@@ -129,10 +129,37 @@
 .st-qty { min-width: 38px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
 .st-qty--buy { color: var(--st-good); }
 .st-qty--sell { color: var(--st-gold); }
-.st-total { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; color: var(--st-soft); min-height: 1.4em; }
+.st-total { display: flex; flex-wrap: wrap; gap: 4px 18px; color: var(--st-soft); }
 .st-total strong { color: var(--st-ink); }
+/* The market's two steps (1 Sell, 2 Buy): each shows only its own price column. */
+.st-table--sell .st-row { grid-template-columns: minmax(120px, 1.7fr) 64px 52px minmax(236px, 2fr); }
+.st-table--buy .st-row { grid-template-columns: minmax(120px, 1.7fr) 64px 56px 52px minmax(236px, 2fr); }
+.st-steps { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; }
+.st-steps__arrow { color: var(--st-soft); }
+.st-stepbtn {
+  font: inherit; font-weight: 800; font-size: 1.05rem; color: var(--st-ink); background: #1b2650;
+  border: 2px solid var(--st-line); border-radius: 999px; min-height: 48px; padding: 4px 20px 4px 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.st-stepbtn__n { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; background: #0a0f23; }
+.st-stepbtn--on { background: var(--st-gold); color: var(--st-gold-ink); border-color: #f5c400; }
+.st-stepbtn--on .st-stepbtn__n { background: var(--st-gold-ink); color: var(--st-gold); }
+.st-stepbtn:focus-visible { outline: 3px solid var(--st-gold); outline-offset: 2px; }
+.st-stepbtn--on:focus-visible { outline-color: #fff; }
+.st-market__empty, .st-market__none { margin: 8px 0; }
+/* Stays at the bottom of the scrolling screen, so Trade is never a scroll away. */
+.st-tradebar {
+  position: sticky; bottom: calc(-1 * max(12px, env(safe-area-inset-bottom, 0px))); z-index: 1; margin: 12px -16px -16px; padding: 10px 16px 12px;
+  background: var(--st-panel-solid); border-top: 2px solid var(--st-gold); border-radius: 0 0 16px 16px;
+  box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.45);
+}
+.st-tradebar__what { margin: 0 0 4px; font-weight: 700; }
+.st-tradebar .st-actions { margin-top: 8px; }
+.st-tradebar .st-advice, .st-tradebar .st-warn { margin: 6px 0 0; }
+/* Bolt's lit buttons scroll clear of the trade bar. */
+.st-root .st-market [data-coach] { scroll-margin-bottom: 190px; }
 @media (max-width: 720px) {
-  .st-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .st-row, .st-table--sell .st-row, .st-table--buy .st-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .st-row--head { display: none; }
   .st-good { grid-column: 1 / -1; }
   .st-num::before { content: attr(data-label); display: block; font-size: 0.68rem; color: var(--st-soft); }

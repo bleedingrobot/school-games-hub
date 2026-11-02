@@ -34,7 +34,13 @@ function averages(galaxy: Galaxy, day: number): number[] {
   return sums.map((s) => (s.n ? s.total / s.n : 0));
 }
 
-export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan }: {
+/** The market's two steps: sell what's in the hold, then buy. */
+type MarketStep = 'sell' | 'buy';
+/** The step that shows a coach target: Sell all is on step 1, Buy max on step 2. */
+const stepShowing = (target: string | undefined): MarketStep | null =>
+  target?.startsWith('sell-all-') ? 'sell' : target?.startsWith('buy-max-') ? 'buy' : null;
+
+export function TradePanel({ galaxy, t, busy, news = [], pushes, want, onTrade, onPlan }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -42,6 +48,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan
   news?: readonly NewsItem[];
   /** The school's pushes on prices now (for "sells best at"). */
   pushes?: Pushes;
+  /** What Bolt is pointing at (a `data-coach` name, maybe with a "#n" on the end so pointing again counts). Opens its step. */
+  want?: string;
   /** Carry out the plan (the game may ask a maths check first). Gives a message to show, or null. */
   onTrade: (plan: number[]) => Promise<string | null>;
   /** Tells the game what is picked but not traded yet (for First Flight), and null when the market closes. */
@@ -67,6 +75,20 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan
   useEffect(() => () => onPlan?.(null), [onPlan]);
   const here = runPlan(t, plan);
   const out = here.ok ? here.out : null;
+
+  // Landing opens step 1 (sell) when the hold has something this planet buys, otherwise step 2 (buy). After a trade
+  // here it stays put (so what was just bought isn't offered straight back), unless step 1 has nothing left to sell.
+  // Bolt pointing at Sell all or Buy max opens that step. Worked out while drawing, so the button he means is already
+  // on screen when he lights it.
+  const sellable = t.market.some((l) => l.sell > 0 && t.cargo[l.good] > 0);
+  const stopKey = `${t.location},${t.day},${t.jumpNo}`;
+  const [step, setStep] = useState<MarketStep>(() => stepShowing(want) ?? (sellable ? 'sell' : 'buy'));
+  const [seen, setSeen] = useState({ stop: stopKey, hold: holdKey, want });
+  if (seen.stop !== stopKey || seen.hold !== holdKey || seen.want !== want) {
+    setSeen({ stop: stopKey, hold: holdKey, want });
+    const kept = seen.stop !== stopKey ? (sellable ? 'sell' : 'buy') : step === 'sell' && !sellable ? 'buy' : step;
+    setStep((seen.want !== want ? stepShowing(want) : null) ?? kept);
+  }
 
   function bump(good: number, by: number) {
     const next = [...plan];
@@ -96,11 +118,22 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan
     setMessage(next[good] === plan[good] ? why : '');
   }
   const any = plan.some((q) => q !== 0);
+  const selling = plan.flatMap((q, good) => (q < 0 ? [`${-q} ${GOODS[good]}`] : []));
+  const buying = plan.flatMap((q, good) => (q > 0 ? [`${q} ${GOODS[good]}`] : []));
+  const picked = selling.length && buying.length ? `Sell ${selling.join(', ')}, then buy ${buying.join(', ')}.`
+    : selling.length ? `Sell ${selling.join(', ')}.`
+    : buying.length ? `Buy ${buying.join(', ')}.`
+    : step === 'sell' ? 'Nothing picked yet. Press + or Sell all.' : 'Nothing picked yet. Press + or Buy max.';
+  // Step 1 lists what's in the hold; step 2 what this planet sells (and anything already picked).
+  const lines = t.market.filter((l) => (step === 'sell' ? t.cargo[l.good] > 0 || plan[l.good] < 0 : l.buy > 0 || plan[l.good] > 0));
+  const notSold = t.market.filter((l) => l.buy <= 0).map((l) => GOODS[l.good]);
+  const priceHelp = (label: string) => (
+    <button type="button" className="st-info" aria-label={`What does ${label} mean?`} aria-expanded={colHelp} aria-controls="st-colhelp" onClick={() => setColHelp(!colHelp)}>ⓘ</button>
+  );
 
   return (
-    <section className="st-panel" aria-labelledby="st-trade-h">
+    <section className="st-panel st-market" aria-labelledby="st-trade-h">
       <h2 id="st-trade-h" className="st-h">Market</h2>
-      <p className="st-sub">Press + to buy and − to sell, then press Trade. <strong>Sell first</strong>: it frees up holds and credits. Holds: {usedHolds(t)} of {holdsOf(t)} full.</p>
       {local.map((n) => <p key={`${n.good}-${n.kind}`} className="st-news">📰 {n.text}</p>)}
       {headlines.length > 0 && (
         <details className="st-newsbox" data-coach="news">
@@ -109,6 +142,20 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan
           <p className="st-soft">Prices here were fixed when you landed. When lots of traders sell something on a planet it gets cheaper there; when lots buy, it gets dearer. Prices drift back overnight.</p>
         </details>
       )}
+      <div className="st-steps" role="group" aria-label="Market steps">
+        <button type="button" className={`st-stepbtn ${step === 'sell' ? 'st-stepbtn--on' : ''}`} aria-pressed={step === 'sell'} onClick={() => setStep('sell')} data-coach="market-sell">
+          <span className="st-stepbtn__n" aria-hidden="true">1</span> Sell{selling.length > 0 && <span className="st-stepbtn__tick" aria-label="(picked)"> ✓</span>}
+        </button>
+        <span className="st-steps__arrow" aria-hidden="true">▶</span>
+        <button type="button" className={`st-stepbtn ${step === 'buy' ? 'st-stepbtn--on' : ''}`} aria-pressed={step === 'buy'} onClick={() => setStep('buy')} data-coach="market-buy">
+          <span className="st-stepbtn__n" aria-hidden="true">2</span> Buy{buying.length > 0 && <span className="st-stepbtn__tick" aria-label="(picked)"> ✓</span>}
+        </button>
+      </div>
+      <p className="st-sub">
+        {step === 'sell'
+          ? <>Sell what's in your hold first: it frees up holds and credits for buying.</>
+          : <>Pick what to buy, then press <strong>Trade</strong>.</>}
+      </p>
       <button type="button" className="st-btn st-btn--small st-colhelp-narrow" aria-expanded={colHelp} aria-controls="st-colhelp" onClick={() => setColHelp(!colHelp)}>ⓘ Which price is mine?</button>
       {colHelp && (
         <p id="st-colhelp" className="st-advice st-colhelp" role="note">
@@ -116,69 +163,103 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan
           <button type="button" className="st-btn st-btn--small st-colhelp__ok" onClick={() => setColHelp(false)}>Got it</button>
         </p>
       )}
-      <div className="st-table" role="table" aria-label="Goods for sale and for sale to this planet">
-        <div className="st-row st-row--head" role="row">
-          <span role="columnheader">Good</span>
-          <span role="columnheader">You buy at <button type="button" className="st-info" aria-label="What does You buy at mean?" aria-expanded={colHelp} aria-controls="st-colhelp" onClick={() => setColHelp(!colHelp)}>ⓘ</button></span>
-          <span role="columnheader">You sell at <button type="button" className="st-info" aria-label="What does You sell at mean?" aria-expanded={colHelp} aria-controls="st-colhelp" onClick={() => setColHelp(!colHelp)}>ⓘ</button></span>
-          <span role="columnheader">In stock</span>
-          <span role="columnheader">In hold</span>
-          <span role="columnheader" aria-label="Sell or buy">Sell ◀ ▶ Buy</span>
-        </div>
-        {t.market.map((line) => {
-          const name = GOODS[line.good];
-          const q = plan[line.good];
-          const can = line.buy > 0 || line.sell > 0;
-          const tag = line.sell > 0 && avg[line.good] > 0 ? (line.sell <= avg[line.good] * 0.88 ? 'cheap' : line.sell >= avg[line.good] * 1.12 ? 'dear' : '') : '';
-          const base = normal[line.good]?.sell ?? 0;
-          // The school's trading moved this price (by 3% or more).
-          const moved = base > 0 && line.sell > 0 && Math.abs(line.sell - base) * 100 >= base * 3 ? (line.sell < base ? 'down' : 'up') : '';
-          return (
-            <div key={name} className={`st-row ${can ? '' : 'st-row--off'}`} role="row">
-              <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}{moved && <em className={`st-tag st-tag--${moved}`} title={moved === 'down' ? 'Lots of traders sold this here, so the price went down' : 'Lots of traders bought this here, so the price went up'}>{moved === 'down' ? '📉 lots sold' : '📈 lots bought'}</em>}
-                {star?.good === line.good ? (
-                  <small className="st-best st-best--star">⭐ Best buy: {bestBuyWorking(galaxy, star)}</small>
-                ) : best[line.good] && best[line.good]!.sell > Math.max(line.sell, 0) && (line.buy > 0 || t.cargo[line.good] > 0) && (
-                  <small className="st-best">Sells best: {galaxy.planets[best[line.good]!.planet].name} {best[line.good]!.sell}{line.buy > 0 && best[line.good]!.sell > line.buy ? ` (+${best[line.good]!.sell - line.buy} each)` : ''}</small>
-                )}
-              </span>
-              <span role="cell" className="st-num" data-label="Buy at">{line.buy > 0 ? line.buy : '—'}</span>
-              <span role="cell" className="st-num" data-label="Sell at">{line.sell > 0 ? line.sell : '—'}</span>
-              <span role="cell" className="st-num" data-label="Stock">{line.buy > 0 ? line.stock : '—'}</span>
-              <span role="cell" className="st-num" data-label="Hold">{t.cargo[line.good]}</span>
-              <span role="cell" className="st-step">
-                {can ? (
-                  <>
-                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, -1)} aria-label={`Sell all ${name}`} disabled={busy || line.sell <= 0 || t.cargo[line.good] === 0} data-coach={`sell-all-${line.good}`}>Sell all</button>
-                    <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, -1)} aria-label={`Sell one ${name}`} disabled={busy}>−</button>
-                    <output className={`st-qty ${q > 0 ? 'st-qty--buy' : q < 0 ? 'st-qty--sell' : ''}`} aria-label={`${name}: ${q > 0 ? `buying ${q}` : q < 0 ? `selling ${-q}` : 'none'}`}>{q > 0 ? `+${q}` : q}</output>
-                    <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, 1)} aria-label={`Buy one ${name}`} disabled={busy}>+</button>
-                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, 1)} aria-label={`Buy as many ${name} as you can`} disabled={busy || line.buy <= 0} data-coach={`buy-max-${line.good}`}>Buy max</button>
-                  </>
+      {lines.length === 0 ? (
+        step === 'sell' ? (
+          <p className="st-soft st-market__empty">Your hold is empty, so there's nothing to sell. <button type="button" className="st-btn st-btn--small" onClick={() => setStep('buy')}>Go to 2. Buy</button></p>
+        ) : (
+          <p className="st-soft st-market__empty">This planet has nothing to sell.</p>
+        )
+      ) : (
+        <div className={`st-table st-table--${step}`} role="table" aria-label={step === 'sell' ? 'Goods in your hold' : 'Goods for sale here'}>
+          <div className="st-row st-row--head" role="row">
+            <span role="columnheader">Good</span>
+            {step === 'sell' ? (
+              <span role="columnheader">You sell at {priceHelp('You sell at')}</span>
+            ) : (
+              <>
+                <span role="columnheader">You buy at {priceHelp('You buy at')}</span>
+                <span role="columnheader">In stock</span>
+              </>
+            )}
+            <span role="columnheader">In hold</span>
+            <span role="columnheader">{step === 'sell' ? 'How many to sell' : 'How many to buy'}</span>
+          </div>
+          {lines.map((line) => {
+            const name = GOODS[line.good];
+            const q = plan[line.good];
+            const tag = line.sell > 0 && avg[line.good] > 0 ? (line.sell <= avg[line.good] * 0.88 ? 'cheap' : line.sell >= avg[line.good] * 1.12 ? 'dear' : '') : '';
+            const base = normal[line.good]?.sell ?? 0;
+            // The school's trading moved this price (by 3% or more).
+            const moved = base > 0 && line.sell > 0 && Math.abs(line.sell - base) * 100 >= base * 3 ? (line.sell < base ? 'down' : 'up') : '';
+            return (
+              <div key={name} className="st-row" role="row">
+                <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}{moved && <em className={`st-tag st-tag--${moved}`} title={moved === 'down' ? 'Lots of traders sold this here, so the price went down' : 'Lots of traders bought this here, so the price went up'}>{moved === 'down' ? '📉 lots sold' : '📈 lots bought'}</em>}
+                  {step === 'buy' && star?.good === line.good ? (
+                    <small className="st-best st-best--star">⭐ Best buy: {bestBuyWorking(galaxy, star)}</small>
+                  ) : best[line.good] && best[line.good]!.sell > Math.max(line.sell, 0) && (
+                    <small className="st-best">Sells best: {galaxy.planets[best[line.good]!.planet].name} {best[line.good]!.sell}{step === 'buy' && best[line.good]!.sell > line.buy ? ` (+${best[line.good]!.sell - line.buy} each)` : ''}</small>
+                  )}
+                </span>
+                {step === 'sell' ? (
+                  <span role="cell" className="st-num" data-label="Sell at">{line.sell > 0 ? line.sell : '—'}</span>
                 ) : (
-                  <span className="st-soft">Not traded here</span>
+                  <>
+                    <span role="cell" className="st-num" data-label="Buy at">{line.buy}</span>
+                    <span role="cell" className="st-num" data-label="Stock">{line.stock}</span>
+                  </>
                 )}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <div className="st-total" aria-live="polite">
-        {out ? (
-          <>
-            <span>Spend <strong>{cr(out.spent)}</strong></span>
-            <span>Earn <strong>{cr(out.earned)}</strong></span>
-            <span>You will have <strong>{cr(out.state.credits)}</strong></span>
-          </>
-        ) : null}
-      </div>
-      {plan.map((q, good) => (q < 0 ? sellElsewhere(galaxy, t, good, best) : null)).filter(Boolean).map((line) => (
-        <p key={line} className="st-advice st-advice--warn"><strong className="st-advice__who">{COACH_NAME}:</strong> {line}</p>
-      ))}
-      {message && <p className="st-warn" role="status">{message}</p>}
-      <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary" disabled={busy || !any} onClick={async () => setMessage((await onTrade(plan)) ?? '')} data-coach="trade-go">Trade</button>
-        <button type="button" className="st-btn" disabled={busy || !any} onClick={() => setPlan(emptyPlan())}>Clear</button>
+                <span role="cell" className="st-num" data-label="Hold">{t.cargo[line.good]}</span>
+                <span role="cell" className="st-step">
+                  {step === 'sell' ? (
+                    line.sell <= 0 ? (
+                      <span className="st-soft">{galaxy.planets[t.location].name} doesn't buy {name}</span>
+                    ) : (
+                      <>
+                        <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, 1)} aria-label={`Sell one fewer ${name}`} disabled={busy || q >= 0}>−</button>
+                        <output className={`st-qty ${q < 0 ? 'st-qty--sell' : ''}`} aria-label={`${name}: ${q < 0 ? `selling ${-q}` : 'none'}`}>{Math.max(-q, 0)}</output>
+                        <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, -1)} aria-label={`Sell one ${name}`} disabled={busy}>+</button>
+                        <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, -1)} aria-label={`Sell all ${name}`} disabled={busy || t.cargo[line.good] === 0} data-coach={`sell-all-${line.good}`}>Sell all</button>
+                      </>
+                    )
+                  ) : q < 0 ? (
+                    <span className="st-soft">Selling {-q} in step 1</span>
+                  ) : (
+                    <>
+                      <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, -1)} aria-label={`Buy one fewer ${name}`} disabled={busy || q <= 0}>−</button>
+                      <output className={`st-qty ${q > 0 ? 'st-qty--buy' : ''}`} aria-label={`${name}: ${q > 0 ? `buying ${q}` : 'none'}`}>{q}</output>
+                      <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, 1)} aria-label={`Buy one ${name}`} disabled={busy}>+</button>
+                      <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, 1)} aria-label={`Buy as many ${name} as you can`} disabled={busy} data-coach={`buy-max-${line.good}`}>Buy max</button>
+                    </>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {step === 'buy' && notSold.length > 0 && <p className="st-soft st-market__none">Not sold here: {notSold.join(', ')}.</p>}
+      {/* The trade bar stays at the bottom of the screen, so Trade is never a scroll away. */}
+      <div className="st-tradebar" data-coach="trade-bar">
+        <p className="st-tradebar__what" aria-live="polite">{picked}</p>
+        <div className="st-total">
+          {out && any && (
+            <>
+              <span>Spend <strong>{cr(out.spent)}</strong></span>
+              <span>Earn <strong>{cr(out.earned)}</strong></span>
+            </>
+          )}
+          <span>You will have <strong>{cr((out?.state ?? t).credits)}</strong></span>
+          <span>Holds <strong>{usedHolds(out?.state ?? t)} of {holdsOf(t)}</strong> full</span>
+        </div>
+        {plan.map((q, good) => (q < 0 ? sellElsewhere(galaxy, t, good, best) : null)).filter(Boolean).map((line) => (
+          <p key={line} className="st-advice st-advice--warn"><strong className="st-advice__who">{COACH_NAME}:</strong> {line}</p>
+        ))}
+        {message && <p className="st-warn" role="status">{message}</p>}
+        <div className="st-actions">
+          <button type="button" className="st-btn st-btn--primary" disabled={busy || !any} onClick={async () => setMessage((await onTrade(plan)) ?? '')} data-coach="trade-go">Trade</button>
+          {step === 'sell' && <button type="button" className="st-btn" onClick={() => setStep('buy')}>Next: 2. Buy ▶</button>}
+          <button type="button" className="st-btn" disabled={busy || !any} onClick={() => setPlan(emptyPlan())}>Clear</button>
+        </div>
       </div>
     </section>
   );
