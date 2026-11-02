@@ -5,5 +5,3 @@
 # Dragon Maths one season for the school: waits for James's read-only check (docs/TEACHER-VIEW-PLAN.md).
 20261028000400
 
-# Diamond Drop: built on branch claw (docs/DIAMOND-PLAN.md); waits for James to say it can go live.
-20261102000200

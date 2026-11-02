@@ -34,7 +34,7 @@ export const diamondDrop: GameDefinition = {
   Play: DiamondPlay,
   ranked: false,
   noBots: true,
-  group: 'complex-maths',
+  group: 'easy-maths',
   useTeacherSwitch: useDiamondEnabled,
   // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), how far the class
   // has dug in the Maths column, and starting one student again on their page.

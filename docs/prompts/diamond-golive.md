@@ -15,7 +15,7 @@ Branch `claw`, worktree `~/games-hub-claw`. Follow docs/GAME_DEVELOPMENT_GUIDE.m
 - Take `20261102000200` out of `supabase/migrations-on-hold.txt` (this is what makes the migration and function go live on merge).
 - `docs/PRIVACY-SUMMARY.md`: Diamond Drop stores each pupil's progress (levels, coins, stars, Gem Book, claw upgrades), each level's seed, Drop times, questions and right/wrong marks (ended levels deleted after 30 days), and the date they found the Heart Diamond. Classmates see only display name, date and claw in the Hall. Answers recorded like other games (right/wrong, never shown to classmates).
 - `shared/README.md`: a line for `shared/diamond/`. `docs/PLAN.md`: the migration note.
-- Switch stays OFF (`ON = false`), id not yet in `registry.test.ts`.
+- Switch stays OFF (`ON = false`), id not yet in `registry.test.ts`. James chose the easy maths group for the dashboard (2 Nov 2026).
 
 ## 2. After the merge
 - "Test and publish" green; the three tables exist and are empty; `diamond_enabled` false everywhere; unsigned `curl -X POST …/functions/v1/diamond` answers 401.
@@ -26,7 +26,7 @@ Branch `claw`, worktree `~/games-hub-claw`. Follow docs/GAME_DEVELOPMENT_GUIDE.m
 Open `/#/diamond` on the live site with `VITE_DIAMOND_ON` builds, or once the code switch is on: play level 1 (guided first go), a Hold on! question, the shop, the Workshop, the Hall, How to play. Check the Games table row and a student's page.
 
 ## 4. Switch on (James's OK, its own small PR)
-`ON = true` in `src/games/diamond/switch.ts` **and** `diamond` (group `complex-maths`) in `src/games/registry.test.ts`. Then the teacher switch on the Teacher page (or every `app_settings` row with the connector, `diamond_enabled` only, if James asks).
+`ON = true` in `src/games/diamond/switch.ts` **and** `diamond` (group `easy-maths`) in `src/games/registry.test.ts`. Then the teacher switch on the Teacher page (or every `app_settings` row with the connector, `diamond_enabled` only, if James asks).
 
 ## 5. Write it down
 "Went live" in docs/DIAMOND-PLAN.md, the memory note, and add `diamond` to the players tracker's query.
