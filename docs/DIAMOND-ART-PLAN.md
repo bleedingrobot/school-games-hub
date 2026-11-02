@@ -292,7 +292,7 @@ The order puts the pictures that change the most-used screens first (gems, then 
 - **Original game:** all names and shapes are our own.
 - **Style choice (2 Nov 2026):** James chose a different style for each level, **backgrounds only**. Gems, rocks, the claw, rope, winch and Nugget keep one look on every level, so they read the same everywhere. That one look is still to choose (Storybook recommended).
 - **Level styles** (`LEVEL_STYLES` in `scripts/diamond-art.py`): 1 storybook watercolour, 2 plasticine, 3 coloured pencil, 4 glowing dark painting, 5 stained glass, 6 woodblock print, 7 explorer's notebook sketch, 8 layered paper-cut, 9 bold comic book, 10 shimmering pastel dream.
-- **Background picks so far** (tries named `level-N-T`, seeds fixed in the script): 1-3, 2-1, 3-2, 4-2, 5-3, 6-2, 7-1, 8-2, 9-4, 10-4. Waiting on James's OK. Level 5's thin glass border is trimmed in the game. Earlier tries of 5, 9 and 10 drew a window frame, creatures or faces; the reworded prompts fixed them.
+- **Background picks so far** (tries named `level-N-T`, seeds fixed in the script): 1-3, 2-1, 3-2, 4-2, 5-3, 6-2, 7-1, 8-2, 9-4, 10-4. James OK'd these on 2 Nov 2026. Level 5's thin glass border is trimmed in the game. Earlier tries of 5, 9 and 10 drew a window frame, creatures or faces; the reworded prompts fixed them.
 
 ## Credits to carry over
 
