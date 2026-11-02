@@ -17,7 +17,7 @@ import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monster
 import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
 import type { Giant } from '../../../../shared/monsters/quests/giants';
 import { nextStep } from '../../../../shared/monsters/quests/nextStep';
-import { questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
+import { badgeStep, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
@@ -559,7 +559,7 @@ const TeamStrip = memo(function TeamStrip({ team }: { team: readonly Monster[] }
 /** The "what next" line: one sentence saying what to do now. */
 const NextLine = memo(function NextLine({ world, quest }: { world: WorldState; quest: QuestOptions }) {
   const q = questOf(world);
-  const step = nextStep(q, { badges: world.badges, playDays: quest.playDays ?? 0, day: quest.day, player: quest.player });
+  const step = nextStep(q, { badges: world.badges, playDays: quest.playDays ?? 0, day: quest.day, player: quest.player, badgeStep: badgeStep(world) });
   return <p className="mw-next" aria-live="polite"><span aria-hidden="true">➜ </span>{step.text}</p>;
 });
 

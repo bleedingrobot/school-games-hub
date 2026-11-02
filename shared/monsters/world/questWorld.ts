@@ -15,6 +15,7 @@ import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
 import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
 import { emptyQuestSave, type EggKind, type ProgressEvent, type QuestSave } from '../quests/types';
 import { spottedToday, WEATHER, WEATHER_LABEL, weatherFor, type Today } from './weather';
+import { AREAS } from './areas';
 import type { GameMap, Thing, WorldState } from './types';
 
 /** What a game knows about today that the save doesn't: the NZ day, the pupil, and the play days the database has counted. */
@@ -316,4 +317,11 @@ export function searchNest(state: WorldState, thing: Thing, opts: QuestOptions):
   const lines: string[] = [];
   const next = giveEgg({ ...state, quest: { ...q, flags } }, `nest:${thing.id}:${week}:${kind}`, opts, lines);
   return { state: next, pages: [...thing.pages, ...lines] };
+}
+
+/** The "what next" line's last resort: where the next badge is won. */
+export function badgeStep(state: WorldState): { text: string; target: { map: string } } | undefined {
+  const next = AREAS.find((a) => !state.badges.includes(a.badge));
+  if (!next) return undefined;
+  return { text: `Win the ${TYPE_LABEL[next.type]} badge: beat the trainer at the top of the Tower in ${next.name}.`, target: { map: next.map } };
 }
