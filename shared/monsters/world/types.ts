@@ -4,6 +4,7 @@
  */
 import type { Bag } from '../engine';
 import type { Monster } from '../rules';
+import type { QuestSave } from '../quests/types';
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export const DIRS: readonly Dir[] = ['up', 'down', 'left', 'right'];
@@ -147,4 +148,6 @@ export interface WorldState {
   paid: string[];
   /** The trainer's look, one of LOOKS in start.ts. Games saved before there were looks have none (and get a default picture). */
   look?: string;
+  /** Quests, bits, eggs and flags (docs/MONSTERS-QUESTS-PLAN.md). Games saved before quests have none, the same as an empty one. Not yet accepted by the server check (Q.5). */
+  quest?: QuestSave;
 }

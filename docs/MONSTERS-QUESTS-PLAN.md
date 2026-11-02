@@ -287,3 +287,23 @@ not touched. No change to `shared/maths/`.
 | 3 | Quest points | **Small points**: 2 per story step, 1 per board job, inside the 40 a day |
 | 4 | Rare strength | **A little stronger** (rare like a fully grown form, ultra rare a bit more) |
 | 5 | Art test now? | Not answered yet |
+
+---
+
+## Q.1 results (built 2 Nov 2026, branch `monsters-quests`; rules only, nothing on screen, not live)
+
+**What's built** (all pure rules in `shared/monsters/`, no screens, no server change):
+
+- **Rarity** (`monsterBook.ts`): every species has a `rarity` and a `final` flag. 6 families are now uncommon (`UNCOMMON`). New: 6 rare families and 3 giants with 2 forms each (`RARE_FAMILIES`), 3 ultra rares with two types (`ULTRA_MONSTERS`). The book is **75**. Rares' stats ×1.12 and ultra rares' ×1.2 on top of the stage boost (`RARITY_BOOST`). An ultra rare's attacks each have their own type, which sets the question's topic and the type bonus (`attackType`, used by `questionFor`, `damageFor` and the foe's attack choice). A two-type defender is judged by its first type. Nothing changes for the existing 54.
+- **Wild picks by rarity** (`world/encounters.ts`): `ENCOUNTERS.rarityWeight` is common 8, uncommon 4, rare 1, ultra 0, times today's weather (×2 for the type it brings) and the spotted family (×2). Still one dice draw per pick, so replays agree. **This changes the live encounter odds once merged** (uncommon families about half as often). The server check is unchanged: it still only asks "could this map give this monster?".
+- **Weather** (`world/weather.ts`): weather per area per NZ day, and the spotted monster of the day, both from the date only.
+- **Quests** (`quests/`): `types.ts` (the `QuestSave` kept in `WorldState.quest`, optional), `quests.ts` (the 7 story quests as data, `record` for battles/catches/visits/puzzles, `talkTo` for start/bring/show/talk, the notice board's 3 daily jobs with one that needs no battle, `questPoints`), `bits.ts` (deterministic drops, the Tinker's 8 recipes), `giants.ts`, `eggs.ts` (rolled when found; 3/5/7 days; own spot; basket of 3; egg warmer), `nextStep.ts` (the "what next" line).
+- **Drawing fallback:** the new monsters borrow a grown drawing of their type until Q.3 paints them (`STAND_IN` in `MonsterArt.tsx`).
+
+**Simulator** (`node scripts/monsters-quests-sim.mjs`, 500 pupils, 10 wild wins a day in the giant's own area): wake-up item bits take a **median of 3 to 5 days** (warm whistle 5, tide bell 4, frost horn 3). The slowest pupils take up to 19 days for the warm whistle, because pebbles are scarce on Fire Mountain; the daily bit spots in Q.4 should even that out. The tide bell was changed to shells and pebbles because Shell Beach has no Leaf monsters.
+
+**Tests:** existing tests updated for 75 monsters (book counts; the painted-picture test skips the new ones until Q.3); **1 new test** (`quests/quests.test.ts`: quest → giant → egg, nothing can be hurried, jobs always reachable). 291 Maths Monsters tests pass; typecheck clean. The `monster` function's `index.ts` was rebuilt (the server still accepts exactly what it did).
+
+**Decisions made along the way (James can change any):** egg odds 50/40/10; bits are deterministic (no dice) so the server can count them exactly; giant battles' levels 18/24/30; the finale needs all three giants woken and an egg of every kind hatched, then gives a choice of ultra rare egg.
+
+**Not done yet / for Q.4–Q.5:** nothing calls these rules from the world yet (talk, battles, the Tinker, the board, the basket); people, spots, puzzles and bonus maps aren't on the maps; the server check doesn't accept `quest` yet; play days aren't counted by the database yet.
