@@ -3,7 +3,7 @@
 How Diamond Drop swaps its drawn-in-code art for paintings, made in ComfyUI on James's gaming PC. It follows the way Star Trader was done (`docs/TRADER-ART-PLAN.md`), so most of the tools can be copied.
 
 Written 2 November 2026 for James.
-**Status: Stage 2: plan and style mock-ups; style not chosen yet.** Nothing is painted and nothing is in the game yet.
+**Status (2 Nov 2026): painted and in the game on branch `claw`, not live.** Each level background has its own style; everything else is in the Storybook look. Section 8 says how the paintings went in.
 
 ## The short version
 
@@ -297,6 +297,21 @@ The order puts the pictures that change the most-used screens first (gems, then 
 - **Style choice (2 Nov 2026):** James chose a different style for each level, **backgrounds only**. Gems, rocks, the claw, rope, winch and Nugget keep one look on every level, so they read the same everywhere. That one look is still to choose (Storybook recommended).
 - **Level styles** (`LEVEL_STYLES` in `scripts/diamond-art.py`): 1 storybook watercolour, 2 plasticine, 3 coloured pencil, 4 glowing dark painting, 5 stained glass, 6 woodblock print, 7 explorer's notebook sketch, 8 layered paper-cut, 9 bold comic book, 10 shimmering pastel dream.
 - **Background picks so far** (tries named `level-N-T`, seeds fixed in the script): 1-3, 2-1, 3-2, 4-2, 5-3, 6-2, 7-1, 8-2, 9-4, 10-4. James OK'd these on 2 Nov 2026. Level 5's thin glass border is trimmed in the game. Earlier tries of 5, 9 and 10 drew a window frame, creatures or faces; the reworded prompts fixed them.
+
+## 8. How the paintings went in (Stage 6, 2 Nov 2026)
+
+- `~/.cache/rembg-venv/bin/python scripts/diamond-art.py tidy` turns the picks (`docs/diamond-art/picks.json`, originals in `~/dragon-art-inbox/diamond-art/`) into `src/games/diamond/art/paint/<folder>/<game id>.webp`, about 2.3 MB in all. Sprites are cut out with rembg. Rope tiles have their paper colour keyed out and their ends cross-faded. Levels 5 and 8 have their painted border trimmed (`TRIM`).
+- **`art/paint.ts`** finds a painting by folder and game id. **Each drawing function in `art/draw.ts` draws the painting when it has downloaded**, so every screen picks it up, and falls back to the drawn version otherwise. Still pictures (`Sprite`) draw again when a painting arrives, and the play screen redraws its cached background.
+- **Fitting the game:**
+  - Levels 1 and 2 have their sky squeezed into the top band (`SURFACE`), so the grass line sits on the game's ground.
+  - The winch is small, on two drawn wooden legs, so the resting claw hangs clear below it.
+  - Painted gems get a soft dark edge so pale gems show on pale grass.
+  - A claw holding something is its open painting squeezed narrower.
+  - The depth gauge on the level map shows a strip of each level's own painting.
+  - The shop shows the stall and each boost; the Gem Book shows the big painting for found gems.
+- **Drawn in code:** the Laser Beam rope, the starter rope, trails, effects and sparkles.
+- **Not used yet:** the level map painting, and the home page card (it goes in when the game goes on the home page).
+- `art/paint.test.ts` checks that every gem, level, boost and Workshop item has its painting, that every file is one the game uses, and the file sizes.
 
 ## Credits to carry over
 

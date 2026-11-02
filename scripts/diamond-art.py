@@ -2,9 +2,11 @@
 """
 Paints Diamond Drop's pictures (docs/DIAMOND-ART-PLAN.md) in ComfyUI on James's gaming PC. Runs on a computer that can
 reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"), never in the site build.
-Standard library only.
+Painting needs only the standard library. Tidying the chosen tries into the game's small WebP files
+(src/games/diamond/art/paint/, read by art/paint.ts) needs Pillow, numpy and rembg (~/.cache/rembg-venv).
 
   python3 scripts/diamond-art.py paint OUT_DIR [names] [--tries 2]   # OUT_DIR/<name>-<try>.png
+  ~/.cache/rembg-venv/bin/python scripts/diamond-art.py tidy [--force]   # picks (docs/diamond-art/picks.json) → the game
   python3 scripts/diamond-art.py paint /tmp/diamond-styles style-a style-b style-c   # the three style tries (one style for all)
   python3 scripts/diamond-art.py paint /tmp/diamond-levels level-1 level-2 …        # each level's background, in its own style
 
@@ -271,8 +273,135 @@ def paint(out: Path, names: list[str], tries: int):
             print(f'  {dest.name}', flush=True)
 
 
+# ---- Tidying: the chosen try of each picture → src/games/diamond/art/paint/<group>/<game name>.webp ----
+
+ROOT = Path(__file__).resolve().parent.parent
+GAME_ART = ROOT / 'src' / 'games' / 'diamond' / 'art' / 'paint'
+INBOX = Path.home() / 'dragon-art-inbox' / 'diamond-art'
+
+# Painting name → the Workshop item it shows (shared/diamond/workshopItems.ts).
+ITEM_IDS = {
+    'head': {'golden': 'golden-claw', 'dino': 'dino-jaw', 'robot': 'robot-hand', 'crab': 'crab-pincer', 'octopus': 'octopus-arm',
+             'magnet': 'giant-magnet', 'chicken': 'rubber-chicken', 'fork': 'giant-fork', 'dragon': 'dragon-talon',
+             'ice': 'ice-crystal-claw', 'glove': 'grabby-glove', 'diamond': 'diamond-claw'},
+    'rope': {'rainbow': 'rainbow-rope', 'vine': 'jungle-vine', 'sausage': 'sausage-chain', 'spaghetti': 'spaghetti',
+             'candy': 'candy-cane', 'bike': 'bike-chain', 'star': 'star-rope'},
+    'winch': {'steam': 'steam-engine', 'rocket': 'rocket-winch', 'snail': 'giant-snail', 'pirate': 'pirate-ship-wheel',
+              'hamster': 'hamster-wheel'},
+    'hat': {'pirate': 'pirate-hat', 'crown': 'crown', 'wizard': 'wizard-hat', 'astronaut': 'astronaut-helmet', 'top-hat': 'top-hat', 'chef': 'chefs-hat',
+            'miner-lamp': 'miner-lamp'},
+    'icon': {'sparkles': 'sparkles', 'bubbles': 'bubbles', 'flames': 'flames', 'confetti': 'confetti', 'music': 'music-notes',
+             'fireworks': 'fireworks', 'disco': 'disco-ball', 'gem-rain': 'gem-rain', 'trumpet': 'trumpet-fanfare',
+             'gem-rain-deluxe': 'gem-rain-deluxe', 'happy-dance': 'happy-dance'},
+    'boost': {'strong-winch': 'strongWinch', 'lucky-charm': 'luckyCharm', 'extra-time': 'extraTime', 'rock-blaster': 'rockBlaster'},
+}
+
+
+def destination(name: str) -> tuple[str, str, str] | None:
+    """(kind of tidying, folder, file name in the game) for a painting, or None when the game doesn't use it (the map and
+    the home card wait for later)."""
+    if name.startswith('level-'):
+        return 'scene', 'levels', name.split('-')[1]
+    for pre, folder in (('gem-', 'gems'), ('book-', 'book')):
+        if name.startswith(pre):
+            return ('cut' if folder == 'gems' else 'square'), folder, name[len(pre):]
+    if name in ('rock-small', 'rock-medium', 'rock-big', 'sack', 'crab', 'winch', 'claw', 'stall'):
+        return 'cut', 'field', name
+    if name.startswith('nugget-'):
+        return 'cut', 'nugget', name[len('nugget-'):]
+    group, _, key = name.partition('-')
+    item = ITEM_IDS.get(group, {}).get(key)
+    if not item:
+        return None
+    return ('rope' if group == 'rope' else 'cut'), {'head': 'heads', 'rope': 'ropes', 'winch': 'winches', 'hat': 'hats',
+                                                     'icon': 'icons', 'boost': 'boosts'}[group], item
+
+
+# Level paintings with a border round them (glass, a paper card), trimmed off by this share of the width.
+TRIM = {'level-5': 0.05, 'level-8': 0.075}
+
+# Things with a hole in the middle, where the cut-out keeps the white.
+HOLLOW = {'head-magnet'}
+
+SIZES = {'gems': 256, 'book': 320, 'field': 320, 'nugget': 320, 'heads': 256, 'winches': 320, 'hats': 320, 'icons': 160, 'boosts': 160}
+
+
+def tidy(force: bool):
+    import numpy as np
+    from PIL import Image
+    from rembg import new_session, remove
+    session = None
+    picks = json.loads((ROOT / 'docs' / 'diamond-art' / 'picks.json').read_text())
+
+    def save(img, out: Path, quality: int):
+        out.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out, 'WEBP', quality=quality, method=6)
+        print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
+
+    def fit(img, size: int):
+        img = img.copy()
+        img.thumbnail((size, size), Image.LANCZOS)
+        return img
+
+    def trim(img, pad=4):
+        a = np.asarray(img)[..., 3] > 40
+        ys, xs = np.where(a)
+        return img.crop((max(0, xs.min() - pad), max(0, ys.min() - pad), min(img.width, xs.max() + pad + 1), min(img.height, ys.max() + pad + 1)))
+
+    for name, t in picks.items():
+        where = destination(name)
+        if not where:
+            continue
+        kind, folder, out_name = where
+        src = INBOX / ('levels' if kind == 'scene' else 'items') / f'{name}-{t}.png'
+        out = GAME_ART / folder / f'{out_name}.webp'
+        if out.exists() and not force:
+            continue
+        img = Image.open(src)
+        if kind == 'scene':
+            img = img.convert('RGB')
+            if name in TRIM:  # a border painted round it
+                m = round(img.width * TRIM[name])
+                img = img.crop((m, m, img.width - m, img.height - m))
+            save(fit(img, 1600), out, 72)
+            save(fit(img, 800), GAME_ART / folder / f'{out_name}-800.webp', 70)
+        elif kind == 'square':
+            save(fit(img.convert('RGB'), SIZES[folder]), out, 80)
+        elif kind == 'rope':
+            # White to see-through, keep the middle strip the rope runs down, and cross-fade the ends so the tile repeats.
+            whole = np.asarray(img.convert('RGB'), dtype=np.float32)
+            h = whole.shape[0]
+            k = h // 10
+            fade = np.linspace(0, 1, k)[:, None, None]
+            a = whole[:h - k].copy()
+            a[:k] = whole[h - k:] * (1 - fade) + whole[:k] * fade
+            # The paper colour (white or cream) from the outer strips; anything close to it goes see-through.
+            w = a.shape[1]
+            paper = np.median(np.concatenate([a[:, :w // 8], a[:, -w // 8:]], axis=1).reshape(-1, 3), axis=0)
+            alpha = np.clip((np.abs(a - paper).max(axis=2) - 14) / 30, 0, 1) * 255
+            cols = np.where(alpha.mean(axis=0) > 25)[0]
+            x0, x1 = max(0, cols.min() - 4), min(a.shape[1], cols.max() + 5)
+            rgba = np.dstack([a, alpha])[:, x0:x1].round().astype(np.uint8)
+            tile = Image.fromarray(rgba, 'RGBA')
+            save(tile.resize((round(tile.width * 256 / tile.height), 256), Image.LANCZOS), out, 82)
+        else:
+            if session is None:
+                session = new_session('isnet-general-use')
+            cut = remove(img.convert('RGB'), session=session, alpha_matting=True)
+            if name in HOLLOW:  # white showing through a gap the cut-out filled in
+                px = np.asarray(cut).copy()
+                white = (px[..., :3].min(axis=2) > 232) & (np.ptp(px[..., :3], axis=2) < 18)
+                px[white, 3] = 0
+                cut = Image.fromarray(px, 'RGBA')
+            cut = trim(cut)
+            save(fit(cut, SIZES[folder]), out, 82)
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
+    if args[:1] == ['tidy']:
+        tidy('--force' in args)
+        sys.exit()
     if len(args) < 2 or args[0] != 'paint':
         sys.exit(__doc__)
     tries = 2

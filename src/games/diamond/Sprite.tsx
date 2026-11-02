@@ -3,6 +3,7 @@
  * scaled so the box is `box` units square, whatever size it shows at. `animate` redraws every frame (try-on claws).
  */
 import { useEffect, useRef } from 'react';
+import { onPainting } from './art/paint';
 
 export function Sprite({
   draw,
@@ -42,7 +43,12 @@ export function Sprite({
       if (animate) frame = requestAnimationFrame(paint);
     };
     paint();
-    return () => cancelAnimationFrame(frame);
+    // A still picture draws again once its painting has downloaded (a moving one picks it up on the next frame).
+    const stop = animate ? undefined : onPainting(paint);
+    return () => {
+      cancelAnimationFrame(frame);
+      stop?.();
+    };
   }, [size, box, animate, draw]);
   return (
     <canvas

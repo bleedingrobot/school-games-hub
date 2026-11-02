@@ -7,12 +7,19 @@ import { LAST_LEVEL, LEVELS, levelSpec } from '../../../shared/diamond/config';
 import { levelsOpen, type Player } from '../../../shared/diamond/progress';
 import type { NextStep } from '../../../shared/diamond/nextStep';
 import { drawGem, drawNugget } from './art/draw';
+import { paintFile } from './art/paint';
 import { drawRig, type Worn } from './art/items';
 import type { DiamondPrefs } from './prefs';
 import { Sprite } from './Sprite';
 
 /** The colour of each level's chamber wall, from the topsoil down to the diamond heart. */
 const CHAMBER = ['#7d4f25', '#b86236', '#7f7665', '#232b45', '#33254c', '#1b344c', '#7c6d57', '#52332d', '#331512', '#24163d'];
+
+/** A layer of the depth gauge: a strip from the middle of that level's own painting, or its colour until there is one. */
+function layerLook(n: number): string {
+  const painted = paintFile('levels', `${n}-800`);
+  return painted ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${painted}) center 60% / cover, ${CHAMBER[n - 1]}` : CHAMBER[n - 1];
+}
 
 export type MapButton = 'play' | 'shop' | 'workshop' | 'book' | 'how' | 'hall';
 
@@ -123,7 +130,7 @@ export function LevelMap({
           const stars = player.stars[n - 1] ?? 0;
           const state = passed ? `passed, ${stars} of 3 stars` : tomorrow ? 'opens tomorrow' : isNext ? 'open now' : 'locked';
           return (
-            <li key={n} className="dd-gauge__layer" style={{ background: CHAMBER[n - 1] }}>
+            <li key={n} className="dd-gauge__layer" style={{ background: layerLook(n) }}>
               <button
                 type="button"
                 className={`dd-chamber${locked ? ' is-locked' : ''}${passed ? ' is-passed' : ''}${selected === n ? ' is-selected' : ''}${tomorrow ? ' is-tomorrow' : ''}`}

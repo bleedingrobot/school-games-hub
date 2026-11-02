@@ -10,6 +10,7 @@ import {
 import { boostPrice, type Player } from '../../../shared/diamond/progress';
 import { itemOf } from '../../../shared/diamond/workshop';
 import { drawGem, GEM_LOOK } from './art/draw';
+import { paintFile } from './art/paint';
 import { drawRig } from './art/items';
 import type { DiamondBackend, Ended, HallRow } from './backend';
 
@@ -122,6 +123,7 @@ export function Shop({ player, level, basket, onToggle, onStart, canStart, why, 
   const left = player.coins - cost;
   return (
     <Page id="dd-shop-title" title={`Shop for level ${level}`} onBack={onBack} coins={player.coins}>
+      {paintFile('field', 'stall') && <img className="dd-stall" src={paintFile('field', 'stall')} alt="" width={110} height={110} />}
       <p className="dd-soft">Boosts help on your next level only. One of each at most.</p>
       {advice && <p className="dd-advice"><strong>Nugget says:</strong> {advice}</p>}
       <ul className="dd-list">
@@ -132,6 +134,7 @@ export function Shop({ player, level, basket, onToggle, onStart, canStart, why, 
           const affordable = inBasket || price <= left;
           return (
             <li key={b.id} className={`dd-item${inBasket ? ' is-chosen' : ''}`}>
+              {paintFile('boosts', b.id) && <img className="dd-item__icon" src={paintFile('boosts', b.id)} alt="" width={64} height={64} />}
               <div className="dd-item__body">
                 <h3 className="dd-item__name">{b.name}{free && <span className="dd-chip dd-chip--gold">Free from a sack!</span>}</h3>
                 <p>{b.about}</p>
@@ -170,7 +173,7 @@ export function GemBook({ player, onBack }: { player: Player; onBack: () => void
           const page = player.gemBook[g.id];
           return (
             <li key={g.id} className={`dd-book__page${page ? '' : ' is-unknown'}${g.id === 'heartDiamond' ? ' is-heart' : ''}`}>
-              <Sprite size={84} draw={(c) => drawGem(c, g.id, 50, 50, 38, { shadow: !page, halo: !!page })} label={page ? `${g.name}: ${GEM_LOOK[g.id].shape}` : 'A gem not found yet'} />
+              <Sprite size={84} draw={(c) => drawGem(c, g.id, 50, 50, 38, { shadow: !page, halo: !!page, book: !!page })} label={page ? `${g.name}: ${GEM_LOOK[g.id].shape}` : 'A gem not found yet'} />
               <h3 className="dd-item__name">{page ? g.name : '???'}</h3>
               {page ? (
                 <p className="dd-small">Caught {page.count} · first on {prettyDate(page.first)}</p>

@@ -4,12 +4,16 @@
  */
 import type { Slot, WorkshopItem } from '../../../../shared/diamond/config';
 import { EFFECT_COLOUR, drawClaw, drawGem, drawNugget, drawRope, drawTrail, drawWinch } from './draw';
+import { drawPainting, paintNow } from './paint';
 
 type Ctx = CanvasRenderingContext2D;
 export type Worn = Partial<Record<Slot, string>>;
 
 /** An upgrade's icon in a 100-unit box. */
 export function drawItem(ctx: Ctx, item: WorkshopItem, time: number) {
+  // Claws, winches, hats and effects show their painting on its own (a rope is drawn hanging, with its painted tile).
+  const folder = { head: 'heads', winch: 'winches', hat: 'hats', trail: 'icons', catch: 'icons' }[item.slot as string];
+  if (folder && drawPainting(ctx, paintNow(folder, item.id), 50, 50, 94)) return;
   ctx.save();
   switch (item.slot) {
     case 'head':

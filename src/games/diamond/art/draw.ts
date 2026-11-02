@@ -3,10 +3,14 @@
  * paintings arrive (docs/DIAMOND-ART-PLAN.md), and the fallback for good after. Everything is drawn in field units
  * (shared/diamond/config.ts: 1000 × 700, y down) or in a small local box; the caller scales the canvas.
  *
+ * Each function draws James's painting instead when it has downloaded (art/paint.ts); the code drawing below it is the
+ * fallback, and still draws everything that moves (the rope line, trails, effects, sparkles).
+ *
  * Only looks live here. Nothing in this file is read by the rules, so a picture can never change a level.
  * Gems differ by shape as well as colour, so colour-blind pupils can tell them apart.
  */
 import { FIELD_H, FIELD_W, GROUND_Y, PIVOT, type GemId } from '../../../../shared/diamond/config';
+import { drawPainting, paintNow } from './paint';
 
 type Ctx = CanvasRenderingContext2D;
 type Pt = [number, number];
@@ -70,7 +74,14 @@ export const GEM_LOOK: Record<GemId, { fill: string; dark: string; light: string
  * One gem, centred on (x, y), about r across from the middle. `shadow` draws it as a dark unknown shape (the Gem Book's
  * pages for gems not found yet); `halo` adds a soft light behind it so dark gems show on dark rock.
  */
-export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, opts: { shadow?: boolean; halo?: boolean; sparkle?: number } = {}) {
+export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, opts: { shadow?: boolean; halo?: boolean; sparkle?: number; book?: boolean } = {}) {
+  // The Gem Book's square painting fills the box; the gem on its own floats in it.
+  const book = opts.book && !opts.shadow ? paintNow('book', gem) : undefined;
+  if (book) {
+    drawPainting(ctx, book, x, y, r * 2.6);
+    return;
+  }
+  const painted = opts.shadow ? undefined : paintNow('gems', gem);
   const look = GEM_LOOK[gem];
   const fill = opts.shadow ? '#2b2b3a' : look.fill;
   const dark = opts.shadow ? '#11111a' : look.dark;
@@ -83,6 +94,16 @@ export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, o
     ctx.fillStyle = g;
     circle(ctx, x, y, r * 1.7);
     ctx.fill();
+  }
+  if (painted) {
+    // A soft dark edge, so a pale gem still shows on pale grass.
+    ctx.shadowColor = 'rgba(30,15,0,0.7)';
+    ctx.shadowBlur = r * 0.4;
+    drawPainting(ctx, painted, x, y, r * 2.4);
+    ctx.shadowBlur = 0;
+    sparkleOn(ctx, x, y, r, opts.sparkle);
+    ctx.restore();
+    return;
   }
   ctx.lineJoin = 'round';
   ctx.lineWidth = Math.max(1.5, r * 0.12);
@@ -178,18 +199,24 @@ export function drawGem(ctx: Ctx, gem: GemId, x: number, y: number, r: number, o
       break;
     }
   }
-  if (opts.sparkle && !opts.shadow) {
-    ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = Math.max(0, Math.min(1, opts.sparkle));
-    star(ctx, x + r * 0.55, y - r * 0.6, r * 0.32, 4, 0.25);
-    ctx.fill();
-  }
+  if (!opts.shadow) sparkleOn(ctx, x, y, r, opts.sparkle);
   ctx.restore();
+}
+
+function sparkleOn(ctx: Ctx, x: number, y: number, r: number, sparkle: number | undefined) {
+  if (!sparkle) return;
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = Math.max(0, Math.min(1, sparkle));
+  star(ctx, x + r * 0.55, y - r * 0.6, r * 0.32, 4, 0.25);
+  ctx.fill();
+  ctx.globalAlpha = 1;
 }
 
 // ——————————————————————————————————— Rocks, sacks, crabs ———————————————————————————————————
 
 export function drawRock(ctx: Ctx, x: number, y: number, r: number, seed: number) {
+  // Big rocks have their own painting; small ones take turns between two, so a field of them isn't all the same.
+  if (drawPainting(ctx, paintNow('field', r >= 36 ? 'rock-big' : seed % 2 ? 'rock-medium' : 'rock-small'), x, y, r * 2.3)) return;
   const rnd = decoRandom(seed * 7919 + 13);
   const pts: Pt[] = [];
   const n = 9;
@@ -213,6 +240,7 @@ export function drawRock(ctx: Ctx, x: number, y: number, r: number, seed: number
 }
 
 export function drawSack(ctx: Ctx, x: number, y: number, r: number) {
+  if (drawPainting(ctx, paintNow('field', 'sack'), x, y - r * 0.1, r * 2.4)) return;
   ctx.save();
   ctx.lineJoin = 'round';
   ctx.beginPath();
@@ -235,6 +263,16 @@ export function drawSack(ctx: Ctx, x: number, y: number, r: number) {
 
 /** A cave crab, facing `dir` (1 right, −1 left). Its legs scuttle unless `still`. It carries its gem on its back. */
 export function drawCrab(ctx: Ctx, x: number, y: number, r: number, time: number, still: boolean, gem?: GemId, dir: 1 | -1 = 1) {
+  const painted = paintNow('field', 'crab');
+  if (painted) {
+    ctx.save();
+    ctx.translate(x, y - (still ? 0 : Math.abs(Math.sin(time * 18)) * r * 0.08));
+    ctx.scale(dir, 1);
+    drawPainting(ctx, painted, 0, -r * 0.1, r * 2.7);
+    ctx.restore();
+    if (gem) drawGem(ctx, gem, x, y - r * 0.55, r * 0.55, { halo: false });
+    return;
+  }
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(dir, 1);
@@ -285,8 +323,31 @@ const LOOKS: LevelLook[] = [
   { sky: null, bands: ['#2a1a45', '#24163d', '#1e1234', '#180f2b'], surface: '#3a2760' },
 ];
 
-/** The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). */
-export function drawBackground(ctx: Ctx, level: number) {
+/** How far down the painting its grass line is, for the levels whose sky reaches below the game's ground. */
+const SURFACE: Partial<Record<number, number>> = { 1: 0.34, 2: 0.38 };
+
+/**
+ * The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). Gives true
+ * when it drew the painting, false for the drawn fallback (so the caller can draw again once the painting arrives).
+ */
+export function drawBackground(ctx: Ctx, level: number): boolean {
+  // Each level's painting is in its own style; it covers the field, trimming a little off the sides. Where its grass
+  // line sits lower than the game's ground (SURFACE), the sky above it is squeezed into the top band.
+  const painted = paintNow('levels', ctx.canvas.width > 1000 ? String(level) : `${level}-800`);
+  if (painted) {
+    const iw = painted.naturalWidth, ih = painted.naturalHeight;
+    const k = Math.max(FIELD_W / iw, FIELD_H / ih);
+    const w = iw * k, x = (FIELD_W - w) / 2;
+    const line = SURFACE[level];
+    if (line) {
+      ctx.drawImage(painted, 0, 0, iw, ih * line, x, 0, w, GROUND_Y);
+      ctx.drawImage(painted, 0, ih * line, iw, ih * (1 - line), x, GROUND_Y, w, FIELD_H - GROUND_Y);
+    } else {
+      const h = ih * k;
+      ctx.drawImage(painted, x, (FIELD_H - h) / 2, w, h);
+    }
+    return true;
+  }
   const look = LOOKS[level - 1];
   const rnd = decoRandom(level * 104729);
   const W = FIELD_W, H = FIELD_H;
@@ -343,6 +404,7 @@ export function drawBackground(ctx: Ctx, level: number) {
   }
   decorate(ctx, level, rnd);
   ctx.restore();
+  return false;
 }
 
 /** Each place's own still details, kept faint in the middle so gems read clearly on top. */
@@ -506,6 +568,17 @@ function shade(hex: string, amount: number): string {
 
 /** The winch at the top, centred on the rope's start (x, y). `turn` spins the drum while reeling. */
 export function drawWinch(ctx: Ctx, x: number, y: number, id: string | undefined, turn: number, time: number, still: boolean) {
+  // The painting sits on two wooden legs, its drum about where the rope starts, small enough that the resting claw
+  // hangs clear below it.
+  const painted = id ? paintNow('winches', id) : paintNow('field', 'winch');
+  if (painted) {
+    ctx.save();
+    ctx.strokeStyle = '#4a3018'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - 30, y + 10); ctx.lineTo(x - 48, GROUND_Y - 6); ctx.moveTo(x + 30, y + 10); ctx.lineTo(x + 48, GROUND_Y - 6); ctx.stroke();
+    ctx.restore();
+    drawPainting(ctx, painted, x, y - 8, 96, 64);
+    return;
+  }
   ctx.save();
   ctx.translate(x, y);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -593,6 +666,21 @@ function drum(ctx: Ctx, x: number, y: number, r: number, turn: number, colour: s
 export function drawRope(ctx: Ctx, x1: number, y1: number, x2: number, y2: number, id: string | undefined, time: number, still: boolean) {
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.hypot(dx, dy) || 1;
+  // A painted rope is a short tile repeated down the line (the Laser Beam is always drawn: it's a glowing line).
+  const tile = paintNow('ropes', id);
+  if (tile) {
+    const w = 9;
+    const step = Math.max(24, Math.min(70, (w * tile.naturalHeight) / tile.naturalWidth));
+    ctx.save();
+    ctx.translate(x1, y1);
+    ctx.rotate(Math.atan2(dy, dx) - Math.PI / 2);
+    for (let s = 0; s < len; s += step) {
+      const part = Math.min(1, (len - s) / step);
+      ctx.drawImage(tile, 0, 0, tile.naturalWidth, tile.naturalHeight * part, -w / 2, s, w, step * part);
+    }
+    ctx.restore();
+    return;
+  }
   const ux = dx / len, uy = dy / len;
   const px = -uy, py = ux; // across the rope
   ctx.save();
@@ -654,6 +742,17 @@ export function drawRope(ctx: Ctx, x1: number, y1: number, x2: number, y2: numbe
  * the rules). `closed` when it holds something. `size` is about its length in field units.
  */
 export function drawClaw(ctx: Ctx, x: number, y: number, angle: number, closed: boolean, id: string | undefined, size = 30, time = 0) {
+  // Each claw is painted open; holding something squeezes it narrower, so open and closed are always the same claw.
+  const painted = id ? paintNow('heads', id) : paintNow('field', 'claw');
+  if (painted) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-angle);
+    ctx.scale(closed ? 0.62 : 1, closed ? 0.96 : 1);
+    drawPainting(ctx, painted, 0, size * 0.55, size * 1.2, size * 1.15);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-angle);
@@ -798,6 +897,16 @@ export type Pose = 'stand' | 'wave' | 'point' | 'cheer' | 'oops';
 export function drawNugget(ctx: Ctx, x: number, y: number, size: number, hat: string | undefined, pose: Pose = 'stand', time = 0, still = false, facing: 1 | -1 = 1) {
   const s = size / 60;
   const bob = still ? 0 : pose === 'cheer' ? Math.abs(Math.sin(time * 10)) * 6 : Math.sin(time * 2) * 0.8;
+  // A Workshop hat has its own painting of Nugget wearing it (always waving); otherwise the hard-hat Nugget in this pose.
+  const painted = hat ? paintNow('hats', hat) : paintNow('nugget', pose === 'stand' ? 'wave' : pose);
+  if (painted) {
+    ctx.save();
+    ctx.translate(x, y - bob * s);
+    ctx.scale(facing, 1);
+    drawPainting(ctx, painted, 0, -size * 0.62, size * 1.3, size * 1.25);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.translate(x, y - bob * s);
   ctx.scale(s * facing, s);

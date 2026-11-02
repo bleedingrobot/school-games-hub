@@ -12,6 +12,7 @@ import { answer as answerSlip, startLevel, step, type LevelState, type Phase } f
 import { direction, thingAt, type Thing } from '../../../shared/diamond/field';
 import { Effects, NUGGET_SPOT, drawAmbient, drawBackground, drawClaw, drawCrab, drawGem, drawNugget, drawRock, drawRope, drawSack, drawTrail, drawWinch } from './art/draw';
 import type { Worn } from './art/items';
+import { paintNow } from './art/paint';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { factText } from './factText';
 import { TIPS, guideStep, showsTip, type Help, type TipId } from './guide';
@@ -163,6 +164,7 @@ export function PlayLevel({
     const ctx = el?.getContext?.('2d') ?? null;
     let bg: HTMLCanvasElement | null = null;
     let bgScale = 0;
+    let bgPainted = false;
     let frame = 0;
     let lastTime = performance.now();
     let acc = 0;
@@ -210,11 +212,11 @@ export function PlayLevel({
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const scale = (w * dpr) / FIELD_W;
       if (el.width !== Math.round(FIELD_W * scale)) { el.width = Math.round(FIELD_W * scale); el.height = Math.round(FIELD_H * scale); }
-      if (!bg || bgScale !== scale) {
+      if (!bg || bgScale !== scale || (!bgPainted && paintNow('levels', el.width > 1000 ? String(started.level) : `${started.level}-800`))) {
         bg = document.createElement('canvas');
         bg.width = el.width; bg.height = el.height;
         const b = bg.getContext('2d');
-        if (b) { b.scale(scale, scale); drawBackground(b, started.level); }
+        if (b) { b.scale(scale, scale); bgPainted = drawBackground(b, started.level); }
         bgScale = scale;
       }
       const time = (performance.now() - t0.current) / 1000;

@@ -147,6 +147,8 @@
 .dd-item { display: flex; gap: 10px; align-items: flex-start; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; border: 3px solid transparent; }
 .dd-item.is-chosen { border-color: var(--won); }
 .dd-item__body { flex: 1; min-width: 0; }
+.dd-stall { display: block; width: 110px; height: auto; margin: 0 auto 4px; }
+img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-item__icon { flex: none; background: radial-gradient(circle, #4a3624, var(--dd-panel)); border-radius: 12px; }
 .dd-item__body p { margin: 4px 0; }
 .dd-item__name { margin: 0; font-size: 1.05rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
