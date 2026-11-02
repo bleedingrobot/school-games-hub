@@ -86,14 +86,14 @@
 .si-decor__drawn { font-size: clamp(1rem, 2.6vw, 1.7rem); line-height: 1; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.3)); }
 .si-place { position: absolute; transform: translate(-50%, -50%); min-width: 44px; min-height: 44px; padding: 0; border-radius: 50%; border: 3px dashed #fff; background: rgba(15, 53, 86, 0.55); color: #fff; font: inherit; font-weight: 800; cursor: pointer; z-index: 250; }
 .si-place:hover, .si-place:focus-visible { background: var(--si-title); }
-.si-walker { position: absolute; left: var(--x1); top: var(--y1); width: 3.2%; min-width: 10px; transform: translate(-50%, -100%); pointer-events: none; z-index: 60; animation: si-walk 16s ease-in-out infinite alternate; }
+.si-walker { position: absolute; left: var(--x1); top: var(--y1); width: 3.2%; min-width: 10px; transform: translate(-50%, -100%); pointer-events: none; z-index: var(--z1); animation: si-walk 16s ease-in-out infinite alternate; }
 .si-walker img { width: 100%; display: block; }
 .si-walker__drawn { display: block; width: 100%; aspect-ratio: 0.55; border-radius: 50% 50% 30% 30% / 35% 35% 25% 25%; background: radial-gradient(circle at 50% 22%, #f5d0a9 0 20%, transparent 21%), linear-gradient(180deg, transparent 0 38%, var(--si-walker) 38%); }
 .si-walker__drawn--0 { --si-walker: #dc2626; }
 .si-walker__drawn--1 { --si-walker: #2563eb; }
 .si-walker__drawn--2 { --si-walker: #ca8a04; }
 .si-walker__drawn--3 { --si-walker: #7c3aed; }
-@keyframes si-walk { from { left: var(--x1); top: var(--y1); } to { left: var(--x2); top: var(--y2); } }
+@keyframes si-walk { from { left: var(--x1); top: var(--y1); z-index: var(--z1); } to { left: var(--x2); top: var(--y2); z-index: var(--z2); } }
 .si-pop { position: absolute; transform: translate(-50%, -100%); padding: 1px 7px; border-radius: 999px; background: var(--si-gold); border: 2px solid #fff; color: var(--ink); font-weight: 800; font-size: 0.85rem; z-index: 260; pointer-events: none; animation: si-pop 1.6s ease-out both; }
 @keyframes si-pop { from { opacity: 0; margin-top: 0; } 25% { opacity: 1; } to { opacity: 1; margin-top: -4%; } }
 .si-garden { position: relative; width: min(70%, 420px); margin: 10px auto 0; }

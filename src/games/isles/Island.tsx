@@ -24,6 +24,8 @@ export function Art({ src, alt = '', className, fallback }: { src?: string; alt?
 /** How wide a building is drawn, as a share of the base's width: smaller on the bigger bases, bigger at higher levels. */
 const BUILDING_WIDTH = [19, 16, 15, 13, 12];
 const LEVEL_GROWTH = [0.8, 1, 1.14, 1.3];
+/** How far in front of a clearing walkers stroll (in % of the base's height). */
+const WALK_AHEAD = 7;
 
 export const spotName = (kind: PlotOrEmpty, level: number) => (kind === 'empty' ? 'Empty spot' : `${KIND_NAME[kind]}, level ${level}`);
 
@@ -89,12 +91,16 @@ export function IslandPicture({
   const choosing = free && onPlace ? free : [];
   const decor = island.decorations.flatMap((d, i) => (d.place === null ? [] : [{ ...d, i, at: placeAt(base, d.place) }]));
   const garden = hasGarden(island);
-  // Each walker strolls between two building clearings, back and forth, at its own pace.
+  // Each walker strolls back and forth between the fronts of two neighbouring clearings, at its own pace, so it walks
+  // on the grass in front of buildings, never over them.
+  const used = places.slice(0, Math.max(2, shown.length));
   const walkers = Array.from({ length: walkerCount(island.islanders) }, (_, i) => {
-    const from = places[(i * 2) % Math.min(places.length, shown.length)];
-    const to = places[(i * 2 + 3) % Math.min(places.length, shown.length)];
-    return { i, from, to };
+    const from = used[(i * 3) % used.length];
+    const to = used.filter((p) => p !== from).sort((a, b) => Math.hypot(a[0] - from[0], a[1] - from[1]) - Math.hypot(b[0] - from[0], b[1] - from[1]))[i % 2];
+    return { i, from, to: to ?? from };
   });
+  /** In front of a clearing, and drawn above buildings further back but behind those nearer the front. */
+  const front = (p: [number, number]) => ({ y: p[1] + WALK_AHEAD, z: Math.round(p[1] + WALK_AHEAD) + 10 });
 
   const decorPicture = (d: (typeof decor)[number]) => {
     const name = decoration(d.id)?.name ?? 'Decoration';
@@ -140,7 +146,11 @@ export function IslandPicture({
           <span
             key={`w${w.i}`}
             className="si-walker"
-            style={{ '--x1': `${w.from[0]}%`, '--y1': `${w.from[1] + 3}%`, '--x2': `${w.to[0]}%`, '--y2': `${w.to[1] + 3}%`, animationDuration: `${14 + w.i * 3}s`, animationDelay: `${-w.i * 2.5}s` } as CSSProperties}
+            style={{
+              '--x1': `${w.from[0]}%`, '--y1': `${front(w.from).y}%`, '--z1': front(w.from).z,
+              '--x2': `${w.to[0]}%`, '--y2': `${front(w.to).y}%`, '--z2': front(w.to).z,
+              animationDuration: `${14 + w.i * 3}s`, animationDelay: `${-w.i * 2.5}s`,
+            } as CSSProperties}
             aria-hidden="true"
           >
             <Art src={walkerArt(w.i)} fallback={<span className={`si-walker__drawn si-walker__drawn--${w.i % 4}`} />} />
