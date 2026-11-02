@@ -1,0 +1,200 @@
+/*
+ * Diamond Drop (docs/DIAMOND-PLAN.md, section 7). Every class starts with .dd- so nothing here can change another page.
+ * The game fills the screen over a dark earth backdrop. Panels use the hub's own colours (var(--card), var(--ink)) and
+ * shared buttons; the play field, the depth gauge and the HUD are the game's own picture. Words are 4.5:1 or better,
+ * every button and target is at least 44 px, and all movement stops for pupils who prefer less motion.
+ */
+.dd-root {
+  --dd-bg: #1c130d;
+  --dd-panel: #2a1d14;
+  --dd-face: #1f1610;
+  --dd-line: #a08268;
+  --dd-ink: #ffffff;
+  --dd-soft: #e3d3c3;
+  --dd-gold: #fcd34d;
+  --dd-gold-ink: #1c1917;
+  --dd-track: #fef3c7;
+  --dd-good: #86efac;
+  --dd-warn: #fdba74;
+  --dd-locked: #b8a898;
+  --dd-locked-bg: #120c08;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 0%, #3b2a1c 0%, var(--dd-bg) 60%);
+  color: var(--dd-ink);
+  font-family: var(--display, 'Trebuchet MS', Verdana, sans-serif);
+  font-size: 16px;
+  line-height: 1.35;
+  padding: max(10px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.dd-root *, .dd-root *::before, .dd-root *::after { box-sizing: border-box; }
+.dd-root [tabindex='-1']:focus, .dd-root [tabindex='-1']:focus-visible { outline: none; }
+.dd-root button:focus-visible, .dd-root summary:focus-visible, .dd-root input:focus-visible { outline: 3px solid var(--dd-gold); outline-offset: 3px; }
+.dd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.dd-soft { color: var(--dd-soft); }
+.dd-small { font-size: 0.9rem; }
+.dd-title { margin: 0; font-size: clamp(1.4rem, 3.5vw, 2rem); line-height: 1.1; }
+.dd-h3 { margin: 12px 0 4px; font-size: 1.1rem; }
+.dd-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.dd-loading, .dd-checking { text-align: center; font-size: 1.2rem; margin: 30vh auto 0; }
+.dd-checking { position: fixed; left: 50%; top: 40%; transform: translateX(-50%); margin: 0; background: var(--dd-panel); padding: 14px 20px; border-radius: 14px; border: 2px solid var(--dd-line); z-index: 6; }
+.dd-trouble { background: #7f1d1d; color: #ffffff; border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; }
+.dd-exit { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: max(10px, env(safe-area-inset-top, 0px)); z-index: 3; }
+
+/* Shared buttons, sized for the game (only on elements that also carry .dd-btn). */
+.dd-root .dd-btn { min-height: 48px; padding: 8px 16px; font-size: 1rem; width: auto; border-radius: 14px; }
+.dd-root .dd-btn--small { min-height: 44px; padding: 6px 12px; font-size: 0.95rem; }
+.dd-root .dd-btn--big { min-height: 64px; padding: 10px 28px; font-size: 1.5rem; border-radius: 20px; }
+.dd-root .dd-btn:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
+
+.dd-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--dd-panel); color: var(--dd-ink); border: 1px solid var(--dd-line); border-radius: 999px; padding: 4px 12px; min-height: 32px; font-size: 0.95rem; }
+.dd-chip--gold { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); margin-left: 6px; }
+.dd-why { margin: 4px 0 0; color: var(--dd-warn); }
+
+/* ——— Level map ——— */
+.dd-map { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: 16px; align-items: start; max-width: 1100px; margin: 0 auto; }
+.dd-map__side { display: flex; flex-direction: column; gap: 12px; }
+.dd-nugget { display: flex; align-items: flex-end; gap: 8px; }
+.dd-bubble { flex: 1; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px 12px; position: relative; }
+.dd-bubble::before { content: ''; position: absolute; left: -8px; bottom: 16px; border: 8px solid transparent; border-right-color: var(--card); border-left: 0; }
+.dd-bubble__text { margin: 0 0 8px; font-weight: 700; }
+.dd-stats { display: flex; flex-wrap: wrap; gap: 6px; }
+.dd-menu { display: flex; flex-direction: column; gap: 8px; }
+.dd-menu__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dd-rig { display: flex; justify-content: center; }
+.dd-settings { background: var(--dd-panel); border: 1px solid var(--dd-line); border-radius: 12px; padding: 0 12px; }
+.dd-settings summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.dd-check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.dd-check input { width: 24px; height: 24px; }
+
+.dd-gauge { list-style: none; margin: 0; padding: 0; border-radius: 18px; overflow: hidden; border: 3px solid #0d0906; }
+.dd-gauge__sky { height: 26px; background: linear-gradient(#7cc8f5, #c9ecff); border-bottom: 6px solid #4cae4f; }
+.dd-gauge__layer { padding: 4px 10px; }
+.dd-chamber {
+  display: grid; grid-template-columns: 40px 1fr auto 34px; align-items: center; gap: 8px; width: 100%; min-height: 46px;
+  background: var(--dd-face); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 999px; padding: 4px 10px 4px 6px;
+  font: inherit; font-weight: 700; text-align: left; cursor: pointer; position: relative;
+}
+.dd-chamber__num { width: 34px; height: 34px; border-radius: 50%; background: var(--dd-gold); color: var(--dd-gold-ink); display: grid; place-items: center; }
+.dd-chamber__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-chamber__state { color: var(--dd-gold); white-space: nowrap; }
+.dd-chamber__you { position: absolute; right: 48px; top: -10px; background: var(--dd-gold); color: var(--dd-gold-ink); font-size: 0.75rem; border-radius: 999px; padding: 1px 8px; }
+.dd-chamber.is-locked { background: var(--dd-locked-bg); color: var(--dd-locked); border-style: dashed; }
+.dd-chamber.is-locked .dd-chamber__num { background: #3a2e25; color: var(--dd-locked); }
+.dd-chamber.is-locked .dd-chamber__state { color: var(--dd-locked); }
+.dd-chamber.is-tomorrow .dd-chamber__state { color: var(--dd-warn); }
+.dd-chamber.is-selected { border-color: var(--dd-gold); box-shadow: 0 0 0 3px var(--dd-gold); }
+.dd-gauge__heart { display: grid; place-items: center; padding: 10px; background: radial-gradient(circle, #6b2a5a 0%, #180f2b 70%); }
+
+/* ——— Play ——— */
+.dd-root--play { padding-top: max(6px, env(safe-area-inset-top, 0px)); }
+.dd-play { display: flex; flex-direction: column; gap: 8px; max-width: 1200px; margin: 0 auto; min-height: 100%; }
+.dd-play__hud { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.dd-play__title { margin: 0 auto 0 0; font-size: 1.15rem; }
+.dd-hud__item { display: inline-flex; align-items: center; gap: 6px; background: var(--dd-panel); border: 1px solid var(--dd-line); border-radius: 999px; padding: 4px 12px; min-height: 36px; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.dd-target { position: relative; flex: 1 1 180px; max-width: 360px; height: 36px; background: var(--dd-track); border-radius: 999px; overflow: hidden; border: 2px solid var(--dd-gold); }
+.dd-target__fill { position: absolute; inset: 0 auto 0 0; background: var(--dd-gold); }
+.dd-target__fill.is-done { background: var(--dd-good); }
+.dd-target__text { position: relative; display: grid; place-items: center; height: 100%; color: var(--dd-gold-ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.dd-field { position: relative; width: min(100%, calc((100dvh - 170px) * 10 / 7)); aspect-ratio: 10 / 7; margin: 0 auto; border-radius: 14px; overflow: hidden; border: 3px solid #0d0906; touch-action: manipulation; }
+.dd-field.is-hidden .dd-field__canvas { visibility: hidden; }
+.dd-field__canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+.dd-play__controls { display: flex; justify-content: center; align-items: center; gap: 12px; }
+.dd-drop {
+  min-width: 200px; min-height: 64px; padding: 8px 32px; border-radius: 20px; border: 3px solid #92400e;
+  background: var(--dd-gold); color: var(--dd-gold-ink); font: inherit; font-size: 1.6rem; font-weight: 900; cursor: pointer;
+  box-shadow: 0 5px 0 #92400e;
+}
+.dd-drop[aria-disabled='true'] { opacity: 0.75; }
+.dd-drop:active { transform: translateY(2px); box-shadow: 0 3px 0 #92400e; }
+.dd-tip { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; max-width: 92%; background: var(--card); color: var(--ink); border-radius: 14px; padding: 6px 6px 6px 14px; font-weight: 700; box-shadow: var(--shadow); }
+.dd-tip__close { min-width: 44px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-size: 1.5rem; cursor: pointer; }
+.dd-tip--guide { padding: 6px 6px 6px 14px; flex-wrap: wrap; justify-content: center; }
+.dd-advice { background: var(--card); color: var(--ink); border-radius: 14px; padding: 8px 12px; margin: 8px 0; }
+.dd-help { border: 0; margin: 8px 0; padding: 0; }
+.dd-help legend { font-weight: 800; padding: 0; margin-bottom: 4px; }
+.dd-overlay { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(12, 8, 5, 0.85); padding: 16px; }
+.dd-overlay .dd-card { max-width: 420px; }
+
+/* A phone on its side: the field on the left, everything else beside it. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .dd-play { display: grid; grid-template-columns: minmax(0, 1fr) 210px; grid-template-rows: auto 1fr; gap: 6px 10px; }
+  .dd-play__hud { grid-column: 2; grid-row: 1; flex-direction: column; align-items: stretch; }
+  .dd-play__title { margin: 0; font-size: 1rem; }
+  .dd-target { flex: 0 0 36px; max-width: none; }
+  .dd-field { grid-column: 1; grid-row: 1 / span 2; width: min(100%, calc((100dvh - 20px) * 10 / 7)); }
+  .dd-play__controls { grid-column: 2; grid-row: 2; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+  .dd-drop { min-width: 0; }
+  .dd-map { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); }
+}
+
+/* ——— Pages: level end, shop, workshop, Gem Book, How to play ——— */
+.dd-page { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.dd-page__top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.dd-card { background: var(--card); color: var(--ink); border-radius: 18px; padding: 12px 16px; }
+.dd-card p { margin: 6px 0; }
+.dd-how ul { margin: 4px 0; padding-left: 20px; }
+.dd-stars { font-size: 2.4rem; letter-spacing: 4px; color: #6b5a4a; }
+.dd-stars .is-on { color: var(--dd-gold); }
+.dd-gems { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.dd-gems li { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.dd-earned { background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
+.dd-achieved { list-style: none; margin: 8px 0; padding: 6px 10px; background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; }
+.dd-achieved li { margin: 2px 0; }
+.dd-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.dd-item { display: flex; gap: 10px; align-items: flex-start; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; border: 3px solid transparent; }
+.dd-item.is-chosen { border-color: var(--won); }
+.dd-item__body { flex: 1; min-width: 0; }
+.dd-stall { display: block; width: 110px; height: auto; margin: 0 auto 4px; }
+img.dd-item__icon { object-fit: contain; padding: 4px; }
+.dd-item__icon { flex: none; background: radial-gradient(circle, #4a3624, var(--dd-panel)); border-radius: 12px; }
+.dd-item__body p { margin: 4px 0; }
+.dd-item__name { margin: 0; font-size: 1.05rem; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.dd-item__meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.dd-item__how { color: var(--ink-soft); font-size: 0.95rem; }
+.dd-item--special { border-color: #b45309; }
+.dd-rarity { border-radius: 999px; padding: 1px 10px; font-size: 0.85rem; font-weight: 800; color: #ffffff; }
+.dd-rarity--common { background: #475569; }
+.dd-rarity--cool { background: #1d4ed8; }
+.dd-rarity--epic { background: #7e22ce; }
+.dd-rarity--legendary { background: #b45309; }
+.dd-ws { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 14px; align-items: start; }
+.dd-ws__try { display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--dd-panel); border: 1px solid var(--dd-line); border-radius: 16px; padding: 10px; position: sticky; top: 0; }
+.dd-list--special { grid-template-columns: 1fr; width: 100%; }
+.dd-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.dd-tab { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--dd-line); background: var(--dd-panel); color: var(--dd-ink); font: inherit; font-weight: 700; cursor: pointer; }
+.dd-tab.is-on { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); }
+.dd-hall { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.dd-hall__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--dd-panel); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 16px; padding: 8px 12px; }
+.dd-hall__row.is-me { border-color: var(--dd-gold); }
+.dd-hall__claw { flex: none; background: radial-gradient(circle, #4a3624, var(--dd-face)); border-radius: 12px; }
+.dd-hall__name { font-weight: 800; }
+.dd-book { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.dd-book__page { background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.dd-book__page p { margin: 0; }
+.dd-book__page.is-unknown { background: #d8c6c9; }
+.dd-book__page.is-unknown .dd-soft { color: #3f3a45; }
+.dd-book__page.is-heart { grid-column: 1 / -1; }
+
+@media (max-width: 720px) {
+  .dd-map { grid-template-columns: 1fr; }
+  .dd-ws { grid-template-columns: 1fr; }
+  .dd-ws__try { position: static; }
+  .dd-exit { position: static; margin-bottom: 8px; }
+}
+
+/* ——— Movement (only for pupils who haven't asked for less) ——— */
+@media (prefers-reduced-motion: no-preference) {
+  .dd-glow { animation: dd-glow 0.9s ease-in-out infinite alternate; }
+  .dd-pulse { animation: dd-pulse 2.4s ease-in-out infinite; }
+  .dd-target__fill { transition: width 0.25s ease-out; }
+  @keyframes dd-glow { from { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0.9); } to { box-shadow: 0 0 0 8px rgba(252, 211, 77, 0.35); } }
+  @keyframes dd-pulse { 50% { transform: scale(1.08); filter: brightness(1.25); } }
+}
+@media (prefers-reduced-motion: reduce) { .dd-root *, .dd-root .button--play, .dd-target__fill { animation: none !important; transition: none !important; } }
+/* The game's own "Less motion" setting does the same, whatever the device says. */
+.dd-root.dd-still *, .dd-root.dd-still .button--play { animation: none !important; transition: none !important; }
+/* "Show me" still points the way with less motion: a steady ring instead of a pulsing one. */
+.dd-glow { outline: 4px solid var(--dd-gold); outline-offset: 3px; }
