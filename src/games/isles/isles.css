@@ -134,6 +134,10 @@
 .si-buildgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
 .si .si-buildgrid .button { width: 100%; height: 100%; display: grid; gap: 2px; text-align: left; justify-items: start; justify-content: stretch; align-content: start; }
 .si-build__name { font-weight: 700; }
+/* The hub's light buttons are white with only a shadow below, so on a white panel their top edge disappears: here
+   they get a soft fill and a thin outline, so each one reads as a whole button. */
+.si :is(.si-panel, .si-pipsays) .button--light { background: var(--tint); border: 2px solid var(--line); }
+.si :is(.si-panel, .si-pipsays) .button--light:not(:disabled):hover { background: var(--tint-hover); }
 /* The Build step's other choices: one full-width row each, the reason for a greyed one just under it. */
 .si-actions { display: grid; gap: 8px; }
 .si .si-step .si-actions .button { width: 100%; min-height: 52px; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; justify-content: center; text-align: left; white-space: normal; }
