@@ -9,6 +9,7 @@ import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
+import { questMarks } from './questWorld';
 import { BADGES } from './mapLoader';
 import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
@@ -95,6 +96,10 @@ describe('the six areas, in order', () => {
       expect(m.isGrass.some(Boolean)).toBe(true);
       expect(m.far.some(Boolean) && m.far.some((f, i) => m.isGrass[i] && !f) && m.far.some((f, i) => m.isGrass[i] && f), `${a.name} has long grass in both halves`).toBe(true);
     }
+    // A new player sees the gold "!" over the Hermit in Kauri Bush (a quest to start), and over nobody once it's started.
+    const fresh = newWorld(opts, team(), 1);
+    expect([...questMarks(fresh, WORLD_MAPS['kauri-bush'])]).toEqual(['kauri-bush:Hermit']);
+    expect([...questMarks({ ...fresh, quest: { flags: [], bits: {}, quests: { kauri: { step: 0, n: 0 } }, eggs: [] } }, WORLD_MAPS['kauri-bush'])]).toEqual([]);
   });
 
   it('every area has a "chest" spot that is a free tile facing a chest, and the other test-page spots are free tiles too', () => {

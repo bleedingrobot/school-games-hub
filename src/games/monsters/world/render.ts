@@ -51,6 +51,8 @@ export interface FrameInput {
   now: number;
   /** 0 = clear, 1 = black: a quick fade after going through a door. */
   fade: number;
+  /** People with a quest step for you (a gold "!" over them). */
+  quests?: ReadonlySet<string>;
 }
 
 /** The tile at a point on the canvas (in the same pixels as the canvas), for taps. */
@@ -135,7 +137,9 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(p.img, 0, 0, TILE, TILE, px, py, TILE * S, TILE * S);
     } else continue;
-    if (view.noticed === p.id) drawExclaim(ctx, px + 5 * S, Math.round(p.y * TILE * S - offY) - (p.painted ? 17 : 9) * S, S);
+    const above = Math.round(p.y * TILE * S - offY) - (p.painted ? 17 : 9) * S;
+    if (view.noticed === p.id) drawExclaim(ctx, px + 5 * S, above, S);
+    else if (f.quests?.has(p.id)) drawExclaim(ctx, px + 5 * S, above, S, true);
   }
   // What stands in front of the walkers on a painted map: tree tops and roofs.
   if (above && sx1 > sx0 && sy1 > sy0) {
@@ -151,13 +155,14 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
 }
 
 /** A little "!" in a speech bubble, in pixel-art style. */
-function drawExclaim(ctx: CanvasRenderingContext2D, x: number, y: number, S: number) {
+function drawExclaim(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, quest = false) {
   const px = (dx: number, dy: number, w: number, h: number, colour: string) => {
     ctx.fillStyle = colour;
     ctx.fillRect(x + dx * S, y + dy * S, w * S, h * S);
   };
   px(-1, 0, 7, 9, '#3f2631');
-  px(0, 1, 5, 7, '#ffffff');
-  px(2, 2, 1, 3, '#dc2626');
-  px(2, 6, 1, 1, '#dc2626');
+  // A trainer who has seen you: red on white. A quest for you: dark on gold.
+  px(0, 1, 5, 7, quest ? '#fbbf24' : '#ffffff');
+  px(2, 2, 1, 3, quest ? '#3f2631' : '#dc2626');
+  px(2, 6, 1, 1, quest ? '#3f2631' : '#dc2626');
 }

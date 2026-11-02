@@ -316,3 +316,15 @@ export function badgeStep(state: WorldState): { text: string; target: { map: str
   if (!next) return undefined;
   return { text: `Win the ${TYPE_LABEL[next.type]} badge: beat the trainer at the top of the Tower in ${next.name}.`, target: { map: next.map } };
 }
+
+/** People on this map with something quest-y for you now (a quest to start, or a step to hand in): the map shows a "!" over them. */
+export function questMarks(state: WorldState, map: GameMap): Set<string> {
+  const q = questOf(state);
+  const out = new Set<string>();
+  for (const t of map.things) {
+    if (!hasQuest(t.id)) continue;
+    const said = talkTo(q, t.id, state.team, state.badges.length).said;
+    if (said === 'started' || said === 'advanced' || said === 'finished') out.add(t.id);
+  }
+  return out;
+}

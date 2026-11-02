@@ -18,7 +18,7 @@ import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wil
 import type { Giant } from '../../../../shared/monsters/quests/giants';
 import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
 import { nextStep } from '../../../../shared/monsters/quests/nextStep';
-import { badgeStep, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
+import { badgeStep, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
@@ -79,6 +79,12 @@ const KEYS: Record<string, Dir> = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right',
 };
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
+
+/** What changes the quest "!" marks: flags, quest steps and bits (team levels change only after a battle, which redraws anyway). */
+const questKey = (w: WorldState) => {
+  const q = w.quest;
+  return q ? `${q.flags.length}|${Object.values(q.quests).map((s) => `${s.step}.${s.n}`).join()}|${Object.values(q.bits).join()}|${w.badges.length}` : '';
+};
 
 export function WorldGame({
   initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1, quest = {},
@@ -281,11 +287,11 @@ export function WorldGame({
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
-      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${view.state.quest?.flags.length ?? 0},${paintedVersion()}`;
+      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${questKey(view.state)},${paintedVersion()}`;
       if (key === lastKey) return;
       lastKey = key;
       const t0 = performance.now();
-      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f });
+      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f, quests: questMarks(view.state, maps[view.state.map]) });
       perf.draws += 1;
       perf.drawMs += performance.now() - t0;
       perf.worst = Math.max(perf.worst, performance.now() - t0);

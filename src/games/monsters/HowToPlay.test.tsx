@@ -18,7 +18,9 @@ describe('How to play', () => {
   it('has a heading for each part, so a screen reader can jump between them', () => {
     render(<HowToPlayBody />);
     const names = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
-    expect(names).toEqual(['Walking', 'Battles', 'Catching', 'Types and maths', 'Growing', 'Healing and the Bag', 'Towers and badges', 'Saving and points', 'Make it fit you']);
+    expect(names).toEqual(['Walking', 'Battles', 'Catching', 'Types and maths', 'Growing', 'Healing and the Bag', 'Towers and badges', 'Quests and puzzles', 'Bits and the Tinker', 'Sleeping giants', 'Eggs', 'Rare monsters and weather', 'Saving and points', 'Make it fit you']);
+    // The egg numbers come from the rules: 3, 5 or 7 days, and cold after 4 days with no battles.
+    expect(screen.getByRole('region', { name: 'Eggs' })).toHaveTextContent(/3 days, or 5 or 7 for.*4 days in a row/s);
     // each section is named by its heading
     for (const h of screen.getAllByRole('heading', { level: 3 })) expect(screen.getByRole('region', { name: h.textContent! })).toBeInTheDocument();
   });
