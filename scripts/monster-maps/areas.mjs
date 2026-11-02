@@ -23,7 +23,7 @@ export function shellBeach() {
   m.hut(16, 15, 19, 16, 'Nurse Hinemoa', 'Kia ora! Come and rest your monsters on the sand.', 'left');
   m.gate('area-3-gate', 3, 1, 'water', 'A rope fence blocks the steep path north. A sign says: "Fire Mountain. Only for trainers with a Water badge!"');
   m.warp('to-fire-mountain', 3, 0, 'fire-mountain', 3, 18, 'up');
-  m.sign('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away.');
+  m.welcome('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away.');
   m.sign('tower-sign', 11, 6, 'The Water Tower. Beat the Tower trainer to win the Water badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Hinemoa will heal your team for free.');
   m.sign('gate-sign', 5, 4, 'North-west: the path up to Fire Mountain. You need the Water badge.');
@@ -77,7 +77,7 @@ export function fireMountain() {
   m.hut(6, 8, 9, 11, 'Nurse Mere', 'Phew, it is hot up here! Come and cool your monsters down.', 'left');
   m.gate('area-4-gate', 20, 1, 'fire', 'A rope fence blocks the icy path north. A sign says: "Snowy Peaks. Only for trainers with a Fire badge!"');
   m.warp('to-snowy-peaks', 20, 0, 'snowy-peaks', 20, 18, 'up');
-  m.sign('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!');
+  m.welcome('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!');
   m.sign('tower-sign', 14, 6, 'The Fire Tower. Beat the Tower trainer to win the Fire badge.');
   m.sign('hut-sign', 10, 11, 'Rest hut. Nurse Mere will heal your team for free.');
   m.sign('gate-sign', 18, 4, 'North-east: the icy path to Snowy Peaks. You need the Fire badge.');
@@ -131,7 +131,7 @@ export function snowyPeaks() {
   m.hut(16, 15, 19, 16, 'Nurse Aroha', 'Brrr! Come in from the cold. I will warm your monsters up.', 'left');
   m.gate('area-5-gate', 4, 1, 'ice', 'A rope fence blocks the dark cave mouth north. A sign says: "Glowworm Caves. Only for trainers with an Ice badge!"');
   m.warp('to-glowworm-caves', 4, 0, 'glowworm-caves', 4, 18, 'up');
-  m.sign('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally.');
+  m.welcome('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally.');
   m.sign('tower-sign', 15, 6, 'The Ice Tower. Beat the Tower trainer to win the Ice badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Aroha will heal your team for free.');
   m.sign('gate-sign', 6, 4, 'North-west: the way to the Glowworm Caves. You need the Ice badge.');
@@ -186,7 +186,7 @@ export function glowwormCaves() {
   m.hut(14, 14, 13, 14, 'Nurse Kowhai', 'Welcome to the caves! It is cosy in here. Let me look after your monsters.', 'right');
   m.gate('area-6-gate', 19, 1, 'spark', 'A rope fence blocks the tunnel north. A sign says: "Harbour City. Only for trainers with a Spark badge!"');
   m.warp('to-harbour-city', 19, 0, 'harbour-city', 19, 18, 'up');
-  m.sign('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more.');
+  m.welcome('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more.');
   m.sign('tower-sign', 13, 6, 'The Spark Tower. Beat the Tower trainer to win the Spark badge.');
   m.sign('hut-sign', 13, 15, 'Rest hut. Nurse Kowhai will heal your team for free.');
   m.sign('gate-sign', 17, 4, 'North-east: the tunnel to Harbour City. You need the Spark badge.');
@@ -238,7 +238,7 @@ export function harbourCity() {
   m.towerBuilding(6, 1);
   m.warp('to-tower', 8, 5, 'tower-6-hall', 5, 7, 'up');
   m.hut(14, 14, 17, 14, 'Nurse Sina', 'Welcome to the big city! Let me rest your monsters.', 'left');
-  m.sign('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
+  m.welcome('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
   m.sign('tower-sign', 10, 6, 'The Stone Tower. Beat the Tower trainer to win the Stone badge, the last one!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Sina will heal your team for free.');
   m.sign('harbour-sign', 16, 4, 'The harbour. Ships come here from all over the world.');

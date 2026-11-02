@@ -48,6 +48,8 @@ export interface Thing {
   giant?: string;
   /** A puzzle: its id in quests/puzzles.ts. */
   puzzle?: string;
+  /** An area's welcome sign: after its text it says what can still be done there (questWorld.areaHints). */
+  hints?: boolean;
 }
 
 /** A way on that stays closed until you hold a badge (a rope fence). The map's wall layer does not draw it; the screen does, while it is closed. */

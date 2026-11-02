@@ -7527,6 +7527,7 @@ function parseMap(id, raw) {
 				if (typeof p.gid === "number") thing.gid = p.gid;
 				else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(", ")})`);
 			}
+			if (kind === "sign" && p.hints === true) thing.hints = true;
 			if (kind === "puzzle") {
 				if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
 				else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);
@@ -11633,6 +11634,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Kauri Bush. Wild monsters hide in the long grass. Walk in it and see who jumps out!"
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -13959,6 +13964,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -16305,6 +16314,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!"
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -18651,6 +18664,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -20997,6 +21014,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -23253,6 +23274,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -31404,6 +31429,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Steam Valley. Warm steam rises from the hot springs. Rare monsters love it here!"
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -32553,6 +32582,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Lagoon Isle. The water here is calm and warm. Shy monsters live by the lagoon."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{
@@ -33702,6 +33735,10 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "text",
 							"type": "string",
 							"value": "Aurora Hollow. On clear nights the southern lights glow over the snow."
+						}, {
+							"name": "hints",
+							"type": "string",
+							"value": true
 						}]
 					},
 					{

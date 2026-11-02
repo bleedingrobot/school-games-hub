@@ -139,6 +139,8 @@ export class MapMaker {
     this.use(x, y);
   }
   sign(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('sign', name, x, y, { text }); }
+  /** An area's welcome sign: after `text` the game adds hints on what can still be done in the area. */
+  welcome(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('sign', name, x, y, { text, hints: true }); }
   spot(name, x, y, facing = 'down') { this.objects.push({ type: 'spot', name, x, y, props: { facing }, extra: {} }); }
   warp(name, x, y, to, toX, toY, facing) { this.object('warp', name, x, y, { to, toX, toY, facing }); }
   person(name, sprite, x, y, facing, text) { this.object('person', name, x, y, { sprite, facing, text }); }

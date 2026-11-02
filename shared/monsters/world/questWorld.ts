@@ -3,17 +3,18 @@
  * say, what a battle counts for, eggs given as rewards, and today's weather for the long grass.
  * Pure, like world.ts: every function gives back a new `WorldState`.
  */
-import { speciesOf } from '../monsterBook';
+import { formAt, RARE_FAMILIES, speciesOf } from '../monsterBook';
+import { TYPE_LABEL } from '../types';
 import type { Monster } from '../rules';
 import { addToBag } from './rewards';
 import { Dice } from './rng';
 import { addBits, canMake, describeBits, RECIPES, takeBits } from '../quests/bits';
 import { addEgg, daysHad, daysNeeded, EGG_LABEL, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
-import { afterGiant, canWake, giantById, isAwake, type Giant } from '../quests/giants';
+import { afterGiant, canWake, giantById, GIANTS, isAwake, type Giant } from '../quests/giants';
 import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
-import { bringToBoard, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
+import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
 import { emptyQuestSave, type EggKind, type ProgressEvent, type QuestSave } from '../quests/types';
-import { spottedToday, weatherFor, type Today } from './weather';
+import { spottedToday, WEATHER, WEATHER_LABEL, weatherFor, type Today } from './weather';
 import type { GameMap, Thing, WorldState } from './types';
 
 /** What a game knows about today that the save doesn't: the NZ day, the pupil, and the play days the database has counted. */
@@ -248,4 +249,49 @@ export function searchPod(state: WorldState, thing: Thing, opts: QuestOptions): 
   if (n < p.count) return { state: found, pages: [...thing.pages, `You found a seed pod! That's ${n} of ${p.count}.`] };
   const solved = solvePuzzle(found, p.id, opts) as Extract<QuestResult, { ok: true }>;
   return { state: solved.state, pages: [...thing.pages, `You found the last seed pod! That's all ${p.count}.`, solved.message] };
+}
+
+/**
+ * What an area's welcome sign says can still be done there, worked out fresh for this pupil: who
+ * needs help, puzzles, seed pods, the sleeping giant, eggs that hatch here, chests, rare monsters and
+ * today's weather. Two hints to a page, so a pupil taps through a few short pages.
+ */
+export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record<string, GameMap>>, opts: QuestOptions): string[] {
+  const q = questOf(state);
+  const hints: string[] = [];
+  const quest = QUESTS.find((x) => x.giver.startsWith(`${map.id}:`));
+  if (quest) {
+    const name = quest.giver.split(':')[1];
+    const who = ['Hermit', 'Teacher'].includes(name) ? `the ${name}` : name;
+    const st = q.quests[quest.id];
+    if (q.flags.includes(`quest-done:${quest.id}`)) hints.push(`You helped ${who}. Thank you!`);
+    else if (st) {
+      const task = quest.steps[st.step];
+      hints.push(`Your quest here: ${task.hint.replace('{left}', String((task.count ?? 1) - st.n))}.`);
+    } else if (canStart(q, quest, state.badges.length)) hints.push(`${who[0].toUpperCase()}${who.slice(1)} needs help. Go and talk to them!`);
+  }
+  for (const id of new Set(map.things.filter((t) => t.kind === 'puzzle').map((t) => t.puzzle!))) {
+    const p = puzzleById(id)!;
+    const solved = q.flags.includes(`solved:${id}`);
+    if (p.kind === 'pods') hints.push(solved ? 'You found all the seed pods here.' : `Seed pods are hidden in the trees here. You have found ${podsFound(q.flags, id)} of ${p.count}.`);
+    else hints.push(solved ? `You solved the ${p.title.toLowerCase()} here.` : `There is a puzzle to solve here: ${p.title.toLowerCase()}.`);
+  }
+  for (const g of GIANTS.filter((x) => x.map === map.id)) {
+    const giant = speciesOf(g.species).name;
+    if (isAwake(q, g)) hints.push(`${giant} is awake, so the way to ${maps[g.opens]?.name ?? 'the side path'} is open.`);
+    else if (!state.badges.includes(g.badge)) hints.push(`A giant monster is asleep on a side path. Win the ${TYPE_LABEL[speciesOf(g.species).type]} badge first, then find a way to wake it.`);
+    else hints.push(`A giant monster is asleep on a side path. Ask the Tinker in Harbour Town to make a ${g.itemName.toLowerCase()} to wake it.`);
+  }
+  for (const [kind, spot] of Object.entries(HATCH_SPOTS)) if (spot.map === map.id) hints.push(`A ${EGG_LABEL[kind as EggKind]} that is ready hatches here, at ${spot.place.replace(/ in .*$/, '')}.`);
+  const closed = map.things.filter((t) => t.kind === 'chest' && !state.chests.includes(t.id)).length;
+  hints.push(closed ? `There ${closed === 1 ? 'is 1 chest' : `are ${closed} chests`} still to find here.` : 'You have opened every chest here.');
+  if (map.wild.some((f) => RARE_FAMILIES[f] && !RARE_FAMILIES[f].giant)) hints.push('Rare monsters live here. Keep exploring the long grass!');
+  const today = todayIn(map, maps, opts.day);
+  if (today) {
+    hints.push(`Today: ${WEATHER_LABEL[today.weather].toLowerCase()}, so ${TYPE_LABEL[WEATHER.brings[today.weather]]} monsters are out more.`);
+    if (today.spotted) hints.push(`${speciesOf(formAt(today.spotted, 1)).name} has been spotted here today!`);
+  }
+  const pages: string[] = [];
+  for (let i = 0; i < hints.length; i += 2) pages.push(hints.slice(i, i + 2).join(' '));
+  return pages;
 }

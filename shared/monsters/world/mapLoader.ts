@@ -13,6 +13,7 @@
  *      chest    - `text` (said when you open it), `loot`, `gid` and `open` (the tiles for closed and open)
  *      giant    - a sleeping giant across the way: `giant` (an id in quests/giants.ts), `text` (unused: it says its own words)
  *      tinker, board - the Tinker who makes things from bits, and the notice board; `text`
+ *      sign    - may have `hints: true`: an area's welcome sign that also says what can still be done there
  *      puzzle  - opens a puzzle from quests/puzzles.ts; `puzzle` (its id), `text`
  *      gate     - `badge` (the badge that opens it), `text` (said while closed), `gid` (the tile drawn while closed);
  *                 it is not on the walls layer, so the screen draws it only while it is closed
@@ -200,6 +201,7 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
         if (typeof p.gid === 'number') thing.gid = p.gid;
         else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(', ')})`);
       }
+      if (kind === 'sign' && p.hints === true) thing.hints = true;
       if (kind === 'puzzle') {
         if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
         else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);

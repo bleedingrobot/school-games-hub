@@ -14,7 +14,7 @@ export function steamValley() {
   m.path(1, 7, 10, 2); m.path(9, 3, 2, 5); m.path(9, 9, 2, 3);
   m.water(12, 2, 5, 3); // the hot springs
   m.longGrass(2, 2, 6, 4); m.longGrass(2, 10, 6, 3); m.longGrass(12, 7, 6, 5);
-  m.sign('valley-sign', 3, 9, 'Steam Valley. Warm steam rises from the hot springs. Rare monsters love it here!');
+  m.welcome('valley-sign', 3, 9, 'Steam Valley. Warm steam rises from the hot springs. Rare monsters love it here!');
   m.sign('springs-sign', 11, 2, 'The hot springs. A warm egg brought here will hatch in the steam.');
   m.trainer('Geyser Gus', PEOPLE.viking, 10, 12, 'up', { sight: 3, text: 'Whoosh! The geysers made me strong. Let us battle!', win: 'Phew, you are hotter than a geyser!', team: 'squaremander:19,centipebble:19', loot: 'trainer-big' });
   m.warp('to-fire-mountain', 0, 7, 'fire-mountain', 22, 7, 'left');
@@ -34,7 +34,7 @@ export function lagoonIsle() {
   m.path(1, 7, 8, 2); m.path(7, 3, 2, 5); m.path(7, 9, 2, 3);
   m.water(11, 3, 7, 7); // the lagoon
   m.longGrass(2, 2, 4, 4); m.longGrass(2, 10, 4, 3); m.longGrass(9, 11, 8, 2);
-  m.sign('isle-sign', 3, 9, 'Lagoon Isle. The water here is calm and warm. Shy monsters live by the lagoon.');
+  m.welcome('isle-sign', 3, 9, 'Lagoon Isle. The water here is calm and warm. Shy monsters live by the lagoon.');
   m.sign('pools-sign', 9, 3, 'The rock pools. A water egg brought here will hatch in the waves.');
   m.trainer('Diver Ngaio', PEOPLE.woman, 8, 12, 'up', { sight: 3, text: 'I dive for shells all day. My monsters dive too! Ready?', win: 'Wow, you swim like a Carrycrab!', team: 'carrycrab:12,plusplash:12', loot: 'trainer-big' });
   m.warp('to-shell-beach', 0, 7, 'shell-beach', 22, 11, 'left');
@@ -55,7 +55,7 @@ export function auroraHollow() {
   m.ice(2, 2, 5, 4); // the ice cave floor
   m.rock(1, 1, 7, 1);
   m.longGrass(12, 2, 6, 4); m.longGrass(12, 10, 6, 3); m.longGrass(2, 8, 5, 4);
-  m.sign('hollow-sign', 16, 9, 'Aurora Hollow. On clear nights the southern lights glow over the snow.');
+  m.welcome('hollow-sign', 16, 9, 'Aurora Hollow. On clear nights the southern lights glow over the snow.');
   m.sign('cave-sign', 7, 3, 'The ice cave. A cold egg brought here will hatch in the frost.');
   m.trainer('Skier Rewi', PEOPLE.ranger, 9, 12, 'up', { sight: 3, text: 'I ski here every night under the lights. Battle me!', win: 'Brrr, that was a cool battle!', team: 'remaindeer:24,sharebear:24', loot: 'trainer-big' });
   m.warp('to-snowy-peaks', 19, 7, 'snowy-peaks', 2, 13, 'right');
