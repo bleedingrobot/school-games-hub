@@ -30,8 +30,8 @@ create function pg_temp.reset() returns void language sql as $$
 $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 -- A pretend island with this many spots on this turn (the server function keeps the whole engine island).
-create function pg_temp.island(turn integer, spots integer, happiness integer default 70) returns jsonb language sql as $$
-  select jsonb_build_object('turn', turn, 'happiness', happiness, 'lighthouse', 0, 'racesWon', 0, 'upgrades', '[]'::jsonb,
+create function pg_temp.island(turn integer, spots integer, islanders integer default 20) returns jsonb language sql as $$
+  select jsonb_build_object('turn', turn, 'islanders', islanders, 'lighthouse', 0, 'racesWon', 0, 'decorations', '[]'::jsonb,
     'spots', (select jsonb_agg(jsonb_build_object('kind', case when n <= 2 then 'farm' else 'empty' end, 'level', 1)) from generate_series(1, spots) n))
 $$;
 create function pg_temp.seed(who text) returns text language sql as $$ select repeat(who, 8) $$;
@@ -83,14 +83,14 @@ select throws_ok($$ select public.record_isles_keeper(pg_temp.id('0a'), 'x99') $
 select ok(not public.record_isles_keeper('00000000-0000-0000-0000-000000000099', 'b01'), '... and only for a pupil with an island');
 
 -- Turns: once each.
-select ok(public.record_isles_turn(pg_temp.id('0a'), 1, pg_temp.island(1, 7, 95), 20000, 0, true, '[{"kind":"anchor"}]', '{}'), 'turn 0 is kept');
-select ok(not public.record_isles_turn(pg_temp.id('0a'), 1, pg_temp.island(1, 7, 95), 20000, 0, true, '[{"kind":"anchor"}]', '{}'),
+select ok(public.record_isles_turn(pg_temp.id('0a'), 1, pg_temp.island(1, 7, 22), 20000, 0, true, '[{"kind":"anchor"}]', '{}'), 'turn 0 is kept');
+select ok(not public.record_isles_turn(pg_temp.id('0a'), 1, pg_temp.island(1, 7, 22), 20000, 0, true, '[{"kind":"anchor"}]', '{}'),
   '... once (sent twice, kept once)');
 select ok(not public.record_isles_turn(pg_temp.id('0b'), 2, pg_temp.island(1, 7), 20000, 0, true, '[]', '{}'), 'a save from an old version is refused');
 select throws_ok($$ select public.record_isles_turn(pg_temp.id('0a'), 2, pg_temp.island(5, 7), 20000, 1, true, '[]', '{}') $$, '22023', null,
   'a turn cannot jump ahead');
-select ok(public.record_isles_turn(pg_temp.id('0a'), 2, pg_temp.island(2, 7, 92), 20000, 1, false, '[]', '{}')
-  and public.record_isles_turn(pg_temp.id('0a'), 3, pg_temp.island(3, 7, 91), 20000, 2, false, '[]', '{}'), 'two more turns');
+select ok(public.record_isles_turn(pg_temp.id('0a'), 2, pg_temp.island(2, 7, 25), 20000, 1, false, '[]', '{}')
+  and public.record_isles_turn(pg_temp.id('0a'), 3, pg_temp.island(3, 7, 28), 20000, 2, false, '[]', '{}'), 'two more turns');
 select is((select count(*)::integer from public.isles_turns where player = pg_temp.id('0a')), 3, 'three turns kept');
 
 -- Questions: the pupil's own, each marked once.
@@ -108,7 +108,7 @@ select ok(not public.record_isles_answer(pg_temp.id('0b'), repeat('a', 24), 0, 5
 create temp table r1 as select public.record_isles_race_start(pg_temp.id('0a'), repeat('cd', 8), 'gull-riders', true, '{"boats":2}', '{"boats":2}', 20000, 3) as id;
 select ok(public.record_isles_race_start(pg_temp.id('0a'), repeat('ef', 8), 'gull-riders', false, '{}', '{}', 20000, 3) is null,
   'a second race cannot start while one is open');
-select ok(public.record_isles_race_finish(pg_temp.id('0a'), (select id from r1), 4, pg_temp.island(3, 7, 91) || '{"racesWon":1}', 20000, '{"won":true}', '{"coins":30,"goods":5}')
+select ok(public.record_isles_race_finish(pg_temp.id('0a'), (select id from r1), 4, pg_temp.island(3, 7, 28) || '{"racesWon":1}', 20000, '{"won":true}', '{"coins":30,"crystals":5}')
   and not public.record_isles_race_finish(pg_temp.id('0a'), (select id from r1), 5, pg_temp.island(3, 7), 20000, '{"won":true}', '{}'),
   'a race finishes once');
 
@@ -122,8 +122,8 @@ select pg_temp.reset();
 
 -- ---- Counts, and New Season ----
 select is(public.isles_counts(pg_temp.id('0a')) - 'isles_farms',
-  '{"isles_chunks": 1, "isles_happy_days": 1, "isles_upgrades": 0, "isles_races_won": 1, "isles_grand": 0, "isles_lighthouses": 0}'::jsonb,
-  'the achievement counts come from the island and its turns');
+  '{"isles_chunks": 1, "isles_islanders": 28, "isles_decorations": 0, "isles_races_won": 1, "isles_grand": 0, "isles_lighthouses": 0}'::jsonb,
+  'the achievement counts come from the island');
 select public.isles_season(array[pg_temp.id('0a')]);
 select ok((select island is null and season = 2 from public.isles_islands where player = pg_temp.id('0a'))
   and not exists (select 1 from public.isles_turns where player = pg_temp.id('0a'))

@@ -58,8 +58,13 @@ it('plays each turn once, six a day, and refuses an impossible spend (test 2)', 
   await send('pupil-a', { action: 'answer', set: question.set, slot: 0, value: rightAnswer(question.set) });
 
   // An impossible spend refuses the whole turn, and the turn isn't used.
-  const tooDear = await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'tax', level: 'low' }, { kind: 'anchor' }] });
+  const tooDear = await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 5, plot: 'farm' }, { kind: 'anchor' }] });
   expect(tooDear.body).toMatchObject({ code: 'not-enough-coins', at: 1 });
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'decorate', id: 'flowers', place: 99 }] })).body).toMatchObject({ code: 'no-such-place' });
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'move', decoration: 0, place: null }] })).body).toMatchObject({ code: 'bad-choice' });
+  // Choices from the old rules (tax, the market) aren't understood.
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'tax', level: 'low' }] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'sell', good: 'food', amount: 5 }] })).status).toBe(400);
   expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 99, plot: 'farm' }] })).body).toMatchObject({ code: 'no-such-spot' });
   expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 5, plot: 'castle' }] })).status).toBe(400);
 
@@ -137,7 +142,7 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   expect(done.race.result.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
   expect(done.race.result.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
   expect(done.race.result.youPath.at(-1)).toBe(1);
-  expect(done.island).toMatchObject({ racesToday: 1, racesWon: 1, coins: 150 + 30, goods: 5 });
+  expect(done.island).toMatchObject({ racesToday: 1, racesWon: 1, coins: 150 + 30, crystals: 5 });
   // Sent twice: finished once.
   expect((await send('pupil-a', { action: 'raceFinish', race: first.id })).body).toMatchObject({ already: true });
   expect(log.points.filter((p) => p.once.startsWith('isles:race:'))).toHaveLength(1);

@@ -209,6 +209,13 @@ C.1 and C.2 can be one session. C.3 is its own.
   - Races: about 1 win in 6 with no answers right, as before.
 - **Found and fixed:** in a photo finish (boats within about 0.05%), rounding could show both boats on the finish line. A boat that hasn't finished now stops at 0.999.
 - **Not yet changed (on purpose):**
-  - The server (`server.ts`, the `isles` function, the migration and the database test) still uses the old rules. That's stage C.2.
+  - The server (`server.ts`, the `isles` function, the migration and the database test) still used the old rules: stage C.2 (done, below).
   - The screens still use the old rules too. That's stage C.3.
-  - Until both are done, the type check and those tests fail on the branch. Nothing is live, so nobody sees it.
+  - Until C.3 is done, the type check and the screen tests fail on the branch. Nothing is live, so nobody sees it.
+
+### C.2 results (the server), 3 Nov 2026
+
+- **`server.ts`:** no market prices; the choices it understands are anchor, build, raise, decorate, move and lighthouse (tax, the workshop slider, upgrades, the festival and buying or selling are refused as unreadable); new words for the new problems (not enough sky crystals, no such decoration place, place taken); race prizes are coins and crystals.
+- **The on-hold migration:** `isles_turns` no longer keeps happiness. `isles_counts` counts islanders and decorations in place of happy days and upgrades (islanders never leave and decorations can't be sold, so the island's own numbers are the season's best). Happy Isle and Bookworm became **Busy Village** (100 islanders, 🏘️) and **Decorator** (8 decorations, 🌸). Kind Heart comes with gifts in S.4. Still on hold, and still needs a new number at go-live.
+- **Tests:** the function's tests 1 to 3 (with the decoration choices and the old choices refused), the rules tests, and the database test (47 checks, on a fresh local database) all pass. The `isles` function file is rebuilt.
+- **Still failing on purpose:** the Sky Isles screens and their tests (stage C.3).

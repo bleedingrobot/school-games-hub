@@ -17,13 +17,13 @@
  *   keeper      the pupil's Sky Keeper portrait (an id from KEEPERS only), kept through New Season.
  *
  * Nothing that counts comes from the browser: the questions and answers are the server's, the random numbers come from
- * the island's seed (and each race's), and the browser never sees a seed. Races against classmates, friendship ropes,
- * the class market's moving prices and the news board are stage S.4.
+ * the island's seed (and each race's), and the browser never sees a seed. Races against classmates, visits, gifts and
+ * the news board are stage S.4 (docs/ISLES-COSY-PLAN.md).
  */
 import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { GRAND_ISLE, KEEPERS, MARKET_PRICE, PLOT_KINDS, RACE_QUESTIONS, UPGRADES } from './config';
+import { DECORATIONS, GRAND_ISLE, KEEPERS, PLOT_KINDS, RACE_QUESTIONS } from './config';
 import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, starterRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
@@ -63,7 +63,7 @@ export interface StoredRace {
   them: Racer;
   status: 'open' | 'done';
   result: RaceResult | null;
-  prize: { coins: number; goods: number } | null;
+  prize: { coins: number; crystals: number } | null;
 }
 
 export interface IslesSettings {
@@ -96,7 +96,7 @@ export interface IslesServices {
   /** The pupil's own race (null if there's no such race of theirs). */
   race(player: string, id: number): Promise<StoredRace | null | 'busy'>;
   /** Finishes an open race and keeps the island after it, only if the island is still at `expectedVersion`. */
-  raceFinish(player: string, id: number, expectedVersion: number, island: Island, day: number, result: RaceResult, prize: { coins: number; goods: number }): Promise<boolean | 'busy'>;
+  raceFinish(player: string, id: number, expectedVersion: number, island: Island, day: number, result: RaceResult, prize: { coins: number; crystals: number }): Promise<boolean | 'busy'>;
   guideDone(player: string): Promise<boolean | 'busy'>;
   /** Keeps the pupil's Sky Keeper (an id from KEEPERS). False if the pupil has no island yet. */
   keeper(player: string, keeper: string): Promise<boolean | 'busy'>;
@@ -133,19 +133,17 @@ const MAX_ACTIONS = 40;
 export const PROBLEM_TEXT: Record<Problem | RaceProblem, string> = {
   'no-turns': 'Your island is resting. See you tomorrow!',
   'not-enough-coins': "You don't have enough coins for that.",
-  'not-enough-food': "You don't have that much food.",
-  'not-enough-goods': "You don't have enough goods for that.",
-  'not-enough-ideas': "You don't have enough ideas for that upgrade yet.",
+  'not-enough-crystals': "You don't have enough sky crystals for that.",
   'no-drift': 'There is no land left in the drift today.',
   'no-such-spot': "That building spot isn't on your island.",
   'same-plot': 'That spot already has that building.',
   'nothing-to-raise': 'Build something on that spot first.',
   'top-level': 'That building is already as big as it gets.',
-  'festival-done': "You've had a festival today already.",
-  'already-have': 'You have that upgrade already.',
+  'no-such-place': "That decoration place isn't on your island.",
+  'place-taken': 'Something is already on that decoration place.',
+  'already-have': 'You have that one already.',
   'not-grand-yet': `The Sky Lighthouse needs a Grand Isle (${GRAND_ISLE} building spots).`,
   'lighthouse-done': 'Your Sky Lighthouse is already lit!',
-  'bad-amount': "That amount doesn't work.",
   'bad-choice': "That choice couldn't be made.",
   'raced-this-turn': "You've raced this turn. Play a turn first.",
   'no-races-left': "You've raced twice today. More races tomorrow!",
@@ -225,7 +223,6 @@ export function parseActions(raw: unknown): Action[] | null {
     const a = item as Record<string, unknown>;
     switch (a.kind) {
       case 'anchor':
-      case 'festival':
       case 'lighthouse':
         out.push({ kind: a.kind });
         break;
@@ -241,25 +238,17 @@ export function parseActions(raw: unknown): Action[] | null {
         out.push({ kind: 'raise', spot });
         break;
       }
-      case 'tax':
-        if (a.level !== 'low' && a.level !== 'fair' && a.level !== 'high') return null;
-        out.push({ kind: 'tax', level: a.level });
-        break;
-      case 'workshop': {
-        const boatShare = int(a.boatShare);
-        if (boatShare === null) return null;
-        out.push({ kind: 'workshop', boatShare });
+      case 'decorate': {
+        const place = int(a.place);
+        if (place === null || !DECORATIONS.some((d) => d.id === a.id)) return null;
+        out.push({ kind: 'decorate', id: a.id as (typeof DECORATIONS)[number]['id'], place });
         break;
       }
-      case 'upgrade':
-        if (!UPGRADES.some((u) => u.id === a.id)) return null;
-        out.push({ kind: 'upgrade', id: a.id as (typeof UPGRADES)[number]['id'] });
-        break;
-      case 'sell':
-      case 'buy': {
-        const amount = int(a.amount);
-        if (amount === null || (a.good !== 'food' && a.good !== 'goods')) return null;
-        out.push({ kind: a.kind, good: a.good, amount });
+      case 'move': {
+        const decoration = int(a.decoration);
+        const place = a.place === null ? null : int(a.place);
+        if (decoration === null || (place === null && a.place !== null)) return null;
+        out.push({ kind: 'move', decoration, place });
         break;
       }
       default:
@@ -282,8 +271,6 @@ export async function handleIsles(services: IslesServices, player: string, body:
   if (!settings) return busy();
   if (!settings.enabled) return no(403, 'Sky Isles is not switched on for your class.', { code: 'game-off' });
   const today = nzDay(services.now());
-  // The class market's prices are the normal ones until stage S.4 moves them.
-  const prices = { ...MARKET_PRICE };
 
   const action = body.action;
   if (!['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper'].includes(action as string)) return unreadable();
@@ -336,7 +323,6 @@ export async function handleIsles(services: IslesServices, player: string, body:
       guide: { done: saved.guideDone, show: !saved.guideDone && now.turn === 0 },
       keeper: saved.keeper ?? null,
       races: settings.races,
-      prices,
       ...extra,
     });
   };
@@ -372,7 +358,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
     const set = await services.questions(player, { ref: turnRef(saved.seed, island.turn) });
     if (set === 'busy') return busy();
     const windy = set?.answered['0']?.right === true;
-    const result = playTurn(island, windy, actions, prices, turnRandom(saved.seed, island.turn));
+    const result = playTurn(island, windy, actions, turnRandom(saved.seed, island.turn));
     if (!result.ok) return no(400, PROBLEM_TEXT[result.problem], { code: result.problem, at: result.at });
     const kept = await services.saveTurn(player, saved.version, result.island, today, { turn: island.turn, windy, actions, report: result.report });
     if (kept === 'busy') return busy();

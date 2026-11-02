@@ -1,4 +1,5 @@
--- Sky Isles, stage S.2: the server side (docs/ISLES-PLAN.md, section 8).
+-- Sky Isles, stage S.2: the server side (docs/ISLES-PLAN.md, section 8), trimmed to the cosy rules in stage C.2
+-- (docs/ISLES-COSY-PLAN.md).
 --
 -- Sky Isles is its own thing: its own tables and functions, prefixed isles_, so no other game reads or changes an
 -- island. Points, the teacher's switch, How points work, achievements, the teacher's "last played" and New Season all go
@@ -18,8 +19,7 @@
 -- 6. The server's functions (record_isles_...), the pupils' two reading functions, the hooks, measures and achievements,
 --    and who can call what.
 --
--- Not here yet: friendship ropes, the class market's moving prices, the news board (stage S.4), the Sky Keeper
--- portrait, island names and the Hall of the Skies (stages S.3 and S.6). They can be added to this file while it is
+-- Not here yet: visits, gifts and the news board (stage S.4), the Sky Keeper portrait, island names and the Hall of the Skies (stages S.3 and S.6). They can be added to this file while it is
 -- still on hold (supabase/migrations-on-hold.txt), or in a migration of their own.
 --
 -- Depends on 20261020000100_game_hooks.sql.
@@ -81,8 +81,6 @@ create table public.isles_turns (
   windy boolean not null,
   actions jsonb not null check (jsonb_typeof(actions) = 'array'),
   report jsonb not null check (jsonb_typeof(report) = 'object'),
-  -- Happiness at the end of the turn (for the Happy Isle achievement).
-  happiness integer not null check (happiness between 0 and 100),
   created_at timestamptz not null default now(),
   primary key (player, season, turn)
 );
@@ -209,9 +207,8 @@ begin
   if not found then
     return false;
   end if;
-  insert into public.isles_turns (player, season, turn, day, windy, actions, report, happiness)
-  select i.player, i.season, record_isles_turn.turn, record_isles_turn.day, windy, actions, report,
-    least(100, greatest(0, (record_isles_turn.island ->> 'happiness')::integer))
+  insert into public.isles_turns (player, season, turn, day, windy, actions, report)
+  select i.player, i.season, record_isles_turn.turn, record_isles_turn.day, windy, actions, report
   from public.isles_islands i where i.player = record_isles_turn.player
   on conflict do nothing;
   if not found then
@@ -411,8 +408,8 @@ $$;
 
 -- A pupil's counts for the achievements, from this season's island (achievements already earned stay through a New
 -- Season). Chunks anchored are the spots past the 6 a new island starts with (START.spots in shared/isles/config.ts);
--- Grand Isle is 16 spots (GRAND_ISLE) and a lit Lighthouse is all 4 stages. A happy day is a day with at least 3 turns
--- played, every one ending at happiness 90 or more.
+-- Grand Isle is 16 spots (GRAND_ISLE) and a lit Lighthouse is all 4 stages. Islanders never leave and decorations
+-- can't be sold, so the island's own numbers are the season's best.
 create function public.isles_counts(who uuid)
 returns jsonb
 language sql
@@ -422,10 +419,8 @@ as $$
   select jsonb_build_object(
     'isles_chunks', coalesce(greatest(0, jsonb_array_length(i.island -> 'spots') - 6), 0),
     'isles_farms', coalesce((select count(*) from jsonb_array_elements(i.island -> 'spots') s where s ->> 'kind' = 'farm'), 0),
-    'isles_happy_days', coalesce((select count(*) from (
-        select t.day from public.isles_turns t where t.player = who and t.season = i.season
-        group by t.day having count(*) >= 3 and min(t.happiness) >= 90) d), 0),
-    'isles_upgrades', coalesce(jsonb_array_length(i.island -> 'upgrades'), 0),
+    'isles_islanders', coalesce((i.island ->> 'islanders')::integer, 0),
+    'isles_decorations', coalesce(jsonb_array_length(i.island -> 'decorations'), 0),
     'isles_races_won', coalesce((i.island ->> 'racesWon')::integer, 0),
     'isles_grand', case when jsonb_array_length(i.island -> 'spots') >= 16 then 1 else 0 end,
     'isles_lighthouses', case when (i.island ->> 'lighthouse')::integer >= 4 then 1 else 0 end)
@@ -484,14 +479,14 @@ values ('isles', 'isles_enabled', 'public.isles_counts(uuid)', 'public.isles_poi
   'public.isles_season(uuid[])', 'public.isles_last_played(uuid)', true);
 
 insert into public.achievement_measures (measure) values
-  ('isles_chunks'), ('isles_farms'), ('isles_happy_days'), ('isles_upgrades'), ('isles_races_won'), ('isles_grand'), ('isles_lighthouses');
+  ('isles_chunks'), ('isles_farms'), ('isles_islanders'), ('isles_decorations'), ('isles_races_won'), ('isles_grand'), ('isles_lighthouses');
 
--- docs/ISLES-PLAN.md, section 6.5. True Friend (a friendship rope kept for 7 days) comes with the ropes in stage S.4.
+-- docs/ISLES-COSY-PLAN.md, section 12. Kind Heart (10 gifts sent) comes with gifts in stage S.4.
 insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values
   ('isles-first-anchor', 'isles', 'First Anchor', '⚓', 'isles_chunks', 1, 1),
   ('isles-green-thumbs', 'isles', 'Green Thumbs', '🌾', 'isles_farms', 5, 2),
-  ('isles-happy-isle', 'isles', 'Happy Isle', '😊', 'isles_happy_days', 1, 3),
-  ('isles-bookworm', 'isles', 'Bookworm', '📚', 'isles_upgrades', 4, 4),
+  ('isles-busy-village', 'isles', 'Busy Village', '🏘️', 'isles_islanders', 100, 3),
+  ('isles-decorator', 'isles', 'Decorator', '🌸', 'isles_decorations', 8, 4),
   ('isles-race-winner', 'isles', 'Race Winner', '⛵', 'isles_races_won', 1, 5),
   ('isles-grand-isle', 'isles', 'Grand Isle', '🏝️', 'isles_grand', 1, 6),
   ('isles-lighthouse-keeper', 'isles', 'Lighthouse Keeper', '🗼', 'isles_lighthouses', 1, 7);
