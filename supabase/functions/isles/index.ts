@@ -7252,6 +7252,10 @@ function playTurn(island, windy, actions, prices, random) {
 * Each boat's speed is RACE_BASE plus its sky-boats (counted as a square root, so a big fleet helps less and less),
 * Swift Sails, happiness, one gust for each right answer (the side that wasn't asked gets HOME_WIND instead) and luck.
 * The faster boat wins; the result also says where each boat was at the end of every leg, for the animation.
+*
+* The questions come during the race: the boats sail a stretch, stop for a question, and a right answer blows a gust
+* on the next stretch. The server sends one stretch at a time (`raceSoFar`), and what it has shown never depends on an
+* answer not yet given, so the finished race always starts with exactly the stretches already seen.
 */
 /** The Gull Riders' id, used where a classmate's island id would go. */
 const GULL_RIDERS = "gull-riders";
@@ -7299,63 +7303,122 @@ function speedParts(racer, wind, luck) {
 		total: 30 + boats + sails + happiness + wind + luck
 	};
 }
-/** The legs the gusts blow on: spread out along the race (legs 2, 4 and 6 of 8). */
-function gustLegsFor(right) {
-	return Array.from({ length: right }, (_, i) => Math.round((i + 1) * 8 / 4) - 1);
-}
 /**
-* How far a boat has gone at the end of each leg. The steady part (everything but the gusts) is shared out over the
-* legs unevenly, so the boats bob back and forth; each gust is added on its own leg.
+* Where the race stops for each question: the leg each stop comes after, spread evenly (with 3 questions and 8 legs,
+* after legs 2, 4 and 6, so a quarter, a half and three quarters of the way). Stop k is at k / (RACE_QUESTIONS + 1).
 */
-function pathOf(steady, gustLegs, random) {
-	const weights = Array.from({ length: 8 }, () => .7 + random() * .6);
-	const sum = weights.reduce((a, b) => a + b, 0);
-	const path = [0];
-	for (let leg = 0; leg < 8; leg++) {
-		const gusts = gustLegs.filter((g) => g === leg).length * 5;
-		path.push(path[leg] + steady * weights[leg] / sum + gusts);
-	}
-	return path;
+const RACE_STOPS = Array.from({ length: 3 }, (_, i) => Math.round((i + 1) * 8 / 4));
+/** The last path point the browser may see once `answered` questions are marked: the next stop (at most the last stop;
+* the last stretch comes with the result). */
+const shownUpTo = (answered) => RACE_STOPS[Math.min(Math.max(0, answered), 2)];
+/** The answers in order (true for right). A number n means the first n were right (the simulator and the tests). */
+function marksOf(right) {
+	const given = typeof right === "number" ? Array.from({ length: clampRight(right) }, () => true) : right;
+	return Array.from({ length: 3 }, (_, i) => given[i] === true);
 }
-function finish(you, them, gustLegs, random) {
-	const won = you.total >= them.total;
-	const lead = Math.max(you.total, them.total);
-	const share = (d) => Math.round(d / lead * 1e3) / 1e3;
+/** A boat's speed with no wind yet: what is known about the challenger before any question is answered. */
+const steadyOf = (speed) => speed.total - speed.wind;
+/**
+* The paths of a race, in a way that never shows more than is known.
+*
+* - Both boats share one set of leg weights (the wind is gusty for everyone at once), and each stretch between stops
+*   is exactly 1 / (RACE_QUESTIONS + 1) of a boat's steady speed. So between two points the gap only ever moves towards
+*   the boat with the higher steady speed, or towards the challenger when a gust blows: the leader is only overtaken
+*   by a boat that has been catching up all race, or by a gust you can see.
+* - Question k's gust (if it was right) blows on the first leg after stop k, and nowhere else.
+* - Up to the last stop, positions are distances over a course length fixed at the start: as far as either boat could
+*   possibly go (the challenger with every gust). Nothing in them depends on a question not yet answered.
+* - On the last stretch (every answer known), the course shrinks smoothly to the winner's distance, so the winner
+*   reaches the finish line exactly and nobody moves backwards.
+*
+* `theirs` gives the other boat's distance from the challenger's steady distance, gusts so far and gusts in all.
+*/
+function pathsOf(you, marks, longest, lead, random, theirs) {
+	const stops = [
+		0,
+		...RACE_STOPS,
+		8
+	];
+	const weights = Array.from({ length: 8 }, () => .7 + random() * .6);
+	const done = [0];
+	for (let s = 0; s + 1 < stops.length; s++) {
+		const sum = weights.slice(stops[s], stops[s + 1]).reduce((a, b) => a + b, 0);
+		for (let leg = stops[s]; leg < stops[s + 1]; leg++) done.push(done[leg] + weights[leg] / sum / 4);
+	}
+	const gustLegs = RACE_STOPS.filter((_, i) => marks[i]);
+	const last = RACE_STOPS[2];
+	const round = (x) => Math.round(x * 1e3) / 1e3;
+	const youPath = [];
+	const themPath = [];
+	let gusts = 0;
+	for (let point = 0; point <= 8; point++) {
+		if (point > 0 && gustLegs.includes(point - 1)) gusts += 5;
+		const share = point === 8 ? 1 : done[point];
+		const length = point <= last ? longest : longest + (lead - longest) * (point - last) / (8 - last);
+		youPath.push(round((steadyOf(you) * share + gusts) / length));
+		themPath.push(round(theirs(share, gusts, (point - last) / (8 - last)) / length));
+	}
 	return {
-		won,
-		you,
-		them,
-		youPath: pathOf(you.total - you.wind, gustLegs, random).map(share),
-		themPath: pathOf(them.total, [], random).map(share),
+		youPath,
+		themPath,
 		gustLegs
 	};
 }
 /**
 * Runs a race. `you` is the challenger (who answered the questions), `them` a classmate's island or `gullRiders(you)`,
-* and `right` how many of the race's questions the server marked right. The same seed, racers and `right` always give
-* the same race.
+* and `right` the answers the server marked, in order (or how many were right). The winner and the prize depend only on
+* how many were right; which ones only moves the gusts. The same seed, racers and answers always give the same race.
 */
 function runRace(seed, you, them, right) {
 	const random = seededRandom(`isles-race:${seed}`);
-	const r = clampRight(right);
-	return finish(speedParts(you, r * 5, random() * 12), speedParts(them, 5, random() * 12), gustLegsFor(r), random);
+	const marks = marksOf(right);
+	const r = marks.filter(Boolean).length;
+	const yours = speedParts(you, r * 5, random() * 12);
+	const theirs = speedParts(them, 5, random() * 12);
+	return {
+		won: yours.total >= theirs.total,
+		you: yours,
+		them: theirs,
+		...pathsOf(yours, marks, Math.max(steadyOf(yours) + 15, theirs.total), Math.max(yours.total, theirs.total), random, (share) => theirs.total * share)
+	};
 }
 /**
 * The first race, against the Gull Riders during turn 2's guide. It can't be lost, whatever the answers: the Gull
 * Riders take it easy and finish between STARTER_LOW and STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it still
-* looks close.
+* looks close. On the way they keep that share of the pupil's steady speed, and catch up that share of the pupil's
+* gusts on the last stretch, so they are always just behind.
 */
 function starterRace(seed, you, right) {
 	const random = seededRandom(`isles-starter:${seed}`);
-	const r = clampRight(right);
+	const marks = marksOf(right);
+	const r = marks.filter(Boolean).length;
 	const yours = speedParts(you, r * 5, random() * 12);
 	const gulls = speedParts(gullRiders(you), 5, 0);
-	const total = yours.total * (STARTER_LOW + random() * STARTER_SPREAD);
-	return finish(yours, {
-		...gulls,
-		luck: total - (gulls.total - gulls.luck),
-		total
-	}, gustLegsFor(r), random);
+	const easy = STARTER_LOW + random() * STARTER_SPREAD;
+	const total = yours.total * easy;
+	return {
+		won: true,
+		you: yours,
+		them: {
+			...gulls,
+			luck: total - (gulls.total - gulls.luck),
+			total
+		},
+		...pathsOf(yours, marks, steadyOf(yours) + 15, yours.total, random, (share, _gusts, lastStretch) => easy * (steadyOf(yours) * share + yours.wind * Math.max(0, lastStretch)))
+	};
+}
+/**
+* What the browser may see of an open race, with `marks` the answers marked so far (in order): the paths up to the next
+* stop. They are the start of the finished race's paths whatever the later answers are (test 3 and the rules tests).
+*/
+function raceSoFar(seed, you, them, starter, marks) {
+	const race = starter ? starterRace(seed, you, marks) : runRace(seed, you, them, marks);
+	const upTo = shownUpTo(marks.length);
+	return {
+		youPath: race.youPath.slice(0, upTo + 1),
+		themPath: race.themPath.slice(0, upTo + 1),
+		gustLegs: race.gustLegs.filter((leg) => leg < upTo)
+	};
 }
 /** The prize for a win: the day's first win brings coins and goods, a later win coins. */
 function racePrize(winsToday) {
@@ -7479,7 +7542,19 @@ function shown(set) {
 		set: set.id
 	}));
 }
-/** What the browser is shown of a race: no seed. */
+/**
+* The race's answers so far, in order (true for right). Questions are answered in order, so these are the first ones;
+* a question with no answer yet ends the list.
+*/
+function raceMarks(questions) {
+	const marks = [];
+	while (questions && marks.length < questions.questions.length && questions.answered[String(marks.length)]) marks.push(questions.answered[String(marks.length)].right);
+	return marks;
+}
+/**
+* What the browser is shown of a race: no seed. An open race comes with the race so far, up to the next stop (worked
+* out here from the seed and the marked answers, never by the browser); a finished one with its whole result.
+*/
 function publicRace(race, questions) {
 	return {
 		id: race.id,
@@ -7492,7 +7567,7 @@ function publicRace(race, questions) {
 		...race.result ? {
 			result: race.result,
 			prize: race.prize
-		} : {}
+		} : { soFar: raceSoFar(race.seed, race.you, race.them, race.starter, raceMarks(questions)) }
 	};
 }
 /**
@@ -7742,8 +7817,27 @@ async function handleIsles(services, player, body) {
 		if (race.status !== "open") return no(409, "That race is over.", { code: "stale" });
 		const a = readAnswer(body);
 		if (!a) return no(400, "That answer couldn't be read.");
-		if (!set) return no(400, "That answer couldn't be marked.");
-		return mark(services, player, set, a, `isles:race:${race.id}:${a.slot}`);
+		if (!set || a.slot >= set.questions.length) return no(400, "That answer couldn't be marked.");
+		const already = (now) => {
+			const before = now.answered[String(a.slot)];
+			return ok({
+				right: before.right,
+				answer: markQuestion(now.questions[a.slot])?.answer,
+				race: publicRace(race, now),
+				already: true
+			});
+		};
+		if (set.answered[String(a.slot)]) return already(set);
+		if (raceMarks(set).length < a.slot) return no(409, "Answer the race questions in order.", { code: "not-yet" });
+		const marked = await mark(services, player, set, a, `isles:race:${race.id}:${a.slot}`);
+		if (marked.status !== 200 && marked.body.code !== "answered") return marked;
+		const now = await services.questions(player, { ref: raceRef(race.id) });
+		if (now === "busy" || !now) return busy();
+		if (marked.status !== 200) return already(now);
+		return ok({
+			...marked.body,
+			race: publicRace(race, now)
+		});
 	}
 	if (race.status === "done") return ok({
 		race: publicRace(race, set),
@@ -7752,8 +7846,8 @@ async function handleIsles(services, player, body) {
 	});
 	const problem = raceProblem(island, GULL_RIDERS, player);
 	if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
-	const right = set ? Object.values(set.answered).filter((m) => m.right).length : 0;
-	const result = race.starter ? starterRace(race.seed, race.you, right) : runRace(race.seed, race.you, race.them, right);
+	const marks = raceMarks(set);
+	const result = race.starter ? starterRace(race.seed, race.you, marks) : runRace(race.seed, race.you, race.them, marks);
 	const settled = settleRace(island, null, result);
 	const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
 	if (kept === "busy") return busy();

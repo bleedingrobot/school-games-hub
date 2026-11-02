@@ -181,6 +181,11 @@
 .si-gust { position: absolute; left: -30%; top: 30%; padding: 2px 8px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: 0.85rem; }
 .si-finish { position: absolute; right: 3%; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(180deg, #fff 0 10px, #1f2937 10px 20px); opacity: 0.85; }
 .si-working { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+/* The race's one line and its main button ("Set sail!"), and the boats bobbing while they sail. */
+.si-race__bar { align-items: center; }
+.si-race__go { margin-left: auto; }
+.si-race--sailing .si-boat img:first-child { animation: si-bob 1.1s ease-in-out infinite; }
+.si-race--sailing .si-lane + .si-lane .si-boat img:first-child { animation-delay: -0.55s; }
 
 .si-howto { display: grid; gap: 6px; }
 .si-howto ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
@@ -193,6 +198,7 @@
 @media (prefers-reduced-motion: reduce) {
   .si-drift, .si-lit { animation: none; }
   .si-boat, .si-spot img { transition: none; }
+  .si-race--sailing .si-boat img:first-child { animation: none; }
   .si-spot:hover img, .si-spot:focus-visible img { transform: none; }
 }
 
@@ -240,4 +246,7 @@
   .si-pipsays { flex-wrap: wrap; }
   .si-wind { font-size: 0.9rem; }
   .si-note, .si-choice__why, .si-step__greyed { font-size: 0.82rem; }
+  .si-race { gap: 6px; }
+  .si-race__bar { flex-wrap: nowrap; }
+  .si-course { height: max(150px, calc(100dvh - 190px)); }
 }

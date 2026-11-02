@@ -3,7 +3,7 @@
  * (trialBackend.ts). Both answer the same requests (shared/isles/server.ts), so the screens can't tell them apart.
  */
 import type { Island, Prices, TurnReport } from '../../../shared/isles/engine';
-import type { RaceResult, Racer } from '../../../shared/isles/race';
+import type { RaceResult, Racer, RaceSoFar } from '../../../shared/isles/race';
 import type { ShownQuestion } from '../../../shared/isles/server';
 
 export interface IslesBackend {
@@ -31,6 +31,8 @@ export interface PublicRace {
   them: Racer;
   questions: ShownQuestion[];
   answered: Record<string, { value: number; right: boolean }>;
+  /** An open race so far, up to the next stop (from the server). */
+  soFar?: RaceSoFar;
   result?: RaceResult;
   prize?: { coins: number; goods: number };
 }

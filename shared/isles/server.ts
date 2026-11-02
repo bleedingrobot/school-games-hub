@@ -8,9 +8,11 @@
  *   answer      marks this turn's question against the stored one, once, and records it for the maths records;
  *   turn        checks the turn's choices and plays the turn with the island's own random numbers and the fair wind
  *               the server marked, keeps it (a turn is played once), and makes the next turn's question;
- *   raceStart   a Sky Race against the Gull Riders (the season's first is the starter race), with three questions;
- *   raceAnswer  marks one race question, once;
- *   raceFinish  works the race out from its seed, the two boats and the answers marked right, and gives the prize;
+ *   raceStart   a Sky Race against the Gull Riders (the season's first is the starter race), with three questions,
+ *               and the race's first stretch;
+ *   raceAnswer  marks one race question, once and in order, and sends the race up to the next stop;
+ *   raceFinish  works the race out from its seed, the two boats and the answers marked right, and gives the prize
+ *               (with the last stretch);
  *   guideDone   the guided first go is finished (or skipped);
  *   keeper      the pupil's Sky Keeper portrait (an id from KEEPERS only), kept through New Season.
  *
@@ -23,7 +25,7 @@ import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRando
 import type { Question } from '../maths/skillPack';
 import { GRAND_ISLE, KEEPERS, MARKET_PRICE, PLOT_KINDS, RACE_QUESTIONS, UPGRADES } from './config';
 import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
-import { GULL_RIDERS, gullRiders, racerOf, raceProblem, runRace, settleRace, starterRace, type Racer, type RaceProblem, type RaceResult } from './race';
+import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, starterRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
 export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper';
 
@@ -181,7 +183,20 @@ function shown(set: QuestionSet): ShownQuestion[] {
   return set.questions.map((q, slot) => ({ ...publicQuestion(q, slot), set: set.id }));
 }
 
-/** What the browser is shown of a race: no seed. */
+/**
+ * The race's answers so far, in order (true for right). Questions are answered in order, so these are the first ones;
+ * a question with no answer yet ends the list.
+ */
+export function raceMarks(questions: QuestionSet | null): boolean[] {
+  const marks: boolean[] = [];
+  while (questions && marks.length < questions.questions.length && questions.answered[String(marks.length)]) marks.push(questions.answered[String(marks.length)].right);
+  return marks;
+}
+
+/**
+ * What the browser is shown of a race: no seed. An open race comes with the race so far, up to the next stop (worked
+ * out here from the seed and the marked answers, never by the browser); a finished one with its whole result.
+ */
 export function publicRace(race: StoredRace, questions: QuestionSet | null) {
   return {
     id: race.id,
@@ -191,7 +206,9 @@ export function publicRace(race: StoredRace, questions: QuestionSet | null) {
     them: race.them,
     questions: questions ? shown(questions) : [],
     answered: questions ? questions.answered : {},
-    ...(race.result ? { result: race.result, prize: race.prize } : {}),
+    ...(race.result
+      ? { result: race.result, prize: race.prize }
+      : { soFar: raceSoFar(race.seed, race.you, race.them, race.starter, raceMarks(questions)) }),
   };
 }
 
@@ -400,16 +417,31 @@ export async function handleIsles(services: IslesServices, player: string, body:
     if (race.status !== 'open') return no(409, 'That race is over.', { code: 'stale' });
     const a = readAnswer(body);
     if (!a) return no(400, "That answer couldn't be read.");
-    if (!set) return no(400, "That answer couldn't be marked.");
-    return mark(services, player, set, a, `isles:race:${race.id}:${a.slot}`);
+    if (!set || a.slot >= set.questions.length) return no(400, "That answer couldn't be marked.");
+    // Sent twice: marked once, and the race as it is (the stretch already shown can't change).
+    const already = (now: QuestionSet) => {
+      const before = now.answered[String(a.slot)];
+      return ok({ right: before.right, answer: markQuestion(now.questions[a.slot])?.answer, race: publicRace(race, now), already: true });
+    };
+    if (set.answered[String(a.slot)]) return already(set);
+    // In order: a question waits until the one before it is marked.
+    if (raceMarks(set).length < a.slot) return no(409, 'Answer the race questions in order.', { code: 'not-yet' });
+    const marked = await mark(services, player, set, a, `isles:race:${race.id}:${a.slot}`);
+    if (marked.status !== 200 && marked.body.code !== 'answered') return marked;
+    const now = await services.questions(player, { ref: raceRef(race.id) });
+    if (now === 'busy' || !now) return busy();
+    // Marked meanwhile by the same answer sent from another tab.
+    if (marked.status !== 200) return already(now);
+    return ok({ ...marked.body, race: publicRace(race, now) });
   }
 
   // raceFinish. Sent twice: the first result.
   if (race.status === 'done') return ok({ race: publicRace(race, set), island, already: true });
   const problem = raceProblem(island, GULL_RIDERS, player);
   if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
-  const right = set ? Object.values(set.answered).filter((m) => m.right).length : 0;
-  const result = race.starter ? starterRace(race.seed, race.you, right) : runRace(race.seed, race.you, race.them, right);
+  // Any question not answered yet counts as wrong (the browser only finishes once they're all answered).
+  const marks = raceMarks(set);
+  const result = race.starter ? starterRace(race.seed, race.you, marks) : runRace(race.seed, race.you, race.them, marks);
   const settled = settleRace(island, null, result);
   const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
   if (kept === 'busy') return busy();

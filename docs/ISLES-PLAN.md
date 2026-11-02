@@ -140,6 +140,7 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 
 - **Challenging.** On a turn you may challenge one classmate's island to a race. A sky-boat race plays as a short animation.
 - **Your speed** is your boats sent, plus your upgrades, plus your happiness, plus **one gust for each right answer** to three focus questions, plus a little luck.
+- **The questions come during the race (chosen, 2 Nov 2026).** The boats sail a stretch and stop; a question pops up with the race still in view. A right answer blows a gust into your sails for the next stretch; a wrong one gets a kind "No gust this time, keep sailing!" and nothing is lost. With 3 questions the stops are a quarter, a half and three quarters of the way. Leaving mid-race and coming back carries on from the same stop.
 - **Their speed** comes from boats they keep home. They don't need to be online.
 - **Winner:** race points, and a prize. The day's first win brings 30 coins and 5 goods (goods help raise buildings to level 3). A later win brings 15 coins. No free land.
 - **The other island** gets a small "well raced" gift of coins. **Nobody ever loses land, boats or anything else** **(chosen)**.
@@ -149,7 +150,7 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
   - An island can be challenged at most 3 times a day.
   - Islands in their calm start can't be challenged (section 6).
 - **When no classmate is free,** the **Gull Riders**, a computer crew, are always there to race.
-- **The server decides the result** from the race's seed and the marked answers.
+- **The server decides the result** from the race's seed and the marked answers, and sends the race one stretch at a time. What it has shown never depends on an answer not yet given.
 - **The teacher can switch races off** for the class. The game still works without them.
 
 ### Friendship ropes (instead of treaties)
@@ -664,6 +665,40 @@ James found the S.3 turn confusing: after the collect sum, one big spend panel o
 **Played in the preview** (headless Chrome, at 1366×640 and 844×390): a turn with lots of coins (question answered right, a chunk anchored, a Library and a Workshop built, High tax, a festival, Better Ploughs), a turn with almost no coins, and a turn after "Skip to tomorrow". Every turn showed the same 11 steps in order. Screenshots of steps 4, 5, 6, 9 and 11 (and a greyed step 4) are in `docs/isles-screens/turn-steps/`.
 
 **Untested:** the live server function (unchanged, still not deployed).
+
+### Race questions during the race: results, 2 Nov 2026
+
+James thought a race would be more fun if the questions came during it, not all at the start. **Now the boats sail a stretch, stop, a question pops up, and a right answer is a gust of wind on the next stretch.** Races stay on My island, between turns, so the 11 turn steps didn't change.
+
+**How it plays:**
+- **Start:** both boats on the start line, Pip's one line, and **Set sail!**
+- **Stretches:** the boats bob along to each stop (a quarter, a half, three quarters of the way; in general stop k is at k / (questions + 1)). The heading says "Sky Race: stretch 2 of 4" and gets focus each time.
+- **At each stop:** "Race question 1 of 3" in the usual question box, with the race behind it. Right: "A gust for your boat!", Pip cheers ("Whoosh! A gust fills your sails!"), a "whoosh!" on your boat and a surge on the next stretch. Wrong: "No gust this time, keep sailing!" and your boat carries on at its usual speed.
+- **The last stretch** comes with the result, then the working, as before.
+- **Leaving mid-race:** coming back shows the boats at the stop before the stretch still to sail, "Welcome back!", and **Sail on!**; then the same question as before. One open race at a time, as before; it can't be thrown away.
+- **Reduced motion:** each stretch jumps to its stop, and the boats don't bob.
+- A screen reader hears who's ahead at each stop ("Your boat is ahead.").
+- Fixed on the way: a lost race said "You still get 0 coins"; it now says 5, which is what the island gets.
+
+**Keeping it fair (`shared/isles/race.ts`):**
+- **The winner and the prize are worked out exactly as before:** the same speeds from the same random numbers, so the same chances. Checked against the old code on 20,000 seeds × 0–3 right answers × both kinds of race: every winner and every speed the same. The simulator gives the same table as before: about 1 in 6 wins with no right answers. The starter race still can't be lost (test 6, 1,000 seeds).
+- **Each gust blows on the stretch straight after its question, only if that question was right.** Which questions were right moves the gusts; how many were right decides the race.
+- **What's shown up to a stop never depends on a later answer.** Positions up to the last stop are distances on a course whose length is fixed at the start: as far as either boat could possibly go (the challenger with every gust). Those distances only use what's known before any answer (boats, sails, happiness, luck) and the gusts already earned. On the last stretch, when every answer is known, the course shrinks smoothly to the winner's distance, so the winner reaches the finish line and no boat ever moves backwards. With few right answers this shows as a sprint for both boats on the last stretch.
+- **The lead only changes hands for a reason you can see.** Both boats share the same gusty-wind pattern on each leg, and each stretch is exactly a quarter of each boat's steady speed. So between any two points the gap moves only towards the boat with the higher steady speed, or towards you when a gust blows. The leader can be caught by a boat that has been closing in all race, or passed by your gust, but never overtaken out of nowhere. I chose this over keeping each boat's own random wobble (which let the lead swap back and forth for no reason) because that wobble could show you ahead at the last stop and then lose with nothing to explain it. The bobbing you see is now a gentle up-and-down on screen.
+- **The starter race:** the Gull Riders keep their share (86–96%) of your steady speed on the way and catch up that share of your gusts on the last stretch, so they are always just behind you and it still looks close.
+
+**Server (`shared/isles/server.ts`):** `raceStart` (and `load`, for an open race) sends the race so far, up to the first stop (`soFar`). Each `raceAnswer` reply adds the next stretch (after the last question it stays at the last stop). `raceFinish` sends the last stretch with the result, as before. Questions are answered in order: question 2 is refused ("Answer the race questions in order.") until question 1 is marked. An answer sent twice is marked once: the second reply gives the first mark and the same stretch, with `already`. Nothing is stored to say how far a race has got: it comes from the marked answers, which can't change, so **the migration didn't change** (no database test needed) and there is no new column. For S.4's classmate races nothing more is needed: the challenged island answers nothing, gets its home wind, and loses nothing, exactly as now.
+
+**What the browser could learn:** the stretch shown before question 1 tells a curious pupil roughly how fast the Gull Riders are this race (their luck). It can't change anything: the questions still decide the gusts, and the server still decides the result.
+
+**Tests:** still 6 of 8.
+- Test 3 now checks: each stretch comes from the server, in order, and each reply keeps what was shown before; question 2 can't be answered before question 1; an answer sent again (even with the right answer) changes nothing; coming back mid-race gets the same stretches; the finished race starts with exactly the stretches shown; gusts are on the legs after questions 1 and 3 when only those were right.
+- The rules tests (5 and 6) gained a check over 150 pairs of boats × all 8 ways of answering × both kinds of race: the winner and speeds depend only on how many were right, gusts are only after right answers, nobody goes backwards, the winner reaches the finish, the lead only changes as described above, and what's shown after each answer is the start of the finished race whatever comes later. Test 6 also checks the Gull Riders are never ahead in the starter race. No expected numbers changed.
+- Test 7 now races by keyboard with reduced motion: focus on the start heading, Set sail!, each stretch's heading, three questions, "No gust this time, keep sailing!", and the result. (Its trial backend now uses a seeded random instead of one fixed number, because the fixed number gave the turn's and the race's question sets the same id.)
+
+**Played in the preview** (headless Chrome, `scripts/isles-race/play-three-races.mjs`, at 1366×640 and 844×390): every answer right (the starter race: won, 30 coins and 5 goods), every answer wrong (lost, 5 coins), and leaving after question 1 and coming back (carried on from the first stop with "Sail on!", the same question 2, then won). Screenshots are in `docs/isles-screens/race-steps/`.
+
+**Untested:** the live server function (changed, not deployed).
 
 ### S.L so far (style try-outs), 1 Nov 2026
 

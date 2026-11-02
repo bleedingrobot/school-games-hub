@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { seededRandom } from '../../../shared/maths/serverQuestions';
 import { IslesPlay } from './IslesPlay';
 import { createTrialBackend } from './trialBackend';
 
@@ -64,7 +65,7 @@ describe('movement and touch', () => {
 describe('keyboard and screen readers', () => {
   it('moves focus to the new screen\'s heading whenever a screen changes, and plays a turn by keyboard', async () => {
     const u = userEvent.setup();
-    const backend = createTrialBackend('a11y', { save: false, random: () => 0.42 });
+    const backend = createTrialBackend('a11y', { save: false, random: seededRandom('a11y') });
     render(<IslesPlay backend={backend} />);
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Choose your Sky Keeper' })).toHaveFocus());
     await u.click(screen.getByRole('radio', { name: 'Sky Keeper 4' }));
@@ -131,5 +132,31 @@ describe('keyboard and screen readers', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     expect(screen.getByRole('img', { name: '5 turns left today' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();
-  });
+
+    // A Sky Race by keyboard, with less motion asked for (each stretch jumps to its stop). The questions come during
+    // the race, one at each stop, and focus follows each new heading: the start, each stretch, the result.
+    const before = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('reduce'), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      await press('Sky Race');
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Sky Race: you and the Gull Riders', level: 2 })).toHaveFocus());
+      await press('Set sail!');
+      for (let q = 1; q <= 3; q++) {
+        const box = await screen.findByRole('dialog', { name: `Race question ${q} of 3` });
+        expect(screen.getByRole('heading', { name: `Sky Race: stretch ${q} of 4`, level: 2 })).toBeInTheDocument();
+        await u.keyboard('999{Enter}');
+        await waitFor(() => expect(box).not.toBeInTheDocument(), { timeout: 4000 });
+        // After the last question, the last stretch jumps straight to the finish.
+        if (q === 3) break;
+        await waitFor(() => expect(screen.getByRole('heading', { name: `Sky Race: stretch ${q + 1} of 4`, level: 2 })).toHaveFocus());
+        expect(screen.getByText('No gust this time, keep sailing!')).toBeInTheDocument();
+      }
+      // The season's first race can't be lost.
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'You won the Sky Race!', level: 2 })).toHaveFocus());
+      await press('Back to my island');
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    } finally {
+      window.matchMedia = before;
+    }
+  }, 30_000);
 });

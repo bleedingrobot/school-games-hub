@@ -4,7 +4,8 @@ import { expect, it } from 'vitest';
 import { markQuestion, seededRandom, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { TURNS_PER_DAY } from '../../../shared/isles/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/isles/memoryServices';
-import { runRace, starterRace } from '../../../shared/isles/race';
+import { RACE_LEGS } from '../../../shared/isles/config';
+import { RACE_STOPS, runRace, starterRace } from '../../../shared/isles/race';
 import { makeHandler } from './handler';
 
 // Sky Isles' server tests (docs/ISLES-PLAN.md, section 9: tests 1, 2 and 3 of the game's 8).
@@ -102,12 +103,40 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   expect(JSON.stringify(first)).not.toMatch(/"answer"|factKey|seed/);
   // Starting again carries on the same race, so a bad start can't be thrown away.
   expect((await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race.id).toBe(first.id);
-  for (const q of first.questions) await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: q.slot, value: rightAnswer(q.set, q.slot) + 1 });
+
+  // The questions come during the race. The server sends the race one stretch at a time: first up to the first stop.
+  const seen = (race: { soFar: { youPath: number[]; themPath: number[] } }) => race.soFar;
+  let shown = seen(first);
+  expect(shown.youPath).toHaveLength(RACE_STOPS[0] + 1);
+  // A question can't be skipped ahead: question 2 waits until question 1 is marked.
+  expect((await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: 1, value: rightAnswer(first.questions[1].set, 1) })).body).toMatchObject({ code: 'not-yet' });
+  for (const q of first.questions) {
+    const reply = (await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: q.slot, value: rightAnswer(q.set, q.slot) + 1 })).body;
+    expect(reply.right).toBe(false);
+    // Each reply adds the next stretch (up to the last stop: the last stretch comes with the result), and what was
+    // shown before stays exactly as it was.
+    const now = seen(reply.race);
+    expect(now.youPath).toHaveLength(RACE_STOPS[Math.min(q.slot + 1, RACE_STOPS.length - 1)] + 1);
+    expect(now.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
+    expect(now.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
+    // Sent again with the right answer: still marked once, as it was, and the stretch shown doesn't change.
+    const again = (await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: q.slot, value: rightAnswer(q.set, q.slot) })).body;
+    expect(again).toMatchObject({ already: true, right: false });
+    expect(seen(again.race)).toEqual(now);
+    shown = now;
+  }
+  // Coming back mid-race (or after the last answer) carries on from the same place.
+  expect((await send('pupil-a', { action: 'load' })).body.openRace.soFar).toEqual(shown);
   // What the browser says about the result is ignored: it comes from the stored seed and the marks.
   const done = (await send('pupil-a', { action: 'raceFinish', race: first.id, won: true, right: 3 })).body;
   const stored = services.data.races[0];
   expect(done.race.result).toEqual(starterRace(stored.seed, stored.you, 0));
   expect(done.race.result.won).toBe(true);
+  // The finished race starts with exactly the stretches shown, and the winner reaches the finish line.
+  expect(done.race.result.youPath).toHaveLength(RACE_LEGS + 1);
+  expect(done.race.result.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
+  expect(done.race.result.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
+  expect(done.race.result.youPath.at(-1)).toBe(1);
   expect(done.island).toMatchObject({ racesToday: 1, racesWon: 1, coins: 150 + 30, goods: 5 });
   // Sent twice: finished once.
   expect((await send('pupil-a', { action: 'raceFinish', race: first.id })).body).toMatchObject({ already: true });
@@ -118,13 +147,22 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   await send('pupil-a', { action: 'turn', turn: 0, actions: [] });
   const second = (await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race;
   expect(second.starter).toBe(false);
-  for (const q of second.questions) await send('pupil-a', { action: 'raceAnswer', race: second.id, slot: q.slot, value: rightAnswer(q.set, q.slot) });
+  const marks = [true, false, true];
+  let stretch = second.soFar;
+  for (const q of second.questions) {
+    const reply = (await send('pupil-a', { action: 'raceAnswer', race: second.id, slot: q.slot, value: rightAnswer(q.set, q.slot) + (marks[q.slot] ? 0 : 1) })).body;
+    expect(reply.race.soFar.youPath.slice(0, stretch.youPath.length)).toEqual(stretch.youPath);
+    stretch = reply.race.soFar;
+  }
   // Another pupil can't answer or finish it.
   await send('pupil-b', { action: 'load' });
   expect((await send('pupil-b', { action: 'raceFinish', race: second.id })).body).toMatchObject({ code: 'stale' });
   const r2 = (await send('pupil-a', { action: 'raceFinish', race: second.id })).body;
   const s2 = services.data.races[1];
-  expect(r2.race.result).toEqual(runRace(s2.seed, s2.you, s2.them, 3));
+  expect(r2.race.result).toEqual(runRace(s2.seed, s2.you, s2.them, marks));
+  expect(r2.race.result.youPath.slice(0, stretch.youPath.length)).toEqual(stretch.youPath);
+  // Each gust blows on the stretch straight after its question, only if it was right: questions 1 and 3 here.
+  expect(r2.race.result.gustLegs).toEqual([RACE_STOPS[0], RACE_STOPS[2]]);
 
   // The teacher can switch races off.
   const off = setup({ settings: () => ({ enabled: true, races: false }) });

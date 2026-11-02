@@ -116,7 +116,7 @@ Weather never takes land or boats.
 - An island in its **calm start** (fewer than 12 turns played, about its first 2 days) can't be challenged by classmates. It can still race the Gull Riders.
 
 **The race:**
-- The challenger answers **3 questions**. Each right answer is a **gust**: +5 speed.
+- The challenger answers **3 questions during the race**, one at each stop (a quarter, a half and three quarters of the way). Each right answer is a **gust**: +5 speed, blowing on the stretch straight after it.
 - Each boat's speed is 30, plus:
   - sky-boats: 3 × the square root of the boats (up to 16 boats), so 2 boats give 4.2, 9 boats 9 and 16 boats 12. A big fleet helps less and less.
   - Swift Sails: +3.
@@ -127,7 +127,7 @@ Weather never takes land or boats.
 - **The Gull Riders** bring the same boats and Swift Sails as the challenger, with happiness 70. So a race against them is decided by the gusts and a little luck: about 1 in 6 with no answers right (James, 2 Nov 2026), half with 1, 5 in 6 with 2, and nearly always with 3.
 - **A small island can win.** A new island (2 boats) against a big one (14 boats and Swift Sails) wins about 1 race in 7 with 2 answers right and almost half with all 3 right.
 - **The result comes only from the race's seed, the two boats (taken when the race starts) and the answers the server marked right.** The browser can't change it.
-- The animation is 8 legs long. The boats bob ahead and behind on the way, and each gust blows on its own leg (legs 2, 4 and 6).
+- The race is 8 legs long, in 4 stretches of 2 legs; the stops come after legs 2, 4 and 6. Each gust blows on the first leg after its question (legs 3, 5 or 7). Both boats share the same gusty wind, so the lead only changes towards the steadily faster boat or with a gust. The server sends one stretch at a time, and what it has shown never depends on a later answer.
 
 **The first race** (turn 2's guide) is against the Gull Riders and **can't be lost**, whatever the answers: they take it easy and finish between 86% and 96% of the way, so it still looks close.
 
