@@ -323,8 +323,15 @@ const LOOKS: LevelLook[] = [
   { sky: null, bands: ['#2a1a45', '#24163d', '#1e1234', '#180f2b'], surface: '#3a2760' },
 ];
 
-/** How far down the painting its grass line is, for the levels whose sky reaches below the game's ground. */
-const SURFACE: Partial<Record<number, number>> = { 1: 0.34, 2: 0.36 };
+/**
+ * For the levels whose sky reaches below the game's ground: how far down the painting its grass line is, and where its
+ * ground ends (level 3's drawing stops above the bottom of the paper).
+ */
+const SURFACE: Partial<Record<number, { line: number; bottom: number }>> = {
+  1: { line: 0.34, bottom: 1 },
+  2: { line: 0.36, bottom: 1 },
+  3: { line: 0.44, bottom: 0.95 },
+};
 
 /**
  * The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). Gives true
@@ -338,10 +345,11 @@ export function drawBackground(ctx: Ctx, level: number): boolean {
     const iw = painted.naturalWidth, ih = painted.naturalHeight;
     const k = Math.max(FIELD_W / iw, FIELD_H / ih);
     const w = iw * k, x = (FIELD_W - w) / 2;
-    const line = SURFACE[level];
-    if (line) {
+    const surface = SURFACE[level];
+    if (surface) {
+      const { line, bottom } = surface;
       ctx.drawImage(painted, 0, 0, iw, ih * line, x, 0, w, GROUND_Y);
-      ctx.drawImage(painted, 0, ih * line, iw, ih * (1 - line), x, GROUND_Y, w, FIELD_H - GROUND_Y);
+      ctx.drawImage(painted, 0, ih * line, iw, ih * (bottom - line), x, GROUND_Y, w, FIELD_H - GROUND_Y);
     } else {
       const h = ih * k;
       ctx.drawImage(painted, x, (FIELD_H - h) / 2, w, h);
