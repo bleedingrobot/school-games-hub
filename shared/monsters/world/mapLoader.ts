@@ -13,6 +13,7 @@
  *      chest    - `text` (said when you open it), `loot`, `gid` and `open` (the tiles for closed and open)
  *      giant    - a sleeping giant across the way: `giant` (an id in quests/giants.ts), `text` (unused: it says its own words)
  *      tinker, board - the Tinker who makes things from bits, and the notice board; `text`
+ *      puzzle  - opens a puzzle from quests/puzzles.ts; `puzzle` (its id), `text`
  *      gate     - `badge` (the badge that opens it), `text` (said while closed), `gid` (the tile drawn while closed);
  *                 it is not on the walls layer, so the screen draws it only while it is closed
  *      warp     - `to` (map id), `toX`, `toY`, `facing`: walking onto it takes you there
@@ -25,6 +26,7 @@
  */
 import { formAt, isFamily, speciesOf } from '../monsterBook';
 import { LOOT } from './rewards';
+import { puzzleById } from '../quests/puzzles';
 import { giantById, GIANTS } from '../quests/giants';
 import { DIRS, type Dir, type Gate, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
 
@@ -79,7 +81,7 @@ export class MapError extends Error {
   }
 }
 
-const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest', 'giant', 'tinker', 'board'];
+const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest', 'giant', 'tinker', 'board', 'puzzle'];
 const NEEDS_FREE_TILE: ThingKind[] = ['person', 'nurse', 'trainer', 'chest', 'giant', 'tinker'];
 export const BADGES = ['leaf', 'water', 'fire', 'ice', 'spark', 'stone'] as const;
 
@@ -198,6 +200,10 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
         if (typeof p.gid === 'number') thing.gid = p.gid;
         else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(', ')})`);
       }
+      if (kind === 'puzzle') {
+        if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
+        else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);
+      }
       if (kind === 'person' || kind === 'trainer' || kind === 'nurse' || kind === 'tinker') {
         if (typeof p.sprite !== 'number') problems.push(`${label} needs a "sprite" number`);
         else thing.sprite = p.sprite;
@@ -228,7 +234,7 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
       }
       things.push(thing);
     } else {
-      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, gate, warp, spot, far)`);
+      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, gate, warp, spot, far)`);
     }
   }
 

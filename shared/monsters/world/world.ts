@@ -9,7 +9,8 @@ import { Dice } from './rng';
 import { findSighting, nextGrassSteps, wildFor, type Sighting } from './encounters';
 import { addToBag, describeLoot, LOOT } from './rewards';
 import { DELTA, type Dir, type Gate, type GameMap, type Thing, type WorldState } from './types';
-import { battleEvents, finishGiant, giantTalk, giveOwedEggs, keysOf, questTalk, recordEvent, todayIn, type QuestOptions } from './questWorld';
+import { battleEvents, finishGiant, giantTalk, giveOwedEggs, keysOf, questOf, questTalk, recordEvent, searchPod, todayIn, type QuestOptions } from './questWorld';
+import { puzzleById } from '../quests/puzzles';
 import { giantFoe, type Giant } from '../quests/giants';
 import { gateAt, isBlocked, thingAt, warpAt } from './walking';
 
@@ -173,7 +174,9 @@ export interface InteractOutcome {
   challenge?: Thing;
   thing?: Thing;
   /** A screen to open once the talking is done (the monster box, the monster book, the Tinker or the notice board). */
-  open?: 'box' | 'book' | 'tinker' | 'board';
+  open?: 'box' | 'book' | 'tinker' | 'board' | 'puzzle';
+  /** The puzzle to open (with open: 'puzzle'). */
+  puzzle?: string;
   /** A woken giant to battle once the talking is done. */
   giant?: Giant;
   /** What the screen should make a sound for. */
@@ -225,6 +228,14 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
     return { state: opened, thing, cue: 'chest', talk: say([...thing.pages, `You found ${describeLoot(loot)}!`]) };
   }
   if (thing.kind === 'box' || thing.kind === 'book' || thing.kind === 'tinker' || thing.kind === 'board') return { state, thing, talk: say(thing.pages), open: thing.kind };
+  if (thing.kind === 'puzzle') {
+    if (puzzleById(thing.puzzle ?? '')?.kind === 'pods') {
+      const found = searchPod(state, thing, opts);
+      return { state: found.state, thing, talk: { pages: found.pages } };
+    }
+    const solved = questOf(state).flags.includes(`solved:${thing.puzzle}`);
+    return { state, thing, talk: say(solved ? [...thing.pages, 'You solved this one already. You can play it again for fun.'] : thing.pages), open: 'puzzle', puzzle: thing.puzzle };
+  }
   if (thing.kind === 'giant') {
     const g = giantTalk(state, thing);
     return { state: g.state, thing, talk: { pages: g.pages }, ...(g.giant ? { giant: g.giant } : {}) };

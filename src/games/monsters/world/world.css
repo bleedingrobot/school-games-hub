@@ -196,3 +196,27 @@
 .mq-pips { display: flex; gap: 4px; }
 .mq-pips span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #64748b; }
 .mq-pips span.is-on { background: #16a34a; border-color: #16a34a; }
+
+/* Puzzles (PuzzlePage.tsx) */
+.mz-says { margin: 0; font-weight: 700; }
+.mz-note { margin: 0; min-height: 1.4em; font-weight: 800; color: #0369a1; }
+.mz-hint { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fef9c3; }
+.mz-stones { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: #7dd3fc; }
+.mz-stone, .mz-bank { min-height: 44px; border: 2px solid var(--mb-ink); border-radius: 50%; background: #e7e5e4; font: inherit; font-size: 1.05rem; font-weight: 900; color: var(--mb-ink); cursor: pointer; }
+.mz-bank { border-radius: 10px; background: #fde68a; }
+.mz-stone.is-here { background: #fde047; box-shadow: 0 0 0 3px #fff; }
+.mz-play { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
+.mz-grid { display: grid; gap: 2px; width: min(100%, 300px); padding: 4px; border-radius: 10px; background: #334155; }
+.mz-grid:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.mz-cell { aspect-ratio: 1; display: grid; place-items: center; border-radius: 4px; font-size: clamp(1rem, 4vw, 1.5rem); line-height: 1; }
+.mz-cell--ice { background: #e0f2fe; } .mz-cell--rock { background: #94a3b8; } .mz-cell--chest { background: #fde68a; }
+.mz-cell--wharf { background: #d6b48a; } .mz-cell--wall { background: #1e3a5f; } .mz-cell.is-spot { box-shadow: inset 0 0 0 3px #16a34a; }
+.mz-arrows { display: grid; grid-template-columns: repeat(3, 84px); grid-template-areas: ". up ." "left . right" ". down ."; gap: 6px; justify-content: center; }
+.mz-arrows__up { grid-area: up; } .mz-arrows__down { grid-area: down; } .mz-arrows__left { grid-area: left; } .mz-arrows__right { grid-area: right; }
+.mz-lanterns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 14px; border-radius: 14px; background: #431407; }
+.mz-lantern { width: 64px; height: 76px; border: 3px solid #78350f; border-radius: 14px 14px 20px 20px; background: #57534e; color: #fff; font: inherit; font-size: 1.4rem; font-weight: 900; cursor: pointer; }
+.mz-lantern.is-lit { background: #f59e0b; color: var(--mb-ink); box-shadow: 0 0 18px #fbbf24; }
+.mz-clues { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.mz-dials { display: flex; gap: 14px; justify-content: center; }
+.mz-dial { display: grid; gap: 6px; justify-items: center; }
+.mz-dial output { width: 56px; padding: 6px 0; border: 3px solid var(--mb-ink); border-radius: 10px; background: #fff; text-align: center; font-size: 1.8rem; font-weight: 900; }

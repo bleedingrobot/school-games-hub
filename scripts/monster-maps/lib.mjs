@@ -148,6 +148,10 @@ export class MapMaker {
   tinker(name, sprite, x, y, facing, text) { this.object('tinker', name, x, y, { sprite, facing, text }); }
   /** The notice board: three small jobs a day. */
   board(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('board', name, x, y, { text }); }
+  /** A puzzle (shared/monsters/quests/puzzles.ts) that opens when you face it; drawn as a sign until it is painted. */
+  puzzle(name, puzzle, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('puzzle', name, x, y, { puzzle, text }); }
+  /** A bush or tree that hides a seed pod: put it on a tile that is already a wall, so it keeps its look. */
+  pod(name, puzzle, x, y, text) { this.object('puzzle', name, x, y, { puzzle, text }); }
   /** Opens a tile of a finished map (a border tree, say) to make a new way through. */
   open(x, y) { this.walls[this.at(x, y)] = 0; }
   /** A trainer who spots you. `team` is "family:level,family:level" (the form comes from the level). */

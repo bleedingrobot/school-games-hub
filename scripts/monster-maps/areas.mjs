@@ -43,6 +43,7 @@ export function shellBeach() {
   m.spot('nurse', 20, 16, 'left');
   m.spot('chest', 22, 11, 'up');
   m.spot('tower-door', 10, 6, 'up');
+  m.puzzle('Rock pool', 'shell-stones', 16, 13, 'A rock pool with numbered stepping stones.');
   m.spot('gate', 3, 2, 'up');
   m.scatter(16, (x, y) => m.palm(x, y), { seed: 2, y0: 2 });
   m.scatter(7, (x, y) => m.boulder(x, y), { seed: 3 });
@@ -96,6 +97,7 @@ export function fireMountain() {
   m.spot('nurse', 9, 12, 'up');
   m.spot('chest', 20, 12, 'right');
   m.spot('tower-door', 12, 6, 'up');
+  m.puzzle('Lantern door', 'fire-lanterns', 4, 10, 'An old door in the rock, with six lanterns around it.');
   m.spot('gate', 20, 2, 'up');
   m.scatter(10, (x, y) => m.autumnTree(x, y), { seed: 5, y0: 2 });
   m.scatter(6, (x, y) => m.autumnSmall(x, y), { seed: 6 });
@@ -149,6 +151,7 @@ export function snowyPeaks() {
   m.spot('nurse', 20, 16, 'left');
   m.spot('chest', 22, 10, 'up');
   m.spot('tower-door', 13, 6, 'up');
+  m.puzzle('Ice slide', 'snow-slide', 11, 13, 'A frozen pond. Ranger Fern’s chest is on the far side.');
   m.spot('gate', 4, 2, 'up');
   m.scatter(18, (x, y) => m.snowTree(x, y), { seed: 8, y0: 2 });
   m.scatter(8, (x, y) => m.snowPine(x, y), { seed: 9 });
@@ -203,6 +206,7 @@ export function glowwormCaves() {
   m.spot('nurse', 13, 13, 'down');
   m.spot('chest', 22, 11, 'down');
   m.spot('tower-door', 11, 6, 'up');
+  m.puzzle('Stone door', 'cave-count', 17, 9, 'A stone door with a number lock. Glowworms shine around it.');
   m.spot('gate', 19, 2, 'up');
   m.scatter(16, (x, y) => m.stalagmite(x, y), { seed: 12, y0: 2 });
   m.scatter(8, (x, y) => m.crystal(x, y), { seed: 13 });
@@ -254,6 +258,7 @@ export function harbourCity() {
   m.spot('nurse', 17, 13, 'down');
   m.spot('chest', 22, 11, 'right');
   m.spot('tower-door', 8, 6, 'up');
+  m.puzzle('Wharf', 'wharf-crates', 7, 8, 'Crates are all over the wharf path!');
   m.scatter(12, (x, y) => m.bigTree(x, y), { seed: 15, y0: 2 });
   m.scatter(10, (x, y) => m.tree(x, y), { seed: 16 });
   m.scatter(6, (x, y) => m.bush(x, y), { seed: 17 });

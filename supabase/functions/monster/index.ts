@@ -6658,7 +6658,7 @@ const GROWTH = {
 const isFamily = (id) => id in GROWTH || id in ULTRA_MONSTERS;
 /** All 75 entries, family by family, first form to last: the first 18 families, the rare ones, then the ultra rares. */
 const MONSTER_BOOK = build();
-const BY_ID = new Map(MONSTER_BOOK.map((s) => [s.id, s]));
+const BY_ID$1 = new Map(MONSTER_BOOK.map((s) => [s.id, s]));
 /** The form of a family a monster of this level has (first form below its first growth level, and so on). */
 function formAt(family, level) {
 	if (family in ULTRA_MONSTERS) return `${family}-1`;
@@ -6667,7 +6667,7 @@ function formAt(family, level) {
 	return `${family}-${1 + at.filter((l) => level >= l).length}`;
 }
 function speciesOf(id) {
-	const s = BY_ID.get(id);
+	const s = BY_ID$1.get(id);
 	if (!s) throw new Error(`No monster "${id}" in the monster book`);
 	return s;
 }
@@ -7151,6 +7151,162 @@ function addToBag(bag, loot) {
 	for (const i of ITEM_ORDER) if (loot[i]) out[i] = (out[i] ?? 0) + loot[i];
 	return out;
 }
+const BY_ID = new Map([
+	{
+		id: "kauri-seeds",
+		kind: "pods",
+		count: 3,
+		title: "Seed pods",
+		says: "The Hermit lost 3 seed pods somewhere in Kauri Bush. Look closely at the bushes!",
+		hint: "One is near the old kauri tree, one by the pond, and one in the far corner.",
+		prize: {
+			bits: "leaf",
+			n: 3
+		}
+	},
+	{
+		id: "shell-stones",
+		kind: "stones",
+		multipleOf: 3,
+		title: "Stepping stones",
+		says: "Cross the rock pool. Only step on numbers in the 3 times table, or splash!",
+		hint: "Start on the 6, then look for 9, 12, 15, 18…",
+		grid: [
+			"8 14 20 10 25 4",
+			"6 9 11 7 16 22",
+			"13 12 15 18 2 30",
+			"5 16 23 21 24 27"
+		],
+		prize: {
+			bits: "water",
+			n: 3
+		}
+	},
+	{
+		id: "fire-lanterns",
+		kind: "lanterns",
+		numbers: [
+			12,
+			3,
+			18,
+			9,
+			6,
+			15
+		],
+		title: "The lantern door",
+		says: "Light the lanterns counting up in threes, smallest first. Get one wrong and they all go out.",
+		hint: "Start with 3. The next one is 3 more.",
+		prize: {
+			bits: "fire",
+			n: 3
+		}
+	},
+	{
+		id: "snow-slide",
+		kind: "slide",
+		title: "The ice slide",
+		says: "Ice is slippery! You slide until you bump into a rock. Get to Ranger Fern’s chest.",
+		hint: "Slide down first, then right.",
+		grid: [
+			"S....#.",
+			".#.....",
+			"......#",
+			"#..#...",
+			".....C.",
+			"..#....",
+			"....#.."
+		],
+		prize: {
+			bits: "ice",
+			n: 3
+		}
+	},
+	{
+		id: "cave-count",
+		kind: "lock",
+		code: "472",
+		title: "The stone door",
+		says: "The stone door has a 3-number lock. The glowworms show the code.",
+		clues: [
+			"The first group of glowworms: ✦✦✦✦",
+			"The second group: ✦✦✦✦✦✦✦",
+			"The last group: ✦✦"
+		],
+		hint: "Count each group of glowworms. That count is one number of the code.",
+		prize: {
+			bits: "spark",
+			n: 3
+		}
+	},
+	{
+		id: "wharf-crates",
+		kind: "crates",
+		title: "The busy wharf",
+		says: "Push each crate onto a marked spot. You can push a crate, but you can’t pull it!",
+		hint: "Push the top crate down first. Use “Start again” if a crate gets stuck in a corner.",
+		grid: [
+			"#######",
+			"#P....#",
+			"#.B.x.#",
+			"#..#..#",
+			"#.xB..#",
+			"#.....#",
+			"#######"
+		],
+		prize: {
+			bits: "stone",
+			n: 3
+		}
+	},
+	{
+		id: "lagoon-stones",
+		kind: "stones",
+		multipleOf: 4,
+		title: "Lagoon stones",
+		says: "Cross the lagoon. Only step on numbers in the 4 times table!",
+		hint: "Start on the 8, then 12, 16, 20…",
+		grid: [
+			"5 9 14 6 10 15",
+			"8 12 16 20 18 7",
+			"11 22 13 24 21 28",
+			"3 26 17 32 36 40"
+		],
+		prize: { egg: "water" }
+	},
+	{
+		id: "aurora-slide",
+		kind: "slide",
+		title: "The frozen lake",
+		says: "Slide across the frozen lake to the chest under the lights.",
+		hint: "Slide down first.",
+		grid: [
+			"S#......",
+			"....#.#.",
+			"#.#...##",
+			"##.#..#.",
+			"......#.",
+			"...#.C.#",
+			"#.......",
+			"..#....."
+		],
+		prize: { egg: "cold" }
+	},
+	{
+		id: "steam-lock",
+		kind: "lock",
+		code: "473",
+		title: "The hot spring chest",
+		says: "A chest with a 3-number lock sits by the hot springs. The signs give clues.",
+		clues: [
+			"My first number is half of 8.",
+			"My second number is 3 more than my first.",
+			"My last number is how many sides a triangle has."
+		],
+		hint: "Half of 8 is 4. So the second number is 4 + 3.",
+		prize: { egg: "warm" }
+	}
+].map((p) => [p.id, p]));
+const puzzleById = (id) => BY_ID.get(id);
 //#endregion
 //#region shared/monsters/quests/giants.ts
 const GIANTS = [
@@ -7215,7 +7371,8 @@ const TALKING = [
 	"chest",
 	"giant",
 	"tinker",
-	"board"
+	"board",
+	"puzzle"
 ];
 const NEEDS_FREE_TILE = [
 	"person",
@@ -7370,6 +7527,10 @@ function parseMap(id, raw) {
 				if (typeof p.gid === "number") thing.gid = p.gid;
 				else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(", ")})`);
 			}
+			if (kind === "puzzle") {
+				if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
+				else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);
+			}
 			if (kind === "person" || kind === "trainer" || kind === "nurse" || kind === "tinker") {
 				if (typeof p.sprite !== "number") problems.push(`${label} needs a "sprite" number`);
 				else thing.sprite = p.sprite;
@@ -7399,7 +7560,7 @@ function parseMap(id, raw) {
 				}
 			}
 			things.push(thing);
-		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, gate, warp, spot, far)`);
+		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, gate, warp, spot, far)`);
 	}
 	const walled = (x, y) => walls[y * width + x] !== 0;
 	for (const t of things) if (NEEDS_FREE_TILE.includes(t.kind) && walled(t.x, t.y)) problems.push(`${t.kind} "${t.name}" at ${t.x},${t.y} is standing on a wall tile`);
@@ -9695,8 +9856,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 29,
-		nextobjectid: 29,
+		nextlayerid: 32,
+		nextobjectid: 32,
 		properties: [
 			{
 				"name": "name",
@@ -9776,7 +9937,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 28,
+				"id": 31,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -10289,7 +10450,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 29,
+				"id": 32,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -10802,7 +10963,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 30,
+				"id": 33,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -11315,7 +11476,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 31,
+				"id": 34,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -11945,6 +12106,66 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"type": "string",
 							"value": "up"
 						}]
+					},
+					{
+						"id": 28,
+						"name": "Seed pod 1",
+						"type": "puzzle",
+						"x": 208,
+						"y": 144,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "kauri-seeds"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "You search the leaves…"
+						}]
+					},
+					{
+						"id": 29,
+						"name": "Seed pod 2",
+						"type": "puzzle",
+						"x": 128,
+						"y": 208,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "kauri-seeds"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "You search the bush…"
+						}]
+					},
+					{
+						"id": 30,
+						"name": "Seed pod 3",
+						"type": "puzzle",
+						"x": 336,
+						"y": 176,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "kauri-seeds"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "You search the branches…"
+						}]
 					}
 				]
 			}
@@ -11961,8 +12182,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 30,
-		nextobjectid: 30,
+		nextlayerid: 31,
+		nextobjectid: 31,
 		properties: [
 			{
 				"name": "name",
@@ -12042,7 +12263,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 29,
+				"id": 30,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -12555,7 +12776,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 30,
+				"id": 31,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -12906,7 +13127,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -13068,7 +13289,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 31,
+				"id": 32,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -13581,7 +13802,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 32,
+				"id": 33,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -14197,6 +14418,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 26,
+						"name": "Rock pool",
+						"type": "puzzle",
+						"x": 256,
+						"y": 208,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "shell-stones"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A rock pool with numbered stepping stones."
+						}]
+					},
+					{
+						"id": 27,
 						"name": "gate",
 						"type": "spot",
 						"x": 48,
@@ -14212,7 +14453,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						}]
 					},
 					{
-						"id": 27,
+						"id": 28,
 						"name": "Drowsea",
 						"type": "giant",
 						"x": 368,
@@ -14240,7 +14481,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						]
 					},
 					{
-						"id": 28,
+						"id": 29,
 						"name": "to-lagoon-isle",
 						"type": "warp",
 						"x": 384,
@@ -14287,8 +14528,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 30,
-		nextobjectid: 30,
+		nextlayerid: 31,
+		nextobjectid: 31,
 		properties: [
 			{
 				"name": "name",
@@ -14368,7 +14609,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 29,
+				"id": 30,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -14881,7 +15122,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 30,
+				"id": 31,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -15145,7 +15386,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					73,
 					74,
@@ -15394,7 +15635,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 31,
+				"id": 32,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -15658,7 +15899,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					275,
 					275,
-					275,
+					0,
 					275,
 					0,
 					0,
@@ -15907,7 +16148,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 32,
+				"id": 33,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -16523,6 +16764,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 26,
+						"name": "Lantern door",
+						"type": "puzzle",
+						"x": 64,
+						"y": 160,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "fire-lanterns"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "An old door in the rock, with six lanterns around it."
+						}]
+					},
+					{
+						"id": 27,
 						"name": "gate",
 						"type": "spot",
 						"x": 320,
@@ -16538,7 +16799,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						}]
 					},
 					{
-						"id": 27,
+						"id": 28,
 						"name": "Snorumble",
 						"type": "giant",
 						"x": 368,
@@ -16566,7 +16827,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						]
 					},
 					{
-						"id": 28,
+						"id": 29,
 						"name": "to-steam-valley",
 						"type": "warp",
 						"x": 384,
@@ -16613,8 +16874,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 30,
-		nextobjectid: 30,
+		nextlayerid: 31,
+		nextobjectid: 31,
 		properties: [
 			{
 				"name": "name",
@@ -16694,7 +16955,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 29,
+				"id": 30,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -17207,7 +17468,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 30,
+				"id": 31,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -17553,7 +17814,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -17720,7 +17981,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 31,
+				"id": 32,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -18233,7 +18494,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 32,
+				"id": 33,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -18849,6 +19110,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 26,
+						"name": "Ice slide",
+						"type": "puzzle",
+						"x": 176,
+						"y": 208,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "snow-slide"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A frozen pond. Ranger Fern’s chest is on the far side."
+						}]
+					},
+					{
+						"id": 27,
 						"name": "gate",
 						"type": "spot",
 						"x": 64,
@@ -18864,7 +19145,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						}]
 					},
 					{
-						"id": 27,
+						"id": 28,
 						"name": "Yawnberg",
 						"type": "giant",
 						"x": 16,
@@ -18892,7 +19173,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						]
 					},
 					{
-						"id": 28,
+						"id": 29,
 						"name": "to-aurora-hollow",
 						"type": "warp",
 						"x": 0,
@@ -18939,8 +19220,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 30,
-		nextobjectid: 30,
+		nextlayerid: 31,
+		nextobjectid: 31,
 		properties: [
 			{
 				"name": "name",
@@ -19020,7 +19301,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 29,
+				"id": 30,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -19533,7 +19814,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 30,
+				"id": 31,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -19785,7 +20066,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					285,
@@ -20046,7 +20327,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 31,
+				"id": 32,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -20298,7 +20579,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					277,
 					277,
-					277,
+					0,
 					277,
 					0,
 					0,
@@ -20559,7 +20840,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 32,
+				"id": 33,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -21175,6 +21456,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 26,
+						"name": "Stone door",
+						"type": "puzzle",
+						"x": 272,
+						"y": 144,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "cave-count"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A stone door with a number lock. Glowworms shine around it."
+						}]
+					},
+					{
+						"id": 27,
 						"name": "gate",
 						"type": "spot",
 						"x": 304,
@@ -21190,7 +21491,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						}]
 					},
 					{
-						"id": 27,
+						"id": 28,
 						"name": "crystal-pool",
 						"type": "spot",
 						"x": 320,
@@ -21206,7 +21507,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						}]
 					},
 					{
-						"id": 28,
+						"id": 29,
 						"name": "torch",
 						"type": "spot",
 						"x": 368,
@@ -21236,8 +21537,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 20,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 26,
-		nextobjectid: 26,
+		nextlayerid: 27,
+		nextobjectid: 27,
 		properties: [
 			{
 				"name": "name",
@@ -21317,7 +21618,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 25,
+				"id": 26,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -21830,7 +22131,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 26,
+				"id": 27,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -22047,7 +22348,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -22343,7 +22644,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 27,
+				"id": 28,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -22856,7 +23157,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 28,
+				"id": 29,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -23411,6 +23712,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 24,
+						"name": "Wharf",
+						"type": "puzzle",
+						"x": 112,
+						"y": 128,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "wharf-crates"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "Crates are all over the wharf path!"
+						}]
+					},
+					{
+						"id": 25,
 						"name": "quarry",
 						"type": "spot",
 						"x": 32,
@@ -30100,8 +30421,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 8,
-		nextobjectid: 8,
+		nextlayerid: 9,
+		nextobjectid: 9,
 		properties: [
 			{
 				"name": "name",
@@ -30181,7 +30502,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 7,
+				"id": 8,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -30474,7 +30795,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 8,
+				"id": 9,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -30679,7 +31000,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -30767,7 +31088,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -30972,7 +31293,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					275,
 					275,
 					275,
-					275,
+					0,
 					275,
 					275,
 					0,
@@ -31060,7 +31381,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -31213,6 +31534,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"type": "string",
 							"value": "right"
 						}]
+					},
+					{
+						"id": 7,
+						"name": "Hot spring chest",
+						"type": "puzzle",
+						"x": 240,
+						"y": 144,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "steam-lock"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A chest with a number lock. Signs nearby give clues."
+						}]
 					}
 				]
 			}
@@ -31229,8 +31570,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 8,
-		nextobjectid: 8,
+		nextlayerid: 9,
+		nextobjectid: 9,
 		properties: [
 			{
 				"name": "name",
@@ -31310,7 +31651,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 7,
+				"id": 8,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -31603,7 +31944,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 8,
+				"id": 9,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -31838,7 +32179,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -31896,7 +32237,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -32131,7 +32472,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					269,
 					269,
 					269,
-					269,
+					0,
 					0,
 					0,
 					0,
@@ -32189,7 +32530,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -32342,6 +32683,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"type": "string",
 							"value": "right"
 						}]
+					},
+					{
+						"id": 7,
+						"name": "Lagoon stones",
+						"type": "puzzle",
+						"x": 80,
+						"y": 176,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "lagoon-stones"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "Stepping stones across the lagoon."
+						}]
 					}
 				]
 			}
@@ -32358,8 +32719,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 8,
-		nextobjectid: 8,
+		nextlayerid: 9,
+		nextobjectid: 9,
 		properties: [
 			{
 				"name": "name",
@@ -32439,7 +32800,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 7,
+				"id": 8,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -32732,7 +33093,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 8,
+				"id": 9,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -32874,7 +33235,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					84,
 					0,
 					0,
 					0,
@@ -33025,7 +33386,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -33318,7 +33679,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -33470,6 +33831,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 							"name": "facing",
 							"type": "string",
 							"value": "left"
+						}]
+					},
+					{
+						"id": 7,
+						"name": "Frozen lake",
+						"type": "puzzle",
+						"x": 192,
+						"y": 96,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "puzzle",
+							"type": "string",
+							"value": "aurora-slide"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A frozen lake under the lights. A chest glints on the ice."
 						}]
 					}
 				]

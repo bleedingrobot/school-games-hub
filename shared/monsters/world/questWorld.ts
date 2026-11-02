@@ -7,9 +7,10 @@ import { speciesOf } from '../monsterBook';
 import type { Monster } from '../rules';
 import { addToBag } from './rewards';
 import { Dice } from './rng';
-import { canMake, describeBits, RECIPES, takeBits } from '../quests/bits';
+import { addBits, canMake, describeBits, RECIPES, takeBits } from '../quests/bits';
 import { addEgg, daysHad, daysNeeded, EGG_LABEL, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
 import { afterGiant, canWake, giantById, isAwake, type Giant } from '../quests/giants';
+import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
 import { bringToBoard, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
 import { emptyQuestSave, type EggKind, type ProgressEvent, type QuestSave } from '../quests/types';
 import { spottedToday, weatherFor, type Today } from './weather';
@@ -209,4 +210,42 @@ export function hatchHere(state: WorldState, map: GameMap, eggId: string, opts: 
   next = owed.state;
   const name = speciesOf(out.monster.species).name;
   return { ok: true, state: next, message: [`Your egg hatched! It’s ${out.monster.shiny ? 'a shiny ' : ''}${name}! ${toTeam ? 'It joined your team.' : 'It went to your monster box.'}`, ...owed.lines].join(' ') };
+}
+
+/**
+ * A puzzle solved (on its screen, or the last seed pod found): sets "solved:<id>" and gives its prize
+ * the first time, and always counts for a quest step or a job that is waiting for it.
+ */
+export function solvePuzzle(state: WorldState, id: string, opts: QuestOptions): QuestResult {
+  const p = puzzleById(id);
+  if (!p) return { ok: false, why: 'There is no puzzle here.' };
+  const q = questOf(state);
+  const flag = `solved:${id}`;
+  const lines: string[] = [];
+  let next = state;
+  if (!q.flags.includes(flag)) {
+    next = { ...state, quest: { ...q, flags: [...q.flags, flag] } };
+    if ('egg' in p.prize) next = giveEgg(next, `puzzle:${id}:${p.prize.egg}`, opts, lines);
+    else {
+      const bits = { [p.prize.bits]: p.prize.n };
+      next = { ...next, quest: { ...questOf(next), bits: addBits(questOf(next).bits, bits) } };
+      lines.push(`You found ${describeBits(bits)}.`);
+    }
+  }
+  const counted = recordEvent(next, { kind: 'solved', id }, opts);
+  return { ok: true, state: counted.state, message: ['Solved!', ...lines, ...counted.lines].join(' ') };
+}
+
+/** Searching a bush for a seed pod: each is found once, and the last one solves the puzzle. */
+export function searchPod(state: WorldState, thing: Thing, opts: QuestOptions): { state: WorldState; pages: string[] } {
+  const p = puzzleById(thing.puzzle ?? '');
+  if (!p || p.kind !== 'pods') return { state, pages: thing.pages };
+  const q = questOf(state);
+  const flag = podFlag(p.id, thing.id);
+  if (q.flags.includes(flag)) return { state, pages: ['You already searched here.'] };
+  const found: WorldState = { ...state, quest: { ...q, flags: [...q.flags, flag] } };
+  const n = podsFound(questOf(found).flags, p.id);
+  if (n < p.count) return { state: found, pages: [...thing.pages, `You found a seed pod! That's ${n} of ${p.count}.`] };
+  const solved = solvePuzzle(found, p.id, opts) as Extract<QuestResult, { ok: true }>;
+  return { state: solved.state, pages: [...thing.pages, `You found the last seed pod! That's all ${p.count}.`, solved.message] };
 }

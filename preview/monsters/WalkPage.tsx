@@ -9,7 +9,8 @@ import { WORLD_MAPS } from '../../shared/monsters/maps';
 import { makeMonster, type Monster } from '../../shared/monsters/rules';
 import { TYPE_LABEL, TYPES, type TypeId } from '../../shared/monsters/types';
 import { AREAS, BADGE_ORDER } from '../../shared/monsters/world/areas';
-import type { WorldState } from '../../shared/monsters/world/types';
+import { DELTA, type Dir, type WorldState } from '../../shared/monsters/world/types';
+import { isBlocked } from '../../shared/monsters/world/walking';
 import { newWorld, refreshBook } from '../../shared/monsters/world/world';
 import { nameOf } from '../../src/games/monsters/text';
 import { WorldGame, type WorldGameProps } from '../../src/games/monsters/world/WorldGame';
@@ -20,7 +21,7 @@ const familyOf = (type: TypeId, nth: number) => Object.entries(FAMILIES).filter(
 /** The first monster of a type, or the second one if the type was already picked (so two of a type are different). */
 const starter = (type: TypeId, nth: number) => makeMonster(`${familyOf(type, nth)}-1`, 5);
 
-interface Teleport { label: string; group: string; map: string; spot: string }
+interface Teleport { label: string; group: string; map: string; spot: string; at?: { x: number; y: number; facing: Dir } }
 
 /** Every place worth seeing, grouped: the town, then each area with its Tower, trainer, grass, nurse and gate. */
 const TELEPORTS: Teleport[] = [
@@ -43,6 +44,16 @@ const TELEPORTS: Teleport[] = [
     ];
     return spots.filter(([, map, spot]) => WORLD_MAPS[map].spots.some((p) => p.name === spot)).map(([label, map, spot]) => ({ group, label, map, spot }));
   }),
+  // Every puzzle, and every bonus area's way in: stand on a free tile next to it, facing it.
+  ...Object.values(WORLD_MAPS).flatMap((m) =>
+    m.things.filter((t) => t.kind === 'puzzle' || t.kind === 'giant').flatMap((t): Teleport[] => {
+      const beside = (['down', 'up', 'left', 'right'] as const).map((facing) => {
+        const [dx, dy] = DELTA[facing];
+        return { x: t.x - dx, y: t.y - dy, facing };
+      }).find((p) => p.x >= 0 && p.y >= 0 && p.x < m.width && p.y < m.height && !isBlocked(m, p.x, p.y, BADGE_ORDER));
+      return beside ? [{ group: t.kind === 'giant' ? 'Sleeping giants' : 'Puzzles', label: `${m.name}: ${t.name}`, map: m.id, spot: '', at: beside }] : [];
+    }),
+  ),
 ];
 const keyOf = (t: Teleport) => `${t.group}: ${t.label}`;
 
@@ -88,7 +99,7 @@ export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) =
 
   function go() {
     const t = TELEPORTS.find((x) => keyOf(x) === where)!;
-    const s = WORLD_MAPS[t.map].spots.find((p) => p.name === t.spot)!;
+    const s = t.at ?? WORLD_MAPS[t.map].spots.find((p) => p.name === t.spot)!;
     setTeleport({ nonce: (teleport?.nonce ?? 0) + 1, map: t.map, x: s.x, y: s.y, facing: s.facing });
   }
 

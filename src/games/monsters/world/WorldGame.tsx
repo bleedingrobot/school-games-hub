@@ -85,7 +85,7 @@ export function WorldGame({
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
   const [talk, setTalk] = useState<TalkState | null>(null);
-  const [menu, setMenu] = useState<{ page: MenuPage; from: 'menu' | 'object' } | null>(null);
+  const [menu, setMenu] = useState<{ page: MenuPage; from: 'menu' | 'object'; puzzle?: string } | null>(null);
   const [sheets, setSheets] = useState<TileCache | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -158,7 +158,7 @@ export function WorldGame({
             : out.giant
               ? () => startBattle(giantBattle(ctrl.current!.state, opts, out.giant!), undefined, out.giant)
               : out.open
-              ? () => setMenu({ page: out.open!, from: 'object' })
+              ? () => setMenu({ page: out.open!, from: 'object', puzzle: out.puzzle })
               : undefined,
         });
       },
@@ -506,6 +506,7 @@ export function WorldGame({
             onChange={(next) => ctrl.current!.patch(next)}
             map={map}
             questOpts={quest}
+            puzzle={menu.puzzle}
           />
         )}
       </div>

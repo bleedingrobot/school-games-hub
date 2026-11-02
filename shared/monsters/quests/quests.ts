@@ -91,7 +91,15 @@ export function canStart(q: QuestSave, quest: Quest, badges: number): boolean {
 }
 
 export function startQuest(q: QuestSave, id: string): QuestSave {
-  return { ...q, quests: { ...q.quests, [id]: { step: 0, n: 0 } } };
+  return skipSolved({ ...q, quests: { ...q.quests, [id]: { step: 0, n: 0 } } }, id);
+}
+
+/** A puzzle solved before its quest got there still counts: moves past "solve" steps already done (never the last step). */
+function skipSolved(q: QuestSave, id: string): QuestSave {
+  const steps = questById(id)!.steps;
+  let st = q.quests[id];
+  while (st.step < steps.length - 1 && steps[st.step].do === 'solve' && q.flags.includes(`solved:${steps[st.step].id}`)) st = { step: st.step + 1, n: 0 };
+  return st === q.quests[id] ? q : { ...q, quests: { ...q.quests, [id]: st } };
 }
 
 const countOf = (t: Task) => t.count ?? 1;
@@ -137,7 +145,7 @@ function advance(q: QuestSave, id: string): boolean {
     q.flags = [...q.flags, `quest-done:${id}`];
     return true;
   }
-  q.quests = { ...q.quests, [id]: { step: st.step + 1, n: 0 } };
+  q.quests = skipSolved({ ...q, quests: { ...q.quests, [id]: { step: st.step + 1, n: 0 } } }, id).quests;
   return false;
 }
 

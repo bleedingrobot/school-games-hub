@@ -49,6 +49,10 @@ export function kauriBush() {
   m.spot('tower-door', 14, 6, 'up');
   m.spot('gate', 21, 2, 'up');
   m.spot('old-kauri', 10, 10, 'up'); // where leafy eggs hatch
+  // The Hermit's lost seed pods, hidden in three trees.
+  m.pod('Seed pod 1', 'kauri-seeds', 13, 9, 'You search the leaves…');
+  m.pod('Seed pod 2', 'kauri-seeds', 8, 13, 'You search the bush…');
+  m.pod('Seed pod 3', 'kauri-seeds', 21, 11, 'You search the branches…');
   m.save();
 
   towerRooms({

@@ -20,6 +20,7 @@ export function steamValley() {
   m.warp('to-fire-mountain', 0, 7, 'fire-mountain', 22, 7, 'left');
   m.spot('entrance', 1, 7, 'right');
   m.spot('hot-springs', 11, 3, 'right');
+  m.puzzle('Hot spring chest', 'steam-lock', 15, 9, 'A chest with a number lock. Signs nearby give clues.');
   m.scatter(8, (x, y) => m.boulder(x, y, true), { seed: 21 });
   m.scatter(5, (x, y) => m.autumnSmall(x, y), { seed: 22 });
   m.save();
@@ -39,6 +40,7 @@ export function lagoonIsle() {
   m.warp('to-shell-beach', 0, 7, 'shell-beach', 22, 11, 'left');
   m.spot('entrance', 1, 7, 'right');
   m.spot('rock-pools', 10, 4, 'right');
+  m.puzzle('Lagoon stones', 'lagoon-stones', 5, 11, 'Stepping stones across the lagoon.');
   m.scatter(8, (x, y) => m.palm(x, y), { seed: 23, y0: 2 });
   m.scatter(4, (x, y) => m.boulder(x, y), { seed: 24 });
   m.save();
@@ -59,6 +61,7 @@ export function auroraHollow() {
   m.warp('to-snowy-peaks', 19, 7, 'snowy-peaks', 2, 13, 'right');
   m.spot('entrance', 18, 7, 'left');
   m.spot('ice-cave', 6, 4, 'left');
+  m.puzzle('Frozen lake', 'aurora-slide', 12, 6, 'A frozen lake under the lights. A chest glints on the ice.');
   m.scatter(8, (x, y) => m.snowTree(x, y), { seed: 25, y0: 2 });
   m.scatter(4, (x, y) => m.snowBush(x, y), { seed: 26 });
   m.save();

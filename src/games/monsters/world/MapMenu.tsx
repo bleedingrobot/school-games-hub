@@ -23,8 +23,10 @@ import type { WorldSettings } from './settings';
 import type { GameMap } from '../../../../shared/monsters/world/types';
 import { questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { BoardPage, EggPage, QuestLogPage, TinkerPage } from './QuestPages';
+import { PuzzlePage } from './PuzzlePage';
+import { puzzleById } from '../../../../shared/monsters/quests/puzzles';
 
-export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look' | 'quests' | 'eggs' | 'tinker' | 'board';
+export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look' | 'quests' | 'eggs' | 'tinker' | 'board' | 'puzzle';
 
 export interface MapMenuProps {
   page: MenuPage;
@@ -39,12 +41,14 @@ export interface MapMenuProps {
   /** The map you are on (the egg basket hatches here) and today's day, pupil and play days. */
   map?: GameMap;
   questOpts?: QuestOptions;
+  /** The puzzle on the puzzle page (its id in quests/puzzles.ts). */
+  puzzle?: string;
 }
 
-const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board' };
+const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
-export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, map, questOpts = {} }: MapMenuProps) {
+export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
   const back = () => (page === 'main' || from === 'object' ? onClose() : onGo('main'));
@@ -78,7 +82,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         }
       }}
     >
-      <Sheet title={TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
+      <Sheet title={page === 'puzzle' ? (puzzleById(puzzle ?? '')?.title ?? TITLES.puzzle) : TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
           <nav aria-label="Menu" className="mm-main">
             {(['team', 'bag', 'quests', 'eggs', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
@@ -103,6 +107,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'eggs' && map && <EggPage world={world} apply={apply} map={map} opts={questOpts} />}
         {page === 'tinker' && <TinkerPage world={world} apply={apply} />}
         {page === 'board' && <BoardPage world={world} apply={apply} opts={questOpts} />}
+        {page === 'puzzle' && puzzle && <PuzzlePage world={world} apply={apply} id={puzzle} opts={questOpts} />}
         {page === 'howto' && <HowToPlayBody />}
         {page === 'look' && (
           <LookPicker
