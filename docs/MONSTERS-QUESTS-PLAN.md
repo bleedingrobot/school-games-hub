@@ -5,7 +5,7 @@ quests, puzzles, items to wake sleeping monsters that block new areas, eggs that
 somewhere warm, wet and so on), and uncommon, rare and ultra rare monsters. James also asked for a painted upgrade of the
 maps and the walking characters, made on his gaming computer.*
 
-**Status: PLAN ONLY, nothing built.** Questions for James are in section 12. The game as it is now (live since 18 Oct 2026)
+**Status: PLAN ONLY, nothing built.** James answered section 12 on 2 Nov 2026. The game as it is now (live since 18 Oct 2026)
 is described in [MONSTER-PLAN.md](MONSTER-PLAN.md).
 
 ---
@@ -141,8 +141,8 @@ A giant monster asleep across a path ("Zzz…" floating up, snoring sound). Talk
 - **What's inside:** the egg's kind (warm, water, cold, leafy, glowing, stony) shows its type. Inside is decided when it's
   found, rolled by the game's dice: about 50% uncommon, 40% rare, 10% ultra rare (finale eggs are always ultra rare). It has
   the usual 1-in-64 shiny chance. The pupil doesn't know what's inside until it hatches.
-- **Hatching, step 1, keep playing:** the egg needs **3 days of play** after it was found (rare eggs could need 5; see
-  section 11). A day of play is a New Zealand day when the pupil answered at least one Maths Monsters question, **counted by
+- **Hatching, step 1, keep playing:** the egg needs **3 days of play** if uncommon, **5** if rare and **7** if ultra rare
+  (James, 2 Nov 2026), counted from when it was found. A day of play is a New Zealand day when the pupil answered at least one Maths Monsters question, **counted by
   the database**. The basket shows "2 of 3 days" and the egg wobbles more each day. Days don't have to be in a row, so a pupil
   who is away isn't punished.
 - **Hatching, step 2, take it home:** once ready, the egg says "This egg feels like it wants somewhere warm…". Walk to the
@@ -280,8 +280,10 @@ not touched. No change to `shared/maths/`.
 
 ## 12. Questions for James
 
-1. **Days to hatch:** 3 days for every egg (recommended), or 3 for uncommon, 5 for rare, 7 for ultra rare?
-2. **Bonus areas:** 3 giants and 3 bonus areas (recommended), or 6 (one per type, about twice the work)?
-3. **Quest points:** small hub points for quests (2 per story step, 1 per board job, inside the 40 a day), or none?
-4. **Rare strength:** a little stronger (recommended), or same strength, just rarer and shinier?
-5. **Art test now?** Start the Kauri Bush style test (Q.2) alongside the rules (Q.1)?
+| # | Question | James's answer (2 Nov 2026) |
+|---|---|---|
+| 1 | Days to hatch | **By rarity: uncommon 3, rare 5, ultra rare 7** |
+| 2 | Bonus areas | **3 giants and 3 bonus areas** |
+| 3 | Quest points | **Small points**: 2 per story step, 1 per board job, inside the 40 a day |
+| 4 | Rare strength | **A little stronger** (rare like a fully grown form, ultra rare a bit more) |
+| 5 | Art test now? | Not answered yet |
