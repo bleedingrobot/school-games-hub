@@ -5,6 +5,9 @@ import { AREAS, BADGE_ORDER } from '../world/areas';
 import { addToBag, LOOT } from '../world/rewards';
 import { refreshBook } from '../world/world';
 import { Session } from './testKit';
+import { findEgg } from '../quests/eggs';
+import { emptyQuestSave, type QuestSave } from '../quests/types';
+import type { WorldState } from '../world/types';
 
 const ok = (c: Checked) => {
   if (!c.ok) throw new Error(`refused: ${c.problem}`);
@@ -31,11 +34,13 @@ describe('honest play is accepted', () => {
 
   it('a session of wild battles, a trainer, healing and saving, chained save after save', () => {
     const s = new Session(['leaf', 'ice']);
+    // With quests on: wins give bits and keep the eggs warm.
+    s.quest = { day: '2026-10-20', player: 'pupil-a', playDays: 0 };
     let prev: Stored | null = null;
     let first = true;
     const accept = () => {
       const item = s.save();
-      const saved = ok(checkSave(prev, item, s.clock.now()));
+      const saved = ok(checkSave(prev, item, s.clock.now(), 'pupil-a'));
       prev = stored(item);
       first = false;
       return saved;
@@ -53,6 +58,7 @@ describe('honest play is accepted', () => {
     expect(first).toBe(false);
     expect(wins).toBeGreaterThan(10);
     expect(answers).toBeGreaterThan(80);
+    expect(Object.values(s.world.quest!.bits).reduce((a, b) => a + b!, 0)).toBeGreaterThan(10);
   });
 
   it('every wild monster of every area, and every trainer, through a whole route', () => {
@@ -116,11 +122,12 @@ describe('the whole game, honestly', () => {
   });
 });
 
+const refused = (c: Checked, problem: string) => {
+  expect(c.ok).toBe(false);
+  if (!c.ok) expect(c.problem).toBe(problem);
+};
+
 describe('a save the rules cannot have produced is refused', () => {
-  const refused = (c: Checked, problem: string) => {
-    expect(c.ok).toBe(false);
-    if (!c.ok) expect(c.problem).toBe(problem);
-  };
 
   it('a look that is not one of the 24 (a missing one is fine: games from before there were looks)', () => {
     const { s, prev } = started();
@@ -393,5 +400,48 @@ describe('a save the rules cannot have produced is refused', () => {
     const h = heal.s.save();
     h.world.heal = { map: 'kauri-bush', x: 1, y: 1, facing: 'down' };
     refused(checkSave(heal.prev, h, heal.s.clock.now()), 'heal');
+  });
+});
+
+describe('quests in a save (docs/MONSTERS-QUESTS-PLAN.md, Q.5)', () => {
+  it('prizes count once, crafting is paid for, and eggs hatch only after their days and never once cold', () => {
+    const { s, prev } = started();
+    const now = s.clock.now();
+    const today = '2026-10-20';
+    const quest = (q: Partial<QuestSave>): QuestSave => ({ ...emptyQuestSave(), ...q });
+    const save = (q: QuestSave, change: (w: WorldState) => WorldState = (w) => w) => {
+      const item = s.save();
+      item.world = change({ ...item.world, quest: q });
+      return item;
+    };
+    // A puzzle's prize: once, and not a bit more.
+    const solved = save(quest({ flags: ['solved:shell-stones'], bits: { water: 3 } }));
+    ok(checkSave(prev, solved, now));
+    refused(checkSave(prev, save(quest({ flags: ['solved:shell-stones'], bits: { water: 4 } })), now), 'quest-bits');
+    refused(checkSave(stored(solved), save(quest({ flags: ['solved:shell-stones'], bits: { water: 6 } })), now), 'quest-bits');
+    refused(checkSave(prev, save(quest({ flags: ['no-such-flag'] })), now), 'quest-flags');
+    // Crafting: 3 bits make one ball, not two; a wake-up item needs its part and its bits.
+    const ball = (n: number) => save(quest({ flags: ['solved:shell-stones'] }), (w) => ({ ...w, bag: addToBag(w.bag, { ball: n }) }));
+    ok(checkSave(stored(solved), ball(1), now));
+    refused(checkSave(stored(solved), ball(2), now), 'bag');
+    refused(checkSave(stored(solved), save(quest({ flags: ['solved:shell-stones', 'made:warm-whistle'] })), now), 'made');
+    // An egg: hatched (the monster in the box) only once the database has counted its days, and only while warm.
+    const egg = findEgg('puzzle:lagoon-stones:water', 'water', 2, () => 0);
+    const hasEgg: Stored = { ...stored(solved), world: { ...stored(solved).world, quest: quest({ flags: ['solved:lagoon-stones', `egg:${egg.id}`], eggs: [egg], lastDay: '2026-10-18' }) } };
+    const hatchedSave = (lastDay = '2026-10-18') => save(quest({ flags: ['solved:lagoon-stones', `egg:${egg.id}`, 'hatched:water'], lastDay }), (w) => ({ ...w, box: [...w.box, { ...makeMonster(egg.species, 5), ...(egg.shiny ? { shiny: true as const } : {}) }] }));
+    const hatchedWorld = hatchedSave();
+    hatchedWorld.world = refreshBook(hatchedWorld.world);
+    refused(checkSave({ ...hasEgg, playDays: 4 }, hatchedWorld, now), 'hatched');
+    expect(ok(checkSave({ ...hasEgg, playDays: 5 }, hatchedWorld, now)).summary.hatched).toBe(1);
+    const coldWorld = { ...hasEgg.world, quest: { ...hasEgg.world.quest!, lastDay: '2026-10-14' } };
+    const hatchedCold = hatchedSave('2026-10-14');
+    hatchedCold.world = refreshBook(hatchedCold.world);
+    refused(checkSave({ ...hasEgg, world: coldWorld, playDays: 5 }, hatchedCold, now), 'hatched');
+    const kept = save(quest({ flags: ['solved:lagoon-stones', `egg:${egg.id}`], eggs: [egg], lastDay: '2026-10-14' }));
+    refused(checkSave({ ...hasEgg, world: coldWorld }, kept, now), 'egg-cold');
+    // A new egg needs its puzzle solved, and a day the database has counted.
+    refused(checkSave(stored(solved), save(quest({ flags: ['solved:shell-stones', `egg:${egg.id}`], eggs: [egg] })), now), 'egg-source');
+    refused(checkSave({ ...stored(solved), playDays: 1 }, save(quest({ flags: ['solved:shell-stones', 'solved:lagoon-stones', `egg:${egg.id}`], eggs: [egg] })), now), 'egg-day');
+    expect(today).toBe(new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland' }).format(new Date(now)));
   });
 });

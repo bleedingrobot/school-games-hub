@@ -1,0 +1,314 @@
+{
+ "ash": [
+  "friendly teenage boy explorer",
+  "short curly brown hair, light skin, a grey knitted sweater, brown trousers, brown boots"
+ ],
+ "captain-tui": [
+  "friendly grown-up ship captain man",
+  "short dark hair, light skin, a white captain hat with a black peak, a navy blue double-breasted jacket with gold buttons, navy trousers, black shoes"
+ ],
+ "caver-pete": [
+  "sturdy grown-up cave explorer man",
+  "short messy brown hair, light skin, a yellow helmet with a lamp, muddy brown dungarees over a grey shirt, brown boots"
+ ],
+ "diver-ngaio": [
+  "cheerful grown-up scuba diver woman",
+  "black hair tied back, brown skin, a snorkel mask on her forehead, a full-length navy blue wetsuit, bare feet, holding a white seashell"
+ ],
+ "dock-worker-sione": [
+  "strong grown-up dock worker man",
+  "short black hair, dark brown skin, an orange high-visibility vest over a navy shirt, navy work trousers, dark boots, carrying a cardboard box on one shoulder"
+ ],
+ "firefighter-kate": [
+  "brave grown-up firefighter woman",
+  "a yellow firefighter helmet, light skin, a mustard yellow firefighter coat with silver stripes, matching yellow trousers, black gloves, black boots"
+ ],
+ "fisher": [
+  "kindly elderly fisherman",
+  "white beard, grey hair, light skin, a blue woollen beanie, a bright yellow raincoat, dark trousers, black boots, holding a fishing rod"
+ ],
+ "geyser-gus": [
+  "friendly grown-up park guide man",
+  "short ginger hair, short ginger beard, light skin, a rust orange fleece jacket, khaki brown hiking trousers, brown hiking boots"
+ ],
+ "glow-gran": [
+  "kind elderly grandmother",
+  "curly silver-grey hair, light skin, a brown knitted cardigan, a long grey-brown dress down to the ankles, brown shoes, holding a glowing lantern"
+ ],
+ "hermit": [
+  "wise elderly hermit man",
+  "long white beard, grey hair, light skin, a green patched cloak over a cream tunic, a brown belt, brown trousers, brown boots, holding a wooden walking stick"
+ ],
+ "hiker-rob": [
+  "adventurous grown-up hiker man",
+  "curly brown hair, short brown beard, light skin, a red and black checked shirt, a dark vest, brown hiking trousers, brown boots"
+ ],
+ "hine": [
+  "cheerful 8 year old girl beachcomber",
+  "brown hair, light skin, a straw sun hat, a yellow jacket over a yellow t-shirt, knee-length denim shorts, bare feet, holding a blue bucket of shells"
+ ],
+ "lifeguard-sam": [
+  "energetic grown-up lifeguard man",
+  "short sandy blond hair, light skin, a red and yellow zip-up lifeguard jacket, matching red long trousers, a whistle on a cord, white shoes"
+ ],
+ "mayor-kiri": [
+  "dignified grown-up town mayor woman",
+  "shoulder-length light brown hair, light skin, a long charcoal grey coat over a dark green blouse, dark trousers, black shoes"
+ ],
+ "mere": [
+  "cheerful grown-up park ranger woman",
+  "dark hair tied back, brown skin, a khaki short-sleeved shirt, khaki trousers, brown boots, one hand pointing"
+ ],
+ "miner-rua": [
+  "tough grown-up miner man",
+  "long dark wavy hair, brown skin, a yellow hard hat, an orange high-visibility vest over a dark shirt, brown trousers, brown boots, holding a pickaxe"
+ ],
+ "nana-pip": [
+  "cosy elderly grandmother, small and gentle",
+  "a grey knitted beanie, a long chunky knitted scarf, a brown padded coat, grey trousers, brown shoes"
+ ],
+ "nurse-aroha": [
+  "kind grown-up nurse woman",
+  "wavy brown hair, light skin, a white nurse cap with a red cross, a cream knitted cardigan, a white apron over a long dark skirt to the ankle, dark shoes, holding a mug"
+ ],
+ "nurse-hinemoa": [
+  "warm grown-up nurse woman",
+  "long dark wavy hair, brown skin, a white nurse cap, a teal short-sleeved tunic with white trim, teal trousers, white shoes"
+ ],
+ "nurse-joy": [
+  "gentle grown-up nurse woman",
+  "wavy brown hair, light skin, a white nurse cap with a red cross, a white and pale pink tunic top, white trousers, white shoes"
+ ],
+ "nurse-kowhai": [
+  "cheerful grown-up nurse woman",
+  "curly dark hair in a bun, brown skin, a white nurse cap, a bright yellow short-sleeved tunic with silver stripes, yellow trousers, white shoes"
+ ],
+ "nurse-mere": [
+  "lively grown-up nurse woman",
+  "dark brown wavy hair, light olive skin, an orange nurse cap, a bright orange short-sleeved tunic, orange trousers, white shoes, holding a woven fan"
+ ],
+ "nurse-pania": [
+  "friendly grown-up nurse woman",
+  "long dark hair, brown skin, a green nurse cap with a white cross, a green short-sleeved tunic with a fern leaf pattern, green trousers, white shoes"
+ ],
+ "nurse-sina": [
+  "smiling grown-up nurse woman",
+  "curly dark hair, a white flower in her hair, brown skin, a white nurse cap with a red cross, a navy blue short-sleeved tunic with white collar, navy trousers, white shoes"
+ ],
+ "old-joe": [
+  "friendly elderly farmer man",
+  "white beard, light skin, a straw hat, a faded blue denim shirt with a grey vest, a brown belt, khaki trousers with mud on the knees, brown boots"
+ ],
+ "old-kui": [
+  "wise elderly grandmother",
+  "silver-grey hair, brown skin, a long black dress to the ankle with a dark feather cloak, brown shoes, holding a wooden walking stick"
+ ],
+ "ranger-fern": [
+  "curious grown-up wildlife ranger woman",
+  "brown hair in a bun, light skin, a red waterproof jacket, brown trousers, hiking boots, holding binoculars up to her eyes"
+ ],
+ "ranger-kiri": [
+  "smart grown-up park ranger woman",
+  "brown hair in a ponytail, light skin, a green wide-brimmed ranger hat, an olive green ranger shirt with rolled sleeves, olive green trousers, a brown belt, brown boots"
+ ],
+ "sailor-hana": [
+  "cheerful grown-up sailor woman",
+  "long black hair, light skin, a navy sailor cap, a navy and white striped sailor sweater, navy trousers, white shoes, one hand in a salute"
+ ],
+ "shopkeeper-lu": [
+  "friendly grown-up shopkeeper man",
+  "curly dark hair, olive skin, a grey short-sleeved shirt, a cream canvas apron, dark knee-length trousers, brown shoes"
+ ],
+ "skier-ben": [
+  "sporty grown-up skier man",
+  "short curly ginger-brown hair, light skin, a grey-green ski jacket, dark grey ski trousers, ski boots, skis on his feet, holding ski poles"
+ ],
+ "skier-jo": [
+  "cheerful grown-up skier woman",
+  "a red woolly beanie, light skin with rosy cheeks, a bright yellow ski jacket, grey ski trousers, black gloves, snow boots, holding a snowball"
+ ],
+ "skier-rewi": [
+  "sporty grown-up skier man",
+  "dark hair, brown skin, ski goggles on his helmet, a bright red ski jacket, black ski trousers, black gloves, ski boots, holding ski poles"
+ ],
+ "snowboarder-mia": [
+  "sporty grown-up snowboarder woman",
+  "long light brown hair, light skin, a dark grey knitted beanie, a brown and grey snow jacket, dark grey snow trousers, black gloves, snow boots, holding a snowboard"
+ ],
+ "spelunker-bo": [
+  "adventurous grown-up cave explorer man",
+  "a grey caving helmet with a lamp, light skin, a bright red caving overalls with a harness, brown boots"
+ ],
+ "surfer-tui": [
+  "relaxed grown-up surfer man",
+  "curly sandy blond hair, light tanned skin, a full-length black wetsuit, bare feet, holding a white surfboard"
+ ],
+ "swimmer-aroha": [
+  "sporty grown-up swim coach woman",
+  "dark hair tucked under a blue swim cap, swim goggles on her forehead, light olive skin, a navy blue zip-up tracksuit top, navy long leggings, white towel over one shoulder, white shoes"
+ ],
+ "tama": [
+  "cheerful 10 year old boy",
+  "short dark hair, light olive skin, a green t-shirt, an olive green jacket, khaki knee-length shorts, brown sandals"
+ ],
+ "teacher": [
+  "friendly grown-up school teacher man",
+  "curly brown hair, light skin, a grey-green shirt, a brown cardigan, dark trousers, brown shoes, holding a clipboard"
+ ],
+ "tinker": [
+  "quirky elderly inventor woman",
+  "fluffy white hair, round goggles on her head, light skin, a sage green shirt, a brown leather apron with tool pockets, dark trousers, brown boots, holding a spanner"
+ ],
+ "tower-guide-ana": [
+  "gentle grown-up tower guide woman",
+  "long dark hair in a side ponytail, brown skin, a long blue tunic with white wave trim reaching below the knee, blue trousers, sandals"
+ ],
+ "tower-guide-ngaio": [
+  "cheerful grown-up tower guide man",
+  "short black hair, light olive skin, a long golden yellow tunic with cream trim reaching below the knee, cream trousers, sandals"
+ ],
+ "tower-guide-pita": [
+  "cheerful grown-up tower guide man",
+  "curly dark hair, light olive skin, a long white tunic reaching below the knee, white trousers, sandals"
+ ],
+ "tower-guide-sefa": [
+  "kind grown-up tower guide man",
+  "short black hair, brown skin, a long grey-brown tunic reaching below the knee, grey trousers, brown sandals"
+ ],
+ "tower-guide-tipene": [
+  "calm grown-up tower guide man",
+  "long wavy dark hair, brown skin, a long red tunic with orange flame patterns reaching below the knee, a brown rope belt, red trousers, sandals"
+ ],
+ "tower-guide-wiremu": [
+  "strong grown-up tower guide man",
+  "long dark wavy hair, brown skin, a green tunic decorated with leaves reaching to the knee, a brown rope belt, green trousers, bare feet"
+ ],
+ "tower-trainer-aroha": [
+  "friendly grown-up tower trainer woman",
+  "long dark hair in a thick braid, brown skin, a long grey-green button-up coat, dark trousers, dark boots, holding a glowing crystal"
+ ],
+ "tower-trainer-hemi": [
+  "strong grown-up tower trainer man",
+  "long dark swept-back hair, brown skin, a green zip-up jacket with a fern pattern, dark trousers, brown boots"
+ ],
+ "tower-trainer-maia": [
+  "confident grown-up tower trainer woman",
+  "long silver-blonde hair, light skin, a long white winter parka with a fur-trimmed hood, black trousers, black boots"
+ ],
+ "tower-trainer-moana": [
+  "warm grown-up tower trainer woman",
+  "short grey hair, olive brown skin, a teal scarf, a long navy blue buttoned coat, dark trousers, black shoes"
+ ],
+ "tower-trainer-rangi": [
+  "energetic grown-up tower trainer man",
+  "short black hair, brown skin, a red zip-up jacket with grey patches, dark grey trousers, black boots"
+ ],
+ "tower-trainer-wiremu": [
+  "cheerful grown-up tower trainer man",
+  "wavy brown hair, light skin, a bright yellow zip-up jacket, dark grey knee-length shorts, brown boots"
+ ],
+ "vera": [
+  "adventurous grown-up traveller woman",
+  "long brown hair in a side braid, light skin, a khaki short-sleeved shirt, brown knee-length shorts, hiking boots, a big hiking backpack, holding a folded map"
+ ],
+ "wee-hana": [
+  "cheerful 7 year old girl",
+  "short dark bob hair with a small yellow hair clip, light skin, a loose grey long-sleeved top, dark grey knee-length shorts, bare feet, holding a flaming torch"
+ ],
+ "boy-01": [
+  "cheerful 9 year old school boy",
+  "curly dark brown hair, olive skin, a green hooded sweatshirt, grey-brown trousers, brown sandals"
+ ],
+ "boy-02": [
+  "cheerful 9 year old school boy",
+  "blond hair, light skin, a red baseball cap worn backwards, a tan t-shirt, a rust brown vest, khaki knee-length shorts, brown boots"
+ ],
+ "boy-03": [
+  "cheerful 9 year old school boy",
+  "short black hair, brown skin, a blue rugby shirt, navy knee-length shorts, bare feet"
+ ],
+ "boy-04": [
+  "cheerful 9 year old school boy",
+  "short dark hair, round glasses, light skin, a bright yellow raincoat, grey trousers, brown shoes, holding a small notebook"
+ ],
+ "boy-05": [
+  "cheerful 9 year old school boy",
+  "short dark wavy hair, olive skin, an orange jacket over a grey t-shirt, brown cargo trousers, brown shoes"
+ ],
+ "boy-06": [
+  "cheerful 9 year old school boy",
+  "dark hair in small braids, brown skin, a white t-shirt, green knee-length shorts, brown sandals"
+ ],
+ "boy-07": [
+  "cheerful 9 year old school boy",
+  "curly ginger hair, light skin with freckles, a khaki bucket hat, a tan t-shirt with an olive vest, olive knee-length shorts, brown boots"
+ ],
+ "boy-08": [
+  "cheerful 9 year old school boy",
+  "short black hair, light skin, a navy blue bomber jacket, khaki knee-length shorts, brown shoes"
+ ],
+ "boy-09": [
+  "cheerful 9 year old school boy",
+  "short curly black hair, dark brown skin, a purple hooded sweatshirt, dark grey knee-length shorts, bare feet"
+ ],
+ "boy-10": [
+  "cheerful 9 year old school boy",
+  "short black hair, light skin, a teal green hooded jacket, dark grey trousers, tan hiking shoes"
+ ],
+ "boy-11": [
+  "cheerful 9 year old school boy",
+  "curly brown hair, brown skin, a tan short-sleeved scout shirt, olive knee-length shorts, brown sandals"
+ ],
+ "boy-12": [
+  "cheerful 9 year old school boy",
+  "black hair in a small top knot, brown skin, a grey t-shirt, a black puffer vest, dark grey knee-length shorts, a green stone necklace, brown sandals"
+ ],
+ "girl-01": [
+  "cheerful 9 year old school girl",
+  "long dark hair in two braids, light olive skin, a bright yellow raincoat, dark green rubber boots"
+ ],
+ "girl-02": [
+  "cheerful 9 year old school girl",
+  "long ginger hair in a high ponytail, light skin with freckles, a blue denim jacket, a green t-shirt, blue jeans, brown shoes"
+ ],
+ "girl-03": [
+  "cheerful 9 year old school girl",
+  "dark curly hair in a bun with a white flower, brown skin, a blue sleeveless top, a patterned green knee-length skirt, bare feet"
+ ],
+ "girl-04": [
+  "cheerful 9 year old school girl",
+  "short black bob hair with a pink hair clip, light skin, a pink puffer jacket, dark trousers, holding a magnifying glass"
+ ],
+ "girl-05": [
+  "cheerful 9 year old school girl",
+  "long dark braid, olive skin, a cream t-shirt, an olive green vest, khaki knee-length shorts, brown sandals, binoculars around her neck"
+ ],
+ "girl-06": [
+  "cheerful 9 year old school girl",
+  "big curly dark hair, dark brown skin, a purple hooded sweatshirt, blue denim knee-length shorts, bare feet"
+ ],
+ "girl-07": [
+  "cheerful 9 year old school girl",
+  "blonde hair in two pigtails, light skin with rosy cheeks, a cream t-shirt, blue denim dungarees with rolled-up legs, brown boots"
+ ],
+ "girl-08": [
+  "cheerful 9 year old school girl",
+  "dark hair in a ponytail, light olive skin, a red bomber jacket, denim knee-length shorts, bare feet"
+ ],
+ "girl-09": [
+  "cheerful 9 year old school girl",
+  "long dark braids with a yellow headband, dark brown skin, a bright orange jacket, a teal t-shirt, blue jeans, grey shoes"
+ ],
+ "girl-10": [
+  "cheerful 9 year old school girl",
+  "long straight black hair with a fringe, light skin, a navy blue cardigan over a white collared shirt, a grey knee-length skirt, holding a small camera"
+ ],
+ "girl-11": [
+  "cheerful 9 year old school girl",
+  "curly dark brown hair, brown skin, a tan scout shirt with rolled sleeves, olive green knee-length shorts, brown shoes, one thumb up"
+ ],
+ "girl-12": [
+  "cheerful 9 year old school girl",
+  "long wavy dark brown hair, brown skin, a cream long-sleeved top, a black puffer vest, dark grey knee-length shorts, a turquoise stone necklace, brown shoes"
+ ]
+}

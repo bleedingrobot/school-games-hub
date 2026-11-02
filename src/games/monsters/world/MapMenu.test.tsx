@@ -89,20 +89,20 @@ describe('the map menu', () => {
     expect(within(bag).getByText(/Repel is working: 50 more steps/)).toBeInTheDocument();
   });
 
-  it('Monster book: all 54 entries, owned and met ones in full, the rest a dark shape with a question mark', async () => {
+  it('Monster book: all 75 entries, owned and met ones in full, the rest a dark shape with a question mark', async () => {
     const user = userEvent.setup();
     game();
     await user.click(screen.getByRole('button', { name: 'Menu' }));
     await user.click(screen.getByRole('button', { name: /^Monster book/ }));
     const book = screen.getByRole('dialog', { name: 'Monster book' });
     const tiles = within(book).getByRole('list', { name: 'All the monsters' }).querySelectorAll('li');
-    expect(tiles).toHaveLength(54);
+    expect(tiles).toHaveLength(75);
     // The team and the box are owned; their earlier forms too.
     expect(within(book).getByRole('button', { name: 'Number 10, Plusplash, owned' })).toBeInTheDocument();
     expect(within(book).getByRole('button', { name: /Coinrock, owned/ })).toBeInTheDocument();
     // Everything else is a mystery, and its name is not given away.
     const unknown = within(book).getAllByRole('button', { name: /not met yet/ });
-    expect(unknown.length).toBe(54 - 4);
+    expect(unknown.length).toBe(75 - 4);
     expect(book.textContent).not.toMatch(/Emperor Quotient/);
     await user.click(unknown[0]);
     expect(within(book).getByText(/You have not met this monster yet/)).toBeInTheDocument();

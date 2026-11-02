@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
+import { nzDay } from '../../shared/monsters/world/battleCap';
+import { spottedNote } from '../../shared/monsters/world/weather';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
 import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
 import type { SeasonClock } from '../../shared/clans/season';
@@ -19,6 +21,7 @@ import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
 import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
+import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
 // The teacher pages and older tests still find these here.
@@ -42,13 +45,14 @@ const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
 
 /**
  * The games whose cards show: every game in GAMES, less those whose teacher switch is off (or still loading, so a card
- * never flashes up). Each game's switch hook is called on every render, in GAMES order, which never changes while the
- * page is open.
+ * never flashes up), and less the non-maths games once the class's row says they are off (they are on unless a teacher
+ * turned them off, so they show while it loads). Each game's switch hook is called on every render, in GAMES order, which
+ * never changes while the page is open.
  */
-function useShownGames(): GameDefinition[] {
+function useShownGames(nonMathsOpen: boolean | null): GameDefinition[] {
   const off = new Set<string>();
   for (const game of GAMES) if (game.useTeacherSwitch && game.useTeacherSwitch() !== true) off.add(game.id);
-  return GAMES.filter((game) => !off.has(game.id));
+  return GAMES.filter((game) => !off.has(game.id) && (nonMathsOpen !== false || game.group !== 'no-maths'));
 }
 
 /**
@@ -125,11 +129,17 @@ export function Dashboard() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';
-  const { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, failed } = useMyGames(meId);
+  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, failed, ...going } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
-  const shownGames = useShownGames();
+  const nonMathsOpen = useNonMathsGamesOpen();
+  const shownGames = useShownGames(nonMathsOpen);
+  // Chess and checkers, 101 and Power Clash games still going wait quietly while the non-maths games are off.
+  const nonMathsShut = nonMathsOpen === false;
+  const inProgress = nonMathsShut ? [] : going.inProgress;
+  const cardGoing = nonMathsShut ? [] : going.cardGoing;
+  const powerGoing = nonMathsShut ? [] : going.powerGoing;
   // Teachers see the season strips too, so they know what their class sees (James, 30 Oct 2026).
   const seasonShown = season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
   const lordSeasonShown = lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
@@ -139,7 +149,9 @@ export function Dashboard() {
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
 
-  const featuredGame = findGame(featured) ?? GAMES[0];
+  // The big Play button: a maths game while the class has the non-maths games off.
+  const featuredGame =
+    nonMathsOpen === false ? (shownGames.find((g) => g.Play) ?? GAMES[0]) : (findGame(featured) ?? GAMES[0]);
   const featuredLevel = BOT_LEVELS.find((l) => l.id === levelFor(featuredGame.id))!;
   // Training before games: the cards still open (to the "Training first" screen), but look resting until a session is done.
   const gate = useTrainingGate();
@@ -221,40 +233,45 @@ export function Dashboard() {
         </h2>
         {GAME_GROUPS.map((group) => {
           const groupGames = shownGames.filter((g) => g.group === group.group);
-          if (groupGames.length === 0) return null;
+          // Training sits under the non-maths games, and stays when they are switched off.
+          const training = group.group === 'no-maths' && trainingOn();
+          if (groupGames.length === 0 && !training) return null;
           return (
             <Fragment key={group.title}>
-              <div className={`game-group game-group--${group.group}`}>
-                <h3 className="game-group__label">
-                  <span>{group.title}</span>
-                </h3>
-                {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
-                    Dragon Maths', side by side on wide screens. */}
-                {group.group === 'complex-maths' && (seasonShown || lordSeasonShown) && (
-                  <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
-                    <Suspense fallback={null}>
-                      {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
-                      {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
-                    </Suspense>
+              {groupGames.length > 0 && (
+                <div className={`game-group game-group--${group.group}`}>
+                  <h3 className="game-group__label">
+                    <span>{group.title}</span>
+                  </h3>
+                  {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
+                      Dragon Maths', side by side on wide screens. */}
+                  {group.group === 'complex-maths' && (seasonShown || lordSeasonShown) && (
+                    <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
+                      <Suspense fallback={null}>
+                        {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
+                        {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
+                      </Suspense>
+                    </div>
+                  )}
+                  <div className="game-grid">
+                    {groupGames.map((game) => (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        level={levelFor(game.id)}
+                        moves={moves[game.id]}
+                        note={game.id === 'monsters' ? spottedNote(nzDay(Date.now())) : undefined}
+                        onLevelChange={(level) => {
+                          setLevels((prev) => ({ ...prev, [game.id]: level }));
+                          setFeatured(game.id);
+                        }}
+                      />
+                    ))}
                   </div>
-                )}
-                <div className="game-grid">
-                  {groupGames.map((game) => (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      level={levelFor(game.id)}
-                      moves={moves[game.id]}
-                      onLevelChange={(level) => {
-                        setLevels((prev) => ({ ...prev, [game.id]: level }));
-                        setFeatured(game.id);
-                      }}
-                    />
-                  ))}
                 </div>
-              </div>
+              )}
               {/* Training has a line of its own, under the non-maths games. */}
-              {group.group === 'no-maths' && trainingOn() && (
+              {training && (
                 <div className="game-group game-group--training">
                   <h3 className="game-group__label">
                     <span>Training</span>

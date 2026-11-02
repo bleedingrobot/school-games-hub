@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { AREA_LEVELS } from '../bands';
 import type { ItemId } from '../engine';
-import { FAMILIES, MONSTER_BOOK, speciesOf } from '../monsterBook';
+import { FAMILIES, MONSTER_BOOK, RARE_FAMILIES, speciesOf } from '../monsterBook';
 import { makeMonster, maxHpOf } from '../rules';
 import { TYPE_LABEL } from '../types';
 import { WORLD_MAPS } from '../maps';
 import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
+import { SPOT_HOMES } from './weather';
+import { questMarks } from './questWorld';
+import { fastTravel, worldPlaces } from './worldMap';
+import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
 import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
@@ -94,6 +98,32 @@ describe('the six areas, in order', () => {
       expect(m.isGrass.some(Boolean)).toBe(true);
       expect(m.far.some(Boolean) && m.far.some((f, i) => m.isGrass[i] && !f) && m.far.some((f, i) => m.isGrass[i] && f), `${a.name} has long grass in both halves`).toBe(true);
     }
+    // A new player sees the gold "!" over the Hermit in Kauri Bush (a quest to start), and over nobody once it's started.
+    const fresh = newWorld(opts, team(), 1);
+    expect([...questMarks(fresh, WORLD_MAPS['kauri-bush'])]).toEqual(['kauri-bush:Hermit']);
+    expect([...questMarks({ ...fresh, quest: { flags: [], bits: {}, quests: { kauri: { step: 0, n: 0 } }, eggs: [] } }, WORLD_MAPS['kauri-bush'])]).toEqual([]);
+    // The world map: 10 places; a new player has the town and Kauri Bush open, and the bonus areas are secret.
+    const places = worldPlaces(fresh, WORLD_MAPS);
+    expect(places.map((p) => p.open)).toEqual([true, true, false, false, false, false, false, false, false, false]);
+    expect(places.filter((p) => p.bonus).map((p) => p.name)).toEqual(['A secret place', 'A secret place', 'A secret place']);
+    expect(places[1].pins.map((p) => p.text)).toContain('Hermit needs your help');
+    expect(places[0].pins.map((p) => p.icon)).toEqual(expect.arrayContaining(['❤️', '🔧', '📋']));
+  });
+
+  it('fast travel: only to open places, free, and you land on a free tile beside the nurse', () => {
+    const fresh = at('harbour-town', 'start');
+    expect(fastTravel(fresh, 'shell-beach', WORLD_MAPS)).toBeUndefined(); // not open yet
+    expect(fastTravel(fresh, 'harbour-town', WORLD_MAPS)).toBeUndefined(); // already here
+    const bush = fastTravel(fresh, 'kauri-bush', WORLD_MAPS)!.state;
+    expect([bush.map, bush.steps, bush.beaten]).toEqual(['kauri-bush', fresh.steps, []]);
+    // With everything open, every place lands on a free tile next to its nurse (or a bonus place's entrance).
+    const all = { ...bush, badges: [...BADGE_ORDER], quest: { flags: GIANTS.map((g) => `woke:${g.id}`), bits: {}, quests: {}, eggs: [] } };
+    for (const p of worldPlaces(all, WORLD_MAPS).filter((x) => !x.here)) {
+      const s = fastTravel(all, p.id, WORLD_MAPS)!.state;
+      const m = WORLD_MAPS[s.map];
+      expect(isBlocked(m, s.x, s.y) || m.things.some((t) => t.x === s.x && t.y === s.y), p.id).toBe(false);
+      if (!p.bonus) expect(m.things.some((t) => t.kind === 'nurse' && Math.abs(t.x - s.x) + Math.abs(t.y - s.y) <= 2), p.id).toBe(true);
+    }
   });
 
   it('every area has a "chest" spot that is a free tile facing a chest, and the other test-page spots are free tiles too', () => {
@@ -150,6 +180,9 @@ describe('the six areas, in order', () => {
   });
 });
 
+/** The form a family should show at a level, worked out from the book's growth levels. */
+const stageAt = (family: string, level: number) => 1 + (FAMILIES[family]?.evolveAt ?? [RARE_FAMILIES[family].evolveAt]).filter((l) => level >= l).length;
+
 describe('all 18 families, all 54 monsters', () => {
   /** Every species that can turn up in the wild or on a trainer's team, and where. */
   function meetings() {
@@ -179,8 +212,18 @@ describe('all 18 families, all 54 monsters', () => {
         }
       }
     }
-    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id)).map((s) => s.id)).toEqual([]);
-    expect(reachable.size).toBe(54);
+    // The giants are woken, and the ultra rare ones come only from eggs; everything else is met on a map.
+    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id) && !RARE_FAMILIES[s.family]?.giant && s.rarity !== 'ultra').map((s) => s.id)).toEqual([]);
+    // The "spotted today" table (shown on the home page without the maps) matches the maps: every uncommon and rare
+    // family that can be spotted, its first area, and the places in that area it lives.
+    const spottable = MONSTER_BOOK.filter((s) => s.stage === 1 && (s.rarity === 'uncommon' || (s.rarity === 'rare' && !RARE_FAMILIES[s.family]?.giant))).map((s) => s.family);
+    expect(Object.keys(SPOT_HOMES).sort()).toEqual(spottable.sort());
+    for (const [family, home] of Object.entries(SPOT_HOMES)) {
+      const homes = Object.values(WORLD_MAPS).filter((m) => m.area > 0 && m.wild.includes(family));
+      const first = Math.min(...homes.map((m) => m.area));
+      expect(home.area, family).toBe(first);
+      expect(home.place.split(' and ').sort(), family).toEqual(homes.filter((m) => m.area === first).map((m) => m.name.replace(/^Area \d+: /, '')).sort());
+    }
   });
 
   it('forms match the levels: a wild family never shows a form its level has not reached', () => {
@@ -190,9 +233,7 @@ describe('all 18 families, all 54 monsters', () => {
         const [lo, hi] = wildLevels(m.area, far);
         for (let level = lo; level <= hi; level++) {
           for (const e of m.wild) {
-            const sp = speciesOf(wildSpecies(e, level));
-            const f = FAMILIES[e];
-            expect(sp.stage, `${e} at ${level}`).toBe(level >= f.evolveAt[1] ? 3 : level >= f.evolveAt[0] ? 2 : 1);
+            expect(speciesOf(wildSpecies(e, level)).stage, `${e} at ${level}`).toBe(stageAt(e, level));
           }
         }
       }
@@ -213,8 +254,7 @@ describe('all 18 families, all 54 monsters', () => {
           expect(mon.level, `${t.id} ${mon.species}`).toBeGreaterThanOrEqual(lo);
           expect(mon.level, `${t.id} ${mon.species}`).toBeLessThanOrEqual(t.badge ? hi + 2 : hi);
           const sp = speciesOf(mon.species);
-          const f = FAMILIES[sp.family];
-          expect(sp.stage, `${t.id} ${mon.species}`).toBe(mon.level >= f.evolveAt[1] ? 3 : mon.level >= f.evolveAt[0] ? 2 : 1);
+          expect(sp.stage, `${t.id} ${mon.species}`).toBe(stageAt(sp.family, mon.level));
         }
         if (t.badge) expect(Math.max(...t.team!.map((x) => x.level))).toBe(hi + 2);
       }
@@ -224,7 +264,7 @@ describe('all 18 families, all 54 monsters', () => {
   it('prints where each family lives (area names, first form to last)', () => {
     const met = meetings();
     const rows = Object.entries(FAMILIES).map(([family, f]) => {
-      const places = (stage: number) => [...(met.get(`${family}-${stage}`) ?? [])].filter((p) => p.startsWith('wild:')).map((p) => AREAS.find((a) => a.map === p.slice(5))!.area).sort().join(',') || '-';
+      const places = (stage: number) => [...(met.get(`${family}-${stage}`) ?? [])].filter((p) => p.startsWith('wild:')).map((p) => WORLD_MAPS[p.slice(5)].area).sort().join(',') || '-';
       return `${TYPE_LABEL[f.type]} ${f.names[0]}: ${[1, 2, 3].map((s) => `${f.names[s - 1]} areas ${places(s)}`).join(' | ')}`;
     });
     expect(rows).toHaveLength(18);
@@ -418,7 +458,7 @@ describe('the monster book', () => {
     expect(met.seen).toEqual(['digibud-1', 'divvy-1', 'multipup-1', 'plusplash-1']);
     expect(met.owned).toEqual(s.owned);
     expect(bookStatus(met, 'divvy-1')).toBe('seen');
-    expect(bookCounts(met)).toEqual({ owned: 2, seen: 4, total: 54 });
+    expect(bookCounts(met)).toEqual({ owned: 2, seen: 4, total: 75 });
     expect(meet(met, [makeMonster('divvy-1', 3)])).toBe(met); // nothing new: same state back
     expect(s.seen).toHaveLength(2);
   });

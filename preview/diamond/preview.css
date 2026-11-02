@@ -1,0 +1,6 @@
+html, body { margin: 0; height: 100%; background: #1c130d; }
+.ddp-tools { margin: 20px auto 0; background: #2a1d14; color: #fff; border: 1px solid #a08268; border-radius: 12px; padding: 4px 10px; max-width: min(340px, calc(100vw - 16px)); font: 14px system-ui, sans-serif; }
+.ddp-tools summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; }
+.ddp-tools p { margin: 4px 0; color: #e3d3c3; }
+.ddp-tools button { margin: 3px; min-height: 44px; padding: 2px 12px; border-radius: 8px; border: 1px solid #a08268; background: #3b2a1c; color: #fff; cursor: pointer; font: inherit; }
+.ddp-tools button:focus-visible { outline: 3px solid #fcd34d; outline-offset: 2px; }

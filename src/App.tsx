@@ -33,6 +33,7 @@ import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
 import { GameGate } from './training/TrainFirst';
+import { NonMathsGate } from './components/NonMathsGate';
 
 // Training has its own screens and styles, so it loads only when someone opens it.
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
@@ -112,10 +113,11 @@ export function AppRoutes() {
               </GameGate>
             }
           />
-          <Route path="play/:id" element={<FriendGamePage />} />
+          {/* Chess and checkers, 101 and Power Clash with classmates are non-maths games: closed while the class has them off. */}
+          <Route path="play/:id" element={<NonMathsGate><FriendGamePage /></NonMathsGate>} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
-          <Route path="card-game/:id" element={<CardGamePage />} />
-          <Route path="power-game/:id" element={<PowerGamePage />} />
+          <Route path="card-game/:id" element={<NonMathsGate><CardGamePage /></NonMathsGate>} />
+          <Route path="power-game/:id" element={<NonMathsGate><PowerGamePage /></NonMathsGate>} />
           <Route path="leaderboard" element={<Leaderboard />} />
           {/* Basic facts training: no address at all until it is switched on (training/switch.ts). */}
           {trainingOn() && (

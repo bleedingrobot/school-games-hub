@@ -10,8 +10,8 @@ import type { BattleReport } from '../save/check';
 export const BATTLES_PER_DAY = 12;
 
 /** A battle counts when it asked a maths question and wasn't in a Tower (the same rule as monster_counts_for_cap). */
-export const countsTowardCap = (battle: Pick<BattleReport, 'map' | 'steps'>) =>
-  !battle.map.startsWith('tower-') && battle.steps.some((s) => s.q !== undefined);
+export const countsTowardCap = (battle: Pick<BattleReport, 'map' | 'steps' | 'giant'>) =>
+  !battle.map.startsWith('tower-') && battle.giant === undefined && battle.steps.some((s) => s.q !== undefined);
 
 const NZ = new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' });
 

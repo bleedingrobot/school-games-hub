@@ -105,13 +105,16 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
   it('after a trade the picked numbers clear, so Buy max works again (it used to fail silently on an old "sell")', async () => {
     play();
     await market();
-    const row = () => screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/)) as HTMLElement;
+    // Water's row on whichever market step is showing (1 Sell or 2 Buy).
+    const row = () => screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^(Buy|Sell) one Water$/)) as HTMLElement;
     fireEvent.click(within(row()).getByLabelText('Buy one Water'));
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
     const skip = screen.queryByText('No thanks');
     if (skip) fireEvent.click(skip);
     await waitFor(() => expect(screen.getByLabelText('Water: none')).toBeTruthy());
-    // Sell the one Water, then buy as many as fit: both work straight after the first trade.
+    // Sell the one Water, then buy as many as fit: both work straight after the first trade. The market stays on
+    // 2 Buy after buying (so the Water isn't offered straight back), and empties back onto it after the sale.
+    fireEvent.click(screen.getByRole('button', { name: 'Sell' }));
     fireEvent.click(within(row()).getByLabelText('Sell all Water'));
     expect(screen.getByLabelText('Water: selling 1')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));

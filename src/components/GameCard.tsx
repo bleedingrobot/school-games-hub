@@ -15,12 +15,15 @@ export function GameCard({
   level,
   onLevelChange,
   moves,
+  note,
 }: {
   game: GameDefinition;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
   /** Today's daily allowance in this game, for games that have one. */
   moves?: CardMoves;
+  /** A line of news for today under the tagline (Maths Monsters' spotted monster). */
+  note?: string;
 }) {
   const { Icon } = game;
   const art = gameCardArt(game.id);
@@ -50,6 +53,7 @@ export function GameCard({
         <div className="game-card__text">
           <h3 id={`game-${game.id}-title`}>{game.name}</h3>
           <p>{game.tagline}</p>
+          {note && <p className="game-card__note">{note}</p>}
         </div>
         {moves && (
           <div className="game-card__moves" aria-label="Moves left today">

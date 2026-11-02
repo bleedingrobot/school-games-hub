@@ -11,8 +11,8 @@ const pic = vi.mocked(monsterPic);
 afterEach(() => pic.mockReset());
 
 describe('monster art', () => {
-  it('draws all 54 monsters with their name as the label', () => {
-    expect(MONSTER_BOOK).toHaveLength(54);
+  it('draws all 75 monsters with their name as the label', () => {
+    expect(MONSTER_BOOK).toHaveLength(75);
     for (const sp of MONSTER_BOOK) {
       const { container, unmount } = render(<MonsterArt species={sp.id} />);
       expect(screen.getByRole('img', { name: sp.name })).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe('monster art', () => {
       return out;
     };
     const pics = new Set(MONSTER_BOOK.map((s) => html(s.id)));
-    expect(pics.size).toBe(54);
+    expect(pics.size).toBe(75);
     expect(html('digibud-1', true)).not.toBe(html('digibud-1'));
     expect(html('digibud-1', true)).toContain('(shiny)');
   });
@@ -41,7 +41,7 @@ describe('monster art', () => {
       unmount();
       return n;
     };
-    for (const family of new Set(MONSTER_BOOK.map((s) => s.family))) {
+    for (const family of new Set(MONSTER_BOOK.filter((s) => s.rarity === 'common' || s.rarity === 'uncommon').map((s) => s.family))) {
       expect(parts(`${family}-3`), family).toBeGreaterThan(parts(`${family}-1`));
     }
   });

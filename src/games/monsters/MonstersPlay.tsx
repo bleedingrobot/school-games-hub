@@ -195,6 +195,8 @@ export function MonstersPlay() {
   if (!data.settings.enabled && !data.offline) return <p className="panel__empty">{WORDS.closed}</p>;
   // A new day (the game left open past midnight) starts again from nothing.
   const resting = battles.day === nzDay(Date.now()) && battles.today >= data.battles.perDay;
+  // Quests need today's day, the pupil, and the days of play the database has counted (0 until the Q.5 migration sends it).
+  const questOpts = { day: nzDay(Date.now()), player, playDays: data.playDays ?? 0 };
   if (!initial) {
     if (data.offline) {
       return (
@@ -227,6 +229,7 @@ export function MonstersPlay() {
         }}
         enabledTopics={data.settings.topics}
         packFor={packFor}
+        quest={questOpts}
       />
       {resting && (
         <p className="mp-play__note" role="status">

@@ -35,6 +35,8 @@ import marble from '../assets/home/marble.webp';
 import marbleSmall from '../assets/home/marble-small.webp';
 import trader from '../assets/home/trader.webp';
 import traderSmall from '../assets/home/trader-small.webp';
+import diamond from '../assets/home/diamond.webp';
+import diamondSmall from '../assets/home/diamond-small.webp';
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -62,6 +64,7 @@ const ART: Record<string, GameCardArt> = {
   'kingdom': { card: kingdom, small: kingdomSmall },
   'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
   'trader': { card: trader, small: traderSmall, focus: 'center 55%' },
+  'diamond': { card: diamond, small: diamondSmall, focus: 'center 80%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {

@@ -3,13 +3,13 @@
  * the path east in Kauri Bush while it still looked open), and the maps it makes are the maps in the game.
  */
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const written = vi.hoisted(() => new Map<string, string>());
 vi.mock('node:fs', async (original) => ({
   ...(await original<typeof import('node:fs')>()),
-  writeFileSync: (url: URL, text: string) => void written.set(String(url).split('/').pop()!, text),
+  // By full path: a map and its paint plan share a file name.
+  writeFileSync: (url: URL, text: string) => void written.set(url.pathname, text),
 }));
 
 // @ts-expect-error plain JavaScript, no types
@@ -80,10 +80,10 @@ describe('the maps in the game are what the map maker makes', () => {
     expect(written.size).toBeGreaterThanOrEqual(20);
   });
 
-  it('and the files in shared/monsters/maps are exactly those (a hand edit, or an old file, shows up here)', () => {
+  it('and the files in shared/monsters/maps and the paint plans are exactly those (a hand edit, or an old file, shows up here)', () => {
     for (const make of all) make();
-    for (const [file, text] of written) {
-      expect(readFileSync(resolve(process.cwd(), 'shared/monsters/maps', file), 'utf8'), file).toBe(text);
+    for (const [path, text] of written) {
+      expect(readFileSync(path, 'utf8'), path).toBe(text);
     }
   });
 });

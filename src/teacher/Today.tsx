@@ -1,6 +1,6 @@
 /**
  * Today (/teacher/:classId), the teacher's landing screen (docs/TEACHER-VIEW-PLAN.md, section 4.2): what needs the teacher, the
- * four class switches flipped mid-lesson, and this week's focus and counts. "This week" shows counts only, never names, so it is
+ * class switches flipped mid-lesson, and this week's focus and counts. "This week" shows counts only, never names, so it is
  * safe on a projector.
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import { fetchSkipMode, saveSkipMode } from '../data/questionSkips';
 import { fetchReactionsEnabled } from '../data/spaceGames';
 import { setMultiplayer, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
+import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
 import { LengthPicker } from '../maths/LengthPicker';
 import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
@@ -49,6 +50,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
   const reactions = useSetting(() => fetchReactionsEnabled(classId), [classId]);
   const training = useSetting(() => fetchTrainingFirst(classId), [classId], trainingOn());
   const skip = useSetting(() => fetchSkipMode(classId), [classId]);
+  const nonMaths = useSetting(() => fetchNonMathsGames(classId), [classId]);
   return (
     <section className="panel lesson-controls" aria-labelledby="lesson-title">
       <h2 id="lesson-title" className="panel__title">
@@ -68,6 +70,13 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           value={reactions.value}
           loadFailed={reactions.failed}
           save={(on) => setSpaceReactions(on, classId)}
+        />
+        <SettingToggle
+          label="Non-maths games"
+          about="Chess, checkers, 101 and Power Clash. Off hides them for this class, and games already going wait until it is back on. Teachers can still open them."
+          value={nonMaths.value}
+          loadFailed={nonMaths.failed}
+          save={(on) => saveNonMathsGames(on, classId)}
         />
         {trainingOn() && (
           <SettingToggle

@@ -3,6 +3,7 @@
  * its type's topic (section 4 of the plan), its badge is the type's name, and its Topic Tower is
  * two small rooms (a hall, then the top floor where the Tower trainer waits).
  */
+import type { Monster } from '../rules';
 import type { TypeId } from '../types';
 
 export interface AreaInfo {
@@ -30,3 +31,9 @@ export const AREAS: readonly AreaInfo[] = [
 export const BADGE_ORDER: readonly string[] = AREAS.map((a) => a.badge);
 
 export const areaInfo = (area: number) => AREAS[area - 1];
+
+/** Badges won before your lead monster walks behind you on the map (James: three quarters of the six, 3 Nov 2026). */
+export const FOLLOW_BADGES = 5;
+/** The monster that walks behind you: the first in your team, once you have FOLLOW_BADGES badges. */
+export const leadFollower = (state: { badges: readonly string[]; team: readonly Monster[] }): Monster | undefined =>
+  state.badges.length >= FOLLOW_BADGES ? state.team[0] : undefined;

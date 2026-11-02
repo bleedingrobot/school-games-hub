@@ -27,7 +27,7 @@ export function kauriBush() {
   m.gate('area-2-gate', 21, 1, 'leaf', 'A rope fence blocks the path north. A sign says: "Shell Beach. Only for trainers with a Leaf badge!"');
   m.warp('to-shell-beach', 21, 0, 'shell-beach', 21, 18, 'up');
   // Signs, people, a trainer and two chests.
-  m.sign('bush-sign', 10, 18, 'Kauri Bush. Wild monsters hide in the long grass. Walk in it and see who jumps out!');
+  m.welcome('bush-sign', 10, 18, 'Kauri Bush. Wild monsters hide in the long grass. Walk in it and see who jumps out!');
   m.sign('trail-sign', 16, 10, 'North: the Leaf Tower and Shell Beach. South: Harbour Town.');
   m.sign('west-sign', 4, 14, 'West trail: lots of long grass. Be ready!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Pania will heal your team for free.');
@@ -48,6 +48,11 @@ export function kauriBush() {
   m.spot('chest', 6, 11, 'down');
   m.spot('tower-door', 14, 6, 'up');
   m.spot('gate', 21, 2, 'up');
+  m.spot('old-kauri', 10, 10, 'up'); // where leafy eggs hatch
+  // The Hermit's lost seed pods, hidden in three trees.
+  m.pod('Seed pod 1', 'kauri-seeds', 13, 9, 'You search the leaves…');
+  m.pod('Seed pod 2', 'kauri-seeds', 8, 13, 'You search the bush…');
+  m.pod('Seed pod 3', 'kauri-seeds', 21, 11, 'You search the branches…');
   m.save();
 
   towerRooms({

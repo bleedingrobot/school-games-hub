@@ -16,7 +16,7 @@
  */
 import type { TopicId } from '../maths/skillPacks';
 import { bandFor, quickSeconds } from './bands';
-import { speciesOf, type Attack } from './monsterBook';
+import { attackType, speciesOf, type Attack } from './monsterBook';
 import {
   catchChance, damageFor, expYield, gainExp, makeMonster, maxHpOf, TUNING,
   type AnswerResult, type Effect, type Monster,
@@ -118,9 +118,14 @@ export const activeMonster = (s: BattleState) => s.team[s.active];
 export const activeFoe = (s: BattleState) => s.foes[s.foeActive];
 
 /** The topic and band the next question for this action should come from. */
-export function questionFor(state: BattleState, action: Pick<BattleAction, 'kind'>): { topic: TopicId; band: number } | null {
+export function questionFor(state: BattleState, action: Pick<BattleAction, 'kind'> & { attack?: number }): { topic: TopicId; band: number } | null {
   let topic: TopicId;
-  if (action.kind === 'fight') topic = TYPE_TOPIC[speciesOf(activeMonster(state).species).type];
+  if (action.kind === 'fight') {
+    // An ultra rare's attacks each have their own type; everyone else asks from their own type.
+    const species = speciesOf(activeMonster(state).species);
+    const attack = action.attack === undefined ? undefined : species.attacks[action.attack];
+    topic = TYPE_TOPIC[attack ? attackType(species, attack) : species.type];
+  }
   else if (action.kind === 'catch') topic = TYPE_TOPIC[speciesOf(activeFoe(state).species).type];
   else return null;
   return { topic, band: bandFor(topic, state.area, state.far) };
@@ -144,7 +149,7 @@ export function foeAttackIndex(state: BattleState, random: () => number): number
   const species = speciesOf(foe.species);
   const target = speciesOf(activeMonster(state).species);
   const best = species.attacks.reduce((bi, a, i, all) => {
-    const score = (x: Attack) => x.power * typeMultiplier(species.type, target.type);
+    const score = (x: Attack) => x.power * typeMultiplier(attackType(species, x), target.type);
     return score(a) > score(all[bi]) ? i : bi;
   }, 0);
   // Always draw, so the number of random draws never depends on who is fighting.
@@ -181,7 +186,7 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
       if (!attack) refuse('That monster has no such attack');
       if (!['right', 'quick-right', 'wrong'].includes(action.answer)) refuse('Unknown answer result');
       s.questions += 1;
-      const hit = damageFor(me(), attack.power, foe(), action.answer, random());
+      const hit = damageFor(me(), attack.power, foe(), action.answer, random(), attackType(speciesOf(me().species), attack));
       foe().hp = Math.max(0, foe().hp - hit.damage);
       events.push({
         kind: 'attack', side: 'you', monster: me().species, attack: attack.name, anim: attack.anim,
@@ -258,7 +263,7 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
   if (foeActs && s.phase === 'choose') {
     const f = foe();
     const attack = speciesOf(f.species).attacks[foeAttackIndex(s, random)];
-    const hit = damageFor(f, attack.power, me(), undefined, random());
+    const hit = damageFor(f, attack.power, me(), undefined, random(), attackType(speciesOf(f.species), attack));
     me().hp = Math.max(0, me().hp - hit.damage);
     events.push({ kind: 'attack', side: 'foe', monster: f.species, attack: attack.name, anim: attack.anim, damage: hit.damage, effect: hit.effect });
     if (me().hp <= 0) {

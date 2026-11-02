@@ -20,6 +20,7 @@
  */
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { checkSave, type SaveItem, type Stored, type SaveSummary } from '../../../shared/monsters/save/check';
+import { nzDay } from '../../../shared/monsters/world/battleCap';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -134,7 +135,7 @@ export function makeHandler(services: Services) {
         results.push({ type: 'save', status: 'duplicate', version: first.value?.version ?? 0, points: null });
         continue;
       }
-      const checked = checkSave(prev, raw, services.now());
+      const checked = checkSave(prev, raw, services.now(), player);
       if (!checked.ok) {
         refused = checked.problem;
         await refuse(player, checked.problem, raw, services);
@@ -179,7 +180,10 @@ export function makeHandler(services: Services) {
         continue;
       }
       results.push({ type: 'save', ...saved.value });
-      prev = { world: item.world, at: item.at };
+      // The database counts a day of play the first time a save with answers arrives on a new NZ day; the next save is checked with that count.
+      const today = nzDay(services.now());
+      const played = summary.questions > 0 && prev?.playDay !== today;
+      prev = { world: item.world, at: item.at, playDays: (prev?.playDays ?? 0) + (played ? 1 : 0), playDay: played ? today : prev?.playDay };
     }
     // New times-table, adding or division answers can move the student on the ladder (late or missed is harmless).
     if (added && services.syncPlace) await services.syncPlace(player);

@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1, H.2 and H.3 built 1 Nov 2026 on branch `trader-hints` (sections 12 to 14); not merged or live. H.4 and H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14). H.4 and H.5 not started.** The `trader-hints` branch is finished: start H.4 on a new branch from `main`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -264,7 +264,7 @@ Each ends with tests passing, a results section here, a commit, and a stop for J
 
 ## 12. Stage H.1 results (1 Nov 2026): Bolt's next step and "Show me"
 
-Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. The name "Bolt" is one line (`COACH_NAME` in `text.ts`) in case James picks another (question 1).
+Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. The name "Bolt" is one line (`COACH_NAME` in `text.ts`) in case James picks another (question 1).
 
 ### What's there
 | Where | What |
@@ -300,7 +300,7 @@ Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **N
 
 ## 13. Stage H.2 results (1 Nov 2026): First Flight
 
-Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files.
+Built on branch `trader-hints`. **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files.
 
 ### What's there
 | Where | What |
@@ -333,7 +333,7 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 
 ## 14. Stage H.3 results (1 Nov 2026): first-time tips and help with choices
 
-Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. Bolt never answers a maths question: his tips and sums are about trading only.
+Built on branch `trader-hints`. **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. Bolt never answers a maths question: his tips and sums are about trading only.
 
 ### What's there
 | Where | What |
@@ -378,3 +378,13 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 ### Merging (1 Nov 2026)
 James asked for H.1 to H.3 to be pushed and merged. Pull request #123 (branch `trader-hints` into `main`) was opened with auto-merge on, so it merges once the checks pass; "Test and publish" then puts it live. Screen code only: no migration, no function deploy. Every helper shows for every pupil until H.4 adds help levels. Rollback: revert the merge.
 
+
+## 15. Market steps and trade bar (3 Nov 2026)
+James: pupils found the market confusing and had to scroll down past all ten goods to find Trade. He picked two fixes from a brainstorm: a trade bar that stays on screen, and splitting the market into two steps.
+- **1 Sell, 2 Buy.** Two big step buttons at the top of the market. Step 1 lists only what's in the hold, with the price the planet pays; step 2 lists only what this planet sells, with its price and stock ("Not sold here: …" underneath). In each step + means one more of that step's action and − one fewer, so there's no negative "sell" number any more. A good being sold in step 1 shows "Selling n in step 1" on step 2.
+- **Which step opens:** landing opens 1 Sell if the hold has anything this planet buys, otherwise 2 Buy. After a trade the market stays on its step (so what was just bought isn't offered straight back), except an empty step 1 moves on to 2 Buy. Picks carry across steps, so one Trade can sell and buy together.
+- **Trade bar:** stuck to the bottom of the scrolling screen. It says what's picked in words ("Sell 2 Medicine, then buy 10 Food."), spend, earn, credits after, holds after, Bolt's "sell there instead?" warnings and any "can't do that" message, then Trade, Next: 2. Buy (on step 1) and Clear.
+- **Bolt:** First Flight and "Show me" open the step that has the button they mean (Sell all is on step 1, Buy max on step 2) before lighting it, through the panel's new `want` prop. Lit buttons scroll clear of the bar.
+- **Tests:** the one market test that looked for a row by its "Buy one" button now finds either step's row and presses 1 Sell. No new tests. All 91 Star Trader screen tests pass.
+- **Checked in the preview** at 800 × 600 and 390 × 844: the whole First Flight, the step after buying and after selling everything, and Show me from the wrong step.
+- Not tried by a child yet. Not merged or live.

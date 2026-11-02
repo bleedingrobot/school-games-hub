@@ -18,18 +18,19 @@ const setup = (over: Partial<BattleSetup> = {}): BattleSetup => ({
 });
 
 describe('monster book', () => {
-  it('has 18 families, 54 entries, three per type', () => {
+  it('has 18 families plus the rare ones, 75 entries, a rare family of every type', () => {
     expect(Object.keys(FAMILIES)).toHaveLength(18);
-    expect(MONSTER_BOOK).toHaveLength(54);
-    for (const t of TYPES) expect(MONSTER_BOOK.filter((s) => s.type === t && s.stage === 1)).toHaveLength(3);
+    expect(MONSTER_BOOK).toHaveLength(75);
+    for (const t of TYPES) expect(MONSTER_BOOK.filter((s) => s.type === t && s.stage === 1 && s.rarity !== 'rare' && s.rarity !== 'ultra')).toHaveLength(3);
+    for (const t of TYPES) expect(MONSTER_BOOK.some((s) => s.type === t && s.rarity === 'rare')).toBe(true);
   });
   it('has unique ids and names, and evolutions that point at the next form', () => {
-    expect(new Set(MONSTER_BOOK.map((s) => s.id)).size).toBe(54);
-    expect(new Set(MONSTER_BOOK.map((s) => s.name)).size).toBe(54);
+    expect(new Set(MONSTER_BOOK.map((s) => s.id)).size).toBe(75);
+    expect(new Set(MONSTER_BOOK.map((s) => s.name)).size).toBe(75);
     for (const s of MONSTER_BOOK) {
-      if (s.stage < 3) expect(speciesOf(s.evolvesTo!).stage).toBe(s.stage + 1);
+      if (!s.final) expect(speciesOf(s.evolvesTo!).stage).toBe(s.stage + 1);
       else expect(s.evolvesTo).toBeUndefined();
-      expect(s.attacks.length).toBe(s.stage + 1);
+      expect(s.attacks.length).toBe(s.final ? 4 : s.stage + 1);
     }
   });
 });
