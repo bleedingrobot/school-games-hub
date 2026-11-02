@@ -30,7 +30,7 @@ export function crystalWords(amount: number): string {
 export const KIND_JOB: Record<PlotKind, string> = {
   farm: 'crops for coins',
   mine: 'the steady coin-maker',
-  dock: 'coins, and a sky-boat for races',
+  dock: '+1 sky-boat: a little faster in Sky Races',
   house: 'room for islanders to move in',
   workshop: 'slowly makes sky crystals',
   library: 'a pretty building that earns well',
@@ -51,7 +51,7 @@ export function makes(island: Island, spot: number): string {
     case 'house':
       return `${coins} a turn, and room for ${HOUSE_ROOM * here.level} islanders`;
     case 'dock':
-      return `${coins} a turn, and ${plural(here.level, 'sky-boat')} for races`;
+      return `${coins} a turn, and +${plural(here.level, 'sky-boat')}: a little faster in Sky Races`;
     case 'workshop':
       return `${coins} and ${crystalWords(WORKSHOP_CRYSTALS * here.level)} a turn`;
     default:

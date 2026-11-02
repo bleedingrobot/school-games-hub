@@ -35,7 +35,7 @@ export function HowToPlayBody() {
         <li><strong>Farm</strong> ({BUILD_COINS.farm} coins): {COINS.farm} coins a turn.</li>
         <li><strong>Mine</strong> ({BUILD_COINS.mine} coins): {COINS.mine} coins a turn.</li>
         <li><strong>House</strong> ({BUILD_COINS.house} coins): {COINS.house} coins a turn, and room for {HOUSE_ROOM} islanders.</li>
-        <li><strong>Dock</strong> ({BUILD_COINS.dock} coins): {COINS.dock} coins a turn, and a sky-boat for races.</li>
+        <li><strong>Dock</strong> ({BUILD_COINS.dock} coins): {COINS.dock} coins a turn, and +1 sky-boat, so your boat is a little faster in Sky Races. Each Dock level adds a sky-boat; each new one helps a bit less than the last.</li>
         <li><strong>Workshop</strong> ({BUILD_COINS.workshop} coins): {COINS.workshop} coins and {crystalWords(0.25)} a turn.</li>
         <li><strong>Library</strong> ({BUILD_COINS.library} coins): {COINS.library} coins a turn.</li>
       </ul>

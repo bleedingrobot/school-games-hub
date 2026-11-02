@@ -22,10 +22,10 @@ const STRETCHES = RACE_QUESTIONS + 1;
 
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-function Working({ who, speed, home }: { who: string; speed: Speed; home: boolean }) {
+function Working({ who, speed, boats, home }: { who: string; speed: Speed; boats: number; home: boolean }) {
   const parts = [
     `${RACE_BASE} to start`,
-    `${n(speed.boats)} from sky-boats`,
+    `${n(speed.boats)} from ${plural(boats, 'sky-boat')}`,
     speed.sails ? `${n(speed.sails)} from Sail flags` : '',
     speed.breeze ? `${n(speed.breeze)} from a warm breeze` : '',
     speed.wind ? `${n(speed.wind)} from ${home ? 'the home wind' : 'gusts'}` : '',
@@ -188,8 +188,8 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
             </p>
             <button type="button" className="button button--primary si-race__go" onClick={() => onDone(island)}>{backLabel}</button>
           </div>
-          <Working who="Your boat" speed={result.you} home={false} />
-          <Working who="The Gull Riders" speed={result.them} home />
+          <Working who="Your boat" speed={result.you} boats={race?.you.boats ?? 0} home={false} />
+          <Working who="The Gull Riders" speed={result.them} boats={race?.them.boats ?? 0} home />
         </div>
       )}
       {race && next && asking && (
