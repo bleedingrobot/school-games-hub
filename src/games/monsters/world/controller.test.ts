@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { WORLD_MAPS } from '../../../../shared/monsters/maps';
 import { makeMonster } from '../../../../shared/monsters/rules';
+import { leadFollower } from '../../../../shared/monsters/world/areas';
 import type { Dir, Thing, WorldState } from '../../../../shared/monsters/world/types';
 import { newWorld, type InteractOutcome, type WorldOptions } from '../../../../shared/monsters/world/world';
 import { TIMING, WalkController } from './controller';
@@ -61,6 +62,19 @@ describe('walking over time', () => {
     expect(v.x).toBeGreaterThan(c.state.x);
     expect(v.x).toBeLessThan(11);
     c.release('left');
+  });
+
+  it('your lead monster walks one tile behind you, and only once you have 5 badges', () => {
+    const { c, run } = make(at('harbour-town', 'start', { x: 11, y: 13, facing: 'left' }));
+    expect(c.view().follower).toBeNull(); // nobody behind you before your first step
+    c.press('left', 0);
+    run(TIMING.step * 2 + 40);
+    c.release('left');
+    run(TIMING.step);
+    const v = c.view();
+    expect(v.follower).toEqual({ x: c.state.x + 1, y: 13, facing: 'left' }); // on the tile you just left, walking your way
+    expect(leadFollower({ badges: ['leaf', 'water', 'fire', 'ice'], team: team() })).toBeUndefined();
+    expect(leadFollower({ badges: ['leaf', 'water', 'fire', 'ice', 'spark'], team: team() })?.species).toBe('plusplash-1');
   });
 
   it('is blocked by a wall, and stands still', () => {

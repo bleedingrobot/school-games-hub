@@ -5,7 +5,8 @@
  */
 import { cameraFor } from '../../../../shared/monsters/world/walking';
 import type { GameMap } from '../../../../shared/monsters/world/types';
-import { DEFAULT_LOOK, mapPic, propPic, slug, walkerPic } from '../art/painted';
+import { leadFollower } from '../../../../shared/monsters/world/areas';
+import { DEFAULT_LOOK, mapPic, monsterPic, propPic, slug, walkerPic } from '../art/painted';
 import type { WalkView } from './controller';
 import { TILE, type TileCache } from './tiles';
 
@@ -115,7 +116,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   // People, back to front.
   const bob = view.walking && Math.floor(now / 100) % 2 ? -S : 0;
   // A painted walker (taller than a tile, feet on its tile) when there is one, else the Tiny Dungeon sprite.
-  const people: { x: number; y: number; img: HTMLCanvasElement | null; painted?: HTMLImageElement; bob: number; id: string }[] = [];
+  const people: { x: number; y: number; img: HTMLCanvasElement | null; painted?: HTMLImageElement; bob: number; id: string; monster?: boolean }[] = [];
   for (const t of map.things) {
     if (t.sprite === undefined) continue;
     const a = view.actors.get(t.id);
@@ -123,13 +124,18 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
     people.push({ id: t.id, x: a?.x ?? t.x, y: a?.y ?? t.y, img: cache.person(t.sprite, facing), painted: ready(walkerPic(slug(t.name), facing)), bob: 0 });
   }
   const me = ready(walkerPic(view.state.look ?? DEFAULT_LOOK, view.state.facing));
+  // Your lead monster walks behind you once you have enough badges (drawn first, so you stand in front on the same tile).
+  const lead = view.follower && leadFollower(view.state);
+  const leadPic = lead && ready(monsterPic(lead.species, lead.shiny, true));
+  if (view.follower && leadPic) people.push({ id: 'lead', x: view.follower.x, y: view.follower.y, img: null, painted: leadPic, bob, monster: true });
   people.push({ id: 'you', x: view.x, y: view.y, img: cache.person(PLAYER_SPRITE, view.state.facing), painted: me, bob });
-  people.sort((a, b) => a.y - b.y);
+  people.sort((a, b) => a.y - b.y || (a.monster ? -1 : b.monster ? 1 : 0));
   for (const p of people) {
     const px = Math.round(p.x * TILE * S - offX);
     const py = Math.round(p.y * TILE * S - offY + p.bob);
     if (p.painted) {
-      const h = WALKER_TILES * TILE * S;
+      // A monster is about a tile tall; a person is taller than a tile, feet on their tile.
+      const h = (p.monster ? 1.1 : WALKER_TILES) * TILE * S;
       const w = (h * p.painted.naturalWidth) / p.painted.naturalHeight;
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(p.painted, px + (TILE * S - w) / 2, py + TILE * S - h, w, h);

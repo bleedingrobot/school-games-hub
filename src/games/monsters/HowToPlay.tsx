@@ -5,7 +5,7 @@
  * can jump between them. Points are explained on the hub's "How points work" page.
  */
 import { TOPICS } from '../../../shared/maths/skillPacks';
-import { AREAS } from '../../../shared/monsters/world/areas';
+import { AREAS, FOLLOW_BADGES } from '../../../shared/monsters/world/areas';
 import { BATTLES_PER_DAY } from '../../../shared/monsters/world/battleCap';
 import { REPEL_STEPS } from '../../../shared/monsters/world/rewards';
 import { MAX_TEAM } from '../../../shared/monsters/engine';
@@ -88,6 +88,7 @@ export function HowToPlayBody() {
         <p>
           There are {AREAS.length} places to explore: {AREAS.map((a) => a.name).join(', ')}. Each has a Tower with trainers inside. Beat the top trainer to win that area’s badge, and the next place opens.
           Each tower asks the maths of its type.
+          Win {FOLLOW_BADGES} badges and the first monster in your team walks behind you on the map.
         </p>
       </section>
 
