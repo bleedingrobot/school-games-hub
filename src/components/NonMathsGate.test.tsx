@@ -36,14 +36,13 @@ describe('the non-maths games gate', () => {
     expect(screen.queryByText('The chess board')).not.toBeInTheDocument();
   });
 
-  it('waits quietly while the setting loads', async () => {
+  it('shows the game while the setting loads, and closes it once the setting says off', async () => {
     let answer: (row: Record<string, unknown>) => void = () => {};
     vi.mocked(classSettings.readSettings).mockReturnValue(new Promise((ok) => (answer = ok)));
     show('student');
-    expect(screen.getByRole('status')).toHaveTextContent('Loading');
-    expect(screen.queryByText('The chess board')).not.toBeInTheDocument();
-    answer({ non_maths_games: true });
-    expect(await screen.findByText('The chess board')).toBeInTheDocument();
+    expect(screen.getByText('The chess board')).toBeInTheDocument();
+    answer({ non_maths_games: false });
+    expect(await screen.findByRole('heading', { name: 'Maths games only for now' })).toBeInTheDocument();
   });
 
   it('shows the game when the switch is on', async () => {
