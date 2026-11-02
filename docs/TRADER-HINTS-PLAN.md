@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14); market steps LIVE 3 Nov 2026 (#142, section 15). H.4 built on branch `trader-hints` 3 Nov 2026, not merged yet (section 16). H.5 not started.** Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14); market steps LIVE 3 Nov 2026 (#142, section 15). H.4 LIVE 3 Nov 2026 (#144, section 16). H.5 not started.** Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -390,7 +390,7 @@ James: pupils found the market confusing and had to scroll down past all ten goo
 - Not tried by a child yet. **Merged and live 3 Nov 2026 (#142).**
 
 ## 16. Stage H.4 results (3 Nov 2026): help levels, Bolt's help panel, accessibility pass
-Built on branch `trader-hints` (merged up to `main` after #142). Only files in `src/games/trader/` changed: no server code, no migration, no shared files. **Not merged or live yet.**
+Built on branch `trader-hints` (merged up to `main` after #142). Only files in `src/games/trader/` changed: no server code, no migration, no shared files. **Live since 3 Nov 2026 (#144).**
 
 ### What's there
 | Where | What |
@@ -435,4 +435,7 @@ Built on branch `trader-hints` (merged up to `main` after #142). Only files in `
 ### Not done / untested
 - No keyboard-only test of the whole First Flight (each step's button and Show me are in the tab order and Show me moves focus, as since H.1).
 - The shipyard "Ask Bolt" and the bank "Ask Bolt" are covered by the code path the fight test uses, not by their own tests.
-- Not tried by a child, or on a real Chromebook or iPad. Not merged or live.
+- Not tried by a child, or on a real Chromebook or iPad.
+
+### Went live (3 Nov 2026)
+James: "Yes, put it live". Pull request #144 merged with auto-merge once its checks passed (9:39am NZ); "Test and publish" ran green and published the site. Screen code only: no migration, no function deploy. Rollback: revert the merge, or make `autoLevel` in `coach/level.ts` return `'off'`. Next: H.5 (a try with James and a few pupils), and James's answers to questions 2 and 3 of section 11.
