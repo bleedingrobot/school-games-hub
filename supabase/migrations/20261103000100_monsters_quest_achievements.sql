@@ -151,7 +151,7 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
 -- 3. The dashboard egg line
 -- ---------------------------------------------------------------------------
 
-create function pg_temp.edit_function(sig text, edits text[][])
+create or replace function pg_temp.edit_function(sig text, edits text[][])
 returns void
 language plpgsql
 as $$
