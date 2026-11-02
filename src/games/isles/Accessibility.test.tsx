@@ -51,12 +51,12 @@ describe('movement and touch', () => {
   });
 
   it('never sets a button or control smaller than 44px', () => {
-    // Badges and drawn shapes inside a button aren't targets themselves.
+    // Badges and drawn shapes inside a button aren't targets themselves, nor are decorations and walkers.
     for (const m of css.matchAll(/([^{}]+)\{[^}]*?min-(?:height|width):\s*(\d+)px/g)) {
-      if (/__(count|drawn)|si-isle__keeper|si-boat/.test(m[1])) continue;
+      if (/__(count|drawn)|si-isle__keeper|si-boat|si-decor|si-walker/.test(m[1])) continue;
       expect(Number(m[2]), m[1].trim()).toBeGreaterThanOrEqual(44);
     }
-    for (const control of ['.si-spot {', '.si-tax__option {', '.si-more__spot {', '.si-drift {', '.si-slider input {']) {
+    for (const control of ['.si-spot {', '.si-place {', '.si-more__spot {', '.si-drift {']) {
       expect(css.slice(css.indexOf(control)).split('}')[0], control).toMatch(/min-height: 44px/);
     }
   });
@@ -71,67 +71,62 @@ describe('keyboard and screen readers', () => {
     await u.click(screen.getByRole('radio', { name: 'Sky Keeper 4' }));
     await u.click(screen.getByRole('button', { name: 'This is my keeper' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
-    for (const [open, heading] of [['Upgrades', 'Upgrades'], ['How to play', 'How to play']]) {
+    for (const [open, heading] of [['Decorations', 'Decorations'], ['How to play', 'How to play']]) {
       await u.click(screen.getByRole('button', { name: open }));
       expect(screen.getByRole('heading', { name: heading, level: 2 }), open).toHaveFocus();
       await u.click(screen.getByRole('button', { name: 'Back' }));
       expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus();
     }
-    // A turn, by keyboard: the same 11 steps, each with its heading focused and "Step n of 11" at the top. Every
-    // spot has a name, a step that can't happen says why and has a working Next, and End turn brings the island back
-    // with one turn fewer.
+    // A turn, by keyboard: the same 4 steps, each with its heading focused and "Step n of 4" at the top. Every spot
+    // has a name, a choice that can't be made says why, and End turn brings the island back with one turn fewer.
     expect(screen.getByRole('button', { name: 'Spot 6: Empty spot' })).toBeInTheDocument();
     screen.getByRole('button', { name: 'Play a turn' }).focus();
     await u.keyboard('{Enter}');
     const at = (n: number, heading: string | RegExp) => {
-      expect(screen.getByRole('img', { name: new RegExp(`^Step ${n} of 11`) })).toBeInTheDocument();
+      expect(screen.getByRole('img', { name: new RegExp(`^Step ${n} of 4`) })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: heading, level: 3 })).toHaveFocus();
     };
     const press = async (name: string | RegExp) => {
       screen.getByRole('button', { name }).focus();
       await u.keyboard('{Enter}');
     };
-    at(1, 'Island report');
-    await press('Start my turn');
     await u.click(await screen.findByRole('button', { name: 'Skip' }));
-    await waitFor(() => at(3, 'Collect and feed'));
+    await waitFor(() => at(2, 'Collect'));
+    expect(screen.getByText(/^Coins: .* = \d+ coins$/)).toBeInTheDocument();
     await press('Next');
-    // Step 4 can't happen yet (land costs 85 coins a spot): greyed, with the numbers, then Next.
-    at(4, 'Land');
-    expect(screen.getByRole('button', { name: 'Anchor it' })).toBeDisabled();
-    expect(screen.getByText(/^Needs 510 coins\. You have \d+\.$/)).toBeInTheDocument();
+    // Land costs 300 coins, so it's greyed, with the numbers.
+    at(3, 'Build');
+    expect(screen.getByRole('button', { name: /^Anchor a chunk of land/ })).toBeDisabled();
+    expect(screen.getByText(/^Needs 300 coins\. You have \d+\.$/)).toBeInTheDocument();
     // Back takes the pupil to the step before; spots can only be tapped on the Build step.
     await press('Back');
-    at(3, 'Collect and feed');
-    await press('Next');
-    at(4, 'Land');
+    at(2, 'Collect');
     expect(screen.queryByRole('button', { name: 'Spot 6: Empty spot' })).not.toBeInTheDocument();
     await press('Next');
-    at(5, 'Build');
+    at(3, 'Build');
     await press('Spot 6: Empty spot');
-    at(5, 'Spot 6: Empty spot');
+    at(3, 'Spot 6: Empty spot');
     await press(/^Farm: 25 coins/);
-    at(5, 'Build another?');
-    await press('No, thanks');
-    at(6, 'Tax');
-    expect(screen.getByRole('radio', { name: /^Fair/ })).toHaveAttribute('aria-checked', 'true');
-    await press('Next');
-    at(7, 'Workshops');
-    expect(screen.getByText(/You have no Workshop yet/)).toBeInTheDocument();
-    await press('Next');
-    at(8, 'Festival');
-    await press('Not this turn');
-    at(9, 'Big projects');
-    await press('Next');
-    at(10, 'Market');
-    expect(screen.getByRole('button', { name: 'Market' })).toBeDisabled();
-    await press('Next');
-    at(11, 'Check and end');
+    at(3, 'Build more?');
+    // A decoration: chosen on the shelf, then put on a numbered place.
+    await press('Yes, build more');
+    at(3, 'Build');
+    await press(/^Decorate/);
+    at(3, 'Decorate');
+    screen.getAllByRole('button', { name: 'Put one up' })[0].focus();
+    await u.keyboard('{Enter}');
+    at(3, 'Where should it go?');
+    await press('Place 1');
+    at(3, 'Build more?');
+    await press('Done building');
+    at(4, 'Race or rest');
     expect(screen.getByText('Build a Farm on spot 6')).toBeInTheDocument();
+    expect(screen.getByText('Put up Flower beds')).toBeInTheDocument();
     await press('End turn');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     expect(screen.getByRole('img', { name: '5 turns left today' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Flower beds' })).toBeInTheDocument();
 
     // A Sky Race by keyboard, with less motion asked for (each stretch jumps to its stop). The questions come during
     // the race, one at each stop, and focus follows each new heading: the start, each stretch, the result.

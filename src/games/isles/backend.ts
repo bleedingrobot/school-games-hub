@@ -2,7 +2,7 @@
  * How Sky Isles' screens talk to a server: the school's `isles` function (src/data/isles.ts) or the browser-only trial
  * (trialBackend.ts). Both answer the same requests (shared/isles/server.ts), so the screens can't tell them apart.
  */
-import type { Island, Prices, TurnReport } from '../../../shared/isles/engine';
+import type { Island, TurnReport } from '../../../shared/isles/engine';
 import type { RaceResult, Racer, RaceSoFar } from '../../../shared/isles/race';
 import type { ShownQuestion } from '../../../shared/isles/server';
 
@@ -34,7 +34,7 @@ export interface PublicRace {
   /** An open race so far, up to the next stop (from the server). */
   soFar?: RaceSoFar;
   result?: RaceResult;
-  prize?: { coins: number; goods: number };
+  prize?: { coins: number; crystals: number };
 }
 
 /** What `load` and `turn` send back. */
@@ -46,7 +46,6 @@ export interface IslandView {
   guide: { done: boolean; show: boolean };
   keeper: string | null;
   races: boolean;
-  prices: Prices;
   openRace?: PublicRace | null;
   report?: TurnReport;
   already?: boolean;

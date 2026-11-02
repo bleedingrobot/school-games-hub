@@ -24,7 +24,7 @@
 
 ### 1. The sky pilot's question
 
-A right answer gives a **fair wind**: everything collected this turn is ×1.15. A wrong answer shows the right one and changes nothing else.
+A right answer gives a **fair wind**: 15% extra coins on top of what the buildings make (rounded down), and Workshop crystals ×1.15. A wrong answer shows the right one and changes nothing else. (Stage C.3 put the wind on the coin total, so the collect sum reads "27 + 4 extra = 31"; the pace didn't move.)
 
 ### 2. Collect
 

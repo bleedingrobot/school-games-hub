@@ -5,7 +5,7 @@
  *
  * Vite turns each file into its own URL, and the browser only downloads a picture when a screen shows it.
  */
-import { BASES, KEEPERS, type PlotOrEmpty } from '../../../shared/isles/config';
+import { BASES, GARDEN_PLACES, KEEPERS, type DecorationId, type PlotOrEmpty } from '../../../shared/isles/config';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
@@ -32,6 +32,36 @@ export const SPOTS: [number, number][][] = [
   [[35, 48], [64, 48], [17, 35], [82, 35], [50, 26], [17, 20], [82, 20], [34, 11], [54, 7], [70, 12], [31, 27], [50, 40], [64, 31]],
   [[50, 54], [29, 48], [72, 48], [16, 36], [84, 35], [50, 28], [17, 22], [82, 21], [31, 12], [50, 8], [69, 12], [33, 31], [67, 29], [61, 43], [39, 19], [61, 18]],
 ];
+
+/**
+ * Where each decoration place sits on each base (same measure as SPOTS), around the edges and along the paths, clear of
+ * the building clearings (placed on 3 Nov 2026, stage C.3). Place n keeps its number as the island grows.
+ */
+export const DECOR_PLACES: [number, number][][] = [
+  [[55, 52], [10, 38], [89, 36], [50, 22]],
+  [[47, 55], [17, 41], [75, 54], [88, 43], [42, 23], [8, 29]],
+  [[44, 52], [68, 51], [13, 38], [89, 45], [44, 38], [66, 30], [24, 11], [92, 33]],
+  [[50, 53], [26, 43], [74, 53], [92, 41], [8, 28], [40, 35], [73, 42], [60, 20], [92, 27], [22, 9]],
+  [[40, 58], [62, 58], [20, 46], [82, 49], [49, 40], [92, 24], [6, 34], [94, 34], [50, 18], [21, 10], [78, 11], [59, 8]],
+];
+
+/**
+ * The sky garden's places (it comes once the Lighthouse is lit): a loose grid on the drawn garden until `base-garden`
+ * is painted and its places are set by hand (docs/prompts/isles-cosy-art.md).
+ */
+export const GARDEN_SPOTS: [number, number][] = Array.from({ length: GARDEN_PLACES }, (_, i) => {
+  const row = Math.floor(i / 5);
+  const col = i % 5;
+  return [14 + col * 18 + (row % 2) * 6, 22 + row * 14];
+});
+export const GARDEN_ASPECT = 1344 / 768;
+export const gardenArt = () => file('base-garden');
+
+export const decorArt = (id: DecorationId) => file(`dec-${id}`);
+/** The islanders who stroll the paths (six painted walkers, used in turn). */
+export const WALKERS = 6;
+export const walkerArt = (i: number) => file(`walker-${(i % WALKERS) + 1}`);
+export const crystalArt = () => file('icon-crystal');
 
 export const buildingArt = (kind: PlotOrEmpty, level: number) => (kind === 'empty' ? file('bld-empty') : file(`bld-${kind}-${Math.max(1, level)}`));
 

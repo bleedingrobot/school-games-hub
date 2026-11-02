@@ -26,8 +26,8 @@ function Working({ who, speed, home }: { who: string; speed: Speed; home: boolea
   const parts = [
     `${RACE_BASE} to start`,
     `${n(speed.boats)} from sky-boats`,
-    speed.sails ? `${n(speed.sails)} from Swift Sails` : '',
-    `${n(speed.happiness)} from happiness`,
+    speed.sails ? `${n(speed.sails)} from Sail flags` : '',
+    speed.breeze ? `${n(speed.breeze)} from a warm breeze` : '',
     speed.wind ? `${n(speed.wind)} from ${home ? 'the home wind' : 'gusts'}` : '',
     // The starter race's Gull Riders take it easy (their luck is below nothing): that part isn't shown.
     speed.luck >= 0.5 ? `${n(speed.luck)} luck` : '',
@@ -56,12 +56,14 @@ function whoLeads(paths: RaceSoFar, point: number): string {
   return Math.abs(gap) < 0.01 ? 'The boats are side by side.' : gap > 0 ? 'Your boat is ahead.' : 'The Gull Riders are ahead.';
 }
 
-export function Race({ backend, open, keeper, onDone, onProblem }: {
+export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Back to my island' }: {
   backend: IslesBackend;
   /** A race already open (carried on from the same stop, with the same questions), or null to start one. */
   open: PublicRace | null;
   keeper: string | null;
   onDone: (island: Island | null) => void;
+  /** The way-back button's words ("Back to my turn" for a race from a turn's last step). */
+  backLabel?: string;
   onProblem: (message: string) => void;
 }) {
   const [race, setRace] = useState<PublicRace | null>(open);
@@ -138,7 +140,7 @@ export function Race({ backend, open, keeper, onDone, onProblem }: {
         ? `${race.starter ? 'Your first race! ' : ''}The race stops for questions on the way. Each right answer is a gust of wind for your boat.`
         : 'Welcome back! Your race carries on from where you stopped.'
       : said ?? (stretch === 1 ? 'Off you go! The first question comes at the first stop.' : 'Sail on to the next stop!');
-  const prize = race?.prize ?? { coins: 0, goods: 0 };
+  const prize = race?.prize ?? { coins: 0, crystals: 0 };
 
   // Focus follows each new heading: the start, each stretch, the result.
   useEffect(() => {
@@ -181,10 +183,10 @@ export function Race({ backend, open, keeper, onDone, onProblem }: {
             <Art src={pipArt(result.won ? 'cheer' : 'wave')} className="si-pip" fallback={<span className="si-pip si-pip--drawn" aria-hidden="true" />} />
             <p>
               {result.won
-                ? `You win ${plural(prize.coins, 'coin')}${prize.goods ? ` and ${n(prize.goods)} goods` : ''}!`
+                ? `You win ${plural(prize.coins, 'coin')}${prize.crystals ? ` and ${plural(prize.crystals, 'sky crystal')}` : ''}!`
                 : `The Gull Riders were faster this time. You still get ${plural(WELL_RACED_COINS, 'coin')} for racing well.`}
             </p>
-            <button type="button" className="button button--primary si-race__go" onClick={() => onDone(island)}>Back to my island</button>
+            <button type="button" className="button button--primary si-race__go" onClick={() => onDone(island)}>{backLabel}</button>
           </div>
           <Working who="Your boat" speed={result.you} home={false} />
           <Working who="The Gull Riders" speed={result.them} home />

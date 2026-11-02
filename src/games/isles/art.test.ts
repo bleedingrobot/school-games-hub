@@ -3,8 +3,8 @@
  * other games' art checks). A missing picture would only fall back to drawn shapes, but it should be caught here.
  */
 import { describe, expect, it } from 'vitest';
-import { BASES, KEEPERS, MAX_LEVEL, PLOT_KINDS } from '../../../shared/isles/config';
-import { allArtFiles, SPOTS } from './art';
+import { BASES, DECORATION_PLACES, KEEPERS, MAX_LEVEL, PLOT_KINDS } from '../../../shared/isles/config';
+import { allArtFiles, DECOR_PLACES, SPOTS } from './art';
 
 const NEEDED = [
   ...BASES.map((_, i) => `base-${i + 1}`),
@@ -25,5 +25,9 @@ describe('the painted pictures', () => {
 
   it('places every building spot on every base', () => {
     expect(SPOTS.map((spots) => spots.length)).toEqual([...BASES]);
+  });
+
+  it('places every decoration place on every base', () => {
+    expect(DECOR_PLACES.map((places) => places.length)).toEqual([...DECORATION_PLACES]);
   });
 });

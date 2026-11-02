@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from 'react';
-import { problemWith, type Action, type Island, type Prices } from '../../../shared/isles/engine';
+import { problemWith, type Action, type Island } from '../../../shared/isles/engine';
 import { whyNot } from './words';
 
 /**
@@ -8,7 +8,6 @@ import { whyNot } from './words';
  */
 export function Choice({
   island,
-  prices,
   action,
   onChoose,
   children,
@@ -17,7 +16,6 @@ export function Choice({
   kind = 'button--primary',
 }: {
   island: Island;
-  prices: Prices;
   action: Action;
   onChoose: (action: Action) => void;
   children: ReactNode;
@@ -26,7 +24,7 @@ export function Choice({
   kind?: string;
 }) {
   const id = useId();
-  const problem = problemWith(island, action, prices);
+  const problem = problemWith(island, action);
   return (
     <div className="si-choice">
       <button

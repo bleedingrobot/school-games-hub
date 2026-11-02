@@ -6966,13 +6966,17 @@ function newDay(island, daysSince, classMiddle) {
 }
 function collect(island, windy) {
 	const wind = windy ? FAIR_WIND : 1;
+	const coins = Object.fromEntries(PLOT_KINDS.map((kind) => [kind, levels(island, kind) * COINS[kind]]));
+	const made = PLOT_KINDS.reduce((sum, kind) => sum + coins[kind], 0);
+	const crystals = Math.floor(levels(island, "workshop") * WORKSHOP_CRYSTALS * wind * 4) / 4;
 	return {
-		coins: Object.fromEntries(PLOT_KINDS.map((kind) => [kind, Math.floor(levels(island, kind) * COINS[kind] * wind)])),
-		crystals: Math.floor(levels(island, "workshop") * WORKSHOP_CRYSTALS * wind * 4) / 4,
+		coins,
+		wind: Math.floor(made * (wind - 1) + 1e-9),
+		crystals,
 		windy
 	};
 }
-const coinsCollected = (c) => PLOT_KINDS.reduce((sum, kind) => sum + c.coins[kind], 0);
+const coinsCollected = (c) => PLOT_KINDS.reduce((sum, kind) => sum + c.coins[kind], c.wind);
 /** The island after collecting, before the pupil builds: what the browser shows on the Build step, and what
 * `playTurn` checks the choices against. */
 function beforeBuilding(island, windy) {

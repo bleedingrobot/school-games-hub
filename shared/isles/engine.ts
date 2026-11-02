@@ -57,9 +57,12 @@ export interface Island {
   racesWon: number;
 }
 
-/** What a turn collected, for the browser's sum line: coins from each kind of building, and sky crystals. */
+/** What a turn collected, for the browser's sum line: coins from each kind of building, the fair wind's extra coins
+ * on top of their total, and sky crystals. */
 export interface Collected {
   coins: Record<PlotKind, number>;
+  /** The fair wind's extra: 15% of the buildings' coins, rounded down (0 with no wind). */
+  wind: number;
   crystals: number;
   /** Was the fair wind blowing (a right answer)? */
   windy: boolean;
@@ -211,13 +214,15 @@ export function newDay(island: Island, daysSince: number, classMiddle: number): 
 
 export function collect(island: Island, windy: boolean): Collected {
   const wind = windy ? FAIR_WIND : 1;
-  const coins = Object.fromEntries(PLOT_KINDS.map((kind) => [kind, Math.floor(levels(island, kind) * COINS[kind] * wind)])) as Record<PlotKind, number>;
+  const coins = Object.fromEntries(PLOT_KINDS.map((kind) => [kind, levels(island, kind) * COINS[kind]])) as Record<PlotKind, number>;
+  // The wind goes on the total, so the sum line reads "buildings + fair wind" with whole numbers.
+  const made = PLOT_KINDS.reduce((sum, kind) => sum + coins[kind], 0);
   // Crystals go in steps of a quarter, so round down to one.
   const crystals = Math.floor(levels(island, 'workshop') * WORKSHOP_CRYSTALS * wind * 4) / 4;
-  return { coins, crystals, windy };
+  return { coins, wind: Math.floor(made * (wind - 1) + 1e-9), crystals, windy };
 }
 
-export const coinsCollected = (c: Collected) => PLOT_KINDS.reduce((sum, kind) => sum + c.coins[kind], 0);
+export const coinsCollected = (c: Collected) => PLOT_KINDS.reduce((sum, kind) => sum + c.coins[kind], c.wind);
 
 /** The island after collecting, before the pupil builds: what the browser shows on the Build step, and what
  * `playTurn` checks the choices against. */

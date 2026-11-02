@@ -8,7 +8,8 @@ import { memoryServices, type MemoryData } from '../../../shared/isles/memorySer
 import { handleIsles } from '../../../shared/isles/server';
 import { readReply, type IslesBackend } from './backend';
 
-const KEY = 'isles-trial';
+// A new name for the cosy rules (3 Nov 2026), so an island saved under the old rules is left behind, not loaded.
+const KEY = 'isles-trial-cosy';
 const DAY_MS = 86_400_000;
 
 function loadData(key: string): MemoryData | undefined {

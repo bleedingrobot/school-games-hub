@@ -211,11 +211,23 @@ C.1 and C.2 can be one session. C.3 is its own.
 - **Not yet changed (on purpose):**
   - The server (`server.ts`, the `isles` function, the migration and the database test) still used the old rules: stage C.2 (done, below).
   - The screens still use the old rules too. That's stage C.3.
-  - Until C.3 is done, the type check and the screen tests fail on the branch. Nothing is live, so nobody sees it.
+  - Until C.3 was done, the type check and the screen tests failed on the branch (fixed in C.3).
 
 ### C.2 results (the server), 3 Nov 2026
 
 - **`server.ts`:** no market prices; the choices it understands are anchor, build, raise, decorate, move and lighthouse (tax, the workshop slider, upgrades, the festival and buying or selling are refused as unreadable); new words for the new problems (not enough sky crystals, no such decoration place, place taken); race prizes are coins and crystals.
 - **The on-hold migration:** `isles_turns` no longer keeps happiness. `isles_counts` counts islanders and decorations in place of happy days and upgrades (islanders never leave and decorations can't be sold, so the island's own numbers are the season's best). Happy Isle and Bookworm became **Busy Village** (100 islanders, 🏘️) and **Decorator** (8 decorations, 🌸). Kind Heart comes with gifts in S.4. Still on hold, and still needs a new number at go-live.
 - **Tests:** the function's tests 1 to 3 (with the decoration choices and the old choices refused), the rules tests, and the database test (47 checks, on a fresh local database) all pass. The `isles` function file is rebuilt.
-- **Still failing on purpose:** the Sky Isles screens and their tests (stage C.3).
+- **Still failing on purpose:** the Sky Isles screens and their tests (stage C.3, done below).
+
+### C.3 results (the screens), 3 Nov 2026
+
+- **The turn is 4 steps** (`TurnSteps.tsx`): the sky pilot's question; Collect (coins pop off each building, then the sum line: "Coins: 12 from Farms + 8 from Mines + … = 27 coins", then "Fair wind: 27 + 4 extra = 31 coins"); Build (tap a spot; anchor the drifting chunk; Decorate; the Lighthouse stage; "Build more?" after each choice; Undo last); Race or rest (Sky Race, then back to this step with the turn's choices kept, or End turn).
+- **A small rule change for the sum line:** the fair wind now goes on the coin total (15% extra, rounded down) instead of on each kind of building, so the working reads in whole numbers. The simulator's pace table didn't move.
+- **Decorations** (`Decorations.tsx`, replacing `Upgrades.tsx`): the shelf with prices and what each does, "Put one up", then a numbered place on the island (or a list of places for the keyboard); moving one, or putting it back on the shelf, is free. **Decoration places** were set by hand on each painted base (4, 6, 8, 10 and 12, clear of the building clearings). The sky garden is drawn as a plain island with a grid of 20 places until `base-garden` is painted.
+- **Islanders** stroll between the buildings (1 walker for every 15 islanders, up to 8), drawn as little figures until the walkers are painted. They stand still when the device asks for less motion.
+- **My island:** coins, sky crystals, islanders (with room), sky-boats; a "Last turn" box (islanders who moved in, lucky weather); Decorations in place of Upgrades; "Class sky" stays greyed until S.4.
+- **How to play, Race (Sail flags and the warm breeze in the speed working, crystals in the prize)** updated. The preview saves under a new name, so an island from the old rules isn't loaded.
+- **Checks:** type check clean; all Sky Isles tests pass (the keyboard test now plays the 4 steps and puts up a decoration); the whole suite passes (one Diamond Drop screen test is slow when everything runs at once and passes on its own).
+- **Preview:** republished as a new page, as the old one couldn't be reached from this session: https://claude.ai/artifact/AbCJrV8AhotXCHaedgVe6V
+- **Next:** C.A (the paintings, on the gaming PC), then S.4.

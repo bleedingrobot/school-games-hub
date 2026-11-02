@@ -1,31 +1,29 @@
 /**
- * Sky Isles (docs/ISLES-PLAN.md): keep a floating island in the class's sky. My island shows it with its buildings, the
- * resources, today's turn pips, the road to Grand Isle and Pip's next step. A turn is the same 11 steps every time,
- * one choice on each screen (TurnSteps.tsx), and all its choices are sent together with End turn. The server keeps the
+ * Sky Isles (docs/ISLES-PLAN.md, made cosy by docs/ISLES-COSY-PLAN.md): keep a floating island in the class's sky. My
+ * island shows it with its buildings, decorations and islanders, what it has, today's turn pips, the road to Grand
+ * Isle and Pip's next step. A turn is the same 4 steps every time, one choice on each screen (TurnSteps.tsx), and all
+ * its choices are sent together with End turn. The server keeps the
  * island and plays every turn (shared/isles/server.ts); these screens only show it and collect the choices.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BASES, GRAND_ISLE, LIGHTHOUSE, START, TURNS_PER_DAY } from '../../../shared/isles/config';
-import { apply, beforeSpending, problemWith, type Action, type Island, type TurnReport } from '../../../shared/isles/engine';
-import { foodRunsOutIn, nextStep } from '../../../shared/isles/nextStep';
+import { BASES, COINS, GRAND_ISLE, LIGHTHOUSE, START, TURNS_PER_DAY } from '../../../shared/isles/config';
+import { apply, beforeBuilding, boatsOf, problemWith, room, wholeCrystals, type Action, type Island, type TurnReport } from '../../../shared/isles/engine';
+import { nextStep } from '../../../shared/isles/nextStep';
 import { GULL_RIDERS, raceProblem } from '../../../shared/isles/race';
 import { PROBLEM_TEXT } from '../../../shared/isles/server';
 import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt } from './art';
 import { IslesError, type IslandView, type IslesBackend, type PublicRace } from './backend';
+import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
 import { Art, IslandPicture } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
 import { SpotPanel } from './Spot';
-import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf } from './TurnSteps';
-import { Upgrades } from './Upgrades';
+import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { actionText, collectLines, n, plural, reportLines } from './words';
 import './isles.css';
-
-/** A choice in a turn, and the step it was made on. */
-interface Pick { step: Step; action: Action }
 
 type Screen =
   | { kind: 'loading' }
@@ -33,8 +31,9 @@ type Screen =
   | { kind: 'keeper'; first: boolean }
   | { kind: 'home' }
   | { kind: 'turn'; step: Step }
-  | { kind: 'race'; open: PublicRace | null }
-  | { kind: 'upgrades'; back: Screen }
+  /** A Sky Race; `inTurn` when it was started from a turn's last step (the turn's choices wait for it). */
+  | { kind: 'race'; open: PublicRace | null; inTurn?: boolean }
+  | { kind: 'decorations'; back: Screen }
   | { kind: 'howto'; back: Screen };
 
 const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper'>, string> = {
@@ -42,21 +41,17 @@ const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper'>, string> = {
   problem: 'Sky Isles',
   home: 'My island',
   turn: 'Your turn',
-  upgrades: 'Upgrades',
+  decorations: 'Decorations',
   howto: 'How to play',
 };
 
 function Resources({ island }: { island: Island }) {
-  const lasts = foodRunsOutIn(island);
   return (
     <ul className="si-res" aria-label="Your island now">
       <li><span>Coins</span><strong>{n(island.coins)}</strong></li>
-      <li><span>Food</span><strong>{n(island.food)}</strong>{lasts !== null && <em className="si-res__warn">{lasts <= 1 ? 'runs out next turn' : `lasts ${lasts} turns`}</em>}</li>
-      <li><span>People</span><strong>{n(island.people)}</strong></li>
-      <li><span>Happiness</span><strong>{n(island.happiness)}</strong></li>
-      <li><span>Ideas</span><strong>{n(Math.floor(island.ideas))}{island.ideas % 1 ? '½' : ''}</strong></li>
-      <li><span>Sky-boats</span><strong>{n(island.boats)}</strong></li>
-      <li><span>Goods</span><strong>{n(island.goods)}</strong></li>
+      <li><span>Sky crystals</span><strong>{n(wholeCrystals(island))}</strong></li>
+      <li><span>Islanders</span><strong>{n(island.islanders)}</strong><em className="si-res__room">room for {n(room(island))}</em></li>
+      <li><span>Sky-boats</span><strong>{n(boatsOf(island))}</strong></li>
     </ul>
   );
 }
@@ -94,8 +89,11 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [view, setView] = useState<IslandView | null>(null);
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
   const [windy, setWindy] = useState(false);
-  const [picks, setPicks] = useState<Pick[]>([]);
+  const [picks, setPicks] = useState<Action[]>([]);
+  /** The spot tapped on My island, between turns. */
   const [spot, setSpot] = useState<number | null>(null);
+  /** What the Build step shows. */
+  const [build, setBuild] = useState<BuildView>({ kind: 'island' });
   /** A choice was just made on this step: ask "another?". */
   const [again, setAgain] = useState(false);
   /** The sky pilot's question is open (step 2). */
@@ -128,25 +126,20 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   }, [load]);
 
   // Each new screen (and each step of a turn, and each change within a step) moves focus to its heading.
-  const landOrBuild = screen.kind === 'turn' && (screen.step === Step.Land || screen.step === Step.Build);
-  const focusKey = screen.kind === 'turn'
-    ? `turn-${screen.step}-${again}-${spot}-${landOrBuild ? picks.filter((x) => x.step === screen.step).length : 0}`
-    : screen.kind;
+  const focusKey = screen.kind === 'turn' ? `turn-${screen.step}-${again}-${JSON.stringify(build)}-${picks.length}` : screen.kind;
   useEffect(() => {
     heading.current?.focus();
   }, [focusKey]);
 
   const island = view?.island ?? null;
-  const prices = view?.prices ?? { food: 2, goods: 6 };
 
-  const actions = useMemo(() => picks.map((x) => x.action), [picks]);
-  /** The island after collecting and feeding, then after each choice so far (each one checked as it was made). */
+  /** The island after collecting, then after each choice so far (each one checked as it was made). */
   const steps = useMemo(() => {
     if (!island) return [];
-    const out = [beforeSpending(island, windy).island];
-    for (const a of actions) out.push(apply(out[out.length - 1], a, prices));
+    const out = [beforeBuilding(island, windy).island];
+    for (const a of picks) out.push(apply(out[out.length - 1], a));
     return out;
-  }, [island, windy, actions, prices]);
+  }, [island, windy, picks]);
   const planned = steps[steps.length - 1] ?? island;
   const turnStep = screen.kind === 'turn' ? screen.step : null;
   // From the collect onwards the resource bar shows what the island has to spend.
@@ -156,30 +149,24 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setAsking(step === Step.Question && !!view?.question && !view.question.answered);
     setAgain(false);
     setSpot(null);
+    setBuild({ kind: 'island' });
     setScreen({ kind: 'turn', step });
   };
 
+  /** A choice on the Build step: kept, then "another?". */
   const choose = (a: Action) => {
-    if (turnStep === null || !planned || problemWith(planned, a, prices)) return;
+    if (turnStep !== Step.Build || !planned || problemWith(planned, a)) return;
     setLit(null);
-    setPicks((list) => [...list, { step: turnStep, action: a }]);
-    setSpot(null);
-    // Land and building ask "another?"; every other step has one choice, so it moves on.
-    if (a.kind === 'anchor' || a.kind === 'build' || a.kind === 'raise') setAgain(true);
-    else if (turnStep < Step.Check) goTo((turnStep + 1) as Step);
+    setPicks((list) => [...list, a]);
+    setBuild({ kind: 'island' });
+    setAgain(true);
   };
 
-  /** Tax and the workshops are settings: the step's one choice is replaced (null keeps last turn's). */
-  const setting = (a: Action | null) => {
-    if (turnStep === null || (a && planned && problemWith(planned, a, prices))) return;
-    setPicks((list) => [...list.filter((x) => x.step !== turnStep), ...(a ? [{ step: turnStep, action: a }] : [])]);
-  };
-
-  /** Back one step: that step's choices (and this one's) are taken away, so it can be chosen again. */
+  /** Back one step. Back to the Collect step takes the building choices away, so they can be made again. */
   const stepBack = () => {
-    if (turnStep === null || turnStep <= Step.Collect) return;
+    if (turnStep === null || !canStop(turnStep)) return;
     const to = (turnStep - 1) as Step;
-    setPicks((list) => list.filter((x) => x.step < to));
+    if (to < Step.Build) setPicks([]);
     goTo(to);
   };
 
@@ -188,6 +175,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setPicks([]);
     setSpot(null);
     setAgain(false);
+    setBuild({ kind: 'island' });
     setScreen({ kind: 'home' });
   };
 
@@ -201,7 +189,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setPicks([]);
     setProblem(null);
     setWindy(view.question?.answered?.right === true);
-    goTo(Step.Report);
+    goTo(Step.Question);
   };
 
   const endTurn = async () => {
@@ -209,7 +197,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setBusy(true);
     setProblem(null);
     try {
-      const v = (await backend.send({ action: 'turn', turn: island.turn, actions })) as unknown as IslandView;
+      const v = (await backend.send({ action: 'turn', turn: island.turn, actions: picks })) as unknown as IslandView;
       show(v);
       setLit(null);
       leave();
@@ -238,7 +226,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     // Between turns, a button that lives on a step of the turn lights up "Play a turn"; it stays lit for when that
     // step comes.
     setLit(target);
-    const el = document.querySelector<HTMLElement>(`[data-pip="${screen.kind === 'home' && stepOf(target) !== null ? 'play' : target}"]`);
+    const el = document.querySelector<HTMLElement>(`[data-pip="${screen.kind === 'home' && stepOf(target) !== null && target !== 'race' ? 'play' : target}"]`);
     el?.scrollIntoView?.({ block: 'center', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     el?.focus();
   };
@@ -275,13 +263,16 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           backend={backend}
           open={screen.open}
           keeper={view.keeper}
+          backLabel={screen.inTurn ? 'Back to my turn' : undefined}
           onProblem={(message) => {
             setProblem(message);
-            setScreen({ kind: 'home' });
+            if (screen.inTurn) setScreen({ kind: 'turn', step: Step.Rest });
+            else leave();
           }}
           onDone={(after) => {
             if (after) setView((v) => (v ? { ...v, island: after, openRace: null } : v));
-            setScreen({ kind: 'home' });
+            // A race from a turn's last step goes back there, with the turn's choices still waiting.
+            setScreen(screen.inTurn ? { kind: 'turn', step: Step.Rest } : { kind: 'home' });
           }}
         />
       </div>
@@ -292,6 +283,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   // In a turn Pip talks about this step only: his next step if it's about this step, or the step's own line.
   const pipHere = turnStep === null || stepOf(step.target) === turnStep;
   const pipSays = island.turnsLeft < 1 && screen.kind === 'home' ? 'Your island is resting. See you tomorrow!' : pipHere ? step.say : STEP_PIP[turnStep!];
+  const lastTurn = screen.kind === 'home' && island.turn > 0 ? reportLines(report) : [];
   const pipLine = (
     <div className="si-pipsays si-next" aria-live="polite">
       <Art src={pipArt('point')} className="si-pip" fallback={<span className="si-pip si-pip--drawn" aria-hidden="true" />} />
@@ -300,7 +292,13 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     </div>
   );
   const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
-    const back = () => setScreen(screen.kind === 'upgrades' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
+  const raceWords = !view.races ? 'Sky Races are switched off for your class.' : raceWhy ? PROBLEM_TEXT[raceWhy] : null;
+  const back = () => setScreen(screen.kind === 'decorations' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
+  // The collect step: coins pop off each building (what it makes, before the fair wind).
+  const pops = turnStep === Step.Collect
+    ? Object.fromEntries(island.spots.flatMap((s, i) => (s.kind === 'empty' ? [] : [[i, COINS[s.kind] * s.level]])))
+    : undefined;
+  const placing = turnStep === Step.Build && (build.kind === 'place' || build.kind === 'move');
 
   return (
     <div className="si">
@@ -325,9 +323,9 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <HowToPlayBody />
           <button type="button" className="button button--primary" onClick={back}>Back</button>
         </section>
-      ) : screen.kind === 'upgrades' ? (
+      ) : screen.kind === 'decorations' ? (
         <section className="si-panel">
-          <Upgrades island={shownIsland} prices={prices} lit={lit} />
+          <Shelf island={shownIsland} lit={lit} />
           <button type="button" className="button button--primary" onClick={back}>Back</button>
         </section>
       ) : (
@@ -336,10 +334,20 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
             <IslandPicture
               island={shownIsland}
               keeper={view.keeper}
-              selected={spot}
               lit={lit}
-              onSpot={screen.kind === 'home' || (turnStep === Step.Build && !again) ? (i) => setSpot((s) => (s === i ? null : i)) : undefined}
-              onDrift={turnStep === Step.Land ? () => choose({ kind: 'anchor' }) : undefined}
+              selected={turnStep === Step.Build ? (build.kind === 'spot' ? build.spot : null) : spot}
+              onSpot={
+                screen.kind === 'home' ? (i) => setSpot((s) => (s === i ? null : i))
+                : turnStep === Step.Build && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i })
+                : undefined
+              }
+              onDrift={turnStep === Step.Build && !again && !placing ? () => choose({ kind: 'anchor' }) : undefined}
+              free={placing ? freePlaces(shownIsland) : undefined}
+              onPlace={(place) => {
+                if (build.kind === 'place') choose({ kind: 'decorate', id: build.id, place });
+                else if (build.kind === 'move') choose({ kind: 'move', decoration: build.decoration, place });
+              }}
+              pops={pops}
             />
             {turnStep === null ? <Road island={shownIsland} /> : pipLine}
           </div>
@@ -348,6 +356,13 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
             {turnStep === null && pipLine}
 
             {spot !== null && screen.kind === 'home' && <SpotPanel island={shownIsland} spot={spot} onClose={() => setSpot(null)} />}
+
+            {lastTurn.length > 0 && (
+              <section className="si-panel si-report" aria-label="Last turn">
+                <h3>Last turn</h3>
+                <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
+              </section>
+            )}
 
             {screen.kind === 'home' && (
               <section className="si-panel si-home">
@@ -367,21 +382,20 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                       type="button"
                       className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
                       data-pip="race"
-                      disabled={!view.races || raceWhy !== null}
-                      aria-describedby={!view.races || raceWhy ? 'si-race-why' : undefined}
+                      disabled={raceWords !== null}
+                      aria-describedby={raceWords ? 'si-race-why' : undefined}
                       onClick={() => setScreen({ kind: 'race', open: null })}
                     >
                       Sky Race
                     </button>
-                    {(!view.races || raceWhy) && <span id="si-race-why" className="si-choice__why">{!view.races ? 'Sky Races are switched off for your class.' : PROBLEM_TEXT[raceWhy!]}</span>}
+                    {raceWords && <span id="si-race-why" className="si-choice__why">{raceWords}</span>}
                   </div>
-                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'upgrades', back: { kind: 'home' } })}>Upgrades</button>
+                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'decorations', back: { kind: 'home' } })}>Decorations</button>
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                 </div>
                 <div className="si-soon">
-                  <button type="button" className={`button button--light${lit === 'market' ? ' si-lit' : ''}`} data-pip="market" disabled aria-describedby="si-soon-words">Class sky</button>
-                  <button type="button" className="button button--light" disabled aria-describedby="si-soon-words">Market</button>
-                  <span id="si-soon-words" className="si-choice__why">The class sky, the market and the news are coming soon.</span>
+                  <button type="button" className="button button--light" disabled aria-describedby="si-soon-words">Class sky</button>
+                  <span id="si-soon-words" className="si-choice__why">The class sky, visits, gifts and the news are coming soon.</span>
                 </div>
                 {problem && <p className="si-problem" role="alert">{problem}</p>}
               </section>
@@ -391,28 +405,28 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               <TurnStep
                 step={turnStep}
                 island={planned}
-                before={steps[picks.filter((x) => x.step < turnStep).length] ?? planned}
-                prices={prices}
-                done={picks.flatMap((x, i) => (x.step === turnStep ? [actionText(steps[i], x.action)] : []))}
-                allLines={picks.map((x, i) => actionText(steps[i], x.action))}
+                lines={picks.map((a, i) => actionText(steps[i], a))}
                 again={again}
-                spot={spot}
+                build={build}
                 lit={lit}
                 busy={busy}
                 problem={problem}
                 headingRef={heading}
-                reportLines={island.turn === 0 ? ['Welcome to your island! The wind is calm and the sky is clear.'] : reportLines(report)}
                 collectLines={collectLines(island, windy)}
                 windy={windy}
                 question={view.question ? { answered: view.question.answered ?? null } : null}
-                onNext={() => goTo(Math.min(turnStep + 1, Step.Check) as Step)}
+                raceWhy={raceWords}
+                onNext={() => goTo(Math.min(turnStep + 1, Step.Rest) as Step)}
                 onBack={stepBack}
                 onChoose={choose}
-                onSetting={setting}
+                onBuild={(b) => {
+                  setAgain(false);
+                  setBuild(b);
+                }}
                 onAnother={() => setAgain(false)}
                 onUndo={() => setPicks((list) => list.slice(0, -1))}
+                onRace={() => setScreen({ kind: 'race', open: null, inTurn: true })}
                 onEnd={() => void endTurn()}
-                onHome={leave}
               />
             )}
           </div>
@@ -423,7 +437,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
         <QuestionModal
           question={{ ...view.question, id: island.turn * 10 + view.question.slot }}
           title="The sky pilot's question"
-          note="Get it right for a fair wind: everything grows more this turn!"
+          note="Get it right for a fair wind: more coins this turn!"
           spot="isles-turn"
           closeLabel="Skip"
           onClose={() => goTo(Step.Collect)}
