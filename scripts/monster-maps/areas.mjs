@@ -1,4 +1,4 @@
-import { MapMaker, PEOPLE, TT, towerRooms } from './lib.mjs';
+import { MapMaker, PEOPLE, TT, X, towerRooms } from './lib.mjs';
 
 /*
  * Areas 2 to 6. Every area is about 25 x 20: you come in at the bottom (the "entrance"), a path
@@ -47,6 +47,10 @@ export function shellBeach() {
   m.scatter(16, (x, y) => m.palm(x, y), { seed: 2, y0: 2 });
   m.scatter(7, (x, y) => m.boulder(x, y), { seed: 3 });
   m.scatter(6, (x, y) => m.bush(x, y), { seed: 4 });
+  // The sleeping giant Drowsea blocks the sea cave east to Lagoon Isle.
+  m.open(24, 11);
+  m.giant('Drowsea', 23, 11, 'drowsea', X(18));
+  m.warp('to-lagoon-isle', 24, 11, 'lagoon-isle', 1, 7, 'right');
   m.save();
   towerRooms({
     n: 2, area: 2, label: 'Water', outside: 'shell-beach', outsideX: 10, outsideY: 6, guide: 'Tower guide Ana', sprite: PEOPLE.villager, badge: 'water',
@@ -96,6 +100,10 @@ export function fireMountain() {
   m.scatter(10, (x, y) => m.autumnTree(x, y), { seed: 5, y0: 2 });
   m.scatter(6, (x, y) => m.autumnSmall(x, y), { seed: 6 });
   m.scatter(10, (x, y) => m.boulder(x, y, true), { seed: 7 });
+  // The sleeping giant Snorumble blocks the way east to Steam Valley.
+  m.open(24, 7);
+  m.giant('Snorumble', 23, 7, 'snorumble', X(19));
+  m.warp('to-steam-valley', 24, 7, 'steam-valley', 1, 7, 'right');
   m.save();
   towerRooms({
     n: 3, area: 3, label: 'Fire', outside: 'fire-mountain', outsideX: 12, outsideY: 6, guide: 'Tower guide Tipene', sprite: PEOPLE.monk, badge: 'fire',
@@ -146,6 +154,10 @@ export function snowyPeaks() {
   m.scatter(8, (x, y) => m.snowPine(x, y), { seed: 9 });
   m.scatter(6, (x, y) => m.snowBush(x, y), { seed: 10 });
   m.scatter(5, (x, y) => m.boulder(x, y), { seed: 11 });
+  // The sleeping giant Yawnberg blocks the pass west to Aurora Hollow.
+  m.open(0, 13);
+  m.giant('Yawnberg', 1, 13, 'yawnberg', X(17));
+  m.warp('to-aurora-hollow', 0, 13, 'aurora-hollow', 18, 7, 'left');
   m.save();
   towerRooms({
     n: 4, area: 4, label: 'Ice', outside: 'snowy-peaks', outsideX: 13, outsideY: 6, guide: 'Tower guide Pita', sprite: PEOPLE.villager, badge: 'ice',
@@ -195,6 +207,8 @@ export function glowwormCaves() {
   m.scatter(16, (x, y) => m.stalagmite(x, y), { seed: 12, y0: 2 });
   m.scatter(8, (x, y) => m.crystal(x, y), { seed: 13 });
   m.scatter(6, (x, y) => m.boulder(x, y, true), { seed: 14 });
+  m.spot('crystal-pool', 20, 7, 'up'); // where glowing eggs hatch
+  m.spot('torch', 23, 2, 'up'); // the cave guide's lost torch
   m.save();
   towerRooms({
     n: 5, area: 5, label: 'Spark', outside: 'glowworm-caves', outsideX: 11, outsideY: 6, guide: 'Tower guide Ngaio', sprite: PEOPLE.woman, badge: 'spark',
@@ -244,6 +258,7 @@ export function harbourCity() {
   m.scatter(10, (x, y) => m.tree(x, y), { seed: 16 });
   m.scatter(6, (x, y) => m.bush(x, y), { seed: 17 });
   m.fence(2, 10, 4); m.fence(21, 10, 3);
+  m.spot('quarry', 2, 13, 'down'); // where stony eggs hatch
   m.save();
   towerRooms({
     n: 6, area: 6, label: 'Stone', outside: 'harbour-city', outsideX: 8, outsideY: 6, guide: 'Tower guide Sefa', sprite: PEOPLE.man, badge: 'stone',

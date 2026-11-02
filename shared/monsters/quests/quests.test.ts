@@ -12,11 +12,11 @@ describe('quests, bits, giants and eggs', () => {
     const team = [makeMonster('plusplash-2', 14)];
     let q = emptyQuestSave();
     // The Shell Beach quest: start it, win 3 battles there, solve the stones, show a Water monster.
-    q = talkTo(q, 'shell-beach:Lifeguard Mere', team, 1).q;
+    q = talkTo(q, 'shell-beach:Hine', team, 1).q;
     for (let i = 0; i < 3; i++) q = record(q, { kind: 'won', map: 'shell-beach', area: 2, foes: ['coinrock-1'] }).q;
     expect(q.bits).toEqual({ stone: 3 });
     q = record(q, { kind: 'solved', id: 'shell-stones' }).q;
-    const done = talkTo(q, 'shell-beach:Lifeguard Mere', team, 1);
+    const done = talkTo(q, 'shell-beach:Hine', team, 1);
     expect(done.said).toBe('finished');
     expect(done.given.eggs).toEqual(['quest:shell:water']);
     q = done.q;

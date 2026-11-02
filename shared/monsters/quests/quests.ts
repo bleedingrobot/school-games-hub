@@ -14,64 +14,64 @@ import type { Bits, Egg, ProgressEvent, Quest, QuestSave, Reward, Task } from '.
 
 export const QUESTS: readonly Quest[] = [
   {
-    id: 'kauri', title: 'The lost seed pods', giver: 'kauri-bush:Ranger Kiri', area: 1,
+    id: 'kauri', title: 'The lost seed pods', giver: 'kauri-bush:Hermit', area: 1,
     steps: [
       { do: 'solve', id: 'kauri-seeds', hint: 'Find the 3 seed pods hidden in Kauri Bush' },
-      { do: 'catch', type: 'leaf', hint: 'Catch a Leaf monster for Ranger Kiri’s nursery' },
-      { do: 'talk', person: 'kauri-bush:Ranger Kiri', hint: 'Go back to Ranger Kiri in Kauri Bush' },
+      { do: 'catch', type: 'leaf', hint: 'Catch a Leaf monster for the Hermit’s garden' },
+      { do: 'talk', person: 'kauri-bush:Hermit', hint: 'Go back to the Hermit in Kauri Bush' },
     ],
     reward: { egg: 'leafy', items: { ball: 5 } },
   },
   {
-    id: 'shell', title: 'Clear the rock pools', giver: 'shell-beach:Lifeguard Mere', area: 2,
+    id: 'shell', title: 'Clear the rock pools', giver: 'shell-beach:Hine', area: 2,
     steps: [
       { do: 'win', area: 2, count: 3, hint: 'Win {left} more battles on Shell Beach' },
       { do: 'solve', id: 'shell-stones', hint: 'Cross the stepping stones in the rock pool' },
-      { do: 'show', person: 'shell-beach:Lifeguard Mere', type: 'water', level: 12, hint: 'Show Lifeguard Mere a Water monster at level 12 or more' },
+      { do: 'show', person: 'shell-beach:Hine', type: 'water', level: 12, hint: 'Show Hine a Water monster at level 12 or more' },
     ],
     reward: { egg: 'water', flag: 'part:lifeguard' },
   },
   {
-    id: 'fire', title: 'The miner’s lanterns', giver: 'fire-mountain:Old Miner Rua', area: 3,
+    id: 'fire', title: 'The miner’s lanterns', giver: 'fire-mountain:Old Kui', area: 3,
     steps: [
-      { do: 'bring', person: 'fire-mountain:Old Miner Rua', type: 'fire', count: 5, hint: 'Bring 5 embers to Old Miner Rua on Fire Mountain' },
+      { do: 'bring', person: 'fire-mountain:Old Kui', type: 'fire', count: 5, hint: 'Bring 5 embers to Old Kui on Fire Mountain' },
       { do: 'solve', id: 'fire-lanterns', hint: 'Light the lanterns in the lava tube in the right order' },
-      { do: 'talk', person: 'fire-mountain:Old Miner Rua', hint: 'Tell Old Miner Rua the lanterns are lit' },
+      { do: 'talk', person: 'fire-mountain:Old Kui', hint: 'Tell Old Kui the lanterns are lit' },
     ],
     reward: { flag: 'part:miner', items: { 'super-potion': 2 } },
   },
   {
-    id: 'snow', title: 'The warden’s hut', giver: 'snowy-peaks:Warden Sam', area: 4,
+    id: 'snow', title: 'The warden’s hut', giver: 'snowy-peaks:Ranger Fern', area: 4,
     steps: [
-      { do: 'solve', id: 'snow-slide', hint: 'Slide across the ice to the warden’s chest' },
+      { do: 'solve', id: 'snow-slide', hint: 'Slide across the ice to Ranger Fern’s chest' },
       { do: 'catch', type: 'ice', hint: 'Catch an Ice monster on Snowy Peaks' },
-      { do: 'bring', person: 'snowy-peaks:Warden Sam', type: 'ice', count: 5, hint: 'Bring 5 frost crystals to Warden Sam' },
+      { do: 'bring', person: 'snowy-peaks:Ranger Fern', type: 'ice', count: 5, hint: 'Bring 5 frost crystals to Ranger Fern' },
     ],
     reward: { egg: 'cold' },
   },
   {
-    id: 'caves', title: 'The lost torch', giver: 'glowworm-caves:Cave Guide Ana', area: 5,
+    id: 'caves', title: 'The lost torch', giver: 'glowworm-caves:Glow Gran', area: 5,
     steps: [
       { do: 'solve', id: 'cave-count', hint: 'Count the glowworm groups and tell the stone door' },
       { do: 'visit', map: 'glowworm-caves', spot: 'torch', hint: 'Find the lost torch deep in the caves' },
-      { do: 'talk', person: 'glowworm-caves:Cave Guide Ana', hint: 'Take the torch back to Cave Guide Ana' },
+      { do: 'talk', person: 'glowworm-caves:Glow Gran', hint: 'Take the torch back to Glow Gran' },
     ],
     reward: { flag: 'part:cave-guide', items: { 'great-ball': 2 } },
   },
   {
-    id: 'harbour', title: 'The busy wharf', giver: 'harbour-city:Harbour Master Tui', area: 6,
+    id: 'harbour', title: 'The busy wharf', giver: 'harbour-city:Captain Tui', area: 6,
     steps: [
       { do: 'solve', id: 'wharf-crates', hint: 'Push the crates off the wharf path' },
       { do: 'win', area: 6, trainer: true, count: 3, hint: 'Beat {left} more trainers in Harbour City' },
-      { do: 'talk', person: 'harbour-city:Harbour Master Tui', hint: 'Go back to Harbour Master Tui' },
+      { do: 'talk', person: 'harbour-city:Captain Tui', hint: 'Go back to Captain Tui' },
     ],
     reward: { egg: 'stony' },
   },
   {
-    id: 'finale', title: 'The Professor’s big question', giver: 'harbour-town:Professor', area: 0, badges: 6,
+    id: 'finale', title: 'The Teacher’s big question', giver: 'harbour-town:Teacher', area: 0, badges: 6,
     needs: ['woke:snorumble', 'woke:drowsea', 'woke:yawnberg'],
     steps: [
-      { do: 'talk', person: 'harbour-town:Professor', hint: 'Hatch an egg of each kind, then see the Professor' },
+      { do: 'talk', person: 'harbour-town:Teacher', hint: 'Hatch an egg of each kind, then see the Teacher' },
     ],
     reward: { flag: 'finale-egg' },
   },

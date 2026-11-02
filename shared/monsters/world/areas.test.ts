@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AREA_LEVELS } from '../bands';
 import type { ItemId } from '../engine';
-import { FAMILIES, MONSTER_BOOK, speciesOf } from '../monsterBook';
+import { FAMILIES, MONSTER_BOOK, RARE_FAMILIES, speciesOf } from '../monsterBook';
 import { makeMonster, maxHpOf } from '../rules';
 import { TYPE_LABEL } from '../types';
 import { WORLD_MAPS } from '../maps';
@@ -150,6 +150,9 @@ describe('the six areas, in order', () => {
   });
 });
 
+/** The form a family should show at a level, worked out from the book's growth levels. */
+const stageAt = (family: string, level: number) => 1 + (FAMILIES[family]?.evolveAt ?? [RARE_FAMILIES[family].evolveAt]).filter((l) => level >= l).length;
+
 describe('all 18 families, all 54 monsters', () => {
   /** Every species that can turn up in the wild or on a trainer's team, and where. */
   function meetings() {
@@ -179,9 +182,8 @@ describe('all 18 families, all 54 monsters', () => {
         }
       }
     }
-    // The rare and ultra rare ones come from the bonus areas, giants and eggs (built in Q.4).
-    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id) && s.rarity !== 'rare' && s.rarity !== 'ultra').map((s) => s.id)).toEqual([]);
-    expect(reachable.size).toBe(54);
+    // The giants are woken, and the ultra rare ones come only from eggs; everything else is met on a map.
+    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id) && !RARE_FAMILIES[s.family]?.giant && s.rarity !== 'ultra').map((s) => s.id)).toEqual([]);
   });
 
   it('forms match the levels: a wild family never shows a form its level has not reached', () => {
@@ -191,9 +193,7 @@ describe('all 18 families, all 54 monsters', () => {
         const [lo, hi] = wildLevels(m.area, far);
         for (let level = lo; level <= hi; level++) {
           for (const e of m.wild) {
-            const sp = speciesOf(wildSpecies(e, level));
-            const f = FAMILIES[e];
-            expect(sp.stage, `${e} at ${level}`).toBe(level >= f.evolveAt[1] ? 3 : level >= f.evolveAt[0] ? 2 : 1);
+            expect(speciesOf(wildSpecies(e, level)).stage, `${e} at ${level}`).toBe(stageAt(e, level));
           }
         }
       }
@@ -214,8 +214,7 @@ describe('all 18 families, all 54 monsters', () => {
           expect(mon.level, `${t.id} ${mon.species}`).toBeGreaterThanOrEqual(lo);
           expect(mon.level, `${t.id} ${mon.species}`).toBeLessThanOrEqual(t.badge ? hi + 2 : hi);
           const sp = speciesOf(mon.species);
-          const f = FAMILIES[sp.family];
-          expect(sp.stage, `${t.id} ${mon.species}`).toBe(mon.level >= f.evolveAt[1] ? 3 : mon.level >= f.evolveAt[0] ? 2 : 1);
+          expect(sp.stage, `${t.id} ${mon.species}`).toBe(stageAt(sp.family, mon.level));
         }
         if (t.badge) expect(Math.max(...t.team!.map((x) => x.level))).toBe(hi + 2);
       }
@@ -225,7 +224,7 @@ describe('all 18 families, all 54 monsters', () => {
   it('prints where each family lives (area names, first form to last)', () => {
     const met = meetings();
     const rows = Object.entries(FAMILIES).map(([family, f]) => {
-      const places = (stage: number) => [...(met.get(`${family}-${stage}`) ?? [])].filter((p) => p.startsWith('wild:')).map((p) => AREAS.find((a) => a.map === p.slice(5))!.area).sort().join(',') || '-';
+      const places = (stage: number) => [...(met.get(`${family}-${stage}`) ?? [])].filter((p) => p.startsWith('wild:')).map((p) => WORLD_MAPS[p.slice(5)].area).sort().join(',') || '-';
       return `${TYPE_LABEL[f.type]} ${f.names[0]}: ${[1, 2, 3].map((s) => `${f.names[s - 1]} areas ${places(s)}`).join(' | ')}`;
     });
     expect(rows).toHaveLength(18);

@@ -142,6 +142,14 @@ export class MapMaker {
   spot(name, x, y, facing = 'down') { this.objects.push({ type: 'spot', name, x, y, props: { facing }, extra: {} }); }
   warp(name, x, y, to, toX, toY, facing) { this.object('warp', name, x, y, { to, toX, toY, facing }); }
   person(name, sprite, x, y, facing, text) { this.object('person', name, x, y, { sprite, facing, text }); }
+  /** A sleeping giant across the way (quests/giants.ts). `gid` is the tile drawn while it sleeps, until it has a painting. */
+  giant(name, x, y, giant, gid) { this.object('giant', name, x, y, { giant, gid, text: 'Zzz…' }); }
+  /** The Tinker, who makes things from bits. */
+  tinker(name, sprite, x, y, facing, text) { this.object('tinker', name, x, y, { sprite, facing, text }); }
+  /** The notice board: three small jobs a day. */
+  board(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('board', name, x, y, { text }); }
+  /** Opens a tile of a finished map (a border tree, say) to make a new way through. */
+  open(x, y) { this.walls[this.at(x, y)] = 0; }
   /** A trainer who spots you. `team` is "family:level,family:level" (the form comes from the level). */
   trainer(name, sprite, x, y, facing, { sight = 4, text, win, team, badge, loot }) {
     this.object('trainer', name, x, y, { sprite, facing, sight, text, win, team, ...(badge ? { badge } : {}), ...(loot ? { loot } : {}) });

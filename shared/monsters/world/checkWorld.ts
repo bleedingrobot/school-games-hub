@@ -2,14 +2,17 @@
  * Checks all the maps together: every door leads somewhere real, and you can walk from the
  * start to every door, sign, person, trainer, chest, gate and patch of grass (nothing is walled in
  * or blocks the way). `badges` is what you hold while walking: all of them by default, so the whole
- * world must be reachable; pass fewer to see how far you get.
+ * world must be reachable; pass fewer to see how far you get. A sleeping giant counts as woken once
+ * you hold its badge, because from then on a pupil can make its item and wake it.
  */
+import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
 import { DIRS, DELTA, type GameMap } from './types';
 import { inMap, isBlocked, warpAt } from './walking';
 
 export function checkWorld(maps: Record<string, GameMap>, start: { map: string; spot: string }, badges: readonly string[] = BADGES): string[] {
   const problems: string[] = [];
+  const keys = [...badges, ...GIANTS.filter((g) => badges.includes(g.badge)).map((g) => `woke:${g.id}`)];
   for (const m of Object.values(maps)) {
     for (const w of m.warps) {
       const to = maps[w.to];
@@ -47,7 +50,7 @@ export function checkWorld(maps: Record<string, GameMap>, start: { map: string; 
     for (const d of DIRS) {
       const nx = x + DELTA[d][0];
       const ny = y + DELTA[d][1];
-      if (!isBlocked(map, nx, ny, badges)) queue.push([id, nx, ny]);
+      if (!isBlocked(map, nx, ny, keys)) queue.push([id, nx, ny]);
     }
   }
 

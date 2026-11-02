@@ -48,6 +48,7 @@ export function kauriBush() {
   m.spot('chest', 6, 11, 'down');
   m.spot('tower-door', 14, 6, 'up');
   m.spot('gate', 21, 2, 'up');
+  m.spot('old-kauri', 10, 10, 'up'); // where leafy eggs hatch
   m.save();
 
   towerRooms({

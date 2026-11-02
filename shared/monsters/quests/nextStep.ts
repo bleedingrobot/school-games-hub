@@ -45,7 +45,7 @@ export function nextStep(q: QuestSave, ctx: NextContext): NextStep {
     const task = quest.steps[st.step];
     if (quest.id === 'finale' && !FINALE_NEEDS.every((f) => q.flags.includes(f))) {
       const missing = FINALE_NEEDS.filter((f) => !q.flags.includes(f)).map((f) => f.slice(8));
-      return { text: `Hatch ${missing.length === 1 ? 'one more egg' : `${missing.length} more kinds of egg`} for the Professor.` };
+      return { text: `Hatch ${missing.length === 1 ? 'one more egg' : `${missing.length} more kinds of egg`} for the Teacher in Harbour Town.` };
     }
     if (task.do === 'bring') {
       const have = q.bits[task.type as TypeId] ?? 0;

@@ -23,7 +23,7 @@
  *
  * Text is split into pages at new lines: one page per tap.
  */
-import { FAMILIES, formAt, speciesOf } from '../monsterBook';
+import { formAt, isFamily, speciesOf } from '../monsterBook';
 import { LOOT } from './rewards';
 import { giantById, GIANTS } from '../quests/giants';
 import { DIRS, type Dir, type Gate, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
@@ -94,7 +94,7 @@ const dirOf = (v: unknown, fallback: Dir): Dir => (DIRS.includes(v as Dir) ? (v 
 
 /** True for a family ("fractopus") or a species ("fractopus-2"), the two ways a wild list or a team names a monster. */
 export function isMonsterName(name: string): boolean {
-  if (FAMILIES[name]) return true;
+  if (isFamily(name)) return true;
   try {
     speciesOf(name);
     return true;
@@ -114,7 +114,7 @@ export function parseTeam(value: string, problems: string[], who: string): Train
       continue;
     }
     if (!Number.isInteger(n) || n < 1 || n > 50) problems.push(`${who}: "${part}" needs a level from 1 to 50`);
-    else team.push({ species: FAMILIES[name] ? formAt(name, n) : name, level: n });
+    else team.push({ species: isFamily(name) ? formAt(name, n) : name, level: n });
   }
   if (!team.length) problems.push(`${who}: a trainer needs a team ("family:level,...")`);
   if (team.length > 3) problems.push(`${who}: a trainer has at most 3 monsters`);
@@ -195,6 +195,7 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
       const thing: Thing = { kind, id: `${id}:${o.name || o.id}`, name: o.name ?? '', x, y, facing: dirOf(p.facing, 'down'), pages };
       if (kind === 'giant') {
         if (giantById(text(p.giant))) thing.giant = text(p.giant);
+        if (typeof p.gid === 'number') thing.gid = p.gid;
         else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(', ')})`);
       }
       if (kind === 'person' || kind === 'trainer' || kind === 'nurse' || kind === 'tinker') {

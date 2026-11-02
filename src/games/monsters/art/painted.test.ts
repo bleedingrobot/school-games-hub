@@ -21,6 +21,9 @@ const both = (name: string) => [name, `${name}-small`];
 /** Everyone on a map who talks with a name: people, nurses and trainers. */
 const PEOPLE = Object.values(WORLD_MAPS).flatMap((m) => m.things.filter((t) => t.kind === 'person' || t.kind === 'nurse' || t.kind === 'trainer').map((t) => t.name));
 const SCENES = [...new Set(Object.keys(WORLD_MAPS).map(sceneFor))];
+// The three bonus areas and their trainers are painted in Q.3 (docs/MONSTERS-QUESTS-PLAN.md); until then they show the plain look.
+const BONUS = ['steam-valley', 'lagoon-isle', 'aurora-hollow'];
+const TO_PAINT = new Set(Object.values(WORLD_MAPS).filter((m) => BONUS.includes(m.id)).flatMap((m) => m.things.map((t) => t.name)));
 
 // Every picture must be one the game looks for (a typo would mean it never shows) and small enough for a Chromebook.
 const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
@@ -52,9 +55,9 @@ describe('the painted pictures', () => {
   });
 
   it('every person on every map has a portrait and a small one for the talk box', () => {
-    expect(PEOPLE).toHaveLength(50);
+    expect(PEOPLE).toHaveLength(53);
     const have = new Set(files('people'));
-    expect(PEOPLE.flatMap((p) => both(slug(p))).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
+    expect(PEOPLE.filter((p) => !TO_PAINT.has(p)).flatMap((p) => both(slug(p))).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
   });
 
   it('every badge and every bag item has a picture', () => {
@@ -69,9 +72,9 @@ describe('the painted pictures', () => {
   });
 
   it('every place and Topic Tower has a battle background and a phone copy', () => {
-    expect(SCENES).toHaveLength(14);
+    expect(SCENES).toHaveLength(17);
     const have = new Set(files('scenes'));
-    expect(SCENES.flatMap((s) => [s, `${s}-800`]).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
+    expect(SCENES.filter((s) => !BONUS.includes(s)).flatMap((s) => [s, `${s}-800`]).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
   });
 
   it('a Tower’s two rooms share one background, and a place uses its own', () => {

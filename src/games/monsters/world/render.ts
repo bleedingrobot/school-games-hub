@@ -70,6 +70,8 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   };
   for (const g of map.gates) if (!view.state.badges.includes(g.badge)) stamp(g.gid, g.x, g.y);
   for (const t of map.things) if (t.kind === 'chest' && t.gid) stamp(view.state.chests.includes(t.id) ? t.openGid! : t.gid, t.x, t.y);
+  // A sleeping giant, until it is woken (a stand-in tile until the giants are painted).
+  for (const t of map.things) if (t.kind === 'giant' && t.gid && !view.state.quest?.flags.includes(`woke:${t.giant}`)) stamp(t.gid, t.x, t.y);
 
   // People, back to front.
   const bob = view.walking && Math.floor(now / 100) % 2 ? -S : 0;
