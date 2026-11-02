@@ -79,7 +79,10 @@ describe('keyboard and screen readers', () => {
     }
     // A turn, by keyboard: the same 4 steps, each with its heading focused and "Step n of 4" at the top. Every spot
     // has a name, a choice that can't be made says why, and End turn brings the island back with one turn fewer.
-    expect(screen.getByRole('button', { name: 'Spot 6: Empty spot' })).toBeInTheDocument();
+    // On My island the spots are only the picture: building happens in a turn.
+    expect(screen.getByRole('img', { name: 'Spot 6: Empty spot' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Spot 6: Empty spot' })).not.toBeInTheDocument();
+    expect(screen.getByText(/^Next turn: build a /)).toBeInTheDocument();
     screen.getByRole('button', { name: 'Play a turn' }).focus();
     await u.keyboard('{Enter}');
     const at = (n: number, heading: string | RegExp) => {
@@ -125,7 +128,7 @@ describe('keyboard and screen readers', () => {
     await press('End turn');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     expect(screen.getByRole('img', { name: '5 turns left today' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Flower beds' })).toBeInTheDocument();
 
     // A Sky Race by keyboard, with less motion asked for (each stretch jumps to its stop). The questions come during

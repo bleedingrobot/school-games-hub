@@ -20,7 +20,6 @@ import { HowToPlayBody } from './HowToPlay';
 import { Art, IslandPicture } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
-import { SpotPanel } from './Spot';
 import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { actionText, collectLines, n, plural, reportLines } from './words';
 import './isles.css';
@@ -90,8 +89,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
   const [windy, setWindy] = useState(false);
   const [picks, setPicks] = useState<Action[]>([]);
-  /** The spot tapped on My island, between turns. */
-  const [spot, setSpot] = useState<number | null>(null);
   /** What the Build step shows. */
   const [build, setBuild] = useState<BuildView>({ kind: 'island' });
   /** A choice was just made on this step: ask "another?". */
@@ -114,7 +111,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       const v = (await backend.send({ action: 'load' })) as unknown as IslandView;
       show(v);
       setPicks([]);
-      setSpot(null);
       setScreen(v.openRace ? { kind: 'race', open: v.openRace } : v.keeper ? { kind: 'home' } : { kind: 'keeper', first: true });
     } catch (e) {
       setScreen({ kind: 'problem', message: e instanceof Error ? e.message : 'Sky Isles could not be opened.' });
@@ -148,7 +144,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const goTo = (step: Step) => {
     setAsking(step === Step.Question && !!view?.question && !view.question.answered);
     setAgain(false);
-    setSpot(null);
     setBuild({ kind: 'island' });
     setScreen({ kind: 'turn', step });
   };
@@ -173,7 +168,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   /** Back to My island without playing: the choices are dropped and the turn isn't used. */
   const leave = () => {
     setPicks([]);
-    setSpot(null);
     setAgain(false);
     setBuild({ kind: 'island' });
     setScreen({ kind: 'home' });
@@ -282,7 +276,12 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const step = nextStep(shownIsland);
   // In a turn Pip talks about this step only: his next step if it's about this step, or the step's own line.
   const pipHere = turnStep === null || stepOf(step.target) === turnStep;
-  const pipSays = island.turnsLeft < 1 && screen.kind === 'home' ? 'Your island is resting. See you tomorrow!' : pipHere ? step.say : STEP_PIP[turnStep!];
+  // Building only happens in a turn, so between turns Pip says it's for the next turn.
+  const nextTurn = screen.kind === 'home' && stepOf(step.target) === Step.Build;
+  const pipSays = island.turnsLeft < 1 && screen.kind === 'home' ? 'Your island is resting. See you tomorrow!'
+    : !pipHere ? STEP_PIP[turnStep!]
+    : nextTurn ? `Next turn: ${step.say[0].toLowerCase()}${step.say.slice(1)}`
+    : step.say;
   const lastTurn = screen.kind === 'home' && island.turn > 0 ? reportLines(report) : [];
   const pipLine = (
     <div className="si-pipsays si-next" aria-live="polite">
@@ -335,12 +334,9 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               island={shownIsland}
               keeper={view.keeper}
               lit={lit}
-              selected={turnStep === Step.Build ? (build.kind === 'spot' ? build.spot : null) : spot}
-              onSpot={
-                screen.kind === 'home' ? (i) => setSpot((s) => (s === i ? null : i))
-                : turnStep === Step.Build && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i })
-                : undefined
-              }
+              selected={turnStep === Step.Build && build.kind === 'spot' ? build.spot : null}
+              // Spots are buttons only on the Build step: on My island they're just the picture.
+              onSpot={turnStep === Step.Build && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i }) : undefined}
               onDrift={turnStep === Step.Build && !again && !placing ? () => choose({ kind: 'anchor' }) : undefined}
               free={placing ? freePlaces(shownIsland) : undefined}
               onPlace={(place) => {
@@ -355,7 +351,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <div className="si-right">
             {turnStep === null && pipLine}
 
-            {spot !== null && screen.kind === 'home' && <SpotPanel island={shownIsland} spot={spot} onClose={() => setSpot(null)} />}
 
             {lastTurn.length > 0 && (
               <section className="si-panel si-report" aria-label="Last turn">
