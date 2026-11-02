@@ -7,6 +7,7 @@ import { BIT_NAME, canMake, describeBits, RECIPES } from '../../../../shared/mon
 import { daysHad, daysNeeded, EGG_LABEL, HATCH_SPOTS, isReady } from '../../../../shared/monsters/quests/eggs';
 import { QUESTS } from '../../../../shared/monsters/quests/quests';
 import { TYPES } from '../../../../shared/monsters/types';
+import { spottedNote } from '../../../../shared/monsters/world/weather';
 import type { GameMap, WorldState } from '../../../../shared/monsters/world/types';
 import { boardToday, handIn, hatchHere, make, questOf, spotHere, type QuestOptions, type QuestResult } from '../../../../shared/monsters/world/questWorld';
 
@@ -130,6 +131,7 @@ export function BoardPage({ world, apply, opts }: PageProps & { opts: QuestOptio
   const jobs = boardToday(world, opts);
   return (
     <div className="mq">
+      {opts.day && <p className="mq-spotted"><span aria-hidden="true">⭐ </span>{spottedNote(opts.day)}</p>}
       {!jobs.length && <p className="mb-empty">The board is empty right now.</p>}
       <ul className="mq-jobs">
         {jobs.map(({ job, n, done }, i) => (

@@ -8,6 +8,7 @@ import { WORLD_MAPS } from '../maps';
 import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
+import { SPOT_HOMES } from './weather';
 import { BADGES } from './mapLoader';
 import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
@@ -184,6 +185,16 @@ describe('all 18 families, all 54 monsters', () => {
     }
     // The giants are woken, and the ultra rare ones come only from eggs; everything else is met on a map.
     expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id) && !RARE_FAMILIES[s.family]?.giant && s.rarity !== 'ultra').map((s) => s.id)).toEqual([]);
+    // The "spotted today" table (shown on the home page without the maps) matches the maps: every uncommon and rare
+    // family that can be spotted, its first area, and the places in that area it lives.
+    const spottable = MONSTER_BOOK.filter((s) => s.stage === 1 && (s.rarity === 'uncommon' || (s.rarity === 'rare' && !RARE_FAMILIES[s.family]?.giant))).map((s) => s.family);
+    expect(Object.keys(SPOT_HOMES).sort()).toEqual(spottable.sort());
+    for (const [family, home] of Object.entries(SPOT_HOMES)) {
+      const homes = Object.values(WORLD_MAPS).filter((m) => m.area > 0 && m.wild.includes(family));
+      const first = Math.min(...homes.map((m) => m.area));
+      expect(home.area, family).toBe(first);
+      expect(home.place.split(' and ').sort(), family).toEqual(homes.filter((m) => m.area === first).map((m) => m.name.replace(/^Area \d+: /, '')).sort());
+    }
   });
 
   it('forms match the levels: a wild family never shows a form its level has not reached', () => {

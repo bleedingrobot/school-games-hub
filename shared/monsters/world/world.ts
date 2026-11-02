@@ -148,7 +148,7 @@ function triggerAfter(state: WorldState, opts: WorldOptions, steppedOnGrass: boo
   } else {
     grassSteps -= 1;
     if (grassSteps <= 0) {
-      const foe = wildFor(map, state.x, state.y, dice, todayIn(map, opts.maps, opts.day));
+      const foe = wildFor(map, state.x, state.y, dice, todayIn(map, opts.day));
       if (foe) {
         const far = map.far[state.y * map.width + state.x];
         return {

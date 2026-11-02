@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
+import { nzDay } from '../../shared/monsters/world/battleCap';
+import { spottedNote } from '../../shared/monsters/world/weather';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
 import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
 import type { SeasonClock } from '../../shared/clans/season';
@@ -245,6 +247,7 @@ export function Dashboard() {
                       game={game}
                       level={levelFor(game.id)}
                       moves={moves[game.id]}
+                      note={game.id === 'monsters' ? spottedNote(nzDay(Date.now())) : undefined}
                       onLevelChange={(level) => {
                         setLevels((prev) => ({ ...prev, [game.id]: level }));
                         setFeatured(game.id);

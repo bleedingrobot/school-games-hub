@@ -136,21 +136,12 @@ export function giantTalk(state: WorldState, thing: Thing): QuestTalk {
 }
 
 /** Today in one area: its weather, and the spotted family if it is here today. */
-export function todayIn(map: GameMap, maps: Readonly<Record<string, GameMap>>, day?: string): Today | undefined {
+export function todayIn(map: GameMap, day?: string): Today | undefined {
   if (!day || map.area < 1) return undefined;
-  const spotted = spottedToday(day, familyAreas(maps));
+  const spotted = spottedToday(day);
   return { weather: weatherFor(day, map.area), ...(spotted.area === map.area ? { spotted: spotted.family } : {}) };
 }
 
-let areasCache: { maps: unknown; areas: Record<string, number> } | undefined;
-/** The first area each family turns up in the wild. */
-function familyAreas(maps: Readonly<Record<string, GameMap>>): Record<string, number> {
-  if (areasCache?.maps === maps) return areasCache.areas;
-  const areas: Record<string, number> = {};
-  for (const m of Object.values(maps)) for (const e of m.wild) if (m.area > 0 && (areas[e] === undefined || m.area < areas[e])) areas[e] = m.area;
-  areasCache = { maps, areas };
-  return areas;
-}
 
 // ── The Tinker, the notice board and the egg basket (the menu screens call these) ──────────────
 
@@ -291,7 +282,7 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
   const closed = map.things.filter((t) => t.kind === 'chest' && !state.chests.includes(t.id)).length;
   hints.push(closed ? `There ${closed === 1 ? 'is 1 chest' : `are ${closed} chests`} still to find here.` : 'You have opened every chest here.');
   if (map.wild.some((f) => RARE_FAMILIES[f] && !RARE_FAMILIES[f].giant)) hints.push('Rare monsters live here. Keep exploring the long grass!');
-  const today = todayIn(map, maps, opts.day);
+  const today = todayIn(map, opts.day);
   if (today) {
     hints.push(`Today: ${WEATHER_LABEL[today.weather].toLowerCase()}, so ${TYPE_LABEL[WEATHER.brings[today.weather]]} monsters are out more.`);
     if (today.spotted) hints.push(`${speciesOf(formAt(today.spotted, 1)).name} has been spotted here today!`);

@@ -220,3 +220,4 @@
 .mz-dials { display: flex; gap: 14px; justify-content: center; }
 .mz-dial { display: grid; gap: 6px; justify-items: center; }
 .mz-dial output { width: 56px; padding: 6px 0; border: 3px solid var(--mb-ink); border-radius: 10px; background: #fff; text-align: center; font-size: 1.8rem; font-weight: 900; }
+.mq-spotted { margin: 0; padding: 8px 12px; border-radius: 12px; background: #dbeafe; border: 1px solid #93c5fd; font-weight: 800; }

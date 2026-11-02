@@ -3,7 +3,7 @@
  * section 8). Both come from the New Zealand date only, so the whole class sees the same weather and
  * the same rare monster on the same day, and the server can work them out too. No clock: pass the day in.
  */
-import { RARE_FAMILIES, UNCOMMON } from '../monsterBook';
+import { formAt, RARE_FAMILIES, speciesOf } from '../monsterBook';
 import type { TypeId } from '../types';
 
 export type Weather = 'sunny' | 'rain' | 'wind' | 'fog' | 'snow';
@@ -41,11 +41,38 @@ export function weatherFor(day: string, area: number): Weather {
   return list[hash(`${day}:weather:${area}`) % list.length];
 }
 
-/** Today's spotted monster: one uncommon or rare family, and the area where it is twice as likely. */
-export function spottedToday(day: string, areas: Readonly<Record<string, number>>): { family: string; area: number } {
-  const families = [...UNCOMMON, ...Object.keys(RARE_FAMILIES).filter((f) => !RARE_FAMILIES[f].giant)].filter((f) => areas[f] !== undefined);
+/**
+ * Where each uncommon and rare family is first met: its area, and the places in that area it lives, for "spotted today".
+ * A table rather than worked out from the maps, so the home page can show it without loading them (areas.test.ts checks it).
+ */
+export const SPOT_HOMES: Readonly<Record<string, { area: number; place: string }>> = {
+  placepetal: { area: 1, place: 'Kauri Bush' },
+  carrycrab: { area: 2, place: 'Shell Beach and Lagoon Isle' },
+  squaremander: { area: 2, place: 'Shell Beach' },
+  remaindeer: { area: 2, place: 'Shell Beach and Lagoon Isle' },
+  denomibolt: { area: 2, place: 'Shell Beach and Lagoon Isle' },
+  centipebble: { area: 2, place: 'Shell Beach' },
+  kilokiwi: { area: 3, place: 'Steam Valley' },
+  plustoise: { area: 2, place: 'Lagoon Isle' },
+  arraydillo: { area: 3, place: 'Steam Valley' },
+  shareseal: { area: 2, place: 'Lagoon Isle' },
+  quarterowl: { area: 2, place: 'Lagoon Isle' },
+  tuatenth: { area: 3, place: 'Steam Valley' },
+};
+
+/** Today's spotted monster, the same for the whole class: one uncommon or rare family, twice as likely in its area today. */
+export function spottedToday(day: string): { family: string; area: number; place: string } {
+  const families = Object.keys(SPOT_HOMES);
   const family = families[hash(`${day}:spotted`) % families.length];
-  return { family, area: areas[family] };
+  return { family, ...SPOT_HOMES[family] };
+}
+
+/** The "spotted today" line for the notice board and the home page card. */
+export function spottedNote(day: string): string {
+  const s = spottedToday(day);
+  const rare = RARE_FAMILIES[s.family] ? 'rare' : 'uncommon';
+  const at = /^(Shell Beach|Lagoon Isle)/.test(s.place) ? 'on' : 'in';
+  return `Spotted today: ${rare === 'rare' ? 'a rare' : 'an uncommon'} ${speciesOf(formAt(s.family, 1)).name} ${at} ${s.place}!`;
 }
 
 /** What changes the wild odds today in one area: its weather and the spotted family, if it lives here. */
