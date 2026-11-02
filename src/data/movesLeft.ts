@@ -18,7 +18,7 @@ export interface RawMovesLeft {
   monsters?: {
     today: number;
     perDay: number;
-    /** The eggs carried, the play-day count and the last battle day, for the egg line. Missing until the Q.5 migration is applied. */
+    /** The eggs carried, the play-day count and the last battle day, for the egg line (my_moves_left, from 20261103000100). */
     eggs?: Pick<Egg, 'species' | 'found' | 'warmed'>[];
     playDays?: number;
     lastDay?: string | null;

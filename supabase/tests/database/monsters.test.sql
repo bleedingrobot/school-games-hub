@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(95);
+select plan(100);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -130,7 +130,7 @@ select is((select count(*)::integer from public.achievements where player = pg_t
 select pg_temp.save('d', 5, owned => 54, seen => 54, badges => 6, finals => 6);
 select is((select count(*)::integer from public.achievements where player = pg_temp.id('d') and achievement like 'mm-%'), 8,
   'saving again does not earn them twice');
-select is((select count(*)::integer from public.achievement_types where game = 'monsters'), 8, 'there are eight to earn');
+select is((select count(*)::integer from public.achievement_types where game = 'monsters'), 13, 'there are thirteen to earn (five for quests)');
 
 -- ---- The "most monsters" board ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
@@ -170,8 +170,8 @@ select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics"
   'at least one topic stays on');
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["pizza"]}') $$, '22023', null, 'unknown topics are refused');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 8,
-  'students see the eight achievements while the game is on');
+select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 13,
+  'students see the thirteen achievements while the game is on');
 select is(public.progress_rules() -> 'monsters', '{"wildWinsPerPoint":3,"trainerWin":3,"badge":8}'::jsonb, '... and the points rules');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_monsters('{"enabled":false,"topics":["add-sub","fractions"]}') ->> 'enabled', 'false', 'and off again');
@@ -248,6 +248,26 @@ select is(public.load_monster_save(pg_temp.id('a')) ->> 'playDays', '1', 'the mo
 select is(pg_temp.quest_save(8, 0, quest_points => 2) ->> 'points', '2', 'quest points are added to the save''s points');
 select pg_temp.quest_save(9, 0, hatched => 1);
 select is((select eggs_hatched from public.monster_saves where player = pg_temp.id('a')), 1, 'hatched eggs are counted');
+select ok(pg_temp.has('a', 'mm-egg-cellent'), '... and the first one earns Egg-cellent');
+
+-- ---- Quest achievements and the dashboard egg line (20261103000100) ----
+select public.record_monster_save(pg_temp.id('a'), jsonb_build_object(
+  'saveId', gen_random_uuid(), 'seq', 10, 'at', 1792000000010,
+  'world', jsonb_build_object('version', 1, 'map', 'harbour-town', 'team', '[]'::jsonb, 'badges', '[]'::jsonb,
+    'quest', jsonb_build_object('lastDay', '2026-11-03', 'eggs', jsonb_build_array(
+      jsonb_build_object('id', 'e1', 'kind', 'leafy', 'species', 'kilokiwi-1', 'found', 2)))),
+  'battles', '[]'::jsonb,
+  'summary', jsonb_build_object('wildWins', 0, 'trainerWins', 0, 'newBadges', '[]'::jsonb, 'catches', 0, 'questions', 0,
+    'right', 0, 'owned', 2, 'seen', 2, 'badges', 0, 'finalInTeam', 0, 'questPoints', 0, 'hatched', 0,
+    'questsDone', 5, 'giantsWoken', 1, 'raresOwned', 2, 'ultrasOwned', 1)));
+select is((select array[quests_done, giants_woken, rares_owned, ultras_owned] from public.monster_saves where player = pg_temp.id('a')),
+  array[5, 1, 2, 1], 'the quest counts are kept from the save');
+select ok(pg_temp.has('a', 'mm-quest-helper') and pg_temp.has('a', 'mm-wake-up-call') and pg_temp.has('a', 'mm-rare-find')
+  and pg_temp.has('a', 'mm-legend-keeper'), '5 quests, a giant, a rare and an ultra rare earn their achievements');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is(jsonb_array_length(public.my_moves_left() -> 'monsters' -> 'eggs'), 1, 'the dashboard is told the eggs carried');
+select is(public.my_moves_left() -> 'monsters' -> 'lastDay', '"2026-11-03"'::jsonb, '... and the last battle day');
+select pg_temp.reset();
 select is(public.monster_counts_for_cap('{"map": "fire-mountain", "giant": "snorumble", "steps": [{"q": {}}]}'), false,
   'a sleeping giant''s battle does not count towards the 12 a day');
 select is(public.monster_counts_for_cap('{"map": "fire-mountain", "steps": [{"q": {}}]}'), true, '... but a wild battle there does');
