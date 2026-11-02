@@ -8,7 +8,7 @@ Written 2 November 2026 for James.
 ## The short version
 
 - **Everything with a picture gets painted:** 10 level backgrounds, the level map, 10 gems (twice: a small sprite and a big Gem Book painting), rocks, the mystery sack, the cave crab, the winch, the claw, Nugget the kiwi, the shop boosts and stall, and the Claw Workshop upgrades. That is **104 paintings** in all (section 1).
-- **Three styles to choose between.** A mock-up of one level (Glow-worm Cave, with a few gems on it) in each style is being shown to James. His choice fills the `{STYLE}` line in every prompt below.
+- **Three styles to choose between.** The Glow-worm Cave was painted on the gaming PC in each style, two tries each (`python3 scripts/diamond-art.py paint <dir> style-a style-b style-c`, 2 Nov 2026), and shown to James. Waiting for his pick. Seen in the tries: Nugget comes out like a chick (short beak), so his prompts need "long thin curved kiwi beak" said strongly. His choice fills the `{STYLE}` line in every prompt below.
   - **A. Storybook:** bright storybook painting, soft edges, warm light, like a picture book.
   - **B. Glowing Cave:** richer and darker, dramatic glowing light, gems shining like lamps.
   - **C. Clean Flat:** crisp flat shapes, bold outlines, few gradients, very readable.
