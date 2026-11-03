@@ -67,6 +67,13 @@ CUT_LONG = 512
 TEXTURE = 1024
 QUALITY = {'planets': 80, 'clouds': 78, 'suns': 80, 'night': 78, 'skies': 80, 'moons': 80, 'rings': 85, 'postcards': 74, 'buttons': 78, 'tech': 82}
 HD_QUALITY = 70
+# Planets get a big -hd copy (and -normal-hd) only for the best 2 surfaces of each kind, to keep the repo small (James, 4 Nov).
+# The others use their normal size on 'incredible' too. Change a pick and re-run with --force planets.
+HD_PLANETS = {
+    'rocky': (1, 3), 'desert': (0, 2), 'ice': (1, 3), 'ocean': (0, 1), 'lava': (0, 3), 'jungle': (1, 2), 'gas': (2, 3),
+    'icegiant': (1, 2), 'crystal': (0, 3), 'toxic': (0, 2), 'eyeball': (0, 2), 'shattered': (0, 2), 'cube': (1, 2),
+    'donut': (0, 2), 'ringworld': (0, 2),
+}
 NORMAL_QUALITY = 88
 # How strong the bumps are on a normal map. Gas and ice giants have no ground, so they get almost none.
 NORMAL_STRENGTH = {'gas': 0.25, 'icegiant': 0.2}
@@ -243,6 +250,9 @@ def outputs(key: str) -> list[Path]:
     g, n = pic.group, pic.name
     base = ART / g
     if g == 'planets':
+        kind, _, surface = n.rpartition('-')
+        if int(surface) not in HD_PLANETS[kind]:
+            return [base / f'{n}.webp', base / f'{n}-normal.webp']
         return [base / f'{n}.webp', base / f'{n}-hd.webp', base / f'{n}-normal.webp', base / f'{n}-normal-hd.webp']
     if g in SIZE:
         return [base / f'{n}.webp', base / f'{n}-hd.webp']
@@ -306,13 +316,19 @@ def make(job):
             a = np.asarray(img, dtype=np.float32)
             img = to_img(np.clip((a - 10) / (255 - 10), 0, 1) * 255)
         save(resize_to(img, small), ART / g / f'{n}.webp', q)
-        hd = big_copy(img, big, seed=zlib.crc32(key.encode()) % 1000)
-        save(hd, ART / g / f'{n}-hd.webp', HD_QUALITY, method=4)
+        kind, _, surface = n.rpartition('-')
+        with_hd = g != 'planets' or int(surface) in HD_PLANETS[kind]
+        if with_hd:
+            hd = big_copy(img, big, seed=zlib.crc32(key.encode()) % 1000)
+            save(hd, ART / g / f'{n}-hd.webp', HD_QUALITY, method=4)
+        else:
+            for suffix in ('-hd', '-normal-hd'):
+                (ART / g / f'{n}{suffix}.webp').unlink(missing_ok=True)
         if g == 'planets':
             rgb = np.asarray(img, dtype=np.float32)
             h = height_map(n, rgb)
             strength = NORMAL_STRENGTH.get(n.rsplit('-', 1)[0], NORMAL_DEFAULT)
-            for size, suffix in ((small, '-normal'), (big, '-normal-hd')):
+            for size, suffix in ((small, '-normal'), (big, '-normal-hd'))[:2 if with_hd else 1]:
                 hs = np.asarray(Image.fromarray((h * 255).round().astype(np.uint8), 'L').resize(size, Image.LANCZOS), dtype=np.float32) / 255
                 save(normal_map(hs, strength), ART / g / f'{n}{suffix}.webp', NORMAL_QUALITY, method=4)
     elif g == 'rings':

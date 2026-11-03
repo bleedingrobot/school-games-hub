@@ -132,14 +132,15 @@ PLANET_LOOKS: dict[str, list[str]] = {
     'ice': [
         'a bright white and blue ice planet like Europa, a smooth ice shell crossed by long straight tan-brown cracks and ridges',
         'a deep blue glacier-ice planet with long crevasse fields, wind-blown snow drifts and pale frozen plains',
-        'a frosted pale pink-white ice planet with frozen craters, snow-covered plains and polar ice caps',
+        # Remade 4 Nov (ice-2 had black bars; jungle-0, ocean-3 and shattered 0, 1, 3 came out as Earth's map): only the ground is described.
+        'close-up of frosted pale pink-white ice plains with small frozen craters and drifts of snow, spread evenly from edge to edge',
         'a blue-grey ice planet with rows of ridges, frozen lakes, thin cracks and drifts of white frost',
     ],
     'ocean': [
         'a deep blue ocean planet, water from edge to edge with swirling white foam streaks and a few tiny scattered island chains',
         'a bright turquoise shallow-sea planet with ring-shaped coral atolls, pale sandbanks and darker deep channels',
         'a dark teal ocean planet with bright swirling current patterns and a handful of green islands',
-        'a rich blue ocean planet with vast pale archipelagos of small green islands and white surf lines',
+        'close-up of rich blue open sea with long pale sandbars, scattered tiny green islets and white surf lines, spread evenly from edge to edge',
     ],
     'lava': [
         'a black volcanic planet like Io, a cracked black crust with branching rivers of bright orange molten lava and glowing lava lakes',
@@ -148,7 +149,7 @@ PLANET_LOOKS: dict[str, list[str]] = {
         'a charcoal-grey planet with wide glowing orange lava seas, black ash plains and dark volcanic cones',
     ],
     'jungle': [
-        'a lush green jungle planet, dense forest canopy across every continent, winding blue rivers and lakes',
+        'close-up of dense green jungle canopy seen from straight above, winding blue rivers and small lakes, the forest filling the picture from edge to edge',
         'a bright emerald rainforest planet with rolling mountain ranges, soft valley mist and silver rivers',
         'a deep green forest planet mixed with golden meadows and grassland, branching rivers and clear lakes',
         'a teal and lime tropical planet of rainforest islands and wide shallow turquoise lagoons',
@@ -178,16 +179,17 @@ PLANET_LOOKS: dict[str, list[str]] = {
         'a murky olive swamp planet with glowing teal pools, dark mud islands and thin mist',
     ],
     'eyeball': [
-        'an eyeball world: the middle of the map is a warm bright blue sunlit ocean, round it a ring of green land, and at the left and right edges white frozen ice',
-        'an eyeball world: the middle of the map is a hot brown desert, round it a ring of green life, and at the left and right edges white frozen ice',
-        'an eyeball world: the middle of the map is golden sunlit rock and sand, round it a band of green forest and rivers, and at the left and right edges blue-white glacier ice',
-        'an eyeball world: the middle of the map is a glittering turquoise lagoon, round it a ring of lush green plants, and at the left and right edges grey frozen plains',
+        # Remade 4 Nov: "eyeball" and "round it a ring" made the model draw a real eye, so the map is described as upright stripes.
+        'a landscape in upright stripes from left to right: white frozen ice, green land, a wide warm bright blue sunlit sea down the middle, green land, white frozen ice',
+        'a landscape in upright stripes from left to right: white frozen ice, green plant life, a wide hot brown desert down the middle, green plant life, white frozen ice',
+        'a landscape in upright stripes from left to right: blue-white glacier ice, green forest and rivers, wide golden sunlit rock and sand down the middle, green forest and rivers, blue-white glacier ice',
+        'a landscape in upright stripes from left to right: grey frozen plains, lush green plants, a wide glittering turquoise lagoon down the middle, lush green plants, grey frozen plains',
     ],
     'shattered': [
-        'a shattered world, huge broken grey-brown crust plates with wide glowing orange chasms between them',
-        'a shattered world of dark grey plates split by deep chasms glowing electric blue',
+        'close-up of cracked grey-brown rock ground, big flat broken plates of rock with wide glowing orange chasms between them, spread evenly from edge to edge',
+        'close-up of cracked dark grey rock ground, big flat broken plates split by deep chasms glowing electric blue, spread evenly from edge to edge',
         'a shattered world of pale icy plates split by glowing teal cracks and drifting white vapour',
-        'a shattered world of red-brown plates split by chasms glowing gold, dust drifting between the plates',
+        'close-up of cracked red-brown rock ground, big flat broken plates split by chasms glowing gold, dust drifting between them, spread evenly from edge to edge',
     ],
     'cube': [
         'a cube planet surface that looks like neat green farmland, a patchwork of square fields, straight rivers and square lakes',
