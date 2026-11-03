@@ -140,6 +140,11 @@ describe('keyboard and screen readers', () => {
     try {
       await press('Sky Race');
       await waitFor(() => expect(screen.getByRole('heading', { name: 'Sky Race: you and the Gull Riders', level: 2 })).toHaveFocus());
+      // Every heading that gets focus, in order: with less motion the next question can open (and take focus) straight
+      // after a stretch's heading had it, too quickly to catch the heading in the moment on a slow machine.
+      const focused: string[] = [];
+      const note = (e: FocusEvent) => { if (e.target instanceof HTMLHeadingElement) focused.push(e.target.textContent ?? ''); };
+      document.addEventListener('focusin', note);
       await press('Set sail!');
       for (let q = 1; q <= 3; q++) {
         const box = await screen.findByRole('dialog', { name: `Race question ${q} of 3` });
@@ -148,9 +153,10 @@ describe('keyboard and screen readers', () => {
         await waitFor(() => expect(box).not.toBeInTheDocument(), { timeout: 4000 });
         // After the last question, the last stretch jumps straight to the finish.
         if (q === 3) break;
-        await waitFor(() => expect(screen.getByRole('heading', { name: `Sky Race: stretch ${q + 1} of 4`, level: 2 })).toHaveFocus());
+        await waitFor(() => expect(focused).toContain(`Sky Race: stretch ${q + 1} of 4`));
         expect(screen.getByText('No gust this time, keep sailing!')).toBeInTheDocument();
       }
+      document.removeEventListener('focusin', note);
       // Every answer wrong: the race is lost, even the season's first.
       await waitFor(() => expect(screen.getByRole('heading', { name: 'Well raced!', level: 2 })).toHaveFocus());
       await press('Back to my island');
