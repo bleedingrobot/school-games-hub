@@ -13,6 +13,7 @@ import { readReply, type IslesBackend } from './backend';
 // A new name for the cosy rules (3 Nov 2026), so an island saved under the old rules is left behind, not loaded.
 const KEY = 'isles-trial-cosy';
 const DAY_MS = 86_400_000;
+const PREVIEW_BONUS = 5000;
 
 function loadData(key: string): MemoryData | undefined {
   try {
@@ -51,7 +52,16 @@ function pretendIsland(spots: number, turn: number, decorations: DecorationId[],
  * still in its calm start, a gift waiting in the post and some news. Only ever in the preview.
  */
 export function pretendClass(data: MemoryData, today: number) {
-  if (data.names && Object.keys(data.names).length > 1) return;
+  if (data.names && Object.keys(data.names).length > 1) {
+    // Saved before stage S.6: give the pretend class its island names and last season's Hall.
+    if (!data.hall) {
+      const fresh: MemoryData = { islands: {}, turns: [], questions: [], races: [], nextRace: 1 };
+      pretendClass(fresh, today);
+      for (const [id, island] of Object.entries(fresh.islands)) if (data.islands[id]) data.islands[id].name ??= island.name;
+      data.hall = fresh.hall;
+    }
+    return;
+  }
   const mates: [string, string, string, string | null, Island][] = [
     ['mate-ana', 'Ana', 'g03', 'Honey Meadow', pretendIsland(12, 40, ['flowers', 'cherry', 'fountain', 'bench', 'chimes'])],
     ['mate-rawiri', 'Rawiri', 'b05', 'Puffin Cove', pretendIsland(9, 26, ['lantern', 'flags'])],
@@ -107,10 +117,29 @@ export function createTrialBackend(name = 'preview', options: { save?: boolean; 
       }
     },
   });
+  /** James's 5,000 coins for trying out land (3 Nov 2026), once, on the preview page only. */
+  const bonus = data as MemoryData & { bonusCoins?: boolean };
+  const giveBonus = () => {
+    const mine = data.islands.trial?.island;
+    if (name !== 'preview' || bonus.bonusCoins || !mine) return false;
+    mine.coins += PREVIEW_BONUS;
+    bonus.bonusCoins = true;
+    if (save) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch {
+        // Private windows can refuse: the coins last until the page is closed.
+      }
+    }
+    return true;
+  };
   return {
     trial: true,
     async send(body) {
+      giveBonus();
       const r = await handleIsles(services, 'trial', body);
+      // A brand-new island: the coins arrive as soon as it's made.
+      if (r.status === 200 && giveBonus() && r.body.island) (r.body.island as Island).coins += PREVIEW_BONUS;
       return readReply(r.status, r.body);
     },
   };
