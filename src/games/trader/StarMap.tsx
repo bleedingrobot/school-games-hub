@@ -82,6 +82,8 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
   const target = aimed ? galaxy.planets.find((p) => chartPoint(p).x === px && chartPoint(p).y === py) ?? null : null;
   const pickedPlanet = picked !== null ? galaxy.planets[picked] : null;
   const guide = flightGuide ?? (level === 'lots' ? picked : null);
+  // With Bolt off, a pupil reads every planet's x and y off the grid themselves: tapping a planet doesn't show them.
+  const showXY = level !== 'off';
   const dest = target ?? null;
   const need = dest ? fuelNeeded(galaxy, t, dest.id) : 0;
   const tank = SHIPS[t.ship].fuelTank;
@@ -170,10 +172,10 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
                 onClick={() => pick(p.id)}
                 data-coach={`planet-${p.id}`}
                 aria-pressed={picked === p.id}
-                aria-label={`${p.name}, x ${chartPoint(p).x}, y ${chartPoint(p).y}${p.id === t.location ? ', you are here' : ''}. Tap to read about it.`}
+                aria-label={`${p.name}${showXY ? `, x ${chartPoint(p).x}, y ${chartPoint(p).y}` : ''}${p.id === t.location ? ', you are here' : ''}. Tap to read about it.`}
               >
                 <img src={planetIcon(p.name)} alt="" draggable={false} />
-                <span className="st-planet__name">{p.name}<span className="st-planet__xy">{coordText(p)}</span></span>
+                <span className="st-planet__name">{p.name}{showXY && <span className="st-planet__xy">{coordText(p)}</span>}</span>
               </button>
             );
           })}
@@ -200,9 +202,12 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
             onJump={() => target && onJump(target.id)}
             here0={here0}
             warn={level !== 'off'}
+            checkHelp={showXY}
           />
           {ideas.length > 0 && <TripIdeas galaxy={galaxy} ideas={ideas} />}
-          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
+          {pickedPlanet
+            ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} showXY={showXY} />
+            : <p className="st-sub">{showXY ? 'Tap a planet to read about it and see its coordinates.' : 'Tap a planet to read about it. Read its x and y off the grid.'}</p>}
         </div>
       </div>
     </section>
@@ -246,8 +251,10 @@ function JumpBox(props: {
   busy: boolean; canPay: boolean; refuelCost: number; onRefuel: () => void; onJump: () => void;
   /** Show Bolt's customs and pirate warnings (not on help level Off). */
   warn: boolean;
+  /** Say which number to check for the tapped planet (not on help level Off, where the pupil reads them off the grid). */
+  checkHelp: boolean;
 }) {
-  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump, warn } = props;
+  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump, warn, checkHelp } = props;
   const aimed = px !== null && py !== null;
   const typedSomething = xs !== '' || ys !== '';
   const bad = (text: string) => text !== '' && text !== '-' && parseCoord(text) === null;
@@ -256,7 +263,7 @@ function JumpBox(props: {
   if (bad(xs) || bad(ys)) help = 'Use whole numbers from −10 to 10.';
   else if (aimed && !target) {
     help = 'There is nothing at that spot, just empty space.';
-    if (pickedPlanet) {
+    if (pickedPlanet && checkHelp) {
       const c = chartPoint(pickedPlanet);
       if (px !== c.x && py === c.y) help += ` Check x for ${pickedPlanet.name}.`;
       else if (px === c.x && py !== c.y) help += ` Check y for ${pickedPlanet.name}.`;
@@ -325,13 +332,13 @@ function TripIdeas({ galaxy, ideas }: { galaxy: Galaxy; ideas: readonly ChartIde
   );
 }
 
-function PlanetCard({ galaxy, t, dest, news, pushes }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[]; pushes?: Pushes }) {
+function PlanetCard({ galaxy, t, dest, news, pushes, showXY }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[]; pushes?: Pushes; showXY: boolean }) {
   const gov = GOVERNMENTS[dest.government];
   const eventText = eventLine(galaxy, dest.id, t.day);
   const banned = GOODS.filter((_, i) => isBanned(dest, i));
   return (
     <div className="st-card">
-      <h3 className="st-h3">{dest.name} <span className="st-xy">{coordText(dest)}</span></h3>
+      <h3 className="st-h3">{dest.name}{showXY && <> <span className="st-xy">{coordText(dest)}</span></>}</h3>
       <p className="st-soft">{PLANET_FACTS[dest.name]}</p>
       <ul className="st-stats st-stats--tight">
         <li><span className="st-soft">Government</span> <strong>{gov.name}</strong></li>

@@ -16,6 +16,10 @@ export const GRID_HALF = 10;
 export const PLANET_COUNT = 24;
 /** Planets are at least this far apart (across + up). */
 export const MIN_PLANET_GAP = 3;
+/** After that, crowded planets are nudged apart to at least this far, where there's room (so names don't overlap on the chart). */
+export const SPREAD_GAP = 5;
+/** ... moving no more than this far (across + up) from where they were made. */
+export const SPREAD_REACH = 3;
 /** The chance a planet has a special resource (rich soil, lots of water ...), in percent. */
 export const RESOURCE_CHANCE_PCT = 40;
 /** Shipyards are on planets at this tech level or higher. */

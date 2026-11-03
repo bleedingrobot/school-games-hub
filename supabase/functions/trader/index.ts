@@ -7230,6 +7230,67 @@ function tryBuild(seed, attempt) {
 		})
 	};
 }
+/** How close the nearest other planet is to a spot (across + up), ignoring planet `skip`. */
+function nearestGap(spots, spot, skip) {
+	let gap = Infinity;
+	spots.forEach((o, i) => {
+		if (i !== skip) gap = Math.min(gap, distance(o, spot));
+	});
+	return gap;
+}
+/**
+* Nudges crowded planets apart so their names don't sit on top of each other on the chart: a planet closer than
+* SPREAD_GAP to another moves to the nearest free spot (within SPREAD_REACH of where it was made) that is far enough from
+* everyone, or the roomiest one it can find. No random numbers, so the same galaxy always spreads the same way, and the
+* planets keep their names, governments and everything else.
+*/
+function spreadOut(spots) {
+	const at = spots.map((s) => ({ ...s }));
+	for (let pass = 0; pass < 20; pass++) {
+		let moved = false;
+		at.forEach((now, i) => {
+			const gap = nearestGap(at, now, i);
+			if (gap >= 5) return;
+			const home = spots[i];
+			let best = now;
+			let bestGap = gap;
+			let bestFrom = distance(now, home);
+			for (let y = home.y - 3; y <= home.y + 3; y++) for (let x = home.x - 3; x <= home.x + 3; x++) {
+				const spot = {
+					x,
+					y
+				};
+				if (x < 0 || y < 0 || x >= 21 || y >= 21 || distance(spot, home) > 3) continue;
+				const room = Math.min(5, nearestGap(at, spot, i));
+				const from = distance(spot, home);
+				if (room > bestGap || room === bestGap && from < bestFrom) {
+					best = spot;
+					bestGap = room;
+					bestFrom = from;
+				}
+			}
+			if (best !== now) {
+				at[i] = best;
+				moved = true;
+			}
+		});
+		if (!moved) break;
+	}
+	return at;
+}
+/** The galaxy with its planets spread out, or as it was if spreading would leave a planet out of a Flea's reach. */
+function spread(galaxy) {
+	const spots = spreadOut(galaxy.planets);
+	const out = {
+		seed: galaxy.seed,
+		planets: galaxy.planets.map((p, i) => ({
+			...p,
+			x: spots[i].x,
+			y: spots[i].y
+		}))
+	};
+	return isPlayable(out) ? out : galaxy;
+}
 /** Can every planet be reached from every other, hopping no further than a Flea's tank? And are there shipyards? */
 function isPlayable(galaxy) {
 	const { planets } = galaxy;
@@ -7252,7 +7313,7 @@ function isPlayable(galaxy) {
 function makeGalaxy(seed) {
 	for (let attempt = 0; attempt < 200; attempt++) {
 		const galaxy = tryBuild(seed, attempt);
-		if (isPlayable(galaxy)) return galaxy;
+		if (isPlayable(galaxy)) return spread(galaxy);
 	}
 	throw new Error(`No playable galaxy for seed ${seed}`);
 }

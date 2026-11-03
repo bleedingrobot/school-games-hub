@@ -5,7 +5,7 @@ import {
 } from './config';
 import { acceptDeal, encounterChance, encounterFor, isGoodDeal, settleCustoms, settleJunk } from './encounter';
 import { fightRound, settleFight, startFight } from './fight';
-import { chartPoint, coordText, distance, isPlayable, makeGalaxy } from './galaxy';
+import { chartPoint, coordText, distance, isPlayable, makeGalaxy, spreadOut } from './galaxy';
 import { isBanned, marketFor, standardPrice } from './market';
 import { borrow, buy, buyMoon, buyShip, freeHolds, fuelNeeded, newTrader, reachable, refuel, repay, sell, startDay, travel } from './state';
 
@@ -31,6 +31,19 @@ describe('galaxy', () => {
         for (const q of g.planets) if (q.id !== p.id) expect(distance(p, q)).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+
+  it('spreads crowded planets apart (most end up 5 or more from their nearest neighbour), keeping names and governments', () => {
+    let roomy = 0;
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+      const g = makeGalaxy(seed);
+      for (const p of g.planets) if (Math.min(...g.planets.filter((q) => q.id !== p.id).map((q) => distance(p, q))) >= 5) roomy++;
+    }
+    expect(roomy / (8 * PLANET_COUNT)).toBeGreaterThan(0.8);
+    const spots = [{ x: 0, y: 0 }, { x: 1, y: 2 }, { x: 12, y: 12 }];
+    expect(spreadOut(spots)).toEqual(spreadOut(spots));
+    expect(distance(spreadOut(spots)[0], spreadOut(spots)[1])).toBeGreaterThanOrEqual(5);
+    expect(spreadOut(spots)[2]).toEqual({ x: 12, y: 12 });
   });
 });
 
