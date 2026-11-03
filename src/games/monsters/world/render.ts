@@ -159,7 +159,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   }
   ctx.imageSmoothingEnabled = false;
   // Over the tree tops, so a pod hidden in a tree still shows.
-  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 9) * S - offX), Math.round((t.y * TILE + 4) * S - offY), S, twinklePhase(now, i)));
+  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 8) * S - offX), Math.round((t.y * TILE + 5) * S - offY), S, twinklePhase(now, i)));
 
   if (f.fade > 0) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;
@@ -167,7 +167,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   }
 }
 
-/** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in pixel-art style. */
+/** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in pixel-art style (1 art pixel a block, small enough to stay a hint). */
 function drawTwinkle(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, phase: number) {
   const r = [0, 1, 2, 3, 2, 1][phase] ?? 0;
   if (!r) return;
