@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""
+Paints Bond Builder's pictures (Jack and the Beanstalk, New Zealand style, a kiwi at the top; docs/BEANSTALK-PLAN.md) in ComfyUI on James's gaming PC. Runs on a
+computer that can reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"), never in the site build.
+
+  python3 scripts/beanstalk-art.py paint OUT_DIR [names] [--style a] [--tries 2]   # OUT_DIR/<style>/<name>-<try>.png
+  python3 scripts/beanstalk-art.py paint /tmp/beanstalk scene --style a            # one style try
+  python3 scripts/beanstalk-art.py list                                            # every picture name
+
+The graph is Diamond Drop's (Z-Image Turbo, 8 steps, a 1.5x second pass); only the words, sizes and seeds change. Seeds
+are fixed, so a try can be painted again exactly. Use only positive wording: this model draws whatever a prompt names,
+even after "no". The game is for younger children (about 5 to 7), so everything is big, round, soft and friendly.
+"""
+from __future__ import annotations
+
+import json
+import sys
+import time
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+COMFY = 'http://100.97.96.115:8188'
+
+# The three styles James chooses between. Cut-outs use the same words (no paper grain: it paints a frame round them).
+STYLES = {
+    'a': "Soft bright storybook painting for a picture book for young children, gentle watercolour washes, rounded friendly "
+         'shapes, warm sunny light, happy clear colours. ',
+    'b': 'Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, '
+         'chunky rounded shapes, bright cheerful colours, soft studio light. ',
+    'c': "Bold simple cartoon for a preschool television show, thick soft rounded dark outlines, flat bright cheerful colours, "
+         'big round friendly shapes, very clear and easy to read. ',
+}
+AGE = ' Suitable for young children aged 5 to 7.'
+SPRITE = (' Single object, centred, the whole object visible with space around it, on a plain pure white background, '
+          'clean empty white all around.' + AGE)
+
+# The one stuck at the top is a kiwi (James, 4 Nov 2026): it can't fly, so it needs the gold trail to get down.
+# The beak words are Diamond Drop's: asked only for a long beak, the clay style gave it a short robin's beak.
+KIWI = ('Kiwi, a cute round New Zealand kiwi bird: a big round egg-shaped body with fluffy shaggy brown feathers, no neck, a '
+        'tailless round bottom, small bright dark eyes, rosy cheeks, and a very long slender pale beak like a drinking straw, '
+        'as long as its whole body, curving gently down towards the ground, tiny wings, thick strong grey legs and big feet, wearing a little red knitted scarf, ')
+JACK = ('Jack, a cheerful small New Zealand boy about six years old with messy brown hair and freckles, a green cap, a red '
+        'and black checked bush shirt, blue shorts and black gumboots, ')
+
+# Metal leaves must read at a glance (James: "much more vibrant and metallic").
+SHINE = 'vivid mirror-bright polished metal with strong gleaming highlights and reflections'
+
+# The style try: the whole story in one picture, so James can see the style on every kind of thing at once.
+SCENE = ('A giant green beanstalk with a thick curling stem and big heart-shaped leaves rising from a little New Zealand farm '
+         'garden at the bottom all the way up into a long white cloud at the top, tall portrait picture. '
+         f'At the very top, standing on a curl of the beanstalk on the cloud, is {KIWI}looking down a little worried. '
+         f'Big leaves all the way up the stalk: the lowest leaves are {SHINE} in coppery bronze, the middle leaves are {SHINE} '
+         f'in bright silver, and the top leaves are {SHINE} in shining yellow gold with sparkles. '
+         f'At the bottom beside the stalk stands {JACK}waving up at the kiwi. Behind: a little white farmhouse with a red roof, '
+         'a pohutukawa tree with red flowers, silver fern fronds, a woolly sheep, and a snowy cone-shaped mountain far away. '
+         'Bright blue sky.')
+
+# Each leaf the same shape so the colour change reads clearly; a number is drawn on top in the game, so the middle stays calm.
+LEAF = ('One big rounded heart-shaped beanstalk leaf seen flat from the front, pointing up, with a short curly stalk at the '
+        'bottom and one soft vein down the middle, the middle of the leaf smooth and plain, ')
+LEAVES = {
+    'green': 'fresh bright green, soft and alive',
+    'bronze': f'made of {SHINE}, rich coppery bronze, warm orange-brown',
+    'silver': f'made of {SHINE}, bright sparkling silver, cool white with two tiny sparkles',
+    'gold': f'made of {SHINE}, shining rich yellow gold with a warm glow and three tiny sparkles',
+}
+
+KIWI_POSES = {
+    'wait': 'sitting hunched up and a little worried, wings hugged round itself, looking down',
+    'wave': 'standing and flapping one wing in a big happy wave, smiling',
+    'hop': 'hopping down with its tiny wings spread out for balance, feet in the air, excited',
+    'cheer': 'jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around',
+    'egg': 'standing proudly beside a large shining golden egg as big as itself, one wing resting on the egg, smiling',
+}
+JACK_POSES = {
+    'wave': 'standing and waving one hand high, big smile',
+    'point': 'pointing up to the sky with one hand, looking up, excited',
+    'cheer': 'jumping with both arms up in the air, laughing',
+    'hold': 'holding a large shining golden egg in both arms, proud and delighted',
+}
+
+THINGS = {
+    'golden-egg': 'a large shining smooth golden egg standing upright with a warm glow and a few bright sparkles',
+    'egg-cushion': 'a large shining golden egg resting on a round plump red velvet cushion with gold tassels, sparkles all round, a prize',
+    'bean': 'one magic bean, a plump shiny purple-and-green speckled bean with a tiny curled green sprout and a soft glow',
+    'sparkle': 'a cluster of bright golden four-pointed sparkles of different sizes',
+    'stem-top': 'the very top of a giant green beanstalk, a thick stem ending in a flat curled platform shaped like a snail shell with two small curly tendrils, seen from the side',
+    'watering-can': 'a small friendly red watering can with water drops coming out of the spout',
+}
+
+SQUARE = (832, 832)
+WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
+BACK = ' Empty background scenery for a children\'s game, calm soft colours in the middle so things placed on top stand out. Wide landscape.' + AGE
+
+PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
+    'scene': (SCENE + AGE, (832, 1248)),
+    **{f'leaf-{k}': (LEAF + w + '.' + SPRITE, SQUARE) for k, w in LEAVES.items()},
+    **{f'kiwi-{p}': (KIWI + w + '.' + SPRITE, SQUARE) for p, w in KIWI_POSES.items()},
+    **{f'jack-{p}': (JACK + w + ', the whole child from head to boots.' + SPRITE, SQUARE) for p, w in JACK_POSES.items()},
+    **{name: (w.capitalize() + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
+    # The stalk: a tall tile the game repeats upwards, the stem straight up the middle from the very top to the very bottom.
+    'stem': ('A thick green beanstalk stem seen straight on, running vertically straight up the middle of a tall narrow picture from '
+             'the very top edge to the very bottom edge, gently twisting with soft stripes, plain pure white background on both sides, '
+             'an even repeating pattern.' + AGE, (448, 1344)),
+    # Three backgrounds stacked as the beanstalk grows: the garden, the open sky, the land above the clouds.
+    'back-garden': ('A sunny New Zealand farm garden: a little white farmhouse with a red tin roof on the left, a wooden fence, a '
+                    'pohutukawa tree with red flowers, silver fern fronds, two woolly sheep in a green paddock, a patch of soft brown dug '
+                    'earth in the middle where a beanstalk sprouts, rolling green hills and a snowy cone-shaped mountain far away, blue sky.' + BACK, WIDE),
+    'back-sky': ('Open bright blue sky high above the world, a few soft small white clouds near the edges, a tui bird and a fantail far away, '
+                 'calm and plain in the middle.' + BACK, WIDE),
+    'back-clouds': ('The magic land on top of the long white cloud: big soft fluffy white clouds along the bottom like a floor, '
+                    'snowy mountain peaks poking up through the clouds far away, a pale golden sunset sky with a few stars.' + BACK, WIDE),
+    'card': ('A giant green beanstalk with big heart-shaped leaves curling up from a cottage garden into the clouds, the leaves '
+             f'{SHINE} in bronze, silver and gold, {KIWI}at the top waving, a shining golden egg glowing beside it, bright blue sky, '
+             'wide landscape picture for a game title card.' + AGE, (1216, 688)),
+}
+
+
+def graph(text: str, seed: int, width=1024, height=1024) -> dict:
+    base = {
+        '1': {'class_type': 'UNETLoader', 'inputs': {'unet_name': 'z_image_turbo_int8_convrot.safetensors', 'weight_dtype': 'default'}},
+        '2': {'class_type': 'CLIPLoader', 'inputs': {'clip_name': 'qwen_3_4b_fp8_mixed.safetensors', 'type': 'lumina2', 'device': 'default'}},
+        '3': {'class_type': 'VAELoader', 'inputs': {'vae_name': 'ae.safetensors'}},
+        '4': {'class_type': 'ModelSamplingAuraFlow', 'inputs': {'model': ['1', 0], 'shift': 3.0}},
+        '5': {'class_type': 'CLIPTextEncode', 'inputs': {'clip': ['2', 0], 'text': text}},
+        '6': {'class_type': 'ConditioningZeroOut', 'inputs': {'conditioning': ['5', 0]}},
+        '7': {'class_type': 'EmptySD3LatentImage', 'inputs': {'width': width, 'height': height, 'batch_size': 1}},
+    }
+    sample = lambda latent, denoise: {'class_type': 'KSampler', 'inputs': {
+        'model': ['4', 0], 'positive': ['5', 0], 'negative': ['6', 0], 'latent_image': latent, 'seed': seed, 'steps': 8, 'cfg': 1.0,
+        'sampler_name': 'res_multistep', 'scheduler': 'simple', 'denoise': denoise}}
+    return {
+        **base,
+        '8': sample(['7', 0], 1.0),
+        '9': {'class_type': 'VAEDecode', 'inputs': {'samples': ['8', 0], 'vae': ['3', 0]}},
+        '11': {'class_type': 'ImageScaleBy', 'inputs': {'image': ['9', 0], 'upscale_method': 'lanczos', 'scale_by': 1.5}},
+        '12': {'class_type': 'VAEEncode', 'inputs': {'pixels': ['11', 0], 'vae': ['3', 0]}},
+        '13': sample(['12', 0], 0.4),
+        '14': {'class_type': 'VAEDecode', 'inputs': {'samples': ['13', 0], 'vae': ['3', 0]}},
+        '10': {'class_type': 'SaveImage', 'inputs': {'images': ['14', 0], 'filename_prefix': 'beanstalk/img'}},
+    }
+
+
+def call(path: str, body: dict | None = None) -> dict:
+    req = urllib.request.Request(COMFY + path, data=json.dumps(body).encode() if body else None, headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read())
+
+
+def paint(out: Path, names: list[str], style: str, tries: int):
+    out = out / style
+    out.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        words, size = PICTURES[name]
+        for n in range(1, tries + 1):
+            dest = out / f'{name}-{n}.png'
+            if dest.exists():
+                continue
+            # Fixed seeds, so a try can be painted again exactly (the same seed in every style, so styles compare fairly).
+            seed = (sum(map(ord, name)) * 7919 + n * 104729) % 2**32
+            job = call('/prompt', {'prompt': graph(STYLES[style] + words, seed, *size)})['prompt_id']
+            for _ in range(300):
+                time.sleep(2)
+                done = call(f'/history/{job}').get(job)
+                if done:
+                    break
+            else:
+                sys.exit(f'{dest.name}: ComfyUI took too long')
+            img = next(i for o in done['outputs'].values() for i in o.get('images', []))
+            q = urllib.parse.urlencode({'filename': img['filename'], 'subfolder': img['subfolder'], 'type': img['type']})
+            with urllib.request.urlopen(f'{COMFY}/view?{q}', timeout=60) as r:
+                dest.write_bytes(r.read())
+            print(f'  {style}/{dest.name}', flush=True)
+
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    if args[:1] == ['list']:
+        print('\n'.join(PICTURES))
+        sys.exit()
+    if len(args) < 2 or args[0] != 'paint':
+        sys.exit(__doc__)
+    opts = {'--tries': '2', '--style': 'a'}
+    for flag in opts:
+        if flag in args:
+            i = args.index(flag)
+            opts[flag] = args[i + 1]
+            del args[i:i + 2]
+    paint(Path(args[1]), args[2:] or list(PICTURES), opts['--style'], int(opts['--tries']))
