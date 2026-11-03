@@ -82,7 +82,10 @@ const stage = document.getElementById('stage')!;
 const bar = document.getElementById('bar')!;
 const stats = document.getElementById('stats')!;
 
-let pick = 0;
+// ?d=Black&f=2&still&shot: open a design (name start) and a close-up (planet number, sun or wide) with the buttons hidden,
+// for taking pictures with a headless browser.
+const q = new URLSearchParams(location.search);
+let pick = Math.max(0, DESIGNS.findIndex((x) => x.name.startsWith(q.get('d') ?? '\u0000')));
 let level: GraphicsLevel | 'auto' = (new URLSearchParams(location.search).get('level') as GraphicsLevel) || 'auto';
 let sunOverride: SunKind | null = null;
 let viewer: (SystemViewer & { debug?: () => { level: string; fps: number; calls: number; triangles: number } }) | null = null;
@@ -157,7 +160,12 @@ setInterval(() => {
 }, 500);
 
 render();
-void make();
+void make().then(() => {
+  const f = q.get('f');
+  if (f) viewer?.focus(f === 'sun' ? 'sun' : f === 'wide' ? null : Number(f));
+  if (q.has('shot')) { bar.style.display = 'none'; stats.style.display = 'none'; }
+  document.body.dataset.ready = '1';
+});
 
 // For checking the looks from the browser console: view('Icy', 4, 'normal') shows a design, a planet and a level.
 (window as unknown as { view: unknown }).view = async (d: string | null, target: number | 'sun' | null, lv?: GraphicsLevel) => {
@@ -170,4 +178,34 @@ void make();
   viewer?.focus(target);
   const g = viewer?.debug?.() as { timeFrame?: () => number } | undefined;
   return g?.timeFrame?.().toFixed(1);
+};
+
+// show(): lays the viewer's own photo over the page, so a hidden browser pane still gives an up-to-date picture.
+// sizes(): each planet's width on screen in pixels, for checking the whole-system view.
+(window as unknown as { show: unknown }).show = async (w = 800, h = 450) => {
+  if (!viewer) return 'no viewer';
+  const blob = await viewer.snapshot(w, h);
+  let im = document.getElementById('dbgimg') as HTMLImageElement | null;
+  if (!im) {
+    im = document.createElement('img');
+    im.id = 'dbgimg';
+    Object.assign(im.style, { position: 'fixed', left: '0', top: '0', width: '100vw', height: '100vh', zIndex: '99999', pointerEvents: 'none' });
+    document.body.appendChild(im);
+  }
+  im.src = URL.createObjectURL(blob);
+  await new Promise((r) => (im!.onload = r));
+  return 'ok';
+};
+(window as unknown as { hideShot: unknown }).hideShot = () => document.getElementById('dbgimg')?.remove();
+(window as unknown as { sizes: unknown }).sizes = () => {
+  type V = { clone(): V; project(c: unknown): V; addScaledVector(v: V, s: number): V; setFromMatrixColumn(m: unknown, i: number): V; x: number; y: number };
+  const d = viewer?.debug?.() as unknown as { camera: { position: V & { constructor: new () => V }; matrixWorld: unknown }; planets: Map<number, { obj: { pos: V; radius: number; band: boolean } }> } | undefined;
+  if (!d) return '';
+  const right = new d.camera.position.constructor().setFromMatrixColumn(d.camera.matrixWorld, 0);
+  const W = innerWidth, H = innerHeight;
+  return [...d.planets].map(([id, { obj: p }]) => {
+    if (p.band) return `${id}:band`;
+    const a = p.pos.clone().project(d.camera), b = p.pos.clone().addScaledVector(right, p.radius).project(d.camera);
+    return `${id}:${Math.round(Math.hypot(((b.x - a.x) * W) / 2, ((b.y - a.y) * H) / 2) * 2)}`;
+  }).join(' ');
 };

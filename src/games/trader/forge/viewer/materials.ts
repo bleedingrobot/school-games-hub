@@ -68,7 +68,9 @@ void main(){
   alb=mix(uBase,alb,uReady);
   float shine=A.a*uReady; float h=E.a; vec3 emis=pow(E.rgb,vec3(2.2))*uEmisGain*uReady;
   vec3 Ng=normalize(vNrm);
-  if(uMapMode>0.5&&!gl_FrontFacing) Ng=-Ng;
+  // the ring world's land is the inside of the band: it always faces the sun's axis (three.js flips the winding for
+  // BackSide, so gl_FrontFacing can't be trusted to say which face this is)
+  if(uMapMode>0.5) Ng=normalize(vec3(-vWorld.x,0.0,-vWorld.z));
   vec3 N=uBump>0.0?bumpNormal(vWorld,Ng,h,uBump):Ng;
   vec3 V=normalize(cameraPosition-vWorld);
   float cs=1.0;

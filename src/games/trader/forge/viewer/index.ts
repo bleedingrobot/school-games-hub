@@ -4,14 +4,14 @@
  */
 import * as THREE from 'three';
 import type { SystemDesign } from '../../../../../shared/trader/system';
-import { nameText } from '../../../../../shared/trader/system';
+import { pieceName } from '../../../../../shared/trader/system';
 import { skyArt, sunArt } from '../art';
 import { Baker } from './bake';
 import { CameraRig, type Pose, type Shot } from './camera';
 import { belt, comets, orbitLines, SKY_R, sky, systemTech, zone } from './extras';
 import { judgeFrames, levelSettings, LEVELS, startLevel, type LevelSettings } from './levels';
 import { makeShared } from './materials';
-import { beltRadius, sunExtent, systemRadius } from './orbits';
+import { beltRadius, layout, orbitRadius, sunExtent, systemRadius } from './orbits';
 import type { Part } from './parts';
 import { buildPlanet, type PlanetObject } from './planet';
 import { makePost, type Post } from './post';
@@ -151,11 +151,11 @@ export const createSystemViewer: CreateViewer = async (container, first, options
     d.planets.forEach((p, slot) => {
       if (!p.built && !showPlans) return;
       keep.add(p.id);
-      const key = JSON.stringify([p, slot, sunKind, d.sun?.kind]);
+      const key = JSON.stringify([p, slot, sunKind, d.sun?.kind, orbitRadius(slot, d)]);
       const old = planets.get(p.id);
       if (old?.key === key) return;
       if (old) { scene.remove(old.obj.root); old.obj.dispose(); }
-      const obj = buildPlanet(p, slot, { shared, s, baker, sphere, sun: sunKind, showPlans, load });
+      const obj = buildPlanet(p, slot, { shared, s, baker, sphere, sun: sunKind, design: d, showPlans, load });
       planets.set(p.id, { key, obj });
       scene.add(obj.root);
     });
@@ -168,13 +168,14 @@ export const createSystemViewer: CreateViewer = async (container, first, options
       const part = make();
       if (part) { extras.set(name, { key, obj: part }); scene.add(part.obj); }
     };
+    const lay = layout(d).radii.map((r) => r.toFixed(2)).join(',');
     const beltShown = d.belt && (d.belt.built || showPlans) ? d.belt : null;
-    extra('belt', JSON.stringify([beltShown, d.beltAfter, d.sun?.kind]), () => (beltShown ? belt(shared, d, s, !beltShown.built) : null));
+    extra('belt', JSON.stringify([beltShown, d.beltAfter, d.sun?.kind, lay]), () => (beltShown ? belt(shared, d, s, !beltShown.built) : null));
     const cometsShown = d.comets && (d.comets.built || showPlans) ? d.comets : null;
-    extra('comets', JSON.stringify([cometsShown, d.planets.length, d.belt, d.sun?.kind]), () => (cometsShown ? comets(shared, d, s, !cometsShown.built) : null));
-    extra('tech', JSON.stringify([d.tech, d.belt, d.beltAfter, d.sun?.kind, d.planets.length, showPlans]), () => (d.tech.length ? systemTech(shared, d, s, showPlans, shownPlanets) : null));
-    extra('zone', JSON.stringify([showPlans, d.sun?.kind]), () => (showPlans && d.sun ? zone(d) : null));
-    extra('orbits', JSON.stringify([d.planets.map((p) => [p.kind, p.built]), d.sun?.kind]), () => orbitLines(d, showPlans));
+    extra('comets', JSON.stringify([cometsShown, d.planets.length, d.belt, d.sun?.kind, lay]), () => (cometsShown ? comets(shared, d, s, !cometsShown.built) : null));
+    extra('tech', JSON.stringify([d.tech, d.belt, d.beltAfter, d.sun?.kind, d.planets.length, showPlans, lay]), () => (d.tech.length ? systemTech(shared, d, s, showPlans, shownPlanets) : null));
+    extra('zone', JSON.stringify([showPlans, d.sun?.kind, lay]), () => (showPlans && d.sun ? zone(d) : null));
+    extra('orbits', JSON.stringify([d.planets.map((p) => [p.kind, p.built]), d.sun?.kind, lay]), () => orbitLines(d, showPlans));
     syncLabels();
     rig.controls.maxDistance = systemRadius(d) * 4;
   }
@@ -184,8 +185,8 @@ export const createSystemViewer: CreateViewer = async (container, first, options
   function syncLabels() {
     const want = new Map<string, { text: string; plan: boolean }>();
     if (labelsOn) {
-      if (design.sun && sunP) want.set('sun', { text: nameText(design.sun.name), plan: !design.sun.built });
-      for (const p of design.planets) if (planets.has(p.id)) want.set(`p${p.id}`, { text: nameText(p.name), plan: !p.built });
+      if (design.sun && sunP) want.set('sun', { text: pieceName(design.sun), plan: !design.sun.built });
+      for (const p of design.planets) if (planets.has(p.id)) want.set(`p${p.id}`, { text: pieceName(p), plan: !p.built });
     }
     for (const [k, el] of labels) if (!want.has(k)) { el.remove(); labels.delete(k); }
     for (const [k, w] of want) {
@@ -195,7 +196,7 @@ export const createSystemViewer: CreateViewer = async (container, first, options
         Object.assign(el.style, {
           position: 'absolute', left: '0', top: '0', whiteSpace: 'nowrap', font: '600 13px system-ui, sans-serif', letterSpacing: '0.02em',
           padding: '2px 8px', borderRadius: '999px', background: 'rgba(6,10,24,0.55)', border: '1px solid rgba(160,190,255,0.25)',
-          textShadow: '0 1px 3px #000', willChange: 'transform',
+          textShadow: '0 1px 3px #000', willChange: 'transform', display: 'none',
         });
         labelLayer.appendChild(el);
         labels.set(k, el);
@@ -227,23 +228,70 @@ export const createSystemViewer: CreateViewer = async (container, first, options
     placed.sort((a, b) => a.z - b.z);
     for (let i = 0; i < placed.length; i++) {
       const a = placed[i];
-      const hit = placed.slice(0, i).some((b) => b.el.style.display !== 'none' && Math.abs(a.x - b.x) < (a.w + b.w) / 2 && Math.abs(a.y - b.y) < 22);
+      // a name only shows once it has its words (never an empty dark pill)
+      const hit = !a.el.textContent?.trim() || placed.slice(0, i).some((b) => b.el.style.display !== 'none' && Math.abs(a.x - b.x) < (a.w + b.w) / 2 && Math.abs(a.y - b.y) < 22);
       a.el.style.display = hit ? 'none' : 'block';
       if (!hit) a.el.style.transform = `translate(${a.x}px, ${a.y}px) translate(-50%, -100%)`;
     }
   }
 
   // ---------------------------------------------------------------- camera targets
+  /**
+   * The wide shot that fits the circle of radius r round the sun on screen, looking down at `elev`: how far back the
+   * camera stands, and how far towards the camera it aims (the near side of the circle looks bigger, so aiming a little
+   * towards it centres the system and lets the camera come closer).
+   */
+  const fitCam = new THREE.PerspectiveCamera();
+  const fitPt = new THREE.Vector3();
+  const fitWide = (r: number, elev: number): { dist: number; shift: number } => {
+    fitCam.fov = camera.fov;
+    fitCam.aspect = camera.aspect;
+    fitCam.near = 0.5;
+    fitCam.far = 1e6;
+    fitCam.updateProjectionMatrix();
+    let yMin = 0, yMax = 0;
+    const fits = (dist: number, shift: number) => {
+      fitCam.position.set(shift + dist * Math.cos(elev), dist * Math.sin(elev), 0);
+      fitCam.lookAt(shift, 0, 0);
+      fitCam.updateMatrixWorld();
+      yMin = 1; yMax = -1;
+      for (let i = 0; i < 48; i++) {
+        const a = (i / 48) * Math.PI * 2;
+        fitPt.set(Math.cos(a) * r, 0, Math.sin(a) * r).project(fitCam);
+        if (fitPt.z > 1 || Math.abs(fitPt.x) > 0.95 || Math.abs(fitPt.y) > 0.9) return false;
+        yMin = Math.min(yMin, fitPt.y); yMax = Math.max(yMax, fitPt.y);
+      }
+      return true;
+    };
+    let shift = 0, dist = r * 3;
+    for (let round = 0; round < 4; round++) {
+      let lo = r * 0.3, hi = r * 8;
+      for (let i = 0; i < 20; i++) {
+        const mid = (lo + hi) / 2;
+        if (fits(mid, shift)) hi = mid;
+        else lo = mid;
+      }
+      dist = hi;
+      fits(dist, shift);
+      // nudge the aim towards whichever edge has more room
+      shift -= ((yMin + yMax) / 2) * r * 0.5;
+    }
+    return { dist, shift };
+  };
+  const WIDE_ELEV = 0.52;
   const wide = (out: Pose, az?: number) => {
     const r = systemRadius(design);
     const a = az ?? Math.atan2(camera.position.z, camera.position.x);
-    out.target.set(0, 0, 0);
-    out.pos.set(Math.cos(a) * r * 1.25, r * 0.62, Math.sin(a) * r * 1.25);
+    const { dist, shift } = fitWide(r, WIDE_ELEV);
+    out.target.set(Math.cos(a) * shift, 0, Math.sin(a) * shift);
+    out.pos.set(Math.cos(a) * (shift + dist * Math.cos(WIDE_ELEV)), dist * Math.sin(WIDE_ELEV), Math.sin(a) * (shift + dist * Math.cos(WIDE_ELEV)));
   };
   const viewOf = (p: PlanetObject, out: Pose, angle = 0.65, distK = 1, up = 0.28) => {
     out.target.copy(p.pos);
     if (p.band) {
-      out.pos.copy(p.pos).multiplyScalar(0.72).setY(p.pos.y + 6);
+      // from inside the ring, a little way round and above, so the band sweeps across the picture with its land facing in
+      const R = p.orbitR, a = Math.atan2(p.pos.z, p.pos.x) + 1.9;
+      out.pos.set(Math.cos(a) * R * 0.8, p.pos.y + R * 0.22, Math.sin(a) * R * 0.8);
       return;
     }
     const dist = (p.hasRing ? p.ringOuter * 2.1 : p.radius * 4.2) * distK + 1;
@@ -269,7 +317,8 @@ export const createSystemViewer: CreateViewer = async (container, first, options
     const shots: Shot[] = [];
     const r = systemRadius(design);
     const az = Math.atan2(camera.position.z, camera.position.x);
-    shots.push({ dur: 13, at: (u, o) => { o.target.set(0, 0, 0); const a = az + u * 0.7; o.pos.set(Math.cos(a) * r * (1.4 - u * 0.25), r * (0.7 - u * 0.25), Math.sin(a) * r * (1.4 - u * 0.25)); } });
+    const fd = fitWide(r, WIDE_ELEV).dist;
+    shots.push({ dur: 13, at: (u, o) => { o.target.set(0, 0, 0); const a = az + u * 0.7; const e = WIDE_ELEV + 0.15 - u * 0.3, dd = fd * (1.05 - u * 0.2); o.pos.set(Math.cos(a) * dd * Math.cos(e), dd * Math.sin(e), Math.sin(a) * dd * Math.cos(e)); } });
     const ps = shownPlanets().filter((p) => !p.band).slice(0, 6);
     for (const p of ps) {
       shots.push({
@@ -475,7 +524,7 @@ export const createSystemViewer: CreateViewer = async (container, first, options
   opts.onLevel?.(level);
 
   /** Debug: counts pixels that are not finite numbers in a float render, so a broken shader can be found. */
-  function probe(): number {
+  function probe(): { bad: number; max: number; over: number } {
     const w = 256, h = 192;
     const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.FloatType });
     renderer.setRenderTarget(rt);
@@ -484,9 +533,13 @@ export const createSystemViewer: CreateViewer = async (container, first, options
     const buf = new Float32Array(w * h * 4);
     renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf);
     rt.dispose();
-    let bad = 0;
-    for (let i = 0; i < buf.length; i += 4) if (!Number.isFinite(buf[i] + buf[i + 1] + buf[i + 2])) bad++;
-    return bad;
+    let bad = 0, max = 0, over = 0;
+    for (let i = 0; i < buf.length; i += 4) {
+      const v = Math.max(buf[i], buf[i + 1], buf[i + 2]);
+      if (!Number.isFinite(buf[i] + buf[i + 1] + buf[i + 2])) bad++;
+      else { max = Math.max(max, v); if (v > 60000) over++; }
+    }
+    return { bad, max, over };
   }
 
   /** Debug: how long one whole frame takes to draw, waiting for the GPU to finish (ms, median of 9). */
@@ -557,7 +610,7 @@ export const createSystemViewer: CreateViewer = async (container, first, options
       labelLayer.remove();
     },
     /** For the preview page: frame time and draw calls. */
-    debug: () => ({ level, fps: frameMs ? 1000 / frameMs : 0, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, busy: baker.busy, scene, renderer, probe, timeFrame }),
+    debug: () => ({ level, fps: frameMs ? 1000 / frameMs : 0, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, busy: baker.busy, scene, renderer, camera, rig, planets, step, probe, timeFrame }),
   };
   return viewer;
 };

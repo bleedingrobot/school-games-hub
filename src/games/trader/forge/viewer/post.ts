@@ -17,8 +17,8 @@ void main(){
   if(uOn<0.5){ gl_FragColor=clean(texture2D(tDiffuse,vUv)); return; }
   vec2 d=vUv-uCenter; d.x*=uAspect;
   float r=length(d);
-  float rE=uHorizon*1.55;
-  float fade=1.0-smoothstep(rE*6.0,rE*12.0,r);
+  float rE=uHorizon*2.1;
+  float fade=1.0-smoothstep(rE*5.0,rE*11.0,r);
   float defl=rE*rE/max(r,1e-4)*fade;
   vec2 src=uCenter+(d/max(r,1e-4))*(r-defl)/vec2(uAspect,1.0);
   vec4 c=clean(texture2D(tDiffuse,src));

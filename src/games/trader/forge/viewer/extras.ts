@@ -245,7 +245,7 @@ void main(){ vec2 c=gl_PointCoord*2.0-1.0; float r=dot(c,c); if(r>1.0) discard;
 
 /** The soft green "just right" band on the orbit plane (Forge view only). */
 export function zone(d: SystemDesign): Part | null {
-  const z = zoneBand(d.sun?.kind);
+  const z = zoneBand(d);
   if (!z) return null;
   const geo = new THREE.RingGeometry(z[0], z[1], 256, 1);
   geo.rotateX(-Math.PI / 2);
@@ -271,7 +271,7 @@ export function orbitLines(d: SystemDesign, plans: boolean): Part {
   const geos: THREE.BufferGeometry[] = [];
   d.planets.forEach((p, slot) => {
     if (p.kind === 'ringworld' || (!p.built && !plans)) return;
-    const r = orbitRadius(slot, d.sun?.kind);
+    const r = orbitRadius(slot, d);
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 256; i++) { const a = (i / 256) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)); }
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
@@ -352,7 +352,7 @@ export function systemTech(shared: Shared, d: SystemDesign, s: LevelSettings, pl
     sail.add(mesh);
     if (planned('sails')) holo(sail, 'sails');
     g.add(sail);
-    const r0 = orbitRadius(1, d.sun?.kind) + 4;
+    const r0 = orbitRadius(1, d) + 4;
     const m = new THREE.Matrix4(), qq = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3(1, 1, 1), e = new THREE.Euler();
     parts.push({
       obj: new THREE.Object3D(),

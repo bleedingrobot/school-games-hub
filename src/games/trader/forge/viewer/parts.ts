@@ -42,24 +42,32 @@ export function asHologram(o: THREE.Object3D, time: { value: number }) {
 // ---------------------------------------------------------------------------------------------- effects
 
 export function aurora(shared: Shared, R: number, amount: number): Part {
-  const geo = new THREE.CylinderGeometry(R * 0.44, R * 0.4, R * 0.28, 96, 1, true);
+  // A curtain standing on the surface round each pole: it starts on the ground at about 68 degrees north (and south),
+  // flares out a little as it rises, and fades out at the top and the bottom so no hard edge outlines the polar night.
+  const lat = THREE.MathUtils.degToRad(68);
+  const r0 = R * Math.cos(lat) * 0.99, y0 = R * Math.sin(lat) * 0.99;
+  const hgt = R * 0.32;
+  const geo = new THREE.CylinderGeometry(r0 * 1.22, r0, hgt, 128, 1, true);
+  geo.translate(0, y0 + hgt / 2, 0);
   const mat = new THREE.ShaderMaterial({
-    vertexShader: /* glsl */ `varying vec2 vUv; varying vec3 vWorld; varying vec3 vNrm;
-void main(){ vUv=uv; vec4 w=modelMatrix*vec4(position,1.0); vWorld=w.xyz; vNrm=normalize(mat3(modelMatrix)*normal); gl_Position=projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: /* glsl */ `uniform float uAmt; uniform vec3 uCenter; varying vec2 vUv; varying vec3 vWorld; varying vec3 vNrm;
+    vertexShader: /* glsl */ `varying vec2 vUv; varying vec3 vWorld;
+void main(){ vUv=uv; vec4 w=modelMatrix*vec4(position,1.0); vWorld=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: /* glsl */ `uniform float uAmt; uniform vec3 uCenter; varying vec2 vUv; varying vec3 vWorld;
 ${LIGHTS}
 ${NOISE}
 void main(){
   float u=vUv.x*6.2831853;
-  float c=snoise(vec3(cos(u)*3.0,sin(u)*3.0,uTime*0.15))*0.5+0.5;
-  float c2=snoise(vec3(cos(u)*9.0,sin(u)*9.0,uTime*0.4))*0.5+0.5;
+  float c=clamp(snoise(vec3(cos(u)*3.0,sin(u)*3.0,uTime*0.15))*0.5+0.5,0.0,1.0);
+  float c2=clamp(snoise(vec3(cos(u)*9.0,sin(u)*9.0,uTime*0.4))*0.5+0.5,0.0,1.0);
   float curtain=c*c*(0.6+0.8*c2);
-  float y=vUv.y;
-  float fade=smoothstep(0.0,0.15,y)*pow(1.0-y,1.5);
+  float y=clamp(vUv.y,0.0,1.0);
+  float fade=smoothstep(0.0,0.25,y)*(1.0-smoothstep(0.45,1.0,y));
   vec3 col=mix(vec3(0.1,1.0,0.45),vec3(1.0,0.25,0.7),smoothstep(0.35,1.0,y+c2*0.2));
+  // bright on the night side, only a whisper in daylight
   float night=1.0;
-  for(int i=0;i<2;i++){ if(i>=uLightCount) break; night=min(night,1.0-0.65*smoothstep(-0.2,0.4,dot(normalize(vWorld-uCenter),normalize(uLightPos[i]-uCenter)))); }
-  gl_FragColor=vec4(col*curtain*fade*uAmt*2.2*night,1.0);
+  for(int i=0;i<2;i++){ if(i>=uLightCount) break; night=min(night,1.0-0.88*smoothstep(-0.25,0.35,dot(normalize(vWorld-uCenter),normalize(uLightPos[i]-uCenter)))); }
+  float face=gl_FrontFacing?1.0:0.7;
+  gl_FragColor=vec4(max(col*curtain*fade*uAmt*2.0*night*face,vec3(0.0)),1.0);
   ${FINISH}
 }`,
     uniforms: { ...shared, uAmt: { value: amount }, uCenter: { value: new THREE.Vector3() } },
@@ -70,9 +78,7 @@ void main(){
   });
   const g = new THREE.Group();
   const north = new THREE.Mesh(geo, mat);
-  north.position.y = R * 0.95;
   const south = new THREE.Mesh(geo, mat);
-  south.position.y = -R * 0.95;
   south.rotation.x = Math.PI;
   g.add(north, south);
   const wp = new THREE.Vector3();

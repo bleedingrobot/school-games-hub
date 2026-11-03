@@ -1,14 +1,14 @@
 /** One planet in the viewer: its surface, clouds, sky glow, rings, moons, effects and technology, or a hologram plan. */
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import type { Built, PlanetPick, SunKind } from '../../../../../shared/trader/system';
+import type { Built, PlanetPick, SunKind, SystemDesign } from '../../../../../shared/trader/system';
 import { SUNS } from '../../../../../shared/trader/system';
 import { cloudArt, moonArt, planetArt, ringArt } from '../art';
 import type { Baker, PlanetMaps, PlanetMapSpec } from './bake';
 import { KIND_ID } from './bakeShaders';
 import type { LevelSettings } from './levels';
 import { atmosphereMaterial, cloudMaterial, hologramMaterial, ringMaterial, ringStrip, surfaceMaterial, type Shared } from './materials';
-import { orbitRadius, orbitSpeed, planetRadius, startAngle } from './orbits';
+import { moonDist, moonSize, orbitRadius, orbitSpeed, planetRadius, ringOuterOf, startAngle } from './orbits';
 import * as P from './parts';
 
 export interface Ctx {
@@ -17,6 +17,8 @@ export interface Ctx {
   baker: Baker;
   sphere: THREE.BufferGeometry;
   sun: SunKind | undefined;
+  /** The whole design, for the orbit layout. */
+  design: SystemDesign;
   showPlans: boolean;
   /** Loads a painted picture as a texture, or null. */
   load(url: string | null): Promise<THREE.Texture | null>;
@@ -80,7 +82,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
   const planned = !p.built;
   const plans = ctx.showPlans;
   const R = planetRadius(p.kind, p.size);
-  const orbitR = orbitRadius(slot, ctx.sun);
+  const orbitR = orbitRadius(slot, ctx.design);
   const speed = orbitSpeed(orbitR, ctx.sun);
   const a0 = startAngle(p.id);
   const band = p.kind === 'ringworld';
@@ -143,7 +145,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
 
   // ---- the ring world: a band round the sun
   if (band) {
-    const W = 5;
+    const W = 13;
     const segs = s.level === 'simple' ? 128 : 360;
     const land = new THREE.CylinderGeometry(orbitR, orbitR, W, segs, 1, true);
     disposables.push(land);
@@ -279,7 +281,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
 
   // ---- rings
   if (p.ring && shown(p.ring, planned, plans)) {
-    const inner = R * 1.35, outer = R * (p.ring.kind === 'double' ? 2.6 : 2.3);
+    const inner = R * 1.35, outer = ringOuterOf(R, p.ring.kind);
     ringOuter = outer;
     const rg = new THREE.RingGeometry(inner, outer, s.level === 'simple' ? 64 : 160, 1);
     rg.rotateX(-Math.PI / 2);
@@ -310,8 +312,8 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
   const moons: { pivot: THREE.Group; mesh: THREE.Mesh; r: number; w: number; ph: number; mat?: THREE.ShaderMaterial; maps?: PlanetMaps }[] = [];
   const shownMoons = p.moons.filter((m) => shown(m, planned, plans));
   shownMoons.forEach((m, i) => {
-    const mr = 0.22 + 0.09 * (m.look % 3) + (m.yours ? 0.06 : 0);
-    const dist = R * (ringOuter ? 2.55 : 1.8) + 1.0 + i * 1.35;
+    const mr = moonSize(R, m.look, m.yours);
+    const dist = moonDist(R, i, ringOuter);
     const pivot = new THREE.Group();
     pivot.rotation.x = 0.12 * (i - 1);
     pivot.rotation.z = 0.08 * i;

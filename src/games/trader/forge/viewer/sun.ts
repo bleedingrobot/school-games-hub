@@ -4,7 +4,7 @@ import type { SunKind } from '../../../../../shared/trader/system';
 import { SUNS } from '../../../../../shared/trader/system';
 import { FINISH, NOISE } from './glsl';
 import { glowMaterial, hologramMaterial, twinkleMaterial } from './materials';
-import { SUN_SIZE } from './orbits';
+import { SUN_SCALE, SUN_SIZE } from './orbits';
 import type { LevelSettings } from './levels';
 
 export interface SunObject {
@@ -133,15 +133,15 @@ export function buildSun(kind: SunKind | null, built: boolean, s: LevelSettings,
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
-      uniforms: { uColor: { value: glowCol }, uIntensity: { value: 1.15 }, uTime: time, uDisc: { value: 1 / look.corona }, uRays: { value: look.rays }, uFlare: { value: look.flare }, uStreak: { value: s.level === 'incredible' ? 0.5 : 0.25 } },
+      uniforms: { uColor: { value: glowCol }, uIntensity: { value: 1.15 }, uTime: time, uDisc: { value: 1 / (look.corona * 0.48) }, uRays: { value: look.rays }, uFlare: { value: look.flare }, uStreak: { value: s.level === 'incredible' ? 0.5 : 0.25 } },
     }));
     disposables.push(corona.material as THREE.Material);
-    corona.scale.setScalar(r * look.corona);
+    corona.scale.setScalar(r * look.corona * 0.48);
     g.add(corona);
     billboards.push(corona);
     const halo = new THREE.Mesh(quad, glowMaterial(glowCol.clone().multiplyScalar(0.6), 0.32, 3.5));
     disposables.push(halo.material as THREE.Material);
-    halo.scale.setScalar(r * look.corona * 2.2);
+    halo.scale.setScalar(r * look.corona * 0.85);
     g.add(halo);
     billboards.push(halo);
     // Close up, the glare would hide the boiling surface: dim the glow and the surface as the camera comes near.
@@ -149,7 +149,7 @@ export function buildSun(kind: SunKind | null, built: boolean, s: LevelSettings,
     const cu = corona.material as THREE.ShaderMaterial, hu = halo.material as THREE.ShaderMaterial;
     updaters.push((_t, cam) => {
       g.getWorldPosition(wp);
-      const near = THREE.MathUtils.smoothstep(cam.position.distanceTo(wp) / r, 3, 16);
+      const near = THREE.MathUtils.smoothstep(cam.position.distanceTo(wp) / (r * SUN_SCALE), 3, 16);
       mat.uniforms.uIntensity.value = look.intensity * (0.2 + 0.8 * near);
       cu.uniforms.uIntensity.value = 1.15 * (0.22 + 0.78 * near);
       hu.uniforms.uIntensity.value = 0.32 * (0.06 + 0.94 * near);
@@ -190,7 +190,7 @@ export function buildSun(kind: SunKind | null, built: boolean, s: LevelSettings,
     disposables.push(horizon.material as THREE.Material);
     horizon.scale.setScalar(radius);
     group.add(horizon);
-    const inner = radius * 1.35, outer = radius * 5;
+    const inner = radius * 1.35, outer = radius * 6;
     const discGeo = new THREE.RingGeometry(inner, outer, s.level === 'simple' ? 96 : 256, 1);
     disposables.push(discGeo);
     const discMat = new THREE.ShaderMaterial({
@@ -211,12 +211,14 @@ void main(){
   vec3 q=vec3(cos(ang)*r*0.6,sin(ang)*r*0.6,r*0.9);
   float n=fbm(q,4)*0.5+0.5;
   float streaks=snoise(vec3(cos(ang)*2.0,sin(ang)*2.0,r*3.0))*0.5+0.5;
+  // spiral arms winding in, so it reads as swirling even from far away
+  float arms=0.55+0.45*sin(a*3.0+log(max(r/uRange.x,1e-3))*7.0-uTime*sp*2.0);
   float temp=pow(1.0-clamp(x,0.0,1.0),1.6);
   vec3 col=mix(vec3(0.7,0.12,0.02),vec3(1.0,0.5,0.12),smoothstep(0.0,0.5,temp));
   col=mix(col,vec3(1.0,0.92,0.8),smoothstep(0.55,1.0,temp));
   vec3 V=normalize(cameraPosition-vWorld);
   float dop=1.0+0.8*dot(vTan,V);
-  float bright=(0.3+0.9*n*streaks+0.4*n)*temp*1.7*dop*dop;
+  float bright=(0.35+0.9*n*streaks+0.4*n)*(0.4+0.8*arms)*temp*2.3*dop*dop;
   float edge=smoothstep(0.0,0.04,x)*(1.0-smoothstep(0.6,1.0,x));
   gl_FragColor=vec4(col*bright*edge,1.0);
   ${FINISH}
@@ -248,7 +250,37 @@ void main(){ float r=length(vUv); float g=exp(-(r-uR0)*(r-uR0)*2500.0)*2.5+exp(-
     photon.renderOrder = 2;
     group.add(photon);
     billboards.push(photon);
-    const glow = new THREE.Mesh(quad, glowMaterial(new THREE.Color(1.0, 0.5, 0.2), 0.12, 3.5));
+    // The far side of the disc, bent by the hole's gravity into a glowing arch over and under it: this is what makes a
+    // black hole look like one from any angle.
+    const lensedMat = new THREE.ShaderMaterial({
+      vertexShader: BILLBOARD_VERT,
+      fragmentShader: /* glsl */ `
+uniform float uTime; uniform float uIn; uniform float uOut; varying vec2 vUv;
+${NOISE}
+void main(){
+  float r=length(vUv); if(r>1.0) discard;
+  float x=(r-uIn)/(uOut-uIn); if(x<0.0||x>1.0) discard;
+  float a=atan(vUv.y,vUv.x+1e-6);
+  float prof=smoothstep(0.0,0.08,x)*(1.0-x)*(1.0-x);
+  float ang=a-uTime*0.3;
+  float n=snoise(vec3(cos(ang)*3.0,sin(ang)*3.0,x*5.0+uTime*0.08))*0.5+0.5;
+  float arc=0.25+0.75*pow(abs(sin(a)),1.4);
+  vec3 col=mix(vec3(1.0,0.42,0.08),vec3(1.0,0.9,0.75),(1.0-x)*(1.0-x)*(1.0-x));
+  gl_FragColor=vec4(col*prof*(0.45+0.9*n)*arc*1.4,1.0);
+  ${FINISH}
+}`,
+      uniforms: { uTime: time, uIn: { value: 1.12 / 3.6 }, uOut: { value: 1 } },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    disposables.push(lensedMat);
+    const lensed = new THREE.Mesh(quad, lensedMat);
+    lensed.scale.setScalar(radius * 3.6);
+    lensed.renderOrder = 1;
+    group.add(lensed);
+    billboards.push(lensed);
+    const glow = new THREE.Mesh(quad, glowMaterial(new THREE.Color(1.0, 0.5, 0.2), 0.1, 3.0));
     disposables.push(glow.material as THREE.Material);
     glow.scale.setScalar(outer * 2.2);
     group.add(glow);
@@ -394,15 +426,20 @@ void main(){
   pick.userData.pick = 'sun';
   group.add(pick);
 
+  // Everything above is made at SUN_SIZE; the whole sun is drawn SUN_SCALE times bigger so it stays the biggest thing
+  // next to the planets. Light positions are worked out in the sun's own space, so they are scaled to match.
+  group.scale.setScalar(SUN_SCALE);
+  if (hole) hole.radius *= SUN_SCALE;
   return {
     group,
     lights,
-    radius,
+    radius: radius * SUN_SCALE,
     pick,
     hole,
     beam,
     update(t, cam) {
       for (const u of updaters) u(t, cam);
+      for (const l of lights) l.pos.multiplyScalar(SUN_SCALE);
       for (const b of billboards) b.quaternion.copy(cam.quaternion);
     },
     dispose() {
