@@ -2,7 +2,7 @@
 
 The new end game for Star Trader. Today the big goal is one button: save 20,000 credits and **buy your moon**. This plan turns that into **building your own solar system**: pupils pick their sun, their planets, how the planets look, what lives on them and what technology they build. Then they can watch it all in full screen, painted to a high standard and moving.
 
-Written 3 November 2026 for James. **Status (4 Nov 2026): built on branch `trader-system` with painted art, not live.** The migration is on hold and nothing is deployed. 14 weak planet maps wait for a repaint at home (`docs/TRADER-SYSTEM-ART-PLAN.md` section 8). All the questions in section 13 are answered.
+Written 3 November 2026 for James. **Status (4 Nov 2026): built on branch `trader-system` with painted art, not live.** The migration is on hold and nothing is deployed. 14 weak planet maps wait for a repaint at home (`docs/TRADER-SYSTEM-ART-PLAN.md` section 8). All the questions in section 13 are answered. S.8 (gallery, stickers, projector tour) built 4 Nov afternoon.
 
 ## The short version
 
@@ -320,7 +320,7 @@ Each stage on its own branch from `main` (guide section 6), tests passing, scree
 | **S.5 Server and saving** | Migration, moves, `trader_systems`, building with credits, moon carried over, the New Season choice screen (keep, or picture + carry ship and credits). Preview only. The profile-page album is a separate small step on its own branch | Claude | Ask before deploying |
 | **S.6 Life, technology, effects** | Postcards, creatures, tier 1–3 tech, auroras, geysers, comets, belts, the black hole | Claude + gaming PC | **Yes** |
 | **S.7 Bolt, maths, achievements, go live** | Forge tour, next-step lines, science tips, budget questions, achievements, Star Makers list. Switch on for one class first | Claude | **Yes: guided first go** |
-| **S.8 Sharing** | Gallery, stickers, teacher's projector tour, photo mode | Claude | Yes |
+| **S.8 Sharing** ✅ built 4 Nov | Gallery, stickers, teacher's projector tour, photo mode. Pictures in the private bucket `trader-gallery`, saved through the trader function at most every 5 minutes; stickers in `trader_stickers`; all in the on-hold migration | Claude | Yes: review page |
 | **S.9 Painted portraits (optional)** | Overnight portraits of each pupil's system on the gaming PC | Claude + gaming PC | Only if wanted |
 
 S.0 and S.1 can run side by side. S.2 is the riskiest (does it look incredible *and* run on a Chromebook?), so it comes before most of the painting.
