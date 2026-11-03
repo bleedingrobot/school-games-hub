@@ -1,6 +1,6 @@
 /**
  * The Star Forge screen (docs/TRADER-SYSTEM-PLAN.md, section 2): the pupil's solar system in live 3D, a row of slot cards, and a
- * step-by-step picker. Planning is free (edits change a draft at once and are saved quietly); building a piece costs credits and
+ * step-by-step picker. Pieces show once the pupil can afford them; planning is free (edits change a draft at once and are saved quietly); building a piece costs credits and
  * always shows the price first. All the rules and prices are the shared ones in `shared/trader/system.ts`.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -137,7 +137,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
         <h2 id="stf-h" className="st-h">🌟 Star Forge: the {pieceName(draft)} System</h2>
         <button ref={opener} type="button" className="st-btn" onClick={(e) => setFull(e.currentTarget.closest<HTMLElement>('.st-root') ?? document.body)}>🔭 View in full screen</button>
       </div>
-      <p className="st-sub">Design your own solar system for free. Build each piece with credits when you are ready. Plans look like holograms.</p>
+      <p className="st-sub">Design your own solar system. New pieces appear as you earn credits, and planning them is free. Build each piece when you are ready. Plans look like holograms.</p>
 
       <div className="stf-grid">
         <div className="stf-left">

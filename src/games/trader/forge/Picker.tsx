@@ -61,6 +61,13 @@ export function Swatches({ label, colours, value, onPick }: { label: string; col
   );
 }
 
+/** Pieces show only once the pupil can afford them (James, 4 Nov); one already picked always shows. */
+const hidden = (price: number, on: boolean, credits: number) => !on && price > credits;
+
+/** How many more there are to aim for. */
+const Locked = ({ n }: { n: number }) =>
+  n ? <p className="st-soft stf-locked">🔒 {n === 1 ? '1 more appears' : `${n} more appear`} as you earn credits.</p> : null;
+
 const Group = ({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) => (
   <div className="stf-group">
     <h4 className="stf-group__h">{title}{hint && <span className="st-soft"> {hint}</span>}</h4>
@@ -167,10 +174,11 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
       <div className="stf-picker__body">
         {sel.k === 'sun' && id === 'kind' && (
           <div className="stf-choices">
-            {(Object.keys(SUNS) as SunKind[]).map((kind) => (
+            {(Object.keys(SUNS) as SunKind[]).filter((kind) => !hidden(SUNS[kind].price, design.sun?.kind === kind, credits)).map((kind) => (
               <Choice key={kind} group="sun" k={kind} emoji={SUN_LOOK[kind].emoji} colour={SUN_LOOK[kind].colour} label={SUNS[kind].name} sub={cr(SUNS[kind].price)} on={design.sun?.kind === kind}
                 onClick={() => onEdit({ ...design, sun: { ...(design.sun ?? { name: [0, 0] as Named['name'] }), kind } })} />
             ))}
+            <Locked n={(Object.keys(SUNS) as SunKind[]).filter((kind) => hidden(SUNS[kind].price, design.sun?.kind === kind, credits)).length} />
           </div>
         )}
         {sel.k === 'sun' && id === 'name' && (design.sun
@@ -179,36 +187,40 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
 
         {planet && id === 'type' && (
           <div className="stf-choices">
-            {(Object.keys(PLANETS) as PlanetKind[]).map((kind) => (
+            {(Object.keys(PLANETS) as PlanetKind[]).filter((kind) => !hidden(planetPrice({ kind, size: planet.size }), planet.kind === kind, credits)).map((kind) => (
               <Choice key={kind} group="planet" k={kind} emoji={PLANET_LOOK[kind].emoji} colour={PLANET_LOOK[kind].colour} label={PLANETS[kind].name} tag={PLANETS[kind].silly ? 'Made up!' : undefined}
                 sub={cr(planetPrice({ kind, size: planet.size }))} on={planet.kind === kind} onClick={() => setP((p) => fitPlanet({ ...p, kind }))} />
             ))}
+            <Locked n={(Object.keys(PLANETS) as PlanetKind[]).filter((kind) => hidden(planetPrice({ kind, size: planet.size }), planet.kind === kind, credits)).length} />
           </div>
         )}
         {planet && id === 'size' && (
           <div className="stf-choices">
-            {SIZES.map((name, size) => (
+            {SIZES.map((name, size) => hidden(planetPrice({ kind: planet.kind, size }), planet.size === size, credits) ? null : (
               <Choice key={name} group="size" k={String(size)} emoji="⚪" colour={PLANET_LOOK[planet.kind].colour} label={name} sub={cr(planetPrice({ kind: planet.kind, size }))} on={planet.size === size} onClick={() => setP((p) => ({ ...p, size }))} />
             ))}
+            <Locked n={SIZES.filter((_, size) => hidden(planetPrice({ kind: planet.kind, size }), planet.size === size, credits)).length} />
           </div>
         )}
-        {planet && id === 'looks' && <Looks p={planet} setP={setP} />}
+        {planet && id === 'looks' && <Looks p={planet} setP={setP} credits={credits} />}
         {planet && id === 'effects' && (
           <>
             <p className="st-soft">Pick up to {MAX_EFFECTS}.</p>
             <div className="stf-choices">
               {(Object.keys(EFFECTS) as EffectKind[]).map((kind) => {
                 const on = planet.effects.some((e) => e.kind === kind);
+                if (hidden(EFFECTS[kind].price, on, credits)) return null;
                 const why = on ? null : effectWhy(planet, slot, kind) ?? (planet.effects.length >= MAX_EFFECTS ? `Up to ${MAX_EFFECTS}` : null);
                 return (
                   <Choice key={kind} group="effect" k={kind} emoji={EFFECT_EMOJI[kind]} colour="#2a3a70" label={EFFECTS[kind].name} tag={EFFECTS[kind].silly ? 'Made up!' : undefined} sub={cr(EFFECTS[kind].price)} on={on} why={why}
                     onClick={() => setP((p) => ({ ...p, effects: on ? p.effects.filter((e) => e.kind !== kind) : [...p.effects, { kind }] }))} />
                 );
               })}
+              <Locked n={(Object.keys(EFFECTS) as EffectKind[]).filter((kind) => hidden(EFFECTS[kind].price, planet.effects.some((e) => e.kind === kind), credits)).length} />
             </div>
           </>
         )}
-        {planet && id === 'life' && <LifeStep planet={planet} slot={slot} design={design} setP={setP} />}
+        {planet && id === 'life' && <LifeStep planet={planet} slot={slot} design={design} setP={setP} credits={credits} />}
         {planet && id === 'tech' && (
           <>
             {[1, 2, 3].map((tier) => (
@@ -216,6 +228,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
                 <div className="stf-choices">
                   {(Object.keys(TECH) as TechKind[]).filter((k) => TECH[k].tier === tier).map((kind) => {
                     const on = planet.tech.some((t) => t.kind === kind);
+                    if (hidden(TECH[kind].price, on, credits)) return null;
                     const need = TECH[kind].needs;
                     const why = on ? null : need === 'solid' && !PLANETS[planet.kind].solid ? 'Needs solid ground' : need === 'moon' && !planet.moons.length ? 'Needs a moon first' : null;
                     return (
@@ -223,6 +236,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
                         onClick={() => setP((p) => ({ ...p, tech: on ? p.tech.filter((t) => t.kind !== kind) : [...p.tech, { kind }] }))} />
                     );
                   })}
+                  <Locked n={(Object.keys(TECH) as TechKind[]).filter((k) => TECH[k].tier === tier && hidden(TECH[k].price, planet.tech.some((t) => t.kind === k), credits)).length} />
                 </div>
               </Group>
             ))}
@@ -230,7 +244,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
         )}
         {planet && id === 'name' && <NamePicker key={planet.id} what="This planet" typing={typing} value={planet} onChange={(n) => setP((p) => withNames(p, n))} />}
 
-        {sel.k === 'extras' && <Extras id={id} design={design} onEdit={onEdit} typing={typing} />}
+        {sel.k === 'extras' && <Extras id={id} design={design} onEdit={onEdit} typing={typing} credits={credits} />}
 
         {id === 'build' && <BuildStep options={options.filter((o) => sameWhere(o.piece.where, sel))} credits={credits} busy={busy} onBuild={onBuild} />}
       </div>
@@ -245,7 +259,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
 
 const sameWhere = (w: Where, sel: Sel): boolean => (sel.k === 'sun' ? w === 'sun' : sel.k === 'extras' ? w === 'extras' : w === sel.id);
 
-function Looks({ p, setP }: { p: PlanetPick; setP: (f: (p: PlanetPick) => PlanetPick) => void }) {
+function Looks({ p, setP, credits }: { p: PlanetPick; setP: (f: (p: PlanetPick) => PlanetPick) => void; credits: number }) {
   const wonder = !!PLANETS[p.kind].wonder;
   return (
     <>
@@ -272,10 +286,11 @@ function Looks({ p, setP }: { p: PlanetPick; setP: (f: (p: PlanetPick) => Planet
           <>
             <div className="stf-choices stf-choices--small">
               <Choice group="ring" k="none" emoji="🚫" colour="#3a4a80" label="No rings" on={!p.ring} onClick={() => setP((q) => ({ ...q, ring: null }))} />
-              {(Object.keys(RINGS) as RingKind[]).map((kind) => (
+              {(Object.keys(RINGS) as RingKind[]).filter((kind) => !hidden(RINGS[kind].price, p.ring?.kind === kind, credits)).map((kind) => (
                 <Choice key={kind} group="ring" k={kind} emoji={RING_EMOJI[kind]} colour="#5a4a80" label={RINGS[kind].name} tag={RINGS[kind].silly ? 'Made up!' : undefined} sub={cr(RINGS[kind].price)} on={p.ring?.kind === kind}
                   onClick={() => setP((q) => ({ ...q, ring: { kind, tilt: q.ring?.tilt ?? 0 } }))} />
               ))}
+              <Locked n={(Object.keys(RINGS) as RingKind[]).filter((kind) => hidden(RINGS[kind].price, p.ring?.kind === kind, credits)).length} />
             </div>
             {p.ring && (
               <div className="stf-tilt" role="group" aria-label="Tilt of the rings">
@@ -297,7 +312,8 @@ function Looks({ p, setP }: { p: PlanetPick; setP: (f: (p: PlanetPick) => Planet
               <button type="button" className="st-btn st-btn--small" onClick={() => setP((q) => ({ ...q, moons: q.moons.filter((y) => y.id !== m.id) }))} aria-label={`Remove moon ${n + 1}`}>Remove</button>
             </div>
           ))}
-          <button type="button" className="st-btn" disabled={p.moons.length >= MAX_MOONS} onClick={() => setP((q) => {
+          {p.moons.length < MAX_MOONS && MOON_PRICE_PIECE > credits && <Locked n={1} />}
+          <button type="button" className="st-btn" disabled={p.moons.length >= MAX_MOONS || MOON_PRICE_PIECE > credits} onClick={() => setP((q) => {
             const used = new Set(q.moons.map((m) => m.id));
             let id = 0;
             while (used.has(id)) id++;
@@ -309,7 +325,7 @@ function Looks({ p, setP }: { p: PlanetPick; setP: (f: (p: PlanetPick) => Planet
   );
 }
 
-function LifeStep({ planet, slot, design, setP }: { planet: PlanetPick; slot: number; design: SystemDesign; setP: (f: (p: PlanetPick) => PlanetPick) => void }) {
+function LifeStep({ planet, slot, design, setP, credits }: { planet: PlanetPick; slot: number; design: SystemDesign; setP: (f: (p: PlanetPick) => PlanetPick) => void; credits: number }) {
   const kinds = PLANETS[planet.kind].life;
   return (
     <>
@@ -317,6 +333,7 @@ function LifeStep({ planet, slot, design, setP }: { planet: PlanetPick; slot: nu
       <div className="stf-choices">
         <Choice group="life" k="none" emoji="🚫" colour="#3a4a80" label="No life" on={!planet.life} onClick={() => setP((p) => ({ ...p, life: null }))} />
         {kinds.map((kind: LifeKind) => {
+          if (hidden(LIFE[kind].price, planet.life?.kind === kind, credits)) return null;
           const zone = lifeProblem({ ...design, planets: design.planets.map((p) => (p === design.planets[slot] ? { ...p, life: null } : p)) }, slot, kind);
           return (
             <Choice key={kind} group="life" k={kind} emoji={LIFE_LOOK[kind].emoji} colour={LIFE_LOOK[kind].colour} label={LIFE[kind].name} tag={kind === 'crystalfolk' ? 'Made up!' : undefined}
@@ -324,6 +341,7 @@ function LifeStep({ planet, slot, design, setP }: { planet: PlanetPick; slot: nu
               onClick={() => setP((p) => ({ ...p, life: { kind, creature: 0 } }))} />
           );
         })}
+        <Locked n={kinds.filter((kind) => hidden(LIFE[kind].price, planet.life?.kind === kind, credits)).length} />
       </div>
       {planet.life && LIFE[planet.life.kind].creatures > 1 && (
         <Group title="Which creature?">
@@ -339,15 +357,16 @@ function LifeStep({ planet, slot, design, setP }: { planet: PlanetPick; slot: nu
   );
 }
 
-function Extras({ id, design, onEdit, typing }: { id: string; design: SystemDesign; onEdit: (d: SystemDesign) => void; typing: boolean }) {
+function Extras({ id, design, onEdit, typing, credits }: { id: string; design: SystemDesign; onEdit: (d: SystemDesign) => void; typing: boolean; credits: number }) {
   if (id === 'belt') {
     return (
       <>
         <div className="stf-choices">
           <Choice group="belt" k="none" emoji="🚫" colour="#3a4a80" label="No belt" on={!design.belt} onClick={() => onEdit({ ...design, belt: null })} />
-          {(Object.keys(BELTS) as BeltKind[]).map((kind) => (
+          {(Object.keys(BELTS) as BeltKind[]).filter((kind) => !hidden(BELTS[kind].price, design.belt?.kind === kind, credits)).map((kind) => (
             <Choice key={kind} group="belt" k={kind} emoji="🪨" colour={BELT_COLOUR[kind]} label={BELTS[kind].name} sub={cr(BELTS[kind].price)} on={design.belt?.kind === kind} onClick={() => onEdit({ ...design, belt: { ...(design.belt ?? {}), kind } })} />
           ))}
+          <Locked n={(Object.keys(BELTS) as BeltKind[]).filter((kind) => hidden(BELTS[kind].price, design.belt?.kind === kind, credits)).length} />
         </div>
         {design.belt && (
           <Group title="Where does it sit?">
@@ -364,10 +383,11 @@ function Extras({ id, design, onEdit, typing }: { id: string; design: SystemDesi
   if (id === 'comets') {
     return (
       <div className="stf-choices">
-        {Array.from({ length: MAX_COMETS + 1 }, (_, n) => (
+        {Array.from({ length: MAX_COMETS + 1 }, (_, n) => hidden(COMET_PRICE * n, (design.comets?.count ?? 0) === n, credits) ? null : (
           <Choice key={n} group="comets" k={String(n)} emoji="☄️" colour="#4a5a90" label={n === 0 ? 'No comets' : n === 1 ? '1 comet' : `${n} comets`} sub={n ? cr(COMET_PRICE * n) : undefined} on={(design.comets?.count ?? 0) === n}
             onClick={() => onEdit({ ...design, comets: n ? { ...(design.comets ?? {}), count: n } : null })} />
         ))}
+        <Locked n={Array.from({ length: MAX_COMETS + 1 }, (_, n) => n).filter((n) => hidden(COMET_PRICE * n, (design.comets?.count ?? 0) === n, credits)).length} />
       </div>
     );
   }
@@ -388,6 +408,7 @@ function Extras({ id, design, onEdit, typing }: { id: string; design: SystemDesi
             <div className="stf-choices">
               {(Object.keys(SYSTEM_TECH) as SystemTechKind[]).filter((k) => SYSTEM_TECH[k].tier === tier).map((kind) => {
                 const on = design.tech.some((t) => t.kind === kind);
+                if (hidden(SYSTEM_TECH[kind].price, on, credits)) return null;
                 const need = SYSTEM_TECH[kind].needs;
                 const why = on ? null : need === 'belt' && !design.belt ? 'Needs an asteroid belt' : need === 'twoPlanets' && design.planets.length < 2 ? 'Needs two planets' : null;
                 return (
@@ -395,6 +416,7 @@ function Extras({ id, design, onEdit, typing }: { id: string; design: SystemDesi
                     onClick={() => onEdit({ ...design, tech: on ? design.tech.filter((t) => t.kind !== kind) : [...design.tech, { kind }] })} />
                 );
               })}
+              <Locked n={(Object.keys(SYSTEM_TECH) as SystemTechKind[]).filter((k) => SYSTEM_TECH[k].tier === tier && hidden(SYSTEM_TECH[k].price, design.tech.some((t) => t.kind === k), credits)).length} />
             </div>
           </Group>
         ))}
