@@ -20,6 +20,8 @@ import type { CreateViewer, GraphicsLevel, SystemViewer, ViewerOptions } from '.
 
 export type { GraphicsLevel, SystemViewer, ViewerOptions } from './types';
 
+/** Painted skies are photos of the Milky Way; dimmed so the planets stand out against them. */
+const PAINTED_SKY_BRIGHT = 0.45;
 const LIGHT_GAIN: Record<string, number> = { yellow: 1.0, red: 0.95, blue: 1.2, white: 1.05, pulsar: 0.9, binary: 1.05, blackhole: 1.0, baby: 0.95 };
 
 interface Piece<T> { key: string; obj: T }
@@ -125,7 +127,9 @@ export const createSystemViewer: CreateViewer = async (container, first, options
       void load(skyArt(d.background, s.level)).then((t) => {
         if (!t || skyP?.obj !== part) return;
         const mesh = part.obj.children[0] as THREE.Mesh;
-        (mesh.material as THREE.ShaderMaterial).uniforms.uMap.value = t;
+        const u = (mesh.material as THREE.ShaderMaterial).uniforms;
+        u.uMap.value = t;
+        u.uBright.value = PAINTED_SKY_BRIGHT;
       });
     }
     // sun
