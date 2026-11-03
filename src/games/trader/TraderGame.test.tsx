@@ -20,6 +20,9 @@ vi.mock('./renderer', () => ({
   }),
 }));
 
+// The 3D viewer needs WebGL, which this test browser doesn't have: the Forge shows its flat picture instead.
+vi.mock('./forge/loadViewer', () => ({ loadViewer: async () => null }));
+
 import { traderApi } from '../../data/trader';
 import { GOODS, WATER } from '../../../shared/trader/config';
 import { isBanned } from '../../../shared/trader/market';
@@ -28,6 +31,7 @@ import { starterTrade } from './coach/advice';
 import { chartPoint, distance, makeGalaxy, startPlanet } from '../../../shared/trader/galaxy';
 import { nzDay } from '../../../supabase/functions/trader/handler';
 import { TraderGame } from './TraderGame';
+import { emptyDesign, nameText } from '../../../shared/trader/system';
 import { trialBackend, type Trial } from './trialBackend';
 
 const NOW = Date.UTC(2026, 9, 22, 1, 0, 0);
@@ -262,7 +266,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
   });
 
   it('shows how close the pupil is to the moon in the top strip', async () => {
-    play();
+    play(trialBackend({ seed: 'screen-test', now: () => NOW, settings: { forge: false } }));
     await market();
     expect(screen.getByText(/^100 of 20,000 credits saved for your moon$/)).toBeTruthy();
     expect(screen.getByText('0%')).toBeTruthy();
@@ -482,7 +486,7 @@ describe("Bolt's first-time tips and help with choices", () => {
   });
 
   it('the shipyard tour lights fuel, the ships and the moon in turn', async () => {
-    play();
+    play(trialBackend({ seed: 'screen-test', now: () => NOW, settings: { forge: false } }));
     await market();
     fireEvent.click(screen.getByRole('tab', { name: 'Ship' }));
     const lit = () => document.querySelector('[data-flight-lit]')?.getAttribute('data-coach');
@@ -744,5 +748,49 @@ describe("Bolt's help panel and help levels (H.4)", () => {
     expect(document.querySelector('.st-flight')?.textContent).not.toMatch(/Hi! I'm Bolt/);
     fireEvent.click(screen.getByRole('button', { name: /^Show Bolt: First Flight step 1 of 9/ }));
     expect(document.querySelector('.st-flight')?.textContent).toMatch(/Hi! I'm Bolt/);
+  });
+});
+
+describe('The Star Forge (S.4)', () => {
+  it('the Forge tab shows only when the class has it on, and the New Season choice stops play until picked', async () => {
+    play(trialBackend({ seed: 'screen-test', now: () => NOW, settings: { forge: false } }));
+    await market();
+    expect(screen.queryByRole('tab', { name: /Forge/ })).toBeNull();
+    cleanup();
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    const api = traderApi(trial.transport);
+    await api.load();
+    trial.tools.give(5000);
+    const fresh = await api.load();
+    const full = await api.act(fresh.ok ? fresh.value.version : 0, [{ type: 'forge', design: { ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0], built: true } } }]);
+    expect(full.ok).toBe(true);
+    trial.tools.endSeason();
+    play(trial);
+    expect(await screen.findByRole('heading', { name: /new season/i })).toBeTruthy();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Keep my solar system/ }));
+    await market();
+    expect(screen.getByRole('tab', { name: /Forge/ })).toBeTruthy();
+  });
+
+  it('planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.tools.give(5000);
+    const { sent } = play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
+    expect(await screen.findByRole('heading', { name: /Star Forge/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Sun: Choose a sun/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Yellow star/ }));
+    expect(screen.getByRole('button', { name: /^Sun: Yellow star, planned/ })).toBeTruthy();
+    expect(sent.some((b) => b.type === 'act')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Build' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Build it' }));
+    expect(await screen.findByText(/Total: 3,000 cr/)).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('group', { name: /Build Yellow star/ })).getByRole('button', { name: 'Build it' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Sun: Yellow star, built/ })).toBeTruthy());
+    expect(JSON.stringify(sent)).toMatch(/"type":"forge"/);
+    void nameText;
   });
 });

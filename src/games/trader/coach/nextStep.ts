@@ -9,7 +9,7 @@ import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
-export type CoachTab = 'trade' | 'ship' | 'bank' | 'map';
+export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'forge';
 
 export interface CoachView {
   galaxy: Galaxy;
@@ -20,6 +20,8 @@ export interface CoachView {
   aimed?: number | null;
   /** The bank is open for this class. */
   loans?: boolean;
+  /** The Star Forge is open, so the goal is the pupil's system and not the moon. */
+  forge?: boolean;
 }
 
 export interface NextStep {
@@ -38,7 +40,7 @@ export function nextStep(v: CoachView): NextStep {
   const tank = SHIPS[t.ship].fuelTank;
 
   // The goal: the moon.
-  if (!t.moon && t.credits >= MOON_PRICE) {
+  if (!v.forge && !t.moon && t.credits >= MOON_PRICE) {
     if (hasShipyard(galaxy, t)) return { say: `You have ${cr(t.credits)}. That's enough to buy your own moon! 🌙`, target: tabTarget('ship', tab, 'moon-buy'), tab: 'ship' };
     const yard = nearestShipyard(galaxy, t);
     return { say: `You have enough to buy your own moon! 🌙 Moons are sold at shipyards${yard ? `: ${yard.name} at ${coordText(yard)} has one` : ''}.`, target: yard ? tabTarget('map', tab, `planet-${yard.id}`) : undefined, tab: 'map' };

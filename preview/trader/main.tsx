@@ -35,6 +35,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           {[0, 1, 2].map((i) => (
             <button key={i} type="button" onClick={() => { trial.tools.forcePirates(i); h.reload(); }}>Pirates {i + 1}</button>
           ))}
+          <button type="button" onClick={() => { trial.tools.endSeason(); h.reload(); }} title="Needs a built sun in the Forge: shows the New Season choice">End the season (Forge)</button>
           <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again</button>
           <button type="button" onClick={() => { localStorage.removeItem('sgh-trader-coach'); location.reload(); }} title="A new game, and Bolt forgets everything: First Flight, tips and help level">Start as a new pupil</button>
           <button
