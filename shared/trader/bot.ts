@@ -10,6 +10,7 @@ import { fightRound, settleFight, startFight } from './fight';
 import type { Galaxy } from './galaxy';
 import { marketFor } from './market';
 import type { Pushes } from './schoolMarket';
+import { PLANETS, SUNS, designProblem, emptyDesign, forgeCost, inZone, newPlanet, planetPrice, systemCounts, type PlanetKind, type SunKind, type SystemDesign } from './system';
 import {
   buy,
   buyMoon,
@@ -44,6 +45,76 @@ export interface BotOptions {
    */
   taste?: number;
   tasteSeed?: string;
+  /**
+   * The Star Forge (docs/TRADER-SYSTEM-PLAN.md): the bot spends on its solar system as soon as it can, and does not save for
+   * (or buy) the old moon, so a game does not end at the moon. Give each game its own `newForgeBot()`.
+   */
+  forge?: ForgeBot;
+}
+
+/** The steps a Forge bot's system goes through, and the first day each was reached (0: not yet). */
+export type Milestone = 'star' | 'planets3' | 'life' | 'full';
+export const MILESTONES: readonly Milestone[] = ['star', 'planets3', 'life', 'full'];
+export interface ForgeBot {
+  design: SystemDesign;
+  days: Record<Milestone, number>;
+}
+export const newForgeBot = (): ForgeBot => ({ design: emptyDesign(), days: { star: 0, planets3: 0, life: 0, full: 0 } });
+
+/** The bot keeps this much back for fuel and repairs. */
+const FORGE_RESERVE = 200;
+const cheapest = <K extends string>(keys: K[], price: (k: K) => number): K => keys.slice().sort((a, b) => price(a) - price(b))[0];
+const BOT_SUN: SunKind = cheapest(Object.keys(SUNS) as SunKind[], (k) => SUNS[k].price);
+const BOT_PLANET: PlanetKind = cheapest(
+  (Object.keys(PLANETS) as PlanetKind[]).filter((k) => !PLANETS[k].wonder && PLANETS[k].life.includes('microbes') && PLANETS[k].solid),
+  (k) => planetPrice({ kind: k, size: 1 }),
+);
+
+/** The design with the next piece built, in the bot's fixed order: the cheapest sun, 3 planets, first life, 5 planets, life on 3 (domes where it is too far from the sun), a big technology, then the star gate and the Dyson ring. Null when done. */
+function nextStep(d: SystemDesign): SystemDesign | null {
+  const next = structuredClone(d);
+  const build = <T extends object>(x: T) => ({ ...x, built: true });
+  const planets = next.planets;
+  const lifeCount = planets.filter((p) => p.life?.built).length;
+  const addPlanet = () => planets.push(build(newPlanet(planets.length + 1, BOT_PLANET)));
+  /** Life on the first built planet without it, nearest the sun first; domes first if it is outside the zone. */
+  const addLife = (): boolean => {
+    const slot = planets.findIndex((p) => !p.life?.built);
+    if (slot < 0) return false;
+    const p = planets[slot];
+    if (!inZone(next.sun?.kind, slot) && !p.tech.some((t) => t.kind === 'domes' && t.built)) p.tech.push(build({ kind: 'domes' as const }));
+    else p.life = build({ kind: 'microbes' as const, creature: 0 });
+    return true;
+  };
+  if (!next.sun?.built) next.sun = build({ kind: BOT_SUN, name: [0, 0] as [number, number] });
+  else if (planets.length < 3) addPlanet();
+  else if (lifeCount < 1) addLife();
+  else if (planets.length < 5) addPlanet();
+  else if (lifeCount < 3) addLife();
+  else if (!next.tech.some((t) => t.built) && !planets.some((p) => p.tech.some((t) => t.kind === 'orbitalring'))) planets[0].tech.push(build({ kind: 'orbitalring' as const }));
+  else if (!next.tech.some((t) => t.kind === 'gate')) next.tech.push(build({ kind: 'gate' as const }));
+  else if (!next.tech.some((t) => t.kind === 'dyson')) next.tech.push(build({ kind: 'dyson' as const }));
+  else return null;
+  return designProblem(next) ? null : next;
+}
+
+/** A Forge bot builds whatever it can now afford, in order, and notes the day it reaches each milestone. */
+export function forgeSpend(t: Trader, f: ForgeBot): Trader {
+  let credits = t.credits;
+  for (;;) {
+    const next = nextStep(f.design);
+    if (!next) break;
+    const cost = forgeCost(f.design, next).total;
+    if (credits - FORGE_RESERVE < cost) break;
+    credits -= cost;
+    f.design = next;
+    const c = systemCounts(next);
+    if (c.sun && !f.days.star) f.days.star = t.day;
+    if (c.planets >= 3 && !f.days.planets3) f.days.planets3 = t.day;
+    if (c.life >= 1 && !f.days.life) f.days.life = t.day;
+    if (c.sun && c.planets >= 5 && c.life >= 3 && c.bigTech >= 1 && !f.days.full) f.days.full = t.day;
+  }
+  return credits === t.credits ? t : { ...t, credits };
 }
 
 /** How a bot meets the school's shared market. */
@@ -136,10 +207,10 @@ function plan(galaxy: Galaxy, t: Trader, options: BotOptions, random: () => numb
 }
 
 /** Spend on the next ship, a laser or a shield when there is plenty to spare. */
-function shop(galaxy: Galaxy, t: Trader): Trader {
+function shop(galaxy: Galaxy, t: Trader, options: BotOptions): Trader {
   if (!hasShipyard(galaxy, t)) return t;
   let state = t;
-  if (state.credits >= MOON_PRICE) {
+  if (!options.forge && state.credits >= MOON_PRICE) {
     const r = buyMoon(galaxy, state);
     if (r.ok) return r.state;
   }
@@ -172,10 +243,11 @@ function shop(galaxy: Galaxy, t: Trader): Trader {
 /** Play one jump. Returns the trader afterwards (still at the new planet, nothing sold yet). */
 export function botJump(galaxy: Galaxy, t: Trader, seed: string, options: BotOptions, stats: BotStats, random: () => number): Trader {
   let state = sellAll(t, random, options);
-  state = shop(galaxy, state);
+  state = shop(galaxy, state, options);
+  if (options.forge) state = forgeSpend(state, options.forge);
   const worthBefore = netWorth(galaxy, state);
   let target: Plan | null = null;
-  if (state.credits >= MOON_PRICE && !state.moon && !hasShipyard(galaxy, state)) {
+  if (!options.forge && state.credits >= MOON_PRICE && !state.moon && !hasShipyard(galaxy, state)) {
     // Head for the nearest shipyard to buy the moon.
     const yards = reachable(galaxy, state).filter((id) => galaxy.planets[id].tech >= 4);
     yards.sort((a, b) => fuelNeeded(galaxy, state, a) - fuelNeeded(galaxy, state, b));
@@ -242,7 +314,8 @@ export function botJump(galaxy: Galaxy, t: Trader, seed: string, options: BotOpt
 
 /** The end of a bot's day: sell up and go shopping (which can buy the moon). */
 export function botEndDay(galaxy: Galaxy, t: Trader, options: BotOptions, random: () => number): Trader {
-  return shop(galaxy, sellAll(t, random, options));
+  const state = shop(galaxy, sellAll(t, random, options), options);
+  return options.forge ? forgeSpend(state, options.forge) : state;
 }
 
 export interface SimResult {
@@ -252,6 +325,8 @@ export interface SimResult {
   /** Credits at the end of each day. */
   credits: number[];
   ships: number[];
+  /** The first day each Forge milestone was reached (0: not reached). Only when the bot used the Forge. */
+  forge?: Record<Milestone, number>;
 }
 
 /** Play up to `days` days of ten jumps each. */
@@ -262,22 +337,23 @@ export function playGame(galaxy: Galaxy, start: Trader, seed: string, days: numb
   const credits: number[] = [];
   const ships: number[] = [];
   let moonDay = 0;
-  for (let day = 1; day <= days && !moonDay; day++) {
+  for (let day = 1; day <= days && (!moonDay || options.forge); day++) {
     t = startDay(galaxy, t, day);
     for (let j = 0; j < JUMPS_PER_DAY; j++) {
       if (t.jumpsLeft < 1) break;
       t = botJump(galaxy, t, seed, options, stats, random);
-      if (t.moon) {
+      if (t.moon && !options.forge) {
         moonDay = day;
         break;
       }
     }
     // End the day by selling up and shopping, which can buy the moon.
     t = sellAll(t, random, options);
-    t = shop(galaxy, t);
-    if (t.moon) moonDay = day;
+    t = shop(galaxy, t, options);
+    if (options.forge) t = forgeSpend(t, options.forge);
+    if (t.moon && !options.forge) moonDay = day;
     credits.push(t.credits);
     ships.push(t.ship);
   }
-  return { moonDay, stats, credits, ships };
+  return { moonDay, stats, credits, ships, ...(options.forge ? { forge: options.forge.days } : {}) };
 }

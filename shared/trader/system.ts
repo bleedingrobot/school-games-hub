@@ -130,9 +130,9 @@ export const TECH: Record<TechKind, TechInfo> = {
   station: { name: 'Space station', price: 2000, tier: 1 },
   telescope: { name: 'Giant telescope', price: 1500, tier: 1 },
   elevator: { name: 'Space elevator', price: 4000, tier: 2, needs: 'solid' },
-  domes: { name: 'Domes', price: 3000, tier: 2 },
+  domes: { name: 'Domes', price: 4000, tier: 2 },
   terraformer: { name: 'Terraformer', price: 5000, tier: 2, needs: 'solid' },
-  orbitalring: { name: 'Orbital ring', price: 9000, tier: 3 },
+  orbitalring: { name: 'Orbital ring', price: 20000, tier: 3 },
   engine: { name: 'Planet engine', price: 10000, tier: 3, needs: 'solid' },
 };
 

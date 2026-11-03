@@ -26,7 +26,7 @@ Today a pupil playing 4 days a week buys the moon around day 16 to 25 of a 35-da
 | First planet | 2,000–4,000 | Week 2 | Picks a world type and look |
 | Life on a planet | 1,500–5,000 | Week 2–3 | Microbes are cheap, a city is dear |
 | More planets, moons, rings | 1,000–6,000 each | Week 3–5 | The system fills up |
-| Big technology (Dyson ring, star gate) | 8,000–15,000 | Week 5 and later | The showpiece for keen traders |
+| Big technology (Dyson ring, star gate, orbital ring) | 10,000–20,000 | Week 5 and later | The showpiece for keen traders |
 
 - A **full system** (sun, 4 planets, life on 2 of them, one big piece of technology) costs about the old moon price and a bit more, so keen pupils still have something to aim at in week 5.
 - Prices are numbers in `shared/trader/config.ts`, checked with the simulator (`npm run trader:sim`) as the moon was. The simulator's target: 90% of pupils who play 3 days a week own a star by day 14; the median pupil has a sun, 3 planets and life by day 35.

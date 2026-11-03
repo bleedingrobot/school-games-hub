@@ -10,7 +10,7 @@ import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
 import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
-import { makeHandler, type ClassSettings, type Saved, type StoredDay } from './handler';
+import { makeHandler, type ClassSettings, type Saved, type SeasonSystem, type StoredDay } from './handler';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -44,13 +44,14 @@ Deno.serve(
         fail('settings', error?.code);
         return null;
       }
-      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string };
+      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean };
       return {
         enabled: row.trader_enabled === true,
         jumpsPerDay: Number.isInteger(row.trader_jumps) ? (row.trader_jumps as number) : 10,
         loans: row.trader_loans !== false,
         // 'choose' counts as on until pupils get a switch of their own (stage T.5).
         maths: parseMathsSwitch(row.trader_maths) !== 'off',
+        forge: row.trader_forge === true,
       };
     },
     async schoolSeed(player) {
@@ -71,6 +72,21 @@ Deno.serve(
       if (!data) return null;
       const row = data as { game: Saved['game']; version: number; season: number };
       return { game: row.game, version: row.version, season: row.season };
+    },
+    async seasonSystem(player): Promise<SeasonSystem | null | 'busy'> {
+      const { data, error } = await admin.rpc('trader_season_system', { player });
+      if (error) {
+        fail('trader_season_system', error.code);
+        return 'busy';
+      }
+      if (!data) return null;
+      const row = data as SeasonSystem;
+      return { design: row.design, carry: row.carry };
+    },
+    async chooseSeason(player, choice, picture, name) {
+      const { error } = await admin.rpc('trader_choose_season', { player, choice, picture_path: picture, picture_name: name });
+      if (error) fail('trader_choose_season', error.code);
+      return !error;
     },
     async request(player, requestId) {
       const { data, error } = await admin.rpc('trader_request', { player, request_id: requestId });
@@ -129,7 +145,8 @@ Deno.serve(
         new_game: a.game,
         new_day: a.day,
         new_net_worth: Math.max(-2_000_000_000, Math.min(2_000_000_000, Math.round(a.netWorth))),
-        new_moon: a.game.t.moon,
+        // "On the Star Makers list": owns the old moon, or has built a sun in the Star Forge (the first one adds them to trader_moons).
+        new_moon: a.game.t.moon || a.game.system?.sun?.built === true,
         new_season: a.season,
         request_id: a.requestId,
         reply: a.reply,

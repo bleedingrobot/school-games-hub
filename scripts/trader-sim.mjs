@@ -2,6 +2,8 @@
 // Run from the project folder with: npm run trader:sim  [-- --games 60] [-- --days 40] [-- --maths 0.7] [-- --sloppy 0.3] [-- --offset 0]
 // A busy school on one shared market (stage T.4): npm run trader:sim -- --school 28,60,100 [--info none|news|all] [--days 30] [--seeds 3]
 //   [--full 3000] [--pupilcap 2000] [--cap 5000] [--keep 50] [--play 1]
+// The Star Forge (docs/TRADER-SYSTEM-PLAN.md): both modes also play a Forge version of the same bots (they build a system
+// instead of buying the moon) and report the day they claim a star, have 3 planets, life, and a full system. Leave it out with --forge 0.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,6 +19,7 @@ const GAMES = Number(option('games', 60));
 const DAYS = Number(option('days', 40));
 const MATHS = Number(option('maths', 0.7));
 const OFFSET = Number(option('offset', 0));
+const FORGE = option('forge', '1') !== '0';
 
 const dir = mkdtempSync(join(tmpdir(), 'trader-sim-'));
 const entryFile = join(process.cwd(), `.trader-sim-entry-${process.pid}.ts`);
@@ -34,6 +37,16 @@ try {
 }
 
 const pct = (n) => `${(n * 100).toFixed(0)}%`;
+
+/** Averages the milestone summaries of several runs and prints "share | day 10th/50th/90th" for each. */
+function printForge(summaries, label) {
+  const names = { star: 'claims a star', planets3: '3 planets', life: 'first life', full: 'full system' };
+  console.log(`  ${label}: share reached | day 10th/50th/90th`);
+  for (const m of ['star', 'planets3', 'life', 'full']) {
+    const avg = (f) => summaries.reduce((a, r) => a + f(r[m]), 0) / summaries.length;
+    console.log(`    ${names[m].padEnd(14)} ${pct(avg((x) => x.share)).padStart(4)} | ${[0, 1, 2].map((i) => avg((x) => x.days[i]).toFixed(1)).join(' / ')}`);
+  }
+}
 
 if (option('school', '')) {
   const sizes = option('school', '28').split(',').map(Number);
@@ -55,11 +68,15 @@ if (option('school', '')) {
       runs.push(simulateSchool({ pupils: pupils || 30, days, mathsRate: MATHS, sloppy, info, seed: `school-${OFFSET + s}`, rules, limits, playShare: play, shared: pupils !== 0 }));
     }
     const avg = (f) => runs.reduce((a, r) => a + f(r), 0) / runs.length;
+    const forgeRuns = FORGE
+      ? Array.from({ length: seeds }, (_, s) => simulateSchool({ pupils: pupils || 30, days, mathsRate: MATHS, sloppy, info, seed: `school-${OFFSET + s}`, rules, limits, playShare: play, shared: pupils !== 0, forge: true }))
+      : [];
     const days3 = [0, 1, 2].map((i) => avg((r) => r.moonDays[i]).toFixed(1)).join(' / ');
     const label = pupils ? `${pupils} pupils, shared market` : '30 pupils, each alone (no shared market)';
     console.log(`\n${label} (${seeds} galaxies, ${avg((r) => r.seconds).toFixed(1)} s each)`);
     console.log(`  moon by day ${days}: ${pct(avg((r) => r.moonShare))} | moon day 10th/50th/90th: ${days3}`);
     console.log(`  credits at day 1/2/3/5/8: ${[0, 1, 2, 3, 4].map((i) => Math.round(avg((r) => r.creditsAt[i]))).join(' / ')}`);
+    if (forgeRuns.length) printForge(forgeRuns.map((r) => r.forge), 'Star Forge bots');
     if (pupils) {
       console.log(`  prices traded at: bought ${avg((r) => r.boughtAtPct).toFixed(1)}% vs normal, sold ${avg((r) => r.soldAtPct).toFixed(1)}% | pupil 20% limit cut ${pct(avg((r) => r.pupilCapShare))} of trades`);
       console.log(`  end of day: ${pct(avg((r) => r.atCapShare))} of prices at the 50% limit, average push ${avg((r) => r.avgPushPct).toFixed(1)}%, biggest ${avg((r) => r.maxPushPct).toFixed(0)}% | ${avg((r) => r.newsPerDay).toFixed(1)} news lines a day`);
@@ -75,5 +92,9 @@ for (const sloppy of sloppyList) {
   console.log(`\nsloppy ${pct(sloppy)}: ${r.games} games, ${DAYS} days, maths ${pct(MATHS)}`);
   console.log(`  moon bought by day ${DAYS}: ${pct(r.moonShare)} | moon day 10th/50th/90th percentile: ${r.moonDays.join(' / ')}`);
   console.log(`  credits at day 1/2/3/5/8: ${r.creditsAt.join(' / ')} | average ship number at day 10: ${r.shipAt10.toFixed(1)}`);
+  if (FORGE) {
+    const f = simulate({ games: GAMES, days: DAYS, mathsRate: MATHS, sloppy, offset: OFFSET, forge: true });
+    printForge([f.forge], 'Star Forge bots (no moon)');
+  }
   console.log(`  per game: ${(s.jumps / r.games).toFixed(0)} jumps, ${pct(s.profitableJumps / Math.max(1, s.jumps))} made money, ${(s.fights / r.games).toFixed(1)} fights (${pct(s.piratesBeaten / Math.max(1, s.fights))} won), ${(s.wrecks / r.games).toFixed(2)} wrecks, ${(s.robbed / r.games).toFixed(2)} robbed, ${(s.customsFines / r.games).toFixed(2)} customs fines`);
 }

@@ -10,7 +10,9 @@ import { emptyPlan } from '../../../shared/trader/plan';
 import { DEFAULT_SETTINGS, newGame, type Game } from '../../../shared/trader/server';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
-import { nzDay, makeHandler, parseActions, type ClassSettings, type Saved, type SaveArgs, type Services, type StoredDay } from './handler';
+import { nzDay, makeHandler, parseActions, type ClassSettings, type Saved, type SaveArgs, type SeasonSystem, type Services, type StoredDay } from './handler';
+import { buildAll, emptyDesign, newPlanet } from '../../../shared/trader/system';
+import { CARRY_MAX_CREDITS } from '../../../shared/trader/config';
 
 const SEED = 'handler-test';
 const galaxy = makeGalaxy(SEED);
@@ -29,6 +31,8 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     busy: false,
     market: new SchoolMarket(),
     marketReads: 0,
+    waiting: new Map<string, SeasonSystem>(),
+    chosen: [] as { choice: string; picture: string | null }[],
   };
   const context: MathsContext = { facts: [], settings: {} };
   const services: Services = {
@@ -49,6 +53,12 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
       return true;
     },
     mathsContext: async () => context,
+    seasonSystem: async (p) => structuredClone(state.waiting.get(p) ?? null),
+    chooseSeason: async (p, choice, picture) => {
+      state.waiting.delete(p);
+      state.chosen.push({ choice, picture });
+      return true;
+    },
     market: async (_p, day) => {
       state.marketReads++;
       return state.market.view(day);
@@ -228,6 +238,38 @@ describe('the Star Trader server function', () => {
     const w = world();
     const r = await w.call({ action: 'load' });
     expect(r.body.game.t.market).toEqual(newGame(galaxy, TODAY, DEFAULT_SETTINGS).t.market);
+  });
+});
+
+describe('the Star Forge at a New Season', () => {
+  it('holds a pupil with a saved system until they choose: keep gives the system and a fresh ship, fresh gives the ship and capped credits', async () => {
+    const design = buildAll({ ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0] }, planets: [newPlanet(1)] });
+    const carry = { ship: 2, credits: 50_000, weapons: [0], shields: [], pods: 1 };
+    const fresh = async (choice: 'keep' | 'fresh', picture?: string) => {
+      const w = world();
+      w.state.waiting.set('ana', { design, carry });
+      const first = await w.call({ action: 'load' });
+      // Nothing to play until they choose: no game is made, and moves are refused.
+      expect(first.body.seasonChoice).toMatchObject({ worth: expect.any(Number), carry: { ship: 2, credits: CARRY_MAX_CREDITS } });
+      expect(first.body.game).toBeUndefined();
+      expect(w.state.games.size).toBe(0);
+      expect((await w.call({ action: 'act', requestId: w.id(), version: 1, actions: [] })).status).toBe(409);
+      expect((await w.call({ action: 'load', seasonChoice: 'bogus' })).status).toBe(400);
+      expect((await w.call({ action: 'load', seasonChoice: 'fresh', picture: 'ben/other.webp' })).status).toBe(400);
+      const r = await w.call({ action: 'load', seasonChoice: choice, ...(picture ? { picture } : {}) });
+      expect(w.state.chosen).toEqual([{ choice, picture: picture ?? null }]);
+      expect((await w.call({ action: 'load' })).body.seasonChoice).toBeUndefined();
+      return r.body.game as Game;
+    };
+    const kept = await fresh('keep');
+    expect(kept.system?.sun?.built).toBe(true);
+    expect(kept.t.ship).toBe(0);
+    expect(kept.t.credits).toBe(100);
+    const started = await fresh('fresh', 'ana/season1.webp');
+    expect(started.system).toBeUndefined();
+    expect(started.t.ship).toBe(2);
+    expect(started.t.credits).toBe(CARRY_MAX_CREDITS);
+    expect(started.t.weapons).toEqual([0]);
   });
 });
 

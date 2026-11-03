@@ -11,7 +11,7 @@ import { SHIPS } from '../../../shared/trader/config';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
 import { busyLunchtime } from '../../../shared/trader/sim';
-import { makeHandler, type ClassSettings, type Saved, type SaveArgs, type Services, type StoredDay } from '../../../supabase/functions/trader/handler';
+import { makeHandler, type ClassSettings, type Saved, type SaveArgs, type SeasonSystem, type Services, type StoredDay } from '../../../supabase/functions/trader/handler';
 import type { Transport } from '../../data/trader';
 
 export interface TrialOptions {
@@ -27,7 +27,7 @@ export interface TrialOptions {
 export interface Trial {
   transport: Transport;
   /** The pretend database. */
-  data: { game: Saved | null; days: Map<number, StoredDay>; requests: Map<string, unknown>; records: { once: string }[]; settings: ClassSettings; skippedDays: number; market: SchoolMarket };
+  data: { game: Saved | null; days: Map<number, StoredDay>; requests: Map<string, unknown>; records: { once: string }[]; settings: ClassSettings; skippedDays: number; market: SchoolMarket; /** Last season's system, waiting for its owner's choice (see tools.endSeason). */ waiting: SeasonSystem | null };
   /** Test tools for the preview (never in the real game). Each changes the pretend database; reload the game after. */
   tools: {
     give(credits: number): void;
@@ -37,6 +37,8 @@ export interface Trial {
     /** Pretend classmates trade all day on the school's market, so the news and moved prices can be seen. */
     busySchool(pupils?: number): void;
     restart(): void;
+    /** Pretend a New Season has started: a built system waits for the keep-or-fresh choice, and the game is cleared. Reload after. */
+    endSeason(): void;
   };
 }
 
@@ -46,9 +48,11 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     days: new Map(),
     requests: new Map(),
     records: [],
-    settings: { enabled: true, ...DEFAULT_SETTINGS, ...options.settings },
+    // The Star Forge is open in the preview so pupils can build; pass settings: { forge: false } to test it closed.
+    settings: { enabled: true, ...DEFAULT_SETTINGS, forge: true, ...options.settings },
     skippedDays: 0,
     market: new SchoolMarket(),
+    waiting: null,
   };
   /** The preview's pretend school: the pupil plus this many classmates (the market's depth). */
   const SCHOOL_SIZE = 30;
@@ -70,6 +74,11 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       return true;
     },
     mathsContext: async () => context,
+    seasonSystem: async () => structuredClone(data.waiting),
+    chooseSeason: async () => {
+      data.waiting = null;
+      return true;
+    },
     market: async (_p, day) => data.market.view(day),
     save: async (_p, a: SaveArgs) => {
       if ((data.game?.version ?? 0) !== a.expectedVersion) return null;
@@ -129,7 +138,16 @@ export function trialBackend(options: TrialOptions = {}): Trial {
         const day = data.game?.game.t.day;
         if (day !== undefined) busyLunchtime(makeGalaxy(seed), data.market, day, pupils, `busy-${data.skippedDays}`);
       },
+      endSeason: () => {
+        const g = data.game?.game;
+        if (!g?.system?.sun?.built) return;
+        data.waiting = { design: structuredClone(g.system), carry: { ship: g.t.ship, credits: g.t.credits, weapons: [...g.t.weapons], shields: [...g.t.shields], pods: g.t.pods } };
+        data.game = null;
+        data.requests.clear();
+        data.days.clear();
+      },
       restart: () => {
+        data.waiting = null;
         data.market.clear();
         data.game = null;
         data.requests.clear();

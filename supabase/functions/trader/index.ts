@@ -354,7 +354,7 @@ function shuffle$1(items, random) {
 /** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
 const tidy = (n) => Math.round(n * 1e3) / 1e3;
 /** Whole numbers within [lo, hi]. */
-const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
+const isInt$1 = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
 /** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
 function show(n) {
 	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
@@ -703,7 +703,7 @@ const facts = {
 	},
 	make: (key, [a, b, v]) => {
 		const fact = parseFact$1(key);
-		if (!fact || fact.a !== a || fact.b !== b || !isInt(v, 0, 4)) return null;
+		if (!fact || fact.a !== a || fact.b !== b || !isInt$1(v, 0, 4)) return null;
 		const s = a + b;
 		if (v === 0) return sum(a, b, { wrong: [
 			s + 1,
@@ -756,7 +756,7 @@ function kind(key, label, tag, roll, valid, make) {
 		curriculumTags: TODO$6(tag),
 		keys: [key],
 		roll: (_k, r) => roll(r),
-		make: (_k, [a, b]) => isInt(a, 0, 9999) && isInt(b, 0, 9999) && valid(a, b) ? make(a, b) : null
+		make: (_k, [a, b]) => isInt$1(a, 0, 9999) && isInt$1(b, 0, 9999) && valid(a, b) ? make(a, b) : null
 	};
 }
 const ones$1 = (n) => n % 10;
@@ -815,7 +815,7 @@ const ADD_SUB = {
 			keys: ["add:to100"],
 			roll: (_k, r) => [int$1(r, 1, 8) * 10 + int$1(r, 1, 9)],
 			make: (_k, [a]) => {
-				if (!isInt(a, 11, 89) || a % 10 === 0) return null;
+				if (!isInt$1(a, 11, 89) || a % 10 === 0) return null;
 				const parts = [
 					String(a),
 					"+",
@@ -1010,7 +1010,7 @@ const DECIMALS = {
 			keys: ["dec:tenths:add"],
 			roll: (_k, r) => [int$1(r, 1, 9), int$1(r, 1, 9)],
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 1, 9) || !isInt(b, 1, 9)) return null;
+				if (!isInt$1(a, 1, 9) || !isInt$1(b, 1, 9)) return null;
 				const parts = [
 					tenths$1(a),
 					"+",
@@ -1042,7 +1042,7 @@ const DECIMALS = {
 				return [a, int$1(r, 1, Math.min(9, a - 1))];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 2, 19) || !isInt(b, 1, Math.min(9, a - 1))) return null;
+				if (!isInt$1(a, 2, 19) || !isInt$1(b, 1, Math.min(9, a - 1))) return null;
 				const parts = [
 					tenths$1(a),
 					"−",
@@ -1070,7 +1070,7 @@ const DECIMALS = {
 			keys: ["dec:from-frac:tenths"],
 			roll: (_k, r) => [int$1(r, 1, 9)],
 			make: (_k, [n]) => {
-				if (!isInt(n, 1, 9)) return null;
+				if (!isInt$1(n, 1, 9)) return null;
 				const parts = [
 					`${n}/10`,
 					"=",
@@ -1096,7 +1096,7 @@ const DECIMALS = {
 			keys: ["money:add"],
 			roll: (_k, r) => [int$1(r, 21, 199) * 5, int$1(r, 21, 199) * 5],
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 105, 995) || !isInt(b, 105, 995) || a % 5 || b % 5) return null;
+				if (!isInt$1(a, 105, 995) || !isInt$1(b, 105, 995) || a % 5 || b % 5) return null;
 				const parts = [
 					dollars(a),
 					"+",
@@ -1138,7 +1138,7 @@ const DECIMALS = {
 					500,
 					1e3,
 					2e3
-				].includes(paid) || !isInt(cost, 105, paid - 5) || cost % 5) return null;
+				].includes(paid) || !isInt$1(cost, 105, paid - 5) || cost % 5) return null;
 				const parts = [
 					dollars(paid),
 					"−",
@@ -1174,7 +1174,7 @@ const DECIMALS = {
 				return [a, int$1(r, 1, 9) * 10];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 11, 99) || a % 10 === 0 || !isInt(b, 10, 90) || b % 10) return null;
+				if (!isInt$1(a, 11, 99) || a % 10 === 0 || !isInt$1(b, 10, 90) || b % 10) return null;
 				const parts = [
 					hundredths$1(a),
 					"+",
@@ -1208,7 +1208,7 @@ const DECIMALS = {
 				return r() < .5 ? [a, b] : [b, a];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 1, 99) || !isInt(b, 1, 99) || a === b || a % 10 === 0 === (b % 10 === 0)) return null;
+				if (!isInt$1(a, 1, 99) || !isInt$1(b, 1, 99) || a === b || a % 10 === 0 === (b % 10 === 0)) return null;
 				const labels = [hundredths$1(a), hundredths$1(b)];
 				const answer = a > b ? 0 : 1;
 				return decimal({
@@ -1232,7 +1232,7 @@ const DECIMALS = {
 				return [a, int$1(r, 1, 2)];
 			},
 			make: (_k, [a, p]) => {
-				if (!isInt(a, 1, 99) || a % 10 === 0 || !isInt(p, 1, 2)) return null;
+				if (!isInt$1(a, 1, 99) || a % 10 === 0 || !isInt$1(p, 1, 2)) return null;
 				const m = 10 ** p;
 				const parts = [
 					tenths$1(a),
@@ -1267,7 +1267,7 @@ const DECIMALS = {
 				return [a];
 			},
 			make: (_k, [a]) => {
-				if (!isInt(a, 11, 199) || a % 10 === 0) return null;
+				if (!isInt$1(a, 11, 199) || a % 10 === 0) return null;
 				const down = Math.floor(a / 10);
 				const answer = a % 10 >= 5 ? down + 1 : down;
 				const parts = [
@@ -1296,7 +1296,7 @@ const DECIMALS = {
 			keys: ["dec:times-whole"],
 			roll: (_k, r) => [int$1(r, 1, 9), int$1(r, 2, 9)],
 			make: (_k, [a, b]) => {
-				if (!isInt(a, 1, 9) || !isInt(b, 2, 9)) return null;
+				if (!isInt$1(a, 1, 9) || !isInt$1(b, 2, 9)) return null;
 				const parts = [
 					tenths$1(a),
 					"×",
@@ -1323,7 +1323,7 @@ const DECIMALS = {
 			keys: ["dec:from-frac"],
 			roll: (_k, r) => r() < .3 ? [int$1(r, 1, 99), 100] : pickOne(r, FRACTIONS_AS_DECIMALS),
 			make: (_k, [n, d]) => {
-				if (!(d === 100 ? isInt(n, 1, 99) : FRACTIONS_AS_DECIMALS.some(([x, y]) => x === n && y === d))) return null;
+				if (!(d === 100 ? isInt$1(n, 1, 99) : FRACTIONS_AS_DECIMALS.some(([x, y]) => x === n && y === d))) return null;
 				const parts = [
 					`${n}/${d}`,
 					"=",
@@ -1402,7 +1402,7 @@ function factFamily(label, divisors, upTo) {
 			];
 		},
 		make: (key, [d, q, v]) => {
-			if (!owned.has(key) || !isInt(v, 0, 1) || key !== `div:${d * q}/${d}`) return null;
+			if (!owned.has(key) || !isInt$1(v, 0, 1) || key !== `div:${d * q}/${d}`) return null;
 			const n = d * q;
 			if (v === 0) {
 				const parts = [
@@ -1487,7 +1487,7 @@ const DIVISION = {
 				return [d, int$1(r, 11, Math.floor(99 / d))];
 			},
 			make: (_k, [d, q]) => {
-				if (!isInt(d, 2, 6) || !isInt(q, 11, Math.floor(99 / d))) return null;
+				if (!isInt$1(d, 2, 6) || !isInt$1(q, 11, Math.floor(99 / d))) return null;
 				const n = d * q;
 				return divide(n, d, { wrong: [
 					q + 1,
@@ -1503,7 +1503,7 @@ const DIVISION = {
 			keys: ["div:by10"],
 			roll: (_k, r) => [int$1(r, 1, 9) * 10 + int$1(r, 1, 9), int$1(r, 1, 2)],
 			make: (_k, [q, p]) => {
-				if (!isInt(q, 11, 99) || q % 10 === 0 || !isInt(p, 1, 2)) return null;
+				if (!isInt$1(q, 11, 99) || q % 10 === 0 || !isInt$1(p, 1, 2)) return null;
 				const d = 10 ** p;
 				return divide(q * d, d, { wrong: [
 					q * 10,
@@ -1519,7 +1519,7 @@ const DIVISION = {
 			keys: ["div:missing"],
 			roll: (_k, r) => [int$1(r, 2, 9), int$1(r, 2, 12)],
 			make: (_k, [d, q]) => {
-				if (!isInt(d, 2, 9) || !isInt(q, 2, 12)) return null;
+				if (!isInt$1(d, 2, 9) || !isInt$1(q, 2, 12)) return null;
 				const parts = [
 					"?",
 					"÷",
@@ -1553,7 +1553,7 @@ const DIVISION = {
 				];
 			},
 			make: (_k, [d, q, rem]) => {
-				if (!isInt(d, 3, 9) || !isInt(q, 2, 9) || !isInt(rem, 1, d - 1)) return null;
+				if (!isInt$1(d, 3, 9) || !isInt$1(q, 2, 9) || !isInt$1(rem, 1, d - 1)) return null;
 				const n = d * q + rem;
 				const parts = [
 					String(n),
@@ -1587,7 +1587,7 @@ const DIVISION = {
 				return [d, int$1(r, Math.ceil(100 / d), Math.floor(999 / d))];
 			},
 			make: (_k, [d, q]) => {
-				if (!isInt(d, 3, 9) || !isInt(q, Math.ceil(100 / d), Math.floor(999 / d))) return null;
+				if (!isInt$1(d, 3, 9) || !isInt$1(q, Math.ceil(100 / d), Math.floor(999 / d))) return null;
 				return divide(d * q, d, { wrong: [
 					q + 1,
 					q - 1,
@@ -1670,7 +1670,7 @@ const FRACTIONS$1 = {
 					4,
 					5,
 					10
-				].includes(d) || !isInt(q, 1, 10)) return null;
+				].includes(d) || !isInt$1(q, 1, 10)) return null;
 				const parts = [
 					frac$1(1, d),
 					"of",
@@ -1715,7 +1715,7 @@ const FRACTIONS$1 = {
 					d
 				];
 			},
-			make: (_k, [a, b, d]) => isInt(d, 3, 12) && isInt(a, 1, d - 1) && isInt(b, 1, d - 1) && a !== b ? bigger(a, d, b, d) : null
+			make: (_k, [a, b, d]) => isInt$1(d, 3, 12) && isInt$1(a, 1, d - 1) && isInt$1(b, 1, d - 1) && a !== b ? bigger(a, d, b, d) : null
 		},
 		"frac:of:nonunit": {
 			label: "A fraction of an amount (3/4 of 20)",
@@ -1746,7 +1746,7 @@ const FRACTIONS$1 = {
 					5,
 					8,
 					10
-				].includes(d) || !isInt(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt(q, 1, 10)) return null;
+				].includes(d) || !isInt$1(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(q, 1, 10)) return null;
 				const parts = [
 					frac$1(n, d),
 					"of",
@@ -1786,7 +1786,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+				if (!isInt$1(d, 2, 5) || !isInt$1(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(k, 2, 5) || !isInt$1(v, 0, 1)) return null;
 				const blank = v === 0 ? `?/${d * k}` : `${n * k}/?`;
 				const parts = [
 					frac$1(n, d),
@@ -1832,7 +1832,7 @@ const FRACTIONS$1 = {
 					d2
 				];
 			},
-			make: (_k, [n, d1, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt(n, 1, Math.min(d1, d2) - 1) ? bigger(n, d1, n, d2) : null
+			make: (_k, [n, d1, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$1(n, 1, Math.min(d1, d2) - 1) ? bigger(n, d1, n, d2) : null
 		},
 		"frac:add:same-den": {
 			label: "Adding fractions with the same bottom number",
@@ -1848,7 +1848,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [a, b, d]) => {
-				if (!isInt(d, 3, 12) || !isInt(a, 1, d - 2) || !isInt(b, 1, d - 1 - a)) return null;
+				if (!isInt$1(d, 3, 12) || !isInt$1(a, 1, d - 2) || !isInt$1(b, 1, d - 1 - a)) return null;
 				const parts = [
 					frac$1(a, d),
 					"+",
@@ -1883,7 +1883,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [a, b, d]) => {
-				if (!isInt(d, 3, 12) || !isInt(a, 2, d) || !isInt(b, 1, a - 1)) return null;
+				if (!isInt$1(d, 3, 12) || !isInt$1(a, 2, d) || !isInt$1(b, 1, a - 1)) return null;
 				const parts = [
 					frac$1(a, d),
 					"−",
@@ -1918,7 +1918,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [w, n, d, v]) => {
-				if (!isInt(d, 2, 8) || !isInt(w, 1, 4) || !isInt(n, 1, d - 1) || !isInt(v, 0, 1)) return null;
+				if (!isInt$1(d, 2, 8) || !isInt$1(w, 1, 4) || !isInt$1(n, 1, d - 1) || !isInt$1(v, 0, 1)) return null;
 				const top = w * d + n;
 				if (v === 0) {
 					const parts = [
@@ -1975,7 +1975,7 @@ const FRACTIONS$1 = {
 					];
 				}
 			},
-			make: (_k, [n1, d1, n2, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt(n1, 1, d1 - 1) && isInt(n2, 1, d2 - 1) && n1 !== n2 && n1 * d2 !== n2 * d1 ? bigger(n1, d1, n2, d2) : null
+			make: (_k, [n1, d1, n2, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$1(n1, 1, d1 - 1) && isInt$1(n2, 1, d2 - 1) && n1 !== n2 && n1 * d2 !== n2 * d1 ? bigger(n1, d1, n2, d2) : null
 		},
 		"frac:simplify": {
 			label: "Simplifying fractions (6/8 = 3/?)",
@@ -1995,7 +1995,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
+				if (!isInt$1(d, 2, 6) || !isInt$1(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(k, 2, 6) || !isInt$1(v, 0, 1)) return null;
 				const parts = [
 					frac$1(n * k, d * k),
 					"=",
@@ -2095,7 +2095,7 @@ function digitWorth(key, label, lo, hi) {
 			}
 		},
 		make: (_k, [n, place]) => {
-			if (!isInt(n, lo, hi) || !askablePlaces(n, 1).includes(place)) return null;
+			if (!isInt$1(n, lo, hi) || !askablePlaces(n, 1).includes(place)) return null;
 			const d = digitAt(n, place);
 			const parts = [
 				"In",
@@ -2121,7 +2121,7 @@ function digitWorth(key, label, lo, hi) {
 	};
 }
 function partition(key, label, lo, hi) {
-	const ok = (n, place) => isInt(n, lo, hi) && isInt(place, 1, digitCount(n) - 1) && digitAt(n, place) !== 0 && String(n).replace(/0/g, "").length >= 2;
+	const ok = (n, place) => isInt$1(n, lo, hi) && isInt$1(place, 1, digitCount(n) - 1) && digitAt(n, place) !== 0 && String(n).replace(/0/g, "").length >= 2;
 	return {
 		label,
 		curriculumTags: TODO("place-value-partition"),
@@ -2163,7 +2163,7 @@ function partition(key, label, lo, hi) {
 }
 /** "10 more than 395": steps are 10s (band 1) or 100s and 1000s (band 2). Half the questions cross into the next place. */
 function moreLess(key, label, steps, lo, hi) {
-	const ok = (n, v, step) => isInt(v, 0, 1) && steps.includes(step) && isInt(n, lo, hi) && isInt(v === 0 ? n + step : n - step, lo - step, hi + step);
+	const ok = (n, v, step) => isInt$1(v, 0, 1) && steps.includes(step) && isInt$1(n, lo, hi) && isInt$1(v === 0 ? n + step : n - step, lo - step, hi + step);
 	return {
 		label,
 		curriculumTags: TODO("place-value-more-less"),
@@ -2210,7 +2210,7 @@ function moreLess(key, label, steps, lo, hi) {
 	};
 }
 function rounding(key, label, to, lo, hi) {
-	const ok = (n) => isInt(n, lo, hi) && n % to !== 0;
+	const ok = (n) => isInt$1(n, lo, hi) && n % to !== 0;
 	return {
 		label,
 		curriculumTags: TODO("rounding"),
@@ -2267,7 +2267,7 @@ const PLACE_VALUE = {
 			keys: ["pv:times10"],
 			roll: (_k, r) => [int$1(r, 2, 99), int$1(r, 1, 3)],
 			make: (_k, [n, p]) => {
-				if (!isInt(n, 2, 99) || !isInt(p, 1, 3)) return null;
+				if (!isInt$1(n, 2, 99) || !isInt$1(p, 1, 3)) return null;
 				const m = 10 ** p;
 				const parts = [
 					String(n),
@@ -2549,7 +2549,7 @@ function bonds(label, tag, prefix, total, from) {
 		},
 		make: (key, [a, b, v]) => {
 			const bond = parseBond$1(key);
-			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
+			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt$1(v, 0, 3)) return null;
 			const t = String(total);
 			const [parts, answer] = v === 0 ? [[
 				String(a),
@@ -2604,7 +2604,7 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		keys,
 		roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 1)],
 		make: (key, [n, v]) => {
-			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
+			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt$1(v, 0, 1)) return null;
 			if (key.startsWith("dbl:")) {
 				const parts = v === 0 ? [
 					String(n),
@@ -2671,7 +2671,7 @@ const EARLY_FACTS = {
 			keys: range$5(1, 9).map((n) => `tenand:${n}`),
 			roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 3)],
 			make: (key, [n, v]) => {
-				if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
+				if (!isInt$1(n, 1, 9) || key !== `tenand:${n}` || !isInt$1(v, 0, 3)) return null;
 				const t = String(10 + n);
 				const [parts, answer] = v === 0 ? [[
 					"10",
@@ -2933,7 +2933,7 @@ const MAX_NUMBER = 30;
 const MAX_ANSWER = 300;
 function build(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
-	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt(n, 2, MAX_NUMBER))) return null;
+	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt$1(n, 2, MAX_NUMBER))) return null;
 	const tokens = tokensOf(template.src, nums);
 	const answer = evaluate(tokens, RIGHT);
 	if (!Number.isInteger(answer) || answer < 1 || answer > MAX_ANSWER) return null;
@@ -3042,7 +3042,7 @@ function talk(parts) {
 /** The two numbers every pick question ends with. */
 const rollPick = (random, wrong = 3) => [int$1(random, 0, wrong), int$1(random, 0, 9)];
 /** Are `slot` and `salt` numbers a roll could have given? */
-const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt, 0, 9);
+const goodPick = (slot, salt, wrong = 3) => isInt$1(slot, 0, wrong) && isInt$1(salt, 0, 9);
 /**
 * A question with the right choice and choices from named mistakes. `named` maps the name of each mistake to the choice it
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
@@ -3119,7 +3119,7 @@ const BIG_DENS = [
 	10
 ];
 /** A top number and bottom number under one: 1/d up to (d - 1)/d. */
-const goodFraction = (n, d, dens) => dens.includes(d) && isInt(n, 1, d - 1);
+const goodFraction = (n, d, dens) => dens.includes(d) && isInt$1(n, 1, d - 1);
 const rollFraction = (r, dens) => {
 	const d = pickOne(r, dens);
 	return [Math.min(d - 1, 1 + Math.floor(r() * (d - 1))), d];
@@ -3143,7 +3143,7 @@ function pairFamily(key, label, dens) {
 		Math.floor(r() * 2),
 		...rollPick(r)
 	], (_k, [n, d, v, slot, salt]) => {
-		if (!goodFraction(n, d, dens) || !isInt(v, 0, 1) || !goodPick(slot, salt)) return null;
+		if (!goodFraction(n, d, dens) || !isInt$1(v, 0, 1) || !goodPick(slot, salt)) return null;
 		const right = frac(d - n, d);
 		const parts = v === 0 ? [
 			frac(n, d),
@@ -3189,7 +3189,7 @@ const fractionFamilies = [
 		});
 	}),
 	oneKey("bondf1:missing-top", "The missing top number (3/8 + ?/8 = 1)", FRACTION_TAGS, 3, (_k, r) => [...rollFraction(r, ALL_DENS), Math.floor(r() * 2)], (_k, [n, d, v]) => {
-		if (!goodFraction(n, d, ALL_DENS) || !isInt(v, 0, 1)) return null;
+		if (!goodFraction(n, d, ALL_DENS) || !isInt$1(v, 0, 1)) return null;
 		const blank = `?/${d}`;
 		const parts = v === 0 ? [
 			frac(n, d),
@@ -3269,7 +3269,7 @@ function decimalBond(u, whole, scale, target) {
 function decimalFamilies(prefix, word, labels, pool, scale, target) {
 	const whole = target * scale;
 	return [oneKey(`${prefix}:${word}`, labels[0], DECIMAL_TAGS, 2, (_k, r) => [pickOne(r, pool), Math.floor(r() * 2)], (_k, [u, v]) => {
-		if (!pool.includes(u) || !isInt(v, 0, 1)) return null;
+		if (!pool.includes(u) || !isInt$1(v, 0, 1)) return null;
 		const b = decimalBond(u, whole, scale, target);
 		const parts = v === 0 ? [
 			b.shown,
@@ -3383,7 +3383,7 @@ const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
 const COUNTS = range$3(1, 39).filter(notTen);
 const tenthFamilies = [
 	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int$1(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
-		if (!isInt(d, 2, 9) || !goodPick(slot, salt)) return null;
+		if (!isInt$1(d, 2, 9) || !goodPick(slot, salt)) return null;
 		const right = frac(d, 10);
 		const parts = [
 			tenths(d),
@@ -3405,7 +3405,7 @@ const tenthFamilies = [
 		});
 	}),
 	oneKey("tenth:to-decimal", "Tenths as a decimal (3/10 = 0.3)", TENTH_TAGS, 3, (_k, r) => [int$1(r, 1, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
-		if (!isInt(d, 1, 9) || !goodPick(slot, salt)) return null;
+		if (!isInt$1(d, 1, 9) || !goodPick(slot, salt)) return null;
 		const right = tenths(d);
 		const parts = [
 			frac(d, 10),
@@ -3427,7 +3427,7 @@ const tenthFamilies = [
 		});
 	}),
 	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
-		if (!isInt(n, 1, 99) || !notTen(n)) return null;
+		if (!isInt$1(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			show(n),
 			"÷",
@@ -3468,7 +3468,7 @@ const tenthFamilies = [
 	}),
 	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int$1(r, 1, 24), 1], (_k, [t, v]) => {
 		if (v === 0) {
-			if (!isInt(t, 2, 38) || t % 2 !== 0) return null;
+			if (!isInt$1(t, 2, 38) || t % 2 !== 0) return null;
 			const parts = [
 				"Half",
 				"of",
@@ -3491,7 +3491,7 @@ const tenthFamilies = [
 				"took half off the number": t / 10 - .5
 			});
 		}
-		if (v !== 1 || !isInt(t, 1, 24)) return null;
+		if (v !== 1 || !isInt$1(t, 1, 24)) return null;
 		const parts = [
 			"Double",
 			tenths(t),
@@ -3521,7 +3521,7 @@ const dig = (t) => t % 10;
 function twoTenths(key, label, ok, sign, named, aLo, aHi) {
 	const pool = range$3(aLo, aHi).flatMap((a) => range$3(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
 	return oneKey(key, label, ADD_TAGS, 2, (_k, r) => pickOne(r, pool), (_k, [a, b]) => {
-		if (!isInt(a, 1, 99) || !isInt(b, 1, 99) || !ok(a, b)) return null;
+		if (!isInt$1(a, 1, 99) || !isInt$1(b, 1, 99) || !ok(a, b)) return null;
 		const parts = [
 			tenths(a),
 			sign,
@@ -3568,7 +3568,7 @@ const addFamilies = [
 		int$1(r, 1, 9),
 		int$1(r, 0, 2)
 	], (_k, [w, t, v]) => {
-		if (!isInt(w, 1, 9) || !isInt(t, 1, 9) || !isInt(v, 0, 2)) return null;
+		if (!isInt$1(w, 1, 9) || !isInt$1(t, 1, 9) || !isInt$1(v, 0, 2)) return null;
 		const small = tenths(t);
 		if (v === 2) {
 			const parts = [
@@ -3624,7 +3624,7 @@ const addFamilies = [
 		int$1(r, 1, 2),
 		int$1(r, 0, 2)
 	], (_k, [t, target, v]) => {
-		if (!isInt(t, 1, 9) || !isInt(target, 1, 2) || !isInt(v, 0, 2)) return null;
+		if (!isInt$1(t, 1, 9) || !isInt$1(target, 1, 2) || !isInt$1(v, 0, 2)) return null;
 		const small = tenths(t);
 		const parts = v === 0 ? [
 			small,
@@ -3752,7 +3752,7 @@ const equivFamilies$1 = [
 		});
 	}),
 	oneKey("deceq:hundredths", "Hundredths as a decimal (7/100 = 0.07)", EQUIV_TAGS$1, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
-		if (!isInt(n, 1, 99) || !notTen(n)) return null;
+		if (!isInt$1(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			frac(n, 100),
 			"=",
@@ -3773,7 +3773,7 @@ const equivFamilies$1 = [
 	}),
 	oneKey("deceq:to-fraction", "A decimal as a fraction (0.75 = 3/4)", EQUIV_TAGS$1, 3, (_k, r) => [int$1(r, 0, FRACTION_DECIMALS.length - 1), ...rollPick(r)], (_k, [i, slot, salt]) => {
 		const pair = FRACTION_DECIMALS[i];
-		if (!pair || !isInt(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
+		if (!pair || !isInt$1(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
 		const [decimal, right] = pair;
 		const parts = [
 			decimal,
@@ -3807,11 +3807,11 @@ const equivFamilies$1 = [
 			...rollPick(r, 1)
 		];
 	}, (_k, [x, y, v, slot, salt]) => {
-		if (!goodPick(slot, salt, 1) || !isInt(x, 1, 99) || !notTen(x) || !isInt(v, 0, 1)) return null;
+		if (!goodPick(slot, salt, 1) || !isInt$1(x, 1, 99) || !notTen(x) || !isInt$1(v, 0, 1)) return null;
 		const smaller = v === 0 ? x : y * 10;
 		const bigger = v === 0 ? y * 10 : x;
-		if (v === 0 && !(isInt(y, 1, 9) && y * 10 > x)) return null;
-		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
+		if (v === 0 && !(isInt$1(y, 1, 9) && y * 10 > x)) return null;
+		if (v === 1 && !(isInt$1(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths(bigger);
 		const wrong = hundredths(smaller);
 		return pick$1({
@@ -3838,7 +3838,7 @@ const places = (answer) => {
 };
 function moveFamily(key, label, make, check, build) {
 	return oneKey(key, label, TIMES_TAGS, 1, (_k, r) => make(r), (_k, [n]) => {
-		if (!isInt(n, 1, 1e5) || !check(n)) return null;
+		if (!isInt$1(n, 1, 1e5) || !check(n)) return null;
 		const { parts, answer, named } = build(n);
 		return withMistakes({
 			parts,
@@ -3914,7 +3914,7 @@ const timesFamilies = [
 		}
 	})),
 	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int$1(r, 0, 3)], (_k, [t, v]) => {
-		if (!isInt(t, 11, 99) || !notTen(t) || !isInt(v, 0, 3)) return null;
+		if (!isInt$1(t, 11, 99) || !notTen(t) || !isInt$1(v, 0, 3)) return null;
 		const small = tenths(t);
 		const [parts, answer] = v === 0 ? [[
 			small,
@@ -4137,7 +4137,7 @@ const families$1 = [
 		});
 	}),
 	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$2(1, 99))], (_k, [h]) => {
-		if (!isInt(h, 1, 99)) return null;
+		if (!isInt$1(h, 1, 99)) return null;
 		const parts = [
 			show(h / 100),
 			"=",
@@ -4228,7 +4228,7 @@ const UNIT_TAGS = ["MS.Y3.NUM.RN.P7"];
 /** 1/d of an amount that d goes into exactly. `dens` are the bottom numbers this type uses. */
 function unitFamily(key, label, dens, qLo, qHi) {
 	return oneKey(key, label, UNIT_TAGS, 2, (_k, r) => [pickOne(r, dens), int$1(r, qLo, qHi)], (_k, [d, q]) => {
-		if (!dens.includes(d) || !isInt(q, qLo, qHi)) return null;
+		if (!dens.includes(d) || !isInt$1(q, qLo, qHi)) return null;
 		const amount = d * q;
 		const parts = [
 			frac(1, d),
@@ -4306,7 +4306,7 @@ function nonUnitFamily(word) {
 		d,
 		int$1(r, 1, 10)
 	], (_k, [n, den, q]) => {
-		if (den !== d || !tops.includes(n) || !isInt(q, 1, 10)) return null;
+		if (den !== d || !tops.includes(n) || !isInt$1(q, 1, 10)) return null;
 		const parts = [
 			frac(n, d),
 			"of",
@@ -4333,7 +4333,7 @@ function nonUnitFamily(word) {
 const EQUIV_TAGS = ["MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"];
 /** Fractions in their simplest form, under one, with a bottom number up to 6. */
 const SIMPLEST = range$1(2, 6).flatMap((d) => range$1(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
-const isSimplest = (n, d) => isInt(d, 2, 6) && isInt(n, 1, d - 1) && gcd$1(n, d) === 1;
+const isSimplest = (n, d) => isInt$1(d, 2, 6) && isInt$1(n, 1, d - 1) && gcd$1(n, d) === 1;
 /** Smallest number that divides k other than 1, if k is not prime (so 12/16 can be "only halved"). */
 const smallestFactor = (k) => range$1(2, k - 1).find((p) => k % p === 0);
 const equivFamilies = [
@@ -4345,7 +4345,7 @@ const equivFamilies = [
 			int$1(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
-		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
+		if (!isSimplest(n, d) || !isInt$1(k, 2, 6)) return null;
 		const parts = [
 			frac(n, d),
 			"=",
@@ -4373,7 +4373,7 @@ const equivFamilies = [
 			int$1(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
-		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
+		if (!isSimplest(n, d) || !isInt$1(k, 2, 6)) return null;
 		const parts = [
 			frac(n, d),
 			"=",
@@ -4403,7 +4403,7 @@ const equivFamilies = [
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
-		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !goodPick(slot, salt)) return null;
+		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !goodPick(slot, salt)) return null;
 		const right = frac(n * k, d * k);
 		const parts = [
 			frac(n, d),
@@ -4434,7 +4434,7 @@ const equivFamilies = [
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
-		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !goodPick(slot, salt)) return null;
+		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !goodPick(slot, salt)) return null;
 		const shown = frac(n * k, d * k);
 		const parts = [
 			"Simplify",
@@ -4468,7 +4468,7 @@ const equivFamilies = [
 			int$1(r, 0, 1)
 		];
 	}, (_k, [n, d, k, v]) => {
-		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !isInt$1(v, 0, 1)) return null;
 		const shown = frac(n * k, d * k);
 		if (v === 0) {
 			const parts = [
@@ -4517,7 +4517,7 @@ function wholeFamily$2(key, label, shapes, qLo, qHi) {
 			int$1(r, qLo, qHi)
 		];
 	}, (_k, [n, d, q]) => {
-		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt(q, qLo, qHi)) return null;
+		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt$1(q, qLo, qHi)) return null;
 		const part = n * q;
 		const whole = d * q;
 		const parts = [
@@ -4640,7 +4640,7 @@ function ofMistakes(p, a) {
 /** "p% of an amount that is q × step". */
 function ofFamily(key, label, tags, p, step, qLo, qHi) {
 	return oneKey(key, label, tags, 1, (_k, r) => [int$1(r, qLo, qHi)], (_k, [q]) => {
-		if (!isInt(q, qLo, qHi)) return null;
+		if (!isInt$1(q, qLo, qHi)) return null;
 		const amount = q * step;
 		const parts = [
 			pct(p),
@@ -4683,7 +4683,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 	return [p, int$1(r, BIG[p].lo, BIG[p].hi)];
 }, (_k, [p, q]) => {
 	const shape = BIG[p];
-	if (!shape || !isInt(q, shape.lo, shape.hi)) return null;
+	if (!shape || !isInt$1(q, shape.lo, shape.hi)) return null;
 	const amount = q * shape.step;
 	const parts = [
 		pct(p),
@@ -4701,7 +4701,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 /** "p% of ? = x": the whole from a percentage. */
 function wholeFamily$1(key, label, p, xLo, xHi) {
 	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [int$1(r, xLo, xHi)], (_k, [x]) => {
-		if (!isInt(x, xLo, xHi)) return null;
+		if (!isInt$1(x, xLo, xHi)) return null;
 		const parts = [
 			pct(p),
 			"of",
@@ -4902,10 +4902,10 @@ const BOND_WORD = {
 };
 function bondFamily(total, type, label, tags) {
 	const key = `bond${total}:${BOND_WORD[total][type]}`;
-	const valid = (a) => type === "take" ? total === 100 ? isInt(a, 1, 99) : isInt(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
+	const valid = (a) => type === "take" ? total === 100 ? isInt$1(a, 1, 99) : isInt$1(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
 	const candidates = range(1, total - 1).filter(valid);
 	return oneKey(key, label, tags, 2, (_k, r) => [pickOne(r, candidates), int$1(r, 0, 1)], (_k, [a, v]) => {
-		if (!valid(a) || !isInt(v, 0, 1)) return null;
+		if (!valid(a) || !isInt$1(v, 0, 1)) return null;
 		const t = String(total);
 		const answer = total - a;
 		const parts = type === "take" ? [
@@ -4991,7 +4991,7 @@ function timesFamily(key, label, pools) {
 		const pair = [pickOne(r, pools[0]), pickOne(r, pools[1])];
 		return r() < .5 ? pair : pair.reverse();
 	}, (_k, [x, y]) => {
-		if (!isInt(x, 1, 1e3) || !isInt(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
+		if (!isInt$1(x, 1, 1e3) || !isInt$1(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
 		const answer = x * y;
 		const parts = [
 			show(x),
@@ -5017,7 +5017,7 @@ function timesFamily(key, label, pools) {
 	});
 }
 const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => [int$1(r, 2, 9), pickOne(r, TENS)], (_k, [d, q]) => {
-	if (!isInt(d, 2, 9) || !isTens(q)) return null;
+	if (!isInt$1(d, 2, 9) || !isTens(q)) return null;
 	const n = d * q;
 	const parts = [
 		show(n),
@@ -5147,7 +5147,7 @@ const factorFamilies = [
 		const n = pickOne(r, PAIR_NUMBERS);
 		return [n, pickOne(r, divisorsOf(n).filter((d) => d >= 2 && d < n))];
 	}, (_k, [n, a]) => {
-		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0) return null;
+		if (!PAIR_NUMBERS.includes(n) || !isInt$1(a, 2, n - 1) || n % a !== 0) return null;
 		const answer = n / a;
 		return withMistakes({
 			parts: [
@@ -5275,7 +5275,7 @@ const CUBES = range(2, 5).map((n) => n ** 3);
 const isSquare = (n) => Number.isInteger(Math.sqrt(n));
 const squareFamilies = [
 	oneKey("square:of", "Square numbers (7 squared)", squareTags, 1, (_k, r) => [int$1(r, 2, 12)], (_k, [n]) => {
-		if (!isInt(n, 2, 12)) return null;
+		if (!isInt$1(n, 2, 12)) return null;
 		return withMistakes({
 			parts: [
 				String(n),
@@ -5295,7 +5295,7 @@ const squareFamilies = [
 		});
 	}),
 	oneKey("cube:of", "Cube numbers (4 cubed)", squareTags, 1, (_k, r) => [int$1(r, 2, 5)], (_k, [n]) => {
-		if (!isInt(n, 2, 5)) return null;
+		if (!isInt$1(n, 2, 5)) return null;
 		return withMistakes({
 			parts: [
 				String(n),
@@ -5362,7 +5362,7 @@ const squareFamilies = [
 			if (!isSquare(x)) return [x];
 		}
 	}, (_k, [x]) => {
-		if (!isInt(x, 5, 143) || isSquare(x)) return null;
+		if (!isInt$1(x, 5, 143) || isSquare(x)) return null;
 		const root = Math.floor(Math.sqrt(x)) + 1;
 		return withMistakes({
 			parts: [
@@ -5507,7 +5507,7 @@ function wholeFamily(unit, suffix, lo, hi, tags, label) {
 			if (n >= lo && n <= hi && wholeKeyOf(unit, n) === key) return [n];
 		}
 	}, (_k, [n]) => {
-		if (!isInt(n, lo, hi) || wholeKeyOf(unit, n) !== key) return null;
+		if (!isInt$1(n, lo, hi) || wholeKeyOf(unit, n) !== key) return null;
 		const down = n - n % unit;
 		const up = down + unit;
 		const answer = n % unit >= half ? up : down;
@@ -5566,7 +5566,7 @@ function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
 			if (m >= lo && m <= hi && decimalKeyOf(unit, dp, m) === key) return [m];
 		}
 	}, (_k, [m]) => {
-		if (!isInt(m, lo, hi) || decimalKeyOf(unit, dp, m) !== key) return null;
+		if (!isInt$1(m, lo, hi) || decimalKeyOf(unit, dp, m) !== key) return null;
 		const lower = Math.floor(m / step);
 		const upper = lower + 1;
 		const up = m % step >= step / 2;
@@ -6814,6 +6814,11 @@ const SHIELDS = [{
 	minTech: 6
 }];
 const MOON_PRICE = 2e4;
+/**
+* A pupil who saves a picture of their system and starts a new one at a New Season carries over their ship and this many
+* credits at most (docs/TRADER-SYSTEM-PLAN.md, 1.2), so a rich pupil's next season isn't too easy. Check with the simulator.
+*/
+const CARRY_MAX_CREDITS = 1e4;
 const PIRATE_TIERS = [
 	{
 		name: "Scrappy pirate",
@@ -7320,6 +7325,748 @@ function makeGalaxy(seed) {
 /** Where a new trader starts: the lowest-numbered planet with a shipyard-level tech and friendly pirates. */
 function startPlanet(galaxy) {
 	return (galaxy.planets.filter((p) => p.tech >= 4 && GOVERNMENTS[p.government].pirates <= 3)[0] ?? galaxy.planets[0]).id;
+}
+//#endregion
+//#region shared/trader/system.ts
+const SUNS = {
+	yellow: {
+		name: "Yellow star",
+		price: 3e3,
+		zone: [2, 3],
+		light: 16773590,
+		plants: 4165434,
+		fact: "A star like our Sun. It will shine steadily for about 10 billion years."
+	},
+	red: {
+		name: "Red dwarf",
+		price: 2500,
+		zone: [0, 1],
+		light: 16756874,
+		plants: 2758712,
+		fact: "The most common star in the galaxy. Small, cool and very long-lived, so its planets huddle close."
+	},
+	blue: {
+		name: "Blue giant",
+		price: 5e3,
+		zone: [5, 7],
+		light: 13623551,
+		plants: 12076332,
+		fact: "Huge and fierce. Its light is so strong that plants here would be red to keep from burning."
+	},
+	white: {
+		name: "White dwarf",
+		price: 3500,
+		zone: [0, 0],
+		light: 15922943,
+		plants: 3112815,
+		fact: "The hot, tiny core left after a star like the Sun runs out of fuel. About the size of Earth."
+	},
+	pulsar: {
+		name: "Pulsar",
+		price: 6e3,
+		zone: null,
+		light: 14214911,
+		plants: 5925536,
+		fact: "A spinning dead star that sweeps two beams of light round, like a lighthouse, many times a second."
+	},
+	binary: {
+		name: "Two suns",
+		price: 8e3,
+		zone: [3, 5],
+		light: 16770756,
+		plants: 3116920,
+		fact: "Two stars circling each other. Most stars in the galaxy have a partner. Every planet gets two sunsets."
+	},
+	blackhole: {
+		name: "Black hole",
+		price: 12e3,
+		zone: null,
+		light: 16762506,
+		plants: 6961802,
+		fact: "So heavy that not even light escapes. A ring of hot gas glows as it swirls in, and it bends the starlight behind it."
+	},
+	baby: {
+		name: "Baby star",
+		price: 4e3,
+		zone: [2, 4],
+		light: 16769208,
+		plants: 8364096,
+		fact: "A young star still wrapped in the cloud of dust and gas it was born from. Its planets are still forming."
+	}
+};
+/** Size names and how much each multiplies a planet's price by (tenths). */
+const SIZES = [
+	"Small",
+	"Medium",
+	"Large",
+	"Huge"
+];
+const SIZE_TENTHS = [
+	8,
+	10,
+	13,
+	16
+];
+const LAND_LIFE = [
+	"microbes",
+	"plants",
+	"animals",
+	"robots",
+	"cities"
+];
+const PLANETS = {
+	rocky: {
+		name: "Rocky world",
+		price: 1500,
+		solid: true,
+		water: false,
+		life: LAND_LIFE,
+		fact: "Bare rock and craters, like Mercury or our Moon."
+	},
+	desert: {
+		name: "Desert world",
+		price: 1800,
+		solid: true,
+		water: false,
+		life: LAND_LIFE,
+		fact: "Sand seas and canyons, like Mars."
+	},
+	ice: {
+		name: "Ice world",
+		price: 1800,
+		solid: true,
+		water: true,
+		life: [
+			"microbes",
+			"sea",
+			"robots"
+		],
+		fact: "Frozen all over. There may be an ocean under the ice, like on Europa."
+	},
+	ocean: {
+		name: "Ocean world",
+		price: 2500,
+		solid: false,
+		water: true,
+		life: [
+			"microbes",
+			"plants",
+			"sea",
+			"cities"
+		],
+		fact: "Water from pole to pole, hundreds of kilometres deep."
+	},
+	lava: {
+		name: "Lava world",
+		price: 2200,
+		solid: true,
+		water: false,
+		life: ["microbes", "robots"],
+		fact: "Rivers of molten rock and erupting volcanoes, like Io."
+	},
+	jungle: {
+		name: "Jungle world",
+		price: 3e3,
+		solid: true,
+		water: true,
+		life: [
+			"microbes",
+			"plants",
+			"sea",
+			"animals",
+			"robots",
+			"cities"
+		],
+		fact: "Warm and wet, covered in thick forest and rivers."
+	},
+	gas: {
+		name: "Gas giant",
+		price: 3500,
+		solid: false,
+		water: false,
+		life: ["microbes", "floaters"],
+		fact: "A huge ball of gas with no ground at all, like Jupiter. Storms here can be bigger than Earth."
+	},
+	icegiant: {
+		name: "Ice giant",
+		price: 3e3,
+		solid: false,
+		water: false,
+		life: ["microbes", "floaters"],
+		fact: "Blue-green and cold, like Uranus and Neptune, with fierce winds."
+	},
+	crystal: {
+		name: "Crystal world",
+		price: 4e3,
+		solid: true,
+		water: false,
+		life: [
+			"microbes",
+			"crystalfolk",
+			"robots"
+		],
+		fact: "Mountains of glittering crystal. Some planets may really be rich in diamond."
+	},
+	toxic: {
+		name: "Toxic swamp",
+		price: 2e3,
+		solid: true,
+		water: true,
+		life: [
+			"microbes",
+			"plants",
+			"sea",
+			"animals"
+		],
+		fact: "Thick, cloudy air and bubbling swamps, a bit like Venus with puddles."
+	},
+	eyeball: {
+		name: "Eyeball world",
+		price: 3e3,
+		solid: true,
+		water: true,
+		life: [
+			"microbes",
+			"plants",
+			"sea",
+			"animals",
+			"cities"
+		],
+		fact: "One side always faces its sun and the other is always night. Life lives in the ring between."
+	},
+	shattered: {
+		name: "Shattered world",
+		price: 3500,
+		solid: true,
+		water: false,
+		life: ["microbes", "robots"],
+		fact: "A planet broken into pieces by a huge crash, slowly drifting apart."
+	},
+	cube: {
+		name: "Cube planet",
+		price: 3e3,
+		solid: true,
+		water: false,
+		life: LAND_LIFE,
+		fact: "Made up! Gravity would pull a real planet this big into a ball.",
+		silly: true
+	},
+	donut: {
+		name: "Donut planet",
+		price: 4e3,
+		solid: true,
+		water: true,
+		life: LAND_LIFE,
+		fact: "Scientists have worked out a spinning donut-shaped planet could hold together. Nobody has found one.",
+		silly: true
+	},
+	ringworld: {
+		name: "Ring world",
+		price: 15e3,
+		solid: true,
+		water: true,
+		life: [
+			"plants",
+			"animals",
+			"robots",
+			"cities"
+		],
+		fact: "A giant band built all the way round a star. An idea from science fiction.",
+		wonder: true
+	}
+};
+const RINGS = {
+	dusty: {
+		name: "Dusty rings",
+		price: 800
+	},
+	icy: {
+		name: "Icy rings",
+		price: 1e3
+	},
+	crystal: {
+		name: "Crystal rings",
+		price: 1500
+	},
+	rainbow: {
+		name: "Rainbow rings",
+		price: 1800,
+		silly: true
+	},
+	double: {
+		name: "Double rings",
+		price: 2e3
+	}
+};
+const EFFECTS = {
+	aurora: {
+		name: "Auroras",
+		price: 900
+	},
+	lightning: {
+		name: "Lightning storms",
+		price: 700
+	},
+	volcano: {
+		name: "Glowing volcanoes",
+		price: 800,
+		needs: "solid"
+	},
+	geysers: {
+		name: "Ice geysers",
+		price: 900,
+		needs: "solid"
+	},
+	meteors: {
+		name: "Meteor showers",
+		price: 700
+	},
+	glowseas: {
+		name: "Glowing seas",
+		price: 1e3,
+		needs: "water"
+	},
+	islands: {
+		name: "Floating islands",
+		price: 1500,
+		silly: true
+	},
+	tail: {
+		name: "Dust tail",
+		price: 1200,
+		needs: "near"
+	}
+};
+const LIFE = {
+	microbes: {
+		name: "Microbes",
+		price: 1500,
+		creatures: 3,
+		fact: "Tiny living things. The first life on Earth was like this, for billions of years."
+	},
+	plants: {
+		name: "Plants and forests",
+		price: 2500,
+		creatures: 3,
+		fact: "Plants grow the colour that best catches their sun's light."
+	},
+	sea: {
+		name: "Sea creatures",
+		price: 3e3,
+		creatures: 5,
+		fact: "Life began in Earth's oceans."
+	},
+	animals: {
+		name: "Land animals",
+		price: 3500,
+		creatures: 5,
+		fact: "Herds and hunters that roam the land."
+	},
+	floaters: {
+		name: "Sky floaters",
+		price: 3500,
+		creatures: 4,
+		fact: "Giant jellies drifting in the clouds. Scientists have wondered if gas giants could hold life like this."
+	},
+	crystalfolk: {
+		name: "Crystal beings",
+		price: 5e3,
+		creatures: 3,
+		fact: "Made up! Living crystals that glow and hum."
+	},
+	robots: {
+		name: "Robots",
+		price: 6e3,
+		creatures: 4,
+		fact: "Machines that build and mend themselves."
+	},
+	cities: {
+		name: "Cities",
+		price: 7e3,
+		creatures: 4,
+		fact: "A whole civilisation, with lights on the night side."
+	}
+};
+const TECH = {
+	satellites: {
+		name: "Satellites",
+		price: 1e3,
+		tier: 1
+	},
+	moonbase: {
+		name: "Moon base",
+		price: 1500,
+		tier: 1,
+		needs: "moon"
+	},
+	station: {
+		name: "Space station",
+		price: 2e3,
+		tier: 1
+	},
+	telescope: {
+		name: "Giant telescope",
+		price: 1500,
+		tier: 1
+	},
+	elevator: {
+		name: "Space elevator",
+		price: 4e3,
+		tier: 2,
+		needs: "solid"
+	},
+	domes: {
+		name: "Domes",
+		price: 3e3,
+		tier: 2
+	},
+	terraformer: {
+		name: "Terraformer",
+		price: 5e3,
+		tier: 2,
+		needs: "solid"
+	},
+	orbitalring: {
+		name: "Orbital ring",
+		price: 9e3,
+		tier: 3
+	},
+	engine: {
+		name: "Planet engine",
+		price: 1e4,
+		tier: 3,
+		needs: "solid"
+	}
+};
+const SYSTEM_TECH = {
+	lanes: {
+		name: "Trade lanes",
+		price: 2e3,
+		tier: 1,
+		needs: "twoPlanets"
+	},
+	sails: {
+		name: "Solar sail ships",
+		price: 2500,
+		tier: 2
+	},
+	miners: {
+		name: "Asteroid miners",
+		price: 3e3,
+		tier: 2,
+		needs: "belt"
+	},
+	gate: {
+		name: "Star gate",
+		price: 12e3,
+		tier: 3
+	},
+	dyson: {
+		name: "Dyson ring",
+		price: 15e3,
+		tier: 3
+	}
+};
+const BELTS = {
+	rocky: {
+		name: "Rocky asteroid belt",
+		price: 1500
+	},
+	icy: {
+		name: "Icy asteroid belt",
+		price: 1800
+	},
+	golden: {
+		name: "Golden asteroid belt",
+		price: 2500
+	}
+};
+const COMET_PRICE = 1e3;
+const CLOUDS = [
+	"none",
+	"thin",
+	"thick",
+	"storms",
+	"spot"
+];
+/** Names are made from two word lists (no typing): [first, second]. */
+const NAME_FIRST = [
+	"Aurora",
+	"Nova",
+	"Zephyr",
+	"Orion",
+	"Lumen",
+	"Vega",
+	"Astra",
+	"Cosmo",
+	"Echo",
+	"Ember",
+	"Frost",
+	"Gale",
+	"Halo",
+	"Iris",
+	"Juno",
+	"Kepler",
+	"Lyra",
+	"Mira",
+	"Nebula",
+	"Onyx",
+	"Pixel",
+	"Quasar",
+	"Rigel",
+	"Sol",
+	"Tera",
+	"Umbra",
+	"Vortex",
+	"Wren",
+	"Xeno",
+	"Zenith",
+	"Comet",
+	"Coral",
+	"Dusk",
+	"Dawn",
+	"Flint",
+	"Jade",
+	"Kiwi",
+	"Moana",
+	"Pounamu",
+	"Rangi",
+	"Tui",
+	"Kauri",
+	"Ruby",
+	"Sapphire",
+	"Storm",
+	"Thunder",
+	"Velvet",
+	"Willow",
+	"Blaze",
+	"Breeze",
+	"Crystal",
+	"Glimmer",
+	"Marble",
+	"Nimbus",
+	"Opal",
+	"Pebble",
+	"Ripple",
+	"Sprout",
+	"Star",
+	"Twinkle"
+];
+const NAME_SECOND = [
+	"Prime",
+	"Major",
+	"Minor",
+	"Nine",
+	"Seven",
+	"Alpha",
+	"Beta",
+	"Gamma",
+	"Delta",
+	"Omega",
+	"One",
+	"Two",
+	"Three",
+	"Four",
+	"Five",
+	"Rise",
+	"Haven",
+	"Reach",
+	"Deep",
+	"Peak",
+	"Hollow",
+	"Gate",
+	"Spire",
+	"Drift",
+	"Bloom",
+	"Glow",
+	"Shine",
+	"Spark",
+	"Dream",
+	"Wonder",
+	"Falls",
+	"Isle",
+	"Point",
+	"Ridge",
+	"Vale",
+	"World",
+	"Base",
+	"Star",
+	"Moon",
+	"Rock"
+];
+const nameText = (n) => `${NAME_FIRST[n[0]] ?? NAME_FIRST[0]} ${NAME_SECOND[n[1]] ?? NAME_SECOND[0]}`;
+const emptyDesign = () => ({
+	v: 1,
+	name: [0, 0],
+	sun: null,
+	planets: [],
+	belt: null,
+	beltAfter: 2,
+	comets: null,
+	background: 0,
+	tech: []
+});
+const planetPrice = (p) => Math.round(PLANETS[p.kind].price * SIZE_TENTHS[p.size] / 10 / 100) * 100;
+/** True if a planet in this slot is in its sun's Goldilocks zone. */
+function inZone(sun, slot) {
+	const z = sun ? SUNS[sun].zone : null;
+	return !!z && slot >= z[0] && slot <= z[1];
+}
+/** The planet's slot is close to its sun (a dust tail can stream off it). */
+const nearSun = (slot) => slot <= 1;
+const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
+const isName = (n) => Array.isArray(n) && n.length === 2 && isInt(n[0], 0, NAME_FIRST.length - 1) && isInt(n[1], 0, NAME_SECOND.length - 1);
+const has = (table, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(table, k);
+const bool = (b) => b === void 0 || typeof b === "boolean";
+/**
+* Why a design can't be saved, in pupil words, or null when it's fine. Checks shape (anything sent by a browser) and the
+* rules that keep the picture sensible. A planned piece may break a "needs" rule (it's just a plan); a built one may not.
+*/
+function designProblem(d) {
+	const bad = "That system could not be read.";
+	if (!d || typeof d !== "object") return bad;
+	const s = d;
+	if (s.v !== 1 || !isName(s.name) || !isInt(s.background, 0, 7) || !isInt(s.beltAfter, 0, 8)) return bad;
+	if (s.sun !== null && (!s.sun || !has(SUNS, s.sun.kind) || !isName(s.sun.name) || !bool(s.sun.built))) return bad;
+	if (!Array.isArray(s.planets) || s.planets.length > 8) return bad;
+	if (s.belt !== null && (!s.belt || !has(BELTS, s.belt.kind) || !bool(s.belt.built))) return bad;
+	if (s.comets !== null && (!s.comets || !isInt(s.comets.count, 1, 3) || !bool(s.comets.built))) return bad;
+	if (!Array.isArray(s.tech) || s.tech.length > Object.keys(SYSTEM_TECH).length) return bad;
+	if (new Set(s.tech.map((x) => x?.kind)).size !== s.tech.length || !s.tech.every((x) => x && has(SYSTEM_TECH, x.kind) && bool(x.built))) return bad;
+	const ids = new Set();
+	for (const p of s.planets) {
+		if (!p || !isInt(p.id, 0, 999) || ids.has(p.id)) return bad;
+		ids.add(p.id);
+		if (!has(PLANETS, p.kind) || !isInt(p.size, 0, SIZES.length - 1) || !isInt(p.surface, 0, 3) || !isInt(p.tint, 0, 7)) return bad;
+		if (!CLOUDS.includes(p.clouds) || !isInt(p.sky, 0, 7) || !isName(p.name) || !bool(p.built)) return bad;
+		if (p.ring !== null && (!p.ring || !has(RINGS, p.ring.kind) || !isInt(p.ring.tilt, 0, 4) || !bool(p.ring.built))) return bad;
+		if (!Array.isArray(p.moons) || p.moons.length > 3) return bad;
+		const moonIds = new Set();
+		for (const m of p.moons) {
+			if (!m || !isInt(m.id, 0, 999) || moonIds.has(m.id) || !isInt(m.look, 0, 7) || !bool(m.built) || !bool(m.yours)) return bad;
+			moonIds.add(m.id);
+		}
+		if (!Array.isArray(p.effects) || p.effects.length > 3) return bad;
+		if (new Set(p.effects.map((x) => x?.kind)).size !== p.effects.length || !p.effects.every((x) => x && has(EFFECTS, x.kind) && bool(x.built))) return bad;
+		if (p.life !== null && (!p.life || !has(LIFE, p.life.kind) || !isInt(p.life.creature, 0, LIFE[p.life.kind].creatures - 1) || !bool(p.life.built))) return bad;
+		if (!Array.isArray(p.tech) || p.tech.length > Object.keys(TECH).length) return bad;
+		if (new Set(p.tech.map((x) => x?.kind)).size !== p.tech.length || !p.tech.every((x) => x && has(TECH, x.kind) && bool(x.built))) return bad;
+		if (PLANETS[p.kind].wonder && (p.ring || p.moons.length)) return "A ring world has no rings or moons of its own.";
+	}
+	if (s.planets.flatMap((p) => p.moons).filter((m) => m.yours).length > 1) return "You only have one moon of your own.";
+	return builtProblem(s);
+}
+/** The rules a built piece must keep (a planned piece may break them while it's only a plan). */
+function builtProblem(s) {
+	if ((s.planets.some((p) => p.built) || !!s.belt?.built || !!s.comets?.built || s.tech.some((t) => t.built)) && !s.sun?.built) return "Build your sun first. Everything else goes round it.";
+	for (let slot = 0; slot < s.planets.length; slot++) {
+		const p = s.planets[slot];
+		const info = PLANETS[p.kind];
+		const parts = [
+			p.ring,
+			p.life,
+			...p.moons,
+			...p.effects,
+			...p.tech
+		].filter(Boolean);
+		if (!p.built && parts.some((x) => x.built)) return `Build ${nameText(p.name)} before the things on it.`;
+		for (const e of p.effects) {
+			if (!e.built) continue;
+			const need = EFFECTS[e.kind].needs;
+			if (need === "water" && !info.water) return `${EFFECTS[e.kind].name} need a world with water.`;
+			if (need === "solid" && !info.solid) return `${EFFECTS[e.kind].name} need solid ground.`;
+			if (need === "near" && !nearSun(slot)) return "A dust tail only streams off a planet close to its sun.";
+		}
+		for (const t of p.tech) {
+			if (!t.built) continue;
+			const need = TECH[t.kind].needs;
+			if (need === "solid" && !info.solid) return `${TECH[t.kind].name} needs solid ground.`;
+			if (need === "moon" && !p.moons.some((m) => m.built)) return "A moon base needs a moon.";
+		}
+		if (p.life?.built) {
+			if (!info.life.includes(p.life.kind)) return `${LIFE[p.life.kind].name} can't live on a ${info.name.toLowerCase()}.`;
+			if (!inZone(s.sun?.kind, slot) && !p.tech.some((t) => t.kind === "domes" && t.built)) return `${nameText(p.name)} is outside the "just right" zone, so life there needs domes first.`;
+		}
+	}
+	for (const t of s.tech) {
+		if (!t.built) continue;
+		const need = SYSTEM_TECH[t.kind].needs;
+		if (need === "belt" && !s.belt?.built) return "Asteroid miners need an asteroid belt.";
+		if (need === "twoPlanets" && s.planets.filter((p) => p.built).length < 2) return "Trade lanes need two built planets.";
+	}
+	return null;
+}
+const looksOf = (p) => JSON.stringify([
+	p.surface,
+	p.tint,
+	p.clouds,
+	p.sky,
+	p.name,
+	p.ring?.tilt ?? 0,
+	p.life?.creature ?? 0,
+	p.moons.map((m) => [m.id, m.look])
+]);
+/** Everything built in a design, with its price: the list `forgeCost` compares. Keys are stable ids. */
+function builtPieces(s, ownsMoon) {
+	const out = new Map();
+	const add = (key, what, price, looks = "") => out.set(key, {
+		what,
+		price,
+		looks
+	});
+	if (s.sun?.built) add(`sun:${s.sun.kind}`, SUNS[s.sun.kind].name, SUNS[s.sun.kind].price, JSON.stringify([
+		s.sun.name,
+		s.name,
+		s.background
+	]));
+	for (const p of s.planets) {
+		if (!p.built) continue;
+		const n = nameText(p.name);
+		add(`planet:${p.id}:${p.kind}:${p.size}`, `${n} (${PLANETS[p.kind].name})`, planetPrice(p), looksOf(p));
+		if (p.ring?.built) add(`ring:${p.id}:${p.ring.kind}`, `${RINGS[p.ring.kind].name} for ${n}`, RINGS[p.ring.kind].price);
+		for (const m of p.moons) if (m.built) add(`moon:${p.id}:${m.id}`, `A moon for ${n}`, m.yours && ownsMoon ? 0 : 700);
+		for (const e of p.effects) if (e.built) add(`effect:${p.id}:${e.kind}`, `${EFFECTS[e.kind].name} on ${n}`, EFFECTS[e.kind].price);
+		if (p.life?.built) add(`life:${p.id}:${p.life.kind}`, `${LIFE[p.life.kind].name} on ${n}`, LIFE[p.life.kind].price);
+		for (const t of p.tech) if (t.built) add(`tech:${p.id}:${t.kind}`, `${TECH[t.kind].name} at ${n}`, TECH[t.kind].price);
+	}
+	if (s.belt?.built) add(`belt:${s.belt.kind}`, BELTS[s.belt.kind].name, BELTS[s.belt.kind].price, String(s.beltAfter));
+	if (s.comets?.built) for (let i = 0; i < s.comets.count; i++) add(`comet:${i}`, "A comet", COMET_PRICE);
+	for (const t of s.tech) if (t.built) add(`stech:${t.kind}`, SYSTEM_TECH[t.kind].name, SYSTEM_TECH[t.kind].price);
+	return out;
+}
+/**
+* What going from one design to the next costs: new built pieces at full price, built pieces with new looks at a
+* repaint, built pieces taken away at half back. `ownsMoon`: the pupil bought the old moon, so one moon is free.
+* Planned pieces never cost anything.
+*/
+function forgeCost(before, after, ownsMoon = false) {
+	const a = builtPieces(before, ownsMoon);
+	const b = builtPieces(after, ownsMoon);
+	const lines = [];
+	for (const [key, piece] of b) {
+		const old = a.get(key);
+		if (!old) lines.push({
+			what: piece.what,
+			credits: piece.price,
+			kind: "build"
+		});
+		else if (old.looks !== piece.looks && piece.price > 0) lines.push({
+			what: `New look for ${piece.what}`,
+			credits: Math.max(100, Math.round(piece.price * 10 / 100 / 10) * 10),
+			kind: "repaint"
+		});
+	}
+	for (const [key, piece] of a) if (!b.has(key) && piece.price > 0) lines.push({
+		what: `Take down ${piece.what}`,
+		credits: -Math.floor(piece.price * 50 / 100),
+		kind: "refund"
+	});
+	const worth = [...b.values()].reduce((sum, p) => sum + p.price, 0);
+	return {
+		lines,
+		total: lines.reduce((sum, l) => sum + l.credits, 0),
+		worth
+	};
 }
 //#endregion
 //#region shared/trader/market.ts
@@ -7936,6 +8683,32 @@ const discountFor = (worth) => worth >= 150 ? 200 : 100;
 * space junk, a friendly trader's offer, or a pirate fight), and how many of today's maths questions have been used.
 * Maths questions are used strictly in order (`asked`), and each answer is marked by the server (`mark`).
 */
+/**
+* A new season's game for a pupil who built a system last season. 'keep': the system stays and the ship and credits start
+* again. 'fresh': no system, but the ship, its gear and up to CARRY_MAX_CREDITS carry over. The saved numbers are checked
+* again here, so nothing odd in the database can give a ship or gear that doesn't exist.
+*/
+function seasonGame(galaxy, day, settings, choice, saved, pushes) {
+	const game = newGame(galaxy, day, settings, pushes);
+	if (choice === "keep") {
+		if (!designProblem(saved.design)) game.system = structuredClone(saved.design);
+		return game;
+	}
+	const c = saved.carry;
+	const ship = Number.isInteger(c.ship) && c.ship >= 0 && c.ship < SHIPS.length ? c.ship : 0;
+	const gear = (list, count, slots) => (Array.isArray(list) ? list : []).filter((i) => Number.isInteger(i) && i >= 0 && i < count).slice(0, slots);
+	game.t = {
+		...game.t,
+		ship,
+		hull: SHIPS[ship].hull,
+		fuel: SHIPS[ship].fuelTank,
+		credits: Math.max(game.t.credits, Math.min(CARRY_MAX_CREDITS, Number.isFinite(c.credits) ? Math.floor(c.credits) : 0)),
+		weapons: gear(c.weapons, WEAPONS.length, SHIPS[ship].weaponSlots),
+		shields: gear(c.shields, SHIELDS.length, SHIPS[ship].shieldSlots),
+		pods: Number.isInteger(c.pods) ? Math.max(0, Math.min(2, c.pods)) : 0
+	};
+	return game;
+}
 var Refused = class extends Error {};
 const refuse = (reason) => {
 	throw new Refused(reason);
@@ -8081,6 +8854,23 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 		case "moon":
 			g.t = must(buyMoon(galaxy, t));
 			return;
+		case "forge": {
+			if (!settings.forge) refuse("The Star Forge is not open yet.");
+			const problem = designProblem(action.design);
+			if (problem) refuse(problem);
+			const cost = forgeCost(g.system ?? emptyDesign(), action.design, t.moon);
+			if (cost.total > t.credits) refuse(`You need ${(cost.total - t.credits).toLocaleString("en-NZ")} more credits.`);
+			g.t = {
+				...t,
+				credits: t.credits - cost.total
+			};
+			g.system = structuredClone(action.design);
+			out.forge = {
+				total: cost.total,
+				worth: cost.worth
+			};
+			return;
+		}
 		case "jump": {
 			const worthBefore = netWorth(galaxy, t);
 			g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
@@ -8449,6 +9239,12 @@ function parseActions(raw) {
 			case "moon":
 				out.push({ type: "moon" });
 				break;
+			case "forge":
+				out.push({
+					type: "forge",
+					design: a.design
+				});
+				break;
 			case "jump":
 				out.push({
 					type: "jump",
@@ -8459,6 +9255,23 @@ function parseActions(raw) {
 		}
 	}
 	return out;
+}
+/** What the choice screen shows: the system's name and worth, and the ship and credits a fresh start would keep (credits are capped). */
+function seasonChoiceOf(w) {
+	return {
+		name: `The ${nameText(w.design.name)} System`,
+		worth: forgeCost(emptyDesign(), w.design).worth,
+		carry: {
+			ship: Number.isInteger(w.carry.ship) ? w.carry.ship : 0,
+			credits: Math.max(0, Math.min(CARRY_MAX_CREDITS, Math.floor(Number(w.carry.credits) || 0)))
+		}
+	};
+}
+/** The saved picture's path: null if there is none, 'bad' unless it is a plain file path inside the pupil's own folder. */
+function pictureOf(raw, player) {
+	if (raw === void 0 || raw === null) return null;
+	if (typeof raw !== "string" || raw.length > 200 || !raw.startsWith(`${player}/`) || raw.includes("..") || !/^[A-Za-z0-9/_.-]+$/.test(raw)) return "bad";
+	return raw;
 }
 function makeHandler(services) {
 	const limiter = new RateLimiter(() => services.now());
@@ -8495,7 +9308,8 @@ function makeHandler(services) {
 		const classSettings = {
 			jumpsPerDay: settings.jumpsPerDay,
 			loans: settings.loans,
-			maths: settings.maths
+			maths: settings.maths,
+			forge: settings.forge === true
 		};
 		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
 		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
@@ -8521,12 +9335,41 @@ function makeHandler(services) {
 			return stored;
 		};
 		if (body.action === "load") {
+			const choice = body.seasonChoice;
+			if (choice !== void 0 && choice !== "keep" && choice !== "fresh") return reply(400, { error: "That couldn't be read." });
+			const picture = pictureOf(body.picture, player);
+			if (picture === "bad") return reply(400, { error: "That couldn't be read." });
 			const view = await readMarket();
 			const pushes = pushesFrom(view);
 			for (let attempt = 0; attempt < 2; attempt++) {
 				const saved = await services.loadGame(player);
 				if (saved === "busy") return reply(503, { error: "We couldn't load your game just now." });
-				let game = saved?.game ?? newGame(galaxy, today, classSettings, pushes);
+				let game;
+				let chosen = null;
+				if (saved) game = saved.game;
+				else {
+					const waiting = await services.seasonSystem(player);
+					if (waiting === "busy") return reply(503, { error: "We couldn't load your game just now." });
+					if (waiting && !designProblem(waiting.design)) {
+						if (choice !== "keep" && choice !== "fresh") return reply(200, {
+							galaxySeed: school.seed,
+							season: school.season,
+							day: today,
+							seasonChoice: seasonChoiceOf(waiting),
+							settings: {
+								jumpsPerDay: settings.jumpsPerDay,
+								loans: settings.loans,
+								maths: settings.maths,
+								forge: settings.forge === true
+							}
+						});
+						game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
+						chosen = {
+							choice,
+							name: `The ${nameText(waiting.design.name)} System`
+						};
+					} else game = newGame(galaxy, today, classSettings, pushes);
+				}
 				const rolled = rollDay(galaxy, game, today, classSettings, pushes);
 				let version = saved?.version ?? 0;
 				if (!saved || rolled !== game) {
@@ -8545,6 +9388,7 @@ function makeHandler(services) {
 					if (newVersion === "busy") return reply(503, { error: "We couldn't load your game just now." });
 					if (newVersion === null) continue;
 					version = newVersion;
+					if (chosen && !await services.chooseSeason(player, chosen.choice, picture, chosen.name)) console.error("trader: the season choice could not be recorded");
 				}
 				const day = await dayQuestions();
 				if (day === "busy") return reply(503, { error: "We couldn't load your game just now." });
@@ -8559,7 +9403,8 @@ function makeHandler(services) {
 					settings: {
 						jumpsPerDay: settings.jumpsPerDay,
 						loans: settings.loans,
-						maths: settings.maths
+						maths: settings.maths,
+						forge: settings.forge === true
 					},
 					news: news(view),
 					prices: prices(view)
@@ -8576,10 +9421,18 @@ function makeHandler(services) {
 		if (already) return reply(200, already);
 		const saved = await services.loadGame(player);
 		if (saved === "busy") return reply(503, { error: "We couldn't load your game just now." });
-		if (!saved) return reply(409, {
-			error: "Open the game first.",
-			stale: true
-		});
+		if (!saved) {
+			const waiting = await services.seasonSystem(player);
+			if (waiting && waiting !== "busy") return reply(409, {
+				error: "Choose what to do with your solar system first.",
+				stale: true,
+				seasonChoice: true
+			});
+			return reply(409, {
+				error: "Open the game first.",
+				stale: true
+			});
+		}
 		if (saved.version !== body.version || saved.game.t.day !== today) return reply(409, {
 			error: "Your game has moved on. Reloading it.",
 			stale: true,
@@ -8710,7 +9563,8 @@ Deno.serve(makeHandler({
 			enabled: row.trader_enabled === true,
 			jumpsPerDay: Number.isInteger(row.trader_jumps) ? row.trader_jumps : 10,
 			loans: row.trader_loans !== false,
-			maths: parseMathsSwitch(row.trader_maths) !== "off"
+			maths: parseMathsSwitch(row.trader_maths) !== "off",
+			forge: row.trader_forge === true
 		};
 	},
 	async schoolSeed(player) {
@@ -8738,6 +9592,29 @@ Deno.serve(makeHandler({
 			version: row.version,
 			season: row.season
 		};
+	},
+	async seasonSystem(player) {
+		const { data, error } = await admin.rpc("trader_season_system", { player });
+		if (error) {
+			fail("trader_season_system", error.code);
+			return "busy";
+		}
+		if (!data) return null;
+		const row = data;
+		return {
+			design: row.design,
+			carry: row.carry
+		};
+	},
+	async chooseSeason(player, choice, picture, name) {
+		const { error } = await admin.rpc("trader_choose_season", {
+			player,
+			choice,
+			picture_path: picture,
+			picture_name: name
+		});
+		if (error) fail("trader_choose_season", error.code);
+		return !error;
 	},
 	async request(player, requestId) {
 		const { data, error } = await admin.rpc("trader_request", {
@@ -8817,7 +9694,7 @@ Deno.serve(makeHandler({
 			new_game: a.game,
 			new_day: a.day,
 			new_net_worth: Math.max(-2e9, Math.min(2e9, Math.round(a.netWorth))),
-			new_moon: a.game.t.moon,
+			new_moon: a.game.t.moon || a.game.system?.sun?.built === true,
 			new_season: a.season,
 			request_id: a.requestId,
 			reply: a.reply,
