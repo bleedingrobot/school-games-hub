@@ -1,7 +1,7 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. Stage 0 (plan), started 4 Nov 2026. Name on the home card is
-not final yet (section 9).
+Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. Stage 0 (plan), started 4 Nov 2026. Name on the home card:
+**Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
 otherwise, it does what `docs/BEANSTALK-PLAN.md` on the `beanstalk` branch does: reading aloud, no hub points, a per-class
@@ -26,7 +26,8 @@ he can only jump in equal hops. The pond is a number line: lily pads float acros
   As extra scenery, the water turns into a sparkling silver river on silver days, and the forest lights up on gold days.
   The thing to watch is always the 10 pads (James, 4 Nov).
 - **The win.** When all 10 pads are gold, Hop gets to the Glow-worm Party and the child gets **the Golden Glow Jar**.
-  After that, a new 30 days starts. What comes next is still open (section 9).
+  Next time they play, a new New Zealand friend (a gecko, a wētā and so on) needs to cross a fresh pond, and the 30 days
+  start again, the same as Beanstalk (James, 4 Nov). Those friends are painted later.
 - **Days are counted, not dates.** This uses the same rule as Beanstalk: at most one pad changes per NZ day (`nzDate`).
 
 ## 2. The maths
@@ -49,8 +50,8 @@ he can only jump in equal hops. The pond is a number line: lily pads float acros
 - **This needs new shared maths.** No early skip-counting questions exist yet. `shared/maths/skillPacks/patterns.ts`
   is pitched at Year 4 to 6 (it starts anywhere up to 30, with steps up to 10). The proposal is a new family in
   `earlyFacts.ts`, with keys like `skip10:up:40`, `skip5:next:25` and `skip2:back:8`, and a ladder skill `skip-count`
-  set before `tables-2-5-10`. **Under the guide, `shared/maths` can't be changed from a game branch,** so this would be
-  its own small branch with James's OK (section 9).
+  set before `tables-2-5-10`. **Under the guide, `shared/maths` can't be changed from a game branch,** so this is its own
+  small branch. James OK'd it on 4 Nov. It goes live on its own, before Hop.
 
 ## 3. Rules as pure functions (`shared/hop/`)
 
@@ -113,10 +114,11 @@ questions are a separate `shared/maths` branch (section 2).
 3. **Step:** the child moves up from 10s to 5s to 2s when ready (server, focus).
 4. **Questions:** missing pad, what comes next, and counting back on gold days.
 
+5. **Name:** Hop's Glow-worm Pond.
+6. **After the jar:** a new NZ friend on a fresh pond.
+7. **Maths:** a separate `shared/maths` skip-counting branch, OK'd.
+
 ## 9. Still open
 
-- The name on the home card.
-- What happens after the Golden Glow Jar: a new friend, as in Beanstalk, or a new pond?
-- An OK for the separate `shared/maths` skip-counting branch.
 - Whether Hop's game shares Beanstalk's day and progress code, by pulling it into shared code when Beanstalk goes
   live, or copies it.
