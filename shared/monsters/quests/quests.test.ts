@@ -8,6 +8,10 @@ import { jobsFor, record, talkTo } from './quests';
 import { emptyQuestSave } from './types';
 
 describe('quests, bits, giants and eggs', () => {
+  it('a quest to start says where the person is', () => {
+    expect(nextStep(emptyQuestSave(), { badges: [], playDays: 0 }).text).toBe('Someone needs help: talk to the Hermit in Kauri Bush.');
+  });
+
   it('a pupil can go from a quest to a woken giant to a hatched egg, and nothing can be hurried', () => {
     const team = [makeMonster('plusplash-2', 14)];
     let q = emptyQuestSave();

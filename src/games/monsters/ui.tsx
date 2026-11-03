@@ -45,13 +45,16 @@ export function TypeChip({ species }: { species: string }) {
 }
 
 /** The name card beside a monster: name, level, type and bars. */
-export function NameCard({ monster, mine, side }: { monster: Monster; mine?: boolean; side: 'you' | 'foe' }) {
+export function NameCard({ monster, mine, side, caught }: { monster: Monster; mine?: boolean; side: 'you' | 'foe'; caught?: boolean }) {
   return (
     <div className={`mb-card mb-card--${side}`}>
       <div className="mb-card__top">
         <strong className="mb-card__name">{nameOf(monster.species)}{monster.shiny ? ' ✦' : ''}</strong>
         <span className="mb-card__level">Lv {monster.level}</span>
         <TypeChip species={monster.species} />
+        {caught !== undefined && (
+          <span className={`mb-chip mb-chip--${caught ? 'caught' : 'new'}`}>{caught ? '✓ Caught' : 'Not caught'}</span>
+        )}
       </div>
       <HealthBar monster={monster} />
       {mine && (

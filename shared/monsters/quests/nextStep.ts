@@ -9,6 +9,7 @@ import { canWake, GIANTS, isAwake } from './giants';
 import { canStart, FINALE_NEEDS, jobsFor, questById, QUESTS } from './quests';
 import type { QuestSave, Task } from './types';
 import type { TypeId } from '../types';
+import { AREAS } from '../world/areas';
 
 export interface NextStep {
   text: string;
@@ -27,6 +28,9 @@ export interface NextContext {
 const fill = (t: Task, left: number) => t.hint.replace('{left}', String(left));
 
 const mapOfPerson = (id: string) => id.split(':')[0];
+
+/** A map's place name for a sentence: "Kauri Bush", or "Harbour Town" for the starting town. */
+const placeName = (map: string) => AREAS.find((a) => a.map === map)?.name ?? 'Harbour Town';
 
 /** A person's name in a sentence: "the Hermit" and "the Teacher" are jobs, not names. */
 const personName = (id: string) => {
@@ -71,7 +75,7 @@ export function nextStep(q: QuestSave, ctx: NextContext): NextStep {
   // 5. A quest you can start.
   const badges = ctx.badges.length;
   const startable = QUESTS.find((quest) => canStart(q, quest, badges));
-  if (startable) return { text: `Someone needs help: talk to ${personName(startable.giver)}.`, target: { person: startable.giver, map: mapOfPerson(startable.giver) } };
+  if (startable) return { text: `Someone needs help: talk to ${personName(startable.giver)} in ${placeName(mapOfPerson(startable.giver))}.`, target: { person: startable.giver, map: mapOfPerson(startable.giver) } };
   // 6. Today's notice board.
   if (ctx.day && ctx.player) {
     const jobs = jobsFor(ctx.day, ctx.player, { maxArea: badges + 1 });
