@@ -794,9 +794,23 @@ describe('The Star Forge (S.4)', () => {
     void nameText;
   });
 
+  it('pieces show only once the pupil can afford them, with a count of the rest', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.tools.give(3000);
+    play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Sun: Choose a sun/ }));
+    expect(screen.getByRole('button', { name: /Yellow star/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Black hole/ })).toBeNull();
+    expect(screen.getByText(/more appear as you earn credits/)).toBeTruthy();
+  });
+
   it('a rude typed name is refused kindly and not saved; a good one is saved', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     await traderApi(trial.transport).load();
+    trial.tools.give(5000);
     const { sent } = play(trial);
     await market();
     fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
