@@ -62,8 +62,9 @@ export function Scene({ grow, leaves, friend, friendPose, child, childPose, back
             <img className="bs-sprout" src={sproutUrl} alt="" style={{ bottom: `calc(var(--bs-ground) + var(--bs-stalk-length) * ${height})` }} />
           )}
           {leaves.map((leaf, i) => {
-            // Leaves sit evenly up the stalk, left and right in turn, the first just above the ground.
-            const at = (i + 0.6) / LEAVES_ON_STALK;
+            // Leaves sit evenly up the stalk, left and right in turn, the first just above the ground and the last well below
+            // the cloud, so none hides behind it (James, 4 Nov 2026).
+            const at = (i + 0.5) / (LEAVES_ON_STALK + 2.5);
             if (at > grow) return null;
             return (
               <img
