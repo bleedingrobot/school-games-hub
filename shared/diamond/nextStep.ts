@@ -46,7 +46,7 @@ export function nextStep(p: Player, now: Date): NextStep {
   }
   const cheapest = BUYABLE.filter((it) => !p.owned.includes(it.id)).sort((a, b) => priceOf(a, week) - priceOf(b, week))[0];
   if (cheapest && p.coins >= priceOf(cheapest, week)) {
-    return { text: `You have ${p.coins} coins: enough for ${cheapest.name} in the Workshop.`, button: 'workshop' };
+    return { text: `You have ${p.coins} coins: enough for ${cheapest.name} in the Shop.`, button: 'workshop' };
   }
   // The shallowest passed level without 3 stars.
   const starless = p.stars.findIndex((s, i) => i < p.deepest && s < 3);

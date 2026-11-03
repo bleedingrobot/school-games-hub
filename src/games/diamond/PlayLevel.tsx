@@ -253,7 +253,7 @@ export function PlayLevel({
       drawClaw(ctx, tx, ty, rad + shake, s.grabbed !== null, worn.head, 40, time);
       drawWinch(ctx, PIVOT.x, PIVOT.y, worn.winch, turn, time, still);
       const pose = effects.current.dancing(time) ? 'cheer' : s.phase === 'question' ? 'oops' : s.passTick !== null ? 'cheer' : 'stand';
-      drawNugget(ctx, NUGGET_SPOT.x, NUGGET_SPOT.y, 50, worn.hat, pose, time, still, -1);
+      drawNugget(ctx, NUGGET_SPOT.x, NUGGET_SPOT.y, 80, worn.hat, pose, time, still, -1);
       effects.current.draw(ctx, dt, time);
       if (tum && tumbling) {
         const k = (time - tum.start) / 0.6;

@@ -21,7 +21,7 @@ function layerLook(n: number): string {
   return painted ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${painted}) center 60% / cover, ${CHAMBER[n - 1]}` : CHAMBER[n - 1];
 }
 
-export type MapButton = 'play' | 'shop' | 'workshop' | 'book' | 'how' | 'hall';
+export type MapButton = 'play' | 'shop' | 'book' | 'how' | 'hall';
 
 export function LevelMap({
   player,
@@ -62,7 +62,7 @@ export function LevelMap({
       <div className="dd-map__side">
         <h2 id="dd-map-title" ref={heading} tabIndex={-1} className="dd-title">Diamond Drop</h2>
         <div className="dd-nugget">
-          <Sprite size={72} draw={(c, t) => drawNugget(c, 46, 96, 82, player.worn.hat, glow ? 'point' : 'wave', t, still)} animate={!still} />
+          <Sprite size={120} draw={(c, t) => drawNugget(c, 46, 96, 82, player.worn.hat, glow ? 'point' : 'wave', t, still)} animate={!still} />
           <div className="dd-bubble">
             <p className="dd-bubble__text" aria-live="polite">{step.text}</p>
             <button type="button" className="button button--light dd-btn dd-btn--small" onClick={onShowMe}>Show me</button>
@@ -80,7 +80,6 @@ export function LevelMap({
           {why && <p id="dd-why" className="dd-why">{why}</p>}
           <div className="dd-menu__row">
             <button type="button" className={`button button--light dd-btn${glow === 'shop' ? ' dd-glow' : ''}`} onClick={() => onOpen('shop')}>Shop</button>
-            <button type="button" className={`button button--light dd-btn${glow === 'workshop' ? ' dd-glow' : ''}`} onClick={() => onOpen('workshop')}>Workshop</button>
             <button type="button" className={`button button--light dd-btn${glow === 'book' ? ' dd-glow' : ''}`} onClick={() => onOpen('book')}>Gem Book</button>
             <button type="button" className={`button button--light dd-btn${glow === 'hall' ? ' dd-glow' : ''}`} onClick={() => onOpen('hall')}>Hall of Finders</button>
             <button type="button" className={`button button--light dd-btn${glow === 'how' ? ' dd-glow' : ''}`} onClick={() => onOpen('how')}>How to play</button>

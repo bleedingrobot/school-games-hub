@@ -9,14 +9,13 @@ import { nextStep } from '../../../shared/diamond/nextStep';
 import { canStart, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { LevelMap, type MapButton } from './LevelMap';
-import { GemBook, Hall, HowToPlay, LevelEnd, Shop } from './Pages';
+import { GemBook, Hall, HowToPlay, LevelEnd, Shop, type ShopTab } from './Pages';
 import { PlayLevel } from './PlayLevel';
 import { helpFor, shopAdvice, type TipId } from './guide';
 import { loadPrefs, savePrefs, wantsLessMotion, type DiamondPrefs } from './prefs';
-import { Workshop } from './Workshop';
 import './diamond.css';
 
-type Screen = 'map' | 'play' | 'end' | 'shop' | 'workshop' | 'book' | 'how' | 'hall';
+type Screen = 'map' | 'play' | 'end' | 'shop' | 'book' | 'how' | 'hall';
 
 export interface GameHandle {
   /** Load the pupil again from the backend (after a preview tool changed it). */
@@ -36,6 +35,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   const [screen, setScreen] = useState<Screen>('map');
   const [selected, setSelected] = useState(1);
   const [basket, setBasket] = useState<BoostId[]>([]);
+  const [shopTab, setShopTab] = useState<ShopTab>('boosts');
   const [started, setStarted] = useState<Started | null>(null);
   const [ended, setEnded] = useState<Ended | null>(null);
   const [achieved, setAchieved] = useState<ReturnType<typeof newAchievements>>([]);
@@ -105,7 +105,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   };
 
   const showMe = () => {
-    const b: MapButton = step.button === 'workshop' ? 'workshop' : 'play';
+    const b: MapButton = step.button === 'workshop' ? 'shop' : 'play';
     if (step.level) setSelected(step.level);
     setGlow(b);
     window.clearTimeout(glowTimer.current);
@@ -141,7 +141,12 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
           now={today}
           selected={selected}
           onSelect={setSelected}
-          onOpen={(b) => (b === 'play' ? void start(selected) : go(b === 'book' ? 'book' : b))}
+          onOpen={(b) => {
+            if (b === 'play') { void start(selected); return; }
+            // The map's Shop opens on claw looks when that's what the next-step line is about.
+            if (b === 'shop') setShopTab(step.button === 'workshop' ? 'looks' : 'boosts');
+            go(b);
+          }}
           step={step}
           glow={mapGlow}
           onShowMe={showMe}
@@ -171,7 +176,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
           ended={ended}
           achieved={achieved}
           againLabel={againLabel}
-          onShop={() => go('shop')}
+          onShop={() => { setShopTab('boosts'); go('shop'); }}
           onAgain={() => void start(canStart(player, selected, today) ? selected : ended.result.level)}
           onMap={() => go('map')}
         />
@@ -180,16 +185,21 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
         <Shop
           player={player}
           level={selected}
+          tab={shopTab}
+          onTab={setShopTab}
           basket={basket}
           onToggle={(id) => setBasket((b) => (b.includes(id) ? b.filter((x) => x !== id) : [...b, id]))}
           onStart={() => void start(selected)}
           canStart={startable && !busy}
           why={why}
           advice={shopAdvice(help, player, selected)}
+          now={today}
+          still={still}
+          onBuy={buy}
+          onWear={wear}
           onBack={() => go('map')}
         />
       )}
-      {screen === 'workshop' && <Workshop player={player} now={today} still={still} onBuy={buy} onWear={wear} onBack={() => go('map')} />}
       {screen === 'book' && <GemBook player={player} onBack={() => go('map')} />}
       {screen === 'how' && <HowToPlay onBack={() => go('map')} />}
       {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
