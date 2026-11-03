@@ -9,7 +9,7 @@ import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
-import { questMarks } from './questWorld';
+import { areaHints, questMarks, questTalk } from './questWorld';
 import { fastTravel, worldPlaces } from './worldMap';
 import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
@@ -102,6 +102,12 @@ describe('the six areas, in order', () => {
     const fresh = newWorld(opts, team(), 1);
     expect([...questMarks(fresh, WORLD_MAPS['kauri-bush'])]).toEqual(['kauri-bush:Hermit']);
     expect([...questMarks({ ...fresh, quest: { flags: [], bits: {}, quests: { kauri: { step: 0, n: 0 } }, eggs: [] } }, WORLD_MAPS['kauri-bush'])]).toEqual([]);
+    // The seed pods have nothing drawn on them, so the Hermit and the welcome sign say where to look.
+    const hermit = WORLD_MAPS['kauri-bush'].things.find((t) => t.id === 'kauri-bush:Hermit')!;
+    const asked = questTalk(fresh, hermit, opts)!;
+    expect(asked.pages.join(' ')).toMatch(/Clue: .*Tama.*pond/);
+    expect(questTalk(asked.state, hermit, opts)?.pages.join(' ') ?? '').toMatch(/Clue: /);
+    expect(areaHints(asked.state, WORLD_MAPS['kauri-bush'], WORLD_MAPS, opts).join(' ')).toMatch(/found 0 of 3\. One is in a tree near the old kauri/);
     // The world map: 10 places; a new player has the town and Kauri Bush open, and the bonus areas are secret.
     const places = worldPlaces(fresh, WORLD_MAPS);
     expect(places.map((p) => p.open)).toEqual([true, true, false, false, false, false, false, false, false, false]);

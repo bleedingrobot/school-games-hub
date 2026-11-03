@@ -7245,7 +7245,7 @@ const PUZZLES = [
 		count: 3,
 		title: "Seed pods",
 		says: "The Hermit lost 3 seed pods somewhere in Kauri Bush. Look closely at the bushes!",
-		hint: "One is near the old kauri tree, one by the pond, and one in the far corner.",
+		hint: "One is in a tree near the old kauri, one in a bush beside Tama on the west side, and one in the branches just north of the pond. Walk up to a tree and press Space to search it.",
 		prize: {
 			bits: "leaf",
 			n: 3
