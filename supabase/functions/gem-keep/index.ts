@@ -1935,7 +1935,7 @@ PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.la
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7) and "half:14" (half of 14). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -2082,70 +2082,191 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
+/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+const tenAnd = {
+	label: "\"Ten and\" facts (10 + 4)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenand:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	make: (key, [n, v]) => {
+		if (!isInt$1(n, 1, 9) || key !== `tenand:${n}` || !isInt$1(v, 0, 3)) return null;
+		const t = String(10 + n);
+		const [parts, answer] = v === 0 ? [[
+			"10",
+			"+",
+			String(n),
+			"=",
+			"?"
+		], 10 + n] : v === 1 ? [[
+			String(n),
+			"+",
+			"10",
+			"=",
+			"?"
+		], 10 + n] : v === 2 ? [[
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		], n] : [[
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		], n];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 10,
+				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
+const SKIP_STEPS = [
+	{
+		step: 10,
+		upTo: 100,
+		word: "tens"
+	},
+	{
+		step: 5,
+		upTo: 50,
+		word: "fives"
+	},
+	{
+		step: 2,
+		upTo: 20,
+		word: "twos"
+	}
+];
+/**
+* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
+* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
+* the step from 0 to `upTo`.
+*/
+function skipTerms(kind, step, upTo, answer, at) {
+	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
+	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
+	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
+}
+const skipKeys = (step, upTo) => [
+	"up",
+	"next",
+	"back"
+].flatMap((kind) => range$5(0, upTo, step).filter((n) => [
+	1,
+	2,
+	3,
+	4
+].some((at) => skipTerms(kind, step, upTo, n, at))).map((n) => `skip${step}:${kind}:${n}`));
+const parseSkip = (key) => {
+	const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
+	return m ? {
+		step: Number(m[1]),
+		kind: m[2],
+		answer: Number(m[3])
+	} : null;
+};
+/**
+* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
+* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
+* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
+*/
+function skipCounting(step, upTo, word) {
+	const keys = skipKeys(step, upTo);
+	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
+	return {
+		label: `Counting in ${word}`,
+		curriculumTags: [],
+		keys,
+		roll: (key, r) => {
+			const { kind, answer } = parseSkip(key);
+			const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
+			return [answer, fits[int(r, 0, fits.length - 1)]];
+		},
+		make: (key, [answer, at]) => {
+			const skip = parseSkip(key);
+			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
+			const terms = skipTerms(skip.kind, step, upTo, answer, at);
+			if (!terms) return null;
+			const gap = terms.indexOf(answer);
+			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
+			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
+			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
+			const before = terms[gap - 1];
+			const back = skip.kind === "back" ? -1 : 1;
+			const wrongSteps = [
+				10,
+				5,
+				2,
+				1
+			].filter((s) => s !== step);
+			return {
+				parts,
+				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}: ${said}. ${prompt}`,
+				prompt,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					...wrongSteps.map((s) => before + back * s),
+					...terms.filter((n) => n !== answer)
+				]
+			};
+		}
+	};
+}
+/** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
+function solveSkip(parts) {
+	if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === "?" || p === "?,").length !== 1) return null;
+	const nums = parts.map((p) => p.replace(/,$/, "")).map((p) => p === "?" ? null : /^\d{1,3}$/.test(p) ? Number(p) : NaN);
+	if (nums.some((n) => Number.isNaN(n))) return null;
+	const gap = nums.indexOf(null);
+	const known = nums.flatMap((n, i) => n === null ? [] : [{
+		n,
+		i
+	}]);
+	const diff = (known[1].n - known[0].n) / (known[1].i - known[0].i);
+	const step = Math.abs(diff);
+	const answer = known[0].n + diff * (gap - known[0].i);
+	const kind = gap === parts.length - 1 ? "next" : diff < 0 ? "back" : "up";
+	if (kind === "next" && diff < 0) return null;
+	const key = `skip${step}:${kind}:${answer}`;
+	const made = Object.values(families$2).find((f) => f.keys.includes(key))?.make(key, [answer, gap]);
+	return made && made.parts.length === parts.length && made.parts.every((p, i) => p === parts[i]) ? {
+		answer,
+		key
+	} : null;
+}
+const families$2 = {
+	tenAnd,
+	...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
+	bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
+	dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
+	bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
+	dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
+};
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
-	families: {
-		tenAnd: {
-			label: "\"Ten and\" facts (10 + 4)",
-			curriculumTags: ["MS.Y1.NUM.OP.P6"],
-			keys: range$5(1, 9).map((n) => `tenand:${n}`),
-			roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
-			make: (key, [n, v]) => {
-				if (!isInt$1(n, 1, 9) || key !== `tenand:${n}` || !isInt$1(v, 0, 3)) return null;
-				const t = String(10 + n);
-				const [parts, answer] = v === 0 ? [[
-					"10",
-					"+",
-					String(n),
-					"=",
-					"?"
-				], 10 + n] : v === 1 ? [[
-					String(n),
-					"+",
-					"10",
-					"=",
-					"?"
-				], 10 + n] : v === 2 ? [[
-					"10",
-					"+",
-					"?",
-					"=",
-					t
-				], n] : [[
-					t,
-					"−",
-					"10",
-					"=",
-					"?"
-				], n];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer,
-					wrong: [
-						answer + 1,
-						answer - 1,
-						answer + 10,
-						n + 1,
-						20,
-						1 + n
-					]
-				};
-			}
-		},
-		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
-		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
-		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
-		dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
-	},
+	families: families$2,
 	bands: [
 		["bond10"],
 		["dblHalf10"],
 		["bond20"],
 		["dblHalf20"]
 	],
-	ladderOnly: ["tenAnd"]
+	ladderOnly: ["tenAnd", ...SKIP_STEPS.map(({ step }) => `skip${step}`)]
 };
 //#endregion
 //#region shared/maths/skillPacks/bedmas.ts
@@ -5316,6 +5437,15 @@ const LADDER = [
 		keys: earlyKeys("dblHalf20"),
 		built: true
 	},
+	...SKIP_STEPS.map(({ step, word }) => ({
+		id: `skip-${step}`,
+		label: `Counting in ${word}`,
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: earlyKeys(`skip${step}`),
+		built: true,
+		inWarmUp: false
+	})),
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -5437,7 +5567,7 @@ function ladderProgress(stats, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -5495,6 +5625,8 @@ function parseLadderInfo(raw) {
 	};
 }
 const builtSkills = () => LADDER.filter((s) => s.built);
+/** The skills the placement warm-up walks over. */
+const warmUpSkills = () => builtSkills().filter((s) => s.inWarmUp !== false);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
@@ -5519,10 +5651,10 @@ function placeToStore(stats, info, opts = {}) {
 /**
 * Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
 * It starts at the first skill and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
-* once) and back one when the answer is wrong or slow. All steps are over the built skills only.
+* once) and back one when the answer is wrong or slow. All steps are over the built skills in the warm-up only.
 */
 function placementNext(steps) {
-	const built = builtSkills();
+	const built = warmUpSkills();
 	const top = built.length - 1;
 	let level = 0;
 	let jump = 3;
@@ -5535,7 +5667,7 @@ function placementNext(steps) {
 }
 /** Where to start: just below the highest skill they answered right and quickly. A student who got nothing right starts at the first skill. */
 function placementResult(steps) {
-	const built = builtSkills();
+	const built = warmUpSkills();
 	let best = -1;
 	for (const step of steps) {
 		const at = built.findIndex((s) => s.id === step.skill);
@@ -5630,6 +5762,11 @@ function solveParts(parts) {
 		answer: generated.answer,
 		keys: [generated.key]
 	};
+	const skip = solveSkip(p);
+	if (skip) return isFocusKey(skip.key) ? {
+		answer: skip.answer,
+		keys: [skip.key]
+	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;
 	let keys = [];
