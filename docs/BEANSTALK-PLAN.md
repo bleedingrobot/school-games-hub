@@ -142,8 +142,12 @@ facts and follows each child's own focus. So the server makes the round itself, 
 
 **Art:**
 - Painted (style B, clay): the set, plus the friends for later beanstalks. Picks are in
-  `~/dragon-art-inbox/beanstalk-art/picks.json`.
+  `docs/beanstalk-art/picks.json`. The tries are in `~/dragon-art-inbox/beanstalk-art/set/b/`.
 - Drawn in code, because the clay model keeps adding blobs: the sparkle, the empty sky and the stalk tile.
+- The bronze leaf is tinted from the silver leaf in the tidy step. Seven bronze tries all came out part matt clay, and
+  tinting keeps the shape the same as the other leaves.
+- The friends for later beanstalks are painted, waiting and cheering: tūī, kererū, wētā, ruru and takahē. The takahē
+  reads as a generic blue bird, so it is weak. The painted sparkles on the cheer poses stay in.
 - Still to do: a `tidy` step that turns the picked tries into small WebP files for the game, like Diamond Drop's.
 
 **Next, Stage 2:** the play screen, local only.
