@@ -29,5 +29,9 @@
  "ruru-wait": 2,
  "ruru-cheer": 1,
  "takahe-wait": 2,
- "takahe-cheer": 2
+ "takahe-cheer": 2,
+ "jill-wave": 2,
+ "jill-point": 2,
+ "jill-cheer": 4,
+ "jill-hold": 3
 }

@@ -6,6 +6,7 @@ computer that can reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a pict
   python3 scripts/beanstalk-art.py paint OUT_DIR [names] [--style a] [--tries 2]   # OUT_DIR/<style>/<name>-<try>.png
   python3 scripts/beanstalk-art.py paint /tmp/beanstalk scene --style a            # one style try
   python3 scripts/beanstalk-art.py list                                            # every picture name
+  ~/.cache/rembg-venv/bin/python scripts/beanstalk-art.py tidy [--force]           # picks (docs/beanstalk-art/picks.json) → the game
 
 The graph is Diamond Drop's (Z-Image Turbo, 8 steps, a 1.5x second pass); only the words, sizes and seeds change. Seeds
 are fixed, so a try can be painted again exactly. Use only positive wording: this model draws whatever a prompt names,
@@ -42,6 +43,9 @@ KIWI = ('Kiwi, a cute round New Zealand kiwi bird: a big round egg-shaped body w
         'as long as its whole body, curving gently down towards the ground, tiny wings, thick strong grey legs and big feet, wearing a little red knitted scarf, ')
 JACK = ('Jack, a cheerful small New Zealand boy about six years old with messy brown hair and freckles, a green cap, a red '
         'and black checked bush shirt, blue shorts and black gumboots, ')
+# Children choose to be Jack or Jill (James, 4 Nov 2026): Jill matches Jack's look and poses.
+JILL = ('Jill, a cheerful small New Zealand girl about six years old with two bouncy brown pigtails tied with yellow ribbons '
+        'and freckles, a yellow cap, a blue and white checked shirt, red shorts and black gumboots, ')
 
 # Metal leaves must read at a glance (James: "much more vibrant and metallic").
 SHINE = 'vivid mirror-bright polished metal with strong gleaming highlights and reflections'
@@ -110,6 +114,7 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'kiwi-{p}': (KIWI + w + '.' + SPRITE, SQUARE) for p, w in KIWI_POSES.items()},
     **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
     **{f'jack-{p}': (JACK + w + ', the whole child from head to boots.' + SPRITE, SQUARE) for p, w in JACK_POSES.items()},
+    **{f'jill-{p}': (JILL + w + ', the whole child from head to boots.' + SPRITE, SQUARE) for p, w in JACK_POSES.items()},
     **{name: (w.capitalize() + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
     # The stalk: a tall tile the game repeats upwards, the stem straight up the middle from the very top to the very bottom.
     'stem': ('One very thick chunky smooth green clay beanstalk stem as wide as a third of the picture, seen straight on, running '
@@ -189,8 +194,94 @@ def paint(out: Path, names: list[str], style: str, tries: int):
             print(f'  {style}/{dest.name}', flush=True)
 
 
+# ---- Tidying: the chosen try of each picture → src/games/beanstalk/art/paint/<group>/<name>.webp ----
+
+ROOT = Path(__file__).resolve().parent.parent
+GAME_ART = ROOT / 'src' / 'games' / 'beanstalk' / 'art' / 'paint'
+INBOX = Path.home() / 'dragon-art-inbox' / 'beanstalk-art' / 'set' / 'b'
+# Things the game doesn't use yet (the style try and the home card wait for later).
+LATER = {'scene', 'card'}
+SIZES = {'leaves': 256, 'friends': 320, 'child': 320, 'things': 256}
+
+
+def destination(name: str) -> tuple[str, str, str] | None:
+    """(kind of tidying, folder, file name in the game) for a painting, or None when the game doesn't use it."""
+    if name in LATER:
+        return None
+    if name.startswith('back-'):
+        return 'scene', 'backs', name[len('back-'):]
+    group, _, key = name.partition('-')
+    if group == 'leaf':
+        return 'cut', 'leaves', key
+    if group in ('jack', 'jill'):
+        return 'cut', 'child', name
+    if group in ('kiwi', 'tui', 'kereru', 'weta', 'ruru', 'takahe'):
+        return 'cut', 'friends', name
+    return 'cut', 'things', name
+
+
+def bronze(img):
+    """The bronze leaf, tinted from the silver one: every bronze try came out part matt clay (4 Nov 2026), and a tint keeps
+    the four leaves the same shape."""
+    import numpy as np
+    from PIL import Image
+    px = np.asarray(img, dtype=np.float32)
+    light = px[..., :3].mean(axis=2, keepdims=True) / 255
+    # Dark copper in the shadows, warm bronze in the middle, a pale peach shine on the highlights.
+    dark, mid, shine = np.array([70, 30, 12.]), np.array([190, 112, 50.]), np.array([255, 222, 180.])
+    rgb = np.where(light < 0.6, dark + (mid - dark) * light / 0.6, mid + (shine - mid) * (light - 0.6) / 0.4)
+    return Image.fromarray(np.dstack([rgb, px[..., 3:]]).clip(0, 255).round().astype(np.uint8), 'RGBA')
+
+
+def tidy(force: bool):
+    import numpy as np
+    from PIL import Image
+    from rembg import new_session, remove
+    session = None
+    picks = json.loads((ROOT / 'docs' / 'beanstalk-art' / 'picks.json').read_text())
+
+    def save(img, out: Path, quality: int):
+        out.parent.mkdir(parents=True, exist_ok=True)
+        img.save(out, 'WEBP', quality=quality, method=6)
+        print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
+
+    def fit(img, size: int):
+        img = img.copy()
+        img.thumbnail((size, size), Image.LANCZOS)
+        return img
+
+    def trim(img, pad=4):
+        a = np.asarray(img)[..., 3] > 40
+        ys, xs = np.where(a)
+        return img.crop((max(0, xs.min() - pad), max(0, ys.min() - pad), min(img.width, xs.max() + pad + 1), min(img.height, ys.max() + pad + 1)))
+
+    for name, t in picks.items():
+        where = destination(name)
+        if not where:
+            continue
+        kind, folder, out_name = where
+        out = GAME_ART / folder / f'{out_name}.webp'
+        if out.exists() and not force:
+            continue
+        img = Image.open(INBOX / f'{name}-{t}.png')
+        if kind == 'scene':
+            img = img.convert('RGB')
+            save(fit(img, 1600), out, 72)
+            save(fit(img, 800), GAME_ART / folder / f'{out_name}-800.webp', 70)
+            continue
+        if session is None:
+            session = new_session('isnet-general-use')
+        cut = trim(remove(img.convert('RGB'), session=session, alpha_matting=True))
+        save(fit(cut, SIZES[folder]), out, 82)
+        if name == 'leaf-silver':
+            save(fit(bronze(cut), SIZES[folder]), GAME_ART / folder / 'bronze.webp', 82)
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
+    if args[:1] == ['tidy']:
+        tidy('--force' in args)
+        sys.exit()
     if args[:1] == ['list']:
         print('\n'.join(PICTURES))
         sys.exit()

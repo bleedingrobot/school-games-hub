@@ -151,3 +151,39 @@ facts and follows each child's own focus. So the server makes the round itself, 
 - Still to do: a `tidy` step that turns the picked tries into small WebP files for the game, like Diamond Drop's.
 
 **Next, Stage 2:** the play screen, local only.
+
+## Stage 2 results (4 Nov)
+
+**What was built:** `src/games/beanstalk/`, plus the preview `preview/beanstalk/` (run it with
+`npx vite --config vite.beanstalk-preview.config.ts`):
+- **Choose:** be Jack or Jill (James, 4 Nov). Jill was painted to match Jack, in four poses.
+- **Home:**
+  - The farm, with the CSS stalk and the 10 magic leaves in their colours.
+  - The friend waiting on a cloud, and the child waving.
+  - "Day N of 30", the Play button, and the shelf of eggs.
+  - After an egg, the next friend is introduced.
+- **Play:**
+  - Six leaves float in a tray, each with its number and a ten-frame. The dots are full on bronze days, small on silver
+    days and gone on gold days.
+  - Tap two leaves. A right pair flies up, a pip lights up and the stalk grows. A wrong pair wobbles back.
+  - Ten pairs reach the friend.
+- **Finish:** the changed leaf sparkles, or "come back tomorrow". On day 30 the scene moves to the clouds: the friend with
+  its egg, the child holding the egg, and the Golden Egg on its cushion.
+- **Voice:** the game talks unless "Voice off" is pressed. That setting is the game's own (`beanstalk-voice`) and doesn't
+  touch the hub's read-aloud setting. It never says a pair before the child taps it.
+- **Sounds** follow the hub's sound setting: a tap, a hop for a right pair, a badge for a leaf and a win for the egg.
+- **The trial backend** (`backend.ts`) runs the shared rules in the browser. Its preview tools are "pretend tomorrow",
+  "jump to day N" and "start again".
+- **Art:** `scripts/beanstalk-art.py tidy` turns the picks into WebP files, about 0.6 MB in all. The bronze leaf is
+  tinted from the silver one.
+
+**Tests:** 6 of 8:
+- 4 rule tests.
+- 1 accessibility test, read from the CSS: contrast, big targets and reduced motion.
+- 1 test of the whole trial game: choose, one leaf a day, refusing an unfinished round, and the egg on day 30.
+
+**Not yet:**
+- The guided first go (a hand pointing at a pair).
+- The server (Stage 3).
+- The teacher switch.
+- Checking every screen at phone size.
