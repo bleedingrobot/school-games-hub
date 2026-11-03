@@ -157,4 +157,34 @@ describe('keyboard and screen readers', () => {
       window.matchMedia = before;
     }
   }, 30_000);
+
+  it('visits a classmate, leaves a gift and opens a race by keyboard, with focus on each heading', async () => {
+    const u = userEvent.setup();
+    const backend = createTrialBackend('a11y-sky', { save: false, random: seededRandom('a11y-sky') });
+    render(<IslesPlay backend={backend} />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Choose your Sky Keeper' })).toHaveFocus());
+    await u.click(screen.getByRole('radio', { name: 'Sky Keeper 2' }));
+    await u.click(screen.getByRole('button', { name: 'This is my keeper' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    // The preview's pretend classmate left a gift in the post.
+    expect(screen.getByText('Ana left you a cake! +10 coins')).toBeInTheDocument();
+    const press = async (name: string | RegExp) => {
+      screen.getByRole('button', { name }).focus();
+      await u.keyboard('{Enter}');
+    };
+    await press('Class sky');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
+    await screen.findByText("Mere lit the Sky Lighthouse!");
+    // An island in its calm start can't be raced, and says why.
+    expect(screen.getByRole('button', { name: "Race Lily's island" })).toBeDisabled();
+    expect(screen.getByRole('button', { name: "Race Lily's island" })).toHaveAccessibleDescription('That island is new and still having a calm start.');
+    await press("Visit Ana's island");
+    await waitFor(() => expect(screen.getByRole('heading', { name: "Ana's island", level: 2 })).toHaveFocus());
+    // Look only: the island's spots are a picture, not buttons.
+    expect(screen.queryByRole('button', { name: /^Spot 1/ })).not.toBeInTheDocument();
+    await press(/Leave a cake/);
+    expect(await screen.findByText(/You left Ana a cake!/)).toBeInTheDocument();
+    await press("Race Ana's island");
+    await waitFor(() => expect(screen.getByRole('heading', { name: "Sky Race: you and Ana's island", level: 2 })).toHaveFocus());
+  }, 30_000);
 });

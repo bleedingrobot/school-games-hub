@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh isles, then scripts/scratch-test.sh isles supabase/tests/database/isles.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(61);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -40,7 +40,7 @@ create function pg_temp.seed(who text) returns text language sql as $$ select re
 select ok(exists (select 1 from public.hub_games where id = 'isles' and switch_column = 'isles_enabled' and counts_fn is not null
   and rules_fn is not null and players_fn is not null and season_fn is not null and last_played_fn is not null and keep_achievements),
   'Sky Isles is registered with its hooks, and achievements stay through a New Season');
-select is((select count(*)::integer from public.achievement_types where game = 'isles'), 7, 'with seven achievements');
+select is((select count(*)::integer from public.achievement_types where game = 'isles'), 8, 'with eight achievements');
 select is((select isles_enabled from public.app_settings limit 1), false, 'the game starts switched off');
 select is((select isles_races from public.app_settings limit 1), true, '... with Sky Races on');
 
@@ -57,6 +57,8 @@ select throws_ok($$ select public.record_isles_answer(auth.uid(), repeat('ab', 8
 select throws_ok($$ select public.record_isles_race_finish(auth.uid(), 1, 1, '{}', 1, '{"won":true}', '{}') $$, '42501', null, '... or finish a race');
 select throws_ok($$ select public.record_isles_keeper(auth.uid(), 'g07') $$, '42501', null, '... or choose a keeper directly');
 select throws_ok($$ select public.isles_season(array[auth.uid()]) $$, '42501', null, '... or clear a season');
+select throws_ok($$ select * from public.isles_post $$, '42501', null, '... or read anyone''s post');
+select throws_ok($$ select public.record_isles_gift(auth.uid(), auth.uid(), 'cake', 100, 1) $$, '42501', null, '... or leave a gift directly');
 select throws_ok($$ select public.teacher_set_isles(true, true) $$, null, null, 'a pupil cannot switch the game on');
 
 -- ---- The teacher's switches ----
@@ -112,6 +114,35 @@ select ok(public.record_isles_race_finish(pg_temp.id('0a'), (select id from r1),
   and not public.record_isles_race_finish(pg_temp.id('0a'), (select id from r1), 5, pg_temp.island(3, 7), 20000, '{"won":true}', '{}'),
   'a race finishes once');
 
+-- ---- Classmates: the class sky, gifts, races against an island, the post and the news ----
+select is((select array_agg(e ->> 'id') from jsonb_array_elements(public.isles_class(pg_temp.id('0a'), 20000) -> 'classmates') e)::text,
+  array[pg_temp.id('0b')::text]::text, 'the class sky has only classmates (not the pupil, not another class)');
+select is(public.record_isles_gift(pg_temp.id('0a'), pg_temp.id('0c'), 'cake', 10, 20000), 'not-classmate', 'a gift only to a classmate');
+select is(public.record_isles_gift(pg_temp.id('0b'), pg_temp.id('0a'), 'cake', 10, 20000), 'sent', 'a gift is left');
+select is(public.record_isles_gift(pg_temp.id('0b'), pg_temp.id('0a'), 'flowers', 10, 20000), 'sent-today', '... one a day');
+select ok((select (e ->> 'giftsToday')::integer = 1 from jsonb_array_elements(public.isles_class(pg_temp.id('0b'), 20000) -> 'classmates') e)
+  and (public.isles_class(pg_temp.id('0b'), 20000) ->> 'giftsSentToday')::integer = 1, '... counted for both of them');
+create temp table r2 as select public.record_isles_race_start(pg_temp.id('0b'), repeat('ab', 8), pg_temp.id('0a')::text, false, '{}', '{}', 20000, 0) as id;
+select ok(public.record_isles_race_finish(pg_temp.id('0b'), (select id from r2), 1, pg_temp.island(0, 10), 20000, '{"won":false}', '{"coins":0,"crystals":0}',
+  pg_temp.id('0a'), true, 5), 'a race against a classmate''s island finishes');
+select is((select (e ->> 'challengedToday')::integer from jsonb_array_elements(public.isles_class(pg_temp.id('0b'), 20000) -> 'classmates') e), 1,
+  '... and counts as a challenge today');
+select is((select array_agg(e ->> 'kind' || ':' || (e ->> 'coins') order by e ->> 'id') from jsonb_array_elements(public.isles_load(pg_temp.id('0a')) -> 'post') e)::text,
+  '{gift:10,raced:5}', 'the gift and the race''s coins wait in the post');
+select ok(not public.record_isles_open_post(pg_temp.id('0a'), 4, pg_temp.island(3, 7), 20000,
+    (select array_agg((e ->> 'id')::bigint) from jsonb_array_elements(public.isles_load(pg_temp.id('0a')) -> 'post') e))
+  and not public.record_isles_open_post(pg_temp.id('0b'), 1, pg_temp.island(0, 10), 20000,
+    (select array_agg((e ->> 'id')::bigint) from jsonb_array_elements(public.isles_load(pg_temp.id('0a')) -> 'post') e)),
+  'the post opens only into its own island at its version');
+select ok(public.record_isles_open_post(pg_temp.id('0a'), 5, pg_temp.island(3, 7, 28) || '{"racesWon":2}', 20000,
+    (select array_agg((e ->> 'id')::bigint) from jsonb_array_elements(public.isles_load(pg_temp.id('0a')) -> 'post') e)),
+  'the post opens into the island');
+select is(public.isles_load(pg_temp.id('0a')) -> 'post', '[]'::jsonb, '... once');
+select public.record_isles_news(pg_temp.id('0a'), 20000, '[{"kind":"spots","spots":8}]');
+select public.record_isles_news(pg_temp.id('0c'), 20000, '[{"kind":"lighthouse"}]');
+select is((select array_agg(e ->> 'kind') from jsonb_array_elements(public.isles_news_board(pg_temp.id('0b'), 19994)) e)::text, '{spots}',
+  'the news board has only the class''s news');
+
 -- ---- What pupils read: their own island, and their own class's sky ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((public.my_isles() -> 'island' ->> 'turn')::integer, 3, 'a pupil reads their own island');
@@ -122,7 +153,7 @@ select pg_temp.reset();
 
 -- ---- Counts, and New Season ----
 select is(public.isles_counts(pg_temp.id('0a')) - 'isles_farms',
-  '{"isles_chunks": 1, "isles_islanders": 28, "isles_decorations": 0, "isles_races_won": 1, "isles_grand": 0, "isles_lighthouses": 0}'::jsonb,
+  '{"isles_chunks": 1, "isles_islanders": 28, "isles_decorations": 0, "isles_races_won": 2, "isles_grand": 0, "isles_lighthouses": 0, "isles_gifts_sent": 0}'::jsonb,
   'the achievement counts come from the island');
 select public.isles_season(array[pg_temp.id('0a')]);
 select ok((select island is null and season = 2 from public.isles_islands where player = pg_temp.id('0a'))

@@ -129,6 +129,16 @@ A Sky Race (if one is left today), or End turn. Then the end of the turn:
 - The other side gets a **"well raced" gift of 5 coins**, win or lose.
 - A classmate who wins at home gets the win counted (for Race Winner), but no prize.
 
+## Classmates (stage S.4, 3 Nov 2026)
+
+- **The class sky:** every classmate's island (their own class, pupils only, hidden profiles left out): name, Sky Keeper, building spots, decorations and Lighthouse. It shows whether each can be raced now, and why not. Never coins, crystals or maths.
+- **Visit:** a classmate's island, look only: buildings, decorations, islanders and Lighthouse.
+- **Gifts:** a bunch of flowers, a cake or a paper lantern, each **10 coins** for the classmate, free to give. **1 gift sent a day**, and an island can be given **3 a day**. It works with no turns left.
+- **The Sky post:** a gift, or what a classmate's race against your island brought you (the 5 "well raced" coins, and a win counted if your island won at home), waits in your post. It opens into your island the next time you open Sky Isles, with a line saying who it was from. A pupil never changes another pupil's island directly, so two pupils can't overwrite each other.
+- **A race against a classmate's island:** their island brings its sky-boats and Sail flags, never a warm breeze (that's only for the challenger), and gets the home wind. The challenged island gets **5 coins whoever wins** (the "well raced" gift) and, if it wins, the win counts for Race Winner.
+- **The Sky news:** good news only, the newest 12 from the last 7 days: an island reaching 8, 12 or 16 building spots, the Lighthouse lit, a decoration put up (one a turn), a Sky Race won. Never who lost, nor anything about maths. A New Season clears the island's news.
+- **Kind Heart** (💝): send 10 gifts.
+
 ## Pip's next step
 
 One short sentence with real names and numbers, and the button it means (for "Show me"). The first that fits wins:

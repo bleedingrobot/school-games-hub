@@ -15,12 +15,16 @@
 -- 3. isles_turns: one row a turn played (a turn sent twice is kept once), with what was chosen and what happened.
 -- 4. isles_questions: the stored maths questions (one for each turn, three for each race) and the answers marked so
 --    far (a question is marked once). The browser only ever gets the questions without their answers.
--- 5. isles_races: Sky Races, one open at a time per pupil, each finished once.
+-- 5. isles_races: Sky Races, one open at a time per pupil, each finished once. A race can be against a classmate's
+--    island (stage S.4).
+-- 5b. isles_post: gifts from classmates and races' "well raced" coins, waiting to be opened into the island by the
+--    receiver's own load (a pupil's server call never writes another pupil's island). isles_news: the class news board,
+--    good news only.
 -- 6. The server's functions (record_isles_...), the pupils' two reading functions, the hooks, measures and achievements,
 --    and who can call what.
 --
--- Not here yet: visits, gifts and the news board (stage S.4), the Sky Keeper portrait, island names and the Hall of the Skies (stages S.3 and S.6). They can be added to this file while it is
--- still on hold (supabase/migrations-on-hold.txt), or in a migration of their own.
+-- Not here yet: island names and the Hall of the Skies (stage S.6). They can be added to this file while it is still on
+-- hold (supabase/migrations-on-hold.txt), or in a migration of their own.
 --
 -- Depends on 20261020000100_game_hooks.sql.
 
@@ -121,11 +125,45 @@ create table public.isles_races (
 create index isles_races_by_player on public.isles_races (player, season);
 create unique index isles_races_one_open on public.isles_races (player) where status = 'open';
 
+-- Gifts and races' "well raced" coins from classmates, opened into the island on the receiver's next load.
+create table public.isles_post (
+  id bigint generated always as identity primary key,
+  to_player uuid not null references public.profiles (id) on delete cascade,
+  from_player uuid not null references public.profiles (id) on delete cascade,
+  day integer not null,
+  kind text not null check (kind in ('gift', 'raced')),
+  -- GIFTS in shared/isles/config.ts.
+  gift text check ((kind = 'gift') = (gift is not null) and (gift is null or gift in ('flowers', 'cake', 'lantern'))),
+  -- A classmate's race lost at this island: a win here.
+  home_win boolean not null default false,
+  coins integer not null check (coins between 0 and 100),
+  opened boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index isles_post_waiting on public.isles_post (to_player) where not opened;
+create index isles_post_gifts_to on public.isles_post (to_player, day) where kind = 'gift';
+-- One gift sent a day (GIFTS_SENT_PER_DAY).
+create unique index isles_post_one_gift_a_day on public.isles_post (from_player, day) where kind = 'gift';
+create index isles_post_gifts_from on public.isles_post (from_player) where kind = 'gift';
+
+-- The class news board: good news only (`NewsKind` in shared/isles/server.ts), never who lost or anything about maths.
+create table public.isles_news (
+  id bigint generated always as identity primary key,
+  player uuid not null references public.profiles (id) on delete cascade,
+  day integer not null,
+  news jsonb not null check (jsonb_typeof(news) = 'object' and pg_column_size(news) < 500),
+  created_at timestamptz not null default now()
+);
+create index isles_news_by_player on public.isles_news (player, day);
+
 alter table public.isles_islands enable row level security;
+alter table public.isles_post enable row level security;
+alter table public.isles_news enable row level security;
 alter table public.isles_turns enable row level security;
 alter table public.isles_questions enable row level security;
 alter table public.isles_races enable row level security;
-revoke all on public.isles_islands, public.isles_turns, public.isles_questions, public.isles_races from anon, authenticated;
+revoke all on public.isles_islands, public.isles_turns, public.isles_questions, public.isles_races, public.isles_post, public.isles_news
+from anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The server function's jobs (service role only)
@@ -161,7 +199,12 @@ as $$
       where m.class_id = public.current_class_of(isles_load.player) and o.island is not null), 0),
     'openRace', (select public.isles_race_json(r) from public.isles_races r where r.player = isles_load.player and r.status = 'open'),
     'racesThisSeason', (select count(*) from public.isles_races r join public.isles_islands i on i.player = r.player
-                        where r.player = isles_load.player and r.status = 'done' and r.season = i.season))
+                        where r.player = isles_load.player and r.status = 'done' and r.season = i.season),
+    'post', coalesce((
+      select jsonb_agg(jsonb_build_object('id', o.id, 'from', o.from_player, 'fromName', coalesce(p.display_name, 'A classmate'), 'kind', o.kind,
+          'gift', o.gift, 'homeWin', o.home_win, 'coins', o.coins) order by o.id)
+      from (select * from public.isles_post o where o.to_player = isles_load.player and not o.opened order by o.id limit 50) o
+      left join public.profiles p on p.id = o.from_player), '[]'::jsonb))
 $$;
 
 -- A new island, only if the pupil has none (or New Season emptied theirs). True if it was kept now.
@@ -306,7 +349,8 @@ $$;
 -- Finishes an open race and keeps the island after it, only if the island is still at `expected_version`. True if it
 -- was kept now (false: the island moved on, or the race was already finished).
 create function public.record_isles_race_finish(
-  player uuid, race bigint, expected_version integer, island jsonb, day integer, result jsonb, prize jsonb
+  player uuid, race bigint, expected_version integer, island jsonb, day integer, result jsonb, prize jsonb,
+  post_to uuid default null, post_home_win boolean default false, post_coins integer default 0
 )
 returns boolean
 language plpgsql
@@ -332,6 +376,11 @@ begin
   update public.isles_races r set status = 'done', result = record_isles_race_finish.result, prize = record_isles_race_finish.prize,
     finished_at = now()
   where r.id = record_isles_race_finish.race and r.player = record_isles_race_finish.player;
+  -- A classmate's island raced at home: its "well raced" coins (and a win, if it won) go in its post.
+  if post_to is not null then
+    insert into public.isles_post (to_player, from_player, day, kind, home_win, coins)
+    values (post_to, record_isles_race_finish.player, record_isles_race_finish.day, 'raced', post_home_win, post_coins);
+  end if;
   return true;
 end;
 $$;
@@ -359,6 +408,133 @@ as $$
     where i.player = record_isles_keeper.player returning 1
   )
   select exists (select 1 from saved)
+$$;
+
+-- Opens the post (by id) into the island, only if the island is still at `expected_version` and every one of them is
+-- the pupil's own and still unopened. True if it was kept now.
+create function public.record_isles_open_post(player uuid, expected_version integer, island jsonb, day integer, ids bigint[])
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if jsonb_typeof(island) <> 'object' or coalesce(array_length(ids, 1), 0) = 0 then
+    raise exception 'That post is not right.' using errcode = '22023';
+  end if;
+  perform 1 from public.isles_post o where o.id = any (ids) and o.to_player = record_isles_open_post.player and not o.opened for update;
+  if (select count(*) from public.isles_post o where o.id = any (ids) and o.to_player = record_isles_open_post.player and not o.opened)
+     <> array_length(ids, 1) then
+    return false;
+  end if;
+  update public.isles_islands i set
+    island = record_isles_open_post.island, day = record_isles_open_post.day, version = i.version + 1, updated_at = now()
+  where i.player = record_isles_open_post.player and i.version = expected_version and i.island is not null;
+  if not found then
+    return false;
+  end if;
+  update public.isles_post o set opened = true where o.id = any (ids) and o.to_player = record_isles_open_post.player;
+  return true;
+end;
+$$;
+
+-- The pupils in a pupil's class who have an island, the pupil left out: their own school, pupils only, hidden
+-- profiles left out (the same class as isles_sky()).
+create function public.isles_classmates(player uuid)
+returns table (id uuid, name text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select p.id, p.display_name
+  from public.isles_islands i
+  join public.profiles p on p.id = i.player
+  join public.class_members m on m.student_id = i.player
+  where m.class_id = public.current_class_of(isles_classmates.player)
+    and p.school_id = (select me.school_id from public.profiles me where me.id = isles_classmates.player)
+    and p.role = 'student'
+    and not p.hidden
+    and i.island is not null
+    and p.id <> isles_classmates.player
+$$;
+
+-- The class sky for the server function: each classmate's island as last saved, with the races started against it and
+-- the gifts it was given today, and how many gifts the pupil sent today.
+create function public.isles_class(player uuid, day integer)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'classmates', coalesce((
+      select jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name, 'keeper', i.keeper, 'day', i.day, 'island', i.island,
+          'challengedToday', (select count(*) from public.isles_races r where r.opponent = c.id::text and r.day = isles_class.day),
+          'giftsToday', (select count(*) from public.isles_post o where o.to_player = c.id and o.kind = 'gift' and o.day = isles_class.day))
+        order by c.name)
+      from public.isles_classmates(isles_class.player) c join public.isles_islands i on i.player = c.id), '[]'::jsonb),
+    'giftsSentToday', (select count(*) from public.isles_post o where o.from_player = isles_class.player and o.kind = 'gift' and o.day = isles_class.day))
+$$;
+
+-- Leaves a gift in a classmate's post: 'sent', or why not ('not-classmate', 'sent-today' (GIFTS_SENT_PER_DAY = 1),
+-- 'given-enough' (GIFTS_RECEIVED_PER_DAY = 3)).
+create function public.record_isles_gift(player uuid, to_player uuid, gift text, coins integer, day integer)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.isles_classmates(record_isles_gift.player) c where c.id = record_isles_gift.to_player) then
+    return 'not-classmate';
+  end if;
+  -- One gift at a time to the same island, so two classmates can't both give its third.
+  perform 1 from public.isles_islands i where i.player = record_isles_gift.to_player for update;
+  if exists (select 1 from public.isles_post o where o.from_player = record_isles_gift.player and o.kind = 'gift' and o.day = record_isles_gift.day) then
+    return 'sent-today';
+  end if;
+  if (select count(*) from public.isles_post o where o.to_player = record_isles_gift.to_player and o.kind = 'gift' and o.day = record_isles_gift.day) >= 3 then
+    return 'given-enough';
+  end if;
+  insert into public.isles_post (to_player, from_player, day, kind, gift, coins)
+  values (record_isles_gift.to_player, record_isles_gift.player, record_isles_gift.day, 'gift', record_isles_gift.gift, record_isles_gift.coins)
+  on conflict do nothing;
+  return case when found then 'sent' else 'sent-today' end;
+end;
+$$;
+
+-- Good news for the class news board (a list of `NewsKind` objects).
+create function public.record_isles_news(player uuid, day integer, news jsonb)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  insert into public.isles_news (player, day, news)
+  select record_isles_news.player, record_isles_news.day, n from jsonb_array_elements(case when jsonb_typeof(record_isles_news.news) = 'array' then record_isles_news.news else '[]' end) n
+  where jsonb_typeof(n) = 'object'
+$$;
+
+-- The class news board: the newest 12 items (NEWS_SHOWN) from day `since` on, from the pupil and their classmates.
+create function public.isles_news_board(player uuid, since integer)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(n.news || jsonb_build_object('name', n.name, 'day', n.day, 'me', n.player = isles_news_board.player) order by n.id desc), '[]'::jsonb)
+  from (
+    select x.id, x.news, x.day, x.player, w.name
+    from public.isles_news x
+    join (select c.id, c.name from public.isles_classmates(isles_news_board.player) c
+          union all select p.id, p.display_name from public.profiles p where p.id = isles_news_board.player) w on w.id = x.player
+    where x.day >= since
+    order by x.id desc
+    limit 12
+  ) n
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -423,7 +599,8 @@ as $$
     'isles_decorations', coalesce(jsonb_array_length(i.island -> 'decorations'), 0),
     'isles_races_won', coalesce((i.island ->> 'racesWon')::integer, 0),
     'isles_grand', case when jsonb_array_length(i.island -> 'spots') >= 16 then 1 else 0 end,
-    'isles_lighthouses', case when (i.island ->> 'lighthouse')::integer >= 4 then 1 else 0 end)
+    'isles_lighthouses', case when (i.island ->> 'lighthouse')::integer >= 4 then 1 else 0 end,
+    'isles_gifts_sent', (select count(*) from public.isles_post o where o.from_player = w.who and o.kind = 'gift'))
   from (select who) w left join public.isles_islands i on i.player = w.who
 $$;
 
@@ -460,7 +637,9 @@ set search_path = ''
 as $$
   with a as (delete from public.isles_turns where player = any (players)),
   b as (delete from public.isles_questions where player = any (players)),
-  c as (delete from public.isles_races where player = any (players))
+  c as (delete from public.isles_races where player = any (players)),
+  -- The news goes; the post stays (gifts sent still count for Kind Heart, and waiting ones open into the new island).
+  d as (delete from public.isles_news where player = any (players))
   update public.isles_islands i set island = null, season = i.season + 1, version = i.version + 1, updated_at = now()
   where i.player = any (players)
 $$;
@@ -479,9 +658,10 @@ values ('isles', 'isles_enabled', 'public.isles_counts(uuid)', 'public.isles_poi
   'public.isles_season(uuid[])', 'public.isles_last_played(uuid)', true);
 
 insert into public.achievement_measures (measure) values
-  ('isles_chunks'), ('isles_farms'), ('isles_islanders'), ('isles_decorations'), ('isles_races_won'), ('isles_grand'), ('isles_lighthouses');
+  ('isles_chunks'), ('isles_farms'), ('isles_islanders'), ('isles_decorations'), ('isles_races_won'), ('isles_grand'), ('isles_lighthouses'),
+  ('isles_gifts_sent');
 
--- docs/ISLES-COSY-PLAN.md, section 12. Kind Heart (10 gifts sent) comes with gifts in stage S.4.
+-- docs/ISLES-COSY-PLAN.md, section 12.
 insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values
   ('isles-first-anchor', 'isles', 'First Anchor', '⚓', 'isles_chunks', 1, 1),
   ('isles-green-thumbs', 'isles', 'Green Thumbs', '🌾', 'isles_farms', 5, 2),
@@ -489,7 +669,8 @@ insert into public.achievement_types (id, game, name, emoji, measure, goal, sort
   ('isles-decorator', 'isles', 'Decorator', '🌸', 'isles_decorations', 8, 4),
   ('isles-race-winner', 'isles', 'Race Winner', '⛵', 'isles_races_won', 1, 5),
   ('isles-grand-isle', 'isles', 'Grand Isle', '🏝️', 'isles_grand', 1, 6),
-  ('isles-lighthouse-keeper', 'isles', 'Lighthouse Keeper', '🗼', 'isles_lighthouses', 1, 7);
+  ('isles-lighthouse-keeper', 'isles', 'Lighthouse Keeper', '🗼', 'isles_lighthouses', 1, 7),
+  ('isles-kind-heart', 'isles', 'Kind Heart', '💝', 'isles_gifts_sent', 10, 8);
 
 -- ---------------------------------------------------------------------------
 -- Who can call what
@@ -502,8 +683,10 @@ revoke execute on function
   public.record_isles_questions(uuid, text, text, jsonb), public.isles_question_set(uuid, text, text),
   public.record_isles_answer(uuid, text, integer, numeric, boolean),
   public.record_isles_race_start(uuid, text, text, boolean, jsonb, jsonb, integer, integer), public.isles_race(uuid, bigint),
-  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb), public.record_isles_guide_done(uuid),
-  public.record_isles_keeper(uuid, text), public.my_isles(), public.isles_sky(),
+  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb, uuid, boolean, integer), public.record_isles_guide_done(uuid),
+  public.record_isles_keeper(uuid, text), public.record_isles_open_post(uuid, integer, jsonb, integer, bigint[]),
+  public.isles_classmates(uuid), public.isles_class(uuid, integer), public.record_isles_gift(uuid, uuid, text, integer, integer),
+  public.record_isles_news(uuid, integer, jsonb), public.isles_news_board(uuid, integer), public.my_isles(), public.isles_sky(),
   public.isles_counts(uuid), public.isles_point_rules(), public.isles_players(), public.isles_season(uuid[]), public.isles_last_played(uuid)
 from public, anon, authenticated;
 grant execute on function public.teacher_set_isles(boolean, boolean, uuid), public.my_isles(), public.isles_sky() to authenticated;
@@ -513,6 +696,8 @@ grant execute on function
   public.record_isles_questions(uuid, text, text, jsonb), public.isles_question_set(uuid, text, text),
   public.record_isles_answer(uuid, text, integer, numeric, boolean),
   public.record_isles_race_start(uuid, text, text, boolean, jsonb, jsonb, integer, integer), public.isles_race(uuid, bigint),
-  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb), public.record_isles_guide_done(uuid),
-  public.record_isles_keeper(uuid, text)
+  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb, uuid, boolean, integer), public.record_isles_guide_done(uuid),
+  public.record_isles_keeper(uuid, text), public.record_isles_open_post(uuid, integer, jsonb, integer, bigint[]),
+  public.isles_classmates(uuid), public.isles_class(uuid, integer), public.record_isles_gift(uuid, uuid, text, integer, integer),
+  public.record_isles_news(uuid, integer, jsonb), public.isles_news_board(uuid, integer)
 to service_role;

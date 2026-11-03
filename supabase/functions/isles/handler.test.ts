@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { markQuestion, seededRandom, type MathsContext } from '../../../shared/maths/serverQuestions';
-import { TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
+import { CALM_TURNS, GIFT_COINS, TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/isles/memoryServices';
 import { RACE_LEGS } from '../../../shared/isles/config';
 import { RACE_STOPS, runRace } from '../../../shared/isles/race';
@@ -98,8 +98,8 @@ it('plays each turn once, six a day, and refuses an impossible spend (test 2)', 
 it("works a Sky Race out from its seed and the answers the server marked, so the browser can't rig it (test 3)", async () => {
   const { send, services, rightAnswer, log } = setup();
   await send('pupil-a', { action: 'load' });
-  // A race needs the opponent's island to be one the server knows: classmates come in stage S.4.
-  expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body).toMatchObject({ code: 'not-yet' });
+  // A race needs the opponent's island to be a classmate's the server knows.
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body).toMatchObject({ code: 'not-classmate' });
 
   // Even the season's first race is an ordinary race (James, 3 Nov 2026): with every answer wrong it is lost.
   const first = (await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race;
@@ -174,6 +174,60 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   const off = setup({ settings: () => ({ enabled: true, races: false }) });
   await off.send('pupil-a', { action: 'load' });
   expect((await off.send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body).toMatchObject({ code: 'races-off' });
+});
+
+it("lets classmates visit, leave gifts and race each other's islands, never writing another pupil's island (test 3, classmates)", async () => {
+  const { send, services, rightAnswer } = setup();
+  services.data.names = { 'pupil-a': 'Ana', 'pupil-b': 'Ben', 'pupil-c': 'Cal', 'pupil-d': 'Dee', 'pupil-e': 'Eru' };
+  for (const who of ['a', 'b', 'c', 'd', 'e']) await send(`pupil-${who}`, { action: 'load' });
+
+  // The class sky: everyone else, with who can be raced (Ben's island is in its calm start) and no coins or maths.
+  const sky = (await send('pupil-a', { action: 'sky' })).body;
+  expect(sky.classmates.map((c: { name: string }) => c.name)).toEqual(['Ben', 'Cal', 'Dee', 'Eru']);
+  expect(sky.classmates[0]).toMatchObject({ spots: 6, raceWhy: 'That island is new and still having a calm start.', giftWhy: null });
+  expect(JSON.stringify(sky)).not.toMatch(/coins|crystals|seed|maths/);
+  // A visit is look only.
+  const visit = (await send('pupil-a', { action: 'visit', who: 'pupil-b' })).body.visit;
+  expect(Object.keys(visit.look).sort()).toEqual(['decorations', 'islanders', 'lighthouse', 'spots']);
+  expect((await send('pupil-a', { action: 'visit', who: 'pupil-x' })).status).toBe(404);
+
+  // Gifts: free, one sent a day, three given a day; they wait in the post until Ben loads.
+  const ben = () => services.data.islands['pupil-b'].island!;
+  const before = ben().coins;
+  expect((await send('pupil-a', { action: 'gift', to: 'pupil-b', gift: 'cake' })).body).toMatchObject({ sent: true, giftsSentToday: 1 });
+  expect((await send('pupil-a', { action: 'gift', to: 'pupil-c', gift: 'cake' })).body).toMatchObject({ code: 'sent-today' });
+  expect((await send('pupil-c', { action: 'gift', to: 'pupil-b', gift: 'pizza' })).status).toBe(400);
+  for (const who of ['c', 'd']) expect((await send(`pupil-${who}`, { action: 'gift', to: 'pupil-b', gift: 'flowers' })).body.sent).toBe(true);
+  expect((await send('pupil-e', { action: 'gift', to: 'pupil-b', gift: 'lantern' })).body).toMatchObject({ code: 'given-enough' });
+  expect(ben().coins).toBe(before);
+  const opened = (await send('pupil-b', { action: 'load' })).body;
+  expect(opened.post.map((p: { fromName: string; gift: string }) => `${p.fromName}:${p.gift}`)).toEqual(['Ana:cake', 'Cal:flowers', 'Dee:flowers']);
+  expect(opened.island.coins).toBe(before + 3 * GIFT_COINS);
+  // Opened once.
+  expect((await send('pupil-b', { action: 'load' })).body).toMatchObject({ post: [], island: { coins: before + 3 * GIFT_COINS } });
+
+  // A race against Ben's island, once its calm start is over: Ben's island races at home, and gets its "well raced"
+  // coins (and a win, if it wins) in its post.
+  services.data.islands['pupil-b'].island!.turn = CALM_TURNS;
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-a' })).body).toMatchObject({ code: 'own-island' });
+  const race = (await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body.race;
+  expect(race).toMatchObject({ opponent: 'pupil-b', them: { breeze: false } });
+  for (const q of race.questions) await send('pupil-a', { action: 'raceAnswer', race: race.id, slot: q.slot, value: rightAnswer(q.set, q.slot) });
+  const benBefore = structuredClone(ben());
+  const done = (await send('pupil-a', { action: 'raceFinish', race: race.id })).body;
+  const stored = services.data.races.find((r) => r.id === race.id)!;
+  expect(done.race.result).toEqual(runRace(stored.seed, stored.you, stored.them, 3));
+  expect(ben()).toEqual(benBefore);
+  const home = (await send('pupil-b', { action: 'load' })).body;
+  expect(home.post).toEqual([{ fromName: 'Ana', coins: WELL_RACED_COINS, kind: 'raced', homeWin: !done.race.result.won }]);
+  expect(home.island).toMatchObject({ coins: benBefore.coins + WELL_RACED_COINS, racesWon: benBefore.racesWon + (done.race.result.won ? 0 : 1) });
+
+  // Not the same island twice in a day.
+  await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'decorate', id: 'flowers', place: 0 }] });
+  const later = (await send('pupil-a', { action: 'sky' })).body;
+  expect(later.classmates[0].raceWhy).toBe("You've raced that island today already.");
+  // The news board: good news only (a race won, a decoration put up), newest first.
+  expect(later.news.map((n: { name: string; kind: string }) => `${n.name}:${n.kind}`)).toEqual([...['Ana:decoration'], ...(done.race.result.won ? ['Ana:race'] : [])]);
 });
 
 it('the deployable file is up to date with the code (run `npm run build:functions -- isles` if this fails)', async () => {

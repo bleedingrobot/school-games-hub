@@ -231,3 +231,12 @@ C.1 and C.2 can be one session. C.3 is its own.
 - **Checks:** type check clean; all Sky Isles tests pass (the keyboard test now plays the 4 steps and puts up a decoration); the whole suite passes (one Diamond Drop screen test is slow when everything runs at once and passes on its own).
 - **Preview:** republished as a new page, as the old one couldn't be reached from this session: https://claude.ai/artifact/AbCJrV8AhotXCHaedgVe6V
 - **Next:** C.A (the paintings, on the gaming PC), then S.4.
+
+### S.4 results (classmates), 3 Nov 2026
+
+James asked for S.4 before the art. Everything in section 11 is in; the rule sheet has a new "Classmates" section.
+- **Server:** new actions `sky` (the class sky and news), `visit` (look only: spots, decorations, islanders, Lighthouse) and `gift`; `raceStart` takes a classmate's id. A classmate's island is only ever read: gifts and a race's "well raced" coins (and a win at home) go in the receiver's **Sky post**, opened into their island by their own next load. The challenged island now gets its 5 coins win or lose, as the rule sheet always said (the rules gave them only when the challenger won).
+- **The on-hold migration** gets `isles_post` and `isles_news`, the functions `isles_classmates`, `isles_class`, `record_isles_gift` (1 sent and 3 given a day, checked with the island locked), `record_isles_open_post`, `record_isles_news`, `isles_news_board`, a post line in `isles_load`, and `record_isles_race_finish` leaves the post. Kind Heart (💝, `isles_gifts_sent` ≥ 10) is the eighth achievement. A New Season clears the news but not the post (sent gifts still count). Database test: 61 checks.
+- **Screens:** Class sky (Sky news and each classmate with Visit and Race; a reason about your own island is said once at the top), a visit (the island picture, three gifts, Race), the race names the classmate's island and shows their Sky Keeper on its boat, and a "Sky post" box on My island. How to play has "Your class".
+- **Preview:** six pretend classmates (one still in its calm start), a cake from Ana in the post and some news. Gift pictures are emoji until they're painted (add `gift-flowers`, `gift-cake`, `gift-lantern` to the art list).
+- **Still to do:** paint the gift pictures; the Hall of the Skies (S.6).

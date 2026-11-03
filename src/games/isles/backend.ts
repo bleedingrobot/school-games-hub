@@ -4,7 +4,10 @@
  */
 import type { Island, TurnReport } from '../../../shared/isles/engine';
 import type { RaceResult, Racer, RaceSoFar } from '../../../shared/isles/race';
-import type { ShownQuestion } from '../../../shared/isles/server';
+import type { GiftId } from '../../../shared/isles/config';
+import type { IslandLook, NewsItem, ShownQuestion } from '../../../shared/isles/server';
+
+export type { NewsItem };
 
 export interface IslesBackend {
   /** The preview: saved in this browser only, no points. */
@@ -26,6 +29,8 @@ export type TurnQuestion = ShownQuestion & { answered: { value: number; right: b
 export interface PublicRace {
   id: number;
   opponent: string;
+  /** A classmate's name, for a race against their island. */
+  opponentName?: string;
   starter: boolean;
   you: Racer;
   them: Racer;
@@ -49,7 +54,36 @@ export interface IslandView {
   openRace?: PublicRace | null;
   report?: TurnReport;
   already?: boolean;
+  /** Post from classmates opened on this load. */
+  post?: PostShown[];
 }
+
+/** A gift, or a classmate's race against this island, as opened from the post. */
+export type PostShown = { fromName: string; coins: number } & ({ kind: 'gift'; gift: GiftId } | { kind: 'raced'; homeWin: boolean });
+
+/** A classmate's island on the class sky: never its coins or maths. */
+export interface ClassmateCard {
+  id: string;
+  name: string;
+  keeper: string | null;
+  spots: number;
+  decorations: number;
+  lighthouse: number;
+  /** Why it can't be raced now (null: it can). */
+  raceWhy: string | null;
+  /** Why a gift can't be left now (null: it can). */
+  giftWhy: string | null;
+}
+
+/** What `sky` sends back. */
+export interface ClassSkyView {
+  classmates: ClassmateCard[];
+  news: NewsItem[];
+  giftsSentToday: number;
+}
+
+/** What `visit` sends back: the card, and the island to look at. */
+export type Visit = ClassmateCard & { look: IslandLook };
 
 /** The reply's body, or an IslesError with the server's words. */
 export function readReply(status: number, body: Record<string, unknown>): Record<string, unknown> {

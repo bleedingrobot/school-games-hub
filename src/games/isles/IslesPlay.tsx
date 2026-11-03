@@ -14,14 +14,15 @@ import { PROBLEM_TEXT } from '../../../shared/isles/server';
 import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt } from './art';
-import { IslesError, type IslandView, type IslesBackend, type PublicRace } from './backend';
+import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
+import { ClassSky, VisitIsland } from './ClassSky';
 import { Art, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
 import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
-import { actionText, collectLines, n, plural, reportLines } from './words';
+import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
 import './isles.css';
 
 type Screen =
@@ -31,11 +32,13 @@ type Screen =
   | { kind: 'home' }
   | { kind: 'turn'; step: Step }
   /** A Sky Race; `inTurn` when it was started from a turn's last step (the turn's choices wait for it). */
-  | { kind: 'race'; open: PublicRace | null; inTurn?: boolean }
+  | { kind: 'race'; open: PublicRace | null; inTurn?: boolean; rival?: { id: string; name: string; keeper: string | null }; back?: Screen }
+  | { kind: 'sky' }
+  | { kind: 'visit'; who: string }
   | { kind: 'decorations'; back: Screen }
   | { kind: 'howto'; back: Screen };
 
-const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper'>, string> = {
+const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper' | 'sky' | 'visit'>, string> = {
   loading: 'Sky Isles',
   problem: 'Sky Isles',
   home: 'My island',
@@ -87,6 +90,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [view, setView] = useState<IslandView | null>(null);
   const [report, setReport] = useState<TurnReport | undefined>(undefined);
+  /** Post opened on load, shown on My island until a turn starts (kept if a second load comes back without it). */
+  const [post, setPost] = useState<PostShown[]>([]);
   const [windy, setWindy] = useState(false);
   const [picks, setPicks] = useState<Action[]>([]);
   /** What the Build step shows. */
@@ -103,6 +108,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const show = useCallback((v: IslandView) => {
     setView(v);
     if (v.report) setReport(v.report);
+    if (v.post?.length) setPost(v.post);
   }, []);
 
   const load = useCallback(async () => {
@@ -179,6 +185,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   };
 
   const startTurn = () => {
+    setPost([]);
     if (!view || !island) return;
     setPicks([]);
     setProblem(null);
@@ -250,6 +257,33 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     );
   }
 
+  if (screen.kind === 'sky') {
+    return (
+      <div className="si">
+        <ClassSky
+          backend={backend}
+          today={view.day}
+          onVisit={(who) => setScreen({ kind: 'visit', who })}
+          onRace={(c) => setScreen({ kind: 'race', open: null, rival: { id: c.id, name: c.name, keeper: c.keeper }, back: { kind: 'sky' } })}
+          onBack={() => setScreen({ kind: 'home' })}
+        />
+      </div>
+    );
+  }
+
+  if (screen.kind === 'visit') {
+    return (
+      <div className="si">
+        <VisitIsland
+          backend={backend}
+          who={screen.who}
+          onRace={(c) => setScreen({ kind: 'race', open: null, rival: { id: c.id, name: c.name, keeper: c.keeper }, back: { kind: 'sky' } })}
+          onBack={() => setScreen({ kind: 'sky' })}
+        />
+      </div>
+    );
+  }
+
   if (screen.kind === 'race') {
     return (
       <div className="si">
@@ -257,7 +291,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           backend={backend}
           open={screen.open}
           keeper={view.keeper}
-          backLabel={screen.inTurn ? 'Back to my turn' : undefined}
+          rival={screen.rival}
+          backLabel={screen.inTurn ? 'Back to my turn' : screen.back ? 'Back to the class sky' : undefined}
           onProblem={(message) => {
             setProblem(message);
             if (screen.inTurn) setScreen({ kind: 'turn', step: Step.Rest });
@@ -266,7 +301,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           onDone={(after) => {
             if (after) setView((v) => (v ? { ...v, island: after, openRace: null } : v));
             // A race from a turn's last step goes back there, with the turn's choices still waiting.
-            setScreen(screen.inTurn ? { kind: 'turn', step: Step.Rest } : { kind: 'home' });
+            setScreen(screen.inTurn ? { kind: 'turn', step: Step.Rest } : screen.back ?? { kind: 'home' });
           }}
         />
       </div>
@@ -353,6 +388,13 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
             {turnStep === null && pipLine}
 
 
+            {screen.kind === 'home' && post.length > 0 && (
+              <section className="si-panel si-post" aria-label="Sky post">
+                <h3>Sky post</h3>
+                <ul className="si-sums">{post.map((p, i) => <li key={i}>{postLine(p)}</li>)}</ul>
+              </section>
+            )}
+
             {lastTurn.length > 0 && (
               <section className="si-panel si-report" aria-label="Last turn">
                 <h3>Last turn</h3>
@@ -389,10 +431,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'decorations', back: { kind: 'home' } })}>Decorations</button>
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                 </div>
-                <div className="si-soon">
-                  <button type="button" className="button button--light" disabled aria-describedby="si-soon-words">Class sky</button>
-                  <span id="si-soon-words" className="si-choice__why">The class sky, visits, gifts and the news are coming soon.</span>
-                </div>
+                <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
                 {problem && <p className="si-problem" role="alert">{problem}</p>}
               </section>
             )}

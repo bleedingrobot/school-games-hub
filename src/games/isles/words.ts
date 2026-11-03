@@ -4,14 +4,16 @@
  * Words are kept plain, for a 9-year-old reading on their own.
  */
 import {
-  BREEZE_SPEED, BUILD_COINS, COINS, HOUSE_ROOM, LIGHTHOUSE, WORKSHOP_CRYSTALS, type DecorationId, type PlotKind,
+  BREEZE_SPEED, BUILD_COINS, COINS, GIFTS, GRAND_ISLE, HOUSE_ROOM, LIGHTHOUSE, WORKSHOP_CRYSTALS, type DecorationId,
+  type GiftId, type PlotKind,
 } from '../../../shared/isles/config';
 import {
   beforeBuilding, chunkPrice, decoration, raisePrice, wholeCrystals, type Action, type Island, type Problem, type TurnReport,
 } from '../../../shared/isles/engine';
 import { KIND_NAME } from '../../../shared/isles/nextStep';
 import type { RaceProblem } from '../../../shared/isles/race';
-import { PROBLEM_TEXT } from '../../../shared/isles/server';
+import { PROBLEM_TEXT, type NewsItem } from '../../../shared/isles/server';
+import type { PostShown } from './backend';
 
 export { KIND_NAME };
 
@@ -150,3 +152,34 @@ export function actionText(island: Island, action: Action): string {
       return `Build stage ${island.lighthouse + 1} of the Sky Lighthouse`;
   }
 }
+
+/** A little picture for each gift, used until its painting is in. */
+export const GIFT_EMOJI: Record<GiftId, string> = { flowers: '💐', cake: '🎂', lantern: '🏮' };
+export const giftName = (gift: GiftId) => GIFTS.find((g) => g.id === gift)?.name ?? 'a gift';
+
+/** A gift or a classmate's race, as opened from the post. */
+export function postLine(p: PostShown): string {
+  if (p.kind === 'gift') return `${p.fromName} left you ${giftName(p.gift)}! +${plural(p.coins, 'coin')}`;
+  return p.homeWin
+    ? `${p.fromName} raced your island, and your island won at home! +${plural(p.coins, 'coin')} for racing well.`
+    : `${p.fromName} raced your island. +${plural(p.coins, 'coin')} for racing well.`;
+}
+
+/** A line on the class news board: good news only. */
+export function newsLine(item: NewsItem): string {
+  const who = item.me ? 'You' : item.name;
+  const whose = item.me ? 'your' : `${item.name}'s`;
+  switch (item.kind) {
+    case 'spots':
+      return item.spots >= GRAND_ISLE ? `${item.me ? 'Your' : whose} island is a Grand Isle!` : `${item.me ? 'Your' : whose} island reached ${item.spots} building spots!`;
+    case 'lighthouse':
+      return `${who} lit the Sky Lighthouse!`;
+    case 'decoration':
+      return `New on ${whose} island: ${decoration(item.id)?.name ?? 'a decoration'}!`;
+    case 'race':
+      return item.gullRiders ? `${who} won a Sky Race against the Gull Riders!` : `${who} won a Sky Race!`;
+  }
+}
+
+/** "today", "yesterday" or "3 days ago". */
+export const daysAgo = (day: number, today: number) => (today - day <= 0 ? 'today' : today - day === 1 ? 'yesterday' : `${today - day} days ago`);

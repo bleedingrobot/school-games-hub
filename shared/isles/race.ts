@@ -234,13 +234,14 @@ export function settleRace(
   };
   let them = defender ? { ...defender.island, challengedToday: defender.island.challengedToday + 1 } : null;
   let prize = { coins: 0, crystals: 0 };
+  // The challenged classmate gets the "well raced" gift whoever wins (ISLES-RULES.md, "Prizes").
+  if (them) them = { ...them, coins: them.coins + WELL_RACED_COINS };
   if (result.won) {
     prize = racePrize(challenger.winsToday);
     you = { ...you, coins: you.coins + prize.coins, crystals: you.crystals + prize.crystals, winsToday: you.winsToday + 1, racesWon: you.racesWon + 1 };
-    if (them) them = { ...them, coins: them.coins + WELL_RACED_COINS };
   } else {
     you = { ...you, coins: you.coins + WELL_RACED_COINS };
-    // A classmate who wins at home gets the same win as the challenger would: race points, not a prize.
+    // A classmate who wins at home gets the win counted (for Race Winner), not a prize.
     if (them) them = { ...them, racesWon: them.racesWon + 1 };
   }
   return { challenger: you, defender: them, prize };

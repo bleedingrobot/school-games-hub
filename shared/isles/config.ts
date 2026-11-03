@@ -165,3 +165,24 @@ export const KEEPERS = [
 
 /** An island under this share of its class's middle size gets one extra chunk in its drift. */
 export const SMALL_ISLAND = 0.7;
+
+// --- Classmates (docs/ISLES-COSY-PLAN.md, section 11) ----------------------------------------------------------------
+
+/** The gifts a pupil can leave on a classmate's island. Each gives the classmate GIFT_COINS and costs nothing
+ * (James, 3 Nov 2026: free to give, once a day). */
+export const GIFTS = [
+  { id: 'flowers', name: 'a bunch of flowers' },
+  { id: 'cake', name: 'a cake' },
+  { id: 'lantern', name: 'a paper lantern' },
+] as const;
+export type GiftId = (typeof GIFTS)[number]['id'];
+export const GIFT_COINS = 10;
+/** Gifts a pupil can send each day, and gifts an island can be given each day. */
+export const GIFTS_SENT_PER_DAY = 1;
+export const GIFTS_RECEIVED_PER_DAY = 3;
+
+/** The class news board: good news only. An island reaching one of these sizes makes the news. */
+export const NEWS_SPOTS = [8, 12, 16];
+/** The news board shows the newest NEWS_SHOWN items from the last NEWS_DAYS days. */
+export const NEWS_DAYS = 7;
+export const NEWS_SHOWN = 12;

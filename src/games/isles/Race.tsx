@@ -1,5 +1,5 @@
 /**
- * A Sky Race against the Gull Riders (docs/ISLES-PLAN.md, section 4). The questions come during the race: the boats
+ * A Sky Race against the Gull Riders or a classmate's island (docs/ISLES-PLAN.md, section 4). The questions come during the race: the boats
  * sail a stretch, stop, a question pops up, and a right answer is a gust of wind for your boat on the next stretch.
  * After the last stretch comes the prize. Nobody loses anything.
  *
@@ -49,17 +49,26 @@ function resumeAt(race: PublicRace | null): number {
 /** Which stretch the boats are on (or have just finished) at this point of the path, from 1. */
 const stretchAt = (point: number) => Math.min(STRETCHES, [...RACE_STOPS, RACE_LEGS].findIndex((stop) => point <= stop) + 1);
 
-/** Who's ahead, for a screen reader at each stop. */
-function whoLeads(paths: RaceSoFar, point: number): string {
-  const gap = (paths.youPath[point] ?? 0) - (paths.themPath[point] ?? 0);
-  return Math.abs(gap) < 0.01 ? 'The boats are side by side.' : gap > 0 ? 'Your boat is ahead.' : 'The Gull Riders are ahead.';
+/** The words for the other boat: the Gull Riders, or a classmate's island. */
+function rivalWords(name: string | undefined) {
+  return name
+    ? { who: `${name}'s island`, title: `${name}'s island`, boat: `${name}'s boat`, ahead: `${name}'s boat is ahead.`, ready: `${name}'s island is getting ready…`, faster: `${name}'s island was faster this time.` }
+    : { who: 'The Gull Riders', title: 'the Gull Riders', boat: "The Gull Riders' boat", ahead: 'The Gull Riders are ahead.', ready: 'The Gull Riders are getting ready…', faster: 'The Gull Riders were faster this time.' };
 }
 
-export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Back to my island' }: {
+/** Who's ahead, for a screen reader at each stop. */
+function whoLeads(paths: RaceSoFar, point: number, ahead: string): string {
+  const gap = (paths.youPath[point] ?? 0) - (paths.themPath[point] ?? 0);
+  return Math.abs(gap) < 0.01 ? 'The boats are side by side.' : gap > 0 ? 'Your boat is ahead.' : ahead;
+}
+
+export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabel = 'Back to my island' }: {
   backend: IslesBackend;
   /** A race already open (carried on from the same stop, with the same questions), or null to start one. */
   open: PublicRace | null;
   keeper: string | null;
+  /** A classmate's island to race (left out: the Gull Riders). */
+  rival?: { id: string; name: string; keeper: string | null };
   onDone: (island: Island | null) => void;
   /** The way-back button's words ("Back to my turn" for a race from a turn's last step). */
   backLabel?: string;
@@ -80,7 +89,7 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
   useEffect(() => {
     if (race || started.current) return;
     started.current = true;
-    backend.send({ action: 'raceStart', opponent: 'gull-riders' }).then(
+    backend.send({ action: 'raceStart', opponent: rival?.id ?? 'gull-riders' }).then(
       (r) => {
         const got = r.race as PublicRace;
         setRace(got);
@@ -88,11 +97,15 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
       },
       (e: Error) => onProblem(e.message),
     );
-  }, [backend, race, onProblem]);
+  }, [backend, race, onProblem, rival]);
 
   const paths = pathsOf(race);
   const end = paths ? paths.youPath.length - 1 : 0;
   const result = race?.result ?? null;
+  // Only the start of a race (and a load) says whose island it is: the name is kept for the rest of the race.
+  const rivalName = useRef(open?.opponentName ?? rival?.name);
+  if (race?.opponentName) rivalName.current = race.opponentName;
+  const them = rivalWords(rivalName.current);
   const next = race?.questions.find((q) => !(String(q.slot) in (race.answered ?? {})));
   const atStop = !!race && sailing && point >= end;
   const asking = atStop && !!next && !result;
@@ -131,9 +144,9 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
   const gust = !!paths && sailing && point > 0 && paths.gustLegs.includes(point - 1) && !asking;
   const title = over
     ? (result.won ? 'You won the Sky Race!' : 'Well raced!')
-    : sailing ? `Sky Race: stretch ${stretch} of ${STRETCHES}` : 'Sky Race: you and the Gull Riders';
+    : sailing ? `Sky Race: stretch ${stretch} of ${STRETCHES}` : `Sky Race: you and ${them.title}`;
   const pipLine = !race
-    ? 'The Gull Riders are getting ready…'
+    ? them.ready
     : !sailing
       ? point === 0
         ? `The race stops for questions on the way. Each right answer is a gust of wind for your boat.`
@@ -169,13 +182,14 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
           </div>
         </div>
         <div className="si-lane">
-          <div className="si-boat" style={{ left: at(paths?.themPath) }} aria-label="The Gull Riders' boat" role="img">
+          <div className="si-boat" style={{ left: at(paths?.themPath) }} aria-label={them.boat} role="img">
             <Art src={boatArt('blue')} fallback={<span className="si-boat__drawn si-boat__drawn--blue" />} />
+            {rival?.keeper && keeperArt(rival.keeper, true) && <img className="si-boat__keeper" src={keeperArt(rival.keeper, true)} alt="" />}
           </div>
         </div>
         <div className="si-finish" aria-hidden="true" />
       </div>
-      <p className="sr-only" aria-live="polite">{paths && sailing && point >= end ? whoLeads(paths, point) : ''}</p>
+      <p className="sr-only" aria-live="polite">{paths && sailing && point >= end ? whoLeads(paths, point, them.ahead) : ''}</p>
       {over && (
         <div className="si-panel si-raceresult">
           <div className="si-pipsays si-race__bar">
@@ -183,12 +197,13 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
             <p>
               {result.won
                 ? `You win ${plural(prize.coins, 'coin')}${prize.crystals ? ` and ${plural(prize.crystals, 'sky crystal')}` : ''}!`
-                : `The Gull Riders were faster this time. You still get ${plural(WELL_RACED_COINS, 'coin')} for racing well.`}
+                : `${them.faster} You still get ${plural(WELL_RACED_COINS, 'coin')} for racing well.`}
+              {rivalName.current && ` ${rivalName.current}'s island gets ${plural(WELL_RACED_COINS, 'coin')} for racing well too.`}
             </p>
             <button type="button" className="button button--primary si-race__go" onClick={() => onDone(island)}>{backLabel}</button>
           </div>
           <Working who="Your boat" speed={result.you} boats={race?.you.boats ?? 0} home={false} />
-          <Working who="The Gull Riders" speed={result.them} boats={race?.them.boats ?? 0} home />
+          <Working who={them.who} speed={result.them} boats={race?.them.boats ?? 0} home />
         </div>
       )}
       {race && next && asking && (

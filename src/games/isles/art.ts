@@ -63,6 +63,8 @@ export const WALKERS = 6;
 export const walkerArt = (i: number) => file(`walker-${(i % WALKERS) + 1}`);
 export const crystalArt = () => file('icon-crystal');
 export const coinArt = () => file('icon-coin');
+/** The three gifts a pupil can leave on a classmate's island (GIFTS). */
+export const giftArt = (id: string) => file(`gift-${id}`);
 
 export const buildingArt = (kind: PlotOrEmpty, level: number) => (kind === 'empty' ? file('bld-empty') : file(`bld-${kind}-${Math.max(1, level)}`));
 

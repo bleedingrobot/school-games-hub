@@ -6849,6 +6849,28 @@ const NO_ANSWER_GAP = .5;
 /** The Sky Keeper portraits a pupil can choose from (src/games/isles/art/keepers/): 20 boys and 20 girls. Just for fun:
 * a keeper has no powers. The server only saves an id from this list. */
 const KEEPERS = [...Array.from({ length: 20 }, (_, i) => `b${String(i + 1).padStart(2, "0")}`), ...Array.from({ length: 20 }, (_, i) => `g${String(i + 1).padStart(2, "0")}`)];
+/** The gifts a pupil can leave on a classmate's island. Each gives the classmate GIFT_COINS and costs nothing
+* (James, 3 Nov 2026: free to give, once a day). */
+const GIFTS = [
+	{
+		id: "flowers",
+		name: "a bunch of flowers"
+	},
+	{
+		id: "cake",
+		name: "a cake"
+	},
+	{
+		id: "lantern",
+		name: "a paper lantern"
+	}
+];
+/** The class news board: good news only. An island reaching one of these sizes makes the news. */
+const NEWS_SPOTS = [
+	8,
+	12,
+	16
+];
 //#endregion
 //#region shared/isles/engine.ts
 /**
@@ -7368,6 +7390,10 @@ function settleRace(challenger, defender, result) {
 		coins: 0,
 		crystals: 0
 	};
+	if (them) them = {
+		...them,
+		coins: them.coins + 5
+	};
 	if (result.won) {
 		prize = racePrize(challenger.winsToday);
 		you = {
@@ -7376,10 +7402,6 @@ function settleRace(challenger, defender, result) {
 			crystals: you.crystals + prize.crystals,
 			winsToday: you.winsToday + 1,
 			racesWon: you.racesWon + 1
-		};
-		if (them) them = {
-			...them,
-			coins: them.coins + 5
 		};
 	} else {
 		you = {
@@ -7399,6 +7421,19 @@ function settleRace(challenger, defender, result) {
 }
 //#endregion
 //#region shared/isles/server.ts
+const ACTIONS = [
+	"load",
+	"answer",
+	"turn",
+	"raceStart",
+	"raceAnswer",
+	"raceFinish",
+	"guideDone",
+	"keeper",
+	"sky",
+	"visit",
+	"gift"
+];
 /** Points (docs/ISLES-PLAN.md, section 6.5). The hub caps points at 40 a day across every game. */
 const POINTS = {
 	turn: 1,
@@ -7432,6 +7467,12 @@ const PROBLEM_TEXT = {
 	"challenged-enough": "That island has raced enough today.",
 	"own-island": "You can't race your own island."
 };
+/** Why a gift can't be left now, in words. */
+const GIFT_TEXT = {
+	"sent-today": "You've left a gift today. You can leave another tomorrow!",
+	"given-enough": "That island has had lots of gifts today. Try another island!",
+	"not-classmate": "That island isn't in your class."
+};
 const ok = (body) => ({
 	status: 200,
 	body
@@ -7458,6 +7499,52 @@ const raceRef = (race) => `race:${race}`;
 function islandToday(saved, today, classMiddle) {
 	return saved.day >= today ? saved.island : newDay(saved.island, today - saved.day, classMiddle);
 }
+/** A classmate's island as it is today: today's turns and races, and the challenges started against it today. */
+function classmateToday(c, today) {
+	return {
+		...c.day >= today ? c.island : newDay(c.island, today - c.day, 0),
+		challengedToday: c.challengedToday
+	};
+}
+/** What anyone may see of an island on a visit or the class sky: never its coins, crystals or maths. */
+function islandLook(island) {
+	return {
+		spots: island.spots,
+		decorations: island.decorations,
+		islanders: island.islanders,
+		lighthouse: island.lighthouse
+	};
+}
+/** Why a gift can't be left on this classmate's island now (null: it can). */
+function giftProblem(c, sentToday) {
+	if (sentToday >= 1) return "sent-today";
+	return c.giftsToday >= 3 ? "given-enough" : null;
+}
+/** The good news a played turn makes for the class news board. */
+function turnNews(before, after, actions) {
+	const news = [];
+	for (const spots of NEWS_SPOTS) if (spotCount(before) < spots && spotCount(after) >= spots) news.push({
+		kind: "spots",
+		spots
+	});
+	if (before.lighthouse < LIGHTHOUSE.length && after.lighthouse >= LIGHTHOUSE.length) news.push({ kind: "lighthouse" });
+	const put = actions.find((a) => a.kind === "decorate");
+	if (put) news.push({
+		kind: "decoration",
+		id: put.id
+	});
+	return news;
+}
+/** The post opened into the island: its coins, and a classmate's race lost at this island counted as a win here. */
+function openedPost(island, post) {
+	const coins = post.reduce((sum, p) => sum + p.coins, 0);
+	const homeWins = post.filter((p) => p.kind === "raced" && p.homeWin).length;
+	return {
+		...island,
+		coins: island.coins + coins,
+		racesWon: island.racesWon + homeWins
+	};
+}
 function shown(set) {
 	return set.questions.map((q, slot) => ({
 		...publicQuestion(q, slot),
@@ -7477,10 +7564,11 @@ function raceMarks(questions) {
 * What the browser is shown of a race: no seed. An open race comes with the race so far, up to the next stop (worked
 * out here from the seed and the marked answers, never by the browser); a finished one with its whole result.
 */
-function publicRace(race, questions) {
+function publicRace(race, questions, opponentName) {
 	return {
 		id: race.id,
 		opponent: race.opponent,
+		...opponentName ? { opponentName } : {},
 		starter: race.starter,
 		you: race.you,
 		them: race.them,
@@ -7570,16 +7658,7 @@ async function handleIsles(services, player, body) {
 	if (!settings.enabled) return no(403, "Sky Isles is not switched on for your class.", { code: "game-off" });
 	const today = nzDay(services.now());
 	const action = body.action;
-	if (![
-		"load",
-		"answer",
-		"turn",
-		"raceStart",
-		"raceAnswer",
-		"raceFinish",
-		"guideDone",
-		"keeper"
-	].includes(action)) return unreadable();
+	if (!ACTIONS.includes(action)) return unreadable();
 	if (action === "guideDone") return await services.guideDone(player) === "busy" ? busy() : ok({ guideDone: true });
 	if (action === "keeper") {
 		if (typeof body.keeper !== "string" || !KEEPERS.includes(body.keeper)) return no(400, "That Sky Keeper isn't one of the portraits.");
@@ -7598,7 +7677,25 @@ async function handleIsles(services, player, body) {
 		if (!state.saved?.island) return busy();
 	}
 	const saved = state.saved;
-	const island = islandToday(saved, today, state.classMiddle);
+	let island = islandToday(saved, today, state.classMiddle);
+	let opened = [];
+	if (action === "load" && state.post.length) {
+		const withPost = openedPost(island, state.post);
+		const kept = await services.openPost(player, saved.version, withPost, today, state.post.map((p) => p.id));
+		if (kept === "busy") return busy();
+		if (kept) {
+			island = withPost;
+			saved.version++;
+			opened = state.post;
+		} else {
+			const now = await services.load(player);
+			if (now === "busy") return busy();
+			if (now.saved?.island && now.saved.seed === saved.seed) {
+				Object.assign(saved, now.saved);
+				island = islandToday(saved, today, now.classMiddle);
+			}
+		}
+	}
 	/** This turn's question set, made the first time it's needed (none if the maths can't be read). */
 	const turnQuestions = async (turn) => {
 		const found = await services.questions(player, { ref: turnRef(saved.seed, turn) });
@@ -7633,14 +7730,31 @@ async function handleIsles(services, player, body) {
 			...extra
 		});
 	};
+	/** A classmate's name, for an open race against their island (a classmate who left the class: "A classmate"). */
+	const opponentName = async (race) => {
+		if (race.opponent === "gull-riders") return void 0;
+		const sky = await services.classSky(player, today);
+		if (sky === "busy") return "busy";
+		return sky.classmates.find((c) => c.id === race.opponent)?.name ?? "A classmate";
+	};
 	if (action === "load") {
 		let openRace = null;
 		if (state.openRace) {
 			const set = await services.questions(player, { ref: raceRef(state.openRace.id) });
-			if (set === "busy") return busy();
-			openRace = publicRace(state.openRace, set);
+			const name = await opponentName(state.openRace);
+			if (set === "busy" || name === "busy") return busy();
+			openRace = publicRace(state.openRace, set, name);
 		}
-		return view(island, { openRace });
+		const post = opened.map(({ fromName, coins, ...p }) => ({
+			fromName,
+			coins,
+			kind: p.kind,
+			...p.kind === "gift" ? { gift: p.gift } : { homeWin: p.homeWin }
+		}));
+		return view(island, {
+			openRace,
+			post
+		});
 	}
 	if (action === "answer") {
 		const a = readAnswer(body);
@@ -7674,24 +7788,103 @@ async function handleIsles(services, player, body) {
 		if (kept === "busy") return busy();
 		if (!kept) return again(services, player, today, view, saved, island.turn);
 		await givePoints(services, player, saved.seed, island, result.island);
+		const news = turnNews(island, result.island, actions);
+		if (news.length) await services.addNews(player, today, news);
 		return view(result.island, { report: result.report });
 	}
+	if (action === "sky" || action === "visit" || action === "gift") {
+		const sky = await services.classSky(player, today);
+		if (sky === "busy") return busy();
+		const shownMate = (c) => {
+			const theirs = classmateToday(c, today);
+			const race = settings.races ? raceProblem(island, {
+				id: c.id,
+				island: theirs
+			}, player) : null;
+			const gift = giftProblem(c, sky.giftsSentToday);
+			return {
+				id: c.id,
+				name: c.name,
+				keeper: c.keeper,
+				spots: spotCount(theirs),
+				decorations: theirs.decorations.filter((d) => d.place !== null).length,
+				lighthouse: theirs.lighthouse,
+				raceWhy: !settings.races ? "Sky Races are switched off for your class." : race ? PROBLEM_TEXT[race] : null,
+				giftWhy: gift ? GIFT_TEXT[gift] : null,
+				look: islandLook(theirs)
+			};
+		};
+		if (action === "sky") {
+			const news = await services.news(player, today - 7 + 1);
+			if (news === "busy") return busy();
+			return ok({
+				classmates: sky.classmates.map((c) => {
+					const { look: _l, ...rest } = shownMate(c);
+					return rest;
+				}),
+				news,
+				giftsSentToday: sky.giftsSentToday
+			});
+		}
+		const who = action === "visit" ? body.who : body.to;
+		if (typeof who !== "string") return unreadable();
+		const mate = sky.classmates.find((c) => c.id === who);
+		if (!mate) return no(404, who === player ? "That's your own island!" : GIFT_TEXT["not-classmate"], { code: "not-classmate" });
+		if (action === "visit") return ok({ visit: shownMate(mate) });
+		if (!GIFTS.some((g) => g.id === body.gift)) return no(400, "That gift isn't one of the three.");
+		const problem = giftProblem(mate, sky.giftsSentToday);
+		if (problem) return no(409, GIFT_TEXT[problem], { code: problem });
+		const sent = await services.sendGift(player, mate.id, {
+			kind: "gift",
+			gift: body.gift,
+			coins: 10
+		}, today);
+		if (sent === "busy") return busy();
+		if (sent !== "sent") return no(409, GIFT_TEXT[sent], { code: sent });
+		return ok({
+			sent: true,
+			visit: shownMate({
+				...mate,
+				giftsToday: mate.giftsToday + 1
+			}),
+			giftsSentToday: sky.giftsSentToday + 1
+		});
+	}
 	if (action === "raceStart") {
-		if (body.opponent !== "gull-riders") return no(400, "Races against classmates are coming soon. Race the Gull Riders!", { code: "not-yet" });
 		if (state.openRace) {
 			const set = await services.questions(player, { ref: raceRef(state.openRace.id) });
-			if (set === "busy") return busy();
-			return ok({ race: publicRace(state.openRace, set) });
+			const name = await opponentName(state.openRace);
+			if (set === "busy" || name === "busy") return busy();
+			return ok({ race: publicRace(state.openRace, set, name) });
 		}
-		const problem = raceProblem(island, GULL_RIDERS, player);
+		let opponent = GULL_RIDERS;
+		let rivalName;
+		if (body.opponent !== "gull-riders") {
+			if (typeof body.opponent !== "string") return unreadable();
+			if (body.opponent === player) return no(400, PROBLEM_TEXT["own-island"], { code: "own-island" });
+			const sky = await services.classSky(player, today);
+			if (sky === "busy") return busy();
+			const mate = sky.classmates.find((c) => c.id === body.opponent);
+			if (!mate) return no(404, GIFT_TEXT["not-classmate"], { code: "not-classmate" });
+			opponent = {
+				id: mate.id,
+				island: classmateToday(mate, today)
+			};
+			rivalName = mate.name;
+		}
+		const problem = raceProblem(island, opponent, player);
 		if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
 		const you = racerOf(island);
+		const them = opponent === "gull-riders" ? gullRiders(you) : {
+			...racerOf(opponent.island),
+			breeze: false
+		};
 		const race = {
 			seed: services.randomHex(16),
-			opponent: GULL_RIDERS,
+			opponent: opponent === "gull-riders" ? GULL_RIDERS : opponent.id,
 			starter: false,
 			you,
-			them: gullRiders(you)
+			them
 		};
 		const id = await services.raceStart(player, race, today, island.turn);
 		if (id === "busy") return busy();
@@ -7710,7 +7903,7 @@ async function handleIsles(services, player, body) {
 			status: "open",
 			result: null,
 			prize: null
-		}, set) });
+		}, set, rivalName) });
 	}
 	const raceId = body.race;
 	if (!Number.isInteger(raceId)) return unreadable();
@@ -7754,8 +7947,20 @@ async function handleIsles(services, player, body) {
 	if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
 	const marks = raceMarks(set);
 	const result = runRace(race.seed, race.you, race.them, marks);
-	const settled = settleRace(island, null, result);
-	const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
+	const home = race.opponent === "gull-riders" ? null : {
+		id: race.opponent,
+		island: newIsland()
+	};
+	const settled = settleRace(island, home, result);
+	const post = home && settled.defender ? {
+		to: home.id,
+		post: {
+			kind: "raced",
+			homeWin: settled.defender.racesWon > home.island.racesWon,
+			coins: settled.defender.coins - home.island.coins
+		}
+	} : null;
+	const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize, post);
 	if (kept === "busy") return busy();
 	if (!kept) {
 		const now = await services.race(player, race.id);
@@ -7766,7 +7971,13 @@ async function handleIsles(services, player, body) {
 		});
 		return no(409, "Your island has moved on. Here's how it is now.", { code: "stale" });
 	}
-	if (result.won) await services.awardPoints(player, POINTS.raceWon, `isles:race:${race.id}`);
+	if (result.won) {
+		await services.awardPoints(player, POINTS.raceWon, `isles:race:${race.id}`);
+		await services.addNews(player, today, [{
+			kind: "race",
+			gullRiders: race.opponent === GULL_RIDERS
+		}]);
+	}
 	return ok({
 		race: publicRace({
 			...race,
@@ -7966,13 +8177,73 @@ Deno.serve(makeHandler({
 	async load(player) {
 		const r = await call("isles_load", { player });
 		if (r === "busy") return r;
+		const post = (r.post ?? []).map((p) => p.kind === "gift" ? {
+			id: Number(p.id),
+			from: p.from,
+			fromName: p.fromName,
+			coins: p.coins,
+			kind: "gift",
+			gift: p.gift
+		} : {
+			id: Number(p.id),
+			from: p.from,
+			fromName: p.fromName,
+			coins: p.coins,
+			kind: "raced",
+			homeWin: p.homeWin
+		});
 		return {
 			saved: r.saved,
 			classMiddle: Number(r.classMiddle) || 0,
 			openRace: raceOf(r.openRace),
-			racesThisSeason: r.racesThisSeason
+			racesThisSeason: r.racesThisSeason,
+			post
 		};
 	},
+	openPost: (player, expectedVersion, island, day, ids) => call("record_isles_open_post", {
+		player,
+		expected_version: expectedVersion,
+		island,
+		day,
+		ids
+	}),
+	async classSky(player, day) {
+		const r = await call("isles_class", {
+			player,
+			day
+		});
+		if (r === "busy") return r;
+		return {
+			classmates: r.classmates.map((c) => ({
+				...c,
+				challengedToday: Number(c.challengedToday),
+				giftsToday: Number(c.giftsToday)
+			})),
+			giftsSentToday: Number(r.giftsSentToday)
+		};
+	},
+	async sendGift(player, to, post, day) {
+		const r = await call("record_isles_gift", {
+			player,
+			to_player: to,
+			gift: post.gift,
+			coins: post.coins,
+			day
+		});
+		return r === "sent" || r === "sent-today" || r === "given-enough" || r === "not-classmate" ? r : "busy";
+	},
+	async addNews(player, day, news) {
+		const { error } = await admin.rpc("record_isles_news", {
+			player,
+			day,
+			news
+		});
+		if (error) console.error(`isles: news failed (${error.code ?? "unknown"})`);
+	},
+	news: (player, since) => call("isles_news_board", {
+		player,
+		since
+	}),
 	start: (player, seed, island, day) => call("record_isles_start", {
 		player,
 		seed,
@@ -8027,14 +8298,17 @@ Deno.serve(makeHandler({
 		});
 		return r === "busy" ? r : raceOf(r);
 	},
-	raceFinish: (player, id, expectedVersion, island, day, result, prize) => call("record_isles_race_finish", {
+	raceFinish: (player, id, expectedVersion, island, day, result, prize, post) => call("record_isles_race_finish", {
 		player,
 		race: id,
 		expected_version: expectedVersion,
 		island,
 		day,
 		result,
-		prize
+		prize,
+		post_to: post?.to ?? null,
+		post_home_win: post?.post.homeWin ?? false,
+		post_coins: post?.post.coins ?? 0
 	}),
 	guideDone: (player) => call("record_isles_guide_done", { player }),
 	keeper: (player, keeper) => call("record_isles_keeper", {

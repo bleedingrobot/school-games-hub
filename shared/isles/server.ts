@@ -3,31 +3,41 @@
  * function (supabase/functions/isles/handler.ts) checks the sign-in and the rate first; the preview's trial backend
  * (stage S.3) calls this with services that keep everything in the browser, so both run exactly the same rules.
  *
- *   load        the island (made on first play, or after a New Season), rolled to today; this turn's question
- *               (without its answer); any Sky Race still open;
+ *   load        the island (made on first play, or after a New Season), rolled to today, with any post opened (gifts
+ *               and "well raced" coins from classmates); this turn's question (without its answer); any Sky Race
+ *               still open;
  *   answer      marks this turn's question against the stored one, once, and records it for the maths records;
  *   turn        checks the turn's choices and plays the turn with the island's own random numbers and the fair wind
  *               the server marked, keeps it (a turn is played once), and makes the next turn's question;
- *   raceStart   a Sky Race against the Gull Riders, with three questions,
- *               and the race's first stretch;
+ *   raceStart   a Sky Race against the Gull Riders or a classmate's island, with three questions, and the race's
+ *               first stretch;
  *   raceAnswer  marks one race question, once and in order, and sends the race up to the next stop;
  *   raceFinish  works the race out from its seed, the two boats and the answers marked right, and gives the prize
  *               (with the last stretch);
  *   guideDone   the guided first go is finished (or skipped);
- *   keeper      the pupil's Sky Keeper portrait (an id from KEEPERS only), kept through New Season.
+ *   keeper      the pupil's Sky Keeper portrait (an id from KEEPERS only), kept through New Season;
+ *   sky         the class sky: classmates' islands (name, Sky Keeper, size, decorations), who can be raced or given a
+ *               gift now (and why not), and the class news board;
+ *   visit       one classmate's island, look only: buildings, decorations and islanders, never coins or maths;
+ *   gift        leaves a classmate a free gift (GIFTS), once a day.
  *
+ * A pupil never writes another pupil's island. A gift, or the "well raced" coins from a classmate's race, goes in the
+ * classmate's post, and their own server load opens it into their island (so two pupils can't overwrite each other).
  * Nothing that counts comes from the browser: the questions and answers are the server's, the random numbers come from
- * the island's seed (and each race's), and the browser never sees a seed. Races against classmates, visits, gifts and
- * the news board are stage S.4 (docs/ISLES-COSY-PLAN.md).
+ * the island's seed (and each race's), and the browser never sees a seed.
  */
 import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { DECORATIONS, GRAND_ISLE, KEEPERS, PLOT_KINDS, RACE_QUESTIONS } from './config';
+import {
+  DECORATIONS, GIFT_COINS, GIFTS, GIFTS_RECEIVED_PER_DAY, GIFTS_SENT_PER_DAY, GRAND_ISLE, KEEPERS, LIGHTHOUSE, NEWS_DAYS, NEWS_SPOTS, PLOT_KINDS,
+  RACE_QUESTIONS, type DecorationId, type GiftId,
+} from './config';
 import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
-export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper';
+export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper' | 'sky' | 'visit' | 'gift';
+const ACTIONS: readonly string[] = ['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper', 'sky', 'visit', 'gift'];
 
 /** The pupil's saved island row. `island` is null after a New Season (a new one is made on the next load). */
 export interface SavedIsland {
@@ -66,6 +76,30 @@ export interface StoredRace {
   prize: { coins: number; crystals: number } | null;
 }
 
+/** Something left in a pupil's post by a classmate, opened into their island on their next load. */
+export type Post = { id: number; from: string; fromName: string; coins: number } & ({ kind: 'gift'; gift: GiftId } | { kind: 'raced'; homeWin: boolean });
+/** What goes in the post: a gift, or what a classmate's race against this island brought it. */
+export type PostToSend = { kind: 'gift'; gift: GiftId; coins: number } | { kind: 'raced'; homeWin: boolean; coins: number };
+
+/** A classmate's island, as the server reads it (never sent to the browser as it is). */
+export interface Classmate {
+  id: string;
+  name: string;
+  keeper: string | null;
+  /** The day the island was last saved: it is rolled to today before it's used. */
+  day: number;
+  island: Island;
+  /** Times classmates have started a race against this island today. */
+  challengedToday: number;
+  /** Gifts this island has been given today. */
+  giftsToday: number;
+}
+
+/** Good news for the class news board. It never says who lost, or anything about maths. */
+export type NewsKind = { kind: 'spots'; spots: number } | { kind: 'lighthouse' } | { kind: 'decoration'; id: DecorationId } | { kind: 'race'; gullRiders: boolean };
+/** `me`: the pupil's own news. */
+export type NewsItem = NewsKind & { name: string; day: number; me: boolean };
+
 export interface IslesSettings {
   enabled: boolean;
   races: boolean;
@@ -80,7 +114,20 @@ export interface IslesServices {
    * The saved island (null for a new pupil), the middle island size in the pupil's class (for the small-island extra
    * chunk), the pupil's open race, and how many races they've finished this season.
    */
-  load(player: string): Promise<{ saved: SavedIsland | null; classMiddle: number; openRace: StoredRace | null; racesThisSeason: number } | 'busy'>;
+  load(player: string): Promise<{ saved: SavedIsland | null; classMiddle: number; openRace: StoredRace | null; racesThisSeason: number; post: Post[] } | 'busy'>;
+  /** Opens the post (by id) into the island, only if the island is still at `expectedVersion` and the post unopened. */
+  openPost(player: string, expectedVersion: number, island: Island, day: number, ids: number[]): Promise<boolean | 'busy'>;
+  /** The other islands in the pupil's class (pupils with an island only), and how many gifts the pupil sent today. */
+  classSky(player: string, day: number): Promise<{ classmates: Classmate[]; giftsSentToday: number } | 'busy'>;
+  /**
+   * Leaves a gift in a classmate's post, only if they are in the pupil's class and neither has used up today's gifts
+   * (GIFTS_SENT_PER_DAY, GIFTS_RECEIVED_PER_DAY).
+   */
+  sendGift(player: string, to: string, post: PostToSend & { kind: 'gift' }, day: number): Promise<'sent' | 'sent-today' | 'given-enough' | 'not-classmate' | 'busy'>;
+  /** Adds good news to the class news board. A failure is only logged. */
+  addNews(player: string, day: number, news: NewsKind[]): Promise<void>;
+  /** The class news board: the newest items from `since` on. */
+  news(player: string, since: number): Promise<NewsItem[] | 'busy'>;
   /** Keeps a new island, only if the pupil has none (or New Season cleared it). False if one is already there. */
   start(player: string, seed: string, island: Island, day: number): Promise<boolean | 'busy'>;
   /** Keeps a played turn, only if the island is still at `expectedVersion` (false if not: it was already played). */
@@ -95,8 +142,14 @@ export interface IslesServices {
   raceStart(player: string, race: Omit<StoredRace, 'id' | 'status' | 'result' | 'prize'>, day: number, turn: number): Promise<number | null | 'busy'>;
   /** The pupil's own race (null if there's no such race of theirs). */
   race(player: string, id: number): Promise<StoredRace | null | 'busy'>;
-  /** Finishes an open race and keeps the island after it, only if the island is still at `expectedVersion`. */
-  raceFinish(player: string, id: number, expectedVersion: number, island: Island, day: number, result: RaceResult, prize: { coins: number; crystals: number }): Promise<boolean | 'busy'>;
+  /**
+   * Finishes an open race and keeps the island after it, only if the island is still at `expectedVersion`. A race
+   * against a classmate also leaves what it brought them in their post.
+   */
+  raceFinish(
+    player: string, id: number, expectedVersion: number, island: Island, day: number, result: RaceResult, prize: { coins: number; crystals: number },
+    post: { to: string; post: PostToSend & { kind: 'raced' } } | null,
+  ): Promise<boolean | 'busy'>;
   guideDone(player: string): Promise<boolean | 'busy'>;
   /** Keeps the pupil's Sky Keeper (an id from KEEPERS). False if the pupil has no island yet. */
   keeper(player: string, keeper: string): Promise<boolean | 'busy'>;
@@ -153,6 +206,13 @@ export const PROBLEM_TEXT: Record<Problem | RaceProblem, string> = {
   'own-island': "You can't race your own island.",
 };
 
+/** Why a gift can't be left now, in words. */
+export const GIFT_TEXT = {
+  'sent-today': "You've left a gift today. You can leave another tomorrow!",
+  'given-enough': 'That island has had lots of gifts today. Try another island!',
+  'not-classmate': "That island isn't in your class.",
+} as const;
+
 const ok = (body: Record<string, unknown>): IslesReply => ({ status: 200, body });
 const no = (status: number, error: string, extra: Record<string, unknown> = {}): IslesReply => ({ status, body: { error, ...extra } });
 const busy = () => no(503, "The sky post couldn't get through just now. Try again in a moment.");
@@ -172,6 +232,42 @@ export const raceRef = (race: number) => `race:${race}`;
 /** The island as it is today: a new day gives fresh turns and drift (unused ones pile up a little). */
 export function islandToday(saved: SavedIsland & { island: Island }, today: number, classMiddle: number): Island {
   return saved.day >= today ? saved.island : newDay(saved.island, today - saved.day, classMiddle);
+}
+
+/** A classmate's island as it is today: today's turns and races, and the challenges started against it today. */
+export function classmateToday(c: Classmate, today: number): Island {
+  const island = c.day >= today ? c.island : newDay(c.island, today - c.day, 0);
+  return { ...island, challengedToday: c.challengedToday };
+}
+
+/** What anyone may see of an island on a visit or the class sky: never its coins, crystals or maths. */
+export function islandLook(island: Island) {
+  return { spots: island.spots, decorations: island.decorations, islanders: island.islanders, lighthouse: island.lighthouse };
+}
+export type IslandLook = ReturnType<typeof islandLook>;
+
+/** Why a gift can't be left on this classmate's island now (null: it can). */
+export function giftProblem(c: Pick<Classmate, 'giftsToday'>, sentToday: number): keyof typeof GIFT_TEXT | null {
+  if (sentToday >= GIFTS_SENT_PER_DAY) return 'sent-today';
+  return c.giftsToday >= GIFTS_RECEIVED_PER_DAY ? 'given-enough' : null;
+}
+
+/** The good news a played turn makes for the class news board. */
+export function turnNews(before: Island, after: Island, actions: Action[]): NewsKind[] {
+  const news: NewsKind[] = [];
+  for (const spots of NEWS_SPOTS) if (spotCount(before) < spots && spotCount(after) >= spots) news.push({ kind: 'spots', spots });
+  if (before.lighthouse < LIGHTHOUSE.length && after.lighthouse >= LIGHTHOUSE.length) news.push({ kind: 'lighthouse' });
+  // One decoration a turn makes the news, so a busy turn doesn't fill the board.
+  const put = actions.find((a): a is Extract<Action, { kind: 'decorate' }> => a.kind === 'decorate');
+  if (put) news.push({ kind: 'decoration', id: put.id });
+  return news;
+}
+
+/** The post opened into the island: its coins, and a classmate's race lost at this island counted as a win here. */
+export function openedPost(island: Island, post: Post[]): Island {
+  const coins = post.reduce((sum, p) => sum + p.coins, 0);
+  const homeWins = post.filter((p) => p.kind === 'raced' && p.homeWin).length;
+  return { ...island, coins: island.coins + coins, racesWon: island.racesWon + homeWins };
 }
 
 /** A question as the browser sees it: no answer, and the set's id to send back. */
@@ -195,10 +291,11 @@ export function raceMarks(questions: QuestionSet | null): boolean[] {
  * What the browser is shown of a race: no seed. An open race comes with the race so far, up to the next stop (worked
  * out here from the seed and the marked answers, never by the browser); a finished one with its whole result.
  */
-export function publicRace(race: StoredRace, questions: QuestionSet | null) {
+export function publicRace(race: StoredRace, questions: QuestionSet | null, opponentName?: string) {
   return {
     id: race.id,
     opponent: race.opponent,
+    ...(opponentName ? { opponentName } : {}),
     starter: race.starter,
     you: race.you,
     them: race.them,
@@ -273,7 +370,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
   const today = nzDay(services.now());
 
   const action = body.action;
-  if (!['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper'].includes(action as string)) return unreadable();
+  if (!ACTIONS.includes(action as string)) return unreadable();
   if (action === 'guideDone') {
     const done = await services.guideDone(player);
     return done === 'busy' ? busy() : ok({ guideDone: true });
@@ -300,7 +397,28 @@ export async function handleIsles(services: IslesServices, player: string, body:
     if (!state.saved?.island) return busy();
   }
   const saved = state.saved as SavedIsland & { island: Island };
-  const island = islandToday(saved, today, state.classMiddle);
+  let island = islandToday(saved, today, state.classMiddle);
+
+  // Post from classmates is opened on load. If the island moved on meanwhile, it waits for the next load.
+  let opened: Post[] = [];
+  if (action === 'load' && state.post.length) {
+    const withPost = openedPost(island, state.post);
+    const kept = await services.openPost(player, saved.version, withPost, today, state.post.map((p) => p.id));
+    if (kept === 'busy') return busy();
+    if (kept) {
+      island = withPost;
+      saved.version++;
+      opened = state.post;
+    } else {
+      // Opened meanwhile (two loads at once): show the island as it is now, post and all.
+      const now = await services.load(player);
+      if (now === 'busy') return busy();
+      if (now.saved?.island && now.saved.seed === saved.seed) {
+        Object.assign(saved, now.saved);
+        island = islandToday(saved, today, now.classMiddle);
+      }
+    }
+  }
 
   /** This turn's question set, made the first time it's needed (none if the maths can't be read). */
   const turnQuestions = async (turn: number): Promise<QuestionSet | null | 'busy'> => {
@@ -327,14 +445,23 @@ export async function handleIsles(services: IslesServices, player: string, body:
     });
   };
 
+  /** A classmate's name, for an open race against their island (a classmate who left the class: "A classmate"). */
+  const opponentName = async (race: StoredRace): Promise<string | undefined | 'busy'> => {
+    if (race.opponent === GULL_RIDERS) return undefined;
+    const sky = await services.classSky(player, today);
+    if (sky === 'busy') return 'busy';
+    return sky.classmates.find((c) => c.id === race.opponent)?.name ?? 'A classmate';
+  };
   if (action === 'load') {
     let openRace = null;
     if (state.openRace) {
       const set = await services.questions(player, { ref: raceRef(state.openRace.id) });
-      if (set === 'busy') return busy();
-      openRace = publicRace(state.openRace, set);
+      const name = await opponentName(state.openRace);
+      if (set === 'busy' || name === 'busy') return busy();
+      openRace = publicRace(state.openRace, set, name);
     }
-    return view(island, { openRace });
+    const post = opened.map(({ fromName, coins, ...p }) => ({ fromName, coins, kind: p.kind, ...(p.kind === 'gift' ? { gift: p.gift } : { homeWin: p.homeWin }) }));
+    return view(island, { openRace, post });
   }
 
   if (action === 'answer') {
@@ -364,23 +491,78 @@ export async function handleIsles(services: IslesServices, player: string, body:
     if (kept === 'busy') return busy();
     if (!kept) return again(services, player, today, view, saved, island.turn);
     await givePoints(services, player, saved.seed, island, result.island);
+    const news = turnNews(island, result.island, actions);
+    if (news.length) await services.addNews(player, today, news);
     return view(result.island, { report: result.report });
   }
 
-  // Sky Races (against the Gull Riders in this stage).
+  // The class sky, visits and gifts.
+  if (action === 'sky' || action === 'visit' || action === 'gift') {
+    const sky = await services.classSky(player, today);
+    if (sky === 'busy') return busy();
+    const shownMate = (c: Classmate) => {
+      const theirs = classmateToday(c, today);
+      const race = settings.races ? raceProblem(island, { id: c.id, island: theirs }, player) : null;
+      const gift = giftProblem(c, sky.giftsSentToday);
+      return {
+        id: c.id,
+        name: c.name,
+        keeper: c.keeper,
+        spots: spotCount(theirs),
+        decorations: theirs.decorations.filter((d) => d.place !== null).length,
+        lighthouse: theirs.lighthouse,
+        raceWhy: !settings.races ? 'Sky Races are switched off for your class.' : race ? PROBLEM_TEXT[race] : null,
+        giftWhy: gift ? GIFT_TEXT[gift] : null,
+        look: islandLook(theirs),
+      };
+    };
+    if (action === 'sky') {
+      const news = await services.news(player, today - NEWS_DAYS + 1);
+      if (news === 'busy') return busy();
+      return ok({ classmates: sky.classmates.map((c) => { const { look: _l, ...rest } = shownMate(c); return rest; }), news, giftsSentToday: sky.giftsSentToday });
+    }
+    const who = action === 'visit' ? body.who : body.to;
+    if (typeof who !== 'string') return unreadable();
+    const mate = sky.classmates.find((c) => c.id === who);
+    if (!mate) return no(404, who === player ? "That's your own island!" : GIFT_TEXT['not-classmate'], { code: 'not-classmate' });
+    if (action === 'visit') return ok({ visit: shownMate(mate) });
+    if (!GIFTS.some((g) => g.id === body.gift)) return no(400, "That gift isn't one of the three.");
+    const problem = giftProblem(mate, sky.giftsSentToday);
+    if (problem) return no(409, GIFT_TEXT[problem], { code: problem });
+    const sent = await services.sendGift(player, mate.id, { kind: 'gift', gift: body.gift as GiftId, coins: GIFT_COINS }, today);
+    if (sent === 'busy') return busy();
+    if (sent !== 'sent') return no(409, GIFT_TEXT[sent], { code: sent });
+    return ok({ sent: true, visit: shownMate({ ...mate, giftsToday: mate.giftsToday + 1 }), giftsSentToday: sky.giftsSentToday + 1 });
+  }
+
+  // Sky Races, against the Gull Riders or a classmate's island.
   if (action === 'raceStart') {
-    if (body.opponent !== GULL_RIDERS) return no(400, 'Races against classmates are coming soon. Race the Gull Riders!', { code: 'not-yet' });
     if (state.openRace) {
       // One race at a time: an open race is carried on (the same questions), so a bad start can't be thrown away.
       const set = await services.questions(player, { ref: raceRef(state.openRace.id) });
-      if (set === 'busy') return busy();
-      return ok({ race: publicRace(state.openRace, set) });
+      const name = await opponentName(state.openRace);
+      if (set === 'busy' || name === 'busy') return busy();
+      return ok({ race: publicRace(state.openRace, set, name) });
     }
-    const problem = raceProblem(island, GULL_RIDERS, player);
+    let opponent: { id: string; island: Island } | typeof GULL_RIDERS = GULL_RIDERS;
+    let rivalName: string | undefined;
+    if (body.opponent !== GULL_RIDERS) {
+      if (typeof body.opponent !== 'string') return unreadable();
+      if (body.opponent === player) return no(400, PROBLEM_TEXT['own-island'], { code: 'own-island' });
+      const sky = await services.classSky(player, today);
+      if (sky === 'busy') return busy();
+      const mate = sky.classmates.find((c) => c.id === body.opponent);
+      if (!mate) return no(404, GIFT_TEXT['not-classmate'], { code: 'not-classmate' });
+      opponent = { id: mate.id, island: classmateToday(mate, today) };
+      rivalName = mate.name;
+    }
+    const problem = raceProblem(island, opponent, player);
     if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
     const you = racerOf(island);
+    // A classmate's island races at home: its boats and Sail flags, never a warm breeze (that's the challenger's).
+    const them = opponent === GULL_RIDERS ? gullRiders(you) : { ...racerOf(opponent.island), breeze: false };
     // No race is a free win any more (James, 3 Nov 2026): `starter` stays false, kept for the database's column.
-    const race = { seed: services.randomHex(16), opponent: GULL_RIDERS, starter: false, you, them: gullRiders(you) };
+    const race = { seed: services.randomHex(16), opponent: opponent === GULL_RIDERS ? GULL_RIDERS : opponent.id, starter: false, you, them };
     const id = await services.raceStart(player, race, today, island.turn);
     if (id === 'busy') return busy();
     if (id === null) return no(409, 'You have a race going already.', { code: 'stale' });
@@ -388,7 +570,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
     const questions = context ? makeRunQuestions(context, RACE_QUESTIONS, () => services.random()) : [];
     const set = questions.length ? await services.storeQuestions(player, { id: services.randomHex(12), ref: raceRef(id), questions }) : null;
     if (set === 'busy') return busy();
-    return ok({ race: publicRace({ ...race, id, status: 'open', result: null, prize: null }, set) });
+    return ok({ race: publicRace({ ...race, id, status: 'open', result: null, prize: null }, set, rivalName) });
   }
 
   const raceId = body.race;
@@ -429,8 +611,13 @@ export async function handleIsles(services: IslesServices, player: string, body:
   // Any question not answered yet counts as wrong (the browser only finishes once they're all answered).
   const marks = raceMarks(set);
   const result = runRace(race.seed, race.you, race.them, marks);
-  const settled = settleRace(island, null, result);
-  const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
+  // A classmate's race leaves its "well raced" coins (and a win at home) in their post: their island isn't touched here.
+  const home = race.opponent === GULL_RIDERS ? null : { id: race.opponent, island: newIsland() };
+  const settled = settleRace(island, home, result);
+  const post = home && settled.defender
+    ? { to: home.id, post: { kind: 'raced' as const, homeWin: settled.defender.racesWon > home.island.racesWon, coins: settled.defender.coins - home.island.coins } }
+    : null;
+  const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize, post);
   if (kept === 'busy') return busy();
   if (!kept) {
     const now = await services.race(player, race.id);
@@ -438,7 +625,10 @@ export async function handleIsles(services: IslesServices, player: string, body:
     if (now?.status === 'done') return ok({ race: publicRace(now, set), already: true });
     return no(409, "Your island has moved on. Here's how it is now.", { code: 'stale' });
   }
-  if (result.won) await services.awardPoints(player, POINTS.raceWon, `isles:race:${race.id}`);
+  if (result.won) {
+    await services.awardPoints(player, POINTS.raceWon, `isles:race:${race.id}`);
+    await services.addNews(player, today, [{ kind: 'race', gullRiders: race.opponent === GULL_RIDERS }]);
+  }
   return ok({ race: publicRace({ ...race, status: 'done', result, prize: settled.prize }, set), island: settled.challenger });
 }
 
