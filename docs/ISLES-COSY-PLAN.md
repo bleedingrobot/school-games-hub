@@ -257,3 +257,13 @@ James asked for S.4 before the art. Everything in section 11 is in; the rule she
 - **Go-live list:** `docs/prompts/isles-golive.md` (stage S.8). Both migrations need renumbering then, and `security.test.sql` and `progress_access.test.sql` need Sky Isles added.
 - **Tests:** still 8 (names, worth and the Hall were added to the existing rules, server and accessibility tests); the database test has 75 checks, all passing on a scratch copy. The teacher panels were checked with a throw-away test (deleted). Not in the registry yet (S.8).
 
+## Went live (stage S.8, 4 Nov 2026)
+
+- **Pre-flight:** migrations renumbered to `20261104000100_isles.sql` and `20261104000200_isles_home_chip.sql`; `security.test.sql` and `progress_access.test.sql` (120 achievements) know Sky Isles; typecheck, all tests, build, the simulator and all 69 database test files on a scratch copy passed. The live database had every function it depends on.
+- **Live, switched off:** #158 (both migrations off hold, the game in `registry.ts` behind `islesOn()`, privacy summary, `shared/README.md`). The first deploy stopped on an unrelated Star Trader test that fails at random; a re-run went through. Checked after: `isles_islands` empty, off for every class, one `hub_games` row, 8 achievements, `my_moves_left()` mentions `isles_islands`, the function answers 401 "Please sign in again.", and the tables and `isles_load` are refused from outside (42501).
+- **Code switch:** #160 (`ON = true`, `isles` in `registry.test.ts`, group `complex-maths`).
+- **Teacher switch:** James asked for every class at once, so `isles_enabled` was set true on all 4 `app_settings` rows (3 classes and the school default).
+- **Tests that failed at random** on the build machine (Diamond Drop, Star Trader, the skill map, the season strip, Mine Runner) were fixed in #161.
+- **Home page card:** the painted class-sky card (`src/assets/home/isles*.webp`) added to `src/components/gameCardArt.ts` straight after.
+- **Still to do:** add Sky Isles to the players tracker's query (the tracker page couldn't be opened from the go-live session).
+

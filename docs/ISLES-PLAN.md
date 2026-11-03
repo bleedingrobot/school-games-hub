@@ -4,7 +4,7 @@
 
 *An original kingdom-building game for School Games Hub, in the BBS "empire game" genre. Asked for by James on 1 November 2026, after we read [Immortal Barons](https://github.com/andy5995/immortal-barons) together. Written from that reading, `docs/GAME_DEVELOPMENT_GUIDE.md` (main `92735a2`) and the other games' plans. Branch `isles`, worktree `~/games-hub-isles`.*
 
-**Status (2 Nov 2026, after S.3 and the step-by-step turn): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine), S.2 (the server) and S.3 (the screens, art and a private preview) are done, and the turn is now 11 steps, one choice at a time. Nothing is live. Next is S.4 (classmates: races, ropes, market, news).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
+**Status (4 Nov 2026): LIVE and switched on for every class (stage S.8, see "Went live" at the end of `docs/ISLES-COSY-PLAN.md`, which wins over this plan).** Older status: **Status (2 Nov 2026, after S.3 and the step-by-step turn): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine), S.2 (the server) and S.3 (the screens, art and a private preview) are done, and the turn is now 11 steps, one choice at a time. Nothing is live. Next is S.4 (classmates: races, ropes, market, news).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
 
 ---
 
