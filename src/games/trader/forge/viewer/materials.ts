@@ -65,6 +65,8 @@ void main(){
   vec4 A=texture2D(uAlbedo,uv); vec4 E=texture2D(uExtra,uv);
   if(uPainted>0.5){ A.rgb=clamp(hueShift(A.rgb,uTintA),0.0,1.0); E.a=dot(A.rgb,vec3(0.3,0.5,0.2)); }
   vec3 alb=pow(A.rgb,vec3(2.2));
+  // paintings are darker than the drawn maps and have no water mask: lift them a little, and only blue water shines
+  if(uPainted>0.5){ alb=min(alb*1.7,vec3(1.0)); A.a=clamp((A.b-max(A.r,A.g*0.85))*5.0,0.0,1.0); }
   alb=mix(uBase,alb,uReady);
   float shine=A.a*uReady; float h=E.a; vec3 emis=pow(E.rgb,vec3(2.2))*uEmisGain*uReady;
   vec3 Ng=normalize(vNrm);
@@ -149,7 +151,7 @@ export function surfaceMaterial(shared: Shared, ringTex: THREE.Texture, o: Surfa
 }
 
 const CLOUD_FRAG = /* glsl */ `
-uniform sampler2D uClouds; uniform vec3 uCenter; uniform float uOpacity; uniform float uLightning; uniform float uReady;
+uniform sampler2D uClouds; uniform vec3 uCenter; uniform float uOpacity; uniform float uLightning; uniform float uReady; uniform float uPainted;
 varying vec3 vObj; varying vec3 vWorld; varying vec3 vNrm; varying vec2 vUv;
 ${LIGHTS}
 ${DIR_UV}
@@ -158,6 +160,8 @@ float h11(float n){ return fract(sin(n)*43758.5453); }
 void main(){
   vec2 uv=dirToUv(normalize(vObj));
   vec4 c=texture2D(uClouds,uv);
+  // a painted cloud map is white on black with no see-through part: its brightness is the cloud
+  if(uPainted>0.5){ c.a=dot(c.rgb,vec3(0.3,0.5,0.2)); c.rgb=mix(vec3(0.85),vec3(1.0),c.a); }
   float a=c.a*uOpacity*uReady;
   vec3 N=normalize(vNrm); vec3 V=normalize(cameraPosition-vWorld);
   vec3 col=vec3(0.0); float day=-1.0;
@@ -197,7 +201,7 @@ export function cloudMaterial(shared: Shared, ringTex: THREE.Texture, clouds: TH
     depthWrite: false,
     uniforms: {
       ...shared,
-      uClouds: { value: clouds }, uCenter: { value: new THREE.Vector3() }, uOpacity: { value: opacity }, uLightning: { value: 0 }, uReady: { value: 0 },
+      uClouds: { value: clouds }, uCenter: { value: new THREE.Vector3() }, uOpacity: { value: opacity }, uLightning: { value: 0 }, uReady: { value: 0 }, uPainted: { value: 0 },
       uHasRing: { value: 0 }, uRingN: { value: new THREE.Vector3(0, 1, 0) }, uRingRange: { value: new THREE.Vector2(1, 2) }, uRingTex: { value: ringTex },
     },
   });

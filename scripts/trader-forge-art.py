@@ -278,7 +278,7 @@ def make(job):
             a = np.asarray(img.convert('L'), dtype=np.float32)
             # a tinted or grey background (the model doesn't always paint pure black) counts as black too
             lo = float(np.clip(np.percentile(a, 20) + 12, 14, 90))
-            a = np.clip((a - lo) / (255 - lo), 0, 1) * 255
+            a = np.clip((a - lo) / (255 - lo), 0, 1) ** 1.7 * 255  # thin haze clears, so the ground shows between the clouds
             img = Image.fromarray(a.round().astype(np.uint8)).convert('RGB')
         if g == 'night':  # lights on black
             a = np.asarray(img, dtype=np.float32)

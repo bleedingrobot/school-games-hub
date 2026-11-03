@@ -160,6 +160,13 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
       surfaceMat.side = THREE.BackSide;
       surfaceMat.uniforms.uNightSquares.value = 1;
       disposables.push(surfaceMat);
+      const sm = surfaceMat;
+      usePaint(planetArt(p.kind, p.surface, s.level), (t) => {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        sm.uniforms.uAlbedo.value = t;
+        sm.uniforms.uPainted.value = 1;
+        sm.uniforms.uTintA.value = (p.tint / 8) * Math.PI * 2;
+      });
       landMesh = new THREE.Mesh(land, surfaceMat);
       const hull = new THREE.Mesh(new THREE.CylinderGeometry(orbitR + 0.25, orbitR + 0.25, W + 0.4, segs, 1, true), new THREE.MeshStandardMaterial({ color: 0x5a6070, metalness: 0.7, roughness: 0.5, emissive: 0x05070c }));
       disposables.push(hull.geometry, hull.material as THREE.Material);
@@ -272,7 +279,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
       disposables.push(cloudMat);
       mats.push(cloudMat);
       const cm = cloudMat;
-      usePaint(cloudArt(p.clouds, s.level), (t) => (cm.uniforms.uClouds.value = t));
+      usePaint(cloudArt(p.clouds, s.level), (t) => { cm.uniforms.uClouds.value = t; cm.uniforms.uPainted.value = 1; });
       cloudMesh = new THREE.Mesh(geo, cloudMat);
       cloudMesh.scale.setScalar(shapeScale * (p.kind === 'gas' ? 1.006 : 1.014));
       tilt.add(cloudMesh);

@@ -93,8 +93,9 @@ CUT_TAIL = (' Single object, centred, the whole object visible with space around
 TILE_TAIL = (' One flat square texture that fills the whole picture edge to edge, seen straight on, even soft light with no shadows, '
              'the same amount of detail everywhere, the edges continue into each other so it can repeat.')
 GLOW_TAIL = ' Glowing light on a solid pure black background, centred, the black around it is plain and empty.'
-BUTTON_TAIL = (' A single icon-like picture centred in the square and filling most of it, on a deep dark blue space background with a soft '
-               'glow behind it, simple bold shape that reads clearly when small. ' + KIDS.strip())
+# never "icon" or "simple shape": the model then paints a white app-icon glyph (a person, a square) in the middle
+BUTTON_TAIL = (' One single subject centred in the square and filling most of it, on a deep dark blue starry space background with a soft '
+               'glow behind it, painted with strong colours and clear outlines so it reads well when small, the whole square is the painting. ' + KIDS.strip())
 
 
 class Picture(NamedTuple):
@@ -238,14 +239,14 @@ for kind, words in SUN_LOOKS.items():
 
 # ---- Skies (360 degree panoramas), index 0 to 7 ----
 SKY_LOOKS = [
-    'a rich purple and magenta nebula with glowing wisps and dark dust lanes, many stars',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, a long thin faint band of purple and magenta glowing gas stretching across the middle like the Milky Way',
     'the Milky Way seen edge-on, a bright glowing band of countless stars and dust lanes across the middle, dark sky above and below',
-    'a beautiful spiral galaxy close by in the distance with its glowing arms, among scattered stars',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, one small faint far-away spiral galaxy as a tiny smudge of light',
     'a deep dark sky with only a few very bright stars and many faint ones, a hint of dark blue',
-    'a teal and blue-green nebula with soft glowing clouds and sparkling stars',
-    'a red and orange fiery nebula of glowing gas clouds with bright blue young stars',
-    'a golden dust cloud with a bright star cluster, warm amber and cream colours',
-    'a pink and violet star-birth nebula with glittering new stars and long ribbons of glowing gas',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, a long thin faint band of teal and blue-green glowing gas stretching across the middle like the Milky Way',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, a long thin faint band of red and orange glowing gas stretching across the middle like the Milky Way',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, a long thin faint band of warm golden and amber starlight stretching across the middle like the Milky Way',
+    'a long-exposure photo of the night sky in deep space, mostly deep black thickly sprinkled with thousands of tiny sharp stars, a long thin faint band of pink and violet glowing gas stretching across the middle like the Milky Way',
 ]
 assert len(SKY_LOOKS) == BACKGROUNDS
 for i, words in enumerate(SKY_LOOKS):
@@ -445,7 +446,7 @@ BUTTONS: dict[str, str] = {
     'tech-engine': 'a planet with a giant engine on it and a long blue flame trailing behind',
     'systemtech-lanes': 'glowing golden trade lanes with small ships flying between two planets',
     'systemtech-miners': 'a mining ship with a claw arm grabbing an asteroid',
-    'systemtech-sails': 'a ship with a huge shining gold solar sail',
+    'systemtech-sails': 'a space probe with a huge flat square sheet of shining gold foil held flat by four thin silver booms in an X, floating in space',
     'systemtech-dyson': 'a star surrounded by a band of dark blue solar panels, light spilling from the gaps',
     'systemtech-gate': 'a giant ring-shaped star gate with a swirling blue portal in the middle',
     # belts, clouds, comets, planet sizes
