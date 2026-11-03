@@ -24,7 +24,7 @@ function setup(over: MemoryOptions = {}) {
   // 9 pm NZ time on 4 Nov 2026 (8 am UTC).
   let clock = Date.UTC(2026, 10, 4, 8);
   let seed = 0.1;
-  const log = { answers: [] } as NonNullable<MemoryOptions['log']>;
+  const log = { answers: [], eggs: [] } as NonNullable<MemoryOptions['log']>;
   const services = memoryServices({ now: () => clock, random: () => (seed += 0.137) % 1, log, ...over });
   const handler = makeHandler({ ...services, userIdFor: async (t) => (t.startsWith('pupil-') ? t : null) });
   const send = async (who: string | null, body: object) => {
@@ -34,7 +34,7 @@ function setup(over: MemoryOptions = {}) {
     return { status: res.status, body: (await res.json()) as Record<string, any> };
   };
   const start = async (who: string) => (await send(who, { action: 'start' })).body.seed as number;
-  return { send, start, log, hours: (h: number) => (clock += h * 3_600_000) };
+  return { send, start, log, services, hours: (h: number) => (clock += h * 3_600_000) };
 }
 
 it('finishes only a pupil’s own, finished challenge, once, and records each pair as a bond to 10', async () => {
@@ -66,8 +66,8 @@ it('finishes only a pupil’s own, finished challenge, once, and records each pa
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 });
 
-it('changes one leaf a NZ day by the server’s clock, whatever the browser sends', async () => {
-  const { send, start, hours } = setup();
+it('changes one leaf a NZ day by the server’s clock, whatever the browser sends, and gives the egg on day 30', async () => {
+  const { send, start, hours, services, log } = setup();
   await send('pupil-a', { action: 'choose', child: 'jack' });
   const finish = async () => {
     const seed = await start('pupil-a');
@@ -79,6 +79,11 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
   expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false });
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ child: 'jack', daysDone: 2, today: '2026-11-05', dots: true });
+  expect(log.eggs).toEqual([]);
+  services.data.players['pupil-a'].daysDone = 29;
+  hours(24);
+  expect(await finish()).toMatchObject({ daysDone: 30, leafChanged: 9, egg: true });
+  expect(log.eggs).toEqual(['pupil-a']); // the hub gives Kiwi's Golden Egg achievement
 });
 
 describe('the deployable file', () => {

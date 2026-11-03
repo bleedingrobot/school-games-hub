@@ -62,5 +62,10 @@ Deno.serve(
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'beanstalk');
     },
+    async progressChanged(player) {
+      // A Golden Egg: the hub gives its achievement (counted from the finished days by beanstalk_counts).
+      const { error } = await admin.rpc('game_progress_changed', { player, game: 'beanstalk' });
+      if (error) console.error(`beanstalk: achievements failed (${error.code ?? 'unknown'})`);
+    },
   }),
 );

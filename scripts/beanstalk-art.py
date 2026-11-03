@@ -199,8 +199,9 @@ def paint(out: Path, names: list[str], style: str, tries: int):
 ROOT = Path(__file__).resolve().parent.parent
 GAME_ART = ROOT / 'src' / 'games' / 'beanstalk' / 'art' / 'paint'
 INBOX = Path.home() / 'dragon-art-inbox' / 'beanstalk-art' / 'set' / 'b'
-# Things the game doesn't use yet (the style try and the home card wait for later).
-LATER = {'scene', 'card'}
+HOME = ROOT / 'src' / 'assets' / 'home'
+# Things the game doesn't use (the style try). The home card goes to src/assets/home/ (docs/GAME_DEVELOPMENT_GUIDE.md, section 2).
+LATER = {'scene'}
 SIZES = {'leaves': 256, 'friends': 320, 'child': 320, 'things': 256}
 
 
@@ -208,6 +209,8 @@ def destination(name: str) -> tuple[str, str, str] | None:
     """(kind of tidying, folder, file name in the game) for a painting, or None when the game doesn't use it."""
     if name in LATER:
         return None
+    if name == 'card':
+        return 'card', '', 'beanstalk'
     if name.startswith('back-'):
         return 'scene', 'backs', name[len('back-'):]
     group, _, key = name.partition('-')
@@ -260,10 +263,15 @@ def tidy(force: bool):
         if not where:
             continue
         kind, folder, out_name = where
-        out = GAME_ART / folder / f'{out_name}.webp'
+        out = (HOME if kind == 'card' else GAME_ART / folder) / f'{out_name}.webp'
         if out.exists() and not force:
             continue
         img = Image.open(INBOX / f'{name}-{t}.png')
+        if kind == 'card':
+            img = img.convert('RGB')
+            save(fit(img, 1600), out, 80)
+            save(fit(img, 800), HOME / f'{out_name}-small.webp', 78)
+            continue
         if kind == 'scene':
             img = img.convert('RGB')
             save(fit(img, 1600), out, 72)

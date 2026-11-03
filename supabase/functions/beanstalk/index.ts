@@ -5481,6 +5481,7 @@ async function handleBeanstalk(services, player, body) {
 					...a,
 					at
 				})));
+				if (result.egg) await services.progressChanged(player);
 				return ok({ ...result });
 			}
 			const again = await services.round(player, seed);
@@ -5644,6 +5645,13 @@ Deno.serve(makeHandler({
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "beanstalk");
+	},
+	async progressChanged(player) {
+		const { error } = await admin.rpc("game_progress_changed", {
+			player,
+			game: "beanstalk"
+		});
+		if (error) console.error(`beanstalk: achievements failed (${error.code ?? "unknown"})`);
 	}
 }));
 //#endregion

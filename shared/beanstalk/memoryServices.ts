@@ -28,7 +28,7 @@ export interface MemoryOptions {
   /** Called after every change (the trial backend saves here). */
   changed?: (data: MemoryData) => void;
   /** Everything recorded, for tests. */
-  log?: { answers: { player: string; once: string; answers: FactAnswer[] }[] };
+  log?: { answers: { player: string; once: string; answers: FactAnswer[] }[]; eggs?: string[] };
 }
 
 const copy = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -78,6 +78,9 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
       if (recorded.has(once)) return;
       recorded.add(once);
       options.log?.answers.push({ player, once, answers });
+    },
+    async progressChanged(player) {
+      options.log?.eggs?.push(player);
     },
   };
 }

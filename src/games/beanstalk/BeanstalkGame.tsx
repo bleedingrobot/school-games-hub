@@ -52,11 +52,13 @@ export interface Helpers {
 
 interface Props {
   backend: BeanstalkBackend;
+  /** Back to the hub's home page (the preview has none). */
+  onExit?: () => void;
   /** Preview tools, shown under the game. */
   extra?: (h: Helpers) => ReactNode;
 }
 
-export function BeanstalkGame({ backend, extra }: Props) {
+export function BeanstalkGame({ backend, onExit, extra }: Props) {
   const [state, setState] = useState<BeanstalkState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -112,6 +114,11 @@ export function BeanstalkGame({ backend, extra }: Props) {
   return (
     <div className="bs-root">
       <div className="bs-bar">
+        {onExit && (
+          <button type="button" className="bs-voice" onClick={onExit}>
+            <span aria-hidden="true">🏠</span> {WORDS.home}
+          </button>
+        )}
         {voice.available && (
           <button type="button" className="bs-voice" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
             <span aria-hidden="true">{voice.on ? '🗣️' : '🤫'}</span> {voice.on ? WORDS.voiceOn : WORDS.voiceOff}

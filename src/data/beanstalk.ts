@@ -6,6 +6,9 @@
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { fromServer, type BeanstalkBackend } from '../games/beanstalk/backend';
+import { readSettings } from './classSettings';
+import { FriendlyError } from './profile';
+import { forgetSettings } from './settingsMemory';
 
 /** The real school server. */
 export const liveBeanstalk: BeanstalkBackend = fromServer(async (body) => {
@@ -31,3 +34,42 @@ export const liveBeanstalk: BeanstalkBackend = fromServer(async (body) => {
   }
   return { status: response.status, body: parsed };
 });
+
+// ---------------------------------------------------------------- the teacher's parts (docs/BEANSTALK-PLAN.md, Stage 4)
+
+export interface BeanstalkSettings {
+  enabled: boolean;
+  /** The leaves' ten-frame dots, on unless the teacher turns them off. */
+  dots: boolean;
+}
+
+export async function fetchBeanstalkSettings(classId?: string | null): Promise<BeanstalkSettings> {
+  const row = await readSettings(['beanstalk_enabled', 'beanstalk_dots'], classId);
+  if (!row) throw new FriendlyError('We couldn’t load the Kiwi’s Beanstalk settings.');
+  return { enabled: row.beanstalk_enabled === true, dots: row.beanstalk_dots !== false };
+}
+
+export const fetchBeanstalkEnabled = async (classId?: string | null) => (await fetchBeanstalkSettings(classId)).enabled;
+
+/** Saves one setting or both (teacher_set_beanstalk leaves out the other). */
+export async function saveBeanstalkSetting(change: Partial<BeanstalkSettings>, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_beanstalk', {
+    enabled: change.enabled ?? null, dots: change.dots ?? null, target_class: classId ?? null,
+  });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+/** The teacher's Games table line for a class. */
+export async function fetchBeanstalkClass(classId: string): Promise<{ players: number; eggs: number }> {
+  const { data, error } = await supabase.rpc('teacher_beanstalk_class', { target_class: classId });
+  if (error || !data) throw new FriendlyError('We couldn’t load Kiwi’s Beanstalk for this class.');
+  return data as { players: number; eggs: number };
+}
+
+/** One student's finished days, or null if they haven't played. */
+export async function fetchBeanstalkStudent(student: string): Promise<{ daysDone: number; lastLeafDay: string | null } | null> {
+  const { data, error } = await supabase.rpc('teacher_beanstalk_student', { student });
+  if (error) throw new FriendlyError('We couldn’t load Kiwi’s Beanstalk for this student.');
+  return (data ?? null) as { daysDone: number; lastLeafDay: string | null } | null;
+}

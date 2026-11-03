@@ -21,6 +21,7 @@ export const WORDS = {
   egg: (name: string) => `All the leaves are gold! ${name} can climb down. You win the Golden Egg!`,
   nextFriend: (name: string) => `Oh no! ${name} is stuck up a new beanstalk.`,
   wentWrong: 'Something went wrong. Please try again soon.',
+  home: 'Home',
   voiceOn: 'Voice on',
   voiceOff: 'Voice off',
   eggs: (n: number) => `${n} Golden ${n === 1 ? 'Egg' : 'Eggs'}`,

@@ -1,9 +1,10 @@
--- Kiwi's Beanstalk (migration 20261104000300): progress, challenges, the switch and the dots setting.
+-- Kiwi's Beanstalk (migrations 20261104000300 and 20261104000400): progress, challenges, the switch and the dots setting,
+-- and the hub hooks with one achievement per Golden Egg.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh beanstalk, then scripts/scratch-test.sh beanstalk supabase/tests/database/beanstalk.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(32);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -62,6 +63,22 @@ select ok(public.beanstalk_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', '[{
 select ok(not public.beanstalk_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', '[{"a":0,"b":1,"ms":900}]', 1), '... once');
 select is(public.beanstalk_load(pg_temp.id('0a')), '{"child": "jill", "daysDone": 1, "lastLeafDay": "2026-11-04", "version": 2}'::jsonb,
   'the beanstalk is saved');
+
+-- ---- In the hub: registered, one achievement per Golden Egg, no points ----
+select ok(exists (select 1 from public.hub_games where id = 'beanstalk' and switch_column = 'beanstalk_enabled' and counts_fn is not null
+  and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
+  'Kiwi''s Beanstalk is registered with its hooks, with nothing for New Season to clear');
+select is((select count(*)::integer from public.achievement_types where game = 'beanstalk'), 6, 'with six achievements, one for each friend''s egg');
+select is(public.beanstalk_counts(pg_temp.id('0a')), '{"beanstalk_eggs": 0}'::jsonb, 'no egg after one day');
+update public.beanstalk_progress set days_done = 30 where player = pg_temp.id('0a');
+select is(public.beanstalk_counts(pg_temp.id('0a')), '{"beanstalk_eggs": 1}'::jsonb, 'the first Golden Egg after thirty days');
+select public.game_progress_changed(pg_temp.id('0a'), 'beanstalk');
+select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'beanstalk-kiwi'), '... and Kiwi''s achievement with it');
+select ok(not exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'beanstalk-tui'), '... not Tūī''s yet');
+select pg_temp.reset();
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.teacher_beanstalk_student(pg_temp.id('0b')) $$, null, null, 'a pupil cannot read a classmate''s beanstalk');
+select pg_temp.reset();
 
 select * from finish();
 rollback;

@@ -17,7 +17,7 @@
 .bs-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .bs-message { margin: auto; font-size: 1.6rem; }
 
-.bs-bar { position: absolute; top: 8px; right: 8px; z-index: 5; }
+.bs-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
 .bs-voice {
   min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--bs-green-dark);
   background: var(--bs-panel); color: var(--bs-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;

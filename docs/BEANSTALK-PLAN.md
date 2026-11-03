@@ -259,3 +259,79 @@ preview and the real game can't drift apart. Preview tools add "The teacher lets
 - The home card (art pick "card").
 - The game's `index.tsx` and code switch.
 - A How to play page.
+
+## Stage 4 results (4 Nov)
+
+**Migration** `20261104000400_beanstalk_hub.sql` (the next free number on 4 Nov):
+- **Registered in `hub_games`.** The switch is `beanstalk_enabled`. It has counts, a How points work line ("No points: each
+  Golden Egg is the prize, and an achievement."), the players list and "last played".
+- **Not a season game.** It has no New Season hook, and achievements are kept.
+- **Six achievements, one per friend's Golden Egg.** The measure is `beanstalk_eggs`, which is the finished days divided
+  by 30:
+
+  | Achievement | Emoji | Golden Eggs |
+  |---|---|---|
+  | Kiwi's Golden Egg | 🥚 | 1 |
+  | Tūī's Golden Egg | 🐦 | 2 |
+  | Kererū's Golden Egg | 🕊️ | 3 |
+  | Wētā's Golden Egg | 🦗 | 4 |
+  | Ruru's Golden Egg | 🦉 | 5 |
+  | Takahē's Golden Egg | 💙 | 6 |
+
+  The function calls `game_progress_changed` when an egg is won.
+- **The teacher's lines.** `teacher_beanstalk_class` gives how many in the class play and their eggs.
+  `teacher_beanstalk_student` gives one student's finished days.
+
+**In the site:**
+- **`src/games/beanstalk/index.tsx`** is the game's definition:
+  - Name "Kiwi's Beanstalk", the easy maths group, not ranked, no bots, and a drawn icon.
+  - `switch.ts` is the code switch. It is **off** (`VITE_BEANSTALK_ON=true` shows it locally).
+  - `BeanstalkPlay.tsx` plays on the real server and has a **Home** button. The preview has no Home button.
+- **The teacher's Games table:**
+  - **The On switch.** Its "?" explains the game for teachers. The numbers in it come from the rules, so they can't go out
+    of date.
+  - **The Maths column** says "Bonds to 10 · 3 playing · 1 Golden Egg".
+  - **A drawer** with "Dots on the leaves" on or off (`src/pages/TeacherBeanstalk.tsx`).
+  - **A line on each student's page:** "12 of 30 days done on this beanstalk · 1 Golden Egg".
+- **The home card picture** (James's pick, card try 3) is at `src/assets/home/beanstalk.webp` and `-small.webp`. It is made
+  by `scripts/beanstalk-art.py tidy`. Its line in `gameCardArt.ts` goes in at the go-live merge, because that file is
+  shared. Suggested focus: `center 45%`.
+- **No How to play page.** The players can't read yet, so the talking guided first go does that job. The teacher's "?"
+  explains the game.
+
+**Not done here, on purpose (go-live steps, all shared files):**
+- `registry.ts` and `registry.test.ts`.
+- The `gameCardArt.ts` line.
+- `FUNCTIONS` in `scripts/build-functions.mjs`.
+- `docs/PRIVACY-SUMMARY.md` and `shared/README.md`.
+- Turning on the code switch.
+
+**Not tried in the real site.** The game isn't in the games list until go-live. A local site would also talk to the live
+database, which needs James's OK. The screens are the same ones the preview runs.
+
+**Tests:**
+- Still 8 of the game's own. The server's second test now also checks that a Golden Egg asks the hub for its achievement.
+- The database test has 32 checks, and they pass on a scratch copy with both migrations. `game_hooks` (38) still passes.
+- `npm run typecheck`, `npm run test:all` (354 files, 6,017 tests), `npm run build` and the preview build all pass (4 Nov).
+
+## Going live (Stage 5): the steps, each only on James's word
+
+1. **Merge main and check the numbers.**
+   - Merge `origin/main` and run `node scripts/migration-numbers.mjs`.
+   - Rename `20261104000300` and `20261104000400` to free numbers after everything on `main` if anything has taken them.
+   - Run all the checks again, plus the database test on a scratch copy.
+2. **Make the shared one-line edits:**
+   - Add `...(beanstalkOn() ? [kiwisBeanstalk] : [])` to the end of `GAMES` in `registry.ts`.
+   - Add `beanstalk` to the end of `FUNCTIONS`.
+   - Add the `gameCardArt.ts` lines.
+   - Add the `docs/PRIVACY-SUMMARY.md` and `shared/README.md` lines.
+   - Add `dist-preview-beanstalk/` to `.gitignore` if it is missing.
+3. **Open a PR.** Merging it applies both migrations and deploys the `beanstalk` function. The code switch stays off and
+   the class switches start off.
+4. **Check live:**
+   - The tables are empty.
+   - An unsigned call to the function gives 401.
+   - A pupil gets 42501 on the tables.
+5. **Code switch PR:** set `ON = true` and add `beanstalk` to `registry.test.ts`.
+6. **Turn the teacher switch on** for the junior classes James names, on the Teacher page (or every row, if he asks).
+7. **Write it down:** add a "Went live" note here, update the memory note, and delete the branch.
