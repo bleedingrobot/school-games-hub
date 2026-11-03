@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. Stage 0 (plan), started 4 Nov 2026. Name on the home card:
+Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stage 1 (rules in `shared/hop/`) done, 4 Nov 2026; next is Stage 2 (the play screen).** The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
@@ -58,8 +58,23 @@ he can only jump in equal hops. The pond is a number line: lily pads float acros
 - `round.ts`: given a seed and the focus, gives today's hops: the row of pads, the gap, the right answer and the
   glow-worm choices.
 - `play.ts`: given a round and the taps, gives the hops made, the mistakes, and whether the round is done.
-- `progress.ts`: given the days completed, gives each pad's colour, the help level and the jar count. Copy Beanstalk's
-  `progress.ts`, or share it if Beanstalk has gone live by then.
+- `progress.ts`: given the days completed, gives each pad's colour, the help level and the jar count. Copied from Beanstalk's
+  `progress.ts` (`pondAfter`, `finishChallenge`, `nzDate`), as Beanstalk isn't live yet.
+
+**How the step is picked (Stage 1, 4 Nov).** Hop makes its own rounds from the shared `skip*` keys, the way Beanstalk does
+with `bond10`, rather than through `makeFocusPack`: a 5-year-old on auto is usually still on `facts-10`, so the ladder would
+never serve them skip counting. `stepFor(records, reached)` gives the first of 10s, 5s, 2s whose counting-up and
+what-comes-next facts are under 70% secure (box 2 or higher, the hub's rule). Counting back is left out of that share,
+because it is only asked on gold days (9 of each step's 26 keys are `back`, so counting them would keep every child on 10s
+until day 21). The server keeps the furthest step reached (`reached`, saved in `hop_progress` at Stage 3), so a child never
+drops back a step. Once 2s are secure the child stays on 2s.
+
+**A round** (`makeRound(seed, records, { reached, gold })`) is 10 different facts of today's step, weakest first (ties by
+the seed), in a shuffled order. On gold days the last 3 hops count back, as Hop hops home. The shared family rolls each
+question's numbers from the seed, and `showHop`/`showRound` make the pads, words and four glow-worms with the shared pack's
+`rebuild`. The server saves the round's hops when it starts (`hop_rounds`), so the records changing later doesn't matter.
+**Replay** (`play.ts`): a tap is the number picked for the current hop. Each hop counts once in the maths records: right if
+the first glow-worm picked was right, with that pick's time. Wrong picks wobble and are counted as mistakes only.
 
 ## 4. Server, tables, switches
 
@@ -101,7 +116,7 @@ questions are a separate `shared/maths` branch (section 2).
 ## 7. Stages
 
 0. Plan (this file).
-1. Rules in `shared/hop/`, and their tests. Separately, the `shared/maths` skip-counting branch, if James OKs it.
+1. Rules in `shared/hop/`, and their tests. **Done 4 Nov.** The `shared/maths` skip-counting branch went live first (PR #163).
 2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James.
 3. The server: migration, function, maths recording and the day rule.
 4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment.
