@@ -5,7 +5,7 @@
  *
  * Vite turns each file into its own URL, and the browser only downloads a picture when a screen shows it.
  */
-import { BASES, GARDEN_PLACES, KEEPERS, type DecorationId, type PlotOrEmpty } from '../../../shared/isles/config';
+import { BASES, KEEPERS, type DecorationId, type PlotOrEmpty } from '../../../shared/isles/config';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
@@ -46,15 +46,14 @@ export const DECOR_PLACES: [number, number][][] = [
 ];
 
 /**
- * The sky garden's places (it comes once the Lighthouse is lit): a loose grid on the drawn garden until `base-garden`
- * is painted and its places are set by hand (docs/prompts/isles-cosy-art.md).
+ * The sky garden's places (it comes once the Lighthouse is lit), same measure as SPOTS: on its painted bare patches
+ * first, then on the grass between the paths, front to back (placed by hand on 4 Nov 2026).
  */
-export const GARDEN_SPOTS: [number, number][] = Array.from({ length: GARDEN_PLACES }, (_, i) => {
-  const row = Math.floor(i / 5);
-  const col = i % 5;
-  return [14 + col * 18 + (row % 2) * 6, 22 + row * 14];
-});
-export const GARDEN_ASPECT = 1344 / 768;
+export const GARDEN_SPOTS: [number, number][] = [
+  [61, 47], [43, 49], [25, 27], [75, 31], [43, 18], [16, 35], [84, 23], [57, 12], [31, 11], [13, 20],
+  [79, 17], [66, 8], [35, 38], [70, 41], [50, 30], [88, 35], [8, 28], [22, 45], [93, 28], [47, 6],
+];
+export const GARDEN_ASPECT = 1175 / 767;
 export const gardenArt = () => file('base-garden');
 
 export const decorArt = (id: DecorationId) => file(`dec-${id}`);
@@ -71,15 +70,26 @@ export const buildingArt = (kind: PlotOrEmpty, level: number) => (kind === 'empt
 export type PipPose = 'wave' | 'point' | 'cheer' | 'think';
 export const pipArt = (pose: PipPose) => file(`pip-${pose}`);
 
-export type BoatColour = 'red' | 'blue' | 'yellow';
+/** The sky-boats, and the Gull Riders' own boat. */
+export type BoatColour = 'red' | 'blue' | 'yellow' | 'gulls';
 export const boatArt = (colour: BoatColour) => file(`boat-${colour}`);
 
 export type Background = 'island' | 'sky' | 'race';
+const wideAndSmall = (name: string) => {
+  const wide = file(name);
+  return { wide, small: file(`${name}-800`) ?? wide };
+};
 /** A background: the full-size one and a smaller copy for phones (either may be missing). */
-export function backgroundArt(id: Background): { wide?: string; small?: string } {
-  const wide = file(`bg-${id}`);
-  return { wide, small: file(`bg-${id}-800`) ?? wide };
-}
+export const backgroundArt = (id: Background): { wide?: string; small?: string } => wideAndSmall(`bg-${id}`);
+
+/** The weather card on the turn report (WEATHER), full-size and small. */
+export const weatherArt = (id: string) => wideAndSmall(`weather-${id}`);
+/** The resting island at night, the season's end, and the Hall of the Skies. */
+export type Scene = 'night' | 'season' | 'hall';
+export const sceneArt = (id: Scene) => wideAndSmall(`scene-${id}`);
+
+/** The Sky Lighthouse at stage 1 to 4 (LIGHTHOUSE), on the Grand Isle. */
+export const lighthouseArt = (stage: number) => file(`lighthouse-${Math.min(4, Math.max(1, stage))}`);
 
 /** A Sky Keeper portrait (320 px), or its 96 px copy for small places. */
 export const keeperArt = (id: string, small = false) => (KEEPERS.includes(id) ? file(`keepers/${id}${small ? '-96' : ''}`) : undefined);

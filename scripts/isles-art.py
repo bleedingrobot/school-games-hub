@@ -278,7 +278,7 @@ ART = ROOT / 'src' / 'games' / 'isles' / 'art'
 INBOX = Path.home() / 'isles-art-inbox'
 PICKS = ROOT / 'docs' / 'isles-art' / 'picks.json'
 # The longest side of each cut-out piece, and the widths of the backgrounds and keeper portraits.
-PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480, 'dec': 256, 'walker': 128, 'icon': 160, 'gift': 160}
+PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480, 'dec': 256, 'walker': 128, 'icon': 160, 'gift': 160, 'lighthouse': 384}
 BG_WIDTHS = (1600, 800)
 KEEPER_SIZES = (320, 96)
 
@@ -289,8 +289,16 @@ def source(name: str, n: int) -> Path:
     return INBOX / folder / f'{name}-{n}.png'
 
 
+HOME = ROOT / 'src' / 'assets' / 'home'
+# Painted backgrounds, not cut out: kept whole at BG_WIDTHS.
+BACKGROUND = ('bg-', 'weather-', 'scene-', 'home-')
+
+
 def outputs(name: str) -> list[Path]:
-    if name.startswith('bg-'):
+    if name == 'home-card':
+        # The home page card (docs/HOME-ART-PLAN.md); it only goes in gameCardArt.ts at go-live.
+        return [HOME / 'isles.webp', HOME / 'isles-small.webp']
+    if name.startswith(BACKGROUND):
         return [ART / f'{name}.webp', ART / f'{name}-800.webp']
     if name.startswith('keeper-'):
         return [ART / 'keepers' / f'{name[7:]}.webp', ART / 'keepers' / f'{name[7:]}-96.webp']
@@ -350,7 +358,7 @@ def tidy(names: list[str], force: bool):
         if not force and all(o.exists() for o in outs):
             continue
         src = source(name, picks[name])
-        if name.startswith('bg-'):
+        if name.startswith(BACKGROUND):
             img = Image.open(src).convert('RGB')
             for out, width in zip(outs, BG_WIDTHS):
                 save(fit(img, width, by_width=True), out, 74)

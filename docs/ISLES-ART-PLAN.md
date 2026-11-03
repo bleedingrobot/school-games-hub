@@ -47,11 +47,30 @@
 | Scenes | the market, the resting island at night ("see you tomorrow"), the season's end celebration, the Hall of the Skies (4) |
 | Home page card | the class sky scene, `isles.webp` + `isles-small.webp` (`docs/HOME-ART-PLAN.md`) (1) |
 
+## Cosy batch (stages C.A and S.7, painted 3 Nov, picked 4 Nov 2026)
+
+Painted overnight on 3 Nov by `~/isles-art-inbox/paint-all.sh`. A helper suggested a pick for each against the checks below, and James kept every suggestion ([the picking page](https://claude.ai/artifact/Hc5FXfb2bfa3J9mDhmZYne)).
+
+| Group | Pictures | Tries | Size in the game | Where it shows |
+|---|---|---|---|---|
+| Repaints | `bld-farm-2`, `bld-farm-3` (no wheat slab), `bld-workshop-1` (a small windmill) | 6 more each (4 to 9) | 384 px | My island |
+| Sky garden | `base-garden` | 9 | 1200 px wide | Beside a Grand Isle once its Lighthouse is lit; its 20 places set by hand (`GARDEN_SPOTS`) |
+| Decorations | `dec-…` (12) | 6 | 256 px | On their places |
+| Islanders | `walker-1` … `walker-6` | 6 | 128 px | Strolling the paths |
+| Small pictures | `icon-coin`, `icon-crystal`, `gift-flowers`, `gift-cake`, `gift-lantern` | 6 | 160 px | Coin pops, crystals, gift buttons |
+| Weather cards | `weather-rainbow`, `-geese`, `-traveller`, `-breeze` | 3 | 1600 and 800 wide | The Last turn report |
+| Lighthouse | `lighthouse-1` … `-4` (one tower growing) | 3 | 384 px | The back of the Grand Isle |
+| Gull Riders | `boat-gulls` | 3 | 480 px | Races against the Gull Riders |
+| Scenes | `scene-night`, `scene-season`, `scene-hall` | 3 | 1600 and 800 wide | Resting ("see you tomorrow"), Past seasons in the Hall, the top of the Hall |
+| Home page card | `home-card` | 3 | `src/assets/home/isles.webp` 1600, `isles-small.webp` 800 | Added to `gameCardArt.ts` at go-live |
+
+The cosy rules dropped fog, storms, the market and the upgrade badges, so they weren't painted. The weather cards and scenes were never drawn in code: when one is missing, the words show alone.
+
 ## From tries to the game (stage S.3)
 
 `scripts/isles-art.py tidy` reads the picks in `docs/isles-art/picks.json` and writes `.webp` files into `src/games/isles/art/`:
-- **Cut-outs:** white removed with rembg, then trimmed. Buildings at 384 px, bases at 1200 px wide, Pip at 320 px, boats at 480 px.
-- **Backgrounds:** 1600 px and 800 px wide.
+- **Cut-outs:** white removed with rembg, then trimmed. Buildings and the Lighthouse at 384 px, bases and the garden at 1200 px wide, Pip at 320 px, boats at 480 px, decorations 256, walkers 128, icons and gifts 160.
+- **Backgrounds, weather cards and scenes:** 1600 px and 800 px wide, not cut out.
 
 The art folder also gets a `CREDITS.md` ("Paintings made by James with Z-Image Turbo in ComfyUI, November 2026") and one `art.test.ts` that checks no picture is missing or spare.
 

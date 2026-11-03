@@ -73,6 +73,9 @@
 .si-kind--empty { background: #78716c; }
 .si-isle__keeper { position: absolute; left: 0; top: 0; width: 12%; min-width: 40px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); z-index: 200; }
 .si-lighthouse { position: absolute; left: 50%; top: 4%; width: 3.5%; height: calc(6% + var(--si-stage) * 4%); transform: translate(-50%, -100%); border-radius: 40% 40% 4px 4px; background: repeating-linear-gradient(180deg, #fff 0 22%, #dc2626 22% 40%); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); z-index: 5; }
+/* The painted Lighthouse stands on the Grand Isle's right-hand edge, like a lighthouse on a cliff, clear of the clearings. */
+.si-lighthouse-pic { position: absolute; left: 93%; top: 33%; height: 40%; width: auto; transform: translate(-50%, -100%); z-index: 43; pointer-events: none; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25)); }
+.si-lighthouse-pic--lit { filter: drop-shadow(0 0 10px rgba(255, 224, 120, 0.9)) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25)); }
 .si-lighthouse__light { position: absolute; left: 50%; top: -18%; width: 160%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, #fff7c2 0 35%, rgba(255, 212, 71, 0) 70%); }
 .si-drift { position: absolute; right: 2%; top: 4%; width: 16%; min-width: 64px; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; z-index: 300; animation: si-bob 3.2s ease-in-out infinite; border-radius: 12px; }
 .si-drift img { width: 100%; display: block; }
@@ -335,6 +338,9 @@
 .si-isle-name__btn { font-size: 0.9rem; min-height: 44px; }
 .si-mate__isle { font-weight: 700; color: var(--ink-soft); }
 .si-hall { display: grid; gap: 12px; }
+/* Painted weather cards and scenes (Card in Island.tsx). */
+.si-card-pic { display: block; width: 100%; max-width: 560px; height: auto; aspect-ratio: 1600 / 914; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 8px rgba(15, 53, 86, 0.15); }
+.si-card-pic--banner { max-width: none; aspect-ratio: auto; height: clamp(120px, 26vw, 240px); }
 .si-hall__list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
 .si-hall__row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
 .si-hall__row--me { border: 2px solid var(--focus); }
@@ -344,15 +350,16 @@
 
 /* New land (anchored this turn or last): a glowing ring, lots of looping sparkles and a "New land!" tag. */
 .si-newland { position: absolute; width: 0; height: 0; z-index: 390; pointer-events: none; }
-.si-newland__ring { position: absolute; left: -46px; top: -24px; width: 92px; height: 48px; border-radius: 50%; border: 3px solid #ffe27a; box-shadow: 0 0 14px 5px rgba(255, 212, 71, 0.85), inset 0 0 12px rgba(255, 244, 190, 0.9); animation: si-ring 1.6s ease-in-out infinite; }
-.si-newland__sparks { position: absolute; left: 0; top: 0; width: 0; height: 0; filter: drop-shadow(0 0 1px #8a5a00) drop-shadow(0 0 4px rgba(255, 196, 0, 0.9)); }
+.si-newland__glow { position: absolute; left: -90px; top: -48px; width: 180px; height: 96px; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 252, 220, 0.95) 0 22%, rgba(255, 214, 80, 0.7) 45%, rgba(255, 196, 0, 0) 72%); mix-blend-mode: screen; animation: si-ring 1.6s ease-in-out infinite; }
+.si-newland__ring { position: absolute; left: -66px; top: -34px; width: 132px; height: 68px; border-radius: 50%; border: 5px solid #fff1a8; box-shadow: 0 0 20px 8px rgba(255, 212, 71, 0.95), inset 0 0 18px 4px rgba(255, 244, 190, 0.95); animation: si-ring 1.6s ease-in-out infinite; }
+.si-newland__sparks { position: absolute; left: 0; top: 0; width: 0; height: 0; filter: drop-shadow(0 0 1px #8a5a00) drop-shadow(0 0 6px rgba(255, 220, 60, 1)) drop-shadow(0 0 3px #fff); }
 .si-newland__sparks > span { position: absolute; left: calc(var(--si-size) / -2); top: calc(var(--si-size) / -2); width: var(--si-size); height: var(--si-size); background: radial-gradient(circle, #fffbe0 15%, #ffd447 55%, #f0a500); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: si-spark 1.8s ease-out var(--si-wait) infinite both; }
 .si-newland__sparks > span:nth-child(3n) { background: radial-gradient(circle, #fff 10%, #ffc61a 60%, #d98e00); }
 .si-newland__sparks > span:nth-child(4n) { background: radial-gradient(circle, #fff 40%, #ffe27a); }
-.si-newland__tag { position: absolute; left: 0; top: -66px; transform: translateX(-50%); white-space: nowrap; padding: 2px 10px; border-radius: 999px; background: #fff8d6; color: #5a3b00; border: 2px solid #f0a500; font-weight: 800; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); }
+.si-newland__tag { position: absolute; left: 0; top: -84px; transform: translateX(-50%); white-space: nowrap; padding: 2px 10px; border-radius: 999px; background: #fff8d6; color: #5a3b00; border: 2px solid #f0a500; font-weight: 800; font-size: 0.85rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); }
 .si-newland-words { font-weight: 700; color: var(--ink); }
 @keyframes si-ring { 0%, 100% { transform: scale(0.92); opacity: 0.75; } 50% { transform: scale(1.08); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-  .si-newland__ring, .si-newland__sparks > span { animation: none; }
+  .si-newland__glow, .si-newland__ring, .si-newland__sparks > span { animation: none; }
   .si-newland__sparks > span { opacity: 0.9; transform: rotate(var(--si-spark)) translateY(calc(var(--si-far) * -0.7)); }
 }

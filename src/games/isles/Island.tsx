@@ -10,7 +10,7 @@ import { DECORATION_PLACES, GRAND_ISLE, type PlotOrEmpty } from '../../../shared
 import { decoration, hasGarden, type Island } from '../../../shared/isles/engine';
 import {
   BASE_ASPECT, DECOR_PLACES, GARDEN_ASPECT, GARDEN_SPOTS, SPOTS, backgroundArt, baseArt, baseFor, buildingArt, decorArt, gardenArt,
-  coinArt, keeperArt, walkerArt,
+  coinArt, keeperArt, lighthouseArt, walkerArt,
 } from './art';
 import { DECOR_EMOJI, KIND_NAME } from './words';
 
@@ -19,6 +19,27 @@ export function Art({ src, alt = '', className, fallback }: { src?: string; alt?
   const [failed, setFailed] = useState(false);
   if (!src || failed) return fallback;
   return <img className={className} src={src} alt={alt} draggable={false} onError={() => setFailed(true)} />;
+}
+
+/**
+ * A painted card (a weather card, a scene): the small copy on phones, the full one on wide screens. These were never
+ * drawn, so when one is missing or won't load the words beside it are enough and nothing shows.
+ */
+export function Card({ art, alt = '', className }: { art: { wide?: string; small?: string }; alt?: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!art.small || failed) return null;
+  const both = art.wide && art.wide !== art.small;
+  return (
+    <img
+      className={`si-card-pic${className ? ` ${className}` : ''}`}
+      src={art.small}
+      srcSet={both ? `${art.small} 800w, ${art.wide} 1600w` : undefined}
+      sizes={both ? '(max-width: 700px) 100vw, 800px' : undefined}
+      alt={alt}
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 /** How wide a building is drawn, as a share of the base's width: smaller on the bigger bases, bigger at higher levels. */
@@ -34,11 +55,12 @@ const SPARKS = [
   ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 11, far: 78 + (i % 2) * 16, size: i % 3 ? 10 : 14, wait: 0.18 + (i % 3) * 0.05, kind: 'burst' })),
   ...Array.from({ length: 14 }, (_, i) => ({ turn: (i - 6.5) * 13, far: 40 + (i % 4) * 12, size: i % 2 ? 8 : 12, wait: 0.3 + (i % 5) * 0.08, kind: 'fall' })),
 ];
-/** The sparkles round new land (James: "lots"): three rings, over and over, each sparkle at its own moment. */
+/** The sparkles round new land (James: "lots"): four rings, over and over, each sparkle at its own moment. */
 const NEW_LAND_SPARKS = [
-  ...Array.from({ length: 18 }, (_, i) => ({ turn: i * 20, far: 34 + (i % 3) * 8, size: i % 2 ? 10 : 16, wait: (i % 6) * 0.27 })),
-  ...Array.from({ length: 16 }, (_, i) => ({ turn: i * 22.5 + 10, far: 62 + (i % 2) * 14, size: i % 3 ? 9 : 14, wait: 0.15 + (i % 5) * 0.31 })),
-  ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 5, far: 92 + (i % 3) * 10, size: i % 2 ? 8 : 12, wait: 0.4 + (i % 4) * 0.35 })),
+  ...Array.from({ length: 20 }, (_, i) => ({ turn: i * 18, far: 30 + (i % 3) * 10, size: i % 2 ? 16 : 26, wait: (i % 6) * 0.27 })),
+  ...Array.from({ length: 20 }, (_, i) => ({ turn: i * 18 + 9, far: 62 + (i % 2) * 16, size: i % 3 ? 14 : 22, wait: 0.15 + (i % 5) * 0.31 })),
+  ...Array.from({ length: 18 }, (_, i) => ({ turn: i * 20 + 5, far: 96 + (i % 3) * 12, size: i % 2 ? 12 : 20, wait: 0.4 + (i % 4) * 0.35 })),
+  ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 13, far: 130 + (i % 2) * 14, size: i % 2 ? 10 : 16, wait: 0.6 + (i % 5) * 0.29 })),
 ];
 /** How far in front of a clearing walkers stroll (in % of the base's height). */
 const WALK_AHEAD = 7;
@@ -143,9 +165,16 @@ export function IslandPicture({
       <div className="si-isle" style={{ aspectRatio: String(BASE_ASPECT[base]) }}>
         <Art src={baseArt(base)} className="si-isle__base" fallback={<div className="si-isle__drawn" aria-hidden="true" />} />
         {island.lighthouse > 0 && (
-          <div className="si-lighthouse" style={{ '--si-stage': island.lighthouse } as CSSProperties} aria-label={`Sky Lighthouse, stage ${island.lighthouse} of 4`} role="img">
-            <span className="si-lighthouse__light" />
-          </div>
+          <Art
+            src={lighthouseArt(island.lighthouse)}
+            className={`si-lighthouse-pic${island.lighthouse >= 4 ? ' si-lighthouse-pic--lit' : ''}`}
+            alt={`Sky Lighthouse, stage ${island.lighthouse} of 4`}
+            fallback={(
+              <div className="si-lighthouse" style={{ '--si-stage': island.lighthouse } as CSSProperties} aria-label={`Sky Lighthouse, stage ${island.lighthouse} of 4`} role="img">
+                <span className="si-lighthouse__light" />
+              </div>
+            )}
+          />
         )}
         {shown.map((spot, i) => {
           const [x, y] = places[i];
@@ -189,6 +218,7 @@ export function IslandPicture({
           if (!at) return null;
           return (
             <span key={`n${spot}`} className="si-newland" style={{ left: `${at[0]}%`, top: `${at[1]}%` } as CSSProperties} aria-hidden="true">
+              <span className="si-newland__glow" />
               <span className="si-newland__ring" />
               <span className="si-newland__sparks">{NEW_LAND_SPARKS.map((s, i) => (
                 <span key={i} style={{ '--si-spark': `${s.turn}deg`, '--si-far': `${s.far}px`, '--si-size': `${s.size}px`, '--si-wait': `${s.wait}s` } as CSSProperties} />

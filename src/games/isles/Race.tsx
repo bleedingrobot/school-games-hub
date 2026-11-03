@@ -183,7 +183,7 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
         </div>
         <div className="si-lane">
           <div className="si-boat" style={{ left: at(paths?.themPath) }} aria-label={them.boat} role="img">
-            <Art src={boatArt('blue')} fallback={<span className="si-boat__drawn si-boat__drawn--blue" />} />
+            <Art src={boatArt(rivalName.current ? 'blue' : 'gulls')} fallback={<span className="si-boat__drawn si-boat__drawn--blue" />} />
             {rival?.keeper && keeperArt(rival.keeper, true) && <img className="si-boat__keeper" src={keeperArt(rival.keeper, true)} alt="" />}
           </div>
         </div>

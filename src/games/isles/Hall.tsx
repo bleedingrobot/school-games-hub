@@ -6,9 +6,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { LIGHTHOUSE } from '../../../shared/isles/config';
 import type { HallEntry, HallSeason } from '../../../shared/isles/server';
-import { keeperArt } from './art';
+import { keeperArt, sceneArt } from './art';
 import type { ClassSkyView, IslesBackend } from './backend';
-import { Art } from './Island';
+import { Art, Card } from './Island';
 import { n } from './words';
 
 const PLACE = ['', '🥇 1st', '🥈 2nd', '🥉 3rd'];
@@ -29,7 +29,7 @@ function Row({ entry }: { entry: Pick<HallEntry, 'name' | 'islandName' | 'keeper
         <Art src={entry.keeper ? keeperArt(entry.keeper, true) : undefined} fallback={<span className="si-keeper__drawn" aria-hidden="true">{entry.name.slice(0, 1)}</span>} />
       </span>
       <span className="si-hall__words">
-        <strong>{entry.islandName ?? `${entry.name}'s island`}</strong>
+        <strong>{entry.islandName ?? (entry.me ? 'Your island' : `${entry.name}'s island`)}</strong>
         <span className="si-note">
           {entry.islandName ? `${entry.me ? 'You' : entry.name}, ` : entry.me ? 'You, ' : ''}worth {n(entry.worth)}{entry.lit ? ', Sky Lighthouse lit' : ''}
         </span>
@@ -75,6 +75,7 @@ export function HallOfSkies({ backend, mine, onBack }: { backend: IslesBackend; 
         <h2 id="si-hall-title" ref={heading} tabIndex={-1}>Hall of the Skies</h2>
         <button type="button" className="button button--light" onClick={onBack}>Back to the class sky</button>
       </div>
+      <Card art={sceneArt('hall')} className="si-card-pic--banner" />
       {problem && <p className="si-problem" role="alert">{problem}</p>}
       {!hall && !problem && <p>Opening the Hall…</p>}
       {hall && (
@@ -88,6 +89,7 @@ export function HallOfSkies({ backend, mine, onBack }: { backend: IslesBackend; 
           </section>
           <section className="si-panel" aria-labelledby="si-hall-past">
             <h3 id="si-hall-past">Past seasons</h3>
+            <Card art={sceneArt('season')} />
             {hall.length ? (
               hall.map((season) => (
                 <section key={season.ended} className="si-hall__season" aria-label={`Season ending ${when(season.ended)}`}>

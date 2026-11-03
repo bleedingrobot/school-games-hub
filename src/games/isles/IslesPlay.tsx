@@ -13,7 +13,7 @@ import { GULL_RIDERS, raceProblem } from '../../../shared/isles/race';
 import { PROBLEM_TEXT } from '../../../shared/isles/server';
 import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
-import { keeperArt, pipArt } from './art';
+import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
@@ -22,7 +22,7 @@ import { HallOfSkies } from './Hall';
 import { NamePicker } from './Names';
 import { celebration, guideLine } from './guide';
 import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, type Help, type Tip } from './help';
-import { Art, IslandPicture, POP_GAP } from './Island';
+import { Art, Card, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
 import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
@@ -552,6 +552,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
             {lastTurn.length > 0 && (
               <section className="si-panel si-report" aria-label="Last turn">
                 <h3>Last turn</h3>
+                {report?.weather && <Card art={weatherArt(report.weather)} />}
                 <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
               </section>
             )}
@@ -560,6 +561,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               <section className="si-panel si-home">
                 {island.turnsLeft < 1 ? (
                   <div className="si-resting">
+                    <Card art={sceneArt('night')} />
                     <p><strong>Your island is resting. See you tomorrow!</strong></p>
                     <p className="si-note">Tomorrow brings {TURNS_PER_DAY} new turns and more land on the wind.</p>
                   </div>
