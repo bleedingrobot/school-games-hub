@@ -2,7 +2,7 @@
 
 The new end game for Star Trader. Today the big goal is one button: save 20,000 credits and **buy your moon**. This plan turns that into **building your own solar system**: pupils pick their sun, their planets, how the planets look, what lives on them and what technology they build. Then they can watch it all in full screen, painted to a high standard and moving.
 
-Written 3 November 2026 for James. **Status: brainstorm, nothing built.** Open questions are in section 13.
+Written 3 November 2026 for James. **Status (4 Nov 2026): built on branch `trader-system` with painted art, not live.** The migration is on hold and nothing is deployed. 14 weak planet maps wait for a repaint at home (`docs/TRADER-SYSTEM-ART-PLAN.md` section 8). All the questions in section 13 are answered.
 
 ## The short version
 
@@ -79,6 +79,7 @@ A new tab beside Market, Ship and Bank: **🌟 Forge**. Built in the same dark p
 ### 2.2 Planning is free, building costs
 
 - Changing a *planned* piece is free and unlimited. Kids can redesign all week.
+- A piece shows in the picker only once the pupil has enough credits for it (James, 4 Nov). A line under each set of choices says how many more appear as they earn credits, and a piece already picked always stays.
 - Once **built**, changing the look of a piece is cheap (a tenth of its price: "repaint"), and removing it gives half back. Kept simple so a pupil can't wreck their own savings by accident: removing asks "Are you sure?" and shows what they get back.
 - The server checks every build against the shared rules (as every move is checked now: `shared/trader/server.ts`), so the browser can't give itself free planets.
 
@@ -326,9 +327,9 @@ S.0 and S.1 can run side by side. S.2 is the riskiest (does it look incredible *
 
 ## 13. Questions for James
 
-1. ~~Keep or clear at a New Season?~~ **Decided (3 Nov):** the pupil chooses: keep the system and reset the ship and credits, or save a picture to their profile, clear it, and keep the ship and credits (section 1.2). Still to check: should *all* the credits carry over, or a share?
-2. **Claim your star at about 3,000 credits** as the first step (my pick), or keep the moon as the first big goal and open the Forge only after it?
-3. **Free planning from day 1** (my pick), or only see pieces once you can afford them?
-4. **Silly pieces** (cube planet, donut planet, floating islands): in, or keep it all real-science looking?
-5. **Painted portraits overnight** (section 6.4): worth doing later?
-6. **Stickers in the gallery**, or look only?
+1. ~~Keep or clear at a New Season?~~ **Decided (3 Nov):** the pupil chooses: keep the system and reset the ship and credits, or save a picture to their profile, clear it, and keep the ship and credits (section 1.2). **Credits (4 Nov):** all of them carry over, up to a cap.
+2. ~~First step~~ **Decided (4 Nov):** claim your star at about 3,000 credits.
+3. ~~Free planning?~~ **Decided (4 Nov):** pieces show only once the pupil can afford them, with a line saying how many more appear as they earn credits. A piece already picked stays. Planning what they can see is still free.
+4. ~~Silly pieces?~~ **Decided (4 Nov):** keep them, as many as possible. More silly pieces are welcome later.
+5. ~~Painted portraits?~~ **Decided (4 Nov):** yes, later.
+6. ~~Stickers?~~ **Decided (4 Nov):** stickers from a fixed set of friendly ones, no typing.
