@@ -247,3 +247,13 @@ James asked for S.4 before the art. Everything in section 11 is in; the rule she
 - **Help levels** (`help.ts`): Lots (Pip's line with Show me, and first-time tips) for the first day's 6 turns, then Some (Pip's line only); Off (only "resting" and the guide). Chosen in How to play, with **Replay the guide**. Kept in the browser.
 - **First-time tips** (Lots only), once each, closed with Got it: a gift in the post, each lucky weather, the first race, a Lighthouse stage, the sky garden.
 - **Test 8** (`Guide.test.tsx`): pressing through, skipping (stays skipped after a reload), catching up and replaying, the help levels, a tip shown once. All 8 tests are now used.
+
+### S.6 results (hub parts), 3 Nov 2026
+- **James chose (cards):** island names picked from a list (no typing); the Hall of the Skies seen by pupils and teachers; yes to the home page "turns left" chip.
+- **Island names:** `shared/isles/names.ts` (24 × 16 names), the `name` action, `isles_islands.name` (kept through New Season). Shown on My island (Name your island / Rename), the class sky, visits and the Hall.
+- **Hall of the Skies:** `isles_hall`, filled by the New Season hook before the islands are cleared (top 3 by `isles_worth()` per class, plus lit Lighthouses). Pupils: "🏆 Hall of the Skies" on the Class sky (this season so far, and past seasons). Teachers: in the drawer and in "Seasons and end of year". A test checks the database's decoration prices match the config.
+- **Teacher contract:** the On switch (with the game and its points behind "?"), "Follows focus" in the Maths column, a drawer with Sky Races on/off, each student's island and the class's Hall, a student panel with "Start this student's island again" (achievements, points, name, keeper and Hall stay) and a one-line summary. No `hardest` (the answers are in the hub's focus reports) and no `alerts` (the cosy island can't get stuck).
+- **Home page chip:** `20261103000400_isles_home_chip.sql`, an exact in-place edit of `my_moves_left()`, on hold with the game; "🏝️ 4 turns left" (`src/data/movesLeft.ts`, its test).
+- **Go-live list:** `docs/prompts/isles-golive.md` (stage S.8). Both migrations need renumbering then, and `security.test.sql` and `progress_access.test.sql` need Sky Isles added.
+- **Tests:** still 8 (names, worth and the Hall were added to the existing rules, server and accessibility tests); the database test has 75 checks, all passing on a scratch copy. The teacher panels were checked with a throw-away test (deleted). Not in the registry yet (S.8).
+

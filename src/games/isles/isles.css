@@ -325,3 +325,19 @@
 .si-tip { border-left: 6px solid var(--si-gold); }
 .si-help { display: grid; gap: 8px; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
 .si-help legend { font-weight: 800; padding: 0 4px; }
+
+/* Island names (Names.tsx) and the Hall of the Skies (Hall.tsx). */
+.si-names { display: grid; gap: 14px; }
+.si-names__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.si-name { min-height: 48px; padding: 8px 12px; border-radius: 14px; border: 3px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.si-name--on { border-color: var(--si-gold); box-shadow: 0 0 0 3px var(--si-gold-edge); background: var(--card); }
+.si-isle-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; font-family: var(--display); font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+.si-isle-name__btn { font-size: 0.9rem; min-height: 44px; }
+.si-mate__isle { font-weight: 700; color: var(--ink-soft); }
+.si-hall { display: grid; gap: 12px; }
+.si-hall__list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
+.si-hall__row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.si-hall__row--me { border: 2px solid var(--focus); }
+.si-hall__place { min-width: 4.5em; font-weight: 700; }
+.si-hall__words { display: flex; flex-direction: column; gap: 2px; }
+.si-hall__season h4 { margin: 12px 0 4px; }

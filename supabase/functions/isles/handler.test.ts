@@ -5,6 +5,7 @@ import { markQuestion, seededRandom, type MathsContext } from '../../../shared/m
 import { CALM_TURNS, GIFT_COINS, TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/isles/memoryServices';
 import { RACE_LEGS } from '../../../shared/isles/config';
+import { islandWorth } from '../../../shared/isles/engine';
 import { RACE_STOPS, runRace } from '../../../shared/isles/race';
 import { makeHandler } from './handler';
 
@@ -228,6 +229,14 @@ it("lets classmates visit, leave gifts and race each other's islands, never writ
   expect(later.classmates[0].raceWhy).toBe("You've raced that island today already.");
   // The news board: good news only (a race won, a decoration put up), newest first.
   expect(later.news.map((n: { name: string; kind: string }) => `${n.name}:${n.kind}`)).toEqual([...['Ana:decoration'], ...(done.race.result.won ? ['Ana:race'] : [])]);
+
+  // Island names: only from the list (never typed), seen by classmates; and the Hall of the Skies (empty until a New Season).
+  expect((await send('pupil-b', { action: 'name', name: 'Rude Words' })).status).toBe(400);
+  expect((await send('pupil-b', { action: 'name', name: 'Puffin Cove' })).body).toEqual({ name: 'Puffin Cove' });
+  expect((await send('pupil-b', { action: 'load' })).body.name).toBe('Puffin Cove');
+  const named = (await send('pupil-a', { action: 'sky' })).body.classmates[0];
+  expect(named).toMatchObject({ name: 'Ben', islandName: 'Puffin Cove', worth: islandWorth(ben()) });
+  expect((await send('pupil-a', { action: 'hall' })).body).toEqual({ hall: [] });
 });
 
 it('the deployable file is up to date with the code (run `npm run build:functions -- isles` if this fails)', async () => {

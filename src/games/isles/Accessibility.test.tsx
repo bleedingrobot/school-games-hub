@@ -174,9 +174,27 @@ describe('keyboard and screen readers', () => {
       screen.getByRole('button', { name }).focus();
       await u.keyboard('{Enter}');
     };
+    // Naming the island: pick from the list, never typed.
+    await press('Name your island');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Name your island', level: 2 })).toHaveFocus());
+    const first = screen.getAllByRole('radio')[0];
+    first.focus();
+    await u.keyboard('{Enter}');
+    const chosen = first.textContent!;
+    await press(`Call it ${chosen}`);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    expect(screen.getByText(`🏝️ ${chosen}`)).toBeInTheDocument();
     await press('Class sky');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
     await screen.findByText("Mere lit the Sky Lighthouse!");
+    expect(screen.getByText('Starlight Haven')).toBeInTheDocument();
+    // The Hall of the Skies: who is ahead this season, and last season's top islands.
+    await press('🏆 Hall of the Skies');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Hall of the Skies', level: 2 })).toHaveFocus());
+    expect(await screen.findByRole('heading', { name: /^Season ending/ })).toBeInTheDocument();
+    expect(screen.getAllByText('Starlight Haven').length).toBe(2);
+    await press('Back to the class sky');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
     // An island in its calm start can't be raced, and says why.
     expect(screen.getByRole('button', { name: "Race Lily's island" })).toBeDisabled();
     expect(screen.getByRole('button', { name: "Race Lily's island" })).toHaveAccessibleDescription('That island is new and still having a calm start.');

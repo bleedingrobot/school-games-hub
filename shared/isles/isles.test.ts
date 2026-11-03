@@ -1,7 +1,9 @@
 // Sky Isles' rule tests (docs/ISLES-PLAN.md, section 9: tests 5 and 6). Balance and pace live in scripts/isles-sim.mjs.
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../maths/serverQuestions';
-import { BREEZE_SPEED, CHUNK_PRICE, GUST_SPEED, RACE_LEGS, RACE_QUESTIONS } from './config';
+import { readFileSync } from 'node:fs';
+import { BREEZE_SPEED, CHUNK_PRICE, DECORATIONS, GUST_SPEED, RACE_LEGS, RACE_QUESTIONS } from './config';
+import { isIslandName, nameChoices } from './names';
 import { coinsCollected, collect, newIsland, playTurn, room, type Action, type Island } from './engine';
 import { GULL_RIDERS, gullRiders, RACE_STOPS, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceResult } from './race';
 
@@ -21,6 +23,17 @@ function play(seed: string) {
 }
 
 describe('Sky Isles rules', () => {
+  it('names islands only from the list, and the database works out island worth with the same decoration prices', () => {
+    const names = nameChoices(seededRandom('names'));
+    expect(new Set(names).size).toBe(6);
+    expect(names.every(isIslandName)).toBe(true);
+    for (const bad of ['Rude Words', 'Cloudberry', 'Cloudberry Hollow Hollow', 'cloudberry hollow', 42]) expect(isIslandName(bad)).toBe(false);
+    // isles_worth() in the migration lists each decoration's coin price (islandWorth counts a tenth of it).
+    const sql = readFileSync('supabase/migrations/20261102000100_isles.sql', 'utf8');
+    const listed = Object.fromEntries([...sql.split('create function public.isles_worth')[1].split('$$;')[0].matchAll(/\('(\w+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
+    expect(listed).toEqual(Object.fromEntries(DECORATIONS.map((d) => [d.id, d.coins])));
+  });
+
   it('rolls a turn and a race the same from the same seed and choices, so the server and the preview agree', () => {
     for (const seed of ['isles-a', 'isles-b', 'isles-c']) {
       const a = play(seed);

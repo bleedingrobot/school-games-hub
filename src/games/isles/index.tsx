@@ -1,9 +1,13 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { useIslesEnabled } from './switch';
+import { ISLES_ABOUT, islesSummary, saveIslesEnabled, useIslesClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const IslesPlay = lazy(() => import('./IslesPlay').then((m) => ({ default: m.IslesPlay })));
+const IslesTeacherSettings = lazy(() => import('../../pages/TeacherIsles').then((m) => ({ default: m.IslesTeacherSettings })));
+const IslesStudentPanel = lazy(() => import('../../pages/TeacherIsles').then((m) => ({ default: m.IslesStudentPanel })));
+const IslesSeasonPanel = lazy(() => import('../../pages/TeacherIsles').then((m) => ({ default: m.IslesSeasonPanel })));
 
 /** A little floating island with a house and a cloud. */
 function IslandIcon({ size = 64 }: { size?: number }) {
@@ -22,7 +26,7 @@ function IslandIcon({ size = 64 }: { size?: number }) {
 /**
  * Sky Isles (docs/ISLES-PLAN.md): grow a floating island in the class's shared sky. Each turn the sky pilot asks a
  * maths question from the pupil's own focus (a right answer is a fair wind). Not ranked. Not in the hub yet: it joins
- * registry.ts behind `islesOn()` (./switch.ts) at go-live, and the teacher contract comes in stage S.6.
+ * registry.ts behind `islesOn()` (./switch.ts) at go-live (docs/prompts/isles-golive.md).
  */
 export const skyIsles: GameDefinition = {
   id: 'isles',
@@ -35,4 +39,14 @@ export const skyIsles: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useIslesEnabled,
+  // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), "Follows focus" for its
+  // maths, and a drawer with Sky Races on or off, the class's islands and its Hall of the Skies.
+  teacher: {
+    switch: { useValue: useIslesClassSwitch, save: saveIslesEnabled, about: ISLES_ABOUT },
+    useSummary: islesSummary,
+    Settings: IslesTeacherSettings,
+    StudentPanel: IslesStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherIsles').then((m) => m.islesStudentSummary(student)),
+  },
+  SeasonPanels: IslesSeasonPanel,
 };

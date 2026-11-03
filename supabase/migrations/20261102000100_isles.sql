@@ -23,8 +23,9 @@
 -- 6. The server's functions (record_isles_...), the pupils' two reading functions, the hooks, measures and achievements,
 --    and who can call what.
 --
--- Not here yet: island names and the Hall of the Skies (stage S.6). They can be added to this file while it is still on
--- hold (supabase/migrations-on-hold.txt), or in a migration of their own.
+-- 7. Stage S.6: island names (picked from shared/isles/names.ts, kept through New Season), isles_hall (the Hall of the
+--    Skies: each season's top 3 islands in each class by island worth, and every lit Lighthouse, kept for good, made
+--    by the New Season hook), and the teacher's class report, student report and island reset.
 --
 -- Depends on 20261020000100_game_hooks.sql.
 
@@ -71,6 +72,8 @@ create table public.isles_islands (
   guide_done boolean not null default false,
   -- The pupil's Sky Keeper portrait (KEEPERS in shared/isles/config.ts: b01 to b20, g01 to g20), kept through New Season.
   keeper text check (keeper is null or keeper ~ '^[bg](0[1-9]|1[0-9]|20)$'),
+  -- The island's name (shared/isles/names.ts: two words from a list, never typed), kept through New Season.
+  name text check (name is null or name ~ '^[A-Z][a-z]{1,15} [A-Z][a-z]{1,15}$'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -156,9 +159,27 @@ create table public.isles_news (
 );
 create index isles_news_by_player on public.isles_news (player, day);
 
+-- The Hall of the Skies, kept for good (a New Season adds to it and never clears it): each class's top 3 islands of
+-- the season by island worth (place 1 to 3), and every island that lit its Sky Lighthouse (place null if it wasn't in
+-- the top 3). The island's name and Sky Keeper are kept as they were.
+create table public.isles_hall (
+  id bigint generated always as identity primary key,
+  player uuid not null references public.profiles (id) on delete cascade,
+  class_id uuid not null references public.classes (id) on delete cascade,
+  ended date not null default (now() at time zone 'Pacific/Auckland')::date,
+  island_name text,
+  keeper text,
+  worth integer not null check (worth >= 0),
+  place smallint check (place between 1 and 3),
+  lit boolean not null,
+  created_at timestamptz not null default now()
+);
+create index isles_hall_by_class on public.isles_hall (class_id, ended);
+
 alter table public.isles_islands enable row level security;
 alter table public.isles_post enable row level security;
 alter table public.isles_news enable row level security;
+alter table public.isles_hall enable row level security;
 alter table public.isles_turns enable row level security;
 alter table public.isles_questions enable row level security;
 alter table public.isles_races enable row level security;
@@ -191,7 +212,7 @@ set search_path = ''
 as $$
   select jsonb_build_object(
     'saved', (select jsonb_build_object('seed', i.seed, 'season', i.season, 'version', i.version, 'day', i.day, 'island', i.island,
-                'guideDone', i.guide_done, 'keeper', i.keeper)
+                'guideDone', i.guide_done, 'keeper', i.keeper, 'name', i.name)
               from public.isles_islands i where i.player = isles_load.player),
     'classMiddle', coalesce((
       select percentile_disc(0.5) within group (order by jsonb_array_length(o.island -> 'spots'))
@@ -410,6 +431,21 @@ as $$
   select exists (select 1 from saved)
 $$;
 
+-- The island's name (the server function only sends names from shared/isles/names.ts; the column's check refuses
+-- anything shaped otherwise). It stays through a New Season. False if the pupil has no island row yet.
+create function public.record_isles_name(player uuid, name text)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  with saved as (
+    update public.isles_islands i set name = record_isles_name.name, updated_at = now()
+    where i.player = record_isles_name.player returning 1
+  )
+  select exists (select 1 from saved)
+$$;
+
 -- Opens the post (by id) into the island, only if the island is still at `expected_version` and every one of them is
 -- the pupil's own and still unopened. True if it was kept now.
 create function public.record_isles_open_post(player uuid, expected_version integer, island jsonb, day integer, ids bigint[])
@@ -470,7 +506,7 @@ set search_path = ''
 as $$
   select jsonb_build_object(
     'classmates', coalesce((
-      select jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name, 'keeper', i.keeper, 'day', i.day, 'island', i.island,
+      select jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name, 'keeper', i.keeper, 'islandName', i.name, 'day', i.day, 'island', i.island,
           'challengedToday', (select count(*) from public.isles_races r where r.opponent = c.id::text and r.day = isles_class.day),
           'giftsToday', (select count(*) from public.isles_post o where o.to_player = c.id and o.kind = 'gift' and o.day = isles_class.day))
         order by c.name)
@@ -628,6 +664,23 @@ as $$
   select i.player from public.isles_islands i where i.island is not null
 $$;
 
+-- What an island is worth, for the Hall of the Skies (islandWorth in shared/isles/engine.ts, never anything about
+-- maths): 10 a spot, 5 a building level, 1 for every 5 islanders, a tenth of each decoration's coin price (DECORATIONS
+-- in shared/isles/config.ts; a test checks these prices match), 50 a Lighthouse stage.
+create function public.isles_worth(island jsonb)
+returns integer
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce(jsonb_array_length(island -> 'spots'), 0) * 10
+    + coalesce((select sum((s ->> 'level')::integer) from jsonb_array_elements(island -> 'spots') s), 0)::integer * 5
+    + coalesce((island ->> 'islanders')::integer, 0) / 5
+    + coalesce((select sum(p.coins / 10) from jsonb_array_elements(island -> 'decorations') d
+                join (values ('flowers', 40), ('bench', 60), ('lantern', 80), ('cherry', 120), ('chimes', 150), ('bridge', 200), ('fountain', 300), ('balloon', 500), ('rainbow', 800), ('flags', 250), ('arch', 200), ('telescope', 600)) p (id, coins) on p.id = d ->> 'id'), 0)::integer
+    + coalesce((island ->> 'lighthouse')::integer, 0) * 50
+$$;
+
 -- What a New Season clears (the game's points always go): the island, its turns, questions and races. The row stays,
 -- so the guide stays done; the next load makes a fresh island with a new seed.
 create function public.isles_season(players uuid[])
@@ -639,7 +692,24 @@ as $$
   b as (delete from public.isles_questions where player = any (players)),
   c as (delete from public.isles_races where player = any (players)),
   -- The news goes; the post stays (gifts sent still count for Kind Heart, and waiting ones open into the new island).
-  d as (delete from public.isles_news where player = any (players))
+  d as (delete from public.isles_news where player = any (players)),
+  -- The Hall of the Skies, before the islands go: each class's top 3 by island worth, and every lit Lighthouse.
+  -- Only islands that played a turn this season count.
+  ranked as (
+    select i.player, public.current_class_of(i.player) as class_id, i.name, i.keeper, public.isles_worth(i.island) as worth,
+           coalesce((i.island ->> 'lighthouse')::integer, 0) >= 4 as lit
+    from public.isles_islands i
+    where i.player = any (players) and i.island is not null and coalesce((i.island ->> 'turn')::integer, 0) > 0
+  ),
+  placed as (
+    select r.*, row_number() over (partition by r.class_id order by r.worth desc, r.player) as place
+    from ranked r where r.class_id is not null
+  ),
+  h as (
+    insert into public.isles_hall (player, class_id, island_name, keeper, worth, place, lit)
+    select p.player, p.class_id, p.name, p.keeper, p.worth, case when p.place <= 3 then p.place end, p.lit
+    from placed p where p.place <= 3 or p.lit
+  )
   update public.isles_islands i set island = null, season = i.season + 1, version = i.version + 1, updated_at = now()
   where i.player = any (players)
 $$;
@@ -651,6 +721,132 @@ stable
 set search_path = ''
 as $$
   select max(t.created_at) from public.isles_turns t where t.player = isles_last_played.player
+$$;
+
+-- One class's Hall of the Skies, newest season first (the last 12 seasons). `viewer` is marked as `me`; hidden
+-- profiles are left out unless `show_hidden` (the class's teacher) or it's the viewer's own.
+create function public.isles_hall_json(target_class uuid, viewer uuid, show_hidden boolean)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object('ended', s.ended, 'entries', s.entries) order by s.ended desc), '[]'::jsonb)
+  from (
+    select h.ended, jsonb_agg(jsonb_build_object(
+        'name', p.display_name, 'islandName', h.island_name, 'keeper', h.keeper, 'worth', h.worth, 'place', h.place, 'lit', h.lit,
+        'me', coalesce(h.player = viewer, false))
+      order by h.place nulls last, h.worth desc) as entries
+    from public.isles_hall h join public.profiles p on p.id = h.player
+    where h.class_id = target_class and (show_hidden or not p.hidden or p.id = viewer)
+    group by h.ended
+    order by h.ended desc
+    limit 12
+  ) s
+$$;
+
+-- The pupil's class's Hall, for the server function.
+create function public.isles_hall(player uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select case when c is null then '[]'::jsonb else public.isles_hall_json(c, isles_hall.player, false) end
+  from public.current_class_of(isles_hall.player) c
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The teacher's reports (docs/ISLES-PLAN.md, section 10)
+-- ---------------------------------------------------------------------------
+
+-- One class: each student's island this season (never maths), and the class's Hall of the Skies.
+create function public.teacher_isles_class(target_class uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher();
+  if target_class is null then
+    raise exception 'Choose a class first.' using errcode = '22023';
+  end if;
+  if not public.teaches_class(target_class) then
+    raise exception 'That isn''t one of your classes.' using errcode = '42501';
+  end if;
+  return jsonb_build_object(
+    'students', coalesce((
+      select jsonb_agg(jsonb_build_object(
+          'id', p.id, 'name', p.display_name, 'islandName', i.name,
+          'spots', jsonb_array_length(i.island -> 'spots'), 'lighthouse', (i.island ->> 'lighthouse')::integer,
+          'turns', (i.island ->> 'turn')::integer, 'worth', public.isles_worth(i.island),
+          'lastPlayed', public.isles_last_played(p.id))
+        order by p.display_name)
+      from public.class_members m
+      join public.profiles p on p.id = m.student_id
+      join public.isles_islands i on i.player = p.id
+      where m.class_id = target_class and p.role = 'student' and i.island is not null), '[]'::jsonb),
+    'hall', public.isles_hall_json(target_class, null, true));
+end;
+$$;
+
+-- One student's island this season (null if they haven't played since the last New Season).
+create function public.teacher_isles_student(student uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher_of(student);
+  return (
+    select jsonb_build_object(
+      'islandName', i.name, 'spots', jsonb_array_length(i.island -> 'spots'), 'lighthouse', (i.island ->> 'lighthouse')::integer,
+      'turns', (i.island ->> 'turn')::integer, 'islanders', (i.island ->> 'islanders')::integer,
+      'decorations', jsonb_array_length(i.island -> 'decorations'), 'racesWon', (i.island ->> 'racesWon')::integer,
+      'worth', public.isles_worth(i.island), 'lastPlayed', public.isles_last_played(student))
+    from public.isles_islands i where i.player = student and i.island is not null);
+end;
+$$;
+
+-- Starts one student's island again (a card asks the teacher first). Achievements, points, the island's name, the Sky
+-- Keeper, the Hall and the guide stay; post waiting for them stays too.
+create function public.teacher_reset_isles(student uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher_of(student);
+  delete from public.isles_turns where player = student;
+  delete from public.isles_questions where player = student;
+  delete from public.isles_races where player = student;
+  delete from public.isles_news where player = student;
+  update public.isles_islands set island = null, version = version + 1, updated_at = now() where player = student;
+end;
+$$;
+
+-- Every class the teacher teaches that has a Hall of the Skies, for the Seasons part of the Teacher page.
+create function public.teacher_isles_halls()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher();
+  return coalesce((
+    select jsonb_agg(jsonb_build_object('classId', c.id, 'className', c.name, 'seasons', public.isles_hall_json(c.id, null, true)) order by c.name)
+    from public.classes c
+    where c.id in (select public.my_classes()) and exists (select 1 from public.isles_hall h where h.class_id = c.id)), '[]'::jsonb);
+end;
 $$;
 
 insert into public.hub_games (id, switch_column, counts_fn, rules_fn, players_fn, season_fn, last_played_fn, keep_achievements)
@@ -687,9 +883,13 @@ revoke execute on function
   public.record_isles_keeper(uuid, text), public.record_isles_open_post(uuid, integer, jsonb, integer, bigint[]),
   public.isles_classmates(uuid), public.isles_class(uuid, integer), public.record_isles_gift(uuid, uuid, text, integer, integer),
   public.record_isles_news(uuid, integer, jsonb), public.isles_news_board(uuid, integer), public.my_isles(), public.isles_sky(),
-  public.isles_counts(uuid), public.isles_point_rules(), public.isles_players(), public.isles_season(uuid[]), public.isles_last_played(uuid)
+  public.isles_counts(uuid), public.isles_point_rules(), public.isles_players(), public.isles_season(uuid[]), public.isles_last_played(uuid),
+  public.record_isles_name(uuid, text), public.isles_worth(jsonb), public.isles_hall_json(uuid, uuid, boolean), public.isles_hall(uuid),
+  public.teacher_isles_class(uuid), public.teacher_isles_student(uuid), public.teacher_reset_isles(uuid), public.teacher_isles_halls()
 from public, anon, authenticated;
-grant execute on function public.teacher_set_isles(boolean, boolean, uuid), public.my_isles(), public.isles_sky() to authenticated;
+grant execute on function public.teacher_set_isles(boolean, boolean, uuid), public.my_isles(), public.isles_sky(),
+  public.teacher_isles_class(uuid), public.teacher_isles_student(uuid), public.teacher_reset_isles(uuid), public.teacher_isles_halls()
+to authenticated;
 grant execute on function
   public.isles_load(uuid), public.record_isles_start(uuid, text, jsonb, integer),
   public.record_isles_turn(uuid, integer, jsonb, integer, integer, boolean, jsonb, jsonb),
@@ -699,5 +899,6 @@ grant execute on function
   public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb, uuid, boolean, integer), public.record_isles_guide_done(uuid),
   public.record_isles_keeper(uuid, text), public.record_isles_open_post(uuid, integer, jsonb, integer, bigint[]),
   public.isles_classmates(uuid), public.isles_class(uuid, integer), public.record_isles_gift(uuid, uuid, text, integer, integer),
-  public.record_isles_news(uuid, integer, jsonb), public.isles_news_board(uuid, integer)
+  public.record_isles_news(uuid, integer, jsonb), public.isles_news_board(uuid, integer),
+  public.record_isles_name(uuid, text), public.isles_hall(uuid)
 to service_role;

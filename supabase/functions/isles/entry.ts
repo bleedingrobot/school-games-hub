@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
-import type { Classmate, NewsItem, Post, QuestionSet, SavedIsland, StoredRace } from '../../../shared/isles/server';
+import type { Classmate, HallSeason, NewsItem, Post, QuestionSet, SavedIsland, StoredRace } from '../../../shared/isles/server';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
@@ -128,6 +128,8 @@ Deno.serve(
       }),
     guideDone: (player) => call<boolean>('record_isles_guide_done', { player }),
     keeper: (player, keeper) => call<boolean>('record_isles_keeper', { player, keeper }),
+    name: (player, name) => call<boolean>('record_isles_name', { player, name }),
+    hall: (player) => call<HallSeason[]>('isles_hall', { player }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'isles');

@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh isles, then scripts/scratch-test.sh isles supabase/tests/database/isles.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(61);
+select plan(75);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -155,10 +155,48 @@ select pg_temp.reset();
 select is(public.isles_counts(pg_temp.id('0a')) - 'isles_farms',
   '{"isles_chunks": 1, "isles_islanders": 28, "isles_decorations": 0, "isles_races_won": 2, "isles_grand": 0, "isles_lighthouses": 0, "isles_gifts_sent": 0}'::jsonb,
   'the achievement counts come from the island');
-select public.isles_season(array[pg_temp.id('0a')]);
+select set_config('isles.room', (select id::text from public.classes where name = 'Isle Room'), false);
+-- ---- Island names, island worth and the teacher's reports (stage S.6) ----
+select pg_temp.act_as_server();
+select ok(public.record_isles_name(pg_temp.id('0a'), 'Cloudberry Hollow'), 'an island name is saved');
+select is(public.isles_load(pg_temp.id('0a')) -> 'saved' ->> 'name', 'Cloudberry Hollow', '... and comes back with the island');
+select throws_ok($$ select public.record_isles_name(pg_temp.id('0a'), 'rude words here') $$, '23514', null, '... only shaped like a listed name');
+select is((select e ->> 'islandName' from jsonb_array_elements(public.isles_class(pg_temp.id('0b'), 20000) -> 'classmates') e), 'Cloudberry Hollow',
+  'classmates see the island''s name');
+select is(public.isles_worth('{"spots":[{"kind":"farm","level":2},{"kind":"empty","level":0}],"islanders":12,"decorations":[{"id":"fountain","place":0}],"lighthouse":1}'),
+  112, 'island worth: spots, levels, islanders, decorations and Lighthouse stages');
+select pg_temp.reset();
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.teacher_isles_class(current_setting('isles.room')::uuid) $$, '42501', null,
+  'a pupil cannot read the class report');
+select throws_ok($$ select public.teacher_reset_isles(auth.uid()) $$, '42501', null, '... or reset an island');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select is((select array_agg(e ->> 'worth' order by e ->> 'name') from jsonb_array_elements(
+    public.teacher_isles_class(current_setting('isles.room')::uuid) -> 'students') e)::text,
+  (select array_agg(w order by n) from (values ('110', (select display_name from public.profiles where id = pg_temp.id('0a'))),
+    ('154', (select display_name from public.profiles where id = pg_temp.id('0b')))) v(w, n))::text,
+  'the teacher''s class report has the class''s islands');
+select is((public.teacher_isles_student(pg_temp.id('0a')) ->> 'turns')::integer, 3, '... and one student''s island');
+select pg_temp.reset();
+
+select public.isles_season(array[pg_temp.id('0a'), pg_temp.id('0b')]);
 select ok((select island is null and season = 2 from public.isles_islands where player = pg_temp.id('0a'))
   and not exists (select 1 from public.isles_turns where player = pg_temp.id('0a'))
   and not exists (select 1 from public.isles_races where player = pg_temp.id('0a')), 'a New Season empties the island and clears its turns and races');
+
+select is((select (e -> 'entries')::text from jsonb_array_elements(public.isles_hall(pg_temp.id('0b'))) e),
+  jsonb_build_array(jsonb_build_object('name', (select display_name from public.profiles where id = pg_temp.id('0a')), 'islandName', 'Cloudberry Hollow',
+    'keeper', 'g07', 'worth', 110, 'place', 1, 'lit', false, 'me', false))::text,
+  'New Season puts the class''s top islands in the Hall of the Skies (an island that never played a turn is left out)');
+select is((select name from public.isles_islands where player = pg_temp.id('0a')) || '/' || (select keeper from public.isles_islands where player = pg_temp.id('0a')),
+  'Cloudberry Hollow/g07', '... and the name and keeper stay');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select is((select e ->> 'className' from jsonb_array_elements(public.teacher_isles_halls()) e), 'Isle Room', 'the teacher sees the class''s Hall');
+select pg_temp.reset();
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select lives_ok($$ select public.teacher_reset_isles('00000000-0000-0000-0000-00000000000c') $$, 'a teacher can start a student''s island again');
+select pg_temp.reset();
+select ok((select island is null from public.isles_islands where player = pg_temp.id('0c')), '... and it is emptied');
 
 select * from finish();
 rollback;

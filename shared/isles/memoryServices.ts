@@ -7,7 +7,7 @@ import type { FactAnswer } from '../maths/leitner';
 import type { MathsContext } from '../maths/serverQuestions';
 import type { Island } from './engine';
 import { GIFTS_RECEIVED_PER_DAY, GIFTS_SENT_PER_DAY, NEWS_SHOWN } from './config';
-import type { IslesServices, IslesSettings, NewsKind, Post, PostToSend, QuestionSet, SavedIsland, StoredRace, TurnRecord } from './server';
+import type { HallEntry, IslesServices, IslesSettings, NewsKind, Post, PostToSend, QuestionSet, SavedIsland, StoredRace, TurnRecord } from './server';
 
 export interface MemoryData {
   islands: Record<string, SavedIsland>;
@@ -20,6 +20,8 @@ export interface MemoryData {
   /** Gifts and races' "well raced" coins waiting in each pupil's post (opened: in their island). */
   post?: (PostToSend & { id: number; from: string; to: string; day: number; opened: boolean })[];
   news?: (NewsKind & { player: string; day: number })[];
+  /** The pretend class's Hall of the Skies (entries by player id), newest season first. */
+  hall?: { ended: string; entries: (Omit<HallEntry, 'name' | 'me'> & { player: string })[] }[];
 }
 
 export interface MemoryOptions {
@@ -87,6 +89,7 @@ export function memoryServices(options: MemoryOptions = {}): IslesServices & { d
           id,
           name: nameOf(id),
           keeper: s.keeper,
+          islandName: s.name ?? null,
           day: s.day,
           island: copy(s.island!),
           challengedToday: data.races.filter((r) => r.opponent === id && r.day === day).length,
@@ -119,7 +122,7 @@ export function memoryServices(options: MemoryOptions = {}): IslesServices & { d
       const mine = data.islands[player];
       if (mine?.island) return false;
       data.islands[player] = {
-        seed, season: mine?.season ?? 1, version: (mine?.version ?? 0) + 1, day, island: copy(island), guideDone: mine?.guideDone ?? false, keeper: mine?.keeper ?? null,
+        seed, season: mine?.season ?? 1, version: (mine?.version ?? 0) + 1, day, island: copy(island), guideDone: mine?.guideDone ?? false, keeper: mine?.keeper ?? null, name: mine?.name ?? null,
       };
       saved();
       return true;
@@ -187,6 +190,19 @@ export function memoryServices(options: MemoryOptions = {}): IslesServices & { d
       mine.keeper = keeper;
       saved();
       return true;
+    },
+    async name(player, name) {
+      const mine = data.islands[player];
+      if (!mine) return false;
+      mine.name = name;
+      saved();
+      return true;
+    },
+    async hall(player) {
+      return (data.hall ?? []).map((season) => ({
+        ended: season.ended,
+        entries: season.entries.map(({ player: who, ...e }) => ({ ...e, name: who === player ? (data.names?.[who] ?? 'You') : nameOf(who), me: who === player })),
+      }));
     },
     async recordAnswers(player, once, answers) {
       options.log?.answers.push({ player, once, answers });

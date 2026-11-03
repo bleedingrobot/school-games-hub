@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BASES, COINS, GRAND_ISLE, LIGHTHOUSE, START, TURNS_PER_DAY } from '../../../shared/isles/config';
-import { apply, beforeBuilding, boatsOf, problemWith, room, wholeCrystals, type Action, type Island, type TurnReport } from '../../../shared/isles/engine';
+import { apply, beforeBuilding, boatsOf, islandWorth, problemWith, room, wholeCrystals, type Action, type Island, type TurnReport } from '../../../shared/isles/engine';
 import { nextStep } from '../../../shared/isles/nextStep';
 import { GULL_RIDERS, raceProblem } from '../../../shared/isles/race';
 import { PROBLEM_TEXT } from '../../../shared/isles/server';
@@ -18,6 +18,8 @@ import { IslesError, type IslandView, type IslesBackend, type PostShown, type Pu
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
 import { ClassSky, VisitIsland } from './ClassSky';
+import { HallOfSkies } from './Hall';
+import { NamePicker } from './Names';
 import { celebration, guideLine } from './guide';
 import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, type Help, type Tip } from './help';
 import { Art, IslandPicture, POP_GAP } from './Island';
@@ -37,10 +39,12 @@ type Screen =
   | { kind: 'race'; open: PublicRace | null; inTurn?: boolean; rival?: { id: string; name: string; keeper: string | null }; back?: Screen }
   | { kind: 'sky' }
   | { kind: 'visit'; who: string }
+  | { kind: 'hall' }
+  | { kind: 'name' }
   | { kind: 'decorations'; back: Screen }
   | { kind: 'howto'; back: Screen };
 
-const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper' | 'sky' | 'visit'>, string> = {
+const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper' | 'sky' | 'visit' | 'hall' | 'name'>, string> = {
   loading: 'Sky Isles',
   problem: 'Sky Isles',
   home: 'My island',
@@ -243,6 +247,19 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     }
   };
 
+  const saveName = async (name: string) => {
+    setBusy(true);
+    try {
+      await backend.send({ action: 'name', name });
+      setView((v) => (v ? { ...v, name } : v));
+      setScreen({ kind: 'home' });
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** The guide is finished or skipped: the server remembers, so it doesn't come back on another Chromebook. */
   const finishGuide = () => {
     void backend.send({ action: 'guideDone' }).catch(() => undefined);
@@ -295,8 +312,30 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           today={view.day}
           onVisit={(who) => setScreen({ kind: 'visit', who })}
           onRace={(c) => setScreen({ kind: 'race', open: null, rival: { id: c.id, name: c.name, keeper: c.keeper }, back: { kind: 'sky' } })}
+          onHall={() => setScreen({ kind: 'hall' })}
           onBack={() => setScreen({ kind: 'home' })}
         />
+      </div>
+    );
+  }
+
+  if (screen.kind === 'hall') {
+    return (
+      <div className="si">
+        <HallOfSkies
+          backend={backend}
+          mine={{ islandName: view.name, keeper: view.keeper, worth: islandWorth(island), lighthouse: island.lighthouse }}
+          onBack={() => setScreen({ kind: 'sky' })}
+        />
+      </div>
+    );
+  }
+
+  if (screen.kind === 'name') {
+    return (
+      <div className="si">
+        <NamePicker current={view.name} busy={busy} onChoose={(name) => void saveName(name)} onBack={() => setScreen({ kind: 'home' })} />
+        {problem && <p className="si-problem" role="alert">{problem}</p>}
       </div>
     );
   }
@@ -392,6 +431,14 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       </header>
 
       <Resources island={shownIsland} />
+      {screen.kind === 'home' && (
+        <p className="si-isle-name">
+          {view.name ? <>🏝️ {view.name} </> : null}
+          <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
+            {view.name ? 'Rename' : 'Name your island'}
+          </button>
+        </p>
+      )}
 
       {screen.kind === 'howto' ? (
         <section className="si-panel">

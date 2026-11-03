@@ -7202,6 +7202,70 @@ function playTurn(island, windy, actions, random) {
 		}
 	};
 }
+/** What a finished island is worth, for the Hall of the Skies (never anything about maths): 10 a spot, 5 a building
+* level, 1 for every 5 islanders, a tenth of each decoration's coin price, 50 a Lighthouse stage. */
+function islandWorth(island) {
+	const allLevels = island.spots.reduce((sum, spot) => sum + spot.level, 0);
+	const decorated = island.decorations.reduce((sum, d) => sum + Math.floor((decoration(d.id)?.coins ?? 0) / 10), 0);
+	return spotCount(island) * 10 + allLevels * 5 + Math.floor(island.islanders / 5) + decorated + island.lighthouse * 50;
+}
+//#endregion
+//#region shared/isles/names.ts
+/**
+* Island names (James, 3 Nov 2026): a pupil picks one from made-up names, never types one, so there's nothing rude to
+* catch. A name is a first word and a place word ("Cloudberry Hollow"). The server only keeps names this list makes.
+* Kept through New Season, like the Sky Keeper.
+*/
+const NAME_FIRST = [
+	"Cloudberry",
+	"Misty",
+	"Sunny",
+	"Moonlit",
+	"Starlight",
+	"Breezy",
+	"Honey",
+	"Willow",
+	"Pebble",
+	"Feather",
+	"Rainbow",
+	"Maple",
+	"Clover",
+	"Lantern",
+	"Puffin",
+	"Bluebell",
+	"Thistle",
+	"Marigold",
+	"Silver",
+	"Golden",
+	"Drizzle",
+	"Seashell",
+	"Daisy",
+	"Fern"
+];
+const NAME_PLACE = [
+	"Isle",
+	"Hollow",
+	"Haven",
+	"Rise",
+	"Nook",
+	"Meadow",
+	"Cove",
+	"Peak",
+	"Glen",
+	"Harbour",
+	"Gardens",
+	"Hill",
+	"Landing",
+	"Springs",
+	"Rest",
+	"Reach"
+];
+/** Is this one of the names the list makes? */
+function isIslandName(name) {
+	if (typeof name !== "string") return false;
+	const [first, place, ...rest] = name.split(" ");
+	return rest.length === 0 && NAME_FIRST.includes(first) && NAME_PLACE.includes(place);
+}
 //#endregion
 //#region shared/isles/race.ts
 /**
@@ -7432,7 +7496,9 @@ const ACTIONS = [
 	"keeper",
 	"sky",
 	"visit",
-	"gift"
+	"gift",
+	"name",
+	"hall"
 ];
 /** Points (docs/ISLES-PLAN.md, section 6.5). The hub caps points at 40 a day across every game. */
 const POINTS = {
@@ -7666,6 +7732,16 @@ async function handleIsles(services, player, body) {
 		if (kept === "busy") return busy();
 		return kept ? ok({ keeper: body.keeper }) : no(409, "Open Sky Isles first.", { code: "stale" });
 	}
+	if (action === "name") {
+		if (!isIslandName(body.name)) return no(400, "That name isn't one of the island names.");
+		const kept = await services.name(player, body.name);
+		if (kept === "busy") return busy();
+		return kept ? ok({ name: body.name }) : no(409, "Open Sky Isles first.", { code: "stale" });
+	}
+	if (action === "hall") {
+		const hall = await services.hall(player);
+		return hall === "busy" ? busy() : ok({ hall });
+	}
 	if ((action === "raceStart" || action === "raceAnswer" || action === "raceFinish") && !settings.races) return no(403, "Sky Races are switched off for your class.", { code: "races-off" });
 	let state = await services.load(player);
 	if (state === "busy") return busy();
@@ -7726,6 +7802,7 @@ async function handleIsles(services, player, body) {
 				show: !saved.guideDone && now.turn === 0
 			},
 			keeper: saved.keeper ?? null,
+			name: saved.name ?? null,
 			races: settings.races,
 			...extra
 		});
@@ -7805,7 +7882,9 @@ async function handleIsles(services, player, body) {
 			return {
 				id: c.id,
 				name: c.name,
+				islandName: c.islandName,
 				keeper: c.keeper,
+				worth: islandWorth(theirs),
 				spots: spotCount(theirs),
 				decorations: theirs.decorations.filter((d) => d.place !== null).length,
 				lighthouse: theirs.lighthouse,
@@ -8315,6 +8394,11 @@ Deno.serve(makeHandler({
 		player,
 		keeper
 	}),
+	name: (player, name) => call("record_isles_name", {
+		player,
+		name
+	}),
+	hall: (player) => call("isles_hall", { player }),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "isles");
 	},

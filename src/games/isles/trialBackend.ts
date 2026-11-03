@@ -52,19 +52,30 @@ function pretendIsland(spots: number, turn: number, decorations: DecorationId[],
  */
 export function pretendClass(data: MemoryData, today: number) {
   if (data.names && Object.keys(data.names).length > 1) return;
-  const mates: [string, string, string, Island][] = [
-    ['mate-ana', 'Ana', 'g03', pretendIsland(12, 40, ['flowers', 'cherry', 'fountain', 'bench', 'chimes'])],
-    ['mate-rawiri', 'Rawiri', 'b05', pretendIsland(9, 26, ['lantern', 'flags'])],
-    ['mate-mere', 'Mere', 'g11', pretendIsland(16, 70, ['rainbow', 'balloon', 'fountain', 'cherry', 'bridge', 'flowers', 'arch', 'telescope'], 4)],
-    ['mate-tama', 'Tama', 'b12', pretendIsland(7, 15, ['flowers'])],
-    ['mate-sione', 'Sione', 'b17', pretendIsland(10, 33, ['bench', 'bridge', 'chimes'])],
-    ['mate-lily', 'Lily', 'g08', pretendIsland(6, 4, [])],
+  const mates: [string, string, string, string | null, Island][] = [
+    ['mate-ana', 'Ana', 'g03', 'Honey Meadow', pretendIsland(12, 40, ['flowers', 'cherry', 'fountain', 'bench', 'chimes'])],
+    ['mate-rawiri', 'Rawiri', 'b05', 'Puffin Cove', pretendIsland(9, 26, ['lantern', 'flags'])],
+    ['mate-mere', 'Mere', 'g11', 'Starlight Haven', pretendIsland(16, 70, ['rainbow', 'balloon', 'fountain', 'cherry', 'bridge', 'flowers', 'arch', 'telescope'], 4)],
+    ['mate-tama', 'Tama', 'b12', null, pretendIsland(7, 15, ['flowers'])],
+    ['mate-sione', 'Sione', 'b17', 'Misty Peak', pretendIsland(10, 33, ['bench', 'bridge', 'chimes'])],
+    ['mate-lily', 'Lily', 'g08', null, pretendIsland(6, 4, [])],
   ];
   data.names = { ...(data.names ?? {}), trial: 'You' };
-  for (const [id, name, keeper, island] of mates) {
+  for (const [id, name, keeper, islandName, island] of mates) {
     data.names[id] = name;
-    data.islands[id] = { seed: id.padEnd(32, '0'), season: 1, version: 1, day: today, island, guideDone: true, keeper };
+    data.islands[id] = { seed: id.padEnd(32, '0'), season: 1, version: 1, day: today, island, guideDone: true, keeper, name: islandName };
   }
+  // Last season's Hall of the Skies, so the preview has one to show.
+  const ended = new Date((today - 9) * 86_400_000).toISOString().slice(0, 10);
+  data.hall = [{
+    ended,
+    entries: [
+      { player: 'mate-mere', islandName: 'Starlight Haven', keeper: 'g11', worth: 742, place: 1, lit: true },
+      { player: 'mate-sione', islandName: 'Misty Peak', keeper: 'b17', worth: 516, place: 2, lit: false },
+      { player: 'mate-ana', islandName: 'Honey Meadow', keeper: 'g03', worth: 488, place: 3, lit: false },
+      { player: 'mate-rawiri', islandName: 'Puffin Cove', keeper: 'b05', worth: 455, place: null, lit: true },
+    ],
+  }];
   data.post = [...(data.post ?? []), { id: 1, from: 'mate-ana', to: 'trial', day: today, opened: false, kind: 'gift', gift: 'cake', coins: 10 }];
   data.news = [
     ...(data.news ?? []),

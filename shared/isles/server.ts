@@ -19,7 +19,10 @@
  *   sky         the class sky: classmates' islands (name, Sky Keeper, size, decorations), who can be raced or given a
  *               gift now (and why not), and the class news board;
  *   visit       one classmate's island, look only: buildings, decorations and islanders, never coins or maths;
- *   gift        leaves a classmate a free gift (GIFTS), once a day.
+ *   gift        leaves a classmate a free gift (GIFTS), once a day;
+ *   name        the island's name, picked from the made-up names in ./names.ts (never typed), kept through New Season;
+ *   hall        the class's Hall of the Skies: each past season's top 3 islands by island worth, and every lit
+ *               Lighthouse, kept for good.
  *
  * A pupil never writes another pupil's island. A gift, or the "well raced" coins from a classmate's race, goes in the
  * classmate's post, and their own server load opens it into their island (so two pupils can't overwrite each other).
@@ -33,11 +36,12 @@ import {
   DECORATIONS, GIFT_COINS, GIFTS, GIFTS_RECEIVED_PER_DAY, GIFTS_SENT_PER_DAY, GRAND_ISLE, KEEPERS, LIGHTHOUSE, NEWS_DAYS, NEWS_SPOTS, PLOT_KINDS,
   RACE_QUESTIONS, type DecorationId, type GiftId,
 } from './config';
-import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
+import { islandWorth, newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
+import { isIslandName } from './names';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
-export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper' | 'sky' | 'visit' | 'gift';
-const ACTIONS: readonly string[] = ['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper', 'sky', 'visit', 'gift'];
+export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper' | 'sky' | 'visit' | 'gift' | 'name' | 'hall';
+const ACTIONS: readonly string[] = ['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper', 'sky', 'visit', 'gift', 'name', 'hall'];
 
 /** The pupil's saved island row. `island` is null after a New Season (a new one is made on the next load). */
 export interface SavedIsland {
@@ -51,6 +55,8 @@ export interface SavedIsland {
   guideDone: boolean;
   /** The Sky Keeper portrait (an id from KEEPERS), or null until the pupil chooses one. */
   keeper: string | null;
+  /** The island's name (from ./names.ts), or null until the pupil picks one. */
+  name: string | null;
 }
 
 /** A stored set of questions: one for a turn, three for a race. Pupils can never read these. */
@@ -86,6 +92,7 @@ export interface Classmate {
   id: string;
   name: string;
   keeper: string | null;
+  islandName: string | null;
   /** The day the island was last saved: it is rolled to today before it's used. */
   day: number;
   island: Island;
@@ -99,6 +106,22 @@ export interface Classmate {
 export type NewsKind = { kind: 'spots'; spots: number } | { kind: 'lighthouse' } | { kind: 'decoration'; id: DecorationId } | { kind: 'race'; gullRiders: boolean };
 /** `me`: the pupil's own news. */
 export type NewsItem = NewsKind & { name: string; day: number; me: boolean };
+
+/** One island in the Hall of the Skies: a season's top 3 (`place` 1 to 3) or a lit Lighthouse (`place` null). */
+export interface HallEntry {
+  name: string;
+  islandName: string | null;
+  keeper: string | null;
+  worth: number;
+  place: number | null;
+  lit: boolean;
+  me: boolean;
+}
+/** One finished season in the class's Hall (`ended`: the New Zealand date it ended, YYYY-MM-DD), newest first. */
+export interface HallSeason {
+  ended: string;
+  entries: HallEntry[];
+}
 
 export interface IslesSettings {
   enabled: boolean;
@@ -153,6 +176,10 @@ export interface IslesServices {
   guideDone(player: string): Promise<boolean | 'busy'>;
   /** Keeps the pupil's Sky Keeper (an id from KEEPERS). False if the pupil has no island yet. */
   keeper(player: string, keeper: string): Promise<boolean | 'busy'>;
+  /** Keeps the island's name (one from ./names.ts). False if the pupil has no island yet. */
+  name(player: string, name: string): Promise<boolean | 'busy'>;
+  /** The pupil's class's Hall of the Skies, newest season first. */
+  hall(player: string): Promise<HallSeason[] | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Gives hub points (once per `once`, which must be unique across every pupil). A failure is only logged. */
@@ -381,6 +408,16 @@ export async function handleIsles(services: IslesServices, player: string, body:
     if (kept === 'busy') return busy();
     return kept ? ok({ keeper: body.keeper }) : no(409, 'Open Sky Isles first.', { code: 'stale' });
   }
+  if (action === 'name') {
+    if (!isIslandName(body.name)) return no(400, "That name isn't one of the island names.");
+    const kept = await services.name(player, body.name);
+    if (kept === 'busy') return busy();
+    return kept ? ok({ name: body.name }) : no(409, 'Open Sky Isles first.', { code: 'stale' });
+  }
+  if (action === 'hall') {
+    const hall = await services.hall(player);
+    return hall === 'busy' ? busy() : ok({ hall });
+  }
   if ((action === 'raceStart' || action === 'raceAnswer' || action === 'raceFinish') && !settings.races) {
     return no(403, 'Sky Races are switched off for your class.', { code: 'races-off' });
   }
@@ -440,6 +477,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
       question: set ? { ...shown(set)[0], answered: set.answered['0'] ?? null } : null,
       guide: { done: saved.guideDone, show: !saved.guideDone && now.turn === 0 },
       keeper: saved.keeper ?? null,
+      name: saved.name ?? null,
       races: settings.races,
       ...extra,
     });
@@ -507,7 +545,9 @@ export async function handleIsles(services: IslesServices, player: string, body:
       return {
         id: c.id,
         name: c.name,
+        islandName: c.islandName,
         keeper: c.keeper,
+        worth: islandWorth(theirs),
         spots: spotCount(theirs),
         decorations: theirs.decorations.filter((d) => d.place !== null).length,
         lighthouse: theirs.lighthouse,

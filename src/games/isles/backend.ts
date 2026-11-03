@@ -50,6 +50,8 @@ export interface IslandView {
   question: TurnQuestion | null;
   guide: { done: boolean; show: boolean };
   keeper: string | null;
+  /** The island's name (shared/isles/names.ts), or null until the pupil picks one. */
+  name: string | null;
   races: boolean;
   openRace?: PublicRace | null;
   report?: TurnReport;
@@ -65,7 +67,10 @@ export type PostShown = { fromName: string; coins: number } & ({ kind: 'gift'; g
 export interface ClassmateCard {
   id: string;
   name: string;
+  islandName: string | null;
   keeper: string | null;
+  /** Island worth, for the Hall of the Skies' "this season so far". */
+  worth: number;
   spots: number;
   decorations: number;
   lighthouse: number;

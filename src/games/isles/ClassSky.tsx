@@ -60,11 +60,12 @@ function RaceButton({ card, onRace, saidAbove }: { card: ClassmateCard; onRace: 
   );
 }
 
-export function ClassSky({ backend, today, onVisit, onRace, onBack }: {
+export function ClassSky({ backend, today, onVisit, onRace, onHall, onBack }: {
   backend: IslesBackend;
   today: number;
   onVisit: (id: string) => void;
   onRace: (c: ClassmateCard) => void;
+  onHall: () => void;
   onBack: () => void;
 }) {
   const [sky, setSky] = useState<ClassSkyView | null>(null);
@@ -84,7 +85,10 @@ export function ClassSky({ backend, today, onVisit, onRace, onBack }: {
     <section className="si-sky" aria-labelledby="si-sky-title">
       <div className="si-top">
         <h2 id="si-sky-title" ref={heading} tabIndex={-1}>Class sky</h2>
-        <button type="button" className="button button--light" onClick={onBack}>Back to my island</button>
+        <div className="si-row">
+          <button type="button" className="button button--light" onClick={onHall}>🏆 Hall of the Skies</button>
+          <button type="button" className="button button--light" onClick={onBack}>Back to my island</button>
+        </div>
       </div>
       {problem && <p className="si-problem" role="alert">{problem}</p>}
       {!sky && !problem && <p>Looking across the sky…</p>}
@@ -112,6 +116,7 @@ export function ClassSky({ backend, today, onVisit, onRace, onBack }: {
                     <Portrait keeper={c.keeper} name={c.name} />
                     <div className="si-mate__words">
                       <strong>{c.name}</strong>
+                      {c.islandName && <span className="si-mate__isle">{c.islandName}</span>}
                       <span className="si-note">{sizeWords(c)}</span>
                     </div>
                     <div className="si-mate__buttons">
@@ -182,6 +187,7 @@ export function VisitIsland({ backend, who, onRace, onBack }: {
       {visit && (
         <div className="si-main">
           <div className="si-left">
+            {visit.islandName && <p className="si-isle-name">🏝️ {visit.islandName}</p>}
             <IslandPicture island={lookIsland(visit)} keeper={visit.keeper} />
             <p className="si-note">
               {sizeWords(visit)}, {plural(visit.look.islanders, 'islander')}. Just looking: everything on {visit.name}'s island stays just as it is.
