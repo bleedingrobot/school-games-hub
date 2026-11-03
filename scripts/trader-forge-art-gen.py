@@ -153,13 +153,13 @@ PLANET_LOOKS: dict[str, list[str]] = {
         'a teal and lime tropical planet of rainforest islands and wide shallow turquoise lagoons',
     ],
     'gas': [
-        'a gas giant like Jupiter, horizontal bands of cream, orange and brown cloud with swirling storms and white ovals',
-        'a gas giant like Saturn, soft pale yellow and white horizontal cloud bands with gentle ripples',
-        'a gas giant with rich red, pink and rose horizontal cloud bands and small swirling storms',
+        'close-up of endless horizontal stripes of cream, orange and brown swirling cloud, wavy edges, small white oval storms',
+        'close-up of endless horizontal stripes of soft pale yellow and white cloud with gentle ripples and wavy edges',
+        'close-up of endless horizontal stripes of rich red, pink and rose cloud with small swirling storms and wavy edges',
         'a gas giant with deep blue and violet horizontal cloud bands and bright white storm swirls',
     ],
     'icegiant': [
-        'an ice giant like Uranus, a smooth pale cyan sphere of cloud with faint soft horizontal bands',
+        'close-up of smooth pale cyan cloud tops with faint soft horizontal stripes and gentle haze',
         'an ice giant like Neptune, deep azure blue with bright white wispy high cloud streaks and a dark storm oval',
         'a blue-green ice giant with swirling turquoise cloud and fine pale bands',
         'a lilac-blue ice giant with soft darker bands and thin bright cloud ribbons',
@@ -215,21 +215,21 @@ for kind, looks in PLANET_LOOKS.items():
 # ---- Cloud maps (white on black) ----
 CLOUD_LOOKS = {
     'thin': 'thin wispy cirrus cloud, long soft streaks and small scattered patches with big clear gaps between them',
-    'thick': 'a thick unbroken blanket of billowing cumulus cloud with only a few small gaps, soft rounded tops',
+    'thick': 'big thick clumps of billowing white cumulus cloud covering about half of the map, with wide black gaps winding between the clumps',
     'storms': 'swirling spiral storm systems like hurricanes, curling bands of towering cloud with a clear eye at the centre of each',
-    'spot': 'gas-giant style horizontal cloud bands with long streaks, and one single huge oval storm like Jupiter\'s Great Red Spot in the middle of the map',
+    'spot': 'long thin horizontal streaks of white cloud in stripes, and one single big oval swirl of white cloud in the middle',
 }
 for kind, words in CLOUD_LOOKS.items():
     add('clouds', kind, f'{STYLE}Seamless flat map of cloud patterns only: {words}.{CLOUD_TAIL}', MAP)
 
 # ---- Sun surfaces ----
 SUN_LOOKS = {
-    'yellow': 'the surface of a yellow star like our Sun, boiling golden-yellow plasma cells, a few small dark sunspots and bright arcs of fire',
-    'red': 'the surface of a red dwarf star, deep orange-red plasma cells with large dark brown starspots and slow glowing flares',
+    'yellow': 'close-up of boiling golden-yellow plasma cells packed together like a honeycomb of fire, a few small dark spots, bright glowing threads',
+    'red': 'close-up of deep orange-red boiling plasma cells packed together like a honeycomb of fire, large dark brown spots, glowing threads',
     'blue': 'the surface of a blue giant star, blinding white-blue plasma with swirling bright electric-blue streamers and fine glowing threads',
-    'white': 'the surface of a white dwarf star, hard smooth bright white with faint blue-white ripples, tiny and dense',
+    'white': 'close-up of brilliant glowing white-hot plasma with fine pale blue ripples and swirls and tiny bright sparkles, dazzling and luminous',
     'pulsar': 'the surface of a pulsar neutron star, glowing pale blue-white with fine curving magnetic field lines swirling in bright arcs',
-    'binary': 'the surface of a warm orange-yellow star with large boiling plasma cells and a few small dark spots, glowing hot',
+    'binary': 'close-up of large boiling orange-yellow plasma cells packed together like a honeycomb of fire, a few small dark spots, glowing hot',
     'blackhole': 'a seamless swirl of hot glowing gas streaks in orange, gold and white on a deep dark red background, like the bright spinning disc round a black hole',
     'baby': 'the surface of a young protostar, glowing pink-orange with swirls of dusty gas and sparkling bright specks, still wrapped in cloud',
 }
@@ -299,7 +299,7 @@ CARDS: dict[str, list[str]] = {
     'microbes': [
         'a close view of a rock pool on an alien shore full of glowing green slime and tiny glowing blobs, gentle ripples, a soft pink sky with two small moons',
         'colourful microbe mats in rings of orange, yellow and turquoise round a steaming hot spring on a rocky alien plain, a twinkling sky',
-        'a shallow warm sea glowing with drifting clouds of tiny blue-green glowing specks like fallen stars, a calm shore at dusk',
+        'close-up of a shallow warm rock pool at dusk, the water filled with swirling clouds of millions of tiny bright blue-green glowing specks, glowing ribbons of light in the water',
     ],
     'plants': [
         'a forest of tall green trees and giant ferns on an alien world under a warm yellow sun, a clear river, a large ringed planet in the pale sky',
@@ -329,7 +329,7 @@ CARDS: dict[str, list[str]] = {
     'crystalfolk': [
         'friendly tall walking beings made of clear glowing crystal, tidy angular bodies with soft light inside, walking across a field of purple crystals at night',
         'small round crystal beings rolling and humming among tall pink crystal spires, rainbow light playing through them',
-        'a gathering of graceful crystal beings of different heights standing in a circle inside a great hall of blue crystal, beams of coloured light',
+        'a circle of tall walking shapes made entirely of clear glowing blue crystal, faceted and see-through like living gemstones, standing among crystal pillars in a great hall of blue crystal, beams of coloured light',
     ],
     'robots': [
         'a shining robot town of round domed houses and neat lines of glowing lights on a desert plain at dusk, small friendly robots rolling along the streets',
@@ -359,7 +359,7 @@ TECH_CUT = {
     'dome': 'a clear glass dome habitat with green plants and a small town inside, a white metal base ring',
     'terraformer': 'a big white terraforming machine, a tall tower with huge fans and vents puffing green mist, on a wide base',
     'miner': 'a chunky asteroid mining ship with a big claw arm holding a lump of rock, orange and grey, floodlights',
-    'sail': 'a slim solar sail ship with a huge shining gold sail stretched on thin masts, a tiny cabin',
+    'sail': 'a space probe: a huge flat square sheet of shining gold foil, thin as paper, held flat by four long thin silver booms in an X, a small boxy silver probe at the centre',
     'trade-ship': 'a small round cargo ship with stacked cargo pods and blue engine glows, scuffed and weathered',
     'engine': 'a giant planet engine: a huge engine block with a wide glowing nozzle, braces and pipes, scuffed grey metal, built to push a world',
 }

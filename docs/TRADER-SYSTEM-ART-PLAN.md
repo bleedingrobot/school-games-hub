@@ -154,10 +154,12 @@ If it all goes wrong: nothing is lost. The PNGs stay in `~/dragon-art-inbox/trad
 ## 8. Things to decide or watch
 
 - **Repo size.** The big copies are large. A real 4096 × 2048 planet is about 1 to 2 MB and an 8192 × 4096 sky about 3 MB, so the whole set could be about 150 MB (the tidy script prints the real total and how much of it is `-hd`). That is too much to commit lightly. Options for later: keep the normal-size files in git and host the `-hd` ones elsewhere (Supabase storage); paint only the best 2 surfaces per kind at 4096; or lower `HD_QUALITY` at the top of the tidy script (70 now). Decide after batch 1 when the real sizes are known. Nothing is committed until then.
-- **Night maps don't line up with the day surface.** They are painted on their own, so a city light can land on what the day map shows as sea. On a night side that is rarely noticed. If James minds, a later version can paint them from the day map (img2img).
+- **Night maps: painted, then left out (4 Nov).** The model painted Earth's real continents on almost every one, so the lights would never match a planet's own land. The viewer already draws city lights, lava glow and crystal veins on each planet's own surface (`bakeShaders.ts`), so the painted night maps are not copied into the game. The paintings stay in the inbox; `nightArt()` finds nothing and the drawn lights are used.
 - **Technology sizes, sun, moon and night sizes aren't in `types.ts`.** The tidy script's table `SIZE` at the top says what it writes; change a number and re-run with `--force`.
 - **Cloud kinds:** `types.ts` says `clouds/<cloudKind>.webp`. "none" has no picture.
 - **The ring world, cube and donut maps** are ordinary flat maps (the strange shape is the viewer's job). The eyeball map has the sunlit ocean or desert in the middle and ice at the left and right edges, so it joins up when wrapped; the viewer should put the middle of the map under the sun.
+
+- **First-look remakes (4 Nov).** 20 of batch 1 were remade once: suns and gas giants that came out as a ball drawn inside the map (their prompts now say "close-up of ..." and never name a star or a planet), cloud maps with grey or tinted backgrounds (the tidy script now treats the darkest fifth of a cloud map as black), and a few planets with frames, a stamp-like pattern or a globe inside.
 
 ## Credits to carry over
 

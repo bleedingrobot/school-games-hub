@@ -276,7 +276,9 @@ def make(job):
         img = load_map(src, key, fix=(g == 'planets'))
         if g == 'clouds':  # white on black: make the black exactly black so the gaps are clear
             a = np.asarray(img.convert('L'), dtype=np.float32)
-            a = np.clip((a - 14) / (255 - 14), 0, 1) * 255
+            # a tinted or grey background (the model doesn't always paint pure black) counts as black too
+            lo = float(np.clip(np.percentile(a, 20) + 12, 14, 90))
+            a = np.clip((a - lo) / (255 - lo), 0, 1) * 255
             img = Image.fromarray(a.round().astype(np.uint8)).convert('RGB')
         if g == 'night':  # lights on black
             a = np.asarray(img, dtype=np.float32)
