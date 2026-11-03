@@ -48,7 +48,9 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
       </span>
     );
   }
-  if (text === '?') return <>{blank}</>;
+  // A gap in a list ('?,' in 6, 8, ?, 12) keeps its comma after the blank.
+  const gap = /^\?([,;]?)$/.exec(text);
+  if (gap) return <>{blank}{gap[1]}</>;
   if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
   return <span>{text}</span>;
 }

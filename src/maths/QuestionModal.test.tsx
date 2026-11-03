@@ -69,6 +69,17 @@ describe('question box', () => {
     await vi.waitFor(() => expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ correct: true })));
   });
 
+  it('shows the typed number in a counting gap (6, 8, ?, 12)', async () => {
+    const user = userEvent.setup();
+    setup(question({ parts: ['6,', '8,', '?,', '12'], spoken: 'Counting in twos: 6, 8, something, 12. What is missing?', prompt: 'What is missing?', answer: 10 }));
+    const blank = document.querySelector('.question__blank')!;
+    expect(blank).toHaveTextContent('?');
+    await user.click(screen.getByRole('button', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: '0' }));
+    expect(blank).toHaveTextContent('10');
+    expect(screen.getByLabelText(/Counting in twos/)).toHaveTextContent('6,8,10,12');
+  });
+
   it('works with a keyboard: digits, Backspace and Enter', async () => {
     const user = userEvent.setup();
     const { onSubmit } = setup();
