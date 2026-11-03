@@ -66,6 +66,8 @@ export function parseLadderInfo(raw: unknown): LadderInfo {
 }
 
 const builtSkills = () => LADDER.filter((s) => s.built);
+/** The skills the placement warm-up walks over. */
+const warmUpSkills = () => builtSkills().filter((s) => s.inWarmUp !== false);
 const indexOfSkill = (id: string | null) =>
   id ? LADDER.findIndex((s) => s.id === id) : -1;
 
@@ -108,12 +110,12 @@ export interface PlacementStep {
 /**
  * Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
  * It starts at the first skill and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
- * once) and back one when the answer is wrong or slow. All steps are over the built skills only.
+ * once) and back one when the answer is wrong or slow. All steps are over the built skills in the warm-up only.
  */
 export function placementNext(
   steps: readonly PlacementStep[],
 ): LadderSkill | null {
-  const built = builtSkills();
+  const built = warmUpSkills();
   const top = built.length - 1;
   let level = 0;
   let jump = PLACEMENT_JUMP;
@@ -129,7 +131,7 @@ export function placementNext(
 
 /** Where to start: just below the highest skill they answered right and quickly. A student who got nothing right starts at the first skill. */
 export function placementResult(steps: readonly PlacementStep[]): LadderSkill {
-  const built = builtSkills();
+  const built = warmUpSkills();
   let best = -1;
   for (const step of steps) {
     const at = built.findIndex((s) => s.id === step.skill);

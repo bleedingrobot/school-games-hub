@@ -15,7 +15,7 @@ import { newMemory, pickFromPools, scheduleRepeat, STEP_SECURE_SHARE, type Pools
 import type { FactAnswer } from './leitner';
 import type { AnswerResult, Question, SkillPack } from './skillPack';
 import { BANDED_PACKS } from './skillPacks';
-import { EARLY_FACTS, earlyFactsPack } from './skillPacks/earlyFacts';
+import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS } from './skillPacks/earlyFacts';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
@@ -32,6 +32,8 @@ export interface LadderSkill {
   /** The mastery keys that make up the skill. Empty for stubs. */
   keys: string[];
   built: boolean;
+  /** False keeps a skill out of the placement warm-up, so the warm-up's ten questions still reach as high as before. */
+  inWarmUp?: false;
 }
 
 const earlyKeys = (family: string) => EARLY_FACTS.families[family].keys;
@@ -84,6 +86,9 @@ export const LADDER: LadderSkill[] = [
   { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: earlyKeys('tenAnd'), built: true },
   { id: 'facts-20', label: 'Number facts to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P1'], keys: [...earlyKeys('bond20'), ...addKeys((s) => s > 10)], built: true },
   { id: 'dbl-half-20', label: 'Doubles and halves to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('dblHalf20'), built: true },
+  // Skip counting leads into ×10, ×5 and ×2, so a junior meets tens, then fives, then twos (no curriculum tag checked yet).
+  // The warm-up leaves it out: a student it places past it has it as passed over, like any skill below their start.
+  ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -264,7 +269,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;

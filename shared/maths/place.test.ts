@@ -21,6 +21,8 @@ import { checkPlacement, parsePlacementAnswers, type PlacementAnswer } from './p
 import { makePlaceSyncer, savePlacement, type PlacePorts } from './syncPlace';
 
 const built = LADDER.filter((s) => s.built);
+/** The skills the placement warm-up walks over (skip counting is left out). */
+const warmUp = built.filter((s) => s.inWarmUp !== false);
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
 const secure = (keys: string[]) => keys.map((k) => rec(k, 3));
 const info = (over: Partial<LadderInfo> = {}): LadderInfo => ({ ...NO_LADDER, on: true, ...over });
@@ -230,52 +232,52 @@ describe('the placement check', () => {
   });
 
   it('starts at the first skill (a class year level plays no part)', () => {
-    expect(placementNext([])?.id).toBe(built[0].id);
+    expect(placementNext([])?.id).toBe(warmUp[0].id);
   });
 
   it('jumps up while the answers are right and quick', () => {
     const steps = run(() => true);
-    const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
+    const levels = steps.map((s) => warmUp.findIndex((b) => b.id === s.skill));
     expect(levels[1] - levels[0]).toBe(PLACEMENT_JUMP);
     expect(levels[2]).toBeGreaterThan(levels[1]);
-    // Ten questions of three skills each reach the last few skills of the ladder (33 since M.5's bond skills).
-    expect(levels.at(-1)).toBeGreaterThanOrEqual(built.length - 6);
+    // Ten questions of three skills each reach the last few skills of the ladder (33 since M.5's bond skills; skip counting is not in the warm-up).
+    expect(levels.at(-1)).toBeGreaterThanOrEqual(warmUp.length - 6);
   });
 
   it('steps back when an answer is wrong, and also when it is right but slow', () => {
     for (const reply of [false, 'slow'] as const) {
       // Climb once, then miss: the third question is one skill below the second.
       const steps = run((_s, i) => (i === 1 ? reply : true));
-      const second = built.findIndex((b) => b.id === steps[1].skill);
-      const third = built.findIndex((b) => b.id === steps[2].skill);
+      const second = warmUp.findIndex((b) => b.id === steps[1].skill);
+      const third = warmUp.findIndex((b) => b.id === steps[2].skill);
       expect(third).toBe(second - 1);
     }
   });
 
   it('after a miss it climbs one at a time', () => {
     const steps = run((_s, i) => i !== 2);
-    const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
+    const levels = steps.map((s) => warmUp.findIndex((b) => b.id === s.skill));
     for (let i = 4; i < levels.length; i++) expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
   });
 
   it('starts just below where the student got to', () => {
     // Right and quick everywhere up to ×3/×4/×8, wrong above.
-    const limit = built.findIndex((b) => b.id === 'tables-3-4-8');
-    const steps = run((skill) => built.findIndex((b) => b.id === skill) <= limit);
-    const best = Math.max(...steps.filter((s) => s.correct && s.quick).map((s) => built.findIndex((b) => b.id === s.skill)));
+    const limit = warmUp.findIndex((b) => b.id === 'tables-3-4-8');
+    const steps = run((skill) => warmUp.findIndex((b) => b.id === skill) <= limit);
+    const best = Math.max(...steps.filter((s) => s.correct && s.quick).map((s) => warmUp.findIndex((b) => b.id === s.skill)));
     expect(best).toBe(limit);
-    expect(placementResult(steps).id).toBe(built[limit - 1].id);
+    expect(placementResult(steps).id).toBe(warmUp[limit - 1].id);
   });
 
   it('starts at the first skill for a student who gets nothing right, and near the top for one who gets everything', () => {
-    expect(placementResult(run(() => false)).id).toBe(built[0].id);
+    expect(placementResult(run(() => false)).id).toBe(warmUp[0].id);
     // Ten questions climbing three skills at a time from the bottom reach skill 27; the start is one below that.
-    expect(placementResult(run(() => true)).id).toBe(built[1 + (PLACEMENT_QUESTIONS - 1) * PLACEMENT_JUMP - 2].id);
-    expect(placementResult([]).id).toBe(built[0].id);
+    expect(placementResult(run(() => true)).id).toBe(warmUp[1 + (PLACEMENT_QUESTIONS - 1) * PLACEMENT_JUMP - 2].id);
+    expect(placementResult([]).id).toBe(warmUp[0].id);
   });
 
   it('asks real questions about the skill, not repeating the same fact', () => {
-    const skill = built.find((b) => b.id === 'tables-6-9')!;
+    const skill = warmUp.find((b) => b.id === 'tables-6-9')!;
     const random = randomFromSeed('p');
     const seen: string[] = [];
     for (let i = 0; i < 8; i++) {
@@ -314,10 +316,10 @@ describe('checking a placement on the server', () => {
 
   it('works out right and wrong itself and does not take the browser’s word', () => {
     const wrong = honest(() => false);
-    expect(checkPlacement(wrong)).toBe(built[0].id);
+    expect(checkPlacement(wrong)).toBe(warmUp[0].id);
     // The same answers sent slowly are not quick, so nothing is passed.
     const slow = honest(() => true, 20_000);
-    expect(checkPlacement(slow)).toBe(built[0].id);
+    expect(checkPlacement(slow)).toBe(warmUp[0].id);
   });
 
   it('refuses a run that is not the walk it should have been', () => {
@@ -429,8 +431,10 @@ describe('the server keeping the place', () => {
 describe('the longer ladder', () => {
   const generated = built.filter((s) => s.keys.length && s.keys.every((k) => packIdOfKey(k) === 'generated'));
 
-  it('has 33 built skills, 23 of them generated, and every one has at least four question types', () => {
-    expect(built).toHaveLength(33);
+  it('has 36 built skills, 23 of them generated, and every one has at least four question types', () => {
+    expect(built).toHaveLength(36);
+    expect(warmUp).toHaveLength(33); // the warm-up walks the same 33 as before skip counting
+    expect(built.filter((s) => !warmUp.includes(s)).map((s) => s.id)).toEqual(['skip-10', 'skip-5', 'skip-2']);
     expect(built).toHaveLength(LADDER.length);
     expect(generated).toHaveLength(23);
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
@@ -444,9 +448,9 @@ describe('the longer ladder', () => {
       steps.push({ skill: skill.id, correct: true, quick: true });
     }
     expect(steps).toHaveLength(10);
-    const at = built.findIndex((b) => b.id === placementResult(steps).id);
-    expect(at).toBeGreaterThanOrEqual(built.length - 7);
-    expect(at).toBeLessThan(built.length - 1);
+    const at = warmUp.findIndex((b) => b.id === placementResult(steps).id);
+    expect(at).toBeGreaterThanOrEqual(warmUp.length - 7);
+    expect(at).toBeLessThan(warmUp.length - 1);
   });
 
   it('a generated skill is secure when 70% of its question types are in box 2 or higher', () => {

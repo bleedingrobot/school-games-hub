@@ -772,7 +772,7 @@ describe('Mission Control maths with classmates', () => {
         const who = w.turnOf(g.id);
         const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
         const solved = solveParts(asked.question!.parts)!;
-        expect(solved.keys.some((k) => /^(mul|add|div|bond|dbl|half)/.test(k))).toBe(true);
+        expect(solved.keys.some((k) => /^(mul|add|div|bond|dbl|half|skip)/.test(k))).toBe(true);
       });
 
       it('with the switch off the questions are times tables as always', async () => {
