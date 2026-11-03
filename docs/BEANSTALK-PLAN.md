@@ -115,3 +115,35 @@ as its own small branch (section 3).
 4. The home card name is **Kiwi's Beanstalk**.
 5. Still open: if `makeFocusPack` can't make "pick two leaves" questions as it stands, it gets a small separate
    `shared/maths` branch (recommended), checked in Stage 1.
+
+## Stage 1 results (4 Nov)
+
+**What was built:** `shared/beanstalk/`:
+- `round.ts` makes the day's 10 pairs from a seed. All five pairs come up and 5+5 only once. It also replays the taps.
+  Six leaves float at once, and each pair made lets the next pair in. Any two leaves that make 10 count, and what is left
+  can always still be paired.
+- `progress.ts` works out the leaf colours, the dots level, the eggs and the friend, all from the count of finished days.
+  `finishChallenge` gives one leaf per NZ day.
+
+**Maths:** no change to `shared/maths` is needed. `makeFocusPack` can't promise 10 bond10 questions: it mixes in `add:`
+facts and follows each child's own focus. So the server makes the round itself, then records plain `FactAnswer`s with
+`recordMathsAnswers`, the way Mine does:
+- A right pair is recorded as `bond10:a+b`.
+- A wrong pair counts against the first leaf's pair, because that is the partner the child was after. It is never recorded
+  as `add:` (decided 4 Nov).
+
+**Tests:** 4 of the game's 8 are in `beanstalk.test.ts`:
+- 200 seeds can be finished.
+- How a wrong pair is marked.
+- The leaf colours.
+- The day rule.
+
+`npm run typecheck` passes.
+
+**Art:**
+- Painted (style B, clay): the set, plus the friends for later beanstalks. Picks are in
+  `~/dragon-art-inbox/beanstalk-art/picks.json`.
+- Drawn in code, because the clay model keeps adding blobs: the sparkle, the empty sky and the stalk tile.
+- Still to do: a `tidy` step that turns the picked tries into small WebP files for the game, like Diamond Drop's.
+
+**Next, Stage 2:** the play screen, local only.
