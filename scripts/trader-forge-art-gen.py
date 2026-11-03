@@ -197,15 +197,17 @@ PLANET_LOOKS: dict[str, list[str]] = {
     ],
     'donut': [
         'a donut planet surface of lush green land with long winding rivers and round lakes',
-        'a donut planet surface of blue ocean dotted with green islands and white surf',
+        # Remade 4 Nov: "donut planet" made the model draw a donut in the picture, so only the ground is described.
+        'an alien landscape of shallow turquoise sea dotted with many small green islands and white surf, spread evenly from edge to edge',
         'a donut planet surface of golden orchards and fields in curving stripes, with rivers and small lakes',
-        'a donut planet surface of snow-capped mountains and green valleys, rivers running between them',
+        'an alien landscape of snow-capped mountain ridges and green valleys with rivers between them, spread evenly from edge to edge',
     ],
     'ringworld': [
         'the inside surface of a giant ring world, long strips of green fields, silver rivers and blue lakes running along it, with neat straight lines of land',
-        'the inside surface of a giant ring world, wide blue seas and green islands, with thin straight stripes of farmland',
+        # Remade 4 Nov: "ring world" made the model draw Earth's map or a ring, so only the ground is described.
+        'an alien landscape of long thin blue lakes and green islands with thin straight stripes of farmland between them, all running left to right in even stripes from edge to edge',
         'the inside surface of a giant ring world of grey-green mountain ranges and forest valleys with glinting rivers, laid out in straight bands',
-        'the inside surface of a giant ring world, golden plains and green forests in straight bands, with grids of tiny glowing town lights',
+        'an alien landscape of golden plains and dark green forests in straight bands running left to right, with neat grids of tiny villages, the stripes running straight from edge to edge',
     ],
 }
 for kind, looks in PLANET_LOOKS.items():

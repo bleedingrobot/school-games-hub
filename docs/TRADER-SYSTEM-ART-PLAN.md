@@ -160,6 +160,8 @@ If it all goes wrong: nothing is lost. The PNGs stay in `~/dragon-art-inbox/trad
 - **The ring world, cube and donut maps** are ordinary flat maps (the strange shape is the viewer's job). The eyeball map has the sunlit ocean or desert in the middle and ice at the left and right edges, so it joins up when wrapped; the viewer should put the middle of the map under the sun.
 
 - **First-look remakes (4 Nov).** 20 of batch 1 were remade once: suns and gas giants that came out as a ball drawn inside the map (their prompts now say "close-up of ..." and never name a star or a planet), cloud maps with grey or tinted backgrounds (the tidy script now treats the darkest fifth of a cloud map as black), and a few planets with frames, a stamp-like pattern or a globe inside.
+- **Four weak donut and ring-world maps, to repaint at home (4 Nov).** `donut-1` and `donut-3` had a donut or a crater drawn inside, `ringworld-1` came out as Earth's map and `ringworld-3` had a ring drawn inside. Their prompts now describe only the ground, spread evenly from edge to edge, and never say "donut" or "ring world". Paint on the gaming PC: `python3 scripts/trader-forge-art-gen.py --only planets/donut-1,planets/donut-3,planets/ringworld-1,planets/ringworld-3` (the old ones go to `_old/` by themselves), then delete those four (with `-hd` and `-normal`) from `src/games/trader/forge/art/paint/planets/` and run `~/.cache/rembg-venv/bin/python scripts/trader-forge-art.py planets`.
+- **Skies repainted (4 Nov).** Skies 0, 2, 4, 5, 6 and 7 were repainted as night sky photos with a faint band; the old ones were one giant galaxy that swamped the viewer. Skies 1 and 3 are the first paintings.
 
 ## Credits to carry over
 
