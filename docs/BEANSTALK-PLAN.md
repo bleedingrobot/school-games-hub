@@ -1,4 +1,4 @@
-# Bond Builder (Jack and the Beanstalk) — plan
+# Kiwi's Beanstalk (Bond Builder) — plan
 
 Short id `beanstalk`. Branch `beanstalk`, worktree `~/games-hub-beanstalk`. Stage 0 (plan), started 4 Nov 2026.
 
@@ -107,12 +107,11 @@ as its own small branch (section 3).
 5. **Teacher switch and dots setting.** Preview for James.
 6. **Go live**, one step at a time.
 
-## 9. Questions for James (recommended answer first)
+## 9. Decisions (James, 4 Nov)
 
-1. Words read aloud with the device's voice? Recommended: yes, with a mute button. Most 5 year olds can't read
-   instructions.
-2. Hub points and achievements? Recommended: no points, because the Golden Egg is the reward. One achievement per egg.
-3. A wrong pair: just wobble back (recommended), or show the right partner after two misses?
-4. If `makeFocusPack` can't make "pick two leaves" questions as it stands: a small separate `shared/maths` branch
-   (recommended), or make the pairs in the game from `bond10` facts only?
-5. Name on the home card: "Bond Builder", or "Kiwi's Beanstalk"?
+1. Words are read aloud with the device's voice, with a mute button.
+2. No hub points. The Golden Egg is the reward, plus one achievement per egg.
+3. A wrong pair just wobbles back. There is no penalty and the answer isn't shown, because the dots are the help.
+4. The home card name is **Kiwi's Beanstalk**.
+5. Still open: if `makeFocusPack` can't make "pick two leaves" questions as it stands, it gets a small separate
+   `shared/maths` branch (recommended), checked in Stage 1.
