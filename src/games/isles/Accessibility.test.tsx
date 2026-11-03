@@ -1,0 +1,218 @@
+/**
+ * Sky Isles for Year 4 to 6 (test 7 of the game's 8, docs/ISLES-PLAN.md section 9, copied from Clan Quest's): text
+ * colours at least 4.5 to 1, buttons at least 44 px high, every movement stopped when the pupil asks for less motion,
+ * and focus moved to each new screen's heading, so a pupil on a keyboard or a screen reader always knows where they are.
+ */
+import { readFileSync } from 'node:fs';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it } from 'vitest';
+import { seededRandom } from '../../../shared/maths/serverQuestions';
+import { IslesPlay } from './IslesPlay';
+import { createTrialBackend } from './trialBackend';
+
+const css = readFileSync(`${process.cwd()}/src/games/isles/isles.css`, 'utf8');
+const hub = readFileSync(`${process.cwd()}/src/styles.css`, 'utf8');
+
+function lum(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+const own = (name: string) => css.match(new RegExp(`--si-${name}:\\s*(#[0-9a-f]{6})`, 'i'))![1];
+const token = (name: string) => hub.match(new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i'))![1];
+
+describe('colour contrast', () => {
+  it('gives text at least 4.5 to 1 on whatever it sits on', () => {
+    const pairs: [string, string, string][] = [
+      ['headings on the sky', own('title'), own('sky')],
+      ['headings low on the sky', own('title'), own('sky-2')],
+      ['words on panels', token('ink'), token('surface')],
+      ['softer words on panels', token('ink-soft'), token('surface')],
+      ['warnings on panels', token('lost'), token('surface')],
+      ['the fair wind on panels', token('won'), token('surface')],
+      ['words on the gold badges', token('ink'), own('gold')],
+    ];
+    for (const [where, text, bg] of pairs) expect(contrast(text, bg), where).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe('movement and touch', () => {
+  it('stops every animation and transition when the pupil prefers less movement', () => {
+    const reduce = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+    for (const m of css.matchAll(/([^{}]+)\{[^}]*\b(animation|transition):(?!\s*none)/g)) {
+      const selector = m[1].trim().split(',')[0].trim();
+      if (selector.startsWith('@')) continue;
+      expect(reduce.includes(selector.split(/[ :]/)[0]), selector).toBe(true);
+    }
+  });
+
+  it('never sets a button or control smaller than 44px', () => {
+    // Badges and drawn shapes inside a button aren't targets themselves, nor are decorations and walkers.
+    for (const m of css.matchAll(/([^{}]+)\{[^}]*?min-(?:height|width):\s*(\d+)px/g)) {
+      if (/__(count|drawn)|si-isle__keeper|si-boat|si-decor|si-walker/.test(m[1])) continue;
+      expect(Number(m[2]), m[1].trim()).toBeGreaterThanOrEqual(44);
+    }
+    for (const control of ['.si-spot {', '.si-place {', '.si-more__spot {', '.si-drift {']) {
+      expect(css.slice(css.indexOf(control)).split('}')[0], control).toMatch(/min-height: 44px/);
+    }
+  });
+});
+
+describe('keyboard and screen readers', () => {
+  it('moves focus to the new screen\'s heading whenever a screen changes, and plays a turn by keyboard', async () => {
+    const u = userEvent.setup();
+    const backend = createTrialBackend('a11y', { save: false, random: seededRandom('a11y') });
+    render(<IslesPlay backend={backend} />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Choose your Sky Keeper' })).toHaveFocus());
+    await u.click(screen.getByRole('radio', { name: 'Sky Keeper 4' }));
+    await u.click(screen.getByRole('button', { name: 'This is my keeper' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    // Pip's guided first go has its own test (Guide.test.tsx).
+    await u.click(screen.getByRole('button', { name: 'Skip the guide' }));
+    for (const [open, heading] of [['Decorations', 'Decorations'], ['How to play', 'How to play']]) {
+      await u.click(screen.getByRole('button', { name: open }));
+      expect(screen.getByRole('heading', { name: heading, level: 2 }), open).toHaveFocus();
+      await u.click(screen.getByRole('button', { name: 'Back' }));
+      expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus();
+    }
+    // A turn, by keyboard: the same 4 steps, each with its heading focused and "Step n of 4" at the top. Every spot
+    // has a name, a choice that can't be made says why, and End turn brings the island back with one turn fewer.
+    // On My island the spots are only the picture: building happens in a turn.
+    expect(screen.getByRole('img', { name: 'Spot 6: Empty spot' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Spot 6: Empty spot' })).not.toBeInTheDocument();
+    expect(screen.getByText(/^Next turn: build a /)).toBeInTheDocument();
+    screen.getByRole('button', { name: 'Play a turn' }).focus();
+    await u.keyboard('{Enter}');
+    const at = (n: number, heading: string | RegExp) => {
+      expect(screen.getByRole('img', { name: new RegExp(`^Step ${n} of 4`) })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: heading, level: 3 })).toHaveFocus();
+    };
+    const press = async (name: string | RegExp) => {
+      screen.getByRole('button', { name }).focus();
+      await u.keyboard('{Enter}');
+    };
+    await u.click(await screen.findByRole('button', { name: 'Skip' }));
+    await waitFor(() => at(2, 'Collect'));
+    expect(screen.getByText(/^Coins: .* = \d+ coins$/)).toBeInTheDocument();
+    await press('Next');
+    // Land costs 300 coins, so it's greyed, with the numbers.
+    at(3, 'Build');
+    expect(screen.getByRole('button', { name: /^Anchor a chunk of land/ })).toBeDisabled();
+    expect(screen.getByText(/^Needs 300 coins\. You have \d+\.$/)).toBeInTheDocument();
+    // Back takes the pupil to the step before; spots can only be tapped on the Build step.
+    await press('Back');
+    at(2, 'Collect');
+    expect(screen.queryByRole('button', { name: 'Spot 6: Empty spot' })).not.toBeInTheDocument();
+    await press('Next');
+    at(3, 'Build');
+    await press('Spot 6: Empty spot');
+    at(3, 'Spot 6: Empty spot');
+    await press(/^Farm: 25 coins/);
+    at(3, 'Build more?');
+    // A decoration: chosen on the shelf, then put on a numbered place.
+    await press('Yes, build more');
+    at(3, 'Build');
+    await press(/^Decorate/);
+    at(3, 'Decorate');
+    screen.getAllByRole('button', { name: 'Put one up' })[0].focus();
+    await u.keyboard('{Enter}');
+    at(3, 'Where should it go?');
+    await press('Place 1');
+    at(3, 'Build more?');
+    await press('Done building');
+    at(4, 'Race or rest');
+    expect(screen.getByText('Build a Farm on spot 6')).toBeInTheDocument();
+    expect(screen.getByText('Put up Flower beds')).toBeInTheDocument();
+    await press('End turn');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    expect(screen.getByRole('img', { name: '5 turns left today' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Flower beds' })).toBeInTheDocument();
+
+    // A Sky Race by keyboard, with less motion asked for (each stretch jumps to its stop). The questions come during
+    // the race, one at each stop, and focus follows each new heading: the start, each stretch, the result.
+    const before = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: query.includes('reduce'), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })) as unknown as typeof window.matchMedia;
+    try {
+      await press('Sky Race');
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Sky Race: you and the Gull Riders', level: 2 })).toHaveFocus());
+      // Every heading that gets focus, in order: with less motion the next question can open (and take focus) straight
+      // after a stretch's heading had it, too quickly to catch the heading in the moment on a slow machine.
+      const focused: string[] = [];
+      const note = (e: FocusEvent) => { if (e.target instanceof HTMLHeadingElement) focused.push(e.target.textContent ?? ''); };
+      document.addEventListener('focusin', note);
+      await press('Set sail!');
+      for (let q = 1; q <= 3; q++) {
+        const box = await screen.findByRole('dialog', { name: `Race question ${q} of 3` });
+        expect(screen.getByRole('heading', { name: `Sky Race: stretch ${q} of 4`, level: 2 })).toBeInTheDocument();
+        await u.keyboard('999{Enter}');
+        await waitFor(() => expect(box).not.toBeInTheDocument(), { timeout: 4000 });
+        // After the last question, the last stretch jumps straight to the finish.
+        if (q === 3) break;
+        await waitFor(() => expect(focused).toContain(`Sky Race: stretch ${q + 1} of 4`));
+        expect(screen.getByText('No gust this time, keep sailing!')).toBeInTheDocument();
+      }
+      document.removeEventListener('focusin', note);
+      // Every answer wrong: the race is lost, even the season's first.
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Well raced!', level: 2 })).toHaveFocus());
+      await press('Back to my island');
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    } finally {
+      window.matchMedia = before;
+    }
+  }, 30_000);
+
+  it('visits a classmate, leaves a gift and opens a race by keyboard, with focus on each heading', async () => {
+    const u = userEvent.setup();
+    const backend = createTrialBackend('a11y-sky', { save: false, random: seededRandom('a11y-sky') });
+    render(<IslesPlay backend={backend} />);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Choose your Sky Keeper' })).toHaveFocus());
+    await u.click(screen.getByRole('radio', { name: 'Sky Keeper 2' }));
+    await u.click(screen.getByRole('button', { name: 'This is my keeper' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    // The preview's pretend classmate left a gift in the post.
+    expect(screen.getByText('Ana left you a cake! +10 coins')).toBeInTheDocument();
+    const press = async (name: string | RegExp) => {
+      screen.getByRole('button', { name }).focus();
+      await u.keyboard('{Enter}');
+    };
+    // Naming the island: pick from the list, never typed.
+    await press('Name your island');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Name your island', level: 2 })).toHaveFocus());
+    const first = screen.getAllByRole('radio')[0];
+    first.focus();
+    await u.keyboard('{Enter}');
+    const chosen = first.textContent!;
+    await press(`Call it ${chosen}`);
+    // The chosen name takes the place of "My island" at the top.
+    await waitFor(() => expect(screen.getByRole('heading', { name: chosen, level: 2 })).toHaveFocus());
+    expect(screen.queryByRole('heading', { name: 'My island' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument();
+    await press('Class sky');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
+    await screen.findByText("Mere lit the Sky Lighthouse!");
+    expect(screen.getByText('Starlight Haven')).toBeInTheDocument();
+    // The Hall of the Skies: who is ahead this season, and last season's top islands.
+    await press('🏆 Hall of the Skies');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Hall of the Skies', level: 2 })).toHaveFocus());
+    expect(await screen.findByRole('heading', { name: /^Season ending/ })).toBeInTheDocument();
+    expect(screen.getAllByText('Starlight Haven').length).toBe(2);
+    await press('Back to the class sky');
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
+    // An island in its calm start can't be raced, and says why.
+    expect(screen.getByRole('button', { name: "Race Lily's island" })).toBeDisabled();
+    expect(screen.getByRole('button', { name: "Race Lily's island" })).toHaveAccessibleDescription('That island is new and still having a calm start.');
+    await press("Visit Ana's island");
+    await waitFor(() => expect(screen.getByRole('heading', { name: "Ana's island", level: 2 })).toHaveFocus());
+    // Look only: the island's spots are a picture, not buttons.
+    expect(screen.queryByRole('button', { name: /^Spot 1/ })).not.toBeInTheDocument();
+    await press(/Leave a cake/);
+    expect(await screen.findByText(/You left Ana a cake!/)).toBeInTheDocument();
+    await press("Race Ana's island");
+    await waitFor(() => expect(screen.getByRole('heading', { name: "Sky Race: you and Ana's island", level: 2 })).toHaveFocus());
+  }, 30_000);
+});

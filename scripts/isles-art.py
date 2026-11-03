@@ -1,0 +1,394 @@
+#!/usr/bin/env python3
+"""
+Paints Sky Isles' pictures (docs/ISLES-ART-PLAN.md) in ComfyUI on James's gaming PC, in the hand-painted anime style
+James chose. Runs on James's computer only, never in the site build. Standard library only.
+
+  python3 scripts/isles-art.py paint OUT_DIR [name ...] [--tries 3]   # OUT_DIR/<name>-<try>.png; every name if none given
+  python3 scripts/isles-art.py list                                   # the names
+  ~/.cache/rembg-venv/bin/python scripts/isles-art.py tidy [name ...] [--force]   # the picks into the game (below)
+
+`tidy` reads docs/isles-art/picks.json (which try of each picture is used) and writes .webp files into
+src/games/isles/art/: pieces cut out of their white background with rembg and trimmed (buildings 384 px, bases 1200 px
+wide, Pip 320 px, boats 480 px), backgrounds 1600 and 800 px wide, and each Sky Keeper as a 320 px and a 96 px square.
+It needs Pillow, numpy and rembg (in ~/.cache/rembg-venv on James's Mac). A file already made is skipped unless --force.
+
+A picture already there is skipped, and seeds are fixed, so any try can be painted again exactly. ComfyUI must be
+listening on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"). The graph is the one every hub painting
+uses (Z-Image Turbo, 8 steps, a 1.5x second pass); only the words change. Use only positive wording: this model draws
+whatever a prompt names, even after "no".
+"""
+from __future__ import annotations
+
+import json
+import sys
+import time
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+COMFY = 'http://100.97.96.115:8188'
+
+STYLE = 'Lush hand-painted anime background art in gouache and watercolour, soft fluffy clouds, warm nostalgic sunlight, gentle detailed scenery. '
+# The same look for pieces that are cut out, without the clouds and scenery the background wording paints behind them.
+PIECE_STYLE = 'Hand-painted anime illustration in gouache and watercolour, warm sunlight, gentle detail, a single game piece. '
+FRIENDLY = ' Cheerful and friendly, made for children aged 8 to 12.'
+# Pieces are cut out later, so each is painted alone on white, seen from the same angle as the island bases.
+PIECE = ' Seen from slightly above at a three-quarter view, the whole thing in view and centred, isolated on a plain flat pure white #FFFFFF background, nothing behind it, empty white all around the edges.'
+SIDE = ' Side-on view facing right, the whole thing in view and centred, isolated on a plain flat pure white #FFFFFF background, nothing behind it, empty white all around the edges.'
+CHARACTER = ' Full body in view and centred, isolated on a plain flat pure white #FFFFFF background, nothing behind it, empty white all around the edges.'
+
+WIDE = (1344, 768)
+SQUARE = (1024, 1024)
+
+ISLAND = (
+    'floating island drifting in the sky, its top a flat empty grassy meadow with soft green grass and a few wildflowers, '
+    'its rocky brown underside tapering downwards with dangling roots and two small waterfalls spilling off the edge.'
+)
+CLEARINGS = (
+    'floating island drifting in the sky, its grassy top a gentle meadow with {n} small round empty clearings of bare '
+    'earth spread evenly across it, joined by winding dirt footpaths, a few small bushes and wildflowers between them. '
+    'Its rocky brown underside tapers downwards with dangling roots and two small waterfalls spilling off the edge.'
+)
+# Buildings sit straight on a base's clearing, so each is painted with only a little grass at its foot.
+ALONE = ' Standing alone, with only a few soft tufts of grass and a little earth right at its foot.'
+BUILDINGS = {
+    'farm': [
+        'A single small barn with a red roof beside a few rows of golden wheat and a haystack.',
+        # Repainted 3 Nov 2026 (James): the farm stands on a few tufts like every other building, with no wide field under it.
+        'A single red barn with a hayloft, two small round haystacks and a little wooden cart beside it, and a few sheaves of golden wheat leaning on its wall.',
+        'A single big red barn with a tall silo and a little windmill, a small vegetable patch, a haystack and a few sheaves of golden wheat close beside it.',
+    ],
+    'mine': [
+        'A single small rocky hillock with a wooden-framed mine entrance and a little mine cart of shiny blue crystals.',
+        'A single rocky hill with a sturdy timber mine entrance, rails, two mine carts of shiny blue crystals and a lantern.',
+        'A single big rocky crag with a grand timber mine entrance, a little crane, rails, carts heaped with glowing blue crystals and lanterns.',
+    ],
+    'dock': [
+        'A single short wooden jetty sticking out sideways into the air, with a small sky-boat with a red sail moored to it.',
+        'A single wooden jetty with a little harbour hut and a rope post, a sky-boat with a red sail and a smaller boat moored to it.',
+        'A single long wooden pier with a harbour master hut, glowing paper lanterns on posts, colourful bunting and two sky-boats with red sails moored to it.',
+    ],
+    'house': [
+        'A single small cosy cottage with a red tiled roof, chimney smoke and a flower box.',
+        'A single two-storey house with a red tiled roof, a balcony, chimney smoke and flower boxes.',
+        'A single grand three-storey manor house with red tiled roofs, a little tower, many windows, chimney smoke and flower boxes.',
+    ],
+    'workshop': [
+        # Repainted 3 Nov 2026 (James): a small windmill, so all three levels are windmills.
+        'A single small timber windmill workshop with four wooden sails turning on its roof, an open front, a stack of planks and a sawhorse beside it.',
+        'A single timber workshop with a small windmill on its roof, stacks of planks and a half-built little boat hull beside it.',
+        'A single big timber boatyard workshop with a windmill on its roof, a wooden crane and a nearly finished sky-boat with a sail beside it.',
+    ],
+    'library': [
+        'A single little round stone library tower with a blue pointed roof and round windows.',
+        'A single round stone library tower with a blue pointed roof, a reading balcony and a small telescope on top.',
+        'A single tall stone library with two blue pointed towers, a big brass telescope, a star globe and stained-glass round windows.',
+    ],
+}
+PIP = 'Pip, a friendly cute round white seagull mascot with a small blue scarf, a yellow beak and big kind eyes, '
+BOAT = 'A small wooden sky-boat with {sail}, a little propeller at the back and small canvas wings on its sides, flying.'
+
+PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
+    # Island bases, Little to Grand (6, 8, 10, 13 and 16 building spots), each with painted clearings joined by paths.
+    'base-1': ('A tiny ' + CLEARINGS.format(n='six') + PIECE, WIDE),
+    'base-2': ('A small ' + CLEARINGS.format(n='eight') + PIECE, WIDE),
+    'base-3': ('A medium-sized ' + CLEARINGS.format(n='ten') + PIECE, WIDE),
+    'base-4': ('A large wide ' + CLEARINGS.format(n='thirteen') + PIECE, WIDE),
+    'base-5': ('A huge grand wide ' + CLEARINGS.format(n='sixteen') + PIECE, WIDE),
+    # A spot that's been claimed but not built on yet.
+    'bld-empty': ('A little wooden marker post with a small blank sign, a coil of rope and a few stacked planks, ready to build.' + ALONE + PIECE, SQUARE),
+    # Buildings at levels 1 to 3 (docs/ISLES-RULES.md), each standing on its own with no patch of land under it.
+    **{f'bld-{kind}-{n}': (words + ALONE + PIECE, SQUARE) for kind, levels in BUILDINGS.items() for n, words in enumerate(levels, 1)},
+    # The cosy batch (stage C.A, 3 Nov 2026). Decorations: smaller than a building, standing on a few tufts of grass.
+    **{f'dec-{d}': (f'{words}, small and charming.' + ALONE + PIECE, SQUARE) for d, words in {
+        'flowers': 'A small round bed of bright colourful flowers edged with little stones',
+        'bench': 'A small wooden picnic bench with a checked cloth folded on it',
+        'lantern': 'A small grey stone garden lantern with a warm glow inside',
+        'cherry': 'A small cherry blossom tree covered in pink blossom',
+        'chimes': 'Shiny wind chimes hanging from a little wooden frame',
+        'bridge': 'A little arched wooden footbridge with rope rails',
+        'fountain': 'A small round stone fountain with sparkling water splashing',
+        'balloon': 'A small colourful striped hot-air balloon with a wicker basket, tied down by ropes to wooden pegs',
+        'rainbow': 'A small garden gate under an arch of flowers in all the colours of the rainbow',
+        'flags': 'A tall wooden pole with bright triangular sail flags fluttering',
+        'arch': 'A welcome arch made of green vines and flowers',
+        'telescope': 'A shiny brass star telescope on a little round wooden platform, pointing up at the sky',
+    }.items()},
+    # Islanders who stroll the paths: shown tiny, so bold simple shapes.
+    **{f'walker-{n}': (f'A small round friendly chibi villager {who}, in simple bright colourful clothes, walking happily.' + SIDE, SQUARE) for n, who in enumerate([
+        'farmer carrying a basket of vegetables', 'child flying a little kite', 'grandparent with a walking stick and a sun hat',
+        'carrying a long loaf of bread', 'fisher with a fishing rod over one shoulder', 'gardener with a green watering can',
+    ], 1)},
+    # Small pictures.
+    'icon-crystal': ('One glowing pale-blue sky crystal, a clear faceted gem with a soft sparkle.' + PIECE, SQUARE),
+    'icon-coin': ('One pretty shiny gold coin, slightly tilted, with a little floating island stamped on its face and a soft golden glint on its rim, bold and simple so it reads when tiny.' + PIECE, SQUARE),
+    'gift-flowers': ('A bunch of bright flowers tied with a pink ribbon bow.' + PIECE, SQUARE),
+    'gift-cake': ('A little round iced cake with pink icing and a cherry on top.' + PIECE, SQUARE),
+    'gift-lantern': ('A glowing round paper lantern, warm orange light shining through it.' + PIECE, SQUARE),
+    # The sky garden that floats beside a Grand Isle once its Lighthouse is lit.
+    'base-garden': ('A small flat ' + ISLAND.replace('its top a flat empty grassy meadow with soft green grass and a few wildflowers', 'its top a flat grassy garden meadow with winding dirt paths and about twenty small round bare patches of earth spread across it, a few flowers between them, only grass, paths and flowers on top') + PIECE, WIDE),
+    # Stage S.7, cosy version (3 Nov 2026): the good-weather cards, the Sky Lighthouse, the Gull Riders, scenes and the
+    # home page card. The cosy rules dropped fog, storms, the market and upgrades, so those aren't painted.
+    'weather-rainbow': ('A bright rainbow arching over a small floating island in a clear blue sky, a few glittering pale-blue sky crystals falling from it.', WIDE),
+    'weather-geese': ('A flock of golden geese flying in a V over a small floating island, shiny gold coins tumbling down from them, sunny sky.', WIDE),
+    'weather-traveller': ('A friendly traveller with a backpack and a walking stick stepping off a little sky-boat onto a small floating island, waving hello, sunny sky.', WIDE),
+    'weather-breeze': ('A warm golden breeze swirling through the sky in soft curling ribbons of light, a small sky-boat with a red sail riding it happily.', WIDE),
+    **{f'lighthouse-{n}': (words + ALONE + PIECE, SQUARE) for n, words in enumerate([
+        'The first stage of a white stone lighthouse: a short round stone base with a little wooden door and scaffolding around it.',
+        'A half-built white stone lighthouse with red stripes, a short tower with a small window and scaffolding at the top.',
+        'A nearly finished tall white stone lighthouse with red stripes and a balcony, its lamp room still open to the sky.',
+        'A finished tall white stone lighthouse with red stripes, a balcony and a glass lamp room shining a warm golden beam of light.',
+    ], 1)},
+    'boat-gulls': ('A small wooden racing sky-boat with a big white sail with a seagull on it, three cheerful seagulls in tiny caps riding on board, a little propeller at the back and small canvas wings, flying.' + SIDE, WIDE),
+    'scene-night': ('A small cosy floating island at night under a starry sky and a big gentle moon, warm lights glowing in little cottage windows, everyone asleep, peaceful.', WIDE),
+    'scene-season': ('A joyful celebration on a floating island: colourful bunting, paper lanterns, fireworks of sparkles in the sky, happy villagers waving, golden evening light.', WIDE),
+    'scene-hall': ('A grand open-air hall high in the clouds with white marble columns and golden banners, small paintings of floating islands hanging between the columns, soft golden light.', WIDE),
+    'home-card': ('Many small colourful floating islands drifting together in a sunny sky above a sea of clouds, each with little cottages, windmills and gardens, sky-boats with bright sails flying between them, one lighthouse shining.', WIDE),
+    # Sky-boats.
+    'boat-red': (BOAT.format(sail='a big billowing red sail') + SIDE, WIDE),
+    'boat-blue': (BOAT.format(sail='a big billowing blue and white striped sail') + SIDE, WIDE),
+    'boat-yellow': (BOAT.format(sail='a big billowing sunny yellow sail') + SIDE, WIDE),
+    # Pip the sky-gull.
+    'pip-wave': (PIP + 'standing and happily waving one wing hello.' + CHARACTER, SQUARE),
+    'pip-point': (PIP + 'standing and pointing helpfully to the right with one wing, smiling.' + CHARACTER, SQUARE),
+    'pip-cheer': (PIP + 'jumping for joy with both wings up in the air, little sparkles around.' + CHARACTER, SQUARE),
+    'pip-think': (PIP + 'standing and thinking with one wing tip on its chin, looking curious.' + CHARACTER, SQUARE),
+    # Backgrounds: simple, so the pieces on top stand out.
+    'bg-island': ('A wide open sky high above a soft sea of clouds, gentle morning light from the upper left, a few tiny far-away floating islands near the horizon, lots of calm open sky in the middle.', WIDE),
+    'bg-sky': ('A wide panoramic sky above a sea of clouds at sunrise, pink and gold light, many tiny far-away floating islands scattered in the distance, lots of open sky.', WIDE),
+    'bg-race': ('A wide sky race course among soft clouds, a line of colourful pennant flags on floating poles curving away through the clouds, distant floating islands, bright sunny day, open sky in the middle.', WIDE),
+}
+
+# Sky Keepers: the portrait each pupil chooses to stand for them (docs/ISLES-PLAN.md, section 7). 20 boys and 20 girls,
+# about 8 to 17, from the many backgrounds of a New Zealand classroom, each with a sky-adventurer look.
+# The very words of the style James chose, so the portraits match the island and the sky.
+PORTRAIT_STYLE = STYLE
+PORTRAIT = (
+    'A head and shoulders character portrait of {who}, smiling warmly and looking at the viewer, wearing {wearing}. '
+    'A soft pale blue sky with a few soft clouds behind.'
+)
+KEEPERS = {
+    'b01': ('an 8-year-old Maori boy with warm brown skin and short curly black hair and brown eyes', 'a green hoodie and a little brass compass on a cord'),
+    'b02': ('an 8-year-old boy with fair skin and messy ginger hair and freckles', 'a red knitted jumper and a leather aviator cap pushed back'),
+    'b03': ('a 9-year-old Samoan boy with brown skin and short black hair and a round cheerful face', 'a blue t-shirt with a coil of rope over one shoulder'),
+    'b04': ('a 9-year-old Chinese boy with light skin and neat black hair and round glasses', 'a yellow raincoat'),
+    'b05': ('a 10-year-old Indian boy with brown skin and wavy dark hair', 'an orange vest over a white shirt, with flying goggles round his neck'),
+    'b06': ('a 10-year-old boy with very dark brown skin, deep cocoa-brown skin, a Tongan boy with a broad warm face and a tight short buzz cut', 'a teal sports jersey and a canvas satchel strap'),
+    'b07': ('an 11-year-old boy with fair skin and straight blond hair', 'a navy pilot jacket and a striped scarf'),
+    'b08': ('an 11-year-old Filipino boy with light brown skin and spiky black hair', 'a striped sailor top, with flying goggles on his forehead'),
+    'b09': ('a 12-year-old Korean boy with light skin and neat side-parted black hair', 'a mustard cardigan and a map case strap'),
+    'b10': ('a 12-year-old Maori boy with warm brown skin and long dark hair pulled back into a low ponytail, the hair tie visible', 'a black windbreaker and a greenstone pendant'),
+    'b11': ('a 13-year-old boy with very dark brown skin, deep cocoa-brown skin, a Fijian boy with short tightly coiled black afro-textured curly hair', 'a denim jacket and a bandana round his neck'),
+    'b12': ('a 13-year-old boy with fair skin and brown curly hair', 'a brown leather aviator jacket with a sheepskin collar'),
+    'b13': ('a 14-year-old Somali boy with dark brown skin and short black hair', 'a green bomber jacket'),
+    'b14': ('a 14-year-old Japanese boy with light skin and shaggy black hair', 'a white shirt with rolled sleeves and a red scarf'),
+    'b15': ('a 15-year-old Cook Islands boy with brown skin and a short fade haircut', 'a bright orange sky-sailor jacket'),
+    'b16': ('a 15-year-old boy with olive skin and dark wavy hair and a friendly grin', 'a blue knitted beanie and a grey coat'),
+    'b17': ('a 16-year-old Sikh boy, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with brown skin and a navy turban', 'an olive field jacket'),
+    'b18': ('a 16-year-old Niuean boy, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with rich brown skin and long curly hair', 'a shirt with a gentle tapa cloth pattern'),
+    'b19': ('a 17-year-old Vietnamese young man, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with light tan skin and neat short hair', 'a dark green flight jacket with goggles round his neck'),
+    'b20': ('a 17-year-old Maori young man, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with warm brown skin and a short tidy haircut', 'a red puffer vest over a white t-shirt'),
+    'g01': ('an 8-year-old Maori girl with warm brown skin and curly dark hair in two puffs', 'a yellow raincoat'),
+    'g02': ('an 8-year-old girl with fair skin and blonde pigtails and freckles', 'blue dungarees, with flying goggles on her head'),
+    'g03': ('a 9-year-old Samoan girl with brown skin and long wavy black hair and a hibiscus flower behind her ear', 'a pink t-shirt'),
+    'g04': ('a 9-year-old Indian girl with brown skin and a long black plait', 'a purple kurta top and a little brass compass on a cord'),
+    'g05': ('a 10-year-old Chinese girl with light skin and a short bob and a fringe', 'a red quilted jacket'),
+    'g06': ('a 10-year-old girl with very dark brown skin, deep cocoa-brown skin, a Tongan girl with thick tightly curly black hair tied back with a wide bright yellow fabric hair band', 'a teal hoodie'),
+    'g07': ('an 11-year-old girl with fair skin and red wavy hair', 'a green knitted jumper and a scarf'),
+    'g08': ('an 11-year-old Filipina girl with light brown skin and long straight black hair and a headband', 'a white blouse and a sky-blue vest'),
+    'g09': ('a 12-year-old Korean girl with light skin and a high ponytail', 'a mustard raincoat with flying goggles round her neck'),
+    'g10': ('a 12-year-old Maori girl with warm brown skin, a broad Polynesian face with a wide nose and full cheeks, and long wavy dark hair', 'a black jacket and a greenstone pendant'),
+    'g11': ('a 13-year-old girl with very dark brown skin, deep cocoa-brown skin, a Fijian girl with short tightly coiled black afro-textured curly hair and a flower clip', 'an orange windbreaker'),
+    'g12': ('a 13-year-old girl with fair skin and brown hair in a messy bun and glasses', 'a brown leather aviator jacket'),
+    'g13': ('a 14-year-old Somali girl with dark brown skin, wearing a soft lilac hijab', 'a denim jacket'),
+    'g14': ('a 14-year-old Japanese girl with light skin and long black hair and a fringe', 'a navy sailor-style coat and a red scarf'),
+    'g15': ('a 15-year-old Cook Islands girl with brown skin and long curly hair and a flower crown', 'a patterned island shirt'),
+    'g16': ('a 15-year-old girl with fair skin and short blonde hair', 'a green flight jacket'),
+    'g17': ('a 16-year-old Indian girl, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with brown skin and long dark wavy hair', 'a maroon cardigan and a map case strap'),
+    'g18': ('a 16-year-old Niuean girl, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with rich brown skin and long braids', 'a yellow zip-up jacket'),
+    'g19': ('a 17-year-old Vietnamese young woman, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with light tan skin and shoulder-length hair', 'a white jacket and a blue scarf'),
+    'g20': ('a 17-year-old Maori young woman, a tall older teenager who clearly looks 16 or 17, with a longer, more grown-up face, a stronger jaw, a longer neck and a more mature build, with warm brown skin and a tidy ponytail', 'a red puffer vest over a white t-shirt'),
+}
+for _id, (_who, _wearing) in KEEPERS.items():
+    PICTURES[f'keeper-{_id}'] = (PORTRAIT.format(who=_who, wearing=_wearing), SQUARE)
+
+
+def graph(text: str, seed: int, size: tuple[int, int]) -> dict:
+    width, height = size
+    base = {
+        '1': {'class_type': 'UNETLoader', 'inputs': {'unet_name': 'z_image_turbo_int8_convrot.safetensors', 'weight_dtype': 'default'}},
+        '2': {'class_type': 'CLIPLoader', 'inputs': {'clip_name': 'qwen_3_4b_fp8_mixed.safetensors', 'type': 'lumina2', 'device': 'default'}},
+        '3': {'class_type': 'VAELoader', 'inputs': {'vae_name': 'ae.safetensors'}},
+        '4': {'class_type': 'ModelSamplingAuraFlow', 'inputs': {'model': ['1', 0], 'shift': 3.0}},
+        '5': {'class_type': 'CLIPTextEncode', 'inputs': {'clip': ['2', 0], 'text': text}},
+        '6': {'class_type': 'ConditioningZeroOut', 'inputs': {'conditioning': ['5', 0]}},
+        '7': {'class_type': 'EmptySD3LatentImage', 'inputs': {'width': width, 'height': height, 'batch_size': 1}},
+    }
+    sample = lambda latent, denoise: {'class_type': 'KSampler', 'inputs': {
+        'model': ['4', 0], 'positive': ['5', 0], 'negative': ['6', 0], 'latent_image': latent, 'seed': seed, 'steps': 8, 'cfg': 1.0,
+        'sampler_name': 'res_multistep', 'scheduler': 'simple', 'denoise': denoise}}
+    return {
+        **base,
+        '8': sample(['7', 0], 1.0),
+        '9': {'class_type': 'VAEDecode', 'inputs': {'samples': ['8', 0], 'vae': ['3', 0]}},
+        '11': {'class_type': 'ImageScaleBy', 'inputs': {'image': ['9', 0], 'upscale_method': 'lanczos', 'scale_by': 1.5}},
+        '12': {'class_type': 'VAEEncode', 'inputs': {'pixels': ['11', 0], 'vae': ['3', 0]}},
+        '13': sample(['12', 0], 0.4),
+        '14': {'class_type': 'VAEDecode', 'inputs': {'samples': ['13', 0], 'vae': ['3', 0]}},
+        '10': {'class_type': 'SaveImage', 'inputs': {'images': ['14', 0], 'filename_prefix': 'isles/img'}},
+    }
+
+
+def call(path: str, body: dict | None = None) -> dict:
+    req = urllib.request.Request(COMFY + path, data=json.dumps(body).encode() if body else None, headers={'Content-Type': 'application/json'})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read())
+
+
+def paint(out: Path, names: list[str], tries: int):
+    out.mkdir(parents=True, exist_ok=True)
+    for n in range(1, tries + 1):
+        for name in names:
+            dest = out / f'{name}-{n}.png'
+            if dest.exists():
+                continue
+            words, size = PICTURES[name]
+            seed = (sum(map(ord, name)) * 7919 + n * 104729) % 2**32
+            started = time.time()
+            style = STYLE if name.startswith(('bg-', 'weather-', 'scene-', 'home-')) else PORTRAIT_STYLE if name.startswith('keeper-') else PIECE_STYLE
+            job = call('/prompt', {'prompt': graph(style + words + FRIENDLY, seed, size)})['prompt_id']
+            for _ in range(300):
+                time.sleep(2)
+                done = call(f'/history/{job}').get(job)
+                if done:
+                    break
+            else:
+                sys.exit(f'{dest.name}: ComfyUI took too long')
+            img = next(i for o in done['outputs'].values() for i in o.get('images', []))
+            q = urllib.parse.urlencode({'filename': img['filename'], 'subfolder': img['subfolder'], 'type': img['type']})
+            with urllib.request.urlopen(f'{COMFY}/view?{q}', timeout=60) as r:
+                dest.write_bytes(r.read())
+            print(f'  {dest.name}  {time.time() - started:.0f}s', flush=True)
+
+
+# --- From tries to the game (stage S.3) ---------------------------------------------------------------------------
+
+ROOT = Path(__file__).resolve().parent.parent
+ART = ROOT / 'src' / 'games' / 'isles' / 'art'
+INBOX = Path.home() / 'isles-art-inbox'
+PICKS = ROOT / 'docs' / 'isles-art' / 'picks.json'
+# The longest side of each cut-out piece, and the widths of the backgrounds and keeper portraits.
+PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480, 'dec': 256, 'walker': 128, 'icon': 160, 'gift': 160, 'lighthouse': 384}
+BG_WIDTHS = (1600, 800)
+KEEPER_SIZES = (320, 96)
+
+
+def source(name: str, n: int) -> Path:
+    """Where a try was painted: bases and buildings in levels/ (the 2 Nov rule change), keepers in keepers/, the rest in art/."""
+    folder = 'levels' if name.startswith(('base-', 'bld-')) else 'keepers' if name.startswith('keeper-') else 'art'
+    return INBOX / folder / f'{name}-{n}.png'
+
+
+HOME = ROOT / 'src' / 'assets' / 'home'
+# Painted backgrounds, not cut out: kept whole at BG_WIDTHS.
+BACKGROUND = ('bg-', 'weather-', 'scene-', 'home-')
+
+
+def outputs(name: str) -> list[Path]:
+    if name == 'home-card':
+        # The home page card (docs/HOME-ART-PLAN.md); it only goes in gameCardArt.ts at go-live.
+        return [HOME / 'isles.webp', HOME / 'isles-small.webp']
+    if name.startswith(BACKGROUND):
+        return [ART / f'{name}.webp', ART / f'{name}-800.webp']
+    if name.startswith('keeper-'):
+        return [ART / 'keepers' / f'{name[7:]}.webp', ART / 'keepers' / f'{name[7:]}-96.webp']
+    return [ART / f'{name}.webp']
+
+
+_session = None
+
+
+def cut_out(src: Path):
+    """The piece on its white background, cut out with rembg and trimmed to the piece."""
+    global _session
+    import numpy as np
+    from PIL import Image
+    from rembg import new_session, remove
+    if _session is None:
+        _session = new_session('isnet-general-use')
+    rgb = Image.open(src).convert('RGB')
+    img = remove(rgb, session=_session, alpha_matting=True)
+    if src.name.startswith('pip-'):
+        # Pip is a white gull on white, and rembg takes his white feathers away too. Keep everything the background
+        # can't reach: fill the white in from the edges, and only that filled white goes.
+        from PIL import ImageDraw
+        marked = rgb.copy()
+        for xy in [(0, 0), (rgb.width - 1, 0), (0, rgb.height - 1), (rgb.width - 1, rgb.height - 1)]:
+            ImageDraw.floodfill(marked, xy, (255, 0, 255), thresh=40)
+        inside = ~np.all(np.asarray(marked) == (255, 0, 255), axis=2)
+        alpha = np.maximum(np.asarray(img)[..., 3], inside.astype(np.uint8) * 255)
+        img = Image.fromarray(np.dstack([np.asarray(rgb), alpha]).astype(np.uint8), 'RGBA')
+    a = np.asarray(img)[..., 3] > 40
+    if a.sum() < 400:
+        sys.exit(f'{src.name}: nothing left after cutting out')
+    ys, xs = np.where(a)
+    return img.crop((max(0, xs.min() - 4), max(0, ys.min() - 4), min(img.width, xs.max() + 5), min(img.height, ys.max() + 5)))
+
+
+def fit(img, longest: int, by_width=False):
+    from PIL import Image
+    scale = longest / (img.width if by_width else max(img.width, img.height))
+    return img if scale >= 1 else img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+
+
+def save(img, out: Path, quality: int):
+    out.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out, 'WEBP', quality=quality, method=6)
+    print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
+
+
+def tidy(names: list[str], force: bool):
+    from PIL import Image
+    picks = json.loads(PICKS.read_text())['picks']
+    unknown = [n for n in names if n not in picks]
+    if unknown:
+        sys.exit(f'Not in picks.json: {", ".join(unknown)}')
+    for name in names or list(picks):
+        outs = outputs(name)
+        if not force and all(o.exists() for o in outs):
+            continue
+        src = source(name, picks[name])
+        if name.startswith(BACKGROUND):
+            img = Image.open(src).convert('RGB')
+            for out, width in zip(outs, BG_WIDTHS):
+                save(fit(img, width, by_width=True), out, 74)
+        elif name.startswith('keeper-'):
+            img = Image.open(src).convert('RGB')
+            side = min(img.size)
+            img = img.crop(((img.width - side) // 2, (img.height - side) // 2, (img.width + side) // 2, (img.height + side) // 2))
+            for out, size in zip(outs, KEEPER_SIZES):
+                save(img.resize((size, size), Image.LANCZOS), out, 80)
+        else:
+            group = name.split('-', 1)[0]
+            save(fit(cut_out(src), PIECE_SIZE[group], by_width=group == 'base'), outs[0], 82)
+
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    tries = 3
+    if '--tries' in args:
+        i = args.index('--tries')
+        tries = int(args[i + 1])
+        del args[i:i + 2]
+    if args[:1] == ['tidy']:
+        force = '--force' in args
+        tidy([a for a in args[1:] if a != '--force'], force)
+    elif args[:1] == ['list']:
+        print('\n'.join(PICTURES))
+    elif args[:1] == ['paint'] and len(args) >= 2:
+        unknown = [a for a in args[2:] if a not in PICTURES]
+        if unknown:
+            sys.exit(f'Unknown: {", ".join(unknown)}')
+        paint(Path(args[1]), args[2:] or list(PICTURES), tries)
+    else:
+        sys.exit(__doc__)

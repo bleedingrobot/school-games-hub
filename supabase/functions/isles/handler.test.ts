@@ -1,0 +1,247 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { expect, it } from 'vitest';
+import { markQuestion, seededRandom, type MathsContext } from '../../../shared/maths/serverQuestions';
+import { CALM_TURNS, GIFT_COINS, TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
+import { memoryServices, type MemoryOptions } from '../../../shared/isles/memoryServices';
+import { RACE_LEGS } from '../../../shared/isles/config';
+import { islandWorth } from '../../../shared/isles/engine';
+import { RACE_STOPS, runRace } from '../../../shared/isles/race';
+import { makeHandler } from './handler';
+
+// Sky Isles' server tests (docs/ISLES-PLAN.md, section 9: tests 1, 2 and 3 of the game's 8).
+
+const TIMES_TABLES: MathsContext = { facts: [], settings: {} };
+
+function setup(over: MemoryOptions = {}) {
+  // Pinned: 11 am on Tuesday 3 November in New Zealand.
+  let clock = Date.UTC(2026, 10, 2, 22);
+  const log = { answers: [], points: [] } as NonNullable<MemoryOptions['log']>;
+  const services = memoryServices({ maths: () => TIMES_TABLES, now: () => clock, random: seededRandom('isles-tests'), log, ...over });
+  const handler = makeHandler({ ...services, userIdFor: async (t) => (t.startsWith('pupil-') ? t : null) });
+  const send = async (who: string | null, body: object) => {
+    const res = await handler(new Request('https://x/isles', {
+      method: 'POST', headers: who ? { Authorization: `Bearer ${who}` } : {}, body: JSON.stringify(body),
+    }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { status: res.status, body: (await res.json()) as Record<string, any> };
+  };
+  /** The right answer to a stored question, read from the server's own store (as only the server can). */
+  const rightAnswer = (set: string, slot = 0) => markQuestion(services.data.questions.find((q) => q.id === set)!.questions[slot])!.answer;
+  return { send, log, services, rightAnswer, tick: (ms: number) => (clock += ms) };
+}
+
+it('marks the turn question itself, once, and only your own (test 1)', async () => {
+  const { send, log, rightAnswer } = setup();
+  expect((await send(null, { action: 'load' })).status).toBe(401);
+  const { question } = (await send('pupil-a', { action: 'load' })).body;
+  // The browser is never sent an answer or a seed.
+  expect(JSON.stringify(question)).not.toMatch(/"answer"|factKey|seed/);
+
+  const wrong = await send('pupil-a', { action: 'answer', set: question.set, slot: 0, value: rightAnswer(question.set) + 1, ms: 4000 });
+  expect(wrong.body).toEqual({ right: false, answer: rightAnswer(question.set) });
+  // Sent twice (even with the right answer the second time): marked once.
+  expect((await send('pupil-a', { action: 'answer', set: question.set, slot: 0, value: rightAnswer(question.set) })).body).toMatchObject({ code: 'answered' });
+  // Another pupil can't answer it, even knowing its id.
+  await send('pupil-b', { action: 'load' });
+  expect((await send('pupil-b', { action: 'answer', set: question.set, slot: 0, value: rightAnswer(question.set) })).body).toMatchObject({ code: 'stale' });
+  // Recorded for the maths records once, as wrong.
+  expect(log.answers.map((a) => [a.player, a.answers[0].correct])).toEqual([['pupil-a', false]]);
+
+  // With the teacher's switch off, nothing happens.
+  const off = setup({ settings: () => ({ enabled: false, races: true }) });
+  expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
+});
+
+it('plays each turn once, six a day, and refuses an impossible spend (test 2)', async () => {
+  const { send, log, services, rightAnswer, tick } = setup();
+  let { island, question } = (await send('pupil-a', { action: 'load' })).body;
+  await send('pupil-a', { action: 'answer', set: question.set, slot: 0, value: rightAnswer(question.set) });
+
+  // An impossible spend refuses the whole turn, and the turn isn't used.
+  const tooDear = await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 5, plot: 'farm' }, { kind: 'anchor' }] });
+  expect(tooDear.body).toMatchObject({ code: 'not-enough-coins', at: 1 });
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'decorate', id: 'flowers', place: 99 }] })).body).toMatchObject({ code: 'no-such-place' });
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'move', decoration: 0, place: null }] })).body).toMatchObject({ code: 'bad-choice' });
+  // Choices from the old rules (tax, the market) aren't understood.
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'tax', level: 'low' }] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'sell', good: 'food', amount: 5 }] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 99, plot: 'farm' }] })).body).toMatchObject({ code: 'no-such-spot' });
+  expect((await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 5, plot: 'castle' }] })).status).toBe(400);
+
+  const turn = { action: 'turn', turn: 0, actions: [{ kind: 'build', spot: 5, plot: 'workshop' }] };
+  const played = (await send('pupil-a', turn)).body;
+  // The fair wind came from the answer the server marked.
+  expect(played.report.collected.windy).toBe(true);
+  expect(played.island).toMatchObject({ turn: 1, turnsLeft: TURNS_PER_DAY - 1, spots: expect.arrayContaining([{ kind: 'workshop', level: 1 }]) });
+  // Sent twice: played once, and the island as it is now comes back.
+  const twice = (await send('pupil-a', turn)).body;
+  expect(twice).toMatchObject({ already: true, island: { turn: 1 } });
+  expect(services.data.turns).toHaveLength(1);
+  expect(log.points).toEqual([{ player: 'pupil-a', points: 1, once: expect.stringMatching(/^isles:[0-9a-f]+:t0$/) }]);
+
+  // The rest of today's six turns (no answer: no fair wind), then a seventh is refused.
+  for (let t = 1; t < TURNS_PER_DAY; t++) {
+    island = (await send('pupil-a', { action: 'turn', turn: t, actions: [] })).body.island;
+    expect(island.turn).toBe(t + 1);
+  }
+  const seventh = await send('pupil-a', { action: 'turn', turn: TURNS_PER_DAY, actions: [] });
+  expect(seventh.body).toMatchObject({ code: 'no-turns', error: expect.stringContaining('See you tomorrow') });
+  expect(services.data.turns).toHaveLength(TURNS_PER_DAY);
+
+  // Tomorrow (New Zealand time) there are six more.
+  tick(24 * 60 * 60 * 1000);
+  ({ island } = (await send('pupil-a', { action: 'load' })).body);
+  expect(island.turnsLeft).toBe(TURNS_PER_DAY);
+  expect((await send('pupil-a', { action: 'turn', turn: TURNS_PER_DAY, actions: [] })).status).toBe(200);
+});
+
+it("works a Sky Race out from its seed and the answers the server marked, so the browser can't rig it (test 3)", async () => {
+  const { send, services, rightAnswer, log } = setup();
+  await send('pupil-a', { action: 'load' });
+  // A race needs the opponent's island to be a classmate's the server knows.
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body).toMatchObject({ code: 'not-classmate' });
+
+  // Even the season's first race is an ordinary race (James, 3 Nov 2026): with every answer wrong it is lost.
+  const first = (await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race;
+  expect(first).toMatchObject({ starter: false });
+  expect(first.questions).toHaveLength(3);
+  expect(JSON.stringify(first)).not.toMatch(/"answer"|factKey|seed/);
+  // Starting again carries on the same race, so a bad start can't be thrown away.
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race.id).toBe(first.id);
+
+  // The questions come during the race. The server sends the race one stretch at a time: first up to the first stop.
+  const seen = (race: { soFar: { youPath: number[]; themPath: number[] } }) => race.soFar;
+  let shown = seen(first);
+  expect(shown.youPath).toHaveLength(RACE_STOPS[0] + 1);
+  // A question can't be skipped ahead: question 2 waits until question 1 is marked.
+  expect((await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: 1, value: rightAnswer(first.questions[1].set, 1) })).body).toMatchObject({ code: 'not-yet' });
+  for (const q of first.questions) {
+    const reply = (await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: q.slot, value: rightAnswer(q.set, q.slot) + 1 })).body;
+    expect(reply.right).toBe(false);
+    // Each reply adds the next stretch (up to the last stop: the last stretch comes with the result), and what was
+    // shown before stays exactly as it was.
+    const now = seen(reply.race);
+    expect(now.youPath).toHaveLength(RACE_STOPS[Math.min(q.slot + 1, RACE_STOPS.length - 1)] + 1);
+    expect(now.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
+    expect(now.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
+    // Sent again with the right answer: still marked once, as it was, and the stretch shown doesn't change.
+    const again = (await send('pupil-a', { action: 'raceAnswer', race: first.id, slot: q.slot, value: rightAnswer(q.set, q.slot) })).body;
+    expect(again).toMatchObject({ already: true, right: false });
+    expect(seen(again.race)).toEqual(now);
+    shown = now;
+  }
+  // Coming back mid-race (or after the last answer) carries on from the same place.
+  expect((await send('pupil-a', { action: 'load' })).body.openRace.soFar).toEqual(shown);
+  // What the browser says about the result is ignored: it comes from the stored seed and the marks.
+  const done = (await send('pupil-a', { action: 'raceFinish', race: first.id, won: true, right: 3 })).body;
+  const stored = services.data.races[0];
+  expect(done.race.result).toEqual(runRace(stored.seed, stored.you, stored.them, 0));
+  expect(done.race.result.won).toBe(false);
+  // The finished race starts with exactly the stretches shown, and the winner reaches the finish line.
+  expect(done.race.result.youPath).toHaveLength(RACE_LEGS + 1);
+  expect(done.race.result.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
+  expect(done.race.result.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
+  expect(done.race.result.themPath.at(-1)).toBe(1);
+  expect(done.island).toMatchObject({ racesToday: 1, racesWon: 0, coins: 150 + WELL_RACED_COINS, crystals: 0 });
+  // Sent twice: finished once.
+  expect((await send('pupil-a', { action: 'raceFinish', race: first.id })).body).toMatchObject({ already: true });
+  // A lost race earns no points.
+  expect(log.points.filter((p) => p.once.startsWith('isles:race:'))).toHaveLength(0);
+
+  // One race a turn: play a turn, then an ordinary race, which the answers decide.
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body).toMatchObject({ code: 'raced-this-turn' });
+  await send('pupil-a', { action: 'turn', turn: 0, actions: [] });
+  const second = (await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race;
+  expect(second.starter).toBe(false);
+  const marks = [true, false, true];
+  let stretch = second.soFar;
+  for (const q of second.questions) {
+    const reply = (await send('pupil-a', { action: 'raceAnswer', race: second.id, slot: q.slot, value: rightAnswer(q.set, q.slot) + (marks[q.slot] ? 0 : 1) })).body;
+    expect(reply.race.soFar.youPath.slice(0, stretch.youPath.length)).toEqual(stretch.youPath);
+    stretch = reply.race.soFar;
+  }
+  // Another pupil can't answer or finish it.
+  await send('pupil-b', { action: 'load' });
+  expect((await send('pupil-b', { action: 'raceFinish', race: second.id })).body).toMatchObject({ code: 'stale' });
+  const r2 = (await send('pupil-a', { action: 'raceFinish', race: second.id })).body;
+  const s2 = services.data.races[1];
+  expect(r2.race.result).toEqual(runRace(s2.seed, s2.you, s2.them, marks));
+  expect(r2.race.result.youPath.slice(0, stretch.youPath.length)).toEqual(stretch.youPath);
+  // Each gust blows on the stretch straight after its question, only if it was right: questions 1 and 3 here.
+  expect(r2.race.result.gustLegs).toEqual([RACE_STOPS[0], RACE_STOPS[2]]);
+
+  // The teacher can switch races off.
+  const off = setup({ settings: () => ({ enabled: true, races: false }) });
+  await off.send('pupil-a', { action: 'load' });
+  expect((await off.send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body).toMatchObject({ code: 'races-off' });
+});
+
+it("lets classmates visit, leave gifts and race each other's islands, never writing another pupil's island (test 3, classmates)", async () => {
+  const { send, services, rightAnswer } = setup();
+  services.data.names = { 'pupil-a': 'Ana', 'pupil-b': 'Ben', 'pupil-c': 'Cal', 'pupil-d': 'Dee', 'pupil-e': 'Eru' };
+  for (const who of ['a', 'b', 'c', 'd', 'e']) await send(`pupil-${who}`, { action: 'load' });
+
+  // The class sky: everyone else, with who can be raced (Ben's island is in its calm start) and no coins or maths.
+  const sky = (await send('pupil-a', { action: 'sky' })).body;
+  expect(sky.classmates.map((c: { name: string }) => c.name)).toEqual(['Ben', 'Cal', 'Dee', 'Eru']);
+  expect(sky.classmates[0]).toMatchObject({ spots: 6, raceWhy: 'That island is new and still having a calm start.', giftWhy: null });
+  expect(JSON.stringify(sky)).not.toMatch(/coins|crystals|seed|maths/);
+  // A visit is look only.
+  const visit = (await send('pupil-a', { action: 'visit', who: 'pupil-b' })).body.visit;
+  expect(Object.keys(visit.look).sort()).toEqual(['decorations', 'islanders', 'lighthouse', 'spots']);
+  expect((await send('pupil-a', { action: 'visit', who: 'pupil-x' })).status).toBe(404);
+
+  // Gifts: free, one sent a day, three given a day; they wait in the post until Ben loads.
+  const ben = () => services.data.islands['pupil-b'].island!;
+  const before = ben().coins;
+  expect((await send('pupil-a', { action: 'gift', to: 'pupil-b', gift: 'cake' })).body).toMatchObject({ sent: true, giftsSentToday: 1 });
+  expect((await send('pupil-a', { action: 'gift', to: 'pupil-c', gift: 'cake' })).body).toMatchObject({ code: 'sent-today' });
+  expect((await send('pupil-c', { action: 'gift', to: 'pupil-b', gift: 'pizza' })).status).toBe(400);
+  for (const who of ['c', 'd']) expect((await send(`pupil-${who}`, { action: 'gift', to: 'pupil-b', gift: 'flowers' })).body.sent).toBe(true);
+  expect((await send('pupil-e', { action: 'gift', to: 'pupil-b', gift: 'lantern' })).body).toMatchObject({ code: 'given-enough' });
+  expect(ben().coins).toBe(before);
+  const opened = (await send('pupil-b', { action: 'load' })).body;
+  expect(opened.post.map((p: { fromName: string; gift: string }) => `${p.fromName}:${p.gift}`)).toEqual(['Ana:cake', 'Cal:flowers', 'Dee:flowers']);
+  expect(opened.island.coins).toBe(before + 3 * GIFT_COINS);
+  // Opened once.
+  expect((await send('pupil-b', { action: 'load' })).body).toMatchObject({ post: [], island: { coins: before + 3 * GIFT_COINS } });
+
+  // A race against Ben's island, once its calm start is over: Ben's island races at home, and gets its "well raced"
+  // coins (and a win, if it wins) in its post.
+  services.data.islands['pupil-b'].island!.turn = CALM_TURNS;
+  expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-a' })).body).toMatchObject({ code: 'own-island' });
+  const race = (await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body.race;
+  expect(race).toMatchObject({ opponent: 'pupil-b', them: { breeze: false } });
+  for (const q of race.questions) await send('pupil-a', { action: 'raceAnswer', race: race.id, slot: q.slot, value: rightAnswer(q.set, q.slot) });
+  const benBefore = structuredClone(ben());
+  const done = (await send('pupil-a', { action: 'raceFinish', race: race.id })).body;
+  const stored = services.data.races.find((r) => r.id === race.id)!;
+  expect(done.race.result).toEqual(runRace(stored.seed, stored.you, stored.them, 3));
+  expect(ben()).toEqual(benBefore);
+  const home = (await send('pupil-b', { action: 'load' })).body;
+  expect(home.post).toEqual([{ fromName: 'Ana', coins: WELL_RACED_COINS, kind: 'raced', homeWin: !done.race.result.won }]);
+  expect(home.island).toMatchObject({ coins: benBefore.coins + WELL_RACED_COINS, racesWon: benBefore.racesWon + (done.race.result.won ? 0 : 1) });
+
+  // Not the same island twice in a day.
+  await send('pupil-a', { action: 'turn', turn: 0, actions: [{ kind: 'decorate', id: 'flowers', place: 0 }] });
+  const later = (await send('pupil-a', { action: 'sky' })).body;
+  expect(later.classmates[0].raceWhy).toBe("You've raced that island today already.");
+  // The news board: good news only (a race won, a decoration put up), newest first.
+  expect(later.news.map((n: { name: string; kind: string }) => `${n.name}:${n.kind}`)).toEqual([...['Ana:decoration'], ...(done.race.result.won ? ['Ana:race'] : [])]);
+
+  // Island names: only from the list (never typed), seen by classmates; and the Hall of the Skies (empty until a New Season).
+  expect((await send('pupil-b', { action: 'name', name: 'Rude Words' })).status).toBe(400);
+  expect((await send('pupil-b', { action: 'name', name: 'Puffin Cove' })).body).toEqual({ name: 'Puffin Cove' });
+  expect((await send('pupil-b', { action: 'load' })).body.name).toBe('Puffin Cove');
+  const named = (await send('pupil-a', { action: 'sky' })).body.classmates[0];
+  expect(named).toMatchObject({ name: 'Ben', islandName: 'Puffin Cove', worth: islandWorth(ben()) });
+  expect((await send('pupil-a', { action: 'hall' })).body).toEqual({ hall: [] });
+});
+
+it('the deployable file is up to date with the code (run `npm run build:functions -- isles` if this fails)', async () => {
+  // @ts-expect-error: plain JavaScript build script
+  const { buildFunction } = await import('../../../scripts/build-functions.mjs');
+  const built: string = await buildFunction('isles');
+  expect(readFileSync(resolve('supabase/functions/isles/index.ts'), 'utf8')).toBe(built);
+});
