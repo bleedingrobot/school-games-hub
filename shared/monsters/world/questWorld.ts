@@ -328,6 +328,18 @@ export function badgeStep(state: WorldState): { text: string; target: { map: str
 }
 
 /** People on this map with something quest-y for you now (a quest to start, or a step to hand in): the map shows a "!" over them. */
+/** Trees with a seed pod still in them, while a quest asks you to find them: they twinkle, since nothing else marks them. */
+export function podTwinkles(state: WorldState, map: GameMap): { x: number; y: number }[] {
+  const q = questOf(state);
+  const looking = new Set<string>();
+  for (const quest of QUESTS) {
+    const st = q.quests[quest.id];
+    const step = st && quest.steps[st.step];
+    if (step?.do === 'solve' && step.id && !q.flags.includes(`solved:${step.id}`)) looking.add(step.id);
+  }
+  return map.things.filter((t) => t.kind === 'puzzle' && t.puzzle && looking.has(t.puzzle) && !q.flags.includes(podFlag(t.puzzle, t.id))).map((t) => ({ x: t.x, y: t.y }));
+}
+
 export function questMarks(state: WorldState, map: GameMap): Set<string> {
   const q = questOf(state);
   const out = new Set<string>();
