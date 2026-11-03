@@ -94,6 +94,8 @@
   color: #0f172a;
   background: #e2e8f0;
 }
+.mb-chip--caught { background: #fde68a; }
+.mb-chip--new { background: #fff; box-shadow: inset 0 0 0 2px #94a3b8; color: #475569; }
 .mb-chip--leaf, .mb-move--leaf { --c: #86efac; background-color: #86efac; }
 .mb-chip--water, .mb-move--water { --c: #7dd3fc; background-color: #7dd3fc; }
 .mb-chip--fire, .mb-move--fire { --c: #fdba74; background-color: #fdba74; }

@@ -13,18 +13,35 @@ export function FlightBubble({ step, top, onAck, onShow, onSkip }: {
   onSkip: () => void;
 }) {
   const [asking, setAsking] = useState(false);
-  useEffect(() => setAsking(false), [step.id]);
+  // Tucked away to a small chip, so it covers nothing on a small screen. Each new step opens it again.
+  const [small, setSmall] = useState(false);
+  useEffect(() => {
+    setAsking(false);
+    setSmall(false);
+  }, [step.id]);
   useEffect(() => {
     if (!asking) return;
     const close = (e: KeyboardEvent) => e.key === 'Escape' && setAsking(false);
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [asking]);
+  if (small) {
+    return (
+      <aside className={`st-flight st-flight--small ${top ? 'st-flight--top' : ''}`} aria-label="First Flight">
+        <button type="button" className="st-btn st-btn--small st-flight__open" onClick={() => setSmall(false)} aria-label={`Show ${COACH_NAME}: First Flight step ${step.n} of ${FLIGHT_STEPS}`}>
+          <BoltFace size={22} /> Step {step.n} of {FLIGHT_STEPS} ▴
+        </button>
+      </aside>
+    );
+  }
   return (
     <aside className={`st-flight ${top ? 'st-flight--top' : ''}`} aria-label="First Flight">
       <BoltFace size={44} />
       <div className="st-flight__body">
-        <p className="st-flight__step">First Flight · step {step.n} of {FLIGHT_STEPS}</p>
+        <p className="st-flight__step">
+          First Flight · step {step.n} of {FLIGHT_STEPS}
+          <button type="button" className="st-flight__tuck" onClick={() => setSmall(true)} aria-label={`Make ${COACH_NAME}'s bubble small`}>▾ Small</button>
+        </p>
         {asking ? (
           <>
             <p className="st-flight__say" role="status">Sure? You can replay First Flight from the title screen.</p>

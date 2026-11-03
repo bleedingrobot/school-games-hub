@@ -1,11 +1,11 @@
 /**
- * Diamond Drop's smaller screens: the level end, the boost shop, the Gem Book, the Hall of Diamond Finders and How to play. Every number on them is
+ * Diamond Drop's smaller screens: the level end, the Shop (boosts and claw looks), the Gem Book, the Hall of Diamond Finders and How to play. Every number on them is
  * read from shared/diamond/config.ts, so changing a number there changes the page.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ACHIEVEMENTS, BOOSTS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARITY_PRICE, REPLAY_COIN_SHARE,
-  SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, levelSpec, type BoostId,
+  SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, levelSpec, type BoostId, type Slot,
 } from '../../../shared/diamond/config';
 import { boostPrice, type Player } from '../../../shared/diamond/progress';
 import { itemOf } from '../../../shared/diamond/workshop';
@@ -14,6 +14,7 @@ import { paintFile } from './art/paint';
 import { drawRig } from './art/items';
 import type { DiamondBackend, Ended, HallRow } from './backend';
 
+import { ClawLooks } from './ClawLooks';
 import { Sprite } from './Sprite';
 
 function Page({ id, title, onBack, backLabel = 'Back to the map', children, coins }: { id: string; title: string; onBack: () => void; backLabel?: string; children: ReactNode; coins?: number }) {
@@ -93,7 +94,7 @@ export function LevelEnd({ ended, achieved, onShop, onAgain, onMap, againLabel }
         )}
         {ended.points > 0 && <p>+{ended.points} {ended.points === 1 ? 'point' : 'points'} for the hub.</p>}
         {ended.earned.length > 0 && (
-          <p className="dd-earned" role="status">New in your Workshop: {ended.earned.map((id) => itemOf(id)?.name ?? id).join(', ')}!</p>
+          <p className="dd-earned" role="status">New claw looks for you (in the Shop): {ended.earned.map((id) => itemOf(id)?.name ?? id).join(', ')}!</p>
         )}
       </div>
       <div className="dd-row">
@@ -105,11 +106,16 @@ export function LevelEnd({ ended, achieved, onShop, onAgain, onMap, againLabel }
   );
 }
 
-// ————————————————————————————————————— Boost shop —————————————————————————————————————
+// ————————————————————————————————————— The Shop —————————————————————————————————————
 
-export function Shop({ player, level, basket, onToggle, onStart, canStart, why, advice, onBack }: {
+export type ShopTab = 'boosts' | 'looks';
+
+/** One shop with two tabs: boosts for the next level, and claw looks that are kept for good. */
+export function Shop({ player, level, tab, onTab, basket, onToggle, onStart, canStart, why, advice, now, still, onBuy, onWear, onBack }: {
   player: Player;
   level: number;
+  tab: ShopTab;
+  onTab: (t: ShopTab) => void;
   basket: BoostId[];
   onToggle: (id: BoostId) => void;
   onStart: () => void;
@@ -117,44 +123,62 @@ export function Shop({ player, level, basket, onToggle, onStart, canStart, why, 
   why: string;
   /** Nugget's advice, with the working (null when help is off). */
   advice: string | null;
+  now: Date;
+  still: boolean;
+  onBuy: (id: string) => void;
+  onWear: (slot: Slot, id: string | null) => void;
   onBack: () => void;
 }) {
   const cost = basket.reduce((sum, id) => sum + (id === player.freeBoost ? 0 : boostPrice(id, level)), 0);
   const left = player.coins - cost;
   return (
-    <Page id="dd-shop-title" title={`Shop for level ${level}`} onBack={onBack} coins={player.coins}>
-      {paintFile('field', 'stall') && <img className="dd-stall" src={paintFile('field', 'stall')} alt="" width={110} height={110} />}
-      <p className="dd-soft">Boosts help on your next level only. One of each at most.</p>
-      {advice && <p className="dd-advice"><strong>Nugget says:</strong> {advice}</p>}
-      <ul className="dd-list">
-        {BOOSTS.map((b) => {
-          const inBasket = basket.includes(b.id);
-          const free = b.id === player.freeBoost;
-          const price = free ? 0 : boostPrice(b.id, level);
-          const affordable = inBasket || price <= left;
-          return (
-            <li key={b.id} className={`dd-item${inBasket ? ' is-chosen' : ''}`}>
-              {paintFile('boosts', b.id) && <img className="dd-item__icon" src={paintFile('boosts', b.id)} alt="" width={64} height={64} />}
-              <div className="dd-item__body">
-                <h3 className="dd-item__name">{b.name}{free && <span className="dd-chip dd-chip--gold">Free from a sack!</span>}</h3>
-                <p>{b.about}</p>
-                <p className="dd-item__how">
-                  {inBasket ? `In your bag.` : free ? 'Free this time.' : `You have ${left}. ${b.name} ${price}. ${affordable ? `You’ll have ${left - price} left.` : `You need ${price - left} more.`}`}
-                </p>
-                <button type="button" className={`button ${inBasket ? 'button--light' : 'button--primary'} dd-btn dd-btn--small`} aria-pressed={inBasket} disabled={!affordable} onClick={() => onToggle(b.id)}>
-                  {inBasket ? 'Take it out' : free ? 'Take it (free)' : `Buy for ${price}`}
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="dd-row">
-        <button type="button" className="button button--play dd-btn dd-btn--big" onClick={onStart} disabled={!canStart}>
-          Start level {level}{basket.length ? ` with ${basket.length} boost${basket.length > 1 ? 's' : ''}` : ''}
-        </button>
+    <Page id="dd-shop-title" title="Shop" onBack={onBack} coins={player.coins}>
+      <div className="dd-shoptabs" role="tablist" aria-label="What to buy">
+        {(['boosts', 'looks'] as const).map((t) => (
+          <button key={t} type="button" role="tab" id={`dd-shoptab-${t}`} aria-selected={tab === t} aria-controls="dd-shoptab-panel" className={`dd-shoptab${tab === t ? ' is-on' : ''}`} onClick={() => onTab(t)}>
+            <span className="dd-shoptab__name">{t === 'boosts' ? `Boosts for level ${level}` : 'Claw looks'}</span>
+            <span className="dd-shoptab__about">{t === 'boosts' ? 'Help on your next go' : 'Kept for good'}</span>
+          </button>
+        ))}
       </div>
-      {why && <p className="dd-why">{why}</p>}
+      <div id="dd-shoptab-panel" role="tabpanel" aria-labelledby={`dd-shoptab-${tab}`}>
+        {tab === 'looks' ? <ClawLooks player={player} now={now} still={still} onBuy={onBuy} onWear={onWear} /> : (
+          <>
+            {paintFile('field', 'stall') && <img className="dd-stall" src={paintFile('field', 'stall')} alt="" width={110} height={110} />}
+            <p className="dd-soft">Boosts help on your next level only. One of each at most.</p>
+            {advice && <p className="dd-advice"><strong>Nugget says:</strong> {advice}</p>}
+            <ul className="dd-list">
+              {BOOSTS.map((b) => {
+                const inBasket = basket.includes(b.id);
+                const free = b.id === player.freeBoost;
+                const price = free ? 0 : boostPrice(b.id, level);
+                const affordable = inBasket || price <= left;
+                return (
+                  <li key={b.id} className={`dd-item${inBasket ? ' is-chosen' : ''}`}>
+                    {paintFile('boosts', b.id) && <img className="dd-item__icon" src={paintFile('boosts', b.id)} alt="" width={64} height={64} />}
+                    <div className="dd-item__body">
+                      <h3 className="dd-item__name">{b.name}{free && <span className="dd-chip dd-chip--gold">Free from a sack!</span>}</h3>
+                      <p>{b.about}</p>
+                      <p className="dd-item__how">
+                        {inBasket ? `In your bag.` : free ? 'Free this time.' : `You have ${left}. ${b.name} ${price}. ${affordable ? `You’ll have ${left - price} left.` : `You need ${price - left} more.`}`}
+                      </p>
+                      <button type="button" className={`button ${inBasket ? 'button--light' : 'button--primary'} dd-btn dd-btn--small`} aria-pressed={inBasket} disabled={!affordable} onClick={() => onToggle(b.id)}>
+                        {inBasket ? 'Take it out' : free ? 'Take it (free)' : `Buy for ${price}`}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="dd-row">
+              <button type="button" className="button button--play dd-btn dd-btn--big" onClick={onStart} disabled={!canStart}>
+                Start level {level}{basket.length ? ` with ${basket.length} boost${basket.length > 1 ? 's' : ''}` : ''}
+              </button>
+            </div>
+            {why && <p className="dd-why">{why}</p>}
+          </>
+        )}
+      </div>
     </Page>
   );
 }
@@ -242,12 +266,12 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <p>1 star for passing, 2 for passing with {STAR_TWO_SECONDS} seconds left, 3 for that and catching every kind of gem on the level.</p>
         <p>Passing a new level keeps all its coins. A replay, or a try that falls short, keeps {sharePercent}% of them.</p>
         <p>Mystery sacks hold coins ({SACK.coinsLow + SACK.coinsPerLevel} or more), {SACK.seconds} extra seconds, or a free boost.</p>
-        <h3 className="dd-h3">The shop</h3>
+        <h3 className="dd-h3">The Shop</h3>
+        <p>The Shop has two tabs. <strong>Boosts</strong> help on your next level only:</p>
         <ul>
           {BOOSTS.map((b) => <li key={b.id}><strong>{b.name}</strong> ({b.base} + {b.perLevel} × the level number): {b.id === 'extraTime' ? `${EXTRA_TIME_SECONDS} more seconds.` : b.about}</li>)}
         </ul>
-        <h3 className="dd-h3">The Claw Workshop</h3>
-        <p>Upgrades change how your claw looks, never how it digs: Common {RARITY_PRICE.common}, Cool {RARITY_PRICE.cool}, Epic {RARITY_PRICE.epic}, Legendary {RARITY_PRICE.legendary} coins. The special of the week costs {Math.round(SPECIAL_SHARE * 100)}% of its price. A few can’t be bought: you win them.</p>
+        <p><strong>Claw looks</strong> are kept for good. They change how your claw looks, never how it digs: Common {RARITY_PRICE.common}, Cool {RARITY_PRICE.cool}, Epic {RARITY_PRICE.epic}, Legendary {RARITY_PRICE.legendary} coins. The special of the week costs {Math.round(SPECIAL_SHARE * 100)}% of its price. A few can’t be bought: you win them.</p>
         <h3 className="dd-h3">Achievements and points</h3>
         <ul>
           {ACHIEVEMENTS.map((a) => <li key={a.id}><span aria-hidden="true">{a.emoji}</span> <strong>{a.name}</strong>: {a.for}.</li>)}

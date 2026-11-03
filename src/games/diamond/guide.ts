@@ -72,7 +72,7 @@ export function shopAdvice(help: Help, player: Player, level: number): string | 
   const name = (id: BoostId) => BOOSTS.find((b) => b.id === id)!.name;
   const cost = (id: BoostId) => (price(id) === 0 ? `${name(id)} is free this time` : `${name(id)} costs ${price(id)} of your ${player.coins} coins, leaving ${player.coins - price(id)}`);
   const passed = level <= player.deepest;
-  if (passed) return `You’ve passed level ${level} before, so you may not need a boost. Coins saved go towards the Workshop.`;
+  if (passed) return `You’ve passed level ${level} before, so you may not need a boost. Coins saved go towards claw looks.`;
   if (level === LAST_LEVEL) {
     return `The Heart Diamond is heavy and slippery. A Lucky Charm halves the slips of every other gem, and a Strong Winch brings heavy things up faster. ${cost('strongWinch')}.`;
   }

@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14). H.4 and H.5 not started.** The `trader-hints` branch is finished: start H.4 on a new branch from `main`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14); market steps LIVE 3 Nov 2026 (#142, section 15). H.4 LIVE 3 Nov 2026 (#144, section 16). H.5 not started.** Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -387,4 +387,71 @@ James: pupils found the market confusing and had to scroll down past all ten goo
 - **Bolt:** First Flight and "Show me" open the step that has the button they mean (Sell all is on step 1, Buy max on step 2) before lighting it, through the panel's new `want` prop. Lit buttons scroll clear of the bar.
 - **Tests:** the one market test that looked for a row by its "Buy one" button now finds either step's row and presses 1 Sell. No new tests. All 91 Star Trader screen tests pass.
 - **Checked in the preview** at 800 × 600 and 390 × 844: the whole First Flight, the step after buying and after selling everything, and Show me from the wrong step.
-- Not tried by a child yet. Not merged or live.
+- Not tried by a child yet. **Merged and live 3 Nov 2026 (#142).**
+
+## 16. Stage H.4 results (3 Nov 2026): help levels, Bolt's help panel, accessibility pass
+Built on branch `trader-hints` (merged up to `main` after #142). Only files in `src/games/trader/` changed: no server code, no migration, no shared files. **Live since 3 Nov 2026 (#144).**
+
+### What's there
+| Where | What |
+|---|---|
+| `coach/level.ts` (new) | The three help levels and Bolt's pick: **Lots** for the first 30 jumps (the server's count, so the same on every device), then **Some**. **Off** only if the pupil picks it. The pupil's pick wins. Rollback: make `autoLevel` return `'off'` |
+| `coach/words.ts` (new) | "What's this screen?" (3 or 4 points for the market, ship, bank, star chart, pirates, a trader, space junk) and Bolt's word list (credits, profit, holds, cargo, fuel, hull, jump, tech level, shipyard, customs, banned, bounty, loan, interest), numbers from the config |
+| `coach/HelpPanel.tsx` (new) | Opened by the **🤖 Help** button in the top strip, which never goes away. What should I do? (Bolt's next step, or First Flight's step, with Show me), What's this screen?, Words, Bolt's tips again (every first-time tip already seen, with today's numbers), How much help? (Lots / Some / Off, "Bolt picked this for you" or "Let Bolt pick"), Replay First Flight. Beside the game on a laptop, a sheet along the bottom on a phone. Not modal: Escape or ✕ closes it and focus goes back to the Help button |
+| `coach/memory.ts` | Keeps the pupil's pick (`level`), for good, like First Flight (a New Season keeps it) |
+| `CoachBar.tsx` | `AskBolt`: on Some, a helper waits behind an "Ask Bolt" button |
+| Title screen | "Bolt's help: Lots / Some / Off" under Less movement and Simpler graphics |
+
+**What each level shows:**
+| | Lots | Some | Off |
+|---|---|---|---|
+| First Flight (starts by itself for a new pupil) | ✅ | ✅ | ❌ (Replay still works and turns help back on) |
+| Next-step line, first-time tips, maths-check note, first-borrow "Sure?" | ✅ | ✅ | ❌ |
+| ⭐ best buy, trip ideas on the star chart, guide lines to the tapped planet's x and y | ✅ | ❌ | ❌ |
+| "Sell there instead?", customs and pirate warnings before a jump, trip summary | ✅ | ✅ | ❌ |
+| Shipyard suggestion, bank line, pirate-fight suggestion | ✅ | behind "Ask Bolt" | ❌ |
+| Friendly-trader helper | ✅ (behind "Help me decide" after 3 deals) | behind "Help me decide" | ❌ |
+| 🤖 Help button and panel, ⓘ on the prices | ✅ | ✅ | ✅ |
+
+### Decisions made while building
+- **Question 2 and 3 of section 11 answered with my picks** (James said "continue", no answers yet): Lots drops to Some after 30 jumps; ⭐ best buy and trip ideas are on Lots only. Both are one line to change.
+- **Warnings stay on Some** (customs, pirates, "sell there instead?"): they stop a pupil losing something, so they aren't the "work it out" help Some hides.
+- **Guide lines** now show on Lots for any planet the pupil taps on the star chart, not only during First Flight.
+- **Bug fixed: Replay First Flight did nothing for a pupil who had already jumped** (it only worked on a game with no jumps, which is why its test passed). Replay now picks Bolt's trade straight away. Replaying with help Off sets help back to Bolt's pick, so Bolt can fly with them.
+- **Phone (844 × 390):** First Flight's bubble covered about 40% of the screen. On short screens it is now more compact (no face, smaller words), and **"▾ Small"** tucks it into a little "Step 3 of 9" chip in the corner; the next step opens it again. While the help panel is open, the bubble steps aside.
+- The help panel's "What should I do?" says First Flight's step while First Flight is on, so the two never disagree.
+
+### Accessibility
+- Help button: 44 px, `aria-expanded`, named "Bolt's help". Panel: a labelled, non-modal dialog; focus goes to its heading; Escape and ✕ close it; focus returns to the Help button (also after Replay).
+- Level pickers are real radio buttons in a fieldset with a legend; 44 px rows.
+- Bolt's words stay in polite live regions (next step, tips, First Flight); "Ask Bolt" buttons say what they'll show.
+- Less movement: nothing new moves; the glow already stops.
+
+### Tests
+- `TraderGame.test.tsx` (5 new): the Help panel (what to do, this screen, words, tips again; Show me lights the button and closes it; Escape gives focus back); Off hides the next step, tips, ⭐ and trip ideas but keeps the Help button, and switching to Some brings Bolt back without the ⭐; Some puts the fight suggestion behind "Ask Bolt"; Lots at 29 jumps, Some at 30, the pupil's pick winning and "Let Bolt pick"; Replay for a pupil who has jumped (fails on the old code), help turned back on, and the bubble made small and opened again.
+- Star Trader tests: 96 pass. Whole project (`npm run check`): 345 files, 5,913 tests; typecheck and build clean. Two Skill Map tests (teacher page, not touched) timed out on the busy computer and pass when run alone (20 of 20).
+- Checked in the browser at 1366 × 640 and 844 × 390: the title's level picker, the help panel, Some and Off, Replay from the panel, the small bubble.
+
+### Not done / untested
+- No keyboard-only test of the whole First Flight (each step's button and Show me are in the tab order and Show me moves focus, as since H.1).
+- The shipyard "Ask Bolt" and the bank "Ask Bolt" are covered by the code path the fight test uses, not by their own tests.
+- Not tried by a child, or on a real Chromebook or iPad.
+
+### Went live (3 Nov 2026)
+James: "Yes, put it live". Pull request #144 merged with auto-merge once its checks passed (9:39am NZ); "Test and publish" ran green and published the site. Screen code only: no migration, no function deploy. Rollback: revert the merge, or make `autoLevel` in `coach/level.ts` return `'off'`. Next: H.5 (a try with James and a few pupils), and James's answers to questions 2 and 3 of section 11.
+
+## 17. Stage H.5 (3 Nov 2026): the try-out
+**Preview for James (private):** https://claude.ai/artifact/2ky8VoGxykTsjuBZpUwxy9 , the whole game on a pretend server, nothing saved. (The T.2 preview link in docs/TRADER-PLAN.md no longer opens.) Preview tools, bottom right: **Start as a new pupil** (a new game, and Bolt forgets First Flight, tips and help level) and **Pretend 30 jumps made** (Bolt drops to Some), as well as the older credits, tomorrow, ships and pirates. One-file build: as in docs/TRADER-PLAN.md (`TRADER_INLINE=1 …`).
+
+**For James to try (about 10 minutes):** Start as a new pupil → First Flight to the end → 🤖 Help (words, tips again) → Pretend 30 jumps made (the ⭐ goes, "Ask Bolt" appears in the shipyard and fights) → Off → Replay First Flight from the Help panel.
+
+**With a few pupils (live, since everything is on):** watch, don't help, and note:
+| Watch for | Tells us |
+|---|---|
+| Do they finish First Flight, or skip it? At which step do they stop reading? | Bolt's wording is too long, or a step is unclear |
+| Do they find the 🤖 Help button by themselves? | Whether it needs pointing out (a first-time tip) |
+| Does anyone pick Off, and how soon? | Bolt is a nag (the pirate warning is the one to watch, section 14) |
+| After the switch to Some (30 jumps), do they get stuck again? | Move the switch later (`LOTS_UNTIL_JUMPS` in `coach/level.ts`) |
+| Does "Buy max" buying just one dear good puzzle them? | Section 12's open point |
+
+Tuning is one line each: the 30 jumps, which helpers show on Some (section 16's table), Bolt's sentences (`coach/flight.ts`, `tips.ts`, `nextStep.ts`, `words.ts`).

@@ -65,6 +65,8 @@ export interface BattleScreenProps {
   trainer?: string;
   /** The player's chosen look, shown opposite the trainer while they say hello. */
   look?: string;
+  /** Monsters already in the book as owned: the foe's card says whether you have caught one yet. Leave out to say nothing. */
+  owned?: readonly string[];
 }
 
 type Mode = 'playing' | 'menu' | 'fight' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
@@ -99,7 +101,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -452,7 +454,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       <div className={`mb-arena${scene.wide ? ' has-art' : ''}`} style={sceneStyle}>
         {!intro && (
           <div className="mb-foe-card">
-            <NameCard monster={foe} side="foe" />
+            <NameCard monster={foe} side="foe" caught={owned?.includes(foe.species)} />
           </div>
         )}
         {/* Decorative: the message already names the trainer. */}

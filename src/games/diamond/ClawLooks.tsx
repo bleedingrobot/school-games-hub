@@ -1,8 +1,9 @@
 /**
- * The Claw Workshop (docs/DIAMOND-PLAN.md, section 3.5): looks-only upgrades in 6 slots, the special of the week first,
- * earned ones showing how to win them, "try it on" on a swinging claw, then buy and wear.
+ * Claw looks, the Shop's second tab (the Claw Workshop of docs/DIAMOND-PLAN.md, section 3.5): looks-only upgrades in
+ * 6 slots, the special of the week first, earned ones showing how to win them, "try it on" on a swinging claw, then buy
+ * and wear. The Shop page (Pages.tsx) holds the heading and the coins.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { SLOTS, type Slot, type WorkshopItem } from '../../../shared/diamond/config';
 import type { Player } from '../../../shared/diamond/progress';
 import { canBuy, priceOf, weekNumber, weeklySpecial } from '../../../shared/diamond/workshop';
@@ -20,23 +21,19 @@ const HOW_TO_WIN: Record<string, string> = {
   diamond_grips: 'Win it by holding on to 10 slipping gems.',
 };
 
-export function Workshop({
+export function ClawLooks({
   player,
   now,
   still,
   onBuy,
   onWear,
-  onBack,
 }: {
   player: Player;
   now: Date;
   still: boolean;
   onBuy: (id: string) => void;
   onWear: (slot: Slot, id: string | null) => void;
-  onBack: () => void;
 }) {
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => heading.current?.focus(), []);
   const week = weekNumber(nzDate(now));
   const special = weeklySpecial(week);
   const [slot, setSlot] = useState<Slot>(special.slot);
@@ -87,13 +84,8 @@ export function Workshop({
   };
 
   return (
-    <section className="dd-page" aria-labelledby="dd-ws-title">
-      <div className="dd-page__top">
-        <button type="button" className="button button--light-outline dd-btn" onClick={onBack}>Back to the map</button>
-        <h2 id="dd-ws-title" ref={heading} tabIndex={-1} className="dd-title">The Claw Workshop</h2>
-        <span className="dd-chip"><span aria-hidden="true">🪙</span> {player.coins} coins</span>
-      </div>
-      <p className="dd-soft">Silly upgrades for your claw. They only change how it looks, never how it digs. Kept for good, even after New Season.</p>
+    <>
+      <p className="dd-soft">Silly looks for your claw. They only change how it looks, never how it digs. Kept for good, even after New Season.</p>
       <div className="dd-ws">
         <div className="dd-ws__try">
           <Sprite size={190} box={200} draw={(c, t) => drawRig(c, worn, t, still, trail.current)} animate label={trying ? `Trying on ${trying.name}` : 'Your claw as it is now'} />
@@ -111,6 +103,6 @@ export function Workshop({
           <ul className="dd-list" aria-label={SLOT_NAME[slot]}>{items.filter((it) => it.id !== special.id).map((it) => card(it, false))}</ul>
         </div>
       </div>
-    </section>
+    </>
   );
 }

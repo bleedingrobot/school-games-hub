@@ -166,6 +166,11 @@ img.dd-item__icon { object-fit: contain; padding: 4px; }
 .dd-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .dd-tab { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--dd-line); background: var(--dd-panel); color: var(--dd-ink); font: inherit; font-weight: 700; cursor: pointer; }
 .dd-tab.is-on { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); }
+.dd-shoptabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
+.dd-shoptab { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 8px 12px; border-radius: 16px; border: 3px solid var(--dd-line); background: var(--dd-panel); color: var(--dd-ink); font: inherit; cursor: pointer; }
+.dd-shoptab.is-on { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); }
+.dd-shoptab__name { font-size: 1.2rem; font-weight: 800; }
+.dd-shoptab__about { font-size: 0.9rem; }
 .dd-hall { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
 .dd-hall__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--dd-panel); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 16px; padding: 8px 12px; }
 .dd-hall__row.is-me { border-color: var(--dd-gold); }

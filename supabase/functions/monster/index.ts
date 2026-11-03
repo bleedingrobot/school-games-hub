@@ -7245,7 +7245,7 @@ const PUZZLES = [
 		count: 3,
 		title: "Seed pods",
 		says: "The Hermit lost 3 seed pods somewhere in Kauri Bush. Look closely at the bushes!",
-		hint: "One is near the old kauri tree, one by the pond, and one in the far corner.",
+		hint: "One is in a tree near the old kauri, one in a bush beside Tama on the west side, and one in the branches just north of the pond. Walk up to a tree and press Space to search it.",
 		prize: {
 			bits: "leaf",
 			n: 3
@@ -9165,7 +9165,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Welcome to Harbour Town! The wild monsters live up the road, in Kauri Bush."
+							"value": "Welcome to Harbour Town! New here? Talk to the Teacher first.\nThe wild monsters live up the road, in Kauri Bush. The Tinker and the notice board are on the east side of town."
 						}]
 					},
 					{
@@ -9890,7 +9890,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "A poster: \"A rested monster is a happy monster. Talk to the nurse any time!\""
+							"value": "A poster: \"A rested monster is a happy monster. Talk to the nurse any time!\"\nIf your team gets tired in a battle, you wake up at the last place you healed. Nothing is lost!"
 						}]
 					},
 					{
@@ -11733,7 +11733,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Kauri Bush. Wild monsters hide in the long grass. Walk in it and see who jumps out!"
+							"value": "Kauri Bush. Leaf monsters live here. Their attacks ask place value and rounding.\nWild monsters hide in the long grass. Walk in it and see who jumps out!"
 						}, {
 							"name": "hints",
 							"type": "string",
@@ -11753,7 +11753,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "North: the Leaf Tower and Shell Beach. South: Harbour Town."
+							"value": "North: the Leaf Tower, and the gate to Shell Beach (you need the Leaf badge). South: Harbour Town."
 						}]
 					},
 					{
@@ -23425,7 +23425,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "The harbour. Ships come here from all over the world."
+							"value": "The harbour. Ships come here from all over the world.\nWon all six badges? Go back to Harbour Town and talk to the Teacher!"
 						}]
 					},
 					{
@@ -24353,7 +24353,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Leaf Tower. Climb the ladder to meet the Tower trainer and win the Leaf badge!"
+							"value": "Leaf Tower. Climb the ladder to meet the Tower trainer and win the Leaf badge!\nThe trainer has 3 Leaf monsters, levels 6 to 8. Stone monsters are strong against Leaf, so bring one if you can!"
 						}]
 					},
 					{
@@ -25463,7 +25463,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Water Tower. Climb the ladder to meet the Tower trainer and win the Water badge!"
+							"value": "Water Tower. Climb the ladder to meet the Tower trainer and win the Water badge!\nThe trainer has 3 Water monsters, levels 12 to 14. Leaf monsters are strong against Water, so bring one if you can!"
 						}]
 					},
 					{
@@ -26573,7 +26573,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Fire Tower. Climb the ladder to meet the Tower trainer and win the Fire badge!"
+							"value": "Fire Tower. Climb the ladder to meet the Tower trainer and win the Fire badge!\nThe trainer has 3 Fire monsters, levels 19 to 21. Water monsters are strong against Fire, so bring one if you can!"
 						}]
 					},
 					{
@@ -27683,7 +27683,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Ice Tower. Climb the ladder to meet the Tower trainer and win the Ice badge!"
+							"value": "Ice Tower. Climb the ladder to meet the Tower trainer and win the Ice badge!\nThe trainer has 3 Ice monsters, levels 27 to 29. Fire monsters are strong against Ice, so bring one if you can!"
 						}]
 					},
 					{
@@ -28793,7 +28793,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Spark Tower. Climb the ladder to meet the Tower trainer and win the Spark badge!"
+							"value": "Spark Tower. Climb the ladder to meet the Tower trainer and win the Spark badge!\nThe trainer has 3 Spark monsters, levels 36 to 38. Ice monsters are strong against Spark, so bring one if you can!"
 						}]
 					},
 					{
@@ -29903,7 +29903,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 						"properties": [{
 							"name": "text",
 							"type": "string",
-							"value": "Stone Tower. Climb the ladder to meet the Tower trainer and win the Stone badge!"
+							"value": "Stone Tower. Climb the ladder to meet the Tower trainer and win the Stone badge!\nThe trainer has 3 Stone monsters, levels 45 to 47. Spark monsters are strong against Stone, so bring one if you can!"
 						}]
 					},
 					{

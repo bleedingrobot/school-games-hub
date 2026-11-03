@@ -37,9 +37,9 @@ export interface Scene {
   cache: TileCache;
 }
 
-/** How many screen pixels each pixel of art takes: a whole number, and the view shows about 8 tiles from top to bottom. */
+/** How many screen pixels each pixel of art takes: a whole number, at most 3 (on a Chromebook that shows about 12 tiles from top to bottom). */
 export function scaleFor(cssHeight: number, dpr: number): number {
-  const css = Math.min(4, Math.max(2, Math.floor(cssHeight / (TILE * 8))));
+  const css = Math.min(3, Math.max(2, Math.floor(cssHeight / (TILE * 8))));
   return Math.max(2, Math.round(css * dpr));
 }
 
@@ -54,7 +54,12 @@ export interface FrameInput {
   fade: number;
   /** People with a quest step for you (a gold "!" over them). */
   quests?: ReadonlySet<string>;
+  /** Trees hiding a seed pod you are looking for (a little twinkle on each). */
+  twinkles?: readonly { x: number; y: number }[];
 }
+
+/** Which step of its twinkle a pod is on (0 is a rest), so the frame is only drawn again when one changes. */
+export const twinklePhase = (now: number, i: number) => Math.floor((now + i * 600) / 160) % 12;
 
 /** The tile at a point on the canvas (in the same pixels as the canvas), for taps. */
 export function tileAt(px: number, py: number, f: Pick<FrameInput, 'width' | 'height' | 'scale' | 'scene' | 'view'>): [number, number] {
@@ -153,11 +158,27 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
     layer(above, above.naturalWidth / mapW);
   }
   ctx.imageSmoothingEnabled = false;
+  // Over the tree tops, so a pod hidden in a tree still shows.
+  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 9) * S - offX), Math.round((t.y * TILE + 4) * S - offY), S, twinklePhase(now, i)));
 
   if (f.fade > 0) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;
     ctx.fillRect(0, 0, W, H);
   }
+}
+
+/** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in pixel-art style. */
+function drawTwinkle(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, phase: number) {
+  const r = [0, 1, 2, 3, 2, 1][phase] ?? 0;
+  if (!r) return;
+  ctx.fillStyle = 'rgba(63, 38, 49, 0.55)';
+  ctx.fillRect(x - (r + 1) * S, y - S, (2 * r + 3) * S, 3 * S);
+  ctx.fillRect(x - S, y - (r + 1) * S, 3 * S, (2 * r + 3) * S);
+  ctx.fillStyle = '#fde68a';
+  ctx.fillRect(x - r * S, y, (2 * r + 1) * S, S);
+  ctx.fillRect(x, y - r * S, S, (2 * r + 1) * S);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, S, S);
 }
 
 /** A little "!" in a speech bubble, in pixel-art style. */
