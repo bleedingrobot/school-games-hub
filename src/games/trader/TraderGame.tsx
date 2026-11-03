@@ -111,7 +111,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
 
   const galaxy: Galaxy | null = useMemo(() => (loaded ? makeGalaxy(loaded.galaxySeed) : null), [loaded?.galaxySeed]); // eslint-disable-line react-hooks/exhaustive-deps
   const forgeOn = loaded?.settings.forge === true;
-  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn } : null;
+  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false } : null;
 
   /** The game as the screen shows it: the server's game with the queued quiet moves applied on top. */
   const game: Game | null = useMemo(() => {
@@ -615,7 +615,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} />}
-                {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} onDraft={setDraft} onPlan={planForge} onApply={applyForge} />}
+                {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} />}
                 {tab === 'bank' && (
                   <BankPanel
                     t={t}

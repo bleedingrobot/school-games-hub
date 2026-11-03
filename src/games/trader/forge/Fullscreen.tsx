@@ -1,7 +1,7 @@
 /** The full-screen viewer (docs/TRADER-SYSTEM-PLAN.md, section 5.1): the system big, with a tour, speed, labels, graphics, photo and Esc to close. */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { nameText, type SystemDesign } from '../../../../shared/trader/system';
+import { pieceName, type SystemDesign } from '../../../../shared/trader/system';
 import { ViewerBox } from './ViewerBox';
 import type { GraphicsLevel, SystemViewer } from './viewer/types';
 
@@ -26,7 +26,7 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
   const [focus, setFocus] = useState<number | 'sun' | null>(null);
   const [said, setSaid] = useState('');
   const full = useRef(false);
-  const title = `The ${nameText(design.name)} System`;
+  const title = `The ${pieceName(design)} System`;
 
   // Full screen if the browser allows it (the overlay covers the page either way); Esc or leaving full screen closes.
   useEffect(() => {
@@ -73,7 +73,7 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${nameText(design.name)} System.webp`;
+      a.download = `${pieceName(design)} System.webp`;
       a.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 2000);
       setSaid('Picture saved.');
@@ -124,7 +124,7 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
           <button type="button" className={`st-btn st-btn--small ${focus === null ? 'st-btn--primary' : ''}`} aria-pressed={focus === null} onClick={() => setFocus(null)}>Whole system</button>
           {design.sun && <button type="button" className={`st-btn st-btn--small ${focus === 'sun' ? 'st-btn--primary' : ''}`} aria-pressed={focus === 'sun'} onClick={() => setFocus('sun')}>Sun</button>}
           {planets.map((p) => (
-            <button key={p.id} type="button" className={`st-btn st-btn--small ${focus === p.id ? 'st-btn--primary' : ''}`} aria-pressed={focus === p.id} onClick={() => setFocus(p.id)}>{nameText(p.name)}</button>
+            <button key={p.id} type="button" className={`st-btn st-btn--small ${focus === p.id ? 'st-btn--primary' : ''}`} aria-pressed={focus === p.id} onClick={() => setFocus(p.id)}>{pieceName(p)}</button>
           ))}
         </div>
         <button type="button" className="st-btn st-btn--primary stf-fs__close" onClick={onClose}>Close (Esc)</button>

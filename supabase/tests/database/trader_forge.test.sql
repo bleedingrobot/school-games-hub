@@ -4,11 +4,13 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh forge && scripts/scratch-test.sh forge supabase/tests/database/trader_forge.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
-  ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
+  ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
+  ('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -54,6 +56,18 @@ select is((select public.trader_choose_season(pg_temp.id('0a'), 'fresh', pg_temp
   and not public.trader_choose_season(pg_temp.id('0a'), 'keep'), true, 'a choice counts once, and the second is refused');
 select is((select count(*)::int from public.trader_system_pictures where player = pg_temp.id('0a')), 1, 'starting fresh with a picture adds it to the album');
 select pg_temp.reset();
+
+-- ---- Typed names: a pupil can't clear them, a teacher can ----
+select pg_temp.act_as_server();
+select public.trader_save(pg_temp.id('0b'), 0,
+  '{"t":{"ship":1,"credits":50,"weapons":[],"shields":[],"pods":0},"system":{"v":1,"label":"Nova","sun":{"kind":"red","label":"Sol","built":true},"planets":[{"id":1,"kind":"rock","label":"Terra"}]}}'::jsonb,
+  1, 100, false, 1, 'request-bbbb-2', '{}'::jsonb, '{}'::jsonb);
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.teacher_clear_trader_names(pg_temp.id('0b')) $$, null, null, 'a pupil cannot clear anyone''s typed names');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select public.teacher_clear_trader_names(pg_temp.id('0b'));
+select pg_temp.reset();
+select is((select game::text from public.trader_games where player = pg_temp.id('0b')) like '%label%', false, 'a teacher clears every typed name, and the rest of the system stays');
 
 select * from finish();
 rollback;

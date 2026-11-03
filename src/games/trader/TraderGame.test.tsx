@@ -793,4 +793,24 @@ describe('The Star Forge (S.4)', () => {
     expect(JSON.stringify(sent)).toMatch(/"type":"forge"/);
     void nameText;
   });
+
+  it('a rude typed name is refused kindly and not saved; a good one is saved', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    const { sent } = play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Sun: Choose a sun/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Yellow star/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Name$/ }));
+    const box = screen.getByLabelText('Type a name');
+    fireEvent.change(box, { target: { value: 'Poopy' } });
+    expect(screen.getByText('Please pick a kinder name.')).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 900));
+    expect(JSON.stringify(sent)).not.toMatch(/Poopy/);
+    fireEvent.change(box, { target: { value: 'zephyr' } });
+    expect(screen.queryByText('Please pick a kinder name.')).toBeNull();
+    expect(document.querySelector('.stf-name__now')?.textContent).toMatch(/Zephyr/);
+    expect(JSON.stringify(sent)).not.toMatch(/Poopy/);
+  });
 });

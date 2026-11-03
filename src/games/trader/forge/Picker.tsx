@@ -1,9 +1,10 @@
 /** The Forge's step-by-step picker (docs/TRADER-SYSTEM-PLAN.md, section 3): big picture buttons, one short step at a time. */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { checkTypedName, TYPED_NAME_MAX } from '../../../../shared/trader/names';
 import {
   BELTS, CLOUDS, COMET_PRICE, EFFECTS, LIFE, MAX_COMETS, MAX_EFFECTS, MAX_MOONS, MOON_LOOKS, MOON_PRICE_PIECE, NAME_FIRST, NAME_SECOND, PLANETS, RINGS, SIZES, SKY_COLOURS,
-  SUNS, SURFACES, SYSTEM_TECH, TECH, TINTS, BACKGROUNDS, lifeProblem, nameText, planetPrice,
-  type BeltKind, type EffectKind, type LifeKind, type NamePick, type PlanetKind, type PlanetPick, type RingKind, type SunKind, type SystemDesign, type SystemTechKind, type TechKind,
+  SUNS, SURFACES, SYSTEM_TECH, TECH, TINTS, BACKGROUNDS, lifeProblem, pieceName, planetPrice,
+  type BeltKind, type EffectKind, type LifeKind, type Named, type PlanetKind, type PlanetPick, type RingKind, type SunKind, type SystemDesign, type SystemTechKind, type TechKind,
 } from '../../../../shared/trader/system';
 import { buttonArt } from './buttonArt';
 import {
@@ -67,18 +68,43 @@ const Group = ({ title, hint, children }: { title: string; hint?: string; childr
   </div>
 );
 
-/** Two scrolling word lists, no typing: "Zephyr" + "Prime". */
-export function NamePicker({ value, onChange, what }: { value: NamePick; onChange: (n: NamePick) => void; what: string }) {
+/** Put a new name on a piece: a picked word-list name drops any typed label; a typed label keeps the word-list name underneath. */
+export function withNames<T extends Named>(x: T, n: Named): T {
+  const { label: _old, ...rest } = x;
+  return n.label ? { ...rest, name: n.name, label: n.label } as T : { ...rest, name: n.name } as T;
+}
+
+/**
+ * Naming a piece: a box to type a name (checked as they type, kindly) when the class allows it, and two scrolling word lists
+ * ("or pick one": "Zephyr" + "Prime"). Picking from the lists clears a typed name. Key it by the piece so the box starts fresh.
+ */
+export function NamePicker({ value, onChange, what, typing }: { value: Named; onChange: (n: Named) => void; what: string; typing: boolean }) {
+  const [text, setText] = useState(value.label ?? '');
+  const checked = text.trim() === '' ? null : checkTypedName(text);
   const list = (words: readonly string[], idx: 0 | 1, label: string) => (
     <div className="stf-words" role="group" aria-label={label}>
       {words.map((w, i) => (
-        <button key={w} type="button" className={`stf-word ${value[idx] === i ? 'is-on' : ''}`} aria-pressed={value[idx] === i} onClick={() => onChange(idx === 0 ? [i, value[1]] : [value[0], i])}>{w}</button>
+        <button key={w} type="button" className={`stf-word ${!value.label && value.name[idx] === i ? 'is-on' : ''}`} aria-pressed={!value.label && value.name[idx] === i}
+          onClick={() => { setText(''); onChange({ name: idx === 0 ? [i, value.name[1]] : [value.name[0], i] }); }}>{w}</button>
       ))}
     </div>
   );
+  function type(raw: string) {
+    setText(raw);
+    const r = checkTypedName(raw);
+    if (r.ok) onChange({ name: value.name, label: r.name });
+  }
   return (
     <div className="stf-name">
-      <p className="stf-name__now" aria-live="polite">{what}: <strong>{nameText(value)}</strong></p>
+      <p className="stf-name__now" aria-live="polite">{what}: <strong>{pieceName(value)}</strong></p>
+      {typing && (
+        <div className="stf-name__type">
+          <label className="stf-group__h" htmlFor="stf-typed">Type a name</label>
+          <input id="stf-typed" className="st-input" type="text" value={text} maxLength={TYPED_NAME_MAX} autoComplete="off" spellCheck={false} onChange={(e) => type(e.target.value)} />
+          {checked && !checked.ok && <p className="st-soft" role="status">{checked.say}</p>}
+        </div>
+      )}
+      <h4 className="stf-group__h">{typing ? 'Or pick one' : 'Pick a name'}</h4>
       <div className="stf-name__lists">
         <div><h4 className="stf-group__h">First word</h4>{list(NAME_FIRST, 0, 'First word of the name')}</div>
         <div><h4 className="stf-group__h">Second word</h4>{list(NAME_SECOND, 1, 'Second word of the name')}</div>
@@ -89,8 +115,10 @@ export function NamePicker({ value, onChange, what }: { value: NamePick; onChang
 
 // ——— The picker ———
 
-export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePlanet, onMove, options, credits, busy }: {
+export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePlanet, onMove, options, credits, busy, typing }: {
   sel: Sel;
+  /** The class lets pupils type names. */
+  typing: boolean;
   design: SystemDesign;
   step: string;
   onStep: (s: string) => void;
@@ -109,7 +137,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
   const planet = sel.k === 'planet' ? design.planets.find((p) => p.id === sel.id) : undefined;
   const slot = planet ? design.planets.indexOf(planet) : -1;
   const setP = (f: (p: PlanetPick) => PlanetPick) => planet && onEdit(mapPlanet(design, planet.id, f));
-  const title = sel.k === 'sun' ? 'Your sun' : sel.k === 'extras' ? 'Extras for the whole system' : planet ? `${nameText(planet.name)}, planet ${slot + 1}` : 'Planet';
+  const title = sel.k === 'sun' ? 'Your sun' : sel.k === 'extras' ? 'Extras for the whole system' : planet ? `${pieceName(planet)}, planet ${slot + 1}` : 'Planet';
   if (sel.k === 'planet' && !planet) return null;
   const id = step === steps[at][0] ? step : steps[0][0];
 
@@ -119,8 +147,8 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
         <h3 className="stf-picker__h" id="stf-picker-h">{title}</h3>
         {planet && (
           <div className="stf-picker__tools">
-            <button type="button" className="st-btn st-btn--small" disabled={slot < 1} onClick={() => onMove(planet.id, -1)} aria-label={`Move ${nameText(planet.name)} closer to the sun`}>← Earlier</button>
-            <button type="button" className="st-btn st-btn--small" disabled={slot >= design.planets.length - 1} onClick={() => onMove(planet.id, 1)} aria-label={`Move ${nameText(planet.name)} further from the sun`}>Later →</button>
+            <button type="button" className="st-btn st-btn--small" disabled={slot < 1} onClick={() => onMove(planet.id, -1)} aria-label={`Move ${pieceName(planet)} closer to the sun`}>← Earlier</button>
+            <button type="button" className="st-btn st-btn--small" disabled={slot >= design.planets.length - 1} onClick={() => onMove(planet.id, 1)} aria-label={`Move ${pieceName(planet)} further from the sun`}>Later →</button>
             <button type="button" className="st-btn st-btn--small" onClick={() => onRemovePlanet(planet.id)}>Remove</button>
           </div>
         )}
@@ -141,12 +169,12 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
           <div className="stf-choices">
             {(Object.keys(SUNS) as SunKind[]).map((kind) => (
               <Choice key={kind} group="sun" k={kind} emoji={SUN_LOOK[kind].emoji} colour={SUN_LOOK[kind].colour} label={SUNS[kind].name} sub={cr(SUNS[kind].price)} on={design.sun?.kind === kind}
-                onClick={() => onEdit({ ...design, sun: { ...(design.sun ?? { name: [0, 0] as NamePick }), kind } })} />
+                onClick={() => onEdit({ ...design, sun: { ...(design.sun ?? { name: [0, 0] as Named['name'] }), kind } })} />
             ))}
           </div>
         )}
         {sel.k === 'sun' && id === 'name' && (design.sun
-          ? <NamePicker what="Your sun" value={design.sun.name} onChange={(name) => onEdit({ ...design, sun: { ...design.sun!, name } })} />
+          ? <NamePicker key="sun" what="Your sun" typing={typing} value={design.sun} onChange={(n) => onEdit({ ...design, sun: withNames(design.sun!, n) })} />
           : <p className="st-soft">Pick your sun first.</p>)}
 
         {planet && id === 'type' && (
@@ -200,9 +228,9 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
             ))}
           </>
         )}
-        {planet && id === 'name' && <NamePicker what="This planet" value={planet.name} onChange={(name) => setP((p) => ({ ...p, name }))} />}
+        {planet && id === 'name' && <NamePicker key={planet.id} what="This planet" typing={typing} value={planet} onChange={(n) => setP((p) => withNames(p, n))} />}
 
-        {sel.k === 'extras' && <Extras id={id} design={design} onEdit={onEdit} />}
+        {sel.k === 'extras' && <Extras id={id} design={design} onEdit={onEdit} typing={typing} />}
 
         {id === 'build' && <BuildStep options={options.filter((o) => sameWhere(o.piece.where, sel))} credits={credits} busy={busy} onBuild={onBuild} />}
       </div>
@@ -311,7 +339,7 @@ function LifeStep({ planet, slot, design, setP }: { planet: PlanetPick; slot: nu
   );
 }
 
-function Extras({ id, design, onEdit }: { id: string; design: SystemDesign; onEdit: (d: SystemDesign) => void }) {
+function Extras({ id, design, onEdit, typing }: { id: string; design: SystemDesign; onEdit: (d: SystemDesign) => void; typing: boolean }) {
   if (id === 'belt') {
     return (
       <>
@@ -373,7 +401,7 @@ function Extras({ id, design, onEdit }: { id: string; design: SystemDesign; onEd
       </>
     );
   }
-  if (id === 'name') return <NamePicker what="Your system" value={design.name} onChange={(name) => onEdit({ ...design, name })} />;
+  if (id === 'name') return <NamePicker key="system" what="Your system" typing={typing} value={design} onChange={(n) => onEdit(withNames(design, n))} />;
   return null;
 }
 

@@ -58,7 +58,7 @@ export interface Loaded {
   seasonChoice?: SeasonChoice;
   /** Today's questions, in the order they are used, without their answers. */
   questions: PublicQuestion[];
-  settings: { jumpsPerDay: number; loans: boolean; maths: boolean; /** The Star Forge is open for this class. */ forge?: boolean };
+  settings: { jumpsPerDay: number; loans: boolean; maths: boolean; /** The Star Forge is open for this class. */ forge?: boolean; /** Pupils may type names in the Forge (missing: yes). */ forgeTyping?: boolean };
   /** The school news today (biggest first). */
   news?: NewsItem[];
   /** The school's pushes on prices right now: [planet, good, push]. */
@@ -181,4 +181,24 @@ export async function saveTraderForge(enabled: boolean, classId?: string | null)
   const { error } = await supabase.rpc('teacher_set_trader_forge', { enabled, target_class: classId ?? null });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+/** Teacher: can pupils type their own names in the Star Forge? (On unless switched off.) */
+export async function fetchTraderForgeTyping(classId?: string | null): Promise<boolean> {
+  const row = await readSettings(['trader_forge_typing'], classId);
+  if (!row) throw new FriendlyError('We couldn’t load the Forge names setting.');
+  return row.trader_forge_typing !== false;
+}
+
+/** Teacher: let pupils type Forge names, or use only the word lists, for a class (or the whole school's default). */
+export async function saveTraderForgeTyping(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_trader_forge_typing', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+/** Teacher: take away every name one pupil typed in the Star Forge (the word-list names stay). */
+export async function clearTraderForgeNames(student: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_clear_trader_names', { target: student });
+  if (error) throw new FriendlyError('We couldn’t clear those names.');
 }

@@ -18,6 +18,8 @@
 -- save, exactly as buying the moon did. trader_games.moon therefore means "on the Star Makers list".
 
 alter table public.app_settings add column trader_forge boolean not null default false;
+-- Pupils may type names for their sun, planets and system (on by default); off means word lists only.
+alter table public.app_settings add column trader_forge_typing boolean not null default true;
 
 create function public.teacher_set_trader_forge(enabled boolean, target_class uuid default null)
 returns void
@@ -32,6 +34,57 @@ begin
   end if;
   perform public.require_settings_target(target_class);
   update public.app_settings set trader_forge = enabled where id in (select public.settings_to_change(target_class));
+end;
+$$;
+
+create function public.teacher_set_trader_forge_typing(enabled boolean, target_class uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher();
+  if enabled is null then
+    raise exception 'Unknown Star Trader setting' using errcode = '22023';
+  end if;
+  perform public.require_settings_target(target_class);
+  update public.app_settings set trader_forge_typing = enabled where id in (select public.settings_to_change(target_class));
+end;
+$$;
+
+create function public.trader_strip_labels(d jsonb)
+returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when jsonb_typeof(d) is distinct from 'object' then d else
+    (d - 'label')
+    || case when jsonb_typeof(d -> 'sun') = 'object' then jsonb_build_object('sun', (d -> 'sun') - 'label') else '{}'::jsonb end
+    || case when jsonb_typeof(d -> 'planets') = 'array' then jsonb_build_object('planets',
+         (select coalesce(jsonb_agg(case when jsonb_typeof(p) = 'object' then p - 'label' else p end order by n), '[]'::jsonb)
+          from jsonb_array_elements(d -> 'planets') with ordinality as t(p, n))) else '{}'::jsonb end
+  end
+$$;
+
+-- A teacher clears the names a pupil typed in the Forge (every "label" on the sun, planets and system), this season's game
+-- and the system waiting for their choice. The word-list names stay.
+create function public.teacher_clear_trader_names(target uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_teacher_of(target);
+  update public.trader_games g
+  set game = jsonb_set(g.game, '{system}', public.trader_strip_labels(g.game -> 'system')),
+      version = g.version + 1
+  where g.player = target and jsonb_typeof(g.game -> 'system') = 'object';
+  update public.trader_systems s
+  set design = public.trader_strip_labels(s.design)
+  where s.player = target and jsonb_typeof(s.design) = 'object';
 end;
 $$;
 
@@ -160,9 +213,12 @@ $$;
 
 revoke execute on function
   public.teacher_set_trader_forge(boolean, uuid),
+  public.teacher_set_trader_forge_typing(boolean, uuid),
+  public.teacher_clear_trader_names(uuid),
+  public.trader_strip_labels(jsonb),
   public.trader_season_system(uuid),
   public.trader_choose_season(uuid, text, text, text),
   public.trader_season(uuid[])
 from public, anon, authenticated;
-grant execute on function public.teacher_set_trader_forge(boolean, uuid) to authenticated;
+grant execute on function public.teacher_set_trader_forge(boolean, uuid), public.teacher_set_trader_forge_typing(boolean, uuid), public.teacher_clear_trader_names(uuid) to authenticated;
 grant execute on function public.trader_season_system(uuid), public.trader_choose_season(uuid, text, text, text) to service_role;

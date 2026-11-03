@@ -6,14 +6,15 @@
  */
 import { useState } from 'react';
 import { FriendlyError } from '../data/profile';
-import { resetTraderShip } from '../data/trader';
-import { saveTraderJumps, saveTraderLoans, useTraderClassSettings } from '../games/trader/teacher';
+import { clearTraderForgeNames, resetTraderShip } from '../data/trader';
+import { FORGE_TYPING_ABOUT, saveForgeTyping, saveTraderJumps, saveTraderLoans, useTraderClassSettings, useTraderForgeTyping } from '../games/trader/teacher';
 import { SettingNumber, SettingToggle } from '../teacher/Settings';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
 export function TraderSettings({ classId }: { classId: string }) {
   const settings = useTraderClassSettings(classId);
+  const typing = useTraderForgeTyping(classId);
   return (
     <div className="panel teacher__switch">
       <SettingNumber
@@ -32,6 +33,13 @@ export function TraderSettings({ classId }: { classId: string }) {
         loadFailed={settings.failed}
         save={(on) => saveTraderLoans(on, classId)}
       />
+      <SettingToggle
+        label="Pupils can type names in the Forge"
+        about={FORGE_TYPING_ABOUT}
+        value={typing.value ?? null}
+        loadFailed={typing.failed}
+        save={(on) => saveForgeTyping(on, classId)}
+      />
       {settings.value?.enabled === false && <p className="panel__empty">Star Trader is off for this class, so these only matter once it’s on.</p>}
     </div>
   );
@@ -41,6 +49,18 @@ export function TraderSettings({ classId }: { classId: string }) {
 export function TraderStudentPanel({ student }: { student: string }) {
   const [confirming, setConfirming] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [clearStatus, setClearStatus] = useState<string | null>(null);
+  async function clearNames() {
+    setClearStatus('Clearing…');
+    try {
+      await clearTraderForgeNames(student);
+      setClearing(false);
+      setClearStatus('Done. Their sun, planets and system go back to word-list names.');
+    } catch (error) {
+      setClearStatus(errorText(error));
+    }
+  }
   async function reset() {
     setStatus('Resetting…');
     try {
@@ -70,6 +90,22 @@ export function TraderStudentPanel({ student }: { student: string }) {
         </button>
       )}
       {status && <p role="status">{status}</p>}
+      {clearing ? (
+        <p>
+          Clear every name this student typed in the Star Forge?{' '}
+          <button type="button" className="button button--danger" onClick={() => void clearNames()}>
+            Yes, clear them
+          </button>{' '}
+          <button type="button" className="button button--light" onClick={() => setClearing(false)}>
+            Cancel
+          </button>
+        </p>
+      ) : (
+        <button type="button" className="button button--light" onClick={() => setClearing(true)}>
+          Clear Forge names…
+        </button>
+      )}
+      {clearStatus && <p role="status">{clearStatus}</p>}
     </section>
   );
 }

@@ -44,7 +44,7 @@ Deno.serve(
         fail('settings', error?.code);
         return null;
       }
-      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean };
+      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean; trader_forge_typing?: boolean };
       return {
         enabled: row.trader_enabled === true,
         jumpsPerDay: Number.isInteger(row.trader_jumps) ? (row.trader_jumps as number) : 10,
@@ -52,6 +52,7 @@ Deno.serve(
         // 'choose' counts as on until pupils get a switch of their own (stage T.5).
         maths: parseMathsSwitch(row.trader_maths) !== 'off',
         forge: row.trader_forge === true,
+        forgeTyping: row.trader_forge_typing !== false,
       };
     },
     async schoolSeed(player) {

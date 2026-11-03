@@ -2816,7 +2816,7 @@ const TEMPLATES = [
 	}))
 ];
 const BEDMAS_KEYS = [...new Set(TEMPLATES.map((t) => t.key))];
-const lettersOf = (src) => (src.match(/[a-d]/g) ?? []).length;
+const lettersOf$1 = (src) => (src.match(/[a-d]/g) ?? []).length;
 /** The template with its numbers put in, as tokens. */
 function tokensOf(src, nums) {
 	let next = 0;
@@ -2933,7 +2933,7 @@ const MAX_NUMBER = 30;
 const MAX_ANSWER = 300;
 function build(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
-	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt$1(n, 2, MAX_NUMBER))) return null;
+	if (!template || nums.length !== lettersOf$1(template.src) || !nums.every((n) => isInt$1(n, 2, MAX_NUMBER))) return null;
 	const tokens = tokensOf(template.src, nums);
 	const answer = evaluate(tokens, RIGHT);
 	if (!Number.isInteger(answer) || answer < 1 || answer > MAX_ANSWER) return null;
@@ -2950,7 +2950,7 @@ function bedmasFamily(key, label) {
 	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
 		for (;;) {
 			const t = pickOne(r, mine);
-			const nums = Array.from({ length: lettersOf(t.src) }, (_, n) => int$1(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const nums = Array.from({ length: lettersOf$1(t.src) }, (_, n) => int$1(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
 			const made = build(t.i, nums);
 			if (made && withMistakes({
 				parts: [],
@@ -7326,8 +7326,159 @@ function makeGalaxy(seed) {
 function startPlanet(galaxy) {
 	return (galaxy.planets.filter((p) => p.tech >= 4 && GOVERNMENTS[p.government].pirates <= 3)[0] ?? galaxy.planets[0]).id;
 }
+/** Letters only, up to three words joined by a space, dash or apostrophe ("Te Ahi", "Nova-Prime", "Big Blue Ball"). */
+const NAME_SHAPE = /^[A-Za-z]+(?:[ '-][A-Za-z]+){0,2}$/;
+const NEVER_INSIDE = [
+	"fuck",
+	"fuk",
+	"fck",
+	"shit",
+	"cunt",
+	"bitch",
+	"bastard",
+	"wank",
+	"twat",
+	"bollock",
+	"nigg",
+	"fagot",
+	"faggot",
+	"retard",
+	"slut",
+	"whore",
+	"porn",
+	"penis",
+	"vagina",
+	"boob",
+	"dildo",
+	"hitler",
+	"pedo",
+	"sexy",
+	"horny",
+	"poop",
+	"pussy",
+	"skank",
+	"tits",
+	"arsehole",
+	"asshole",
+	"dickhead",
+	"killyourself",
+	"bullshit",
+	"motherf"
+];
+const NEVER_ALONE = [
+	"ass",
+	"arse",
+	"butt",
+	"bum",
+	"poo",
+	"pee",
+	"piss",
+	"cock",
+	"dick",
+	"tit",
+	"hell",
+	"damn",
+	"crap",
+	"sex",
+	"fag",
+	"hoe",
+	"nob",
+	"knob",
+	"prick",
+	"wee",
+	"weewee",
+	"willy",
+	"fart",
+	"stupid",
+	"dumb",
+	"idiot",
+	"loser",
+	"ugly",
+	"fat",
+	"kill",
+	"die",
+	"dead",
+	"gay",
+	"homo",
+	"nude",
+	"naked",
+	"drug",
+	"drugs",
+	"weed",
+	"beer",
+	"vape",
+	"rape",
+	"kys",
+	"kkk",
+	"shag",
+	"puta",
+	"nazi",
+	"bomb",
+	"gun",
+	"smelly",
+	"stinky",
+	"hate",
+	"sucks",
+	"suck",
+	"nerd",
+	"dork",
+	"balls",
+	"butthole",
+	"poopoo",
+	"boobs"
+];
+/** "boob" becomes b+o+o+b+: the same letters in order, each typed one or more times. */
+const stretchy = (word) => [...word].map((ch) => `${ch}+`).join("");
+const insideRule = new RegExp(NEVER_INSIDE.map(stretchy).join("|"));
+const aloneRule = new RegExp(`^(?:${NEVER_ALONE.map(stretchy).join("|")})$`);
+const lettersOf = (s) => s.toLowerCase().replace(/[^a-z]/g, "");
+/** A typed name, tidied (spaces trimmed, each word starting with a capital), or why it can't be used, in pupil words. */
+function checkTypedName(raw) {
+	if (typeof raw !== "string") return {
+		ok: false,
+		say: "Type a name."
+	};
+	const trimmed = raw.trim().replace(/\s+/g, " ");
+	if (trimmed === "") return {
+		ok: false,
+		say: "Type a name."
+	};
+	if (trimmed.length < 2) return {
+		ok: false,
+		say: `A name needs at least 2 letters.`
+	};
+	if (trimmed.length > 14) return {
+		ok: false,
+		say: `A name can be up to 14 letters long.`
+	};
+	if (!NAME_SHAPE.test(trimmed)) return {
+		ok: false,
+		say: "Use letters only, up to three words."
+	};
+	const whole = lettersOf(trimmed);
+	const parts = trimmed.split(/[ '-]/).map(lettersOf);
+	if (insideRule.test(whole) || aloneRule.test(whole) || parts.some((p) => aloneRule.test(p))) return {
+		ok: false,
+		say: "Please pick a kinder name."
+	};
+	return {
+		ok: true,
+		name: trimmed.replace(/(^|[ '-])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase())
+	};
+}
 //#endregion
 //#region shared/trader/system.ts
+/**
+* The Star Forge: your own solar system (docs/TRADER-SYSTEM-PLAN.md). Every piece a pupil can choose, its price and
+* its rules, and the one function the server and the screen both use to work out what a change costs (`forgeCost`).
+*
+* A pupil's system is a `SystemDesign`. Every piece in it is either planned (free, shown as a hologram) or built
+* (`built: true`, paid for with credits). Looks (surface, tint, clouds, sky colour, names, ring tilt, creature) can be
+* changed freely while planned; on a built piece they cost a repaint. Changing what a built piece *is* (a sun's kind, a
+* planet's type or size) is pulling it down (half back) and building the new one.
+*
+* Pure: no Date, no random. The viewer reads the same design to draw it.
+*/
 const SUNS = {
 	yellow: {
 		name: "Yellow star",
@@ -7717,7 +7868,7 @@ const TECH = {
 	},
 	domes: {
 		name: "Domes",
-		price: 3e3,
+		price: 4e3,
 		tier: 2
 	},
 	terraformer: {
@@ -7728,7 +7879,7 @@ const TECH = {
 	},
 	orbitalring: {
 		name: "Orbital ring",
-		price: 9e3,
+		price: 2e4,
 		tier: 3
 	},
 	engine: {
@@ -7895,6 +8046,7 @@ const NAME_SECOND = [
 	"Rock"
 ];
 const nameText = (n) => `${NAME_FIRST[n[0]] ?? NAME_FIRST[0]} ${NAME_SECOND[n[1]] ?? NAME_SECOND[0]}`;
+const pieceName = (x) => x.label ?? nameText(x.name);
 const emptyDesign = () => ({
 	v: 1,
 	name: [0, 0],
@@ -7918,6 +8070,12 @@ const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >
 const isName = (n) => Array.isArray(n) && n.length === 2 && isInt(n[0], 0, NAME_FIRST.length - 1) && isInt(n[1], 0, NAME_SECOND.length - 1);
 const has = (table, k) => typeof k === "string" && Object.prototype.hasOwnProperty.call(table, k);
 const bool = (b) => b === void 0 || typeof b === "boolean";
+/** A typed name must already be tidy and pass the naughty-word check. */
+const labelOk = (l) => {
+	if (l === void 0) return true;
+	const c = checkTypedName(l);
+	return c.ok && c.name === l;
+};
 /**
 * Why a design can't be saved, in pupil words, or null when it's fine. Checks shape (anything sent by a browser) and the
 * rules that keep the picture sensible. A planned piece may break a "needs" rule (it's just a plan); a built one may not.
@@ -7926,8 +8084,8 @@ function designProblem(d) {
 	const bad = "That system could not be read.";
 	if (!d || typeof d !== "object") return bad;
 	const s = d;
-	if (s.v !== 1 || !isName(s.name) || !isInt(s.background, 0, 7) || !isInt(s.beltAfter, 0, 8)) return bad;
-	if (s.sun !== null && (!s.sun || !has(SUNS, s.sun.kind) || !isName(s.sun.name) || !bool(s.sun.built))) return bad;
+	if (s.v !== 1 || !isName(s.name) || !labelOk(s.label) || !isInt(s.background, 0, 7) || !isInt(s.beltAfter, 0, 8)) return bad;
+	if (s.sun !== null && (!s.sun || !has(SUNS, s.sun.kind) || !isName(s.sun.name) || !labelOk(s.sun.label) || !bool(s.sun.built))) return bad;
 	if (!Array.isArray(s.planets) || s.planets.length > 8) return bad;
 	if (s.belt !== null && (!s.belt || !has(BELTS, s.belt.kind) || !bool(s.belt.built))) return bad;
 	if (s.comets !== null && (!s.comets || !isInt(s.comets.count, 1, 3) || !bool(s.comets.built))) return bad;
@@ -7939,6 +8097,7 @@ function designProblem(d) {
 		ids.add(p.id);
 		if (!has(PLANETS, p.kind) || !isInt(p.size, 0, SIZES.length - 1) || !isInt(p.surface, 0, 3) || !isInt(p.tint, 0, 7)) return bad;
 		if (!CLOUDS.includes(p.clouds) || !isInt(p.sky, 0, 7) || !isName(p.name) || !bool(p.built)) return bad;
+		if (!labelOk(p.label)) return "Please pick a kinder name.";
 		if (p.ring !== null && (!p.ring || !has(RINGS, p.ring.kind) || !isInt(p.ring.tilt, 0, 4) || !bool(p.ring.built))) return bad;
 		if (!Array.isArray(p.moons) || p.moons.length > 3) return bad;
 		const moonIds = new Set();
@@ -7969,7 +8128,7 @@ function builtProblem(s) {
 			...p.effects,
 			...p.tech
 		].filter(Boolean);
-		if (!p.built && parts.some((x) => x.built)) return `Build ${nameText(p.name)} before the things on it.`;
+		if (!p.built && parts.some((x) => x.built)) return `Build ${pieceName(p)} before the things on it.`;
 		for (const e of p.effects) {
 			if (!e.built) continue;
 			const need = EFFECTS[e.kind].needs;
@@ -7985,7 +8144,7 @@ function builtProblem(s) {
 		}
 		if (p.life?.built) {
 			if (!info.life.includes(p.life.kind)) return `${LIFE[p.life.kind].name} can't live on a ${info.name.toLowerCase()}.`;
-			if (!inZone(s.sun?.kind, slot) && !p.tech.some((t) => t.kind === "domes" && t.built)) return `${nameText(p.name)} is outside the "just right" zone, so life there needs domes first.`;
+			if (!inZone(s.sun?.kind, slot) && !p.tech.some((t) => t.kind === "domes" && t.built)) return `${pieceName(p)} is outside the "just right" zone, so life there needs domes first.`;
 		}
 	}
 	for (const t of s.tech) {
@@ -8001,7 +8160,6 @@ const looksOf = (p) => JSON.stringify([
 	p.tint,
 	p.clouds,
 	p.sky,
-	p.name,
 	p.ring?.tilt ?? 0,
 	p.life?.creature ?? 0,
 	p.moons.map((m) => [m.id, m.look])
@@ -8014,14 +8172,10 @@ function builtPieces(s, ownsMoon) {
 		price,
 		looks
 	});
-	if (s.sun?.built) add(`sun:${s.sun.kind}`, SUNS[s.sun.kind].name, SUNS[s.sun.kind].price, JSON.stringify([
-		s.sun.name,
-		s.name,
-		s.background
-	]));
+	if (s.sun?.built) add(`sun:${s.sun.kind}`, SUNS[s.sun.kind].name, SUNS[s.sun.kind].price, String(s.background));
 	for (const p of s.planets) {
 		if (!p.built) continue;
-		const n = nameText(p.name);
+		const n = pieceName(p);
 		add(`planet:${p.id}:${p.kind}:${p.size}`, `${n} (${PLANETS[p.kind].name})`, planetPrice(p), looksOf(p));
 		if (p.ring?.built) add(`ring:${p.id}:${p.ring.kind}`, `${RINGS[p.ring.kind].name} for ${n}`, RINGS[p.ring.kind].price);
 		for (const m of p.moons) if (m.built) add(`moon:${p.id}:${m.id}`, `A moon for ${n}`, m.yours && ownsMoon ? 0 : 700);
@@ -8067,6 +8221,14 @@ function forgeCost(before, after, ownsMoon = false) {
 		total: lines.reduce((sum, l) => sum + l.credits, 0),
 		worth
 	};
+}
+/** Every name the pupil typed in a design (for the teacher's "no typing" switch and the teacher's name check). */
+function typedNames(d) {
+	return [
+		d.label,
+		d.sun?.label,
+		...d.planets.map((p) => p.label)
+	].filter((l) => typeof l === "string");
 }
 //#endregion
 //#region shared/trader/market.ts
@@ -8858,6 +9020,7 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			if (!settings.forge) refuse("The Star Forge is not open yet.");
 			const problem = designProblem(action.design);
 			if (problem) refuse(problem);
+			if (settings.forgeTyping === false && typedNames(action.design).some((n) => !typedNames(g.system ?? emptyDesign()).includes(n))) refuse("Pick names from the lists for now.");
 			const cost = forgeCost(g.system ?? emptyDesign(), action.design, t.moon);
 			if (cost.total > t.credits) refuse(`You need ${(cost.total - t.credits).toLocaleString("en-NZ")} more credits.`);
 			g.t = {
@@ -9309,7 +9472,8 @@ function makeHandler(services) {
 			jumpsPerDay: settings.jumpsPerDay,
 			loans: settings.loans,
 			maths: settings.maths,
-			forge: settings.forge === true
+			forge: settings.forge === true,
+			forgeTyping: settings.forgeTyping !== false
 		};
 		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
 		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
@@ -9360,7 +9524,8 @@ function makeHandler(services) {
 								jumpsPerDay: settings.jumpsPerDay,
 								loans: settings.loans,
 								maths: settings.maths,
-								forge: settings.forge === true
+								forge: settings.forge === true,
+								forgeTyping: settings.forgeTyping !== false
 							}
 						});
 						game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
@@ -9404,7 +9569,8 @@ function makeHandler(services) {
 						jumpsPerDay: settings.jumpsPerDay,
 						loans: settings.loans,
 						maths: settings.maths,
-						forge: settings.forge === true
+						forge: settings.forge === true,
+						forgeTyping: settings.forgeTyping !== false
 					},
 					news: news(view),
 					prices: prices(view)
@@ -9564,7 +9730,8 @@ Deno.serve(makeHandler({
 			jumpsPerDay: Number.isInteger(row.trader_jumps) ? row.trader_jumps : 10,
 			loans: row.trader_loans !== false,
 			maths: parseMathsSwitch(row.trader_maths) !== "off",
-			forge: row.trader_forge === true
+			forge: row.trader_forge === true,
+			forgeTyping: row.trader_forge_typing !== false
 		};
 	},
 	async schoolSeed(player) {

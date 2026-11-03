@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  EFFECTS, LIFE, MAX_PLANETS, PLANETS, RINGS, SUNS, designProblem, forgeCost, inZone, nameText, planetPrice, type PlanetPick, type SystemDesign,
+  EFFECTS, LIFE, MAX_PLANETS, PLANETS, RINGS, SUNS, designProblem, forgeCost, inZone, pieceName, planetPrice, type PlanetPick, type SystemDesign,
 } from '../../../../shared/trader/system';
 import { AskBolt, BoltFace } from '../coach/CoachBar';
 import type { HelpLevel } from '../coach/level';
@@ -24,7 +24,9 @@ interface Confirm {
   cheer: string;
 }
 
-export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level, onDraft, onPlan, onApply }: {
+export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level, typing = true, onDraft, onPlan, onApply }: {
+  /** The class lets pupils type names (the teacher's switch). */
+  typing?: boolean;
   /** What the game has saved, and the pupil's working copy. */
   saved: SystemDesign;
   draft: SystemDesign;
@@ -113,7 +115,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
       setSel(null);
       return;
     }
-    setConfirm({ title: id < 0 ? 'Take down your sun?' : `Take down ${nameText(draft.planets.find((p) => p.id === id)?.name ?? [0, 0])}?`, verb: 'Yes, take it down', target: next, cheer: 'Taken down. Some credits came back.' });
+    setConfirm({ title: id < 0 ? 'Take down your sun?' : `Take down ${pieceName(draft.planets.find((p) => p.id === id) ?? { name: [0, 0] })}?`, verb: 'Yes, take it down', target: next, cheer: 'Taken down. Some credits came back.' });
   }
   async function go(c: Confirm) {
     setWorking(true);
@@ -132,7 +134,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
   return (
     <section className="st-panel stf" aria-labelledby="stf-h" data-coach="forge-view">
       <div className="stf-head">
-        <h2 id="stf-h" className="st-h">🌟 Star Forge: the {nameText(draft.name)} System</h2>
+        <h2 id="stf-h" className="st-h">🌟 Star Forge: the {pieceName(draft)} System</h2>
         <button ref={opener} type="button" className="st-btn" onClick={(e) => setFull(e.currentTarget.closest<HTMLElement>('.st-root') ?? document.body)}>🔭 View in full screen</button>
       </div>
       <p className="st-sub">Design your own solar system for free. Build each piece with credits when you are ready. Plans look like holograms.</p>
@@ -147,7 +149,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
               title="Sun" line={draft.sun ? SUNS[draft.sun.kind].name : 'Choose a sun'} state={!draft.sun ? 'empty' : draft.sun.built ? 'built' : 'plan'} price={draft.sun ? SUNS[draft.sun.kind].price : 0} />
             {draft.planets.map((p, i) => (
               <SlotCard key={p.id} on={selected('planet', p.id)} onClick={() => choose({ k: 'planet', id: p.id })} zone={inZone(sunKind, i)} emoji={PLANET_LOOK[p.kind].emoji} colour={PLANET_LOOK[p.kind].colour}
-                title={`Planet ${i + 1}`} line={nameText(p.name)} state={p.built ? 'built' : 'plan'} price={planetPrice(p)} more={unbuiltParts(p)} life={p.life ? LIFE_LOOK[p.life.kind].emoji : undefined} />
+                title={`Planet ${i + 1}`} line={pieceName(p)} state={p.built ? 'built' : 'plan'} price={planetPrice(p)} more={unbuiltParts(p)} life={p.life ? LIFE_LOOK[p.life.kind].emoji : undefined} />
             ))}
             {draft.planets.length < MAX_PLANETS && (
               <SlotCard add zone={inZone(sunKind, draft.planets.length)} onClick={() => {
@@ -185,7 +187,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
           {confirm && <ConfirmCard confirm={confirm} saved={saved} credits={credits} ownsMoon={ownsMoon} busy={busy || working} head={confirmHead} onGo={() => void go(confirm)} onCancel={() => { setConfirm(null); setNote(''); }} />}
           {note && <p className="st-warn" role="status">{note}</p>}
           {!sel && !confirm && <div className="st-card stf-hint"><p>👆 Tap the <strong>Sun</strong> to choose your star, or <strong>+ planet</strong> to add a world. Planning is free!</p></div>}
-          {sel && <Picker sel={sel} design={draft} step={step} onStep={setStep} onEdit={edit} onBuild={askBuild} onRemovePlanet={askRemove} onMove={(id, by) => edit(movePlanet(draft, id, by))} options={options} credits={credits} busy={busy || working} />}
+          {sel && <Picker sel={sel} design={draft} step={step} onStep={setStep} onEdit={edit} onBuild={askBuild} onRemovePlanet={askRemove} onMove={(id, by) => edit(movePlanet(draft, id, by))} options={options} credits={credits} busy={busy || working} typing={typing} />}
           {sel && <Facts sel={sel} design={draft} planet={planetAt} />}
         </div>
       </div>

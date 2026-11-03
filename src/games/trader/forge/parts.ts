@@ -3,7 +3,7 @@
  * built, the goal bar and Bolt's Forge words. No React here. The rules themselves live in `shared/trader/system.ts`.
  */
 import {
-  BELTS, COMET_PRICE, EFFECTS, LIFE, MAX_PLANETS, PLANETS, SIZES, SUNS, SYSTEM_TECH, TECH, designProblem, emptyDesign, forgeCost, inZone, nameText, newPlanet,
+  BELTS, COMET_PRICE, EFFECTS, LIFE, MAX_PLANETS, PLANETS, SIZES, SUNS, SYSTEM_TECH, TECH, designProblem, emptyDesign, forgeCost, inZone, pieceName, newPlanet,
   type EffectKind, type PlanetKind, type PlanetPick, type SunKind, type SystemDesign,
 } from '../../../../shared/trader/system';
 
@@ -86,7 +86,7 @@ export function listPieces(d: SystemDesign): Piece[] {
   if (d.sun) out.push({ key: 'sun', where: 'sun', label: `${SUNS[d.sun.kind].name} (your sun)`, short: 'your sun', built: !!d.sun.built, build: (x) => (x.sun ? { ...x, sun: { ...x.sun, built: true } } : x) });
   for (const p of d.planets) {
     const id = p.id;
-    const n = nameText(p.name);
+    const n = pieceName(p);
     const add = (key: string, label: string, built: boolean | undefined, f: (q: PlanetPick) => PlanetPick) =>
       out.push({ key: `${key}:${id}`, where: id, label, short: n, built: !!built, build: (x) => mapPlanet(x, id, f) });
     add('planet', `${n}, ${SIZES[p.size].toLowerCase()} ${PLANETS[p.kind].name.toLowerCase()}`, p.built, (q) => ({ ...q, built: true }));

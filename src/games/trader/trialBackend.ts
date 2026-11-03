@@ -49,7 +49,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     requests: new Map(),
     records: [],
     // The Star Forge is open in the preview so pupils can build; pass settings: { forge: false } to test it closed.
-    settings: { enabled: true, ...DEFAULT_SETTINGS, forge: true, ...options.settings },
+    settings: { enabled: true, ...DEFAULT_SETTINGS, forge: true, forgeTyping: true, ...options.settings },
     skippedDays: 0,
     market: new SchoolMarket(),
     waiting: null,
