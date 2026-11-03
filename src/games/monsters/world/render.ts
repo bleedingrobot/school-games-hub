@@ -167,13 +167,10 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   }
 }
 
-/** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in chunky pixel-art style (2 art pixels a block, so it reads on a small screen). */
-function drawTwinkle(ctx: CanvasRenderingContext2D, x0: number, y0: number, px: number, phase: number) {
+/** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in pixel-art style (1 art pixel a block, small enough to stay a hint). */
+function drawTwinkle(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, phase: number) {
   const r = [0, 1, 2, 3, 2, 1][phase] ?? 0;
   if (!r) return;
-  const S = 2 * px;
-  const x = x0 - px;
-  const y = y0 - px;
   ctx.fillStyle = 'rgba(63, 38, 49, 0.55)';
   ctx.fillRect(x - (r + 1) * S, y - S, (2 * r + 3) * S, 3 * S);
   ctx.fillRect(x - S, y - (r + 1) * S, 3 * S, (2 * r + 3) * S);
