@@ -35,7 +35,7 @@ export function screenHelp(screen: HelpScreen): { title: string; points: string[
       return {
         title: 'The Star Forge',
         points: [
-          'Design your own solar system. Planning is free and you can change your mind as often as you like.',
+          'Design your own solar system. New pieces appear as you earn credits. Planning is free and you can change your mind as often as you like.',
           'Tap the Sun or a planet card, then go through the steps: type, size, looks, effects, life, technology and name.',
           'Plans look like holograms. Press Build it to pay with credits and make a piece solid.',
           '"View in full screen" lets you fly round your system and take a picture of it.',

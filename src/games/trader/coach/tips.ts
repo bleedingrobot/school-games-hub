@@ -75,7 +75,7 @@ export function tipStops(id: TipId, c: TipContext): TipStop[] {
       return [{ say: `That's all ${c.jumpsPerDay} jumps for today! Your ship, cargo and credits are saved. See you tomorrow.`, target: 'hud-jumps' }];
     case 'forge':
       return [
-        { say: 'Welcome to the Star Forge! Design your own solar system here. Planning is free, so try anything.', target: 'forge-view' },
+        { say: 'Welcome to the Star Forge! Design your own solar system here. Planning is free, and more pieces appear as you earn credits.', target: 'forge-view' },
         { say: 'Tap the Sun, then + planet. Each card walks you through the choices. Plans look like holograms.', target: 'forge-slots' },
         { say: 'When you have enough credits, press Build it and a piece turns solid. Trading earns the credits!' },
       ];

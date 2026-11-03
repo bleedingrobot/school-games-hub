@@ -167,7 +167,7 @@ export function goalOf(d: SystemDesign, credits: number, ownsMoon: boolean): Goa
 /** Bolt's next-step line for the Forge tab. Never about the maths questions. */
 export function forgeStep(d: SystemDesign, credits: number, ownsMoon: boolean): { say: string; target?: string } {
   const next = nextPiece(d, ownsMoon);
-  if (!d.sun) return { say: 'Start by choosing your sun. Planning is free, so try anything you like!', target: 'forge-slots' };
+  if (!d.sun) return { say: 'Start by choosing your sun. Planning is free, so try any you can see!', target: 'forge-slots' };
   if (!next) return { say: d.planets.length ? 'Everything you planned is built. Add another planet, or press "View in full screen" to see it all.' : 'Your sun is built! Press + planet to plan your first world.', target: 'forge-slots' };
   if (next.problem) return { say: `${next.problem}`, target: 'forge-slots' };
   if (credits >= next.price) return { say: `You have enough to build ${next.piece.short} (${cr(next.price)}). Open it and press Build it!`, target: 'forge-slots' };
