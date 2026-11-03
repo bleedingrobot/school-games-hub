@@ -10,7 +10,8 @@ import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
 import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
-import { makeHandler, type ClassSettings, type Saved, type SeasonSystem, type StoredDay } from './handler';
+import { PICTURE_GAP_MINUTES } from '../../../shared/trader/gallery';
+import { makeHandler, type ClassSettings, type GalleryRow, type Saved, type SeasonSystem, type StoredDay } from './handler';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -28,6 +29,9 @@ function serverKey(): string {
 const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
   auth: { persistSession: false, autoRefreshToken: false },
 });
+
+/** The private bucket for gallery pictures (20261103000300_trader_forge.sql): only the server key reaches it. */
+const GALLERY_BUCKET = 'trader-gallery';
 
 /** Logs say which database function failed and the error code, never who. */
 const fail = (name: string, code: string | undefined) => console.error(`trader: ${name} failed (${code ?? 'unknown'})`);
@@ -162,6 +166,46 @@ Deno.serve(
     },
     async recordAnswers(player, once, answers: FactAnswer[]) {
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'trader');
+    },
+    async gallery(player): Promise<GalleryRow[] | 'busy'> {
+      const { data, error } = await admin.rpc('trader_gallery_list', { player });
+      if (error) {
+        fail('trader_gallery_list', error.code);
+        return 'busy';
+      }
+      return Array.isArray(data) ? (data as GalleryRow[]) : [];
+    },
+    async pictureLinks(players) {
+      if (!players.length) return {};
+      const { data, error } = await admin.storage.from(GALLERY_BUCKET).createSignedUrls(players.map((p) => `${p}.webp`), 60 * 60);
+      if (error || !data) {
+        fail('gallery links', error?.name);
+        return {};
+      }
+      const links: Record<string, string> = {};
+      for (const row of data) if (row.path && row.signedUrl && !row.error) links[row.path.replace(/\.webp$/, '')] = row.signedUrl;
+      return links;
+    },
+    async giveSticker(visitor, owner, sticker) {
+      const { data, error } = await admin.rpc('trader_give_sticker', { visitor, owner, sticker });
+      if (error) {
+        fail('trader_give_sticker', error.code);
+        return 'busy';
+      }
+      return data === 'own' || data === 'class' || data === 'none' ? data : 'ok';
+    },
+    async mayDraw(player) {
+      const { data, error } = await admin.rpc('trader_gallery_drawn', { player, gap: `${PICTURE_GAP_MINUTES} minutes` });
+      if (error) {
+        fail('trader_gallery_drawn', error.code);
+        return 'busy';
+      }
+      return data === true;
+    },
+    async storePicture(player, webp) {
+      const { error } = await admin.storage.from(GALLERY_BUCKET).upload(`${player}.webp`, webp, { contentType: 'image/webp', upsert: true, cacheControl: '300' });
+      if (error) fail('gallery picture', error.name);
+      return !error;
     },
   }),
 );

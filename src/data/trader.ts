@@ -16,6 +16,8 @@ import type { Encounter } from '../../shared/trader/encounter';
 import type { NewsItem } from '../../shared/trader/news';
 import type { Fight, FightAction } from '../../shared/trader/fight';
 import type { Action, Ask, Game, Marked } from '../../shared/trader/server';
+import type { GalleryEntry, StickerId } from '../../shared/trader/gallery';
+import type { SystemDesign } from '../../shared/trader/system';
 
 /** Sends one request: the reply's status and body, or null if the server couldn't be reached. */
 export type Transport = (body: Record<string, unknown>, options?: { keepalive?: boolean }) => Promise<{ status: number; body: Record<string, unknown> } | null>;
@@ -105,6 +107,12 @@ export interface TraderApi {
    * credits). `picture` (fresh only) is the path of the saved picture, which must start with the pupil's own id and a slash.
    */
   chooseSeason(choice: 'keep' | 'fresh', picture?: string): Promise<ApiResult<Loaded>>;
+  /** The class gallery: classmates' built systems, own first (docs/TRADER-SYSTEM-PLAN.md, section 7). */
+  gallery(): Promise<ApiResult<{ systems: GalleryEntry[] }>>;
+  /** Leave, change or (null) take back a sticker on a classmate's system. */
+  sticker(owner: string, sticker: StickerId | null): Promise<ApiResult<{ sticker: StickerId | null }>>;
+  /** Save the gallery picture (a base64 .webp). `saved` is false if the last one was too recent. */
+  savePicture(webp: string): Promise<ApiResult<{ saved: boolean }>>;
 }
 
 const newRequestId = (): string => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -129,6 +137,9 @@ export function traderApi(send: Transport): TraderApi {
     junk: (version, ask) => call<MoveReply>({ action: 'junk', requestId: newRequestId(), version, ...(ask ? { ask } : {}) }),
     deal: (version, take) => call<MoveReply>({ action: 'deal', requestId: newRequestId(), version, take }),
     chooseSeason: (choice, picture) => call<Loaded>({ action: 'load', seasonChoice: choice, ...(picture ? { picture } : {}) }),
+    gallery: () => call({ action: 'gallery' }),
+    sticker: (owner, sticker) => call({ action: 'sticker', owner, sticker }),
+    savePicture: (webp) => call({ action: 'picture', picture: webp }),
   };
 }
 
@@ -201,4 +212,11 @@ export async function saveTraderForgeTyping(enabled: boolean, classId?: string |
 export async function clearTraderForgeNames(student: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_clear_trader_names', { target: student });
   if (error) throw new FriendlyError('We couldn’t clear those names.');
+}
+
+/** Teacher: the built systems of one class's pupils, for the projector tour (system names only, never pupils'). */
+export async function fetchClassSystems(classId: string): Promise<SystemDesign[]> {
+  const { data, error } = await supabase.rpc('teacher_trader_class_systems', { target_class: classId });
+  if (error) throw new FriendlyError('We couldn’t load the class’s systems.');
+  return Array.isArray(data) ? (data as SystemDesign[]) : [];
 }

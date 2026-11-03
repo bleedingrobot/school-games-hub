@@ -9,7 +9,7 @@ import type { Pushes } from '../../../../shared/trader/schoolMarket';
 import { fuelCost, fuelNeeded, hasShipyard, holdsOf, usedHolds, type Trader } from '../../../../shared/trader/state';
 import { allPrices, bannedCargo, cargoPlan, nearestPlanet, nearestShipyard, nextUpgrade, stopOnTheWay, tradeIdeas } from './advice';
 
-export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'forge';
+export type CoachTab = 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery';
 
 export interface CoachView {
   galaxy: Galaxy;

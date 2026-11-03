@@ -30,6 +30,7 @@ import { TipCard } from './coach/TipCard';
 import { MATHS_TIP, nextTip, TIP_IDS, tipsFor, tipStops, type TipId, type TipMoment } from './coach/tips';
 import { nextStep, type CoachTab } from './coach/nextStep';
 import { Forge } from './forge/Forge';
+import { Gallery } from './forge/Gallery';
 import { forgeStep, goalOf, type Goal } from './forge/parts';
 import { SeasonChoice } from './forge/SeasonChoice';
 import { BankPanel, ShipPanel, TradePanel } from './Panels';
@@ -266,6 +267,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   }
 
   /** Pay for a change to the system now. Null when it worked, else the reason it didn't. */
+  /** The class gallery's picture of the pupil's system (drawn by the Forge). A refusal is quiet: the next build tries again. */
+  async function savePicture(webp: string): Promise<boolean> {
+    const r = await api.savePicture(webp);
+    return r.ok && r.value.saved;
+  }
+
   async function applyForge(target: SystemDesign): Promise<string | null> {
     if (lock.current || !loaded) return 'One moment…';
     lock.current = true;
@@ -570,7 +577,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
 
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
-  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'] as [Tab, string]] : [])];
+  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
   return (
@@ -601,7 +608,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
       ) : (
         <>
           <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} />
-          <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge') ? 'st-main--wide' : ''}`}>
+          <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
                 <div role="tablist" aria-label="Where to go on the planet" className="st-tabs">
@@ -615,7 +622,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} />}
-                {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} />}
+                {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
+                {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
                 {tab === 'bank' && (
                   <BankPanel
                     t={t}

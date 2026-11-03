@@ -9,6 +9,11 @@
  *   junk   steering through space junk (a maths answer);
  *   deal   a friendly trader's offer, taken or left.
  *
+ * The Star Forge's sharing (docs/TRADER-SYSTEM-PLAN.md, section 7), while the Forge is on:
+ *   gallery  every classmate's system with a built sun (own first), with links to their pictures and the stickers;
+ *   sticker  leave, change or take back a sticker on a classmate's system;
+ *   picture  save the gallery picture the pupil's browser drew (at most once every few minutes).
+ *
  * The school's shared market (stage T.4): prices are read with the school's push when a pupil lands (load and jump) and
  * fixed for the visit; a trade's push on the school's prices is saved in the same database step as the game, so it counts
  * once. The news comes back in the load and jump replies the pupil already gets, never as a request of its own.
@@ -24,6 +29,7 @@ import type { FactAnswer } from '../../../shared/maths/leitner';
 import { CARRY_MAX_CREDITS } from '../../../shared/trader/config';
 import { makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
 import { designProblem, emptyDesign, forgeCost, nameText, type SystemDesign } from '../../../shared/trader/system';
+import { MAX_PICTURE_BYTES, isSticker, isWebp, type GalleryEntry, type StickerId } from '../../../shared/trader/gallery';
 import {
   applyBatch,
   applyDeal,
@@ -109,7 +115,20 @@ export interface Services {
   save(player: string, args: SaveArgs): Promise<number | null | 'busy'>;
   /** Adds answers to the pupil's maths records (counted once by `once`). The game goes on if this fails. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
+  /** The class gallery: classmates' systems with a built sun, own first (without picture links). 'busy' if it can't be read. */
+  gallery(player: string): Promise<GalleryRow[] | 'busy'>;
+  /** Short-lived links to the saved pictures of these players (only those that exist). */
+  pictureLinks(players: string[]): Promise<Record<string, string>>;
+  /** Leaves (or with null takes back) a sticker: 'ok', or why not. */
+  giveSticker(visitor: string, owner: string, sticker: StickerId | null): Promise<'ok' | 'own' | 'class' | 'none' | 'busy'>;
+  /** Notes a picture being saved now: false if the last was too recent or there is no built sun. */
+  mayDraw(player: string): Promise<boolean | 'busy'>;
+  /** Saves the pupil's gallery picture (replacing the last). */
+  storePicture(player: string, webp: Uint8Array): Promise<boolean>;
 }
+
+/** A gallery row as the database gives it: `drawn` says a picture was saved. */
+export type GalleryRow = Omit<GalleryEntry, 'picture'> & { drawn: boolean };
 
 export const MAX_REQUESTS_PER_MINUTE = 90;
 const MAX_ACTIONS = 40;
@@ -204,6 +223,17 @@ function seasonChoiceOf(w: SeasonSystem) {
     worth: forgeCost(emptyDesign(), w.design).worth,
     carry: { ship: Number.isInteger(w.carry.ship) ? w.carry.ship : 0, credits: Math.max(0, Math.min(CARRY_MAX_CREDITS, Math.floor(Number(w.carry.credits) || 0))) },
   };
+}
+
+/** A base64 .webp gallery picture, or null unless it is a small one. */
+function webpOf(raw: unknown): Uint8Array | null {
+  if (typeof raw !== 'string' || raw.length > Math.ceil(MAX_PICTURE_BYTES / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
+  try {
+    const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+    return bytes.length <= MAX_PICTURE_BYTES && isWebp(bytes) ? bytes : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The saved picture's path: null if there is none, 'bad' unless it is a plain file path inside the pupil's own folder. */
@@ -330,6 +360,34 @@ export function makeHandler(services: Services) {
         });
       }
       return reply(409, { error: 'Your game changed on another screen. Please try again.' });
+    }
+
+    if (body.action === 'gallery' || body.action === 'sticker' || body.action === 'picture') {
+      if (!classSettings.forge) return reply(400, { error: 'The Star Forge is not switched on for your class.' });
+      if (body.action === 'gallery') {
+        const rows = await services.gallery(player);
+        if (rows === 'busy') return reply(503, { error: "We couldn't load the gallery just now." });
+        const shown = rows.filter((r) => r.design && !designProblem(r.design));
+        const links = await services.pictureLinks(shown.filter((r) => r.drawn).map((r) => r.id));
+        const systems: GalleryEntry[] = shown.map(({ drawn: _drawn, ...r }) => ({ ...r, picture: links[r.id] ?? null }));
+        return reply(200, { systems });
+      }
+      if (body.action === 'sticker') {
+        const sticker = body.sticker === null ? null : isSticker(body.sticker) ? body.sticker : undefined;
+        if (sticker === undefined || typeof body.owner !== 'string' || !/^[A-Za-z0-9-]{1,64}$/.test(body.owner)) return reply(400, { error: "That couldn't be read." });
+        const done = await services.giveSticker(player, body.owner, sticker);
+        if (done === 'busy') return reply(503, { error: "We couldn't save that just now." });
+        if (done === 'own') return reply(400, { error: "You can't give your own system a sticker." });
+        if (done === 'class') return reply(400, { error: 'You can only give stickers to classmates.' });
+        if (done === 'none') return reply(400, { error: "That system isn't built yet." });
+        return reply(200, { sticker });
+      }
+      const webp = webpOf(body.picture);
+      if (!webp) return reply(400, { error: "That picture couldn't be read." });
+      const may = await services.mayDraw(player);
+      if (may === 'busy') return reply(503, { error: "We couldn't save that just now." });
+      if (!may) return reply(200, { saved: false });
+      return reply(200, { saved: await services.storePicture(player, webp) });
     }
 
     const requestId = body.requestId;

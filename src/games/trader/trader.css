@@ -582,3 +582,37 @@
 .stf-season__btn { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 12px 14px; }
 .stf-season__t { font-size: 1.15rem; }
 .stf-season__s { font-size: 0.9rem; font-weight: 400; color: var(--st-soft); }
+
+/* The class gallery (S.8) */
+.stg-hint { margin: 8px 0; }
+.stg-grid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.stg-card { background: rgba(27, 38, 80, 0.55); border: 2px solid var(--st-line); border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.stg-card.is-mine { border-color: var(--st-gold); }
+.stg-open { font: inherit; color: var(--st-ink); background: none; border: 0; padding: 0; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; border-radius: 10px; }
+.stg-open:hover .stg-pic { filter: brightness(1.12); }
+.stg-pic { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; background: #02040c; }
+.stg-pic--plain { position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 50%, #1a2350, #02040c 70%); }
+.stg-pic__sun { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 0 28px rgba(253, 224, 71, 0.45); }
+.stg-pic__note { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: 0.85rem; color: var(--st-soft); }
+.stg-name { font-weight: 800; font-size: 1.05rem; line-height: 1.2; }
+.stg-by { color: var(--st-soft); font-size: 0.92rem; }
+.stg-yours { color: var(--st-gold); }
+.stg-counts { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; }
+.stg-count { background: #141d44; border: 1px solid var(--st-line); border-radius: 999px; padding: 4px 10px; font-weight: 700; }
+.stg-stickers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.stg-sticker { font: inherit; font-size: 1.3rem; min-height: 44px; min-width: 0; padding: 0; background: #141d44; color: var(--st-ink); border: 2px solid var(--st-line); border-radius: 10px; cursor: pointer; }
+.stg-sticker:hover:not(:disabled) { background: #26346b; }
+.stg-sticker.is-on { background: #3b2f05; border-color: var(--st-gold); box-shadow: 0 0 0 2px var(--st-gold) inset; }
+.stg-sticker:disabled { opacity: 0.6; cursor: wait; }
+.stg-said { margin: 10px 0 0; color: var(--st-good); }
+@media (max-width: 520px) { .stg-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; } }
+
+/* The teacher's projector tour (S.8) */
+.st-root.stp { z-index: 100; display: flex; flex-direction: column; background: #02040c; }
+.stp .stf-viewer.stp__view { flex: 1; height: auto; border-radius: 0; border: 0; }
+.stp__empty { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--st-soft); padding: 24px; text-align: center; }
+.stp__bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px max(14px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgba(2, 4, 12, 0.85) 45%); display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 20px; }
+.stp__name { margin: 0 auto 0 0; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1.05; text-shadow: 0 2px 18px #000; }
+.stp__name:focus { outline: none; }
+.stp__bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.stp__count { color: var(--st-soft); font-weight: 700; margin-right: 4px; }

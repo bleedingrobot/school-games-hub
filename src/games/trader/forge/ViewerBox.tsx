@@ -5,13 +5,15 @@ import { loadViewer } from './loadViewer';
 import { PLANET_LOOK, SUN_LOOK, TINT_SWATCHES } from './looks';
 import type { GraphicsLevel, SystemViewer } from './viewer/types';
 
-export function ViewerBox({ design, showPlans = true, labels = true, reducedMotion = false, interactive = true, className = '', onPick, onReady, onLevel }: {
+export function ViewerBox({ design, showPlans = true, labels = true, reducedMotion = false, interactive = true, className = '', label = 'Your solar system, in 3D', onPick, onReady, onLevel }: {
   design: SystemDesign;
   showPlans?: boolean;
   labels?: boolean;
   reducedMotion?: boolean;
   interactive?: boolean;
   className?: string;
+  /** What a screen reader calls the 3D view. */
+  label?: string;
   onPick?: (planetId: number | null) => void;
   /** The viewer is ready (or gone: null). */
   onReady?: (v: SystemViewer | null) => void;
@@ -67,7 +69,7 @@ export function ViewerBox({ design, showPlans = true, labels = true, reducedMoti
 
   const words = describeSystem(design, showPlans);
   return (
-    <div className={`stf-viewer ${className}`} role="group" aria-label="Your solar system, in 3D" aria-describedby="stf-words">
+    <div className={`stf-viewer ${className}`} role="group" aria-label={label} aria-describedby="stf-words">
       <div ref={host} className="stf-viewer__host" />
       {status === 'loading' && <p className="stf-viewer__msg" role="status">Loading the 3D view…</p>}
       {status === 'flat' && <FlatView design={design} />}

@@ -98,7 +98,7 @@ export interface TipMoment {
   after: 'customs' | 'wrecked' | 'robbed' | null;
   /** On the planet with its tabs showing, and First Flight's bubble not in the way. */
   planet: boolean;
-  tab: 'trade' | 'ship' | 'bank' | 'map' | 'forge';
+  tab: 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery';
   shipyard: boolean;
   loans: boolean;
   hasNews: boolean;

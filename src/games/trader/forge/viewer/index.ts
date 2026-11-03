@@ -563,6 +563,11 @@ export const createSystemViewer: CreateViewer = async (container, first, options
 
   const viewer: SystemViewer & { debug: () => object } = {
     setDesign(d) { apply(d); },
+    async ready() {
+      // Paintings start loading as pieces are made, and each is put on its piece just after it arrives.
+      for (let n = 0; n < 3; n++) await Promise.allSettled([...textures.values()]);
+      await new Promise((r) => setTimeout(r, 50));
+    },
     focus,
     tour(on) {
       if (on && !opts.reducedMotion) rig.startTour(tourShots());

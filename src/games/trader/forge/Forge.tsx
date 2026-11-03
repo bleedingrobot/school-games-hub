@@ -11,10 +11,13 @@ import { AskBolt, BoltFace } from '../coach/CoachBar';
 import type { HelpLevel } from '../coach/level';
 import { COACH_NAME } from '../text';
 import { FullscreenView } from './Fullscreen';
+import { drawGalleryPicture, pictureDue, rememberPicture } from './galleryPicture';
 import { LIFE_LOOK, PLANET_LOOK, SUN_LOOK } from './looks';
 import { addPlanet, buildOptions, buildWhatICan, cr, movePlanet, removePlanet, zoneTip, type BuildOption } from './parts';
 import { Picker, STEPS, type Sel } from './Picker';
 import { ViewerBox } from './ViewerBox';
+import { PICTURE_GAP_MINUTES } from '../../../../shared/trader/gallery';
+import type { GraphicsLevel } from './viewer/types';
 
 interface Confirm {
   title: string;
@@ -24,7 +27,7 @@ interface Confirm {
   cheer: string;
 }
 
-export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level, typing = true, onDraft, onPlan, onApply }: {
+export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level, typing = true, onDraft, onPlan, onApply, onPicture }: {
   /** The class lets pupils type names (the teacher's switch). */
   typing?: boolean;
   /** What the game has saved, and the pupil's working copy. */
@@ -40,6 +43,8 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
   onPlan: (d: SystemDesign) => void;
   /** Pay for a change now. Resolves to null when it worked, or the reason it didn't. */
   onApply: (target: SystemDesign) => Promise<string | null>;
+  /** Save the class gallery's picture of the system (base64 .webp). True if it was saved. */
+  onPicture?: (webp: string) => Promise<boolean>;
 }) {
   const [sel, setSel] = useState<Sel | null>(null);
   const [step, setStep] = useState('kind');
@@ -49,6 +54,8 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
   const [full, setFull] = useState<HTMLElement | null>(null);
   const [working, setWorking] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
+  const [graphics, setGraphics] = useState<GraphicsLevel | null>(null);
+  useGalleryPicture(saved, graphics, onPicture);
   const confirmHead = useRef<HTMLHeadingElement>(null);
 
   const pending = useMemo(() => forgeCost(saved, draft, ownsMoon), [saved, draft, ownsMoon]);
@@ -141,7 +148,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
 
       <div className="stf-grid">
         <div className="stf-left">
-          {!full && <ViewerBox design={draft} showPlans labels reducedMotion={lessMotion} onPick={(id) => id !== null && choose({ k: 'planet', id })} />}
+          {!full && <ViewerBox design={draft} showPlans labels reducedMotion={lessMotion} onLevel={setGraphics} onReady={(v) => setGraphics(v?.level ?? null)} onPick={(id) => id !== null && choose({ k: 'planet', id })} />}
           {full && <div className="stf-viewer stf-viewer--away"><p className="st-soft">Your system is open in full screen.</p></div>}
 
           <div className="stf-slots" data-coach="forge-slots" role="group" aria-label="Pieces of your system, from the sun outwards">
@@ -195,6 +202,36 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
       {full && <FullscreenView design={draft} lessMotion={lessMotion} container={full} onClose={() => { setFull(null); window.setTimeout(() => opener.current?.focus(), 0); }} />}
     </section>
   );
+}
+
+/**
+ * Keeps the class gallery's picture of the saved system up to date: drawn after a build (and when the Forge opens) once
+ * something new is built, at most once every few minutes, and never on Simple graphics or with no 3D viewer.
+ */
+function useGalleryPicture(saved: SystemDesign, graphics: GraphicsLevel | null, onPicture?: (webp: string) => Promise<boolean>) {
+  const [tick, setTick] = useState(0);
+  const drawing = useRef(false);
+  const latest = useRef(onPicture);
+  latest.current = onPicture;
+  const key = JSON.stringify(saved);
+  useEffect(() => {
+    if (!latest.current || drawing.current || !saved.sun?.built || !graphics || graphics === 'simple') return;
+    if (!pictureDue(saved, graphics)) {
+      // Something new but too soon: look again when the wait is over.
+      const timer = window.setTimeout(() => setTick((t) => t + 1), PICTURE_GAP_MINUTES * 60_000 / 4);
+      return () => window.clearTimeout(timer);
+    }
+    drawing.current = true;
+    const design = saved;
+    void (async () => {
+      try {
+        const webp = await drawGalleryPicture(design, graphics);
+        if (webp && latest.current && (await latest.current(webp))) rememberPicture(design);
+      } finally {
+        drawing.current = false;
+      }
+    })();
+  }, [key, graphics, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 const unbuiltParts = (p: PlanetPick): number =>

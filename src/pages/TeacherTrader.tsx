@@ -4,17 +4,22 @@
  * page) putting their ship back at the start. Per class, like the other game switches. The server checks every setting on every
  * request, so nothing can be done while it is off.
  */
-import { useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { FriendlyError } from '../data/profile';
 import { clearTraderForgeNames, resetTraderShip } from '../data/trader';
 import { FORGE_TYPING_ABOUT, saveForgeTyping, saveTraderJumps, saveTraderLoans, useTraderClassSettings, useTraderForgeTyping } from '../games/trader/teacher';
 import { SettingNumber, SettingToggle } from '../teacher/Settings';
+
+// The tour brings three.js and Star Trader's look, so it loads only when opened.
+const ProjectorTour = lazy(() => import('../games/trader/forge/ProjectorTour').then((m) => ({ default: m.ProjectorTour })));
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
 export function TraderSettings({ classId }: { classId: string }) {
   const settings = useTraderClassSettings(classId);
   const typing = useTraderForgeTyping(classId);
+  const [touring, setTouring] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
   return (
     <div className="panel teacher__switch">
       <SettingNumber
@@ -40,6 +45,19 @@ export function TraderSettings({ classId }: { classId: string }) {
         loadFailed={typing.failed}
         save={(on) => saveForgeTyping(on, classId)}
       />
+      <div>
+        <p>
+          <strong>Projector tour.</strong> Fly through each student’s solar system in turn, full screen, about a minute each. It shows each system’s name, never the student’s.
+        </p>
+        <button ref={opener} type="button" className="button button--light" onClick={() => setTouring(true)}>
+          🌌 Show the class’s systems
+        </button>
+      </div>
+      {touring && (
+        <Suspense fallback={<p role="status">Opening the tour…</p>}>
+          <ProjectorTour classId={classId} onClose={() => { setTouring(false); window.setTimeout(() => opener.current?.focus(), 0); }} />
+        </Suspense>
+      )}
       {settings.value?.enabled === false && <p className="panel__empty">Star Trader is off for this class, so these only matter once it’s on.</p>}
     </div>
   );

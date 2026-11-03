@@ -7081,6 +7081,47 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region shared/trader/gallery.ts
+/** The six friendly stickers a visitor can leave on a classmate's system. No typing anywhere. */
+const STICKERS = [
+	{
+		id: "wow",
+		emoji: "🌟",
+		name: "Wow"
+	},
+	{
+		id: "planets",
+		emoji: "🪐",
+		name: "Cool planets"
+	},
+	{
+		id: "life",
+		emoji: "👽",
+		name: "Love the life"
+	},
+	{
+		id: "tech",
+		emoji: "🚀",
+		name: "Great tech"
+	},
+	{
+		id: "pretty",
+		emoji: "🌈",
+		name: "Pretty"
+	},
+	{
+		id: "amazing",
+		emoji: "🤯",
+		name: "Amazing"
+	}
+];
+const isSticker = (x) => STICKERS.some((s) => s.id === x);
+/** True if the bytes are a .webp file (RIFF....WEBP). */
+function isWebp(bytes) {
+	const tag = (at) => String.fromCharCode(...bytes.subarray(at, at + 4));
+	return bytes.length > 12 && tag(0) === "RIFF" && tag(8) === "WEBP";
+}
+//#endregion
 //#region shared/space/mathsQuestion.ts
 /**
 * Which question Mission Control asks next: the same choice in the bot game (the browser) and
@@ -9430,6 +9471,16 @@ function seasonChoiceOf(w) {
 		}
 	};
 }
+/** A base64 .webp gallery picture, or null unless it is a small one. */
+function webpOf(raw) {
+	if (typeof raw !== "string" || raw.length > Math.ceil(4e4 / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
+	try {
+		const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+		return bytes.length <= 4e4 && isWebp(bytes) ? bytes : null;
+	} catch {
+		return null;
+	}
+}
 /** The saved picture's path: null if there is none, 'bad' unless it is a plain file path inside the pupil's own folder. */
 function pictureOf(raw, player) {
 	if (raw === void 0 || raw === null) return null;
@@ -9578,6 +9629,35 @@ function makeHandler(services) {
 			}
 			return reply(409, { error: "Your game changed on another screen. Please try again." });
 		}
+		if (body.action === "gallery" || body.action === "sticker" || body.action === "picture") {
+			if (!classSettings.forge) return reply(400, { error: "The Star Forge is not switched on for your class." });
+			if (body.action === "gallery") {
+				const rows = await services.gallery(player);
+				if (rows === "busy") return reply(503, { error: "We couldn't load the gallery just now." });
+				const shown = rows.filter((r) => r.design && !designProblem(r.design));
+				const links = await services.pictureLinks(shown.filter((r) => r.drawn).map((r) => r.id));
+				return reply(200, { systems: shown.map(({ drawn: _drawn, ...r }) => ({
+					...r,
+					picture: links[r.id] ?? null
+				})) });
+			}
+			if (body.action === "sticker") {
+				const sticker = body.sticker === null ? null : isSticker(body.sticker) ? body.sticker : void 0;
+				if (sticker === void 0 || typeof body.owner !== "string" || !/^[A-Za-z0-9-]{1,64}$/.test(body.owner)) return reply(400, { error: "That couldn't be read." });
+				const done = await services.giveSticker(player, body.owner, sticker);
+				if (done === "busy") return reply(503, { error: "We couldn't save that just now." });
+				if (done === "own") return reply(400, { error: "You can't give your own system a sticker." });
+				if (done === "class") return reply(400, { error: "You can only give stickers to classmates." });
+				if (done === "none") return reply(400, { error: "That system isn't built yet." });
+				return reply(200, { sticker });
+			}
+			const webp = webpOf(body.picture);
+			if (!webp) return reply(400, { error: "That picture couldn't be read." });
+			const may = await services.mayDraw(player);
+			if (may === "busy") return reply(503, { error: "We couldn't save that just now." });
+			if (!may) return reply(200, { saved: false });
+			return reply(200, { saved: await services.storePicture(player, webp) });
+		}
 		const requestId = body.requestId;
 		if (typeof requestId !== "string" || !REQUEST_ID.test(requestId) || !Number.isInteger(body.version)) return reply(400, { error: "That couldn't be read." });
 		const wanted = body.action;
@@ -9711,6 +9791,8 @@ const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", serverKey(), { au
 	persistSession: false,
 	autoRefreshToken: false
 } });
+/** The private bucket for gallery pictures (20261103000300_trader_forge.sql): only the server key reaches it. */
+const GALLERY_BUCKET = "trader-gallery";
 /** Logs say which database function failed and the error code, never who. */
 const fail = (name, code) => console.error(`trader: ${name} failed (${code ?? "unknown"})`);
 Deno.serve(makeHandler({
@@ -9880,6 +9962,57 @@ Deno.serve(makeHandler({
 	},
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "trader");
+	},
+	async gallery(player) {
+		const { data, error } = await admin.rpc("trader_gallery_list", { player });
+		if (error) {
+			fail("trader_gallery_list", error.code);
+			return "busy";
+		}
+		return Array.isArray(data) ? data : [];
+	},
+	async pictureLinks(players) {
+		if (!players.length) return {};
+		const { data, error } = await admin.storage.from(GALLERY_BUCKET).createSignedUrls(players.map((p) => `${p}.webp`), 3600);
+		if (error || !data) {
+			fail("gallery links", error?.name);
+			return {};
+		}
+		const links = {};
+		for (const row of data) if (row.path && row.signedUrl && !row.error) links[row.path.replace(/\.webp$/, "")] = row.signedUrl;
+		return links;
+	},
+	async giveSticker(visitor, owner, sticker) {
+		const { data, error } = await admin.rpc("trader_give_sticker", {
+			visitor,
+			owner,
+			sticker
+		});
+		if (error) {
+			fail("trader_give_sticker", error.code);
+			return "busy";
+		}
+		return data === "own" || data === "class" || data === "none" ? data : "ok";
+	},
+	async mayDraw(player) {
+		const { data, error } = await admin.rpc("trader_gallery_drawn", {
+			player,
+			gap: `5 minutes`
+		});
+		if (error) {
+			fail("trader_gallery_drawn", error.code);
+			return "busy";
+		}
+		return data === true;
+	},
+	async storePicture(player, webp) {
+		const { error } = await admin.storage.from(GALLERY_BUCKET).upload(`${player}.webp`, webp, {
+			contentType: "image/webp",
+			upsert: true,
+			cacheControl: "300"
+		});
+		if (error) fail("gallery picture", error.name);
+		return !error;
 	}
 }));
 //#endregion

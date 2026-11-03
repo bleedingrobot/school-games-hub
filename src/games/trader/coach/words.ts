@@ -4,7 +4,7 @@
  */
 import { LOAN_MAX, LOAN_WEEKLY_PCT, MOON_PRICE, POD_HOLDS, SHIPYARD_TECH } from '../../../../shared/trader/config';
 
-export type HelpScreen = 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'fight' | 'deal' | 'junk' | 'other';
+export type HelpScreen = 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery' | 'fight' | 'deal' | 'junk' | 'other';
 
 const n = (x: number): string => x.toLocaleString('en-NZ');
 
@@ -39,6 +39,16 @@ export function screenHelp(screen: HelpScreen): { title: string; points: string[
           'Tap the Sun or a planet card, then go through the steps: type, size, looks, effects, life, technology and name.',
           'Plans look like holograms. Press Build it to pay with credits and make a piece solid.',
           '"View in full screen" lets you fly round your system and take a picture of it.',
+        ],
+      };
+    case 'gallery':
+      return {
+        title: 'The class gallery',
+        points: [
+          'See the solar systems your classmates have built. Yours is first, once your sun is built.',
+          'Tap a system to visit it in full screen. You can look, but not change anything.',
+          'Leave one sticker on each classmate\'s system to say what you like. Tap it again to take it back.',
+          'You can see how many stickers your own system has, but not who gave them.',
         ],
       };
     case 'bank':

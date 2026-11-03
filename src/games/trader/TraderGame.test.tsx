@@ -31,7 +31,8 @@ import { starterTrade } from './coach/advice';
 import { chartPoint, distance, makeGalaxy, startPlanet } from '../../../shared/trader/galaxy';
 import { nzDay } from '../../../supabase/functions/trader/handler';
 import { TraderGame } from './TraderGame';
-import { emptyDesign, nameText } from '../../../shared/trader/system';
+import { describeSystem, designProblem, emptyDesign, nameText, pieceName } from '../../../shared/trader/system';
+import { PRETEND_CLASSMATES } from './trialClassmates';
 import { trialBackend, type Trial } from './trialBackend';
 
 const NOW = Date.UTC(2026, 9, 22, 1, 0, 0);
@@ -826,5 +827,126 @@ describe('The Star Forge (S.4)', () => {
     expect(screen.queryByText('Please pick a kinder name.')).toBeNull();
     expect(document.querySelector('.stf-name__now')?.textContent).toMatch(/Zephyr/);
     expect(JSON.stringify(sent)).not.toMatch(/Poopy/);
+  });
+});
+
+describe('The class gallery (S.8)', () => {
+  async function galleryTrial(opts: { sun?: boolean } = {}) {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    const api = traderApi(trial.transport);
+    await api.load();
+    if (opts.sun !== false) {
+      trial.tools.give(5000);
+      const fresh = await api.load();
+      const full = await api.act(fresh.ok ? fresh.value.version : 0, [{ type: 'forge', design: { ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0], built: true } } }]);
+      expect(full.ok).toBe(true);
+    }
+    trial.tools.classmates();
+    return trial;
+  }
+  async function openGallery(trial: Trial) {
+    play(trial);
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: /Gallery/ }));
+    await screen.findByRole('heading', { name: /Class gallery/ });
+  }
+  // The server leaves out any design that fails designProblem (the pretend Aroha and Mere do today: life outside the habitable zone).
+  const SHOWN = PRETEND_CLASSMATES.filter((c) => !designProblem(c.design));
+  const sysName = (d: Parameters<typeof pieceName>[0]) => `The ${pieceName(d)} System`;
+  const cardOf = (id: string) => {
+    const c = PRETEND_CLASSMATES.find((x) => x.id === id)!;
+    const visit = screen.getByRole('button', { name: new RegExp(`^Visit ${sysName(c.design)}, by ${c.name}$`) });
+    return { c, visit, card: visit.closest('li') as HTMLElement };
+  };
+
+  it('the Gallery tab shows with the Forge, and not when the Forge is off', async () => {
+    play(trialBackend({ seed: 'screen-test', now: () => NOW, settings: { forge: false } }));
+    await market();
+    expect(screen.queryByRole('tab', { name: /Gallery/ })).toBeNull();
+    cleanup();
+    play(trialBackend({ seed: 'screen-test', now: () => NOW }));
+    await market();
+    expect(screen.getByRole('tab', { name: /Gallery/ })).toBeTruthy();
+  });
+
+  it('shows your own system first marked Yours with counts read out, then every classmate, with pictures where saved', async () => {
+    const trial = await galleryTrial();
+    trial.tools.classmatePicture('classmate-ben', 'data:image/webp;base64,AAAA');
+    await openGallery(trial);
+    await waitFor(() => expect(screen.getAllByRole('listitem').length).toBeGreaterThan(1));
+    const cards = document.querySelectorAll('.stg-card');
+    expect(cards).toHaveLength(SHOWN.length + 1);
+    expect(within(cards[0] as HTMLElement).getByText('⭐ Yours')).toBeTruthy();
+    expect(within(cards[0] as HTMLElement).getByLabelText(/3 Wow/)).toBeTruthy();
+    expect(within(cards[0] as HTMLElement).getByLabelText(/2 Cool planets/)).toBeTruthy();
+    expect(within(cards[0] as HTMLElement).getByLabelText(/1 Amazing/)).toBeTruthy();
+    for (const c of SHOWN) {
+      const { card } = cardOf(c.id);
+      expect(within(card).getByText(sysName(c.design))).toBeTruthy();
+    }
+    const withPic = cardOf('classmate-ben').card;
+    expect(withPic.querySelector('img')?.getAttribute('src')).toBe('data:image/webp;base64,AAAA');
+    expect(within(withPic).queryByText('No picture yet')).toBeNull();
+    const noPic = cardOf('classmate-sam').card;
+    expect(noPic.querySelector('img')).toBeNull();
+    expect(within(noPic).getByText('No picture yet')).toBeTruthy();
+  });
+
+  it('before you build a sun it asks you to, and the classmates still show', async () => {
+    const trial = await galleryTrial({ sun: false });
+    await openGallery(trial);
+    expect(await screen.findByText(/Build your sun in the Forge/)).toBeTruthy();
+    expect(screen.queryByText('⭐ Yours')).toBeNull();
+    expect(document.querySelectorAll('.stg-card')).toHaveLength(SHOWN.length);
+    expect(cardOf('classmate-sam').visit).toBeTruthy();
+  });
+
+  it('gives, changes and takes back a sticker (one per system); your own card has no sticker buttons', async () => {
+    const trial = await galleryTrial();
+    await openGallery(trial);
+    await screen.findByText('⭐ Yours');
+    const { card } = cardOf('classmate-ben');
+    const btn = (n: string) => within(card).getByRole('button', { name: n });
+    expect(within(card).getAllByRole('button', { pressed: false })).toHaveLength(6);
+    fireEvent.click(btn('Wow'));
+    await waitFor(() => expect(btn('Wow').getAttribute('aria-pressed')).toBe('true'));
+    expect(trial.data.given.get('classmate-ben')).toBe('wow');
+    fireEvent.click(btn('Pretty'));
+    await waitFor(() => expect(btn('Pretty').getAttribute('aria-pressed')).toBe('true'));
+    expect(btn('Wow').getAttribute('aria-pressed')).toBe('false');
+    expect(trial.data.given.get('classmate-ben')).toBe('pretty');
+    expect([...trial.data.given.keys()].filter((k) => k === 'classmate-ben')).toHaveLength(1);
+    fireEvent.click(btn('Pretty'));
+    await waitFor(() => expect(btn('Pretty').getAttribute('aria-pressed')).toBe('false'));
+    expect(trial.data.given.has('classmate-ben')).toBe(false);
+    const own = document.querySelector('.stg-card.is-mine') as HTMLElement;
+    expect(within(own).queryByRole('button', { name: 'Wow' })).toBeNull();
+    expect(own.querySelector('.stg-stickers')).toBeNull();
+  });
+
+  it('visiting opens a full-screen look-only view with the system name, and Esc closes it', async () => {
+    const trial = await galleryTrial();
+    await openGallery(trial);
+    await screen.findByText('⭐ Yours');
+    const { c, visit } = cardOf('classmate-lily');
+    fireEvent.click(visit);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog.textContent).toContain(sysName(c.design));
+    expect(within(dialog).queryByRole('button', { name: /Plans/ })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: /Photo/ })).toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('each card has screen-reader words linked by aria-describedby', async () => {
+    const trial = await galleryTrial();
+    await openGallery(trial);
+    await screen.findByText('⭐ Yours');
+    for (const c of SHOWN) {
+      const { visit } = cardOf(c.id);
+      const id = visit.getAttribute('aria-describedby');
+      expect(id).toBeTruthy();
+      expect(document.getElementById(id!)?.textContent).toBe(describeSystem(c.design));
+    }
   });
 });

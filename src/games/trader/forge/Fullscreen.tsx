@@ -8,9 +8,11 @@ import type { GraphicsLevel, SystemViewer } from './viewer/types';
 const SPEEDS: [number, string][] = [[0, 'Pause'], [1, '1×'], [4, '4×'], [16, '16×']];
 const LEVELS: [GraphicsLevel, string][] = [['incredible', 'Incredible'], ['normal', 'Normal'], ['simple', 'Simple']];
 
-export function FullscreenView({ design, lessMotion, container, onClose }: {
+export function FullscreenView({ design, lessMotion, visiting = false, container, onClose }: {
   design: SystemDesign;
   lessMotion: boolean;
+  /** A classmate's system from the gallery: look only, built pieces only (no plans, no photo). */
+  visiting?: boolean;
   /** Where to put it (the Star Trader root, so it keeps the game's colours). */
   container: HTMLElement;
   onClose: () => void;
@@ -18,7 +20,7 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
   const overlay = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const viewer = useRef<SystemViewer | null>(null);
-  const [plans, setPlans] = useState(true);
+  const [plans, setPlans] = useState(!visiting);
   const [labels, setLabels] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [touring, setTouring] = useState(false);
@@ -91,6 +93,7 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
         labels={labels}
         reducedMotion={lessMotion}
         className="stf-fs__view"
+        label={visiting ? `${title}, in 3D` : undefined}
         onLevel={setLevel}
         onReady={(v) => {
           viewer.current = v;
@@ -106,8 +109,8 @@ export function FullscreenView({ design, lessMotion, container, onClose }: {
         <div className="stf-fs__row" role="group" aria-label="Look around">
           <button type="button" className={`st-btn st-btn--small ${touring ? 'st-btn--primary' : ''}`} aria-pressed={touring} disabled={lessMotion} title={lessMotion ? 'Turned off because you chose less movement' : undefined} onClick={() => setTouring((t) => !t)}>🎬 Tour</button>
           <button type="button" className={`st-btn st-btn--small ${labels ? 'st-btn--primary' : ''}`} aria-pressed={labels} onClick={() => setLabels((l) => !l)}>🏷️ Names</button>
-          <button type="button" className={`st-btn st-btn--small ${plans ? 'st-btn--primary' : ''}`} aria-pressed={plans} onClick={() => setPlans((p) => !p)}>👻 Plans</button>
-          <button type="button" className="st-btn st-btn--small" onClick={() => void photo()}>📷 Photo</button>
+          {!visiting && <button type="button" className={`st-btn st-btn--small ${plans ? 'st-btn--primary' : ''}`} aria-pressed={plans} onClick={() => setPlans((p) => !p)}>👻 Plans</button>}
+          {!visiting && <button type="button" className="st-btn st-btn--small" onClick={() => void photo()}>📷 Photo</button>}
         </div>
         <div className="stf-fs__row" role="group" aria-label="Speed">
           {SPEEDS.map(([s, name]) => (

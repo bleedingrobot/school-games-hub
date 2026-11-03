@@ -43,6 +43,8 @@ export interface SystemViewer {
   setLabels(on: boolean): void;
   setLevel(level: GraphicsLevel): void;
   readonly level: GraphicsLevel;
+  /** Resolves once the paintings for the pieces on show have loaded (or failed and fallen back to code-drawn ones). */
+  ready(): Promise<void>;
   /** A still picture of the system now, as a .webp, without labels (photo mode, the gallery, the profile album). */
   snapshot(width: number, height: number): Promise<Blob>;
   /** Stop drawing and free the GPU. */
