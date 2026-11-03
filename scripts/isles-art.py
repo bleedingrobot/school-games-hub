@@ -54,8 +54,9 @@ ALONE = ' Standing alone, with only a few soft tufts of grass and a little earth
 BUILDINGS = {
     'farm': [
         'A single small barn with a red roof beside a few rows of golden wheat and a haystack.',
-        'A single red barn with a hayloft beside a bigger field of golden wheat in neat rows, two haystacks and a wooden cart.',
-        'A single big red barn with a silo and a little windmill, beside rich fields of tall golden wheat, haystacks and a vegetable patch.',
+        # Repainted 3 Nov 2026 (James): the farm stands on a few tufts like every other building, with no wide field under it.
+        'A single red barn with a hayloft, two small round haystacks and a little wooden cart beside it, and a few sheaves of golden wheat leaning on its wall.',
+        'A single big red barn with a tall silo and a little windmill, a small vegetable patch, a haystack and a few sheaves of golden wheat close beside it.',
     ],
     'mine': [
         'A single small rocky hillock with a wooden-framed mine entrance and a little mine cart of shiny blue crystals.',
@@ -73,7 +74,8 @@ BUILDINGS = {
         'A single grand three-storey manor house with red tiled roofs, a little tower, many windows, chimney smoke and flower boxes.',
     ],
     'workshop': [
-        'A single small timber woodworking shed with a slanted shingle roof and an open front, a stack of planks and a sawhorse beside it.',
+        # Repainted 3 Nov 2026 (James): a small windmill, so all three levels are windmills.
+        'A single small timber windmill workshop with four wooden sails turning on its roof, an open front, a stack of planks and a sawhorse beside it.',
         'A single timber workshop with a small windmill on its roof, stacks of planks and a half-built little boat hull beside it.',
         'A single big timber boatyard workshop with a windmill on its roof, a wooden crane and a nearly finished sky-boat with a sail beside it.',
     ],
@@ -97,6 +99,51 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     'bld-empty': ('A little wooden marker post with a small blank sign, a coil of rope and a few stacked planks, ready to build.' + ALONE + PIECE, SQUARE),
     # Buildings at levels 1 to 3 (docs/ISLES-RULES.md), each standing on its own with no patch of land under it.
     **{f'bld-{kind}-{n}': (words + ALONE + PIECE, SQUARE) for kind, levels in BUILDINGS.items() for n, words in enumerate(levels, 1)},
+    # The cosy batch (stage C.A, 3 Nov 2026). Decorations: smaller than a building, standing on a few tufts of grass.
+    **{f'dec-{d}': (f'{words}, small and charming.' + ALONE + PIECE, SQUARE) for d, words in {
+        'flowers': 'A small round bed of bright colourful flowers edged with little stones',
+        'bench': 'A small wooden picnic bench with a checked cloth folded on it',
+        'lantern': 'A small grey stone garden lantern with a warm glow inside',
+        'cherry': 'A small cherry blossom tree covered in pink blossom',
+        'chimes': 'Shiny wind chimes hanging from a little wooden frame',
+        'bridge': 'A little arched wooden footbridge with rope rails',
+        'fountain': 'A small round stone fountain with sparkling water splashing',
+        'balloon': 'A small colourful striped hot-air balloon with a wicker basket, tied down by ropes to wooden pegs',
+        'rainbow': 'A small garden gate under an arch of flowers in all the colours of the rainbow',
+        'flags': 'A tall wooden pole with bright triangular sail flags fluttering',
+        'arch': 'A welcome arch made of green vines and flowers',
+        'telescope': 'A shiny brass star telescope on a little round wooden platform, pointing up at the sky',
+    }.items()},
+    # Islanders who stroll the paths: shown tiny, so bold simple shapes.
+    **{f'walker-{n}': (f'A small round friendly chibi villager {who}, in simple bright colourful clothes, walking happily.' + SIDE, SQUARE) for n, who in enumerate([
+        'farmer carrying a basket of vegetables', 'child flying a little kite', 'grandparent with a walking stick and a sun hat',
+        'carrying a long loaf of bread', 'fisher with a fishing rod over one shoulder', 'gardener with a green watering can',
+    ], 1)},
+    # Small pictures.
+    'icon-crystal': ('One glowing pale-blue sky crystal, a clear faceted gem with a soft sparkle.' + PIECE, SQUARE),
+    'icon-coin': ('One pretty shiny gold coin, slightly tilted, with a little floating island stamped on its face and a soft golden glint on its rim, bold and simple so it reads when tiny.' + PIECE, SQUARE),
+    'gift-flowers': ('A bunch of bright flowers tied with a pink ribbon bow.' + PIECE, SQUARE),
+    'gift-cake': ('A little round iced cake with pink icing and a cherry on top.' + PIECE, SQUARE),
+    'gift-lantern': ('A glowing round paper lantern, warm orange light shining through it.' + PIECE, SQUARE),
+    # The sky garden that floats beside a Grand Isle once its Lighthouse is lit.
+    'base-garden': ('A small flat ' + ISLAND.replace('its top a flat empty grassy meadow with soft green grass and a few wildflowers', 'its top a flat grassy garden meadow with winding dirt paths and about twenty small round bare patches of earth spread across it, a few flowers between them, only grass, paths and flowers on top') + PIECE, WIDE),
+    # Stage S.7, cosy version (3 Nov 2026): the good-weather cards, the Sky Lighthouse, the Gull Riders, scenes and the
+    # home page card. The cosy rules dropped fog, storms, the market and upgrades, so those aren't painted.
+    'weather-rainbow': ('A bright rainbow arching over a small floating island in a clear blue sky, a few glittering pale-blue sky crystals falling from it.', WIDE),
+    'weather-geese': ('A flock of golden geese flying in a V over a small floating island, shiny gold coins tumbling down from them, sunny sky.', WIDE),
+    'weather-traveller': ('A friendly traveller with a backpack and a walking stick stepping off a little sky-boat onto a small floating island, waving hello, sunny sky.', WIDE),
+    'weather-breeze': ('A warm golden breeze swirling through the sky in soft curling ribbons of light, a small sky-boat with a red sail riding it happily.', WIDE),
+    **{f'lighthouse-{n}': (words + ALONE + PIECE, SQUARE) for n, words in enumerate([
+        'The first stage of a white stone lighthouse: a short round stone base with a little wooden door and scaffolding around it.',
+        'A half-built white stone lighthouse with red stripes, a short tower with a small window and scaffolding at the top.',
+        'A nearly finished tall white stone lighthouse with red stripes and a balcony, its lamp room still open to the sky.',
+        'A finished tall white stone lighthouse with red stripes, a balcony and a glass lamp room shining a warm golden beam of light.',
+    ], 1)},
+    'boat-gulls': ('A small wooden racing sky-boat with a big white sail with a seagull on it, three cheerful seagulls in tiny caps riding on board, a little propeller at the back and small canvas wings, flying.' + SIDE, WIDE),
+    'scene-night': ('A small cosy floating island at night under a starry sky and a big gentle moon, warm lights glowing in little cottage windows, everyone asleep, peaceful.', WIDE),
+    'scene-season': ('A joyful celebration on a floating island: colourful bunting, paper lanterns, fireworks of sparkles in the sky, happy villagers waving, golden evening light.', WIDE),
+    'scene-hall': ('A grand open-air hall high in the clouds with white marble columns and golden banners, small paintings of floating islands hanging between the columns, soft golden light.', WIDE),
+    'home-card': ('Many small colourful floating islands drifting together in a sunny sky above a sea of clouds, each with little cottages, windmills and gardens, sky-boats with bright sails flying between them, one lighthouse shining.', WIDE),
     # Sky-boats.
     'boat-red': (BOAT.format(sail='a big billowing red sail') + SIDE, WIDE),
     'boat-blue': (BOAT.format(sail='a big billowing blue and white striped sail') + SIDE, WIDE),
@@ -208,7 +255,7 @@ def paint(out: Path, names: list[str], tries: int):
             words, size = PICTURES[name]
             seed = (sum(map(ord, name)) * 7919 + n * 104729) % 2**32
             started = time.time()
-            style = STYLE if name.startswith('bg-') else PORTRAIT_STYLE if name.startswith('keeper-') else PIECE_STYLE
+            style = STYLE if name.startswith(('bg-', 'weather-', 'scene-', 'home-')) else PORTRAIT_STYLE if name.startswith('keeper-') else PIECE_STYLE
             job = call('/prompt', {'prompt': graph(style + words + FRIENDLY, seed, size)})['prompt_id']
             for _ in range(300):
                 time.sleep(2)
@@ -231,7 +278,7 @@ ART = ROOT / 'src' / 'games' / 'isles' / 'art'
 INBOX = Path.home() / 'isles-art-inbox'
 PICKS = ROOT / 'docs' / 'isles-art' / 'picks.json'
 # The longest side of each cut-out piece, and the widths of the backgrounds and keeper portraits.
-PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480}
+PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480, 'dec': 256, 'walker': 128, 'icon': 160, 'gift': 160}
 BG_WIDTHS = (1600, 800)
 KEEPER_SIZES = (320, 96)
 

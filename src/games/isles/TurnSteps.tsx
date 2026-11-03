@@ -65,6 +65,8 @@ export interface StepProps {
   island: Island;
   /** Every choice this turn, in words. */
   lines: string[];
+  /** New building spots anchored so far this turn (glowing on the island). */
+  newLand?: number;
   /** A choice was just made: ask "another?". */
   again: boolean;
   build: BuildView;
@@ -149,6 +151,7 @@ export function TurnStep(p: StepProps) {
         body = (
           <>
             <p>Done: {p.lines[p.lines.length - 1]}.</p>
+            {p.newLand ? <p className="si-newland-words">✨ Your island grew! {p.newLand === 1 ? 'The new spot is' : `${p.newLand} new spots are`} sparkling on your island, ready for a building.</p> : null}
             <p>You have {plural(island.coins, 'coin')} left.</p>
           </>
         );

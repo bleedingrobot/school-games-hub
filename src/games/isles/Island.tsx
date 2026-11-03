@@ -34,6 +34,12 @@ const SPARKS = [
   ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 11, far: 78 + (i % 2) * 16, size: i % 3 ? 10 : 14, wait: 0.18 + (i % 3) * 0.05, kind: 'burst' })),
   ...Array.from({ length: 14 }, (_, i) => ({ turn: (i - 6.5) * 13, far: 40 + (i % 4) * 12, size: i % 2 ? 8 : 12, wait: 0.3 + (i % 5) * 0.08, kind: 'fall' })),
 ];
+/** The sparkles round new land (James: "lots"): three rings, over and over, each sparkle at its own moment. */
+const NEW_LAND_SPARKS = [
+  ...Array.from({ length: 18 }, (_, i) => ({ turn: i * 20, far: 34 + (i % 3) * 8, size: i % 2 ? 10 : 16, wait: (i % 6) * 0.27 })),
+  ...Array.from({ length: 16 }, (_, i) => ({ turn: i * 22.5 + 10, far: 62 + (i % 2) * 14, size: i % 3 ? 9 : 14, wait: 0.15 + (i % 5) * 0.31 })),
+  ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 5, far: 92 + (i % 3) * 10, size: i % 2 ? 8 : 12, wait: 0.4 + (i % 4) * 0.35 })),
+];
 /** How far in front of a clearing walkers stroll (in % of the base's height). */
 const WALK_AHEAD = 7;
 
@@ -76,6 +82,7 @@ export function IslandPicture({
   free,
   onPlace,
   pops,
+  fresh = [],
 }: {
   island: Island;
   keeper: string | null;
@@ -91,6 +98,8 @@ export function IslandPicture({
   onPlace?: (place: number) => void;
   /** Coins popping off each spot (the collect step), by spot, one building at a time in spot order. */
   pops?: Record<number, number>;
+  /** New land: spots anchored this turn or last, ringed and sparkling. */
+  fresh?: number[];
 }) {
   const base = baseFor(island.spots.length);
   const places = SPOTS[base];
@@ -175,6 +184,19 @@ export function IslandPicture({
             <Art src={walkerArt(w.i)} fallback={<span className={`si-walker__drawn si-walker__drawn--${w.i % 4}`} />} />
           </span>
         ))}
+        {fresh.map((spot) => {
+          const at = places[spot];
+          if (!at) return null;
+          return (
+            <span key={`n${spot}`} className="si-newland" style={{ left: `${at[0]}%`, top: `${at[1]}%` } as CSSProperties} aria-hidden="true">
+              <span className="si-newland__ring" />
+              <span className="si-newland__sparks">{NEW_LAND_SPARKS.map((s, i) => (
+                <span key={i} style={{ '--si-spark': `${s.turn}deg`, '--si-far': `${s.far}px`, '--si-size': `${s.size}px`, '--si-wait': `${s.wait}s` } as CSSProperties} />
+              ))}</span>
+              <span className="si-newland__tag">✨ New land!</span>
+            </span>
+          );
+        })}
         {popOrder.map((spot) => {
           const at = places[spot];
           if (!at) return null;

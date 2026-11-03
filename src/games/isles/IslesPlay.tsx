@@ -114,6 +114,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [cheer, setCheer] = useState<string[] | null>(null);
   const [help, setHelp] = useState<Help | null>(null);
   const [seen, setSeen] = useState<Tip[]>(() => seenTips());
+  /** Land anchored last turn (spot numbers from…to), sparkling on My island until the next turn starts. */
+  const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -206,6 +208,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
 
   const startTurn = () => {
     setPost([]);
+    setGrew(null);
     if (!view || !island) return;
     setPicks([]);
     setProblem(null);
@@ -219,6 +222,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     setProblem(null);
     try {
       const v = (await backend.send({ action: 'turn', turn: island.turn, actions: picks })) as unknown as IslandView;
+      setGrew(v.island.spots.length > island.spots.length ? { from: island.spots.length, to: v.island.spots.length } : null);
       show(v);
       setLit(null);
       if (guiding) {
@@ -388,7 +392,13 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     : !pipHere ? STEP_PIP[turnStep!]
     : nextTurn ? `Next turn: ${step.say[0].toLowerCase()}${step.say.slice(1)}`
     : step.say;
-  const lastTurn = screen.kind === 'home' && island.turn > 0 ? reportLines(report) : [];
+  const lastTurn = screen.kind === 'home' && island.turn > 0
+    ? [...(grew ? [`✨ Your island grew! ${plural(grew.to - grew.from, 'new building spot')}: ${grew.to} spots now.`] : []), ...reportLines(report)]
+    : [];
+  // New land sparkles: anchored this turn (while the turn goes on), or last turn (on My island).
+  const fresh = turnStep !== null && shownIsland.spots.length > island.spots.length
+    ? Array.from({ length: shownIsland.spots.length - island.spots.length }, (_, i) => island.spots.length + i)
+    : screen.kind === 'home' && grew ? Array.from({ length: grew.to - grew.from }, (_, i) => grew.from + i) : [];
   // Help Off keeps only the guide and the resting line; Some leaves out "Show me".
   const pipLine = helpNow === 'off' && !guideNow && !resting ? null : (
     <div className={`si-pipsays si-next${guideNow ? ' si-guide' : ''}`} aria-live="polite">
@@ -499,6 +509,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                 else if (build.kind === 'move') choose({ kind: 'move', decoration: build.decoration, place });
               }}
               pops={pops}
+              fresh={fresh}
             />
             {turnStep === null ? <Road island={shownIsland} /> : pipLine}
           </div>
@@ -584,6 +595,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                 step={turnStep}
                 island={planned}
                 lines={picks.map((a, i) => actionText(steps[i], a))}
+                newLand={planned.spots.length - island.spots.length}
                 again={again}
                 build={build}
                 lit={lit}
