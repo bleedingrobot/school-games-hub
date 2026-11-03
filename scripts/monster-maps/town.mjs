@@ -18,7 +18,7 @@ export function harbourTown() {
   m.fence(14, 15, 5); m.fence(2, 4, 4);
   m.water(17, 15, 4, 2);
   // Things to do.
-  m.sign('welcome', 9, 14, 'Welcome to Harbour Town! The wild monsters live up the road, in Kauri Bush.');
+  m.sign('welcome', 9, 14, 'Welcome to Harbour Town! New here? Talk to the Teacher first.\nThe wild monsters live up the road, in Kauri Bush. The Tinker and the notice board are on the east side of town.');
   m.sign('healing-sign', 8, 9, 'Healing Centre. Tired monsters rest here.');
   m.sign('north-sign', 14, 1, 'North: Kauri Bush. Watch out for long grass!');
   m.sign('pond-sign', 16, 14, 'Please do not feed the Minnowus.');
@@ -50,7 +50,7 @@ export function healingCentre() {
   for (let x = 0; x < 10; x++) if (x !== 5) m.wall(x, 6, TD(40));
   m.wall(5, 6, TT(89));
   m.bush(1, 4); m.bush(8, 4);
-  m.sign('poster', 1, 2, 'A poster: "A rested monster is a happy monster. Talk to the nurse any time!"', TT(93));
+  m.sign('poster', 1, 2, 'A poster: "A rested monster is a happy monster. Talk to the nurse any time!"\nIf your team gets tired in a battle, you wake up at the last place you healed. Nothing is lost!', TT(93));
   m.warp('out', 5, 6, 'harbour-town', 6, 9, 'down');
   m.spot('wake', 4, 3, 'up');
   m.save();

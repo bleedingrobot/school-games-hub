@@ -261,7 +261,11 @@ export function towerRooms({ n, area, label, outside, outsideX, outsideY, guide,
   hall.wall(1, 6, TD(66)); hall.wall(9, 6, TD(66)); // sacks
   hall.wall(5, 8, TT(89)); // the door
   hall.person(guide, sprite, 3, 4, 'right', hint);
-  hall.sign('tower-sign', 7, 4, `${label} Tower. Climb the ladder to meet the Tower trainer and win the ${badge[0].toUpperCase()}${badge.slice(1)} badge!`, TT(83));
+  // The type wheel (shared/monsters/types.ts): each type is strong against the next one.
+  const wheel = ['Leaf', 'Water', 'Fire', 'Ice', 'Spark', 'Stone'];
+  const beats = wheel[(wheel.indexOf(label) + 5) % 6];
+  const levels = team.split(',').map((s) => Number(s.split(':')[1]));
+  hall.sign('tower-sign', 7, 4, `${label} Tower. Climb the ladder to meet the Tower trainer and win the ${badge[0].toUpperCase()}${badge.slice(1)} badge!\nThe trainer has ${levels.length} ${label} monsters, levels ${Math.min(...levels)} to ${Math.max(...levels)}. ${beats} monsters are strong against ${label}, so bring one if you can!`, TT(83));
   hall.wall(5, 2, TD(68)); hall.warp('up', 5, 2, `tower-${n}-top`, 5, 6, 'up');
   hall.warp('out', 5, 8, outside, outsideX, outsideY, 'down');
   hall.spot('inside', 5, 6, 'up');

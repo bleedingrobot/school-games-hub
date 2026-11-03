@@ -241,7 +241,7 @@ export function harbourCity() {
   m.welcome('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
   m.sign('tower-sign', 10, 6, 'The Stone Tower. Beat the Tower trainer to win the Stone badge, the last one!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Sina will heal your team for free.');
-  m.sign('harbour-sign', 16, 4, 'The harbour. Ships come here from all over the world.');
+  m.sign('harbour-sign', 16, 4, 'The harbour. Ships come here from all over the world.\nWon all six badges? Go back to Harbour Town and talk to the Teacher!');
   m.sign('chest-sign-1', 23, 12, 'A chest is stashed behind the shops to the east.');
   m.sign('chest-sign-2', 4, 11, 'A chest is waiting in the corner park, to the west.');
   m.person('Shopkeeper Lu', PEOPLE.villager, 13, 11, 'down', 'A book costs $3.50 and a pen costs $1.25. That is $4.75 altogether. Money is just decimals!');

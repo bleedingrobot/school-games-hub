@@ -27,8 +27,8 @@ export function kauriBush() {
   m.gate('area-2-gate', 21, 1, 'leaf', 'A rope fence blocks the path north. A sign says: "Shell Beach. Only for trainers with a Leaf badge!"');
   m.warp('to-shell-beach', 21, 0, 'shell-beach', 21, 18, 'up');
   // Signs, people, a trainer and two chests.
-  m.welcome('bush-sign', 10, 18, 'Kauri Bush. Wild monsters hide in the long grass. Walk in it and see who jumps out!');
-  m.sign('trail-sign', 16, 10, 'North: the Leaf Tower and Shell Beach. South: Harbour Town.');
+  m.welcome('bush-sign', 10, 18, 'Kauri Bush. Leaf monsters live here. Their attacks ask place value and rounding.\nWild monsters hide in the long grass. Walk in it and see who jumps out!');
+  m.sign('trail-sign', 16, 10, 'North: the Leaf Tower, and the gate to Shell Beach (you need the Leaf badge). South: Harbour Town.');
   m.sign('west-sign', 4, 14, 'West trail: lots of long grass. Be ready!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Pania will heal your team for free.');
   m.sign('tower-sign', 15, 6, 'The Leaf Tower. Beat the Tower trainer to win the Leaf badge.');
