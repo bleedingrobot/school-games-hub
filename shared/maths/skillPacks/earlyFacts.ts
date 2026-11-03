@@ -3,7 +3,7 @@
  * times tables. One mastery record per fact, like 7 × 8 in times tables.
  *
  * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
- * (double 7) and "half:14" (half of 14). Adding and taking away within 20 keeps its own
+ * (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
  * "add:7+8" records (add-sub pack), so nothing already saved changes.
  *
  * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -89,8 +89,102 @@ const tenAnd: Family = {
   },
 };
 
+/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
+export const SKIP_STEPS = [
+  { step: 10, upTo: 100, word: 'tens' },
+  { step: 5, upTo: 50, word: 'fives' },
+  { step: 2, upTo: 20, word: 'twos' },
+] as const;
+export type SkipStep = (typeof SKIP_STEPS)[number]['step'];
+/** How a skip-counting question goes: a gap counting up (2, 4, ?, 8), what comes next (2, 4, 6, ?), or a gap counting back (10, 8, ?, 4). */
+export type SkipKind = 'up' | 'next' | 'back';
+
+/**
+ * One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
+ * (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
+ * the step from 0 to `upTo`.
+ */
+function skipTerms(kind: SkipKind, step: number, upTo: number, answer: number, at: number): number[] | null {
+  if (kind === 'next' ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
+  const terms =
+    kind === 'up' ? range(answer - at * step, answer + (3 - at) * step, step)
+    : kind === 'back' ? range(answer - (3 - at) * step, answer + at * step, step).reverse()
+    : range(answer - at * step, answer, step);
+  return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
+}
+
+const skipKeys = (step: number, upTo: number) =>
+  (['up', 'next', 'back'] as const).flatMap((kind) =>
+    range(0, upTo, step)
+      .filter((n) => [1, 2, 3, 4].some((at) => skipTerms(kind, step, upTo, n, at)))
+      .map((n) => `skip${step}:${kind}:${n}`),
+  );
+const parseSkip = (key: string) => {
+  const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
+  return m ? { step: Number(m[1]), kind: m[2] as SkipKind, answer: Number(m[3]) } : null;
+};
+
+/**
+ * Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
+ * the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
+ * Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
+ */
+function skipCounting(step: number, upTo: number, word: string): Family {
+  const keys = skipKeys(step, upTo);
+  const ats = (kind: SkipKind) => (kind === 'next' ? [3, 4] : [1, 2]);
+  return {
+    label: `Counting in ${word}`,
+    curriculumTags: [],
+    keys,
+    roll: (key, r) => {
+      const { kind, answer } = parseSkip(key)!;
+      const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
+      return [answer, fits[int(r, 0, fits.length - 1)]];
+    },
+    make: (key, [answer, at]) => {
+      const skip = parseSkip(key);
+      if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
+      const terms = skipTerms(skip.kind, step, upTo, answer, at);
+      if (!terms) return null;
+      const gap = terms.indexOf(answer);
+      const parts = terms.map((n, i) => (i === gap ? '?' : String(n)) + (i < terms.length - 1 ? ',' : ''));
+      const said = terms.map((n, i) => (i === gap ? (skip.kind === 'next' ? '' : 'something') : String(n))).filter(Boolean).join(', ');
+      const prompt = skip.kind === 'next' ? 'What comes next?' : 'What is missing?';
+      const before = terms[gap - 1];
+      const back = skip.kind === 'back' ? -1 : 1;
+      const wrongSteps = [10, 5, 2, 1].filter((s) => s !== step);
+      return {
+        parts,
+        spoken: `Counting ${skip.kind === 'back' ? 'back ' : ''}in ${word}: ${said}. ${prompt}`,
+        prompt,
+        answer,
+        wrong: [answer + 1, answer - 1, ...wrongSteps.map((s) => before + back * s), ...terms.filter((n) => n !== answer)],
+      };
+    },
+  };
+}
+
+/** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
+export function solveSkip(parts: readonly string[]): { answer: number; key: string } | null {
+  if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === '?' || p === '?,').length !== 1) return null;
+  const nums = parts.map((p) => p.replace(/,$/, '')).map((p) => (p === '?' ? null : /^\d{1,3}$/.test(p) ? Number(p) : NaN));
+  if (nums.some((n) => Number.isNaN(n))) return null;
+  const gap = nums.indexOf(null);
+  const known = nums.flatMap((n, i) => (n === null ? [] : [{ n, i }]));
+  const diff = (known[1].n - known[0].n) / (known[1].i - known[0].i);
+  const step = Math.abs(diff);
+  const answer = known[0].n + diff * (gap - known[0].i);
+  const kind: SkipKind = gap === parts.length - 1 ? 'next' : diff < 0 ? 'back' : 'up';
+  if (kind === 'next' && diff < 0) return null;
+  const key = `skip${step}:${kind}:${answer}`;
+  const family = Object.values(families).find((f) => f.keys.includes(key));
+  const made = family?.make(key, [answer, gap]);
+  return made && made.parts.length === parts.length && made.parts.every((p, i) => p === parts[i]) ? { answer, key } : null;
+}
+
 const families: Record<string, Family> = {
   tenAnd,
+  ...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
   bond10: bonds('Pairs that make 10', 'MS.Y1.NUM.OP.P1', 'bond10', 10, 0),
   dblHalf10: doublesHalves('Doubles and halves to 10', 'MS.Y1.NUM.OP.P2', 1, 5, 2, 10),
   bond20: bonds('Pairs that make 20', 'MS.Y2.NUM.OP.P1', 'bond20', 20, 1),
@@ -102,8 +196,8 @@ export const EARLY_FACTS: PackDefinition = {
   label: 'Early number facts',
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
-  // Only the ladder asks the "ten and" facts.
-  ladderOnly: ['tenAnd'],
+  // Only the ladder asks the "ten and" facts and skip counting.
+  ladderOnly: ['tenAnd', ...SKIP_STEPS.map(({ step }) => `skip${step}`)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);
