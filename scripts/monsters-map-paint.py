@@ -113,9 +113,9 @@ INDOOR = ['healing-centre'] + [f'tower-{n}-{r}' for n in range(1, 7) for r in ('
 def wall(words): return f'seamless tileable flat front view of an indoor wall of {words}, {STYLE}, flat even soft lighting, straight on'
 # Per room look: floor, wall, banner, and (tower tops) the two statues. A tower's hall and top share one look.
 ROOM_LOOK = {
-    'heal': ('clean pale honey-coloured wooden floorboards, smooth polished planks', 'smooth warm cream plaster with a soft pink lower half and a white wooden rail between',
+    'heal': ('clean pale honey-coloured wooden floorboards, smooth polished planks', 'soft pale pink painted wooden wall planks running straight up and down, smooth and clean',
              'hanging cloth banner, white with a big soft red cross and a little pink heart, gold trim'),
-    'leaf': ('mossy old wooden floorboards with small green moss patches and a few fallen leaves', 'mossy green-grey stone bricks with small ferns and ivy growing between them',
+    'leaf': ('old wooden floorboards with thin lines of soft green moss in the gaps between the planks and a few fallen leaves', 'mossy green-grey stone bricks with small ferns and ivy growing between them',
              'hanging cloth banner, deep green with a big golden fern leaf, gold trim'),
     'water': ('smooth pale blue and white tiled floor with soft wavy patterns, like a bathhouse', 'pale blue stone bricks with little shells and starfish set into them',
               'hanging cloth banner, deep blue with a big white wave and a water drop, gold trim'),
@@ -123,13 +123,13 @@ ROOM_LOOK = {
              'hanging cloth banner, red with a big golden flame, gold trim'),
     'ice': ('frosty pale blue stone slabs dusted with snow and thin ice', 'big pale blue ice blocks with frost and white snow on their edges',
             'hanging cloth banner, icy pale blue with a big white snowflake, silver trim'),
-    'spark': ('dark slate floor tiles with thin bright yellow lines like lightning between them', 'purple-grey stone bricks with copper pipes and small glowing yellow lamps',
+    'spark': ('dark blue-grey slate flagstones of mixed sizes with thin glowing yellow cracks running between some of them', 'purple-grey stone bricks with copper pipes and small glowing yellow lamps',
               'hanging cloth banner, purple with a big yellow lightning bolt, gold trim'),
-    'stone': ('big grey granite flagstones, worn and solid, with tiny glittering flecks', 'huge rough grey granite blocks, heavy and ancient',
+    'stone': ('old castle floor of big plain weathered flagstones, every stone soft warm grey, a little moss in some cracks', 'dry stone wall of rough flat grey slate pieces stacked in uneven layers, all cool grey and blue-grey',
               'hanging cloth banner, slate grey with a big golden mountain and gem, gold trim'),
 }
 STATUE = {
-    'leaf': 'stone statue on a round plinth of a friendly leafy plant monster, green moss on it',
+    'leaf': 'stone statue on a round plinth of a friendly little dinosaur monster with smiling eyes and a big leaf growing on its head, green moss on it',
     'water': 'stone statue on a round plinth of a friendly crab monster, with a little fountain of water',
     'fire': 'stone statue on a round plinth of a friendly fire lizard monster, with a small flame burning in a bowl',
     'ice': 'statue carved from clear blue ice on a round plinth of a friendly penguin monster',
@@ -145,13 +145,13 @@ for t, words in STATUE.items(): SPR[f'statue-{t}'] = solo(words, 768, 1024)
 SPR.update({
     'window': solo('small arched stone window in a wall with wooden shutters open and blue sky in it, seen straight on', 768, 768),
     'door-in': solo('arched wooden door with iron studs and a round handle in a stone doorway, seen straight on from inside a room', 768, 1024),
-    'counter': solo('long wooden shop counter with a smooth top, panelled front, a little bell on it, seen from the front', 1024, 768),
+    'counter': solo('long low wooden shop counter seen straight on from the front, perfectly level with a flat bottom edge resting on the floor, panelled front, smooth top, a little bell on it', 1024, 768),
     'poster': solo('small wooden easel standing on the floor holding a bright poster of a smiling cartoon monster with a heart, no writing', 768, 1024),
     'plant-pot': solo('round green leafy plant in a big terracotta pot'),
     'cupboard': solo('tall wooden cupboard with two doors and a shelf of jars on top, seen from the front', 768, 1024),
     'barrel': solo('round wooden barrel with iron hoops, upright'),
     'ladder-up': solo('tall wooden ladder standing straight up, leading to a square hole in a ceiling, seen from the front', 512, 1024),
-    'ladder-down': solo('square wooden trapdoor hole in a floor, open, with the top of a wooden ladder going down into the dark, seen from above', 768, 768),
+    'ladder-down': solo('looking straight down from above at a dark square hole in wooden floorboards with a thin wooden frame, the top rungs of a wooden ladder inside going down into darkness, flat top-down view', 768, 768),
 })
 # Old tile number (the `walls` layer of the room's tile map) → what stands there.
 ROOM_TILE = {161: 'window', 162: 'banner', 205: 'counter', 94: 'poster', 6: 'plant-pot', 90: 'door-in', 196: 'cupboard', 199: 'barrel', 201: 'ladder', 197: 'statue', 84: 'sign'}
@@ -182,6 +182,9 @@ def cutout(src, dest):
     cut = remove(Image.open(src).convert('RGB'), session=_session, alpha_matting=True)
     cut.crop(cut.getbbox()).save(dest)
 
+# The model keeps dropping coloured gems into grey stone walls whatever the words, so these lose their colour after painting.
+GREY = {'wall-stone'}
+
 def parts(only=None):
     PARTS.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -190,7 +193,9 @@ def parts(only=None):
         if (only and only != n) or d.exists(): continue
         raw = PARTS / f'_raw-tex-{n}.png'
         txt2img(text, 1024, 1024, 100 + i + RESEED.get(n, 0), raw)
-        tileable(Image.open(raw)).save(d); print(d.name, round(time.time() - t0), flush=True)
+        im = tileable(Image.open(raw))
+        if n in GREY: im = Image.blend(im, im.convert('L').convert('RGB'), 0.92)
+        im.save(d); print(d.name, round(time.time() - t0), flush=True)
     for i, (n, (text, w, h)) in enumerate(SPR.items()):
         d = PARTS / f'{n}.png'
         if (only and only != n) or d.exists(): continue
@@ -399,7 +404,8 @@ def paint_room(map_id):
             run = 1
             while x + run < W and at(x + run, y) == g: seen.add((x + run, y)); run += 1
             sp = fit(sprite('counter'), w=run * S + 4)
-            items.append((bottom - 2, sp, x * S - 2, bottom - 2 - sp.height, None, (x * S + run * 32, bottom - 4, run * 30, 7)))
+            items.append((bottom - 2, sp, x * S - 2, bottom - 2 - sp.height, None, (x * S + run * 32, bottom - 6, run * 32, 6)))
+        elif k == 'window' and ROOM_TILE.get(at(x, y + 1)) == 'statue': continue  # a statue in front would half hide it
         elif k in ('window', 'banner'):  # on the back wall
             sp = fit(sprite(f'banner-{t}' if k == 'banner' else k), w=58 if k == 'banner' else 54)
             top = y * S - 34 if k == 'banner' else y * S + 32 - sp.height // 2
