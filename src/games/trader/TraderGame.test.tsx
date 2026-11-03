@@ -675,6 +675,29 @@ describe("Bolt's help panel and help levels (H.4)", () => {
     expect(document.querySelector('.st-best--star')).toBeNull();
   });
 
+  it('Off: tapping a planet shows its name and facts but not its coordinates (the pupil reads them off the grid)', async () => {
+    coach({ level: 'off' });
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    await screen.findByRole('heading', { name: /Star chart/ });
+    const planets = screen.getAllByRole('button', { name: /Tap to read about it/ });
+    expect(planets.some((b) => /, x -?\d+, y -?\d+/.test(b.getAttribute('aria-label') ?? ''))).toBe(false);
+    expect(document.querySelector('.st-planet__xy')).toBeNull();
+    const other = planets.find((b) => !/you are here/.test(b.getAttribute('aria-label') ?? '')) as HTMLElement;
+    fireEvent.click(other);
+    expect(screen.getByRole('heading', { name: other.getAttribute('aria-label')!.split('.')[0], level: 3 })).toBeTruthy();
+    expect(document.querySelector('.st-xy')).toBeNull();
+    // An empty spot says so, without saying which number to check.
+    const taken = new Set(makeGalaxy('screen-test').planets.map((p) => `${chartPoint(p).x},${chartPoint(p).y}`));
+    const empty = [-10, -9, -8, -7, -6, -5].find((x) => !taken.has(`${x},10`)) as number;
+    const set = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    set(/^x \(across\)/, String(empty));
+    set(/^y \(up\)/, '10');
+    expect(screen.getByText(/nothing at that spot/)).toBeTruthy();
+    expect(screen.queryByText(/Check (x|y|both)/)).toBeNull();
+  });
+
   it('Some: Bolt\'s fight suggestion waits behind "Ask Bolt"', async () => {
     coach({ level: 'some' });
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
