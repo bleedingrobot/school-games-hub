@@ -256,6 +256,28 @@ def load_map(src: Path, name: str, fix: bool) -> Image.Image:
     return to_img(wrap_seam(a))
 
 
+
+def trim_frame(img: Image.Image) -> Image.Image:
+    """Some buttons come out as a canvas hanging on a pale wall: keep just the canvas (a square from its middle)."""
+    a = np.asarray(img, dtype=np.float32)
+    pale = (a.min(axis=2) > 175) & (a.max(axis=2) - a.min(axis=2) < 30)
+    w = a.shape[1]
+    # how far in each edge the pale wall goes, measured along rows and columns that are mostly pale
+    rows, cols = pale.mean(axis=1), pale.mean(axis=0)
+    def edge(v):
+        i = 0
+        while i < len(v) // 4 and v[i] > 0.5:
+            i += 1
+        return i
+    t, b, l, r = edge(rows), edge(rows[::-1]), edge(cols), edge(cols[::-1])
+    if max(t, b, l, r) < w * 0.02:
+        return img
+    x0, y0, x1, y1 = l, t, w - r, w - b
+    side = int(min(x1 - x0, y1 - y0) * 0.94)  # in a little past the canvas edge and its shadow
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    return img.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side))
+
+
 def make_derived(key: str, src: Path):
     """A square from the middle of a wide map (the lit middle for an eyeball world), as a button picture."""
     img = Image.open(src).convert('RGB')
@@ -309,6 +331,7 @@ def make(job):
         img = Image.open(src).convert('RGB')
         side = min(img.size)  # a square already, but make sure
         img = img.crop(((img.width - side) // 2, (img.height - side) // 2, (img.width + side) // 2, (img.height + side) // 2))
+        img = trim_frame(img)
         save(img.resize((BUTTON, BUTTON), Image.LANCZOS), ART / g / f'{n}.webp', q)
     elif g == 'tech':
         if n in TECH_CUT:
