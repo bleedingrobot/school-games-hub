@@ -7,3 +7,5 @@
 
 # Sky Isles: built in stage S.2, goes live at stage S.8 with James's yes (docs/ISLES-PLAN.md).
 20261102000100
+# ...and its home page chip (depends on 20261102000100).
+20261103000400

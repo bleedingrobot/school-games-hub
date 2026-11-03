@@ -1,10 +1,11 @@
 /**
  * "Moves left today" for the dashboard cards: the pupil's own daily allowances in the games that have them (Dragon Maths
- * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles; Diamond Drop's one new level a day; Star Trader jumps). Read-only, through my_moves_left(). Any trouble just means no
+ * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles; Diamond Drop's one new level a day; Star Trader jumps; Sky Isles turns). Read-only, through my_moves_left(). Any trouble just means no
  * line on the card, so the dashboard never waits for it or complains about it.
  */
 import { levelsOpen, type Player } from '../../shared/diamond/progress';
 import { nzDayNumber } from '../../shared/clans/clock';
+import { MOST_TURNS_SAVED, TURNS_PER_DAY } from '../../shared/isles/config';
 import { nzDate, rollDay } from '../../shared/lord/engine';
 import type { Hero } from '../../shared/lord/types';
 import { eggWarmth, isReady } from '../../shared/monsters/quests/eggs';
@@ -31,6 +32,8 @@ export interface RawMovesLeft {
   diamond?: { deepest: number; newLevelDate: string | null } | null;
   /** Star Trader's saved day number, jumps left on it, and the class's jumps a day. Missing until 20261102000300 is applied. */
   trader?: { day: number; jumpsLeft: number; perDay: number } | null;
+  /** Sky Isles: the New Zealand day number the island was last saved on and the turns left then. Missing until 20261103000400 is applied. */
+  isles?: { day: number; turnsLeft: number } | null;
 }
 
 /** One thing on a card: "🌲 7 forest fights". `empty` is for a used-up allowance, which is drawn quietly. */
@@ -113,6 +116,18 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     const left = trader.day < nzDayNumber(now.getTime()) ? trader.perDay : Math.max(trader.jumpsLeft, 0);
     out.trader = {
       chips: [{ emoji: '🚀', text: `${left} of ${trader.perDay} jumps`, empty: left === 0 }],
+      allDone: left === 0,
+    };
+  }
+  const isles = raw?.isles;
+  if (isles && typeof isles.turnsLeft === 'number') {
+    // Each later day adds TURNS_PER_DAY turns, up to MOST_TURNS_SAVED, when the pupil next plays.
+    const today = nzDayNumber(now.getTime());
+    const left = isles.day < today
+      ? Math.min(MOST_TURNS_SAVED, isles.turnsLeft + TURNS_PER_DAY * (today - isles.day))
+      : Math.max(isles.turnsLeft, 0);
+    out.isles = {
+      chips: [{ emoji: '🏝️', text: plural(left, 'turn', 'turns') + ' left', empty: left === 0 }],
       allDone: left === 0,
     };
   }
