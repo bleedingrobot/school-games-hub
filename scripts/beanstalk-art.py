@@ -61,9 +61,10 @@ LEAF = ('One big rounded heart-shaped beanstalk leaf seen flat from the front, p
         'bottom and one soft vein down the middle, the middle of the leaf smooth and plain, ')
 LEAVES = {
     'green': 'fresh bright green, soft and alive',
-    'bronze': f'made of {SHINE}, rich coppery bronze, warm orange-brown',
-    'silver': f'made of {SHINE}, bright sparkling silver, cool white with two tiny sparkles',
-    'gold': f'made of {SHINE}, shining rich yellow gold with a warm glow and three tiny sparkles',
+    # Asked to be "made of metal", clay leaves came out matt with a few foil patches; wrapped in foil they shine (4 Nov).
+    'bronze': f'the whole leaf and its stalk wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze',
+    'silver': f'the whole leaf wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every part of it silver',
+    'gold': f'the whole leaf wrapped smoothly in shiny crinkled yellow gold foil, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
 KIWI_POSES = {
@@ -84,10 +85,20 @@ THINGS = {
     'golden-egg': 'a large shining smooth golden egg standing upright with a warm glow and a few bright sparkles',
     'egg-cushion': 'a large shining golden egg resting on a round plump red velvet cushion with gold tassels, sparkles all round, a prize',
     'bean': 'one magic bean, a plump shiny purple-and-green speckled bean with a tiny curled green sprout and a soft glow',
-    'sparkle': 'a cluster of bright golden four-pointed sparkles of different sizes',
+    'sparkle': 'three shiny gold foil four-pointed stars of different sizes standing on their own, nothing else',
     'stem-top': 'the very top of a giant green beanstalk, a thick stem ending in a flat curled platform shaped like a snail shell with two small curly tendrils, seen from the side',
     'watering-can': 'a small friendly red watering can with water drops coming out of the spout',
 }
+
+# The friend stuck on each later beanstalk, after Kiwi's Golden Egg (James, 4 Nov 2026). Each keeps a knitted scarf of its own colour.
+FRIENDS = {
+    'tui': 'a cute round New Zealand tui bird with glossy dark blue-green feathers, a white tuft of curly feathers at its throat like a little bow tie, a thin curved black beak, wearing a little yellow knitted scarf, ',
+    'kereru': 'a cute plump New Zealand kereru wood pigeon with a shiny green-purple head and back, a pure white chest, a red beak and red feet, wearing a little blue knitted scarf, ',
+    'weta': 'a cute friendly New Zealand weta insect, a round shiny brown body with stripes, six long spiky back legs, long thin feelers, big kind eyes and a smile, wearing a little green knitted scarf, ',
+    'ruru': 'a cute small round New Zealand ruru owl with soft brown speckled feathers, huge round yellow eyes, a tiny hooked beak, wearing a little purple knitted scarf, ',
+    'takahe': 'a cute plump round New Zealand takahe bird with bright blue and green feathers, a big thick bright red beak, strong red legs, wearing a little orange knitted scarf, ',
+}
+FRIEND_POSES = {k: KIWI_POSES[k] for k in ('wait', 'cheer')}
 
 SQUARE = (832, 832)
 WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
@@ -97,22 +108,26 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     'scene': (SCENE + AGE, (832, 1248)),
     **{f'leaf-{k}': (LEAF + w + '.' + SPRITE, SQUARE) for k, w in LEAVES.items()},
     **{f'kiwi-{p}': (KIWI + w + '.' + SPRITE, SQUARE) for p, w in KIWI_POSES.items()},
+    **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
     **{f'jack-{p}': (JACK + w + ', the whole child from head to boots.' + SPRITE, SQUARE) for p, w in JACK_POSES.items()},
     **{name: (w.capitalize() + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
     # The stalk: a tall tile the game repeats upwards, the stem straight up the middle from the very top to the very bottom.
-    'stem': ('A thick green beanstalk stem seen straight on, running vertically straight up the middle of a tall narrow picture from '
-             'the very top edge to the very bottom edge, gently twisting with soft stripes, plain pure white background on both sides, '
+    'stem': ('One very thick chunky smooth green clay beanstalk stem as wide as a third of the picture, seen straight on, running '
+             'vertically straight up the middle of a tall narrow picture from the very top edge to the very bottom edge, cut off by both '
+             'edges, gently twisting with soft rolled stripes, plain pure white background on both sides, '
              'an even repeating pattern.' + AGE, (448, 1344)),
     # Three backgrounds stacked as the beanstalk grows: the garden, the open sky, the land above the clouds.
     'back-garden': ('A sunny New Zealand farm garden: a little white farmhouse with a red tin roof on the left, a wooden fence, a '
                     'pohutukawa tree with red flowers, silver fern fronds, two woolly sheep in a green paddock, a patch of soft brown dug '
                     'earth in the middle where a beanstalk sprouts, rolling green hills and a snowy cone-shaped mountain far away, blue sky.' + BACK, WIDE),
-    'back-sky': ('Open bright blue sky high above the world, a few soft small white clouds near the edges, a tui bird and a fantail far away, '
-                 'calm and plain in the middle.' + BACK, WIDE),
-    'back-clouds': ('The magic land on top of the long white cloud: big soft fluffy white clouds along the bottom like a floor, '
-                    'snowy mountain peaks poking up through the clouds far away, a pale golden sunset sky with a few stars.' + BACK, WIDE),
+    'back-sky': ('Only open bright blue sky high above the world, a few soft small white clay clouds near the edges, '
+                 'empty, calm and plain everywhere else.' + BACK, WIDE),
+    'back-clouds': ('A wide calm view high above the world: a smooth floor of soft white clouds along the bottom third, three '
+                    'snowy white mountain tops far away poking through the clouds, a smooth pale golden and blue sky above, '
+                    'large plain empty areas of sky.' + BACK, WIDE),
     'card': ('A giant green beanstalk with big heart-shaped leaves curling up from a cottage garden into the clouds, the leaves '
-             f'{SHINE} in bronze, silver and gold, {KIWI}at the top waving, a shining golden egg glowing beside it, bright blue sky, '
+             f'wrapped in shiny bronze, silver and gold foil, on top of a cloud at the top {KIWI}waving, standing on the cloud next to a '
+             'shining golden egg as big as the kiwi, bright blue sky, '
              'wide landscape picture for a game title card.' + AGE, (1216, 688)),
 }
 
