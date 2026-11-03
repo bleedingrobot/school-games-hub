@@ -29,6 +29,12 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
             <p>
+              <label>
+                <input type="checkbox" defaultChecked={trial.tools.dotsOn()} onChange={(e) => { trial.tools.setDots(e.target.checked); h.reload(); }} />{' '}
+                The teacher lets the leaves show dots
+              </label>
+            </p>
+            <p>
               <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again as a new pupil</button>
             </p>
           </details>

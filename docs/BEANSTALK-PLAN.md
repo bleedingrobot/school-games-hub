@@ -65,10 +65,11 @@ where the device can (the browser's built-in voice, which James can turn off). S
   - `beanstalk_progress`: one row per child. It holds the days completed, the last NZ day a leaf changed, the eggs, and
     the current friend.
   - `beanstalk_rounds`: the server-made rounds, each claimed once.
-- **Function** `supabase/functions/beanstalk/` has three calls:
-  - `start`: makes or returns today's round.
+- **Function** `supabase/functions/beanstalk/` has four calls (as built in Stage 3):
+  - `load`: Jack or Jill, the finished days, today's NZ date and the class's dots setting.
+  - `choose`: Jack or Jill.
+  - `start`: makes today's round from a fresh seed.
   - `finish`: replays the taps, marks them, records facts, and changes a leaf if it's the first finish today.
-  - `state`: returns the leaf colours and eggs.
 - **Switches:** a code switch `BEANSTALK_ON`, plus the per-class teacher switch `beanstalk_enabled`, which is off by
   default. A teacher turns it on for junior classes (James, 4 Nov). The teacher can also turn the dots off with
   `beanstalk_dots`.
@@ -187,3 +188,74 @@ facts and follows each child's own focus. So the server makes the round itself, 
 - The server (Stage 3).
 - The teacher switch.
 - Checking every screen at phone size.
+
+## Screen check and guided first go (4 Nov)
+
+Checked every screen in the preview at Chromebook size (1366 x 640) and phone size (844 x 390). Fixed:
+- **Jill showed as Jack.** The preview server was out of date; restarting it fixed it. Nothing was wrong in the game.
+- **The leaf numbers and dots stuck out above the leaves** and covered the row of pips. The leaf's bottom padding was
+  worked out from the whole tray's width. It is now worked out from the leaf, and the ten-frame dots are bigger.
+- **Two stalks on the play screen.** The painted farm has its own sprout on a dirt mound, and the drawn stalk grew from
+  the bottom edge beside it. The stalk now grows out of the painted sprout on every screen size. `Scene.tsx` measures the
+  scene so the stalk, cloud, friend and child are placed from its real size.
+- **The leaf that had just changed was hidden behind the child's head.** The child now stands clear of the stalk's
+  leaves, and the stalk's leaves get smaller on a short stalk (a phone).
+- **On a phone, "Voice off" covered the words** on the home and finish panels. On short screens the panel now starts
+  under the voice button, with slightly smaller words.
+- The floating leaves can shrink to 80 px on a phone (still big for small fingers; the test asks for at least 64).
+
+**Guided first go:** on a child's very first challenge (no finished days yet, from the saved game, so it follows them to
+any Chromebook) a big hand points at a leaf, and the leaf glows. Once they tap a leaf, the hand moves to its partner. It
+follows what the child does, so it can never get stuck, and it goes after the first right pair. The voice says "Start with
+the leaf the hand points to", then "Now tap the leaf the hand points to". It never says the numbers. The hand is an emoji
+for now (👆); a painted one can replace it later.
+
+## Stage 3 results (4 Nov)
+
+**Migration** `20261104000300_beanstalk.sql` (the next free number on 4 Nov; check again at go-live):
+- `beanstalk_progress`: one row a pupil. Jack or Jill, the count of finished days, the NZ day a leaf last changed, and a
+  version, so two tabs can't both save.
+- `beanstalk_rounds`: one row a challenge. Its seed, whether it's open, and once finished the taps and the wrong pairs. A
+  seed is used once per pupil, a challenge finishes once, and finished ones over 30 days old go.
+- Both tables have RLS on, no policy and no grant. Pupils can't read them or call the server's functions.
+- `beanstalk_finish` only lets the count of finished days stay or go up by one.
+- The switch `app_settings.beanstalk_enabled` (off to start) and `beanstalk_dots` (on to start), set by
+  `teacher_set_beanstalk(enabled, dots, target_class)`. Either can be left out.
+- No `hub_games` row, achievement or teacher lines yet: those are Stage 4's own migration.
+
+**Function** `supabase/functions/beanstalk/` (`handler.ts`, `entry.ts`, the built `index.ts`), with its rules in
+`shared/beanstalk/server.ts`, the same file the preview runs:
+- `load` gives Jack or Jill, the finished days, the last leaf day, today's NZ date by the server's clock, and the class's
+  dots setting.
+- `choose` saves Jack or Jill.
+- `start` makes a fresh seed and keeps it (any other open challenge closes). It refuses until Jack or Jill is chosen.
+- `finish` checks the challenge is the pupil's and still open, makes the round again from the seed, and replays the taps.
+  Anything odd is refused, and so is an unfinished challenge. The leaf comes from `finishChallenge` with the server's NZ
+  date, never anything the browser sends. Each pair tapped is recorded with `recordMathsAnswers` as `bond10:a+b`, once per
+  challenge (`beanstalk:<seed>`). A wrong pair counts against the first leaf's pair.
+- Every call checks the teacher's switch first. Signed out gets 401, and over 30 requests a minute gets 429.
+- Load: about 3 to 4 requests a child a lesson (load, choose once, start, finish).
+
+**The preview** now runs the server's own rules (`shared/beanstalk/memoryServices.ts` stands in for the database), so the
+preview and the real game can't drift apart. Preview tools add "The teacher lets the leaves show dots".
+`src/data/beanstalk.ts` is the caller for the real server, ready for Stage 4.
+
+**Tests:** 8 of 8.
+- 4 rule tests, 2 screen tests.
+- 2 server tests:
+  - Only a pupil's own finished challenge counts, once, with each pair recorded as a bond to 10.
+  - One leaf a NZ day by the server's clock, whatever the browser sends. This includes 1 am in New Zealand, which is still
+    the day before in UTC.
+- Plus the "index.ts is up to date" check.
+- `supabase/tests/database/beanstalk.test.sql`: 25 checks pass on a scratch copy. The copy was the local database as it
+  is plus this migration, because the local copy has Sky Isles applied without its history row. `game_hooks`, `diamond`
+  and `mine` also still pass on that copy.
+
+`npm run typecheck`, `npm run test:all` (354 files, 6,017 tests), `npm run build` and the preview build all pass (4 Nov).
+
+**Still to do (Stage 4):**
+- The teacher's switch and dots on the Games table.
+- The achievement per egg and the `hub_games` row.
+- The home card (art pick "card").
+- The game's `index.tsx` and code switch.
+- A How to play page.

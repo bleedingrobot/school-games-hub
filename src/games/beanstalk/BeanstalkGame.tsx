@@ -10,7 +10,7 @@ import { useSound } from '../../sound';
 import { canSpeak, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
 import { childArt, FRIEND_NAMES, paint } from './art';
-import type { BeanstalkBackend, BeanstalkState, Child } from './backend';
+import { BeanstalkError, type BeanstalkBackend, type BeanstalkState, type Child } from './backend';
 import { Round } from './Round';
 import { Scene } from './Scene';
 import { WORDS } from './words';
@@ -59,7 +59,9 @@ interface Props {
 export function BeanstalkGame({ backend, extra }: Props) {
   const [state, setState] = useState<BeanstalkState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  // The server's own words for a refusal (the game switched off, say); anything else is a plain "went wrong".
+  const fail = useCallback((e: unknown) => setFailed(e instanceof BeanstalkError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
   const { soundOn } = useSound();
 
@@ -70,12 +72,12 @@ export function BeanstalkGame({ backend, extra }: Props) {
         setState(s);
         setScreen(s.child ? { kind: 'home' } : { kind: 'choose' });
       })
-      .catch(() => setFailed(true));
-  }, [backend]);
+      .catch(fail);
+  }, [backend, fail]);
   useEffect(reload, [reload]);
 
-  const choose = (child: Child) => backend.choose(child).then(reload, () => setFailed(true));
-  const play = () => backend.start().then(({ seed }) => setScreen({ kind: 'play', seed }), () => setFailed(true));
+  const choose = (child: Child) => backend.choose(child).then(reload, fail);
+  const play = () => backend.start().then(({ seed }) => setScreen({ kind: 'play', seed }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then(
       (result) => {
@@ -83,18 +85,18 @@ export function BeanstalkGame({ backend, extra }: Props) {
         setScreen({ kind: 'finish', result });
         if (soundOn) playSound(result.egg ? 'win' : 'badge');
       },
-      () => setFailed(true),
+      fail,
     );
 
   let body: ReactNode;
-  if (failed) body = <p className="bs-message">Something went wrong. Please try again soon.</p>;
+  if (failed) body = <p className="bs-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="bs-message">…</p>;
   else if (screen.kind === 'choose') body = <Choose say={voice.say} onChoose={choose} />;
   else if (screen.kind === 'play' && state.child)
     body = (
       <Round
         seed={screen.seed}
-        dots={stalkAfter(state.daysDone).dots}
+        dots={state.dots ? stalkAfter(state.daysDone).dots : 'none'}
         friend={stalkAfter(state.daysDone).friend}
         child={state.child}
         guide={state.daysDone === 0 && state.lastLeafDay === null}
