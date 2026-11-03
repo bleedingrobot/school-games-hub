@@ -182,8 +182,10 @@ describe('keyboard and screen readers', () => {
     await u.keyboard('{Enter}');
     const chosen = first.textContent!;
     await press(`Call it ${chosen}`);
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
-    expect(screen.getByText(`🏝️ ${chosen}`)).toBeInTheDocument();
+    // The chosen name takes the place of "My island" at the top.
+    await waitFor(() => expect(screen.getByRole('heading', { name: chosen, level: 2 })).toHaveFocus());
+    expect(screen.queryByRole('heading', { name: 'My island' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rename' })).toBeInTheDocument();
     await press('Class sky');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Class sky', level: 2 })).toHaveFocus());
     await screen.findByText("Mere lit the Sky Lighthouse!");

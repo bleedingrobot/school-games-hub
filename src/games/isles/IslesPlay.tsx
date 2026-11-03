@@ -427,7 +427,12 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   return (
     <div className="si">
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
-        {screen.kind === 'turn' ? <h2>Your turn</h2> : <h2 ref={heading} tabIndex={-1}>{HEADINGS[screen.kind]}</h2>}
+        {screen.kind === 'turn' ? <h2>Your turn</h2> : (
+          // A named island is called by its name at the top (James, 4 Nov 2026); until then it's "My island".
+          <h2 ref={heading} tabIndex={-1}>
+            {screen.kind === 'home' && view.name ? <><span aria-hidden="true">🏝️ </span>{view.name}</> : HEADINGS[screen.kind]}
+          </h2>
+        )}
         {turnStep !== null && <StepStrip step={turnStep} />}
         <div className="si-top__right">
           {turnStep !== null && canStop(turnStep) && <button type="button" className="button button--light si-stop" onClick={leave}>Stop, back to my island</button>}
@@ -443,7 +448,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       <Resources island={shownIsland} />
       {screen.kind === 'home' && (
         <p className="si-isle-name">
-          {view.name ? <>🏝️ {view.name} </> : null}
           <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
             {view.name ? 'Rename' : 'Name your island'}
           </button>
