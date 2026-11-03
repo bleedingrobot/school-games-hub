@@ -97,6 +97,7 @@ export function BeanstalkGame({ backend, extra }: Props) {
         dots={stalkAfter(state.daysDone).dots}
         friend={stalkAfter(state.daysDone).friend}
         child={state.child}
+        guide={state.daysDone === 0 && state.lastLeafDay === null}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.seed, taps)}

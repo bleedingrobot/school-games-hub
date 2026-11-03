@@ -5,8 +5,6 @@
   --bs-green: #3f9b3a;
   --bs-green-dark: #24661f;
   --bs-gold: #f5c518;
-  --bs-ground: 6%;
-  --bs-stalk-length: 66%;
   position: relative;
   min-height: 100dvh;
   display: flex;
@@ -25,12 +23,21 @@
   background: var(--bs-panel); color: var(--bs-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;
 }
 
-/* The scene: the painted farm behind, a CSS sky above it, the stalk up the middle and a cloud at the top. */
+/* The scene: the painted farm behind, a CSS sky above it, the stalk up the middle and a cloud at the top.
+   The stalk grows out of the painted sprout, whose foot is 79% down the farm picture (1600 x 1003). The picture covers the
+   scene and is pinned 75% down, so on a short wide screen (a phone, or the play screen) the sky is cut, not the sprout.
+   --bs-w and --bs-h are the scene's size, measured by Scene.tsx. */
 .bs-scene {
+  --bs-w: 100vw;
+  --bs-h: 100vh;
+  --bs-ground: calc(var(--bs-h) * 0.25 - 0.04 * max(var(--bs-h), var(--bs-w) * 0.627));
+  --bs-top: clamp(96px, var(--bs-h) * 0.26, 180px);
+  --bs-stalk-length: calc(var(--bs-h) - var(--bs-ground) - var(--bs-top));
+  --bs-stalk-leaf: clamp(36px, min(10vmin, var(--bs-stalk-length) * 0.22), 110px);
   position: relative;
   flex: 1;
   min-height: 0;
-  background: var(--bs-back) center bottom / cover no-repeat, linear-gradient(#8fd0f5, #cfeefc);
+  background: var(--bs-back) center 75% / cover no-repeat, linear-gradient(#8fd0f5, #cfeefc);
 }
 .bs-scene--clouds { background-position: center; }
 .bs-stalk {
@@ -48,7 +55,7 @@
 }
 .bs-stalk-leaf {
   position: absolute;
-  width: clamp(54px, 10vmin, 110px);
+  width: var(--bs-stalk-leaf);
   transform-origin: bottom center;
   filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.2));
 }
@@ -62,9 +69,9 @@
 /* A puffy CSS cloud with the friend sitting on it. */
 .bs-cloud {
   position: absolute;
-  top: calc(100% - var(--bs-ground) - var(--bs-stalk-length));
+  top: var(--bs-top);
   left: 50%;
-  width: clamp(150px, 24vmin, 260px);
+  width: clamp(120px, min(24vmin, var(--bs-h) * 0.4), 260px);
   aspect-ratio: 2.2;
   transform: translate(-50%, -55%);
   background:
@@ -79,14 +86,15 @@
   position: absolute;
   left: 50%;
   bottom: 62%;
-  height: clamp(80px, 15vmin, 170px);
+  height: clamp(64px, min(15vmin, var(--bs-h) * 0.24), 170px);
   transform: translateX(-50%);
 }
 .bs-child {
   position: absolute;
   bottom: 2%;
-  left: calc(50% - clamp(120px, 24vmin, 260px));
-  height: clamp(110px, 26vmin, 260px);
+  /* Clear of the stalk's leaves, so a leaf that has just changed is never behind the child. */
+  right: calc(50% + 8px + var(--bs-stalk-leaf) * 1.8);
+  height: clamp(80px, min(26vmin, var(--bs-h) * 0.42), 260px);
   filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.2));
 }
 
@@ -111,6 +119,15 @@
 .bs-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
 .bs-shelf img { height: 44px; }
 .bs-prize { width: min(220px, 60%); }
+/* A phone on its side: the panel starts under the voice button, and everything in it is a little smaller. */
+@media (max-height: 500px) {
+  .bs-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .bs-panel h2 { font-size: 1.2rem; }
+  .bs-panel p { margin: 6px 0; }
+  .bs-day { font-size: 1.1rem; }
+  .bs-play-button { margin-top: 4px; }
+  .bs-prize { width: min(130px, 40%); }
+}
 @media (max-width: 700px) {
   .bs-home { flex-direction: column; }
   .bs-home .bs-scene { min-height: 62dvh; }
@@ -138,7 +155,7 @@
 .bs-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.45); }
 .bs-pip--done { background: var(--bs-gold); box-shadow: 0 0 0 2px #fff; }
 .bs-tray {
-  --bs-leaf: clamp(96px, min(15vw, 22vh), 150px);
+  --bs-leaf: clamp(80px, min(15vw, 22vh), 150px);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -156,7 +173,8 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 0 0 12%;
+  /* Lifts the number and dots into the leaf's heart, above its stem (a % here would be of the whole tray's width). */
+  padding: 0 0 calc(var(--bs-leaf) * 0.2);
   border: 0;
   background: center / contain no-repeat;
   cursor: pointer;
@@ -185,12 +203,12 @@
 .bs-leaf__number {
   display: grid;
   place-items: center;
-  width: 46%;
+  width: 40%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: #fff;
   color: var(--bs-ink);
-  font: 900 calc(var(--bs-leaf) * 0.3) / 1 system-ui, sans-serif;
+  font: 900 calc(var(--bs-leaf) * 0.27) / 1 system-ui, sans-serif;
   box-shadow: 0 2px 0 rgb(0 0 0 / 0.2);
 }
 /* A ten-frame: two rows of five, with the leaf's number of dots filled. */
@@ -198,14 +216,31 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 2px;
-  width: 54%;
+  width: 64%;
   padding: 3px;
   border-radius: 6px;
   background: rgb(255 255 255 / 0.9);
 }
 .bs-dot { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid #9bb592; }
 .bs-dot--on { background: #d9481c; border-color: #a33310; }
-.bs-frame--small { width: 40%; opacity: 0.55; }
+.bs-frame--small { width: 46%; opacity: 0.55; }
+
+/* The guided first go: a hand at the foot of the leaf to tap, nudging up at it. */
+.bs-leaf--pointed { filter: drop-shadow(0 0 10px #fffbd0) drop-shadow(0 0 3px #fff); }
+.bs-hand {
+  position: absolute;
+  left: 66%;
+  top: 48%;
+  font-size: calc(var(--bs-leaf) * 0.56);
+  line-height: 1;
+  translate: -50% 0;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+  pointer-events: none;
+  animation: bs-nudge 0.9s ease-in-out infinite;
+}
+@keyframes bs-nudge {
+  50% { translate: -50% -14%; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .bs-root *, .bs-root *::before, .bs-root *::after { animation: none !important; transition: none !important; }

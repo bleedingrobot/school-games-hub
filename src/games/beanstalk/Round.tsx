@@ -19,12 +19,14 @@ interface Props {
   dots: Dots;
   friend: Friend;
   child: Child;
+  /** The child's very first challenge: a hand shows them a right pair, until they have made one. */
+  guide: boolean;
   sound: boolean;
   say: (text: string) => void;
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, friend, child, sound, say, onDone }: Props) {
+export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: Props) {
   const round = useMemo(() => makeRound(seed), [seed]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
@@ -38,7 +40,7 @@ export function Round({ seed, dots, friend, child, sound, say, onDone }: Props) 
 
   useEffect(() => {
     heading.current?.focus();
-    say(WORDS.tapTwo);
+    say(guide ? WORDS.guideStart : WORDS.tapTwo);
     const pending = timers.current;
     return () => pending.forEach((t) => window.clearTimeout(t));
   }, [seed]); // only when the round starts
@@ -50,6 +52,7 @@ export function Round({ seed, dots, friend, child, sound, say, onDone }: Props) 
     if (picked === null || picked === leaf) {
       setPicked(picked === leaf ? null : leaf);
       if (sound) playSound('tap');
+      if (guide && pairsMade === 0 && picked === null) say(WORDS.guideNext);
       return;
     }
     const now = Date.now();
@@ -77,6 +80,12 @@ export function Round({ seed, dots, friend, child, sound, say, onDone }: Props) 
     });
   }
 
+  // The hand follows the child: it points at a leaf with a partner, and once one is picked, at that leaf's partner. Every
+  // leaf floating has a partner (round.ts), so it always has somewhere to point. Gone after the first right pair.
+  const onScreen = slots.filter((s): s is number => s !== null && !flying.includes(s));
+  const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === TARGET);
+  const pointAt = !guide || pairsMade > 0 || flying.length ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
+
   const look = (leaf: number): LeafLook =>
     flying.includes(leaf) ? 'flying' : wobble.includes(leaf) ? 'wobble' : picked === leaf ? 'picked' : 'resting';
 
@@ -101,7 +110,15 @@ export function Round({ seed, dots, friend, child, sound, say, onDone }: Props) 
           leaf === null ? (
             <span key={`empty${slot}`} className="bs-leaf bs-leaf--gone" />
           ) : (
-            <Leaf key={leaf} value={round.leaves[leaf]} dots={dots} look={look(leaf)} slot={slot} onTap={() => tap(leaf)} />
+            <Leaf
+              key={leaf}
+              value={round.leaves[leaf]}
+              dots={dots}
+              look={look(leaf)}
+              slot={slot}
+              pointed={leaf === pointAt}
+              onTap={() => tap(leaf)}
+            />
           ),
         )}
       </div>

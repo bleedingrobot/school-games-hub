@@ -2,7 +2,7 @@
  * The beanstalk picture every screen is built on: the stalk (drawn in CSS) growing from the farm up to a cloud, the
  * friend stuck on top, the child at the bottom, and leaves along the stalk.
  */
-import type { CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { LEAVES_ON_STALK, type Friend, type Metal } from '../../../shared/beanstalk/progress';
 import { childArt, friendArt, leafArt, paint, type ChildPose, type Pose } from './art';
 import type { Child } from './backend';
@@ -27,8 +27,25 @@ interface Props {
 
 export function Scene({ grow, leaves, friend, friendPose, child, childPose, back = 'garden' }: Props) {
   const backUrl = paint(`backs/${back}`);
+  // The stalk, cloud and child are placed from the scene's size (beanstalk.css), so the stalk meets the painted sprout.
+  const box = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  const style = {
+    ...(backUrl ? { '--bs-back': `url("${backUrl}")` } : {}),
+    ...(size ? { '--bs-w': `${size.w}px`, '--bs-h': `${size.h}px` } : {}),
+  } as CSSProperties;
   return (
-    <div className={`bs-scene bs-scene--${back}`} style={backUrl ? ({ '--bs-back': `url("${backUrl}")` } as CSSProperties) : undefined}>
+    <div ref={box} className={`bs-scene bs-scene--${back}`} style={style}>
       {back === 'garden' && (
         <>
           <div className="bs-stalk" style={{ height: `calc(var(--bs-stalk-length) * ${Math.min(1, Math.max(0, grow))})` }} />
