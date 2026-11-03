@@ -30,6 +30,7 @@ import {
   type Result,
   type Trader,
 } from './state';
+import { designProblem, emptyDesign, forgeCost, type SystemDesign } from './system';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -51,6 +52,8 @@ export interface Game {
   stats: Stats;
   /** How far this pupil has pushed each price today (their 20% a day limit). Missing in a game that has not traded yet. */
   pushed?: PupilPushes;
+  /** The pupil's solar system in the Star Forge (docs/TRADER-SYSTEM-PLAN.md). Missing until they first plan one. */
+  system?: SystemDesign;
 }
 
 /** The teacher's settings for the pupil's class, and whether maths is on for them. */
@@ -59,6 +62,8 @@ export interface Settings {
   loans: boolean;
   /** Maths checks are on. When off, checks are skipped: laser shots are full power and junk is steered safely. */
   maths: boolean;
+  /** The Star Forge is open (docs/TRADER-SYSTEM-PLAN.md). Missing: closed. */
+  forge?: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = { jumpsPerDay: JUMPS_PER_DAY, loans: true, maths: true };
@@ -92,6 +97,7 @@ export type Action =
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
   | { type: 'moon' }
+  | { type: 'forge'; design: SystemDesign }
   | { type: 'jump'; dest: number };
 
 export interface Outcome {
@@ -110,6 +116,8 @@ export interface Outcome {
   junk?: { steeredWell: boolean };
   /** A friendly trader's deal taken or not. */
   deal?: { took: boolean };
+  /** What a Star Forge change came to (positive: paid). */
+  forge?: { total: number; worth: number };
   /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
   pushes?: MarketPush[];
 }
@@ -236,6 +244,17 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
     case 'moon':
       g.t = must(buyMoon(galaxy, t));
       return;
+    case 'forge': {
+      if (!settings.forge) refuse('The Star Forge is not open yet.');
+      const problem = designProblem(action.design);
+      if (problem) refuse(problem);
+      const cost = forgeCost(g.system ?? emptyDesign(), action.design, t.moon);
+      if (cost.total > t.credits) refuse(`You need ${(cost.total - t.credits).toLocaleString('en-NZ')} more credits.`);
+      g.t = { ...t, credits: t.credits - cost.total };
+      g.system = structuredClone(action.design);
+      out.forge = { total: cost.total, worth: cost.worth };
+      return;
+    }
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
       g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
