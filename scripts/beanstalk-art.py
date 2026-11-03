@@ -91,7 +91,15 @@ THINGS = {
     'bean': 'one magic bean, a plump shiny purple-and-green speckled bean with a tiny curled green sprout and a soft glow',
     'sparkle': 'three shiny gold foil four-pointed stars of different sizes standing on their own, nothing else',
     'stem-top': 'the very top of a giant green beanstalk, a thick stem ending in a flat curled platform shaped like a snail shell with two small curly tendrils, seen from the side',
+    # The top of the growing stalk, the same as the sprout painted in the farm picture (James, 4 Nov 2026: "I want the
+    # beanstalk to look like this and grow up"). It rides on top of the stalk as it grows.
+    'sprout-top': 'the top of a young bean sprout made of smooth soft light green clay: a short thick round stem with two big '
+                  'plump rounded leaves opening out to the left and right like a little V, each leaf folded softly down its middle, '
+                  'bright fresh minty green with gentle shading, seen from the front',
     'watering-can': 'a small friendly red watering can with water drops coming out of the spout',
+    # The friend stands on it at the top of the stalk. The CSS cloud looked flat and white beside the clay (James, 4 Nov 2026).
+    'cloud': 'one big soft puffy white clay cloud, wide and low, made of five chunky round white plasticine puffs pressed together, '
+             'a gently flat top for a little bird to stand on, soft pale blue-grey shading underneath, fingerprint texture, seen from the side',
 }
 
 # The friend stuck on each later beanstalk, after Kiwi's Golden Egg (James, 4 Nov 2026). Each keeps a knitted scarf of its own colour.
@@ -117,10 +125,10 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'jill-{p}': (JILL + w + ', the whole child from head to boots.' + SPRITE, SQUARE) for p, w in JACK_POSES.items()},
     **{name: (w.capitalize() + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
     # The stalk: a tall tile the game repeats upwards, the stem straight up the middle from the very top to the very bottom.
-    'stem': ('One very thick chunky smooth green clay beanstalk stem as wide as a third of the picture, seen straight on, running '
-             'vertically straight up the middle of a tall narrow picture from the very top edge to the very bottom edge, cut off by both '
-             'edges, gently twisting with soft rolled stripes, plain pure white background on both sides, '
-             'an even repeating pattern.' + AGE, (448, 1344)),
+    'stem': ('One very thick smooth round stem of soft light green clay, the same fresh minty green as a young bean sprout, as wide '
+             'as a third of the picture, seen straight on, running vertically straight up the middle of a tall narrow picture from '
+             'the very top edge to the very bottom edge, cut off by both edges, rolled smooth and round with gentle shading on its '
+             'sides, plain pure white background on both sides, the same all the way up.' + AGE, (448, 1344)),
     # Three backgrounds stacked as the beanstalk grows: the garden, the open sky, the land above the clouds.
     'back-garden': ('A sunny New Zealand farm garden: a little white farmhouse with a red tin roof on the left, a wooden fence, a '
                     'pohutukawa tree with red flowers, silver fern fronds, two woolly sheep in a green paddock, a patch of soft brown dug '
@@ -280,7 +288,8 @@ def tidy(force: bool):
         if session is None:
             session = new_session('isnet-general-use')
         cut = trim(remove(img.convert('RGB'), session=session, alpha_matting=True))
-        save(fit(cut, SIZES[folder]), out, 82)
+        # The cloud is wide and is shown up to 260 px across; the stem is a tall tile repeated up the stalk.
+        save(fit(cut, {'cloud': 480, 'stem': 600}.get(name, SIZES[folder])), out, 82)
         if name == 'leaf-silver':
             save(fit(bronze(cut), SIZES[folder]), GAME_ART / folder / 'bronze.webp', 82)
 

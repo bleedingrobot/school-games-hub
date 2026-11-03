@@ -335,3 +335,23 @@ database, which needs James's OK. The screens are the same ones the preview runs
 5. **Code switch PR:** set `ON = true` and add `beanstalk` to `registry.test.ts`.
 6. **Turn the teacher switch on** for the junior classes James names, on the Teacher page (or every row, if he asks).
 7. **Write it down:** add a "Went live" note here, update the memory note, and delete the branch.
+
+## James's look-over (4 Nov, afternoon)
+
+- **The stalk looks like the farm picture's sprout growing up.** It is smooth rounded clay in the sprout's own greens
+  (sampled from the picture), with no stripes.
+- **The magic leaves touch the stalk.** Each leaf's stem tip sits on the stalk, and the leaf swings out from there.
+- **The floating leaves shuffle.** They used to come in pair by pair, so a new pair landed side by side in the gaps and a
+  round even started with pairs next to each other. Now the tray is shuffled at the start and after every pair found. Only
+  where each leaf sits changes, so the server's replay is the same.
+- **Ready for painted pieces.** The game uses a painted cloud, stem and sprout top as soon as they exist, and keeps the
+  drawn ones until then.
+
+## Paint tonight (James at the gaming PC)
+
+The words are in `scripts/beanstalk-art.py`. The steps are in `docs/prompts/beanstalk-paint-tonight.md`, also saved on the
+prompts page.
+
+- `cloud`: the CSS cloud "looks terrible", and it needs to be clay like the rest.
+- `stem`: a tall clay stalk piece, repeated up the stalk, in the sprout's minty green.
+- `sprout-top`: the sprout's two round leaves, riding on the tip of the stalk as it grows.

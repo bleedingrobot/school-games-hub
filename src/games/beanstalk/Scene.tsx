@@ -27,6 +27,12 @@ interface Props {
 
 export function Scene({ grow, leaves, friend, friendPose, child, childPose, back = 'garden' }: Props) {
   const backUrl = paint(`backs/${back}`);
+  // The painted clay cloud once there is one (scripts/beanstalk-art.py, 'cloud'); until then the CSS cloud.
+  const cloudUrl = paint('things/cloud');
+  // The same for the stalk: a painted clay stem repeated up it, and the sprout's two leaves riding on top as it grows.
+  const stemUrl = paint('things/stem');
+  const sproutUrl = paint('things/sprout-top');
+  const height = Math.min(1, Math.max(0, grow));
   // The stalk, cloud and child are placed from the scene's size (beanstalk.css), so the stalk meets the painted sprout.
   const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -48,7 +54,13 @@ export function Scene({ grow, leaves, friend, friendPose, child, childPose, back
     <div ref={box} className={`bs-scene bs-scene--${back}`} style={style}>
       {back === 'garden' && (
         <>
-          <div className="bs-stalk" style={{ height: `calc(var(--bs-stalk-length) * ${Math.min(1, Math.max(0, grow))})` }} />
+          <div
+            className={`bs-stalk${stemUrl ? ' bs-stalk--painted' : ''}`}
+            style={{ height: `calc(var(--bs-stalk-length) * ${height})`, ...(stemUrl ? { backgroundImage: `url("${stemUrl}")` } : {}) }}
+          />
+          {sproutUrl && height < 1 && (
+            <img className="bs-sprout" src={sproutUrl} alt="" style={{ bottom: `calc(var(--bs-ground) + var(--bs-stalk-length) * ${height})` }} />
+          )}
           {leaves.map((leaf, i) => {
             // Leaves sit evenly up the stalk, left and right in turn, the first just above the ground.
             const at = (i + 0.6) / LEAVES_ON_STALK;
@@ -65,7 +77,8 @@ export function Scene({ grow, leaves, friend, friendPose, child, childPose, back
           })}
         </>
       )}
-      <div className={`bs-cloud${back === 'clouds' ? ' bs-cloud--low' : ''}`}>
+      <div className={`bs-cloud${back === 'clouds' ? ' bs-cloud--low' : ''}${cloudUrl ? ' bs-cloud--painted' : ''}`}>
+        {cloudUrl && <img className="bs-cloud__art" src={cloudUrl} alt="" />}
         <img className="bs-friend" src={friendArt(friend, friendPose)} alt="" />
       </div>
       {child && <img className="bs-child" src={childArt(child, childPose)} alt="" />}

@@ -12,6 +12,20 @@ import { Scene } from './Scene';
 import { WORDS } from './words';
 
 const FLY_MS = 650;
+
+/**
+ * The tray's leaves (and gaps) in a new order. Leaves come in pair by pair, so without this a new pair would land side by
+ * side in the gaps the last pair left: far too easy (James, 4 Nov 2026). Only where they sit changes; which leaf is which
+ * (and so what the server replays) stays the same.
+ */
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 const WOBBLE_MS = 500;
 
 interface Props {
@@ -30,7 +44,7 @@ export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: 
   const round = useMemo(() => makeRound(seed), [seed]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
-  const [slots, setSlots] = useState<(number | null)[]>(() => replay(round, []).onScreen.slice(0, ON_SCREEN));
+  const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
   const [flying, setFlying] = useState<number[]>([]);
   const [wobble, setWobble] = useState<number[]>([]);
   const since = useRef(Date.now());
@@ -74,7 +88,7 @@ export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: 
     later(FLY_MS, () => {
       const after = replay(round, next);
       const newcomers = after.onScreen.filter((i) => !slots.includes(i));
-      setSlots(slots.map((s) => (s !== null && pair.includes(s) ? (newcomers.shift() ?? null) : s)));
+      setSlots(shuffled(slots.map((s) => (s !== null && pair.includes(s) ? (newcomers.shift() ?? null) : s))));
       setFlying([]);
       if (after.done) onDone(next);
     });
