@@ -25,7 +25,7 @@ const price = (p: { coins: number; crystals: number }) => (p.crystals ? `${coins
 
 /** What to build on an empty spot: a House when the island is nearly full, then one Workshop for crystals, then
  * whatever earns most. */
-function wantedKind(island: Island): PlotKind {
+export function wantedKind(island: Island): PlotKind {
   if (room(island) - island.islanders <= 2) return 'house';
   if (count(island, 'workshop') === 0) return 'workshop';
   return count(island, 'library') <= count(island, 'mine') ? 'library' : 'mine';

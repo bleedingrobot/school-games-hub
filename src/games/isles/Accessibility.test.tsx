@@ -71,6 +71,8 @@ describe('keyboard and screen readers', () => {
     await u.click(screen.getByRole('radio', { name: 'Sky Keeper 4' }));
     await u.click(screen.getByRole('button', { name: 'This is my keeper' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
+    // Pip's guided first go has its own test (Guide.test.tsx).
+    await u.click(screen.getByRole('button', { name: 'Skip the guide' }));
     for (const [open, heading] of [['Decorations', 'Decorations'], ['How to play', 'How to play']]) {
       await u.click(screen.getByRole('button', { name: open }));
       expect(screen.getByRole('heading', { name: heading, level: 2 }), open).toHaveFocus();

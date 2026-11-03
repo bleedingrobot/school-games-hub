@@ -107,9 +107,15 @@ export function TurnStep(p: StepProps) {
   let body: ReactNode = null;
   /** The main buttons, right of Back. */
   let main: ReactNode = null;
-  const next = (label = 'Next') => <button type="button" className="button button--primary si-step__main" onClick={p.onNext}>{label}</button>;
+  const next = (label = 'Next') => (
+    <button type="button" className={`button button--primary si-step__main${p.lit === 'next' ? ' si-lit' : ''}`} data-pip="next" onClick={p.onNext}>{label}</button>
+  );
   const doneBuilding = next('Done building');
-  const toIsland = <button type="button" className="button button--light" onClick={() => p.onBuild({ kind: 'island' })}>Back to the island</button>;
+  const toIsland = (
+    <button type="button" className={`button button--light${p.lit === 'back-to-island' ? ' si-lit' : ''}`} data-pip="back-to-island" onClick={() => p.onBuild({ kind: 'island' })}>
+      Back to the island
+    </button>
+  );
 
   switch (step) {
     case Step.Question: {
@@ -155,7 +161,7 @@ export function TurnStep(p: StepProps) {
       } else if (b.kind === 'spot' && island.spots[b.spot]) {
         const here = island.spots[b.spot];
         title = `Spot ${b.spot + 1}: ${spotName(here.kind, here.level)}`;
-        body = <SpotChoices island={island} spot={b.spot} onChoose={p.onChoose} />;
+        body = <SpotChoices island={island} spot={b.spot} onChoose={p.onChoose} lit={p.lit} />;
         main = toIsland;
       } else if (b.kind === 'shelf') {
         title = 'Decorate';

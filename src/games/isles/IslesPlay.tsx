@@ -18,6 +18,8 @@ import { IslesError, type IslandView, type IslesBackend, type PostShown, type Pu
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
 import { ClassSky, VisitIsland } from './ClassSky';
+import { celebration, guideLine } from './guide';
+import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, type Help, type Tip } from './help';
 import { Art, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
@@ -100,7 +102,14 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [again, setAgain] = useState(false);
   /** The sky pilot's question is open (step 2). */
   const [asking, setAsking] = useState(false);
-  const [lit, setLit] = useState<string | null>(null);
+  /** The button "Show me" lit up (the guide lights its own). */
+  const [picked, setLit] = useState<string | null>(null);
+  /** Pip's guided first go is running: for a new island (the server says), or replayed from How to play. */
+  const [guiding, setGuiding] = useState(false);
+  /** Pip's words once the guided turn is played (null: not showing). */
+  const [cheer, setCheer] = useState<string[] | null>(null);
+  const [help, setHelp] = useState<Help | null>(null);
+  const [seen, setSeen] = useState<Tip[]>(() => seenTips());
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -117,6 +126,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       const v = (await backend.send({ action: 'load' })) as unknown as IslandView;
       show(v);
       setPicks([]);
+      setGuiding(v.guide.show);
       setScreen(v.openRace ? { kind: 'race', open: v.openRace } : v.keeper ? { kind: 'home' } : { kind: 'keeper', first: true });
     } catch (e) {
       setScreen({ kind: 'problem', message: e instanceof Error ? e.message : 'Sky Isles could not be opened.' });
@@ -146,6 +156,12 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const turnStep = screen.kind === 'turn' ? screen.step : null;
   // From the collect onwards the resource bar shows what the island has to spend.
   const shownIsland = turnStep !== null && turnStep >= Step.Collect ? planned : island;
+  // The guide says where the pupil is now and lights the button it means (it follows whatever they press).
+  const guideNow = guiding && shownIsland && (screen.kind === 'home' || screen.kind === 'turn')
+    ? guideLine({ step: turnStep, island: shownIsland, build, again, picks: picks.length })
+    : null;
+  const lit = guideNow ? guideNow.target ?? null : picked;
+  const helpNow = help ?? helpFor(island);
 
   const goTo = (step: Step) => {
     setAsking(step === Step.Question && !!view?.question && !view.question.answered);
@@ -201,6 +217,11 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
       const v = (await backend.send({ action: 'turn', turn: island.turn, actions: picks })) as unknown as IslandView;
       show(v);
       setLit(null);
+      if (guiding) {
+        setGuiding(false);
+        setCheer(celebration(v.island.turnsLeft));
+        finishGuide();
+      }
       leave();
     } catch (e) {
       fail(e);
@@ -220,6 +241,15 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     } finally {
       setBusy(false);
     }
+  };
+
+  /** The guide is finished or skipped: the server remembers, so it doesn't come back on another Chromebook. */
+  const finishGuide = () => {
+    void backend.send({ action: 'guideDone' }).catch(() => undefined);
+  };
+  const skipGuide = () => {
+    setGuiding(false);
+    finishGuide();
   };
 
   const showMe = (target: string | undefined) => {
@@ -313,19 +343,29 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const pipHere = turnStep === null || stepOf(step.target) === turnStep;
   // Building only happens in a turn, so between turns Pip says it's for the next turn.
   const nextTurn = screen.kind === 'home' && stepOf(step.target) === Step.Build;
-  const pipSays = island.turnsLeft < 1 && screen.kind === 'home' ? 'Your island is resting. See you tomorrow!'
+  const resting = island.turnsLeft < 1 && screen.kind === 'home';
+  const pipSays = guideNow ? guideNow.say
+    : resting ? 'Your island is resting. See you tomorrow!'
     : !pipHere ? STEP_PIP[turnStep!]
     : nextTurn ? `Next turn: ${step.say[0].toLowerCase()}${step.say.slice(1)}`
     : step.say;
   const lastTurn = screen.kind === 'home' && island.turn > 0 ? reportLines(report) : [];
-  const pipLine = (
-    <div className="si-pipsays si-next" aria-live="polite">
+  // Help Off keeps only the guide and the resting line; Some leaves out "Show me".
+  const pipLine = helpNow === 'off' && !guideNow && !resting ? null : (
+    <div className={`si-pipsays si-next${guideNow ? ' si-guide' : ''}`} aria-live="polite">
       <Art src={pipArt('point')} className="si-pip" fallback={<span className="si-pip si-pip--drawn" aria-hidden="true" />} />
       <p>{pipSays}</p>
-      {/* Between turns the island is only a picture, so a building step has nothing to show. */}
-      {step.target && pipHere && !nextTurn && island.turnsLeft > 0 && <button type="button" className="button button--light si-showme" onClick={() => showMe(step.target)}>Show me</button>}
+      {guideNow ? (
+        <button type="button" className="button button--light si-showme" onClick={skipGuide}>Skip the guide</button>
+      ) : (
+        // Between turns the island is only a picture, so a building step has nothing to show.
+        helpNow === 'lots' && step.target && pipHere && !nextTurn && island.turnsLeft > 0 && (
+          <button type="button" className="button button--light si-showme" onClick={() => showMe(step.target)}>Show me</button>
+        )
+      )}
     </div>
   );
+  const tip = screen.kind === 'home' && helpNow === 'lots' && !guideNow && !cheer ? tipNow(island, report, post.length > 0, seen) : null;
   const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
   const raceWords = !view.races ? 'Sky Races are switched off for your class.' : raceWhy ? PROBLEM_TEXT[raceWhy] : null;
   const back = () => setScreen(screen.kind === 'decorations' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
@@ -355,6 +395,38 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
 
       {screen.kind === 'howto' ? (
         <section className="si-panel">
+          <fieldset className="si-help">
+            <legend>How much should Pip help?</legend>
+            <div className="si-row" role="radiogroup" aria-label="Pip's help">
+              {(Object.keys(HELP_NAMES) as Help[]).map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  role="radio"
+                  aria-checked={helpNow === h}
+                  className={`button ${helpNow === h ? 'button--primary' : 'button--light'}`}
+                  onClick={() => {
+                    setHelp(h);
+                    saveHelp(h);
+                  }}
+                >
+                  {HELP_NAMES[h]}
+                </button>
+              ))}
+            </div>
+            <p className="si-note">Lots: Pip's tip with Show me, and a tip the first time something new happens. Some: just Pip's tip. Off: Pip stays quiet.</p>
+            <button
+              type="button"
+              className="button button--light"
+              onClick={() => {
+                setGuiding(true);
+                setCheer(null);
+                setScreen({ kind: 'home' });
+              }}
+            >
+              Replay the guide
+            </button>
+          </fieldset>
           <HowToPlayBody />
           <button type="button" className="button button--primary" onClick={back}>Back</button>
         </section>
@@ -387,6 +459,30 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <div className="si-right">
             {turnStep === null && pipLine}
 
+
+            {screen.kind === 'home' && cheer && (
+              <section className="si-panel si-cheer" aria-label="Pip says well done">
+                <h3>{cheer[0]}</h3>
+                {cheer.slice(1).map((line) => <p key={line}>{line}</p>)}
+                <button type="button" className="button button--primary si-close" onClick={() => setCheer(null)}>Thanks, Pip!</button>
+              </section>
+            )}
+
+            {tip && (
+              <section className="si-panel si-tip" aria-label="Pip's tip">
+                <p><strong>Pip's tip:</strong> {TIPS[tip]}</p>
+                <button
+                  type="button"
+                  className="button button--light si-close"
+                  onClick={() => {
+                    markTipSeen(tip);
+                    setSeen((list) => [...list, tip]);
+                  }}
+                >
+                  Got it
+                </button>
+              </section>
+            )}
 
             {screen.kind === 'home' && post.length > 0 && (
               <section className="si-panel si-post" aria-label="Sky post">

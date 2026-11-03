@@ -240,3 +240,10 @@ James asked for S.4 before the art. Everything in section 11 is in; the rule she
 - **Screens:** Class sky (Sky news and each classmate with Visit and Race; a reason about your own island is said once at the top), a visit (the island picture, three gifts, Race), the race names the classmate's island and shows their Sky Keeper on its boat, and a "Sky post" box on My island. How to play has "Your class".
 - **Preview:** six pretend classmates (one still in its calm start), a cake from Ana in the post and some news. Gift pictures are emoji until they're painted (add `gift-flowers`, `gift-cake`, `gift-lantern` to the art list).
 - **Still to do:** paint the gift pictures; the Hall of the Skies (S.6).
+
+### S.5 results (Pip), 3 Nov 2026
+
+- **The guided first go** (`src/games/isles/guide.ts`), fitted to the 4-step turn: after choosing a Sky Keeper, Pip's box turns gold and says one thing at a time, lighting the real button: Play a turn, then Next after the question (Pip never helps with the maths), Next after the collect, the empty spot, the Workshop, Done building, End turn. Then "Your island grew!" with the turns left. It's worked out from what's on screen, so it catches up whatever the pupil presses (a spot with a building on it: "go back to the island"; Stop: back to the start). "Skip the guide" is always there. Finished or skipped, the server's `guideDone` remembers it (any Chromebook). The turn-2 race guide is gone with the starter race.
+- **Help levels** (`help.ts`): Lots (Pip's line with Show me, and first-time tips) for the first day's 6 turns, then Some (Pip's line only); Off (only "resting" and the guide). Chosen in How to play, with **Replay the guide**. Kept in the browser.
+- **First-time tips** (Lots only), once each, closed with Got it: a gift in the post, each lucky weather, the first race, a Lighthouse stage, the sky garden.
+- **Test 8** (`Guide.test.tsx`): pressing through, skipping (stays skipped after a reload), catching up and replaying, the help levels, a tip shown once. All 8 tests are now used.

@@ -317,3 +317,11 @@
 .si-gift__pic { font-size: 2.2rem; line-height: 1; }
 .si-gift__pic img { width: 64px; height: 64px; object-fit: contain; display: block; }
 .si-post { border: 3px solid var(--si-gold); background: color-mix(in srgb, var(--si-gold) 10%, var(--surface)); }
+
+/* Pip's guided first go, first-time tips and the help choice (stage S.5). */
+.si-pipsays.si-guide { border: 3px solid var(--si-gold); background: color-mix(in srgb, var(--si-gold) 12%, var(--surface)); }
+.si-cheer { border: 3px solid var(--si-gold); background: color-mix(in srgb, var(--si-gold) 14%, var(--surface)); }
+.si-cheer h3 { font-size: 1.4rem; }
+.si-tip { border-left: 6px solid var(--si-gold); }
+.si-help { display: grid; gap: 8px; margin: 0 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.si-help legend { font-weight: 800; padding: 0 4px; }
