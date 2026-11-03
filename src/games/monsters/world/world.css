@@ -123,13 +123,26 @@
 
 /* The monster book */
 .bk { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; min-height: 0; }
-.bk-list { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.bk-list { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; }
 .bk-count { margin: 0 0 6px; font-weight: 600; color: var(--mb-soft); }
 .bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; margin: 0; padding: 0 4px 4px 0; list-style: none; overflow-y: auto; min-height: 0; align-content: start; }
-.bk-tile { display: grid; justify-items: center; width: 100%; padding: 4px 2px 3px; border: 2px solid var(--mb-line); border-radius: 12px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+.bk-tile { position: relative; display: grid; justify-items: center; width: 100%; padding: 4px 2px 3px; border: 2px solid var(--mb-line); border-radius: 12px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
 .bk-tile.is-selected { border-color: #2563eb; background: #eff6ff; }
 .bk-tile:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 .bk-tile--owned { border-color: #86efac; }
+.bk-tile--uncommon { background: #e0f2fe; }
+.bk-tile--rare { background: #f3e8ff; }
+.bk-tile--ultra { background: linear-gradient(160deg, #fef9c3, #fde68a); }
+.bk-tile.is-selected { box-shadow: 0 0 0 2px #2563eb; }
+.bk-stars { position: absolute; top: 2px; right: 5px; font-size: 0.7rem; line-height: 1; letter-spacing: -1px; }
+.bk-tile--uncommon .bk-stars { color: #0284c7; }
+.bk-tile--rare .bk-stars { color: #9333ea; }
+.bk-tile--ultra .bk-stars { color: #d97706; }
+.bk-key { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.bk-rarity { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--mb-line); background: #fff; font-size: 0.78rem; font-weight: 800; }
+.bk-rarity--uncommon { background: #e0f2fe; border-color: #7dd3fc; color: #075985; }
+.bk-rarity--rare { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+.bk-rarity--ultra { background: linear-gradient(160deg, #fef9c3, #fde68a); border-color: #fbbf24; color: #92400e; }
 .bk-name { font-size: 0.72rem; font-weight: 800; line-height: 1.15; text-align: center; min-height: 1.7em; overflow-wrap: anywhere; }
 .bk-dark { position: relative; display: inline-block; }
 .bk-dark .mon-art, .bk-dark svg { filter: brightness(0) opacity(0.82); }
