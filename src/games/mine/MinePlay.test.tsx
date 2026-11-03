@@ -41,8 +41,9 @@ async function start(name: string, ui = <MinePreview />) {
   const u = userEvent.setup();
   render(wrap(ui));
   await u.click(screen.getByRole('button', { name: `Play ${name}` }));
-  await waitFor(() => expect(session()).toBeTruthy());
-  await waitFor(() => expect(screen.queryByText('Starting the mine…')).toBeNull());
+  // The mine screen loads lazily: on a busy machine that can take longer than waitFor's usual second.
+  await waitFor(() => expect(session()).toBeTruthy(), { timeout: 5000 });
+  await waitFor(() => expect(screen.queryByText('Starting the mine…')).toBeNull(), { timeout: 5000 });
   return u;
 }
 

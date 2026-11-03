@@ -20,6 +20,9 @@ vi.mock('../data/skillMap', async (importOriginal) => ({
   fetchClassMap: vi.fn(),
 }));
 
+// The teacher pages load lazily: on a busy machine the first one can take longer than findBy's usual second.
+const LOADED = { timeout: 5000 };
+
 const teacher: AuthState = {
   status: 'signed-in',
   profile: {
@@ -138,7 +141,7 @@ describe('the skill map', () => {
 
   it('is a table with a row for each student and a column for each of the six stages', async () => {
     show();
-    const table = await screen.findByRole('table');
+    const table = await screen.findByRole('table', {}, LOADED);
     const headers = within(table)
       .getAllByRole('columnheader')
       .map((h) => h.textContent ?? '');
@@ -154,14 +157,14 @@ describe('the skill map', () => {
 
   it('shows a real name where teachers already see one, and no year level anywhere', async () => {
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     expect(screen.getByText('ana')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\bYear \d/);
   });
 
   it('colours a closed stage with how many of its skills are secure, and says it in words and a letter', async () => {
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     const early = cellOf('Speedy Otter 27', 'Early number facts');
     expect(early).toHaveAttribute('data-level', 'learning'); // 2 of 5 secure: some asked, not all secure
     expect(early).toHaveTextContent('2 of 5');
@@ -191,7 +194,7 @@ describe('the skill map', () => {
       ]),
     );
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     const row = screen.getByRole('row', { name: /Speedy Otter 27/ });
     expect(row).toHaveTextContent('Now');
     expect(row).toHaveTextContent('Furthest');
@@ -203,7 +206,7 @@ describe('the skill map', () => {
 
   it('marks the stage a student is working on', async () => {
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     expect(cellOf('Brave Kiwi 7', 'Early number facts')).toHaveAttribute('data-here', 'true');
     expect(cellOf('Brave Kiwi 7', 'Times tables')).not.toHaveAttribute('data-here');
   });
@@ -211,7 +214,7 @@ describe('the skill map', () => {
   it('opens a stage into its skills with a button, from the keyboard too, and closes it again', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     const button = screen.getByRole('button', { name: /Early number facts/ });
     expect(button).toHaveAttribute('aria-expanded', 'false');
     button.focus();
@@ -251,7 +254,7 @@ describe('the skill map', () => {
   it('opens and closes every stage at once', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     await user.click(screen.getByRole('button', { name: 'Open every stage' }));
     const built = LADDER.filter((l) => l.built).length;
     expect(screen.getAllByRole('button', { name: /Speedy Otter 27, / })).toHaveLength(built);
@@ -271,7 +274,7 @@ describe('the skill map', () => {
       ]),
     );
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     await user.click(screen.getByRole('button', { name: /^Rounding/ }));
     await user.click(
       screen.getByRole('button', {
@@ -297,7 +300,7 @@ describe('the skill map', () => {
   it('opens the 12 × 12 grid for a times-table cell', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     await user.click(screen.getByRole('button', { name: /^Times tables/ }));
     await user.click(
       screen.getByRole('button', {
@@ -325,7 +328,7 @@ describe('the skill map', () => {
   it('tapping the same cell again, or closing its stage, closes the detail', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
     const cell = screen.getByRole('button', {
       name: /Speedy Otter 27, Number facts to 10: Secure/,
@@ -355,7 +358,7 @@ describe('the skill map', () => {
   it('leaves out switched-off tables: the cell says so, and is not counted as not started', async () => {
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana({ enabledTables: [] })]));
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     const times = cellOf('Speedy Otter 27', 'Times tables');
     expect(times).toHaveAttribute('data-level', 'off');
     expect(times).toHaveTextContent('Switched off');
@@ -364,7 +367,7 @@ describe('the skill map', () => {
   it('links a row and a skill to Set a focus for that student or skill', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     expect(screen.getByRole('link', { name: 'Set focus for Speedy Otter 27' })).toHaveAttribute('href', '/teacher/c12/maths?student=s1');
     await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
     expect(screen.getByRole('link', { name: 'Set focus on Number facts to 10' })).toHaveAttribute(
@@ -386,7 +389,7 @@ describe('the skill map', () => {
   it('counts how many students are secure at the foot of each column', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     const foot = screen.getAllByRole('row').at(-1)!;
     expect(foot).toHaveTextContent('Secure or fluent');
     expect(foot).toHaveTextContent('0 of 2');
@@ -401,14 +404,14 @@ describe('the skill map', () => {
     unmount();
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana()], { auto: true }));
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     expect(screen.queryByText(/Auto is off for this class/)).toBeNull();
   });
 
   it('picks a class, and asks for the one picked', async () => {
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ben()], { classId: 'c14', className: 'Room 14' }));
     await user.selectOptions(screen.getByRole('combobox', { name: 'Class' }), 'c14');
     expect(await screen.findByRole('heading', { level: 2, name: /Room 14/ })).toBeInTheDocument();
@@ -418,7 +421,7 @@ describe('the skill map', () => {
 
   it('opens on the class the link names', async () => {
     show(teacher, '/skills?class=c14');
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     expect(skillMap.fetchClassMap).toHaveBeenCalledWith('c14');
   });
 
@@ -443,7 +446,7 @@ describe('the skill map', () => {
     const set = vi.spyOn(Storage.prototype, 'setItem');
     const user = userEvent.setup();
     show();
-    await screen.findByRole('table');
+    await screen.findByRole('table', {}, LOADED);
     await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
     // Only the teacher pages' remembered class (TeacherClass.tsx), never anything from the map.
     expect(set.mock.calls.filter(([key]) => key !== 'sgh-teacher-class')).toEqual([]);

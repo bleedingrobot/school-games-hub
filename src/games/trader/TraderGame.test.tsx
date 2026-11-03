@@ -107,21 +107,23 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     await market();
     // Water's row on whichever market step is showing (1 Sell or 2 Buy).
     const row = () => screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^(Buy|Sell) one Water$/)) as HTMLElement;
-    fireEvent.click(within(row()).getByLabelText('Buy one Water'));
+    // Straight after a trade the market can still be redrawing, so each control is waited for, not looked up once.
+    const inRow = (label: string) => waitFor(() => within(row()).getByLabelText(label));
+    fireEvent.click(await inRow('Buy one Water'));
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
     const skip = screen.queryByText('No thanks');
     if (skip) fireEvent.click(skip);
     await waitFor(() => expect(screen.getByLabelText('Water: none')).toBeTruthy());
     // Sell the one Water, then buy as many as fit: both work straight after the first trade. The market stays on
     // 2 Buy after buying (so the Water isn't offered straight back), and empties back onto it after the sale.
-    fireEvent.click(screen.getByRole('button', { name: 'Sell' }));
-    fireEvent.click(within(row()).getByLabelText('Sell all Water'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sell' }));
+    fireEvent.click(await inRow('Sell all Water'));
     expect(screen.getByLabelText('Water: selling 1')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
     const skip2 = screen.queryByText('No thanks');
     if (skip2) fireEvent.click(skip2);
     await waitFor(() => expect(screen.getByLabelText('Water: none')).toBeTruthy());
-    fireEvent.click(within(row()).getByLabelText('Buy as many Water as you can'));
+    fireEvent.click(await inRow('Buy as many Water as you can'));
     expect(screen.getByLabelText(/^Water: buying \d+$/)).toBeTruthy();
   });
 

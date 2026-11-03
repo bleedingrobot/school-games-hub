@@ -7,6 +7,9 @@ import { trialBackend } from './trialBackend';
 describe('Diamond Drop screens', () => {
   // jsdom has no canvas: the pictures just don't draw.
   beforeAll(() => void vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null));
+  // The level's clock is held still (no animation frames), so the Drop always counts at tick 0: on a slow machine a
+  // frame or two could run before the click and the claw would have swung on.
+  beforeAll(() => void vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(0));
 
   it('guides a new pupil’s first go, records a Drop, and reaches the level end screen with the server’s replay', async () => {
     localStorage.clear();
