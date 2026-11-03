@@ -467,6 +467,7 @@ export function WorldGame({
           place={world.map}
           trainer={scene.trainer?.name}
           look={world.look}
+          owned={world.owned}
         />
       </div>
     );

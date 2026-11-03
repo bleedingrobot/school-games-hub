@@ -170,7 +170,7 @@
 .mm-howto kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; border: 1px solid #94a3b8; border-bottom-width: 2px; border-radius: 5px; background: #f1f5f9; font: 700 0.85em/1.4 inherit; text-align: center; }
 
 /* Quests: the "what next" line on the map, and the quest pages in the menu. */
-.mw-next { position: absolute; top: 52px; left: 8px; right: 8px; margin: 0; max-width: 560px; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); pointer-events: none; }
+.mw-next { position: absolute; top: 52px; left: 8px; margin: 0; width: fit-content; max-width: min(560px, calc(100% - 16px)); padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); pointer-events: none; }
 .mq { display: grid; gap: 12px; }
 .mq-bits { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .mq-bit { padding: 3px 10px; border-radius: 999px; background: #f1f5f9; font-size: 0.85rem; }
