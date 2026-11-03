@@ -3,7 +3,7 @@
  * first finish changes one magic leaf (bronze, then silver, then gold); thirty days bring the friend down and win the
  * Golden Egg, and the next friend is stuck on a fresh beanstalk. The screens only show what the backend says.
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
 import { useSound } from '../../sound';
@@ -58,6 +58,32 @@ interface Props {
   extra?: (h: Helpers) => ReactNode;
 }
 
+/** Below this much room under the hub's top bar, the game covers the whole screen, bar and all. */
+const ROOM_UNDER_BAR = 420;
+
+/**
+ * In the hub the game sits under the top bar, so a full screen tall would push its bottom (the floating leaves) off the
+ * screen. This sets --bs-room to the height left below where the game starts (the whole screen in the preview). On a short
+ * screen (a phone on its side) that would leave too little, so the game covers the whole screen (the bar is fixed at the
+ * top, so scrolling wouldn't move it); its own Home button takes the child back.
+ */
+function useFitBelow(root: RefObject<HTMLDivElement | null>) {
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const fit = () => {
+      el.classList.remove('bs-root--cover');
+      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
+      const cover = top > 0 && window.innerHeight - top - 12 < ROOM_UNDER_BAR;
+      el.classList.toggle('bs-root--cover', cover);
+      el.style.setProperty('--bs-room', top === 0 || cover ? '100dvh' : `calc(100dvh - ${top + 12}px)`);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [root]);
+}
+
 export function BeanstalkGame({ backend, onExit, extra }: Props) {
   const [state, setState] = useState<BeanstalkState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
@@ -66,6 +92,8 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
   const fail = useCallback((e: unknown) => setFailed(e instanceof BeanstalkError ? e.message : WORDS.wentWrong), []);
   const voice = useVoice();
   const { soundOn } = useSound();
+  const root = useRef<HTMLDivElement>(null);
+  useFitBelow(root);
 
   const reload = useCallback(() => {
     backend
@@ -114,7 +142,7 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
-    <div className="bs-root">
+    <div className="bs-root" ref={root}>
       <div className="bs-bar">
         {onExit && (
           <button type="button" className="bs-voice" onClick={onExit}>

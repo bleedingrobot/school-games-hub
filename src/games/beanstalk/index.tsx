@@ -5,6 +5,7 @@ import { BEANSTALK_ABOUT, saveBeanstalkEnabled, useBeanstalkClassSwitch, useBean
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const BeanstalkPlay = lazy(() => import('./BeanstalkPlay').then((m) => ({ default: m.BeanstalkPlay })));
+const BeanstalkStudentPanel = lazy(() => import('../../pages/TeacherBeanstalk').then((m) => ({ default: m.BeanstalkStudentPanel })));
 const BeanstalkTeacherSettings = lazy(() => import('../../pages/TeacherBeanstalk').then((m) => ({ default: m.BeanstalkTeacherSettings })));
 
 /** A beanstalk with heart-shaped leaves and a golden egg on a cloud. */
@@ -44,6 +45,7 @@ export const kiwisBeanstalk: GameDefinition = {
     switch: { useValue: useBeanstalkClassSwitch, save: saveBeanstalkEnabled, about: BEANSTALK_ABOUT },
     useSummary: useBeanstalkSummary,
     Settings: BeanstalkTeacherSettings,
+    StudentPanel: BeanstalkStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherBeanstalk').then((m) => m.beanstalkStudentSummary(student)),
   },
 };

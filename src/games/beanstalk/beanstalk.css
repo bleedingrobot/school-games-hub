@@ -6,7 +6,7 @@
   --bs-green-dark: #24661f;
   --bs-gold: #f5c518;
   position: relative;
-  min-height: 100dvh;
+  min-height: var(--bs-room, 100dvh);
   display: flex;
   flex-direction: column;
   background: linear-gradient(#8fd0f5, #cfeefc);
@@ -14,6 +14,8 @@
   font-family: system-ui, sans-serif;
   overflow: hidden;
 }
+/* A phone on its side in the hub: over the hub's top bar, so the leaves fit (BeanstalkGame.tsx, useFitBelow). */
+.bs-root--cover { position: fixed; inset: 0; z-index: 20; }
 .bs-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .bs-message { margin: auto; font-size: 1.6rem; }
 
@@ -112,8 +114,8 @@
 }
 
 /* Home and finish: the scene with a panel beside it (below it on a narrow screen). */
-.bs-home { flex: 1; display: flex; min-height: 100dvh; }
-.bs-home .bs-scene { min-height: 100dvh; }
+.bs-home { flex: 1; display: flex; min-height: var(--bs-room, 100dvh); }
+.bs-home .bs-scene { min-height: var(--bs-room, 100dvh); }
 .bs-panel {
   align-self: center;
   width: min(380px, 40vw);
@@ -163,7 +165,7 @@
 .bs-choose__child:hover { transform: translateY(-3px); }
 
 /* Playing: the scene on top, a row of pips, and the tray of floating leaves along the bottom. */
-.bs-play { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
+.bs-play { flex: 1; display: flex; flex-direction: column; min-height: var(--bs-room, 100dvh); }
 .bs-progress { display: flex; justify-content: center; gap: 8px; padding: 8px; background: #5aa84b; }
 .bs-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.45); }
 .bs-pip--done { background: var(--bs-gold); box-shadow: 0 0 0 2px #fff; }

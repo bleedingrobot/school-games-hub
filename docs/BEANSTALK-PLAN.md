@@ -336,6 +336,54 @@ database, which needs James's OK. The screens are the same ones the preview runs
 6. **Turn the teacher switch on** for the junior classes James names, on the Teacher page (or every row, if he asks).
 7. **Write it down:** add a "Went live" note here, update the memory note, and delete the branch.
 
+## Tried for real (4 Nov, midday)
+
+The real site and the `beanstalk` function ran on this Mac against the local test database, not the school's. There was
+one test teacher, two test pupils, and two test classes (on for one, off for the other).
+
+**What worked:**
+- **Games table:** the teacher saw "Kiwi's Beanstalk · Off · Bonds to 10 · nobody yet" and switched it on for one class
+  ("Saved ✓"). Later the row read "1 playing · 0 Golden Eggs".
+- **Pupils:**
+  - The pupil in the class that's on saw the home card.
+  - Choosing Jill, the guided first go and finishing all worked. The leaf turned bronze. The server saved day 1, and all
+    10 pairs went into the maths records as `bond10`.
+  - A second go the same day said "Come back tomorrow", with no new leaf and no guide hand.
+  - The pupil in the class that's off had no card. Going straight to `#/beanstalk` showed "Kiwi's Beanstalk is not
+    switched on for your class."
+- **Dots off:** turning the dots off in the drawer gave numbers only on the pupil's next go.
+- **Golden Egg:** moved to day 29 in the database and played. "You win the Golden Egg!", the server gave the
+  `beanstalk-kiwi` achievement, and Tūī was stuck up a new beanstalk.
+
+**Fixed:**
+- **The game was a full screen tall under the hub's top bar,** so the floating leaves were cut off at the bottom. It now
+  fits the room left under the bar (`useFitBelow` in `BeanstalkGame.tsx`, `--bs-room`). On a phone on its side there isn't
+  room, so the game covers the whole screen, bar and all (`.bs-root--cover`). Its own Home button takes the child back.
+  The bar stays at the top, so scrolling it away didn't work.
+- **No Beanstalk line on a student's page:** the page lists only games with a student panel. There's one now
+  (`BeanstalkStudentPanel`): who they're helping, the leaves' colours, the day the last leaf changed, the dots next time,
+  and the Golden Eggs. The line itself reads "1 of 30 days done on this beanstalk".
+
+**Notes:**
+- The home card has no picture yet. `gameCardArt.ts` is one of the go-live edits.
+- The first call after starting the function is slow (about 2 seconds, the server warming up). After that it's quick.
+
+**Checks after the fixes:** typecheck OK; `npm run test:all` 354 files / 6017 tests passed; build OK.
+
+**How to do it again:**
+- `npx supabase start` needs auth, rest, kong and the edge runtime running (restarting it restarts the shared local
+  database).
+- Pipe both migrations in with `docker exec -i supabase_db_school-games-hub psql -U postgres`.
+- Run `npx supabase functions serve --no-verify-jwt`, and the site with a `.env.local` holding the local URL and key plus
+  `VITE_BEANSTALK_ON=true`, with the registry line added for now.
+- Email sign-in is off locally. Make users with the admin API (`e2e.<name>@douglaspark.school.nz`), then sign in with a
+  magic-link `token_hash` (admin `generate_link`, then `/auth/v1/verify`) and put the session in `sb-127-auth-token`.
+- Classes made by hand need `give_class_settings(class)`.
+- Pupils can't be deleted through the admin API locally (`class_group_members` permission), so delete them from
+  `auth.users` in SQL.
+- Afterwards, take the Beanstalk objects back out of the local database. They have no history rows.
+
+
 ## James's look-over (4 Nov, afternoon)
 
 - **The stalk looks like the farm picture's sprout growing up.** It is smooth rounded clay in the sprout's own greens
