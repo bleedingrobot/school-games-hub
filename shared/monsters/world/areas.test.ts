@@ -9,7 +9,7 @@ import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
-import { areaHints, questMarks, questTalk } from './questWorld';
+import { areaHints, podTwinkles, questMarks, questTalk } from './questWorld';
 import { fastTravel, worldPlaces } from './worldMap';
 import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
@@ -108,6 +108,13 @@ describe('the six areas, in order', () => {
     expect(asked.pages.join(' ')).toMatch(/Clue: .*Tama.*pond/);
     expect(questTalk(asked.state, hermit, opts)?.pages.join(' ') ?? '').toMatch(/Clue: /);
     expect(areaHints(asked.state, WORLD_MAPS['kauri-bush'], WORLD_MAPS, opts).join(' ')).toMatch(/found 0 of 3\. One is in a tree near the old kauri/);
+    // The pod trees twinkle only while you're looking, and each stops once it's found.
+    const bush = WORLD_MAPS['kauri-bush'];
+    expect(podTwinkles(fresh, bush)).toEqual([]);
+    expect(podTwinkles(asked.state, bush)).toHaveLength(3);
+    const pod = bush.things.find((t) => t.kind === 'puzzle')!;
+    const found = interact({ ...asked.state, map: 'kauri-bush', x: pod.x, y: pod.y + 1, facing: 'up' }, opts).state;
+    expect(podTwinkles(found, bush)).toHaveLength(2);
     // The world map: 10 places; a new player has the town and Kauri Bush open, and the bonus areas are secret.
     const places = worldPlaces(fresh, WORLD_MAPS);
     expect(places.map((p) => p.open)).toEqual([true, true, false, false, false, false, false, false, false, false]);
