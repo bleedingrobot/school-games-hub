@@ -5,6 +5,7 @@ Runs on this computer; the painting happens in ComfyUI on James's gaming PC.
 
   python scripts/monsters-map-paint.py parts [name]   paint the textures and sprites the maps need (skips ones already made)
   python scripts/monsters-map-paint.py map <id>|all   build a painted map from its paint plan
+  python scripts/monsters-map-paint.py map indoor     build the 13 indoor rooms (Healing Centre, tower halls and tops) from their tile maps
   python scripts/monsters-map-paint.py sheet          a contact sheet of every part
 
 Each map's plan (scripts/monster-maps/paint-plans/<id>.json, written by `node scripts/make-monster-maps.mjs`) says
@@ -106,6 +107,56 @@ SPR = {
     'monster-book': solo('wooden reading stand holding a big open red book'),
 }
 
+# ---------- indoor rooms: the Healing Centre and both rooms of every Topic Tower, each in its own look ----------
+INDOOR = ['healing-centre'] + [f'tower-{n}-{r}' for n in range(1, 7) for r in ('hall', 'top')]
+# A wall seen straight on, for the back wall (the floor textures are top-down like the outdoor ones).
+def wall(words): return f'seamless tileable flat front view of an indoor wall of {words}, {STYLE}, flat even soft lighting, straight on'
+# Per room look: floor, wall, banner, and (tower tops) the two statues. A tower's hall and top share one look.
+ROOM_LOOK = {
+    'heal': ('clean pale honey-coloured wooden floorboards, smooth polished planks', 'soft pale pink painted wooden wall planks running straight up and down, smooth and clean',
+             'hanging cloth banner, white with a big soft red cross and a little pink heart, gold trim'),
+    'leaf': ('old wooden floorboards with thin lines of soft green moss in the gaps between the planks and a few fallen leaves', 'mossy green-grey stone bricks with small ferns and ivy growing between them',
+             'hanging cloth banner, deep green with a big golden fern leaf, gold trim'),
+    'water': ('smooth pale blue and white tiled floor with soft wavy patterns, like a bathhouse', 'pale blue stone bricks with little shells and starfish set into them',
+              'hanging cloth banner, deep blue with a big white wave and a water drop, gold trim'),
+    'fire': ('warm reddish brown stone flagstones with thin glowing orange cracks between them', 'dark red bricks with warm orange glow and soot marks',
+             'hanging cloth banner, red with a big golden flame, gold trim'),
+    'ice': ('frosty pale blue stone slabs dusted with snow and thin ice', 'big pale blue ice blocks with frost and white snow on their edges',
+            'hanging cloth banner, icy pale blue with a big white snowflake, silver trim'),
+    'spark': ('dark blue-grey slate flagstones of mixed sizes with thin glowing yellow cracks running between some of them', 'purple-grey stone bricks with copper pipes and small glowing yellow lamps',
+              'hanging cloth banner, purple with a big yellow lightning bolt, gold trim'),
+    'stone': ('old castle floor of big plain weathered flagstones, every stone soft warm grey, a little moss in some cracks', 'dry stone wall of rough flat grey slate pieces stacked in uneven layers, all cool grey and blue-grey',
+              'hanging cloth banner, slate grey with a big golden mountain and gem, gold trim'),
+}
+STATUE = {
+    'leaf': 'stone statue on a round plinth of a friendly little dinosaur monster with smiling eyes and a big leaf growing on its head, green moss on it',
+    'water': 'stone statue on a round plinth of a friendly crab monster, with a little fountain of water',
+    'fire': 'stone statue on a round plinth of a friendly fire lizard monster, with a small flame burning in a bowl',
+    'ice': 'statue carved from clear blue ice on a round plinth of a friendly penguin monster',
+    'spark': 'brass statue on a round plinth of a friendly lightning bug monster, with small yellow sparks',
+    'stone': 'carved granite statue on a round plinth of a friendly rock golem monster holding a gem',
+}
+ROOM_THEME = {'healing-centre': 'heal', **{f'tower-{n}-{r}': t for n, t in enumerate(['leaf', 'water', 'fire', 'ice', 'spark', 'stone'], 1) for r in ('hall', 'top')}}
+for t, (floor, w_, banner) in ROOM_LOOK.items():
+    TEX[f'floor-{t}'] = texture(floor)
+    TEX[f'wall-{t}'] = wall(w_)
+    SPR[f'banner-{t}'] = solo(banner + ', hanging from a short wooden pole, seen straight on', 512, 768)
+for t, words in STATUE.items(): SPR[f'statue-{t}'] = solo(words, 768, 1024)
+SPR.update({
+    'window': solo('small arched stone window in a wall with wooden shutters open and blue sky in it, seen straight on', 768, 768),
+    'door-in': solo('arched wooden door with iron studs and a round handle in a stone doorway, seen straight on from inside a room', 768, 1024),
+    'counter': solo('long low wooden shop counter seen straight on from the front, perfectly level with a flat bottom edge resting on the floor, panelled front, smooth top, a little bell on it', 1024, 768),
+    'poster': solo('small wooden easel standing on the floor holding a bright poster of a smiling cartoon monster with a heart, no writing', 768, 1024),
+    'plant-pot': solo('round green leafy plant in a big terracotta pot'),
+    'cupboard': solo('tall wooden cupboard with two doors and a shelf of jars on top, seen from the front', 768, 1024),
+    'barrel': solo('round wooden barrel with iron hoops, upright'),
+    'ladder-up': solo('tall wooden ladder standing straight up, leading to a square hole in a ceiling, seen from the front', 512, 1024),
+    'ladder-down': solo('looking straight down from above at a dark square hole in wooden floorboards with a thin wooden frame, the top rungs of a wooden ladder inside going down into darkness, flat top-down view', 768, 768),
+})
+# Old tile number (the `walls` layer of the room's tile map) → what stands there.
+ROOM_TILE = {161: 'window', 162: 'banner', 205: 'counter', 94: 'poster', 6: 'plant-pot', 90: 'door-in', 196: 'cupboard', 199: 'barrel', 201: 'ladder', 197: 'statue', 84: 'sign'}
+WALL_TILE = 173
+
 def txt2img(text, w, h, seed, dest):
     latent = {'7': {'class_type': 'EmptySD3LatentImage', 'inputs': {'width': w, 'height': h, 'batch_size': 1}}}
     wa.run(wa.base(text, seed, 1.0, latent), dest)
@@ -131,6 +182,9 @@ def cutout(src, dest):
     cut = remove(Image.open(src).convert('RGB'), session=_session, alpha_matting=True)
     cut.crop(cut.getbbox()).save(dest)
 
+# The model keeps dropping coloured gems into grey stone walls whatever the words, so these lose their colour after painting.
+GREY = {'wall-stone'}
+
 def parts(only=None):
     PARTS.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
@@ -139,7 +193,9 @@ def parts(only=None):
         if (only and only != n) or d.exists(): continue
         raw = PARTS / f'_raw-tex-{n}.png'
         txt2img(text, 1024, 1024, 100 + i + RESEED.get(n, 0), raw)
-        tileable(Image.open(raw)).save(d); print(d.name, round(time.time() - t0), flush=True)
+        im = tileable(Image.open(raw))
+        if n in GREY: im = Image.blend(im, im.convert('L').convert('RGB'), 0.92)
+        im.save(d); print(d.name, round(time.time() - t0), flush=True)
     for i, (n, (text, w, h)) in enumerate(SPR.items()):
         d = PARTS / f'{n}.png'
         if (only and only != n) or d.exists(): continue
@@ -310,6 +366,81 @@ def paint_map(map_id):
     full.convert('RGB').save(PARTS / f'_map-{map_id}.png')
     print(map_id, (OUT / f'{map_id}.webp').stat().st_size // 1024, 'KB +', (OUT / f'{map_id}-above.webp').stat().st_size // 1024, 'KB', flush=True)
 
+def paint_room(map_id):
+    """An indoor room, straight from its tile map: the floor, the back wall seen straight on, the other walls from above,
+    and each old tile's thing painted where it stood. Same two pictures and 64 px squares as the outdoor maps."""
+    M = json.load(open(ROOT / f'shared/monsters/maps/{map_id}.json'))
+    W, H = M['width'], M['height']
+    h, w = H * S, W * S
+    t = ROOM_THEME[map_id]
+    walls = next(l['data'] for l in M['layers'] if l['name'] == 'walls')
+    at = lambda x, y: walls[y * W + x]
+    face_rows = 0
+    while face_rows < H and all(at(x, face_rows) for x in range(W)): face_rows += 1
+    # the floor, a little uneven, then the back wall with a skirting line and its shadow on the floor
+    img = tex(f'floor-{t}', h, w, 30, 30, 0.45) * (0.97 + 0.03 * noise(h, w, 80, 5)[..., None])
+    fy = face_rows * S
+    img[:fy] = tex(f'wall-{t}', fy, w, 0, 0, 0.4)
+    img[fy - 6:fy] *= 0.55
+    img[fy:fy + 40] *= (1 - 0.3 * smooth(1 - np.arange(40) / 40))[:, None, None]
+    # the side and front walls seen from above: darker, with a soft shadow where they meet the floor
+    tops = {(x, y) for y in range(face_rows, H) for x in range(W) if at(x, y) == WALL_TILE}
+    if tops:
+        m = np.kron(np.array([[1. if (x, y) in tops else 0. for x in range(W)] for y in range(H)], np.float32), np.ones((S, S), np.float32))
+        sh = gaussian_filter(m, 10) * (1 - m)
+        img = img * (1 - 0.35 * sh[..., None])
+        img = blend(img, tex(f'wall-{t}', h, w, 17, 9, 0.4) * 0.62 * (1 + 0.25 * rim(1 - m, 6)[..., None]), m)
+    full = Image.fromarray(img.clip(0, 255).astype(np.uint8)).convert('RGBA')
+    above = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    items = []  # (base y, sprite, left, top, cut or None, shadow)
+    hall = map_id.endswith('-hall')
+    seen = set()
+    for i, g in enumerate(walls):
+        k = ROOM_TILE.get(g)
+        x, y = i % W, i // W
+        if not k or (x, y) in seen: continue
+        cx, bottom = x * S + 32, (y + 1) * S
+        if k == 'counter':  # side-by-side counter squares make one long counter
+            run = 1
+            while x + run < W and at(x + run, y) == g: seen.add((x + run, y)); run += 1
+            sp = fit(sprite('counter'), w=run * S + 4)
+            items.append((bottom - 2, sp, x * S - 2, bottom - 2 - sp.height, None, (x * S + run * 32, bottom - 6, run * 32, 6)))
+        elif k == 'window' and ROOM_TILE.get(at(x, y + 1)) == 'statue': continue  # a statue in front would half hide it
+        elif k in ('window', 'banner'):  # on the back wall
+            sp = fit(sprite(f'banner-{t}' if k == 'banner' else k), w=58 if k == 'banner' else 54)
+            top = y * S - 34 if k == 'banner' else y * S + 32 - sp.height // 2
+            # a ladder up in front of the banner would hide it: hang one either side instead
+            spots = [cx - S, cx + S] if k == 'banner' and ROOM_TILE.get(at(x, y + 1)) == 'ladder' and hall else [cx]
+            items += [(-1000, sp, c - sp.width // 2, top, None, None) for c in spots]
+        elif k == 'door-in':
+            sp = fit(sprite('door-in'), h=S - 4)
+            items.append((-999, sp, cx - sp.width // 2, y * S + 2, None, None))
+        elif k == 'ladder' and not hall:  # a hole in the floor: nothing stands up
+            sp = fit(sprite('ladder-down'), w=60)
+            items.append((-998, sp, cx - sp.width // 2, y * S + 32 - sp.height // 2, None, None))
+        else:
+            n, size = {'ladder': ('ladder-up', {'h': 150}), 'cupboard': ('cupboard', {'h': 112}), 'statue': (f'statue-{t}', {'h': 116}),
+                       'barrel': ('barrel', {'w': 54}), 'poster': ('poster', {'h': 84}), 'plant-pot': ('plant-pot', {'w': 60}), 'sign': ('sign-a', {'w': 58})}[k]
+            sp = fit(sprite(n), **size)
+            base = bottom - 4 if k in ('ladder', 'cupboard') else y * S + 60
+            cut = None if k in ('ladder', 'sign') else sp.height - 30
+            items.append((base, sp, cx - sp.width // 2, base - sp.height, cut, None if k == 'ladder' else (cx, base - 2, 26, 8)))
+    items.sort(key=lambda it: it[0])
+    shadows = np.zeros((h, w), np.uint8)
+    for *_, shd in items:
+        if shd: shadows = np.maximum(shadows, np.asarray(shadow(w, h, *shd)))
+    sh = Image.new('RGBA', (w, h), (30, 20, 15, 0)); sh.putalpha(Image.fromarray(shadows))
+    full = Image.alpha_composite(full, sh)
+    for _, sp, x0, y0, cut, _ in items:
+        layer = Image.new('RGBA', (w, h), (0, 0, 0, 0)); layer.paste(sp, (x0, y0)); full.alpha_composite(layer)
+        if cut:
+            top = Image.new('RGBA', (w, h), (0, 0, 0, 0)); top.paste(upper(sp, cut), (x0, y0)); above.alpha_composite(top)
+    OUT.mkdir(parents=True, exist_ok=True)
+    full.convert('RGB').save(OUT / f'{map_id}.webp', quality=80, method=6)
+    above.save(OUT / f'{map_id}-above.webp', quality=78, method=6)
+    full.convert('RGB').save(PARTS / f'_map-{map_id}.png')
+    print(map_id, (OUT / f'{map_id}.webp').stat().st_size // 1024, 'KB', flush=True)
+
 def sheet():
     names = [f'tex-{n}' for n in TEX] + list(SPR)
     have = [n for n in names if (PARTS / f'{n}.png').exists()]
@@ -325,5 +456,7 @@ def sheet():
 if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'parts': parts(*(sys.argv[2:3]))
-    elif cmd == 'map': [paint_map(m) for m in (OUTDOOR if sys.argv[2] == 'all' else sys.argv[2:])]
+    elif cmd == 'map':
+        ids = {'all': OUTDOOR, 'indoor': INDOOR}.get(sys.argv[2], sys.argv[2:])
+        [paint_room(m) if m in INDOOR else paint_map(m) for m in ids]
     elif cmd == 'sheet': sheet()
