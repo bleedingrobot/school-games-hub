@@ -1,4 +1,4 @@
--- Sky Isles (migration 20261102000100): islands, turns, questions, races, the switches, what pupils can read, and the hub
+-- Sky Isles (migration 20261104000100): islands, turns, questions, races, the switches, what pupils can read, and the hub
 -- hooks. Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh isles, then scripts/scratch-test.sh isles supabase/tests/database/isles.test.sql
 begin;

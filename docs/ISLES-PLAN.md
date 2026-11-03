@@ -364,7 +364,7 @@ Plus How to play (numbers read from the config) and the season-end celebration.
 | `market` | Buys or sells at the class market |
 | `guideDone` | Marks the guided first go as finished |
 
-**Migration `20261102000100_isles.sql`** (a free number on 2 Nov 2026 from `node scripts/migration-numbers.mjs`; on hold in `supabase/migrations-on-hold.txt`; check again at go-live). New tables, all prefixed `isles_`, RLS on, pupils read only through `my_isles()` and `isles_sky()` (own class only, via `my_school()` and class membership):
+**Migration `20261104000100_isles.sql`** (a free number on 2 Nov 2026 from `node scripts/migration-numbers.mjs`; on hold in `supabase/migrations-on-hold.txt`; check again at go-live). New tables, all prefixed `isles_`, RLS on, pupils read only through `my_isles()` and `isles_sky()` (own class only, via `my_school()` and class membership):
 
 | Table | Holds |
 |---|---|
@@ -548,7 +548,7 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 ### S.2 results (the server), 2 Nov 2026
 
 **Built:**
-- **Migration `20261102000100_isles.sql`** (on hold in `supabase/migrations-on-hold.txt`, not live).
+- **Migration `20261104000100_isles.sql`** (on hold in `supabase/migrations-on-hold.txt`, not live).
   - Four tables: `isles_islands` (one per pupil: seed, version, NZ day, the island, guide done), `isles_turns` (one row a turn, unique per pupil, season and turn), `isles_questions` (server only; one set per turn, three per race; each answer marked once) and `isles_races` (one open race at a time; finished once).
   - Row security is on, with no policy and no grant, on all four.
   - Pupils read only through `my_isles()` (their own island, never the seed) and `isles_sky()` (own class only, own school, pupils only, hidden profiles left out).
@@ -589,7 +589,7 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 **Noticed, not fixed (not this branch's to change):** Kingdom Keeper's server refuses answers over 1,000,000, so a pupil whose focus is rounding to the nearest million may have right answers refused there. Worth its own small fix.
 
 **Go-live list additions:**
-- Take `20261102000100` out of `migrations-on-hold.txt` in the go-live PR.
+- Take `20261104000100` out of `migrations-on-hold.txt` in the go-live PR.
 - Check the migration number again.
 - The `isles` function deploys itself when its `index.ts` lands on main.
 

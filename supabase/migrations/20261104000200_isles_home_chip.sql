@@ -1,6 +1,6 @@
 -- Sky Isles on the home page "moves left today" chips: an exact edit to my_moves_left() so it also sends 'isles'
 -- ({ day, turnsLeft } from the pupil's island, null if they have none yet). src/data/movesLeft.ts reads it.
--- Depends on 20261102000100_isles.sql (the isles_islands table), so it is on hold with it
+-- Depends on 20261104000100_isles.sql (the isles_islands table), so it is on hold with it
 -- (supabase/migrations-on-hold.txt) until Sky Isles goes live. If the text is not found exactly once, nothing changes.
 
 create or replace function pg_temp.edit_function(sig text, edits text[][])

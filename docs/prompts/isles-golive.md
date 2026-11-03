@@ -11,8 +11,8 @@ Ask James on a card whether he has tried the preview (the private page in `docs/
 ## Where things stand
 - Built and tested on branch `isles` (pushed to `origin/isles`). Read `docs/GAME_DEVELOPMENT_GUIDE.md` sections 8 and 9, then `docs/ISLES-COSY-PLAN.md` (it wins over `docs/ISLES-PLAN.md`) and `docs/ISLES-RULES.md`.
 - **Nothing is live.** Two migrations are written, tested on scratch copies, and listed in `supabase/migrations-on-hold.txt` so the live job skips them:
-  - `20261102000100_isles.sql`: the tables (islands, turns, questions, races, post, news, Hall of the Skies), the server-only functions, the switches `app_settings.isles_enabled` (off) and `isles_races` (on), the hooks, 8 achievements, island names, the teacher's reports and island reset.
-  - `20261103000400_isles_home_chip.sql`: an exact in-place edit of the shared `my_moves_left()` for the home page's "turns left" chip (James said yes, 3 Nov 2026). It refuses to run if the text it edits has changed on `main`.
+  - `20261104000100_isles.sql`: the tables (islands, turns, questions, races, post, news, Hall of the Skies), the server-only functions, the switches `app_settings.isles_enabled` (off) and `isles_races` (on), the hooks, 8 achievements, island names, the teacher's reports and island reset.
+  - `20261104000200_isles_home_chip.sql`: an exact in-place edit of the shared `my_moves_left()` for the home page's "turns left" chip (James said yes, 3 Nov 2026). It refuses to run if the text it edits has changed on `main`.
 - The `isles` function (`supabase/functions/isles/index.ts`) is built, not deployed. It deploys by itself when its `index.ts` reaches `main`.
 - The **code switch** is `ON = false` in `src/games/isles/switch.ts`, and the game is **not yet in `src/games/registry.ts`**. The teacher contract (switch, Sky Races, class report, student panel, Hall of the Skies) is in `src/games/isles/index.tsx` and `src/pages/TeacherIsles.tsx`.
 - It depends on `20261020000100_game_hooks.sql` (hub_games), `space_maths_context`, `record_fact_answers` (through `recordMathsAnswers`), `settings_of`, `require_settings_target`, `require_teacher_of`, `teaches_class`, `current_class_of`, `add_game_points`. Check, don't assume (step 1).
@@ -26,7 +26,7 @@ Ask James on a card whether he has tried the preview (the private page in `docs/
 
 ## The steps
 1. **Pre-flight (nothing live).**
-   - `git fetch`, merge `origin/main` into `isles`. Run `node scripts/migration-numbers.mjs`. `20261102000100` is older than many migrations on `main` now, so **rename both Sky Isles migrations to the next free numbers after everything on `main`** (the chip one must come after the isles one), and update `migrations-on-hold.txt`, the chip migration's "Depends on" line, `movesLeft.ts`'s comment, this prompt and the plans.
+   - `git fetch`, merge `origin/main` into `isles`. Run `node scripts/migration-numbers.mjs`. `20261104000100` is older than many migrations on `main` now, so **rename both Sky Isles migrations to the next free numbers after everything on `main`** (the chip one must come after the isles one), and update `migrations-on-hold.txt`, the chip migration's "Depends on" line, `movesLeft.ts`'s comment, this prompt and the plans.
    - If any newer migration on `main` changed `my_moves_left()`, check the chip edit still matches (step 1's scratch copy will tell you: it stops with "did not match exactly once").
    - Update the shared database tests for Sky Isles: `security.test.sql` (add to the signed-in list: `teacher_set_isles`, `my_isles`, `isles_sky`, `teacher_isles_class`, `teacher_isles_student`, `teacher_reset_isles`, `teacher_isles_halls`) and `progress_access.test.sql`'s achievement count (+8 for Sky Isles; it was 112 on 3 Nov 2026, so 120 if nothing else changed). Both fail on a scratch copy with Sky Isles in it until then.
    - Sky Isles has 8 tests (the most a game may have): don't add more.

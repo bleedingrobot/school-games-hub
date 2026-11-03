@@ -32,7 +32,7 @@ export interface RawMovesLeft {
   diamond?: { deepest: number; newLevelDate: string | null } | null;
   /** Star Trader's saved day number, jumps left on it, and the class's jumps a day. Missing until 20261102000300 is applied. */
   trader?: { day: number; jumpsLeft: number; perDay: number } | null;
-  /** Sky Isles: the New Zealand day number the island was last saved on and the turns left then. Missing until 20261103000400 is applied. */
+  /** Sky Isles: the New Zealand day number the island was last saved on and the turns left then. Missing until 20261104000200 is applied. */
   isles?: { day: number; turnsLeft: number } | null;
 }
 

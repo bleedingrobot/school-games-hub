@@ -29,7 +29,7 @@ describe('Sky Isles rules', () => {
     expect(names.every(isIslandName)).toBe(true);
     for (const bad of ['Rude Words', 'Cloudberry', 'Cloudberry Hollow Hollow', 'cloudberry hollow', 42]) expect(isIslandName(bad)).toBe(false);
     // isles_worth() in the migration lists each decoration's coin price (islandWorth counts a tenth of it).
-    const sql = readFileSync('supabase/migrations/20261102000100_isles.sql', 'utf8');
+    const sql = readFileSync('supabase/migrations/20261104000100_isles.sql', 'utf8');
     const listed = Object.fromEntries([...sql.split('create function public.isles_worth')[1].split('$$;')[0].matchAll(/\('(\w+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
     expect(listed).toEqual(Object.fromEntries(DECORATIONS.map((d) => [d.id, d.coins])));
   });

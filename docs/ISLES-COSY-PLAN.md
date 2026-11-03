@@ -171,7 +171,7 @@ Nothing is live, and the migration is still on hold, so it can be changed freely
 | `shared/isles/race.ts` | Kept. Happiness becomes the flat +3, goods become crystals, and the warm-breeze head start is added |
 | `shared/isles/nextStep.ts` | Rewritten to section 13 |
 | `shared/isles/server.ts`, `memoryServices.ts`, the `isles` function | Trimmed to fit. Gift and visit come in S.4 |
-| Migration `20261102000100_isles.sql` | The island JSON changes shape. S.4 adds a gifts table and news. No rope or market tables |
+| Migration `20261104000100_isles.sql` | The island JSON changes shape. S.4 adds a gifts table and news. No rope or market tables |
 | `TurnSteps.tsx` | 11 steps become 4. `Spot.tsx` stays. `Upgrades.tsx` becomes `Decorations.tsx` |
 | `Race.tsx` | Kept |
 | `scripts/isles-sim.mjs` | Rewritten for the new rules. The new pace table goes to James |
@@ -253,7 +253,7 @@ James asked for S.4 before the art. Everything in section 11 is in; the rule she
 - **Island names:** `shared/isles/names.ts` (24 × 16 names), the `name` action, `isles_islands.name` (kept through New Season). Shown on My island (Name your island / Rename), the class sky, visits and the Hall.
 - **Hall of the Skies:** `isles_hall`, filled by the New Season hook before the islands are cleared (top 3 by `isles_worth()` per class, plus lit Lighthouses). Pupils: "🏆 Hall of the Skies" on the Class sky (this season so far, and past seasons). Teachers: in the drawer and in "Seasons and end of year". A test checks the database's decoration prices match the config.
 - **Teacher contract:** the On switch (with the game and its points behind "?"), "Follows focus" in the Maths column, a drawer with Sky Races on/off, each student's island and the class's Hall, a student panel with "Start this student's island again" (achievements, points, name, keeper and Hall stay) and a one-line summary. No `hardest` (the answers are in the hub's focus reports) and no `alerts` (the cosy island can't get stuck).
-- **Home page chip:** `20261103000400_isles_home_chip.sql`, an exact in-place edit of `my_moves_left()`, on hold with the game; "🏝️ 4 turns left" (`src/data/movesLeft.ts`, its test).
+- **Home page chip:** `20261104000200_isles_home_chip.sql`, an exact in-place edit of `my_moves_left()`, on hold with the game; "🏝️ 4 turns left" (`src/data/movesLeft.ts`, its test).
 - **Go-live list:** `docs/prompts/isles-golive.md` (stage S.8). Both migrations need renumbering then, and `security.test.sql` and `progress_access.test.sql` need Sky Isles added.
 - **Tests:** still 8 (names, worth and the Hall were added to the existing rules, server and accessibility tests); the database test has 75 checks, all passing on a scratch copy. The teacher panels were checked with a throw-away test (deleted). Not in the registry yet (S.8).
 
