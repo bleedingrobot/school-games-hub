@@ -344,6 +344,13 @@ database, which needs James's OK. The screens are the same ones the preview runs
 - **The floating leaves shuffle.** They used to come in pair by pair, so a new pair landed side by side in the gaps and a
   round even started with pairs next to each other. Now the tray is shuffled at the start and after every pair found. Only
   where each leaf sits changes, so the server's replay is the same.
+- **The play screen shows the progress too** (James: "after day 10, all the leaves down the bottom and on the tree should be
+  bronze"):
+  - The floating leaves are the colour every magic leaf has reached: green on days 1 to 10, bronze on days 11 to 20, and
+    silver on days 21 to 30.
+  - The stalk shows each magic leaf's real colour as it grows, instead of plain green.
+  - The stalk's leaves are a little smaller (16% of the stalk's length), so they don't pile up on the short play-screen
+    stalk.
 - **Ready for painted pieces.** The game uses a painted cloud, stem and sprout top as soon as they exist, and keeps the
   drawn ones until then.
 

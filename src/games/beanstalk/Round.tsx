@@ -3,7 +3,7 @@
  * the friend; a wrong pair wobbles and stays (no penalty, nothing shown: the dots are the help). Ten pairs reach the top.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Dots, Friend } from '../../../shared/beanstalk/progress';
+import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
 import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, TARGET, type Tap } from '../../../shared/beanstalk/round';
 import { playSound } from '../sounds';
 import type { Child } from './backend';
@@ -31,6 +31,10 @@ const WOBBLE_MS = 500;
 interface Props {
   seed: number;
   dots: Dots;
+  /** The magic leaves' colours now, bottom first: the stalk shows them as it grows. */
+  stalkLeaves: Metal[];
+  /** The floating leaves' colour: the colour every magic leaf has reached (green, bronze or silver). */
+  trayMetal: Metal;
   friend: Friend;
   child: Child;
   /** The child's very first challenge: a hand shows them a right pair, until they have made one. */
@@ -40,7 +44,7 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: Props) {
+export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide, sound, say, onDone }: Props) {
   const round = useMemo(() => makeRound(seed), [seed]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
@@ -108,7 +112,7 @@ export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: 
       <h2 className="bs-sr" tabIndex={-1} ref={heading}>{WORDS.tapTwo}</h2>
       <Scene
         grow={0.08 + (0.92 * pairsMade) / PAIRS_PER_ROUND}
-        leaves={Array.from({ length: pairsMade }, () => ({ metal: 'green' as const }))}
+        leaves={stalkLeaves.slice(0, pairsMade).map((metal) => ({ metal }))}
         friend={friend}
         friendPose={pairsMade >= PAIRS_PER_ROUND ? 'cheer' : 'wait'}
         child={child}
@@ -128,6 +132,7 @@ export function Round({ seed, dots, friend, child, guide, sound, say, onDone }: 
               key={leaf}
               value={round.leaves[leaf]}
               dots={dots}
+              metal={trayMetal}
               look={look(leaf)}
               slot={slot}
               pointed={leaf === pointAt}

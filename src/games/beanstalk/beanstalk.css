@@ -33,7 +33,7 @@
   --bs-ground: calc(var(--bs-h) * 0.25 - 0.04 * max(var(--bs-h), var(--bs-w) * 0.627));
   --bs-top: clamp(96px, var(--bs-h) * 0.26, 180px);
   --bs-stalk-length: calc(var(--bs-h) - var(--bs-ground) - var(--bs-top));
-  --bs-stalk-leaf: clamp(36px, min(10vmin, var(--bs-stalk-length) * 0.22), 110px);
+  --bs-stalk-leaf: clamp(30px, min(10vmin, var(--bs-stalk-length) * 0.16), 110px);
   --bs-stalk-w: clamp(26px, 4vw, 44px);
   position: relative;
   flex: 1;

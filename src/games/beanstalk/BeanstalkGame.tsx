@@ -4,7 +4,7 @@
  * Golden Egg, and the next friend is stuck on a fresh beanstalk. The screens only show what the backend says.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { DAYS_PER_EGG, LEAVES_ON_STALK, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
+import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
 import { useSound } from '../../sound';
 import { canSpeak, speak, stopSpeaking } from '../../speech';
@@ -99,6 +99,8 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
       <Round
         seed={screen.seed}
         dots={state.dots ? stalkAfter(state.daysDone).dots : 'none'}
+        stalkLeaves={stalkAfter(state.daysDone).leaves}
+        trayMetal={METALS[Math.floor(stalkAfter(state.daysDone).day / LEAVES_ON_STALK)]}
         friend={stalkAfter(state.daysDone).friend}
         child={state.child}
         guide={state.daysDone === 0 && state.lastLeafDay === null}
