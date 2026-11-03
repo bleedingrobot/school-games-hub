@@ -39,5 +39,10 @@ describe('the Star Forge', () => {
       { ...good, planets: [{ ...newPlanet(1), size: 9 }] }, { ...good, planets: Array.from({ length: 9 }, (_, i) => newPlanet(i)) }]) {
       expect(designProblem(bad)).toMatch(/could not be read/);
     }
+    // Typed names: tidy, kind ones only.
+    expect(designProblem({ ...good, planets: [{ ...newPlanet(1), label: 'Big Blue Ball' }] })).toBeNull();
+    for (const rude of ['Fuuuck', 'Poo', 'Butt Head', 'Shiiit Land', 'dumb', 'big blue ball', 'R2 D2']) {
+      expect(designProblem({ ...good, planets: [{ ...newPlanet(1), label: rude }] })).toMatch(/kinder/);
+    }
   });
 });

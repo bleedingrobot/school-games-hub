@@ -30,7 +30,7 @@ import {
   type Result,
   type Trader,
 } from './state';
-import { designProblem, emptyDesign, forgeCost, type SystemDesign } from './system';
+import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -64,6 +64,8 @@ export interface Settings {
   maths: boolean;
   /** The Star Forge is open (docs/TRADER-SYSTEM-PLAN.md). Missing: closed. */
   forge?: boolean;
+  /** Pupils may type their own names in the Forge (checked for naughty words either way). Missing: allowed. */
+  forgeTyping?: boolean;
 }
 
 /** What a pupil ended a season with, kept for the pupil who chooses to start a new system (docs/TRADER-SYSTEM-PLAN.md, 1.2). */
@@ -285,6 +287,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (!settings.forge) refuse('The Star Forge is not open yet.');
       const problem = designProblem(action.design);
       if (problem) refuse(problem);
+      if (settings.forgeTyping === false && typedNames(action.design).some((n) => !typedNames(g.system ?? emptyDesign()).includes(n))) refuse('Pick names from the lists for now.');
       const cost = forgeCost(g.system ?? emptyDesign(), action.design, t.moon);
       if (cost.total > t.credits) refuse(`You need ${(cost.total - t.credits).toLocaleString('en-NZ')} more credits.`);
       g.t = { ...t, credits: t.credits - cost.total };

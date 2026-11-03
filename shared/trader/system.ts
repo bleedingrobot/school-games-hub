@@ -9,6 +9,7 @@
  *
  * Pure: no Date, no random. The viewer reads the same design to draw it.
  */
+import { checkTypedName } from './names';
 
 // ---------------------------------------------------------------------------------------------
 // The catalogue
@@ -180,19 +181,22 @@ export const NAME_SECOND = [
 ] as const;
 export type NamePick = [number, number];
 export const nameText = (n: NamePick): string => `${NAME_FIRST[n[0]] ?? NAME_FIRST[0]} ${NAME_SECOND[n[1]] ?? NAME_SECOND[0]}`;
+/** Anything with a name: the two-word name, or the one the pupil typed (`label`, checked by ./names.ts) when there is one. */
+export interface Named { name: NamePick; label?: string }
+export const pieceName = (x: Named): string => x.label ?? nameText(x.name);
 
 // ---------------------------------------------------------------------------------------------
 // A design
 // ---------------------------------------------------------------------------------------------
 
 export interface Built { built?: boolean }
-export interface SunPick extends Built { kind: SunKind; name: NamePick }
+export interface SunPick extends Built, Named { kind: SunKind }
 export interface RingPick extends Built { kind: RingKind; tilt: number }
 export interface MoonPick extends Built { id: number; look: number; /** The moon bought before the Forge (Star Trader's old goal): free, and painted as "Your moon". */ yours?: boolean }
 export interface EffectPick extends Built { kind: EffectKind }
 export interface LifePick extends Built { kind: LifeKind; creature: number }
 export interface TechPick extends Built { kind: TechKind }
-export interface PlanetPick extends Built {
+export interface PlanetPick extends Built, Named {
   /** Stays the same when planets are moved, so a built planet is never charged twice. */
   id: number;
   kind: PlanetKind;
@@ -201,7 +205,6 @@ export interface PlanetPick extends Built {
   tint: number;
   clouds: CloudKind;
   sky: number;
-  name: NamePick;
   ring: RingPick | null;
   moons: MoonPick[];
   effects: EffectPick[];
@@ -212,9 +215,8 @@ export interface BeltPick extends Built { kind: BeltKind }
 export interface CometsPick extends Built { count: number }
 export interface SystemTechPick extends Built { kind: SystemTechKind }
 
-export interface SystemDesign {
+export interface SystemDesign extends Named {
   v: 1;
-  name: NamePick;
   sun: SunPick | null;
   /** In order from the sun: index 0 is the nearest slot. */
   planets: PlanetPick[];
@@ -251,6 +253,12 @@ const isInt = (n: unknown, lo: number, hi: number): n is number => typeof n === 
 const isName = (n: unknown): n is NamePick => Array.isArray(n) && n.length === 2 && isInt(n[0], 0, NAME_FIRST.length - 1) && isInt(n[1], 0, NAME_SECOND.length - 1);
 const has = <K extends string>(table: Record<K, unknown>, k: unknown): k is K => typeof k === 'string' && Object.prototype.hasOwnProperty.call(table, k);
 const bool = (b: unknown): boolean => b === undefined || typeof b === 'boolean';
+/** A typed name must already be tidy and pass the naughty-word check. */
+const labelOk = (l: unknown): boolean => {
+  if (l === undefined) return true;
+  const c = checkTypedName(l);
+  return c.ok && c.name === l;
+};
 
 /**
  * Why a design can't be saved, in pupil words, or null when it's fine. Checks shape (anything sent by a browser) and the
@@ -260,8 +268,8 @@ export function designProblem(d: unknown): string | null {
   const bad = 'That system could not be read.';
   if (!d || typeof d !== 'object') return bad;
   const s = d as SystemDesign;
-  if (s.v !== 1 || !isName(s.name) || !isInt(s.background, 0, BACKGROUNDS - 1) || !isInt(s.beltAfter, 0, MAX_PLANETS)) return bad;
-  if (s.sun !== null && (!s.sun || !has(SUNS, s.sun.kind) || !isName(s.sun.name) || !bool(s.sun.built))) return bad;
+  if (s.v !== 1 || !isName(s.name) || !labelOk(s.label) || !isInt(s.background, 0, BACKGROUNDS - 1) || !isInt(s.beltAfter, 0, MAX_PLANETS)) return bad;
+  if (s.sun !== null && (!s.sun || !has(SUNS, s.sun.kind) || !isName(s.sun.name) || !labelOk(s.sun.label) || !bool(s.sun.built))) return bad;
   if (!Array.isArray(s.planets) || s.planets.length > MAX_PLANETS) return bad;
   if (s.belt !== null && (!s.belt || !has(BELTS, s.belt.kind) || !bool(s.belt.built))) return bad;
   if (s.comets !== null && (!s.comets || !isInt(s.comets.count, 1, MAX_COMETS) || !bool(s.comets.built))) return bad;
@@ -273,6 +281,7 @@ export function designProblem(d: unknown): string | null {
     ids.add(p.id);
     if (!has(PLANETS, p.kind) || !isInt(p.size, 0, SIZES.length - 1) || !isInt(p.surface, 0, SURFACES - 1) || !isInt(p.tint, 0, TINTS - 1)) return bad;
     if (!CLOUDS.includes(p.clouds) || !isInt(p.sky, 0, SKY_COLOURS - 1) || !isName(p.name) || !bool(p.built)) return bad;
+    if (!labelOk(p.label)) return 'Please pick a kinder name.';
     if (p.ring !== null && (!p.ring || !has(RINGS, p.ring.kind) || !isInt(p.ring.tilt, 0, 4) || !bool(p.ring.built))) return bad;
     if (!Array.isArray(p.moons) || p.moons.length > MAX_MOONS) return bad;
     const moonIds = new Set<number>();
@@ -299,7 +308,7 @@ function builtProblem(s: SystemDesign): string | null {
     const p = s.planets[slot];
     const info = PLANETS[p.kind];
     const parts = [p.ring, p.life, ...p.moons, ...p.effects, ...p.tech].filter(Boolean) as Built[];
-    if (!p.built && parts.some((x) => x.built)) return `Build ${nameText(p.name)} before the things on it.`;
+    if (!p.built && parts.some((x) => x.built)) return `Build ${pieceName(p)} before the things on it.`;
     for (const e of p.effects) {
       if (!e.built) continue;
       const need = EFFECTS[e.kind].needs;
@@ -316,7 +325,7 @@ function builtProblem(s: SystemDesign): string | null {
     if (p.life?.built) {
       if (!info.life.includes(p.life.kind)) return `${LIFE[p.life.kind].name} can't live on a ${info.name.toLowerCase()}.`;
       if (!inZone(s.sun?.kind, slot) && !p.tech.some((t) => t.kind === 'domes' && t.built)) {
-        return `${nameText(p.name)} is outside the "just right" zone, so life there needs domes first.`;
+        return `${pieceName(p)} is outside the "just right" zone, so life there needs domes first.`;
       }
     }
   }
@@ -357,16 +366,16 @@ export interface ForgeCost {
   worth: number;
 }
 
-const looksOf = (p: PlanetPick): string => JSON.stringify([p.surface, p.tint, p.clouds, p.sky, p.name, p.ring?.tilt ?? 0, p.life?.creature ?? 0, p.moons.map((m) => [m.id, m.look])]);
+const looksOf = (p: PlanetPick): string => JSON.stringify([p.surface, p.tint, p.clouds, p.sky, p.ring?.tilt ?? 0, p.life?.creature ?? 0, p.moons.map((m) => [m.id, m.look])]);
 
 /** Everything built in a design, with its price: the list `forgeCost` compares. Keys are stable ids. */
 function builtPieces(s: SystemDesign, ownsMoon: boolean): Map<string, { what: string; price: number; looks: string }> {
   const out = new Map<string, { what: string; price: number; looks: string }>();
   const add = (key: string, what: string, price: number, looks = '') => out.set(key, { what, price, looks });
-  if (s.sun?.built) add(`sun:${s.sun.kind}`, SUNS[s.sun.kind].name, SUNS[s.sun.kind].price, JSON.stringify([s.sun.name, s.name, s.background]));
+  if (s.sun?.built) add(`sun:${s.sun.kind}`, SUNS[s.sun.kind].name, SUNS[s.sun.kind].price, String(s.background));
   for (const p of s.planets) {
     if (!p.built) continue;
-    const n = nameText(p.name);
+    const n = pieceName(p);
     add(`planet:${p.id}:${p.kind}:${p.size}`, `${n} (${PLANETS[p.kind].name})`, planetPrice(p), looksOf(p));
     if (p.ring?.built) add(`ring:${p.id}:${p.ring.kind}`, `${RINGS[p.ring.kind].name} for ${n}`, RINGS[p.ring.kind].price);
     for (const m of p.moons) if (m.built) add(`moon:${p.id}:${m.id}`, `A moon for ${n}`, m.yours && ownsMoon ? 0 : MOON_PRICE_PIECE);
@@ -436,10 +445,10 @@ export function systemCounts(d: SystemDesign) {
 /** The system in words, for screen readers and the gallery. Only built pieces unless `withPlans`. */
 export function describeSystem(d: SystemDesign, withPlans = false): string {
   const show = (x: Built | null | undefined) => !!x && (withPlans || !!x.built);
-  if (!show(d.sun)) return `The ${nameText(d.name)} System has no sun yet.`;
+  if (!show(d.sun)) return `The ${pieceName(d)} System has no sun yet.`;
   const sun = d.sun!;
   const planets = d.planets.filter(show);
-  const bits = [`The ${nameText(d.name)} System: a ${SUNS[sun.kind].name.toLowerCase()} called ${nameText(sun.name)}, with ${planets.length === 1 ? '1 planet' : `${planets.length} planets`}.`];
+  const bits = [`The ${pieceName(d)} System: a ${SUNS[sun.kind].name.toLowerCase()} called ${pieceName(sun)}, with ${planets.length === 1 ? '1 planet' : `${planets.length} planets`}.`];
   for (const p of planets) {
     const extras = [
       p.ring && show(p.ring) ? RINGS[p.ring.kind].name.toLowerCase() : '',
@@ -448,10 +457,15 @@ export function describeSystem(d: SystemDesign, withPlans = false): string {
       p.life && show(p.life) ? LIFE[p.life.kind].name.toLowerCase() : '',
       ...p.tech.filter(show).map((t) => TECH[t.kind].name.toLowerCase()),
     ].filter(Boolean);
-    bits.push(`${nameText(p.name)}, a ${SIZES[p.size].toLowerCase()} ${PLANETS[p.kind].name.toLowerCase()}${extras.length ? ` with ${extras.join(', ')}` : ''}.`);
+    bits.push(`${pieceName(p)}, a ${SIZES[p.size].toLowerCase()} ${PLANETS[p.kind].name.toLowerCase()}${extras.length ? ` with ${extras.join(', ')}` : ''}.`);
   }
   if (show(d.belt)) bits.push(`A ${BELTS[d.belt!.kind].name.toLowerCase()}.`);
   const tech = d.tech.filter(show);
   if (tech.length) bits.push(`${tech.map((t) => SYSTEM_TECH[t.kind].name).join(', ')}.`);
   return bits.join(' ');
+}
+
+/** Every name the pupil typed in a design (for the teacher's "no typing" switch and the teacher's name check). */
+export function typedNames(d: SystemDesign): string[] {
+  return [d.label, d.sun?.label, ...d.planets.map((p) => p.label)].filter((l): l is string => typeof l === 'string');
 }
