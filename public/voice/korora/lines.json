@@ -1,0 +1,550 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "let-s-count-them-together",
+  "text": "Let’s count them together."
+ },
+ {
+  "slug": "yes-they-share-them-fairly",
+  "text": "Yes! They share them fairly."
+ },
+ {
+  "slug": "yes-there-is-one-left-over",
+  "text": "Yes! There is one left over."
+ },
+ {
+  "slug": "korora-is-hungry-help-korora-catch-fish-at-the-mirror-pool",
+  "text": "Kororā is hungry! Help Kororā catch fish at the mirror pool."
+ },
+ {
+  "slug": "korora-is-hungry-help-korora-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Kororā is hungry! Help Kororā catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-korora-has-a-new-pool-to-fish-in",
+  "text": "Now Kororā has a new pool to fish in!"
+ },
+ {
+  "slug": "now-korora-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Kororā has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "hoiho-is-hungry-help-hoiho-catch-fish-at-the-mirror-pool",
+  "text": "Hoiho is hungry! Help Hoiho catch fish at the mirror pool."
+ },
+ {
+  "slug": "hoiho-is-hungry-help-hoiho-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Hoiho is hungry! Help Hoiho catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-hoiho-has-a-new-pool-to-fish-in",
+  "text": "Now Hoiho has a new pool to fish in!"
+ },
+ {
+  "slug": "now-hoiho-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Hoiho has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "kiwi-is-hungry-help-kiwi-catch-fish-at-the-mirror-pool",
+  "text": "Kiwi is hungry! Help Kiwi catch fish at the mirror pool."
+ },
+ {
+  "slug": "kiwi-is-hungry-help-kiwi-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Kiwi is hungry! Help Kiwi catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-kiwi-has-a-new-pool-to-fish-in",
+  "text": "Now Kiwi has a new pool to fish in!"
+ },
+ {
+  "slug": "now-kiwi-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Kiwi has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "pukeko-is-hungry-help-pukeko-catch-fish-at-the-mirror-pool",
+  "text": "Pūkeko is hungry! Help Pūkeko catch fish at the mirror pool."
+ },
+ {
+  "slug": "pukeko-is-hungry-help-pukeko-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Pūkeko is hungry! Help Pūkeko catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-pukeko-has-a-new-pool-to-fish-in",
+  "text": "Now Pūkeko has a new pool to fish in!"
+ },
+ {
+  "slug": "now-pukeko-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Pūkeko has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "kereru-is-hungry-help-kereru-catch-fish-at-the-mirror-pool",
+  "text": "Kererū is hungry! Help Kererū catch fish at the mirror pool."
+ },
+ {
+  "slug": "kereru-is-hungry-help-kereru-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Kererū is hungry! Help Kererū catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-kereru-has-a-new-pool-to-fish-in",
+  "text": "Now Kererū has a new pool to fish in!"
+ },
+ {
+  "slug": "now-kereru-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Kererū has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "takahe-is-hungry-help-takahe-catch-fish-at-the-mirror-pool",
+  "text": "Takahē is hungry! Help Takahē catch fish at the mirror pool."
+ },
+ {
+  "slug": "takahe-is-hungry-help-takahe-catch-fish-at-the-mirror-pool-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Takahē is hungry! Help Takahē catch fish at the mirror pool. Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "now-takahe-has-a-new-pool-to-fish-in",
+  "text": "Now Takahē has a new pool to fish in!"
+ },
+ {
+  "slug": "now-takahe-has-a-new-pool-to-fish-in-well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Now Takahē has a new pool to fish in! Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "double-1-1-fish-on-the-rock-and-1-in-the-water-how-many-fish",
+  "text": "Double 1. 1 fish on the rock, and 1 in the water. How many fish?"
+ },
+ {
+  "slug": "2",
+  "text": "2!"
+ },
+ {
+  "slug": "double-2-2-fish-on-the-rock-and-2-in-the-water-how-many-fish",
+  "text": "Double 2. 2 fish on the rock, and 2 in the water. How many fish?"
+ },
+ {
+  "slug": "double-2-2-fish-on-the-rock-and-2-in-the-water-how-many-fish-tap-the-number-the-hand-points-to",
+  "text": "Double 2. 2 fish on the rock, and 2 in the water. How many fish? Tap the number the hand points to."
+ },
+ {
+  "slug": "4",
+  "text": "4!"
+ },
+ {
+  "slug": "double-3-3-fish-on-the-rock-and-3-in-the-water-how-many-fish",
+  "text": "Double 3. 3 fish on the rock, and 3 in the water. How many fish?"
+ },
+ {
+  "slug": "6",
+  "text": "6!"
+ },
+ {
+  "slug": "double-4-4-fish-on-the-rock-and-4-in-the-water-how-many-fish",
+  "text": "Double 4. 4 fish on the rock, and 4 in the water. How many fish?"
+ },
+ {
+  "slug": "8",
+  "text": "8!"
+ },
+ {
+  "slug": "double-5-5-fish-on-the-rock-and-5-in-the-water-how-many-fish",
+  "text": "Double 5. 5 fish on the rock, and 5 in the water. How many fish?"
+ },
+ {
+  "slug": "10",
+  "text": "10!"
+ },
+ {
+  "slug": "half-of-2-share-2-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 2. Share 2 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-1-is-2-so-what-is-half-of-2",
+  "text": "Double 1 is 2. So what is half of 2?"
+ },
+ {
+  "slug": "1",
+  "text": "1!"
+ },
+ {
+  "slug": "half-of-4-share-4-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 4. Share 4 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-2-is-4-so-what-is-half-of-4",
+  "text": "Double 2 is 4. So what is half of 4?"
+ },
+ {
+  "slug": "half-of-6-share-6-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 6. Share 6 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-3-is-6-so-what-is-half-of-6",
+  "text": "Double 3 is 6. So what is half of 6?"
+ },
+ {
+  "slug": "3",
+  "text": "3!"
+ },
+ {
+  "slug": "half-of-8-share-8-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 8. Share 8 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-4-is-8-so-what-is-half-of-8",
+  "text": "Double 4 is 8. So what is half of 8?"
+ },
+ {
+  "slug": "half-of-10-share-10-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 10. Share 10 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-5-is-10-so-what-is-half-of-10",
+  "text": "Double 5 is 10. So what is half of 10?"
+ },
+ {
+  "slug": "5",
+  "text": "5!"
+ },
+ {
+  "slug": "double-6-6-fish-on-the-rock-and-6-in-the-water-how-many-fish",
+  "text": "Double 6. 6 fish on the rock, and 6 in the water. How many fish?"
+ },
+ {
+  "slug": "12",
+  "text": "12!"
+ },
+ {
+  "slug": "double-7-7-fish-on-the-rock-and-7-in-the-water-how-many-fish",
+  "text": "Double 7. 7 fish on the rock, and 7 in the water. How many fish?"
+ },
+ {
+  "slug": "14",
+  "text": "14!"
+ },
+ {
+  "slug": "double-8-8-fish-on-the-rock-and-8-in-the-water-how-many-fish",
+  "text": "Double 8. 8 fish on the rock, and 8 in the water. How many fish?"
+ },
+ {
+  "slug": "16",
+  "text": "16!"
+ },
+ {
+  "slug": "double-9-9-fish-on-the-rock-and-9-in-the-water-how-many-fish",
+  "text": "Double 9. 9 fish on the rock, and 9 in the water. How many fish?"
+ },
+ {
+  "slug": "18",
+  "text": "18!"
+ },
+ {
+  "slug": "double-10-10-fish-on-the-rock-and-10-in-the-water-how-many-fish",
+  "text": "Double 10. 10 fish on the rock, and 10 in the water. How many fish?"
+ },
+ {
+  "slug": "20",
+  "text": "20!"
+ },
+ {
+  "slug": "half-of-12-share-12-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 12. Share 12 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-6-is-12-so-what-is-half-of-12",
+  "text": "Double 6 is 12. So what is half of 12?"
+ },
+ {
+  "slug": "half-of-14-share-14-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 14. Share 14 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-7-is-14-so-what-is-half-of-14",
+  "text": "Double 7 is 14. So what is half of 14?"
+ },
+ {
+  "slug": "7",
+  "text": "7!"
+ },
+ {
+  "slug": "half-of-16-share-16-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 16. Share 16 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-8-is-16-so-what-is-half-of-16",
+  "text": "Double 8 is 16. So what is half of 16?"
+ },
+ {
+  "slug": "half-of-18-share-18-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 18. Share 18 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-9-is-18-so-what-is-half-of-18",
+  "text": "Double 9 is 18. So what is half of 18?"
+ },
+ {
+  "slug": "9",
+  "text": "9!"
+ },
+ {
+  "slug": "half-of-20-share-20-fish-fairly-between-the-two-chicks-how-many-does-each-chick-get",
+  "text": "Half of 20. Share 20 fish fairly between the two chicks. How many does each chick get?"
+ },
+ {
+  "slug": "double-10-is-20-so-what-is-half-of-20",
+  "text": "Double 10 is 20. So what is half of 20?"
+ },
+ {
+  "slug": "3-fish-can-the-two-chicks-share-them-fairly",
+  "text": "3 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "4-fish-can-the-two-chicks-share-them-fairly",
+  "text": "4 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "5-fish-can-the-two-chicks-share-them-fairly",
+  "text": "5 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "6-fish-can-the-two-chicks-share-them-fairly",
+  "text": "6 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "7-fish-can-the-two-chicks-share-them-fairly",
+  "text": "7 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "8-fish-can-the-two-chicks-share-them-fairly",
+  "text": "8 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "9-fish-can-the-two-chicks-share-them-fairly",
+  "text": "9 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "10-fish-can-the-two-chicks-share-them-fairly",
+  "text": "10 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "11-fish-can-the-two-chicks-share-them-fairly",
+  "text": "11 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "12-fish-can-the-two-chicks-share-them-fairly",
+  "text": "12 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "13-fish-can-the-two-chicks-share-them-fairly",
+  "text": "13 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "14-fish-can-the-two-chicks-share-them-fairly",
+  "text": "14 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "15-fish-can-the-two-chicks-share-them-fairly",
+  "text": "15 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "16-fish-can-the-two-chicks-share-them-fairly",
+  "text": "16 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "17-fish-can-the-two-chicks-share-them-fairly",
+  "text": "17 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "18-fish-can-the-two-chicks-share-them-fairly",
+  "text": "18 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "19-fish-can-the-two-chicks-share-them-fairly",
+  "text": "19 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "20-fish-can-the-two-chicks-share-them-fairly",
+  "text": "20 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "11",
+  "text": "11!"
+ },
+ {
+  "slug": "13",
+  "text": "13!"
+ },
+ {
+  "slug": "15",
+  "text": "15!"
+ },
+ {
+  "slug": "17",
+  "text": "17!"
+ },
+ {
+  "slug": "19",
+  "text": "19!"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-pebble",
+  "text": "Well done! Come back tomorrow to change another pebble."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-pebble-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "Well done! Come back tomorrow to change another pebble. You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-pebble-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "Well done! Come back tomorrow to change another pebble. You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-pebble-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "Well done! Come back tomorrow to change another pebble. You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-bronze",
+  "text": "Well done! A pebble turned bronze!"
+ },
+ {
+  "slug": "well-done-a-pebble-turned-bronze-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "Well done! A pebble turned bronze! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-bronze-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "Well done! A pebble turned bronze! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-bronze-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "Well done! A pebble turned bronze! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-silver",
+  "text": "Well done! A pebble turned silver!"
+ },
+ {
+  "slug": "well-done-a-pebble-turned-silver-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "Well done! A pebble turned silver! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-silver-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "Well done! A pebble turned silver! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-silver-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "Well done! A pebble turned silver! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-gold",
+  "text": "Well done! A pebble turned gold!"
+ },
+ {
+  "slug": "well-done-a-pebble-turned-gold-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "Well done! A pebble turned gold! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-gold-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "Well done! A pebble turned gold! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "well-done-a-pebble-turned-gold-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "Well done! A pebble turned gold! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-korora-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Kororā caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-korora-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Kororā caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-korora-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Kororā caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-korora-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Kororā caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-hoiho-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Hoiho caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-hoiho-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Hoiho caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-hoiho-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Hoiho caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-hoiho-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Hoiho caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kiwi-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Kiwi caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kiwi-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Kiwi caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kiwi-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Kiwi caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kiwi-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Kiwi caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-pukeko-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Pūkeko caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-pukeko-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Pūkeko caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-pukeko-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Pūkeko caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-pukeko-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Pūkeko caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kereru-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Kererū caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kereru-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Kererū caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kereru-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Kererū caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-kereru-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Kererū caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-takahe-caught-the-golden-fish",
+  "text": "All the pebbles are gold! Takahē caught the Golden Fish!"
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-takahe-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-10",
+  "text": "All the pebbles are gold! Takahē caught the Golden Fish! You are so good at this! Next time: halves to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-takahe-caught-the-golden-fish-you-are-so-good-at-this-next-time-doubles-to-10",
+  "text": "All the pebbles are gold! Takahē caught the Golden Fish! You are so good at this! Next time: doubles to 10."
+ },
+ {
+  "slug": "all-the-pebbles-are-gold-takahe-caught-the-golden-fish-you-are-so-good-at-this-next-time-halves-to-20",
+  "text": "All the pebbles are gold! Takahē caught the Golden Fish! You are so good at this! Next time: halves to 20."
+ }
+]
