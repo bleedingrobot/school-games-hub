@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stage 1 (rules in `shared/hop/`) done, 4 Nov 2026; next is Stage 2 (the play screen).** The shared skip-counting maths is live (PR #163). Name on the home card:
+Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stages 1 (rules) and 2 (play screen, stand-in art) done, 4 Nov 2026; next is painting the art (section 5), then Stage 3 (the server).** The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
@@ -105,8 +105,15 @@ The set to paint (around 2 to 6 tries each):
 | Home card | 1 (+ small) | Hop mid-leap over glowing pads. |
 | Extras | sparkle, splash ring, glow dot | Small effects. |
 
-Numbers are drawn in code, never painted. Tries go to `~/dragon-art-inbox/hop-art/`. The art script will be
-`scripts/hop-art.py`, copied from `scripts/beanstalk-art.py`.
+Numbers are drawn in code, never painted. **The script is written: `scripts/hop-art.py`** (copied from Beanstalk's, clay
+style only; `python3 scripts/hop-art.py list` names all 33 pictures). For the evening on the gaming PC:
+1. Style try: `python3 scripts/hop-art.py paint ~/dragon-art-inbox/hop-art/set scene --tries 4`.
+2. The rest: `python3 scripts/hop-art.py paint ~/dragon-art-inbox/hop-art/set --tries 3` (or name some pictures).
+3. Write the chosen try of each into `docs/hop-art/picks.json` (`{"hop-wait": 2, ...}`), then
+   `~/.cache/rembg-venv/bin/python scripts/hop-art.py tidy`. It writes WebP files to `src/games/hop/art/paint/`
+   (`friends/`, `pads/`, `things/`, `back/`) and the home card to `src/assets/home/hop.webp`.
+The game picks each picture up as soon as it is there (`src/games/hop/art.ts`); until then it draws a stand-in in code.
+Friends' scarves: Hop blue, gecko red, wētā green, tuatara orange, kiwi yellow, ruru purple.
 
 ## 6. Shared files touched (at the end, one line each)
 
@@ -117,10 +124,29 @@ questions are a separate `shared/maths` branch (section 2).
 
 0. Plan (this file).
 1. Rules in `shared/hop/`, and their tests. **Done 4 Nov.** The `shared/maths` skip-counting branch went live first (PR #163).
-2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James.
+2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James. **Done 4 Nov (stand-in art).**
 3. The server: migration, function, maths recording and the day rule.
 4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment.
 5. Go live, one step at a time, on James's word. This comes after Beanstalk is live, so its pattern is proven.
+
+## Stage 2 results (4 Nov)
+
+**What was built:** `src/games/hop/` and the preview `preview/hop/` (`npx vite --config vite.hop-preview.config.ts`, or
+`npm run hop:single` for one HTML file; also published as a private try-out page, https://claude.ai/artifact/Pgag3omCMSV8rYnuNt7E33).
+- **Home:** the night pond with the 10 magic pads curving to the Glow-worm Party, Hop waving on the near bank, "Day N of
+  30", "Counting in tens/fives/twos", Play, and the shelf of jars.
+- **Play:** 10 pips, the question ("What is missing?" / "What comes next?"), the row of 4 or 5 pads with Hop on the pad
+  before the glowing gap, the arcs between pads with the step ("+10", "−2" counting back): full on bronze days, faint on
+  silver, none on gold. Four glow-worms with numbers on glowing beads; the right one flies to the pad and Hop jumps; a
+  wrong one wobbles. Each hop is read aloud with the shared pack's words.
+- **Finish:** the changed pad glows with Hop on it, "Next time we count in fives!" when the step moved up, and on day 30
+  Hop at the party and the Golden Glow Jar.
+- **Voice** (`hop-voice`, on unless turned off) and **sounds** (the hub's setting), as Beanstalk.
+- **Trial backend** (`backend.ts`) runs `shared/hop/` in the browser, with its own maths records, so the step really moves
+  up. Preview tools: pretend tomorrow, jump to day N, count in 10s/5s/2s, start again. Stage 3 swaps it for the server.
+- **Art:** stand-ins drawn in code (frog, pads, glow-worms, the night, the cave), replaced by the paintings when tidied.
+
+**Tests:** 6: the 4 rule tests, 1 accessibility test (contrast, big targets, reduced motion) and 1 whole trial game.
 
 ## 8. Decisions (James, 4 Nov)
 

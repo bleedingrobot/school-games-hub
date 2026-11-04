@@ -1,0 +1,254 @@
+/* Hop's Glow-worm Pond. A night pond, but every number sits dark on a light pad or glowing bead (plan section 5), and
+   every target is at least 64px for children of 5 to 7. */
+.hp-root {
+  --hp-ink: #1b2340;
+  --hp-panel: #fffdf5;
+  --hp-night: #0f1d3d;
+  --hp-deep: #16305c;
+  --hp-glow: #bff3ff;
+  --hp-gold: #f5c518;
+  --hp-teal-dark: #0f5c66;
+  position: relative;
+  min-height: var(--hp-room, 100dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--hp-night);
+  color: var(--hp-ink);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+.hp-root--cover { position: fixed; inset: 0; z-index: 20; }
+.hp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.hp-message { margin: auto; font-size: 1.6rem; color: #fff; padding: 24px; text-align: center; }
+
+.hp-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
+.hp-button {
+  min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--hp-teal-dark);
+  background: var(--hp-panel); color: var(--hp-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;
+}
+
+/* The night: the painted pond once there is one (--hp-back), and a drawn sky, water and bush until then. Silver days turn
+   the water into a sparkling river; gold days light up the bush. */
+.hp-pond, .hp-play {
+  position: relative;
+  background:
+    var(--hp-back, none) center / cover no-repeat,
+    radial-gradient(ellipse 60% 18% at 50% 100%, #1d4a3a 0 70%, transparent 71%),
+    linear-gradient(var(--hp-night) 0 34%, #1b3a6b 34% 36%, var(--hp-deep) 36% 100%);
+}
+.hp-pond--silver {
+  background:
+    var(--hp-back, none) center / cover no-repeat,
+    repeating-linear-gradient(170deg, transparent 0 22px, rgb(220 235 255 / 0.16) 22px 26px),
+    linear-gradient(var(--hp-night) 0 34%, #3b5a8a 34% 36%, #4b6a96 36% 100%);
+}
+.hp-pond--gold {
+  background:
+    var(--hp-back, none) center / cover no-repeat,
+    radial-gradient(ellipse 30% 40% at 0% 40%, rgb(255 200 80 / 0.4), transparent 70%),
+    radial-gradient(ellipse 30% 40% at 100% 40%, rgb(255 200 80 / 0.4), transparent 70%),
+    linear-gradient(var(--hp-night) 0 34%, #1b3a6b 34% 36%, var(--hp-deep) 36% 100%);
+}
+/* Stars and the bush along the far edge, drawn only while there is no painted background. */
+.hp-stars {
+  position: absolute; inset: 0 0 66% 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 20%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 30% 45%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 48% 15%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 66% 38%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 82% 22%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 92% 55%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(ellipse 14% 40% at 4% 100%, #10301f 0 70%, transparent 71%),
+    radial-gradient(ellipse 18% 55% at 22% 100%, #143a26 0 70%, transparent 71%),
+    radial-gradient(ellipse 16% 45% at 78% 100%, #143a26 0 70%, transparent 71%),
+    radial-gradient(ellipse 14% 60% at 97% 100%, #10301f 0 70%, transparent 71%);
+}
+[style*='--hp-back'] > .hp-stars, [style*='--hp-back'] > .hp-bank { display: none; }
+
+/* Home and finish: the pond with the magic pads, and a panel beside it (below it on a narrow screen). */
+.hp-home { flex: 1; display: flex; min-height: var(--hp-room, 100dvh); }
+.hp-pond { flex: 1; min-height: var(--hp-room, 100dvh); --hp-pad-size: clamp(54px, min(8vw, 12vh), 110px); }
+.hp-bank--near {
+  position: absolute; left: -6%; bottom: -8%; width: 22%; height: 34%;
+  border-radius: 50%; background: radial-gradient(#24563a, #163a27);
+}
+.hp-pond__spot, .hp-pond__friend { position: absolute; translate: -50% -50%; }
+.hp-pond__spot .hp-pad { width: var(--hp-pad-size); }
+.hp-pond__friend { width: calc(var(--hp-pad-size) * 1.2); translate: -50% -78%; transition: left 0.8s, top 0.8s; }
+.hp-party { position: absolute; right: 0; top: 18%; width: 22%; height: 34%; }
+.hp-party img { width: 100%; height: 100%; object-fit: contain; object-position: right center; }
+.hp-party__cave {
+  position: absolute; inset: 10% 0 0 10%;
+  border-radius: 60% 0 0 40%; background: radial-gradient(ellipse at 30% 60%, #050b18 0 40%, #1e3d2a 41%);
+}
+.hp-party__thread {
+  position: absolute; top: 14%; width: 2px;
+  background: linear-gradient(rgb(191 243 255 / 0.2), var(--hp-glow));
+  box-shadow: 0 0 6px var(--hp-glow);
+}
+.hp-party__thread::after {
+  content: ''; position: absolute; bottom: -4px; left: -3px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--hp-glow); box-shadow: 0 0 10px 3px #7fe8ff;
+}
+
+.hp-panel {
+  align-self: center;
+  width: min(380px, 40vw);
+  margin: 16px;
+  padding: 20px 22px;
+  border-radius: 28px;
+  background: var(--hp-panel);
+  box-shadow: 0 6px 0 var(--hp-teal-dark), 0 0 30px rgb(127 232 255 / 0.35);
+  text-align: center;
+}
+.hp-panel h2 { margin: 0 0 8px; font-size: clamp(1.3rem, 2.6vw, 1.8rem); line-height: 1.25; }
+.hp-panel h2:focus { outline: none; }
+.hp-panel h2:focus-visible { outline: 3px solid var(--hp-gold); }
+.hp-day { font-size: 1.3rem; font-weight: 800; color: var(--hp-teal-dark); margin: 6px 0; }
+.hp-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #e3f7fa; color: var(--hp-teal-dark); font-weight: 800; }
+.hp-play-button { width: 100%; margin-top: 10px; }
+.hp-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.hp-shelf img { height: 44px; }
+.hp-prize { width: min(220px, 60%); }
+/* A stand-in Golden Glow Jar until it is painted. */
+.hp-jar {
+  display: inline-block; width: 30px; height: 40px; border-radius: 30% 30% 40% 40%;
+  background: radial-gradient(circle at 40% 55%, #fffbd6, var(--hp-gold) 45%, #b98a00);
+  box-shadow: 0 0 12px rgb(245 197 24 / 0.8); border-top: 6px solid #8a6a3a;
+}
+.hp-jar--big { width: 110px; height: 140px; margin: 8px auto; display: block; border-top-width: 16px; }
+@media (max-height: 500px) {
+  .hp-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .hp-panel h2 { font-size: 1.2rem; }
+  .hp-panel p { margin: 4px 0; }
+  .hp-play-button { margin-top: 4px; }
+  .hp-prize, .hp-jar--big { width: min(90px, 40%); height: auto; aspect-ratio: 11 / 14; }
+}
+@media (max-width: 700px) {
+  .hp-home { flex-direction: column; }
+  .hp-pond { min-height: 55dvh; }
+  .hp-panel { width: auto; }
+}
+
+/* A lily pad: its picture (or drawn leaf), with the number on a light disc in the middle. */
+.hp-pad { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 10 / 7; }
+.hp-pad__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.35)); }
+.hp-pad__leaf { fill: #4fae45; stroke: #2f7a2c; stroke-width: 2; }
+.hp-pad--bronze .hp-pad__leaf { fill: #c97a3a; stroke: #8a4a1a; }
+.hp-pad--silver .hp-pad__leaf { fill: #d5dde6; stroke: #8b96a3; }
+.hp-pad--gold .hp-pad__leaf { fill: #ffd34a; stroke: #b98a00; }
+.hp-pad--gap .hp-pad__art { filter: drop-shadow(0 0 8px var(--hp-glow)); animation: hp-pulse 1.6s ease-in-out infinite; }
+@keyframes hp-pulse { 50% { opacity: 0.55; } }
+.hp-pad--glow .hp-pad__art { animation: hp-glow 1.2s ease-in-out 3; }
+@keyframes hp-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--hp-gold)); scale: 1.2; } }
+.hp-pad__num {
+  position: relative;
+  display: grid; place-items: center;
+  min-width: 46%; aspect-ratio: 1.3; padding: 0 4px; border-radius: 999px;
+  background: var(--hp-panel); color: var(--hp-ink);
+  font: 900 calc(var(--hp-pad-size, 90px) * 0.3) / 1 system-ui, sans-serif;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}
+.hp-pad__num--gap { background: rgb(255 255 255 / 0.18); color: #fff; box-shadow: 0 0 10px var(--hp-glow); }
+.hp-pond .hp-pad__num { display: none; }
+
+.hp-friend { display: block; width: 100%; }
+.hp-friend img, img.hp-friend { width: 100%; object-fit: contain; }
+.hp-friend--emoji { font-size: calc(var(--hp-pad-size, 90px) * 0.8); text-align: center; line-height: 1; }
+.hp-drawn { display: block; width: 100%; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.35)); }
+.hp-friend--cheer { animation: hp-flip 1s ease-in-out 2; }
+@keyframes hp-flip { 40% { translate: 0 -40%; rotate: 0deg; } 70% { translate: 0 -40%; rotate: 360deg; } 100% { rotate: 360deg; } }
+
+/* Playing: the hop counter, the question, the row of pads with Hop on it, and the glow-worms. */
+.hp-play {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--hp-room, 100dvh);
+  padding: 10px 10px 16px;
+  box-sizing: border-box;
+}
+.hp-progress { display: flex; gap: 8px; padding: 14px 8px 0; align-self: flex-start; position: relative; }
+.hp-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.25); border: 2px solid rgb(255 255 255 / 0.5); }
+.hp-pip--done { background: var(--hp-glow); border-color: #fff; box-shadow: 0 0 10px 2px #7fe8ff; }
+.hp-ask { margin: 8px 0 0; padding: 6px 20px; border-radius: 999px; background: var(--hp-panel); font: 800 clamp(1.2rem, 3vw, 1.8rem) system-ui, sans-serif; position: relative; }
+
+.hp-row {
+  --hp-pad-size: clamp(64px, min(15vw, 20vh), 150px);
+  position: relative;
+  width: min(96vw, calc(var(--hp-n) * var(--hp-pad-size) * 1.45));
+  height: calc(var(--hp-pad-size) * 2);
+  animation: hp-slide 0.5s ease-out;
+}
+@keyframes hp-slide { from { translate: 30% 0; opacity: 0; } }
+.hp-row__spot, .hp-row__frog, .hp-arc { position: absolute; left: calc((var(--hp-i) + 0.5) / var(--hp-n) * 100%); }
+.hp-row__spot { bottom: 0; width: var(--hp-pad-size); translate: -50% 0; }
+.hp-row__frog {
+  bottom: calc(var(--hp-pad-size) * 0.58);
+  width: calc(var(--hp-pad-size) * 0.85);
+  translate: -50% 0;
+  transition: left 0.65s ease-in-out;
+}
+.hp-row__frog--jump .hp-friend { animation: hp-jump 0.65s ease-in-out; }
+@keyframes hp-jump { 50% { translate: 0 calc(var(--hp-pad-size) * -0.8); } }
+/* Each hop's arc, from one pad to the next, with its step ("+2") on top. The label fades as the days go on. */
+.hp-arc {
+  bottom: calc(var(--hp-pad-size) * 0.55);
+  width: calc(100% / var(--hp-n));
+  height: calc(var(--hp-pad-size) * 0.75);
+  box-sizing: border-box;
+  border: 4px dashed rgb(191 243 255 / 0.55);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+.hp-arc--next { border-color: var(--hp-glow); }
+.hp-arc__label {
+  position: absolute; left: 50%; top: 0; translate: -50% -70%;
+  padding: 2px 10px; border-radius: 999px; background: var(--hp-panel); color: var(--hp-ink);
+  font: 900 clamp(1rem, 2.4vw, 1.5rem) / 1.2 system-ui, sans-serif;
+}
+.hp-arc--faint .hp-arc__label { opacity: 0.45; }
+
+.hp-worms { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; position: relative; }
+.hp-worm {
+  --hp-worm: clamp(76px, min(16vw, 18vh), 130px);
+  position: relative;
+  width: var(--hp-worm);
+  height: calc(var(--hp-worm) * 1.15);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  animation: hp-bob 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--hp-i) * -0.7s);
+}
+@keyframes hp-bob { 50% { translate: 0 -8px; } }
+.hp-worm:focus-visible { outline: 4px solid var(--hp-gold); outline-offset: 4px; border-radius: 50%; }
+.hp-worm__bug { width: 70%; margin-bottom: -10%; position: relative; z-index: 1; }
+.hp-worm__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.hp-worm__bead {
+  position: relative;
+  display: grid; place-items: center;
+  width: 84%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #e2fbff 55%, #a8ecf7);
+  box-shadow: 0 0 18px 6px rgb(127 232 255 / 0.55);
+  color: var(--hp-ink);
+  font: 900 calc(var(--hp-worm) * 0.32) / 1 system-ui, sans-serif;
+}
+.hp-worm--wobble { animation: hp-wobble 0.5s ease-in-out; }
+@keyframes hp-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
+.hp-worm--gone { animation: hp-fly 0.6s ease-in forwards; pointer-events: none; }
+@keyframes hp-fly { to { translate: 0 -30vh; scale: 0.4; opacity: 0; } }
+
+@media (max-height: 500px) {
+  .hp-row { --hp-pad-size: clamp(56px, 16vh, 100px); }
+  .hp-worm { --hp-worm: 72px; }
+  .hp-ask { font-size: 1.1rem; margin: 0; }
+  .hp-progress { padding-top: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-root *, .hp-root *::before, .hp-root *::after { animation: none !important; transition: none !important; }
+  .hp-worm--gone { opacity: 0; }
+}
