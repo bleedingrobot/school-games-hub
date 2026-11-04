@@ -64,7 +64,7 @@ describe('the early facts pack', () => {
   });
 
   it('asks only correct questions, with a distinct right answer among the choices', () => {
-    for (const key of keys) {
+    for (const key of keys.filter((k) => !k.startsWith('oddeven:'))) {
       for (let i = 0; i < 12; i++) {
         const q = pack.questionFor(key, 'focus', { multipleChoice: true });
         expect(q.factKey).toBe(key);
@@ -373,7 +373,7 @@ describe('skip counting in tens, fives and twos', () => {
   const ids = LADDER.map((s) => s.id);
 
   it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
-    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'tables-2-5-10']);
+    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'tables-2-5-10']);
     const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
     const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
     expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');
@@ -491,5 +491,25 @@ describe('the part-whole facts (7 is 4 and 3), for Pipi', () => {
     expect(solvePart(['07', '=', '4', '+', '?'])).toBeNull();
     expect(solvePart(['2', '=', '1', '+', '?'])).toBeNull(); // wholes start at 3
     expect(pack.rebuild('part7:4', [7, 3])).toBeNull();
+  });
+});
+
+describe('odd and even to 20, for Penguin Pairs', () => {
+  it('sits beside the ladder, asks "Is 7 odd or even?" as a pick-one question, and the server reads it back', () => {
+    const skill = LADDER.find((s) => s.id === 'odd-even')!;
+    expect(skill).toMatchObject({ inAuto: false, inWarmUp: false });
+    expect(skill.keys).toHaveLength(20);
+    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => k.startsWith('oddeven'))).toBe(false);
+    const pack = earlyFactsPack();
+    for (const key of skill.keys) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key)).toBe('early-facts');
+      const q = pack.questionFor(key, 'focus');
+      const n = Number(key.split(':')[1]);
+      expect(q.choiceLabels).toEqual(['odd', 'even']);
+      expect(q.answer).toBe(n % 2 === 0 ? 1 : 0);
+      expect(solveParts(q.parts)).toEqual({ answer: q.answer, keys: [key] });
+    }
+    expect(pack.rebuild('oddeven:7', [8])).toBeNull();
   });
 });
