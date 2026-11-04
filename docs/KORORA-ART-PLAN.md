@@ -4,15 +4,17 @@ The game ships with clay-look SVG stand-ins (`src/games/korora/KororaArt.tsx`). 
 ComfyUI on James's gaming PC with `scripts/korora-art.py` (clay style, the same as Beanstalk and Hop), the way Hop and
 Pipi were painted.
 
-## Pictures (27)
+## Pictures (26)
+
+James's changes (4 Nov 2026): the penguin is Two-Shoes, the stones go across the water and the prize is dancing shoes. Repaint `pebble-grey`, `pebble-gold`, `shoes-gold`, the three `back-across-*`, `card`, `sparkle` and `takahe-*` (the tidy step makes `shoes-bronze` and `shoes-silver` from the gold pair).
 
 | Group | Names | Notes |
 | --- | --- | --- |
-| Kororā | `korora-wait`, `korora-dive`, `korora-gulp`, `korora-cheer` | little blue penguin with a red knitted scarf |
-| Pebbles | `pebble-grey`, `pebble-gold` | bronze and silver are tints of grey in code; numbers are drawn in code |
-| Things | `chick-wait`, `chick-happy`, `fish`, `golden-fish`, `golden-fish-cushion`, `splash`, `sparkle` | the fish is drawn many times, so it must read small |
+| Two-Shoes | `korora-wait`, `korora-dive`, `korora-gulp`, `korora-cheer` | little blue penguin with a red knitted scarf |
+| Stepping stones | `pebble-grey`, `pebble-gold` | flat stones to stand on; bronze and silver are tinted from gold; numbers are drawn in code |
+| Things | `chick-wait`, `chick-happy`, `fish`, `shoes-gold`, `splash`, `sparkle` | the fish is drawn many times, so it must read small |
 | Friends | `hoiho`, `kiwi`, `pukeko`, `kereru`, `takahe` × `wait`, `cheer` | one new pool friend per Golden Fish |
-| Backs | `back-day`, `back-silver`, `back-evening` | rock pool with a calm mirror line across the middle third |
+| Backs | `back-across-day`, `back-across-silver`, `back-across-evening` | calm water right across the scene, a bank at each side, for the stepping stones |
 | Home card | `card` | goes to `src/assets/home/korora.webp`, Marble Rush card style |
 
 ## Steps

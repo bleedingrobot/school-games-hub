@@ -1,6 +1,7 @@
 /**
- * Kororā's magic pebbles at Penguin Pairs: one pebble changes on each NZ day a child finishes the challenge, bronze for
- * days 1 to 10, silver for 11 to 20 and gold for 21 to 30 (docs/KORORA-PLAN.md section 1). Days are counted, not dates,
+ * Two-Shoes' stepping stones at Penguin Pairs: ten magic stones across the water, and one changes on each NZ day a child
+ * finishes the challenge, bronze for days 1 to 10, silver for 11 to 20 and gold for 21 to 30 (docs/KORORA-PLAN.md
+ * section 1). Each crossing wins a pair of dancing shoes: bronze, then silver, then dazzling gold. Days are counted, not dates,
  * so a missed day loses nothing. Everything here comes from the count of finished days alone. Copied from
  * shared/hop/progress.ts (docs/EARLY-GAMES-PLAN.md section 7).
  */
@@ -8,11 +9,12 @@
 export const PEBBLES = 10;
 export const METALS = ['grey', 'bronze', 'silver', 'gold'] as const;
 export type Metal = (typeof METALS)[number];
-/** Ten pebbles, three changes each: thirty finished days to a Golden Fish. */
+/** Ten stones, three changes each: thirty finished days to the dazzling gold dancing shoes. */
 export const DAYS_PER_FISH = PEBBLES * (METALS.length - 1);
 
 /**
- * Who sits by the pool, in order: Kororā first, then a new New Zealand bird friend at a fresh pool after each Golden Fish.
+ * Who crosses the stones, in order: Two-Shoes the penguin first (id korora), then a new New Zealand bird friend at a
+ * fresh pool after each pair of gold shoes.
  * All birds, so the two little ones are always "chicks". The friends after Kororā are painted later.
  */
 export const FRIENDS = ['korora', 'hoiho', 'kiwi', 'pukeko', 'kereru', 'takahe'] as const;
@@ -26,8 +28,10 @@ export type Friend = (typeof FRIENDS)[number];
 export type Help = 'full' | 'faint' | 'none';
 
 export interface Pool {
-  /** Golden Fish won so far. */
+  /** Pairs of dazzling gold dancing shoes won so far (one per pool; "fish" in the database, from before the shoes). */
   fish: number;
+  /** The best dancing shoes won at this pool so far: bronze after one crossing, silver after two. */
+  shoes: 'bronze' | 'silver' | null;
   friend: Friend;
   /** Finished days at this pool, 0 to 29. */
   day: number;
@@ -55,6 +59,7 @@ export function poolAfter(daysDone: number): Pool {
     friend: FRIENDS[fish % FRIENDS.length],
     day,
     pebbles,
+    shoes: round === 0 ? null : round === 1 ? 'bronze' : 'silver',
     today: (['bronze', 'silver', 'gold'] as const)[round],
     help: (['full', 'faint', 'none'] as const)[round],
     gold: round === 2,
@@ -71,13 +76,17 @@ export interface FinishResult {
   lastPebbleDay: string | null;
   /** Which pebble changed (0 is the first), or null when a pebble already changed today. */
   pebbleChanged: number | null;
-  /** True when this finish turned the last pebble gold: a Golden Fish. */
+  /** True when this finish turned the last stone gold: the dazzling gold dancing shoes. */
   goldenFish: boolean;
+  /** The dancing shoes this finish won, when it turned the last stone of a crossing. */
+  shoesWon: Exclude<Metal, 'grey'> | null;
 }
 
 /** A finished challenge: one pebble changes on the first finish of each NZ day; playing again the same day is just for fun. */
 export function finishChallenge(daysDone: number, lastPebbleDay: string | null, today: string): FinishResult {
-  if (lastPebbleDay === today) return { daysDone: wholeCount(daysDone), lastPebbleDay, pebbleChanged: null, goldenFish: false };
+  if (lastPebbleDay === today) return { daysDone: wholeCount(daysDone), lastPebbleDay, pebbleChanged: null, goldenFish: false, shoesWon: null };
   const next = wholeCount(daysDone) + 1;
-  return { daysDone: next, lastPebbleDay: today, pebbleChanged: daysDone % PEBBLES, goldenFish: next % DAYS_PER_FISH === 0 };
+  const crossed = next % PEBBLES === 0;
+  const shoesWon = crossed ? (['gold', 'bronze', 'silver'] as const)[(next / PEBBLES) % 3] : null;
+  return { daysDone: next, lastPebbleDay: today, pebbleChanged: daysDone % PEBBLES, goldenFish: next % DAYS_PER_FISH === 0, shoesWon };
 }

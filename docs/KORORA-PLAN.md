@@ -1,6 +1,6 @@
 # Penguin Pairs (doubles and halves) — plan
 
-Short id `korora`. **Status: built and going live 4 Nov 2026 with clay stand-in art; final paintings in `docs/KORORA-ART-PLAN.md`.** Was called "Kororā's Mirror Pool"; the penguin is still Kororā. Game B in `docs/EARLY-GAMES-PLAN.md`; the parts every
+Short id `korora`. **Status: built and going live 4 Nov 2026 with clay stand-in art; final paintings in `docs/KORORA-ART-PLAN.md`.** Was called "Kororā's Mirror Pool"; the penguin is Two-Shoes (section 10). Game B in `docs/EARLY-GAMES-PLAN.md`; the parts every
 early game shares are in section 7 there and aren't repeated here.
 
 ## 1. The game in plain words
@@ -87,7 +87,18 @@ prize. 5. Go live. **No shared-maths branch**, so this is the quickest of the fi
    8. A "Hear it again" button.
    9. Teachers can set picture help to Fades, Always on or Off, and see each child's hardest facts.
 
-## 10. How it was built
+## 10. James's changes (4 Nov 2026, after going live)
+
+- The penguin is **Two-Shoes** (code id still `korora`).
+- The ten magic stones are **stepping stones across the water**, left bank to right bank; whoever is crossing stands
+  on the last stone that changed (`src/games/korora/Pool.tsx`).
+- The aim is a **pair of dancing shoes**: each crossing (10 days) wins a pair, bronze, then silver, then dazzling gold
+  after 30 days (`shoesWon` in `shared/korora/progress.ts`). Only the gold pair is an achievement, on the same day the
+  Golden Fish was, so no pupil's progress changed; migration `20261105000300_korora_shoes.sql` renames the achievements.
+- New pictures: flat stepping stones, the gold shoes (bronze and silver tinted from it), backgrounds with water right
+  across (`back-across-*`) and a new home card (`docs/KORORA-ART-PLAN.md`).
+
+## 11. How it was built
 
 - Rules: `shared/korora/` (round, play, progress, server, memoryServices), tests in `korora.test.ts`.
 - Game: `src/games/korora/` (Goes, Pool, KororaGame, clay SVG stand-ins in `KororaArt.tsx`), preview

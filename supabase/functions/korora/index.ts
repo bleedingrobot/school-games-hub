@@ -1165,10 +1165,11 @@ const METALS = [
 	"silver",
 	"gold"
 ];
-/** Ten pebbles, three changes each: thirty finished days to a Golden Fish. */
+/** Ten stones, three changes each: thirty finished days to the dazzling gold dancing shoes. */
 const DAYS_PER_FISH = 10 * (METALS.length - 1);
 /**
-* Who sits by the pool, in order: Kororā first, then a new New Zealand bird friend at a fresh pool after each Golden Fish.
+* Who crosses the stones, in order: Two-Shoes the penguin first (id korora), then a new New Zealand bird friend at a
+* fresh pool after each pair of gold shoes.
 * All birds, so the two little ones are always "chicks". The friends after Kororā are painted later.
 */
 const FRIENDS = [
@@ -1193,6 +1194,7 @@ function poolAfter(daysDone) {
 		friend: FRIENDS[fish % FRIENDS.length],
 		day,
 		pebbles,
+		shoes: round === 0 ? null : round === 1 ? "bronze" : "silver",
 		today: [
 			"bronze",
 			"silver",
@@ -1219,14 +1221,21 @@ function finishChallenge(daysDone, lastPebbleDay, today) {
 		daysDone: wholeCount(daysDone),
 		lastPebbleDay,
 		pebbleChanged: null,
-		goldenFish: false
+		goldenFish: false,
+		shoesWon: null
 	};
 	const next = wholeCount(daysDone) + 1;
+	const shoesWon = next % 10 === 0 ? [
+		"gold",
+		"bronze",
+		"silver"
+	][next / 10 % 3] : null;
 	return {
 		daysDone: next,
 		lastPebbleDay: today,
 		pebbleChanged: daysDone % 10,
-		goldenFish: next % DAYS_PER_FISH === 0
+		goldenFish: next % DAYS_PER_FISH === 0,
+		shoesWon
 	};
 }
 //#endregion
