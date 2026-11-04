@@ -43,6 +43,8 @@ import beanstalk from '../assets/home/beanstalk.webp';
 import beanstalkSmall from '../assets/home/beanstalk-small.webp';
 import hop from '../assets/home/hop.webp';
 import hopSmall from '../assets/home/hop-small.webp';
+import pipi from '../assets/home/pipi.webp';
+import pipiSmall from '../assets/home/pipi-small.webp';
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -74,6 +76,7 @@ const ART: Record<string, GameCardArt> = {
   'isles': { card: isles, small: islesSmall, focus: 'center 50%' },
   'beanstalk': { card: beanstalk, small: beanstalkSmall, focus: 'center 45%' },
   'hop': { card: hop, small: hopSmall, focus: 'center 40%' },
+  'pipi': { card: pipi, small: pipiSmall, focus: 'center 45%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {

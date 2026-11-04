@@ -1,7 +1,7 @@
 # Pipi's Hidden Shells (part-whole within 10) — plan
 
-Short id `pipi`. **Status (4 Nov 2026): shared maths LIVE (PR #189); Stages 2 and 3 below (rules, play screen) done on a game
-branch with stand-in paper art and a preview (`npm run pipi:single`); not live.** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
+Short id `pipi`. **Status (4 Nov 2026): LIVE (all stages, painted art); shared maths LIVE first (PR #189), the game in PR #193.
+Voice clips still to record (`scripts/voice-clips.py pipi`); until then the browser's voice reads the lines.** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
 game shares (30 counted days, fading help, way A, voice, guided first go, switches, stages) are in section 7 there and
 aren't repeated here.
 
@@ -111,7 +111,12 @@ Also: the game goes in the **Foundational skills** group at the top of the home 
   same part key as the split shown. Four shells to choose from (not 0 to 10).
 - **Play screen** (`src/games/pipi/`): `PipiGame`, `Goes` (the wave, the five-/ten-frame on bronze days, faint outlines on
   silver, no marks and the spots closing up on gold or with help off), `Beach`, `PipiArt` (paper stand-ins), trial
-  backend in `backend.ts`, preview `preview/pipi`. Not in the registry yet.
+  backend in `backend.ts`, preview `preview/pipi`.
+- **Server and hub** (stages 4 and 5): migration `20261104001300_pipi.sql` (tables `pipi_progress` and `pipi_rounds`,
+  `pipi_load/start/round/finish`, switch `pipi_enabled` and help setting `pipi_help`, both on by default,
+  `teacher_set_pipi`, hub hooks, six pearl achievements, teacher lines), function `supabase/functions/pipi`,
+  `src/data/pipi.ts`, game card in Foundational skills (`src/games/pipi/index.tsx`, switch `PIPI_ON`), teacher drawer
+  and student line in `src/pages/TeacherPipi.tsx`. DB tests in `supabase/tests/database/pipi.test.sql`.
 
 ## 11. Old questions for James
 
