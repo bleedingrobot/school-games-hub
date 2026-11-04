@@ -24,7 +24,7 @@ create function pg_temp.reset() returns void language sql as $$
 $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 
-select is((select trader_forge from public.app_settings where class_id is null and school_id = 1), false, 'the Star Forge starts switched off');
+select is((select trader_forge from public.app_settings where class_id is null and school_id = 1), true, 'the Star Forge starts switched on');
 
 -- ---- Pupils reach nothing directly ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');

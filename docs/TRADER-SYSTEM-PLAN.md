@@ -2,7 +2,7 @@
 
 The new end game for Star Trader. Today the big goal is one button: save 20,000 credits and **buy your moon**. This plan turns that into **building your own solar system**: pupils pick their sun, their planets, how the planets look, what lives on them and what technology they build. Then they can watch it all in full screen, painted to a high standard and moving.
 
-Written 3 November 2026 for James. **Status (4 Nov 2026): built on branch `trader-system` with painted art, not live.** The migration is on hold and nothing is deployed. 14 weak planet maps wait for a repaint at home (`docs/TRADER-SYSTEM-ART-PLAN.md` section 8). All the questions in section 13 are answered. S.8 (gallery, stickers, projector tour) built 4 Nov afternoon.
+Written 3 November 2026 for James. **Status (4 Nov 2026): LIVE and switched on for every class.** Merged in PR #187 (with Choose your captain); migration `20261103000300_trader_forge.sql` applied and the trader function deployed by Test and publish on 4 Nov, 6:24 pm. Every class's `trader_forge` set on the same evening, and new classes start on (`20261104001200_trader_forge_on.sql`). The 14 weak planet maps were repainted and committed before going live. Not started: the New Season picture upload, achievements and points, more silly pieces.
 
 ## The short version
 
