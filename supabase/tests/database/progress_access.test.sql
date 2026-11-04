@@ -124,7 +124,7 @@ select is(public.my_progress() #>> '{games,0,game}', 'checkers', 'my progress fo
 select is(public.my_progress() #>> '{games,0,rank,rank}', 'silver', 'my checkers badge');
 select is(public.my_progress() #>> '{games,0,rank,next}', 'gold', 'and the next one to aim for');
 select ok(public.my_progress()::text !~ '"rating"', 'no raw rating numbers are sent to the page');
-select is(jsonb_array_length(public.my_progress() -> 'achievements'), 53, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');
+select is(jsonb_array_length(public.my_progress() -> 'achievements'), 59, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');  -- 53 + Hop's Glow-worm Pond's 6, on by default
 select is((public.progress_rules() ->> 'botDailyCap')::int, 40, 'the rules page reads the real daily cap');
 
 -- ---- Teacher functions refuse students ----
