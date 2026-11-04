@@ -1,18 +1,22 @@
 /**
- * /#/badge/<code>: where a pupil's QR badge takes them (docs/BADGE-SIGN-IN-PLAN.md). Signs them in, then opens the home page.
- * Whoever was signed in on this device before is swapped for the badge's pupil.
+ * /#/badge/<code>: where a pupil's QR badge takes them (docs/BADGE-SIGN-IN-PLAN.md). Signs them in, then loads the home
+ * page afresh, the same way a Google sign-in comes back to the site, so every part of the site starts out signed in as
+ * this pupil. Whoever was signed in on this device before is swapped for the badge's pupil.
  */
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router';
-import { useAuth } from '../auth/AuthContext';
+import { Link, useParams } from 'react-router';
 import { codeFromScan, signInWithBadge } from '../data/badge';
 import { FriendlyError } from '../data/profile';
+import { freshUrl } from '../freshLoad';
 import './badges.css';
 
-export function BadgeSignIn() {
+/** Open the home page with a full page load (not just a change of page inside the site). */
+export function openHomeAfresh(go: (url: string) => void = (url) => window.location.replace(url)): void {
+  go(freshUrl({ pathname: window.location.pathname, search: window.location.search, hash: '#/' }));
+}
+
+export function BadgeSignIn({ goHome = openHomeAfresh }: { goHome?: () => void } = {}) {
   const { code: raw = '' } = useParams();
-  const { status, profile } = useAuth();
-  const [who, setWho] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -24,13 +28,11 @@ export function BadgeSignIn() {
       setProblem('That isn’t a sign-in badge.');
       return;
     }
-    signInWithBadge(code).then(setWho, (e: unknown) =>
-      setProblem(e instanceof FriendlyError ? e.message : 'That badge didn’t work. Try again.'),
+    signInWithBadge(code).then(
+      () => goHome(),
+      (e: unknown) => setProblem(e instanceof FriendlyError ? e.message : 'That badge didn’t work. Try again.'),
     );
-  }, [raw]);
-
-  // In once the site has loaded this pupil's own profile (not the last person's on this device).
-  if (who && status === 'signed-in' && profile?.id === who) return <Navigate to="/" replace />;
+  }, [raw, goHome]);
 
   return (
     <main id="main" className="badge-in">
