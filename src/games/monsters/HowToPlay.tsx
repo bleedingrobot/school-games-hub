@@ -13,6 +13,7 @@ import { TYPE_LABEL, TYPE_TOPIC, TYPES, strongAgainst } from '../../../shared/mo
 import { EGGS, HATCH_SPOTS } from '../../../shared/monsters/quests/eggs';
 import { GIANTS } from '../../../shared/monsters/quests/giants';
 import { QUESTS } from '../../../shared/monsters/quests/quests';
+import { TypeChart } from './TypeChart';
 
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
@@ -61,6 +62,7 @@ export function HowToPlayBody() {
       <section aria-labelledby="mht-types">
         <h3 id="mht-types">Types and maths</h3>
         <p>Each type of monster asks its own kind of maths. A type hits the next one in the list extra hard.</p>
+        <TypeChart />
         <ul>
           {TYPES.map((t) => (
             <li key={t}>

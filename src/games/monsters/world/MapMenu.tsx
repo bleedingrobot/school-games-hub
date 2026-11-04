@@ -18,6 +18,7 @@ import { HowToPlayBody } from '../HowToPlay';
 import { hasLooks, LookPicker, lookName } from '../LookPicker';
 import { MonsterBookScreen } from '../MonsterBookScreen';
 import { ITEM_LABEL } from '../text';
+import { TypeChart } from '../TypeChart';
 import { BagList, Sheet, TeamList } from '../ui';
 import type { WorldSettings } from './settings';
 import type { GameMap } from '../../../../shared/monsters/world/types';
@@ -29,7 +30,7 @@ import { fastTravel } from '../../../../shared/monsters/world/worldMap';
 import { WORLD_MAPS } from '../../../../shared/monsters/maps';
 import { puzzleById } from '../../../../shared/monsters/quests/puzzles';
 
-export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look' | 'quests' | 'eggs' | 'tinker' | 'board' | 'puzzle' | 'world';
+export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look' | 'quests' | 'eggs' | 'tinker' | 'board' | 'puzzle' | 'world' | 'types';
 
 export interface MapMenuProps {
   page: MenuPage;
@@ -50,13 +51,13 @@ export interface MapMenuProps {
   puzzle?: string;
 }
 
-const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
+const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', types: 'Strong and weak', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, onTravel, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
-  const back = () => (page === 'main' || from === 'object' ? onClose() : onGo('main'));
+  const back = () => (page === 'main' || from === 'object' ? onClose() : onGo(page === 'types' ? 'settings' : 'main'));
 
   // Each page puts the keyboard on its first button, so a screen reader reads from the top.
   useEffect(() => {
@@ -87,7 +88,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         }
       }}
     >
-      <Sheet title={page === 'puzzle' ? (puzzleById(puzzle ?? '')?.title ?? TITLES.puzzle) : TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
+      <Sheet title={page === 'puzzle' ? (puzzleById(puzzle ?? '')?.title ?? TITLES.puzzle) : TITLES[page]} reading={page === 'howto' || page === 'badges' || page === 'types'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
           <nav aria-label="Menu" className="mm-main">
             {(['team', 'bag', 'world', 'quests', 'eggs', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
@@ -124,6 +125,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
           />
         )}
         {page === 'howto' && <HowToPlayBody />}
+        {page === 'types' && <TypeChart />}
         {page === 'look' && (
           <LookPicker
             value={world.look}
@@ -147,6 +149,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
             <label><input type="checkbox" checked={settings.multipleChoice} onChange={(e) => onSettingsChange({ ...settings, multipleChoice: e.target.checked })} /> Choose answers (instead of the number pad)</label>
             <label><input type="checkbox" checked={settings.dpad} onChange={(e) => onSettingsChange({ ...settings, dpad: e.target.checked })} /> On-screen arrows (for touch screens)</label>
             <p className="mb-empty">Sound follows the speaker button at the top of the page.</p>
+            <button type="button" className="mb-btn" onClick={() => onGo('types')}>Who is strong against who?</button>
           </div>
         )}
         <p className="mm-msg" role="status" aria-live="polite">{message}</p>
