@@ -69,7 +69,7 @@ select throws_ok($$ select public.score_bot_game(b) from public.bot_games b limi
 select throws_ok($$ select public.award_achievements(auth.uid(), 'chess', now()) $$, '42501', null,
   'a student can''t hand out achievements');
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student can''t change a saved game');
-select is((select count(*)::int from public.achievement_types), 144, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder and Giant Slayer + Diamond Drop's 6 + Maths Monsters quests' 5 + Sky Isles' 8 + Kiwi's Beanstalk's 6 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6
+select is((select count(*)::int from public.achievement_types), 150, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder and Giant Slayer + Diamond Drop's 6 + Maths Monsters quests' 5 + Sky Isles' 8 + Kiwi's Beanstalk's 6 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6
 
 -- ---- Signed-out visitors and outsiders see nothing ----
 select pg_temp.act_as_anon();
@@ -124,7 +124,7 @@ select is(public.my_progress() #>> '{games,0,game}', 'checkers', 'my progress fo
 select is(public.my_progress() #>> '{games,0,rank,rank}', 'silver', 'my checkers badge');
 select is(public.my_progress() #>> '{games,0,rank,next}', 'gold', 'and the next one to aim for');
 select ok(public.my_progress()::text !~ '"rating"', 'no raw rating numbers are sent to the page');
-select is(jsonb_array_length(public.my_progress() -> 'achievements'), 71, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');  -- 53 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6, on by default
+select is(jsonb_array_length(public.my_progress() -> 'achievements'), 77, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');  -- 53 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6, on by default
 select is((public.progress_rules() ->> 'botDailyCap')::int, 40, 'the rules page reads the real daily cap');
 
 -- ---- Teacher functions refuse students ----
