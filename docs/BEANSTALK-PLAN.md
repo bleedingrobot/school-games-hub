@@ -1,6 +1,6 @@
 # Kiwi's Beanstalk (Bond Builder) — plan
 
-Short id `beanstalk`. Branch `beanstalk`, worktree `~/games-hub-beanstalk`. Stage 0 (plan), started 4 Nov 2026.
+Short id `beanstalk`. **Status: LIVE 4 Nov 2026** for every class, in Easy maths games (PR #175: tables, function and hub wiring; PR #177: code switch on). Started 4 Nov 2026; the `beanstalk` branch is merged and deleted.
 
 **For younger children (about 5 to 7)**, not the usual Year 4 to 6. Much of the guide still applies (server in charge, the
 shared maths focus, switches, going live one step at a time). Some of it is changed on purpose for this age group, as
@@ -446,3 +446,15 @@ How it works:
   teacher's notes say the sum.
 - Checked in the preview at 1366x640 and 844x390 on the tūī's and kererū's beanstalks. The tests cover all three sums
   (existing tests extended, so the count is unchanged). Function rebuilt.
+
+## Went live (4 Nov 2026, evening)
+
+- **PR #175** (merged): migrations `20261104000700_beanstalk.sql` and `20261104000800_beanstalk_hub.sql` applied by Test and
+  publish (renumbered from 000300 and 000400, which training had taken on main). The `beanstalk` function was deployed. The
+  shared database tests needed the three teacher functions and the 6 achievements added to their lists.
+- **Checked live:** both migrations are in the live history, the tables are empty, row security is on, pupils have no
+  access to the tables, and a signed-out call to the function answers 401.
+- **Switches:** `beanstalk_enabled` is on in all 4 `app_settings` rows (James: "I always want switches on by default").
+  **PR #177** turned the code switch on. The card is in **Easy maths games**.
+- **Not done:** the players tracker artifact couldn't be opened from this session, so Kiwi's Beanstalk (table
+  `beanstalk_rounds`, columns `started_at` and `finished_at`) still needs adding to its query.
