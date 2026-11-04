@@ -1,6 +1,8 @@
-# Star Forge: pick up where we left off (branch `trader-system`, after the 4 Nov 2026 evening repaint)
+# Star Forge: pick up (LIVE since 4 Nov 2026)
 
-Reply to James in plain, simple words. Work only in the worktree `/Users/jriley/games-hub-trader-system` (branch `trader-system`). Start with `git -C ~/games-hub-trader-system status` and `git log --oneline -10`. Nothing is live: the Forge's migration is on hold (`supabase/migrations-on-hold.txt`) and nothing is deployed. Use Sonnet helpers for looking through contact sheets and other routine checks.
+Reply to James in plain, simple words. **The Forge is live and on for every class** (PR #187, merged to `main` 4 Nov; branch `trader-system` and PR #184 are finished, work from `main` on a new branch). Use Sonnet helpers for routine checks. Next, when James picks: the New Season picture upload to the profile album, achievements and points, more silly pieces, or a closer gallery camera.
+
+## History (before going live)
 
 ## Read first
 - `docs/TRADER-SYSTEM-PLAN.md`: the whole plan. All the questions in section 13 are answered (4 Nov).
