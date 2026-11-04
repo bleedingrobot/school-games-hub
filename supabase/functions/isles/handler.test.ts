@@ -96,6 +96,19 @@ it('plays each turn once, six a day, and refuses an impossible spend (test 2)', 
   expect((await send('pupil-a', { action: 'turn', turn: TURNS_PER_DAY, actions: [] })).status).toBe(200);
 });
 
+it('on an unlimited day lets turns past the six through, keeps 0 left and gives no hub points', async () => {
+  const { send, log, services } = setup({ settings: () => ({ enabled: true, races: true, unlimited: true }) });
+  await send('pupil-a', { action: 'load' });
+  for (let t = 0; t < TURNS_PER_DAY; t++) await send('pupil-a', { action: 'turn', turn: t, actions: [] });
+  const pointsBefore = log.points.length;
+  const extra = await send('pupil-a', { action: 'turn', turn: TURNS_PER_DAY, actions: [] });
+  expect(extra.status).toBe(200);
+  expect(extra.body.island).toMatchObject({ turn: TURNS_PER_DAY + 1, turnsLeft: 0 });
+  expect(extra.body.unlimited).toBe(true);
+  expect(services.data.turns).toHaveLength(TURNS_PER_DAY + 1);
+  expect(log.points).toHaveLength(pointsBefore);
+});
+
 it("works a Sky Race out from its seed and the answers the server marked, so the browser can't rig it (test 3)", async () => {
   const { send, services, rightAnswer, log } = setup();
   await send('pupil-a', { action: 'load' });

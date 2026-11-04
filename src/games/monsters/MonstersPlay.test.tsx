@@ -80,6 +80,17 @@ describe('Maths Monsters opening', () => {
     expect(WORDS.resting(12)).toMatch(/Towers/);
   });
 
+  it('on an unlimited day the monsters do not rest past the limit, and it says so', async () => {
+    const { newWorld } = await import('../../../shared/monsters/world/world');
+    const { WORLD_MAPS } = await import('../../../shared/monsters/maps');
+    const { startTeam } = await import('../../../shared/monsters/world/start');
+    const world = newWorld({ maps: WORLD_MAPS }, startTeam(['leaf', 'ice']), 5);
+    data.loadMonsters.mockResolvedValue(opened({ tail: { base: 4, world, battles: [] }, battles: { day: nzDay(Date.now()), today: 12, perDay: 12, unlimited: true } }));
+    render(<MonstersPlay />);
+    expect(await screen.findByText('Unlimited today')).toBeInTheDocument();
+    expect(screen.queryByText(WORDS.resting(12))).not.toBeInTheDocument();
+  });
+
   it('carries on from the saved game, without a new save until something happens', async () => {
     const { newWorld } = await import('../../../shared/monsters/world/world');
     const { WORLD_MAPS } = await import('../../../shared/monsters/maps');

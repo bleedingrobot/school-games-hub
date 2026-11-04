@@ -23,8 +23,8 @@ export interface GameHandle {
 }
 
 /** The level a pupil most likely wants next: today's new level if it's open, else their deepest. */
-function bestLevel(p: Player, now: Date): number {
-  const open = levelsOpen(p, now);
+function bestLevel(p: Player, now: Date, unlimited = false): number {
+  const open = levelsOpen(p, now, unlimited);
   if (open.next !== null && open.nextOpen) return open.next;
   return Math.max(1, p.deepest);
 }
@@ -43,6 +43,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   const [glow, setGlow] = useState<MapButton | null>(null);
   const [prefs, setPrefsState] = useState<DiamondPrefs>(loadPrefs);
   const [busy, setBusy] = useState(false);
+  const [unlimited, setUnlimited] = useState(false);
   const still = wantsLessMotion(prefs);
   const glowTimer = useRef(0);
 
@@ -52,8 +53,9 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
     const r = await backend.load();
     if (!r.ok) { setTrouble(r.message); return; }
     setPlayer(r.value.player);
+    setUnlimited(r.value.unlimited === true);
     setClock({ server: r.value.now, at: Date.now() });
-    setSelected(bestLevel(r.value.player, new Date(r.value.now)));
+    setSelected(bestLevel(r.value.player, new Date(r.value.now), r.value.unlimited === true));
     setScreen((s) => (s === 'play' ? s : 'map'));
   }, [backend]);
 
@@ -69,7 +71,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
     });
   }, []);
 
-  const step = useMemo(() => (player ? nextStep(player, now()) : null), [player, now]);
+  const step = useMemo(() => (player ? nextStep(player, now(), unlimited) : null), [player, now, unlimited]);
 
   if (!player || !step) {
     return (
@@ -125,8 +127,8 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   const help = helpFor(prefs.help, player.lifetime.plays);
   // A new pupil's map lights up Play until they've played once.
   const mapGlow = glow ?? (player.lifetime.plays === 0 && help !== 'off' ? 'play' : null);
-  const startable = canStart(player, selected, today);
-  const why = startable ? '' : selected === levelsOpen(player, today).next ? `Level ${selected} opens tomorrow.` : `Level ${selected} is still locked.`;
+  const startable = canStart(player, selected, today, unlimited);
+  const why = startable ? '' : selected === levelsOpen(player, today, unlimited).next ? `Level ${selected} opens tomorrow.` : `Level ${selected} is still locked.`;
   const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
 
   return (
@@ -139,6 +141,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
         <LevelMap
           player={player}
           now={today}
+          unlimited={unlimited}
           selected={selected}
           onSelect={setSelected}
           onOpen={(b) => {
@@ -174,10 +177,11 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
       {screen === 'end' && ended && (
         <LevelEnd
           ended={ended}
+          unlimited={unlimited}
           achieved={achieved}
           againLabel={againLabel}
           onShop={() => { setShopTab('boosts'); go('shop'); }}
-          onAgain={() => void start(canStart(player, selected, today) ? selected : ended.result.level)}
+          onAgain={() => void start(canStart(player, selected, today, unlimited) ? selected : ended.result.level)}
           onMap={() => go('map')}
         />
       )}

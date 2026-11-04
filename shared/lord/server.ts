@@ -25,6 +25,7 @@ import { packIdOfKey } from '../maths/ladder';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { EXTRA_TURN_POINTS } from '../unlimited';
 import { computerHeroes } from './computer';
 import { EVENT_BY_ID, eventsOn } from './events';
 import {
@@ -90,6 +91,8 @@ export interface FightInfo {
   day: string;
   /** Does this fight offer "size it up"? (A pure function of the seed.) */
   sizeUp: boolean;
+  /** A forest fight taken past the normal allowance on an unlimited day: it earns no hub points. */
+  extra?: boolean;
   stage?: 1 | 2 | 3;
   /** A master's trial: how the three questions went. */
   trial?: Result[];
@@ -118,6 +121,8 @@ export interface Settings {
   seasonStart: string | null;
   /** The maths topics the teacher has left on (a missing or empty list means all of them). */
   topics?: string[];
+  /** The teacher's "Unlimited turns today" switch is on: forest and arena fights no longer run out (extra ones earn no points). */
+  unlimitedToday?: boolean;
 }
 
 export interface Commit {
@@ -196,6 +201,8 @@ export interface LordState {
   today: string;
   season: { number: number; dayOfSeason: number; daysLeft: number };
   forestPerDay: number;
+  /** The teacher's unlimited-turns switch is on today. */
+  unlimited?: boolean;
   /** The maths topics the teacher has left on. */
   topics: string[];
   classOpen: boolean;
@@ -311,6 +318,8 @@ interface Done {
   news?: NewsLine[];
   /** Added to the pupil's lifetime counts (and to their points, for the three that earn them). */
   gain?: Partial<Stats>;
+  /** An extra turn on an unlimited day: the win still counts, but earns no hub points. */
+  noPoints?: boolean;
   hall?: boolean;
   doneFight?: DoneFight;
 }
@@ -365,15 +374,17 @@ function setLook(c: Ctx): Done | Refuse {
 function forest(c: Ctx): Done | Refuse {
   const { hero, extra } = c.w;
   if (extra.pendingEvent) return { summary: { kind: 'event', again: true }, result: { kind: 'event', eventId: extra.pendingEvent } };
-  if (hero.forestLeft <= 0) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
+  const unlimited = c.settings.unlimitedToday === true;
+  const extraTurn = hero.forestLeft <= 0 && unlimited;
+  if (hero.forestLeft <= 0 && !unlimited) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
   if (hero.hp <= 0) return rule('You are too hurt to go into the forest. See the healer.');
   const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
   if (trip.kind === 'event') {
     return { extra: { ...extra, pendingEvent: trip.event.id }, summary: { kind: 'event', id: trip.event.id }, result: { kind: 'event', eventId: trip.event.id } };
   }
-  const after = useForestTurn(hero);
+  const after = useForestTurn(hero, unlimited);
   const open: OpenFight = {
-    id: c.s.newId(), kind: 'forest', seed: trip.seed, start: startFight(after, trip.monster, trip.seed), info: { day: c.today, sizeUp: offersSizeItUp(trip.seed) },
+    id: c.s.newId(), kind: 'forest', seed: trip.seed, start: startFight(after, trip.monster, trip.seed), info: { day: c.today, sizeUp: offersSizeItUp(trip.seed), ...(extraTurn ? { extra: true } : {}) },
   };
   return { hero: after, openFight: open, summary: { kind: 'fight', monster: trip.monster.id, seed: trip.seed }, result: { kind: 'fight' } };
 }
@@ -444,6 +455,7 @@ function fightFinish(c: Ctx): Done | Refuse {
   return {
     hero, answers, notes,
     gain: won ? { forestWins: 1 } : undefined,
+    noPoints: was.info.extra === true,
     news: fight.outcome === 'lost' ? [flattenedLine(c.player, fight.monster.name)] : undefined,
     closeFight: { status: 'finished', actions, result: { outcome: fight.outcome, rounds: fight.round, ...rewards, sizeUp } },
     summary: { outcome: fight.outcome, monster: fight.monster.id, ...rewards },
@@ -674,7 +686,8 @@ const sane = (h: unknown): h is Hero => {
 /** Three fights a day against a saved copy of a classmate's hero or a computer hero, near your level. Played by the server. */
 async function arena(c: Ctx): Promise<Done | Refuse> {
   const { hero } = c.w;
-  if (hero.arenaLeft <= 0) return { refuse: 'no-turns', message: 'You have used your arena fights today. Come back tomorrow!' };
+  const unlimited = c.settings.unlimitedToday === true;
+  if (hero.arenaLeft <= 0 && !unlimited) return { refuse: 'no-turns', message: 'You have used your arena fights today. Come back tomorrow!' };
   const season = seasonFor(c.settings, c.today);
   const classmates = await c.s.arenaCandidates(c.player, season.number, hero.level);
   const pool: Opponent[] = [];
@@ -697,7 +710,7 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
   const duel = playDuel(you, opponent.duelist, seed);
   const won = duel.winner === 'a';
   const exp = won ? arenaExp(hero.level) : 0;
-  const after: Hero = { ...hero, arenaLeft: hero.arenaLeft - 1, exp: hero.exp + exp, arenaWins: hero.arenaWins + (won ? 1 : 0) };
+  const after: Hero = { ...hero, arenaLeft: Math.max(0, hero.arenaLeft - 1), exp: hero.exp + exp, arenaWins: hero.arenaWins + (won ? 1 : 0) };
   const slug = opponent.kind === 'computer' ? `computer-${opponent.id}` : `pupil-${opponent.id.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12)}`;
   const result = { outcome: won ? 'won' : 'lost', rounds: duel.rounds, hpYou: duel.hpA, hpThem: duel.hpB, exp, log: duel.log };
   return {
@@ -761,6 +774,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   today,
   season: { number: season.number, dayOfSeason: season.dayOfSeason, daysLeft: season.daysLeft },
   forestPerDay: settings.forestPerDay,
+  unlimited: settings.unlimitedToday === true,
   topics: topicsOn(settings.topics),
   classOpen: w?.extra.classOpen ?? false,
   openFight: w?.open ? { id: w.open.id, kind: w.open.kind, seed: w.open.seed, start: w.open.start, sizeUp: w.open.info.sizeUp, stage: w.open.info.stage, trial: w.open.info.trial } : null,
@@ -983,7 +997,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   const nextExtra: Extra = { ...(done.extra ?? base.extra), stats };
   const nextOpen = done.openFight ?? (done.closeFight ? null : base.open);
   const changed = !!(done.hero || done.extra || done.openFight || done.closeFight || done.doneFight);
-  const earned = { forest: gain.forestWins ?? 0, master: gain.masterWins ?? 0, dragon: gain.dragons ?? 0 };
+  const earned = done.noPoints ? { forest: EXTRA_TURN_POINTS, master: 0, dragon: 0 } : { forest: gain.forestWins ?? 0, master: gain.masterWins ?? 0, dragon: gain.dragons ?? 0 };
   const reply = (state: Work, version: number): RunResult => ({ status: 200, body: { ok: true, state: finishNow(state, version), result: done.result } });
   const after: Work = { hero: nextHero, extra: nextExtra, season: base.season, open: nextOpen };
   if (!changed && !rolled) return reply(after, row?.version ?? 0);

@@ -369,7 +369,7 @@ describe('the clans server function', () => {
   it('tells the browser the settings the server used, and never anything private', async () => {
     const { send } = setup();
     const { body } = await send(create());
-    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'clock', 'day', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings']);
+    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'clock', 'day', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings', 'unlimitedToday']);
     expect(body.state.settings.yearBand).toBeDefined();
   });
 
@@ -878,6 +878,20 @@ describe('fame, points, settings and maths records through the server function',
     const next = await t.send({ type: 'load' });
     expect(next.body.state.day).toBe(2);
     expect(next.body.state.fightsLeft).toBe(5);
+  });
+
+  it('refuses a fight past the limit on a normal day, but lets it through on an unlimited day with no wins counted', async () => {
+    const t = setup();
+    await t.send(create());
+    const row = t.clans.get('student-1')!;
+    row.state.fightsLeft = 0;
+    const refused = await t.send({ type: 'fightStart', depth: 0, boss: false });
+    expect(refused.body.why).toBe('fights');
+    (t.teacher as { unlimitedToday?: boolean }).unlimitedToday = true;
+    const out = await t.send({ type: 'fightStart', depth: 0, boss: false });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.state.fightsLeft).toBe(0);
+    expect(out.body.state.fight.extra).toBe(true);
   });
 
   it('records a quest puzzle answer, right or wrong, in the private records', async () => {

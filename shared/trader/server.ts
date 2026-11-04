@@ -69,6 +69,8 @@ export interface Settings {
   forge?: boolean;
   /** Pupils may type their own names in the Forge (checked for naughty words either way). Missing: allowed. */
   forgeTyping?: boolean;
+  /** Unlimited jumps today (the teacher's switch): a jump past 0 is allowed and the count stays at 0. */
+  unlimited?: boolean;
 }
 
 /** What a pupil ended a season with, kept for the pupil who chooses to start a new system (docs/TRADER-SYSTEM-PLAN.md, 1.2). */
@@ -305,7 +307,9 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       return;
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
-      g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
+      // On an unlimited day a jump with none left goes through and the count stays at 0. (Star Trader gives no hub points.)
+      const extra = settings.unlimited === true && t.jumpsLeft < 1;
+      g.t = must(travel(galaxy, extra ? { ...t, jumpsLeft: 1 } : t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
       g.stats.jumps += 1;
       const e = encounterFor(galaxy, g.t, seed);
       out.encounter = e;

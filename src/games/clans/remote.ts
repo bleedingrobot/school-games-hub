@@ -30,6 +30,8 @@ export interface ServerClan {
   fame: number;
   season: number;
   fightsPerDay: number;
+  /** The teacher's "Unlimited turns today" switch (the server decides; this only changes what is shown). */
+  unlimitedToday?: boolean;
   achievements: string[];
   /** The season clock (null when the server does not know it yet, or an older server). */
   clock?: SeasonClock | null;
@@ -50,7 +52,7 @@ export function sessionFrom(state: ServerClan, previous?: Session | null): Sessi
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
     settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
     notes: state.notes, raidsOn: state.raidsOn,
-    fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, achievements: state.achievements,
+    fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, unlimitedToday: state.unlimitedToday, achievements: state.achievements,
     clock: state.clock ?? null,
   };
 }

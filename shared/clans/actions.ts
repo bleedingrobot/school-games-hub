@@ -56,6 +56,8 @@ export interface OpenFight<Q = Question> {
   /** The maths settings the fight's Battle Cry questions were made with, kept so a teacher's change cannot alter an open fight. */
   settings: PracticalSettings;
   rounds: RecordedRound[];
+  /** Started past the normal fights of an unlimited day: it earns no wins, so no hub points (fame and achievement counts too). */
+  extra?: true;
   /**
    * A ladder fight's Battle Cry questions, one a round, made by the server from the child's maths when the fight began.
    * The server keeps the whole questions; the browser is only given what to show (`publicQuestion`). Missing: an old-style fight.
@@ -98,6 +100,8 @@ export interface Context {
   maths?: MathsContext | null;
   /** Mine fights a day (the teacher's setting). The default is `CONFIG.fightsPerDay`. */
   fightsPerDay?: number;
+  /** The teacher's "Unlimited turns today" switch: mine fights past the daily limit are allowed (but earn no hub points). */
+  unlimitedToday?: boolean;
   /**
    * The levels of the class (group) village this clan belonged to, for converting an old save the first time it loads.
    * Without it the clan's own `village` is used. Ignored once the save is converted.
@@ -533,19 +537,20 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
     case 'fightStart': {
       // A fight is already open (a refresh, or another Chromebook): this is that fight again, and nothing more is used.
       if (state.fight) return state.fight.monster ? refuse('fight-open', 'You are in the middle of the monster fight. Finish it first!') : done(state, { type: 'fightStart', resumed: true }, false);
-      if (state.fightsLeft <= 0) return refuse('fights', "That's all the fights for today. Come back tomorrow!");
+      const extra = state.fightsLeft <= 0 && ctx.unlimitedToday === true;
+      if (state.fightsLeft <= 0 && !extra) return refuse('fights', "That's all the fights for today. Come back tomorrow!");
       if (!clan.members.some((m) => !m.knockedOut)) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
       if (action.boss && !bossAt(action.depth)) return refuse('boss', 'There is no boss at that depth.');
       const seed = fightSeed(state.seed, state.fightNo);
       if (newFight(clan.members, action.depth, seed, action.boss).result) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
-      state.fight = { depth: action.depth, boss: action.boss, seed, no: state.fightNo + 1, settings, rounds: [] };
+      state.fight = { depth: action.depth, boss: action.boss, seed, no: state.fightNo + 1, settings, rounds: [], ...(extra ? { extra: true as const } : {}) };
       // A ladder fight: the questions come from the child's own maths, made now from the fight's seed and kept with it.
       // Without the child's maths (it couldn't be loaded) the fight is an old-style one, so the fight still goes ahead.
       if (action.ladder && ctx.maths) {
         state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:${seed}:${state.fightNo + 1}`));
         state.fight.marks = [];
       }
-      state.fightsLeft--;
+      if (!extra) state.fightsLeft--;
       state.fightNo++;
       return done(state, { type: 'fightStart', resumed: false });
     }
@@ -603,7 +608,8 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
         const monster: MonsterOutcome = { kind: open.monster.setup.kind, season, won, first, tries: clan.monster.tries };
         return done(state, { type: 'fightRound', round: action.round, over: true, summary, monster, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
       }
-      const earned = earnedOrNone({ wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0, cries: rightCry });
+      // An extra fight earns no wins or bosses (the database turns those into fame and hub points); Battle Cries still count.
+      const earned = earnedOrNone({ wins: won && !boss && !open.extra ? 1 : 0, bosses: won && boss && !open.extra ? 1 : 0, cries: rightCry });
       return done(state, { type: 'fightRound', round: action.round, over: true, summary, ...earnedPart(earned) }, true, effects);
     }
   }

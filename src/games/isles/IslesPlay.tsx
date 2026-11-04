@@ -6,6 +6,7 @@
  * island and plays every turn (shared/isles/server.ts); these screens only show it and collect the choices.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { BASES, COINS, GRAND_ISLE, LIGHTHOUSE, START, TURNS_PER_DAY } from '../../../shared/isles/config';
 import { apply, beforeBuilding, boatsOf, islandWorth, problemWith, room, wholeCrystals, type Action, type Island, type TurnReport } from '../../../shared/isles/engine';
 import { nextStep } from '../../../shared/isles/nextStep';
@@ -64,12 +65,12 @@ function Resources({ island }: { island: Island }) {
   );
 }
 
-function TurnPips({ left }: { left: number }) {
+function TurnPips({ left, unlimited = false }: { left: number; unlimited?: boolean }) {
   const today = Math.min(left, TURNS_PER_DAY);
   return (
-    <div className="si-pips" role="img" aria-label={`${plural(left, 'turn')} left today`}>
+    <div className="si-pips" role="img" aria-label={unlimited && left < 1 ? UNLIMITED_LABEL : `${plural(left, 'turn')} left today`}>
       {Array.from({ length: TURNS_PER_DAY }, (_, i) => <span key={i} className={i < today ? 'si-pips__on' : ''} />)}
-      <span className="si-pips__words">{left > TURNS_PER_DAY ? `${left} turns (some saved)` : `${plural(left, 'turn')} left today`}</span>
+      <span className="si-pips__words">{unlimited && left < 1 ? UNLIMITED_LABEL : left > TURNS_PER_DAY ? `${left} turns (some saved)` : `${plural(left, 'turn')} left today`}</span>
     </div>
   );
 }
@@ -386,7 +387,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const pipHere = turnStep === null || stepOf(step.target) === turnStep;
   // Building only happens in a turn, so between turns Pip says it's for the next turn.
   const nextTurn = screen.kind === 'home' && stepOf(step.target) === Step.Build;
-  const resting = island.turnsLeft < 1 && screen.kind === 'home';
+  const unlimited = view.unlimited === true;
+  const resting = island.turnsLeft < 1 && !unlimited && screen.kind === 'home';
   const pipSays = guideNow ? guideNow.say
     : resting ? 'Your island is resting. See you tomorrow!'
     : !pipHere ? STEP_PIP[turnStep!]
@@ -436,7 +438,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
         {turnStep !== null && <StepStrip step={turnStep} />}
         <div className="si-top__right">
           {turnStep !== null && canStop(turnStep) && <button type="button" className="button button--light si-stop" onClick={leave}>Stop, back to my island</button>}
-          <TurnPips left={island.turnsLeft} />
+          <TurnPips left={island.turnsLeft} unlimited={unlimited} />
           {view.keeper && (
             <button type="button" className="si-keeperbtn" onClick={() => setScreen({ kind: 'keeper', first: false })} aria-label="Change your Sky Keeper">
               <Art src={keeperArt(view.keeper, true)} fallback={<span className="si-keeper__drawn">?</span>} />
@@ -563,7 +565,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
 
             {screen.kind === 'home' && (
               <section className="si-panel si-home">
-                {island.turnsLeft < 1 ? (
+                {island.turnsLeft < 1 && !unlimited ? (
                   <div className="si-resting">
                     <Card art={sceneArt('night')} />
                     <p><strong>Your island is resting. See you tomorrow!</strong></p>

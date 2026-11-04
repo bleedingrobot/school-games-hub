@@ -15,7 +15,7 @@ export function HowToPlayBody() {
       <h3>A day in the game</h3>
       <ul>
         <li>Each day you can fight in <strong>the forest</strong> (usually {FOREST_FIGHTS_PER_DAY} fights, and the teacher can change that). Winning gives gold and experience. Events in the forest are free.</li>
-        <li>Your health and turns come back every morning. If you miss a day, up to two days’ worth of forest fights are saved up for you, so there is no need to rush.</li>
+        <li>Your health and turns come back every morning. If you miss a day, up to two days’ worth of forest fights are saved up for you, so there is no need to rush. Some days your teacher may give unlimited turns.</li>
         <li>You can use a class skill {SKILL_USES_PER_DAY} times a day. Pick it in a fight.</li>
         <li>If you lose a forest fight you wake at the healer. You lose the gold you are carrying, but <strong>gold in the bank is safe</strong>, and you keep your experience. Then you carry on.</li>
       </ul>

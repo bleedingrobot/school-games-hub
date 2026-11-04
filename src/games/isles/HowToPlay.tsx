@@ -23,7 +23,7 @@ export function HowToPlayBody() {
       </p>
 
       <h3>Each day</h3>
-      <p>You have {TURNS_PER_DAY} turns a day. Turns you don't use wait for you, up to {MOST_TURNS_SAVED}. Each turn has 4 steps:</p>
+      <p>You have {TURNS_PER_DAY} turns a day. Turns you don't use wait for you, up to {MOST_TURNS_SAVED}. Some days your teacher may give unlimited turns. Each turn has 4 steps:</p>
       <ol>
         <li><strong>The sky pilot's question.</strong> Get it right for a fair wind: {pct(FAIR_WIND)} more coins this turn. Wrong just means no wind.</li>
         <li><strong>Collect.</strong> Every building makes coins.</li>

@@ -53,6 +53,8 @@ export interface IslandView {
   /** The island's name (shared/isles/names.ts), or null until the pupil picks one. */
   name: string | null;
   races: boolean;
+  /** The teacher's switch: turns aren't stopped at 0 today. */
+  unlimited?: boolean;
   openRace?: PublicRace | null;
   report?: TurnReport;
   already?: boolean;

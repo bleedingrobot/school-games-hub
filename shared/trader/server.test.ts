@@ -89,6 +89,16 @@ describe('the server applying moves', () => {
     expect(r.game.asked).toBe(0);
   });
 
+  it('refuses a jump with none left on a normal day, but lets it through (count stays 0) on an unlimited day', () => {
+    const g0 = newGame(galaxy, 1, DEFAULT_SETTINGS);
+    const g = { ...g0, t: { ...g0.t, jumpsLeft: 0, fuel: 20 } };
+    const jump: Action = { type: 'jump', dest: reachable(galaxy, g.t)[0] };
+    expect(applyBatch(galaxy, SEED, g, [jump], DEFAULT_SETTINGS, noMark).ok).toBe(false);
+    const r = ok(applyBatch(galaxy, SEED, g, [jump], { ...DEFAULT_SETTINGS, unlimited: true }, noMark));
+    expect(r.game.t.jumpsLeft).toBe(0);
+    expect(r.game.t.jumpNo).toBe(g.t.jumpNo + 1);
+  });
+
   it('a jump uses a jump and fuel, and while something is happening nothing else can be done', () => {
     let g = newGame(galaxy, 1, DEFAULT_SETTINGS);
     let met = false;

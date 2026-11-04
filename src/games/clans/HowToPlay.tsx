@@ -22,7 +22,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-mines">
           <h3 id="htp-mines">The Mines</h3>
           <p>This is where you fight. Pick how deep to go. The tag says if it is too easy, just right, tough or too hard. Deeper means more experience, but harder monsters. Bosses wait at some depths.</p>
-          <p>You get <strong>{fightsPerDay} fights a day</strong>. They all come back tomorrow.</p>
+          <p>You get <strong>{fightsPerDay} fights a day</strong>. They all come back tomorrow. Some days your teacher may give unlimited fights.</p>
           <p>Heroes who are knocked out are not gone for good. They wake up the next day, or at the Church.</p>
         </section>
         <section aria-labelledby="htp-cry">

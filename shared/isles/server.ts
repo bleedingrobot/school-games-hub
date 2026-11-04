@@ -126,6 +126,8 @@ export interface HallSeason {
 export interface IslesSettings {
   enabled: boolean;
   races: boolean;
+  /** Unlimited turns today (the teacher's switch). Missing: no. */
+  unlimited?: boolean;
 }
 
 export interface IslesServices {
@@ -479,6 +481,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
       keeper: saved.keeper ?? null,
       name: saved.name ?? null,
       races: settings.races,
+      unlimited: settings.unlimited === true,
       ...extra,
     });
   };
@@ -523,12 +526,13 @@ export async function handleIsles(services: IslesServices, player: string, body:
     const set = await services.questions(player, { ref: turnRef(saved.seed, island.turn) });
     if (set === 'busy') return busy();
     const windy = set?.answered['0']?.right === true;
-    const result = playTurn(island, windy, actions, turnRandom(saved.seed, island.turn));
+    const result = playTurn(island, windy, actions, turnRandom(saved.seed, island.turn), settings.unlimited === true);
     if (!result.ok) return no(400, PROBLEM_TEXT[result.problem], { code: result.problem, at: result.at });
     const kept = await services.saveTurn(player, saved.version, result.island, today, { turn: island.turn, windy, actions, report: result.report });
     if (kept === 'busy') return busy();
     if (!kept) return again(services, player, today, view, saved, island.turn);
-    await givePoints(services, player, saved.seed, island, result.island);
+    // A turn taken with none left (unlimited day) gives no turn points; the once-only milestones still count.
+    await givePoints(services, player, saved.seed, island, result.island, island.turnsLeft > 0);
     const news = turnNews(island, result.island, actions);
     if (news.length) await services.addNews(player, today, news);
     return view(result.island, { report: result.report });
@@ -702,8 +706,8 @@ async function again(services: IslesServices, player: string, today: number, vie
 }
 
 /** A point for the turn, and more for reaching Grand Isle and for each Lighthouse stage (each once, by the island's seed). */
-async function givePoints(services: IslesServices, player: string, seed: string, before: Island, after: Island) {
-  await services.awardPoints(player, POINTS.turn, `isles:${seed}:t${before.turn}`);
+async function givePoints(services: IslesServices, player: string, seed: string, before: Island, after: Island, turnPoints = true) {
+  if (turnPoints) await services.awardPoints(player, POINTS.turn, `isles:${seed}:t${before.turn}`);
   if (spotCount(before) < GRAND_ISLE && spotCount(after) >= GRAND_ISLE) await services.awardPoints(player, POINTS.grandIsle, `isles:${seed}:grand`);
   for (let stage = before.lighthouse + 1; stage <= after.lighthouse; stage++) {
     await services.awardPoints(player, POINTS.lighthouseStage, `isles:${seed}:light${stage}`);

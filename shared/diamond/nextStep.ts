@@ -30,8 +30,8 @@ function missingGem(p: Player): { name: string; level: number } | null {
   return null;
 }
 
-export function nextStep(p: Player, now: Date): NextStep {
-  const open = levelsOpen(p, now);
+export function nextStep(p: Player, now: Date, unlimited = false): NextStep {
+  const open = levelsOpen(p, now, unlimited);
   if (open.next !== null && open.nextOpen) {
     if (open.next === 1 && p.lifetime.plays === 0) return { text: `Press Play to start! ${passLine(1)}.`, button: 'play', level: 1 };
     return { text: `${passLine(open.next)}.`, button: 'play', level: open.next };

@@ -185,6 +185,8 @@ describe('opening the game', () => {
     writeTail(ME, { base: 3, world, battles: [fought, { ...fought, map: 'tower-1-top' }] as never });
     rpc.mockResolvedValueOnce({ ...server(3), data: { ...server(3).data, battles: { today: 5, perDay: 12 } } });
     expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 6, perDay: 12 });
+    rpc.mockResolvedValueOnce({ ...server(3), data: { ...server(3).data, battles: { today: 12, perDay: 12, unlimited: true } } });
+    expect((await loadMonsters(ME)).battles.unlimited).toBe(true);
     // Before the database knows about the limit: the game's own number, and nothing counted on the server.
     rpc.mockResolvedValueOnce(server(9));
     expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 0, perDay: 12 });

@@ -97,4 +97,19 @@ describe('Diamond Drop rules', () => {
     expect(p.deepest).toBe(2);
     expect(canStart(p, 3, afterMidnight)).toBe(false);
   });
+
+  it('on an unlimited day a second new level opens and counts, with no hub points; a normal day still refuses', () => {
+    const day = new Date('2026-11-03T10:50:00Z');
+    const win = { ...levelResult(startLevel(1, 9)), passed: true, stars: 3 as const };
+    const first = applyResult(newPlayer(), win, day, true);
+    expect(first.points).toBeGreaterThan(0);
+    const p = first.player;
+    expect(canStart(p, 2, day)).toBe(false);
+    expect(canStart(p, 2, day, true)).toBe(true);
+    expect(applyResult(p, { ...win, level: 2 }, day).player.deepest).toBe(1);
+    const second = applyResult(p, { ...win, level: 2 }, day, true);
+    expect(second).toMatchObject({ newLevel: true, points: 0 });
+    expect(second.player.deepest).toBe(2);
+    expect(second.coins).toBe(win.coins);
+  });
 });

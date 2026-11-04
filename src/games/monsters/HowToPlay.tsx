@@ -47,7 +47,7 @@ export function HowToPlayBody() {
         </p>
         <p>Enemy monsters hit back without asking you anything. If all your monsters get tired, you hurry back to your last healing spot and keep everything.</p>
         <p>
-          Your monsters can have <strong>{BATTLES_PER_DAY} battles a day</strong>. After that they rest until tomorrow: no wild monsters and no trainers, but you can still explore and battle in the Towers. Running away before a question doesn’t count.
+          Your monsters can have <strong>{BATTLES_PER_DAY} battles a day</strong>. After that they rest until tomorrow: no wild monsters and no trainers, but you can still explore and battle in the Towers. Running away before a question doesn’t count. Some days your teacher may give unlimited battles.
         </p>
       </section>
 

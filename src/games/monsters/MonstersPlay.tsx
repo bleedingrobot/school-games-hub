@@ -9,6 +9,7 @@ import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import { WORLD_MAPS } from '../../../shared/monsters/maps';
 import type { BattleReport } from '../../../shared/monsters/save/check';
 import type { TypeId } from '../../../shared/monsters/types';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { countsTowardCap, nzDay } from '../../../shared/monsters/world/battleCap';
 import type { WorldState } from '../../../shared/monsters/world/types';
 import { newWorld } from '../../../shared/monsters/world/world';
@@ -194,7 +195,9 @@ export function MonstersPlay() {
   }
   if (!data.settings.enabled && !data.offline) return <p className="panel__empty">{WORDS.closed}</p>;
   // A new day (the game left open past midnight) starts again from nothing.
-  const resting = battles.day === nzDay(Date.now()) && battles.today >= data.battles.perDay;
+  const spent = battles.day === nzDay(Date.now()) && battles.today >= data.battles.perDay;
+  // The teacher's switch: no resting, the extra battles earn no hub points (the database sees to that).
+  const resting = spent && !data.battles.unlimited;
   // Quests need today's day, the pupil, and the days of play the database has counted (0 until the Q.5 migration sends it).
   const questOpts = { day: nzDay(Date.now()), player, playDays: data.playDays ?? 0 };
   if (!initial) {
@@ -234,6 +237,11 @@ export function MonstersPlay() {
       {resting && (
         <p className="mp-play__note" role="status">
           {WORDS.resting(data.battles.perDay)}
+        </p>
+      )}
+      {spent && data.battles.unlimited && (
+        <p className="mp-play__note" role="status">
+          {UNLIMITED_LABEL}
         </p>
       )}
       <p className="mp-play__note" role="status">

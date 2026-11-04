@@ -2,6 +2,23 @@
 // then run `npm run build:functions`. Deploy this file as the "isles" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/**
+* Is this game's switch on today? `days` is the settings row's `unlimited_days` ({ game id: NZ date }). Anything that
+* isn't today's date (missing, an old day, junk) is off.
+*/
+function isUnlimitedFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -7448,7 +7465,7 @@ function endOfTurn(island, random) {
 		island: {
 			...next,
 			turn: next.turn + 1,
-			turnsLeft: next.turnsLeft - 1
+			turnsLeft: Math.max(0, next.turnsLeft - 1)
 		},
 		arrived,
 		weather,
@@ -7460,8 +7477,8 @@ function endOfTurn(island, random) {
 * doesn't decide). Every choice is checked in order against the island as it is then; one impossible choice refuses
 * the whole turn, and `at` says which.
 */
-function playTurn(island, windy, actions, random) {
-	if (island.turnsLeft < 1) return {
+function playTurn(island, windy, actions, random, unlimited = false) {
+	if (island.turnsLeft < 1 && !unlimited) return {
 		ok: false,
 		problem: "no-turns",
 		at: -1
@@ -8091,6 +8108,7 @@ async function handleIsles(services, player, body) {
 			keeper: saved.keeper ?? null,
 			name: saved.name ?? null,
 			races: settings.races,
+			unlimited: settings.unlimited === true,
 			...extra
 		});
 	};
@@ -8138,7 +8156,7 @@ async function handleIsles(services, player, body) {
 		const set = await services.questions(player, { ref: turnRef(saved.seed, island.turn) });
 		if (set === "busy") return busy();
 		const windy = set?.answered["0"]?.right === true;
-		const result = playTurn(island, windy, actions, turnRandom(saved.seed, island.turn));
+		const result = playTurn(island, windy, actions, turnRandom(saved.seed, island.turn), settings.unlimited === true);
 		if (!result.ok) return no(400, PROBLEM_TEXT[result.problem], {
 			code: result.problem,
 			at: result.at
@@ -8151,7 +8169,7 @@ async function handleIsles(services, player, body) {
 		});
 		if (kept === "busy") return busy();
 		if (!kept) return again(services, player, today, view, saved, island.turn);
-		await givePoints(services, player, saved.seed, island, result.island);
+		await givePoints(services, player, saved.seed, island, result.island, island.turnsLeft > 0);
 		const news = turnNews(island, result.island, actions);
 		if (news.length) await services.addNews(player, today, news);
 		return view(result.island, { report: result.report });
@@ -8388,8 +8406,8 @@ async function again(services, player, today, view, before, turn) {
 	return no(409, "Your island has moved on. Here's how it is now.", { code: "stale" });
 }
 /** A point for the turn, and more for reaching Grand Isle and for each Lighthouse stage (each once, by the island's seed). */
-async function givePoints(services, player, seed, before, after) {
-	await services.awardPoints(player, POINTS.turn, `isles:${seed}:t${before.turn}`);
+async function givePoints(services, player, seed, before, after, turnPoints = true) {
+	if (turnPoints) await services.awardPoints(player, POINTS.turn, `isles:${seed}:t${before.turn}`);
 	if (spotCount(before) < 16 && spotCount(after) >= 16) await services.awardPoints(player, POINTS.grandIsle, `isles:${seed}:grand`);
 	for (let stage = before.lighthouse + 1; stage <= after.lighthouse; stage++) await services.awardPoints(player, POINTS.lighthouseStage, `isles:${seed}:light${stage}`);
 }
@@ -8518,7 +8536,8 @@ Deno.serve(makeHandler({
 		const row = data;
 		return {
 			enabled: row.isles_enabled === true,
-			races: row.isles_races !== false
+			races: row.isles_races !== false,
+			unlimited: isUnlimitedFor(row.unlimited_days, "isles")
 		};
 	},
 	async mathsContext(player) {

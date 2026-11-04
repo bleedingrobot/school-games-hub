@@ -13,6 +13,7 @@ import { EVENT_BY_ID } from '../../../shared/lord/events';
 import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { useAuth } from '../../auth/AuthContext';
 import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
 import { FightScreen } from './Fight';
@@ -305,7 +306,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       return s.openFight.kind === 'forest' ? setScreen({ name: 'encounter' }) : playFight(s.openFight);
     }
     if (s.pendingEvent) return setScreen({ name: 'event', eventId: s.pendingEvent });
-    if (s.hero!.forestLeft <= 0) return say('You have used all your forest fights today. Come back tomorrow, or visit the village.');
+    if (s.hero!.forestLeft <= 0 && !s.unlimited) return say('You have used all your forest fights today. Come back tomorrow, or visit the village.');
     const reply = await act({ action: 'forest' });
     if (!reply) return;
     const r = reply.result as { kind: 'fight' | 'event'; eventId?: string };
@@ -438,7 +439,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
     case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} onLook={() => setScreen({ name: 'look' })} />; break;
     case 'look': body = <LookPage hero={hero} act={act} back={toVillage} busy={busy} />; break;
-    case 'arena': body = <Arena hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
+    case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
     case 'howto': body = <HowToPlay back={toVillage} />; break;
@@ -587,14 +588,14 @@ function Frame({ children, hero, hideStatus, backend, state }: { children: React
           state?.hero && <span className="lord-trial">Season {state.season.number}, day {state.season.dayOfSeason} of 35{state.season.daysLeft <= 4 ? `: ${state.season.daysLeft} days left!` : ''}</span>
         )}
       </header>
-      {hero && !hideStatus && <StatusBar hero={hero} />}
+      {hero && !hideStatus && <StatusBar hero={hero} unlimited={!!state?.unlimited} />}
       {children}
       <footer className="lord-credits">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</footer>
     </div>
   );
 }
 
-function StatusBar({ hero }: { hero: Hero }) {
+function StatusBar({ hero, unlimited }: { hero: Hero; unlimited: boolean }) {
   const need = expNeeded(hero.level);
   return (
     <ul className="lord-status" aria-label="Your hero at a glance">
@@ -602,8 +603,8 @@ function StatusBar({ hero }: { hero: Hero }) {
       <li><Icon name="heart" scale={1} colour="#ff5555" /> <strong>{hero.hp}</strong> / {hero.maxHp}</li>
       <li><Icon name="gold" scale={1} /> <strong>{hero.gold}</strong> <span className="lord-soft">(bank {hero.bank})</span></li>
       <li>Exp <strong>{hero.exp}</strong>{Number.isFinite(need) ? ` / ${need}` : ''}</li>
-      <li>Forest fights <strong>{hero.forestLeft}</strong></li>
-      <li>Arena <strong>{hero.arenaLeft}</strong></li>
+      <li>Forest fights <strong>{unlimited && hero.forestLeft <= 0 ? UNLIMITED_LABEL : hero.forestLeft}</strong></li>
+      <li>Arena <strong>{unlimited && hero.arenaLeft <= 0 ? UNLIMITED_LABEL : hero.arenaLeft}</strong></li>
       <li>Skills <strong>{hero.skillLeft}</strong> / {SKILL_USES_PER_DAY}</li>
       {hero.dragonKills > 0 && <li>{'★'.repeat(Math.min(hero.dragonKills, 5))}</li>}
     </ul>
@@ -621,7 +622,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
     <section className="lord-village" aria-label="The village">
       {hasMap() ? (
         <KingdomMap
-          heroClass={hero.heroClass} look={hero.look} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0}
+          heroClass={hero.heroClass} look={hero.look} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0 || !!state.unlimited}
           onGo={(spot) => (spot === 'forest' ? onForest() : spot === 'dragon' ? onDragon() : onPlace(spot))}
         />
       ) : (
@@ -634,7 +635,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
       {road && <SeasonRoad season={state.season} hero={hero} />}
       <div className="lord-village__intro">
         <div>
-          <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : 'No forest fights left today. The village is still open!'}</p>
+          <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : state.unlimited ? `Forest fights: ${UNLIMITED_LABEL}.` : 'No forest fights left today. The village is still open!'}</p>
           {note && <p className="lord-note" role="status">{note}</p>}
           {waiting > 0 && (
             <p className="lord-note" role="status">
@@ -661,7 +662,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
         </div>
       </div>
       <div className="lord-menu">
-        <button type="button" className="lord-place-btn lord-place-btn--forest" onClick={onForest} disabled={busy || (!fight && !state.pendingEvent && hero.forestLeft <= 0)}>
+        <button type="button" className="lord-place-btn lord-place-btn--forest" onClick={onForest} disabled={busy || (!fight && !state.pendingEvent && hero.forestLeft <= 0 && !state.unlimited)}>
           <kbd>F</kbd> <strong>{fight ? 'Carry on with your fight' : 'The Forest'}</strong> <span>{fight ? 'From the start of it' : 'Fight monsters, find gold'}</span>
         </button>
         {dragonReady && (

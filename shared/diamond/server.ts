@@ -50,6 +50,8 @@ export interface Saved {
 export interface DiamondServices {
   /** Is the game switched on for this pupil's class? Null if it can't be read. */
   enabled(player: string): Promise<boolean | null>;
+  /** Has the teacher switched on unlimited new levels for today? Missing: no. */
+  unlimited?(player: string): Promise<boolean>;
   /** The pupil's maths records, the class's question settings and their focus (null if they can't be read). */
   mathsContext(player: string): Promise<MathsContext | null>;
   /** The pupil's progress (version 0 and a new player if they've never played). */
@@ -121,11 +123,12 @@ export async function handleDiamond(services: DiamondServices, player: string, b
   if (on === null) return busy();
   if (!on) return no(403, 'Diamond Drop is not switched on for your class.', { code: 'game-off' });
   const now = () => new Date(services.now());
+  const unlimited = (await services.unlimited?.(player)) === true;
 
   if (body.action === 'load') {
     const s = await services.load(player);
     if (s === 'busy') return busy();
-    return ok({ player: s.player, now: services.now() });
+    return ok({ player: s.player, now: services.now(), unlimited });
   }
 
   if (body.action === 'levelStart') {
@@ -135,7 +138,7 @@ export async function handleDiamond(services: DiamondServices, player: string, b
     for (let tries = 0; tries < TRIES; tries++) {
       const s = await services.load(player);
       if (s === 'busy') return busy();
-      if (!canStart(s.player, level as number, now())) {
+      if (!canStart(s.player, level as number, now(), unlimited)) {
         return no(409, (level as number) > s.player.deepest + 1 ? 'That level is still locked.' : 'That level opens tomorrow.', { code: 'not-open' });
       }
       const paid = takeBoosts(s.player, level as number, boosts);
@@ -194,7 +197,7 @@ export async function handleDiamond(services: DiamondServices, player: string, b
         level: lvl.level, seed, drops: drops as number[], finish: (finish ?? null) as number | null,
         boosts: lvl.boosts, marks: lvl.marks.map((m) => m === true), starter: lvl.starter,
       });
-      const applied = applyResult(s.player, result, now());
+      const applied = applyResult(s.player, result, now(), unlimited);
       const kept = await services.end(player, seed, s.version, applied.player, { drops: drops as number[], finish: (finish ?? null) as number | null, result });
       if (kept === 'busy') return busy();
       if (kept) {

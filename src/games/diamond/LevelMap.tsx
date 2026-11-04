@@ -26,6 +26,7 @@ export type MapButton = 'play' | 'shop' | 'book' | 'how' | 'hall';
 export function LevelMap({
   player,
   now,
+  unlimited = false,
   selected,
   onSelect,
   onOpen,
@@ -38,6 +39,8 @@ export function LevelMap({
 }: {
   player: Player;
   now: Date;
+  /** The teacher's switch: the next new level is open even after one today. */
+  unlimited?: boolean;
   selected: number;
   onSelect: (level: number) => void;
   onOpen: (b: MapButton) => void;
@@ -51,7 +54,7 @@ export function LevelMap({
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
-  const open = levelsOpen(player, now);
+  const open = levelsOpen(player, now, unlimited);
   const trail = useRef<[number, number][]>([]);
   const canPlay = selected <= player.deepest || (selected === open.next && open.nextOpen);
   const why = selected === open.next && !open.nextOpen ? `Level ${selected} opens tomorrow.` : selected > player.deepest + 1 ? `Level ${selected} is still locked.` : '';

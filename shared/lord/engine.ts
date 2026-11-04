@@ -275,7 +275,8 @@ export function applyForestResult(hero: Hero, fight: FightState): Hero {
 }
 
 /** The forest-fight turn is taken when the fight is handed out, so closing the tab does not give it back. */
-export const useForestTurn = (hero: Hero): Hero => {
+export const useForestTurn = (hero: Hero, unlimited = false): Hero => {
+  if (hero.forestLeft <= 0 && unlimited) return hero; // an extra turn on an unlimited day: stays at 0
   if (hero.forestLeft <= 0) throw new Error('No forest fights left today');
   return { ...hero, forestLeft: hero.forestLeft - 1 };
 };

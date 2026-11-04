@@ -521,7 +521,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
             <Results
               summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')}
               extra={monsterDone && <MonsterResult outcome={monsterDone} session={session} />}
-              onMines={!monsterDone && session.fightsLeft > 0 && session.clan.members.some((m) => !m.knockedOut) ? () => setScreen('mines') : undefined}
+              onMines={!monsterDone && (session.fightsLeft > 0 || session.unlimitedToday === true) && session.clan.members.some((m) => !m.knockedOut) ? () => setScreen('mines') : undefined}
             />
           )}
         </>
