@@ -1,13 +1,13 @@
 /**
- * Weka’s Stepping Stones (docs/WEKA-PLAN.md): each day, ten goes of doubles and halves at Weka's mirror pool. Each day's
- * first finish changes one magic pebble (bronze, then silver, then gold); thirty days win the Golden Fish, and a new
- * friend comes to a fresh pool. The screens only show what the backend says. Copied from Hop's Glow-worm Pond.
+ * Weka’s Stepping Stones (docs/WEKA-PLAN.md): each day, ten goes across the stream, adding by making ten. Each day's
+ * first finish changes one magic stone on the far bank (bronze, then silver, then gold); thirty days win the Golden
+ * Picnic Basket, and a new friend comes to a fresh stream. The screens only show what the backend says. Copied from
+ * Penguin Pairs.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/weka/play';
-import { DAYS_PER_BASKET, STONES, streamAfter, type Help } from '../../../shared/weka/progress';
+import { DAYS_PER_BASKET, STONES, streamAfter } from '../../../shared/weka/progress';
 import type { Round } from '../../../shared/weka/round';
-import type { HelpSetting } from '../../../shared/weka/server';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -15,8 +15,8 @@ import { playSound } from '../sounds';
 import { FRIEND_NAMES, paint } from './art';
 import { WekaError, type WekaBackend, type WekaFinish, type WekaState } from './backend';
 import { Goes } from './Goes';
-import { Fish } from './WekaArt';
-import { Pool } from './Pool';
+import { Basket } from './WekaArt';
+import { Stream } from './Stream';
 import { WORDS } from './words';
 import './weka.css';
 
@@ -107,13 +107,13 @@ export function WekaGame({ backend, onExit, extra }: Props) {
   if (failed) body = <p className="wk-message">{failed}</p>;
   else if (!state || screen.kind === 'loading') body = <p className="wk-message">…</p>;
   else if (screen.kind === 'play') {
-    const pool = streamAfter(state.daysDone);
+    const stream = streamAfter(state.daysDone);
     body = (
       <Goes
         round={screen.round}
-        help={helpFor(pool.help, state.help)}
-        scenery={pool.today}
-        friend={pool.friend}
+        setting={state.help}
+        scenery={screen.round.day}
+        friend={stream.friend}
         guide={state.daysDone === 0 && state.lastStoneDay === null}
         sound={soundOn}
         say={voice.say}
@@ -143,14 +143,11 @@ export function WekaGame({ backend, onExit, extra }: Props) {
   );
 }
 
-/** The teacher's help setting on top of the pebbles' fading help. */
-const helpFor = (today: Help, setting: HelpSetting): Help => (setting === 'always' ? 'full' : setting === 'off' ? 'none' : today);
-
 function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => void; onPlay: () => void }) {
-  const pool = streamAfter(state.daysDone);
-  const name = FRIEND_NAMES[pool.friend];
+  const stream = streamAfter(state.daysDone);
+  const name = FRIEND_NAMES[stream.friend];
   const doneToday = state.lastStoneDay === state.today;
-  const title = pool.day === 0 && pool.fish > 0 ? WORDS.nextFriend(name) : WORDS.wants(name);
+  const title = stream.day === 0 && stream.baskets > 0 ? WORDS.nextFriend(name) : WORDS.wants(name);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -158,18 +155,18 @@ function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => vo
   }, [say, doneToday, title]);
   return (
     <div className="wk-home">
-      <Pool scenery={pool.today} pebbles={pool.pebbles.map((metal) => ({ metal }))} friend={pool.friend} pose="wait" />
+      <Stream scenery={stream.today} stones={stream.stones.map((metal) => ({ metal }))} friend={stream.friend} pose="wait" />
       <div className="wk-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
-        <p className="wk-day">{WORDS.dayCount(Math.min(pool.day + 1, DAYS_PER_BASKET))}</p>
+        <p className="wk-day">{WORDS.dayCount(Math.min(stream.day + 1, DAYS_PER_BASKET))}</p>
         <p className="wk-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play wk-play-button" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
-        {pool.fish > 0 && (
-          <p className="wk-shelf" aria-label={WORDS.fishWon(pool.fish)}>
-            {Array.from({ length: pool.fish }, (_, i) => <span key={i} className="wk-shelf__fish"><Fish golden /></span>)}
+        {stream.baskets > 0 && (
+          <p className="wk-shelf" aria-label={WORDS.basketsWon(stream.baskets)}>
+            {Array.from({ length: stream.baskets }, (_, i) => <span key={i} className="wk-shelf__basket"><Basket /></span>)}
           </p>
         )}
       </div>
@@ -177,16 +174,16 @@ function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => vo
   );
 }
 
-/** A pebble changes colour, or, on the thirtieth day, the Golden Fish is won. */
+/** A stone changes colour, or, on the thirtieth day, the Golden Picnic Basket is won. */
 function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) => void; onNext: () => void }) {
-  // On a Golden Fish day the new pool has already started, so show the one just finished: every pebble gold.
-  const pool = streamAfter(result.goldenBasket ? result.daysDone - 1 : result.daysDone);
-  const pebbles = result.goldenBasket
+  // On a Golden Picnic Basket day the new stream has already started, so show the one just finished: every stone gold.
+  const stream = streamAfter(result.goldenBasket ? result.daysDone - 1 : result.daysDone);
+  const stones = result.goldenBasket
     ? Array.from({ length: STONES }, () => ({ metal: 'gold' as const, glow: true }))
-    : pool.pebbles.map((metal, i) => ({ metal, glow: i === result.stoneChanged }));
-  const changed = result.stoneChanged === null ? null : pebbles[result.stoneChanged].metal;
-  const name = FRIEND_NAMES[pool.friend];
-  const main = result.goldenBasket ? WORDS.goldenBasket(name) : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
+    : stream.stones.map((metal, i) => ({ metal, glow: i === result.stoneChanged }));
+  const changed = result.stoneChanged === null ? null : stones[result.stoneChanged].metal;
+  const name = FRIEND_NAMES[stream.friend];
+  const main = result.goldenBasket ? WORDS.goldenBasket(name) : changed ? WORDS.stoneTurned(changed) : WORDS.doneToday;
   const up = result.level !== result.levelBefore ? result.level : null;
   const line = finishLine(main, up);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -194,14 +191,14 @@ function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) 
     heading.current?.focus();
     say(line);
   }, [say, line]);
-  const cushion = paint('things/golden-fish-cushion');
+  const cushion = paint('things/golden-basket-cushion');
   return (
     <div className={`wk-home${result.goldenBasket ? ' wk-home--prize' : ''}`}>
-      <Pool scenery={result.goldenBasket ? 'gold' : pool.today} pebbles={pebbles} friend={pool.friend} pose="cheer" />
+      <Stream scenery={result.goldenBasket ? 'gold' : stream.today} stones={stones} friend={stream.friend} pose="cheer" />
       <div className="wk-panel">
         <h2 tabIndex={-1} ref={heading}>{main}</h2>
         {up && <p className="wk-chip">{WORDS.levelUp(up)}</p>}
-        {result.goldenBasket && (cushion ? <img className="wk-prize" src={cushion} alt="The Golden Fish" /> : <span className="wk-prize" role="img" aria-label="The Golden Fish"><Fish golden /></span>)}
+        {result.goldenBasket && (cushion ? <img className="wk-prize" src={cushion} alt="The Golden Picnic Basket" /> : <span className="wk-prize" role="img" aria-label="The Golden Picnic Basket"><Basket /></span>)}
         <button type="button" className="button button--play wk-play-button" onClick={onNext}>
           OK
         </button>

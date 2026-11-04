@@ -14,9 +14,9 @@ const lines = allVoiceLines().map((text) => ({ slug: voiceSlug(text), text }));
 describe('Weka’s Stepping Stones voice clips', () => {
   if (process.env.WRITE_VOICE_LINES) writeFileSync(listFile, `${JSON.stringify(lines, null, 1)}\n`);
 
-  it('gives every line its own clip name, with plain letters (Weka is weka)', () => {
+  it('gives every line its own clip name, with plain letters (Takahē is takahe)', () => {
     expect(new Set(lines.map((l) => l.slug)).size).toBe(lines.length);
-    expect(lines.find((l) => l.text.startsWith('Weka is hungry'))?.slug).toMatch(/^weka-is-hungry/);
+    expect(lines.find((l) => l.text.startsWith('Takahē wants to cross'))?.slug).toMatch(/^takahe-wants-to-cross/);
   });
 
   it('has the list of lines up to date', () => {

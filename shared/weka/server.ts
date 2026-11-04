@@ -103,10 +103,10 @@ function readTaps(v: unknown): Tap[] | null {
   return taps;
 }
 
-/** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
+/** The records after this challenge's answers, the way record_fact_answers will change them (add-sub's quick time). */
 export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
   const byKey = new Map(facts.map((s) => [s.key, s]));
-  const quick = quickMsForPack('early-facts');
+  const quick = quickMsForPack('add-sub');
   for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
   return [...byKey.values()];
 }

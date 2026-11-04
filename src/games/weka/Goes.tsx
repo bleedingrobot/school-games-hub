@@ -1,45 +1,55 @@
 /**
- * Today's challenge at Weka’s Stepping Stones: ten goes by Weka's mirror pool (docs/WEKA-PLAN.md).
+ * Today's challenge at Weka's Stepping Stones: ten goes across the stream (docs/WEKA-PLAN.md).
  *
- *  - A double: fish land on the rock and the still pool shows the same fish upside down. How many fish now?
- *  - A half: a pile of fish to share fairly between the two chicks. How many does each chick get?
- *  - Fair or not (gold days): can the two chicks share this many fish fairly, or is one left over?
+ *  - Adding: "8 + 5". Weka is on stone 8 and hops 5 more. Where does Weka land? (8 and 2 make 10, then 3 more: 13.)
+ *  - Smaller first (silver and gold days): "5 + 8". Start on the bigger number.
+ *  - Hopping back (gold days): "13 − 5". Weka is on 13 and hops back 5 (3 back to the big rock, then 2 more: 8).
  *
- * The support James chose (4 Nov 2026), all in this screen:
- *  - help that fades with the pebbles: bronze days show a clear reflection with each fish joined to its mirror fish and
- *    share halves out one by one; silver days a faint, rippled reflection and the pile only; gold days the words only;
- *  - hints that build up after wrong taps on a go: a wobble, then the pictures come back and Bella counts the fish, then
- *    the hand points to the right number;
- *  - fish sit in rows of five, like a ten-frame;
- *  - tap a fish to count it (doubles), or to give it to a chick (halves and fair or not);
- *  - a double comes just before its half, with the same fish (the rules put them together);
- *  - after three goes in a row with a wrong first tap, the full pictures come back for the rest of the round;
+ * The support, all in this screen (plan section 4):
+ *  - each go's help comes with it from the server, from the child's record of that fact: 'full' (every stone numbered,
+ *    the hops split into two colours, and two steps: first "how many hops to the big rock?", then "where will Weka
+ *    land?"), 'faint' (every fifth stone numbered and the big rock, one tap) or 'none' (the sum only); the teacher can
+ *    keep it always on or off;
+ *  - stones come in fives, light and dark, with the big rock at 10, so the structure of ten shows on the number line;
+ *  - hints build after wrong taps: a wobble, then the picture comes back and Bella says the make-ten sentence ("8 and 2
+ *    make 10. Then 3 more.") or counts the hops to the big rock with the child, then the hand points;
+ *  - after three goes in a row with a wrong first tap, full help comes back for the rest of the round;
  *  - "Hear it again" reads the question again.
- * None of this changes what counts: the taps are replayed by the server, which records the first pick of each fact.
+ * None of this changes what counts: only the final picks are sent, and the server replays them and records the first
+ * pick of each fact. The first step is help only and is never sent.
  */
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tap } from '../../../shared/weka/play';
-import type { Friend as FriendName, Help } from '../../../shared/weka/progress';
-import { followsItsDouble, GOES_PER_ROUND, showRound, type Go, type Round } from '../../../shared/weka/round';
+import type { Friend as FriendName } from '../../../shared/weka/progress';
+import { askLine, fromTenLine, GOES_PER_ROUND, showRound, stemLine, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
+import type { HelpSetting } from '../../../shared/weka/server';
 import { playSound } from '../sounds';
-import { Chick, Fish, Friend, Pebble } from './WekaArt';
-import { backFor, type Scenery } from './Pool';
-import { goLine } from './voiceLines';
+import type { Pose } from './art';
+import { backFor, type Scenery } from './Stream';
+import { Friend, Hop, StepStone, Stone } from './WekaArt';
 import { WORDS } from './words';
 
-const RIGHT_MS = 1600;
+const RIGHT_MS = 1800;
 const WOBBLE_MS = 500;
-const SHARE_MS = 320;
-const COUNT_MS = 650;
-/** After this many goes in a row with a wrong first tap, the full pictures come back for the rest of the round. */
+const HOP_MS = 260;
+const COUNT_MS = 700;
+const GUIDE_MS = 2600;
+/** After this many goes in a row with a wrong first tap, full help comes back for the rest of the round. */
 const STRUGGLE_GOES = 3;
+/** The stretch of stream shown: every go starts, lands and passes within 5 to 20. */
+const FIRST = 5;
+const LAST = 20;
+const STONES = Array.from({ length: LAST - FIRST + 1 }, (_, i) => FIRST + i);
 
 const MORE: Record<Help, Help> = { none: 'faint', faint: 'full', full: 'full' };
 
+/** The teacher's setting on top of the go's own help. */
+export const helpFor = (go: Help, setting: HelpSetting): Help => (setting === 'always' ? 'full' : setting === 'off' ? 'none' : go);
+
 interface Props {
   round: Round;
-  /** The help for today, from the pebbles and the teacher's setting. */
-  help: Help;
+  /** The class's help setting. */
+  setting: HelpSetting;
   scenery: Scenery;
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the way on the first go. */
@@ -50,27 +60,36 @@ interface Props {
 }
 
 type Phase = 'ask' | 'right' | 'done';
+type Step = 'toTen' | 'answer';
 
-/** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
-const rowsOf = (n: number) => Array.from({ length: Math.ceil(n / 5) }, (_, r) => Math.min(5, n - r * 5));
+/** The stones between two numbers, not counting the first: 8 → 10 is [9, 10]; 13 → 10 is [12, 11, 10]. */
+const between = (from: number, to: number) => {
+  const out: number[] = [];
+  for (let n = from; n !== to; ) {
+    n += to > from ? 1 : -1;
+    out.push(n);
+  }
+  return out;
+};
 
-export function Goes({ round, help, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, setting, scenery, friend, guide = false, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
   const [phase, setPhase] = useState<Phase>('ask');
+  const [step, setStep] = useState<Step>('answer');
   const [wobble, setWobble] = useState<number | null>(null);
-  /** Wrong taps on this go: 1 wobble, 2 pictures and counting, 3 the hand. */
+  /** Wrong taps on this step: 1 wobble, 2 the picture and Bella's sentence, 3 the hand. */
   const [wrongs, setWrongs] = useState(0);
-  /** Goes in a row with a wrong first tap, and whether the full pictures have come back for the round. */
+  const [firstWrong, setFirstWrong] = useState(false);
+  /** Goes in a row with a wrong first tap, and whether full help has come back for the round. */
   const [streak, setStreak] = useState(0);
   const [boost, setBoost] = useState(false);
-  /** Fish tapped (or counted with Bella), in order: their count shows on them. */
-  const [counted, setCounted] = useState<string[]>([]);
-  /** Fish given to each chick, by their place in the pile. */
-  const [shared, setShared] = useState<number[]>([]);
-  /** The guided first go's hand: on the rock's fish, then the water's, then the right number. */
-  const [guideStep, setGuideStep] = useState<0 | 1 | 2>(0);
+  /** Where Weka stands, and the stones lit by counting together. */
+  const [pos, setPos] = useState(0);
+  const [lit, setLit] = useState<number[]>([]);
+  const [pose, setPose] = useState<Pose>('wait');
+  const [guidePoint, setGuidePoint] = useState(false);
   const since = useRef(Date.now());
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -83,81 +102,104 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const guided = guide && at === 0;
-  const line = goLine(go, guided, followsItsDouble(round.goes, at));
-  const shown: Help = boost ? 'full' : wrongs >= 2 ? (help === 'none' ? 'full' : MORE[help]) : help;
+  const start: Help = boost || guided ? 'full' : helpFor(go.h, setting);
+  const twoStep = start === 'full';
+  const shown: Help = wrongs >= 2 ? MORE[start] : start;
 
-  // Each new go is read aloud once; bronze-day halves share themselves out while the child watches.
+  /** Weka hops stone by stone to `to`. */
+  function hopTo(from: number, to: number, then?: () => void) {
+    const path = between(from, to);
+    setPose('hop');
+    path.forEach((n, i) => later(i * HOP_MS, () => setPos(n)));
+    later(path.length * HOP_MS + 60, () => {
+      setPose('land');
+      then?.();
+    });
+  }
+
+  // Each new go is read aloud once and Weka waits on the starting stone.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
     since.current = Date.now();
-    say(line);
-    setGuideStep(0);
-    if (guided) {
-      later(1800, () => setGuideStep(1));
-      later(3600, () => setGuideStep(2));
-    }
-    if (go.kind === 'half' && help === 'full') shareAll(go.n, 1200);
+    const s: Step = twoStep ? 'toTen' : 'answer';
+    setStep(s);
+    setPos(go.from);
+    setPose('wait');
+    setLit([]);
+    setGuidePoint(false);
+    say(s === 'toTen' ? toTenLine(go, guided) : askLine(go, guided));
+    if (guided) later(GUIDE_MS, () => setGuidePoint(true));
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
 
-  /** Shares the rest of the pile out, one each in turn. */
-  function shareAll(n: number, wait = 0) {
-    for (let i = 0; i < n; i++) {
-      later(wait + i * SHARE_MS, () => setShared((s) => (s.includes(i) || s.length >= n ? s : [...s, i])));
-    }
-  }
-
-  /** Bella counts the fish with the child, lighting each one. */
+  /** Bella counts the hops to the big rock with the child, lighting each stone. */
   function countTogether() {
-    const fishIds = go.kind === 'double'
-      ? [...Array.from({ length: go.n }, (_, i) => `r${i}`), ...Array.from({ length: go.n }, (_, i) => `w${i}`)]
-      : Array.from({ length: go.n }, (_, i) => `p${i}`);
-    setCounted([]);
+    const path = between(go.from, 10);
+    setLit([]);
     say(WORDS.countWithMe);
-    // Halves count one chick's share; doubles count every fish, the rock's then the water's.
-    const ids = go.kind === 'half' ? fishIds.filter((_, i) => i % 2 === 0) : fishIds;
-    if (go.kind !== 'double') shareAll(go.n);
-    ids.forEach((id, i) =>
-      later(1600 + i * COUNT_MS, () => {
-        setCounted((c) => [...c, id]);
+    path.forEach((n, i) =>
+      later(1500 + i * COUNT_MS, () => {
+        setLit((l) => [...l, n]);
         say(WORDS.yes(i + 1));
       }),
     );
   }
 
+  function wrong(n: number) {
+    const w = wrongs + 1;
+    setWrongs(w);
+    if (!firstWrong) {
+      setFirstWrong(true);
+      const s = streak + 1;
+      setStreak(s);
+      if (s >= STRUGGLE_GOES) setBoost(true);
+    }
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    if (w === 2) {
+      if (step === 'toTen') countTogether();
+      else {
+        setLit(between(go.from, 10));
+        say(stemLine(go));
+      }
+    } else say(WORDS.tryAgain);
+  }
+
   function pick(n: number) {
     if (phase !== 'ask') return;
+    if (step === 'toTen') {
+      // Help only: never sent, never recorded.
+      if (n !== go.toTen) return wrong(n);
+      clearTimers();
+      setWrongs(0);
+      setGuidePoint(false);
+      setLit([]);
+      if (sound) playSound('tap');
+      hopTo(go.from, 10, () => {
+        setStep('answer');
+        since.current = Date.now();
+        say(fromTenLine(go));
+        if (guided) later(GUIDE_MS, () => setGuidePoint(true));
+      });
+      return;
+    }
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
-    const first = wrongs === 0;
-    if (n !== go.answer) {
-      const w = wrongs + 1;
-      setWrongs(w);
-      if (first) {
-        const s = streak + 1;
-        setStreak(s);
-        if (s >= STRUGGLE_GOES) setBoost(true);
-      }
-      setWobble(n);
-      if (sound) playSound('tap');
-      later(WOBBLE_MS, () => setWobble(null));
-      if (w === 2 && go.kind !== 'fair') countTogether();
-      else say(WORDS.tryAgain);
-      return;
-    }
-    if (first) setStreak(0);
+    if (n !== go.answer) return wrong(n);
+    if (!firstWrong) setStreak(0);
     clearTimers();
     setPhase('right');
-    setGuideStep(2);
-    say(go.kind === 'fair' ? (go.answer === 1 ? WORDS.fairYes : WORDS.notFairYes) : WORDS.yes(n));
+    say(WORDS.yes(n));
     if (sound) playSound('badge');
-    // Show it is fair: the rest of the pile goes to the chicks.
-    if (go.kind !== 'double') shareAll(go.n);
-    const wait = go.kind === 'double' ? RIGHT_MS : Math.max(RIGHT_MS, go.n * SHARE_MS + 600);
-    later(wait, () => {
+    // Show the whole journey: to the big rock (if not there yet), then on.
+    const hopOn = () => hopTo(10, go.answer, () => setPose('cheer'));
+    if (pos === 10) hopOn();
+    else hopTo(go.from, 10, hopOn);
+    later(RIGHT_MS + (Math.abs(go.from - go.answer) * HOP_MS), () => {
       if (at + 1 >= goes.length) {
         setPhase('done');
         later(600, () => onDone(next));
@@ -165,29 +207,27 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
         setAt(at + 1);
         setPhase('ask');
         setWrongs(0);
-        setCounted([]);
-        setShared([]);
+        setFirstWrong(false);
       }
     });
   }
 
-  /** Tapping a fish: count it (doubles), or give it to the next chick (halves, fair or not) on days the pile shows. */
-  function tapFish(id: string, pileIndex?: number) {
-    if (pileIndex !== undefined) {
-      setShared((s) => (s.includes(pileIndex) ? s : [...s, pileIndex]));
-      if (sound) playSound('tap');
-      return;
-    }
-    setCounted((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
-  }
-
-  const pointAt = phase === 'ask' && ((guided && guideStep === 2) || wrongs >= 3) ? go.answer : null;
+  const choices = step === 'toTen' ? go.toTenChoices : go.choices;
+  const target = step === 'toTen' ? go.toTen : go.answer;
+  const pointAt = phase === 'ask' && ((guided && guidePoint) || wrongs >= 3) ? target : null;
   const made = at + (phase === 'ask' ? 0 : 1);
-  const pose = phase === 'right' || phase === 'done' ? (go.kind === 'double' ? 'gulp' : 'cheer') : 'wait';
   const style = { ...backFor(scenery) } as CSSProperties;
+  const sign = go.kind === 'back' ? '−' : '+';
+  const onBigRock = pos === 10 && step === 'answer';
+  const ask = step === 'toTen'
+    ? `${go.parts.join(' ').replace(' = ?', '')}: how many hops to 10?`
+    : go.parts.join(' ');
+  /** The stones on the way to the big rock, shown once Weka has hopped there or a hint lights them. */
+  const toStones = new Set(onBigRock || phase !== 'ask' ? between(go.from, 10) : lit);
+  const onStones = new Set(phase !== 'ask' ? between(10, go.answer) : []);
 
   return (
-    <div className={`wk-play wk-pool--${scenery}`} style={style}>
+    <div className={`wk-play wk-stream--${scenery}`} style={style}>
       <h2 className="wk-sr" tabIndex={-1} ref={heading}>{WORDS.pickNumber}</h2>
       <div className="wk-top">
         <div className="wk-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
@@ -195,138 +235,67 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
             <span key={i} className={i < made ? 'wk-pip wk-pip--done' : 'wk-pip'} />
           ))}
         </div>
-        <button type="button" className="wk-button" onClick={() => say(line)}>
+        <button type="button" className="wk-button" onClick={() => say(step === 'toTen' ? toTenLine(go) : onBigRock ? fromTenLine(go) : askLine(go))}>
           <span aria-hidden="true">👂</span> {WORDS.hearAgain}
         </button>
       </div>
-      <p className="wk-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish: fair or not?` : go.parts.join(' ')}</p>
-      <div className="wk-scene" key={at}>
-        <span className={`wk-scene__friend${go.kind === 'double' ? '' : ' wk-scene__friend--low'}`}>
-          <Friend friend={friend} pose={pose} />
-        </span>
-        {go.kind === 'double' ? (
-          <Mirror go={go} help={shown} phase={phase} counted={counted} guide={guided && phase === 'ask' ? guideStep : null} onFish={tapFish} />
+      <p className="wk-ask" aria-live="polite">{ask}</p>
+      {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
+      <p className="wk-stem" aria-live="polite">
+        {(onBigRock || (wrongs >= 2 && step === 'answer') || phase !== 'ask') && shown !== 'none'
+          ? go.kind === 'back'
+            ? `${go.total} − ${go.toTen} = 10, then − ${go.rest}`
+            : `${go.big} + ${go.toTen} = 10, then + ${go.rest}`
+          : ' '}
+      </p>
+      {/* The hops Weka will make: one group, or split into to-the-rock and after on full help. */}
+      {shown !== 'none' && (
+        <div className="wk-hops" aria-hidden="true">
+          <span className="wk-hops__label">{sign}{go.small}</span>
+          {Array.from({ length: go.small }, (_, i) => (
+            <Fragment key={i}>
+              {shown === 'full' && i === go.toTen && <span className="wk-hops__gap" />}
+              <Hop part={shown === 'full' && i >= go.toTen ? 'on' : 'to'} />
+            </Fragment>
+          ))}
+        </div>
+      )}
+      <div className={`wk-scene wk-scene--${shown}`} key={at} aria-hidden="true">
+        {shown === 'none' && phase === 'ask' ? (
+          <div className="wk-water-only">
+            <span className="wk-scene__friend wk-scene__friend--bank"><Friend friend={friend} pose={pose} /></span>
+          </div>
         ) : (
-          <Share go={go} help={shown} phase={phase} counted={counted} shared={shared} onFish={tapFish} />
+          <div className="wk-path">
+            {STONES.map((n) => {
+              const numbered = shown === 'full' || n % 5 === 0 || phase !== 'ask' || toStones.has(n);
+              const mark = toStones.has(n) ? 'to' : onStones.has(n) ? 'on' : null;
+              return (
+                <span key={n} className={`wk-path__spot${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
+                  <StepStone n={n} big={n === 10} shade={(n - 1) % 10 < 5 ? 'light' : 'dark'} number={numbered} mark={mark} />
+                </span>
+              );
+            })}
+            <span className="wk-scene__friend" style={{ left: `${((pos - FIRST + 0.5) / STONES.length) * 100}%` }}>
+              <Friend friend={friend} pose={pose} />
+            </span>
+          </div>
         )}
       </div>
-      <div className={`wk-choices${go.kind === 'fair' ? ' wk-choices--fair' : ''}`} role="group" aria-label={WORDS.pickNumber}>
-        {go.choices.map((n) => (
+      <div className="wk-choices" role="group" aria-label={WORDS.pickNumber}>
+        {choices.map((n) => (
           <button
-            key={`${at}-${n}`}
+            key={`${at}-${step}-${n}`}
             type="button"
             className={`wk-choice${wobble === n ? ' wk-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' wk-choice--right' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
             onClick={() => pick(n)}
-            aria-label={`${go.kind === 'fair' ? (n === 1 ? WORDS.fair : WORDS.notFair) : n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
+            aria-label={`${n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
           >
-            {go.kind === 'fair' ? (
-              <span className="wk-choice__words">
-                <span aria-hidden="true">{n === 1 ? '🐟🐟' : '🐟🐟🐟'}</span> {n === 1 ? WORDS.fair : WORDS.notFair}
-              </span>
-            ) : (
-              <Pebble metal="grey" value={n} />
-            )}
+            <Stone metal="grey" value={n} />
             {n === pointAt && <span className="wk-hand" aria-hidden="true">👆</span>}
           </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-/** A tappable fish, with its count when counted. */
-function FishSpot({ id, counted, onTap, className = '', style }: { id: string; counted: string[]; onTap: () => void; className?: string; style?: CSSProperties }) {
-  const n = counted.indexOf(id);
-  return (
-    <span className={`wk-fish${n >= 0 ? ' wk-fish--counted' : ''} ${className}`} style={style} onClick={onTap} aria-hidden="true">
-      <Fish />
-      {n >= 0 && <span className="wk-fish__count">{n + 1}</span>}
-    </span>
-  );
-}
-
-/** A double: the fish on the rock, the still water, and their reflection upside down (clear, faint or gone). */
-function Mirror({ go, help, phase, counted, guide, onFish }: {
-  go: Go; help: Help; phase: Phase; counted: string[]; guide: 0 | 1 | 2 | null; onFish: (id: string) => void;
-}) {
-  const rows = rowsOf(go.n);
-  // The reflection is the rock's rows in the opposite order, so the bottom row sits nearest the water's edge.
-  const reflection = help !== 'none' || phase !== 'ask' ? help === 'none' ? 'full' : help : null;
-  let idx = 0;
-  const rock = rows.map((count, r) => {
-    const start = idx;
-    idx += count;
-    return { r, count, start };
-  });
-  return (
-    <div className="wk-mirror">
-      <div className={`wk-rock${guide === 0 ? ' wk-guide' : ''}`}>
-        {rock.map(({ r, count, start }) => (
-          <div key={r} className="wk-row">
-            {Array.from({ length: count }, (_, i) => (
-              <FishSpot key={i} id={`r${start + i}`} counted={counted} onTap={() => onFish(`r${start + i}`)} className={help === 'full' ? 'wk-fish--linked' : ''} />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className={`wk-water${reflection ? ` wk-water--${reflection}` : ''}${guide === 1 ? ' wk-guide' : ''}`}>
-        {reflection &&
-          [...rock].reverse().map(({ r, count, start }) => (
-            <div key={r} className="wk-row wk-row--mirror">
-              {Array.from({ length: count }, (_, i) => (
-                <FishSpot key={i} id={`w${start + i}`} counted={counted} onTap={() => onFish(`w${start + i}`)} className="wk-fish--mirror" />
-              ))}
-            </div>
-          ))}
-        {!reflection && <span className="wk-water__ripple" aria-hidden="true" />}
-      </div>
-    </div>
-  );
-}
-
-/** A half, or fair or not: the pile of fish, and the two chicks each with the fish they have been given. */
-function Share({ go, help, phase, counted, shared, onFish }: {
-  go: Go; help: Help; phase: Phase; counted: string[]; shared: number[]; onFish: (id: string, pile?: number) => void;
-}) {
-  const pileShown = help !== 'none' || phase !== 'ask' || shared.length > 0;
-  const left = shared.filter((_, i) => i % 2 === 0);
-  const right = shared.filter((_, i) => i % 2 === 1);
-  const still = Array.from({ length: go.n }, (_, i) => i).filter((i) => !shared.includes(i));
-  const nest = (items: number[], happy: boolean, side: string) => (
-    <div className={`wk-nest wk-nest--${side}`}>
-      <span className="wk-chick"><Chick happy={happy} /></span>
-      <div className="wk-nest__fish">
-        {rowsOf(items.length).map((count, r) => (
-          <div key={r} className="wk-row wk-row--small">
-            {items.slice(r * 5, r * 5 + count).map((i) => (
-              <FishSpot key={i} id={`p${i}`} counted={counted} onTap={() => onFish(`p${i}`)} />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-  const done = phase !== 'ask' && still.length <= 1;
-  return (
-    <div className="wk-share">
-      {nest(left, done, 'left')}
-      <div className="wk-pile">
-        {pileShown ? (
-          rowsOf(still.length).map((count, r) => (
-            <div key={r} className="wk-row">
-              {still.slice(r * 5, r * 5 + count).map((i) => (
-                <FishSpot key={i} id={`p${i}`} counted={counted} onTap={() => onFish(`p${i}`, i)} className={done ? 'wk-fish--left-over' : ''} />
-              ))}
-            </div>
-          ))
-        ) : (
-          <span className="wk-basket" aria-hidden="true">
-            <span className="wk-basket__num">{go.n}</span>
-          </span>
-        )}
-        {pileShown && help !== 'full' && phase === 'ask' && shared.length === 0 && <p className="wk-tip">{WORDS.tapToShare}</p>}
-      </div>
-      {nest(right, done, 'right')}
     </div>
   );
 }
