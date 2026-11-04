@@ -35,6 +35,7 @@ Painted with ComfyUI on James's gaming PC, in the same style and prompt base as 
 | Clan Quest | A clan village with a storm giant far away on the horizon |
 | Kingdom Keeper | Riverstone city by a river, fields and a castle |
 | Marble Rush | A glass marble on a chunky block track at Boulder Beach |
+| Quick looks (Training, 4 Nov 2026) | A sunny garden, seven raised beds with 1 to 7 flowers, a ladybird. Drawn stand-in for now; painting in `docs/prompts/quick-looks-art.md` step 5b |
 
 ## Build
 

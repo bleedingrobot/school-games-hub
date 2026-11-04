@@ -3,7 +3,30 @@ import type { CSSProperties } from 'react';
 import type { BotLevel, GameDefinition } from '../games/types';
 import type { CardMoves } from '../data/movesLeft';
 import { BotLevelPicker } from './BotLevelPicker';
-import { gameCardArt } from './gameCardArt';
+import { gameCardArt, type GameCardArt } from './gameCardArt';
+
+function artStyle(art: GameCardArt, colours: [string, string]): CSSProperties {
+  return {
+    '--card-a': colours[0],
+    '--card-b': colours[1],
+    '--card-art': `url("${art.small}")`,
+    '--card-focus': art.focus ?? 'center 65%',
+  } as CSSProperties;
+}
+
+function CardPic({ art }: { art: GameCardArt }) {
+  return (
+    <img
+      className="game-card__pic"
+      src={art.small}
+      srcSet={`${art.small} 800w, ${art.card} 1600w`}
+      sizes="(max-width: 700px) 100vw, 400px"
+      alt=""
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
 
 /**
  * A game on the home page, in the Marble Rush course-card look: its painted scene across the top, a panel over the bottom
@@ -27,23 +50,13 @@ export function GameCard({
 }) {
   const { Icon } = game;
   const art = gameCardArt(game.id);
-  const style = {
-    '--card-a': game.colours[0],
-    '--card-b': game.colours[1],
-    ...(art ? { '--card-art': `url("${art.small}")`, '--card-focus': art.focus ?? 'center 65%' } : {}),
-  } as CSSProperties;
+  const style = art
+    ? artStyle(art, game.colours)
+    : ({ '--card-a': game.colours[0], '--card-b': game.colours[1] } as CSSProperties);
   return (
     <article className={art ? 'game-card game-card--art' : 'game-card'} style={style} aria-labelledby={`game-${game.id}-title`}>
       {art ? (
-        <img
-          className="game-card__pic"
-          src={art.small}
-          srcSet={`${art.small} 800w, ${art.card} 1600w`}
-          sizes="(max-width: 700px) 100vw, 400px"
-          alt=""
-          loading="lazy"
-          decoding="async"
-        />
+        <CardPic art={art} />
       ) : (
         <div className="game-card__pic game-card__pic--none" aria-hidden="true">
           <Icon size={44} />
@@ -83,6 +96,43 @@ export function GameCard({
             aria-label={game.noBots ? undefined : `Play ${game.name} vs bot`}
           >
             Play {game.name}
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/**
+ * A home page card for something that is not a game in the registry (Quick looks, a Training activity), in the same
+ * look as GameCard: picture, panel with name and tagline, and a Play button carrying the picture.
+ */
+export function ActivityCard({
+  id,
+  name,
+  tagline,
+  to,
+  colours,
+}: {
+  id: string;
+  name: string;
+  tagline: string;
+  to: string;
+  colours: [string, string];
+}) {
+  const art = gameCardArt(id);
+  const style = art ? artStyle(art, colours) : ({ '--card-a': colours[0], '--card-b': colours[1] } as CSSProperties);
+  return (
+    <article className={art ? 'game-card game-card--art' : 'game-card'} style={style} aria-labelledby={`game-${id}-title`}>
+      {art ? <CardPic art={art} /> : <div className="game-card__pic game-card__pic--none" aria-hidden="true" />}
+      <div className="game-card__body">
+        <div className="game-card__text">
+          <h3 id={`game-${id}-title`}>{name}</h3>
+          <p>{tagline}</p>
+        </div>
+        <div className="game-card__do">
+          <Link className="game-card__go" to={to}>
+            Play {name}
           </Link>
         </div>
       </div>

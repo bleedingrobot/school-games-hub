@@ -45,6 +45,10 @@ import hop from '../assets/home/hop.webp';
 import hopSmall from '../assets/home/hop-small.webp';
 import pipi from '../assets/home/pipi.webp';
 import pipiSmall from '../assets/home/pipi-small.webp';
+// Quick looks is a Training activity, not a game, but it has a card with the foundational games. Stand-in drawn garden
+// for now; the painted scene replaces this file by name (docs/prompts/quick-looks-art.md).
+import quickLooks from '../assets/home/quick-looks.webp';
+import quickLooksSmall from '../assets/home/quick-looks-small.webp';
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -77,6 +81,7 @@ const ART: Record<string, GameCardArt> = {
   'beanstalk': { card: beanstalk, small: beanstalkSmall, focus: 'center 45%' },
   'hop': { card: hop, small: hopSmall, focus: 'center 40%' },
   'pipi': { card: pipi, small: pipiSmall, focus: 'center 45%' },
+  'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 85%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {

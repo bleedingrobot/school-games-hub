@@ -1,7 +1,8 @@
 # The database rules: each school's and each pupil's data kept apart, scoring, the games' server checks.
 # Starts a throwaway database on GitHub's machine, applies every migration to it, and runs supabase/tests/database.
-# Runs on every pull request (so a failure shows before merging) and again inside "Test and publish" on main,
-# where a failing check stops the publish. Same as `npm run test:db` on your own copy.
+# Runs on pull requests that change the database files (migrations, database tests, Supabase config, the workflows),
+# and inside "Test and publish" on main when those changed since the last publish, where a failing check stops it.
+# Same as `npm run test:db` on your own copy.
 name: Database checks
 
 on:
@@ -11,16 +12,32 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: db-checks-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   db:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+        with:
+          fetch-depth: 2
+      # On a pull request, skip the rest when no database file changed. ("Test and publish" decides for itself.)
+      - id: what
+        if: github.event_name == 'pull_request'
+        run: scripts/ci-changes.sh HEAD^1
+      - if: steps.what.outputs.db == 'false'
+        run: echo "No database file changed, so the database checks are skipped."
+      - if: steps.what.outputs.db != 'false'
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - if: steps.what.outputs.db != 'false'
+        run: npm ci
       # Only the database: the rest of Supabase isn't needed for these checks.
-      - run: npx supabase db start
-      - run: npx supabase test db supabase/tests/database
+      - if: steps.what.outputs.db != 'false'
+        run: npx supabase db start
+      - if: steps.what.outputs.db != 'false'
+        run: npx supabase test db supabase/tests/database
