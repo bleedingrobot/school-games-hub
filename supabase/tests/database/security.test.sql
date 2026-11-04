@@ -79,6 +79,7 @@ $$, array[
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
   'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
   'teacher_set_hop', 'teacher_hop_class', 'teacher_hop_student',
+  'teacher_set_pipi', 'teacher_pipi_class', 'teacher_pipi_student',
   'teacher_class_badges', 'teacher_renew_badge',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
