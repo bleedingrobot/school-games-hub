@@ -1,0 +1,194 @@
+/* Pipi's Hidden Shells, in layered paper (James, 4 Nov 2026): flat colours, soft wavy edges, a small hard shadow under
+   every piece as if cut from card. Numbers sit dark on light shells, and every target is at least 64px for children of 5
+   to 7. */
+.pp-root {
+  --pp-ink: #2b2233;
+  --pp-panel: #fffaf0;
+  --pp-sky: #bfe4ec;
+  --pp-sea: #3f9fb3;
+  --pp-sea-dark: #2b7d92;
+  --pp-wet: #e0c48e;
+  --pp-sand: #f3ddb0;
+  --pp-sand-dark: #e2c58c;
+  --pp-red: #d1453b;
+  --pp-leaf: #2f6b45;
+  --pp-gold: #f2b928;
+  --pp-paper: drop-shadow(0 3px 0 rgb(60 40 20 / 0.18));
+  position: relative;
+  min-height: var(--pp-room, 100dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--pp-sand);
+  color: var(--pp-ink);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+.pp-root--cover { position: fixed; inset: 0; z-index: 20; }
+.pp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pp-message { margin: auto; font-size: 1.6rem; padding: 24px; text-align: center; }
+
+.pp-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
+.pp-button {
+  min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--pp-sea-dark);
+  background: var(--pp-panel); color: var(--pp-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;
+  filter: var(--pp-paper);
+}
+
+/* ---- the paper beach: sky, sun, clouds, a dune with a pōhutukawa, the sea, wet sand and dry sand ---- */
+.pp-beach, .pp-play {
+  position: relative;
+  background: var(--pp-back, none) center / cover no-repeat, var(--pp-sky);
+  --pp-sky: #bfe4ec;
+}
+.pp-scene--silver { --pp-sky: #f6d9b4; }
+.pp-scene--gold { --pp-sky: #f7b98a; }
+.pp-scene--gold .pp-sun { background: #f7d36a; top: 26%; }
+[style*='--pp-back'] > .pp-layers { display: none; }
+.pp-layers { position: absolute; inset: 0; pointer-events: none; }
+.pp-layers > span { position: absolute; filter: var(--pp-paper); }
+.pp-sun { width: 11vmin; height: 11vmin; border-radius: 50%; background: #fff3b8; right: 14%; top: 8%; }
+.pp-cloud { height: 6vmin; background: #fffdf6; border-radius: 999px; }
+.pp-cloud::before, .pp-cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+.pp-cloud::before { width: 45%; height: 160%; left: 15%; bottom: 20%; }
+.pp-cloud::after { width: 35%; height: 130%; left: 48%; bottom: 25%; }
+.pp-cloud--a { width: 18vmin; left: 10%; top: 10%; }
+.pp-cloud--b { width: 13vmin; left: 52%; top: 18%; opacity: 0.9; }
+.pp-dune { left: -8%; top: 30%; width: 48%; height: 30%; border-radius: 50% 60% 0 0; background: #d9c27d; }
+.pp-tree { left: 6%; top: 18%; width: 22%; height: 26%; filter: none !important; }
+.pp-tree__trunk { position: absolute; left: 44%; bottom: 0; width: 10%; height: 50%; background: #6b4a33; border-radius: 4px; }
+.pp-tree__top {
+  position: absolute; left: 0; right: 0; top: 0; height: 66%; border-radius: 50% 50% 46% 46%;
+  background:
+    radial-gradient(circle at 20% 40%, var(--pp-red) 0 6%, transparent 7%),
+    radial-gradient(circle at 46% 22%, var(--pp-red) 0 6%, transparent 7%),
+    radial-gradient(circle at 70% 36%, var(--pp-red) 0 6%, transparent 7%),
+    radial-gradient(circle at 34% 64%, var(--pp-red) 0 6%, transparent 7%),
+    radial-gradient(circle at 62% 66%, var(--pp-red) 0 6%, transparent 7%),
+    radial-gradient(circle at 84% 58%, var(--pp-red) 0 5%, transparent 6%),
+    var(--pp-leaf);
+  filter: var(--pp-paper);
+}
+/* The sea, with a scalloped paper edge where the waves break. */
+.pp-sea {
+  left: 0; right: 0; top: 40%; height: 16%; background: var(--pp-sea);
+  -webkit-mask: radial-gradient(circle at 50% 100%, #000 70%, transparent 71%) 0 100% / 7vmin 100% repeat-x, linear-gradient(#000, #000) 0 0 / 100% 70% no-repeat;
+}
+.pp-wet { left: 0; right: 0; top: 50%; height: 12%; background: var(--pp-wet); border-radius: 40% 60% 0 0 / 30% 30% 0 0; }
+.pp-sand { left: 0; right: 0; top: 56%; bottom: 0; background: var(--pp-sand); border-radius: 60% 40% 0 0 / 14% 10% 0 0; }
+
+/* ---- home and finish: the beach with the ten magic shells, and a paper panel beside it ---- */
+.pp-home { flex: 1; display: flex; min-height: var(--pp-room, 100dvh); }
+.pp-beach { flex: 1; min-height: var(--pp-room, 100dvh); --pp-shell-size: clamp(42px, min(7vw, 10vh), 92px); }
+.pp-tideline { position: absolute; left: 22%; right: 3%; top: 66%; display: flex; justify-content: space-between; }
+.pp-tideline__spot { width: var(--pp-shell-size); translate: 0 calc(sin(var(--pp-i) * 0.9rad) * 12px); }
+.pp-magic { width: 100%; display: block; filter: var(--pp-paper); }
+.pp-magic--glow { animation: pp-glow 1.4s ease-in-out 2; }
+@keyframes pp-glow { 50% { scale: 1.25; filter: drop-shadow(0 0 14px #fff2a8) drop-shadow(0 3px 0 rgb(60 40 20 / 0.18)); } }
+.pp-beach__friend { position: absolute; left: 3%; top: 54%; width: clamp(90px, 16vw, 200px); }
+.pp-friend { display: block; width: 100%; filter: var(--pp-paper); }
+.pp-friend--cheer, .pp-friend--wave { animation: pp-bob 0.9s ease-in-out infinite; }
+@keyframes pp-bob { 50% { translate: 0 -6px; } }
+
+.pp-panel {
+  align-self: center; width: min(360px, 34vw); margin: 16px; padding: 20px 22px; border-radius: 22px;
+  background: var(--pp-panel); filter: var(--pp-paper); position: relative;
+}
+.pp-title { margin: 0 0 4px; font-weight: 800; color: var(--pp-sea-dark); font-size: 1rem; }
+.pp-panel h2 { margin: 0 0 8px; font-size: clamp(1.3rem, 2.6vw, 1.8rem); line-height: 1.25; }
+.pp-panel h2:focus { outline: none; }
+.pp-panel h2:focus-visible { outline: 3px solid var(--pp-gold); }
+.pp-day { font-size: 1.3rem; font-weight: 800; color: var(--pp-sea-dark); margin: 6px 0; }
+.pp-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #e1f2f4; color: var(--pp-sea-dark); font-weight: 800; }
+.pp-play-button { width: 100%; margin-top: 10px; min-height: 64px; }
+.pp-shelf { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 0; }
+.pp-shelf .pp-pearl { width: 40px; }
+.pp-prize { display: block; width: 160px; margin: 8px auto; }
+.pp-pearl { width: 100%; display: block; filter: var(--pp-paper); }
+
+/* ---- a go: the sign, the frame on the sand, the wave and the number shells ---- */
+.pp-play { flex: 1; display: flex; flex-direction: column; align-items: center; min-height: var(--pp-room, 100dvh); }
+.pp-progress { display: flex; gap: 8px; padding: 14px 8px 0; align-self: flex-start; position: relative; }
+.pp-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.55); border: 2px solid var(--pp-sea-dark); }
+.pp-pip--done { background: var(--pp-gold); }
+.pp-sign {
+  position: relative; margin-top: 8px; padding: 8px 24px 10px; border-radius: 18px; background: var(--pp-panel);
+  filter: var(--pp-paper); display: grid; justify-items: center; text-align: center;
+}
+.pp-sign__whole { font: 900 clamp(2.6rem, 8vmin, 4.4rem) / 1 system-ui, sans-serif; }
+.pp-sign__words { font-weight: 800; font-size: 1.1rem; color: var(--pp-sea-dark); }
+.pp-sign__ask { font-weight: 800; font-size: clamp(1.1rem, 2.6vw, 1.5rem); margin-top: 2px; }
+
+.pp-stage {
+  position: relative; flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 2vh; --pp-spot: clamp(50px, min(9vw, 11vh), 96px);
+}
+.pp-play__friend { position: absolute; left: 3%; bottom: 4%; width: clamp(70px, 12vw, 150px); }
+.pp-frame { position: relative; display: grid; gap: 6px; padding: 10px; border-radius: 14px; }
+.pp-frame--five { grid-template-columns: repeat(5, var(--pp-spot)); background: #fff3d8; outline: 4px solid #b98c52; filter: var(--pp-paper); }
+.pp-frame--ten { grid-template-columns: repeat(5, var(--pp-spot)); background: #fff3d8; outline: 4px solid #b98c52; filter: var(--pp-paper); }
+.pp-frame--five .pp-spot, .pp-frame--ten .pp-spot { outline: 2px dashed #d6b27a; border-radius: 8px; }
+.pp-frame--row { grid-auto-flow: column; grid-auto-columns: var(--pp-spot); }
+.pp-frame--row .pp-spot--empty { display: none; }
+.pp-spot { width: var(--pp-spot); aspect-ratio: 6 / 5; display: grid; place-items: end center; }
+.pp-pipi, .pp-hidden { width: 100%; display: block; }
+.pp-pipi { filter: var(--pp-paper); transition: translate 0.4s; }
+.pp-pipi--dig { animation: pp-dig 0.6s ease-in forwards; }
+@keyframes pp-dig { to { translate: 0 60%; rotate: 8deg; opacity: 0; } }
+.pp-spot--popped .pp-pipi { animation: pp-pop 0.5s ease-out; }
+@keyframes pp-pop { from { translate: 0 60%; opacity: 0; } }
+.pp-pipi__foot { transform-origin: 44px 26px; animation: pp-wave 0.6s ease-in-out infinite alternate; }
+@keyframes pp-wave { to { rotate: -20deg; } }
+.pp-hidden--faint .pp-hidden__outline { opacity: 0.35; }
+.pp-spot--pointed .pp-hidden__outline { animation: pp-pulse 0.9s ease-in-out infinite; }
+@keyframes pp-pulse { 50% { stroke-width: 5; opacity: 0.6; } }
+
+/* The wave washes in over the sand and back out. */
+.pp-wave {
+  position: absolute; left: -10%; right: -10%; bottom: 0; height: 70%; z-index: 2; pointer-events: none;
+  background: var(--pp-sea); opacity: 0.85; border-radius: 50% 50% 0 0 / 22% 22% 0 0;
+  filter: var(--pp-paper); animation: pp-wash-in 0.65s ease-out both;
+}
+.pp-wave--out { animation: pp-wash-out 0.65s ease-in both; }
+@keyframes pp-wash-in { from { translate: 0 100%; } }
+@keyframes pp-wash-out { from { translate: 0 0; } to { translate: 0 105%; } }
+
+.pp-shells { display: flex; gap: clamp(10px, 3vw, 28px); padding: 4px 12px 14px; position: relative; }
+.pp-shellbtn {
+  --pp-shell: clamp(76px, min(15vw, 17vh), 128px);
+  position: relative; width: var(--pp-shell); height: calc(var(--pp-shell) * 0.9); padding: 0; border: 0;
+  background: none; cursor: pointer; filter: var(--pp-paper); animation: pp-bob 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--pp-i) * -0.6s);
+}
+.pp-shellbtn:disabled { cursor: default; opacity: 0.75; }
+.pp-shellbtn:focus-visible { outline: 4px solid var(--pp-gold); outline-offset: 4px; border-radius: 30%; }
+.pp-shell { width: 100%; height: 100%; display: block; }
+.pp-shell__number { font: 900 38px system-ui, sans-serif; fill: var(--pp-ink); }
+.pp-shellbtn--wobble { animation: pp-wobble 0.5s ease-in-out; }
+@keyframes pp-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
+.pp-shellbtn--right { animation: pp-right 0.8s ease-out forwards; }
+@keyframes pp-right { 40% { scale: 1.25; } 100% { scale: 1.1; } }
+.pp-hand { position: absolute; left: 50%; top: -52%; font-size: 3rem; translate: -50% 0; animation: pp-point 0.9s ease-in-out infinite; pointer-events: none; }
+@keyframes pp-point { 50% { translate: -50% -10px; } }
+
+@media (max-height: 500px) {
+  .pp-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .pp-panel h2 { font-size: 1.2rem; }
+  .pp-panel p { margin: 4px 0; }
+  .pp-sign { padding: 4px 16px 6px; }
+  .pp-sign__whole { font-size: 2.2rem; }
+  .pp-stage { --pp-spot: clamp(36px, 7vw, 64px); }
+  .pp-shellbtn { --pp-shell: 72px; }
+}
+@media (max-width: 700px) {
+  .pp-home { flex-direction: column; }
+  .pp-beach { min-height: 52dvh; }
+  .pp-panel { width: auto; }
+  .pp-tideline { left: 4%; top: 72%; }
+  .pp-beach__friend { top: 40%; }
+  .pp-stage { --pp-spot: clamp(36px, 15vw, 64px); }
+  .pp-play__friend { display: none; }
+  .pp-sign { margin-top: 60px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-root *, .pp-root *::before, .pp-root *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
