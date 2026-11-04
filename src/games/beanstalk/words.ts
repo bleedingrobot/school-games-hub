@@ -2,6 +2,8 @@
 import type { Metal } from '../../../shared/beanstalk/progress';
 
 export const WORDS = {
+  /** What changes each day, for the next-part chip (src/components/NextPartChip.tsx). */
+  part: 'leaf',
   title: "Kiwi's Beanstalk",
   whoAreYou: 'Who do you want to be?',
   jack: 'Jack',

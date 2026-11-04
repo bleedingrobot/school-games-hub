@@ -7,6 +7,7 @@ import { METALS, type Metal } from '../../../shared/korora/progress';
 import { LEVELS, levelKeys, parseKey, spokenFor, fairKeys, type Go, type Level } from '../../../shared/korora/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
+import { nextPartWords } from '../../components/NextPartChip';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/korora/';
@@ -28,7 +29,7 @@ export function finishLine(main: string, levelUp: Level | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, WORDS.fairYes, WORDS.notFairYes]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

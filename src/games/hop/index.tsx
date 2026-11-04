@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { WORDS } from './words';
 import { useHopEnabled } from './switch';
 import { HOP_ABOUT, saveHopEnabled, useHopClassSwitch, useHopSummary } from './teacher';
 
@@ -43,6 +44,8 @@ export const hopsGlowwormPond: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'foundational',
+  // The home page card's chip: today's lily pad ready, or come back tomorrow.
+  nextPart: { noun: WORDS.part },
   useTeacherSwitch: useHopEnabled,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Glow Jars in the
   // Maths column, and a drawer with the hops' step labels on or off.

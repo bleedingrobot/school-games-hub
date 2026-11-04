@@ -43,6 +43,12 @@ export interface GameDefinition {
   useTeacherSwitch?: () => boolean | null;
   /** The game on the teacher's Games table and student page (docs/TEACHER-VIEW-PLAN.md, section 6). */
   teacher?: TeacherContract;
+  /**
+   * For a game that moves on once a day (the Foundational skills games): what moves on ("leaf", "lily pad"), for the "next
+   * part" chip on its home page card ("Today’s leaf is ready" / "Next leaf tomorrow"). It also needs a day hook in hub_games
+   * (migration 20261105000300_next_part_chips.sql) and a `<NextPartChip>` on its own home screen.
+   */
+  nextPart?: { noun: string };
   /** Season resets for the "Seasons and end of year" part at the bottom of the Teacher page, away from the everyday switches. Lazy too. */
   SeasonPanels?: ComponentType;
 }

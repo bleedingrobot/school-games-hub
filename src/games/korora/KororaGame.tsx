@@ -3,6 +3,7 @@
  * first finish changes one magic pebble (bronze, then silver, then gold); thirty days win the Golden Fish, and a new
  * friend comes to a fresh pool. The screens only show what the backend says. Copied from Hop's Glow-worm Pond.
  */
+import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/korora/play';
 import { DAYS_PER_FISH, PEBBLES, poolAfter, type Help } from '../../../shared/korora/progress';
@@ -162,6 +163,7 @@ function Home({ state, say, onPlay }: { state: KororaState; say: (t: string) => 
       <div className="kr-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="kr-day">{WORDS.dayCount(Math.min(pool.day + 1, DAYS_PER_FISH))}</p>
+        <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="kr-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play kr-play-button" onClick={onPlay}>

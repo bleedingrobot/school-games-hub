@@ -6,6 +6,7 @@
 import { DAYS_PER_EGG, METALS, stalkAfter } from '../../../shared/beanstalk/progress';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
+import { nextPartWords } from '../../components/NextPartChip';
 
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/beanstalk/';
@@ -16,7 +17,7 @@ export function homeLine(title: string, doneToday: boolean): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.tryAgain, WORDS.doneToday]);
+  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.tryAgain, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   // Friends and sums go round together (6 friends, 3 sums), so one lap of 6 beanstalks has every pairing.
   for (let e = 0; e < 6; e++) {
     const { friend, target } = stalkAfter(e * DAYS_PER_EGG);

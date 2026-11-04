@@ -7,6 +7,7 @@ import { beachAfter, DAYS_PER_PEARL, METALS } from '../../../shared/pipi/progres
 import { GUIDED_KEY, LEVELS, showGo, type Kind } from '../../../shared/pipi/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
+import { nextPartWords } from '../../components/NextPartChip';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/pipi/';
@@ -17,7 +18,7 @@ export function homeLine(title: string, doneToday: boolean): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.doneToday]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (let p = 0; p < 6; p++) {
     const name = FRIEND_NAMES[beachAfter(p * DAYS_PER_PEARL).friend];
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
