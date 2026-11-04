@@ -98,6 +98,8 @@ export const LADDER: LadderSkill[] = [
   // Skip counting leads into ×10, ×5 and ×2, so a junior meets tens, then fives, then twos (no curriculum tag checked yet).
   // The warm-up leaves it out: a student it places past it has it as passed over, like any skill below their start.
   ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
+  // Odd and even to 20 sits beside the ladder (`inAuto`): Penguin Pairs asks it on gold days from its own rules, and a teacher can choose it.
+  { id: 'odd-even', label: 'Odd and even numbers to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('oddEven'), built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -280,7 +282,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;

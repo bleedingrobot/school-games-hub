@@ -166,8 +166,8 @@ describe('the skill map', () => {
     show();
     await screen.findByRole('table', {}, LOADED);
     const early = cellOf('Speedy Otter 27', 'Early number facts');
-    expect(early).toHaveAttribute('data-level', 'learning'); // 2 of 10 secure (with the two part-whole skills): some asked, not all secure
-    expect(early).toHaveTextContent('2 of 10');
+    expect(early).toHaveAttribute('data-level', 'learning'); // 2 of 11 secure (with the two part-whole skills and odd-even): some asked, not all secure
+    expect(early).toHaveTextContent('2 of 11');
     expect(early).toHaveTextContent('Learning');
     const times = cellOf('Speedy Otter 27', 'Times tables');
     expect(times).toHaveAttribute('data-level', 'learning');
