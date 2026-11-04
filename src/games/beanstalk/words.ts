@@ -19,7 +19,7 @@ export const WORDS = {
   dotsEach: (step: number) => `${step} each`,
   tryAgain: 'Try again!',
   leafTurned: (metal: Metal) => `Well done! A leaf turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another leaf.',
+  doneToday: 'Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day.',
   egg: (name: string) => `All the leaves are gold! ${name} can climb down. You win the Golden Egg!`,
   nextFriend: (name: string, target: number) => `Oh no! ${name} is stuck up a new beanstalk. This time, make pairs that add to ${target}!`,
   wentWrong: 'Something went wrong. Please try again soon.',
