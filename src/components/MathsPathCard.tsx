@@ -57,10 +57,15 @@ export default function MathsPathCard({
   }, [homePage]);
 
   const ladder = data?.focus.ladder;
-  const progress =
+  const placed =
     data && ladder?.on
       ? placeProgress(data.facts, ladder, data.settings)
       : null;
+  // The part-whole skills sit beside the ladder (Pipi's game), so the student's path leaves them out.
+  const progress = placed && {
+    ...placed,
+    skills: placed.skills.filter((p) => p.skill.inAuto !== false),
+  };
   const myId = profile?.id;
 
   // "You moved up!": the skills that are secure now and weren't last time (a jump to a new starting place doesn't count: only skills

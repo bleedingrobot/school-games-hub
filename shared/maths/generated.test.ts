@@ -43,7 +43,7 @@ describe('the generated skills in the ladder', () => {
       expect(skill.keys.length, id).toBeGreaterThanOrEqual(4);
       for (const key of skill.keys) expect(packIdOfKey(key), key).toBe('generated');
     }
-    expect(LADDER.filter((s) => s.built)).toHaveLength(36); // F.6 built the rest; M.5 added fraction-bonds and decimal-bonds; then skip counting
+    expect(LADDER.filter((s) => s.built)).toHaveLength(38); // F.6 built the rest; M.5 added fraction-bonds and decimal-bonds; then skip counting
   });
 
   it('every generated key has a pack in ladderKeyPacks', () => {

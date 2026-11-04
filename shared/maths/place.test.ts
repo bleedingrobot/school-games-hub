@@ -20,7 +20,8 @@ import {
 import { checkPlacement, parsePlacementAnswers, type PlacementAnswer } from './placementCheck';
 import { makePlaceSyncer, savePlacement, type PlacePorts } from './syncPlace';
 
-const built = LADDER.filter((s) => s.built);
+// The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
+const built = LADDER.filter((s) => s.built && s.inAuto !== false);
 /** The skills the placement warm-up walks over (skip counting is left out). */
 const warmUp = built.filter((s) => s.inWarmUp !== false);
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
@@ -74,7 +75,7 @@ describe('progress with a floor', () => {
     const p = ladderProgress([], { floor: rankOf('tables-3-4-8') });
     const before = built.slice(0, built.findIndex((s) => s.id === 'tables-3-4-8'));
     expect(p.current?.id).toBe('tables-3-4-8');
-    expect(p.skills.filter((s) => s.passedOver).map((s) => s.skill.id)).toEqual(before.map((s) => s.id));
+    expect(p.skills.filter((s) => s.passedOver && s.skill.inAuto !== false).map((s) => s.skill.id)).toEqual(before.map((s) => s.id));
     expect(p.skills.filter((s) => s.passedOver).every((s) => s.status === 'secure')).toBe(true);
     expect(p.secureCount).toBe(0); // nothing is proven yet
     expect(p.percent).toBe(0);
@@ -84,7 +85,7 @@ describe('progress with a floor', () => {
     const before = built.slice(0, built.findIndex((s) => s.id === 'tables-3-4-8'));
     const p = ladderProgress(secure(before.slice(0, 2).flatMap((s) => s.keys)), { floor: rankOf('tables-3-4-8') });
     expect(p.secureCount).toBe(2);
-    expect(p.skills.filter((s) => s.passedOver).map((s) => s.skill.id)).toEqual(before.slice(2).map((s) => s.id));
+    expect(p.skills.filter((s) => s.passedOver && s.skill.inAuto !== false).map((s) => s.skill.id)).toEqual(before.slice(2).map((s) => s.id));
     expect(p.percent).toBe(Math.round((100 * 2) / p.builtCount));
   });
 
@@ -432,10 +433,10 @@ describe('the longer ladder', () => {
   const generated = built.filter((s) => s.keys.length && s.keys.every((k) => packIdOfKey(k) === 'generated'));
 
   it('has 36 built skills, 23 of them generated, and every one has at least four question types', () => {
-    expect(built).toHaveLength(36);
+    expect(built).toHaveLength(36); // and the two part-whole skills beside the ladder
     expect(warmUp).toHaveLength(33); // the warm-up walks the same 33 as before skip counting
     expect(built.filter((s) => !warmUp.includes(s)).map((s) => s.id)).toEqual(['skip-10', 'skip-5', 'skip-2']);
-    expect(built).toHaveLength(LADDER.length);
+    expect(LADDER.filter((s) => !built.includes(s)).map((s) => s.id)).toEqual(['parts-5', 'parts-10']);
     expect(generated).toHaveLength(23);
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
   });

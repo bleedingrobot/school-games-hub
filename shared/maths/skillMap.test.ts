@@ -6,7 +6,9 @@ import { NO_LADDER, parseLadderInfo, placeProgress, type LadderInfo } from './pl
 import { STEP_SECURE_SHARE } from './selector';
 import { cellFor, classCounts, LEVELS, STAGES, stageOfSkill, stageSkills, studentMap, type CellLevel } from './skillMap';
 
-const built = LADDER.filter((s) => s.built);
+// The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
+const built = LADDER.filter((s) => s.built && s.inAuto !== false);
+const allBuilt = LADDER.filter((s) => s.built);
 const rec = (key: string, box: number, attempts = 3): FactStats => ({
   ...newStats(key),
   attempts,
@@ -37,8 +39,8 @@ describe('the stages', () => {
       'fractions-decimals-percentages',
     ]);
     const all = STAGES.flatMap((s) => stageSkills(s.id));
-    expect(all.map((s) => s.id).sort()).toEqual(built.map((s) => s.id).sort());
-    for (const s of built) expect(stageOfSkill(s.id)).toBe(s.stage);
+    expect(all.map((s) => s.id).sort()).toEqual(allBuilt.map((s) => s.id).sort());
+    for (const s of allBuilt) expect(stageOfSkill(s.id)).toBe(s.stage);
     expect(stageOfSkill('nope')).toBeNull();
   });
 
@@ -113,7 +115,7 @@ describe("a cell's level", () => {
 describe('the map agrees with ladderProgress', () => {
   const everything = (box: number) =>
     withBox(
-      built.flatMap((s) => s.keys),
+      allBuilt.flatMap((s) => s.keys),
       box,
     );
 
