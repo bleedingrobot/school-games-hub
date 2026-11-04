@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. **Status: LIVE 4 Nov 2026** for every class, in Easy maths games (PR #168, everything in one PR). The `hop` branch is merged. The shared skip-counting maths is live (PR #163). Name on the home card:
+Short id `hop`. **Status: LIVE 4 Nov 2026** for every class, in Foundational skills (moved from Easy maths games 4 Nov 2026) (PR #168, everything in one PR). The `hop` branch is merged. The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say

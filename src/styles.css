@@ -3078,6 +3078,9 @@ main:focus {
   color: #ffffff;
   font-size: 0.85rem;
 }
+[data-hub-theme='soft'] .game-group--foundational .game-group__label span {
+  background: #be185d;
+}
 [data-hub-theme='soft'] .game-group--no-maths .game-group__label span {
   background: #0e7490;
 }

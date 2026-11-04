@@ -106,7 +106,12 @@ export interface TeacherAlert {
   section?: string;
 }
 
-export type DashboardGroup = 'no-maths' | 'easy-maths' | 'complex-maths';
+/**
+ * The dashboard's groups. `foundational` is "Foundational skills", at the top: the early-years games (ages 5 to 7) such as
+ * Beanstalk, Hop and the planned games in docs/EARLY-GAMES-PLAN.md (Pipi, Kororā, Tūī, Weka, Ruru). A new early game just
+ * says `group: 'foundational'`.
+ */
+export type DashboardGroup = 'foundational' | 'no-maths' | 'easy-maths' | 'complex-maths';
 
 /** Games that count for leaderboards, rank badges and won/lost stats. */
 export const isRanked = (game: GameDefinition) => game.ranked !== false;

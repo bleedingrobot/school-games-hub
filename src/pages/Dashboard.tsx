@@ -39,6 +39,8 @@ const RECENT_SHOWN = 3;
 
 /** How the dashboard groups its games, top to bottom. Each game says its group (`group` in its GameDefinition). */
 const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
+  // The early-years games, at the top (James, 4 Nov 2026). New early games join with `group: 'foundational'`.
+  { title: 'Foundational skills', group: 'foundational' },
   { title: 'Non-maths games', group: 'no-maths' },
   { title: 'Easy maths games', group: 'easy-maths' },
   { title: 'Complex maths games', group: 'complex-maths' },
@@ -236,10 +238,12 @@ export function Dashboard() {
           const groupGames = shownGames.filter((g) => g.group === group.group);
           // Training sits under the non-maths games, and stays when they are switched off.
           const training = group.group === 'no-maths' && trainingOn();
-          if (groupGames.length === 0 && !training) return null;
+          // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026).
+          const quickLooks = group.group === 'foundational' && trainingOn();
+          if (groupGames.length === 0 && !training && !quickLooks) return null;
           return (
             <Fragment key={group.title}>
-              {groupGames.length > 0 && (
+              {(groupGames.length > 0 || quickLooks) && (
                 <div className={`game-group game-group--${group.group}`}>
                   <h3 className="game-group__label">
                     <span>{group.title}</span>
@@ -268,6 +272,17 @@ export function Dashboard() {
                         }}
                       />
                     ))}
+                    {quickLooks && (
+                      <Link to="/training?quick=1" className="link-tile link-tile--open">
+                        <span className="link-tile__emoji" aria-hidden="true">
+                          <SceneThumb />
+                        </span>
+                        <span>
+                          <strong>Quick looks</strong>
+                          <span>Flash a picture, tap how many you saw</span>
+                        </span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               )}
@@ -285,15 +300,6 @@ export function Dashboard() {
                       <span>
                         <strong>Multiplication and division training</strong>
                         <span>A few minutes a day to build your facts</span>
-                      </span>
-                    </Link>
-                    <Link to="/training?quick=1" className="link-tile">
-                      <span className="link-tile__emoji" aria-hidden="true">
-                        <SceneThumb />
-                      </span>
-                      <span>
-                        <strong>Quick looks</strong>
-                        <span>Flash a picture, tap how many you saw</span>
                       </span>
                     </Link>
                   </div>

@@ -37,7 +37,7 @@ export const kiwisBeanstalk: GameDefinition = {
   Play: BeanstalkPlay,
   ranked: false,
   noBots: true,
-  group: 'easy-maths',
+  group: 'foundational',
   useTeacherSwitch: useBeanstalkEnabled,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Eggs in the
   // Maths column, and a drawer with the leaves' dots on or off.
