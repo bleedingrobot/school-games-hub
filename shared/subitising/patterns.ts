@@ -95,16 +95,21 @@ const PIPS: Record<number, ReadonlyArray<readonly [number, number, number]>> = {
   6: [[-1, -1, 0], [-1, 0, 0], [-1, 1, 0], [1, -1, 1], [1, 0, 1], [1, 1, 1]],
 };
 const PIP_GAP = 30;
+/** A die turned 45 degrees is drawn smaller so its corners stay well inside the box. */
+const TURNED_PIP_GAP = DOT_R * 2 + MIN_GAP;
+const TURNED_DIE_SIZE = 87;
 
 function dieFace(n: number, turn: number): { dots: Dot[]; die: Die } {
-  const rotated = rotate(PIPS[n].map(([x, y]) => [x * PIP_GAP, y * PIP_GAP] as const), turn);
+  const turned = turn % 90 !== 0;
+  const gap = turned ? TURNED_PIP_GAP : PIP_GAP;
+  const rotated = rotate(PIPS[n].map(([x, y]) => [x * gap, y * gap] as const), turn);
   const dots = rotated.map(([x, y], i) => ({
     x: BOX.width / 2 + x,
     y: BOX.height / 2 + y,
-    color: (PIPS[n][i][2] === 1 ? 1 : 0) as 0 | 1,
+    color: 0 as const,
     group: PIPS[n][i][2],
   }));
-  return { dots, die: { x: BOX.width / 2, y: BOX.height / 2, size: 2 * PIP_GAP + 2 * DOT_R + 14, turn } };
+  return { dots, die: { x: BOX.width / 2, y: BOX.height / 2, size: turned ? TURNED_DIE_SIZE : 2 * PIP_GAP + 2 * DOT_R + 14, turn } };
 }
 
 /** A frame of `cols` x `rows` squares, centred in the box. */

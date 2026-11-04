@@ -35,11 +35,23 @@ export function rngFor(seed: number): Random {
 const pick = <T,>(rng: Random, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
 
 /**
- * `count` buttons in a row of whole numbers, always holding the answer, as close to centred on it as
- * the lowest number allows and keeping below `hi` where it can. (A stage with only 1 to 3 still gets 5 buttons.)
+ * `count` buttons in a row of whole numbers, always holding the answer and kept within `lo` to `hi`
+ * where it can. Where the run starts is picked at random among the valid starts, so the answer's
+ * place in the row varies. A range narrower than `count` is widened on both sides (never below 1), so
+ * stage 1 shows 1 to 5 and stage 2 (4 or 5) shows a row from 1-5 up to 3-7.
  */
-export function choicesFor(answer: number, lo: number, hi: number, count: number): number[] {
-  const start = Math.max(lo, Math.min(answer - Math.floor(count / 2), hi - count + 1));
+export function choicesFor(answer: number, lo: number, hi: number, count: number, rng: Random): number[] {
+  // A range narrower than the row is widened by the shortfall on both sides, so the answer can sit in different places.
+  const extra = count - (hi - lo + 1);
+  if (extra > 0) {
+    lo = Math.max(1, lo - extra);
+    hi += extra;
+  }
+  const top = Math.max(hi, lo + count - 1);
+  const first = Math.max(lo, answer - count + 1);
+  const last = Math.min(answer, top - count + 1);
+  // An answer outside the range has no valid start: end the run on it.
+  const start = last < first ? Math.max(1, answer - count + 1) : first + Math.floor(rng() * (last - first + 1));
   return Array.from({ length: count }, (_, i) => start + i);
 }
 
@@ -76,7 +88,7 @@ export function buildTrial(progress: Progress, seed: number, index: number, last
     const capacity = FRAME_CAPACITY[type] ?? def.max;
     const answer = gap ? capacity - n : n;
     const low = gap ? 1 : Math.max(1, def.min - 1);
-    const high = gap ? capacity - 1 : def.max + 1;
+    const high = gap ? capacity - 1 : def.max;
     return {
       activity: gap ? 'gap' : 'flash',
       stage,
@@ -86,7 +98,7 @@ export function buildTrial(progress: Progress, seed: number, index: number, last
       picture,
       answer,
       flashMs: flashMs(stage, progress.stages[stage - 1].answers, config),
-      choices: choicesFor(answer, low, high, config.choiceCount),
+      choices: choicesFor(answer, low, high, config.choiceCount, rng),
       review,
     };
   }

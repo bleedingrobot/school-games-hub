@@ -118,7 +118,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 .sb-choice,
 .sb-btn {
@@ -169,7 +169,7 @@
 .sb-choice:focus-visible,
 .sb-btn:focus-visible,
 .sb-toggle input:focus-visible {
-  outline: 4px solid #f0a73a;
+  outline: 3px solid var(--sb-main-dark);
   outline-offset: 2px;
 }
 .sb-progress {
@@ -250,8 +250,14 @@
     font-size: 1.15rem;
     min-height: 1.6em;
   }
+  .sb-choices {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
   .sb-choice {
-    min-width: 56px;
+    flex: 1 1 0;
+    min-width: 48px;
+    max-width: 64px;
     min-height: 56px;
   }
   .sb-btn {
@@ -262,7 +268,18 @@
     min-height: 54px;
   }
 }
+/* Five buttons share one row on a phone (each at least 48 px wide). */
 @media (max-width: 420px) {
+  .sb-choices {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .sb-choice {
+    flex: 1 1 0;
+    min-width: 48px;
+    max-width: 64px;
+    min-height: 56px;
+  }
   .sb-garden {
     grid-template-columns: repeat(2, 1fr);
   }

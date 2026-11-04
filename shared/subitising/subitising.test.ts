@@ -69,6 +69,24 @@ describe('pictures', () => {
     expect(makePicture('dicet', 4, rngFor(1)).die?.turn).toBe(45);
   });
 
+  it('draw plain dice pips in one colour', () => {
+    for (const type of ['dice', 'dicet'] as const) {
+      for (let n = 1; n <= 6; n++) expect(new Set(makePicture(type, n, rngFor(1)).dots.map((d) => d.color))).toEqual(new Set([0]));
+    }
+  });
+
+  it('keep the corners of a turned die inside the box, with room between the pips', () => {
+    for (let n = 1; n <= 6; n++) {
+      const { die, dots } = makePicture('dicet', n, rngFor(1));
+      const half = (die!.size / 2) * Math.SQRT2;
+      expect(die!.x - half).toBeGreaterThanOrEqual(8);
+      expect(die!.x + half).toBeLessThanOrEqual(BOX.width - 8);
+      expect(die!.y - half).toBeGreaterThanOrEqual(8);
+      expect(die!.y + half).toBeLessThanOrEqual(BOX.height - 8);
+      if (dots.length > 1) expect(closestPair(dots) - 2 * DOT_R).toBeGreaterThanOrEqual(6 - 1e-9);
+    }
+  });
+
   it('refuse a Missing Spots picture that is full or empty', () => {
     expect(() => makeGapPicture('five', 5, rngFor(1))).toThrow();
     expect(() => makeGapPicture('ten', 0, rngFor(1))).toThrow();
@@ -238,10 +256,38 @@ describe('trials', () => {
     expect(buildTrial(progressFrom([], 4), 1, 0).flashMs).toBe(STAGES[3].flashStartMs);
   });
 
-  it('choicesFor keeps the answer and the count', () => {
-    expect(choicesFor(1, 1, 4, 5)).toEqual([1, 2, 3, 4, 5]);
-    expect(choicesFor(3, 1, 4, 5)).toEqual([1, 2, 3, 4, 5]);
-    expect(choicesFor(10, 4, 11, 5)).toEqual([7, 8, 9, 10, 11]);
+  it('choicesFor keeps the answer, the count and the range, and starts the run at random', () => {
+    const rng = rngFor(3);
+    const starts = new Set<number>();
+    for (let i = 0; i < 100; i++) {
+      const c = choicesFor(3, 1, 8, 5, rng);
+      expect(c).toHaveLength(5);
+      expect(c).toContain(3);
+      expect(Math.min(...c)).toBeGreaterThanOrEqual(1);
+      expect(Math.max(...c)).toBeLessThanOrEqual(8);
+      starts.add(c[0]);
+    }
+    expect(starts).toEqual(new Set([1, 2, 3]));
+    // A short range is widened on both sides (never below 1).
+    expect(choicesFor(2, 1, 3, 5, rng)).toEqual([1, 2, 3, 4, 5]);
+    const wide = new Set<string>();
+    for (let i = 0; i < 100; i++) wide.add(choicesFor(4, 3, 5, 5, rng).join());
+    expect(wide).toEqual(new Set(['1,2,3,4,5', '2,3,4,5,6', '3,4,5,6,7']));
+  });
+
+  it('puts the answer in different button places and never offers numbers far above the stage', () => {
+    for (let stage = 1; stage <= 4; stage++) {
+      const p = progressFrom([], stage as 1 | 2 | 3 | 4);
+      const places = new Set<number>();
+      for (let i = 0; i < 200; i++) {
+        const t = buildTrial(p, 500 + i, i);
+        places.add(t.choices.indexOf(t.answer));
+        expect(t.choices).toEqual([...t.choices].sort((a, b) => a - b));
+        if (t.activity === 'flash') expect(Math.max(...t.choices)).toBeLessThanOrEqual(Math.max(STAGES[stage - 1].max + (stage === 2 ? 2 : 0), 5));
+      }
+      // Stage 1 (1 to 3) always shows 1 to 5, so the answer's place is the number itself.
+      expect(places.size).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 

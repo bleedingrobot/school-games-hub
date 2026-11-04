@@ -3,7 +3,7 @@ import { FRAME_CAPACITY, SUBITISING_CONFIG as CONFIG } from '../../shared/subiti
 import { isStruggling } from '../../shared/subitising/engine';
 import { groupSizes } from '../../shared/subitising/patterns';
 import type { Trial } from '../../shared/subitising/trials';
-import { speak } from '../speech';
+import { speak, stopSpeaking } from '../speech';
 import { BlankPicture, PictureSvg } from './PictureSvg';
 
 export interface AnswerResult {
@@ -61,6 +61,9 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   const recent = useRef<boolean[]>([]);
   const lastThinking = useRef<number | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  const choicesBox = useRef<HTMLDivElement>(null);
+  const refocusChoices = useRef(false);
 
   const staticPicture = helped || guidedMode;
 
@@ -81,7 +84,12 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
       };
     }
     if (phase === 'peek') {
-      const t = window.setTimeout(() => setPhase('answer'), CONFIG.peekMs);
+      const t = window.setTimeout(() => {
+        // Thinking time starts again once the peek is over.
+        unlockedAt.current = performance.now();
+        refocusChoices.current = true;
+        setPhase('answer');
+      }, CONFIG.peekMs);
       return () => window.clearTimeout(t);
     }
     if (phase === 'answer' && locked) {
@@ -116,11 +124,28 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (/^[1-9]$/.test(e.key) && trial.choices.includes(Number(e.key))) choose(Number(e.key));
+      if (/^[0-9]$/.test(e.key)) {
+        // The 0 key answers 10.
+        const value = e.key === '0' ? 10 : Number(e.key);
+        if (trial.choices.includes(value)) choose(value);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [choose, trial]);
+
+  // The buttons that were focused have gone: keep focus somewhere useful.
+  useEffect(() => {
+    if (phase === 'feedback') nextButton.current?.focus({ preventScroll: true });
+  }, [phase]);
+  useEffect(() => {
+    if (phase !== 'answer' || locked || !refocusChoices.current) return;
+    refocusChoices.current = false;
+    choicesBox.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
+  }, [phase, locked]);
+
+  // Stop any read-aloud still queued when this screen goes.
+  useEffect(() => () => stopSpeaking(), []);
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
@@ -132,8 +157,8 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   useEffect(() => {
     if (!reading) return;
     if (phase === 'ready') speak('Get ready');
-    else if (phase === 'answer') speak(helped ? 'Take your time. Can you see smaller groups?' : trial.activity === 'gap' ? 'How many empty squares?' : 'How many did you see?');
-  }, [reading, phase, helped, trial]);
+    else if (phase === 'answer') speak(helped ? 'Take your time. Can you see smaller groups?' : trial.activity === 'gap' ? 'How many empty squares?' : guidedMode ? 'How many can you see?' : 'How many did you see?');
+  }, [reading, phase, helped, trial, guidedMode]);
   useEffect(() => {
     if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result));
   }, [reading, phase, result, trial]);
@@ -157,7 +182,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   };
 
   const gap = trial.activity === 'gap';
-  const prompt = gap ? 'How many empty squares?' : 'How many did you see?';
+  const prompt = gap ? 'How many empty squares?' : guidedMode ? 'How many can you see?' : 'How many did you see?';
   const showing = phase === 'show' || phase === 'peek' || (phase === 'answer' && staticPicture) || phase === 'feedback';
   const mode = phase === 'feedback' ? (result?.correct ? 'right' : 'help') : helped && phase === 'answer' ? 'help' : 'plain';
   const label =
@@ -174,19 +199,25 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
         {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
       </div>
       <div className="sb-live" role="status" aria-live="polite">
-        {phase === 'answer' && !staticPicture ? 'The picture has gone. How many?' : phase === 'feedback' ? feedback : ''}
+        {phase === 'answer' && !staticPicture
+          ? 'The picture has gone. How many?'
+          : phase === 'answer'
+            ? `The picture is staying on the screen. ${gap ? 'How many empty squares?' : 'Look for the groups. How many?'}`
+            : phase === 'feedback'
+              ? feedback
+              : ''}
       </div>
 
       {phase === 'feedback' ? (
         <>
           <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
-          <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
+          <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
             {index + 1 >= total ? 'Finish' : 'Next'}
           </button>
         </>
       ) : (
         <>
-          <div className="sb-choices" role="group" aria-label="Answers">
+          <div ref={choicesBox} className="sb-choices" role="group" aria-label="Answers">
             {trial.choices.map((c) => (
               <button key={c} type="button" className="sb-choice" disabled={phase !== 'answer' || locked} onClick={() => choose(c)}>
                 {c}

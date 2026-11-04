@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(36);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -100,6 +100,16 @@ select lives_ok($$ select public.record_training_student(pg_temp.id('a'), '{"1":
 select public.record_training_student(pg_temp.id('a'), '{"2":[1000]}', true, 1);
 select is((select sessions_done from public.training_students where player = pg_temp.id('a')), 3,
   'the sessions count only goes up');
+-- Quick looks settings ("q" inside typing): an older tab without them can't wipe them, and "f" never goes down.
+select public.record_training_student(pg_temp.id('a'), '{"2":[1000],"q":{"p":1,"s":4,"f":3,"g":0}}', true, 1);
+select public.record_training_student(pg_temp.id('a'), '{"2":[1100]}', true, 1);
+select is((select typing from public.training_students where player = pg_temp.id('a')),
+  '{"2":[1100],"q":{"p":1,"s":4,"f":3,"g":0}}'::jsonb, 'a save without Quick looks settings keeps the saved ones');
+select public.record_training_student(pg_temp.id('a'), '{"2":[1100],"q":{"p":1,"s":2,"f":1,"g":1}}', true, 1);
+select is((select typing -> 'q' from public.training_students where player = pg_temp.id('a')),
+  '{"p":1,"s":2,"f":3,"g":1}'::jsonb, '... a save with them replaces them, but stages finished never go down');
+select public.record_training_student(pg_temp.id('a'), '{"2":[1100],"q":{"p":1,"s":2,"f":4,"g":1}}', true, 1);
+select is((select typing #>> '{q,f}' from public.training_students where player = pg_temp.id('a')), '4', '... and can go up');
 select throws_ok($$ select public.record_training_student(pg_temp.id('a'), '[600]', true, 1) $$, '23514', null, 'typing times must be an object');
 select pg_temp.reset();
 
