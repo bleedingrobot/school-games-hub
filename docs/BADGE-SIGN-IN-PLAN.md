@@ -1,6 +1,6 @@
 # QR sign-in badges for Years 1–4
 
-**Status:** built 4 Nov 2026 on branch `claude/project-thread-l6dcwz` (James picked "QR badges" from three options).
+**Status:** LIVE 4 Nov 2026 (PR #199: migration applied, `badge` function deployed, site published). James picked "QR badges" from three options. Not yet tried with a real pupil badge on the live site.
 
 ## Why
 
