@@ -459,3 +459,28 @@
   .st-flight__say { font-size: 0.85rem; line-height: 1.3; }
   .st-flight__btns { margin-top: 4px; }
 }
+
+/* ——— Choose your captain (Captain.tsx) ——— */
+.st-capface { display: inline-block; flex: none; border-radius: 50%; object-fit: cover; border: 2px solid var(--st-line); background: #26305a; }
+.st-capface--none { display: inline-flex; align-items: center; justify-content: center; }
+.st-hud__cap { padding: 0; border: 0; background: none; border-radius: 50%; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: inherit; }
+.st-hud__cap:disabled { cursor: default; }
+.st-hud__cap .st-capface { border-color: var(--st-gold); }
+.st-capcard { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.st-capcard .st-capface { border-color: var(--st-gold); border-width: 3px; }
+.st-capcard__line { margin: 0 0 6px; }
+.st-capback { position: absolute; inset: 0; z-index: 30; background: rgba(3, 6, 16, 0.7); display: flex; align-items: center; justify-content: center; padding: 12px; }
+.st-cappick {
+  background: var(--st-panel-solid); border: 1px solid var(--st-line); border-radius: 16px;
+  width: min(760px, 100%); max-height: 100%; display: flex; flex-direction: column; padding: 14px 16px;
+}
+.st-cappick__sub { margin: 0 0 10px; }
+.st-capgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; overflow-y: auto; padding: 4px; scrollbar-width: thin; }
+.st-capbtn { padding: 4px; border: 3px solid transparent; border-radius: 50%; background: none; cursor: pointer; justify-self: center; min-width: 44px; min-height: 44px; }
+.st-capbtn:hover .st-capface { border-color: var(--st-cyan); }
+.st-capbtn--on { border-color: var(--st-gold); box-shadow: 0 0 12px rgba(253, 224, 71, 0.6); }
+.st-cappick__foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-top: 12px; }
+@media (max-width: 520px) {
+  .st-capgrid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+  .st-capbtn .st-capface { width: 56px !important; height: 56px !important; }
+}

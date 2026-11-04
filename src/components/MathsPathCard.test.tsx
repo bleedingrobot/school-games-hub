@@ -63,7 +63,7 @@ describe('My maths path on the home page', () => {
 
   it('opens into the whole path, with the tables inside the times-table skills', async () => {
     const user = userEvent.setup();
-    show(on(), secure(['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20']));
+    show(on(), secure(['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20', 'skip-10', 'skip-5', 'skip-2']));
     const open = await screen.findByRole('button', { name: 'See my whole path' });
     expect(open).toHaveAttribute('aria-expanded', 'false');
     await user.click(open);

@@ -8,6 +8,9 @@ import { Session } from './testKit';
 import { findEgg } from '../quests/eggs';
 import { emptyQuestSave, type QuestSave } from '../quests/types';
 import type { WorldState } from '../world/types';
+import { WORLD_MAPS } from '../maps';
+import { podFlag } from '../quests/puzzles';
+import { weekOf } from '../world/questWorld';
 
 const ok = (c: Checked) => {
   if (!c.ok) throw new Error(`refused: ${c.problem}`);
@@ -443,5 +446,28 @@ describe('quests in a save (docs/MONSTERS-QUESTS-PLAN.md, Q.5)', () => {
     refused(checkSave(stored(solved), save(quest({ flags: ['solved:shell-stones', `egg:${egg.id}`], eggs: [egg] })), now), 'egg-source');
     refused(checkSave({ ...stored(solved), playDays: 1 }, save(quest({ flags: ['solved:shell-stones', 'solved:lagoon-stones', `egg:${egg.id}`], eggs: [egg] })), now), 'egg-day');
     expect(today).toBe(new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland' }).format(new Date(now)));
+  });
+  it('seed pods and egg nests, with the real map thing ids (they have a colon in them: "kauri-bush:Seed pod 1")', () => {
+    const { s, prev } = started();
+    const now = s.clock.now();
+    const save = (q: Partial<QuestSave>) => {
+      const item = s.save();
+      item.world = { ...item.world, quest: { ...emptyQuestSave(), ...q } };
+      return item;
+    };
+    // The flags the game really sets when a pod bush is searched (searchPod).
+    const pods = WORLD_MAPS['kauri-bush'].things.filter((t) => t.kind === 'puzzle' && t.puzzle === 'kauri-seeds').map((t) => podFlag('kauri-seeds', t.id));
+    expect(pods).toHaveLength(3);
+    expect(pods[0]).toMatch(/^pod:kauri-seeds:kauri-bush:/);
+    ok(checkSave(prev, save({ flags: [pods[0]] }), now));
+    ok(checkSave(prev, save({ flags: [...pods, 'solved:kauri-seeds'], bits: { leaf: 3 } }), now));
+    refused(checkSave(prev, save({ flags: ['pod:kauri-seeds:kauri-bush:No such bush'] }), now), 'quest-flags');
+    refused(checkSave(prev, save({ flags: ['pod:kauri-seeds'] }), now), 'quest-flags');
+    // A nest: the flag and the egg the game really make (searchNest), on a day the database has counted.
+    const nest = Object.values(WORLD_MAPS).flatMap((m) => m.things).find((t) => t.kind === 'nest')!;
+    const week = weekOf(new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland' }).format(new Date(now)));
+    const egg = findEgg(`nest:${nest.id}:${week}:${nest.egg}`, nest.egg!, 1, () => 0);
+    ok(checkSave({ ...prev, playDays: 1 }, save({ flags: [`nest:${nest.id}:${week}`, `egg:${egg.id}`], eggs: [egg] }), now));
+    refused(checkSave(prev, save({ flags: [`nest:${nest.id}:x`] }), now), 'quest-flags');
   });
 });

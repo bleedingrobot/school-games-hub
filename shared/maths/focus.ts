@@ -11,6 +11,7 @@ import type { FactStats } from './leitner';
 import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
 import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
+import { solveSkip } from './skillPacks/earlyFacts';
 import { solveGenerated } from './skillPacks/generated';
 import { TimesTables } from './skillPacks/timesTables';
 
@@ -273,6 +274,8 @@ export function solveParts(parts: unknown): Solved | null {
   // The generated skills (bonds to 100, rounding, order of operations...) read their own questions back.
   const generated = solveGenerated(p);
   if (generated) return { answer: generated.answer, keys: [generated.key] };
+  const skip = solveSkip(p);
+  if (skip) return isFocusKey(skip.key) ? { answer: skip.answer, keys: [skip.key] } : null;
   const blanks = p.filter((x) => x === '?').length;
   let answer = NaN;
   let keys: string[] = [];

@@ -52,6 +52,15 @@ describe('the server applying moves', () => {
     expect(applyBatch(galaxy, SEED, g, [{ type: 'borrow', amount: 9999 }], DEFAULT_SETTINGS, noMark).ok).toBe(false);
     expect(applyBatch(galaxy, SEED, g, [{ type: 'trade', plan: [1, 2] }], DEFAULT_SETTINGS, noMark).ok).toBe(false);
     expect(applyBatch(galaxy, SEED, g, [{ type: 'jump', dest: 999 }], DEFAULT_SETTINGS, noMark).ok).toBe(false);
+    expect(applyBatch(galaxy, SEED, g, [{ type: 'captain', id: 'x99' }], DEFAULT_SETTINGS, noMark).ok).toBe(false);
+  });
+
+  it('picking a captain is kept in the game, through a new day, and changes nothing else', () => {
+    const g = newGame(galaxy, 1, DEFAULT_SETTINGS);
+    const r = ok(applyBatch(galaxy, SEED, g, [{ type: 'captain', id: 'f07' }], DEFAULT_SETTINGS, noMark));
+    expect(r.game.captain).toBe('f07');
+    expect(r.game.t).toEqual(g.t);
+    expect(rollDay(galaxy, r.game, 2, DEFAULT_SETTINGS).captain).toBe('f07');
   });
 
   it('a right answer to the next question gives a discount, a wrong one does not, and a question is used once, in order', () => {

@@ -11,6 +11,7 @@ import { BIG_TRADE_CREDITS, GOODS, JUMPS_PER_DAY, SHIELDS, SHIPS, WEAPONS } from
 import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } from './encounter';
 import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from './fight';
 import type { Galaxy } from './galaxy';
+import { isCaptain } from './captains';
 import { discountFor, runPlan } from './plan';
 import { pupilPush, tidyPushes, type MarketPush, type PupilPushes, type Pushes } from './schoolMarket';
 import {
@@ -51,6 +52,8 @@ export interface Game {
   stats: Stats;
   /** How far this pupil has pushed each price today (their 20% a day limit). Missing in a game that has not traded yet. */
   pushed?: PupilPushes;
+  /** The captain the pupil picked (captains.ts), only a look. Missing until they pick one. */
+  captain?: string;
 }
 
 /** The teacher's settings for the pupil's class, and whether maths is on for them. */
@@ -92,7 +95,8 @@ export type Action =
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
   | { type: 'moon' }
-  | { type: 'jump'; dest: number };
+  | { type: 'jump'; dest: number }
+  | { type: 'captain'; id: string };
 
 export interface Outcome {
   game: Game;
@@ -235,6 +239,10 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       return;
     case 'moon':
       g.t = must(buyMoon(galaxy, t));
+      return;
+    case 'captain':
+      if (!isCaptain(action.id)) refuse('That captain could not be found.');
+      g.captain = action.id;
       return;
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
