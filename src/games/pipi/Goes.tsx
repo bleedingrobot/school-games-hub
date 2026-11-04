@@ -140,10 +140,18 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
         ))}
       </div>
       <div className="pp-sign" aria-live="polite">
-        <span className="pp-sign__whole">
-          {go.kind === 'altogether' && phase !== 'right' && phase !== 'done' ? '?' : go.whole}
-        </span>
-        <span className="pp-sign__words">altogether</span>
+        {go.kind === 'altogether' && phase !== 'right' && phase !== 'done' ? (
+          // The parts, not the total: the total is the answer.
+          <>
+            <span className="pp-sign__whole">{WORDS.parts(go.showing, go.hiding)}</span>
+            <span className="pp-sign__words">{WORDS.hereAndPopped}</span>
+          </>
+        ) : (
+          <>
+            <span className="pp-sign__whole">{go.whole}</span>
+            <span className="pp-sign__words">altogether</span>
+          </>
+        )}
         {phase !== 'tide' && <span className="pp-sign__ask">{ask}</span>}
       </div>
       <div className="pp-stage" key={at}>

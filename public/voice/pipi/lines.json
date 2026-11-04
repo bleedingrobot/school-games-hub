@@ -132,10 +132,6 @@
   "text": "3 pipi. How many are hiding?"
  },
  {
-  "slug": "0-here-and-3-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 3 popped up. How many pipi altogether?"
- },
- {
   "slug": "1-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 2 popped up. How many pipi altogether?"
  },
@@ -152,16 +148,8 @@
   "text": "2 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "3-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "3 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "4-pipi-how-many-are-hiding",
   "text": "4 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-4-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 4 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-3-popped-up-how-many-pipi-altogether",
@@ -180,16 +168,8 @@
   "text": "3 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "4-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "4 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "5-pipi-how-many-are-hiding",
   "text": "5 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-5-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 5 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-4-popped-up-how-many-pipi-altogether",
@@ -212,16 +192,8 @@
   "text": "4 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "5-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "5 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "6-pipi-how-many-are-hiding",
   "text": "6 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-6-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 6 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-5-popped-up-how-many-pipi-altogether",
@@ -248,16 +220,8 @@
   "text": "5 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "6-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "6 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "7-pipi-how-many-are-hiding",
   "text": "7 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-7-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 7 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-6-popped-up-how-many-pipi-altogether",
@@ -288,16 +252,8 @@
   "text": "6 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "7-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "7 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "8-pipi-how-many-are-hiding",
   "text": "8 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-8-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 8 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-7-popped-up-how-many-pipi-altogether",
@@ -332,16 +288,8 @@
   "text": "7 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "8-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "8 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "9-pipi-how-many-are-hiding",
   "text": "9 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-9-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 9 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-8-popped-up-how-many-pipi-altogether",
@@ -380,16 +328,8 @@
   "text": "8 here, and 1 popped up. How many pipi altogether?"
  },
  {
-  "slug": "9-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "9 here, and 0 popped up. How many pipi altogether?"
- },
- {
   "slug": "10-pipi-how-many-are-hiding",
   "text": "10 pipi. How many are hiding?"
- },
- {
-  "slug": "0-here-and-10-popped-up-how-many-pipi-altogether",
-  "text": "0 here, and 10 popped up. How many pipi altogether?"
  },
  {
   "slug": "1-here-and-9-popped-up-how-many-pipi-altogether",
@@ -430,10 +370,6 @@
  {
   "slug": "9-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "9 here, and 1 popped up. How many pipi altogether?"
- },
- {
-  "slug": "10-here-and-0-popped-up-how-many-pipi-altogether",
-  "text": "10 here, and 0 popped up. How many pipi altogether?"
  },
  {
   "slug": "yes-0",

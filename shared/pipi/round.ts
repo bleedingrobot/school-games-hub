@@ -143,14 +143,15 @@ export function makeRound(
   const edges = Math.max(GOES_PER_ROUND - middle.length, random() < 0.5 ? 1 : 0);
   let picked = shuffle([...weakest(middle, GOES_PER_ROUND - edges, box, random), ...weakest(keys.filter(isEdge), edges, box, random)], random);
   if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, GOES_PER_ROUND);
-  // The other kinds never take the first go, and two tides never uses an edge (nothing to swap).
+  // The other kinds never take the first go or an edge: two tides has nothing to swap, and "4 here and 0 popped up" isn't
+  // an altogether question.
   const goes: GoPlan[] = picked.map((key) => ({ key, kind: 'hiding' }));
   const free = shuffle(goes.map((_, i) => i).slice(1), random);
   if (colour === 'gold') {
     free.filter((i) => !isEdge(goes[i].key)).slice(0, TWO_TIDES_GOES).forEach((i) => (goes[i].kind = 'twoTides'));
   }
   if (colour !== 'bronze') {
-    free.filter((i) => goes[i].kind === 'hiding').slice(0, ALTOGETHER_GOES).forEach((i) => (goes[i].kind = 'altogether'));
+    free.filter((i) => goes[i].kind === 'hiding' && !isEdge(goes[i].key)).slice(0, ALTOGETHER_GOES).forEach((i) => (goes[i].kind = 'altogether'));
   }
   return { seed, level, colour, goes };
 }
@@ -178,6 +179,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
     };
   }
   if (plan.kind === 'altogether') {
+    if (shown === 0 || shown === whole) return null;
     const choices = choicesFor(whole, [whole + 1, whole - 1, shown, hidden, whole + 2], false, random);
     return { ...plan, whole, showing: shown, hiding: hidden, answer: whole, spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`, choices };
   }

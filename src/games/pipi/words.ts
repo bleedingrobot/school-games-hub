@@ -17,6 +17,8 @@ export const WORDS = {
   altogether: (n: number) => `${n} altogether`,
   howManyHiding: 'How many are hiding?',
   howManyAltogether: 'How many altogether?',
+  parts: (here: number, popped: number) => `${here} and ${popped}`,
+  hereAndPopped: 'here and popped up',
   howManyNow: 'Splash! Now how many are hiding?',
   guideStart: 'Look at the sand. Then tap the shell the hand points to.',
   guideHere: 'try this one',

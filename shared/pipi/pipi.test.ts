@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newStats, type FactStats } from '../maths/leitner';
+import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
 import { GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, parseKey, showRound, type Colour, type Round } from './round';
@@ -54,6 +54,11 @@ describe('the round', () => {
       expect(kinds('silver').filter((k) => k === 'altogether')).toHaveLength(2);
       expect(kinds('silver')).not.toContain('twoTides');
       expect(kinds('gold').filter((k) => k === 'twoTides')).toHaveLength(2);
+      // Altogether and two tides never use 0 or all hiding.
+      for (const g of makeRound(seed, recordsFor[1], { colour: 'gold' }).goes.filter((x) => x.kind !== 'hiding')) {
+        const p = parseKey(g.key)!;
+        expect(p.shown > 0 && p.shown < p.whole, g.key).toBe(true);
+      }
       for (const c of colours) expect(kinds(c)[0]).toBe('hiding');
       const guided = makeRound(seed, [], { guided: true });
       expect(guided.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding' });
@@ -91,7 +96,7 @@ describe('the server rules', () => {
     const { memoryServices } = await import('./memoryServices');
     const { handlePipi } = await import('./server');
     let now = Date.parse('2026-11-04T00:00:00Z');
-    const log = { answers: [] as { player: string; once: string; answers: unknown[] }[] };
+    const log = { answers: [] as { player: string; once: string; answers: FactAnswer[] }[] };
     const services = memoryServices({ now: () => now, log });
     const ask = (body: Record<string, unknown>) => handlePipi(services, 'p1', body);
     expect((await ask({ action: 'load' })).body).toMatchObject({ daysDone: 0, level: 1, help: true, guided: true });
