@@ -1,6 +1,6 @@
 /**
  * The home page's own layout for each person: the game sections they folded away and the games they pinned to the top
- * (James, 4 Nov 2026). Kept on the server (home_layouts, migration 20261105000400) so it follows them to any Chromebook,
+ * (James, 4 Nov 2026). Kept on the server (home_layouts, migration 20261105000600) so it follows them to any Chromebook,
  * and in this browser too, so the page opens the right way at once and still works if the server can't be reached.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
