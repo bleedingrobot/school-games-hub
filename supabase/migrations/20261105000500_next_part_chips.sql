@@ -44,6 +44,8 @@ create trigger hub_games_day_check
 before insert or update of day_fn on public.hub_games
 for each row execute function public.hub_games_day_check();
 
+revoke execute on function public.hub_games_day_check() from public, anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- 2. What the home page reads
 -- ---------------------------------------------------------------------------
