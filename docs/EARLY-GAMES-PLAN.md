@@ -147,6 +147,37 @@ If speed matters more than the gap, swap 1 and 2: Kororā's Mirror Pool could be
   paints on the gaming PC (ComfyUI) in the evening.
 - **Tests:** at most 8 per game (`docs/TESTING.md`), copying Hop's 4 rule tests.
 
+## 7. How each of these is built (shared by all five plans)
+
+Each game has its own plan: `docs/PIPI-PLAN.md`, `docs/KORORA-PLAN.md`, `docs/TUI-PLAN.md`, `docs/WEKA-PLAN.md`,
+`docs/RURU-PLAN.md` (written 4 Nov 2026). They all follow how Kiwi's Beanstalk and Hop were built, so these parts are the
+same for every one and aren't repeated in each plan:
+
+- **Who and how long.** Ages 5 to 7. One challenge of about 10 goes, 3 to 5 minutes. Play again the same day for fun.
+- **The 30 counted days.** 10 magic things turn bronze (days 1 to 10), silver (11 to 20), gold (21 to 30), at most one
+  per NZ day (`nzDate`, server clock). Day 30 wins the prize; then a new NZ friend and the 30 days start again. Copy
+  `progress.ts` from `shared/hop/` (or the shared engine, if it exists by then: section 6).
+- **Help fades** with the colour: full on bronze, faint on silver, none on gold. A teacher can turn the help off.
+- **The child's level comes from their own records,** the way Hop picks its step (`stepFor`): a 5-year-old on auto is
+  usually on `facts-10`, so `makeFocusPack` would never serve these. The server keeps the furthest level `reached`, so a
+  child never drops back.
+- **Way A.** The server makes each round from a seed and saves its questions at `start`; `finish` replays the taps and
+  records each question once with `recordMathsAnswers` (right if the first tap was right). Wrong taps wobble back, no
+  penalty, the answer isn't shown.
+- **Voice** with the game's own mute (`<id>-voice`), reading the question but never the answer. Sounds follow the hub.
+- **Guided first go** on the very first challenge (from the saved game): a pointing hand that follows the child, never
+  says the answer, and goes after the first right one. No How to play page; the teacher's "?" explains it.
+- **No hub points.** One achievement per prize, per friend (like Beanstalk's six Golden Eggs). Not a season game.
+- **Server:** tables `<id>_progress` and `<id>_rounds` (RLS on, no grants), function `supabase/functions/<id>/` with
+  `load`, `start`, `finish` (plus `choose` if there's a character pick), a code switch `<ID>_ON`, a per-class switch
+  `<id>_enabled` **on by default** (James), a help setting, `hub_games` row, teacher class and student lines, group
+  `easy-maths`. About 3 requests a child a lesson.
+- **Stages:** 0 plan, (shared maths branch if needed, live first), 1 rules + tests, 2 play screen with stand-in art and a
+  preview, 3 server, 4 hub, teacher settings, guided first go, prize moment, 5 go live. At most 8 tests.
+- **Art:** threads draw stand-ins in code; `scripts/<id>-art.py` lists the pictures; James paints on the gaming PC
+  (ComfyUI) in the evening and picks in `docs/<id>-art/picks.json`. Numbers are always drawn in code, never painted.
+- **The look is open.** Each plan lists a few looks to choose from; it is not assumed to be Beanstalk's clay.
+
 ## Sources
 
 - NZ Ministry of Education, Mathematics and Statistics curriculum, Phase 1 (Years 0 to 3), 2025:
