@@ -77,6 +77,7 @@ $$, array[
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader',
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
+  'teacher_set_hop',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'
