@@ -1,6 +1,7 @@
 # Pipi's Hidden Shells (part-whole within 10) — plan
 
-Short id `pipi`. **Status: Stage 0, plan only (4 Nov 2026).** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
+Short id `pipi`. **Status (4 Nov 2026): shared maths LIVE (PR #189); Stages 2 and 3 below (rules, play screen) done on a game
+branch with stand-in paper art and a preview (`npm run pipi:single`); not live.** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
 game shares (30 counted days, fading help, way A, voice, guided first go, switches, stages) are in section 7 there and
 aren't repeated here.
 
@@ -89,7 +90,30 @@ One per Golden Pearl, per friend: Pipi's, Kororā's, Tuatara's, Wētā's, Kiwi's
 5. Hub, teacher settings (help on/off), guided first go, pearl moment.
 6. Go live.
 
-## 9. Questions for James
+## 9. James's answers (4 Nov 2026)
+
+1. Look: **paper cut-out** (layered paper sand, dunes, waves and pōhutukawa, flat colours).
+2. Name: **Pipi's Hidden Shells**.
+3. No teacher cap on small wholes: levels move up on their own.
+
+Also: the game goes in the **Foundational skills** group at the top of the home page (not Easy maths); read-aloud in
+**Bella's** voice (public/voice/pipi/lines.json, `scripts/voice-clips.py pipi`); James paints the art on the gaming PC
+(`scripts/pipi-art.py`).
+
+## 10. How it was built (notes for the next stages)
+
+- **Shared maths:** families `parts5`/`parts10`, ladder skills `parts-5`/`parts-10` before facts-10 with `inWarmUp: false`
+  and a new `inAuto: false` (beside the ladder: never a student's current skill or auto review, not counted, left out of
+  the student's path card; a teacher can choose them as a focus).
+- **Rules** (`shared/pipi/`): `round.ts` (`levelFor`, `makeRound`, `showGo`), `play.ts`, `progress.ts` (`beachAfter`,
+  copied from Hop), `server.ts` (`handlePipi`: load/start/finish; saves `reached` level and `played` count, the guided go
+  while `played` is 0), `memoryServices.ts`. Two tides records the split as it is after the swap; altogether records the
+  same part key as the split shown. Four shells to choose from (not 0 to 10).
+- **Play screen** (`src/games/pipi/`): `PipiGame`, `Goes` (the wave, the five-/ten-frame on bronze days, faint outlines on
+  silver, no marks and the spots closing up on gold or with help off), `Beach`, `PipiArt` (paper stand-ins), trial
+  backend in `backend.ts`, preview `preview/pipi`. Not in the registry yet.
+
+## 11. Old questions for James
 
 1. Which look (section 5)?
 2. Name: "Pipi's Hidden Shells", or something else ("Hide and Seek Pipi")?
