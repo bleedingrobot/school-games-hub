@@ -29,6 +29,7 @@ import { MonsterArt, type MonsterState } from './art/MonsterArt';
 import { lookPic, monsterPic, personPic, preload, scenePic } from './art/painted';
 import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from './settings';
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
+import { TypeChart } from './TypeChart';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
 import './art/monster-art.css';
 import './monsters.css';
@@ -127,6 +128,16 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   const [ball, setBall] = useState<null | 'shake' | 'caught'>(null);
   const [evolving, setEvolving] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const chartButton = useRef<HTMLButtonElement>(null);
+  // Opening the chart puts the keyboard on its Back button, so Enter or Escape closes it.
+  useEffect(() => {
+    if (showChart) document.querySelector<HTMLElement>('[aria-label="Strong and weak"] button')?.focus({ preventScroll: true });
+  }, [showChart]);
+  const closeChart = () => {
+    setShowChart(false);
+    window.setTimeout(() => chartButton.current?.focus({ preventScroll: true }), 0);
+  };
   const [pendingItem, setPendingItem] = useState<ItemId | null>(null);
 
   const log = useRef(start.events.slice());
@@ -394,6 +405,11 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const tag = (e.target as HTMLElement | null)?.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    // The chart is on top: the battle's keys wait until it is closed.
+    if (showChart) {
+      if (e.key === 'Escape') closeChart();
+      return;
+    }
     const n = Number(e.key);
     if (mode === 'menu' && n >= 1 && n <= menuItems.length) {
       e.preventDefault();
@@ -487,6 +503,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
             <label>
               <input type="checkbox" checked={settings.multipleChoice} onChange={(e) => changeSettings({ ...settings, multipleChoice: e.target.checked })} /> Multiple choice
             </label>
+            <button ref={chartButton} type="button" className="mb-btn mb-btn--small" onClick={() => setShowChart(true)}>
+              Who is strong against who?
+            </button>
           </div>
         )}
       </div>
@@ -632,6 +651,12 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           }}
           onDone={(marked) => run({ ...asking.action, answer: judged.current } as BattleAction, marked.correct ? undefined : marked.fact)}
         />
+      )}
+
+      {showChart && (
+        <Sheet title="Strong and weak" reading onBack={closeChart}>
+          <TypeChart />
+        </Sheet>
       )}
     </section>
   );
