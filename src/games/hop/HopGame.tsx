@@ -108,7 +108,7 @@ export function HopGame({ backend, onExit, extra }: Props) {
     body = (
       <Hops
         round={screen.round}
-        help={pond.help}
+        help={state.labels ? pond.help : 'none'}
         padMetal={METALS[Math.floor(pond.day / PADS)]}
         scenery={pond.today}
         friend={pond.friend}

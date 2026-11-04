@@ -33,6 +33,12 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               <button key={s} type="button" onClick={() => { trial.tools.setStep(s); h.reload(); }}>{s}s</button>
             ))}
             <p>
+              <label>
+                <input type="checkbox" defaultChecked={trial.tools.labelsOn()} onChange={(e) => { trial.tools.setLabels(e.target.checked); h.reload(); }} />{' '}
+                The teacher lets the hops show their step (+2)
+              </label>
+            </p>
+            <p>
               <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again as a new pupil</button>
             </p>
           </details>

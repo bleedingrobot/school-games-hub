@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stages 1 (rules) and 2 (play screen, stand-in art) done, 4 Nov 2026; next is painting the art (section 5), then Stage 3 (the server).** The shared skip-counting maths is live (PR #163). Name on the home card:
+Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stages 1 (rules), 2 (play screen, stand-in art) and 3 (server) done, 4 Nov 2026; next is painting the art (section 5, the evening of 4 Nov), then Stage 4 (hub and teacher).** The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
@@ -125,7 +125,7 @@ questions are a separate `shared/maths` branch (section 2).
 0. Plan (this file).
 1. Rules in `shared/hop/`, and their tests. **Done 4 Nov.** The `shared/maths` skip-counting branch went live first (PR #163).
 2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James. **Done 4 Nov (stand-in art).**
-3. The server: migration, function, maths recording and the day rule.
+3. The server: migration, function, maths recording and the day rule. **Done 4 Nov.**
 4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment.
 5. Go live, one step at a time, on James's word. This comes after Beanstalk is live, so its pattern is proven.
 
@@ -147,6 +147,43 @@ questions are a separate `shared/maths` branch (section 2).
 - **Art:** stand-ins drawn in code (frog, pads, glow-worms, the night, the cave), replaced by the paintings when tidied.
 
 **Tests:** 6: the 4 rule tests, 1 accessibility test (contrast, big targets, reduced motion) and 1 whole trial game.
+
+## Stage 3 results (4 Nov)
+
+**Migration** `20261104000500_hop.sql` (the next free number across `main` and every branch on 4 Nov; check again at go-live):
+- `hop_progress`: one row a pupil. The count of finished days, the NZ day a pad last changed, the furthest step reached
+  (10, 5 or 2) and a version, so two tabs can't both save. Made by the pupil's first `start`.
+- `hop_rounds`: one row a challenge. Its seed, step, gold-day flag and **its ten hops as the server made them** (the round
+  depends on the pupil's records at that moment, so it is kept rather than made again from the seed). Once finished: the
+  taps and the wrong glow-worms. A seed is used once per pupil, a challenge finishes once, finished ones over 30 days go.
+- Both tables have RLS on, no policy and no grant. Pupils can't read them or call the server's functions.
+- `hop_finish` only lets the finished days stay or go up by one, and the step reached only stay or move on (`hop_step_rank`).
+- The switch `app_settings.hop_enabled` (off to start) and `hop_labels` (step labels, on to start), set by
+  `teacher_set_hop(enabled, labels, target_class)`.
+- No `hub_games` row, achievement or teacher lines yet: those are Stage 4's own migration.
+
+**Function** `supabase/functions/hop/` (`handler.ts`, `entry.ts`, the built `index.ts`), with its rules in
+`shared/hop/server.ts`, the same file the preview runs (`shared/hop/memoryServices.ts` stands in for the database):
+- `load` gives the finished days, the last pad day, today's NZ date by the server's clock, the step for next time and the
+  class's step-label setting.
+- `start` reads the pupil's records (`space_maths_context`, the same as every maths game), makes the round
+  (`makeRound`, gold days from the saved days) and keeps it.
+- `finish` checks the challenge is the pupil's and still open, replays the taps on the kept round, refuses anything odd or
+  unfinished, changes a pad with `finishChallenge` and the server's NZ date, works out the step for next time from the
+  records plus this round's answers, and saves. Each hop is recorded once with `recordMathsAnswers` (`hop:<seed>`), right
+  only if the first glow-worm picked was right.
+- Every call checks the teacher's switch first. Signed out gets 401, over 30 requests a minute gets 429.
+- Load: about 3 requests a child a lesson (load, start, finish); `load` and `start` each read the maths records once.
+- Not yet in `FUNCTIONS` (scripts/build-functions.mjs): that is a shared file, added at go-live with the others.
+
+**The game** shows step labels only when the teacher allows them. `src/data/hop.ts` is the caller for the real server,
+ready for Stage 4. Preview tools add "The teacher lets the hops show their step".
+
+**Tests:** 8 of 8: 4 rule tests, 2 screen tests and 2 server tests (only a pupil's own finished challenge counts, once,
+each hop against its skip-counting fact, and the step never drops back; one pad a NZ day by the server's clock, with
+counting back and the jar on gold days), plus the "index.ts is up to date" check.
+`supabase/tests/database/hop.test.sql` has 26 checks. There is no local database in the cloud session, so it runs in CI's
+"Database checks" on the draft pull request.
 
 ## 8. Decisions (James, 4 Nov)
 
