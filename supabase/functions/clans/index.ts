@@ -13237,7 +13237,8 @@ function applyInner(saved, action, ctx, flags) {
 				type: "fightStart",
 				resumed: true
 			}, false);
-			if (state.fightsLeft <= 0) return refuse("fights", "That's all the fights for today. Come back tomorrow!");
+			const extra = state.fightsLeft <= 0 && ctx.unlimitedToday === true;
+			if (state.fightsLeft <= 0 && !extra) return refuse("fights", "That's all the fights for today. Come back tomorrow!");
 			if (!clan.members.some((m) => !m.knockedOut)) return refuse("resting", "Everyone is resting. They wake up tomorrow.");
 			if (action.boss && !bossAt(action.depth)) return refuse("boss", "There is no boss at that depth.");
 			const seed = fightSeed(state.seed, state.fightNo);
@@ -13248,13 +13249,14 @@ function applyInner(saved, action, ctx, flags) {
 				seed,
 				no: state.fightNo + 1,
 				settings,
-				rounds: []
+				rounds: [],
+				...extra ? { extra: true } : {}
 			};
 			if (action.ladder && ctx.maths) {
 				state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:${seed}:${state.fightNo + 1}`));
 				state.fight.marks = [];
 			}
-			state.fightsLeft--;
+			if (!extra) state.fightsLeft--;
 			state.fightNo++;
 			return done(state, {
 				type: "fightStart",
@@ -13361,8 +13363,8 @@ function applyInner(saved, action, ctx, flags) {
 				}, true, effects);
 			}
 			const earned = earnedOrNone({
-				wins: won && !boss ? 1 : 0,
-				bosses: won && boss ? 1 : 0,
+				wins: won && !boss && !open.extra ? 1 : 0,
+				bosses: won && boss && !open.extra ? 1 : 0,
 				cries: rightCry
 			});
 			return done(state, {
@@ -13507,6 +13509,7 @@ function publicState(state, settings, loaded, extras) {
 		fame: extras?.fame ?? 0,
 		season: extras?.settings.season ?? 1,
 		fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
+		unlimitedToday: extras?.settings.unlimitedToday === true,
 		achievements: extras?.achievements ?? [],
 		clock: readClock(extras?.clock)
 	};
@@ -13544,6 +13547,7 @@ function makeHandler(services) {
 		const settings = readPracticalSettings(extras.value.settings);
 		const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
 		const typedNames = extras.value.settings.typedNames === true;
+		const unlimitedToday = extras.value.settings.unlimitedToday === true;
 		const clock = readClock(extras.value.clock);
 		const maths = action.type === "fightStart" && action.ladder ? await services.mathsContext(player) : void 0;
 		for (let attempt = 0; attempt < 4; attempt++) {
@@ -13568,6 +13572,7 @@ function makeHandler(services) {
 				settings,
 				maths,
 				fightsPerDay,
+				unlimitedToday,
 				groupVillage: loaded.value.groupVillage ?? null,
 				self: loaded.value.self ?? void 0,
 				raidsOn: loaded.value.raidsOn ?? false,

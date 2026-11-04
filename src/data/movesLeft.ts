@@ -11,8 +11,11 @@ import type { Hero } from '../../shared/lord/types';
 import { eggWarmth, isReady } from '../../shared/monsters/quests/eggs';
 import type { Egg } from '../../shared/monsters/quests/types';
 import { supabase } from '../lib/supabase';
+import { UNLIMITED_LABEL } from '../../shared/unlimited';
 
 export interface RawMovesLeft {
+  /** The class's "Unlimited turns today" switch (20261104001300). */
+  unlimited?: boolean;
   lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number; level?: number; exp?: number } | null;
   clans: { fightsLeft: number; perDay: number } | null;
   /** Battles counted today and the daily limit (battleCap.ts). Missing until 20261027000300 is applied. */
@@ -53,9 +56,14 @@ export type MovesByGame = Record<string, CardMoves>;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+/** On an unlimited day a used-up allowance isn't used up: say so instead. */
+const lifted = (chip: MoveChip, unlimited: boolean): MoveChip =>
+  unlimited && chip.empty ? { emoji: chip.emoji, text: UNLIMITED_LABEL, empty: false } : chip;
+
 /** Turns what the database said into chips per game id. `now` is a parameter so tests can pick the day. */
 export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = new Date()): MovesByGame {
   const out: MovesByGame = {};
+  const unlimited = raw?.unlimited === true;
   const lord = raw?.lord;
   if (lord && typeof lord.forestLeft === 'number') {
     // A hero who hasn't played yet today gets the new day's allowance when they next play, so show that.
@@ -66,26 +74,22 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     );
     const masterTries = (hero.masterTried ? 0 : 1) + (hero.masterExtra ?? 0);
     const chips: MoveChip[] = [
-      { emoji: '🌲', text: plural(hero.forestLeft, 'forest fight', 'forest fights'), empty: hero.forestLeft === 0 },
-      { emoji: '🏟️', text: plural(hero.arenaLeft, 'arena fight', 'arena fights'), empty: hero.arenaLeft === 0 },
+      lifted({ emoji: '🌲', text: plural(hero.forestLeft, 'forest fight', 'forest fights'), empty: hero.forestLeft === 0 }, unlimited),
+      lifted({ emoji: '🏟️', text: plural(hero.arenaLeft, 'arena fight', 'arena fights'), empty: hero.arenaLeft === 0 }, unlimited),
       { emoji: '🗡️', text: plural(masterTries, 'master try', 'master tries'), empty: masterTries === 0 },
     ];
     out['dragon-maths'] = { chips, allDone: chips.every((c) => c.empty) };
   }
   const clans = raw?.clans;
   if (clans && typeof clans.fightsLeft === 'number') {
-    out['clan-quest'] = {
-      chips: [{ emoji: '⛏️', text: `${clans.fightsLeft} of ${clans.perDay} mine fights`, empty: clans.fightsLeft === 0 }],
-      allDone: clans.fightsLeft === 0,
-    };
+    const chip = lifted({ emoji: '⛏️', text: `${clans.fightsLeft} of ${clans.perDay} mine fights`, empty: clans.fightsLeft === 0 }, unlimited);
+    out['clan-quest'] = { chips: [chip], allDone: chip.empty };
   }
   const monsters = raw?.monsters;
   if (monsters && typeof monsters.today === 'number') {
     const left = Math.max(monsters.perDay - monsters.today, 0);
-    out.monsters = {
-      chips: [{ emoji: '⚔️', text: `${left} of ${monsters.perDay} battles`, empty: left === 0 }],
-      allDone: left === 0,
-    };
+    const chip = lifted({ emoji: '⚔️', text: `${left} of ${monsters.perDay} battles`, empty: left === 0 }, unlimited);
+    out.monsters = { chips: [chip], allDone: chip.empty };
     const eggs = monsters.eggs ?? [];
     if (eggs.length) {
       // A nudge to come back: an egg about to go cold comes first, then eggs ready to hatch.
@@ -104,7 +108,7 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     // One new level a day. Replays never run out, so the card never says "all done"; a pupil past level 10 gets no chip.
     const open = levelsOpen({ deepest: diamond.deepest, newLevelDate: diamond.newLevelDate } as Player, now);
     if (open.next !== null) {
-      const chip: MoveChip = open.nextOpen
+      const chip: MoveChip = open.nextOpen || unlimited
         ? { emoji: '⛏️', text: `New level ${open.next} ready`, empty: false }
         : { emoji: '⛏️', text: `Level ${open.next} opens tomorrow`, empty: true };
       out.diamond = { chips: [chip], allDone: false };
@@ -114,10 +118,8 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
   if (trader && typeof trader.jumpsLeft === 'number') {
     // A new day gives back the class's jumps a day when they next play (rollDay in shared/trader/server.ts).
     const left = trader.day < nzDayNumber(now.getTime()) ? trader.perDay : Math.max(trader.jumpsLeft, 0);
-    out.trader = {
-      chips: [{ emoji: '🚀', text: `${left} of ${trader.perDay} jumps`, empty: left === 0 }],
-      allDone: left === 0,
-    };
+    const chip = lifted({ emoji: '🚀', text: `${left} of ${trader.perDay} jumps`, empty: left === 0 }, unlimited);
+    out.trader = { chips: [chip], allDone: chip.empty };
   }
   const isles = raw?.isles;
   if (isles && typeof isles.turnsLeft === 'number') {
@@ -126,10 +128,8 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     const left = isles.day < today
       ? Math.min(MOST_TURNS_SAVED, isles.turnsLeft + TURNS_PER_DAY * (today - isles.day))
       : Math.max(isles.turnsLeft, 0);
-    out.isles = {
-      chips: [{ emoji: '🏝️', text: plural(left, 'turn', 'turns') + ' left', empty: left === 0 }],
-      allDone: left === 0,
-    };
+    const chip = lifted({ emoji: '🏝️', text: plural(left, 'turn', 'turns') + ' left', empty: left === 0 }, unlimited);
+    out.isles = { chips: [chip], allDone: chip.empty };
   }
   return out;
 }

@@ -42,8 +42,9 @@ const sharePercent = Math.round(REPLAY_COIN_SHARE * 100);
 
 // ————————————————————————————————————— Level end —————————————————————————————————————
 
-export function LevelEnd({ ended, achieved, onShop, onAgain, onMap, againLabel }: {
+export function LevelEnd({ ended, unlimited = false, achieved, onShop, onAgain, onMap, againLabel }: {
   ended: Ended;
+  unlimited?: boolean;
   /** Hub achievements this level just earned. */
   achieved: readonly (typeof ACHIEVEMENTS)[number][];
   onShop: () => void;
@@ -84,7 +85,7 @@ export function LevelEnd({ ended, achieved, onShop, onAgain, onMap, againLabel }
         )}
         {r.questions > 0 && <p>Hold on! questions: you held on {r.held} of {r.questions} times.</p>}
         {r.freeBoost && <p>A mystery sack gave you a free {BOOSTS.find((b) => b.id === r.freeBoost)?.name} for your next level.</p>}
-        {ended.newLevel && r.level < LAST_LEVEL && <p>Level {r.level + 1} opens tomorrow. You can replay any level you’ve passed for stars, gems and coins.</p>}
+        {ended.newLevel && r.level < LAST_LEVEL && !unlimited && <p>Level {r.level + 1} opens tomorrow. You can replay any level you’ve passed for stars, gems and coins.</p>}
         {achieved.length > 0 && (
           <ul className="dd-achieved" role="status" aria-label="Achievements earned">
             {achieved.map((a) => (
@@ -261,7 +262,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <h3 className="dd-h3">Hold on!</h3>
         <p>Rare gems can slip on the way up. A maths question pops up and the clock stops while you answer. Get it right and the claw holds on. Get it wrong and the gem falls back into the rock, where you can catch it again. At most {QUESTION_CAP} questions a level ({QUESTION_CAP_LAST} on level {LAST_LEVEL}).</p>
         <h3 className="dd-h3">One new level a day</h3>
-        <p>You can try today’s new level as many times as you like. Once you pass it, the next level opens tomorrow. Levels you’ve passed are always open to replay.</p>
+        <p>You can try today’s new level as many times as you like. Once you pass it, the next level opens tomorrow. Levels you’ve passed are always open to replay. Some days your teacher may give unlimited new levels.</p>
         <h3 className="dd-h3">Stars and coins</h3>
         <p>1 star for passing, 2 for passing with {STAR_TWO_SECONDS} seconds left, 3 for that and catching every kind of gem on the level.</p>
         <p>Passing a new level keeps all its coins. A replay, or a try that falls short, keeps {sharePercent}% of them.</p>

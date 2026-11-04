@@ -7,6 +7,7 @@ import {
   ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, REPLAY_COIN_SHARE,
   type AchievementMeasure, type BoostId, type GemId, type Slot,
 } from './config';
+import { EXTRA_TURN_POINTS } from '../unlimited';
 import type { LevelResult } from './engine';
 import { WORKSHOP_ITEMS } from './workshopItems';
 
@@ -74,17 +75,18 @@ export interface LevelsOpen {
 /**
  * Which levels a pupil may start now. Passed levels are always open. The next one is open unless a new level was
  * already passed today (New Zealand date): then it opens tomorrow. Tries at today's level are unlimited.
+ * On an unlimited day (the teacher's switch) the next new level is always open.
  */
-export function levelsOpen(p: Player, now: Date): LevelsOpen {
+export function levelsOpen(p: Player, now: Date, unlimited = false): LevelsOpen {
   const replays = Array.from({ length: p.deepest }, (_, i) => i + 1);
   const next = p.deepest < LAST_LEVEL ? p.deepest + 1 : null;
-  return { replays, next, nextOpen: next !== null && p.newLevelDate !== nzDate(now) };
+  return { replays, next, nextOpen: next !== null && (unlimited || p.newLevelDate !== nzDate(now)) };
 }
 
-export function canStart(p: Player, level: number, now: Date): boolean {
+export function canStart(p: Player, level: number, now: Date, unlimited = false): boolean {
   if (!Number.isInteger(level) || level < 1 || level > LAST_LEVEL) return false;
   if (level <= p.deepest) return true;
-  const open = levelsOpen(p, now);
+  const open = levelsOpen(p, now, unlimited);
   return level === open.next && open.nextOpen;
 }
 
@@ -151,7 +153,7 @@ export interface Applied {
  * Add a finished level to the pupil's progress. The caller has checked `canStart` when the level began; a pass only
  * moves the pupil deeper if it was the next level and it was still open (so two passes in one day can't both count).
  */
-export function applyResult(before: Player, r: LevelResult, now: Date): Applied {
+export function applyResult(before: Player, r: LevelResult, now: Date, unlimited = false): Applied {
   const today = nzDate(now);
   const p: Player = {
     ...before,
@@ -162,7 +164,10 @@ export function applyResult(before: Player, r: LevelResult, now: Date): Applied 
   };
   let points = 0;
   let newLevel = false;
-  if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now).nextOpen) {
+  let extra = false;
+  if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
+    // A new level when one was already passed today is an extra one (only possible on an unlimited day).
+    extra = before.newLevelDate === today;
     p.deepest = r.level;
     p.newLevelDate = today;
     newLevel = true;
@@ -195,7 +200,8 @@ export function applyResult(before: Player, r: LevelResult, now: Date): Applied 
   if (r.freeBoost && !p.freeBoost) p.freeBoost = r.freeBoost;
   const earned = newlyEarned(p);
   p.owned.push(...earned);
-  return { player: p, coins, points, newLevel, earned };
+  // Extra new levels give everything but hub points.
+  return { player: p, coins, points: extra ? EXTRA_TURN_POINTS : points, newLevel, earned };
 }
 
 /** New Season: back to level 1 with no coins, stars or Gem Book. Workshop upgrades, what's worn and achievement totals stay. */

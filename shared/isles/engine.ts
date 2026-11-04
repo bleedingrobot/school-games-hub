@@ -369,7 +369,7 @@ function endOfTurn(island: Island, random: () => number) {
     }
   }
 
-  return { island: { ...next, turn: next.turn + 1, turnsLeft: next.turnsLeft - 1 }, arrived, weather, weatherAmount };
+  return { island: { ...next, turn: next.turn + 1, turnsLeft: Math.max(0, next.turnsLeft - 1) }, arrived, weather, weatherAmount };
 }
 
 // --- A whole turn ----------------------------------------------------------------------------------------------------
@@ -381,8 +381,9 @@ export type TurnResult = { ok: true; island: Island; report: TurnReport } | { ok
  * doesn't decide). Every choice is checked in order against the island as it is then; one impossible choice refuses
  * the whole turn, and `at` says which.
  */
-export function playTurn(island: Island, windy: boolean, actions: Action[], random: () => number): TurnResult {
-  if (island.turnsLeft < 1) return { ok: false, problem: 'no-turns', at: -1 };
+export function playTurn(island: Island, windy: boolean, actions: Action[], random: () => number, unlimited = false): TurnResult {
+  // On an unlimited day (the teacher's switch) a turn with none left goes ahead and the count stays at 0.
+  if (island.turnsLeft < 1 && !unlimited) return { ok: false, problem: 'no-turns', at: -1 };
   const ready = beforeBuilding(island, windy);
   let next = ready.island;
   for (let i = 0; i < actions.length; i++) {

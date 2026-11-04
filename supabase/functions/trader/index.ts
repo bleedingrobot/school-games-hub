@@ -7196,6 +7196,17 @@ function pushesFrom(view, quiet = MARKET_QUIET_BP) {
 	return (planet) => byPlanet.get(planet) ?? null;
 }
 //#endregion
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/** Is the switch on today? Anything that isn't today's date (null, an old day, junk) is off. */
+const isUnlimitedDay = (day, now = new Date()) => typeof day === "string" && day === nzToday(now);
+//#endregion
 //#region shared/maths/focusResults.ts
 /**
 * What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
@@ -9330,7 +9341,11 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			return;
 		case "jump": {
 			const worthBefore = netWorth(galaxy, t);
-			g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
+			const extra = settings.unlimited === true && t.jumpsLeft < 1;
+			g.t = must(travel(galaxy, extra ? {
+				...t,
+				jumpsLeft: 1
+			} : t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
 			g.stats.jumps += 1;
 			const e = encounterFor(galaxy, g.t, seed);
 			out.encounter = e;
@@ -9784,7 +9799,8 @@ function makeHandler(services) {
 			loans: settings.loans,
 			maths: settings.maths,
 			forge: settings.forge === true,
-			forgeTyping: settings.forgeTyping !== false
+			forgeTyping: settings.forgeTyping !== false,
+			unlimited: settings.unlimited === true
 		};
 		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
 		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
@@ -9836,7 +9852,8 @@ function makeHandler(services) {
 								loans: settings.loans,
 								maths: settings.maths,
 								forge: settings.forge === true,
-								forgeTyping: settings.forgeTyping !== false
+								forgeTyping: settings.forgeTyping !== false,
+								unlimited: settings.unlimited === true
 							}
 						});
 						game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
@@ -9881,7 +9898,8 @@ function makeHandler(services) {
 						loans: settings.loans,
 						maths: settings.maths,
 						forge: settings.forge === true,
-						forgeTyping: settings.forgeTyping !== false
+						forgeTyping: settings.forgeTyping !== false,
+						unlimited: settings.unlimited === true
 					},
 					news: news(view),
 					prices: prices(view)
@@ -10073,7 +10091,8 @@ Deno.serve(makeHandler({
 			loans: row.trader_loans !== false,
 			maths: parseMathsSwitch(row.trader_maths) !== "off",
 			forge: row.trader_forge === true,
-			forgeTyping: row.trader_forge_typing !== false
+			forgeTyping: row.trader_forge_typing !== false,
+			unlimited: isUnlimitedDay(row.unlimited_day)
 		};
 	},
 	async schoolSeed(player) {

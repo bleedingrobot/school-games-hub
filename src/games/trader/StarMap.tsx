@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { eventLine, newsAbout, type NewsItem } from '../../../shared/trader/news';
 import { pricesAt } from '../../../shared/trader/priceGuide';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { GOODS, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
 import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
@@ -54,10 +55,12 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', onAim, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', unlimited = false, onAim, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
+  /** The teacher's switch: jumps are not stopped at 0 today. */
+  unlimited?: boolean;
   /** The school news today (a planet's own lines go on its card). */
   news?: readonly NewsItem[];
   /** The school's pushes on prices now (for a planet's price list). */
@@ -200,6 +203,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuid
             refuelCost={fuelCost(t.ship, short)}
             onRefuel={() => onRefuel(short)}
             onJump={() => target && onJump(target.id)}
+            unlimited={unlimited}
             here0={here0}
             warn={level !== 'off'}
             checkHelp={showXY}
@@ -248,13 +252,13 @@ function CoordField({ id, label, value, onChange, coach }: { id: string; label: 
 function JumpBox(props: {
   t: Trader; here: Planet; here0: { x: number; y: number }; xs: string; ys: string; setXs: (v: string) => void; setYs: (v: string) => void;
   px: number | null; py: number | null; target: Planet | null; pickedPlanet: Planet | null; need: number; short: number; tooFar: boolean;
-  busy: boolean; canPay: boolean; refuelCost: number; onRefuel: () => void; onJump: () => void;
+  busy: boolean; canPay: boolean; refuelCost: number; onRefuel: () => void; onJump: () => void; unlimited?: boolean;
   /** Show Bolt's customs and pirate warnings (not on help level Off). */
   warn: boolean;
   /** Say which number to check for the tapped planet (not on help level Off, where the pupil reads them off the grid). */
   checkHelp: boolean;
 }) {
-  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump, warn, checkHelp } = props;
+  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump, warn, checkHelp, unlimited = false } = props;
   const aimed = px !== null && py !== null;
   const typedSomething = xs !== '' || ys !== '';
   const bad = (text: string) => text !== '' && text !== '-' && parseCoord(text) === null;
@@ -298,10 +302,10 @@ function JumpBox(props: {
         )}
       </div>
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || t.jumpsLeft < 1} onClick={onJump} data-coach="jump-go">
+        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || (t.jumpsLeft < 1 && !unlimited)} onClick={onJump} data-coach="jump-go">
           Jump!{target && target.id !== here.id ? ` (${need} fuel)` : ''}
         </button>
-        {t.jumpsLeft < 1 && <span className="st-soft">No jumps left today.</span>}
+        {t.jumpsLeft < 1 && (unlimited ? <span className="st-soft">{UNLIMITED_LABEL}</span> : <span className="st-soft">No jumps left today.</span>)}
       </div>
       <span className="st-sr">You are at x {here0.x}, y {here0.y}.</span>
     </div>

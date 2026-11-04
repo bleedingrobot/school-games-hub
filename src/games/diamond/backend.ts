@@ -12,6 +12,8 @@ export interface Loaded {
   player: Player;
   /** The server's clock, so "today" and the special of the week match it (milliseconds). */
   now: number;
+  /** The teacher's switch: new levels aren't limited to one a day today. */
+  unlimited?: boolean;
 }
 
 export interface Started {

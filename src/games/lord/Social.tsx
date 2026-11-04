@@ -14,6 +14,7 @@ import { HeroSprite } from './Sprite';
 import { dayLabel, narrateDuel } from './text';
 import { Stage } from './Stage';
 import type { SceneId } from './art';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 
 function Page({ title, back, children, scene }: { title: string; back: () => void; children: ReactNode; scene: SceneId }) {
   return (
@@ -66,8 +67,8 @@ export interface DuelResult {
   opponent: { name: string; heroClass: HeroClass; look?: string; level: number; maxHp: number; computer: boolean };
 }
 
-export function Arena({ hero, act, say, back, busy }: {
-  hero: Hero; act: (a: LordAction) => Promise<Reply | null>; say: (n: string) => void; back: () => void; busy: boolean;
+export function Arena({ hero, act, say, back, busy, unlimited = false }: {
+  unlimited?: boolean; hero: Hero; act: (a: LordAction) => Promise<Reply | null>; say: (n: string) => void; back: () => void; busy: boolean;
 }) {
   const [last, setLast] = useState<DuelResult | null>(null);
   const left = hero.arenaLeft;
@@ -86,10 +87,10 @@ export function Arena({ hero, act, say, back, busy }: {
         Fight a copy of a classmate’s hero, or one of the village’s computer heroes, near your level. The computer plays it for you.
         Winning gives a little experience. <strong>Losing costs you nothing</strong>, and a classmate’s real hero is never hurt.
       </p>
-      <p className="lord-soft">Arena fights left today: <strong>{left}</strong> of 3.</p>
+      <p className="lord-soft">Arena fights left today: {unlimited && left <= 0 ? <strong>{UNLIMITED_LABEL}</strong> : <><strong>{left}</strong> of 3</>}.</p>
       <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy || left <= 0} onClick={() => void fight()}>
-          {left > 0 ? 'Step into the arena' : 'No arena fights left today'}
+        <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy || (left <= 0 && !unlimited)} onClick={() => void fight()}>
+          {left > 0 || unlimited ? 'Step into the arena' : 'No arena fights left today'}
         </button>
       </div>
       {last && (

@@ -51,6 +51,8 @@ export interface Session {
   fame?: number;
   season?: number;
   fightsPerDay?: number;
+  /** The teacher's "Unlimited turns today" switch: mine fights carry on after the normal ones (no hub points). */
+  unlimitedToday?: boolean;
   /** The season clock from the server (missing on the test page, null when the server does not know it). */
   clock?: SeasonClock | null;
   /** The ids of the achievements earned so far. */

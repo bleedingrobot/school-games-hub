@@ -31,6 +31,7 @@ import { MONSTERS_BY_NAME } from './monsters';
 import { fxArt, sceneArt, zoneScene, type FxId } from './art';
 import { lookOf } from '../../../shared/clans/looks';
 import { nextSeed, type Session } from './session';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 
 type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'replay' | 'summary' | 'over';
 
@@ -354,7 +355,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   return (
     <section className="cq-fight" aria-label="The fight">
       <p className="cq-fight__top">
-        <strong>{look ? 'The monster attacks!' : `Depth ${fight.depth}`}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight))}{look ? ` of ${maxRoundsOf(fight)}` : <> · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}</>}
+        <strong>{look ? 'The monster attacks!' : `Depth ${fight.depth}`}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight))}{look ? ` of ${maxRoundsOf(fight)}` : <> · Fights today: {session.unlimitedToday && session.fightsLeft === 0 ? UNLIMITED_LABEL : fightsLabel(session.fightsLeft, session.fightsPerDay)}</>}
       </p>
       <div className={`cq-arena ${bump ? 'is-bump' : ''}`} onClick={skip}>
         {flourish && <Victory />}

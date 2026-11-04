@@ -13,6 +13,7 @@ import { fetchReactionsEnabled } from '../data/spaceGames';
 import { setMultiplayer, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
 import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
+import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
 import { LengthPicker } from '../maths/LengthPicker';
 import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
@@ -51,6 +52,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
   const training = useSetting(() => fetchTrainingFirst(classId), [classId], trainingOn());
   const skip = useSetting(() => fetchSkipMode(classId), [classId]);
   const nonMaths = useSetting(() => fetchNonMathsGames(classId), [classId]);
+  const unlimited = useSetting(() => fetchUnlimitedToday(classId), [classId]);
   return (
     <section className="panel lesson-controls" aria-labelledby="lesson-title">
       <h2 id="lesson-title" className="panel__title">
@@ -77,6 +79,13 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           value={nonMaths.value}
           loadFailed={nonMaths.failed}
           save={(on) => saveNonMathsGames(on, classId)}
+        />
+        <SettingToggle
+          label="Unlimited turns today"
+          about="Lifts the daily limit in Dragon Maths, Clan Quest, Maths Monsters, Diamond Drop, Star Trader and Sky Isles until midnight, then turns itself off. Extra turns earn game rewards but no points."
+          value={unlimited.value}
+          loadFailed={unlimited.failed}
+          save={(on) => saveUnlimitedToday(on, classId)}
         />
         {trainingOn() && (
           <SettingToggle

@@ -307,6 +307,19 @@ describe('the Daily News', () => {
 });
 
 describe('points and counts', () => {
+  it('on an unlimited day a forest fight at 0 is allowed, stays at 0 and earns no points; a normal day still refuses', async () => {
+    const g = new Game();
+    await g.start();
+    g.patch({ ...STRONG, forestLeft: 0 });
+    expect((await g.send({ action: 'forest' })).body).toMatchObject({ ok: false, reason: 'no-turns' });
+    g.db.settings.unlimitedToday = true;
+    const open = await g.fight();
+    expect(g.hero().forestLeft).toBe(0);
+    await g.send({ action: 'fight-finish', fightId: open.id, actions: play(open.start).actions });
+    expect(g.hero().forestWins).toBe(1);
+    expect(g.db.scores).toHaveLength(0);
+  });
+
   it('give the server’s own count of wins to score: a forest win is one, a master is one, nothing else is', async () => {
     const g = new Game();
     await g.start();

@@ -1,5 +1,6 @@
 import { bossAt } from '../../../shared/clans/fight';
 import { CONFIG } from '../../../shared/clans/config';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { fightsLabel } from './fightView';
 import { hintFor, type FightSummary, type Session } from './session';
 import { ZONE_TEXT, zoneForDepth } from './text';
@@ -12,12 +13,13 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
   const hint = hintFor(session);
   const boss = bossAt(session.depth);
   const awake = session.clan.members.some((m) => !m.knockedOut);
-  const canGo = session.fightsLeft > 0 && awake && !locked;
+  const unlimited = session.unlimitedToday === true;
+  const canGo = (session.fightsLeft > 0 || unlimited) && awake && !locked;
   const set = (d: number) => onDepth(Math.max(0, Math.min(CONFIG.maxLevel, d)));
   return (
     <section className="cq-mines" aria-label="The Mines">
       <h2>The Mines</h2>
-      <p>Fights left today: <strong>{fightsLabel(session.fightsLeft, session.fightsPerDay)}</strong></p>
+      <p>Fights left today: <strong>{unlimited && session.fightsLeft === 0 ? UNLIMITED_LABEL : fightsLabel(session.fightsLeft, session.fightsPerDay)}</strong></p>
       <div className="cq-depth">
         <button type="button" className="cq-btn" aria-label="Go less deep" onClick={() => set(session.depth - 1)}>−</button>
         <label>
@@ -34,8 +36,8 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
         <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       {locked && <p className="cq-note">{locked}</p>}
-      {session.fightsLeft === 0 && <p className="cq-note">That's all the fights for today. Come back tomorrow!</p>}
-      {session.fightsLeft > 0 && !awake && <p className="cq-note">Everyone is resting. They wake up tomorrow.</p>}
+      {session.fightsLeft === 0 && !unlimited && <p className="cq-note">That's all the fights for today. Come back tomorrow!</p>}
+      {(session.fightsLeft > 0 || unlimited) && !awake && <p className="cq-note">Everyone is resting. They wake up tomorrow.</p>}
     </section>
   );
 }

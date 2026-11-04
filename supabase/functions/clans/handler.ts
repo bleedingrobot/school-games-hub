@@ -73,7 +73,7 @@ export interface RaidSave {
 
 /** What the database says besides the clan, on every request (clan_extras): the teacher's settings, this clan's fame and its achievements. */
 export interface Extras {
-  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number; typedNames?: unknown };
+  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number; typedNames?: unknown; unlimitedToday?: boolean };
   fame: number;
   /** The ids of the achievements earned so far. */
   achievements: string[];
@@ -136,6 +136,7 @@ export function publicState(state: ServerState, settings: PracticalSettings, loa
     clan, seed, day, fightsLeft, fightNo, raidNo, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
     raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
+    unlimitedToday: extras?.settings.unlimitedToday === true,
     achievements: extras?.achievements ?? [],
     clock: readClock(extras?.clock),
   };
@@ -173,6 +174,7 @@ export function makeHandler(services: Services) {
     const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
     // Made-up hero names only when the teacher has switched them on (an older database without the switch means off).
     const typedNames = extras.value.settings.typedNames === true;
+    const unlimitedToday = extras.value.settings.unlimitedToday === true;
     // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
     const clock: SeasonClock | null = readClock(extras.value.clock);
     const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
@@ -188,7 +190,7 @@ export function makeHandler(services: Services) {
       if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
       // groupVillage is only read the first time an old save is converted to "My Village".
-      const ctx = { seed, today, settings, maths, fightsPerDay, groupVillage: loaded.value.groupVillage ?? null, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames, clock };
+      const ctx = { seed, today, settings, maths, fightsPerDay, unlimitedToday, groupVillage: loaded.value.groupVillage ?? null, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames, clock };
       let target: LoadedTarget = null;
       if (state && action.type === 'raidTargets') {
         const mates = await services.mates(player);

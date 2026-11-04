@@ -8306,7 +8306,8 @@ function applyForestResult(hero, fight) {
 	return next;
 }
 /** The forest-fight turn is taken when the fight is handed out, so closing the tab does not give it back. */
-const useForestTurn = (hero) => {
+const useForestTurn = (hero, unlimited = false) => {
+	if (hero.forestLeft <= 0 && unlimited) return hero;
 	if (hero.forestLeft <= 0) throw new Error("No forest fights left today");
 	return {
 		...hero,
@@ -9337,7 +9338,9 @@ function forest(c) {
 			eventId: extra.pendingEvent
 		}
 	};
-	if (hero.forestLeft <= 0) return {
+	const unlimited = c.settings.unlimitedToday === true;
+	const extraTurn = hero.forestLeft <= 0 && unlimited;
+	if (hero.forestLeft <= 0 && !unlimited) return {
 		refuse: "no-turns",
 		message: "You have used all your forest fights today. Come back tomorrow, or visit the village."
 	};
@@ -9357,7 +9360,7 @@ function forest(c) {
 			eventId: trip.event.id
 		}
 	};
-	const after = useForestTurn(hero);
+	const after = useForestTurn(hero, unlimited);
 	return {
 		hero: after,
 		openFight: {
@@ -9367,7 +9370,8 @@ function forest(c) {
 			start: startFight(after, trip.monster, trip.seed),
 			info: {
 				day: c.today,
-				sizeUp: offersSizeItUp(trip.seed)
+				sizeUp: offersSizeItUp(trip.seed),
+				...extraTurn ? { extra: true } : {}
 			}
 		},
 		summary: {
@@ -9485,6 +9489,7 @@ function fightFinish(c) {
 		answers,
 		notes,
 		gain: won ? { forestWins: 1 } : void 0,
+		noPoints: was.info.extra === true,
 		news: fight.outcome === "lost" ? [flattenedLine(c.player, fight.monster.name)] : void 0,
 		closeFight: {
 			status: "finished",
@@ -9915,7 +9920,8 @@ const sane = (h) => {
 /** Three fights a day against a saved copy of a classmate's hero or a computer hero, near your level. Played by the server. */
 async function arena(c) {
 	const { hero } = c.w;
-	if (hero.arenaLeft <= 0) return {
+	const unlimited = c.settings.unlimitedToday === true;
+	if (hero.arenaLeft <= 0 && !unlimited) return {
 		refuse: "no-turns",
 		message: "You have used your arena fights today. Come back tomorrow!"
 	};
@@ -9950,7 +9956,7 @@ async function arena(c) {
 	const exp = won ? arenaExp(hero.level) : 0;
 	const after = {
 		...hero,
-		arenaLeft: hero.arenaLeft - 1,
+		arenaLeft: Math.max(0, hero.arenaLeft - 1),
 		exp: hero.exp + exp,
 		arenaWins: hero.arenaWins + (won ? 1 : 0)
 	};
@@ -10165,6 +10171,7 @@ const viewOf = (w, version, today, season, settings) => ({
 		daysLeft: season.daysLeft
 	},
 	forestPerDay: settings.forestPerDay,
+	unlimited: settings.unlimitedToday === true,
 	topics: topicsOn(settings.topics),
 	classOpen: w?.extra.classOpen ?? false,
 	openFight: w?.open ? {
@@ -10542,7 +10549,11 @@ async function runLord(s, player, raw) {
 	};
 	const nextOpen = done.openFight ?? (done.closeFight ? null : base.open);
 	const changed = !!(done.hero || done.extra || done.openFight || done.closeFight || done.doneFight);
-	const earned = {
+	const earned = done.noPoints ? {
+		forest: 0,
+		master: 0,
+		dragon: 0
+	} : {
 		forest: gain.forestWins ?? 0,
 		master: gain.masterWins ?? 0,
 		dragon: gain.dragons ?? 0

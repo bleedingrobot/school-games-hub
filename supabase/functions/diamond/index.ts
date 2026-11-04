@@ -2,6 +2,17 @@
 // then run `npm run build:functions`. Deploy this file as the "diamond" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/** Is the switch on today? Anything that isn't today's date (null, an old day, junk) is off. */
+const isUnlimitedDay = (day, now = new Date()) => typeof day === "string" && day === nzToday(now);
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -8291,20 +8302,21 @@ const needsStarter = (p) => p.lifetime.plays === 0;
 /**
 * Which levels a pupil may start now. Passed levels are always open. The next one is open unless a new level was
 * already passed today (New Zealand date): then it opens tomorrow. Tries at today's level are unlimited.
+* On an unlimited day (the teacher's switch) the next new level is always open.
 */
-function levelsOpen(p, now) {
+function levelsOpen(p, now, unlimited = false) {
 	const replays = Array.from({ length: p.deepest }, (_, i) => i + 1);
 	const next = p.deepest < LAST_LEVEL ? p.deepest + 1 : null;
 	return {
 		replays,
 		next,
-		nextOpen: next !== null && p.newLevelDate !== nzDate(now)
+		nextOpen: next !== null && (unlimited || p.newLevelDate !== nzDate(now))
 	};
 }
-function canStart(p, level, now) {
+function canStart(p, level, now, unlimited = false) {
 	if (!Number.isInteger(level) || level < 1 || level > LAST_LEVEL) return false;
 	if (level <= p.deepest) return true;
-	const open = levelsOpen(p, now);
+	const open = levelsOpen(p, now, unlimited);
 	return level === open.next && open.nextOpen;
 }
 function boostPrice(id, level) {
@@ -8367,7 +8379,7 @@ function newlyEarned(p) {
 * Add a finished level to the pupil's progress. The caller has checked `canStart` when the level began; a pass only
 * moves the pupil deeper if it was the next level and it was still open (so two passes in one day can't both count).
 */
-function applyResult(before, r, now) {
+function applyResult(before, r, now, unlimited = false) {
 	const today = nzDate(now);
 	const p = {
 		...before,
@@ -8381,7 +8393,9 @@ function applyResult(before, r, now) {
 	};
 	let points = 0;
 	let newLevel = false;
-	if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now).nextOpen) {
+	let extra = false;
+	if (r.passed && r.level === before.deepest + 1 && levelsOpen(before, now, unlimited).nextOpen) {
+		extra = before.newLevelDate === today;
 		p.deepest = r.level;
 		p.newLevelDate = today;
 		newLevel = true;
@@ -8418,7 +8432,7 @@ function applyResult(before, r, now) {
 	return {
 		player: p,
 		coins,
-		points,
+		points: extra ? 0 : points,
 		newLevel,
 		earned
 	};
@@ -8556,12 +8570,14 @@ async function handleDiamond(services, player, body) {
 	if (on === null) return busy();
 	if (!on) return no(403, "Diamond Drop is not switched on for your class.", { code: "game-off" });
 	const now = () => new Date(services.now());
+	const unlimited = await services.unlimited?.(player) === true;
 	if (body.action === "load") {
 		const s = await services.load(player);
 		if (s === "busy") return busy();
 		return ok({
 			player: s.player,
-			now: services.now()
+			now: services.now(),
+			unlimited
 		});
 	}
 	if (body.action === "levelStart") {
@@ -8571,7 +8587,7 @@ async function handleDiamond(services, player, body) {
 		for (let tries = 0; tries < TRIES; tries++) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
-			if (!canStart(s.player, level, now())) return no(409, level > s.player.deepest + 1 ? "That level is still locked." : "That level opens tomorrow.", { code: "not-open" });
+			if (!canStart(s.player, level, now(), unlimited)) return no(409, level > s.player.deepest + 1 ? "That level is still locked." : "That level opens tomorrow.", { code: "not-open" });
 			const paid = takeBoosts(s.player, level, boosts);
 			if (!paid.ok) return no(400, paid.reason === "coins" ? "Not enough coins for those boosts." : "Those boosts can’t be used.");
 			const seed = Math.floor(services.random() * 2 ** 32);
@@ -8642,7 +8658,7 @@ async function handleDiamond(services, player, body) {
 				marks: lvl.marks.map((m) => m === true),
 				starter: lvl.starter
 			});
-			const applied = applyResult(s.player, result, now());
+			const applied = applyResult(s.player, result, now(), unlimited);
 			const kept = await services.end(player, seed, s.version, applied.player, {
 				drops,
 				finish: finish ?? null,
@@ -8923,6 +8939,10 @@ Deno.serve(makeHandler({
 			return null;
 		}
 		return data.diamond_enabled === true;
+	},
+	async unlimited(player) {
+		const { data } = await admin.rpc("settings_of", { player }).maybeSingle();
+		return isUnlimitedDay(data?.unlimited_day);
 	},
 	async mathsContext(player) {
 		const { data, error } = await admin.rpc("space_maths_context", { player });

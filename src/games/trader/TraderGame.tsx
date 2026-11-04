@@ -39,6 +39,7 @@ import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
+import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
 import './trader.css';
 
@@ -115,7 +116,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
 
   const galaxy: Galaxy | null = useMemo(() => (loaded ? makeGalaxy(loaded.galaxySeed) : null), [loaded?.galaxySeed]); // eslint-disable-line react-hooks/exhaustive-deps
   const forgeOn = loaded?.settings.forge === true;
-  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false } : null;
+  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false, unlimited: loaded.settings.unlimited === true } : null;
 
   /** The game as the screen shows it: the server's game with the queued quiet moves applied on top. */
   const game: Game | null = useMemo(() => {
@@ -130,7 +131,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const design = draft ?? savedSystem;
   // Bolt's next step, worked out fresh from the game each time it changes.
   const step = useMemo(
-    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn })) : null),
+    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t: loaded?.settings.unlimited && t.jumpsLeft < 1 ? { ...t, jumpsLeft: 1 } : t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn })) : null),
     [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design],
   );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
@@ -521,7 +522,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     shipyard: galaxy && t ? hasShipyard(galaxy, t) : false,
     loans: loaded?.settings.loans ?? false,
     hasNews: news.length > 0,
-    jumpsLeft: t?.jumpsLeft ?? 1,
+    jumpsLeft: loaded?.settings.unlimited ? 1 : t?.jumpsLeft ?? 1,
     welcome,
   };
   const fitting = tipsFor(moment);
@@ -610,7 +611,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
         />
       ) : (
         <>
-          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
@@ -639,9 +640,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                     bolt={bolt && loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
                   />
                 )}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} unlimited={settings.unlimited} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
-                {t.jumpsLeft < 1 && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
+                {t.jumpsLeft < 1 && !settings.unlimited && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
             )}
             {phase.k === 'warp' && <div className="st-warp" role="status">Jumping…</div>}
@@ -719,11 +720,12 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
   );
 }
 
-function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
+function Hud({ goal, t, jumpsPerDay, unlimited, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
   /** The Forge goal (replaces the moon bar when the Forge is open). */
   goal: Goal | null;
   t: Game['t'];
   jumpsPerDay: number;
+  unlimited: boolean;
   planet: string;
   government: string;
   onExit?: () => void;
@@ -751,11 +753,12 @@ function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen,
       <div className="st-hud__item" title="Hull: your ship's health"><span aria-hidden="true">🛠️</span><strong>{t.hull}/{ship.hull}</strong><span className="st-sr">hull</span></div>
       <div className="st-hud__item" title="Jumps left today" data-coach="hud-jumps">
         <span aria-hidden="true">🚀</span>
-        <span className="st-dots" aria-label={`${t.jumpsLeft} of ${jumpsPerDay} jumps left today`}>
+        <span className="st-dots" aria-label={unlimited && t.jumpsLeft < 1 ? UNLIMITED_LABEL : `${t.jumpsLeft} of ${jumpsPerDay} jumps left today`}>
           {Array.from({ length: jumpsPerDay }, (_, i) => (
             <i key={i} className={i < t.jumpsLeft ? 'on' : ''} />
           ))}
         </span>
+        {unlimited && t.jumpsLeft < 1 && <strong>{UNLIMITED_LABEL}</strong>}
       </div>
       {goal ? <ForgeGoal goal={goal} /> : <MoonProgress t={t} />}
       {t.loan.owed > 0 && <div className="st-hud__item" title="You owe the bank"><span aria-hidden="true">🏦</span><strong>−{t.loan.owed}</strong></div>}
