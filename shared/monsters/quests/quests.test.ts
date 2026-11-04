@@ -12,14 +12,39 @@ describe('quests, bits, giants and eggs', () => {
     expect(nextStep(emptyQuestSave(), { badges: [], playDays: 0 }).text).toBe('Someone needs help: talk to the Hermit in Kauri Bush.');
   });
 
+  it('the Hermit: find the pods, hand them in, catch a Leaf monster, hand it in, and the quest is done', () => {
+    let q = talkTo(emptyQuestSave(), 'kauri-bush:Hermit', [], 0).q;
+    q = record(q, { kind: 'solved', id: 'kauri-seeds' }).q;
+    expect(record(q, { kind: 'caught', map: 'kauri-bush', area: 1, species: 'digibud-1' }).q.quests.kauri).toEqual({ step: 0, n: 1, ready: true });
+    q = talkTo(q, 'kauri-bush:Hermit', [], 0).q;
+    expect(q.quests.kauri).toEqual({ step: 1, n: 0 });
+    q = record(q, { kind: 'caught', map: 'kauri-bush', area: 1, species: 'digibud-1' }).q;
+    const done = talkTo(q, 'kauri-bush:Hermit', [], 0);
+    expect(done.said).toBe('finished');
+    expect(done.given.eggs).toEqual(['quest:kauri:leafy']);
+  });
+
   it('a pupil can go from a quest to a woken giant to a hatched egg, and nothing can be hurried', () => {
     const team = [makeMonster('plusplash-2', 14)];
     let q = emptyQuestSave();
-    // The Shell Beach quest: start it, win 3 battles there, solve the stones, show a Water monster.
+    // The Shell Beach quest, one part at a time: win 3 battles there, hand them in to Hine, solve the
+    // stones, then go back and show her a Water monster.
     q = talkTo(q, 'shell-beach:Hine', team, 1).q;
     for (let i = 0; i < 3; i++) q = record(q, { kind: 'won', map: 'shell-beach', area: 2, foes: ['coinrock-1'] }).q;
     expect(q.bits).toEqual({ stone: 3 });
+    expect(q.quests.shell).toEqual({ step: 0, n: 3, ready: true });
+    expect(nextStep(q, { badges: ['leaf'], playDays: 0 })).toEqual({ text: 'Part done! Go back to Hine on Shell Beach.', target: { person: 'shell-beach:Hine', map: 'shell-beach' } });
+    // The next part doesn't start until it's handed in: solving the stones now doesn't count.
+    expect(record(q, { kind: 'solved', id: 'shell-stones' }).q.quests.shell).toEqual({ step: 0, n: 3, ready: true });
+    const handed = talkTo(q, 'shell-beach:Hine', team, 1);
+    expect(handed.said).toBe('advanced');
+    q = handed.q;
+    expect(q.quests.shell).toEqual({ step: 1, n: 0 });
+    expect(talkTo(q, 'shell-beach:Hine', team, 1).said).toBe('nothing');
     q = record(q, { kind: 'solved', id: 'shell-stones' }).q;
+    expect(q.quests.shell).toEqual({ step: 1, n: 1, ready: true });
+    // Handing in the stones and showing the Water monster happen in the same talk.
+    expect(talkTo(q, 'shell-beach:Hine', [makeMonster('plusplash-2', 5)], 1).said).toBe('advanced');
     const done = talkTo(q, 'shell-beach:Hine', team, 1);
     expect(done.said).toBe('finished');
     expect(done.given.eggs).toEqual(['quest:shell:water']);
