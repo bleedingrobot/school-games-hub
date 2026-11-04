@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
-import { GameCard } from '../components/GameCard';
+import { ActivityCard, GameCard } from '../components/GameCard';
 import { nzDay } from '../../shared/monsters/world/battleCap';
 import { spottedNote } from '../../shared/monsters/world/weather';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
@@ -23,7 +23,6 @@ import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
-import { SceneThumb } from '../subitising/Scene';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -273,15 +272,13 @@ export function Dashboard() {
                       />
                     ))}
                     {quickLooks && (
-                      <Link to="/training?quick=1" className="link-tile link-tile--open">
-                        <span className="link-tile__emoji" aria-hidden="true">
-                          <SceneThumb />
-                        </span>
-                        <span>
-                          <strong>Quick looks</strong>
-                          <span>Flash a picture, tap how many you saw</span>
-                        </span>
-                      </Link>
+                      <ActivityCard
+                        id="quick-looks"
+                        name="Quick looks"
+                        tagline="Flash a picture, tap how many you saw"
+                        to="/training?quick=1"
+                        colours={['#4f9e45', '#8fcdf0']}
+                      />
                     )}
                   </div>
                 </div>

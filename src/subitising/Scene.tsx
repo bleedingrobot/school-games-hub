@@ -50,7 +50,7 @@ export function GardenScene({ className = '', beds = true }: { className?: strin
   );
 }
 
-/** A small picture of the garden to stand in for an icon (Training home, dashboard tile). */
+/** A small picture of the garden to stand in for an icon (Training home). */
 export function SceneThumb({ className = '' }: { className?: string }) {
   return (
     <span className={`sb-thumb ${className}`.trim()} aria-hidden="true">
