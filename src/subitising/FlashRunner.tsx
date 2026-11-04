@@ -40,6 +40,15 @@ function feedbackText(trial: Trial, result: AnswerResult): string {
   return flashFeedback(result.correct, trial.answer, groupSizes(trial.picture));
 }
 
+/** A small empty square, beside the Missing Spots question. */
+function EmptySquareIcon() {
+  return (
+    <svg className="sb-empty-icon" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" focusable="false" style={{ verticalAlign: '-5px', marginLeft: 4 }}>
+      <rect x="3" y="3" width="20" height="20" rx="2" fill="#fff3c4" stroke="#1f2a37" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud }: Props) {
   const [index, setIndex] = useState(0);
   const [trial, setTrial] = useState<Trial>(() => next(0, null));
@@ -62,7 +71,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
 
   useEffect(() => {
     if (phase === 'ready') {
-      const t = window.setTimeout(() => setPhase('show'), CONFIG.readyMs);
+      const t = window.setTimeout(() => setPhase('show'), trial.activity === 'gap' ? Math.max(CONFIG.readyMs, CONFIG.gapReadyMs) : CONFIG.readyMs);
       return () => window.clearTimeout(t);
     }
     if (phase === 'show') {
@@ -149,7 +158,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   const reading = readAloud?.on ?? false;
   useEffect(() => {
     if (!reading) return;
-    if (phase === 'ready') speak(PROMPTS.ready, VOICE_FOLDER);
+    if (phase === 'ready') speak(trial.activity === 'gap' ? PROMPTS.readyGap : PROMPTS.readyFlash, VOICE_FOLDER);
     else if (phase === 'answer') speak(helped ? PROMPTS.helped : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash, VOICE_FOLDER);
   }, [reading, phase, helped, trial, guidedMode]);
   useEffect(() => {
@@ -175,27 +184,33 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   };
 
   const gap = trial.activity === 'gap';
-  const prompt = gap ? 'How many empty squares?' : guidedMode ? 'How many can you see?' : 'How many did you see?';
+  const prompt = gap ? (
+    <span>
+      How many <strong>empty squares</strong>? <EmptySquareIcon />
+    </span>
+  ) : guidedMode ? 'How many can you see?' : 'How many did you see?';
   const showing = phase === 'show' || phase === 'peek' || (phase === 'answer' && staticPicture) || phase === 'feedback';
   const mode = phase === 'feedback' ? (result?.correct ? 'right' : 'help') : helped && phase === 'answer' ? 'help' : 'plain';
   const label =
-    phase === 'feedback' ? `The picture again. ${gap ? `${trial.n} counters and ${trial.answer} empty` : `${trial.answer}`}.` : phase === 'ready' ? 'Get ready' : phase === 'answer' && !staticPicture ? 'The picture has gone' : 'A picture is showing';
+    phase === 'feedback' ? `The picture again. ${gap ? `${trial.n} counters and ${trial.answer} empty` : `${trial.answer}`}.` : phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : phase === 'answer' && !staticPicture ? 'The picture has gone' : 'A picture is showing';
 
   const feedback = result ? feedbackText(trial, result) : '';
 
   return (
     <section className="sb-screen" aria-label="Quick looks">
       <h1 ref={heading} tabIndex={-1} className="sb-prompt">
-        {phase === 'ready' ? 'Get ready…' : helped && phase === 'answer' ? 'Take your time. Can you see smaller groups?' : prompt}
+        {phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : helped && phase === 'answer' ? 'Take your time. Can you see smaller groups?' : prompt}
       </h1>
       <div className="sb-stage">
         <div className="sb-board">
-          {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
+          {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} tintEmpty={gap} label={label} /> : <BlankPicture label={label} />}
         </div>
       </div>
       <div className="sb-live" role="status" aria-live="polite">
         {phase === 'answer' && !staticPicture
-          ? 'The picture has gone. How many?'
+          ? gap
+            ? 'The picture has gone. How many empty squares?'
+            : 'The picture has gone. How many?'
           : phase === 'answer'
             ? `The picture is staying on the screen. ${gap ? 'How many empty squares?' : 'Look for the groups. How many?'}`
             : phase === 'feedback'
