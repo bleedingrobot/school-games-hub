@@ -12,7 +12,7 @@ import { addBits, canMake, describeBits, RECIPES, takeBits } from '../quests/bit
 import { addEgg, daysHad, daysNeeded, EGG_LABEL, EGGS, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
 import { afterGiant, canWake, giantById, GIANTS, isAwake, type Giant } from '../quests/giants';
 import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
-import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
+import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, stepHint, talkTo, type Given, type Job } from '../quests/quests';
 import { emptyQuestSave, type EggKind, type ProgressEvent, type QuestSave } from '../quests/types';
 import { spottedToday, WEATHER, WEATHER_LABEL, weatherFor, type Today } from './weather';
 import { AREAS } from './areas';
@@ -121,7 +121,7 @@ export function questTalk(state: WorldState, person: Thing, opts: QuestOptions):
   }
   const quest = res.quest!;
   const st = res.q.quests[quest.id];
-  const nextHint = st ? quest.steps[st.step].hint.replace('{left}', String((quest.steps[st.step].count ?? 1) - st.n)) : '';
+  const nextHint = st ? stepHint(quest, st) : '';
   // Hidden seed pods have nothing drawn on them, so whoever sends you to find them says where to look.
   const step = st ? quest.steps[st.step] : undefined;
   const pods = step?.do === 'solve' ? puzzleById(step.id ?? '') : undefined;
@@ -268,8 +268,7 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
     const st = q.quests[quest.id];
     if (q.flags.includes(`quest-done:${quest.id}`)) hints.push(`You helped ${who}. Thank you!`);
     else if (st) {
-      const task = quest.steps[st.step];
-      hints.push(`Your quest here: ${task.hint.replace('{left}', String((task.count ?? 1) - st.n))}.`);
+      hints.push(`Your quest here: ${stepHint(quest, st)}.`);
     } else if (canStart(q, quest, state.badges.length)) hints.push(`${who[0].toUpperCase()}${who.slice(1)} needs help. Go and talk to them!`);
   }
   for (const id of new Set(map.things.filter((t) => t.kind === 'puzzle').map((t) => t.puzzle!))) {

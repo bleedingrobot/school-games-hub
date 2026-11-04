@@ -34406,6 +34406,7 @@ const QUESTS = [
 		id: "kauri",
 		title: "The lost seed pods",
 		giver: "kauri-bush:Hermit",
+		back: "Go back to the Hermit in Kauri Bush",
 		area: 1,
 		steps: [
 			{
@@ -34433,6 +34434,7 @@ const QUESTS = [
 		id: "shell",
 		title: "Clear the rock pools",
 		giver: "shell-beach:Hine",
+		back: "Go back to Hine on Shell Beach",
 		area: 2,
 		steps: [
 			{
@@ -34463,6 +34465,7 @@ const QUESTS = [
 		id: "fire",
 		title: "The miner’s lanterns",
 		giver: "fire-mountain:Old Kui",
+		back: "Go back to Old Kui on Fire Mountain",
 		area: 3,
 		steps: [
 			{
@@ -34492,6 +34495,7 @@ const QUESTS = [
 		id: "snow",
 		title: "The warden’s hut",
 		giver: "snowy-peaks:Ranger Fern",
+		back: "Go back to Ranger Fern on Snowy Peaks",
 		area: 4,
 		steps: [
 			{
@@ -34518,6 +34522,7 @@ const QUESTS = [
 		id: "caves",
 		title: "The lost torch",
 		giver: "glowworm-caves:Glow Gran",
+		back: "Go back to Glow Gran in the Glowworm Caves",
 		area: 5,
 		steps: [
 			{
@@ -34546,6 +34551,7 @@ const QUESTS = [
 		id: "harbour",
 		title: "The busy wharf",
 		giver: "harbour-city:Captain Tui",
+		back: "Go back to Captain Tui in Harbour City",
 		area: 6,
 		steps: [
 			{
@@ -34572,6 +34578,7 @@ const QUESTS = [
 		id: "finale",
 		title: "The Teacher’s big question",
 		giver: "harbour-town:Teacher",
+		back: "Go back to the Teacher in Harbour Town",
 		area: 0,
 		badges: 6,
 		needs: [
@@ -34887,6 +34894,11 @@ function questShape(raw, maps) {
 	for (const [id, st] of Object.entries(q.quests)) {
 		const quest = questById(id);
 		if (!quest || !isObject$1(st) || !isInt$1(st.step, 0, quest.steps.length - 1) || !isInt$1(st.n, 0, 999)) return "quest-log";
+		if (st.ready !== void 0 && st.ready !== true || !Object.keys(st).every((k) => [
+			"step",
+			"n",
+			"ready"
+		].includes(k))) return "quest-log";
 	}
 	if (q.board !== void 0) {
 		const b = q.board;

@@ -147,6 +147,7 @@ export function questShape(raw: unknown, maps: Record<string, GameMap>): string 
   for (const [id, st] of Object.entries(q.quests)) {
     const quest = questById(id);
     if (!quest || !isObject(st) || !isInt(st.step, 0, quest.steps.length - 1) || !isInt(st.n, 0, 999)) return 'quest-log';
+    if ((st.ready !== undefined && st.ready !== true) || !Object.keys(st).every((k) => ['step', 'n', 'ready'].includes(k))) return 'quest-log';
   }
   if (q.board !== undefined) {
     const b = q.board;
