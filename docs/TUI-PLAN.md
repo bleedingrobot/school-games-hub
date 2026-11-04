@@ -27,7 +27,7 @@ branch always holds exactly ten berries, and ten berries always fill one flax ke
    **So:** the game always *shows* the ten first and the ones after, the spoken question always says "ten and four"
    before the number word, and a reversal (41 for 14) is one of the wrong choices so the slip shows up in the records.
 2. **Te reo Māori is one of the clear languages.** 14 is *tekau mā whā*, "ten and four". Many NZ classrooms already
-   count in te reo. **So:** Bella can say the te reo number in the right-answer moment (question card for James, 11).
+   count in te reo. **So:** Bella says the te reo number in the right-answer moment on the easier help levels (James, 4 Nov).
 3. **Ten has to become "one thing" (unitising).** Children first see 14 as fourteen ones. The big step is seeing one ten
    and four ones (Cobb and Wheatley; Clements and Sarama's composing trajectory: "10 and some more" comes before tens
    and ones to 100). **So:** the kete. Ten loose berries visibly tuck into one kete with a "10" tag, and from then on the
@@ -119,7 +119,7 @@ Ways 2 and 3 use the same levels: on "how many more?" the missing berries are em
 
 - **The colours still mark days, not skill.** Bronze, silver and gold flowers reward turning up (30 days, shared rule).
   Because help now follows the child, a gold day can still show berries for a child who needs them. This differs from
-  Hop and Pipi, whose help fades with the colour (question card for James, 11).
+  Hop and Pipi, whose help fades with the colour (James chose this, 4 Nov).
 - **The voice fades with the level:** level 5 says the "ten… and four more" line; levels 4 to 1 read the question
   ("Ten plus four. How many?"); level 0 says only "How many?" and the child reads the sum. A child can always tap the
   speaker to hear the full question again. The game's own mute (`tui-voice`) turns the voice off.
@@ -186,7 +186,7 @@ If a try keeps failing (the beak, the kete tag picking up writing), change only 
 Bella (Kokoro `af_bella`, speed 0.9) for every line, recorded with `scripts/voice-clips.py tui` (add `tui` to its list)
 from `src/games/tui/voiceLines.ts`, with a `voiceLines.test.ts` that writes `public/voice/tui/lines.json`. `SAY_AS`
 already says Tūī as "Too-ee" and Kererū; add Pīwakawaka, Korimako, Kākā, kōwhai, kete, and the te reo numbers *tekau mā
-tahi* to *tekau mā iwa* if James says yes (11). About 150 lines: every question at every voice level for the nine facts
+tahi* to *tekau mā iwa* (James said yes, 4 Nov). About 150 lines: every question at every voice level for the nine facts
 and four ways, the "ten… and n more" lines, praise, the guided first go, and the prize. Bella reads the question, never
 the answer before a right tap; after a right tap she says the whole fact as a stem sentence, "Ten and four is fourteen" (the
 same words as Weka's "10 and 3 make 13": "and", never "equals"), with the arrow-cards moment. Listen to the te reo clips before they go live: Kokoro is an English voice.
@@ -203,12 +203,13 @@ stand-ins drawn in code and a preview (`preview/tui`). 3. Server (migration `<ne
 4. Hub card in Foundational skills, teacher drawer and student line, guided first go, prize moment, Bella clips.
 5. Go live. **No shared-maths branch.** Painting can happen any time from now; the game picks the pictures up.
 
-## 11. Questions for James (asked on cards, 4 Nov 2026)
+## 11. James's answers (4 Nov 2026)
 
-1. **How help fades:** with the child's results (this plan, recommended) or with the days, like Hop and Pipi?
-2. **Te reo numbers:** should Bella say *tekau mā whā* with "ten and four is fourteen" on help levels 5 to 3?
-
-Answers go here when they come.
+1. **How help fades: by the child's results** (section 4), not by the days. The colours still mark days.
+2. **Te reo numbers: yes, on the easier help levels.** After a right answer on help levels 5 to 3 Bella says
+   "Tekau mā whā. Ten and four is fourteen." Check the te reo clips by ear before they go live.
+3. **Painting waits until James is home from work** (the gaming PC). The first try from a Mac session on 4 Nov stopped
+   before it painted anything (`extra_usage_unavailable`). Steps are in section 7.
 
 Later idea (parked): grow into tens and ones to 100 with several kete. That needs new shared maths.
 
