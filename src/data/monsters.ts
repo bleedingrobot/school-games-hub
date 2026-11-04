@@ -111,6 +111,9 @@ function setQueue(player: string, items: SaveItem[]) {
 export const readTail = (player: string): Tail | null => (memoryTails.has(player) ? memoryTails.get(player)! : read<Tail>(tailKey(player)));
 
 export function writeTail(player: string, tail: Tail | null) {
+  // After a refusal the game on screen no longer counts: keeping it here would bring it back at the next
+  // opening, ahead of the server, and every save from it would be refused too.
+  if (tail && refusedPlayers.has(player)) return;
   memoryTails.set(player, tail);
   write(tailKey(player), tail);
 }
@@ -199,8 +202,9 @@ async function sendQueue(player: string, keepalive: boolean): Promise<FlushResul
  * device's game carries on. If another Chromebook has saved since this one did, the server's wins.
  */
 export async function loadMonsters(player: string): Promise<MonstersData> {
-  refusedPlayers.delete(player);
   await flushQueue(player);
+  // Opening starts afresh, even if that last send was refused: this opening uses the server's save.
+  refusedPlayers.delete(player);
   const device = readTail(player);
   try {
     const { data, error } = await supabase.rpc('my_monsters');

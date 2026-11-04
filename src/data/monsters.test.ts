@@ -88,6 +88,30 @@ describe('the Maths Monsters save queue', () => {
     expect(savingStopped(ME)).toBe(false);
   });
 
+  it('after a refusal, playing on cannot bring the refused game back: the next opening uses the server save', async () => {
+    const [a] = items(1);
+    enqueueSave(ME, a);
+    fetchMock.mockResolvedValueOnce(reply(1, [{ type: 'refused', problem: 'quest-flags' }]));
+    await flushQueue(ME);
+    // A battle fought after the refusal writes the device copy.
+    writeTail(ME, { base: 21, world: { ...a.world, steps: 999 }, battles: [] });
+    expect(readTail(ME)).toBeNull();
+    rpc.mockResolvedValueOnce({ data: { save: { world: a.world, version: 20 }, settings: { enabled: true, topics: [] }, facts: [] }, error: null });
+    const loaded = await loadMonsters(ME);
+    expect(loaded.tail).toMatchObject({ base: 20, world: a.world });
+  });
+
+  it('a save refused as the game opens does not stop this opening from saving', async () => {
+    const [a] = items(1);
+    enqueueSave(ME, a);
+    writeTail(ME, { base: 21, world: a.world, battles: [] });
+    fetchMock.mockResolvedValueOnce(reply(1, [{ type: 'refused', problem: 'quest-bits' }]));
+    rpc.mockResolvedValueOnce({ data: { save: { world: a.world, version: 20 }, settings: { enabled: true, topics: [] }, facts: [] }, error: null });
+    const loaded = await loadMonsters(ME);
+    expect(loaded.tail?.base).toBe(20);
+    expect(savingStopped(ME)).toBe(false);
+  });
+
   it('sends a long queue in more than one request', async () => {
     for (const item of items(30)) enqueueSave(ME, item);
     fetchMock.mockImplementation(async (_u, init) => {
