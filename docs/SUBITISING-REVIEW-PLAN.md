@@ -116,9 +116,14 @@ Picture sheets and screenshots: project files `subitising-review/` (`quick-looks
 - **Later:** the Missing Spots five-frame offers 5 (never right) because 5 buttons are always shown; Missing Spots ten-frames offer 8 and 9. Ending the starting check after one answer places the student from that one answer.
 
 ### H. What to build next (ranked)
-1. **Missing Spots wording and picture** (most students on it, 55% right, a quarter answering the wrong question): show the empty squares highlighted on the answer screen and say "How many EMPTY squares?" in big words.
-2. **A fairer starting check**: e.g. two right in a row to go up, or 8 pictures, so stage 2 and 3 students aren't skipped ahead.
+1. **(Done 4 Nov, see below.) Missing Spots wording and picture** (most students on it, 55% right, a quarter answering the wrong question): show the empty squares highlighted on the answer screen and say "How many EMPTY squares?" in big words.
+2. **(Done 4 Nov, see below.) A fairer starting check**: e.g. two right in a row to go up, or 8 pictures, so stage 2 and 3 students aren't skipped ahead.
 3. **More variety in pictures** (dice and frames turned or mirrored, rows filled from either end), so pictures can't be learned by shape.
 4. **Stage 5 scattered dots** (the research document's next stage; most students are already at stage 4).
 5. The "going well" flash: decide when it should start (e.g. after 6 of the last 8).
 6. Then Compare, Same Number, teacher view (needs the teacher view plan), te reo prompts.
+
+### Follow-ups done (4 November 2026)
+- **Stage order changed** to James's seven stages (SUBITISING-PLAN.md section 15). Checked against published progressions (Clements and Sarama, NCETM Mastering Number, Glasgow subitising progression): small amounts first, structured before scattered, "how many more to make 10" after the frame is known, mixed last. They usually put dice before ten-frame to 5; James kept ten-frame to 5 first.
+- **Missing Spots:** the question is now shown (and read) on the Get ready screen before the picture, the empty squares are tinted on Missing Spots pictures, and the prompt says "How many **empty squares**?" with an icon.
+- **Starting check:** now 6 pictures, two per stage, a binary search over the 7 stages (first test at stage 4). Worked out exactly for a student right 90% on stages they can do and 30% above: about two thirds land on the right stage, and misses lean low (safer) instead of high. The old up/down walk put a student who could do stage 2 too high 92% of the time.
