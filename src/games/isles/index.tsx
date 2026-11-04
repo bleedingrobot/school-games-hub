@@ -37,7 +37,7 @@ export const skyIsles: GameDefinition = {
   Play: IslesPlay,
   ranked: false,
   noBots: true,
-  group: 'complex-maths',
+  group: 'easy-maths',
   useTeacherSwitch: useIslesEnabled,
   // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), "Follows focus" for its
   // maths, and a drawer with Sky Races on or off, the class's islands and its Hall of the Skies.
