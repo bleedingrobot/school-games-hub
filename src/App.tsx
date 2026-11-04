@@ -13,6 +13,7 @@ import { Lobby } from './pages/Lobby';
 import { NotFound } from './pages/NotFound';
 import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
+import { BadgeSignIn } from './pages/BadgeSignIn';
 import { SpaceGamePage } from './pages/SpaceGamePage';
 import { CardGamePage } from './pages/CardGamePage';
 import { PowerGamePage } from './pages/PowerGamePage';
@@ -23,6 +24,7 @@ import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
 import { TeacherStudents } from './teacher/Students';
 import { StudentPage } from './teacher/StudentPage';
+import { BadgeSheet } from './teacher/BadgeSheet';
 import { HardestQuestions } from './teacher/Hardest'; // Today shows its top three, so it's in the teacher bundle anyway
 import { TeacherGames } from './teacher/Games';
 import { AdminClasses, AdminOverview, AdminStudents, AdminTeachers } from './teacher/Admin';
@@ -72,6 +74,7 @@ export function teacherRoutes() {
         <Route index element={<Today />} />
         <Route path="students" element={<TeacherStudents />} />
         <Route path="students/:studentId" element={<StudentPage />} />
+        <Route path="badges" element={<BadgeSheet />} />
         <Route path="maths" element={<TeacherMaths />}>
           <Route index element={<Suspense fallback={loading}><SetFocus /></Suspense>} />
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />
@@ -94,6 +97,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/badge/:code" element={<BadgeSignIn />} />
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
