@@ -42,7 +42,7 @@ export const hopsGlowwormPond: GameDefinition = {
   Play: HopPlay,
   ranked: false,
   noBots: true,
-  group: 'easy-maths',
+  group: 'foundational',
   useTeacherSwitch: useHopEnabled,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Glow Jars in the
   // Maths column, and a drawer with the hops' step labels on or off.

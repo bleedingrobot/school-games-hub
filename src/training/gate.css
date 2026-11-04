@@ -59,7 +59,8 @@
 }
 
 /* The home page's game cards while the games are locked: still there, but resting. */
-.game-groups--locked .game-group:not(.game-group--training) .game-grid {
+/* Quick looks (a training activity) sits with the foundational games but stays open. */
+.game-groups--locked .game-group:not(.game-group--training) .game-grid > :not(.link-tile--open) {
   opacity: 0.6;
   filter: saturate(0.5);
 }

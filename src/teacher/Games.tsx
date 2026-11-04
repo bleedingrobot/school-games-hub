@@ -17,6 +17,7 @@ import './games.css';
 
 /** The same groups, in the same order, as the dashboard. */
 export const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
+  { title: 'Foundational skills', group: 'foundational' },
   { title: 'No maths', group: 'no-maths' },
   { title: 'Easy maths', group: 'easy-maths' },
   { title: 'Complex maths', group: 'complex-maths' },

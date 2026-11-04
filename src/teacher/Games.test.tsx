@@ -186,10 +186,11 @@ describe('the Games table', () => {
     // The name, without the icon (hidden from screen readers, but the 101 card's icon says 101).
     const names = (g: HTMLElement) => within(g).getAllByRole('rowheader').map((h) => h.lastChild?.textContent);
     const want = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.name);
-    expect(groups.map((g) => within(g).getAllByRole('columnheader')[0].textContent)).toEqual(['No maths', 'Easy maths', 'Complex maths']);
-    expect(names(groups[0])).toEqual(want('no-maths'));
-    expect(names(groups[1])).toEqual(want('easy-maths'));
-    expect(names(groups[2])).toEqual(want('complex-maths'));
+    expect(groups.map((g) => within(g).getAllByRole('columnheader')[0].textContent)).toEqual(['Foundational skills', 'No maths', 'Easy maths', 'Complex maths']);
+    expect(names(groups[0])).toEqual(want('foundational'));
+    expect(names(groups[1])).toEqual(want('no-maths'));
+    expect(names(groups[2])).toEqual(want('easy-maths'));
+    expect(names(groups[3])).toEqual(want('complex-maths'));
     expect(within(t).getAllByRole('rowheader')).toHaveLength(ALL_GAMES.length);
   });
 

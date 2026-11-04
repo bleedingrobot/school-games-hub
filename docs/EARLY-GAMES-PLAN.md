@@ -58,7 +58,7 @@ best. Beanstalk and Hop already fit "short and daily".
 All five keep the frame children already know from Beanstalk and Hop: a NZ creature, a short daily challenge (about 10
 goes), 10 big magic things that turn bronze, silver then gold over 30 counted days, a prize at the end, help that fades
 (full on bronze, faint on silver, none on gold), no penalty for a wrong tap, reading aloud, the server making and marking
-every round (the guide's way A), a per-class teacher switch, and the `easy-maths` group. So each one reuses
+every round (the guide's way A), a per-class teacher switch, and the `foundational` group (Foundational skills, top of the home page). So each one reuses
 `shared/beanstalk`'s `progress.ts` pattern and Hop's round/play/replay pattern.
 
 ### A. Pipi's Hidden Shells: part-whole within 10 (recommended first)
@@ -141,8 +141,10 @@ If speed matters more than the gap, swap 1 and 2: Kororā's Mirror Pool could be
 - **One shared early-years engine?** Beanstalk and Hop each have their own copy of the 30-day progress code. With 3 or
   more of these games, it is worth moving that into one shared folder (its own small branch, like a shared-maths change).
   Suggest doing it when the third early game starts.
-- **The Easy maths shelf** already has 10 games, and these would make 15. A "Little ones" shelf or a junior filter on the home
-  page may help. Needs James's call.
+- **Home page shelf: decided.** James, 4 Nov 2026: every early game goes in **Foundational skills**, its own group at the
+  top of the home page (and the teacher Games table), not Easy maths. Beanstalk, Hop and Quick looks are already there. A new
+  game joins with `group: 'foundational'` in its `GameDefinition` and its id in the `foundational` line of
+  `src/games/registry.test.ts`; nothing else to edit.
 - **Art:** each game gets `scripts/<game>-art.py` and a picture list. Threads build with stand-ins drawn in code; James
   paints on the gaming PC (ComfyUI) in the evening.
 - **Tests:** at most 8 per game (`docs/TESTING.md`), copying Hop's 4 rule tests.
@@ -171,7 +173,7 @@ same for every one and aren't repeated in each plan:
 - **Server:** tables `<id>_progress` and `<id>_rounds` (RLS on, no grants), function `supabase/functions/<id>/` with
   `load`, `start`, `finish` (plus `choose` if there's a character pick), a code switch `<ID>_ON`, a per-class switch
   `<id>_enabled` **on by default** (James), a help setting, `hub_games` row, teacher class and student lines, group
-  `easy-maths`. About 3 requests a child a lesson.
+  `foundational`. About 3 requests a child a lesson.
 - **Stages:** 0 plan, (shared maths branch if needed, live first), 1 rules + tests, 2 play screen with stand-in art and a
   preview, 3 server, 4 hub, teacher settings, guided first go, prize moment, 5 go live. At most 8 tests.
 - **Art:** threads draw stand-ins in code; `scripts/<id>-art.py` lists the pictures; James paints on the gaming PC

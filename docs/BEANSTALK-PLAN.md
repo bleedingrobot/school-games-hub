@@ -1,6 +1,6 @@
 # Kiwi's Beanstalk (Bond Builder) — plan
 
-Short id `beanstalk`. **Status: LIVE 4 Nov 2026** for every class, in Easy maths games (PR #175: tables, function and hub wiring; PR #177: code switch on). Started 4 Nov 2026; the `beanstalk` branch is merged and deleted.
+Short id `beanstalk`. **Status: LIVE 4 Nov 2026** for every class, in Foundational skills (moved from Easy maths games 4 Nov 2026) (PR #175: tables, function and hub wiring; PR #177: code switch on). Started 4 Nov 2026; the `beanstalk` branch is merged and deleted.
 
 **For younger children (about 5 to 7)**, not the usual Year 4 to 6. Much of the guide still applies (server in charge, the
 shared maths focus, switches, going live one step at a time). Some of it is changed on purpose for this age group, as
