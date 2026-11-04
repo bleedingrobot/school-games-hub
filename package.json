@@ -66,7 +66,8 @@
     "isles:preview": "vite build --config vite.isles-preview.config.ts",
     "diamond:sim": "node scripts/diamond-sim.mjs",
     "diamond:preview": "vite build --config vite.diamond-preview.config.ts",
-    "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html"
+    "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html",
+    "beanstalk:single": "BEANSTALK_INLINE=1 vite build --config vite.beanstalk-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-beanstalk kiwis-beanstalk-test-page.html"
   },
   "engines": {
     "node": ">=22"

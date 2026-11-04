@@ -8020,6 +8020,19 @@ function settleFight(t, fight) {
 	return state;
 }
 //#endregion
+//#region shared/trader/captains.ts
+/**
+* The starship captains a pupil can pick (docs/prompts/trader-captains-pickup.md): 20 men (m01..m20) and 20 women
+* (f01..f20), painted on James's PC by scripts/trader-captains-art-gen.py. The choice is only a look: it changes nothing
+* in the game. It is kept in the pupil's game, so it follows them to any Chromebook; a New Season is a fresh game, so they
+* pick again then.
+*/
+const keys = (p) => Array.from({ length: 20 }, (_, i) => `${p}${String(i + 1).padStart(2, "0")}`);
+const CAPTAINS_MEN = keys("m");
+const CAPTAINS_WOMEN = keys("f");
+const CAPTAINS = [...CAPTAINS_MEN, ...CAPTAINS_WOMEN];
+const isCaptain = (id) => typeof id === "string" && CAPTAINS.includes(id);
+//#endregion
 //#region shared/trader/plan.ts
 /**
 * A trade plan is how many of each good the pupil wants to buy (positive) or sell (negative) on this visit. Selling goes
@@ -8215,6 +8228,10 @@ function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 			return;
 		case "moon":
 			g.t = must(buyMoon(galaxy, t));
+			return;
+		case "captain":
+			if (!isCaptain(action.id)) refuse("That captain could not be found.");
+			g.captain = action.id;
 			return;
 		case "jump": {
 			const worthBefore = netWorth(galaxy, t);
@@ -8588,6 +8605,13 @@ function parseActions(raw) {
 				out.push({
 					type: "jump",
 					dest: a.dest
+				});
+				break;
+			case "captain":
+				if (typeof a.id !== "string" || a.id.length > 8) return null;
+				out.push({
+					type: "captain",
+					id: a.id
 				});
 				break;
 			default: return null;

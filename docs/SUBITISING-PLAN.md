@@ -160,3 +160,22 @@ Flash is 1000 to 1200 ms depending on the stage. Feedback is gentle: right → c
 ## 14. Review (4 November 2026)
 
 A full review (maths, pictures, timing, feedback, accessibility, live data, bugs) is in [SUBITISING-REVIEW-PLAN.md](SUBITISING-REVIEW-PLAN.md), with the fixes made and a ranked list of what to build next.
+
+## 15. New stage order (James, 4 November 2026)
+
+James: "one of the first steps [is] just recognising dot patterns to 5 on a ten-frame, then standard dot patterns on a ten-frame to 10. Counting dots and counting spaces should be separate first, and then mixed later."
+
+| Stage | Name (shown) | Picture types (key id) | Numbers | Activity |
+|---|---|---|---|---|
+| 1 | A few dots | line, clus, angl | 1 to 3 | dots |
+| 2 | Ten-frame to 5 | `tenfive` (ten-frame, top row filled from the left) | 1 to 5 | dots |
+| 3 | Dice and dots | dice, dicet, dots | 4 to 5 | dots |
+| 4 | Five-frames | five, fiveplus, pair | 3 to 7 | dots |
+| 5 | Ten-frame to 10 | ten (rows), tenpair (pairs) | 5 to 10 | dots |
+| 6 | Empty squares | five, ten, tenpair | answers 1 to 7 | spaces only (`gap:` keys) |
+| 7 | Mix it up | tenmix (scattered) | dots 5 to 10, spaces 1 to 7 | dots and spaces mixed, half each |
+
+- A key's stage comes from its activity and type: every `gap:` key is stage 6 except `gap:tenmix-*` (stage 7); `sub:` keys go by type. Old saved answers keep their meaning (`sub:ten-8` was stage 4, now stage 5; `gap:ten-3` now stage 6; `sub:tenmix-7` now stage 7).
+- Saved settings get a version: `q = {p, s, f, g, v: 2}`. Settings without `v` are the old four stages and are moved over once: `f` 0→0, 1→1, 2→2, 3→4, 4→5 and `s` 1→1, 2→3, 3→4, 4→5 (never lower, so the database's "finished never goes down" rule still holds). A student who had finished the old ten-frames stage starts on Empty squares.
+- Starting check: 8 pictures from stage 3; right goes up a stage, wrong goes down (1 to 7).
+- The garden has seven plants. The `training` function is rebuilt (it checks keys and settings).

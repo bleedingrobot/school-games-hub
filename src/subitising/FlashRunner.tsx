@@ -4,7 +4,9 @@ import { isStruggling } from '../../shared/subitising/engine';
 import { groupSizes } from '../../shared/subitising/patterns';
 import type { Trial } from '../../shared/subitising/trials';
 import { speak, stopSpeaking } from '../speech';
+import { Friend } from './Friend';
 import { BlankPicture, PictureSvg } from './PictureSvg';
+import { flashFeedback, gapFeedback, PROMPTS, VOICE_FOLDER } from './voiceLines';
 
 export interface AnswerResult {
   given: number;
@@ -32,19 +34,10 @@ interface Props {
 
 type Phase = 'ready' | 'show' | 'answer' | 'peek' | 'feedback';
 
-/** "5 and 3", from the natural groups of a picture (nothing when it is just one group). */
-function partsText(trial: Trial): string {
-  const sizes = groupSizes(trial.picture);
-  return sizes.length > 1 ? sizes.join(' and ') : '';
-}
-
 /** The line said after an answer. It names the answer, so it is only used once the student has answered. */
 function feedbackText(trial: Trial, result: AnswerResult): string {
-  const parts = partsText(trial);
-  if (trial.activity === 'gap') {
-    return `${trial.n} counters and ${trial.answer} empty squares make ${FRAME_CAPACITY[trial.type] ?? 0}.`;
-  }
-  return result.correct ? `Yes! ${trial.answer}${parts ? `: ${parts}` : ''}.` : `Let me show you again. It was ${trial.answer}${parts ? `: ${parts}` : ''}.`;
+  if (trial.activity === 'gap') return gapFeedback(trial.n, trial.answer, FRAME_CAPACITY[trial.type] ?? 0);
+  return flashFeedback(result.correct, trial.answer, groupSizes(trial.picture));
 }
 
 export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud }: Props) {
@@ -156,11 +149,11 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   const reading = readAloud?.on ?? false;
   useEffect(() => {
     if (!reading) return;
-    if (phase === 'ready') speak('Get ready');
-    else if (phase === 'answer') speak(helped ? 'Take your time. Can you see smaller groups?' : trial.activity === 'gap' ? 'How many empty squares?' : guidedMode ? 'How many can you see?' : 'How many did you see?');
+    if (phase === 'ready') speak(PROMPTS.ready, VOICE_FOLDER);
+    else if (phase === 'answer') speak(helped ? PROMPTS.helped : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash, VOICE_FOLDER);
   }, [reading, phase, helped, trial, guidedMode]);
   useEffect(() => {
-    if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result));
+    if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result), VOICE_FOLDER);
   }, [reading, phase, result, trial]);
 
   const advance = () => {
@@ -196,7 +189,9 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
         {phase === 'ready' ? 'Get ready…' : helped && phase === 'answer' ? 'Take your time. Can you see smaller groups?' : prompt}
       </h1>
       <div className="sb-stage">
-        {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
+        <div className="sb-board">
+          {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
+        </div>
       </div>
       <div className="sb-live" role="status" aria-live="polite">
         {phase === 'answer' && !staticPicture
@@ -210,7 +205,10 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
 
       {phase === 'feedback' ? (
         <>
-          <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
+          <div className="sb-feedback">
+            <Friend happy={result?.correct ?? false} />
+            <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
+          </div>
           <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
             {index + 1 >= total ? 'Finish' : 'Next'}
           </button>

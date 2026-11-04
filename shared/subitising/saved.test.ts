@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { STAGES } from './config';
+import { STAGES, type StageNumber } from './config';
 import { progressFrom, type SubAnswer } from './engine';
 import { gapKey, helpedKey, isQuickKey, parseKey, plainKey, subKey } from './keys';
-import { defaultSettings, finishedInARow, packSettings, quickAnswersFrom, splitTyping, typingWithSettings, unpackSettings } from './saved';
+import { defaultSettings, finishedInARow, packSettings, quickAnswersFrom, splitTyping, typingWithSettings, unpackSettings, type QuickSettings } from './saved';
 
 describe('keys for answers given with help', () => {
   it('are the same picture, marked helped, and mark the same answer', () => {
     expect(helpedKey('sub:ten-8')).toBe('subh:ten-8');
     expect(helpedKey('gap:five-4')).toBe('gaph:five-4');
     expect(plainKey('subh:ten-8')).toBe('sub:ten-8');
-    expect(parseKey('subh:ten-8')).toMatchObject({ helped: true, answer: 8, stage: 4 });
+    expect(parseKey('subh:ten-8')).toMatchObject({ helped: true, answer: 8, stage: 5 });
     expect(parseKey('gaph:five-4')).toMatchObject({ helped: true, answer: 1 });
     expect(parseKey('sub:ten-8')?.helped).toBe(false);
   });
@@ -33,9 +33,36 @@ describe('Quick looks settings saved with the student', () => {
     expect(JSON.stringify(packSettings(full)).length).toBeLessThan(40);
   });
   it('are never trusted when they are not the short form', () => {
-    for (const bad of [null, [], 'x', {}, { p: 2, s: 1, f: 0, g: 0 }, { p: 1, s: 5, f: 0, g: 0 }, { p: 1, s: 1, f: 5, g: 0 }, { p: 1, s: 1, f: 0, g: 0, extra: 1 }, { p: 1, s: 1.5, f: 0, g: 0 }]) {
+    for (const bad of [null, [], 'x', {}, { p: 2, s: 1, f: 0, g: 0 }, { p: 1, s: 8, f: 0, g: 0 }, { p: 1, s: 1, f: 8, g: 0 }, { p: 1, s: 0, f: 0, g: 0, v: 2 }, { p: 1, s: 1, f: 0, g: 0, v: 3 }, { p: 1, s: 1, f: 0, g: 0, w: 2 }, { p: 1, s: 1, f: 0, g: 0, extra: 1 }, { p: 1, s: 1.5, f: 0, g: 0 }]) {
       expect(unpackSettings(bad), JSON.stringify(bad)).toBeNull();
     }
+  });
+  it('write version 2 and read it back for every stage', () => {
+    expect(packSettings(full).v).toBe(2);
+    for (let s = 1; s <= 7; s++) {
+      for (let f = 0; f <= 7; f++) {
+        const q = { placed: true, startStage: s as StageNumber, finished: f as QuickSettings['finished'], guided: false };
+        expect(unpackSettings(packSettings(q))).toEqual(q);
+      }
+    }
+  });
+  it('move old four-stage settings over once, never lower', () => {
+    const old = (s: number, f: number) => unpackSettings({ p: 1, s, f, g: 0 });
+    expect([0, 1, 2, 3, 4].map((f) => old(1, f)?.finished)).toEqual([0, 1, 2, 4, 5]);
+    expect([1, 2, 3, 4].map((s) => old(s, 0)?.startStage)).toEqual([1, 3, 4, 5]);
+    // A number only the new stages have shows it is already new.
+    expect(old(5, 0)).toMatchObject({ startStage: 5, finished: 0 });
+    expect(old(1, 6)).toMatchObject({ startStage: 1, finished: 6 });
+    // Version 2 is never moved.
+    expect(unpackSettings({ p: 1, s: 2, f: 3, g: 0, v: 2 })).toMatchObject({ startStage: 2, finished: 3 });
+    for (let s = 1; s <= 4; s++) for (let f = 0; f <= 4; f++) {
+      const q = old(s, f)!;
+      expect(q.startStage).toBeGreaterThanOrEqual(s);
+      expect(q.finished).toBeGreaterThanOrEqual(f);
+    }
+    // Moving it twice (old, saved as version 2, read again) changes nothing more.
+    const once = old(4, 4)!;
+    expect(unpackSettings(packSettings(once))).toEqual(once);
   });
   it('ride in the typing column without disturbing the typing times', () => {
     const typing = { 1: [600, 650], 2: [900] };
@@ -106,5 +133,6 @@ describe('a finished stage and the database keeping only the newest 30 answers p
     expect(finishedInARow(progressFrom([], 3))).toBe(2);
     expect(finishedInARow(progressFrom([]))).toBe(0);
     expect(finishedInARow(progressFrom([], 1, undefined, 4))).toBe(4);
+    expect(finishedInARow(progressFrom([], 1, undefined, 7))).toBe(7);
   });
 });

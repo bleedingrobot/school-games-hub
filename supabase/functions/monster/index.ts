@@ -34406,6 +34406,7 @@ const QUESTS = [
 		id: "kauri",
 		title: "The lost seed pods",
 		giver: "kauri-bush:Hermit",
+		back: "Go back to the Hermit in Kauri Bush",
 		area: 1,
 		steps: [
 			{
@@ -34433,6 +34434,7 @@ const QUESTS = [
 		id: "shell",
 		title: "Clear the rock pools",
 		giver: "shell-beach:Hine",
+		back: "Go back to Hine on Shell Beach",
 		area: 2,
 		steps: [
 			{
@@ -34463,6 +34465,7 @@ const QUESTS = [
 		id: "fire",
 		title: "The miner’s lanterns",
 		giver: "fire-mountain:Old Kui",
+		back: "Go back to Old Kui on Fire Mountain",
 		area: 3,
 		steps: [
 			{
@@ -34492,6 +34495,7 @@ const QUESTS = [
 		id: "snow",
 		title: "The warden’s hut",
 		giver: "snowy-peaks:Ranger Fern",
+		back: "Go back to Ranger Fern on Snowy Peaks",
 		area: 4,
 		steps: [
 			{
@@ -34518,6 +34522,7 @@ const QUESTS = [
 		id: "caves",
 		title: "The lost torch",
 		giver: "glowworm-caves:Glow Gran",
+		back: "Go back to Glow Gran in the Glowworm Caves",
 		area: 5,
 		steps: [
 			{
@@ -34546,6 +34551,7 @@ const QUESTS = [
 		id: "harbour",
 		title: "The busy wharf",
 		giver: "harbour-city:Captain Tui",
+		back: "Go back to Captain Tui in Harbour City",
 		area: 6,
 		steps: [
 			{
@@ -34572,6 +34578,7 @@ const QUESTS = [
 		id: "finale",
 		title: "The Teacher’s big question",
 		giver: "harbour-town:Teacher",
+		back: "Go back to the Teacher in Harbour Town",
 		area: 0,
 		badges: 6,
 		needs: [
@@ -34816,12 +34823,29 @@ function knownFlag(f, maps) {
 		case "hatched": return EGG_KINDS.includes(id);
 		case "egg":
 		case "owed": return eggRefOk(id, maps);
-		case "nest": return rest.length === 2 && isNestThing(rest[0], maps) && /^\d{1,6}$/.test(rest[1]);
-		case "pod": return rest.length === 2 && PUZZLES.some((p) => p.id === rest[0] && p.kind === "pods");
+		case "nest": {
+			const cut = id.lastIndexOf(":");
+			return cut > 0 && isNestThing(id.slice(0, cut), maps) && /^\d{1,6}$/.test(id.slice(cut + 1));
+		}
+		case "pod": {
+			const [puzzle, ...thing] = rest;
+			const thingId = thing.join(":");
+			return PUZZLES.some((p) => p.id === puzzle && p.kind === "pods") && Object.values(maps).some((m) => m.things.some((t) => t.id === thingId && t.kind === "puzzle" && t.puzzle === puzzle));
+		}
 		default: return false;
 	}
 }
 const isNestThing = (id, maps) => Object.values(maps).some((m) => m.things.some((t) => t.id === id && t.kind === "nest"));
+/** "nest:<thing id>:<week>:<kind>" split up (the thing id itself has a colon in it, "map:name"). */
+function nestRef(ref) {
+	const parts = ref.split(":");
+	if (parts[0] !== "nest" || parts.length < 4) return void 0;
+	return {
+		thing: parts.slice(1, -2).join(":"),
+		week: parts[parts.length - 2],
+		kind: parts[parts.length - 1]
+	};
+}
 /** "quest:<id>:<kind>", "puzzle:<id>:<kind>" or "nest:<thing>:<week>:<kind>": a place an egg can come from. */
 function eggRefOk(ref, maps) {
 	const parts = ref.split(":");
@@ -34831,7 +34855,8 @@ function eggRefOk(ref, maps) {
 		const p = puzzleById(parts[1]);
 		return !!p && "egg" in p.prize && p.prize.egg === kind;
 	}
-	if (parts[0] === "nest" && parts.length === 4) return /^\d{1,6}$/.test(parts[2]) && Object.values(maps).some((m) => m.things.some((t) => t.id === parts[1] && t.kind === "nest" && t.egg === kind));
+	const nest = nestRef(ref);
+	if (nest) return /^\d{1,6}$/.test(nest.week) && Object.values(maps).some((m) => m.things.some((t) => t.id === nest.thing && t.kind === "nest" && t.egg === kind));
 	return false;
 }
 function bitsOk(b) {
@@ -34869,6 +34894,11 @@ function questShape(raw, maps) {
 	for (const [id, st] of Object.entries(q.quests)) {
 		const quest = questById(id);
 		if (!quest || !isObject$1(st) || !isInt$1(st.step, 0, quest.steps.length - 1) || !isInt$1(st.n, 0, 999)) return "quest-log";
+		if (st.ready !== void 0 && st.ready !== true || !Object.keys(st).every((k) => [
+			"step",
+			"n",
+			"ready"
+		].includes(k))) return "quest-log";
 	}
 	if (q.board !== void 0) {
 		const b = q.board;
@@ -34929,7 +34959,8 @@ function checkQuest(was, w, battles, facts) {
 			const parts = id.split(":");
 			if (parts[0] === "quest" && !has(`quest-done:${parts[1]}`)) return "egg-source";
 			if (parts[0] === "puzzle" && !has(`solved:${parts[1]}`)) return "egg-source";
-			if (parts[0] === "nest" && ![weekOf(facts.today), weekOf(facts.today) - 1].includes(Number(parts[2]))) return "egg-source";
+			const nest = nestRef(id);
+			if (parts[0] === "nest" && (!nest || ![weekOf(facts.today), weekOf(facts.today) - 1].includes(Number(nest.week)))) return "egg-source";
 		} else if (kind === "made") {
 			if (!RECIPES.some((r) => r.flag === f && (r.needs ?? []).every(has))) return "made";
 		}

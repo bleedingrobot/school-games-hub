@@ -83,7 +83,7 @@ const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 /** What changes the quest "!" marks: flags, quest steps and bits (team levels change only after a battle, which redraws anyway). */
 const questKey = (w: WorldState) => {
   const q = w.quest;
-  return q ? `${q.flags.length}|${Object.values(q.quests).map((s) => `${s.step}.${s.n}`).join()}|${Object.values(q.bits).join()}|${w.badges.length}` : '';
+  return q ? `${q.flags.length}|${Object.values(q.quests).map((s) => `${s.step}.${s.n}${s.ready ? 'r' : ''}`).join()}|${Object.values(q.bits).join()}|${w.badges.length}` : '';
 };
 
 export function WorldGame({

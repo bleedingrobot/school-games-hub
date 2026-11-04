@@ -171,7 +171,7 @@ describe('checking Quick looks settings on a student item', () => {
     const r = checkItem(student(), NOW);
     expect(r.ok && r.item.type === 'student' && r.item.quick).toEqual(quick);
     if (!r.ok || r.item.type !== 'student') throw new Error('should be accepted');
-    expect(studentTyping(r.item)).toEqual({ 1: [600], 2: [900], q: { p: 1, s: 3, f: 2, g: 0 } });
+    expect(studentTyping(r.item)).toEqual({ 1: [600], 2: [900], q: { p: 1, s: 3, f: 2, g: 0, v: 2 } });
   });
 
   it('leaves the typing column exactly as it was when there are no Quick looks settings', () => {
@@ -182,17 +182,31 @@ describe('checking Quick looks settings on a student item', () => {
   });
 
   it('turns away settings that make no sense', () => {
-    for (const bad of [null, 5, {}, { ...quick, startStage: 5 }, { ...quick, startStage: 0 }, { ...quick, finished: 5 }, { ...quick, placed: 1 }, { ...quick, guided: 'no' }, { ...quick, finished: 1.5 }]) {
+    for (const bad of [null, 5, {}, { ...quick, startStage: 8 }, { ...quick, startStage: 0 }, { ...quick, finished: 8 }, { ...quick, placed: 1 }, { ...quick, guided: 'no' }, { ...quick, finished: 1.5 }]) {
       expect(problem(student({ quick: bad })), JSON.stringify(bad)).toBe('quick');
     }
   });
 
   it('still fits the database’s 600-character limit with the biggest typing times', () => {
     const full = { 1: Array(10).fill(10_000), 2: Array(10).fill(10_000), 3: Array(10).fill(10_000) };
-    const r = checkItem(student({ typing: full, quick: { placed: true, startStage: 4, finished: 4, guided: true } }), NOW);
+    const r = checkItem(student({ typing: full, quick: { placed: true, startStage: 7, finished: 7, guided: true } }), NOW);
     if (!r.ok || r.item.type !== 'student') throw new Error('should be accepted');
     // How Postgres writes jsonb as text: ", " between items and ": " after keys.
     const asText = JSON.stringify(studentTyping(r.item)).replace(/,/g, ', ').replace(/":/g, '": ');
     expect(asText.length).toBeLessThanOrEqual(600);
+  });
+});
+
+describe('Quick looks answers and settings from before the seven stages', () => {
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  it('still pass the check', () => {
+    for (const key of ['sub:ten-5', 'sub:ten-8', 'gap:ten-3', 'gap:ten-9', 'sub:tenmix-9', 'gap:five-2', 'sub:fiveplus-6', 'subh:tenpair-10', 'sub:tenfive-5', 'gap:tenmix-5']) {
+      const r = checkItem({ type: 'answers', batchId: '123e4567-e89b-42d3-a456-426614174000', seed: 5, answers: [{ key, given: 1, ms: 1000, typingMs: 0, at: NOW - 1000, day }] }, NOW);
+      expect(r.ok, key).toBe(true);
+    }
+  });
+  it('accept all seven stages in settings', () => {
+    const r = checkItem({ type: 'student', typing: {}, autoSubmit: true, sessionsDone: 1, quick: { placed: true, startStage: 7, finished: 7, guided: false } }, NOW);
+    expect(r.ok).toBe(true);
   });
 });
