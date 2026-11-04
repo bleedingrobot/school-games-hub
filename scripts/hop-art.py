@@ -92,9 +92,10 @@ FRIENDS = {
     'gecko': 'a cute green New Zealand gecko with bright yellow spots, big round friendly eyes and a smile, wearing a little red knitted scarf, ',
     'weta': 'a cute friendly New Zealand weta insect, a round shiny brown body with stripes, six long spiky back legs, long thin feelers, big kind eyes and a smile, wearing a little green knitted scarf, ',
     'tuatara': 'a cute friendly green-grey New Zealand tuatara lizard with a long tail and a row of soft spikes down its back, big kind eyes and a smile, wearing a little orange knitted scarf, ',
-    'kiwi': ('a cute round New Zealand kiwi bird: a big round egg-shaped body with fluffy shaggy brown feathers, no neck, a '
-             'tailless round bottom, small bright dark eyes, rosy cheeks, and a very long slender pale beak like a drinking straw, '
-             'as long as its whole body, curving gently down towards the ground, tiny wings, thick strong grey legs and big feet, wearing a little yellow knitted scarf, '),
+    'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, pointing straight out forward '
+             'and slightly down, as long as its whole body, long and slender like a sharpened pencil, with a little round nostril at the tip, '
+             'the beak clearly the longest part of the bird; a big round egg-shaped body with fluffy shaggy brown feathers, a round bottom, '
+             'small bright dark eyes, rosy cheeks, tiny wings, thick strong grey legs and big feet with three toes, wearing a little yellow knitted scarf, '),
     'ruru': 'a cute small round New Zealand ruru owl with soft brown speckled feathers, huge round yellow eyes, a tiny hooked beak, wearing a little purple knitted scarf, ',
 }
 FRIEND_POSES = {
@@ -118,10 +119,10 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
     # Three backgrounds: the pond, the silver river, and the bush lit up warm gold for gold days.
     'back-pond': (NIGHT + ', the dark blue water reflecting the stars.' + BACK, WIDE),
-    'back-river': (NIGHT + ', the water a sparkling silver river flowing gently, bright silver glints.' + BACK, WIDE),
-    'back-forest': (NIGHT + ', the bush edges and ferns lit up with a warm golden glow, the water dark and calm.' + BACK, WIDE),
-    'card': (HOP + 'leaping through the air with its legs stretched out, over glowing round lily pads in '
-             f'coppery bronze, bright silver and shining gold foil, on a night pond with floating glow-worms holding {GLOW} glowing beads, '
+    'back-river': (NIGHT + ', the water a calm smooth flowing silver river with soft bright silver glints along the surface, plain smooth water in the middle, brown clay banks.' + BACK, WIDE),
+    'back-forest': (NIGHT + ', the bush edges and ferns glowing warm golden yellow, golden light on the ferns and on the water\'s edge, brown clay ground, the water dark and calm.' + BACK, WIDE),
+    'card': (HOP + 'with golden eyes and small brown speckles on its back, leaping through the air with its legs stretched out over three round lily pads in a row, all the same size: '
+             f'a coppery bronze pad, a bright silver pad and a shining gold pad, on a night pond, with tiny pale glow-worm larvae with smiling faces floating on both sides, each holding a {GLOW} glowing bead, '
              'a starry sky, wide landscape picture for a game title card.' + AGE, (1216, 688)),
 }
 
@@ -214,6 +215,22 @@ def destination(name: str) -> tuple[str, str, str] | None:
     return 'cut', 'things', name
 
 
+def tint(img, metal: str):
+    """The bronze and silver pads, tinted from the gold one: every bronze and silver try came out part green or brown clay
+    (4 Nov 2026), the gold one came out almost all foil, and a tint keeps the three metal pads the same shape (as Beanstalk's leaves)."""
+    import numpy as np
+    from PIL import Image
+    px = np.asarray(img, dtype=np.float32)
+    light = px[..., :3].mean(axis=2, keepdims=True) / 255
+    # Dark shadow, the metal's own middle, and a pale shine on the highlights.
+    dark, mid, shine = {
+        'bronze': (np.array([70, 30, 12.]), np.array([190, 112, 50.]), np.array([255, 222, 180.])),
+        'silver': (np.array([48, 54, 64.]), np.array([168, 176, 188.]), np.array([250, 252, 255.])),
+    }[metal]
+    rgb = np.where(light < 0.6, dark + (mid - dark) * light / 0.6, mid + (shine - mid) * (light - 0.6) / 0.4)
+    return Image.fromarray(np.dstack([rgb, px[..., 3:]]).clip(0, 255).round().astype(np.uint8), 'RGBA')
+
+
 def tidy(force: bool):
     import numpy as np
     from PIL import Image
@@ -260,6 +277,9 @@ def tidy(force: bool):
         cut = trim(remove(img.convert('RGB'), session=session, alpha_matting=True))
         # The party bank is wide, so it is kept larger.
         save(fit(cut, {'party': 480}.get(name, SIZES[folder])), out, 82)
+        if name == 'pad-gold':
+            for metal in ('bronze', 'silver'):
+                save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / f'{metal}.webp', 82)
 
 
 if __name__ == '__main__':
