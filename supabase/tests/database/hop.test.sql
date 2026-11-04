@@ -28,8 +28,8 @@ create function pg_temp.hops() returns jsonb language sql as $$
   select jsonb_agg(jsonb_build_object('key', 'skip10:up:' || (n * 10), 'answer', n * 10, 'at', 1)) from generate_series(1, 10) n
 $$;
 
--- ---- Off to start, with the step labels on ----
-select is((select bool_or(hop_enabled) from public.app_settings), false, 'the game starts switched off everywhere');
+-- ---- On to start for every class, with the step labels on ----
+select is((select bool_and(hop_enabled) from public.app_settings), true, 'the game starts switched on everywhere');
 select is((select bool_and(hop_labels) from public.app_settings), true, '... with the step labels on');
 
 -- ---- Pupils can't reach anything directly ----

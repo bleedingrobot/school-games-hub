@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Stages 1 (rules), 2 (play screen, stand-in art) and 3 (server) done, 4 Nov 2026; next is painting the art (section 5, the evening of 4 Nov), then Stage 4 (hub and teacher).** The shared skip-counting maths is live (PR #163). Name on the home card:
+Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Status: going live 4 Nov 2026 (PR #168), switched on for every class, in Easy maths games.** Stages 1 to 4 and the painted art are done. The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
@@ -127,7 +127,7 @@ questions are a separate `shared/maths` branch (section 2).
 2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James. **Done 4 Nov (stand-in art).**
 3. The server: migration, function, maths recording and the day rule. **Done 4 Nov.**
 4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment. **Done 4 Nov (not live).**
-5. Go live, one step at a time, on James's word. This comes after Beanstalk is live, so its pattern is proven.
+5. Go live. **4 Nov 2026, on James's word ("lets go live!!!!"), after Beanstalk.** One PR (#168): migrations, the `hop` function, the registry, home card, privacy line and the code switch on. `hop_enabled` starts on for every class (James: switches on by default).
 
 ## Stage 2 results (4 Nov)
 

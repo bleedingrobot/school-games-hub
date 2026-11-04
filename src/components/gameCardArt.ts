@@ -41,6 +41,8 @@ import isles from '../assets/home/isles.webp';
 import islesSmall from '../assets/home/isles-small.webp';
 import beanstalk from '../assets/home/beanstalk.webp';
 import beanstalkSmall from '../assets/home/beanstalk-small.webp';
+import hop from '../assets/home/hop.webp';
+import hopSmall from '../assets/home/hop-small.webp';
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -71,6 +73,7 @@ const ART: Record<string, GameCardArt> = {
   'diamond': { card: diamond, small: diamondSmall, focus: 'center 80%' },
   'isles': { card: isles, small: islesSmall, focus: 'center 50%' },
   'beanstalk': { card: beanstalk, small: beanstalkSmall, focus: 'center 45%' },
+  'hop': { card: hop, small: hopSmall, focus: 'center 40%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {

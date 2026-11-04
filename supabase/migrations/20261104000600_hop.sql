@@ -12,7 +12,7 @@
 --    server made them from the pupil's maths records (shared/hop/round.ts), kept so the taps are checked against exactly
 --    what the pupil was shown. Once it has finished: the taps and how many glow-worms were wrong. A seed is used once per
 --    pupil and a challenge finishes once. Finished challenges over 30 days old go.
--- 3. The switch (app_settings.hop_enabled, per class, OFF to start), the step-label setting (app_settings.hop_labels,
+-- 3. The switch (app_settings.hop_enabled, per class, ON to start for every class: James, 4 Nov 2026, "I always want switches on by default"), the step-label setting (app_settings.hop_labels,
 --    on to start) and teacher_set_hop().
 --
 -- Pupils can't read or change any of it directly; the server function does everything. The maths records it reads come
@@ -150,7 +150,7 @@ $$;
 -- The switch and the step labels
 -- ---------------------------------------------------------------------------
 
-alter table public.app_settings add column hop_enabled boolean not null default false;
+alter table public.app_settings add column hop_enabled boolean not null default true;
 alter table public.app_settings add column hop_labels boolean not null default true;
 
 -- Either setting, or both (a null one is left as it is).
