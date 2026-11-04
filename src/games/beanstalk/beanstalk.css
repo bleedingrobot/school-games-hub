@@ -60,8 +60,9 @@
 .bs-sprout {
   position: absolute;
   left: 50%;
-  width: calc(var(--bs-stalk-w) * 3.2);
-  transform: translate(-50%, 30%);
+  /* The painted leaves (4 Nov night): their joint sits just over the stalk's tip, which hides behind them. */
+  width: calc(var(--bs-stalk-w) * 4);
+  transform: translate(-50%, 32%);
   transition: bottom 0.6s ease-out;
   pointer-events: none;
 }
@@ -95,7 +96,16 @@
   filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.15));
 }
 .bs-cloud--low { top: auto; bottom: 22%; transform: translate(-50%, 0); }
-.bs-cloud--painted { background: none; }
+/* The painted clay cloud (4 Nov night) is a little bigger than the drawn one, so the friend doesn't dwarf it. */
+.bs-cloud--painted {
+  background: none;
+  width: clamp(130px, min(26vmin, var(--bs-h) * 0.41), 300px);
+  aspect-ratio: 1.76;
+  transform: translate(-50%, -45%);
+}
+.bs-cloud--low.bs-cloud--painted { transform: translate(-50%, 0); }
+/* The friend's feet sink a little into the top puffs, and the head stays on screen on the short play screen. */
+.bs-cloud--painted .bs-friend { bottom: 70%; }
 .bs-cloud__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
 .bs-friend {
   position: absolute;

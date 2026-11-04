@@ -95,11 +95,14 @@ THINGS = {
     # beanstalk to look like this and grow up"). It rides on top of the stalk as it grows.
     'sprout-top': 'the top of a young bean sprout made of smooth soft light green clay: a short thick round stem with two big '
                   'plump rounded leaves opening out to the left and right like a little V, each leaf folded softly down its middle, '
-                  'bright fresh minty green with gentle shading, seen from the front',
+                  'bright fresh minty green with gentle shading, seen from the front, the stem cut off cleanly at the bottom just '
+                  'below the leaves, nothing under the stem: no pot, no ball, no seed, no ground, floating alone',
     'watering-can': 'a small friendly red watering can with water drops coming out of the spout',
     # The friend stands on it at the top of the stalk. The CSS cloud looked flat and white beside the clay (James, 4 Nov 2026).
-    'cloud': 'one big soft puffy white clay cloud, wide and low, made of five chunky round white plasticine puffs pressed together, '
-             'a gently flat top for a little bird to stand on, soft pale blue-grey shading underneath, fingerprint texture, seen from the side',
+    # Asked for "a flat top for a little bird to stand on", it painted a yellow bird on every cloud (4 Nov night): say it's empty.
+    'cloud': 'one long soft puffy white clay cloud, twice as wide as it is tall, made of seven chunky round smooth white plasticine '
+             'puffs pressed together in a long low row, the top gently flat and completely empty with nothing on it, soft pale '
+             'blue-grey shading underneath, fingerprint texture, seen from the side, only the cloud and nothing else',
 }
 
 # The friend stuck on each later beanstalk, after Kiwi's Golden Egg (James, 4 Nov 2026). Each keeps a knitted scarf of its own colour.
@@ -288,6 +291,26 @@ def tidy(force: bool):
         if session is None:
             session = new_session('isnet-general-use')
         cut = trim(remove(img.convert('RGB'), session=session, alpha_matting=True))
+        if name == 'stem':
+            # The tile repeats upwards, so keep only the rows where the stem is full width: a rounded end would show a
+            # bump at every join (4 Nov night).
+            a = np.asarray(cut)[..., 3] > 128
+            widths = a.sum(axis=1)
+            full = np.where(widths >= 0.92 * np.median(widths[widths > 0]))[0]
+            cut = trim(cut.crop((0, full.min() + 6, cut.width, full.max() - 6)), pad=0)
+        if name == 'sprout-top':
+            # Only the two leaves and a short stub of stem, with the stem in the middle: the clay stalk carries on under
+            # them, and the painted sprout's own thin stem showed beside it (4 Nov night).
+            a = np.asarray(cut)[..., 3] > 128
+            widths = a.sum(axis=1)
+            stem_w = np.median(widths[int(cut.height * 0.85):])
+            stem_x = np.where(a[int(cut.height * 0.9)])[0].mean()
+            leafy = np.where(widths > stem_w * 2.5)[0]
+            bottom = min(cut.height, int(leafy.max() + stem_w * 0.8))
+            half = int(max(stem_x, cut.width - stem_x)) + 2
+            box = Image.new('RGBA', (half * 2, bottom))
+            box.paste(cut.crop((0, 0, cut.width, bottom)), (half - int(round(stem_x)), 0))
+            cut = box
         # The cloud is wide and is shown up to 260 px across; the stem is a tall tile repeated up the stalk.
         save(fit(cut, {'cloud': 480, 'stem': 600}.get(name, SIZES[folder])), out, 82)
         if name == 'leaf-silver':

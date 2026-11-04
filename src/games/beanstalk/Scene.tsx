@@ -58,13 +58,14 @@ export function Scene({ grow, leaves, friend, friendPose, child, childPose, back
             className={`bs-stalk${stemUrl ? ' bs-stalk--painted' : ''}`}
             style={{ height: `calc(var(--bs-stalk-length) * ${height})`, ...(stemUrl ? { backgroundImage: `url("${stemUrl}")` } : {}) }}
           />
-          {sproutUrl && height < 1 && (
+          {/* Not before the stalk starts: the farm picture's own sprout is there, and the two pairs of leaves doubled up. */}
+          {sproutUrl && height > 0 && height < 1 && (
             <img className="bs-sprout" src={sproutUrl} alt="" style={{ bottom: `calc(var(--bs-ground) + var(--bs-stalk-length) * ${height})` }} />
           )}
           {leaves.map((leaf, i) => {
             // Leaves sit evenly up the stalk, left and right in turn, the first just above the ground and the last well below
-            // the cloud, so none hides behind it (James, 4 Nov 2026).
-            const at = (i + 0.5) / (LEAVES_ON_STALK + 2.5);
+            // the cloud, so none hides behind it (James, 4 Nov 2026). A little lower for the painted cloud, which hangs lower.
+            const at = (i + 0.5) / (LEAVES_ON_STALK + 3.2);
             if (at > grow) return null;
             return (
               <img

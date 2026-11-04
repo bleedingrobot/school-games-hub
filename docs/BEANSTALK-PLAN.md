@@ -410,3 +410,18 @@ prompts page.
 - `cloud`: the CSS cloud "looks terrible", and it needs to be clay like the rest.
 - `stem`: a tall clay stalk piece, repeated up the stalk, in the sprout's minty green.
 - `sprout-top`: the sprout's two round leaves, riding on the tip of the stalk as it grows.
+
+## Painted 4 Nov night
+
+James picked cloud 2, stem 3 and sprout top 4 (clay, style b). They are in `art/paint/things/`, and the drawn cloud, stalk
+and sprout are only used when a painting is missing. The tries and a contact sheet are in `~/dragon-art-inbox/beanstalk-art/`.
+
+- **New words.** The first clouds all had a yellow bird on top (the words said "for a little bird to stand on"), and the
+  sprout tops sat on a clay ball. The words now say the cloud is empty and nothing is under the sprout's stem.
+- **Tidy trims them for the game.** The stem keeps only its full-width middle, so the repeats join with no bump. The sprout
+  top keeps just the two leaves and a short stub, centred, so the clay stalk carries on under them.
+- **How they sit.** The painted cloud is a bit bigger than the drawn one and hangs a little lower, so the friend still fits
+  on the short play screen. The stalk's leaves sit slightly lower, so the top one clears the cloud. The sprout top waits
+  until the stalk starts growing (at the start the farm picture's own sprout is there). Checked at 1366x640 and 844x390:
+  the friend stays on screen, and all ten leaves show (the top one just touches the cloud's underside).
+- `npm run typecheck`, `npm run test:all` (6017 tests) and `npm run build` pass.
