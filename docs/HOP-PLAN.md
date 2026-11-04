@@ -1,6 +1,6 @@
 # Hop's Glow-worm Pond (skip counting) — plan
 
-Short id `hop`. Branch `hop`, worktree `~/games-hub-hop`. **Status: going live 4 Nov 2026 (PR #168), switched on for every class, in Easy maths games.** Stages 1 to 4 and the painted art are done. The shared skip-counting maths is live (PR #163). Name on the home card:
+Short id `hop`. **Status: LIVE 4 Nov 2026** for every class, in Easy maths games (PR #168, everything in one PR). The `hop` branch is merged. The shared skip-counting maths is live (PR #163). Name on the home card:
 **Hop's Glow-worm Pond** (James, 4 Nov).
 
 **For younger children (about 5 to 7)**, like Kiwi's Beanstalk, and built the same way. Wherever this plan doesn't say
@@ -225,6 +225,17 @@ function's `index.ts` didn't change.
 - `FUNCTIONS` in `scripts/build-functions.mjs`: add `hop`.
 - The privacy summary: add Hop's pond (days done, step reached).
 - Flip `HOP_ON` in `src/games/hop/switch.ts`, run the migrations, deploy the function.
+
+## Went live (4 Nov 2026, afternoon)
+
+- **PR #168** (squash-merged as `65b6fa8`): Test and publish applied `20261104000600_hop.sql` and `20261104000900_hop_hub.sql`,
+  deployed the `hop` function and published the site with the code switch on. The shared database tests needed Hop's
+  teacher functions, its 6 achievements, and (because it starts switched on) its points rules and achievements showing.
+- **Checked live:** both migrations are in the live history, `hop_progress` and `hop_rounds` are empty with row security on,
+  `hop_enabled` is on in all 4 `app_settings` rows, the 6 Golden Glow Jar achievements are there, and a signed-out call to
+  the function answers 401.
+- **Not done:** the players tracker artifact couldn't be opened from this session, so Hop (table `hop_rounds`) still needs
+  adding to its query, along with Sky Isles and Kiwi's Beanstalk.
 
 ## 8. Decisions (James, 4 Nov)
 
