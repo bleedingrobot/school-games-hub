@@ -1,0 +1,454 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-pipi-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Pipi find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-pipi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Pipi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-pipi-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Pipi find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-pipi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Pipi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-pipi-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Pipi found the Golden Pearl!"
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-korora-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Kororā find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-korora-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Kororā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-korora-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Kororā find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-korora-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Kororā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-korora-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Kororā found the Golden Pearl!"
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-tuatara-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Tuatara find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-tuatara-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Tuatara find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-tuatara-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Tuatara find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-tuatara-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Tuatara find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-tuatara-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Tuatara found the Golden Pearl!"
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-weta-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Wētā find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-weta-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Wētā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-weta-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Wētā find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-weta-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Wētā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-weta-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Wētā found the Golden Pearl!"
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-kiwi-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Kiwi find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-kiwi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Kiwi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-kiwi-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Kiwi find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-kiwi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Kiwi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-kiwi-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Kiwi found the Golden Pearl!"
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-tui-find-the-pipi-hiding-in-the-sand",
+  "text": "The tide is coming in! Help Tūī find the pipi hiding in the sand."
+ },
+ {
+  "slug": "the-tide-is-coming-in-help-tui-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "The tide is coming in! Help Tūī find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "a-new-beach-help-tui-find-the-pipi-hiding-in-the-sand",
+  "text": "A new beach! Help Tūī find the pipi hiding in the sand."
+ },
+ {
+  "slug": "a-new-beach-help-tui-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
+  "text": "A new beach! Help Tūī find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
+ },
+ {
+  "slug": "all-the-magic-shells-are-gold-tui-found-the-golden-pearl",
+  "text": "All the magic shells are gold! Tūī found the Golden Pearl!"
+ },
+ {
+  "slug": "3-pipi-how-many-are-hiding",
+  "text": "3 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-3-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 3 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "3-pipi-how-many-are-hiding-look-at-the-sand-then-tap-the-shell-the-hand-points-to",
+  "text": "3 pipi. How many are hiding? Look at the sand. Then tap the shell the hand points to."
+ },
+ {
+  "slug": "2-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-pipi-how-many-are-hiding",
+  "text": "4 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-4-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 4 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-pipi-how-many-are-hiding",
+  "text": "5 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-5-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 5 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-pipi-how-many-are-hiding",
+  "text": "6 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-5-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-6-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 6 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "5 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "7-pipi-how-many-are-hiding",
+  "text": "7 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-6-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 6 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-7-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 7 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-5-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "5 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "6 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "8-pipi-how-many-are-hiding",
+  "text": "8 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-7-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 7 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-8-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 8 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-6-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 6 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-5-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "5 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "6 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "7-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "7 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "9-pipi-how-many-are-hiding",
+  "text": "9 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-8-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 8 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-9-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 9 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-7-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 7 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-6-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 6 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-5-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "5 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "6 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "7-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "7 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "8-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "8 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "10-pipi-how-many-are-hiding",
+  "text": "10 pipi. How many are hiding?"
+ },
+ {
+  "slug": "1-here-and-9-popped-up-how-many-pipi-altogether",
+  "text": "1 here, and 9 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-10-pipi-how-many-are-hiding-now",
+  "text": "Splash! The hiding ones pop up and the others dig in. 10 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "2-here-and-8-popped-up-how-many-pipi-altogether",
+  "text": "2 here, and 8 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-7-popped-up-how-many-pipi-altogether",
+  "text": "3 here, and 7 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-6-popped-up-how-many-pipi-altogether",
+  "text": "4 here, and 6 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-5-popped-up-how-many-pipi-altogether",
+  "text": "5 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-4-popped-up-how-many-pipi-altogether",
+  "text": "6 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "7-here-and-3-popped-up-how-many-pipi-altogether",
+  "text": "7 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "8-here-and-2-popped-up-how-many-pipi-altogether",
+  "text": "8 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "9-here-and-1-popped-up-how-many-pipi-altogether",
+  "text": "9 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "yes-0",
+  "text": "Yes! 0!"
+ },
+ {
+  "slug": "yes-1",
+  "text": "Yes! 1!"
+ },
+ {
+  "slug": "yes-2",
+  "text": "Yes! 2!"
+ },
+ {
+  "slug": "yes-3",
+  "text": "Yes! 3!"
+ },
+ {
+  "slug": "yes-4",
+  "text": "Yes! 4!"
+ },
+ {
+  "slug": "yes-5",
+  "text": "Yes! 5!"
+ },
+ {
+  "slug": "yes-6",
+  "text": "Yes! 6!"
+ },
+ {
+  "slug": "yes-7",
+  "text": "Yes! 7!"
+ },
+ {
+  "slug": "yes-8",
+  "text": "Yes! 8!"
+ },
+ {
+  "slug": "yes-9",
+  "text": "Yes! 9!"
+ },
+ {
+  "slug": "yes-10",
+  "text": "Yes! 10!"
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-bronze",
+  "text": "Well done! A magic shell turned bronze!"
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-silver",
+  "text": "Well done! A magic shell turned silver!"
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-gold",
+  "text": "Well done! A magic shell turned gold!"
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-bronze-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
+  "text": "Well done! A magic shell turned bronze! You are so good at this! Next time the pipi families are 6 and 7."
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-silver-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
+  "text": "Well done! A magic shell turned silver! You are so good at this! Next time the pipi families are 6 and 7."
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-gold-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
+  "text": "Well done! A magic shell turned gold! You are so good at this! Next time the pipi families are 6 and 7."
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-bronze-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
+  "text": "Well done! A magic shell turned bronze! You are so good at this! Next time the pipi families are up to 10."
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-silver-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
+  "text": "Well done! A magic shell turned silver! You are so good at this! Next time the pipi families are up to 10."
+ },
+ {
+  "slug": "well-done-a-magic-shell-turned-gold-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
+  "text": "Well done! A magic shell turned gold! You are so good at this! Next time the pipi families are up to 10."
+ }
+]

@@ -1,10 +1,16 @@
+import { lazy, Suspense, useState } from 'react';
 import { Navigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import banner from '../assets/dps-banner.png';
 import kids from '../assets/dps-kids.png';
+import './badges.css';
+
+// The camera and QR reader load only when a pupil taps "Scan my badge".
+const BadgeScanner = lazy(() => import('./BadgeScanner'));
 
 export function SignIn() {
   const { status, message, signIn } = useAuth();
+  const [scanning, setScanning] = useState(false);
   if (status === 'signed-in') return <Navigate to="/" replace />;
 
   return (
@@ -31,6 +37,15 @@ export function SignIn() {
           <p className="signin__message" role="alert">
             {message}
           </p>
+        )}
+        {/* Young pupils (Years 1-4) sign in with the QR badge their teacher printed: no typing. */}
+        <button type="button" className="button button--play badge-button" onClick={() => setScanning(true)}>
+          <span aria-hidden="true">📷</span> Scan my badge
+        </button>
+        {scanning && (
+          <Suspense fallback={<p role="status">Starting the camera…</p>}>
+            <BadgeScanner onClose={() => setScanning(false)} />
+          </Suspense>
         )}
         <button
           type="button"

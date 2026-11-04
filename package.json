@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:changed": "TESTS=all vitest run --changed --passWithNoTests",
+    "test:changed": "TESTS=all vitest run --changed origin/main --passWithNoTests",
     "test:logic": "vitest run --project logic",
     "test:slow": "TESTS=slow vitest run",
     "test:all": "TESTS=all vitest run",
@@ -27,6 +27,7 @@
     "marble:determinism": "node scripts/marble-determinism.mjs",
     "marble:sim": "node scripts/marble-sim.mjs",
     "marble:preview": "vite build --config vite.marble-preview.config.ts",
+    "pipi:single": "PIPI_INLINE=1 vite build --config vite.pipi-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-pipi pipis-hidden-shells-test-page.html",
     "hop:single": "HOP_INLINE=1 vite build --config vite.hop-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-hop hops-glow-worm-pond-test-page.html",
     "marble:single": "MARBLE_INLINE=1 vite build --config vite.marble-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-marble marble-rush-test-page.html",
     "monsters:sim": "node scripts/monsters-sim.mjs",
@@ -67,7 +68,8 @@
     "diamond:sim": "node scripts/diamond-sim.mjs",
     "diamond:preview": "vite build --config vite.diamond-preview.config.ts",
     "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html",
-    "beanstalk:single": "BEANSTALK_INLINE=1 vite build --config vite.beanstalk-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-beanstalk kiwis-beanstalk-test-page.html"
+    "beanstalk:single": "BEANSTALK_INLINE=1 vite build --config vite.beanstalk-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-beanstalk kiwis-beanstalk-test-page.html",
+    "korora:single": "KORORA_INLINE=1 vite build --config vite.korora-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-korora penguin-pairs-test-page.html"
   },
   "engines": {
     "node": ">=22"
@@ -79,6 +81,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
     "chess.js": "1.4.0",
+    "jsqr": "1.4.0",
+    "qrcode-generator": "2.0.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^8.4.0",

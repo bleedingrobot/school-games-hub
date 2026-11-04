@@ -1,9 +1,13 @@
-# Checks everything and puts it live every time main is pushed, in the go-live order:
-#   1. checks, side by side: the site's (build) and the database rules (db, in db-tests.yml)
+# Checks and puts it live every time main is pushed, in the go-live order:
+#   0. changes: what changed since the last publish that went green (scripts/ci-changes.sh)
+#   1. checks, side by side: the site's (typecheck + build, and the tests split across 4 machines) and the
+#      database rules (db, in db-tests.yml, only when database files changed)
 #   2. live database: applies new migrations (scripts/apply-live-migrations.sh)
-#   3. server functions: deploys each one whose index.ts changed in this push
+#   3. server functions: deploys each one whose index.ts changed since the last green publish
 #   4. the site, to GitHub Pages
-# If any step fails, the later ones don't run. Steps 2 and 3 need the repo secret SUPABASE_ACCESS_TOKEN;
+# If any step fails, the later ones don't run. A push that only changes notes and plans (docs/, top-level .md)
+# does nothing. Because everything is measured from the last green publish, a run that was dropped from the
+# queue or failed is caught up by the next one. Steps 2 and 3 need the repo secret SUPABASE_ACCESS_TOKEN;
 # without it they say so and are skipped (the site still publishes).
 name: Test and publish
 
@@ -19,6 +23,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -27,7 +32,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      site: ${{ steps.what.outputs.site }}
+      db: ${{ steps.what.outputs.db }}
+      functions: ${{ steps.what.outputs.functions }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EVENT: ${{ github.event_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: what
+        run: |
+          # The commit of the last "Test and publish" that went green on main: everything after it is new.
+          base=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
+          if [ -n "$base" ] && ! git merge-base --is-ancestor "$base" HEAD 2>/dev/null; then base=""; fi
+          echo "Last green publish: ${base:-none found}"
+          scripts/ci-changes.sh "$base"
+          # Run by hand: always check and publish everything, whatever changed.
+          if [ "$EVENT" = "workflow_dispatch" ]; then echo "site=true" >> "$GITHUB_OUTPUT"; echo "db=true" >> "$GITHUB_OUTPUT"; fi
+
   build:
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -36,19 +66,42 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # The same three steps as `npm run check`. Always the full set of tests (test:all), never the quick one.
       - run: npm run typecheck
-      - run: npm run test:all
       - run: npm run build
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
+  tests:
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: tests (${{ matrix.shard }} of 4)
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Always the full set of tests (test:all), never the quick one: a quarter of the files on each machine.
+      - run: npm run test:all -- --shard=${{ matrix.shard }}/4
+
   db:
+    needs: [changes]
+    if: needs.changes.outputs.db == 'true'
     uses: ./.github/workflows/db-tests.yml
 
   database:
-    needs: [build, db]
+    needs: [changes, build, tests, db]
+    # Runs when the site checks passed and the database checks passed or weren't needed.
+    if: >-
+      !cancelled() && needs.build.result == 'success' && needs.tests.result == 'success' &&
+      (needs.db.result == 'success' || needs.db.result == 'skipped')
     runs-on: ubuntu-latest
     concurrency:
       group: live-database
@@ -66,16 +119,15 @@ jobs:
           scripts/apply-live-migrations.sh
 
   functions:
-    needs: [database]
+    needs: [changes, database]
+    if: ${{ !cancelled() && needs.database.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      BEFORE: ${{ github.event.before }}
+      CHANGED: ${{ needs.changes.outputs.functions }}
       EXTRA: ${{ inputs.functions }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -87,15 +139,11 @@ jobs:
             echo "::warning::No SUPABASE_ACCESS_TOKEN secret, so no server functions were deployed."
             exit 0
           fi
-          names=""
-          # A function goes live when its built file (supabase/functions/<name>/index.ts) changed in this push.
-          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            names=$(git diff --name-only "$BEFORE" HEAD -- 'supabase/functions/*/index.ts' | cut -d/ -f3)
-          fi
+          # A function goes live when its built file (supabase/functions/<name>/index.ts) changed since the last green publish.
           if [ "$EXTRA" = "all" ]; then
             names=$(node -e "import('./scripts/build-functions.mjs').then(m => console.log(m.FUNCTIONS.join(' ')))")
           else
-            names="$names $EXTRA"
+            names="$CHANGED $EXTRA"
           fi
           names=$(echo $names | tr ' ' '\n' | sort -u)
           if [ -z "$names" ]; then echo "No server function changed."; exit 0; fi
@@ -106,6 +154,7 @@ jobs:
 
   deploy:
     needs: [functions]
+    if: ${{ !cancelled() && needs.functions.result == 'success' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

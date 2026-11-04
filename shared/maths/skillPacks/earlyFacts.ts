@@ -3,7 +3,7 @@
  * times tables. One mastery record per fact, like 7 × 8 in times tables.
  *
  * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
- * (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`). Adding and taking away within 20 keeps its own
+ * (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`). Adding and taking away within 20 keeps its own
  * "add:7+8" records (add-sub pack), so nothing already saved changes.
  *
  * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -209,6 +209,39 @@ export function solvePart(parts: readonly string[]): { answer: number; key: stri
   return Object.values(PART_WHOLES).some(([from, to]) => partKeys(from, to).includes(key)) ? { answer: Number(parts[0]) - Number(parts[2]), key } : null;
 }
 
+/**
+ * Odd and even to 20 (NZ Year 2): "oddeven:7" asks "Is 7 odd or even?", a pick-one question with the choices
+ * ["odd", "even"] (the answer is the index of the right one). Penguin Pairs asks it as "can the two chicks share 7 fish
+ * fairly?": even shares fairly, odd leaves one over.
+ */
+export const ODD_EVEN_TO = 20;
+export const ODD_EVEN_LABELS = ['odd', 'even'] as const;
+const oddEven: Family = {
+  label: 'Odd and even numbers to 20',
+  curriculumTags: ['MS.Y2.NUM.OP.P2'],
+  keys: range(1, ODD_EVEN_TO).map((n) => `oddeven:${n}`),
+  roll: (key) => [Number(key.split(':')[1])],
+  make: (key, [n]) => {
+    if (!isInt(n, 1, ODD_EVEN_TO) || key !== `oddeven:${n}`) return null;
+    const answer = n % 2 === 0 ? 1 : 0;
+    return {
+      parts: ['Is', String(n), 'odd', 'or', 'even?'],
+      spoken: `Is ${n} odd or even?`,
+      answer,
+      pick: [...ODD_EVEN_LABELS],
+      fact: `${n} is ${ODD_EVEN_LABELS[answer]}`,
+    };
+  },
+};
+
+/** An odd-or-even question read back from how it was shown (["Is", "7", "odd", "or", "even?"]): the index of the right choice. */
+export function solveOddEven(parts: readonly string[]): { answer: number; key: string } | null {
+  if (parts.length !== 5 || parts[0] !== 'Is' || parts[2] !== 'odd' || parts[3] !== 'or' || parts[4] !== 'even?') return null;
+  if (!/^[1-9]\d?$/.test(parts[1])) return null;
+  const n = Number(parts[1]);
+  return n <= ODD_EVEN_TO ? { answer: n % 2 === 0 ? 1 : 0, key: `oddeven:${n}` } : null;
+}
+
 /** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
 export function solveSkip(parts: readonly string[]): { answer: number; key: string } | null {
   if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === '?' || p === '?,').length !== 1) return null;
@@ -229,6 +262,7 @@ export function solveSkip(parts: readonly string[]): { answer: number; key: stri
 
 const families: Record<string, Family> = {
   tenAnd,
+  oddEven,
   parts5: partWhole('Parts of 3, 4 and 5 (5 is 2 and 3)', ...PART_WHOLES.parts5),
   parts10: partWhole('Parts of 6 to 10 (7 is 4 and 3)', ...PART_WHOLES.parts10),
   ...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
@@ -243,8 +277,8 @@ export const EARLY_FACTS: PackDefinition = {
   label: 'Early number facts',
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
-  // Only the ladder asks the "ten and" facts, the part-whole facts and skip counting.
-  ladderOnly: ['tenAnd', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`)],
+  // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
+  ladderOnly: ['tenAnd', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

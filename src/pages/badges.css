@@ -1,0 +1,88 @@
+/* QR sign-in badges: the sign-in page's "Scan my badge", the camera, and the /#/badge page (docs/BADGE-SIGN-IN-PLAN.md). */
+
+.badge-button {
+  width: 100%;
+  margin: 8px 0 20px;
+  padding: 16px 20px;
+  font-size: 1.8rem;
+}
+
+.badge-scan {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  margin: 0 0 20px;
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+}
+.badge-scan h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+.badge-scan__view {
+  position: relative;
+  width: min(100%, 420px);
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0f172a;
+}
+.badge-scan__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* like a mirror, so moving the card left moves it left */
+}
+.badge-scan__frame {
+  position: absolute;
+  inset: 15% 22%;
+  border: 5px dashed #fde047;
+  border-radius: 16px;
+}
+.badge-scan__problem {
+  font-weight: 700;
+  color: var(--lost);
+}
+
+.badge-in {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+.badge-in__card {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: 420px;
+  padding: 36px 28px;
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.badge-in__card h1 {
+  margin: 0;
+}
+.badge-in__big {
+  margin: 0;
+  font-size: 4rem;
+  line-height: 1;
+}
+.badge-in__spin {
+  animation: badge-spin 1.2s linear infinite;
+}
+@keyframes badge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge-in__spin {
+    animation: none;
+  }
+}

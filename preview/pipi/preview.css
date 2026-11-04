@@ -1,0 +1,5 @@
+html, body { margin: 0; height: 100%; }
+.ppp-tools { position: absolute; left: 8px; top: 52px; z-index: 6; background: #fff; border: 2px solid #0f5c66; border-radius: 12px; padding: 4px 10px; max-width: min(320px, calc(100vw - 16px)); font: 14px system-ui, sans-serif; }
+.ppp-tools summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; }
+.ppp-tools p { margin: 4px 0; }
+.ppp-tools button { margin: 3px; min-height: 44px; padding: 2px 12px; border-radius: 8px; border: 1px solid #0f5c66; background: #e3f7fa; cursor: pointer; font: inherit; }

@@ -2531,7 +2531,7 @@ PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.la
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -2885,6 +2885,40 @@ function solvePart(parts) {
 		key
 	} : null;
 }
+const ODD_EVEN_LABELS = ["odd", "even"];
+const oddEven = {
+	label: "Odd and even numbers to 20",
+	curriculumTags: ["MS.Y2.NUM.OP.P2"],
+	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
+	roll: (key) => [Number(key.split(":")[1])],
+	make: (key, [n]) => {
+		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
+		const answer = n % 2 === 0 ? 1 : 0;
+		return {
+			parts: [
+				"Is",
+				String(n),
+				"odd",
+				"or",
+				"even?"
+			],
+			spoken: `Is ${n} odd or even?`,
+			answer,
+			pick: [...ODD_EVEN_LABELS],
+			fact: `${n} is ${ODD_EVEN_LABELS[answer]}`
+		};
+	}
+};
+/** An odd-or-even question read back from how it was shown (["Is", "7", "odd", "or", "even?"]): the index of the right choice. */
+function solveOddEven(parts) {
+	if (parts.length !== 5 || parts[0] !== "Is" || parts[2] !== "odd" || parts[3] !== "or" || parts[4] !== "even?") return null;
+	if (!/^[1-9]\d?$/.test(parts[1])) return null;
+	const n = Number(parts[1]);
+	return n <= 20 ? {
+		answer: n % 2 === 0 ? 1 : 0,
+		key: `oddeven:${n}`
+	} : null;
+}
 /** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
 function solveSkip(parts) {
 	if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === "?" || p === "?,").length !== 1) return null;
@@ -2909,6 +2943,7 @@ function solveSkip(parts) {
 }
 const families$2 = {
 	tenAnd,
+	oddEven,
 	parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
 	parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
 	...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
@@ -2929,6 +2964,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"oddEven",
 		"parts5",
 		"parts10",
 		...SKIP_STEPS.map(({ step }) => `skip${step}`)
@@ -6128,6 +6164,16 @@ const LADDER = [
 		built: true,
 		inWarmUp: false
 	})),
+	{
+		id: "odd-even",
+		label: "Odd and even numbers to 20",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P2"],
+		keys: earlyKeys("oddEven"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -6306,7 +6352,7 @@ function focusPools(spec, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -6580,6 +6626,11 @@ function solveParts(parts) {
 	if (part) return isFocusKey(part.key) ? {
 		answer: part.answer,
 		keys: [part.key]
+	} : null;
+	const oddEven = solveOddEven(p);
+	if (oddEven) return isFocusKey(oddEven.key) ? {
+		answer: oddEven.answer,
+		keys: [oddEven.key]
 	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;

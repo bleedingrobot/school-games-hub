@@ -11,7 +11,7 @@ import type { FactStats } from './leitner';
 import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
 import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
-import { solvePart, solveSkip } from './skillPacks/earlyFacts';
+import { solveOddEven, solvePart, solveSkip } from './skillPacks/earlyFacts';
 import { solveGenerated } from './skillPacks/generated';
 import { TimesTables } from './skillPacks/timesTables';
 
@@ -278,6 +278,8 @@ export function solveParts(parts: unknown): Solved | null {
   if (skip) return isFocusKey(skip.key) ? { answer: skip.answer, keys: [skip.key] } : null;
   const part = solvePart(p);
   if (part) return isFocusKey(part.key) ? { answer: part.answer, keys: [part.key] } : null;
+  const oddEven = solveOddEven(p);
+  if (oddEven) return isFocusKey(oddEven.key) ? { answer: oddEven.answer, keys: [oddEven.key] } : null;
   const blanks = p.filter((x) => x === '?').length;
   let answer = NaN;
   let keys: string[] = [];
