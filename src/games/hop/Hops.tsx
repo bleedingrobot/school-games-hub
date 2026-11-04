@@ -10,6 +10,7 @@ import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/prog
 import { HOPS_PER_ROUND, showRound, type Round } from '../../../shared/hop/round';
 import { playSound } from '../sounds';
 import { Friend, GlowWorm, LilyPad } from './HopArt';
+import { HundredsBoard } from './HundredsBoard';
 import { backFor, type Scenery } from './Pond';
 import { WORDS } from './words';
 import { hopLine } from './voiceLines';
@@ -100,10 +101,13 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
     <div className={`hp-play hp-pond--${scenery}`} style={backFor(scenery)}>
       <div className="hp-stars" aria-hidden="true" />
       <h2 className="hp-sr" tabIndex={-1} ref={heading}>{WORDS.pickWorm}</h2>
-      <div className="hp-progress" aria-label={WORDS.hopsMade(made, HOPS_PER_ROUND)}>
-        {Array.from({ length: HOPS_PER_ROUND }, (_, i) => (
-          <span key={i} className={i < made ? 'hp-pip hp-pip--done' : 'hp-pip'} />
-        ))}
+      <div className="hp-top">
+        <div className="hp-progress" aria-label={WORDS.hopsMade(made, HOPS_PER_ROUND)}>
+          {Array.from({ length: HOPS_PER_ROUND }, (_, i) => (
+            <span key={i} className={i < made ? 'hp-pip hp-pip--done' : 'hp-pip'} />
+          ))}
+        </div>
+        <HundredsBoard />
       </div>
       <p className="hp-ask" aria-live="polite">{hop.prompt}</p>
       <div className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>

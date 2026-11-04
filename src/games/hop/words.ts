@@ -26,5 +26,9 @@ export const WORDS = {
   home: 'Home',
   voiceOn: 'Voice on',
   voiceOff: 'Voice off',
+  board: 'Hundreds board',
+  boardShow: '100 board',
+  boardHide: 'Hide board',
+  boardClear: 'Clear',
   jars: (n: number) => `${n} Golden Glow ${n === 1 ? 'Jar' : 'Jars'}`,
 } as const;
