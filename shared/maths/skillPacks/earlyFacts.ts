@@ -3,7 +3,7 @@
  * times tables. One mastery record per fact, like 7 × 8 in times tables.
  *
  * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
- * (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
+ * (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`). Adding and taking away within 20 keeps its own
  * "add:7+8" records (add-sub pack), so nothing already saved changes.
  *
  * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -164,6 +164,51 @@ function skipCounting(step: number, upTo: number, word: string): Family {
   };
 }
 
+/** The wholes in each part-whole skill: small wholes first, then up to 10. */
+export const PART_WHOLES = { parts5: [3, 5], parts10: [6, 10] } as const;
+const partKeys = (from: number, to: number) => range(from, to).flatMap((w) => range(0, w).map((s) => `part${w}:${s}`));
+const parsePart = (key: string) => {
+  const m = /^part(\d+):(\d+)$/.exec(key);
+  return m ? { whole: Number(m[1]), shown: Number(m[2]) } : null;
+};
+
+/**
+ * The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
+ * counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
+ * number showing, the whole and two more.
+ */
+function partWhole(label: string, from: number, to: number): Family {
+  const keys = partKeys(from, to);
+  return {
+    label,
+    curriculumTags: ['MS.Y1.NUM.OP.P1'],
+    keys,
+    roll: (key) => {
+      const { whole, shown } = parsePart(key)!;
+      return [whole, shown];
+    },
+    make: (key, [whole, shown]) => {
+      if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
+      const answer = whole - shown;
+      return {
+        parts: [String(whole), '=', String(shown), '+', '?'],
+        spoken: `${whole} is ${shown} and how many more?`,
+        answer,
+        wrong: [answer + 1, answer - 1, shown, whole, answer + 2],
+      };
+    },
+  };
+}
+
+/** A part-whole question read back from how it was shown (["7", "=", "4", "+", "?"]), or null when it isn't one. */
+export function solvePart(parts: readonly string[]): { answer: number; key: string } | null {
+  if (parts.length !== 5 || parts[1] !== '=' || parts[3] !== '+' || parts[4] !== '?') return null;
+  if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[2])) return null;
+  const key = `part${Number(parts[0])}:${Number(parts[2])}`;
+  if (key !== `part${parts[0]}:${parts[2]}`) return null; // no leading zeros
+  return Object.values(PART_WHOLES).some(([from, to]) => partKeys(from, to).includes(key)) ? { answer: Number(parts[0]) - Number(parts[2]), key } : null;
+}
+
 /** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
 export function solveSkip(parts: readonly string[]): { answer: number; key: string } | null {
   if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === '?' || p === '?,').length !== 1) return null;
@@ -184,6 +229,8 @@ export function solveSkip(parts: readonly string[]): { answer: number; key: stri
 
 const families: Record<string, Family> = {
   tenAnd,
+  parts5: partWhole('Parts of 3, 4 and 5 (5 is 2 and 3)', ...PART_WHOLES.parts5),
+  parts10: partWhole('Parts of 6 to 10 (7 is 4 and 3)', ...PART_WHOLES.parts10),
   ...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
   bond10: bonds('Pairs that make 10', 'MS.Y1.NUM.OP.P1', 'bond10', 10, 0),
   dblHalf10: doublesHalves('Doubles and halves to 10', 'MS.Y1.NUM.OP.P2', 1, 5, 2, 10),
@@ -196,8 +243,8 @@ export const EARLY_FACTS: PackDefinition = {
   label: 'Early number facts',
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
-  // Only the ladder asks the "ten and" facts and skip counting.
-  ladderOnly: ['tenAnd', ...SKIP_STEPS.map(({ step }) => `skip${step}`)],
+  // Only the ladder asks the "ten and" facts, the part-whole facts and skip counting.
+  ladderOnly: ['tenAnd', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

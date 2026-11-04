@@ -3170,7 +3170,7 @@ const EXTRA_PACKS = {
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -3461,6 +3461,69 @@ function skipCounting(step, upTo, word) {
 		}
 	};
 }
+/** The wholes in each part-whole skill: small wholes first, then up to 10. */
+const PART_WHOLES = {
+	parts5: [3, 5],
+	parts10: [6, 10]
+};
+const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
+const parsePart = (key) => {
+	const m = /^part(\d+):(\d+)$/.exec(key);
+	return m ? {
+		whole: Number(m[1]),
+		shown: Number(m[2])
+	} : null;
+};
+/**
+* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
+* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
+* number showing, the whole and two more.
+*/
+function partWhole(label, from, to) {
+	const keys = partKeys(from, to);
+	return {
+		label,
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys,
+		roll: (key) => {
+			const { whole, shown } = parsePart(key);
+			return [whole, shown];
+		},
+		make: (key, [whole, shown]) => {
+			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
+			const answer = whole - shown;
+			return {
+				parts: [
+					String(whole),
+					"=",
+					String(shown),
+					"+",
+					"?"
+				],
+				spoken: `${whole} is ${shown} and how many more?`,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					shown,
+					whole,
+					answer + 2
+				]
+			};
+		}
+	};
+}
+/** A part-whole question read back from how it was shown (["7", "=", "4", "+", "?"]), or null when it isn't one. */
+function solvePart(parts) {
+	if (parts.length !== 5 || parts[1] !== "=" || parts[3] !== "+" || parts[4] !== "?") return null;
+	if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[2])) return null;
+	const key = `part${Number(parts[0])}:${Number(parts[2])}`;
+	if (key !== `part${parts[0]}:${parts[2]}`) return null;
+	return Object.values(PART_WHOLES).some(([from, to]) => partKeys(from, to).includes(key)) ? {
+		answer: Number(parts[0]) - Number(parts[2]),
+		key
+	} : null;
+}
 /** A skip-counting question read back from how it was shown (its parts), made again and checked, or null when it isn't one. */
 function solveSkip(parts) {
 	if (parts.length < 4 || parts.length > 5 || parts.filter((p) => p === "?" || p === "?,").length !== 1) return null;
@@ -3485,6 +3548,8 @@ function solveSkip(parts) {
 }
 const families$2 = {
 	tenAnd,
+	parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
+	parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
 	...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
 	bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
 	dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
@@ -3501,7 +3566,12 @@ const EARLY_FACTS = {
 		["bond20"],
 		["dblHalf20"]
 	],
-	ladderOnly: ["tenAnd", ...SKIP_STEPS.map(({ step }) => `skip${step}`)]
+	ladderOnly: [
+		"tenAnd",
+		"parts5",
+		"parts10",
+		...SKIP_STEPS.map(({ step }) => `skip${step}`)
+	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
@@ -6629,6 +6699,26 @@ const tables = tablesSkills();
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 const LADDER = [
 	{
+		id: "parts-5",
+		label: "Parts of numbers to 5",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys: earlyKeys("parts5"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "parts-10",
+		label: "Parts of numbers to 10",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys: earlyKeys("parts10"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
 		id: "facts-10",
 		label: "Number facts to 10",
 		stage: "early-facts",
@@ -6761,8 +6851,14 @@ function ladderProgress(stats, opts = {}) {
 				status: "upcoming",
 				share: 1
 			};
-			builtCount++;
 			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+			if (skill.inAuto === false) return {
+				skill,
+				status: "secure",
+				share,
+				passedOver: share < STEP_SECURE_SHARE
+			};
+			builtCount++;
 			if (index < floor) {
 				const real = share >= STEP_SECURE_SHARE;
 				if (real) secureCount++;
@@ -6797,7 +6893,7 @@ function ladderProgress(stats, opts = {}) {
 /** The focus, review and stretch keys auto draws from for these records. */
 function autoPools(progress, opts = {}) {
 	const enabled = opts.enabledTables ?? TABLES;
-	const live = progress.skills.filter((p) => p.skill.built).map((p) => ({
+	const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false).map((p) => ({
 		...p,
 		keys: activeKeys(p.skill, enabled, opts.division !== false)
 	})).filter((p) => p.keys.length);
@@ -6841,7 +6937,7 @@ function focusPools(spec, opts = {}) {
 	const mine = new Set(focus);
 	return {
 		focus,
-		review: LADDER.slice(0, LADDER.indexOf(chosen[0])).filter((s) => s.built).flatMap(keysOf).filter((k) => !mine.has(k)),
+		review: LADDER.slice(0, LADDER.indexOf(chosen[0])).filter((s) => s.built && (s.inAuto !== false || chosen[0].inAuto === false)).flatMap(keysOf).filter((k) => !mine.has(k)),
 		stretch: []
 	};
 }
@@ -6849,7 +6945,7 @@ function focusPools(spec, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -7108,6 +7204,11 @@ function solveParts(parts) {
 	if (skip) return isFocusKey(skip.key) ? {
 		answer: skip.answer,
 		keys: [skip.key]
+	} : null;
+	const part = solvePart(p);
+	if (part) return isFocusKey(part.key) ? {
+		answer: part.answer,
+		keys: [part.key]
 	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;

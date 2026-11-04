@@ -6,16 +6,17 @@ import { randomFromSeed } from '../space/random';
 import { CAMPAIGN_STEPS } from './config';
 import { parseFactKey } from './facts';
 import { afterAnswer, newStats, type FactStats } from './leitner';
-import { AutoPack, autoPools, LADDER, ladderProgress, packIdOfKey, tablesJumpFloor } from './ladder';
+import { AutoPack, autoPools, focusPools, LADDER, ladderProgress, packIdOfKey, tablesJumpFloor } from './ladder';
 import { BandedPack, sameAnswer } from './banded';
 import { BANDED_PACKS } from './skillPacks';
-import { earlyFactsPack, EARLY_FACTS, solveSkip } from './skillPacks/earlyFacts';
+import { earlyFactsPack, EARLY_FACTS, solvePart, solveSkip } from './skillPacks/earlyFacts';
 import { RECORD_KEY } from './skillPacks/generatedKit';
 import { solveParts } from './focus';
 
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
 const secure = (keys: string[]) => keys.map((k) => rec(k, 3));
-const built = LADDER.filter((s) => s.built);
+// The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
+const built = LADDER.filter((s) => s.built && s.inAuto !== false);
 
 /** Reads a question off the screen for the plain sums the early facts ask. */
 function solve(parts: string[]): number {
@@ -31,6 +32,8 @@ function solve(parts: string[]): number {
   m = /^(\d+) ÷ \? = (\d+)$/.exec(text);
   if (m) return +m[1] / +m[2];
   m = /^(\d+) − (\d+) = \?$/.exec(text);
+  if (m) return +m[1] - +m[2];
+  m = /^(\d+) = (\d+) \+ \?$/.exec(text);
   if (m) return +m[1] - +m[2];
   m = /^(\d+) \+ \? = (\d+)$/.exec(text);
   if (m) return +m[2] - +m[1];
@@ -443,5 +446,50 @@ describe('skip counting in tens, fives and twos', () => {
     };
     expect(run('a')).toEqual(run('a'));
     expect(run('a')).not.toEqual(run('b'));
+  });
+});
+
+describe('the part-whole facts (7 is 4 and 3), for Pipi', () => {
+  const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
+
+  it('has a record for every split of 3 to 10, in two skills before the facts to 10 that sit beside the ladder', () => {
+    expect(LADDER.slice(0, 3).map((s) => s.id)).toEqual(['parts-5', 'parts-10', 'facts-10']);
+    expect(keysOf('parts-5')).toHaveLength(4 + 5 + 6);
+    expect(keysOf('parts-10')).toHaveLength(7 + 8 + 9 + 10 + 11);
+    expect(keysOf('parts-5')).toEqual(expect.arrayContaining(['part3:0', 'part3:3', 'part5:2']));
+    for (const key of [...keysOf('parts-5'), ...keysOf('parts-10')]) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key), key).toBe('early-facts');
+    }
+    // Auto never puts anyone on them or asks them as review, and they don't count.
+    const p = ladderProgress([]);
+    expect(p.current?.id).toBe('facts-10');
+    expect(p.builtCount).toBe(built.length);
+    expect(autoPools(ladderProgress(secure(keysOf('facts-10')))).review.some((k) => k.startsWith('part'))).toBe(false);
+    expect(ladderProgress(secure(keysOf('parts-5'))).skills[0]).toMatchObject({ status: 'secure', passedOver: false });
+    // A teacher can choose them as a focus.
+    expect(focusPools({ skills: ['parts-10'], onlyThese: false })).toMatchObject({ focus: keysOf('parts-10'), review: keysOf('parts-5') });
+    expect(focusPools({ skills: ['facts-20'], onlyThese: false }).review.some((k) => k.startsWith('part'))).toBe(false);
+  });
+
+  it('asks whole = shown + ?, wrong choices from the known mistakes, and the server reads each back', () => {
+    const pack = earlyFactsPack([], randomFromSeed('parts'));
+    for (const key of [...keysOf('parts-5'), ...keysOf('parts-10')]) {
+      const [whole, shown] = key.slice(4).split(':').map(Number);
+      const q = pack.questionFor(key, 'focus', { multipleChoice: true });
+      expect(q.parts).toEqual([String(whole), '=', String(shown), '+', '?']);
+      expect(q.answer).toBe(whole - shown);
+      expect(q.spoken).toBe(`${whole} is ${shown} and how many more?`);
+      expect(new Set(q.choices).size).toBe(4);
+      const mistakes = [q.answer + 1, q.answer - 1, shown, whole, q.answer + 2];
+      for (const c of q.choices!) if (c !== q.answer) expect(mistakes, `${key}: ${c}`).toContain(c);
+      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
+      expect(pack.rebuild(key, q.params!)?.parts).toEqual(q.parts);
+    }
+    expect(solvePart(['11', '=', '4', '+', '?'])).toBeNull(); // wholes go to 10
+    expect(solvePart(['7', '=', '8', '+', '?'])).toBeNull(); // more showing than there are
+    expect(solvePart(['07', '=', '4', '+', '?'])).toBeNull();
+    expect(solvePart(['2', '=', '1', '+', '?'])).toBeNull(); // wholes start at 3
+    expect(pack.rebuild('part7:4', [7, 3])).toBeNull();
   });
 });

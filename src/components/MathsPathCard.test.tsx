@@ -14,7 +14,7 @@ vi.mock('../data/ladder', async (importOriginal) => ({
 }));
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ profile: { id: 'student-1', role: 'student' } }) }));
 
-const built = LADDER.filter((s) => s.built);
+const built = LADDER.filter((s) => s.built && s.inAuto !== false); // the part-whole skills sit beside the path
 const secure = (ids: string[]): FactStats[] => built.filter((s) => ids.includes(s.id)).flatMap((s) => s.keys.map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 })));
 const on = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocus => ({
   ...AUTO_FOCUS,

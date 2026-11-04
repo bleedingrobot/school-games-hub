@@ -34,6 +34,11 @@ export interface LadderSkill {
   built: boolean;
   /** False keeps a skill out of the placement warm-up, so the warm-up's ten questions still reach as high as before. */
   inWarmUp?: false;
+  /**
+   * False keeps a skill beside the ladder rather than on it: auto never makes it the current skill or asks it as review, and
+   * it doesn't count towards progress. A teacher can still choose it as a focus, and a game (Pipi) can ask it from its own rules.
+   */
+  inAuto?: false;
 }
 
 const earlyKeys = (family: string) => EARLY_FACTS.families[family].keys;
@@ -81,6 +86,10 @@ const tables = tablesSkills();
 
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 export const LADDER: LadderSkill[] = [
+  // The part-whole facts (7 is 4 and 3) sit under the facts to 10, for the youngest. Pipi's Hidden Shells asks them from the
+  // child's own records, so they stay beside the ladder (`inAuto`) and an older student's auto practice never meets them.
+  { id: 'parts-5', label: 'Parts of numbers to 5', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts5'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'parts-10', label: 'Parts of numbers to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts10'), built: true, inWarmUp: false, inAuto: false },
   { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s <= 10)], built: true },
   { id: 'dbl-half-10', label: 'Doubles and halves to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P2'], keys: earlyKeys('dblHalf10'), built: true },
   { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: earlyKeys('tenAnd'), built: true },
@@ -216,8 +225,10 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
     if (!skill.built) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);
     if (keys.length === 0) return { skill, status: 'upcoming' as const, share: 1 };
-    builtCount++;
     const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+    // A skill beside the ladder is shown as behind the student and never counts.
+    if (skill.inAuto === false) return { skill, status: 'secure' as const, share, passedOver: share < STEP_SECURE_SHARE };
+    builtCount++;
     if (index < floor) {
       const real = share >= STEP_SECURE_SHARE;
       if (real) secureCount++;
@@ -236,7 +247,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
 /** The focus, review and stretch keys auto draws from for these records. */
 export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): Pools {
   const enabled = opts.enabledTables ?? TABLES;
-  const live = progress.skills.filter((p) => p.skill.built).map((p) => ({ ...p, keys: activeKeys(p.skill, enabled, opts.division !== false) })).filter((p) => p.keys.length);
+  const live = progress.skills.filter((p) => p.skill.built && p.skill.inAuto !== false).map((p) => ({ ...p, keys: activeKeys(p.skill, enabled, opts.division !== false) })).filter((p) => p.keys.length);
   const at = live.findIndex((p) => p.status === 'current');
   if (at < 0) return { focus: [], review: live.flatMap((p) => p.keys), stretch: [] };
   return { focus: live[at].keys, review: live.slice(0, at).flatMap((p) => p.keys), stretch: live[at + 1]?.keys ?? [] };
@@ -261,7 +272,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
   const focus = [...new Set(chosen.flatMap(keysOf))];
   if (spec.onlyThese) return { focus, review: [], stretch: [] };
   const mine = new Set(focus);
-  const before = LADDER.slice(0, LADDER.indexOf(chosen[0])).filter((s) => s.built);
+  const before = LADDER.slice(0, LADDER.indexOf(chosen[0])).filter((s) => s.built && (s.inAuto !== false || chosen[0].inAuto === false));
   return { focus, review: before.flatMap(keysOf).filter((k) => !mine.has(k)), stretch: [] };
 }
 
@@ -269,7 +280,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;

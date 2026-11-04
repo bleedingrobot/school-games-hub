@@ -540,7 +540,7 @@ var BandedPack = class {
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -831,11 +831,65 @@ function skipCounting(step, upTo, word) {
 		}
 	};
 }
+/** The wholes in each part-whole skill: small wholes first, then up to 10. */
+const PART_WHOLES = {
+	parts5: [3, 5],
+	parts10: [6, 10]
+};
+const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
+const parsePart = (key) => {
+	const m = /^part(\d+):(\d+)$/.exec(key);
+	return m ? {
+		whole: Number(m[1]),
+		shown: Number(m[2])
+	} : null;
+};
+/**
+* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
+* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
+* number showing, the whole and two more.
+*/
+function partWhole(label, from, to) {
+	const keys = partKeys(from, to);
+	return {
+		label,
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys,
+		roll: (key) => {
+			const { whole, shown } = parsePart(key);
+			return [whole, shown];
+		},
+		make: (key, [whole, shown]) => {
+			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
+			const answer = whole - shown;
+			return {
+				parts: [
+					String(whole),
+					"=",
+					String(shown),
+					"+",
+					"?"
+				],
+				spoken: `${whole} is ${shown} and how many more?`,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					shown,
+					whole,
+					answer + 2
+				]
+			};
+		}
+	};
+}
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
 	families: {
 		tenAnd,
+		parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
+		parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
 		...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
 		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
 		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
@@ -848,7 +902,12 @@ const EARLY_FACTS = {
 		["bond20"],
 		["dblHalf20"]
 	],
-	ladderOnly: ["tenAnd", ...SKIP_STEPS.map(({ step }) => `skip${step}`)]
+	ladderOnly: [
+		"tenAnd",
+		"parts5",
+		"parts10",
+		...SKIP_STEPS.map(({ step }) => `skip${step}`)
+	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
@@ -5857,6 +5916,26 @@ const tables = tablesSkills();
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 const LADDER = [
 	{
+		id: "parts-5",
+		label: "Parts of numbers to 5",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys: earlyKeys("parts5"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "parts-10",
+		label: "Parts of numbers to 10",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys: earlyKeys("parts10"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
 		id: "facts-10",
 		label: "Number facts to 10",
 		stage: "early-facts",
@@ -5938,7 +6017,7 @@ const LADDER = [
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
