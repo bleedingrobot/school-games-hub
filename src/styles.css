@@ -2556,7 +2556,7 @@ main:focus {
   flex: 1;
   align-items: center;
   gap: 10px;
-  min-height: 36px;
+  min-height: 40px;
   padding: 0;
   border: 0;
   background: none;
@@ -2621,8 +2621,8 @@ main:focus {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 32px;
-  padding: 4px 10px 4px 8px;
+  min-height: 40px;
+  padding: 4px 12px 4px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.88);
   color: #1e293b;

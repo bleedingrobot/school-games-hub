@@ -77,7 +77,8 @@ describe('requests sent when a page opens', () => {
     await settle();
     // Written down for the plan's results (npx vitest run src/pages/RequestCount.test.tsx shows it). Before S.2 it was 20.
     console.info(`home page: ${sent.length} requests\n  ${[...sent].sort().join('\n  ')}`);
-    expect([...sent].sort()).toEqual(['from app_settings', 'rpc my_home_page']);
+    // Plus the pupil's home layout (folded sections, pinned games), asked once per visit, not each time the page opens.
+    expect([...sent].sort()).toEqual(['from app_settings', 'rpc my_home_layout', 'rpc my_home_page']);
   });
 
   it('the lobby sends one request, plus one read of the game switches', async () => {
