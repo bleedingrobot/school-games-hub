@@ -7,11 +7,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { codeFromScan } from '../data/badge';
 
+type Facing = 'user' | 'environment';
+
+/** Phones start on the back camera (the pupil points the phone at the card); tablets and laptops on the screen's side. */
+export function startingCamera(width = window.innerWidth, height = window.innerHeight, touch = navigator.maxTouchPoints > 0): Facing {
+  return touch && Math.min(width, height) < 600 ? 'environment' : 'user';
+}
+
 export default function BadgeScanner({ onClose }: { onClose: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const [problem, setProblem] = useState<string | null>(null);
   const [notBadge, setNotBadge] = useState(false);
+  const [facing, setFacing] = useState<Facing>(() => startingCamera());
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -49,9 +57,8 @@ export default function BadgeScanner({ onClose }: { onClose: () => void }) {
       setProblem('This device can’t use its camera here. Ask your teacher.');
       return;
     }
-    // The camera on the screen's side, so the pupil can see themselves holding the card up.
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      .getUserMedia({ video: { facingMode: facing }, audio: false })
       .then((s) => {
         if (stopped) {
           s.getTracks().forEach((t) => t.stop());
@@ -71,7 +78,7 @@ export default function BadgeScanner({ onClose }: { onClose: () => void }) {
       cancelAnimationFrame(frame);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [navigate]);
+  }, [navigate, facing]);
 
   return (
     <div className="badge-scan" role="dialog" aria-modal="true" aria-labelledby="badge-scan-title">
@@ -80,14 +87,27 @@ export default function BadgeScanner({ onClose }: { onClose: () => void }) {
         <p className="badge-scan__problem" role="alert">{problem}</p>
       ) : (
         <div className="badge-scan__view">
-          <video ref={video} className="badge-scan__video" muted playsInline aria-label="Camera" />
+          <video
+            ref={video}
+            className={`badge-scan__video${facing === 'user' ? ' badge-scan__video--mirror' : ''}`}
+            muted
+            playsInline
+            aria-label="Camera"
+          />
           <div className="badge-scan__frame" aria-hidden="true" />
         </div>
       )}
       {notBadge && !problem && <p role="status">That QR code isn’t a sign-in badge.</p>}
-      <button type="button" className="button button--light-outline" onClick={onClose}>
-        Close
-      </button>
+      <div className="badge-scan__buttons">
+        {!problem && (
+          <button type="button" className="button button--light" onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))}>
+            🔄 Switch camera
+          </button>
+        )}
+        <button type="button" className="button button--light-outline" onClick={onClose}>
+          Close
+        </button>
+      </div>
     </div>
   );
 }
