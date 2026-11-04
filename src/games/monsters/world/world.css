@@ -180,7 +180,6 @@
 .mm-howto h3 { margin: 14px 0 4px; font-size: 1.05rem; }
 .mm-howto p, .mm-howto ul { margin: 0 0 8px; }
 .mm-howto ul { padding-left: 20px; }
-.mm-typechart { display: block; width: min(100%, 560px); height: auto; margin: 8px auto; border-radius: 12px; }
 .mm-howto kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; border: 1px solid #94a3b8; border-bottom-width: 2px; border-radius: 5px; background: #f1f5f9; font: 700 0.85em/1.4 inherit; text-align: center; }
 
 /* Quests: the "what next" line on the map, and the quest pages in the menu. */

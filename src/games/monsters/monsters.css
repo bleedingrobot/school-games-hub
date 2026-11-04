@@ -162,6 +162,7 @@
 }
 .mb-settings label { display: flex; align-items: center; gap: 8px; min-height: 32px; }
 .mb-settings input { width: 20px; height: 20px; }
+.mm-typechart { display: block; width: min(100%, 560px); height: auto; margin: 8px auto; border-radius: 12px; }
 
 /* ---------- Message box and menus ---------- */
 .mb-panel {
