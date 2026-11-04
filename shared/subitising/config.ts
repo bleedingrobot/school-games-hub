@@ -70,6 +70,8 @@ export const SUBITISING_CONFIG = {
   answerLockMs: 1000,
   /** "Get ready" pause before each picture. */
   readyMs: 700,
+  /** Missing Spots "Get ready" is at least this long, so the question can be read before the picture. */
+  gapReadyMs: 1200,
   /** "Peek again" shows the picture for this long, once per picture. */
   peekMs: 500,
   /** How many answer buttons are shown (at least). */
@@ -77,7 +79,7 @@ export const SUBITISING_CONFIG = {
   /** A session is this many pictures. */
   sessionTrials: 12,
   /** The starting check is this many pictures. */
-  placementTrials: 8,
+  placementTrials: 6,
   /** The answers kept in the browser, newest last. */
   keepAnswers: 400,
 } as const;

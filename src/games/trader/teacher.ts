@@ -1,5 +1,5 @@
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
-import { fetchTraderSettings, saveTraderSettings, type TraderSettings } from '../../data/trader';
+import { fetchTraderForgeTyping, fetchTraderSettings, saveTraderForgeTyping, saveTraderSettings, type TraderSettings } from '../../data/trader';
 import { useSetting } from '../../teacher/useSetting';
 
 /**
@@ -25,6 +25,13 @@ export function useTraderClassMaths(classId: string) {
   return useSetting(async (): Promise<MathsSwitch> => (await fetchTraderSettings(classId)).maths, [classId]);
 }
 
+export function useTraderForgeTyping(classId: string) {
+  return useSetting(() => fetchTraderForgeTyping(classId), [classId]);
+}
+
+export const saveForgeTyping = (on: boolean, classId: string) => saveTraderForgeTyping(on, classId);
+export const FORGE_TYPING_ABOUT =
+  'On: pupils can type their own names for their sun, planets and system (letters only, up to 14, rude words refused). Classmates can see them. Off: names come from word lists; names already typed are kept.';
 export const saveTraderEnabled = (enabled: boolean, classId: string) => change(classId, { enabled });
 export const saveTraderMaths = (maths: MathsSwitch, classId: string) => change(classId, { maths });
 export const saveTraderJumps = (jumps: number, classId: string) => change(classId, { jumps });

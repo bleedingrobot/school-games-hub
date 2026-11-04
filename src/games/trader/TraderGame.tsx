@@ -13,6 +13,7 @@ import type { NewsItem } from '../../../shared/trader/news';
 import { schoolPushes } from '../../../shared/trader/priceGuide';
 import { runPlan } from '../../../shared/trader/plan';
 import { applyBatch, type Action, type Game, type Mark, type Settings } from '../../../shared/trader/server';
+import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
 import { CaptainFace, CaptainPicker } from './Captain';
@@ -29,6 +30,10 @@ import { forSeason, loadCoach, noteHold, saveCoach, type CoachMemory } from './c
 import { TipCard } from './coach/TipCard';
 import { MATHS_TIP, nextTip, TIP_IDS, tipsFor, tipStops, type TipId, type TipMoment } from './coach/tips';
 import { nextStep, type CoachTab } from './coach/nextStep';
+import { Forge } from './forge/Forge';
+import { Gallery } from './forge/Gallery';
+import { forgeStep, goalOf, type Goal } from './forge/parts';
+import { SeasonChoice } from './forge/SeasonChoice';
 import { BankPanel, ShipPanel, TradePanel } from './Panels';
 import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
@@ -64,6 +69,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const [prefs, setPrefs] = useState(loadPrefs);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  /** The pupil's working copy of their solar system in the Forge (null: just what the game has saved). */
+  const [draft, setDraft] = useState<SystemDesign | null>(null);
+  const planOnly = useRef(new WeakSet<Action>());
   const [fightLog, setFightLog] = useState<string[]>([]);
   const [fightBusy, setFightBusy] = useState(false);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -106,21 +114,24 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   }, [reload]);
 
   const galaxy: Galaxy | null = useMemo(() => (loaded ? makeGalaxy(loaded.galaxySeed) : null), [loaded?.galaxySeed]); // eslint-disable-line react-hooks/exhaustive-deps
-  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths } : null;
+  const forgeOn = loaded?.settings.forge === true;
+  const settings: Settings | null = loaded ? { jumpsPerDay: loaded.settings.jumpsPerDay, loans: loaded.settings.loans, maths: loaded.settings.maths, forge: forgeOn, forgeTyping: loaded.settings.forgeTyping !== false } : null;
 
   /** The game as the screen shows it: the server's game with the queued quiet moves applied on top. */
   const game: Game | null = useMemo(() => {
-    if (!loaded || !galaxy || !settings) return null;
+    if (!loaded || !galaxy || !settings || !loaded.game) return null;
     if (!queue.length) return loaded.game;
     const r = applyBatch(galaxy, loaded.galaxySeed, loaded.game, queue, settings, noMark);
     return r.ok ? r.game : loaded.game;
   }, [loaded, galaxy, queue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const t = game?.t;
+  const savedSystem = useMemo(() => game?.system ?? emptyDesign(), [game?.system]);
+  const design = draft ?? savedSystem;
   // Bolt's next step, worked out fresh from the game each time it changes.
   const step = useMemo(
-    () => (galaxy && t ? nextStep({ galaxy, t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans }) : null),
-    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans],
+    () => (galaxy && t ? (tab === 'forge' ? forgeStep(design, t.credits, t.moon) : nextStep({ galaxy, t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans, forge: forgeOn })) : null),
+    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans, forgeOn, design],
   );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
@@ -244,6 +255,51 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     }
     setQueue((q) => [...q, action]);
     setNote(done);
+  }
+
+  /** A free change to the pupil's system plan: checked now, shown at once and sent with the next request (a newer plan replaces an older one waiting). */
+  function planForge(d: SystemDesign) {
+    if (!loaded || !galaxy || !settings || !loaded.game) return;
+    const action: Action = { type: 'forge', design: d };
+    planOnly.current.add(action);
+    const last = queue[queue.length - 1];
+    const next = [...(last && planOnly.current.has(last) ? queue.slice(0, -1) : queue), action];
+    const r = applyBatch(galaxy, loaded.galaxySeed, loaded.game, next, settings, noMark);
+    if (!r.ok) return setNote(r.reason);
+    setQueue(next);
+  }
+
+  /** Pay for a change to the system now. Null when it worked, else the reason it didn't. */
+  /** The class gallery's picture of the pupil's system (drawn by the Forge). A refusal is quiet: the next build tries again. */
+  async function savePicture(webp: string): Promise<boolean> {
+    const r = await api.savePicture(webp);
+    return r.ok && r.value.saved;
+  }
+
+  async function applyForge(target: SystemDesign): Promise<string | null> {
+    if (lock.current || !loaded) return 'One moment…';
+    lock.current = true;
+    setBusy(true);
+    const r = await flush([{ type: 'forge', design: target }]);
+    setBusy(false);
+    lock.current = false;
+    if (!r.ok) return r.message;
+    setDraft(null);
+    return null;
+  }
+
+  /** The New Season choice: keep the system, or save a picture and start a new one. */
+  async function chooseSeason(pick: 'keep' | 'fresh'): Promise<string | null> {
+    // TODO: for 'fresh', take a photo with the viewer (needs last season's design, which the reply does not carry yet) and send it as the picture.
+    const r = await api.chooseSeason(pick, undefined);
+    if (!r.ok) return r.message;
+    setLoaded(r.value);
+    setNews(r.value.news ?? []);
+    setPrices(r.value.prices ?? []);
+    setQueue([]);
+    setDraft(null);
+    setProblem(null);
+    return null;
   }
 
   /** The next question to ask, if there is one (maths is on and today's list is not used up). */
@@ -481,7 +537,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     if (candidate === 'newday') setWelcome(false);
     else remember((m) => (m.tips.includes(candidate) ? m : { ...m, tips: [...m.tips, candidate] }));
   }, [fitKey, candidate, tip, bolt]); // eslint-disable-line react-hooks/exhaustive-deps
-  const stops = tip && galaxy && t && loaded ? tipStops(tip.id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news }) : [];
+  const stops = tip && galaxy && t && loaded ? tipStops(tip.id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news, forge: forgeOn }) : [];
   const tipStop = tip ? stops[tip.stop] ?? null : null;
   const closeTip = useCallback(() => setTip(null), []);
   const tipCard = tip && tipStop && !asking
@@ -510,7 +566,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   }, []);
   // The first-time tips already shown, to read again in the help panel ("borrow" is only a "Sure?").
   const tipsAgain = galaxy && t && loaded && helpOpen
-    ? coach.tips.filter((id): id is TipId => id !== 'borrow' && TIP_IDS.includes(id as TipId)).map((id) => tipStops(id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news }).map((s) => s.say).join(' '))
+    ? coach.tips.filter((id): id is TipId => id !== 'borrow' && TIP_IDS.includes(id as TipId)).map((id) => tipStops(id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news, forge: forgeOn }).map((s) => s.say).join(' '))
     : [];
   useEffect(() => {
     if (shown) lightUp(root.current, shown.target, lessMotion);
@@ -524,7 +580,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
 
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
-  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart']];
+  const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart'], ...(forgeOn ? [['forge', '🌟 Forge'], ['gallery', '🌌 Gallery']] as [Tab, string][] : [])];
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
   return (
@@ -532,6 +588,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
       <SpaceCanvas ref={view} scene={scene as Scene} lessMotion={lessMotion} simple={prefs.simple} label={label} />
       {problem ? (
         <Problem problem={problem} onRetry={() => void reload()} onExit={onExit} />
+      ) : loaded?.seasonChoice ? (
+        <SeasonChoice choice={loaded.seasonChoice} bolt={level !== 'off'} onPick={chooseSeason} onExit={onExit} />
       ) : !loaded || !game || !t || !here || !galaxy || !settings ? (
         <div className="st-title"><div className="st-title__box" role="status"><h1 className="st-title__h">Star Trader</h1><p className="st-title__p">Getting your ship ready…</p></div></div>
       ) : phase.k === 'title' ? (
@@ -552,8 +610,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
         />
       ) : (
         <>
-          <Hud t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
-          <div className={`st-main ${phase.k === 'planet' && !pending && tab === 'map' ? 'st-main--wide' : ''}`}>
+          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
+          <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
                 <div role="tablist" aria-label="Where to go on the planet" className="st-tabs">
@@ -566,7 +624,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
-                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
+                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
+                {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
+                {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
                 {tab === 'bank' && (
                   <BankPanel
                     t={t}
@@ -659,7 +719,9 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
   );
 }
 
-function Hud({ t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
+function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
+  /** The Forge goal (replaces the moon bar when the Forge is open). */
+  goal: Goal | null;
   t: Game['t'];
   jumpsPerDay: number;
   planet: string;
@@ -695,13 +757,25 @@ function Hud({ t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHel
           ))}
         </span>
       </div>
-      <MoonProgress t={t} />
+      {goal ? <ForgeGoal goal={goal} /> : <MoonProgress t={t} />}
       {t.loan.owed > 0 && <div className="st-hud__item" title="You owe the bank"><span aria-hidden="true">🏦</span><strong>−{t.loan.owed}</strong></div>}
       {/* Bolt's help button never goes away, whatever the help level. */}
       <button ref={help} type="button" className="st-btn st-btn--small st-hud__help" aria-expanded={helpOpen} aria-label={`${COACH_NAME}'s help`} onClick={onHelp} data-coach="help">
         <BoltFace size={22} /> Help
       </button>
     </header>
+  );
+}
+
+/** How close the pupil is to the goal: the next piece of their solar system. */
+function ForgeGoal({ goal }: { goal: Goal }) {
+  return (
+    <div className="st-hud__item st-hud__moon stf-goal" title={goal.text}>
+      <span aria-hidden="true">🌟</span>
+      <span className="stf-goal__text" aria-hidden="true">{goal.text}</span>
+      {goal.need > 0 && <span className="st-moonbar" aria-hidden="true"><i style={{ width: `${goal.pct}%` }} /></span>}
+      <span className="st-sr">{goal.text}</span>
+    </div>
   );
 }
 

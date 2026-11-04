@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Star Forge viewer</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; color: #e8eeff; font: 14px system-ui, sans-serif; }
+      #stage { position: fixed; inset: 0; background: #000; }
+      #bar { position: fixed; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; z-index: 5;
+        background: rgba(8, 12, 28, 0.72); border: 1px solid rgba(140, 170, 255, 0.25); border-radius: 12px; padding: 8px; backdrop-filter: blur(6px); }
+      #bar button, #bar select { font: inherit; color: inherit; background: rgba(40, 60, 120, 0.55); border: 1px solid rgba(150, 180, 255, 0.35); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+      #bar button.on { background: #3d6bff; border-color: #8fb0ff; }
+      #bar .sep { width: 1px; height: 22px; background: rgba(150, 180, 255, 0.3); margin: 0 4px; }
+      #stats { position: fixed; top: 8px; right: 10px; z-index: 5; font: 12px ui-monospace, monospace; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; }
+      #stage:fullscreen ~ #bar { display: none; }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="stats">…</div>
+    <div id="bar"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

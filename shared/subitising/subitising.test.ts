@@ -379,21 +379,49 @@ describe('trials', () => {
 });
 
 describe('placement', () => {
-  it('moves up on right and down on wrong, within 1 to 7', () => {
-    expect(C.placementTrials).toBe(8);
-    expect(placementLevel([])).toBe(3);
-    expect(placementLevel([true, true, true])).toBe(6);
-    expect(placementLevel([true, true, true, true, true, true, true, true])).toBe(7);
-    expect(placementLevel([false, false, false, false])).toBe(1);
-    expect(placementLevel([false, false, false, false, false, false, false, false])).toBe(1);
-    expect(placementLevel([false, true])).toBe(3);
-    expect(startStageFrom([true, true, true, true, true])).toBe(7);
+  /** Plays the check for a student who passes every stage below `firstFail` (both pictures right) and none from it up. */
+  function play(firstFail: number) {
+    const answers: boolean[] = [];
+    const trials = [];
+    while (answers.length < C.placementTrials) {
+      const t = placementTrial(answers, 11);
+      trials.push(t);
+      answers.push(t.stage < firstFail);
+    }
+    return { answers, trials };
+  }
+
+  it('is a binary search of 3 tests: 6 pictures, the first test at stage 4', () => {
+    expect(C.placementTrials).toBe(6);
+    expect(placementLevel([])).toBe(4);
+    for (const firstFail of [1, 2, 3, 4, 5, 6, 7, 8]) expect(play(firstFail).answers).toHaveLength(6);
+    expect(placementTrial([], 5).stage).toBe(4);
+    expect(placementTrial([true], 5).stage).toBe(4);
   });
-  it('shows pictures from the level it is at, with no review', () => {
-    for (let i = 0; i < 30; i++) expect(placementTrial([], 5 + i).stage).toBe(3);
-    for (let i = 0; i < 30; i++) expect(placementTrial([true, true], 5 + i).stage).toBe(5);
-    for (let i = 0; i < 30; i++) expect(placementTrial([true, true, true], 5 + i).activity).toBe('gap');
-    for (let i = 0; i < 30; i++) expect(placementTrial([true, true, true, true], 5 + i).stage).toBe(7);
+  it('lands exactly', () => {
+    expect(startStageFrom([true, true, true, true, true, true])).toBe(7);
+    expect(startStageFrom([false, false, false, false, false, false])).toBe(1);
+    expect(startStageFrom(play(4).answers)).toBe(4); // passes stages 1-3 only
+    expect(startStageFrom(play(6).answers)).toBe(6); // passes 1-5
+    for (let f = 1; f <= 8; f++) expect(startStageFrom(play(f).answers), `first fail ${f}`).toBe(Math.min(f, 7));
+  });
+  it('uses the best guess so far when ended early', () => {
+    expect(startStageFrom([])).toBe(1);
+    expect(startStageFrom([true])).toBe(1);
+    expect(startStageFrom([true, true])).toBe(5);
+    expect(startStageFrom([true, true, true, true])).toBe(7);
+    expect(startStageFrom([false, true])).toBe(1);
+  });
+  it('tests the stage the search is at, with no review, and two different kinds of picture per test', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const { trials } = play(9);
+      expect(trials.map((t) => t.stage)).toEqual([4, 4, 6, 6, 7, 7]);
+      expect(trials[0].type).not.toBe(trials[1].type);
+      expect(trials[2].type).not.toBe(trials[3].type);
+      expect(trials[2].activity).toBe('gap');
+      expect(trials.every((t) => !t.review)).toBe(true);
+      expect(trials[4].key).not.toBe(trials[5].key);
+    }
   });
 });
 

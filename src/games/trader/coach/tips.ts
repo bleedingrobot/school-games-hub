@@ -11,11 +11,11 @@ import { nearestShipyard, timesInTen } from './advice';
 
 export type TipId =
   | 'maths' | 'junk' | 'trader' | 'pirates' | 'pirates-nolaser' | 'customs' | 'wrecked' | 'robbed'
-  | 'shipyard' | 'noyard' | 'bank' | 'borrow' | 'news' | 'jumps' | 'newday';
+  | 'shipyard' | 'noyard' | 'bank' | 'borrow' | 'news' | 'jumps' | 'newday' | 'forge';
 
 export const TIP_IDS: readonly TipId[] = [
   'maths', 'junk', 'trader', 'pirates', 'pirates-nolaser', 'customs', 'wrecked', 'robbed',
-  'shipyard', 'noyard', 'bank', 'borrow', 'news', 'jumps', 'newday',
+  'shipyard', 'noyard', 'bank', 'borrow', 'news', 'jumps', 'newday', 'forge',
 ];
 
 /** One stop of a tip (the shipyard tour has three). `target` is a `data-coach` name to light up. */
@@ -31,6 +31,8 @@ export interface TipContext {
   t: Trader;
   jumpsPerDay: number;
   news: readonly NewsItem[];
+  /** The Star Forge is open (the goal is the pupil's system, not the moon). */
+  forge?: boolean;
 }
 
 export function tipStops(id: TipId, c: TipContext): TipStop[] {
@@ -57,7 +59,7 @@ export function tipStops(id: TipId, c: TipContext): TipStop[] {
       return [
         { say: 'Welcome to the shipyard! Fuel and mending are here.', target: 'ship-fuel' },
         { say: 'Bigger ships carry more cargo. Each one shows its holds next to yours.', target: 'ship-list' },
-        { say: `And this is the moon you're saving for: ${MOON_PRICE.toLocaleString('en-NZ')} credits.`, target: 'ship-moon' },
+        { say: c.forge ? 'And this points to the Forge, where you build your own solar system.' : `And this is the moon you're saving for: ${MOON_PRICE.toLocaleString('en-NZ')} credits.`, target: 'ship-moon' },
       ];
     case 'noyard': {
       const yard = hasShipyard(galaxy, t) ? null : nearestShipyard(galaxy, t);
@@ -71,9 +73,15 @@ export function tipStops(id: TipId, c: TipContext): TipStop[] {
       return [{ say: '📰 This is the school news. When lots of traders sell something on a planet, it gets cheap there. Reading the news helps you find bargains.', target: 'news' }];
     case 'jumps':
       return [{ say: `That's all ${c.jumpsPerDay} jumps for today! Your ship, cargo and credits are saved. See you tomorrow.`, target: 'hud-jumps' }];
+    case 'forge':
+      return [
+        { say: 'Welcome to the Star Forge! Design your own solar system here. Planning is free, and more pieces appear as you earn credits.', target: 'forge-view' },
+        { say: 'Tap the Sun, then + planet. Each card walks you through the choices. Plans look like holograms.', target: 'forge-slots' },
+        { say: 'When you have enough credits, press Build it and a piece turns solid. Trading earns the credits!' },
+      ];
     case 'newday': {
       const pct = Math.min(100, Math.floor((t.credits * 100) / MOON_PRICE));
-      const goal = t.moon ? 'You own a moon! 🌙' : `You're ${pct}% of the way to your moon.`;
+      const goal = c.forge ? 'Your solar system is waiting in the Forge. 🌟' : t.moon ? 'You own a moon! 🌙' : `You're ${pct}% of the way to your moon.`;
       const headline = c.news[0] ? ` 📰 ${c.news[0].text}` : '';
       return [{ say: `Welcome back! A new day: ${t.jumpsLeft} jumps and ${t.credits.toLocaleString('en-NZ')} credits. ${goal}${headline}` }];
     }
@@ -90,7 +98,7 @@ export interface TipMoment {
   after: 'customs' | 'wrecked' | 'robbed' | null;
   /** On the planet with its tabs showing, and First Flight's bubble not in the way. */
   planet: boolean;
-  tab: 'trade' | 'ship' | 'bank' | 'map';
+  tab: 'trade' | 'ship' | 'bank' | 'map' | 'forge' | 'gallery';
   shipyard: boolean;
   loans: boolean;
   hasNews: boolean;
@@ -109,6 +117,7 @@ export function tipsFor(m: TipMoment): TipId[] {
   const ids: TipId[] = [];
   if (m.welcome) ids.push('newday');
   if (m.jumpsLeft < 1) ids.push('jumps');
+  if (m.tab === 'forge') ids.push('forge');
   if (m.tab === 'ship') ids.push(m.shipyard ? 'shipyard' : 'noyard');
   if (m.tab === 'bank' && m.loans) ids.push('bank');
   if (m.tab === 'trade' && m.hasNews) ids.push('news');

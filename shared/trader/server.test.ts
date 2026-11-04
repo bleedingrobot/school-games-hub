@@ -5,6 +5,7 @@ import { makeGalaxy } from './galaxy';
 import { emptyPlan } from './plan';
 import { DEFAULT_SETTINGS, applyBatch, applyDeal, applyFight, applyJunk, newGame, rollDay, type Action, type Game, type Mark, type Reply, type Settings } from './server';
 import { reachable } from './state';
+import { buildAll, emptyDesign, forgeCost, SUNS, type SystemDesign } from './system';
 
 const galaxy = makeGalaxy('server-test');
 const SEED = 'server-test';
@@ -166,3 +167,29 @@ describe('the server applying moves', () => {
     expect(GOODS[WATER]).toBe('Water');
   });
 });
+
+describe('the Star Forge move', () => {
+  const sunOnly = (built: boolean): SystemDesign => buildAll({ ...emptyDesign(), sun: { kind: 'red', name: [0, 0], built } });
+  const open: Settings = { ...DEFAULT_SETTINGS, forge: true };
+
+  it('is refused while the teacher\'s switch is off, and nothing is charged', () => {
+    const g = newGame(galaxy, 1, DEFAULT_SETTINGS);
+    g.t.credits = 50_000;
+    expect(applyBatch(galaxy, SEED, g, [{ type: 'forge', design: sunOnly(true) }], DEFAULT_SETTINGS, noMark).ok).toBe(false);
+  });
+
+  it('charges what building costs, keeps the design, and is refused when the pupil is short or sends a wrong design', () => {
+    const g = newGame(galaxy, 1, open);
+    g.t.credits = SUNS.red.price + 40;
+    const r = ok(applyBatch(galaxy, SEED, g, [{ type: 'forge', design: sunOnly(true) }], open, noMark));
+    expect(r.game.t.credits).toBe(40);
+    expect(r.game.system?.sun?.built).toBe(true);
+    expect(r.forge?.total).toBe(forgeCost(emptyDesign(), sunOnly(true)).total);
+    g.t.credits = SUNS.red.price - 1;
+    expect(applyBatch(galaxy, SEED, g, [{ type: 'forge', design: sunOnly(true) }], open, noMark).ok).toBe(false);
+    g.t.credits = 50_000;
+    const noSun = { ...sunOnly(true), sun: null, planets: [{ ...buildAll({ ...emptyDesign(), planets: [] }).planets[0] }] } as unknown as SystemDesign;
+    expect(applyBatch(galaxy, SEED, g, [{ type: 'forge', design: { ...noSun, v: 2 } as unknown as SystemDesign }], open, noMark).ok).toBe(false);
+  });
+});
+

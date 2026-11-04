@@ -9,6 +9,11 @@
  *   junk   steering through space junk (a maths answer);
  *   deal   a friendly trader's offer, taken or left.
  *
+ * The Star Forge's sharing (docs/TRADER-SYSTEM-PLAN.md, section 7), while the Forge is on:
+ *   gallery  every classmate's system with a built sun (own first), with links to their pictures and the stickers;
+ *   sticker  leave, change or take back a sticker on a classmate's system;
+ *   picture  save the gallery picture the pupil's browser drew (at most once every few minutes).
+ *
  * The school's shared market (stage T.4): prices are read with the school's push when a pupil lands (load and jump) and
  * fixed for the visit; a trade's push on the school's prices is saved in the same database step as the game, so it counts
  * once. The news comes back in the load and jump replies the pupil already gets, never as a request of its own.
@@ -21,7 +26,10 @@ import type { Question } from '../../../shared/maths/skillPack';
 import { publicQuestion, type PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { QUESTIONS_PER_DAY, makeDayQuestions, markQuestion, sameAnswer, type MathsContext } from '../../../shared/trader/questions';
 import type { FactAnswer } from '../../../shared/maths/leitner';
+import { CARRY_MAX_CREDITS } from '../../../shared/trader/config';
 import { makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
+import { designProblem, emptyDesign, forgeCost, nameText, type SystemDesign } from '../../../shared/trader/system';
+import { MAX_PICTURE_BYTES, isSticker, isWebp, type GalleryEntry, type StickerId } from '../../../shared/trader/gallery';
 import {
   applyBatch,
   applyDeal,
@@ -30,8 +38,10 @@ import {
   newGame,
   netWorthOf,
   rollDay,
+  seasonGame,
   type Action,
   type Ask,
+  type Carry,
   type Game,
   type Mark,
   type Reply,
@@ -52,6 +62,12 @@ export interface Saved {
   game: Game;
   version: number;
   season: number;
+}
+
+/** A system saved at the end of last season, waiting for its owner to choose (docs/TRADER-SYSTEM-PLAN.md, 1.2). */
+export interface SeasonSystem {
+  design: SystemDesign;
+  carry: Carry;
 }
 
 export interface StoredDay {
@@ -91,11 +107,28 @@ export interface Services {
   mathsContext(player: string): Promise<MathsContext | null>;
   /** The school's market today (pushes and recent news rows). Null if it can't be read: prices are then normal. */
   market(player: string, day: number): Promise<SchoolView | null>;
+  /** The pupil's system from last season, if they have not chosen what to do with it yet. 'busy' if it can't be read. */
+  seasonSystem(player: string): Promise<SeasonSystem | null | 'busy'>;
+  /** Records the choice (once). A picture path (for 'fresh') adds the picture to the profile album. False if it could not be recorded. */
+  chooseSeason(player: string, choice: 'keep' | 'fresh', picture: string | null, name: string): Promise<boolean>;
   /** Saves; gives the new version, null if the saved game has moved on, 'busy' if the database could not be reached. */
   save(player: string, args: SaveArgs): Promise<number | null | 'busy'>;
   /** Adds answers to the pupil's maths records (counted once by `once`). The game goes on if this fails. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
+  /** The class gallery: classmates' systems with a built sun, own first (without picture links). 'busy' if it can't be read. */
+  gallery(player: string): Promise<GalleryRow[] | 'busy'>;
+  /** Short-lived links to the saved pictures of these players (only those that exist). */
+  pictureLinks(players: string[]): Promise<Record<string, string>>;
+  /** Leaves (or with null takes back) a sticker: 'ok', or why not. */
+  giveSticker(visitor: string, owner: string, sticker: StickerId | null): Promise<'ok' | 'own' | 'class' | 'none' | 'busy'>;
+  /** Notes a picture being saved now: false if the last was too recent or there is no built sun. */
+  mayDraw(player: string): Promise<boolean | 'busy'>;
+  /** Saves the pupil's gallery picture (replacing the last). */
+  storePicture(player: string, webp: Uint8Array): Promise<boolean>;
 }
+
+/** A gallery row as the database gives it: `drawn` says a picture was saved. */
+export type GalleryRow = Omit<GalleryEntry, 'picture'> & { drawn: boolean };
 
 export const MAX_REQUESTS_PER_MINUTE = 90;
 const MAX_ACTIONS = 40;
@@ -169,6 +202,10 @@ export function parseActions(raw: unknown): Action[] | null {
       case 'moon':
         out.push({ type: 'moon' });
         break;
+      case 'forge':
+        // The rules check the whole design (designProblem) before anything is charged.
+        out.push({ type: 'forge', design: a.design as SystemDesign });
+        break;
       case 'jump':
         out.push({ type: 'jump', dest: a.dest as number });
         break;
@@ -181,6 +218,33 @@ export function parseActions(raw: unknown): Action[] | null {
     }
   }
   return out;
+}
+
+/** What the choice screen shows: the system's name and worth, and the ship and credits a fresh start would keep (credits are capped). */
+function seasonChoiceOf(w: SeasonSystem) {
+  return {
+    name: `The ${nameText(w.design.name)} System`,
+    worth: forgeCost(emptyDesign(), w.design).worth,
+    carry: { ship: Number.isInteger(w.carry.ship) ? w.carry.ship : 0, credits: Math.max(0, Math.min(CARRY_MAX_CREDITS, Math.floor(Number(w.carry.credits) || 0))) },
+  };
+}
+
+/** A base64 .webp gallery picture, or null unless it is a small one. */
+function webpOf(raw: unknown): Uint8Array | null {
+  if (typeof raw !== 'string' || raw.length > Math.ceil(MAX_PICTURE_BYTES / 3) * 4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
+  try {
+    const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+    return bytes.length <= MAX_PICTURE_BYTES && isWebp(bytes) ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The saved picture's path: null if there is none, 'bad' unless it is a plain file path inside the pupil's own folder. */
+function pictureOf(raw: unknown, player: string): string | null | 'bad' {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== 'string' || raw.length > 200 || !raw.startsWith(`${player}/`) || raw.includes('..') || !/^[A-Za-z0-9/_.-]+$/.test(raw)) return 'bad';
+  return raw;
 }
 
 export function makeHandler(services: Services) {
@@ -209,7 +273,7 @@ export function makeHandler(services: Services) {
     const school = await services.schoolSeed(player);
     if (!school) return reply(503, { error: "We couldn't load Star Trader just now." });
     const galaxy = galaxyFor(school.seed);
-    const classSettings: Settings = { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths };
+    const classSettings: Settings = { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false };
     /** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
     const readMarket = async (): Promise<SchoolView> => (await services.market(player, today)) ?? EMPTY_VIEW;
     const news = (view: SchoolView): NewsItem[] => newsFor(galaxy, today, view);
@@ -232,12 +296,37 @@ export function makeHandler(services: Services) {
     };
 
     if (body.action === 'load') {
+      // Sent with a load by a pupil whose last season's system is waiting: what to do with it, and (for 'fresh') where the saved picture is.
+      const choice = body.seasonChoice;
+      if (choice !== undefined && choice !== 'keep' && choice !== 'fresh') return reply(400, { error: "That couldn't be read." });
+      const picture = pictureOf(body.picture, player);
+      if (picture === 'bad') return reply(400, { error: "That couldn't be read." });
       const view = await readMarket();
       const pushes = pushesFrom(view);
       for (let attempt = 0; attempt < 2; attempt++) {
         const saved = await services.loadGame(player);
         if (saved === 'busy') return reply(503, { error: "We couldn't load your game just now." });
-        let game = saved?.game ?? newGame(galaxy, today, classSettings, pushes);
+        let game: Game;
+        let chosen: { choice: 'keep' | 'fresh'; name: string } | null = null;
+        if (saved) game = saved.game;
+        else {
+          // No game this season: a system saved at the last New Season waits for its owner's choice, and nothing else happens until it comes.
+          const waiting = await services.seasonSystem(player);
+          if (waiting === 'busy') return reply(503, { error: "We couldn't load your game just now." });
+          if (waiting && !designProblem(waiting.design)) {
+            if (choice !== 'keep' && choice !== 'fresh') {
+              return reply(200, {
+                galaxySeed: school.seed,
+                season: school.season,
+                day: today,
+                seasonChoice: seasonChoiceOf(waiting),
+                settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false },
+              });
+            }
+            game = seasonGame(galaxy, today, classSettings, choice, waiting, pushes);
+            chosen = { choice, name: `The ${nameText(waiting.design.name)} System` };
+          } else game = newGame(galaxy, today, classSettings, pushes);
+        }
         const rolled = rollDay(galaxy, game, today, classSettings, pushes);
         let version = saved?.version ?? 0;
         if (!saved || rolled !== game) {
@@ -256,6 +345,8 @@ export function makeHandler(services: Services) {
           if (newVersion === 'busy') return reply(503, { error: "We couldn't load your game just now." });
           if (newVersion === null) continue;
           version = newVersion;
+          // The game exists now, so the choice is never asked again; if this fails the row just stays pending, unseen.
+          if (chosen && !(await services.chooseSeason(player, chosen.choice, picture, chosen.name))) console.error('trader: the season choice could not be recorded');
         }
         const day = await dayQuestions();
         if (day === 'busy') return reply(503, { error: "We couldn't load your game just now." });
@@ -267,12 +358,40 @@ export function makeHandler(services: Services) {
           version,
           day: today,
           questions,
-          settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths },
+          settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths, forge: settings.forge === true, forgeTyping: settings.forgeTyping !== false },
           news: news(view),
           prices: prices(view),
         });
       }
       return reply(409, { error: 'Your game changed on another screen. Please try again.' });
+    }
+
+    if (body.action === 'gallery' || body.action === 'sticker' || body.action === 'picture') {
+      if (!classSettings.forge) return reply(400, { error: 'The Star Forge is not switched on for your class.' });
+      if (body.action === 'gallery') {
+        const rows = await services.gallery(player);
+        if (rows === 'busy') return reply(503, { error: "We couldn't load the gallery just now." });
+        const shown = rows.filter((r) => r.design && !designProblem(r.design));
+        const links = await services.pictureLinks(shown.filter((r) => r.drawn).map((r) => r.id));
+        const systems: GalleryEntry[] = shown.map(({ drawn: _drawn, ...r }) => ({ ...r, picture: links[r.id] ?? null }));
+        return reply(200, { systems });
+      }
+      if (body.action === 'sticker') {
+        const sticker = body.sticker === null ? null : isSticker(body.sticker) ? body.sticker : undefined;
+        if (sticker === undefined || typeof body.owner !== 'string' || !/^[A-Za-z0-9-]{1,64}$/.test(body.owner)) return reply(400, { error: "That couldn't be read." });
+        const done = await services.giveSticker(player, body.owner, sticker);
+        if (done === 'busy') return reply(503, { error: "We couldn't save that just now." });
+        if (done === 'own') return reply(400, { error: "You can't give your own system a sticker." });
+        if (done === 'class') return reply(400, { error: 'You can only give stickers to classmates.' });
+        if (done === 'none') return reply(400, { error: "That system isn't built yet." });
+        return reply(200, { sticker });
+      }
+      const webp = webpOf(body.picture);
+      if (!webp) return reply(400, { error: "That picture couldn't be read." });
+      const may = await services.mayDraw(player);
+      if (may === 'busy') return reply(503, { error: "We couldn't save that just now." });
+      if (!may) return reply(200, { saved: false });
+      return reply(200, { saved: await services.storePicture(player, webp) });
     }
 
     const requestId = body.requestId;
@@ -289,7 +408,11 @@ export function makeHandler(services: Services) {
 
     const saved = await services.loadGame(player);
     if (saved === 'busy') return reply(503, { error: "We couldn't load your game just now." });
-    if (!saved) return reply(409, { error: 'Open the game first.', stale: true });
+    if (!saved) {
+      const waiting = await services.seasonSystem(player);
+      if (waiting && waiting !== 'busy') return reply(409, { error: 'Choose what to do with your solar system first.', stale: true, seasonChoice: true });
+      return reply(409, { error: 'Open the game first.', stale: true });
+    }
     if (saved.version !== body.version || saved.game.t.day !== today) {
       return reply(409, { error: 'Your game has moved on. Reloading it.', stale: true, version: saved.version });
     }
