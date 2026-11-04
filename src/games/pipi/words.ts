@@ -5,6 +5,8 @@ import type { Level } from '../../../shared/pipi/round';
 const LEVEL_WORDS: Record<Level, string> = { 1: 'up to 5', 2: '6 and 7', 3: 'up to 10' };
 
 export const WORDS = {
+  /** What changes each day, for the next-part chip (src/components/NextPartChip.tsx). */
+  part: 'shell',
   title: "Pipi's Hidden Shells",
   wants: (name: string) => `The tide is coming in! Help ${name} find the pipi hiding in the sand.`,
   nextFriend: (name: string) => `A new beach! Help ${name} find the pipi hiding in the sand.`,

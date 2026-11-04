@@ -4,6 +4,7 @@ import type { BotLevel, GameDefinition } from '../games/types';
 import type { CardMoves } from '../data/movesLeft';
 import { BotLevelPicker } from './BotLevelPicker';
 import { gameCardArt, type GameCardArt } from './gameCardArt';
+import { NextPartChip } from './NextPartChip';
 
 function artStyle(art: GameCardArt, colours: [string, string]): CSSProperties {
   return {
@@ -39,6 +40,7 @@ export function GameCard({
   onLevelChange,
   moves,
   note,
+  nextPartDone,
 }: {
   game: GameDefinition;
   level: BotLevel;
@@ -47,6 +49,8 @@ export function GameCard({
   moves?: CardMoves;
   /** A line of news for today under the tagline (Maths Monsters' spotted monster). */
   note?: string;
+  /** For a daily game (`nextPart`): true once today's part is done, false while it is ready, undefined for no chip. */
+  nextPartDone?: boolean;
 }) {
   const { Icon } = game;
   const art = gameCardArt(game.id);
@@ -67,6 +71,7 @@ export function GameCard({
           <h3 id={`game-${game.id}-title`}>{game.name}</h3>
           <p>{game.tagline}</p>
           {note && <p className="game-card__note">{note}</p>}
+          {game.nextPart && nextPartDone !== undefined && <NextPartChip noun={game.nextPart.noun} done={nextPartDone} />}
         </div>
         {moves && (
           <div className="game-card__moves" aria-label="Moves left today">

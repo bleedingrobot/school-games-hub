@@ -8,6 +8,7 @@ import { showHop, STEPS } from '../../../shared/hop/round';
 import { EARLY_FACTS, type SkipStep } from '../../../shared/maths/skillPacks/earlyFacts';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
+import { nextPartWords } from '../../components/NextPartChip';
 
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/hop/';
@@ -28,7 +29,7 @@ export function finishLine(main: string, stepUp: SkipStep | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain]);
+  const lines = new Set<string>([WORDS.tryAgain, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

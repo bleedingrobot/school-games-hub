@@ -3,6 +3,7 @@
  * first finish changes one magic shell along the high-tide line (bronze, then silver, then gold); thirty days win the
  * Golden Pearl, and a new friend's beach starts. The screens only show what the backend says.
  */
+import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/pipi/play';
 import { beachAfter, DAYS_PER_PEARL, SHELLS } from '../../../shared/pipi/progress';
@@ -160,6 +161,7 @@ function Home({ state, say, onPlay }: { state: PipiState; say: (t: string) => vo
         <p className="pp-title">{WORDS.title}</p>
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="pp-day">{WORDS.dayCount(Math.min(beach.day + 1, DAYS_PER_PEARL))}</p>
+        <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="pp-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play pp-play-button" onClick={onPlay}>

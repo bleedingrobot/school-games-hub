@@ -3,6 +3,7 @@
  * changes one magic lily pad (bronze, then silver, then gold); thirty days bring Hop to the Glow-worm Party and win the
  * Golden Glow Jar, and a new friend crosses a fresh pond. The screens only show what the backend says.
  */
+import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/hop/play';
 import { DAYS_PER_JAR, METALS, PADS, pondAfter } from '../../../shared/hop/progress';
@@ -159,6 +160,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
       <div className="hp-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="hp-day">{WORDS.dayCount(Math.min(pond.day + 1, DAYS_PER_JAR))}</p>
+        <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="hp-chip">{WORDS.counting(state.step)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play hp-play-button" onClick={onPlay}>

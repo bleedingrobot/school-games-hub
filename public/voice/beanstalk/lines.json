@@ -16,6 +16,14 @@
   "text": "Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
+  "slug": "today-s-leaf-is-ready",
+  "text": "Today’s leaf is ready"
+ },
+ {
+  "slug": "next-leaf-tomorrow",
+  "text": "Next leaf tomorrow"
+ },
+ {
   "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
   "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 10 to help."
  },
