@@ -2550,12 +2550,100 @@ main:focus {
   letter-spacing: 0.03em;
   color: var(--h-label);
 }
-.game-group__label::after {
-  content: '';
+/* Each heading folds its section away or opens it again; each person's choice is kept (James, 4 Nov 2026). */
+.game-group__toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.game-group__toggle:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.game-group__line {
   flex: 1;
   height: 2px;
   border-radius: 2px;
   background: var(--h-label-line);
+}
+.game-group__count {
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+.game-group__chevron {
+  padding: 2px 10px;
+  border: 2px solid var(--h-label-line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+.game-group__chevron::after {
+  content: ' ▴';
+}
+.game-group.is-collapsed .game-group__chevron::after {
+  content: ' ▾';
+}
+.game-group__toggle:hover .game-group__chevron {
+  background: var(--h-label-line);
+}
+.game-group__body {
+  display: grid;
+  gap: 10px;
+}
+.game-group__body[hidden] {
+  display: none;
+}
+.game-group__empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--h-label);
+  opacity: 0.8;
+}
+/* "Pin to top" on each card, in its top corner. */
+.game-card__pin {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #1e293b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+}
+.game-card__pin input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #be185d;
+  cursor: pointer;
+}
+.game-card__pin.is-pinned {
+  background: #fde68a;
+}
+.game-card__pin:focus-within {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
 }
 .game-grid {
   display: grid;
@@ -3072,26 +3160,29 @@ main:focus {
 }
 
 /* Soft and bright: white cards with a colour band on top, and coloured groups. */
-[data-hub-theme='soft'] .game-group__label span {
+[data-hub-theme='soft'] .game-group__name {
   padding: 2px 12px;
   border-radius: 999px;
   color: #ffffff;
   font-size: 0.85rem;
 }
-[data-hub-theme='soft'] .game-group--foundational .game-group__label span {
+[data-hub-theme='soft'] .game-group--foundational .game-group__name {
   background: #be185d;
 }
-[data-hub-theme='soft'] .game-group--no-maths .game-group__label span {
+[data-hub-theme='soft'] .game-group--no-maths .game-group__name {
   background: #0e7490;
 }
-[data-hub-theme='soft'] .game-group--easy-maths .game-group__label span {
+[data-hub-theme='soft'] .game-group--easy-maths .game-group__name {
   background: #b45309;
 }
-[data-hub-theme='soft'] .game-group--complex-maths .game-group__label span {
+[data-hub-theme='soft'] .game-group--complex-maths .game-group__name {
   background: #6d28d9;
 }
-[data-hub-theme='soft'] .game-group--training .game-group__label span {
+[data-hub-theme='soft'] .game-group--training .game-group__name {
   background: #15803d;
+}
+[data-hub-theme='soft'] .game-group--pinned .game-group__name {
+  background: #a16207;
 }
 
 /* Game menu: a bright edge on each card, and a glow on hover. */

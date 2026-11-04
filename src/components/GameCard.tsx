@@ -14,6 +14,25 @@ function artStyle(art: GameCardArt, colours: [string, string]): CSSProperties {
   } as CSSProperties;
 }
 
+/** The "Pin to top" tick box in a card's top corner. Not shown where nothing can be pinned (no onPinChange). */
+export function PinBox({ id, name, pinned, onPinChange }: { id: string; name: string; pinned: boolean; onPinChange: (pinned: boolean) => void }) {
+  return (
+    <label className={pinned ? 'game-card__pin is-pinned' : 'game-card__pin'} title={pinned ? 'Unpin' : 'Pin to top'}>
+      <input
+        type="checkbox"
+        checked={pinned}
+        onChange={(e) => onPinChange(e.target.checked)}
+        aria-label={`Pin ${name} to top`}
+        data-pin={id}
+      />
+      <span aria-hidden="true">📌</span>
+      <span className="game-card__pin-text" aria-hidden="true">
+        {pinned ? 'Pinned' : 'Pin to top'}
+      </span>
+    </label>
+  );
+}
+
 function CardPic({ art }: { art: GameCardArt }) {
   return (
     <img
@@ -39,6 +58,8 @@ export function GameCard({
   onLevelChange,
   moves,
   note,
+  pinned = false,
+  onPinChange,
 }: {
   game: GameDefinition;
   level: BotLevel;
@@ -47,6 +68,9 @@ export function GameCard({
   moves?: CardMoves;
   /** A line of news for today under the tagline (Maths Monsters' spotted monster). */
   note?: string;
+  /** Pinned to the top of the home page, and how to change it (no tick box without it). */
+  pinned?: boolean;
+  onPinChange?: (pinned: boolean) => void;
 }) {
   const { Icon } = game;
   const art = gameCardArt(game.id);
@@ -62,6 +86,7 @@ export function GameCard({
           <Icon size={44} />
         </div>
       )}
+      {onPinChange && <PinBox id={game.id} name={game.name} pinned={pinned} onPinChange={onPinChange} />}
       <div className="game-card__body">
         <div className="game-card__text">
           <h3 id={`game-${game.id}-title`}>{game.name}</h3>
@@ -113,18 +138,23 @@ export function ActivityCard({
   tagline,
   to,
   colours,
+  pinned = false,
+  onPinChange,
 }: {
   id: string;
   name: string;
   tagline: string;
   to: string;
   colours: [string, string];
+  pinned?: boolean;
+  onPinChange?: (pinned: boolean) => void;
 }) {
   const art = gameCardArt(id);
   const style = art ? artStyle(art, colours) : ({ '--card-a': colours[0], '--card-b': colours[1] } as CSSProperties);
   return (
     <article className={art ? 'game-card game-card--art' : 'game-card'} style={style} aria-labelledby={`game-${id}-title`}>
       {art ? <CardPic art={art} /> : <div className="game-card__pic game-card__pic--none" aria-hidden="true" />}
+      {onPinChange && <PinBox id={id} name={name} pinned={pinned} onPinChange={onPinChange} />}
       <div className="game-card__body">
         <div className="game-card__text">
           <h3 id={`game-${id}-title`}>{name}</h3>

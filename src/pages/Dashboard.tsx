@@ -22,6 +22,7 @@ import { trainingOn } from '../training/switch';
 import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
+import { useHomeLayout } from '../data/homeLayout';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
 // The teacher pages and older tests still find these here.
@@ -127,6 +128,58 @@ function GoingLine({ emoji, to, children }: { emoji: ReactNode; to: string; chil
   );
 }
 
+/** A card on the home page and the group it sits in. */
+interface Tile {
+  id: string;
+  group: DashboardGroup | undefined;
+  card: ReactNode;
+}
+
+/**
+ * One section of games: a heading that folds it away or opens it again, and what is in it. While it is folded the heading
+ * says how many games are inside.
+ */
+function GameGroup({
+  id,
+  title,
+  count,
+  collapsed,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  count?: number;
+  collapsed: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`game-group game-group--${id}${collapsed ? ' is-collapsed' : ''}`}>
+      <h3 className="game-group__label">
+        <button type="button" className="game-group__toggle" aria-expanded={!collapsed} aria-controls={`games-${id}`} onClick={onToggle}>
+          <span className="game-group__name">
+            {id === 'pinned' && <span aria-hidden="true">📌 </span>}
+            {title}
+          </span>
+          {collapsed && count !== undefined && count > 0 && (
+            <span className="game-group__count">
+              {count} game{count === 1 ? '' : 's'}
+            </span>
+          )}
+          <span className="game-group__line" aria-hidden="true" />
+          <span className="game-group__chevron" aria-hidden="true">
+            {collapsed ? 'Show' : 'Hide'}
+          </span>
+        </button>
+      </h3>
+      <div id={`games-${id}`} className="game-group__body" hidden={collapsed}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard() {
   const { profile } = useAuth();
   const meId = profile?.id;
@@ -158,6 +211,51 @@ export function Dashboard() {
   // Training before games: the cards still open (to the "Training first" screen), but look resting until a session is done.
   const gate = useTrainingGate();
   const gamesLocked = trainingOn() && gate.ready && gate.locked;
+
+  // Each person's own layout: folded-away sections and games pinned to the top (James, 4 Nov 2026).
+  const { isCollapsed, toggleCollapsed, isPinned, togglePinned, layout } = useHomeLayout(meId);
+  // Every card on the page, with the group it belongs in. A pinned card moves to Pinned, at the top.
+  const tiles: Tile[] = shownGames
+    .filter((game) => GAME_GROUPS.some((g) => g.group === game.group))
+    .map((game) => ({
+      id: game.id,
+      group: game.group,
+      card: (
+        <GameCard
+          key={game.id}
+          game={game}
+          level={levelFor(game.id)}
+          moves={moves[game.id]}
+          note={game.id === 'monsters' ? spottedNote(nzDay(Date.now())) : undefined}
+          onLevelChange={(level) => {
+            setLevels((prev) => ({ ...prev, [game.id]: level }));
+            setFeatured(game.id);
+          }}
+          pinned={isPinned(game.id)}
+          onPinChange={() => togglePinned(game.id)}
+        />
+      ),
+    }));
+  // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026).
+  if (trainingOn())
+    tiles.push({
+      id: 'quick-looks',
+      group: 'foundational',
+      card: (
+        <ActivityCard
+          key="quick-looks"
+          id="quick-looks"
+          name="Quick looks"
+          tagline="Flash a picture, tap how many you saw"
+          to="/training?quick=1"
+          colours={['#4f9e45', '#8fcdf0']}
+          pinned={isPinned('quick-looks')}
+          onPinChange={() => togglePinned('quick-looks')}
+        />
+      ),
+    });
+  // In the order they were pinned (a pinned game the class can't see right now just waits).
+  const pinnedTiles = layout.pinned.flatMap((id) => tiles.filter((t) => t.id === id));
 
   return (
     <div className="dashboard">
@@ -233,20 +331,28 @@ export function Dashboard() {
         <h2 id="games-title" className="sr-only">
           Pick a game
         </h2>
+        {pinnedTiles.length > 0 && (
+          <GameGroup id="pinned" title="Pinned" count={pinnedTiles.length} collapsed={isCollapsed('pinned')} onToggle={() => toggleCollapsed('pinned')}>
+            <div className="game-grid">{pinnedTiles.map((tile) => tile.card)}</div>
+          </GameGroup>
+        )}
         {GAME_GROUPS.map((group) => {
-          const groupGames = shownGames.filter((g) => g.group === group.group);
+          const groupTiles = tiles.filter((t) => t.group === group.group && !isPinned(t.id));
           // Training sits under the non-maths games, and stays when they are switched off.
           const training = group.group === 'no-maths' && trainingOn();
-          // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026).
-          const quickLooks = group.group === 'foundational' && trainingOn();
-          if (groupGames.length === 0 && !training && !quickLooks) return null;
+          // A group whose games are all pinned keeps its heading, so it is clear where they went.
+          const hasGames = tiles.some((t) => t.group === group.group);
+          if (!hasGames && !training) return null;
           return (
             <Fragment key={group.title}>
-              {(groupGames.length > 0 || quickLooks) && (
-                <div className={`game-group game-group--${group.group}`}>
-                  <h3 className="game-group__label">
-                    <span>{group.title}</span>
-                  </h3>
+              {hasGames && (
+                <GameGroup
+                  id={group.group}
+                  title={group.title}
+                  count={groupTiles.length}
+                  collapsed={isCollapsed(group.group)}
+                  onToggle={() => toggleCollapsed(group.group)}
+                >
                   {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
                       Dragon Maths', side by side on wide screens. */}
                   {group.group === 'complex-maths' && (seasonShown || lordSeasonShown) && (
@@ -257,38 +363,16 @@ export function Dashboard() {
                       </Suspense>
                     </div>
                   )}
-                  <div className="game-grid">
-                    {groupGames.map((game) => (
-                      <GameCard
-                        key={game.id}
-                        game={game}
-                        level={levelFor(game.id)}
-                        moves={moves[game.id]}
-                        note={game.id === 'monsters' ? spottedNote(nzDay(Date.now())) : undefined}
-                        onLevelChange={(level) => {
-                          setLevels((prev) => ({ ...prev, [game.id]: level }));
-                          setFeatured(game.id);
-                        }}
-                      />
-                    ))}
-                    {quickLooks && (
-                      <ActivityCard
-                        id="quick-looks"
-                        name="Quick looks"
-                        tagline="Flash a picture, tap how many you saw"
-                        to="/training?quick=1"
-                        colours={['#4f9e45', '#8fcdf0']}
-                      />
-                    )}
-                  </div>
-                </div>
+                  {groupTiles.length > 0 ? (
+                    <div className="game-grid">{groupTiles.map((tile) => tile.card)}</div>
+                  ) : (
+                    <p className="game-group__empty">All pinned to the top.</p>
+                  )}
+                </GameGroup>
               )}
               {/* Training has a line of its own, under the non-maths games. */}
               {training && (
-                <div className="game-group game-group--training">
-                  <h3 className="game-group__label">
-                    <span>Training</span>
-                  </h3>
+                <GameGroup id="training" title="Training" collapsed={isCollapsed('training')} onToggle={() => toggleCollapsed('training')}>
                   <div className="game-grid">
                     <Link to="/training" className="link-tile">
                       <span className="link-tile__emoji" aria-hidden="true">
@@ -300,7 +384,7 @@ export function Dashboard() {
                       </span>
                     </Link>
                   </div>
-                </div>
+                </GameGroup>
               )}
             </Fragment>
           );
