@@ -280,6 +280,22 @@ describe('the battle screen', () => {
     await user.click(screen.getByRole('checkbox', { name: /Multiple choice/ }));
     expect(JSON.parse(localStorage.getItem('sgh-monsters-settings')!)).toEqual({ calm: true, multipleChoice: true });
   });
+
+  it('Settings opens the strong and weak chart, and closing it goes back to the battle', async () => {
+    const { user } = setup(wild());
+    await passMessages(user);
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('button', { name: 'Who is strong against who?' }));
+    const chart = screen.getByRole('dialog', { name: 'Strong and weak' });
+    expect(within(chart).getByRole('img', { name: /Leaf is strong against Water/ })).toBeInTheDocument();
+    // The battle's number keys wait while the chart is open.
+    await user.keyboard('1');
+    expect(screen.getByRole('dialog', { name: 'Strong and weak' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fight' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Strong and weak' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fight' })).toBeInTheDocument();
+  });
 });
 
 describe('what the battle writes down for saving', () => {

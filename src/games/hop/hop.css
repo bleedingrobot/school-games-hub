@@ -171,7 +171,7 @@
   padding: 10px 10px 16px;
   box-sizing: border-box;
 }
-.hp-progress { display: flex; gap: 8px; padding: 14px 8px 0; align-self: flex-start; position: relative; }
+.hp-progress { display: flex; gap: 8px; padding: 14px 8px 0; position: relative; }
 .hp-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.25); border: 2px solid rgb(255 255 255 / 0.5); }
 .hp-pip--done { background: var(--hp-glow); border-color: #fff; box-shadow: 0 0 10px 2px #7fe8ff; }
 .hp-ask { margin: 8px 0 0; padding: 6px 20px; border-radius: 999px; background: var(--hp-panel); font: 800 clamp(1.2rem, 3vw, 1.8rem) system-ui, sans-serif; position: relative; }
@@ -179,7 +179,7 @@
 .hp-row {
   --hp-pad-size: clamp(64px, min(15vw, 20vh), 150px);
   position: relative;
-  width: min(96vw, calc(var(--hp-n) * var(--hp-pad-size) * 1.45));
+  width: min(100%, calc(var(--hp-n) * var(--hp-pad-size) * 1.45));
   height: calc(var(--hp-pad-size) * 2);
   animation: hp-slide 0.5s ease-out;
 }
@@ -272,4 +272,32 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .hp-hand { animation: none; }
+}
+
+/* The hundreds board helper: a button beside the hop counter opens a 1-100 board; a tapped number lights up gold. */
+.hp-top { align-self: flex-start; position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 14px; }
+.hp-board-toggle { margin-top: 6px; }
+.hp-board {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  width: min(440px, calc(100vw - 32px));
+  padding: 10px; box-sizing: border-box; border-radius: 18px;
+  background: var(--hp-panel); border: 3px solid var(--hp-teal-dark); box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+.hp-board__grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.hp-board__cell {
+  aspect-ratio: 1; min-width: 0; padding: 0; border: 1px solid #b9d8dc; border-radius: 6px;
+  background: #fff; color: var(--hp-ink); font: 800 clamp(0.75rem, 3vw, 1.05rem) system-ui, sans-serif; cursor: pointer;
+}
+.hp-board__cell--ten { background: #eef8fa; }
+.hp-board__cell--lit { background: var(--hp-gold); border-color: #b58b00; box-shadow: 0 0 8px 2px rgb(245 197 24 / 0.7); }
+.hp-board__cell:focus-visible, .hp-board__clear:focus-visible { outline: 3px solid var(--hp-teal-dark); outline-offset: 1px; }
+.hp-board__clear {
+  margin-top: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 2px solid var(--hp-teal-dark);
+  background: #fff; color: var(--hp-ink); font: 700 1rem system-ui, sans-serif; cursor: pointer;
+}
+/* On a wide screen the board sits beside the pond, and the pads and glow-worms move over to make room for it. */
+@media (min-width: 900px) {
+  .hp-top { position: static; }
+  .hp-board { top: 76px; left: 10px; z-index: 6; width: min(440px, 36vw); }
+  .hp-play:has(.hp-board) { padding-left: calc(min(440px, 36vw) + 24px); }
 }

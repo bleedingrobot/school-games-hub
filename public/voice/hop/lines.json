@@ -1,0 +1,1250 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "hop-wants-to-get-to-the-glow-worm-party-help-hop-hop-across-the-pond",
+  "text": "Hop wants to get to the Glow-worm Party! Help Hop hop across the pond."
+ },
+ {
+  "slug": "hop-wants-to-get-to-the-glow-worm-party-help-hop-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Hop wants to get to the Glow-worm Party! Help Hop hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-hop-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Hop needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-hop-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Hop needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "gecko-wants-to-get-to-the-glow-worm-party-help-gecko-hop-across-the-pond",
+  "text": "Gecko wants to get to the Glow-worm Party! Help Gecko hop across the pond."
+ },
+ {
+  "slug": "gecko-wants-to-get-to-the-glow-worm-party-help-gecko-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Gecko wants to get to the Glow-worm Party! Help Gecko hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-gecko-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Gecko needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-gecko-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Gecko needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "weta-wants-to-get-to-the-glow-worm-party-help-weta-hop-across-the-pond",
+  "text": "Wētā wants to get to the Glow-worm Party! Help Wētā hop across the pond."
+ },
+ {
+  "slug": "weta-wants-to-get-to-the-glow-worm-party-help-weta-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Wētā wants to get to the Glow-worm Party! Help Wētā hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-weta-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Wētā needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-weta-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Wētā needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "tuatara-wants-to-get-to-the-glow-worm-party-help-tuatara-hop-across-the-pond",
+  "text": "Tuatara wants to get to the Glow-worm Party! Help Tuatara hop across the pond."
+ },
+ {
+  "slug": "tuatara-wants-to-get-to-the-glow-worm-party-help-tuatara-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Tuatara wants to get to the Glow-worm Party! Help Tuatara hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-tuatara-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Tuatara needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-tuatara-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Tuatara needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "kiwi-wants-to-get-to-the-glow-worm-party-help-kiwi-hop-across-the-pond",
+  "text": "Kiwi wants to get to the Glow-worm Party! Help Kiwi hop across the pond."
+ },
+ {
+  "slug": "kiwi-wants-to-get-to-the-glow-worm-party-help-kiwi-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Kiwi wants to get to the Glow-worm Party! Help Kiwi hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-kiwi-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Kiwi needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-kiwi-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Kiwi needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "ruru-wants-to-get-to-the-glow-worm-party-help-ruru-hop-across-the-pond",
+  "text": "Ruru wants to get to the Glow-worm Party! Help Ruru hop across the pond."
+ },
+ {
+  "slug": "ruru-wants-to-get-to-the-glow-worm-party-help-ruru-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Ruru wants to get to the Glow-worm Party! Help Ruru hop across the pond. Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "now-ruru-needs-to-cross-a-new-pond-to-the-party",
+  "text": "Now Ruru needs to cross a new pond to the party!"
+ },
+ {
+  "slug": "now-ruru-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Now Ruru needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "counting-in-tens-0-something-20-30-what-is-missing",
+  "text": "Counting in tens: 0, something, 20, 30. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-0-something-20-30-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 0, something, 20, 30. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "10",
+  "text": "10!"
+ },
+ {
+  "slug": "counting-in-tens-10-something-30-40-what-is-missing",
+  "text": "Counting in tens: 10, something, 30, 40. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-10-something-30-40-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 10, something, 30, 40. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "20",
+  "text": "20!"
+ },
+ {
+  "slug": "counting-in-tens-0-10-something-30-what-is-missing",
+  "text": "Counting in tens: 0, 10, something, 30. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-0-10-something-30-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 0, 10, something, 30. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-20-something-40-50-what-is-missing",
+  "text": "Counting in tens: 20, something, 40, 50. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-20-something-40-50-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 20, something, 40, 50. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "30",
+  "text": "30!"
+ },
+ {
+  "slug": "counting-in-tens-10-20-something-40-what-is-missing",
+  "text": "Counting in tens: 10, 20, something, 40. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-10-20-something-40-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 10, 20, something, 40. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-30-something-50-60-what-is-missing",
+  "text": "Counting in tens: 30, something, 50, 60. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-30-something-50-60-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 30, something, 50, 60. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "40",
+  "text": "40!"
+ },
+ {
+  "slug": "counting-in-tens-20-30-something-50-what-is-missing",
+  "text": "Counting in tens: 20, 30, something, 50. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-20-30-something-50-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 20, 30, something, 50. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-40-something-60-70-what-is-missing",
+  "text": "Counting in tens: 40, something, 60, 70. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-40-something-60-70-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 40, something, 60, 70. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "50",
+  "text": "50!"
+ },
+ {
+  "slug": "counting-in-tens-30-40-something-60-what-is-missing",
+  "text": "Counting in tens: 30, 40, something, 60. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-30-40-something-60-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 30, 40, something, 60. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-50-something-70-80-what-is-missing",
+  "text": "Counting in tens: 50, something, 70, 80. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-50-something-70-80-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 50, something, 70, 80. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "60",
+  "text": "60!"
+ },
+ {
+  "slug": "counting-in-tens-40-50-something-70-what-is-missing",
+  "text": "Counting in tens: 40, 50, something, 70. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-40-50-something-70-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 40, 50, something, 70. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-60-something-80-90-what-is-missing",
+  "text": "Counting in tens: 60, something, 80, 90. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-60-something-80-90-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 60, something, 80, 90. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "70",
+  "text": "70!"
+ },
+ {
+  "slug": "counting-in-tens-50-60-something-80-what-is-missing",
+  "text": "Counting in tens: 50, 60, something, 80. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-50-60-something-80-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 50, 60, something, 80. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-70-something-90-100-what-is-missing",
+  "text": "Counting in tens: 70, something, 90, 100. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-70-something-90-100-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 70, something, 90, 100. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "80",
+  "text": "80!"
+ },
+ {
+  "slug": "counting-in-tens-60-70-something-90-what-is-missing",
+  "text": "Counting in tens: 60, 70, something, 90. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-60-70-something-90-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 60, 70, something, 90. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-70-80-something-100-what-is-missing",
+  "text": "Counting in tens: 70, 80, something, 100. What is missing?"
+ },
+ {
+  "slug": "counting-in-tens-70-80-something-100-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 70, 80, something, 100. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "90",
+  "text": "90!"
+ },
+ {
+  "slug": "counting-in-tens-0-10-20-what-comes-next",
+  "text": "Counting in tens: 0, 10, 20. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-0-10-20-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 0, 10, 20. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-10-20-30-what-comes-next",
+  "text": "Counting in tens: 10, 20, 30. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-10-20-30-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 10, 20, 30. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-0-10-20-30-what-comes-next",
+  "text": "Counting in tens: 0, 10, 20, 30. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-0-10-20-30-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 0, 10, 20, 30. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-20-30-40-what-comes-next",
+  "text": "Counting in tens: 20, 30, 40. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-20-30-40-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 20, 30, 40. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-10-20-30-40-what-comes-next",
+  "text": "Counting in tens: 10, 20, 30, 40. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-10-20-30-40-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 10, 20, 30, 40. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-30-40-50-what-comes-next",
+  "text": "Counting in tens: 30, 40, 50. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-30-40-50-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 30, 40, 50. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-20-30-40-50-what-comes-next",
+  "text": "Counting in tens: 20, 30, 40, 50. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-20-30-40-50-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 20, 30, 40, 50. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-40-50-60-what-comes-next",
+  "text": "Counting in tens: 40, 50, 60. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-40-50-60-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 40, 50, 60. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-30-40-50-60-what-comes-next",
+  "text": "Counting in tens: 30, 40, 50, 60. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-30-40-50-60-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 30, 40, 50, 60. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-50-60-70-what-comes-next",
+  "text": "Counting in tens: 50, 60, 70. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-50-60-70-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 50, 60, 70. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-40-50-60-70-what-comes-next",
+  "text": "Counting in tens: 40, 50, 60, 70. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-40-50-60-70-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 40, 50, 60, 70. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-60-70-80-what-comes-next",
+  "text": "Counting in tens: 60, 70, 80. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-60-70-80-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 60, 70, 80. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-50-60-70-80-what-comes-next",
+  "text": "Counting in tens: 50, 60, 70, 80. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-50-60-70-80-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 50, 60, 70, 80. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-tens-70-80-90-what-comes-next",
+  "text": "Counting in tens: 70, 80, 90. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-70-80-90-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 70, 80, 90. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "100",
+  "text": "100!"
+ },
+ {
+  "slug": "counting-in-tens-60-70-80-90-what-comes-next",
+  "text": "Counting in tens: 60, 70, 80, 90. What comes next?"
+ },
+ {
+  "slug": "counting-in-tens-60-70-80-90-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in tens: 60, 70, 80, 90. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-back-in-tens-30-20-something-0-what-is-missing",
+  "text": "Counting back in tens: 30, 20, something, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-30-something-10-0-what-is-missing",
+  "text": "Counting back in tens: 30, something, 10, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-40-30-something-10-what-is-missing",
+  "text": "Counting back in tens: 40, 30, something, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-40-something-20-10-what-is-missing",
+  "text": "Counting back in tens: 40, something, 20, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-50-40-something-20-what-is-missing",
+  "text": "Counting back in tens: 50, 40, something, 20. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-50-something-30-20-what-is-missing",
+  "text": "Counting back in tens: 50, something, 30, 20. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-60-50-something-30-what-is-missing",
+  "text": "Counting back in tens: 60, 50, something, 30. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-60-something-40-30-what-is-missing",
+  "text": "Counting back in tens: 60, something, 40, 30. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-70-60-something-40-what-is-missing",
+  "text": "Counting back in tens: 70, 60, something, 40. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-70-something-50-40-what-is-missing",
+  "text": "Counting back in tens: 70, something, 50, 40. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-80-70-something-50-what-is-missing",
+  "text": "Counting back in tens: 80, 70, something, 50. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-80-something-60-50-what-is-missing",
+  "text": "Counting back in tens: 80, something, 60, 50. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-90-80-something-60-what-is-missing",
+  "text": "Counting back in tens: 90, 80, something, 60. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-90-something-70-60-what-is-missing",
+  "text": "Counting back in tens: 90, something, 70, 60. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-100-90-something-70-what-is-missing",
+  "text": "Counting back in tens: 100, 90, something, 70. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-tens-100-something-80-70-what-is-missing",
+  "text": "Counting back in tens: 100, something, 80, 70. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-0-something-10-15-what-is-missing",
+  "text": "Counting in fives: 0, something, 10, 15. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-0-something-10-15-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 0, something, 10, 15. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "5",
+  "text": "5!"
+ },
+ {
+  "slug": "counting-in-fives-5-something-15-20-what-is-missing",
+  "text": "Counting in fives: 5, something, 15, 20. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-5-something-15-20-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 5, something, 15, 20. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-0-5-something-15-what-is-missing",
+  "text": "Counting in fives: 0, 5, something, 15. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-0-5-something-15-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 0, 5, something, 15. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-10-something-20-25-what-is-missing",
+  "text": "Counting in fives: 10, something, 20, 25. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-10-something-20-25-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 10, something, 20, 25. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "15",
+  "text": "15!"
+ },
+ {
+  "slug": "counting-in-fives-5-10-something-20-what-is-missing",
+  "text": "Counting in fives: 5, 10, something, 20. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-5-10-something-20-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 5, 10, something, 20. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-15-something-25-30-what-is-missing",
+  "text": "Counting in fives: 15, something, 25, 30. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-15-something-25-30-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 15, something, 25, 30. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-10-15-something-25-what-is-missing",
+  "text": "Counting in fives: 10, 15, something, 25. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-10-15-something-25-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 10, 15, something, 25. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-20-something-30-35-what-is-missing",
+  "text": "Counting in fives: 20, something, 30, 35. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-20-something-30-35-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 20, something, 30, 35. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "25",
+  "text": "25!"
+ },
+ {
+  "slug": "counting-in-fives-15-20-something-30-what-is-missing",
+  "text": "Counting in fives: 15, 20, something, 30. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-15-20-something-30-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 15, 20, something, 30. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-25-something-35-40-what-is-missing",
+  "text": "Counting in fives: 25, something, 35, 40. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-25-something-35-40-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 25, something, 35, 40. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-20-25-something-35-what-is-missing",
+  "text": "Counting in fives: 20, 25, something, 35. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-20-25-something-35-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 20, 25, something, 35. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-30-something-40-45-what-is-missing",
+  "text": "Counting in fives: 30, something, 40, 45. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-30-something-40-45-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 30, something, 40, 45. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "35",
+  "text": "35!"
+ },
+ {
+  "slug": "counting-in-fives-25-30-something-40-what-is-missing",
+  "text": "Counting in fives: 25, 30, something, 40. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-25-30-something-40-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 25, 30, something, 40. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-35-something-45-50-what-is-missing",
+  "text": "Counting in fives: 35, something, 45, 50. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-35-something-45-50-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 35, something, 45, 50. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-30-35-something-45-what-is-missing",
+  "text": "Counting in fives: 30, 35, something, 45. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-30-35-something-45-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 30, 35, something, 45. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-35-40-something-50-what-is-missing",
+  "text": "Counting in fives: 35, 40, something, 50. What is missing?"
+ },
+ {
+  "slug": "counting-in-fives-35-40-something-50-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 35, 40, something, 50. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "45",
+  "text": "45!"
+ },
+ {
+  "slug": "counting-in-fives-0-5-10-what-comes-next",
+  "text": "Counting in fives: 0, 5, 10. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-0-5-10-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 0, 5, 10. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-5-10-15-what-comes-next",
+  "text": "Counting in fives: 5, 10, 15. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-5-10-15-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 5, 10, 15. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-0-5-10-15-what-comes-next",
+  "text": "Counting in fives: 0, 5, 10, 15. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-0-5-10-15-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 0, 5, 10, 15. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-10-15-20-what-comes-next",
+  "text": "Counting in fives: 10, 15, 20. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-10-15-20-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 10, 15, 20. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-5-10-15-20-what-comes-next",
+  "text": "Counting in fives: 5, 10, 15, 20. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-5-10-15-20-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 5, 10, 15, 20. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-15-20-25-what-comes-next",
+  "text": "Counting in fives: 15, 20, 25. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-15-20-25-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 15, 20, 25. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-10-15-20-25-what-comes-next",
+  "text": "Counting in fives: 10, 15, 20, 25. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-10-15-20-25-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 10, 15, 20, 25. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-20-25-30-what-comes-next",
+  "text": "Counting in fives: 20, 25, 30. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-20-25-30-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 20, 25, 30. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-15-20-25-30-what-comes-next",
+  "text": "Counting in fives: 15, 20, 25, 30. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-15-20-25-30-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 15, 20, 25, 30. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-25-30-35-what-comes-next",
+  "text": "Counting in fives: 25, 30, 35. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-25-30-35-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 25, 30, 35. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-20-25-30-35-what-comes-next",
+  "text": "Counting in fives: 20, 25, 30, 35. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-20-25-30-35-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 20, 25, 30, 35. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-30-35-40-what-comes-next",
+  "text": "Counting in fives: 30, 35, 40. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-30-35-40-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 30, 35, 40. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-25-30-35-40-what-comes-next",
+  "text": "Counting in fives: 25, 30, 35, 40. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-25-30-35-40-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 25, 30, 35, 40. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-35-40-45-what-comes-next",
+  "text": "Counting in fives: 35, 40, 45. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-35-40-45-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 35, 40, 45. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-fives-30-35-40-45-what-comes-next",
+  "text": "Counting in fives: 30, 35, 40, 45. What comes next?"
+ },
+ {
+  "slug": "counting-in-fives-30-35-40-45-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in fives: 30, 35, 40, 45. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-back-in-fives-15-10-something-0-what-is-missing",
+  "text": "Counting back in fives: 15, 10, something, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-15-something-5-0-what-is-missing",
+  "text": "Counting back in fives: 15, something, 5, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-20-15-something-5-what-is-missing",
+  "text": "Counting back in fives: 20, 15, something, 5. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-20-something-10-5-what-is-missing",
+  "text": "Counting back in fives: 20, something, 10, 5. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-25-20-something-10-what-is-missing",
+  "text": "Counting back in fives: 25, 20, something, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-25-something-15-10-what-is-missing",
+  "text": "Counting back in fives: 25, something, 15, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-30-25-something-15-what-is-missing",
+  "text": "Counting back in fives: 30, 25, something, 15. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-30-something-20-15-what-is-missing",
+  "text": "Counting back in fives: 30, something, 20, 15. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-35-30-something-20-what-is-missing",
+  "text": "Counting back in fives: 35, 30, something, 20. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-35-something-25-20-what-is-missing",
+  "text": "Counting back in fives: 35, something, 25, 20. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-40-35-something-25-what-is-missing",
+  "text": "Counting back in fives: 40, 35, something, 25. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-40-something-30-25-what-is-missing",
+  "text": "Counting back in fives: 40, something, 30, 25. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-45-40-something-30-what-is-missing",
+  "text": "Counting back in fives: 45, 40, something, 30. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-45-something-35-30-what-is-missing",
+  "text": "Counting back in fives: 45, something, 35, 30. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-50-45-something-35-what-is-missing",
+  "text": "Counting back in fives: 50, 45, something, 35. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-fives-50-something-40-35-what-is-missing",
+  "text": "Counting back in fives: 50, something, 40, 35. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-0-something-4-6-what-is-missing",
+  "text": "Counting in twos: 0, something, 4, 6. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-0-something-4-6-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 0, something, 4, 6. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "2",
+  "text": "2!"
+ },
+ {
+  "slug": "counting-in-twos-2-something-6-8-what-is-missing",
+  "text": "Counting in twos: 2, something, 6, 8. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-2-something-6-8-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 2, something, 6, 8. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "4",
+  "text": "4!"
+ },
+ {
+  "slug": "counting-in-twos-0-2-something-6-what-is-missing",
+  "text": "Counting in twos: 0, 2, something, 6. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-0-2-something-6-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 0, 2, something, 6. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-4-something-8-10-what-is-missing",
+  "text": "Counting in twos: 4, something, 8, 10. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-4-something-8-10-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 4, something, 8, 10. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "6",
+  "text": "6!"
+ },
+ {
+  "slug": "counting-in-twos-2-4-something-8-what-is-missing",
+  "text": "Counting in twos: 2, 4, something, 8. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-2-4-something-8-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 2, 4, something, 8. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-6-something-10-12-what-is-missing",
+  "text": "Counting in twos: 6, something, 10, 12. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-6-something-10-12-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 6, something, 10, 12. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "8",
+  "text": "8!"
+ },
+ {
+  "slug": "counting-in-twos-4-6-something-10-what-is-missing",
+  "text": "Counting in twos: 4, 6, something, 10. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-4-6-something-10-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 4, 6, something, 10. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-8-something-12-14-what-is-missing",
+  "text": "Counting in twos: 8, something, 12, 14. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-8-something-12-14-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 8, something, 12, 14. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-6-8-something-12-what-is-missing",
+  "text": "Counting in twos: 6, 8, something, 12. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-6-8-something-12-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 6, 8, something, 12. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-10-something-14-16-what-is-missing",
+  "text": "Counting in twos: 10, something, 14, 16. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-10-something-14-16-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 10, something, 14, 16. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "12",
+  "text": "12!"
+ },
+ {
+  "slug": "counting-in-twos-8-10-something-14-what-is-missing",
+  "text": "Counting in twos: 8, 10, something, 14. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-8-10-something-14-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 8, 10, something, 14. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-12-something-16-18-what-is-missing",
+  "text": "Counting in twos: 12, something, 16, 18. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-12-something-16-18-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 12, something, 16, 18. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "14",
+  "text": "14!"
+ },
+ {
+  "slug": "counting-in-twos-10-12-something-16-what-is-missing",
+  "text": "Counting in twos: 10, 12, something, 16. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-10-12-something-16-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 10, 12, something, 16. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-14-something-18-20-what-is-missing",
+  "text": "Counting in twos: 14, something, 18, 20. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-14-something-18-20-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 14, something, 18, 20. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "16",
+  "text": "16!"
+ },
+ {
+  "slug": "counting-in-twos-12-14-something-18-what-is-missing",
+  "text": "Counting in twos: 12, 14, something, 18. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-12-14-something-18-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 12, 14, something, 18. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-14-16-something-20-what-is-missing",
+  "text": "Counting in twos: 14, 16, something, 20. What is missing?"
+ },
+ {
+  "slug": "counting-in-twos-14-16-something-20-what-is-missing-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 14, 16, something, 20. What is missing? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "18",
+  "text": "18!"
+ },
+ {
+  "slug": "counting-in-twos-0-2-4-what-comes-next",
+  "text": "Counting in twos: 0, 2, 4. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-0-2-4-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 0, 2, 4. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-2-4-6-what-comes-next",
+  "text": "Counting in twos: 2, 4, 6. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-2-4-6-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 2, 4, 6. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-0-2-4-6-what-comes-next",
+  "text": "Counting in twos: 0, 2, 4, 6. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-0-2-4-6-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 0, 2, 4, 6. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-4-6-8-what-comes-next",
+  "text": "Counting in twos: 4, 6, 8. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-4-6-8-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 4, 6, 8. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-2-4-6-8-what-comes-next",
+  "text": "Counting in twos: 2, 4, 6, 8. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-2-4-6-8-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 2, 4, 6, 8. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-6-8-10-what-comes-next",
+  "text": "Counting in twos: 6, 8, 10. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-6-8-10-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 6, 8, 10. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-4-6-8-10-what-comes-next",
+  "text": "Counting in twos: 4, 6, 8, 10. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-4-6-8-10-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 4, 6, 8, 10. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-8-10-12-what-comes-next",
+  "text": "Counting in twos: 8, 10, 12. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-8-10-12-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 8, 10, 12. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-6-8-10-12-what-comes-next",
+  "text": "Counting in twos: 6, 8, 10, 12. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-6-8-10-12-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 6, 8, 10, 12. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-10-12-14-what-comes-next",
+  "text": "Counting in twos: 10, 12, 14. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-10-12-14-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 10, 12, 14. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-8-10-12-14-what-comes-next",
+  "text": "Counting in twos: 8, 10, 12, 14. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-8-10-12-14-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 8, 10, 12, 14. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-12-14-16-what-comes-next",
+  "text": "Counting in twos: 12, 14, 16. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-12-14-16-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 12, 14, 16. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-10-12-14-16-what-comes-next",
+  "text": "Counting in twos: 10, 12, 14, 16. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-10-12-14-16-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 10, 12, 14, 16. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-14-16-18-what-comes-next",
+  "text": "Counting in twos: 14, 16, 18. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-14-16-18-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 14, 16, 18. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-in-twos-12-14-16-18-what-comes-next",
+  "text": "Counting in twos: 12, 14, 16, 18. What comes next?"
+ },
+ {
+  "slug": "counting-in-twos-12-14-16-18-what-comes-next-tap-the-glow-worm-with-the-right-number-start-with-the-glow-worm-the-hand-points-to",
+  "text": "Counting in twos: 12, 14, 16, 18. What comes next? Tap the glow-worm with the right number. Start with the glow-worm the hand points to."
+ },
+ {
+  "slug": "counting-back-in-twos-6-4-something-0-what-is-missing",
+  "text": "Counting back in twos: 6, 4, something, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-6-something-2-0-what-is-missing",
+  "text": "Counting back in twos: 6, something, 2, 0. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-8-6-something-2-what-is-missing",
+  "text": "Counting back in twos: 8, 6, something, 2. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-8-something-4-2-what-is-missing",
+  "text": "Counting back in twos: 8, something, 4, 2. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-10-8-something-4-what-is-missing",
+  "text": "Counting back in twos: 10, 8, something, 4. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-10-something-6-4-what-is-missing",
+  "text": "Counting back in twos: 10, something, 6, 4. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-12-10-something-6-what-is-missing",
+  "text": "Counting back in twos: 12, 10, something, 6. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-12-something-8-6-what-is-missing",
+  "text": "Counting back in twos: 12, something, 8, 6. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-14-12-something-8-what-is-missing",
+  "text": "Counting back in twos: 14, 12, something, 8. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-14-something-10-8-what-is-missing",
+  "text": "Counting back in twos: 14, something, 10, 8. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-16-14-something-10-what-is-missing",
+  "text": "Counting back in twos: 16, 14, something, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-16-something-12-10-what-is-missing",
+  "text": "Counting back in twos: 16, something, 12, 10. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-18-16-something-12-what-is-missing",
+  "text": "Counting back in twos: 18, 16, something, 12. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-18-something-14-12-what-is-missing",
+  "text": "Counting back in twos: 18, something, 14, 12. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-20-18-something-14-what-is-missing",
+  "text": "Counting back in twos: 20, 18, something, 14. What is missing?"
+ },
+ {
+  "slug": "counting-back-in-twos-20-something-16-14-what-is-missing",
+  "text": "Counting back in twos: 20, something, 16, 14. What is missing?"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Well done! Come back tomorrow to change another lily pad."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-bronze",
+  "text": "Well done! A lily pad turned bronze!"
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-silver",
+  "text": "Well done! A lily pad turned silver!"
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-gold",
+  "text": "Well done! A lily pad turned gold!"
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
+  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar!"
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
+  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+ },
+ {
+  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
+  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+ }
+]

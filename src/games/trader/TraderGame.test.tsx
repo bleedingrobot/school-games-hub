@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // A stand-in picture (the real one draws on a canvas, which this test browser doesn't have).
@@ -34,6 +34,9 @@ import { TraderGame } from './TraderGame';
 import { describeSystem, designProblem, emptyDesign, nameText, pieceName } from '../../../shared/trader/system';
 import { PRETEND_CLASSMATES } from './trialClassmates';
 import { trialBackend, type Trial } from './trialBackend';
+
+// These screens do a lot per step; on a busy CI runner the default 1s wait ran out (twice on 4 Nov 2026).
+configure({ asyncUtilTimeout: 5000 });
 
 const NOW = Date.UTC(2026, 9, 22, 1, 0, 0);
 const ALL_TIPS = ['maths', 'junk', 'trader', 'pirates', 'pirates-nolaser', 'customs', 'wrecked', 'robbed', 'shipyard', 'noyard', 'bank', 'borrow', 'news', 'jumps'];
@@ -555,7 +558,7 @@ describe("Bolt's first-time tips and help with choices", () => {
     const { x, y } = chartPoint(dest);
     type(/^x \(across\)/, String(x));
     type(/^y \(up\)/, String(y));
-    const warn = await screen.findByText(new RegExp(`^🚫 ${dest.name} bans .*${name}.*\\. If customs stop you, they will take your .*1 ${name}.* and fine you\\.$`));
+    const warn = await screen.findByText(new RegExp(`^🚫 ${dest.name} bans .*${name}.*\\. If customs stop you, they will take your .*1 ${name}.* and fine you\\.$`), {}, { timeout: 5000 });
     expect(warn).toBeTruthy();
     expect((screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement).disabled).toBe(false);
     // Bolt's trip ideas are words only: the boxes keep what the pupil typed.

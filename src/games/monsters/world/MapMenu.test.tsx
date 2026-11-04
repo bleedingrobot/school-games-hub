@@ -128,6 +128,18 @@ describe('the map menu', () => {
     expect(items[2]).toHaveTextContent('Win it in the Fire Tower, Fire Mountain');
   });
 
+  it('Settings has a button to the strong and weak chart, and Back returns to Settings', async () => {
+    const user = userEvent.setup();
+    render(<WorldGame initial={newWorld(opts, [makeMonster('plusplash-1', 5)], 3)} settings={settings} onSettingsChange={() => {}} timeScale={0} />);
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByRole('button', { name: /^Settings/ }));
+    await user.click(screen.getByRole('button', { name: 'Who is strong against who?' }));
+    const page = screen.getByRole('dialog', { name: 'Strong and weak' });
+    expect(within(page).getByRole('img', { name: /Leaf is strong against Water.*Stone is strong against Leaf/ })).toBeInTheDocument();
+    await user.click(within(page).getByRole('button', { name: /back/i }));
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument();
+  });
+
   it('Settings: the same choices as before, kept from the map', async () => {
     const user = userEvent.setup();
     let saved: WorldSettings = settings;
