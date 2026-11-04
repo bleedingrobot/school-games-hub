@@ -118,7 +118,7 @@ select ok(exists (select 1 from public.achievements where player = pg_temp.id('0
 
 select pg_temp.ana();
 select is(jsonb_array_length(pg_temp.mine('test-game')), 0, 'while the game is switched off, its achievements are hidden');
-select is(public.progress_rules() -> 'hubGames', null, '... and so are its points rules');
+select is(public.progress_rules() #> '{hubGames,test-game}', null, '... and so are its points rules');  -- other games switched on by default (Hop's Glow-worm Pond) still show theirs
 select pg_temp.reset();
 update public.app_settings set test_game_on = true;
 select pg_temp.ana();
