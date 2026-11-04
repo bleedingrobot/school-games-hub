@@ -1,0 +1,232 @@
+/* Weka’s Stepping Stones. A sunny clay rock pool: every number sits dark on a light pebble, and every target is at least 64px for
+   children of 5 to 7. The mirror line (rock above, still water below) is the clearest thing on the screen. */
+.wk-root {
+  --wk-ink: #1b2340;
+  --wk-panel: #fffdf5;
+  --wk-sky: #bfe6f5;
+  --wk-sea: #3f8fb5;
+  --wk-pool: #5fb3cf;
+  --wk-rock: #8f8577;
+  --wk-gold: #f5c518;
+  --wk-teal-dark: #0f5c66;
+  --wk-fish: clamp(34px, min(7vw, 8.5vh), 76px);
+  --wk-choice: clamp(76px, min(15vw, 17vh), 130px);
+  position: relative;
+  min-height: var(--wk-room, 100dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--wk-sky);
+  color: var(--wk-ink);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+.wk-root--cover { position: fixed; inset: 0; z-index: 20; }
+.wk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.wk-message { margin: auto; font-size: 1.6rem; color: var(--wk-ink); padding: 24px; text-align: center; }
+
+.wk-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
+.wk-button {
+  min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--wk-teal-dark);
+  background: var(--wk-panel); color: var(--wk-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;
+}
+
+/* The pool: the painted one once there is one (--wk-back), and drawn sky, sea, rocks and water until then. Silver days
+   sparkle; gold days are a golden evening. */
+.wk-pool, .wk-play {
+  position: relative;
+  background:
+    var(--wk-back, none) center / cover no-repeat,
+    radial-gradient(ellipse 70% 30% at 50% 100%, #a39887 0 60%, transparent 61%),
+    linear-gradient(var(--wk-sky) 0 30%, var(--wk-sea) 30% 40%, #e9d9b8 40% 100%);
+}
+.wk-pool--silver {
+  background:
+    var(--wk-back, none) center / cover no-repeat,
+    repeating-linear-gradient(160deg, transparent 0 26px, rgb(255 255 255 / 0.22) 26px 29px),
+    linear-gradient(#d9ecf7 0 30%, #7fa8c4 30% 40%, #e3e2dc 40% 100%);
+}
+.wk-pool--gold {
+  background:
+    var(--wk-back, none) center / cover no-repeat,
+    radial-gradient(ellipse 40% 30% at 50% 28%, rgb(255 190 90 / 0.7), transparent 70%),
+    linear-gradient(#ffcf8a 0 30%, #d88a4a 30% 40%, #edd2a6 40% 100%);
+}
+
+/* Home and finish: the pool with the magic pebbles, and a panel beside it (below it on a narrow screen). */
+.wk-home { flex: 1; display: flex; min-height: var(--wk-room, 100dvh); }
+.wk-pool { flex: 1; min-height: var(--wk-room, 100dvh); --wk-pebble-size: clamp(54px, min(8vw, 11vh), 100px); }
+.wk-pool__water {
+  position: absolute; left: 14%; right: 14%; top: 50%; height: 34%;
+  border-radius: 50%; background: radial-gradient(ellipse at 40% 35%, #a8e2f2, var(--wk-pool) 60%, #2f7d9e);
+  box-shadow: inset 0 6px 0 rgb(255 255 255 / 0.35), 0 0 0 10px #a39887;
+}
+[style*='--wk-back'] > .wk-pool__water { display: none; }
+.wk-pool__spot { position: absolute; translate: -50% -50%; width: var(--wk-pebble-size); }
+.wk-pool__friend { position: absolute; left: 8%; top: 40%; width: calc(var(--wk-pebble-size) * 1.5); }
+
+.wk-panel {
+  align-self: center;
+  width: min(380px, 40vw);
+  margin: 16px;
+  padding: 20px 22px;
+  border-radius: 28px;
+  background: var(--wk-panel);
+  box-shadow: 0 6px 0 var(--wk-teal-dark), 0 8px 24px rgb(0 0 0 / 0.18);
+  text-align: center;
+}
+.wk-panel h2 { margin: 0 0 8px; font-size: clamp(1.3rem, 2.6vw, 1.8rem); line-height: 1.25; }
+.wk-panel h2:focus { outline: none; }
+.wk-panel h2:focus-visible { outline: 3px solid var(--wk-gold); }
+.wk-day { font-size: 1.3rem; font-weight: 800; color: var(--wk-teal-dark); margin: 6px 0; }
+.wk-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #e3f7fa; color: var(--wk-teal-dark); font-weight: 800; }
+.wk-play-button { width: 100%; margin-top: 10px; }
+.wk-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.wk-shelf__fish { width: 52px; }
+.wk-prize { display: block; width: min(200px, 60%); margin: 8px auto; }
+@media (max-height: 500px) {
+  .wk-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .wk-panel h2 { font-size: 1.2rem; }
+  .wk-panel p { margin: 4px 0; }
+  .wk-play-button { margin-top: 4px; }
+  .wk-prize { width: min(90px, 40%); }
+}
+@media (max-width: 700px) {
+  .wk-home { flex-direction: column; }
+  .wk-pool { min-height: 55dvh; }
+  .wk-panel { width: auto; }
+}
+
+/* A pebble: its picture (or drawn clay stone), with the number on a light disc in the middle. */
+.wk-pebble { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 10 / 7; }
+.wk-pebble__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.3)); }
+.wk-pebble--glow .wk-pebble__art { animation: wk-glow 1.2s ease-in-out 3; }
+@keyframes wk-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--wk-gold)); scale: 1.2; } }
+.wk-pebble__num {
+  position: relative;
+  display: grid; place-items: center;
+  min-width: 46%; aspect-ratio: 1.3; padding: 0 4px; border-radius: 999px;
+  background: var(--wk-panel); color: var(--wk-ink);
+  font: 900 calc(var(--wk-choice) * 0.3) / 1 system-ui, sans-serif;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}
+
+.wk-friend { display: block; width: 100%; }
+.wk-friend img, img.wk-friend { width: 100%; object-fit: contain; }
+.wk-friend--emoji { font-size: calc(var(--wk-fish) * 2); text-align: center; line-height: 1; }
+.wk-drawn { display: block; width: 100%; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.3)); }
+.wk-friend--cheer, .wk-friend--gulp { animation: wk-flap 0.5s ease-in-out 3; }
+@keyframes wk-flap { 50% { translate: 0 -12%; } }
+
+/* Playing: the go counter, the question, the scene (rock, mirror line, water) and the answer pebbles. */
+.wk-play {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: var(--wk-room, 100dvh);
+  padding: 10px 10px 16px;
+  box-sizing: border-box;
+}
+.wk-top { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-right: 300px; }
+.wk-progress { display: flex; gap: 8px; padding: 6px 8px 0; }
+.wk-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--wk-teal-dark); }
+.wk-pip--done { background: var(--wk-gold); }
+.wk-ask { margin: 0; padding: 6px 20px; border-radius: 999px; background: var(--wk-panel); font: 800 clamp(1.2rem, 3vw, 1.8rem) system-ui, sans-serif; }
+
+.wk-scene { position: relative; width: min(100%, 900px); flex: 1; display: flex; align-items: center; justify-content: center; animation: wk-in 0.4s ease-out; }
+@keyframes wk-in { from { opacity: 0; translate: 0 10px; } }
+.wk-scene__friend { position: absolute; right: 2%; top: 4%; width: calc(var(--wk-fish) * 2.4); z-index: 2; }
+/* Sharing: Weka watches from the front, out of the chicks' way. */
+.wk-scene__friend--low { top: auto; bottom: -4%; right: auto; left: 50%; translate: -50% 0; width: calc(var(--wk-fish) * 1.6); }
+.wk-share { padding-bottom: calc(var(--wk-fish) * 1.6); }
+
+/* Fish in rows of five, like a ten-frame. */
+.wk-row { display: flex; justify-content: center; gap: calc(var(--wk-fish) * 0.18); min-height: calc(var(--wk-fish) * 0.66); }
+.wk-row + .wk-row { margin-top: calc(var(--wk-fish) * 0.14); }
+.wk-row--small { --wk-fish: clamp(24px, min(4.4vw, 6vh), 48px); }
+.wk-fish { position: relative; width: var(--wk-fish); cursor: pointer; transition: translate 0.3s; }
+.wk-fish__art { display: block; width: 100%; }
+.wk-fish--counted .wk-fish__art { filter: drop-shadow(0 0 6px #fff6b0) drop-shadow(0 0 2px var(--wk-gold)); }
+.wk-fish__count {
+  position: absolute; left: 50%; top: -40%; translate: -50% 0;
+  min-width: 1.5em; padding: 0 4px; border-radius: 999px; background: var(--wk-panel); color: var(--wk-ink);
+  font: 900 calc(var(--wk-fish) * 0.42) / 1.3 system-ui, sans-serif; text-align: center; box-shadow: 0 1px 0 rgb(0 0 0 / 0.3);
+}
+.wk-fish--left-over { animation: wk-bounce 0.6s ease-in-out 3; }
+@keyframes wk-bounce { 50% { translate: 0 -30%; } }
+
+/* A double: the rock above the mirror line, the water below with the reflection. */
+.wk-mirror { display: flex; flex-direction: column; align-items: center; width: min(100%, 640px); }
+.wk-rock {
+  width: 100%; padding: 14px 10px 10px; box-sizing: border-box;
+  border-radius: 40px 40px 8px 8px; background: radial-gradient(ellipse at 40% 20%, #b9ae9d, var(--wk-rock) 70%, #6b6255);
+  box-shadow: inset 0 6px 0 rgb(255 255 255 / 0.25);
+}
+.wk-water {
+  position: relative; width: 100%; min-height: calc(var(--wk-fish) * 1.6); padding: 10px 10px 14px; box-sizing: border-box;
+  border-radius: 8px 8px 60px 60px; background: linear-gradient(#bfeaf6, var(--wk-pool) 40%, #2f7d9e);
+  border-top: 5px solid #fff;
+}
+.wk-row--mirror { transform: scaleY(-1); }
+.wk-fish--mirror .wk-fish__art { opacity: 0.85; }
+.wk-fish--mirror .wk-fish__count { transform: scaleY(-1); top: auto; bottom: -40%; }
+/* Bronze: each fish joined to its mirror fish by a faint line across the water's edge. */
+.wk-fish--linked::after {
+  content: ''; position: absolute; left: 50%; top: 75%; height: calc(var(--wk-fish) * 0.45 + 30px); border-left: 3px dashed rgb(255 255 255 / 0.85);
+  pointer-events: none;
+}
+.wk-rock .wk-row:not(:last-child) .wk-fish--linked::after { display: none; }
+.wk-water--faint .wk-fish--mirror .wk-fish__art { opacity: 0.35; filter: blur(1.5px); }
+.wk-water--faint { background: repeating-linear-gradient(180deg, transparent 0 9px, rgb(255 255 255 / 0.25) 9px 11px), linear-gradient(#bfeaf6, var(--wk-pool) 40%, #2f7d9e); }
+.wk-water__ripple { display: block; margin: 8px auto; width: 50%; height: 10px; border-radius: 50%; border: 3px solid rgb(255 255 255 / 0.6); }
+
+/* A half: the pile on the rock between two chicks, each with the fish it has been given. */
+.wk-share { display: grid; grid-template-columns: 1fr minmax(0, 1.4fr) 1fr; align-items: end; gap: 10px; width: 100%; }
+.wk-pile {
+  align-self: center; min-height: calc(var(--wk-fish) * 2); padding: 14px 8px; border-radius: 40px;
+  background: radial-gradient(ellipse at 40% 20%, #b9ae9d, var(--wk-rock) 70%, #6b6255);
+}
+.wk-nest { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.wk-nest__fish { min-height: 40px; }
+.wk-chick { width: calc(var(--wk-fish) * 2); }
+.wk-chick__art { display: block; width: 100%; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.wk-basket { display: grid; place-items: center; width: calc(var(--wk-fish) * 2.4); aspect-ratio: 1.3; margin: 0 auto; border-radius: 20px 20px 40px 40px; background: repeating-linear-gradient(90deg, #c08a4a 0 10px, #a8743a 10px 20px); }
+.wk-basket__num { display: grid; place-items: center; min-width: 54%; aspect-ratio: 1.3; border-radius: 999px; background: var(--wk-panel); font: 900 calc(var(--wk-fish) * 0.8) / 1 system-ui, sans-serif; }
+.wk-tip { margin: 8px 0 0; text-align: center; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+
+/* The answers: four pebbles with numbers, or two big "fair or not" buttons. */
+.wk-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; position: relative; }
+.wk-choice {
+  position: relative; width: var(--wk-choice); padding: 0; border: 0; background: none; cursor: pointer;
+}
+.wk-choice:focus-visible { outline: 4px solid var(--wk-teal-dark); outline-offset: 4px; border-radius: 40%; }
+.wk-choices--fair .wk-choice { width: auto; min-height: 76px; padding: 0 22px; border-radius: 999px; background: var(--wk-panel); border: 3px solid var(--wk-teal-dark); }
+.wk-choice__words { font: 800 clamp(1.1rem, 2.6vw, 1.5rem) system-ui, sans-serif; color: var(--wk-ink); }
+.wk-choice--wobble { animation: wk-wobble 0.5s ease-in-out; }
+@keyframes wk-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
+.wk-choice--right { animation: wk-pop 0.6s ease-out forwards; }
+@keyframes wk-pop { 50% { scale: 1.25; } 100% { scale: 1.1; } }
+.wk-choice--pointed { filter: drop-shadow(0 0 10px #fffbd0) drop-shadow(0 0 3px #fff); }
+.wk-hand {
+  position: absolute; left: 60%; top: 62%; font-size: calc(var(--wk-choice) * 0.5); line-height: 1; translate: -50% 0;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: wk-nudge 0.9s ease-in-out infinite;
+}
+@keyframes wk-nudge { 50% { translate: -50% -14%; } }
+/* The guided first go: the rock's fish, then the water's, glow in turn before the hand moves to the number. */
+.wk-guide { box-shadow: 0 0 0 5px #fff6b0, 0 0 24px 6px var(--wk-gold); }
+
+@media (max-height: 500px) {
+  .wk-root { --wk-fish: clamp(28px, 9vh, 44px); }
+  .wk-root { --wk-choice: 72px; }
+  .wk-ask { font-size: 1.1rem; }
+  .wk-top { padding-right: 280px; }
+}
+@media (max-width: 640px) {
+  .wk-top { padding-right: 0; padding-top: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wk-root *, .wk-root *::before, .wk-root *::after { animation: none !important; transition: none !important; }
+}
