@@ -35,7 +35,9 @@ branch always holds exactly ten berries, and ten berries always fill one flax ke
 4. **Ten-frames carry the structure.** NCETM's Mastering Number (Year 1 "10 and a bit") and NSW's "Investigating teen
    numbers with 10 frames" use one full frame and a second frame filled left to right, top row first, so 4 is seen
    without counting and "5 and some more" helps for 6 to 9. **So:** bronze-help pictures use exactly that layout, the
-   same one Quick looks and Pipi use, so children meet a structure they know.
+   same one Quick looks and Pipi use, so children meet a structure they know. **Matched with Weka's Stepping Stones**
+   (4 Nov): in a ten, berries 1 to 5 are one shade (orange) and 6 to 10 a deeper shade (red-orange), tinted in code
+   from the one berry picture, and the ten always becomes one stand-out thing (Tūī's kete, Weka's big flat rock).
 5. **Concrete, then picture, then symbols, faded on purpose (concreteness fading).** Starting with objects and fading
    to symbols beats objects alone or symbols alone for later use (Fyfe, McNeil, Son and Goldstone, 2014). The link
    between the steps must be shown, not assumed. **So:** six help levels (section 4), and from level 4 down the written
@@ -121,8 +123,9 @@ Ways 2 and 3 use the same levels: on "how many more?" the missing berries are em
 - **The voice fades with the level:** level 5 says the "ten… and four more" line; levels 4 to 1 read the question
   ("Ten plus four. How many?"); level 0 says only "How many?" and the child reads the sum. A child can always tap the
   speaker to hear the full question again. The game's own mute (`tui-voice`) turns the voice off.
-- **Teacher settings** (drawer, like Pipi): help on or off (`tui_help`, on by default; off means level 0 and no Peek, but
-  a wrong tap still brings the picture back for that go, because that is how a wrong answer gets put right); the
+- **Teacher settings** (drawer): picture help **Fades / Always / Off**, as Penguin Pairs and Weka (`tui_help`, Fades by
+  default). Fades is this section; Always keeps level 4; Off means level 0 and no Peek, but a wrong tap still brings the
+  picture back for that go, because that is how a wrong answer gets put right. The
   student line shows the step and help level ("Step 3 How many more?, help level 2").
 
 ## 5. Rules (`shared/tui/`)
@@ -185,8 +188,8 @@ from `src/games/tui/voiceLines.ts`, with a `voiceLines.test.ts` that writes `pub
 already says Tūī as "Too-ee" and Kererū; add Pīwakawaka, Korimako, Kākā, kōwhai, kete, and the te reo numbers *tekau mā
 tahi* to *tekau mā iwa* if James says yes (11). About 150 lines: every question at every voice level for the nine facts
 and four ways, the "ten… and n more" lines, praise, the guided first go, and the prize. Bella reads the question, never
-the answer before a right tap; after a right tap she says the whole fact ("Ten and four is fourteen") with the
-arrow-cards moment. Listen to the te reo clips before they go live: Kokoro is an English voice.
+the answer before a right tap; after a right tap she says the whole fact as a stem sentence, "Ten and four is fourteen" (the
+same words as Weka's "10 and 3 make 13": "and", never "equals"), with the arrow-cards moment. Listen to the te reo clips before they go live: Kokoro is an English voice.
 
 ## 9. Achievements
 
