@@ -1,6 +1,6 @@
 // Connects the diamond handler to Supabase. Edit handler.ts (or shared/diamond/server.ts) for the logic, then run
 // `npm run build:functions -- diamond` to rebuild index.ts, the single file that actually gets deployed.
-import { isUnlimitedDay } from '../../../shared/unlimited';
+import { isUnlimitedFor } from '../../../shared/unlimited';
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
@@ -50,7 +50,7 @@ Deno.serve(
     },
     async unlimited(player) {
       const { data } = await admin.rpc('settings_of', { player }).maybeSingle();
-      return isUnlimitedDay((data as { unlimited_day?: string | null } | null)?.unlimited_day);
+      return isUnlimitedFor((data as { unlimited_days?: unknown } | null)?.unlimited_days, 'diamond');
     },
     async mathsContext(player): Promise<MathsContext | null> {
       const { data, error } = await admin.rpc('space_maths_context', { player });

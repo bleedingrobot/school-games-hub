@@ -8,7 +8,7 @@ import type { MathsContext } from '../../../shared/trader/questions';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
 import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
-import { isUnlimitedDay } from '../../../shared/unlimited';
+import { isUnlimitedFor } from '../../../shared/unlimited';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { PICTURE_GAP_MINUTES } from '../../../shared/trader/gallery';
@@ -49,7 +49,7 @@ Deno.serve(
         fail('settings', error?.code);
         return null;
       }
-      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean; trader_forge_typing?: boolean; unlimited_day?: string | null };
+      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean; trader_forge_typing?: boolean; unlimited_days?: unknown };
       return {
         enabled: row.trader_enabled === true,
         jumpsPerDay: Number.isInteger(row.trader_jumps) ? (row.trader_jumps as number) : 10,
@@ -58,7 +58,7 @@ Deno.serve(
         maths: parseMathsSwitch(row.trader_maths) !== 'off',
         forge: row.trader_forge === true,
         forgeTyping: row.trader_forge_typing !== false,
-        unlimited: isUnlimitedDay(row.unlimited_day),
+        unlimited: isUnlimitedFor(row.unlimited_days, 'trader'),
       };
     },
     async schoolSeed(player) {

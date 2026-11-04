@@ -7204,8 +7204,14 @@ const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
 	month: "2-digit",
 	day: "2-digit"
 }).format(now);
-/** Is the switch on today? Anything that isn't today's date (null, an old day, junk) is off. */
-const isUnlimitedDay = (day, now = new Date()) => typeof day === "string" && day === nzToday(now);
+/**
+* Is this game's switch on today? `days` is the settings row's `unlimited_days` ({ game id: NZ date }). Anything that
+* isn't today's date (missing, an old day, junk) is off.
+*/
+function isUnlimitedFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
+}
 //#endregion
 //#region shared/maths/focusResults.ts
 /**
@@ -10092,7 +10098,7 @@ Deno.serve(makeHandler({
 			maths: parseMathsSwitch(row.trader_maths) !== "off",
 			forge: row.trader_forge === true,
 			forgeTyping: row.trader_forge_typing !== false,
-			unlimited: isUnlimitedDay(row.unlimited_day)
+			unlimited: isUnlimitedFor(row.unlimited_days, "trader")
 		};
 	},
 	async schoolSeed(player) {

@@ -1,6 +1,6 @@
 // Connects the isles handler to Supabase. Edit handler.ts (or shared/isles/server.ts) for the logic, then run
 // `npm run build:functions -- isles` to rebuild index.ts, the single file that actually gets deployed.
-import { isUnlimitedDay } from '../../../shared/unlimited';
+import { isUnlimitedFor } from '../../../shared/unlimited';
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
@@ -50,8 +50,8 @@ Deno.serve(
         console.error(`isles: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
-      const row = data as { isles_enabled?: boolean; isles_races?: boolean; unlimited_day?: string | null };
-      return { enabled: row.isles_enabled === true, races: row.isles_races !== false, unlimited: isUnlimitedDay(row.unlimited_day) };
+      const row = data as { isles_enabled?: boolean; isles_races?: boolean; unlimited_days?: unknown };
+      return { enabled: row.isles_enabled === true, races: row.isles_races !== false, unlimited: isUnlimitedFor(row.unlimited_days, 'isles') };
     },
     async mathsContext(player): Promise<MathsContext | null> {
       const { data, error } = await admin.rpc('space_maths_context', { player });

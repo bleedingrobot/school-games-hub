@@ -1,10 +1,10 @@
--- Unlimited turns today (migration 20261104001300): the per-class switch. Off to start; a student can't change it; a teacher
--- changes only a class they teach; it is on for today's NZ date only; the games and home chips can read it.
+-- Unlimited turns today (migration 20261104001300): a per-class switch for each game. Off to start; a student can't change
+-- it; a teacher changes only a class they teach and only that game; it is on for today's NZ date only; the games can read it.
 -- Run on a throw-away copy: scripts/scratch-db.sh unlimited, then
 --   scripts/scratch-test.sh unlimited supabase/tests/database/unlimited_turns.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -33,33 +33,36 @@ select public.give_class_settings((select id from public.classes where name = 'R
 select set_config('test.room_two', (select id::text from public.classes where name = 'Room Two'), true);
 select set_config('test.ana_class', (select class_id::text from public.class_members where student_id = pg_temp.id('0a')), true);
 
-select is((select count(*)::integer from public.app_settings where unlimited_day is not null), 0, 'the switch starts off everywhere');
+select is((select count(*)::integer from public.app_settings where unlimited_days <> '{}'), 0, 'the switches start off everywhere');
 
 select pg_temp.cat();
-select throws_ok(format('select public.teacher_set_unlimited_today(true, %L)', current_setting('test.room_two')),
-  null, null, 'a student cannot switch it on');
-select throws_ok($$ select public.unlimited_today() $$, '42501', null, 'a student cannot ask about any player directly');
+select throws_ok(format('select public.teacher_set_unlimited_today(%L, true, %L)', 'trader', current_setting('test.room_two')),
+  null, null, 'a student cannot switch one on');
+select throws_ok($$ select public.unlimited_today(null, 'trader') $$, '42501', null, 'a student cannot ask about any player directly');
 select pg_temp.reset();
 
 select pg_temp.fin();
-select throws_ok(format('select public.teacher_set_unlimited_today(true, %L)', current_setting('test.ana_class')),
-  '42501', null, 'a teacher cannot switch it on for a class they don''t teach');
-select lives_ok(format('select public.teacher_set_unlimited_today(true, %L)', current_setting('test.room_two')), 'a teacher switches it on for their class');
+select throws_ok(format('select public.teacher_set_unlimited_today(%L, true, %L)', 'chess', current_setting('test.room_two')),
+  '22023', null, 'only the games with a daily limit have one');
+select throws_ok(format('select public.teacher_set_unlimited_today(%L, true, %L)', 'trader', current_setting('test.ana_class')),
+  '42501', null, 'a teacher cannot switch one on for a class they don''t teach');
+select lives_ok(format('select public.teacher_set_unlimited_today(%L, true, %L)', 'trader', current_setting('test.room_two')), 'a teacher switches Star Trader on for their class');
 select pg_temp.reset();
-select is((select unlimited_day from public.app_settings where class_id = current_setting('test.room_two')::uuid),
-  (now() at time zone 'Pacific/Auckland')::date, '... for today''s New Zealand date');
-select is(public.unlimited_today(pg_temp.id('0c')) and not public.unlimited_today(pg_temp.id('0a')), true, '... only for that class');
+select is(public.unlimited_games(pg_temp.id('0c')), '["trader"]'::jsonb, '... only Star Trader, for today');
+select is(public.unlimited_today(pg_temp.id('0c'), 'trader') and not public.unlimited_today(pg_temp.id('0a'), 'trader'), true, '... only for that class');
 
-update public.app_settings set unlimited_day = (now() at time zone 'Pacific/Auckland')::date - 1
+update public.app_settings set unlimited_days = jsonb_build_object('trader', to_char((now() at time zone 'Pacific/Auckland')::date - 1, 'YYYY-MM-DD'))
 where class_id = current_setting('test.room_two')::uuid;
-select is(public.unlimited_today(pg_temp.id('0c')), false, 'yesterday''s switch is off today');
+select is(public.unlimited_today(pg_temp.id('0c'), 'trader'), false, 'yesterday''s switch is off today');
 
 select pg_temp.fin();
-select lives_ok(format('select public.teacher_set_unlimited_today(true, %L)', current_setting('test.room_two')), 'switched on again');
+select lives_ok(format('select public.teacher_set_unlimited_today(g, true, %L) from unnest(array[%L, %L, %L]) g', current_setting('test.room_two'), 'dragon-maths', 'clan-quest', 'monsters'), 'three more switched on');
+select lives_ok(format('select public.teacher_set_unlimited_today(%L, false, %L)', 'trader', current_setting('test.room_two')), 'and Star Trader off');
 select pg_temp.reset();
 select is((public.clans_settings(pg_temp.id('0c')) ->> 'unlimitedToday')::boolean
   and (public.monster_battle_rules(pg_temp.id('0c')) ->> 'unlimitedToday')::boolean
-  and (public.lord_server_settings(pg_temp.id('0c')) ->> 'unlimitedToday')::boolean, true, 'the games'' settings say so');
+  and (public.lord_server_settings(pg_temp.id('0c')) ->> 'unlimitedToday')::boolean
+  and not public.unlimited_today(pg_temp.id('0c'), 'trader'), true, 'the games'' settings say so');
 
 select * from finish();
 rollback;

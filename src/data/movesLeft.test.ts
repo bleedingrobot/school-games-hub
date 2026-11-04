@@ -32,12 +32,12 @@ describe('movesFromRaw', () => {
     expect(m.allDone).toBe(true);
   });
 
-  it('says Unlimited today for used-up turns when the class switch is on', () => {
-    const raw = { ...lord({ forestLeft: 0, arenaLeft: 0 }), clans: { fightsLeft: 0, perDay: 8 }, unlimited: true };
+  it("says Unlimited today for used-up turns only in the games whose switch is on", () => {
+    const raw = { ...lord({ forestLeft: 0, arenaLeft: 0 }), clans: { fightsLeft: 0, perDay: 8 }, unlimited: ['dragon-maths'] };
     const m = movesFromRaw(raw, noon('2026-10-19'));
     expect(m['dragon-maths'].chips.map((c) => c.text)).toEqual(['Unlimited today', 'Unlimited today', '0 master tries']);
     expect(m['dragon-maths'].allDone).toBe(false);
-    expect(m['clan-quest'].chips[0]).toEqual({ emoji: '⛏️', text: 'Unlimited today', empty: false });
+    expect(m['clan-quest'].chips[0]).toEqual({ emoji: '⛏️', text: '0 of 8 mine fights', empty: true });
   });
 
   it('shows Clan Quest mine fights', () => {
