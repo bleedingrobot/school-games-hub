@@ -83,7 +83,7 @@ The same shape as Beanstalk:
 - **Function** `supabase/functions/hop/` with four calls: `load`, `start`, `finish`, plus a teacher help setting.
 - **Switches:** a code switch `HOP_ON`, plus the per-class switch `hop_enabled`, which is off by default.
 - **Group:** `easy-maths`.
-- **Migration:** the next free number on 4 Nov is `20261104000500`. Check it again at Stage 3.
+- **Migration:** the next free number on 4 Nov is `20261104000600`. Check it again at Stage 3.
 
 ## 5. Art (ComfyUI on the gaming PC)
 
@@ -150,7 +150,7 @@ questions are a separate `shared/maths` branch (section 2).
 
 ## Stage 3 results (4 Nov)
 
-**Migration** `20261104000500_hop.sql` (the next free number across `main` and every branch on 4 Nov; check again at go-live):
+**Migration** `20261104000600_hop.sql` (the next free number across `main` and every branch on 4 Nov; check again at go-live):
 - `hop_progress`: one row a pupil. The count of finished days, the NZ day a pad last changed, the furthest step reached
   (10, 5 or 2) and a version, so two tabs can't both save. Made by the pupil's first `start`.
 - `hop_rounds`: one row a challenge. Its seed, step, gold-day flag and **its ten hops as the server made them** (the round

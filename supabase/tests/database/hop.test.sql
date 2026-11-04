@@ -1,4 +1,4 @@
--- Hop's Glow-worm Pond (migration 20261104000500): progress, challenges, the switch and the step-label setting.
+-- Hop's Glow-worm Pond (migration 20261104000600): progress, challenges, the switch and the step-label setting.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh hop, then scripts/scratch-test.sh hop supabase/tests/database/hop.test.sql
 begin;
