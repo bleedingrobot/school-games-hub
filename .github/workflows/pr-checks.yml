@@ -1,5 +1,7 @@
 # The site's checks on every pull request (typecheck, every test, build), so a failure shows before merging
 # instead of skipping a publish. The database checks run on pull requests from db-tests.yml.
+# The tests are split across 4 machines that run side by side (about 1.5 minutes instead of 4).
+# A pull request that only changes notes and plans (docs/, or a .md file at the top level) skips them.
 name: Site checks
 
 on:
@@ -8,8 +10,27 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request stops the checks still running for the older one.
+concurrency:
+  group: site-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      site: ${{ steps.what.outputs.site }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      # The checkout is the pull request merged into main, so its first parent is main: the diff is just this PR.
+      - id: what
+        run: scripts/ci-changes.sh HEAD^1
+
   build:
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -19,5 +40,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run test:all
       - run: npm run build
+
+  tests:
+    needs: [changes]
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: tests (${{ matrix.shard }} of 4)
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Every test (test:all), a quarter of the files on each machine.
+      - run: npm run test:all -- --shard=${{ matrix.shard }}/4
