@@ -5,7 +5,7 @@
  *
  * All pictures live in a 240 x 140 box. The screen scales it.
  */
-import { FRAME_CAPACITY, type PictureType } from './config';
+import { FRAME_CAPACITY, GAP_FILLED, type PictureType } from './config';
 
 export const BOX = { width: 240, height: 140 } as const;
 /** Dot radius, and the least gap left between two dots. */
@@ -124,7 +124,7 @@ const cellCentre = (f: Frame, col: number, row: number) => ({ x: f.x + (col + 0.
  */
 function filledCells(type: PictureType, n: number, rng: Random): Array<[number, number]> {
   if (type === 'five') return Array.from({ length: n }, (_, i) => [i, 0] as [number, number]);
-  if (type === 'ten') return Array.from({ length: n }, (_, i) => [i % 5, Math.floor(i / 5)] as [number, number]);
+  if (type === 'ten' || type === 'tenfive') return Array.from({ length: n }, (_, i) => [i % 5, Math.floor(i / 5)] as [number, number]);
   if (type === 'tenpair') return Array.from({ length: n }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
   const all: Array<[number, number]> = [];
   for (let row = 0; row < 2; row++) for (let col = 0; col < 5; col++) all.push([col, row]);
@@ -188,6 +188,7 @@ export function makePicture(type: PictureType, n: number, rng: Random): Picture 
       return { type, n, dots: [...five, ...extra], twoColour: true };
     }
     case 'five':
+    case 'tenfive':
     case 'ten':
     case 'tenpair':
     case 'tenmix':
@@ -198,7 +199,8 @@ export function makePicture(type: PictureType, n: number, rng: Random): Picture 
 /** For Missing Spots: a frame with `filled` counters in it. */
 export function makeGapPicture(type: PictureType, filled: number, rng: Random): Picture {
   const capacity = FRAME_CAPACITY[type];
-  if (!capacity || filled < 1 || filled >= capacity) throw new Error(`No Missing Spots picture for ${type} with ${filled}`);
+  const range = GAP_FILLED[type];
+  if (!capacity || !range || filled < range[0] || filled > range[1]) throw new Error(`No Missing Spots picture for ${type} with ${filled}`);
   return framePicture(type, filled, rng);
 }
 

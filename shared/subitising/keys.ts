@@ -8,7 +8,7 @@
  * for the answers that do. The database keeps no spare column for it, and the key is the place
  * the server already reads.
  */
-import { FRAME_CAPACITY, STAGE_OF_TYPE, stageOf, type PictureType, type StageNumber } from './config';
+import { FRAME_CAPACITY, GAP_FILLED, stageOf, stageOfKey, type PictureType, type StageNumber } from './config';
 
 export type Activity = 'flash' | 'gap';
 
@@ -42,15 +42,19 @@ export function parseKey(key: string): ParsedKey | null {
   const m = KEY.exec(key);
   if (!m) return null;
   const type = m[3] as PictureType;
-  const stage = STAGE_OF_TYPE.get(type);
-  if (!stage) return null;
   const n = Number(m[4]);
   const helped = m[2] === 'h';
-  const def = stageOf(stage);
-  // A picture's number stays inside its stage (a made-up `sub:line-99` is not a picture we ever show).
-  if (m[1] === 'sub' && (n < def.min || n > def.max)) return null;
-  if (m[1] === 'sub') return { activity: 'flash', type, n, stage, helped, answer: n };
+  if (m[1] === 'sub') {
+    const stage = stageOfKey('flash', type);
+    if (!stage) return null;
+    const def = stageOf(stage);
+    // A picture's number stays inside its stage (a made-up `sub:line-99` is not a picture we ever show).
+    if (n < def.min || n > def.max) return null;
+    return { activity: 'flash', type, n, stage, helped, answer: n };
+  }
+  const stage = stageOfKey('gap', type);
   const capacity = FRAME_CAPACITY[type];
-  if (!capacity || n < 1 || n >= capacity) return null;
+  const range = GAP_FILLED[type];
+  if (!stage || !capacity || !range || n < range[0] || n > range[1]) return null;
   return { activity: 'gap', type, n, stage, helped, answer: capacity - n };
 }

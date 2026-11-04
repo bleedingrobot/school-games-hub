@@ -16,10 +16,20 @@ const STAGES = [
 		max: 3,
 		flashStartMs: 1200,
 		flashGoodMs: 800,
-		gaps: false
+		activity: "flash"
 	},
 	{
 		id: 2,
+		name: "Ten-frame to 5",
+		types: ["tenfive"],
+		min: 1,
+		max: 5,
+		flashStartMs: 1200,
+		flashGoodMs: 800,
+		activity: "flash"
+	},
+	{
+		id: 3,
 		name: "Dice and dots",
 		types: [
 			"dice",
@@ -30,10 +40,10 @@ const STAGES = [
 		max: 5,
 		flashStartMs: 1e3,
 		flashGoodMs: 1e3,
-		gaps: false
+		activity: "flash"
 	},
 	{
-		id: 3,
+		id: 4,
 		name: "Five-frames",
 		types: [
 			"five",
@@ -44,31 +54,64 @@ const STAGES = [
 		max: 7,
 		flashStartMs: 1e3,
 		flashGoodMs: 600,
-		gaps: true
+		activity: "flash"
 	},
 	{
-		id: 4,
-		name: "Ten-frames",
-		types: [
-			"ten",
-			"tenpair",
-			"tenmix"
-		],
+		id: 5,
+		name: "Ten-frame to 10",
+		types: ["ten", "tenpair"],
 		min: 5,
 		max: 10,
 		flashStartMs: 1e3,
 		flashGoodMs: 800,
-		gaps: true
+		activity: "flash"
+	},
+	{
+		id: 6,
+		name: "Empty squares",
+		types: [
+			"five",
+			"ten",
+			"tenpair"
+		],
+		min: 1,
+		max: 7,
+		flashStartMs: 1e3,
+		flashGoodMs: 800,
+		activity: "gap"
+	},
+	{
+		id: 7,
+		name: "Mix it up",
+		types: ["tenmix"],
+		min: 5,
+		max: 10,
+		flashStartMs: 1e3,
+		flashGoodMs: 800,
+		activity: "mixed"
 	}
 ];
 const stageOf = (id) => STAGES[id - 1];
-const STAGE_OF_TYPE = new Map(STAGES.flatMap((s) => s.types.map((t) => [t, s.id])));
-/** How many counters a frame holds (only frame pictures can have Missing Spots). */
+const FLASH_STAGE_OF_TYPE = new Map(STAGES.filter((s) => s.activity !== "gap").flatMap((s) => s.types.map((t) => [t, s.id])));
+/** The stage a saved key belongs to: every gap is stage 6 except tenmix (7); dots go by picture type. Undefined if the type has none. */
+function stageOfKey(activity, type) {
+	if (activity === "gap") return type === "tenmix" ? 7 : 6;
+	return FLASH_STAGE_OF_TYPE.get(type);
+}
+/** How many counters a frame holds (only frame pictures can have empty squares; tenfive is never used for gaps). */
 const FRAME_CAPACITY = {
 	five: 5,
+	tenfive: 10,
 	ten: 10,
 	tenpair: 10,
 	tenmix: 10
+};
+/** The counters showing in an empty-squares picture (so 5 - n or 10 - n squares are empty). */
+const GAP_FILLED = {
+	five: [1, 4],
+	ten: [3, 9],
+	tenpair: [3, 9],
+	tenmix: [3, 9]
 };
 //#endregion
 //#region shared/subitising/keys.ts
@@ -90,22 +133,26 @@ function parseKey(key) {
 	const m = KEY.exec(key);
 	if (!m) return null;
 	const type = m[3];
-	const stage = STAGE_OF_TYPE.get(type);
-	if (!stage) return null;
 	const n = Number(m[4]);
 	const helped = m[2] === "h";
-	const def = stageOf(stage);
-	if (m[1] === "sub" && (n < def.min || n > def.max)) return null;
-	if (m[1] === "sub") return {
-		activity: "flash",
-		type,
-		n,
-		stage,
-		helped,
-		answer: n
-	};
+	if (m[1] === "sub") {
+		const stage = stageOfKey("flash", type);
+		if (!stage) return null;
+		const def = stageOf(stage);
+		if (n < def.min || n > def.max) return null;
+		return {
+			activity: "flash",
+			type,
+			n,
+			stage,
+			helped,
+			answer: n
+		};
+	}
+	const stage = stageOfKey("gap", type);
 	const capacity = FRAME_CAPACITY[type];
-	if (!capacity || n < 1 || n >= capacity) return null;
+	const range = GAP_FILLED[type];
+	if (!stage || !capacity || !range || n < range[0] || n > range[1]) return null;
 	return {
 		activity: "gap",
 		type,
@@ -121,7 +168,8 @@ const packSettings = (q) => ({
 	p: q.placed ? 1 : 0,
 	s: q.startStage,
 	f: q.finished,
-	g: q.guided ? 1 : 0
+	g: q.guided ? 1 : 0,
+	v: 2
 });
 /** The student's typing column with the Quick looks settings added (or left out when there are none). */
 function typingWithSettings(typing, quick) {
@@ -509,7 +557,7 @@ function checkItem(raw, now) {
 		let quick;
 		if (item.quick !== void 0) {
 			const packed = item.quick;
-			if (!(typeof packed === "object" && packed !== null && typeof packed.placed === "boolean" && typeof packed.guided === "boolean" && isInt(packed.startStage, 1, 4) && isInt(packed.finished, 0, 4))) return {
+			if (!(typeof packed === "object" && packed !== null && typeof packed.placed === "boolean" && typeof packed.guided === "boolean" && isInt(packed.startStage, 1, 7) && isInt(packed.finished, 0, 7))) return {
 				ok: false,
 				problem: "quick"
 			};
