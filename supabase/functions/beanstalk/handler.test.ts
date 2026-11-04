@@ -2,20 +2,20 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/beanstalk/memoryServices';
-import { bondKey, makeRound, replay, TARGET, type Tap } from '../../../shared/beanstalk/round';
+import { bondKey, makeRound, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
 import { makeHandler } from './handler';
 
 // Kiwi's Beanstalk's server tests (docs/TESTING.md: the game has 8 tests in all; these are the 2 fairness ones).
 
 /** Every pair right first time, after one wrong pair if `wobble`. */
-function goodTaps(seed: number, wobble = false): Tap[] {
-  const round = makeRound(seed);
+function goodTaps(seed: number, wobble = false, target: Target = 10): Tap[] {
+  const round = makeRound(seed, target);
   const taps: Tap[] = [];
   for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
     const [a] = r.onScreen;
-    const wrong = r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] !== TARGET);
+    const wrong = r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] !== target);
     if (wobble && taps.length === 0 && wrong !== undefined) taps.push({ a, b: wrong, ms: 4000 });
-    taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === TARGET)!, ms: 2500 });
+    taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === target)!, ms: 2500 });
   }
   return taps;
 }
@@ -84,6 +84,12 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
   hours(24);
   expect(await finish()).toMatchObject({ daysDone: 30, leafChanged: 9, egg: true });
   expect(log.eggs).toEqual(['pupil-a']); // the hub gives Kiwi's Golden Egg achievement
+
+  // The tūī's beanstalk is bonds to 100, from the saved days whatever the browser sends, and is recorded as one.
+  hours(24);
+  const seed = await start('pupil-a');
+  expect((await send('pupil-a', { action: 'finish', seed, taps: goodTaps(seed, true, 100), target: 10 })).body).toMatchObject({ daysDone: 31, leafChanged: 0 });
+  expect(log.answers.at(-1)!.answers.every((a) => a.key === 'bond100:tens')).toBe(true);
 });
 
 describe('the deployable file', () => {

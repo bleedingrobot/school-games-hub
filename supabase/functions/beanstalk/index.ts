@@ -5278,12 +5278,131 @@ function userIdFromToken(auth) {
 		}
 	};
 }
+//#endregion
+//#region shared/seededRandom.ts
+/** A tiny repeatable random number generator, so "random" test games are the same every run. */
+function seeded(seed) {
+	return () => {
+		seed = (seed * 1103515245 + 12345) % 2147483648;
+		return seed / 2147483648;
+	};
+}
+/** What each beanstalk's pairs add up to, in turn: Kiwi 10, tūī 100, kererū 1000, then round again (James, 4 Nov 2026). */
+const TARGETS = [
+	10,
+	100,
+	1e3
+];
+const isTarget = (n) => TARGETS.includes(n);
+const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
+/** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
+const SMALL_PARTS = [
+	1,
+	2,
+	3,
+	4,
+	5
+];
+function makeRound(seed, target = 10) {
+	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+	if (!isTarget(target)) throw new RangeError(`Bad target ${target}`);
+	const random = seeded(seed);
+	random();
+	random();
+	const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
+	while (pool.length < 10) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[pool[i], pool[j]] = [pool[j], pool[i]];
+	}
+	const step = target / 10;
+	return {
+		seed,
+		target,
+		leaves: pool.flatMap((a) => random() < .5 ? [a, 10 - a] : [10 - a, a]).map((n) => n * step)
+	};
+}
+/**
+* The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
+* place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
+*/
+const bondKey = (n, target = 10) => {
+	if (target === 100) return "bond100:tens";
+	if (target === 1e3) return "bond1000:hundreds";
+	const lo = Math.min(n, 10 - n);
+	return `bond10:${lo}+${10 - lo}`;
+};
+/** The leaves floating once some pairs are made. */
+const floating = (round, used, pairsMade) => round.leaves.map((_, i) => i).slice(0, 6 + 2 * pairsMade).filter((i) => !used.has(i));
+/** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
+function replay(round, taps) {
+	const used = new Set();
+	const answers = [];
+	let pairsMade = 0;
+	for (const { a, b, ms } of taps) {
+		if (pairsMade === 10) throw new Error("Taps after the round was done");
+		const now = floating(round, used, pairsMade);
+		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
+		const right = round.leaves[a] + round.leaves[b] === round.target;
+		answers.push({
+			key: bondKey(round.leaves[a], round.target),
+			correct: right,
+			ms
+		});
+		if (right) {
+			used.add(a).add(b);
+			pairsMade++;
+		}
+	}
+	return {
+		pairsMade,
+		mistakes: answers.length - pairsMade,
+		done: pairsMade === 10,
+		onScreen: floating(round, used, pairsMade),
+		answers
+	};
+}
+const METALS = [
+	"green",
+	"bronze",
+	"silver",
+	"gold"
+];
 /** Ten leaves, three changes each: thirty finished days to a Golden Egg. */
-const DAYS_PER_EGG = 30;
+const DAYS_PER_EGG = 10 * (METALS.length - 1);
+/** Who is stuck on top of each beanstalk, in order: Kiwi first, then a new New Zealand friend after each egg (James, 4 Nov 2026). */
+const FRIENDS = [
+	"kiwi",
+	"tui",
+	"kereru",
+	"weta",
+	"ruru",
+	"takahe"
+];
+/** What this beanstalk's pairs add up to: 10, 100, 1000, then round again with the next friends (James, 4 Nov 2026). */
+const targetFor = (eggs) => TARGETS[eggs % TARGETS.length];
 const wholeCount = (n) => {
 	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
 	return n;
 };
+function stalkAfter(daysDone) {
+	const eggs = Math.floor(wholeCount(daysDone) / DAYS_PER_EGG);
+	const day = daysDone % DAYS_PER_EGG;
+	const round = Math.floor(day / 10);
+	const leaves = Array.from({ length: 10 }, (_, i) => METALS[round + (i < day % 10 ? 1 : 0)]);
+	return {
+		eggs,
+		friend: FRIENDS[eggs % FRIENDS.length],
+		target: targetFor(eggs),
+		day,
+		leaves,
+		dots: [
+			"full",
+			"small",
+			"none"
+		][round]
+	};
+}
 /** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
 const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
 	timeZone: "Pacific/Auckland",
@@ -5305,75 +5424,6 @@ function finishChallenge(daysDone, lastLeafDay, today) {
 		lastLeafDay: today,
 		leafChanged: daysDone % 10,
 		egg: next % DAYS_PER_EGG === 0
-	};
-}
-//#endregion
-//#region shared/seededRandom.ts
-/** A tiny repeatable random number generator, so "random" test games are the same every run. */
-function seeded(seed) {
-	return () => {
-		seed = (seed * 1103515245 + 12345) % 2147483648;
-		return seed / 2147483648;
-	};
-}
-const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
-/** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
-const SMALL_PARTS = [
-	1,
-	2,
-	3,
-	4,
-	5
-];
-function makeRound(seed) {
-	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
-	const random = seeded(seed);
-	random();
-	random();
-	const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
-	while (pool.length < 10) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
-	for (let i = pool.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[pool[i], pool[j]] = [pool[j], pool[i]];
-	}
-	return {
-		seed,
-		leaves: pool.flatMap((a) => random() < .5 ? [a, 10 - a] : [10 - a, a])
-	};
-}
-/** The fact a pair practises: `bond10:3+7`, smaller number first. */
-const bondKey = (n) => {
-	const lo = Math.min(n, 10 - n);
-	return `bond10:${lo}+${10 - lo}`;
-};
-/** The leaves floating once some pairs are made. */
-const floating = (round, used, pairsMade) => round.leaves.map((_, i) => i).slice(0, 6 + 2 * pairsMade).filter((i) => !used.has(i));
-/** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
-function replay(round, taps) {
-	const used = new Set();
-	const answers = [];
-	let pairsMade = 0;
-	for (const { a, b, ms } of taps) {
-		if (pairsMade === 10) throw new Error("Taps after the round was done");
-		const now = floating(round, used, pairsMade);
-		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
-		const right = round.leaves[a] + round.leaves[b] === 10;
-		answers.push({
-			key: bondKey(round.leaves[a]),
-			correct: right,
-			ms
-		});
-		if (right) {
-			used.add(a).add(b);
-			pairsMade++;
-		}
-	}
-	return {
-		pairsMade,
-		mistakes: answers.length - pairsMade,
-		done: pairsMade === 10,
-		onScreen: floating(round, used, pairsMade),
-		answers
 	};
 }
 //#endregion
@@ -5454,16 +5504,16 @@ async function handleBeanstalk(services, player, body) {
 		if (round === "busy") return busy();
 		if (!round) return no(409, "That isn’t one of your challenges.", { code: "not-yours" });
 		if (!round.open) return no(409, "That challenge has finished.", { code: "ended" });
-		let played;
-		try {
-			played = replay(makeRound(seed), taps);
-		} catch {
-			return unreadable();
-		}
-		if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
 		for (let tries = 0; tries < TRIES; tries++) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
+			let played;
+			try {
+				played = replay(makeRound(seed, stalkAfter(s.daysDone).target), taps);
+			} catch {
+				return unreadable();
+			}
+			if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
 			const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
 			const progress = {
 				child: s.child,

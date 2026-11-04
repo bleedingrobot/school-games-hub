@@ -1,10 +1,10 @@
 /**
- * Today's challenge: tap two floating leaves that make 10. A right pair flies up to the stalk and the stalk grows towards
+ * Today's challenge: tap two floating leaves that make the beanstalk's sum (10, 100 or 1000). A right pair flies up to the stalk and the stalk grows towards
  * the friend; a wrong pair wobbles and stays (no penalty, nothing shown: the dots are the help). Ten pairs reach the top.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, TARGET, type Tap } from '../../../shared/beanstalk/round';
+import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
 import { playSound } from '../sounds';
 import type { Child } from './backend';
 import { Leaf, type LeafLook } from './Leaf';
@@ -36,6 +36,8 @@ interface Props {
   /** The floating leaves' colour: the colour every magic leaf has reached (green, bronze or silver). */
   trayMetal: Metal;
   friend: Friend;
+  /** What a pair adds up to on this beanstalk. */
+  target: Target;
   child: Child;
   /** The child's very first challenge: a hand shows them a right pair, until they have made one. */
   guide: boolean;
@@ -44,8 +46,8 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide, sound, say, onDone }: Props) {
-  const round = useMemo(() => makeRound(seed), [seed]);
+export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, child, guide, sound, say, onDone }: Props) {
+  const round = useMemo(() => makeRound(seed, target), [seed, target]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
@@ -58,7 +60,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide
 
   useEffect(() => {
     heading.current?.focus();
-    say(guide ? WORDS.guideStart : WORDS.tapTwo);
+    say(guide ? WORDS.guideStart(target) : WORDS.tapTwo(target));
     const pending = timers.current;
     return () => pending.forEach((t) => window.clearTimeout(t));
   }, [seed]); // only when the round starts
@@ -79,7 +81,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide
     setTaps(next);
     setPicked(null);
     const [x, y] = [round.leaves[picked], round.leaves[leaf]];
-    if (x + y !== TARGET) {
+    if (x + y !== target) {
       setWobble([picked, leaf]);
       say(WORDS.tryAgain);
       later(WOBBLE_MS, () => setWobble([]));
@@ -101,7 +103,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide
   // The hand follows the child: it points at a leaf with a partner, and once one is picked, at that leaf's partner. Every
   // leaf floating has a partner (round.ts), so it always has somewhere to point. Gone after the first right pair.
   const onScreen = slots.filter((s): s is number => s !== null && !flying.includes(s));
-  const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === TARGET);
+  const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === target);
   const pointAt = !guide || pairsMade > 0 || flying.length ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
 
   const look = (leaf: number): LeafLook =>
@@ -109,7 +111,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide
 
   return (
     <div className="bs-play">
-      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{WORDS.tapTwo}</h2>
+      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{WORDS.tapTwo(target)}</h2>
       <Scene
         grow={0.08 + (0.92 * pairsMade) / PAIRS_PER_ROUND}
         leaves={stalkLeaves.slice(0, pairsMade).map((metal) => ({ metal }))}
@@ -131,6 +133,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, child, guide
             <Leaf
               key={leaf}
               value={round.leaves[leaf]}
+              step={target / 10}
               dots={dots}
               metal={trayMetal}
               look={look(leaf)}

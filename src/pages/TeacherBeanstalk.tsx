@@ -30,7 +30,7 @@ export async function beanstalkStudentSummary(student: string): Promise<string |
   const s = await fetchBeanstalkStudent(student);
   if (!s) return null;
   const stalk = stalkAfter(s.daysDone);
-  const parts = [`${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk`];
+  const parts = [`${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk (pairs to ${stalk.target})`];
   if (stalk.eggs) parts.push(`${stalk.eggs} Golden ${stalk.eggs === 1 ? 'Egg' : 'Eggs'}`);
   return parts.join(' · ');
 }
@@ -53,7 +53,7 @@ export function BeanstalkStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Kiwi’s Beanstalk">
       <p>
-        Helping {FRIEND_NAMES[stalk.friend]}. Leaves: {leaves}.
+        Helping {FRIEND_NAMES[stalk.friend]} with pairs that make {stalk.target}. Leaves: {leaves}.
         {lastLeafDay && <> Last leaf changed {new Date(`${lastLeafDay}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>Next time the leaves show {DOTS[stalk.dots]} (unless dots are off for the class). Golden Eggs so far: {stalk.eggs}.</p>

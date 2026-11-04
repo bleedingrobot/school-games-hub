@@ -6,15 +6,16 @@
  *   load    the pupil's beanstalk (a new pupil has none), the class's dots setting and today's NZ date by the server's clock;
  *   choose  be Jack or Jill;
  *   start   makes today's challenge from a fresh seed and keeps it (any other open challenge is closed);
- *   finish  replays the taps on the server's own round, records each pair for the maths records (a wrong pair counts
- *           against the first leaf's pair), and changes a leaf on the first finish of the NZ day. A Golden Egg is an
+ *   finish  replays the taps on the server's own round (its sum, 10, 100 or 1000, from the saved beanstalk), records
+ *           each pair for the maths records (a wrong pair counts against the first leaf's pair), and changes a leaf on
+ *           the first finish of the NZ day. A Golden Egg is an
  *           achievement (Stage 4's migration counts eggs from the finished days).
  *
  * Nothing that counts comes from the browser: the seed is the server's, the round is made again from it, the day is the
  * server's clock, and the leaves come from the saved count of finished days. A challenge finishes once.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { finishChallenge, nzDate } from './progress';
+import { finishChallenge, nzDate, stalkAfter } from './progress';
 import { makeRound, MAX_SEED, isSeed, replay, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
@@ -137,22 +138,24 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
     if (round === 'busy') return busy();
     if (!round) return no(409, 'That isn’t one of your challenges.', { code: 'not-yours' });
     if (!round.open) return no(409, 'That challenge has finished.', { code: 'ended' });
-    let played;
-    try {
-      played = replay(makeRound(seed), taps);
-    } catch {
-      return unreadable();
-    }
-    if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
     for (let tries = 0; tries < TRIES; tries++) {
       const s = await services.load(player);
       if (s === 'busy') return busy();
+      // The sum comes from the saved beanstalk. It is the same as when the challenge started: starting one closes any
+      // other, so no other finish can move the days on in between.
+      let played;
+      try {
+        played = replay(makeRound(seed, stalkAfter(s.daysDone).target), taps);
+      } catch {
+        return unreadable();
+      }
+      if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
       const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
       const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay };
       const kept = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (kept === 'busy') return busy();
       if (kept) {
-        // One answer a pair tapped, as bonds to 10: once per challenge, so a finish sent again never counts twice.
+        // One answer a pair tapped, as bonds to 10, 100 or 1000: once per challenge, so a finish sent again never counts twice.
         const at = services.now();
         await services.recordAnswers(player, `beanstalk:${seed}`, played.answers.map((a) => ({ ...a, at })));
         if (result.egg) await services.progressChanged(player);

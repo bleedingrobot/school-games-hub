@@ -35,7 +35,7 @@ where the device can (the browser's built-in voice, which James can turn off). S
 
 ## 3. The maths
 
-- Only **bonds to 10**: the focus family `bond10` (`shared/maths/skillPacks/earlyFacts.ts`), fact keys like
+- **Bonds to 10, then 100, then 1000** (changed 4 Nov night, see "Bigger bonds" at the end). Kiwi's beanstalk: the focus family `bond10` (`shared/maths/skillPacks/earlyFacts.ts`), fact keys like
   `bond10:3+7`. It feeds the ladder skill `facts-10`. Pairs 1+9 to 5+5 are used, and 0+10 is not.
 - **Support dots (James, 4 Nov):** each leaf shows its number and that many dots in a ten-frame. The dots shrink as the
   beanstalk advances:
@@ -425,3 +425,24 @@ and sprout are only used when a painting is missing. The tries and a contact she
   until the stalk starts growing (at the start the farm picture's own sprout is there). Checked at 1366x640 and 844x390:
   the friend stays on screen, and all ten leaves show (the top one just touches the cloud's underside).
 - `npm run typecheck`, `npm run test:all` (6017 tests) and `npm run build` pass.
+
+## Bigger bonds (James, 4 Nov night)
+
+Each beanstalk's pairs add up to a bigger number: Kiwi 10, tūī 100 (70 + 30), kererū 1000 (700 + 300), then round again
+(wētā 10, ruru 100, takahē 1000). James chose:
+
+- **No zero pairs.** 100 + 0 and 1000 + 0 are left out, as 10 + 0 is.
+- **The dots count tens or hundreds.** The same ten-frame: 70 shows 7 dots, with "10 each" (or "100 each") under it.
+- **Round again after the third.** Fluency stays fresh.
+
+How it works:
+
+- `targetFor(eggs)` in `progress.ts` gives the sum, and `makeRound(seed, target)` scales the same round up. A seed gives the
+  same shape for every sum.
+- The server takes the sum from the pupil's saved days, never from the browser. It is the same as when the challenge
+  started, because starting one closes any other.
+- Pairs are recorded as `bond100:tens` and `bond1000:hundreds`, the hub's place-value keys that Bond Match uses.
+- The words, the home title ("This time, make pairs that add to 100!"), the leaf numbers (a pill for 2 to 4 digits) and the
+  teacher's notes say the sum.
+- Checked in the preview at 1366x640 and 844x390 on the tūī's and kererū's beanstalks. The tests cover all three sums
+  (existing tests extended, so the count is unchanged). Function rebuilt.

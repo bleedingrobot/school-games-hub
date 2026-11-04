@@ -130,6 +130,7 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
         stalkLeaves={stalkAfter(state.daysDone).leaves}
         trayMetal={METALS[Math.floor(stalkAfter(state.daysDone).day / LEAVES_ON_STALK)]}
         friend={stalkAfter(state.daysDone).friend}
+        target={stalkAfter(state.daysDone).target}
         child={state.child}
         guide={state.daysDone === 0 && state.lastLeafDay === null}
         sound={soundOn}
@@ -188,7 +189,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
   const name = FRIEND_NAMES[stalk.friend];
   const doneToday = state.lastLeafDay === state.today;
   // A fresh beanstalk after an egg says who is stuck now.
-  const title = stalk.day === 0 && stalk.eggs > 0 ? WORDS.nextFriend(name) : WORDS.stuck(name);
+  const title = stalk.day === 0 && stalk.eggs > 0 ? WORDS.nextFriend(name, stalk.target) : WORDS.stuck(name, stalk.target);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();

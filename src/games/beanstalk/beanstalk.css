@@ -249,6 +249,13 @@
 .bs-dot { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid #9bb592; }
 .bs-dot--on { background: #d9481c; border-color: #a33310; }
 .bs-frame--small { width: 46%; opacity: 0.55; }
+/* Bigger numbers on the 100 and 1000 beanstalks: the circle stretches to a pill and the digits shrink a little. */
+.bs-leaf__number--digits2 { width: auto; min-width: 40%; aspect-ratio: auto; height: calc(var(--bs-leaf) * 0.36); padding: 0 6%; border-radius: 999px; font-size: calc(var(--bs-leaf) * 0.24); }
+.bs-leaf__number--digits3 { width: auto; min-width: 40%; aspect-ratio: auto; height: calc(var(--bs-leaf) * 0.32); padding: 0 6%; border-radius: 999px; font-size: calc(var(--bs-leaf) * 0.2); }
+.bs-leaf__number--digits4 { width: auto; min-width: 40%; aspect-ratio: auto; height: calc(var(--bs-leaf) * 0.3); padding: 0 6%; border-radius: 999px; font-size: calc(var(--bs-leaf) * 0.17); }
+/* "10 each" under the dots: each dot is a ten (or a hundred). */
+.bs-each { margin-top: -2px; padding: 0 5px; border-radius: 6px; background: rgb(255 255 255 / 0.9); color: var(--bs-ink); font: 800 calc(var(--bs-leaf) * 0.1) / 1.2 system-ui, sans-serif; }
+.bs-each--small { opacity: 0.7; }
 
 /* The guided first go: a hand at the foot of the leaf to tap, nudging up at it. */
 .bs-leaf--pointed { filter: drop-shadow(0 0 10px #fffbd0) drop-shadow(0 0 3px #fff); }
