@@ -46,7 +46,7 @@ export interface GameDefinition {
   /**
    * For a game that moves on once a day (the Foundational skills games): what moves on ("leaf", "lily pad"), for the "next
    * part" chip on its home page card ("Today’s leaf is ready" / "Next leaf tomorrow"). It also needs a day hook in hub_games
-   * (migration 20261105000400_next_part_chips.sql) and a `<NextPartChip>` on its own home screen.
+   * (migration 20261105000500_next_part_chips.sql) and a `<NextPartChip>` on its own home screen.
    */
   nextPart?: { noun: string };
   /** Season resets for the "Seasons and end of year" part at the bottom of the Teacher page, away from the everyday switches. Lazy too. */
