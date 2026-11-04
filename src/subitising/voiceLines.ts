@@ -1,6 +1,6 @@
 /**
  * Every line Quick looks can read aloud, in one place, so each one can have a recorded clip
- * (public/voice/quick-looks/<slug>.mp3, made with Kokoro by scripts/quick-looks-voice.py).
+ * (public/voice/quick-looks/<slug>.mp3, made with Kokoro by scripts/voice-clips.py).
  * Lines without a clip fall back to the browser's own voice.
  */
 import { FRAME_CAPACITY, GAP_FILLED, type PictureType } from '../../shared/subitising/config';

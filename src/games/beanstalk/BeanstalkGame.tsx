@@ -7,12 +7,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
 import { useSound } from '../../sound';
-import { canSpeak, speak, stopSpeaking } from '../../speech';
+import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
 import { childArt, FRIEND_NAMES, paint } from './art';
 import { BeanstalkError, type BeanstalkBackend, type BeanstalkState, type Child } from './backend';
 import { Round } from './Round';
 import { Scene } from './Scene';
+import { homeLine, VOICE_FOLDER } from './voiceLines';
 import { WORDS } from './words';
 import './beanstalk.css';
 
@@ -35,8 +36,8 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
-  const say = useCallback((text: string) => on && speak(text), [on]);
-  return { on, setOn, say, available: canSpeak() };
+  const say = useCallback((text: string) => on && speak(text, VOICE_FOLDER), [on]);
+  return { on, setOn, say, available: canReadAloud() };
 }
 
 type Screen =
@@ -193,7 +194,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
-    say(doneToday ? `${title} ${WORDS.doneToday}` : title);
+    say(homeLine(title, doneToday));
   }, [say, doneToday, title]);
   return (
     <div className="bs-home">
