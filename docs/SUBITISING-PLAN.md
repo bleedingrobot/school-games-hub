@@ -156,3 +156,7 @@ Flash is 1000 to 1200 ms depending on the stage. Feedback is gentle: right → c
 - **What students see:** a "Quick looks" button next to "Today's session" on the Training home, for everyone who can open Training. No separate switch. Read-aloud is off until a student switches it on.
 - **Not yet checked live:** signing in as a student and doing a session on the real site (needs a school Google account). James to try it.
 - **Turning it off:** hide the button in `src/training/TrainingApp.tsx` and publish. Answers already saved stay in `training_answers` and do not affect the times-table map.
+
+## 14. Review (4 November 2026)
+
+A full review (maths, pictures, timing, feedback, accessibility, live data, bugs) is in [SUBITISING-REVIEW-PLAN.md](SUBITISING-REVIEW-PLAN.md), with the fixes made and a ranked list of what to build next.
