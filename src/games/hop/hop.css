@@ -226,7 +226,8 @@
 @keyframes hp-bob { 50% { translate: 0 -8px; } }
 .hp-worm:focus-visible { outline: 4px solid var(--hp-gold); outline-offset: 4px; border-radius: 50%; }
 .hp-worm__bug { width: 70%; margin-bottom: -10%; position: relative; z-index: 1; }
-.hp-worm__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+/* The painted glow-worm perches on the upper left of its bead, in front of it, so the worm shows and the number stays clear. */
+.hp-worm__art { position: absolute; left: -26%; top: -14%; width: 74%; height: auto; z-index: 1; pointer-events: none; }
 .hp-worm__bead {
   position: relative;
   display: grid; place-items: center;
