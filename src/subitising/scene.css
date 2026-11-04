@@ -1,0 +1,38 @@
+/* The Quick looks garden scene (backdrop and thumbnails). No dependence on .sb-app so the hub can use the thumbnail. */
+.sb-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+.sb-scene--painted {
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+}
+.sb-scene--faint {
+  opacity: 0.3;
+}
+.sb-scene--nobeds .sb-scene-beds {
+  display: none;
+}
+.sb-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.sb-thumb--inline {
+  display: inline-block;
+  width: 36px;
+  height: 28px;
+  vertical-align: middle;
+  margin-right: 8px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}

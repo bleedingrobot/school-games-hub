@@ -4,6 +4,7 @@ import { isStruggling } from '../../shared/subitising/engine';
 import { groupSizes } from '../../shared/subitising/patterns';
 import type { Trial } from '../../shared/subitising/trials';
 import { speak, stopSpeaking } from '../speech';
+import { Friend } from './Friend';
 import { BlankPicture, PictureSvg } from './PictureSvg';
 
 export interface AnswerResult {
@@ -196,7 +197,9 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
         {phase === 'ready' ? 'Get ready…' : helped && phase === 'answer' ? 'Take your time. Can you see smaller groups?' : prompt}
       </h1>
       <div className="sb-stage">
-        {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
+        <div className="sb-board">
+          {showing ? <PictureSvg picture={trial.picture} mode={mode} ghosts={gap && phase === 'feedback'} label={label} /> : <BlankPicture label={label} />}
+        </div>
       </div>
       <div className="sb-live" role="status" aria-live="polite">
         {phase === 'answer' && !staticPicture
@@ -210,7 +213,10 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
 
       {phase === 'feedback' ? (
         <>
-          <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
+          <div className="sb-feedback">
+            <Friend happy={result?.correct ?? false} />
+            <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
+          </div>
           <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
             {index + 1 >= total ? 'Finish' : 'Next'}
           </button>
