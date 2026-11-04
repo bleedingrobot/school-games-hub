@@ -36,8 +36,13 @@ export async function signInWithBadge(code: string): Promise<string> {
   }
   const body = (await response.json().catch(() => ({}))) as { key?: string; error?: string };
   if (!response.ok || !body.key) throw new FriendlyError(body.error ?? 'That badge didn’t work. Try again.');
+  // Let the sign-in code finish starting up first (it may still be reading or renewing whoever was signed in before),
+  // so it can't throw the pupil's new sign-in away a moment later.
+  await supabase.auth.initialize();
   const { data, error } = await supabase.auth.verifyOtp({ token_hash: body.key, type: 'magiclink' });
   if (error || !data.user) throw new FriendlyError('That badge didn’t work. Try again.');
+  const { data: saved } = await supabase.auth.getSession();
+  if (saved.session?.user.id !== data.user.id) throw new FriendlyError('That badge didn’t work. Try again.');
   return data.user.id;
 }
 
