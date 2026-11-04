@@ -1,0 +1,99 @@
+/* The teacher's sheet of QR sign-in badges (BadgeSheet.tsx), on screen and printed: 8 cards to an A4 page. */
+
+.badges__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.badges__note {
+  max-width: 70ch;
+}
+.badges__notice {
+  font-weight: 700;
+}
+.badges__sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.badge-card {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 2px dashed #64748b;
+  border-radius: 14px;
+  background: #fff;
+  color: #0f172a;
+  break-inside: avoid;
+}
+.badge-card__qr {
+  width: 120px;
+  height: 120px;
+}
+.badge-card__words p {
+  margin: 0 0 4px;
+}
+.badge-card__name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.badge-card__player,
+.badge-card__class {
+  font-size: 0.9rem;
+  color: #334155;
+}
+.badge-card__tip {
+  font-weight: 700;
+}
+.badge-card__renew {
+  min-height: 44px;
+  margin-top: 4px;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  /* Only the cards: no site header, tabs or buttons. */
+  body * {
+    visibility: hidden;
+  }
+  .badges__sheet,
+  .badges__sheet * {
+    visibility: visible;
+  }
+  .badges__sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm;
+    margin: 0;
+  }
+  .badge-card {
+    grid-template-columns: 40mm 1fr;
+    height: 58mm;
+    border-color: #94a3b8;
+  }
+  .badge-card__qr {
+    width: 40mm;
+    height: 40mm;
+  }
+  .badge-card__renew {
+    display: none;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+}
