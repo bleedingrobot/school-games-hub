@@ -24,4 +24,4 @@ The art is finished. Ask James (on a clickable card) which of these comes next:
 2. **The New Season picture upload** to the profile album.
 3. **Achievements and points.**
 4. **More silly pieces** (James wants as many as possible; paint them on the gaming PC, never in code).
-5. Small, only if James asks: repaint `ringworld-3` (its stripes are upright, so the band looks a bit like a barcode; the prompt asks for flat bands but the model ignored it twice), or a closer camera for the gallery pictures.
+5. Small, only if James asks: a closer camera for the gallery pictures. (`ringworld-3` was painted a third time on 4 Nov evening and now has flat bands.)

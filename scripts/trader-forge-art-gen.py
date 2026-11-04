@@ -210,8 +210,8 @@ PLANET_LOOKS: dict[str, list[str]] = {
         # Remade 4 Nov: "ring world" made the model draw Earth's map or a ring, so only the ground is described.
         'an alien landscape of long thin blue lakes and green islands with thin straight stripes of farmland between them, all running left to right in even stripes from edge to edge',
         'the inside surface of a giant ring world of grey-green mountain ranges and forest valleys with glinting rivers, laid out in straight bands',
-        # Repainted again 4 Nov: the bands came out upright; the ring band needs them lying flat.
-        'an alien landscape in long flat horizontal bands, one above the other: golden plains and dark green forests, with neat grids of tiny villages, every band runs straight across from the left edge to the right edge',
+        # Repainted a third time 4 Nov: "bands" came out upright or not at all; this copies ring world 1's wording, which worked.
+        'an alien landscape of long thin golden wheat fields and long thin dark green forest strips with thin straight rivers between them, all running left to right in even stripes from edge to edge, with tiny villages',
     ],
 }
 for kind, looks in PLANET_LOOKS.items():
