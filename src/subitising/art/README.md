@@ -5,11 +5,14 @@ Add an optional `<name>-small.webp` copy (about half the size) and narrow screen
 
 | Name | Size | What |
 |---|---|---|
-| `garden-scene` | 1600 x 900 | Sunny garden, low fence, path, four empty raised beds along the bottom third, sky at the top (the panel covers the top half). While this picture exists the code hides its own CSS beds, so the plants stand over the painted ones. |
+| `garden-scene` | 1600 x 900 | Sunny garden, low fence, path, seven empty raised beds along the bottom third, sky at the top (the panel covers the top half). While this picture exists the code hides its own CSS beds, so the plants stand over the painted ones. |
 | `plant-1-0` to `plant-1-4` | 512 x 512 cut-out | Daisy: seed, sprout, leafy, bud, in flower |
-| `plant-2-0` to `plant-2-4` | 512 x 512 cut-out | Sunflower, same five steps |
-| `plant-3-0` to `plant-3-4` | 512 x 512 cut-out | Kowhai, same five steps |
-| `plant-4-0` to `plant-4-4` | 512 x 512 cut-out | Pohutukawa, same five steps |
+| `plant-2-0` to `plant-2-4` | 512 x 512 cut-out | Tulip: same five steps |
+| `plant-3-0` to `plant-3-4` | 512 x 512 cut-out | Sunflower: same five steps |
+| `plant-4-0` to `plant-4-4` | 512 x 512 cut-out | Lavender: same five steps |
+| `plant-5-0` to `plant-5-4` | 512 x 512 cut-out | Kowhai: same five steps |
+| `plant-6-0` to `plant-6-4` | 512 x 512 cut-out | Harakeke (flax): same five steps, tall dark flower stalks at the end |
+| `plant-7-0` to `plant-7-4` | 512 x 512 cut-out | Pohutukawa: same five steps |
 | `friend-happy`, `friend-calm` | 512 x 512 cut-out | Ladybird: cheering, and gentle encouraging smile |
 
-The plants share one soil mound and light so they line up in the beds.
+Seven plants, 35 pictures. The plants share one soil mound and light so they line up in the beds.

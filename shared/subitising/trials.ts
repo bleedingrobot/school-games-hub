@@ -2,7 +2,7 @@
  * Builds one picture to practise. Same seed, same progress and same index always make the same
  * picture, so a test (or a teacher preview) can make it again.
  */
-import { FRAME_CAPACITY, STAGES, SUBITISING_CONFIG, stageOf, type PictureType, type StageNumber, type SubitisingConfig } from './config';
+import { FRAME_CAPACITY, GAP_FILLED, STAGES, SUBITISING_CONFIG, slotOf, stageOf, type PictureType, type StageNumber, type SubitisingConfig } from './config';
 import { flashMs, type Progress } from './engine';
 import { gapKey, subKey, type Activity } from './keys';
 import { makeGapPicture, makePicture, type Picture, type Random } from './patterns';
@@ -64,8 +64,9 @@ function chooseSource(progress: Progress, index: number, last: { key: string } |
   if (progress.stepBack && !review) return { stage, type: types[0], review };
   // Practise the types least seen lately, so none is left out.
   const seen = progress.stages[stage - 1].seen;
-  const fewest = Math.min(...types.map((t) => seen[t] ?? 0));
-  const pool = types.filter((t) => (seen[t] ?? 0) === fewest);
+  const total = (t: PictureType) => (seen[slotOf('flash', t)] ?? 0) + (seen[slotOf('gap', t)] ?? 0);
+  const fewest = Math.min(...types.map(total));
+  const pool = types.filter((t) => total(t) === fewest);
   const lastType = last ? last.key.split(':')[1]?.split('-')[0] : null;
   const fresh = pool.filter((t) => t !== lastType);
   return { stage, type: pick(rng, fresh.length ? fresh : pool), review };
@@ -77,11 +78,10 @@ export function buildTrial(progress: Progress, seed: number, index: number, last
   for (let attempt = 0; attempt < 6; attempt++) {
     const { stage, type, review } = chooseSource(progress, index + attempt, last, rng, config);
     const def = stageOf(stage);
-    const frameType = FRAME_CAPACITY[type] !== undefined;
-    const gap = def.gaps && frameType && rng() < 1 / config.gapEvery;
+    const gap = def.activity === 'gap' || (def.activity === 'mixed' && rng() < 0.5);
     // Stepping back makes the numbers smaller, never bigger than the stage's lower half.
     const hi = progress.stepBack && !review ? Math.max(def.min, Math.ceil((def.min + def.max) / 2)) : def.max;
-    const n = typeRange(type, def.min, hi, gap, rng);
+    const n = gap ? gapFilled(type, progress.stepBack && !review ? GAP_STEP_BACK_ANSWER : GAP_MAX_ANSWER, rng) : typeRange(type, def.min, hi, rng);
     const key = gap ? gapKey(type, n) : subKey(type, n);
     if (last && last.key === key && attempt < 5) continue;
     const picture = gap ? makeGapPicture(type, n, rng) : makePicture(type, n, rng);
@@ -105,15 +105,23 @@ export function buildTrial(progress: Progress, seed: number, index: number, last
   throw new Error('unreachable');
 }
 
+/** The most empty squares a student is asked for, and when stepping back. */
+const GAP_MAX_ANSWER = 7;
+const GAP_STEP_BACK_ANSWER = 4;
+
+/** Counters showing in a gap picture: the type's range, keeping the answer (squares empty) at most `maxAnswer`. */
+function gapFilled(type: PictureType, maxAnswer: number, rng: Random): number {
+  const [fLo, fHi] = GAP_FILLED[type]!;
+  const capacity = FRAME_CAPACITY[type]!;
+  const lo = Math.min(fHi, Math.max(fLo, capacity - maxAnswer));
+  return lo + Math.floor(rng() * (fHi - lo + 1));
+}
+
 /** The numbers a picture type can show: a five-frame holds 5, dice stop at 6, and so on. */
-function typeRange(type: PictureType, min: number, max: number, gap: boolean, rng: Random): number {
+function typeRange(type: PictureType, min: number, max: number, rng: Random): number {
   let lo = min;
   let hi = max;
-  const capacity = FRAME_CAPACITY[type];
-  if (gap && capacity) {
-    lo = capacity === 5 ? 1 : 3;
-    hi = Math.max(lo, Math.min(capacity - 1, max));
-  } else if (type === 'five') {
+  if (type === 'five') {
     hi = Math.min(hi, 5);
   } else if (type === 'fiveplus') {
     lo = 6;

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 
 export type Level = 0 | 1 | 2 | 3 | 4;
-export type StageId = 1 | 2 | 3 | 4;
+/** Which plant: 1 daisy, 2 tulip, 3 sunflower, 4 lavender, 5 kōwhai, 6 harakeke, 7 pōhutukawa (a plain number so it follows the stage list). */
+export type StageId = number;
 
 const GREEN = '#3f9d4e';
 const GREEN_DARK = '#2c7a3a';
@@ -200,11 +201,98 @@ function Pohutukawa({ level }: { level: Level }) {
   );
 }
 
-const KINDS: Record<StageId, (p: { level: Level }) => ReactNode> = { 1: Daisy, 2: Sunflower, 3: Kowhai, 4: Pohutukawa };
+
+function Tulip({ level }: { level: Level }) {
+  if (level === 0) return <Seed />;
+  const top = TOP[level];
+  return (
+    <>
+      <Stem level={level} w={3.5} />
+      {level === 1 && (
+        <>
+          <Leaf x={50} y={92} angle={-110} len={13} />
+          <Leaf x={50} y={92} angle={-70} len={13} />
+        </>
+      )}
+      {level >= 2 && (
+        <>
+          <Leaf x={49} y={96} angle={-118} len={level === 2 ? 30 : 36} fill={GREEN} />
+          <Leaf x={51} y={96} angle={-62} len={level === 2 ? 30 : 36} fill={GREEN} />
+        </>
+      )}
+      {level === 3 && <path d={`M50 ${top + 12} Q 41 ${top + 6} 45 ${top - 6} Q 50 ${top - 12} 55 ${top - 6} Q 59 ${top + 6} 50 ${top + 12}Z`} fill="#e0525f" stroke="#a82a38" strokeWidth="0.8" />}
+      {level === 4 && (
+        <g transform={`translate(50 ${top + 4})`}>
+          <path d="M-12 -14 Q -14 6 0 10 Q 14 6 12 -14 Q 6 -6 0 -16 Q -6 -6 -12 -14Z" fill="#d9283f" stroke="#a01a2c" strokeWidth="0.9" strokeLinejoin="round" />
+          <path d="M0 -17 Q -9 -4 0 10 Q 9 -4 0 -17Z" fill="#ef4f63" stroke="#a01a2c" strokeWidth="0.7" />
+        </g>
+      )}
+    </>
+  );
+}
+
+function Lavender({ level }: { level: Level }) {
+  if (level === 0) return <Seed />;
+  const SAGE = '#6aa07a';
+  const spikes: Array<[number, number, number]> = level === 1 ? [[50, 76, 0]] : level === 2 ? [[40, 70, -8], [50, 62, 0], [60, 70, 8]] : [[34, 58, -12], [42, 44, -5], [50, 38, 0], [58, 44, 5], [66, 58, 12]];
+  return (
+    <>
+      {spikes.map(([x, y]) => (
+        <path key={`s${x}`} d={`M${50 + (x - 50) * 0.3} 97 Q ${x} ${y + 24} ${x} ${y + 14}`} stroke="#4f8a60" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      ))}
+      <Leaf x={50} y={96} angle={-150} len={level === 1 ? 12 : 20} fill={SAGE} />
+      <Leaf x={50} y={96} angle={-30} len={level === 1 ? 12 : 20} fill={SAGE} />
+      {level >= 2 && <Leaf x={50} y={96} angle={-100} len={18} fill={SAGE} />}
+      {level >= 2 && <Leaf x={50} y={96} angle={-80} len={18} fill={SAGE} />}
+      {level >= 3 &&
+        spikes.map(([x, y]) => (
+          <g key={`f${x}`}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <ellipse key={i} cx={x + (i % 2 ? 1.6 : -1.6)} cy={y + i * 4} rx="2.6" ry="2.8" fill={level === 3 ? '#a9a0d8' : i % 2 ? '#8a5fc4' : '#9b73d3'} stroke={level === 3 ? '#7d73b4' : '#5f3b98'} strokeWidth="0.5" />
+            ))}
+            <ellipse cx={x} cy={y - 3} rx="1.8" ry="3" fill={level === 3 ? '#a9a0d8' : '#8a5fc4'} stroke={level === 3 ? '#7d73b4' : '#5f3b98'} strokeWidth="0.5" />
+          </g>
+        ))}
+    </>
+  );
+}
+
+/** A long flax blade rising from the base and arching out. */
+function Blade({ dx, h, w = 4 }: { dx: number; h: number; w?: number }) {
+  const tipX = 50 + dx;
+  const tipY = 98 - h;
+  return <path d={`M${50 - w / 2} 98 Q ${50 + dx * 0.15} ${98 - h * 0.7} ${tipX} ${tipY} Q ${50 + dx * 0.45 + w / 2} ${98 - h * 0.6} ${50 + w / 2} 98Z`} fill={GREEN} stroke={GREEN_DARK} strokeWidth="0.8" strokeLinejoin="round" />;
+}
+
+function Harakeke({ level }: { level: Level }) {
+  if (level === 0) return <Seed />;
+  const blades: Array<[number, number]> = level === 1 ? [[-8, 20], [8, 20]] : level === 2 ? [[-22, 36], [-8, 46], [8, 46], [22, 36]] : [[-34, 34], [-22, 50], [-9, 58], [9, 58], [22, 50], [34, 34]];
+  const STALK = '#4a3326';
+  const flowers: Array<[number, number]> = [[41, 34], [50, 28], [59, 34], [44, 44], [56, 44]];
+  return (
+    <>
+      {level >= 3 && <line x1="50" y1="96" x2="50" y2={level === 3 ? 34 : 24} stroke={STALK} strokeWidth="3" strokeLinecap="round" />}
+      {level >= 4 && <path d="M50 52 L 42 36 M50 52 L 58 36 M50 60 L 41 46 M50 60 L 59 46" stroke={STALK} strokeWidth="1.8" fill="none" strokeLinecap="round" />}
+      {blades.map(([dx, h]) => (
+        <Blade key={dx} dx={dx} h={h} w={level === 1 ? 3 : 4.5} />
+      ))}
+      {level === 3 && [[46, 36], [54, 36], [50, 30]].map(([x, y]) => <ellipse key={`${x}${y}`} cx={x} cy={y} rx="2.6" ry="3.4" fill="#6b2a2a" stroke="#3d1414" strokeWidth="0.6" />)}
+      {level === 4 &&
+        flowers.map(([x, y]) => (
+          <g key={`${x}${y}`}>
+            <ellipse cx={x} cy={y - 2} rx="3.4" ry="4.8" fill="#8a1f2c" stroke="#4a0f18" strokeWidth="0.7" />
+            <ellipse cx={x} cy={y - 5} rx="1.6" ry="1.6" fill="#e8b04a" />
+          </g>
+        ))}
+    </>
+  );
+}
+
+const KINDS: Array<(p: { level: Level }) => ReactNode> = [Daisy, Tulip, Sunflower, Lavender, Kowhai, Harakeke, Pohutukawa];
 
 /** A stand-in drawn plant: a different kind for each stage, five steps, all on the same soil mound. */
 export function PlantSvg({ stage, level }: { stage: StageId; level: Level }) {
-  const Kind = KINDS[stage];
+  const Kind = KINDS[stage - 1] ?? Daisy;
   return (
     <svg viewBox="0 0 100 110" className="sb-plant" aria-hidden="true" focusable="false">
       <Mound>

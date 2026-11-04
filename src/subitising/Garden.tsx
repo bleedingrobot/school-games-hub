@@ -1,21 +1,21 @@
 import { STAGES } from '../../shared/subitising/config';
 import { growth, type Progress } from '../../shared/subitising/engine';
-import { artUrl } from './art';
+import { artUrl, type ArtName } from './art';
 import { PlantSvg, type Level, type StageId } from './PlantSvg';
 
 const WORDS = ['A seed', 'Sprouting', 'Growing', 'Nearly in flower', 'In flower'] as const;
 
 /** One plant, from a seed (0) to a flower (4): the painted picture if there is one, else a drawn stand-in. */
 function Plant({ stage, level }: { stage: StageId; level: Level }) {
-  const url = artUrl(`plant-${stage}-${level}`);
+  const url = artUrl(`plant-${stage}-${level}` as ArtName);
   if (url) return <img src={url} alt="" aria-hidden="true" className="sb-plant sb-plant--art" loading="lazy" decoding="async" />;
   return <PlantSvg stage={stage} level={level} />;
 }
 
-/** Four plants in four raised beds, one for each stage. They only ever grow. `grew` lists stages that just moved up a step. */
+/** One plant in its own raised bed for each stage (seven now). They only ever grow. `grew` lists stages that just moved up a step. */
 export function Garden({ progress, grew = [] }: { progress: Progress; grew?: number[] }) {
   return (
-    <ul className="sb-garden" aria-label="Your garden">
+    <ul className="sb-garden" aria-label="Your garden" style={{ ['--sb-n' as string]: STAGES.length }}>
       {STAGES.map((s) => {
         const level = growth(progress.stages[s.id - 1]);
         return (

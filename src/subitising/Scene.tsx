@@ -1,7 +1,14 @@
+import { STAGES } from '../../shared/subitising/config';
 import { artUrl } from './art';
 import './scene.css';
 
-/** The garden behind the screens: the painted picture if there is one, else a drawn sky, hill, fence and four beds. */
+const BED_LEFT = 6;
+const BED_GAP = 2.5;
+/** Beds share the scene width (160) whatever the number of stages. */
+const BED_W = (160 - 2 * BED_LEFT - (STAGES.length - 1) * BED_GAP) / STAGES.length;
+const BED_PITCH = BED_W + BED_GAP;
+
+/** The garden behind the screens: the painted picture if there is one, else a drawn sky, hill, fence and one bed per stage. */
 export function GardenScene({ className = '', beds = true }: { className?: string; beds?: boolean }) {
   const url = artUrl('garden-scene');
   const cls = `sb-scene ${className}`.trim();
@@ -30,11 +37,11 @@ export function GardenScene({ className = '', beds = true }: { className?: strin
       <rect y="66" width="160" height="24" fill="#74bf5f" />
       {beds && (
         <g className="sb-scene-beds">
-          {[0, 1, 2, 3].map((i) => (
-            <g key={i} transform={`translate(${10 + i * 37} 71)`}>
-              <rect width="31" height="14" rx="1.5" fill="#b9803f" stroke="#7b4f22" strokeWidth="0.6" />
-              <rect x="1.2" y="1.2" width="28.6" height="4" rx="1" fill="#5e4026" />
-              <path d="M0 8.5H31M0 11.5H31" stroke="#8a5a28" strokeWidth="0.5" />
+          {STAGES.map((_, i) => (
+            <g key={i} transform={`translate(${BED_LEFT + i * BED_PITCH} 71)`}>
+              <rect width={BED_W} height="14" rx="1.5" fill="#b9803f" stroke="#7b4f22" strokeWidth="0.6" />
+              <rect x="1.2" y="1.2" width={BED_W - 2.4} height="4" rx="1" fill="#5e4026" />
+              <path d={`M0 8.5H${BED_W}M0 11.5H${BED_W}`} stroke="#8a5a28" strokeWidth="0.5" />
             </g>
           ))}
         </g>

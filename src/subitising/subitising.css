@@ -248,11 +248,7 @@
   list-style: none;
   margin: auto 0 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
   width: 100%;
-  max-width: 640px;
   position: relative;
   z-index: 1;
 }
@@ -409,9 +405,6 @@
     max-width: 64px;
     min-height: 56px;
   }
-  .sb-garden {
-    gap: 6px;
-  }
   .sb-plaque {
     padding: 3px 3px 4px;
     font-size: 0.72rem;
@@ -424,5 +417,53 @@
   .sb-app * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/*
+ * The garden row (plants, beds, plaques) for any number of stages. --sb-n is the number of plants, set by Garden.tsx.
+ * Wide screens: one row. Phones (520 px or less): two rows (4 + 3 for seven).
+ */
+.sb-garden {
+  --sb-gap: 8px;
+  --sb-per-row: var(--sb-n, 4);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px var(--sb-gap);
+  max-width: calc(var(--sb-n, 4) * 118px);
+}
+.sb-garden .sb-plant-card {
+  flex: 0 0 calc((100% - (var(--sb-per-row) - 1) * var(--sb-gap)) / var(--sb-per-row));
+}
+.sb-garden .sb-plaque {
+  margin-top: 10px;
+  padding: 3px 3px 4px;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+.sb-garden .sb-plaque span {
+  font-size: 0.66rem;
+}
+.sb-garden .sb-bed {
+  height: 32px;
+}
+@media (max-width: 520px) {
+  .sb-garden {
+    --sb-gap: 6px;
+    --sb-per-row: min(var(--sb-n, 4), 4);
+    max-width: 100%;
+  }
+  .sb-garden {
+    row-gap: 6px;
+  }
+  .sb-garden .sb-plaque {
+    font-size: 0.66rem;
+    flex: 1 1 auto;
+    justify-content: center;
+    overflow-wrap: normal;
+  }
+  .sb-garden .sb-plaque span {
+    font-size: 0.62rem;
   }
 }
