@@ -55,13 +55,13 @@ SHELL = ('One fan-shaped scallop shell seen from above, the same simple shape ev
 SHELLS = {
     'sand': 'soft sandy beige and pale pink, matte and gentle',
     'bronze': f'the whole shell covered edge to edge in coppery bronze, {SHINE}, all bronze from rim to centre, the middle flat and smooth',
-    'silver': f'the whole shell covered edge to edge in bright silver, {SHINE}, all silver from rim to centre, the middle flat and smooth',
+    'silver': f'the whole shell made of solid cool grey chrome silver foil like a shiny new spoon, {SHINE}, every ridge and the middle the same grey metallic silver, a cool blue-grey sheen',
     'gold': f'the whole shell covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
 PEARL = f'the Golden Pearl, one big round smooth pearl in {SHINE} in shining yellow gold with a soft warm glow'
 THINGS = {
-    'pearl': PEARL + ', a single pearl alone',
+    'pearl': PEARL + ', a single round pearl floating by itself in empty white space, only the pearl and its small soft shadow',
     'pearl-cushion': PEARL + ', resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
 }
 
