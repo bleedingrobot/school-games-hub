@@ -8,7 +8,8 @@ import type { Tap } from '../../../shared/hop/play';
 import { DAYS_PER_JAR, METALS, PADS, pondAfter } from '../../../shared/hop/progress';
 import type { Round } from '../../../shared/hop/round';
 import { useSound } from '../../sound';
-import { canSpeak, speak, stopSpeaking } from '../../speech';
+import { canReadAloud, speak, stopSpeaking } from '../../speech';
+import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
 import { playSound } from '../sounds';
 import { FRIEND_NAMES, paint } from './art';
 import { HopError, type HopBackend, type HopFinish, type HopState } from './backend';
@@ -36,8 +37,8 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
-  const say = useCallback((text: string) => on && speak(text), [on]);
-  return { on, setOn, say, available: canSpeak() };
+  const say = useCallback((text: string) => on && speak(text, VOICE_FOLDER), [on]);
+  return { on, setOn, say, available: canReadAloud() };
 }
 
 type Screen = { kind: 'loading' } | { kind: 'home' } | { kind: 'play'; round: Round } | { kind: 'finish'; result: HopFinish };
@@ -149,7 +150,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
-    say(doneToday ? `${title} ${WORDS.doneToday}` : title);
+    say(homeLine(title, doneToday));
   }, [say, doneToday, title]);
   const jar = paint('things/jar');
   return (
@@ -184,11 +185,12 @@ function Finish({ result, say, onNext }: { result: HopFinish; say: (t: string) =
   const name = FRIEND_NAMES[pond.friend];
   const main = result.jar ? WORDS.jar(name) : changed ? WORDS.padTurned(changed) : WORDS.doneToday;
   const stepUp = result.step !== result.stepBefore ? WORDS.stepUp(result.step) : null;
+  const line = finishLine(main, result.step !== result.stepBefore ? result.step : null);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
-    say(stepUp ? `${main} ${stepUp}` : main);
-  }, [say, main, stepUp]);
+    say(line);
+  }, [say, line]);
   const cushion = paint('things/jar-cushion');
   return (
     <div className={`hp-home${result.jar ? ' hp-home--jar' : ''}`}>

@@ -12,6 +12,7 @@ import { playSound } from '../sounds';
 import { Friend, GlowWorm, LilyPad } from './HopArt';
 import { backFor, type Scenery } from './Pond';
 import { WORDS } from './words';
+import { hopLine } from './voiceLines';
 
 const JUMP_MS = 650;
 const LAND_MS = 750;
@@ -52,7 +53,7 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   useEffect(() => {
     if (at === 0) heading.current?.focus();
     since.current = Date.now();
-    say(guide && at === 0 ? `${hops[0].spoken} ${WORDS.guideStart}` : hops[at].spoken);
+    say(hopLine(hops[at].spoken, guide && at === 0));
     // Read again only when the hop changes, not when the guide ends.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, hops, say]);
