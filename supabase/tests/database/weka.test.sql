@@ -1,4 +1,4 @@
--- Weka’s Stepping Stones (migration 20261105000400, short id weka): progress, challenges, the switch and the help setting, and
+-- Weka’s Stepping Stones (migration 20261105000600, short id weka): progress, challenges, the switch and the help setting, and
 -- the hub hooks with one achievement per Golden Picnic Basket.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh weka, then scripts/scratch-test.sh weka supabase/tests/database/weka.test.sql

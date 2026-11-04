@@ -95,7 +95,7 @@ One per Golden Picnic Basket, per friend. No points.
 
 - Rules: `shared/weka/` (round, play, progress, server, memoryServices), tests in `weka.test.ts`.
 - Game: `src/games/weka/` (Goes, Stream, WekaGame, clay SVG stand-ins in `WekaArt.tsx`), preview `npm run weka:single`.
-- Server: `supabase/migrations/20261105000400_weka.sql`, function `supabase/functions/weka/`, pgTAP
+- Server: `supabase/migrations/20261105000600_weka.sql`, function `supabase/functions/weka/`, pgTAP
   `supabase/tests/database/weka.test.sql`.
 - Teacher: `src/pages/TeacherWeka.tsx` (switch, picture help, class baskets, student panel with hardest facts).
 - Art: `scripts/weka-art.py`, `docs/WEKA-ART-PLAN.md`.
