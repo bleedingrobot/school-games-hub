@@ -1,7 +1,11 @@
 [
  {
-  "slug": "get-ready",
-  "text": "Get ready"
+  "slug": "get-ready-how-many-dots",
+  "text": "Get ready: how many dots?"
+ },
+ {
+  "slug": "get-ready-how-many-empty-squares",
+  "text": "Get ready: how many empty squares?"
  },
  {
   "slug": "take-your-time-can-you-see-smaller-groups",

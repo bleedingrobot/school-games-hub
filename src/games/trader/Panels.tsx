@@ -301,7 +301,7 @@ function Suggests({ s }: { s: ShipSuggestion }) {
   return <span className="st-ribbon"><strong>🤖 {COACH_NAME} suggests:</strong> {s.why}</span>;
 }
 
-export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, onAct, onMoon, captain, onCaptain }: {
+export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, forge = false, onForge, onAct, onMoon, captain, onCaptain }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -311,6 +311,9 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, o
   /** Do a move (the game checks it with the shared rules and tells the pupil if it can't be done). */
   onAct: (action: Action, done: string) => void;
   onMoon: () => void;
+  /** The Star Forge is open: the moon is part of the pupil's own solar system, so this card points there. */
+  forge?: boolean;
+  onForge?: () => void;
   /** The pupil's captain and opening the picker ("Choose your captain"). */
   captain?: string;
   onCaptain?: () => void;
@@ -431,6 +434,20 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, o
               {shown?.target === 'ship-pod' && <Suggests s={shown!} />}
             </li>
           </ul>
+          {forge ? (
+            <>
+              <h3 className="st-h3">Your own solar system</h3>
+              <div className="st-moon" data-coach="ship-moon">
+                <span aria-hidden="true">🌟</span>
+                <div>
+                  <strong>Your moon is now part of your own solar system.</strong>
+                  <div className="st-soft">Design it for free in the Forge, then build it with credits.</div>
+                </div>
+                <button type="button" className="st-btn st-btn--primary" onClick={onForge}>Open the Forge</button>
+              </div>
+            </>
+          ) : (
+          <>
           <h3 className="st-h3">Your own moon</h3>
           <div className="st-moon" data-coach="ship-moon">
             <span aria-hidden="true">🌙</span>
@@ -440,6 +457,8 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, o
             </div>
             <button type="button" className="st-btn st-btn--primary" disabled={busy || t.credits < MOON_PRICE} onClick={onMoon} data-coach="moon-buy">Buy the moon</button>
           </div>
+          </>
+          )}
         </>
       )}
     </section>

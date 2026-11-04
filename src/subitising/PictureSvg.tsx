@@ -8,12 +8,16 @@ interface Props {
   mode?: PictureMode;
   /** Draw ghost counters in the empty squares of a frame (Missing Spots, after the answer). */
   ghosts?: boolean;
+  /** Tint the empty squares of a frame pale yellow so the spaces stand out (Missing Spots pictures). */
+  tintEmpty?: boolean;
   /** The words a screen reader says. Never the number while the answer is still being worked out. */
   label: string;
 }
 
 const COLOURS = ['#2f6fb5', '#e0891a'] as const;
 const INK = '#1f2a37';
+/** Empty squares in a Missing Spots picture: clearly different from the white filled squares. */
+const GAP_TINT = '#fff3c4';
 const HELP_LOOP = '#6d7d93';
 
 const pad = DOT_R + 7;
@@ -29,17 +33,21 @@ function groupBoxes(dots: readonly Dot[]) {
   });
 }
 
-export function PictureSvg({ picture, mode = 'plain', ghosts = false, label }: Props) {
+export function PictureSvg({ picture, mode = 'plain', ghosts = false, tintEmpty = false, label }: Props) {
   const { dots, frame, die } = picture;
   const colourOf = (d: Dot) => COLOURS[mode === 'help' ? d.group % 2 : d.color];
   const empty: Array<{ x: number; y: number }> = [];
-  if (ghosts && frame) {
+  const emptyCells = new Set<number>();
+  if ((ghosts || tintEmpty) && frame) {
     const taken = new Set(dots.map((d) => `${Math.round(d.x)},${Math.round(d.y)}`));
     for (let row = 0; row < frame.rows; row++) {
       for (let col = 0; col < frame.cols; col++) {
         const x = frame.x + (col + 0.5) * frame.cell;
         const y = frame.y + (row + 0.5) * frame.cell;
-        if (!taken.has(`${Math.round(x)},${Math.round(y)}`)) empty.push({ x, y });
+        if (!taken.has(`${Math.round(x)},${Math.round(y)}`)) {
+          empty.push({ x, y });
+          emptyCells.add(row * frame.cols + col);
+        }
       }
     }
   }
@@ -62,14 +70,14 @@ export function PictureSvg({ picture, mode = 'plain', ghosts = false, label }: P
       {frame && (
         <g stroke={INK} strokeWidth="3" fill="#fff">
           {Array.from({ length: frame.rows * frame.cols }, (_, i) => (
-            <rect key={i} x={frame.x + (i % frame.cols) * frame.cell} y={frame.y + Math.floor(i / frame.cols) * frame.cell} width={frame.cell} height={frame.cell} />
+            <rect key={i} fill={tintEmpty && emptyCells.has(i) ? GAP_TINT : undefined} x={frame.x + (i % frame.cols) * frame.cell} y={frame.y + Math.floor(i / frame.cols) * frame.cell} width={frame.cell} height={frame.cell} />
           ))}
         </g>
       )}
       {mode === 'help' &&
         groupBoxes(dots).map((b) => <rect key={b.group} x={b.x} y={b.y} width={b.w} height={b.h} rx="14" className="sb-loop" stroke={HELP_LOOP} />)}
       {empty.map((e, i) => (
-        <circle key={`g${i}`} cx={e.x} cy={e.y} r={DOT_R} className="sb-ghost" />
+        ghosts && <circle key={`g${i}`} cx={e.x} cy={e.y} r={DOT_R} className="sb-ghost" />
       ))}
       {dots.map((d, i) => (
         <circle key={i} cx={d.x} cy={d.y} r={DOT_R} fill={colourOf(d)} />

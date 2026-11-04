@@ -10,7 +10,8 @@ import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
 import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
-import { makeHandler, type ClassSettings, type Saved, type StoredDay } from './handler';
+import { PICTURE_GAP_MINUTES } from '../../../shared/trader/gallery';
+import { makeHandler, type ClassSettings, type GalleryRow, type Saved, type SeasonSystem, type StoredDay } from './handler';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -29,6 +30,9 @@ const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+/** The private bucket for gallery pictures (20261103000300_trader_forge.sql): only the server key reaches it. */
+const GALLERY_BUCKET = 'trader-gallery';
+
 /** Logs say which database function failed and the error code, never who. */
 const fail = (name: string, code: string | undefined) => console.error(`trader: ${name} failed (${code ?? 'unknown'})`);
 
@@ -44,13 +48,15 @@ Deno.serve(
         fail('settings', error?.code);
         return null;
       }
-      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string };
+      const row = data as { trader_enabled?: boolean; trader_jumps?: number; trader_loans?: boolean; trader_maths?: string; trader_forge?: boolean; trader_forge_typing?: boolean };
       return {
         enabled: row.trader_enabled === true,
         jumpsPerDay: Number.isInteger(row.trader_jumps) ? (row.trader_jumps as number) : 10,
         loans: row.trader_loans !== false,
         // 'choose' counts as on until pupils get a switch of their own (stage T.5).
         maths: parseMathsSwitch(row.trader_maths) !== 'off',
+        forge: row.trader_forge === true,
+        forgeTyping: row.trader_forge_typing !== false,
       };
     },
     async schoolSeed(player) {
@@ -71,6 +77,21 @@ Deno.serve(
       if (!data) return null;
       const row = data as { game: Saved['game']; version: number; season: number };
       return { game: row.game, version: row.version, season: row.season };
+    },
+    async seasonSystem(player): Promise<SeasonSystem | null | 'busy'> {
+      const { data, error } = await admin.rpc('trader_season_system', { player });
+      if (error) {
+        fail('trader_season_system', error.code);
+        return 'busy';
+      }
+      if (!data) return null;
+      const row = data as SeasonSystem;
+      return { design: row.design, carry: row.carry };
+    },
+    async chooseSeason(player, choice, picture, name) {
+      const { error } = await admin.rpc('trader_choose_season', { player, choice, picture_path: picture, picture_name: name });
+      if (error) fail('trader_choose_season', error.code);
+      return !error;
     },
     async request(player, requestId) {
       const { data, error } = await admin.rpc('trader_request', { player, request_id: requestId });
@@ -129,7 +150,8 @@ Deno.serve(
         new_game: a.game,
         new_day: a.day,
         new_net_worth: Math.max(-2_000_000_000, Math.min(2_000_000_000, Math.round(a.netWorth))),
-        new_moon: a.game.t.moon,
+        // "On the Star Makers list": owns the old moon, or has built a sun in the Star Forge (the first one adds them to trader_moons).
+        new_moon: a.game.t.moon || a.game.system?.sun?.built === true,
         new_season: a.season,
         request_id: a.requestId,
         reply: a.reply,
@@ -144,6 +166,46 @@ Deno.serve(
     },
     async recordAnswers(player, once, answers: FactAnswer[]) {
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'trader');
+    },
+    async gallery(player): Promise<GalleryRow[] | 'busy'> {
+      const { data, error } = await admin.rpc('trader_gallery_list', { player });
+      if (error) {
+        fail('trader_gallery_list', error.code);
+        return 'busy';
+      }
+      return Array.isArray(data) ? (data as GalleryRow[]) : [];
+    },
+    async pictureLinks(players) {
+      if (!players.length) return {};
+      const { data, error } = await admin.storage.from(GALLERY_BUCKET).createSignedUrls(players.map((p) => `${p}.webp`), 60 * 60);
+      if (error || !data) {
+        fail('gallery links', error?.name);
+        return {};
+      }
+      const links: Record<string, string> = {};
+      for (const row of data) if (row.path && row.signedUrl && !row.error) links[row.path.replace(/\.webp$/, '')] = row.signedUrl;
+      return links;
+    },
+    async giveSticker(visitor, owner, sticker) {
+      const { data, error } = await admin.rpc('trader_give_sticker', { visitor, owner, sticker });
+      if (error) {
+        fail('trader_give_sticker', error.code);
+        return 'busy';
+      }
+      return data === 'own' || data === 'class' || data === 'none' ? data : 'ok';
+    },
+    async mayDraw(player) {
+      const { data, error } = await admin.rpc('trader_gallery_drawn', { player, gap: `${PICTURE_GAP_MINUTES} minutes` });
+      if (error) {
+        fail('trader_gallery_drawn', error.code);
+        return 'busy';
+      }
+      return data === true;
+    },
+    async storePicture(player, webp) {
+      const { error } = await admin.storage.from(GALLERY_BUCKET).upload(`${player}.webp`, webp, { contentType: 'image/webp', upsert: true, cacheControl: '300' });
+      if (error) fail('gallery picture', error.name);
+      return !error;
     },
   }),
 );

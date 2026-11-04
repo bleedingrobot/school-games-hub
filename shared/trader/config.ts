@@ -194,6 +194,11 @@ export const TRADE_IN_PCT = 60;
 export const JUMPS_PER_DAY = 10;
 export const START_CREDITS = 100;
 export const MOON_PRICE = 20_000;
+/**
+ * A pupil who saves a picture of their system and starts a new one at a New Season carries over their ship and this many
+ * credits at most (docs/TRADER-SYSTEM-PLAN.md, 1.2), so a rich pupil's next season isn't too easy. Check with the simulator.
+ */
+export const CARRY_MAX_CREDITS = 10_000;
 
 /** Loans: up to this much, this percent of what you borrowed added once a week, this share of each sale pays it back. */
 export const LOAN_MAX = 500;

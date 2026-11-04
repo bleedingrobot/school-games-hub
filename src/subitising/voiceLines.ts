@@ -9,7 +9,8 @@ import { FRAME_CAPACITY, GAP_FILLED, type PictureType } from '../../shared/subit
 export const VOICE_FOLDER = 'voice/quick-looks/';
 
 export const PROMPTS = {
-  ready: 'Get ready',
+  readyFlash: 'Get ready: how many dots?',
+  readyGap: 'Get ready: how many empty squares?',
   helped: 'Take your time. Can you see smaller groups?',
   gap: 'How many empty squares?',
   guided: 'How many can you see?',

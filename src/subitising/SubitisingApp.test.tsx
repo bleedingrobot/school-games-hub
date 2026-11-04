@@ -99,7 +99,7 @@ describe('Quick looks', () => {
     const t = setup(emptySubState());
     fireEvent.click(screen.getByRole('button', { name: 'Start with a quick check' }));
     for (let i = 0; i < C.placementTrials; i++) {
-      advance(C.readyMs + 10);
+      advance(C.gapReadyMs + 10);
       const n = dotsShown();
       const prompt = document.querySelector('.sb-prompt')!.textContent;
       const cells = document.querySelectorAll('.sb-stage svg g[stroke] rect').length;
@@ -113,7 +113,7 @@ describe('Quick looks', () => {
     t.sync();
     expect(screen.getByText('All done!')).toBeTruthy();
     expect(t.state().placed).toBe(true);
-    expect(t.state().startStage).toBe(7); // eight right in a row climbs to the top
+    expect(t.state().startStage).toBe(7); // all six right lands on the top stage
     expect(t.state().answers).toHaveLength(0); // the check isn't practice
   });
 
@@ -234,7 +234,7 @@ describe('Quick looks', () => {
       const n = dotsShown();
       advance(1400);
       advance(C.answerLockMs);
-      expect(said).toEqual(['Get ready', 'How many did you see?']);
+      expect(said).toEqual(['Get ready: how many dots?', 'How many did you see?']);
       expect(said.join(' ')).not.toMatch(/\d/);
       fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
       t.sync();
@@ -249,7 +249,7 @@ describe('Quick looks', () => {
       advance(C.readyMs + 10);
       advance(1400);
       advance(C.answerLockMs);
-      expect(clips).toEqual(['voice/quick-looks/get-ready.mp3', 'voice/quick-looks/how-many-did-you-see.mp3']);
+      expect(clips).toEqual(['voice/quick-looks/get-ready-how-many-dots.mp3', 'voice/quick-looks/how-many-did-you-see.mp3']);
       expect(said).toEqual([]);
     });
 
