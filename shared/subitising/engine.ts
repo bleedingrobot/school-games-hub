@@ -5,7 +5,7 @@
  * Finishing a stage stays finished. Answers after that can make the next pictures easier for a
  * while (stepping back) but never take a finished stage away.
  */
-import { STAGES, SUBITISING_CONFIG, stageOf, type PictureType, type StageNumber, type SubitisingConfig } from './config';
+import { STAGES, SUBITISING_CONFIG, slotOf, slotsOf, stageOf, type StageNumber, type SubitisingConfig } from './config';
 import { parseKey } from './keys';
 
 /** One saved answer, as far as Quick looks cares. Guided answers (picture stayed on screen with help) aren't counted. */
@@ -23,8 +23,8 @@ export interface StageProgress {
   finished: boolean;
   /** Counted answers in this stage, newest last. */
   answers: boolean[];
-  /** Answers per picture type among the last `typeLookback` counted answers. */
-  seen: Partial<Record<PictureType, number>>;
+  /** Answers per slot (`flash:ten`, `gap:ten`: a picture type in one activity) among the last `typeLookback` counted answers. */
+  seen: Record<string, number>;
 }
 
 export interface Progress {
@@ -42,14 +42,14 @@ export const share = (answers: readonly boolean[]) => (answers.length ? answers.
 /** Does this run of answers finish a stage? */
 export function stageDone(
   stage: StageNumber,
-  answers: readonly { correct: boolean; type: PictureType }[],
+  answers: readonly { correct: boolean; slot: string }[],
   config: SubitisingConfig = SUBITISING_CONFIG,
 ): boolean {
   if (answers.length < config.window) return false;
   const lastWindow = answers.slice(-config.window).map((a) => a.correct);
   if (share(lastWindow) < config.masteryAccuracy) return false;
   const lookback = answers.slice(-config.typeLookback);
-  return stageOf(stage).types.every((t) => lookback.filter((a) => a.type === t).length >= config.minPerType);
+  return slotsOf(stageOf(stage)).every((t) => lookback.filter((a) => a.slot === t).length >= config.minPerType);
 }
 
 /**
@@ -65,21 +65,21 @@ export function progressFrom(
   finishedBefore = 0,
 ): Progress {
   const finished = new Set<StageNumber>(STAGES.filter((s) => s.id < startStage || s.id <= finishedBefore).map((s) => s.id));
-  const byStage = new Map<StageNumber, { correct: boolean; type: PictureType }[]>(STAGES.map((s) => [s.id, []]));
+  const byStage = new Map<StageNumber, { correct: boolean; slot: string }[]>(STAGES.map((s) => [s.id, []]));
 
   for (const a of answers) {
     if (a.helped) continue;
     const key = parseKey(a.key);
     if (!key || key.helped) continue;
     const list = byStage.get(key.stage)!;
-    list.push({ correct: a.correct, type: key.type });
+    list.push({ correct: a.correct, slot: slotOf(key.activity, key.type) });
     if (!finished.has(key.stage) && stageDone(key.stage, list, config)) finished.add(key.stage);
   }
 
   const stages: StageProgress[] = STAGES.map((s) => {
     const list = byStage.get(s.id)!;
-    const seen: Partial<Record<PictureType, number>> = {};
-    for (const a of list.slice(-config.typeLookback)) seen[a.type] = (seen[a.type] ?? 0) + 1;
+    const seen: Record<string, number> = {};
+    for (const a of list.slice(-config.typeLookback)) seen[a.slot] = (seen[a.slot] ?? 0) + 1;
     return { id: s.id, finished: finished.has(s.id), answers: list.map((a) => a.correct), seen };
   });
 

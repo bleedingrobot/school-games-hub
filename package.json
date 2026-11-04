@@ -61,6 +61,8 @@
     "archery:determinism": "node scripts/archery-determinism.mjs",
     "kingdom:sim": "node scripts/kingdom-sim.mjs",
     "kingdom:preview": "vite build --config vite.kingdom-preview.config.ts",
+    "isles:sim": "node scripts/isles-sim.mjs",
+    "isles:preview": "vite build --config vite.isles-preview.config.ts",
     "diamond:sim": "node scripts/diamond-sim.mjs",
     "diamond:preview": "vite build --config vite.diamond-preview.config.ts",
     "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html"

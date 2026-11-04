@@ -45,9 +45,9 @@ export const PUZZLES: readonly Puzzle[] = [
   },
   {
     id: 'shell-stones', kind: 'stones', multipleOf: 3, title: 'Stepping stones',
-    says: 'Cross the rock pool. Only step on numbers in the 3 times table, or splash!',
+    says: 'Cross the rock pool. Count in 3s and only step on numbers in the 3 times table, or splash! Step up, down, left or right.',
     hint: 'Start on the 6, then look for 9, 12, 15, 18…',
-    grid: ['8 14 20 10 25 4', '6 9 11 7 16 22', '13 12 15 18 2 30', '5 16 23 21 24 27'],
+    grid: ['8 14 20 10 25 4', '6 9 11 7 16 22', '13 12 15 18 2 26', '5 16 23 21 24 27'],
     prize: { bits: 'water', n: 3 },
   },
   {
@@ -80,9 +80,9 @@ export const PUZZLES: readonly Puzzle[] = [
   // The bonus areas: each puzzle there gives an egg of the area's kind.
   {
     id: 'lagoon-stones', kind: 'stones', multipleOf: 4, title: 'Lagoon stones',
-    says: 'Cross the lagoon. Only step on numbers in the 4 times table!',
+    says: 'Cross the lagoon. Count in 4s and only step on numbers in the 4 times table! Step up, down, left or right.',
     hint: 'Start on the 8, then 12, 16, 20…',
-    grid: ['5 9 14 6 10 15', '8 12 16 20 18 7', '11 22 13 24 21 28', '3 26 17 32 36 40'],
+    grid: ['5 9 14 6 10 15', '8 12 16 20 18 7', '11 22 13 24 21 30', '3 26 17 28 32 36'],
     prize: { egg: 'water' },
   },
   {
@@ -113,21 +113,26 @@ export interface StonesState {
   done: boolean;
   /** Just fell in (the screen shows a splash). */
   splash?: boolean;
+  /** The last tap did nothing because that stone is not next to you (the screen says why). */
+  miss?: 'start' | 'far';
 }
 
 export const stonesGrid = (p: Extract<Puzzle, { kind: 'stones' }>) => p.grid.map((r) => r.split(' ').map(Number));
 
-/** Step onto the stone at row `r`, column `c`, or off the far side with c = the width. */
+/**
+ * Step onto the stone at row `r`, column `c`, or off the far side with c = the width. You step up, down,
+ * left or right; a tap on a stone that is not next to you does nothing but says why (`miss`).
+ */
 export function stepStone(p: Extract<Puzzle, { kind: 'stones' }>, s: StonesState, r: number, c: number): StonesState {
   if (s.done) return s;
   const grid = stonesGrid(p);
   const width = grid[0].length;
+  if (r < 0 || r >= grid.length || c < 0 || c > width) return { ...s, splash: false, miss: undefined };
   const next = s.at ? Math.abs(s.at[0] - r) + Math.abs(s.at[1] - c) === 1 : c === 0;
-  if (!next || r < 0 || r >= grid.length) return { ...s, splash: false };
-  if (c === width) return { ...s, at: null, done: true, splash: false };
-  if (c < 0) return { ...s, splash: false };
+  if (!next) return { ...s, splash: false, miss: s.at ? 'far' : 'start' };
+  if (c === width) return { ...s, at: null, done: true, splash: false, miss: undefined };
   if (grid[r][c] % p.multipleOf !== 0) return { at: null, tries: s.tries + 1, done: false, splash: true };
-  return { ...s, at: [r, c], splash: false };
+  return { ...s, at: [r, c], splash: false, miss: undefined };
 }
 
 // ---- Ice slide ----

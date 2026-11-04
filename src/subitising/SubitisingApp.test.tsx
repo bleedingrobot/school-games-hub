@@ -28,11 +28,11 @@ describe('Quick looks', () => {
     vi.unstubAllGlobals();
   });
 
-  it('asks for the starting check first, and shows four plants', () => {
+  it('asks for the starting check first, and shows seven plants', () => {
     setup(emptySubState());
     expect(screen.getByRole('button', { name: 'Start with a quick check' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Start looking' })).toBeNull();
-    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getAllByRole('listitem')).toHaveLength(7);
   });
 
   it('flashes a picture, hides it, keeps the buttons locked for a second, then takes the answer', () => {
@@ -113,7 +113,7 @@ describe('Quick looks', () => {
     t.sync();
     expect(screen.getByText('All done!')).toBeTruthy();
     expect(t.state().placed).toBe(true);
-    expect(t.state().startStage).toBe(4); // six right in a row climbs to the top
+    expect(t.state().startStage).toBe(7); // eight right in a row climbs to the top
     expect(t.state().answers).toHaveLength(0); // the check isn't practice
   });
 
@@ -231,5 +231,25 @@ describe('Quick looks', () => {
       expect(screen.getByRole('button', { name: /Reading out loud: off/ })).toBeTruthy();
       expect(localStorage.getItem('sgh-read-aloud')).toBe('false');
     });
+  });
+
+  it('moves focus to Next after an answer, and answers 10 with the 0 key', () => {
+    setup({ ...emptySubState(), placed: true, startStage: 5, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.answerLockMs + 10);
+    const labels = screen.getAllByRole('button').map((b) => b.textContent);
+    if (labels.includes('10')) {
+      fireEvent.keyDown(window, { key: '0' });
+    } else {
+      fireEvent.click(screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? ''))!);
+    }
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^(Next|Finish)$/ }));
+  });
+
+  it('tells a screen reader the picture is staying, and asks "can you see" in guided mode', () => {
+    setup({ ...emptySubState(), placed: true, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    expect(screen.getByRole('heading', { name: 'How many can you see?' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('The picture is staying on the screen.');
   });
 });

@@ -15,7 +15,7 @@ export interface QuickSettings {
   /** Where the starting check put them. */
   startStage: StageNumber;
   /** How many stages, from the first, are finished (kept so a stage finished long ago is never forgotten). */
-  finished: 0 | 1 | 2 | 3 | 4;
+  finished: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
   /** "Keep the picture on the screen" (no flashing). */
   guided: boolean;
 }
@@ -28,20 +28,35 @@ export interface PackedSettings {
   s: number;
   f: number;
   g: 0 | 1;
+  /** Settings version: 2 = the seven stages. Missing = the first four stages. */
+  v: 2;
 }
 
-export const packSettings = (q: QuickSettings): PackedSettings => ({ p: q.placed ? 1 : 0, s: q.startStage, f: q.finished, g: q.guided ? 1 : 0 });
+export const packSettings = (q: QuickSettings): PackedSettings => ({ p: q.placed ? 1 : 0, s: q.startStage, f: q.finished, g: q.guided ? 1 : 0, v: 2 });
 
 const inRange = (v: unknown, lo: number, hi: number): v is number => typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi;
 
-/** Reads the short form, or null if it isn't one (so a bad value is never trusted). */
+/** Old stage numbers (four stages) to the new ones (seven): finished 0,1,2,3,4 and start 1,2,3,4. */
+const OLD_FINISHED = [0, 1, 2, 4, 5];
+const OLD_START = [0, 1, 3, 4, 5];
+
+/** Reads the short form (new or old), or null if it isn't one (so a bad value is never trusted). */
 export function unpackSettings(raw: unknown): QuickSettings | null {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
   const q = raw as Record<string, unknown>;
   const keys = Object.keys(q);
-  if (keys.length !== 4 || !['p', 's', 'f', 'g'].every((k) => keys.includes(k))) return null;
+  const hasV = keys.includes('v');
+  if (keys.length !== (hasV ? 5 : 4) || !['p', 's', 'f', 'g'].every((k) => keys.includes(k))) return null;
+  if (hasV && q.v !== 2) return null;
   if (!inRange(q.p, 0, 1) || !inRange(q.s, 1, STAGES.length) || !inRange(q.f, 0, STAGES.length) || !inRange(q.g, 0, 1)) return null;
-  return { placed: q.p === 1, startStage: q.s as StageNumber, finished: q.f as QuickSettings['finished'], guided: q.g === 1 };
+  let s = q.s;
+  let f = q.f;
+  // Without a version these are the old four stages, unless a number only the new stages have shows it is already new.
+  if (!hasV && s <= 4 && f <= 4) {
+    s = OLD_START[s];
+    f = OLD_FINISHED[f];
+  }
+  return { placed: q.p === 1, startStage: s as StageNumber, finished: f as QuickSettings['finished'], guided: q.g === 1 };
 }
 
 /** The student's typing column with the Quick looks settings added (or left out when there are none). */
