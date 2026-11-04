@@ -1,6 +1,6 @@
 /**
  * Read-aloud for students who can't read yet. A game can give a folder of recorded clips (made with
- * Kokoro, see scripts/quick-looks-voice.py), named by voiceSlug(text); a line with no clip, or a clip
+ * Kokoro, see scripts/voice-clips.py), named by voiceSlug(text); a line with no clip, or a clip
  * that won't play, uses the browser's own voice instead. Nothing is sent anywhere. Off until the student turns it on; the choice is remembered on this device only,
  * the same way the sound setting is. A page may never speak an answer before it has been given.
  */
@@ -23,8 +23,14 @@ const canPlayClips = (): boolean => typeof Audio !== 'undefined' && typeof windo
 
 /** "Yes! 5: 3 and 2." → "yes-5-3-and-2", the clip's file name. */
 export function voiceSlug(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Tūī → tui
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
+
+/** Can this device read aloud at all, with clips or its own voice? */
+export const canReadAloud = (): boolean => canSpeak() || canPlayClips();
 
 let clip: HTMLAudioElement | null = null;
 
@@ -98,5 +104,5 @@ export function useReadAloud() {
       // Storage blocked: it just won't be remembered.
     }
   }, []);
-  return { on, setOn, available: canSpeak() || canPlayClips() };
+  return { on, setOn, available: canReadAloud() };
 }

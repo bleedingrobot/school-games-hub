@@ -6,9 +6,9 @@ import { groupSizes, makePicture } from '../../shared/subitising/patterns';
 import { voiceSlug } from '../speech';
 import { allVoiceLines, flashFeedback } from './voiceLines';
 
-// The list scripts/quick-looks-voice.py records. After changing a line, rewrite it with
+// The list scripts/voice-clips.py records. After changing a line, rewrite it with
 //   WRITE_VOICE_LINES=1 npx vitest run src/subitising/voiceLines.test.ts
-// then make the new clips with the script.
+// then make the new clips with scripts/voice-clips.py quick-looks.
 const folder = join(process.cwd(), 'public/voice/quick-looks');
 const listFile = join(folder, 'lines.json');
 const lines = allVoiceLines().map((text) => ({ slug: voiceSlug(text), text }));

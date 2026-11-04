@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 // With BEANSTALK_INLINE=1 everything goes inside the script, so `npm run beanstalk:single` can make one HTML file.
 export default defineConfig({
   root: 'preview/beanstalk',
+  publicDir: '../../public', // the recorded voice clips (public/voice/beanstalk)
   base: './',
   plugins: [react()],
   build: { outDir: '../../dist-preview-beanstalk', emptyOutDir: true, assetsInlineLimit: process.env.BEANSTALK_INLINE ? 100_000_000 : 4096,
