@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PICTURE_GAP_MINUTES, STICKERS, type StickerId } from '../../../shared/trader/gallery';
 import { MARKET_CAP_BP, MARKET_KEEP_PCT, MARKET_MIN_DEPTH, MARKET_QUIET_BP, WATER } from '../../../shared/trader/config';
 import { marketFor } from '../../../shared/trader/market';
 import { priceMove, pushPerUnit, pushedLine } from '../../../shared/trader/schoolMarket';
@@ -10,7 +11,9 @@ import { emptyPlan } from '../../../shared/trader/plan';
 import { DEFAULT_SETTINGS, newGame, type Game } from '../../../shared/trader/server';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { SchoolMarket } from '../../../shared/trader/schoolMarket';
-import { nzDay, makeHandler, parseActions, type ClassSettings, type Saved, type SaveArgs, type Services, type StoredDay } from './handler';
+import { nzDay, makeHandler, parseActions, type ClassSettings, type Saved, type SaveArgs, type SeasonSystem, type Services, type StoredDay } from './handler';
+import { buildAll, emptyDesign, newPlanet } from '../../../shared/trader/system';
+import { CARRY_MAX_CREDITS } from '../../../shared/trader/config';
 
 const SEED = 'handler-test';
 const galaxy = makeGalaxy(SEED);
@@ -29,11 +32,22 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     busy: false,
     market: new SchoolMarket(),
     marketReads: 0,
+    waiting: new Map<string, SeasonSystem>(),
+    chosen: [] as { choice: string; picture: string | null }[],
+    stickers: new Map<string, StickerId>(), // `${owner}:${visitor}`
+    pictures: new Map<string, Uint8Array>(),
+    lastDrawn: new Map<string, number>(),
+    pictureCalls: 0,
+    stickerCalls: 0,
   };
+  const classOf = (p: string) => (p === 'cat' ? 2 : 1);
+  const names: Record<string, string> = { ana: 'Ana', ben: 'Ben', cat: 'Cat' };
+  const builtSun = (p: string) => !!state.games.get(p)?.game.system?.sun?.built;
+  const clock = opts.now ?? (() => NOW);
   const context: MathsContext = { facts: [], settings: {} };
   const services: Services = {
-    userIdFor: async (token) => (token === 'good' ? 'ana' : token === 'good2' ? 'ben' : null),
-    now: opts.now ?? (() => NOW),
+    userIdFor: async (token) => (token === 'good' ? 'ana' : token === 'good2' ? 'ben' : token === 'good3' ? 'cat' : null),
+    now: clock,
     randomHex: (n) => 'ab'.repeat(n),
     random: (() => {
       let i = 0;
@@ -49,6 +63,12 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
       return true;
     },
     mathsContext: async () => context,
+    seasonSystem: async (p) => structuredClone(state.waiting.get(p) ?? null),
+    chooseSeason: async (p, choice, picture) => {
+      state.waiting.delete(p);
+      state.chosen.push({ choice, picture });
+      return true;
+    },
     market: async (_p, day) => {
       state.marketReads++;
       return state.market.view(day);
@@ -68,6 +88,44 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     recordAnswers: async (_p, once, answers) => {
       state.records.push({ once, answers });
     },
+    gallery: async (p) => {
+      if (state.busy) return 'busy';
+      const ids = [...state.games.keys()].filter((id) => classOf(id) === classOf(p) && builtSun(id));
+      ids.sort((a, b) => (a === p ? -1 : b === p ? 1 : a.localeCompare(b)));
+      return ids.map((id) => {
+        const counts: Partial<Record<StickerId, number>> = {};
+        let given: StickerId | null = null;
+        for (const [k, v] of state.stickers) {
+          const [owner, visitor] = k.split(':');
+          if (owner !== id) continue;
+          counts[v] = (counts[v] ?? 0) + 1;
+          if (visitor === p) given = v;
+        }
+        return { id, name: names[id] ?? id, design: structuredClone(state.games.get(id)!.game.system!), mine: id === p, drawn: state.pictures.has(id), stickers: id === p ? counts : given };
+      });
+    },
+    pictureLinks: async (ids) => Object.fromEntries(ids.filter((id) => state.pictures.has(id)).map((id) => [id, `https://pics/${id}.webp`])),
+    giveSticker: async (visitor, owner, sticker) => {
+      state.stickerCalls++;
+      if (visitor === owner) return 'own';
+      if (classOf(visitor) !== classOf(owner)) return 'class';
+      if (!builtSun(owner)) return 'none';
+      if (sticker === null) state.stickers.delete(`${owner}:${visitor}`);
+      else state.stickers.set(`${owner}:${visitor}`, sticker);
+      return 'ok';
+    },
+    mayDraw: async (p) => {
+      if (!builtSun(p)) return false;
+      const last = state.lastDrawn.get(p);
+      if (last !== undefined && clock() - last < PICTURE_GAP_MINUTES * 60_000) return false;
+      state.lastDrawn.set(p, clock());
+      return true;
+    },
+    storePicture: async (p, webp) => {
+      state.pictureCalls++;
+      state.pictures.set(p, webp);
+      return true;
+    },
   };
   const handler = makeHandler(services);
   const call = async (body: object, token = 'good') => {
@@ -76,7 +134,13 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
   };
   let n = 0;
   const id = () => `req-${String(++n).padStart(6, '0')}`;
-  return { state, call, id };
+  /** Gives a pupil a saved game with a built sun (and so a place in the gallery). */
+  const giveSun = (p: string, _token: string) => {
+    const g = newGame(galaxy, TODAY, DEFAULT_SETTINGS);
+    g.system = buildAll({ ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0] }, planets: [newPlanet(1)] });
+    state.games.set(p, { game: g, version: 1, season: 1 });
+  };
+  return { state, call, id, giveSun };
 }
 
 describe('the Star Trader server function', () => {
@@ -231,6 +295,38 @@ describe('the Star Trader server function', () => {
   });
 });
 
+describe('the Star Forge at a New Season', () => {
+  it('holds a pupil with a saved system until they choose: keep gives the system and a fresh ship, fresh gives the ship and capped credits', async () => {
+    const design = buildAll({ ...emptyDesign(), sun: { kind: 'yellow', name: [0, 0] }, planets: [newPlanet(1)] });
+    const carry = { ship: 2, credits: 50_000, weapons: [0], shields: [], pods: 1 };
+    const fresh = async (choice: 'keep' | 'fresh', picture?: string) => {
+      const w = world();
+      w.state.waiting.set('ana', { design, carry });
+      const first = await w.call({ action: 'load' });
+      // Nothing to play until they choose: no game is made, and moves are refused.
+      expect(first.body.seasonChoice).toMatchObject({ worth: expect.any(Number), carry: { ship: 2, credits: CARRY_MAX_CREDITS } });
+      expect(first.body.game).toBeUndefined();
+      expect(w.state.games.size).toBe(0);
+      expect((await w.call({ action: 'act', requestId: w.id(), version: 1, actions: [] })).status).toBe(409);
+      expect((await w.call({ action: 'load', seasonChoice: 'bogus' })).status).toBe(400);
+      expect((await w.call({ action: 'load', seasonChoice: 'fresh', picture: 'ben/other.webp' })).status).toBe(400);
+      const r = await w.call({ action: 'load', seasonChoice: choice, ...(picture ? { picture } : {}) });
+      expect(w.state.chosen).toEqual([{ choice, picture: picture ?? null }]);
+      expect((await w.call({ action: 'load' })).body.seasonChoice).toBeUndefined();
+      return r.body.game as Game;
+    };
+    const kept = await fresh('keep');
+    expect(kept.system?.sun?.built).toBe(true);
+    expect(kept.t.ship).toBe(0);
+    expect(kept.t.credits).toBe(100);
+    const started = await fresh('fresh', 'ana/season1.webp');
+    expect(started.system).toBeUndefined();
+    expect(started.t.ship).toBe(2);
+    expect(started.t.credits).toBe(CARRY_MAX_CREDITS);
+    expect(started.t.weapons).toEqual([0]);
+  });
+});
+
 describe('the school\'s shared market (stage T.4)', () => {
   it('a trade pushes the school\'s price once, even when the request is sent twice', async () => {
     const w = world();
@@ -293,6 +389,113 @@ describe('the school\'s shared market (stage T.4)', () => {
     const r = await w.call({ action: 'load' });
     expect(r.status).toBe(200);
     expect(r.body.game.t.market).toEqual(newGame(galaxy, TODAY, DEFAULT_SETTINGS).t.market);
+  });
+});
+
+describe('Sharing: gallery, stickers, pictures (S.8)', () => {
+  const webp = (extra = 20) => {
+    const b = new Uint8Array(12 + extra);
+    b.set([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
+    let bin = '';
+    for (const x of b) bin += String.fromCharCode(x);
+    return btoa(bin);
+  };
+  const forgeWorld = (opts: Parameters<typeof world>[0] = {}) => {
+    const w = world({ ...opts, settings: { forge: true, ...opts.settings } });
+    w.giveSun('ana', 'good');
+    w.giveSun('ben', 'good2');
+    w.giveSun('cat', 'good3');
+    return w;
+  };
+
+  it('the gallery shows classmates only, own system first, a picture link only where one was drawn, and counts without names for the owner', async () => {
+    const w = forgeWorld();
+    w.state.pictures.set('ben', new Uint8Array([1]));
+    await w.call({ action: 'sticker', owner: 'ana', sticker: 'wow' }, 'good2');
+    const r = await w.call({ action: 'gallery' }, 'good');
+    expect(r.status).toBe(200);
+    const systems = r.body.systems as any[];
+    expect(systems.map((s) => s.id)).toEqual(['ana', 'ben']);
+    expect(systems[0].mine).toBe(true);
+    expect(systems[1].mine).toBe(false);
+    expect(systems[0].picture).toBeNull();
+    expect(systems[1].picture).toBe('https://pics/ben.webp');
+    expect(systems[0].stickers).toEqual({ wow: 1 });
+    expect(JSON.stringify(systems[0].stickers)).not.toMatch(/ben|Ben/);
+    // The other class's pupil never appears, and sees only their own class.
+    expect(JSON.stringify(r.body)).not.toContain('cat');
+    expect(((await w.call({ action: 'gallery' }, 'good3')).body.systems as any[]).map((s) => s.id)).toEqual(['cat']);
+  });
+
+  it('a classmate without a built sun is not in the gallery', async () => {
+    const w = forgeWorld();
+    w.state.games.get('ben')!.game.system = undefined;
+    expect(((await w.call({ action: 'gallery' })).body.systems as any[]).map((s) => s.id)).toEqual(['ana']);
+  });
+
+  it('a pupil can leave one sticker per classmate: a second replaces the first, and it can be taken back', async () => {
+    const w = forgeWorld();
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: 'wow' })).body).toEqual({ sticker: 'wow' });
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: 'pretty' })).body).toEqual({ sticker: 'pretty' });
+    expect(w.state.stickers.size).toBe(1);
+    const mine = ((await w.call({ action: 'gallery' })).body.systems as any[]).find((s) => s.id === 'ben');
+    expect(mine.stickers).toBe('pretty');
+    const owner = ((await w.call({ action: 'gallery' }, 'good2')).body.systems as any[])[0];
+    expect(owner.stickers).toEqual({ pretty: 1 });
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: null })).body).toEqual({ sticker: null });
+    expect(w.state.stickers.size).toBe(0);
+    for (const s of STICKERS) expect((await w.call({ action: 'sticker', owner: 'ben', sticker: s.id })).status).toBe(200);
+  });
+
+  it('refuses stickers on your own system, on another class, on an unknown sticker, and on a system that is not built', async () => {
+    const w = forgeWorld();
+    expect((await w.call({ action: 'sticker', owner: 'ana', sticker: 'wow' })).status).toBe(400);
+    expect((await w.call({ action: 'sticker', owner: 'cat', sticker: 'wow' })).status).toBe(400);
+    const before = w.state.stickerCalls;
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: 'thumbs' })).status).toBe(400);
+    expect((await w.call({ action: 'sticker', owner: 'ben' })).status).toBe(400);
+    expect((await w.call({ action: 'sticker', owner: 'ben/../x', sticker: 'wow' })).status).toBe(400);
+    expect(w.state.stickerCalls).toBe(before);
+    w.state.games.get('ben')!.game.system = undefined;
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: 'wow' })).status).toBe(400);
+    expect(w.state.stickers.size).toBe(0);
+  });
+
+  it('saves a small .webp picture, not another within five minutes, but again after', async () => {
+    let now = NOW;
+    const w = forgeWorld({ now: () => now });
+    expect((await w.call({ action: 'picture', picture: webp() })).body).toEqual({ saved: true });
+    expect(w.state.pictures.get('ana')![8]).toBe(0x57);
+    expect((await w.call({ action: 'picture', picture: webp() })).body).toEqual({ saved: false });
+    expect(w.state.pictureCalls).toBe(1);
+    now += (PICTURE_GAP_MINUTES - 1) * 60_000;
+    expect((await w.call({ action: 'picture', picture: webp() })).body).toEqual({ saved: false });
+    now += 2 * 60_000;
+    expect((await w.call({ action: 'picture', picture: webp() })).body).toEqual({ saved: true });
+    expect(w.state.pictureCalls).toBe(2);
+  });
+
+  it('refuses a picture that is not a .webp or is too big, and does not save one without a built sun', async () => {
+    const w = forgeWorld();
+    const png = btoa('\x89PNG\r\n\x1a\n and some more bytes');
+    expect((await w.call({ action: 'picture', picture: png })).status).toBe(400);
+    expect((await w.call({ action: 'picture', picture: 'not base64!!' })).status).toBe(400);
+    expect((await w.call({ action: 'picture' })).status).toBe(400);
+    expect((await w.call({ action: 'picture', picture: webp(40_000) })).status).toBe(400);
+    expect(w.state.pictureCalls).toBe(0);
+    w.state.games.get('ana')!.game.system = undefined;
+    expect((await w.call({ action: 'picture', picture: webp() })).body).toEqual({ saved: false });
+    expect(w.state.pictureCalls).toBe(0);
+  });
+
+  it('all three are refused while the class\'s Forge switch is off', async () => {
+    const w = world({ settings: { forge: false } });
+    w.giveSun('ana', 'good');
+    w.giveSun('ben', 'good2');
+    expect((await w.call({ action: 'gallery' })).status).toBe(400);
+    expect((await w.call({ action: 'sticker', owner: 'ben', sticker: 'wow' })).status).toBe(400);
+    expect((await w.call({ action: 'picture', picture: webp() })).status).toBe(400);
+    expect(w.state.stickerCalls + w.state.pictureCalls).toBe(0);
   });
 });
 

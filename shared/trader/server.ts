@@ -7,7 +7,7 @@
  * space junk, a friendly trader's offer, or a pirate fight), and how many of today's maths questions have been used.
  * Maths questions are used strictly in order (`asked`), and each answer is marked by the server (`mark`).
  */
-import { BIG_TRADE_CREDITS, GOODS, JUMPS_PER_DAY, SHIELDS, SHIPS, WEAPONS } from './config';
+import { BIG_TRADE_CREDITS, CARRY_MAX_CREDITS, GOODS, JUMPS_PER_DAY, MAX_PODS, SHIELDS, SHIPS, WEAPONS } from './config';
 import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } from './encounter';
 import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from './fight';
 import type { Galaxy } from './galaxy';
@@ -31,6 +31,7 @@ import {
   type Result,
   type Trader,
 } from './state';
+import { designProblem, emptyDesign, forgeCost, typedNames, type SystemDesign } from './system';
 
 export type Deal = Extract<Encounter, { kind: 'trader' }>;
 
@@ -52,6 +53,8 @@ export interface Game {
   stats: Stats;
   /** How far this pupil has pushed each price today (their 20% a day limit). Missing in a game that has not traded yet. */
   pushed?: PupilPushes;
+  /** The pupil's solar system in the Star Forge (docs/TRADER-SYSTEM-PLAN.md). Missing until they first plan one. */
+  system?: SystemDesign;
   /** The captain the pupil picked (captains.ts), only a look. Missing until they pick one. */
   captain?: string;
 }
@@ -62,6 +65,47 @@ export interface Settings {
   loans: boolean;
   /** Maths checks are on. When off, checks are skipped: laser shots are full power and junk is steered safely. */
   maths: boolean;
+  /** The Star Forge is open (docs/TRADER-SYSTEM-PLAN.md). Missing: closed. */
+  forge?: boolean;
+  /** Pupils may type their own names in the Forge (checked for naughty words either way). Missing: allowed. */
+  forgeTyping?: boolean;
+}
+
+/** What a pupil ended a season with, kept for the pupil who chooses to start a new system (docs/TRADER-SYSTEM-PLAN.md, 1.2). */
+export interface Carry {
+  ship: number;
+  credits: number;
+  weapons: number[];
+  shields: number[];
+  pods: number;
+}
+
+/**
+ * A new season's game for a pupil who built a system last season. 'keep': the system stays and the ship and credits start
+ * again. 'fresh': no system, but the ship, its gear and up to CARRY_MAX_CREDITS carry over. The saved numbers are checked
+ * again here, so nothing odd in the database can give a ship or gear that doesn't exist.
+ */
+export function seasonGame(galaxy: Galaxy, day: number, settings: Settings, choice: 'keep' | 'fresh', saved: { design: SystemDesign; carry: Carry }, pushes?: Pushes): Game {
+  const game = newGame(galaxy, day, settings, pushes);
+  if (choice === 'keep') {
+    if (!designProblem(saved.design)) game.system = structuredClone(saved.design);
+    return game;
+  }
+  const c = saved.carry;
+  const ship = Number.isInteger(c.ship) && c.ship >= 0 && c.ship < SHIPS.length ? c.ship : 0;
+  const gear = (list: unknown, count: number, slots: number): number[] =>
+    (Array.isArray(list) ? list : []).filter((i): i is number => Number.isInteger(i) && i >= 0 && i < count).slice(0, slots);
+  game.t = {
+    ...game.t,
+    ship,
+    hull: SHIPS[ship].hull,
+    fuel: SHIPS[ship].fuelTank,
+    credits: Math.max(game.t.credits, Math.min(CARRY_MAX_CREDITS, Number.isFinite(c.credits) ? Math.floor(c.credits) : 0)),
+    weapons: gear(c.weapons, WEAPONS.length, SHIPS[ship].weaponSlots),
+    shields: gear(c.shields, SHIELDS.length, SHIPS[ship].shieldSlots),
+    pods: Number.isInteger(c.pods) ? Math.max(0, Math.min(MAX_PODS, c.pods)) : 0,
+  };
+  return game;
 }
 
 export const DEFAULT_SETTINGS: Settings = { jumpsPerDay: JUMPS_PER_DAY, loans: true, maths: true };
@@ -95,6 +139,7 @@ export type Action =
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
   | { type: 'moon' }
+  | { type: 'forge'; design: SystemDesign }
   | { type: 'jump'; dest: number }
   | { type: 'captain'; id: string };
 
@@ -114,6 +159,8 @@ export interface Outcome {
   junk?: { steeredWell: boolean };
   /** A friendly trader's deal taken or not. */
   deal?: { took: boolean };
+  /** What a Star Forge change came to (positive: paid). */
+  forge?: { total: number; worth: number };
   /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
   pushes?: MarketPush[];
 }
@@ -240,6 +287,18 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
     case 'moon':
       g.t = must(buyMoon(galaxy, t));
       return;
+    case 'forge': {
+      if (!settings.forge) refuse('The Star Forge is not open yet.');
+      const problem = designProblem(action.design);
+      if (problem) refuse(problem);
+      if (settings.forgeTyping === false && typedNames(action.design).some((n) => !typedNames(g.system ?? emptyDesign()).includes(n))) refuse('Pick names from the lists for now.');
+      const cost = forgeCost(g.system ?? emptyDesign(), action.design, t.moon);
+      if (cost.total > t.credits) refuse(`You need ${(cost.total - t.credits).toLocaleString('en-NZ')} more credits.`);
+      g.t = { ...t, credits: t.credits - cost.total };
+      g.system = structuredClone(action.design);
+      out.forge = { total: cost.total, worth: cost.worth };
+      return;
+    }
     case 'captain':
       if (!isCaptain(action.id)) refuse('That captain could not be found.');
       g.captain = action.id;
