@@ -1,0 +1,47 @@
+/* The "next part" chip (NextPartChip.tsx): green while today's part is ready, a quiet night colour once it's done. */
+.next-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.next-part--ready {
+  background: #dcfce7;
+  color: #14532d;
+}
+.next-part--tomorrow {
+  background: #ede9fe;
+  color: #3b0764;
+}
+/* In a game it can be tapped to hear it: big enough for small fingers. */
+.next-part--button {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+.next-part--button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+[data-hub-theme='menu'] .game-card .next-part--ready {
+  background: rgba(134, 239, 172, 0.2);
+  color: #dcfce7;
+}
+[data-hub-theme='menu'] .game-card .next-part--tomorrow {
+  background: rgba(196, 181, 253, 0.2);
+  color: #ede9fe;
+}
+@media (prefers-reduced-motion: reduce) {
+  .next-part--button:active {
+    transform: none;
+  }
+}

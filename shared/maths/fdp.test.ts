@@ -271,6 +271,21 @@ describe.each(KEYS.map((k) => [k] as const))('%s', (key) => {
   });
 });
 
+describe('the whole from a percentage has tidy answers', () => {
+  it.each([
+    ['pct:whole:ten', 10],
+    ['pct:whole:fifty', 10],
+    ['pct:whole:quarter', 20],
+  ] as const)('%s: every whole is a whole number and a multiple of %i', (key, tidy) => {
+    const random = randomFromSeed(`tidy:${key}`);
+    for (let i = 0; i < 300; i++) {
+      const q = GENERATED.families[key].make(key, GENERATED.families[key].roll(key, random))!;
+      expect(Number.isInteger(q.answer), q.parts.join(' ')).toBe(true);
+      expect((q.answer as number) % tidy, q.parts.join(' ')).toBe(0);
+    }
+  });
+});
+
 describe('answers that carry their numbers', () => {
   it('cleanParams takes 1 to 12 finite numbers up to a billion, nothing else', () => {
     expect(cleanParams([1, 2.5])).toEqual([1, 2.5]);

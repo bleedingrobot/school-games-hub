@@ -5,6 +5,8 @@ import type { SkipStep } from '../../../shared/maths/skillPacks/earlyFacts';
 const STEP_WORD: Record<SkipStep, string> = { 10: 'tens', 5: 'fives', 2: 'twos' };
 
 export const WORDS = {
+  /** What changes each day, for the next-part chip (src/components/NextPartChip.tsx). */
+  part: 'lily pad',
   title: "Hop's Glow-worm Pond",
   wants: (name: string) => `${name} wants to get to the Glow-worm Party! Help ${name} hop across the pond.`,
   nextFriend: (name: string) => `Now ${name} needs to cross a new pond to the party!`,

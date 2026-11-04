@@ -1,5 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { WORDS } from './words';
 import { useKororaEnabled } from './switch';
 import { KORORA_ABOUT, saveKororaEnabled, useKororaClassSwitch, useKororaSummary } from './teacher';
 
@@ -44,6 +45,8 @@ export const penguinPairs: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'foundational',
+  // The home page card's chip: today's pebble ready, or come back tomorrow.
+  nextPart: { noun: WORDS.part },
   useTeacherSwitch: useKororaEnabled,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's gold dancing shoes in the
   // Maths column, and a drawer with the help setting.

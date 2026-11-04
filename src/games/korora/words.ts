@@ -10,6 +10,8 @@ const LEVEL_WORDS: Record<Level, string> = {
 };
 
 export const WORDS = {
+  /** What changes each day, for the next-part chip (src/components/NextPartChip.tsx). */
+  part: 'stepping stone',
   title: 'Penguin Pairs',
   wants: (name: string) => `${name} wants a pair of dancing shoes! Help ${name} across the stepping stones.`,
   nextFriend: (name: string) => `Now ${name} wants dancing shoes too!`,
