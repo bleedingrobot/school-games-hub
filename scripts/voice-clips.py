@@ -36,6 +36,10 @@ SAY_AS = {
     'Wētā': 'Wetta',  # the everyday Kiwi way (James, 4 Nov 2026)
     'Ruru': 'Roo-roo',
     'Takahē': 'Tah-kah-heh',
+    'Kororā': 'Koh-roh-rah',
+    # NZ English says pipi "pee-pee"; Kokoro would say "pippy".
+    'Pipi': 'Peepee',
+    'pipi': 'peepee',
 }
 
 ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']

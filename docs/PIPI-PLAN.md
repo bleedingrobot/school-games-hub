@@ -1,7 +1,7 @@
 # Pipi's Hidden Shells (part-whole within 10) — plan
 
-Short id `pipi`. **Status (4 Nov 2026): LIVE (all stages, painted art); shared maths LIVE first (PR #189), the game in PR #193.
-Voice clips still to record (`scripts/voice-clips.py pipi`); until then the browser's voice reads the lines.** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
+Short id `pipi`. **Status (4 Nov 2026): LIVE (all stages, painted art); shared maths LIVE first (PR #189), the game in PR #193..
+Bella's voice clips recorded (`scripts/voice-clips.py pipi`; pipi is said "pee-pee").** Game A in `docs/EARLY-GAMES-PLAN.md`; the parts every early
 game shares (30 counted days, fading help, way A, voice, guided first go, switches, stages) are in section 7 there and
 aren't repeated here.
 

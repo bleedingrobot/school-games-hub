@@ -38,7 +38,7 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
-  // Bella's recorded clips (public/voice/pipi/), the same voice as Kiwi's Beanstalk; the browser's own voice until they are made.
+  // Bella's recorded clips (public/voice/pipi/), the same voice as Kiwi's Beanstalk.
   const say = useCallback((text: string) => on && speak(text, VOICE_FOLDER), [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
