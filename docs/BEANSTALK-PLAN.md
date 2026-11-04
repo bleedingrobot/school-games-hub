@@ -212,7 +212,7 @@ for now (👆); a painted one can replace it later.
 
 ## Stage 3 results (4 Nov)
 
-**Migration** `20261104000300_beanstalk.sql` (the next free number on 4 Nov; check again at go-live):
+**Migration** `20261104000700_beanstalk.sql` (renumbered from 000300 at go-live):
 - `beanstalk_progress`: one row a pupil. Jack or Jill, the count of finished days, the NZ day a leaf last changed, and a
   version, so two tabs can't both save.
 - `beanstalk_rounds`: one row a challenge. Its seed, whether it's open, and once finished the taps and the wrong pairs. A
@@ -262,7 +262,7 @@ preview and the real game can't drift apart. Preview tools add "The teacher lets
 
 ## Stage 4 results (4 Nov)
 
-**Migration** `20261104000400_beanstalk_hub.sql` (the next free number on 4 Nov):
+**Migration** `20261104000800_beanstalk_hub.sql` (renumbered from 000400 at go-live):
 - **Registered in `hub_games`.** The switch is `beanstalk_enabled`. It has counts, a How points work line ("No points: each
   Golden Egg is the prize, and an achievement."), the players list and "last played".
 - **Not a season game.** It has no New Season hook, and achievements are kept.

@@ -5,7 +5,7 @@
 -- beanstalk, and each friend's egg is an achievement (shared/beanstalk/progress.ts: FRIENDS, DAYS_PER_EGG = 30).
 -- It isn't a season game: days are counted, not dates, so New Season leaves the beanstalk and the achievements as they are.
 --
--- Depends on 20261104000300_beanstalk.sql and 20261020000100_game_hooks.sql.
+-- Depends on 20261104000700_beanstalk.sql and 20261020000100_game_hooks.sql.
 
 -- ---------------------------------------------------------------------------
 -- The hooks

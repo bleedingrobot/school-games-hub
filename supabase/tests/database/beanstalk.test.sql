@@ -1,4 +1,4 @@
--- Kiwi's Beanstalk (migrations 20261104000300 and 20261104000400): progress, challenges, the switch and the dots setting,
+-- Kiwi's Beanstalk (migrations 20261104000700 and 20261104000800): progress, challenges, the switch and the dots setting,
 -- and the hub hooks with one achievement per Golden Egg.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh beanstalk, then scripts/scratch-test.sh beanstalk supabase/tests/database/beanstalk.test.sql
