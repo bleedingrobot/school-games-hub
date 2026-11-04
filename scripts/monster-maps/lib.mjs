@@ -163,7 +163,7 @@ export class MapMaker {
   /** A bush or tree that hides a seed pod: put it on a tile that is already a wall, so it keeps its look. */
   pod(name, puzzle, x, y, text) { this.object('puzzle', name, x, y, { puzzle, text }); }
   /** Opens a tile of a finished map (a border tree, say) to make a new way through. */
-  open(x, y) { this.walls[this.at(x, y)] = 0; }
+  open(x, y) { this.walls[this.at(x, y)] = 0; this.plan = this.plan.filter((t) => t.x !== x || t.y !== y); }
   /** A trainer who spots you. `team` is "family:level,family:level" (the form comes from the level). */
   trainer(name, sprite, x, y, facing, { sight = 4, text, win, team, badge, loot }) {
     this.object('trainer', name, x, y, { sprite, facing, sight, text, win, team, ...(badge ? { badge } : {}), ...(loot ? { loot } : {}) });
@@ -236,10 +236,31 @@ export class MapMaker {
       ],
     };
   }
+  /**
+   * The painted map shows a way out only where there is path, so every exit on the edge of the map
+   * gets path straight in from the edge until it meets a path (over its gate or sleeping giant).
+   * Only the painting changes: these squares were already open in the game.
+   */
+  #pathsToExits() {
+    const isPath = (x, y) => this.inside(x, y) && this.pathCells.has(this.at(x, y));
+    for (const o of this.objects) {
+      if (o.type !== 'warp') continue;
+      const [dx, dy] = o.y === 0 ? [0, 1] : o.y === this.height - 1 ? [0, -1] : o.x === 0 ? [1, 0] : o.x === this.width - 1 ? [-1, 0] : [0, 0];
+      if (!dx && !dy) continue;
+      const way = [];
+      for (let x = o.x, y = o.y; this.inside(x, y) && !isPath(x, y); x += dx, y += dy) {
+        if (way.length && this.walls[this.at(x, y)]) { way.length = 0; break; } // something in the way: leave it
+        way.push(this.at(x, y));
+        if (isPath(x + dy, y + dx) || isPath(x - dy, y - dx)) break; // a path runs alongside: joined
+      }
+      for (const i of way) this.pathCells.add(i);
+    }
+  }
   save() {
     writeFileSync(new URL(`../../shared/monsters/maps/${this.id}.json`, import.meta.url), JSON.stringify(this.toTiled()) + '\n');
     console.log(`wrote ${this.id}.json (${this.width} x ${this.height})`);
     // The painter's plan: the biome, which squares are path and long grass, and what stands where.
+    if (this.pathCells) this.#pathsToExits();
     const paths = [...(this.pathCells ?? [])].sort((a, b) => a - b);
     const plan = { id: this.id, width: this.width, height: this.height, biome: this.biomeName, paths, grass: this.grass.flatMap((g, i) => (g ? [i] : [])), things: this.plan };
     writeFileSync(new URL(`./paint-plans/${this.id}.json`, import.meta.url), JSON.stringify(plan) + '\n');

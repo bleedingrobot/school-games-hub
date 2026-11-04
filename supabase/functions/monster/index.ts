@@ -2369,7 +2369,7 @@ const TOPICS = [
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7) and "half:14" (half of 14). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -2516,58 +2516,156 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
+/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+const tenAnd = {
+	label: "\"Ten and\" facts (10 + 4)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenand:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	make: (key, [n, v]) => {
+		if (!isInt$2(n, 1, 9) || key !== `tenand:${n}` || !isInt$2(v, 0, 3)) return null;
+		const t = String(10 + n);
+		const [parts, answer] = v === 0 ? [[
+			"10",
+			"+",
+			String(n),
+			"=",
+			"?"
+		], 10 + n] : v === 1 ? [[
+			String(n),
+			"+",
+			"10",
+			"=",
+			"?"
+		], 10 + n] : v === 2 ? [[
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		], n] : [[
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		], n];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 10,
+				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
+const SKIP_STEPS = [
+	{
+		step: 10,
+		upTo: 100,
+		word: "tens"
+	},
+	{
+		step: 5,
+		upTo: 50,
+		word: "fives"
+	},
+	{
+		step: 2,
+		upTo: 20,
+		word: "twos"
+	}
+];
+/**
+* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
+* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
+* the step from 0 to `upTo`.
+*/
+function skipTerms(kind, step, upTo, answer, at) {
+	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
+	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
+	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
+}
+const skipKeys = (step, upTo) => [
+	"up",
+	"next",
+	"back"
+].flatMap((kind) => range$5(0, upTo, step).filter((n) => [
+	1,
+	2,
+	3,
+	4
+].some((at) => skipTerms(kind, step, upTo, n, at))).map((n) => `skip${step}:${kind}:${n}`));
+const parseSkip = (key) => {
+	const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
+	return m ? {
+		step: Number(m[1]),
+		kind: m[2],
+		answer: Number(m[3])
+	} : null;
+};
+/**
+* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
+* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
+* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
+*/
+function skipCounting(step, upTo, word) {
+	const keys = skipKeys(step, upTo);
+	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
+	return {
+		label: `Counting in ${word}`,
+		curriculumTags: [],
+		keys,
+		roll: (key, r) => {
+			const { kind, answer } = parseSkip(key);
+			const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
+			return [answer, fits[int(r, 0, fits.length - 1)]];
+		},
+		make: (key, [answer, at]) => {
+			const skip = parseSkip(key);
+			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
+			const terms = skipTerms(skip.kind, step, upTo, answer, at);
+			if (!terms) return null;
+			const gap = terms.indexOf(answer);
+			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
+			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
+			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
+			const before = terms[gap - 1];
+			const back = skip.kind === "back" ? -1 : 1;
+			const wrongSteps = [
+				10,
+				5,
+				2,
+				1
+			].filter((s) => s !== step);
+			return {
+				parts,
+				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}: ${said}. ${prompt}`,
+				prompt,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					...wrongSteps.map((s) => before + back * s),
+					...terms.filter((n) => n !== answer)
+				]
+			};
+		}
+	};
+}
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
 	families: {
-		tenAnd: {
-			label: "\"Ten and\" facts (10 + 4)",
-			curriculumTags: ["MS.Y1.NUM.OP.P6"],
-			keys: range$5(1, 9).map((n) => `tenand:${n}`),
-			roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
-			make: (key, [n, v]) => {
-				if (!isInt$2(n, 1, 9) || key !== `tenand:${n}` || !isInt$2(v, 0, 3)) return null;
-				const t = String(10 + n);
-				const [parts, answer] = v === 0 ? [[
-					"10",
-					"+",
-					String(n),
-					"=",
-					"?"
-				], 10 + n] : v === 1 ? [[
-					String(n),
-					"+",
-					"10",
-					"=",
-					"?"
-				], 10 + n] : v === 2 ? [[
-					"10",
-					"+",
-					"?",
-					"=",
-					t
-				], n] : [[
-					t,
-					"−",
-					"10",
-					"=",
-					"?"
-				], n];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer,
-					wrong: [
-						answer + 1,
-						answer - 1,
-						answer + 10,
-						n + 1,
-						20,
-						1 + n
-					]
-				};
-			}
-		},
+		tenAnd,
+		...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
 		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
 		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
 		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
@@ -2579,7 +2677,7 @@ const EARLY_FACTS = {
 		["bond20"],
 		["dblHalf20"]
 	],
-	ladderOnly: ["tenAnd"]
+	ladderOnly: ["tenAnd", ...SKIP_STEPS.map(({ step }) => `skip${step}`)]
 };
 //#endregion
 //#region shared/maths/skillPacks/bedmas.ts
@@ -5563,6 +5661,15 @@ const LADDER = [
 		keys: earlyKeys("dblHalf20"),
 		built: true
 	},
+	...SKIP_STEPS.map(({ step, word }) => ({
+		id: `skip-${step}`,
+		label: `Counting in ${word}`,
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: earlyKeys(`skip${step}`),
+		built: true,
+		inWarmUp: false
+	})),
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -5684,7 +5791,7 @@ function ladderProgress(stats, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -7245,7 +7352,7 @@ const PUZZLES = [
 		count: 3,
 		title: "Seed pods",
 		says: "The Hermit lost 3 seed pods somewhere in Kauri Bush. Look closely at the bushes!",
-		hint: "One is near the old kauri tree, one by the pond, and one in the far corner.",
+		hint: "One is in a tree near the old kauri, one in a bush beside Tama on the west side, and one in the branches just north of the pond. Walk up to a tree and press Space to search it.",
 		prize: {
 			bits: "leaf",
 			n: 3
@@ -7256,12 +7363,12 @@ const PUZZLES = [
 		kind: "stones",
 		multipleOf: 3,
 		title: "Stepping stones",
-		says: "Cross the rock pool. Only step on numbers in the 3 times table, or splash!",
+		says: "Cross the rock pool. Count in 3s and only step on numbers in the 3 times table, or splash! Step up, down, left or right.",
 		hint: "Start on the 6, then look for 9, 12, 15, 18…",
 		grid: [
 			"8 14 20 10 25 4",
 			"6 9 11 7 16 22",
-			"13 12 15 18 2 30",
+			"13 12 15 18 2 26",
 			"5 16 23 21 24 27"
 		],
 		prize: {
@@ -7350,13 +7457,13 @@ const PUZZLES = [
 		kind: "stones",
 		multipleOf: 4,
 		title: "Lagoon stones",
-		says: "Cross the lagoon. Only step on numbers in the 4 times table!",
+		says: "Cross the lagoon. Count in 4s and only step on numbers in the 4 times table! Step up, down, left or right.",
 		hint: "Start on the 8, then 12, 16, 20…",
 		grid: [
 			"5 9 14 6 10 15",
 			"8 12 16 20 18 7",
-			"11 22 13 24 21 28",
-			"3 26 17 32 36 40"
+			"11 22 13 24 21 30",
+			"3 26 17 28 32 36"
 		],
 		prize: { egg: "water" }
 	},
@@ -34299,6 +34406,7 @@ const QUESTS = [
 		id: "kauri",
 		title: "The lost seed pods",
 		giver: "kauri-bush:Hermit",
+		back: "Go back to the Hermit in Kauri Bush",
 		area: 1,
 		steps: [
 			{
@@ -34326,6 +34434,7 @@ const QUESTS = [
 		id: "shell",
 		title: "Clear the rock pools",
 		giver: "shell-beach:Hine",
+		back: "Go back to Hine on Shell Beach",
 		area: 2,
 		steps: [
 			{
@@ -34356,6 +34465,7 @@ const QUESTS = [
 		id: "fire",
 		title: "The miner’s lanterns",
 		giver: "fire-mountain:Old Kui",
+		back: "Go back to Old Kui on Fire Mountain",
 		area: 3,
 		steps: [
 			{
@@ -34385,6 +34495,7 @@ const QUESTS = [
 		id: "snow",
 		title: "The warden’s hut",
 		giver: "snowy-peaks:Ranger Fern",
+		back: "Go back to Ranger Fern on Snowy Peaks",
 		area: 4,
 		steps: [
 			{
@@ -34411,6 +34522,7 @@ const QUESTS = [
 		id: "caves",
 		title: "The lost torch",
 		giver: "glowworm-caves:Glow Gran",
+		back: "Go back to Glow Gran in the Glowworm Caves",
 		area: 5,
 		steps: [
 			{
@@ -34439,6 +34551,7 @@ const QUESTS = [
 		id: "harbour",
 		title: "The busy wharf",
 		giver: "harbour-city:Captain Tui",
+		back: "Go back to Captain Tui in Harbour City",
 		area: 6,
 		steps: [
 			{
@@ -34465,6 +34578,7 @@ const QUESTS = [
 		id: "finale",
 		title: "The Teacher’s big question",
 		giver: "harbour-town:Teacher",
+		back: "Go back to the Teacher in Harbour Town",
 		area: 0,
 		badges: 6,
 		needs: [
@@ -34709,12 +34823,29 @@ function knownFlag(f, maps) {
 		case "hatched": return EGG_KINDS.includes(id);
 		case "egg":
 		case "owed": return eggRefOk(id, maps);
-		case "nest": return rest.length === 2 && isNestThing(rest[0], maps) && /^\d{1,6}$/.test(rest[1]);
-		case "pod": return rest.length === 2 && PUZZLES.some((p) => p.id === rest[0] && p.kind === "pods");
+		case "nest": {
+			const cut = id.lastIndexOf(":");
+			return cut > 0 && isNestThing(id.slice(0, cut), maps) && /^\d{1,6}$/.test(id.slice(cut + 1));
+		}
+		case "pod": {
+			const [puzzle, ...thing] = rest;
+			const thingId = thing.join(":");
+			return PUZZLES.some((p) => p.id === puzzle && p.kind === "pods") && Object.values(maps).some((m) => m.things.some((t) => t.id === thingId && t.kind === "puzzle" && t.puzzle === puzzle));
+		}
 		default: return false;
 	}
 }
 const isNestThing = (id, maps) => Object.values(maps).some((m) => m.things.some((t) => t.id === id && t.kind === "nest"));
+/** "nest:<thing id>:<week>:<kind>" split up (the thing id itself has a colon in it, "map:name"). */
+function nestRef(ref) {
+	const parts = ref.split(":");
+	if (parts[0] !== "nest" || parts.length < 4) return void 0;
+	return {
+		thing: parts.slice(1, -2).join(":"),
+		week: parts[parts.length - 2],
+		kind: parts[parts.length - 1]
+	};
+}
 /** "quest:<id>:<kind>", "puzzle:<id>:<kind>" or "nest:<thing>:<week>:<kind>": a place an egg can come from. */
 function eggRefOk(ref, maps) {
 	const parts = ref.split(":");
@@ -34724,7 +34855,8 @@ function eggRefOk(ref, maps) {
 		const p = puzzleById(parts[1]);
 		return !!p && "egg" in p.prize && p.prize.egg === kind;
 	}
-	if (parts[0] === "nest" && parts.length === 4) return /^\d{1,6}$/.test(parts[2]) && Object.values(maps).some((m) => m.things.some((t) => t.id === parts[1] && t.kind === "nest" && t.egg === kind));
+	const nest = nestRef(ref);
+	if (nest) return /^\d{1,6}$/.test(nest.week) && Object.values(maps).some((m) => m.things.some((t) => t.id === nest.thing && t.kind === "nest" && t.egg === kind));
 	return false;
 }
 function bitsOk(b) {
@@ -34762,6 +34894,11 @@ function questShape(raw, maps) {
 	for (const [id, st] of Object.entries(q.quests)) {
 		const quest = questById(id);
 		if (!quest || !isObject$1(st) || !isInt$1(st.step, 0, quest.steps.length - 1) || !isInt$1(st.n, 0, 999)) return "quest-log";
+		if (st.ready !== void 0 && st.ready !== true || !Object.keys(st).every((k) => [
+			"step",
+			"n",
+			"ready"
+		].includes(k))) return "quest-log";
 	}
 	if (q.board !== void 0) {
 		const b = q.board;
@@ -34822,7 +34959,8 @@ function checkQuest(was, w, battles, facts) {
 			const parts = id.split(":");
 			if (parts[0] === "quest" && !has(`quest-done:${parts[1]}`)) return "egg-source";
 			if (parts[0] === "puzzle" && !has(`solved:${parts[1]}`)) return "egg-source";
-			if (parts[0] === "nest" && ![weekOf(facts.today), weekOf(facts.today) - 1].includes(Number(parts[2]))) return "egg-source";
+			const nest = nestRef(id);
+			if (parts[0] === "nest" && (!nest || ![weekOf(facts.today), weekOf(facts.today) - 1].includes(Number(nest.week)))) return "egg-source";
 		} else if (kind === "made") {
 			if (!RECIPES.some((r) => r.flag === f && (r.needs ?? []).every(has))) return "made";
 		}

@@ -30,7 +30,7 @@ const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-/** The private bucket for gallery pictures (20261103000300_trader_forge.sql): only the server key reaches it. */
+/** The private bucket for gallery pictures (20261104001100_trader_forge.sql): only the server key reaches it. */
 const GALLERY_BUCKET = 'trader-gallery';
 
 /** Logs say which database function failed and the error code, never who. */

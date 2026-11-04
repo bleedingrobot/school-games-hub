@@ -6,10 +6,12 @@ import { randomFromSeed } from '../space/random';
 import { CAMPAIGN_STEPS } from './config';
 import { parseFactKey } from './facts';
 import { afterAnswer, newStats, type FactStats } from './leitner';
-import { AutoPack, autoPools, LADDER, ladderProgress, tablesJumpFloor } from './ladder';
+import { AutoPack, autoPools, LADDER, ladderProgress, packIdOfKey, tablesJumpFloor } from './ladder';
 import { BandedPack, sameAnswer } from './banded';
 import { BANDED_PACKS } from './skillPacks';
-import { earlyFactsPack, EARLY_FACTS } from './skillPacks/earlyFacts';
+import { earlyFactsPack, EARLY_FACTS, solveSkip } from './skillPacks/earlyFacts';
+import { RECORD_KEY } from './skillPacks/generatedKit';
+import { solveParts } from './focus';
 
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
 const secure = (keys: string[]) => keys.map((k) => rec(k, 3));
@@ -34,6 +36,15 @@ function solve(parts: string[]): number {
   if (m) return +m[2] - +m[1];
   m = /^\? \+ (\d+) = (\d+)$/.exec(text);
   if (m) return +m[2] - +m[1];
+  // Skip counting: "20, 30, ?, 50". The gap is the number that keeps every step the same.
+  const pads = parts.map((p) => p.replace(/,$/, ''));
+  if (pads.length >= 4 && pads.filter((p) => p === '?').length === 1 && pads.every((p) => p === '?' || /^\d+$/.test(p))) {
+    const gap = pads.indexOf('?');
+    const [i, j] = gap < 2 ? [2, 3] : [0, 1];
+    const step = +pads[j] - +pads[i];
+    const answer = +pads[i] + step * (gap - i);
+    return pads.every((p, k) => +(p === '?' ? answer : p) === answer + step * (k - gap)) ? answer : NaN;
+  }
   return NaN;
 }
 
@@ -127,7 +138,7 @@ describe('the ladder', () => {
       return; // the alignment tool isn't on this machine (CI): skip
     }
     for (const skill of LADDER) {
-      if (skill.id === 'bonds-1000') { expect(skill.curriculumTags).toEqual([]); continue; }
+      if (skill.id === 'bonds-1000' || skill.id.startsWith('skip-')) { expect(skill.curriculumTags).toEqual([]); continue; }
       expect(skill.curriculumTags.length, skill.id).toBeGreaterThan(0);
       for (const tag of skill.curriculumTags) expect(text, `${skill.id}: ${tag}`).toContain(`- ${tag} `);
     }
@@ -347,5 +358,90 @@ describe('jumping ahead on secure times tables (22 Oct 2026)', () => {
   it('never lowers a floor that is already higher', () => {
     const progress = ladderProgress(secure(times('tables-2-5-10')), { floor: at('tables-7') });
     expect(at(progress.current!.id)).toBeGreaterThanOrEqual(at('tables-7'));
+  });
+});
+
+describe('skip counting in tens, fives and twos', () => {
+  const steps = [
+    { id: 'skip-10', family: 'skip10', step: 10, upTo: 100 },
+    { id: 'skip-5', family: 'skip5', step: 5, upTo: 50 },
+    { id: 'skip-2', family: 'skip2', step: 2, upTo: 20 },
+  ];
+  const ids = LADDER.map((s) => s.id);
+
+  it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
+    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'tables-2-5-10']);
+    const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
+    const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
+    expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');
+    expect(ladderProgress(secure([...before, ...keysOf('skip-10')])).current?.id).toBe('skip-5');
+    expect(ladderProgress(secure([...before, ...keysOf('skip-10'), ...keysOf('skip-5')])).current?.id).toBe('skip-2');
+  });
+
+  it('has a record for each missing number of each kind, kept by the early-facts pack', () => {
+    for (const { id, family } of steps) {
+      const keys = EARLY_FACTS.families[family].keys;
+      expect(LADDER.find((s) => s.id === id)!.keys).toEqual(keys);
+      for (const key of keys) {
+        expect(RECORD_KEY.test(key), key).toBe(true);
+        expect(packIdOfKey(key), key).toBe('early-facts');
+      }
+    }
+    expect(EARLY_FACTS.families.skip10.keys).toEqual(expect.arrayContaining(['skip10:up:40', 'skip10:next:100', 'skip10:back:10']));
+    expect(EARLY_FACTS.families.skip2.keys).not.toContain('skip2:next:4'); // two pads shown is too few
+    expect(EARLY_FACTS.families.skip5.keys).not.toContain('skip5:up:50'); // nothing after 50
+  });
+
+  it('asks only sequences of multiples of the step in range, with wrong choices from the known mistakes', () => {
+    const pack = earlyFactsPack([], randomFromSeed('skip'));
+    for (const { family, step, upTo } of steps) {
+      for (const key of EARLY_FACTS.families[family].keys) {
+        const [, kind, n] = key.split(':');
+        for (let i = 0; i < 6; i++) {
+          const q = pack.questionFor(key, 'focus', { multipleChoice: true });
+          const pads = q.parts.map((p) => p.replace(/,$/, ''));
+          const shown = pads.filter((p) => p !== '?').map(Number);
+          expect(q.answer).toBe(+n);
+          expect(solve(q.parts), `${key}: ${q.parts.join(' ')}`).toBe(q.answer);
+          expect([...shown, q.answer].every((x) => x % step === 0 && x >= 0 && x <= upTo)).toBe(true);
+          const filled = pads.map((p) => (p === '?' ? q.answer : +p));
+          expect(filled.slice(1).map((x, k) => x - filled[k])).toEqual(filled.slice(1).map(() => (kind === 'back' ? -step : step)));
+          expect(pads.indexOf('?') === pads.length - 1).toBe(kind === 'next');
+          expect(q.spoken).toMatch(/^Counting (back )?in (tens|fives|twos): /);
+          expect(new Set(q.choices).size).toBe(4);
+          expect(q.choices).toContain(q.answer);
+          const before = +pads[pads.indexOf('?') - 1];
+          const mistakes = [q.answer + 1, q.answer - 1, ...[10, 5, 2, 1].map((s) => before + (kind === 'back' ? -s : s)), ...shown];
+          for (const c of q.choices!) if (c !== q.answer) expect(mistakes, `${key}: ${c}`).toContain(c);
+        }
+      }
+    }
+  });
+
+  it('the server reads each question back from how it was shown, or from its numbers, and refuses anything else', () => {
+    const pack = earlyFactsPack([], randomFromSeed('skip-solve'));
+    for (const { family } of steps) {
+      for (const key of EARLY_FACTS.families[family].keys) {
+        const q = pack.questionFor(key, 'focus');
+        expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
+        expect(pack.rebuild(key, q.params!)?.parts).toEqual(q.parts);
+      }
+    }
+    expect(solveSkip(['20,', '30,', '?,', '45'])).toBeNull(); // not an even step
+    expect(solveSkip(['3,', '5,', '?,', '9'])).toBeNull(); // not multiples of 2
+    expect(solveSkip(['80,', '90,', '100,', '?'])).toBeNull(); // past 100
+    expect(solveSkip(['20', '30', '?', '50'])).toBeNull(); // not as it is shown
+    expect(pack.rebuild('skip10:up:40', [40, 3])).toBeNull();
+    expect(pack.rebuild('skip10:up:40', [30, 1])).toBeNull();
+    expect(pack.rebuild('skip10:back:90', [90, 2])).toBeNull(); // would start at 110
+  });
+
+  it('gives the same questions for the same seed', () => {
+    const run = (seed: string) => {
+      const p = earlyFactsPack([], randomFromSeed(seed));
+      return LADDER.filter((s) => s.id.startsWith('skip-')).flatMap((s) => s.keys).map((k) => p.questionFor(k, 'focus', { multipleChoice: true })).map((q) => `${q.parts.join(' ')} ${q.choices}`);
+    };
+    expect(run('a')).toEqual(run('a'));
+    expect(run('a')).not.toEqual(run('b'));
   });
 });

@@ -1,6 +1,7 @@
 /**
- * Read-aloud for students who can't read yet, using the browser's own voice (nothing is downloaded
- * or sent anywhere). Off until the student turns it on; the choice is remembered on this device only,
+ * Read-aloud for students who can't read yet. A game can give a folder of recorded clips (made with
+ * Kokoro, see scripts/voice-clips.py), named by voiceSlug(text); a line with no clip, or a clip
+ * that won't play, uses the browser's own voice instead. Nothing is sent anywhere. Off until the student turns it on; the choice is remembered on this device only,
  * the same way the sound setting is. A page may never speak an answer before it has been given.
  */
 import { useCallback, useState } from 'react';
@@ -18,9 +19,23 @@ function readSaved(): boolean {
 /** Can this browser talk at all? */
 export const canSpeak = (): boolean => typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
 
-/** Says it now, stopping anything still being said. Does nothing where there is no voice. */
-export function speak(text: string): void {
-  if (!canSpeak() || !text) return;
+const canPlayClips = (): boolean => typeof Audio !== 'undefined' && typeof window !== 'undefined';
+
+/** "Yes! 5: 3 and 2." → "yes-5-3-and-2", the clip's file name. */
+export function voiceSlug(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Tūī → tui
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Can this device read aloud at all, with clips or its own voice? */
+export const canReadAloud = (): boolean => canSpeak() || canPlayClips();
+
+let clip: HTMLAudioElement | null = null;
+
+function browserVoice(text: string): void {
+  if (!canSpeak()) return;
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -32,7 +47,44 @@ export function speak(text: string): void {
   }
 }
 
+/**
+ * Says it now, stopping anything still being said. With a clip folder, plays `<folder><slug>.mp3`
+ * and only falls back to the browser's voice if that clip can't play. Does nothing where there is no voice.
+ */
+export function speak(text: string, clipFolder?: string): void {
+  if (!text) return;
+  stopSpeaking();
+  if (!clipFolder || !canPlayClips()) {
+    browserVoice(text);
+    return;
+  }
+  try {
+    const audio = new Audio(`${clipFolder}${voiceSlug(text)}.mp3`);
+    clip = audio;
+    let fellBack = false;
+    const fallBack = () => {
+      if (fellBack || clip !== audio) return; // already handled, or something newer is being said
+      fellBack = true;
+      clip = null;
+      browserVoice(text);
+    };
+    audio.addEventListener('error', fallBack);
+    const playing = audio.play();
+    if (playing && typeof playing.catch === 'function') playing.catch(fallBack);
+  } catch {
+    browserVoice(text);
+  }
+}
+
 export function stopSpeaking(): void {
+  if (clip) {
+    try {
+      clip.pause();
+    } catch {
+      // Already stopped.
+    }
+    clip = null;
+  }
   try {
     if (canSpeak()) window.speechSynthesis.cancel();
   } catch {
@@ -52,5 +104,5 @@ export function useReadAloud() {
       // Storage blocked: it just won't be remembered.
     }
   }, []);
-  return { on, setOn, available: canSpeak() };
+  return { on, setOn, available: canReadAloud() };
 }

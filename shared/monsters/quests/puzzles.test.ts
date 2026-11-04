@@ -27,6 +27,22 @@ describe('the puzzles', () => {
         }, (s) => `${s.at}:${s.done}`);
         expect(solve, p.id).toBeGreaterThan(g[0].length);
         expect(g.map((row) => row[0] % p.multipleOf === 0).filter(Boolean).length, p.id).toBeLessThan(g.length);
+        // One clear route: the multiples are exactly the count (start, start + n, …) in stepping order,
+        // each next to the one before and to no other, with just one multiple by each bank.
+        const path = g.flatMap((row, r) => row.flatMap((n, c): [number, number, number][] => (n % p.multipleOf === 0 ? [[n, r, c]] : []))).sort((a, b) => a[0] - b[0]);
+        path.forEach(([n], i) => expect(n, p.id).toBe(path[0][0] + i * p.multipleOf));
+        const touch = (a: number[], b: number[]) => Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) === 1;
+        path.forEach((a, i) => path.forEach((b, j) => expect(touch(a, b), `${p.id} ${a[0]} ${b[0]}`).toBe(Math.abs(i - j) === 1)));
+        expect(path[0][2], p.id).toBe(0);
+        expect(path[path.length - 1][2], p.id).toBe(g[0].length - 1);
+        expect(path.filter(([, , c]) => c === 0).length, p.id).toBe(1);
+        expect(path.filter(([, , c]) => c === g[0].length - 1).length, p.id).toBe(1);
+        // Walking the count crosses, and a tap on a stone that is not next to you says why.
+        let s: Parameters<typeof stepStone>[1] = { at: null, tries: 0, done: false };
+        expect(stepStone(p, s, path[1][1], path[1][2]).miss, p.id).toBe('start');
+        for (const [, r, c] of path) s = stepStone(p, s, r, c);
+        expect(stepStone(p, { at: [path[0][1], path[0][2]], tries: 0, done: false }, path[2][1], path[2][2]).miss, p.id).toBe('far');
+        expect(stepStone(p, s, s.at![0], g[0].length).done, p.id).toBe(true);
         const wrong = g.findIndex((row) => row[0] % p.multipleOf !== 0);
         expect(stepStone(p, { at: null, tries: 0, done: false }, wrong, 0)).toMatchObject({ tries: 1, splash: true, at: null });
       }

@@ -209,6 +209,10 @@ export function parseActions(raw: unknown): Action[] | null {
       case 'jump':
         out.push({ type: 'jump', dest: a.dest as number });
         break;
+      case 'captain':
+        if (typeof a.id !== 'string' || a.id.length > 8) return null;
+        out.push({ type: 'captain', id: a.id });
+        break;
       default:
         return null;
     }

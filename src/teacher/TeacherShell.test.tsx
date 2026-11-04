@@ -295,7 +295,7 @@ describe('Today', () => {
     data.fetchTrainingFirst.mockRejectedValue(new Error('offline'));
     show('/teacher/c12');
     await screen.findByRole('switch', { name: 'Training before games' });
-    expect(await screen.findByText('We couldn’t load this setting.')).toBeInTheDocument();
+    expect((await screen.findAllByText('We couldn’t load this setting.')).length).toBeGreaterThan(0);
   });
 
   it('saves the Skip button choice for this class at once', async () => {

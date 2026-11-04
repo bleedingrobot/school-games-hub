@@ -28,11 +28,11 @@ describe('Quick looks', () => {
     vi.unstubAllGlobals();
   });
 
-  it('asks for the starting check first, and shows four plants', () => {
+  it('asks for the starting check first, and shows seven plants', () => {
     setup(emptySubState());
     expect(screen.getByRole('button', { name: 'Start with a quick check' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Start looking' })).toBeNull();
-    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getAllByRole('listitem')).toHaveLength(7);
   });
 
   it('flashes a picture, hides it, keeps the buttons locked for a second, then takes the answer', () => {
@@ -113,7 +113,7 @@ describe('Quick looks', () => {
     t.sync();
     expect(screen.getByText('All done!')).toBeTruthy();
     expect(t.state().placed).toBe(true);
-    expect(t.state().startStage).toBe(4); // six right in a row climbs to the top
+    expect(t.state().startStage).toBe(7); // eight right in a row climbs to the top
     expect(t.state().answers).toHaveLength(0); // the check isn't practice
   });
 
@@ -183,9 +183,30 @@ describe('Quick looks', () => {
 
   describe('reading out loud', () => {
     const said: string[] = [];
+    const clips: string[] = [];
+    let clipsWork = false;
     beforeEach(() => {
       said.length = 0;
+      clips.length = 0;
+      clipsWork = false;
       localStorage.clear();
+      // A recorded clip: plays when clipsWork, otherwise fails at once (as a missing file would) so the browser voice speaks.
+      vi.stubGlobal(
+        'Audio',
+        class {
+          private failed: (() => void)[] = [];
+          constructor(public src: string) {}
+          addEventListener(type: string, f: () => void) {
+            if (type === 'error') this.failed.push(f);
+          }
+          play() {
+            if (clipsWork) clips.push(this.src);
+            else this.failed.forEach((f) => f());
+            return undefined;
+          }
+          pause() {}
+        },
+      );
       vi.stubGlobal('SpeechSynthesisUtterance', class { constructor(public text: string) {} });
       vi.stubGlobal('speechSynthesis', { cancel: () => {}, speak: (u: { text: string }) => void said.push(u.text) });
       Object.defineProperty(window, 'speechSynthesis', { value: (globalThis as { speechSynthesis: unknown }).speechSynthesis, configurable: true });
@@ -220,6 +241,18 @@ describe('Quick looks', () => {
       expect(said.at(-1)).toMatch(new RegExp(`^Yes! ${n}`));
     });
 
+    it('plays the recorded clips when they are there, and the browser voice stays quiet', () => {
+      clipsWork = true;
+      setup({ ...emptySubState(), placed: true });
+      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      advance(C.readyMs + 10);
+      advance(1400);
+      advance(C.answerLockMs);
+      expect(clips).toEqual(['voice/quick-looks/get-ready.mp3', 'voice/quick-looks/how-many-did-you-see.mp3']);
+      expect(said).toEqual([]);
+    });
+
     it('can be muted from the practice screen, and the choice is remembered on the device', () => {
       setup({ ...emptySubState(), placed: true });
       fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
@@ -231,5 +264,25 @@ describe('Quick looks', () => {
       expect(screen.getByRole('button', { name: /Reading out loud: off/ })).toBeTruthy();
       expect(localStorage.getItem('sgh-read-aloud')).toBe('false');
     });
+  });
+
+  it('moves focus to Next after an answer, and answers 10 with the 0 key', () => {
+    setup({ ...emptySubState(), placed: true, startStage: 5, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.answerLockMs + 10);
+    const labels = screen.getAllByRole('button').map((b) => b.textContent);
+    if (labels.includes('10')) {
+      fireEvent.keyDown(window, { key: '0' });
+    } else {
+      fireEvent.click(screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? ''))!);
+    }
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^(Next|Finish)$/ }));
+  });
+
+  it('tells a screen reader the picture is staying, and asks "can you see" in guided mode', () => {
+    setup({ ...emptySubState(), placed: true, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    expect(screen.getByRole('heading', { name: 'How many can you see?' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('The picture is staying on the screen.');
   });
 });

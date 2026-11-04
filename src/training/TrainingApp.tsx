@@ -10,6 +10,7 @@ import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
 import { TypingCheck } from './TypingCheck';
 import './training.css';
+import { SceneThumb } from '../subitising/Scene';
 
 type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map' | 'quick';
 
@@ -92,6 +93,7 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
           )}
           {quick && (
             <button type="button" className="tr-btn tr-btn-primary" onClick={() => setScreen('quick')}>
+              <SceneThumb className="sb-thumb--inline" />
               Quick looks
             </button>
           )}

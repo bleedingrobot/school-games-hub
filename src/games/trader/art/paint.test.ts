@@ -76,3 +76,16 @@ describe('the measured points on the painted ships', () => {
     }
   });
 });
+
+describe('the captains', () => {
+  it('every captain has a portrait, no file is spare, and each is small', async () => {
+    const { CAPTAINS } = await import('../../../../shared/trader/captains');
+    const { captainArt } = await import('./captains');
+    const dir = join(__dirname, 'captains');
+    const names = readdirSync(dir).filter((f) => f.endsWith('.webp')).map((f) => f.replace(/\.webp$/, '')).sort();
+    expect(CAPTAINS).toHaveLength(40);
+    expect(names).toEqual([...CAPTAINS].sort());
+    expect(CAPTAINS.filter((c) => !captainArt(c))).toEqual([]);
+    for (const n of names) expect(statSync(join(dir, `${n}.webp`)).size / 1024).toBeLessThan(20);
+  });
+});

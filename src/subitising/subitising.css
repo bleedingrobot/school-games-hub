@@ -15,8 +15,11 @@
   color: var(--sb-ink);
   font-family: 'Trebuchet MS', Verdana, 'Segoe UI', sans-serif;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
 }
 /* Inside the hub the page already has a header and its own main area: don't add a second full-height box. */
 .sb-app--hub {
@@ -39,6 +42,8 @@
   align-items: center;
   gap: 12px;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 .sb-screen h1,
 .sb-screen h2,
@@ -67,7 +72,28 @@
 }
 .sb-stage {
   width: 100%;
-  max-width: min(380px, 62vh);
+  max-width: min(396px, calc(62vh + 16px));
+}
+/* The flash tray sits on a soft wooden board. The picture inside stays plain. */
+.sb-board {
+  padding: 8px;
+  border-radius: 20px;
+  background: repeating-linear-gradient(100deg, #d9a862 0 14px, #cf9d57 14px 15px, #dcae6a 15px 30px);
+  border: 2px solid #9a6a30;
+  box-shadow: 0 3px 0 #7d5224, 0 6px 10px rgba(60, 35, 10, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.sb-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.sb-friend {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: block;
+  object-fit: contain;
 }
 .sb-picture {
   display: block;
@@ -118,7 +144,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 .sb-choice,
 .sb-btn {
@@ -135,11 +161,30 @@
   font-size: 1.8rem;
   font-weight: 700;
 }
+/* Chunky wooden number tiles: light warm wood face, darker edge and bottom, pressed moves down. */
+.sb-choice {
+  background: linear-gradient(180deg, #fbebc7, #f1d49c);
+  color: #2b1a0a;
+  border: 2px solid #9a6a30;
+  box-shadow: 0 5px 0 #7d5224, 0 8px 8px rgba(60, 35, 10, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  margin-bottom: 6px;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.sb-choice:not(:disabled):hover {
+  background: linear-gradient(180deg, #fff3d6, #f6dfae);
+}
+.sb-choice:not(:disabled):active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #7d5224, 0 2px 3px rgba(60, 35, 10, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
 .sb-choice:disabled {
-  opacity: 0.45;
+  background: #e6dccb;
+  color: #3d3123;
+  border-color: #b8a88f;
+  box-shadow: 0 2px 0 #b8a88f;
+  opacity: 0.55;
   cursor: default;
 }
-.sb-choice:not(:disabled):hover,
 .sb-btn:hover {
   background: #eef5fc;
 }
@@ -169,7 +214,7 @@
 .sb-choice:focus-visible,
 .sb-btn:focus-visible,
 .sb-toggle input:focus-visible {
-  outline: 4px solid #f0a73a;
+  outline: 3px solid var(--sb-main-dark);
   outline-offset: 2px;
 }
 .sb-progress {
@@ -201,24 +246,93 @@
 }
 .sb-garden {
   list-style: none;
-  margin: 0;
+  margin: auto 0 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 .sb-plant-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  font-size: 0.85rem;
+  min-width: 0;
+}
+.sb-plantbox {
+  width: 100%;
+  max-width: 120px;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -20px;
+  transform-origin: 50% 92%;
 }
 .sb-plant {
+  display: block;
   width: 100%;
-  max-width: 90px;
   height: auto;
+}
+.sb-plant--art {
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+/* The raised wooden bed under each plant (hidden when the painted scene has its own). */
+.sb-bed {
+  width: 100%;
+  height: 40px;
+  border-radius: 6px 6px 8px 8px;
+  border: 2px solid #6e4520;
+  background: repeating-linear-gradient(180deg, #c98f49 0 11px, #8a5a28 11px 13px);
+  box-shadow: 0 4px 0 #56351a, 0 7px 8px rgba(40, 25, 5, 0.25);
+  position: relative;
+  z-index: 1;
+}
+.sb-bed::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 12px;
+  border-radius: 4px 4px 0 0;
+  background: #5e4026;
+}
+.sb-scene--painted ~ .sb-garden .sb-bed {
+  display: none;
+}
+.sb-scene--painted ~ .sb-garden .sb-plantbox {
+  margin-bottom: 4px;
+}
+.sb-plaque {
+  margin-top: 12px;
+  width: 100%;
+  padding: 4px 6px 5px;
+  border-radius: 8px;
+  background: #f4dfab;
+  border: 2px solid #8a5a28;
+  box-shadow: 0 2px 0 #6e4520;
+  color: #2b1a0a;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  z-index: 2;
+}
+.sb-plaque span {
+  font-size: 0.75rem;
+}
+.sb-grow {
+  animation: sb-grow 600ms ease-out both;
+}
+@keyframes sb-grow {
+  from {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .sb-tools {
   border: 2px dashed var(--sb-line);
@@ -240,18 +354,35 @@
 /* A phone on its side: everything has to fit in about 390 px of height without scrolling. */
 @media (max-height: 520px) {
   .sb-app {
-    padding: 6px;
+    padding: 4px 6px;
   }
   .sb-screen {
-    padding: 10px 14px 12px;
-    gap: 8px;
+    padding: 8px 14px 10px;
+    gap: 6px;
   }
   .sb-prompt {
     font-size: 1.15rem;
     min-height: 1.6em;
   }
+  .sb-stage {
+    max-width: min(396px, calc(52vh + 12px));
+  }
+  .sb-board {
+    padding: 6px;
+    border-radius: 16px;
+  }
+  .sb-friend {
+    width: 44px;
+    height: 44px;
+  }
+  .sb-choices {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
   .sb-choice {
-    min-width: 56px;
+    flex: 1 1 0;
+    min-width: 48px;
+    max-width: 64px;
     min-height: 56px;
   }
   .sb-btn {
@@ -262,14 +393,77 @@
     min-height: 54px;
   }
 }
+/* Five buttons share one row on a phone (each at least 48 px wide). */
 @media (max-width: 420px) {
-  .sb-garden {
-    grid-template-columns: repeat(2, 1fr);
+  .sb-choices {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .sb-choice {
+    flex: 1 1 0;
+    min-width: 48px;
+    max-width: 64px;
+    min-height: 56px;
+  }
+  .sb-plaque {
+    padding: 3px 3px 4px;
+    font-size: 0.72rem;
+  }
+  .sb-plaque span {
+    font-size: 0.68rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .sb-app * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/*
+ * The garden row (plants, beds, plaques) for any number of stages. --sb-n is the number of plants, set by Garden.tsx.
+ * Wide screens: one row. Phones (520 px or less): two rows (4 + 3 for seven).
+ */
+.sb-garden {
+  --sb-gap: 8px;
+  --sb-per-row: var(--sb-n, 4);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px var(--sb-gap);
+  max-width: calc(var(--sb-n, 4) * 118px);
+}
+.sb-garden .sb-plant-card {
+  flex: 0 0 calc((100% - (var(--sb-per-row) - 1) * var(--sb-gap)) / var(--sb-per-row));
+}
+.sb-garden .sb-plaque {
+  margin-top: 10px;
+  padding: 3px 3px 4px;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+.sb-garden .sb-plaque span {
+  font-size: 0.66rem;
+}
+.sb-garden .sb-bed {
+  height: 32px;
+}
+@media (max-width: 520px) {
+  .sb-garden {
+    --sb-gap: 6px;
+    --sb-per-row: min(var(--sb-n, 4), 4);
+    max-width: 100%;
+  }
+  .sb-garden {
+    row-gap: 6px;
+  }
+  .sb-garden .sb-plaque {
+    font-size: 0.66rem;
+    flex: 1 1 auto;
+    justify-content: center;
+    overflow-wrap: normal;
+  }
+  .sb-garden .sb-plaque span {
+    font-size: 0.62rem;
   }
 }

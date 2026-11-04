@@ -6,7 +6,7 @@
 import { BIT_NAME, canMake, describeBits, RECIPES } from './bits';
 import { EGG_LABEL, HATCH_SPOTS, isReady } from './eggs';
 import { canWake, GIANTS, isAwake } from './giants';
-import { canStart, FINALE_NEEDS, jobsFor, questById, QUESTS } from './quests';
+import { canStart, FINALE_NEEDS, jobsFor, questById, QUESTS, stepHint } from './quests';
 import type { QuestSave, Task } from './types';
 import type { TypeId } from '../types';
 import { AREAS } from '../world/areas';
@@ -53,6 +53,7 @@ export function nextStep(q: QuestSave, ctx: NextContext): NextStep {
     const st = q.quests[quest.id];
     if (!st) continue;
     const task = quest.steps[st.step];
+    if (st.ready) return { text: `Part done! ${stepHint(quest, st)}.`, target: { person: quest.giver, map: mapOfPerson(quest.giver) } };
     if (quest.id === 'finale' && !FINALE_NEEDS.every((f) => q.flags.includes(f))) {
       const missing = FINALE_NEEDS.filter((f) => !q.flags.includes(f)).map((f) => f.slice(8));
       return { text: `Hatch ${missing.length === 1 ? 'one more egg' : `${missing.length} more kinds of egg`} for the Teacher in Harbour Town.` };

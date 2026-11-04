@@ -77,4 +77,18 @@ describe('movesFromRaw', () => {
     expect(movesFromRaw({ lord: null, clans: null, trader: { day: today - 1, jumpsLeft: 0, perDay: 12 } }, at).trader.chips[0].text).toBe('12 of 12 jumps');
     expect(movesFromRaw({ lord: null, clans: null, trader: { day: today, jumpsLeft: 0, perDay: 10 } }, at).trader.allDone).toBe(true);
   });
+
+  it('shows Sky Isles turns left, adding a day\'s turns on a later day up to the most saved', () => {
+    const at = noon('2026-11-03');
+    const today = Math.round(Date.UTC(2026, 10, 3) / 86_400_000);
+    const isles = (day: number, turnsLeft: number) => movesFromRaw({ lord: null, clans: null, isles: { day, turnsLeft } }, at).isles;
+    expect(isles(today, 4)).toEqual({ chips: [{ emoji: '🏝️', text: '4 turns left', empty: false }], allDone: false });
+    expect(isles(today, 1)!.chips[0].text).toBe('1 turn left');
+    expect(isles(today - 1, 4)!.chips[0].text).toBe('10 turns left');
+    expect(isles(today - 2, 4)!.chips[0].text).toBe('16 turns left');
+    expect(isles(today - 3, 10)!.chips[0].text).toBe('18 turns left');
+    expect(isles(today - 30, 0)!.chips[0].text).toBe('18 turns left');
+    expect(isles(today, 0)).toEqual({ chips: [{ emoji: '🏝️', text: '0 turns left', empty: true }], allDone: true });
+    expect(movesFromRaw({ lord: null, clans: null, isles: null }, at).isles).toBeUndefined();
+  });
 });

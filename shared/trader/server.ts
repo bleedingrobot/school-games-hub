@@ -11,6 +11,7 @@ import { BIG_TRADE_CREDITS, CARRY_MAX_CREDITS, GOODS, JUMPS_PER_DAY, MAX_PODS, S
 import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } from './encounter';
 import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from './fight';
 import type { Galaxy } from './galaxy';
+import { isCaptain } from './captains';
 import { discountFor, runPlan } from './plan';
 import { pupilPush, tidyPushes, type MarketPush, type PupilPushes, type Pushes } from './schoolMarket';
 import {
@@ -54,6 +55,8 @@ export interface Game {
   pushed?: PupilPushes;
   /** The pupil's solar system in the Star Forge (docs/TRADER-SYSTEM-PLAN.md). Missing until they first plan one. */
   system?: SystemDesign;
+  /** The captain the pupil picked (captains.ts), only a look. Missing until they pick one. */
+  captain?: string;
 }
 
 /** The teacher's settings for the pupil's class, and whether maths is on for them. */
@@ -137,7 +140,8 @@ export type Action =
   | { type: 'repay'; amount: number }
   | { type: 'moon' }
   | { type: 'forge'; design: SystemDesign }
-  | { type: 'jump'; dest: number };
+  | { type: 'jump'; dest: number }
+  | { type: 'captain'; id: string };
 
 export interface Outcome {
   game: Game;
@@ -295,6 +299,10 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       out.forge = { total: cost.total, worth: cost.worth };
       return;
     }
+    case 'captain':
+      if (!isCaptain(action.id)) refuse('That captain could not be found.');
+      g.captain = action.id;
+      return;
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
       g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));

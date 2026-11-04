@@ -14,7 +14,7 @@ export interface SubState {
   guidedMode: boolean;
   sessionsDone: number;
   /** How many stages, from the first, are finished (kept so a stage finished long ago is never forgotten). */
-  finished: 0 | 1 | 2 | 3 | 4;
+  finished: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 }
 
 export const emptySubState = (): SubState => ({ answers: [], placed: false, startStage: 1, guidedMode: false, sessionsDone: 0, finished: 0 });
