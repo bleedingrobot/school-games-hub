@@ -6,7 +6,7 @@
 import type { CSSProperties } from 'react';
 import type { Friend as FriendName, Metal } from '../../../shared/hop/progress';
 import { paint, type Pose } from './art';
-import { Friend, LilyPad } from './Art';
+import { Friend, LilyPad } from './HopArt';
 
 export type Scenery = 'bronze' | 'silver' | 'gold';
 

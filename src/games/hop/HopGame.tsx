@@ -112,6 +112,7 @@ export function HopGame({ backend, onExit, extra }: Props) {
         padMetal={METALS[Math.floor(pond.day / PADS)]}
         scenery={pond.today}
         friend={pond.friend}
+        guide={state.daysDone === 0 && state.lastPadDay === null}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

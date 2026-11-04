@@ -9,7 +9,7 @@ import type { Tap } from '../../../shared/hop/play';
 import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/progress';
 import { HOPS_PER_ROUND, showRound, type Round } from '../../../shared/hop/round';
 import { playSound } from '../sounds';
-import { Friend, GlowWorm, LilyPad } from './Art';
+import { Friend, GlowWorm, LilyPad } from './HopArt';
 import { backFor, type Scenery } from './Pond';
 import { WORDS } from './words';
 
@@ -24,6 +24,8 @@ interface Props {
   padMetal: Metal;
   scenery: Scenery;
   friend: FriendName;
+  /** The child's very first challenge: a hand shows them the right glow-worm on the first hop. */
+  guide?: boolean;
   sound: boolean;
   say: (text: string) => void;
   onDone: (taps: Tap[]) => void;
@@ -31,7 +33,7 @@ interface Props {
 
 type Phase = 'ask' | 'jump' | 'done';
 
-export function Hops({ round, help, padMetal, scenery, friend, sound, say, onDone }: Props) {
+export function Hops({ round, help, padMetal, scenery, friend, guide = false, sound, say, onDone }: Props) {
   const hops = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -50,7 +52,9 @@ export function Hops({ round, help, padMetal, scenery, friend, sound, say, onDon
   useEffect(() => {
     if (at === 0) heading.current?.focus();
     since.current = Date.now();
-    say(hops[at].spoken);
+    say(guide && at === 0 ? `${hops[0].spoken} ${WORDS.guideStart}` : hops[at].spoken);
+    // Read again only when the hop changes, not when the guide ends.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, hops, say]);
 
   const hop = hops[Math.min(at, hops.length - 1)];
@@ -86,6 +90,8 @@ export function Hops({ round, help, padMetal, scenery, friend, sound, say, onDon
     });
   }
 
+  // The guided first go: the hand points at the right glow-worm on the first hop, until it is picked.
+  const pointAt = guide && at === 0 && phase === 'ask' ? hop.answer : null;
   const sitting = phase === 'ask' ? gap - 1 : gap;
   const made = at + (phase === 'ask' ? 0 : 1);
 
@@ -119,12 +125,13 @@ export function Hops({ round, help, padMetal, scenery, friend, sound, say, onDon
           <button
             key={`${at}-${n}`}
             type="button"
-            className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}`}
+            className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}${n === pointAt ? ' hp-worm--pointed' : ''}`}
             style={{ ['--hp-i' as string]: i }}
             onClick={() => pick(n)}
-            aria-label={String(n)}
+            aria-label={n === pointAt ? `${n}, ${WORDS.guideHere}` : String(n)}
           >
             <GlowWorm value={n} />
+            {n === pointAt && <span className="hp-hand" aria-hidden="true">👆</span>}
           </button>
         ))}
       </div>

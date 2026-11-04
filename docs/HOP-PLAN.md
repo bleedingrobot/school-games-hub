@@ -126,7 +126,7 @@ questions are a separate `shared/maths` branch (section 2).
 1. Rules in `shared/hop/`, and their tests. **Done 4 Nov.** The `shared/maths` skip-counting branch went live first (PR #163).
 2. The play screen: pads, glow-worms, the jump, the fading help. A preview for James. **Done 4 Nov (stand-in art).**
 3. The server: migration, function, maths recording and the day rule. **Done 4 Nov.**
-4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment.
+4. The hub and teacher settings, the guided first go, the pads changing colour, and the jar moment. **Done 4 Nov (not live).**
 5. Go live, one step at a time, on James's word. This comes after Beanstalk is live, so its pattern is proven.
 
 ## Stage 2 results (4 Nov)
@@ -184,6 +184,47 @@ each hop against its skip-counting fact, and the step never drops back; one pad 
 counting back and the jar on gold days), plus the "index.ts is up to date" check.
 `supabase/tests/database/hop.test.sql` has 26 checks. There is no local database in the cloud session, so it runs in CI's
 "Database checks" on the draft pull request.
+
+## Stage 4 results (4 Nov)
+
+**Migration** `20261104000900_hop_hub.sql` (next free number across `main` and every branch on 4 Nov; check again at go-live):
+- `hub_games` row `hop` with its hooks: `hop_counts` (Golden Glow Jars, one per 30 finished days), `hop_point_rules` ("No
+  points"), `hop_players_list`, `hop_last_played`; no season function, and `keep_achievements` on, so New Season leaves
+  the pond alone. Switch column `hop_enabled`.
+- Six achievements, one per Golden Glow Jar, one per friend in order (Hop, Gecko, Wētā, Tuatara, Kiwi, Ruru; `hop_jars`
+  1 to 6). No hub points. The function already tells the hub when a jar is won (`game_progress_changed`).
+- The teacher's lines: `teacher_hop_class` (pupils playing, jars won) and `teacher_hop_student` (days done, last pad day,
+  furthest step reached 10/5/2, last played). Teachers only; a pupil can't read a classmate's.
+- Nothing shared is re-created.
+
+**The game in the hub:** `src/games/hop/index.tsx` (group `easy-maths`, not ranked, no bots), `switch.ts` (the code switch
+`HOP_ON`, OFF; `VITE_HOP_ON=true` shows it on your own computer; plus `useTeacherSwitch` reading `hop_enabled`),
+`HopPlay.tsx` (the real server through `src/data/hop.ts`; the preview still uses the trial backend) and a Home button
+back to the hub. `src/data/hop.ts` also has the teacher's reads and `teacher_set_hop` saves.
+
+**The teacher:** `teacher.ts` and `src/pages/TeacherHop.tsx`: the On switch in the Games table row (with its "?"), a Maths
+column line ("Skip counting · N playing · N Golden Glow Jars"), a "Step labels on the hops" drawer (`hop_labels`), and on a
+student's page a line that opens to their pond (pads by colour, step reached, last pad change, last played, jars).
+
+**Guided first go:** on a child's very first challenge (no finished days, no pad day yet) a pointing hand sits on the
+right glow-worm on the first hop, and the first hop is read with "Start with the glow-worm the hand points to". It goes
+once that hop is answered. The pad-change moment and the jar moment are unchanged and run on the server's result, which the
+trial backend already mirrors.
+
+**Housekeeping:** `Art.tsx` renamed `HopArt.tsx`. Next to `art.ts` it only differed in case, which a Mac can't tell apart
+(`tsc` refused it and the screens couldn't be tested there).
+
+**Tests:** the hop tests, 10 of 10 (the new one checks the hand shows on the first hop of a new pupil and not later);
+`tsc --noEmit` clean. `hop.test.sql` now has 34 checks (8 new: the hub row, six achievements, jars counted from days, the
+achievement given, last played, a pupil can't read a classmate's pond); run on a scratch database copy, 34 of 34. The
+function's `index.ts` didn't change.
+
+**Left for go-live (shared one-line edits, not made):**
+- `src/games/registry.ts` and its test: add `hopsGlowwormPond`.
+- `src/components/gameCardArt.ts`: the home card picture (with the painted art).
+- `FUNCTIONS` in `scripts/build-functions.mjs`: add `hop`.
+- The privacy summary: add Hop's pond (days done, step reached).
+- Flip `HOP_ON` in `src/games/hop/switch.ts`, run the migrations, deploy the function.
 
 ## 8. Decisions (James, 4 Nov)
 

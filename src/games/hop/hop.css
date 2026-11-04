@@ -252,3 +252,23 @@
   .hp-root *, .hp-root *::before, .hp-root *::after { animation: none !important; transition: none !important; }
   .hp-worm--gone { opacity: 0; }
 }
+
+/* The guided first go: a hand under the glow-worm to tap, nudging up at it. */
+.hp-worm--pointed { filter: drop-shadow(0 0 10px #fffbd0) drop-shadow(0 0 3px #fff); }
+.hp-hand {
+  position: absolute;
+  left: 60%;
+  top: 62%;
+  font-size: calc(var(--hp-worm) * 0.56);
+  line-height: 1;
+  translate: -50% 0;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35));
+  pointer-events: none;
+  animation: hp-nudge 0.9s ease-in-out infinite;
+}
+@keyframes hp-nudge {
+  50% { translate: -50% -14%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-hand { animation: none; }
+}

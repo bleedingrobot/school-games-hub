@@ -1,9 +1,10 @@
--- Hop's Glow-worm Pond (migration 20261104000600): progress, challenges, the switch and the step-label setting.
+-- Hop's Glow-worm Pond (migrations 20261104000600 and 20261104000900): progress, challenges, the switch and the step-label
+-- setting, and the hub hooks with one achievement per Golden Glow Jar.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh hop, then scripts/scratch-test.sh hop supabase/tests/database/hop.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(26);
+select plan(34);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -67,6 +68,23 @@ select ok(public.hop_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 5::smalli
 select ok(not public.hop_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 5::smallint, '[{"pick":10,"ms":900}]', 1), '... once');
 select is(public.hop_load(pg_temp.id('0a')), '{"daysDone": 1, "lastPadDay": "2026-11-04", "reached": 5, "version": 2}'::jsonb,
   'the pond is saved');
+select pg_temp.reset();
+
+-- ---- In the hub: registered, one achievement per Golden Glow Jar, no points ----
+select ok(exists (select 1 from public.hub_games where id = 'hop' and switch_column = 'hop_enabled' and counts_fn is not null
+  and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
+  'Hop''s Glow-worm Pond is registered with its hooks, with nothing for New Season to clear');
+select is((select count(*)::integer from public.achievement_types where game = 'hop'), 6, 'with six achievements, one for each friend''s jar');
+select is(public.hop_counts(pg_temp.id('0a')), '{"hop_jars": 0}'::jsonb, 'no jar after one day');
+update public.hop_progress set days_done = 30 where player = pg_temp.id('0a');
+select is(public.hop_counts(pg_temp.id('0a')), '{"hop_jars": 1}'::jsonb, 'the first Golden Glow Jar after thirty days');
+select public.game_progress_changed(pg_temp.id('0a'), 'hop');
+select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'hop-hop'), '... and Hop''s achievement with it');
+select ok(not exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'hop-gecko'), '... not Gecko''s yet');
+select ok(public.hop_last_played(pg_temp.id('0a')) is not null and public.hop_last_played(pg_temp.id('0b')) is null, 'when a pupil last played comes from their pond');
+select pg_temp.reset();
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.teacher_hop_student(pg_temp.id('0b')) $$, null, null, 'a pupil cannot read a classmate''s pond');
 select pg_temp.reset();
 
 select * from finish();

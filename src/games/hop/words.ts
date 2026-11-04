@@ -14,6 +14,8 @@ export const WORDS = {
   playAgain: 'Play again',
   pickWorm: 'Tap the glow-worm with the right number.',
   hopsMade: (n: number, of: number) => `${n} of ${of} hops`,
+  guideStart: 'Tap the glow-worm with the right number. Start with the glow-worm the hand points to.',
+  guideHere: 'try this one',
   tryAgain: 'Try again!',
   yes: (n: number) => `${n}!`,
   padTurned: (metal: Metal) => `Well done! A lily pad turned ${metal}!`,
