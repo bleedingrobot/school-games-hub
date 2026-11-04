@@ -232,4 +232,24 @@ describe('Quick looks', () => {
       expect(localStorage.getItem('sgh-read-aloud')).toBe('false');
     });
   });
+
+  it('moves focus to Next after an answer, and answers 10 with the 0 key', () => {
+    setup({ ...emptySubState(), placed: true, startStage: 4, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.answerLockMs + 10);
+    const labels = screen.getAllByRole('button').map((b) => b.textContent);
+    if (labels.includes('10')) {
+      fireEvent.keyDown(window, { key: '0' });
+    } else {
+      fireEvent.click(screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? ''))!);
+    }
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^(Next|Finish)$/ }));
+  });
+
+  it('tells a screen reader the picture is staying, and asks "can you see" in guided mode', () => {
+    setup({ ...emptySubState(), placed: true, guidedMode: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    expect(screen.getByRole('heading', { name: 'How many can you see?' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain('The picture is staying on the screen.');
+  });
 });

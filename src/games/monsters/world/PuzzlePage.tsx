@@ -42,13 +42,19 @@ const onArrow = (move: (d: SlideDir) => void) => (e: KeyboardEvent) => {
   move(d);
 };
 
+const STONE_MISS = {
+  start: 'Start on a stone on the left side of the pool.',
+  far: 'Too far! Step to a stone right next to you: up, down, left or right.',
+} as const;
+
 function Stones({ p, report }: { p: Of<'stones'>; report: Report }) {
   const grid = stonesGrid(p);
   const [s, set] = useState<StonesState>({ at: null, tries: 0, done: false });
   const go = (r: number, c: number) => {
     const next = stepStone(p, s, r, c);
     set(next);
-    report({ tries: next.tries, done: next.done, note: next.splash ? 'Splash! Back to the start.' : undefined });
+    const note = next.splash ? 'Splash! Back to the start.' : next.miss ? STONE_MISS[next.miss] : undefined;
+    report({ tries: next.tries, done: next.done, note });
   };
   const width = grid[0].length;
   return (
