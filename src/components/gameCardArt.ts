@@ -43,6 +43,8 @@ import beanstalk from '../assets/home/beanstalk.webp';
 import beanstalkSmall from '../assets/home/beanstalk-small.webp';
 import hop from '../assets/home/hop.webp';
 import hopSmall from '../assets/home/hop-small.webp';
+import korora from '../assets/home/korora.webp';
+import kororaSmall from '../assets/home/korora-small.webp';
 // Quick looks is a Training activity, not a game, but it has a card with the foundational games. Stand-in drawn garden
 // for now; the painted scene replaces this file by name (docs/prompts/quick-looks-art.md).
 import quickLooks from '../assets/home/quick-looks.webp';
@@ -78,6 +80,7 @@ const ART: Record<string, GameCardArt> = {
   'isles': { card: isles, small: islesSmall, focus: 'center 50%' },
   'beanstalk': { card: beanstalk, small: beanstalkSmall, focus: 'center 45%' },
   'hop': { card: hop, small: hopSmall, focus: 'center 40%' },
+  'korora': { card: korora, small: kororaSmall, focus: 'center 45%' },
   'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 85%' },
 };
 

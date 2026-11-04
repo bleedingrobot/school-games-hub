@@ -65,15 +65,15 @@ THINGS = {
     'fish': FISH + 'lying flat on its side, side view',
     'golden-fish': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold with a soft warm glow, side view, alone',
     'golden-fish-cushion': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold, side view, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
-    'splash': 'a crown-shaped splash of glossy clear blue water drops in a ring, all blue',
-    'sparkle': f'three {SHINE} gold four-pointed stars of different sizes floating in the air with space between them',
+    'splash': 'a lively splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
+    'sparkle': f'three {SHINE} gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, every star solid shining gold, flat like stickers, only gold stars on plain white',
 }
 
 # The friend at each later pool, after Kororā's Golden Fish. All birds, so the little ones are always chicks.
 FRIENDS = {
     'hoiho': 'a cute small New Zealand yellow-eyed penguin, a hoiho, slate grey back, white tummy, a pale yellow band around its head and bright yellow eyes, a smile, wearing a little blue knitted scarf, ',
-    'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long and slender like a '
-             'sharpened pencil, a big round egg-shaped body with fluffy shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
+    'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
+             'downwards, a big round egg-shaped body with fluffy shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
              'strong grey legs and big feet, wearing a little yellow knitted scarf, '),
     'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little green knitted scarf, ',
     'kereru': 'a cute plump New Zealand kereru wood pigeon, shiny green and purple head and back, a clean white chest, a small red beak, big kind eyes, wearing a little orange knitted scarf, ',
@@ -88,8 +88,9 @@ SQUARE = (832, 832)
 WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
 BACK = (' Empty background scenery for a children\'s game, calm soft colours in the middle so things placed on top stand out. '
         'Wide landscape.' + AGE)
-COAST = ('A wide view of a sunny New Zealand rocky shore: smooth grey rocks along the bottom, a big flat rock ledge across the '
-         'middle with a still, glassy rock pool below it, the sea and a pohutukawa tree far behind')
+COAST = ('A wide view of a sunny New Zealand rocky shore: smooth plain grey rocks along the bottom, all the rocks grey, a big flat rock ledge across the '
+         'middle with a still, glassy, empty rock pool below it, the sea and a pohutukawa tree far behind, the only colours grey rock, '
+         'green plants, blue water and sky, a tidy uncluttered shore')
 
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'korora-{p}': (KORORA + w + ', the whole penguin.' + SPRITE, SQUARE) for p, w in KORORA_POSES.items()},
@@ -227,6 +228,15 @@ def tidy(force: bool):
         ys, xs = np.where(a)
         return img.crop((max(0, xs.min() - pad), max(0, ys.min() - pad), min(img.width, xs.max() + pad + 1), min(img.height, ys.max() + pad + 1)))
 
+    def fill_holes(cut, source):
+        # rembg can take a white tummy for background; anything walled in by the figure stays solid, in its painted colours.
+        from scipy.ndimage import binary_fill_holes
+        px = np.asarray(cut).copy()
+        hole = binary_fill_holes(px[..., 3] > 128) & (px[..., 3] <= 128)
+        px[hole, :3] = np.asarray(source)[hole]
+        px[hole, 3] = 255
+        return Image.fromarray(px, 'RGBA')
+
     for name, t in picks.items():
         where = destination(name)
         if not where:
@@ -248,7 +258,7 @@ def tidy(force: bool):
             continue
         if session is None:
             session = new_session('isnet-general-use')
-        cut = trim(remove(img.convert('RGB'), session=session, alpha_matting=True))
+        cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
         save(fit(cut, {'fish': 160}.get(name, SIZES[folder])), out, 82)
         if name == 'pebble-gold':
             for metal in ('bronze', 'silver'):
