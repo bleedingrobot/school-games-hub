@@ -1,4 +1,4 @@
--- The "next part" chips (migration 20261105000300_next_part_chips.sql): hub_games.day_fn and my_next_parts().
+-- The "next part" chips (migration 20261105000400_next_part_chips.sql): hub_games.day_fn and my_next_parts().
 -- Run on a throw-away copy: scripts/scratch-db.sh chips, then scripts/scratch-test.sh chips supabase/tests/database/next_part_chips.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;

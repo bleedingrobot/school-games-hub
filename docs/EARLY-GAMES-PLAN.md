@@ -94,6 +94,7 @@ every round (the guide's way A), a per-class teacher switch, and the `foundation
   The child taps the number (10 and 4 → 14), or on silver and gold days goes the other way: "16 is 10 and ?". On gold
   days, two full branches appear for 20.
 - **Fading help:** bronze shows every berry, silver shows the full branch as one bar labelled 10, gold shows only "10 + 4".
+- **Look and voice:** Beanstalk's clay and Bella (James, 4 Nov 2026). Full plan: `docs/TUI-PLAN.md`, painting script `scripts/tui-art.py`.
 - **Maths fit:** **no shared-maths change.** Uses the existing `tenand:` keys (all four ways they are asked already
   exist) and the ladder skill `ten-and`. Later it can grow into tens and ones to 100 (that part would need new maths).
 

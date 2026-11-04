@@ -1,5 +1,5 @@
 /**
- * Kororā, the chicks, the fish and the pebbles. Each uses its painted picture once there is one (art.ts) and a soft clay
+ * Two-Shoes the penguin, the chicks, the fish and the pebbles. Each uses its painted picture once there is one (art.ts) and a soft clay
  * stand-in drawn in code until then (the look James chose, like Kiwi's Beanstalk), so the game can be tried before the
  * art is painted. Numbers are always drawn in code, dark on light.
  */
@@ -17,7 +17,7 @@ function ClayDefs({ id, light, base, dark }: { id: string; light: string; base: 
   );
 }
 
-/** A stand-in Kororā: a little blue penguin in clay, slate-blue back, white front, pink feet. */
+/** A stand-in Two-Shoes: a little blue penguin in clay, slate-blue back, white front, pink feet. */
 function DrawnPenguin({ pose }: { pose: Pose }) {
   const up = pose === 'cheer';
   const dive = pose === 'dive';
@@ -56,7 +56,7 @@ function DrawnPenguin({ pose }: { pose: Pose }) {
 
 const FRIEND_EMOJI: Record<FriendName, string> = { korora: '🐧', hoiho: '🐧', kiwi: '🥝', pukeko: '🐦', kereru: '🕊️', takahe: '🦃' };
 
-/** Whoever is fishing at the pool: Kororā, or a later friend. */
+/** Whoever is crossing the stones: Two-Shoes, or a later friend. */
 export function Friend({ friend, pose, className = '' }: { friend: FriendName; pose: Pose; className?: string }) {
   const src = friendArt(friend, pose);
   const cls = `kr-friend kr-friend--${pose} ${className}`;
@@ -132,5 +132,43 @@ export function Pebble({ metal, value, glow }: { metal: Metal; value?: number; g
       )}
       {value != null && <span className="kr-pebble__num">{value}</span>}
     </span>
+  );
+}
+
+/**
+ * A pair of dancing shoes: bronze after the first crossing, silver after the second, and dazzling gold (with sparkles)
+ * after the third.
+ */
+export function DancingShoes({ metal }: { metal: Exclude<Metal, 'grey'> }) {
+  const src = paint(`things/shoes-${metal}`);
+  const cls = `kr-shoes kr-shoes--${metal}`;
+  if (src) return <img className={cls} src={src} alt="" />;
+  const [light, base, dark] = PEBBLE[metal];
+  const id = `kr-sh-${metal}`;
+  // One shoe from the side: a rounded toe on the left, a little heel on the right, and a pink strap.
+  const shoe = (dx: number) => (
+    <g transform={`translate(${dx} 0)`}>
+      <path d="M36 44 L44 44 L43 56 L38 56 Z" fill={dark} />
+      <path d="M4 46 Q0 34 12 31 Q22 29 28 24 Q36 18 44 22 Q46 34 44 46 Z" fill={`url(#${id})`} />
+      <path d="M5 47 Q24 50 45 46" stroke={dark} strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M20 30 Q28 34 38 26" stroke="#e8577a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <circle cx="38" cy="26" r="2.6" fill="#e8577a" />
+    </g>
+  );
+  return (
+    <svg viewBox="0 0 100 64" className={cls} aria-hidden="true">
+      <defs>
+        <ClayDefs id={id} light={light} base={base} dark={dark} />
+      </defs>
+      {shoe(4)}
+      {shoe(50)}
+      {metal === 'gold' && (
+        <g fill="#fff6b0" stroke="#f5c518" strokeWidth="1">
+          <path d="M50 2 L53 10 L61 12 L53 14 L50 22 L47 14 L39 12 L47 10 Z" />
+          <path d="M88 8 L90 13 L95 14 L90 15 L88 20 L86 15 L81 14 L86 13 Z" />
+          <path d="M10 6 L12 11 L17 12 L12 13 L10 18 L8 13 L3 12 L8 11 Z" />
+        </g>
+      )}
+    </svg>
   );
 }

@@ -3,7 +3,7 @@ import './nextPartChip.css';
 /**
  * The "next part" chip of the daily Foundational skills games (James, 4 Nov 2026): is today's part (a leaf, a lily pad, a
  * shell, a pebble) still ready to change, or should the pupil come back tomorrow? Shown on the home page card (from
- * my_next_parts(), migration 20261105000300) and on each game's own home screen. A game gets it with `nextPart` in its
+ * my_next_parts(), migration 20261105000400) and on each game's own home screen. A game gets it with `nextPart` in its
  * GameDefinition (src/games/types.ts) and a `<NextPartChip>` on its home screen.
  */
 export function nextPartWords(noun: string, done: boolean): string {

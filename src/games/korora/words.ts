@@ -11,10 +11,10 @@ const LEVEL_WORDS: Record<Level, string> = {
 
 export const WORDS = {
   /** What changes each day, for the next-part chip (src/components/NextPartChip.tsx). */
-  part: 'pebble',
+  part: 'stepping stone',
   title: 'Penguin Pairs',
-  wants: (name: string) => `${name} is hungry! Help ${name} catch fish at the mirror pool.`,
-  nextFriend: (name: string) => `Now ${name} has a new pool to fish in!`,
+  wants: (name: string) => `${name} wants a pair of dancing shoes! Help ${name} across the stepping stones.`,
+  nextFriend: (name: string) => `Now ${name} wants dancing shoes too!`,
   level: (level: Level) => LEVEL_WORDS[level],
   dayCount: (day: number) => `Day ${day} of 30`,
   play: 'Play',
@@ -35,13 +35,16 @@ export const WORDS = {
   tapToCount: 'Tap the fish to count them.',
   tapToShare: 'Tap a fish to give it to a chick.',
   shareAgain: 'Start again',
-  pebbleTurned: (metal: Metal) => `Well done! A pebble turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another pebble.',
+  pebbleTurned: (metal: Metal) => `Well done! A stepping stone turned ${metal}!`,
+  doneToday: 'Well done! Come back tomorrow to change another stepping stone.',
   levelUp: (level: Level) => `You are so good at this! Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,
-  goldenFish: (name: string) => `All the pebbles are gold! ${name} caught the Golden Fish!`,
+  /** A crossing done: bronze shoes, then silver, then (all the stones gold) the dazzling gold ones. */
+  shoesWon: (metal: Exclude<Metal, 'grey'>, name: string) =>
+    metal === 'gold' ? `All the stones are gold! ${name} won the dazzling gold dancing shoes!` : `${name} crossed the water and won ${metal} dancing shoes!`,
+  shoesName: (metal: Exclude<Metal, 'grey'>) => (metal === 'gold' ? 'Dazzling gold dancing shoes' : `${metal[0].toUpperCase()}${metal.slice(1)} dancing shoes`),
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',
   voiceOn: 'Voice on',
   voiceOff: 'Voice off',
-  fishWon: (n: number) => `${n} Golden Fish`,
+  goldShoesWon: (n: number) => `${n} ${n === 1 ? 'pair' : 'pairs'} of dazzling gold dancing shoes`,
 } as const;

@@ -1,6 +1,6 @@
 /**
  * The home page's "next part" chips (src/components/NextPartChip.tsx): for each daily Foundational skills game, has the pupil
- * already moved on today? Read through my_next_parts() (migration 20261105000300). Only a nicety: any trouble just means no chips.
+ * already moved on today? Read through my_next_parts() (migration 20261105000400). Only a nicety: any trouble just means no chips.
  */
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
