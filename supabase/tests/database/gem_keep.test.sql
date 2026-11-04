@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(66);
+select plan(69);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -163,6 +163,21 @@ select is(public.import_gem_keep_progress(pg_temp.id('e'), '[]'), 'skipped', '..
 select is((select coalesce(sum(points), 0)::integer from public.scored_games where player = pg_temp.id('e')), 0,
   'imported progress earns no points by itself');
 select is(pg_temp.run('e', 2) ->> 'status', 'saved', 'an imported Key opens the next level');
+
+-- ---- Teachers who play are left off the boards (20261105000400) ----
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is((select count(*)::integer from public.gem_keep_leaderboard() where display_name = (select display_name from public.profiles where id = pg_temp.id('e'))),
+  0, 'a teacher with stars is not on the stars board');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
+select is((select count(*)::integer from public.gem_keep_leaderboard() where is_me), 0, '... not even on their own view of it');
+select pg_temp.reset();
+select is((select array_agg(p.proname::text order by p.proname) from pg_proc p
+           where p.pronamespace = 'public'::regnamespace and p.prosrc ~ 'p\.role = ''student'''
+             and p.proname in ('leaderboard', 'gem_keep_leaderboard', 'monsters_leaderboard', 'lord_hall', 'lord_warriors',
+                               'clan_scoreboard', 'clan_hall_of_legends', 'marble_board', 'mine_board', 'diamond_hall')),
+  array['clan_hall_of_legends', 'clan_scoreboard', 'diamond_hall', 'gem_keep_leaderboard', 'leaderboard', 'lord_hall',
+        'lord_warriors', 'marble_board', 'mine_board', 'monsters_leaderboard'],
+  'every leaderboard and hall shows pupils only');
 
 -- ---- Teachers ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
