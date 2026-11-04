@@ -112,6 +112,9 @@ export function TeacherStudents() {
             {isAdmin ? 'Whole school' : 'All my students'}
           </button>
         </div>
+        <Link className="button button--light" to={`/teacher/${classId}/badges`}>
+          📷 Sign-in badges
+        </Link>
         <label className="students-hide">
           <input type="checkbox" checked={hideReal} onChange={(e) => setHideReal(e.target.checked)} />
           Hide real names

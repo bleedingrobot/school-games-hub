@@ -112,7 +112,7 @@ Also: the game goes in the **Foundational skills** group at the top of the home 
 - **Play screen** (`src/games/pipi/`): `PipiGame`, `Goes` (the wave, the five-/ten-frame on bronze days, faint outlines on
   silver, no marks and the spots closing up on gold or with help off), `Beach`, `PipiArt` (paper stand-ins), trial
   backend in `backend.ts`, preview `preview/pipi`.
-- **Server and hub** (stages 4 and 5): migration `20261104001300_pipi.sql` (tables `pipi_progress` and `pipi_rounds`,
+- **Server and hub** (stages 4 and 5): migration `20261104001400_pipi.sql` (tables `pipi_progress` and `pipi_rounds`,
   `pipi_load/start/round/finish`, switch `pipi_enabled` and help setting `pipi_help`, both on by default,
   `teacher_set_pipi`, hub hooks, six pearl achievements, teacher lines), function `supabase/functions/pipi`,
   `src/data/pipi.ts`, game card in Foundational skills (`src/games/pipi/index.tsx`, switch `PIPI_ON`), teacher drawer

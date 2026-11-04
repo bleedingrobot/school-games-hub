@@ -1,4 +1,4 @@
--- Pipi's Hidden Shells (migration 20261104001300): progress, challenges, the switch and the help setting, and the hub
+-- Pipi's Hidden Shells (migration 20261104001400): progress, challenges, the switch and the help setting, and the hub
 -- hooks with one achievement per Golden Pearl.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh pipi, then scripts/scratch-test.sh pipi supabase/tests/database/pipi.test.sql
