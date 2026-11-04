@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabase';
 import { UNLIMITED_LABEL } from '../../shared/unlimited';
 
 export interface RawMovesLeft {
-  /** The games whose "Unlimited turns today" switch is on for the class (20261104001300). */
+  /** The games whose "Unlimited turns today" switch is on for the class (20261105000200). */
   unlimited?: string[];
   lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number; level?: number; exp?: number } | null;
   clans: { fightsLeft: number; perDay: number } | null;

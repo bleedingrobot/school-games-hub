@@ -1,5 +1,5 @@
 /**
- * Unlimited turns today (James, 4 Nov 2026; migration 20261104001300_unlimited_turns.sql): one class switch per game, on
+ * Unlimited turns today (James, 4 Nov 2026; migration 20261105000200_unlimited_turns.sql): one class switch per game, on
  * the teacher's Today page. For the rest of that New Zealand day, that game's daily turn limit is lifted.
  *
  * The same rule in every game: the normal turns are used first, as on any day. After that each extra turn gives

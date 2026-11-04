@@ -1,4 +1,4 @@
--- Unlimited turns today (migration 20261104001300): a per-class switch for each game. Off to start; a student can't change
+-- Unlimited turns today (migration 20261105000200): a per-class switch for each game. Off to start; a student can't change
 -- it; a teacher changes only a class they teach and only that game; it is on for today's NZ date only; the games can read it.
 -- Run on a throw-away copy: scripts/scratch-db.sh unlimited, then
 --   scripts/scratch-test.sh unlimited supabase/tests/database/unlimited_turns.test.sql
