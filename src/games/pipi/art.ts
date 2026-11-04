@@ -1,5 +1,5 @@
 /**
- * The painted pictures, in the paper cut-out look James picked (4 Nov 2026), listed in scripts/pipi-art.py and tidied
+ * The painted pictures, in clay like the other Foundational skills games (James, 4 Nov 2026; first painted as paper cut-out), listed in scripts/pipi-art.py and tidied
  * into ./art/paint/. Until James paints them on the gaming PC (ComfyUI), `paint` finds nothing and the game draws its
  * paper stand-ins in code (PipiArt.tsx), so it works either way. Numbers are always drawn in code, never painted.
  */
