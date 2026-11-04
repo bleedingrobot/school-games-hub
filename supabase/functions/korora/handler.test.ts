@@ -67,14 +67,14 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 });
 
-it('changes one pebble a NZ day by the server’s clock, with fair-or-not recorded on gold days and the Golden Fish on day 30', async () => {
+it('changes one pebble a NZ day by the server’s clock, with fair-or-not recorded on gold days and the gold dancing shoes on day 30', async () => {
   const { send, start, hours, services, log } = setup();
   const finish = async () => {
     const round = await start('pupil-a');
     const reply = (await send('pupil-a', { action: 'finish', seed: round.seed, taps: goodTaps(round), daysDone: 29, goldenFish: true })).body;
     return { round, reply };
   };
-  expect((await finish()).reply).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, level: 1, levelBefore: 1 });
+  expect((await finish()).reply).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, shoesWon: null, level: 1, levelBefore: 1 });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect((await finish()).reply).toMatchObject({ daysDone: 1, pebbleChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
@@ -87,8 +87,8 @@ it('changes one pebble a NZ day by the server’s clock, with fair-or-not record
   expect(last.round.gold).toBe(true);
   expect(last.round.goes.slice(-FAIR_GOES).every((g) => g.key.startsWith('oddeven:'))).toBe(true);
   expect(log.answers.at(-1)!.answers.filter((a) => a.key.startsWith('oddeven:'))).toHaveLength(FAIR_GOES);
-  expect(last.reply).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true });
-  expect(log.fish).toEqual(['pupil-a']); // the hub gives Kororā's Golden Fish achievement
+  expect(last.reply).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true, shoesWon: 'gold' });
+  expect(log.fish).toEqual(['pupil-a']); // the hub gives Two-Shoes' gold dancing shoes achievement
 });
 
 describe('the deployable file', () => {

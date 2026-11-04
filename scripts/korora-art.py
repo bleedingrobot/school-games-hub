@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Paints Penguin Pairs' pictures (Kororā, a little blue penguin, at a rock pool that mirrors fish: doubles and halves for
+Paints Penguin Pairs' pictures (Two-Shoes, a little blue penguin, crossing stepping stones to win dancing shoes, at water that mirrors fish: doubles and halves for
 ages 5 to 7; docs/KORORA-PLAN.md, docs/KORORA-ART-PLAN.md) in ComfyUI on James's gaming PC. Runs on a computer that can
 reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"), never in the site build.
 Copied from scripts/hop-art.py: same graph, seeds and tidying, only the words, picture list and paths change.
@@ -35,7 +35,7 @@ AGE = ' Suitable for young children aged 5 to 7.'
 SPRITE = (' Single object, centred, the whole object visible with space around it, on a plain pure white background, '
           'clean empty white all around.' + AGE)
 
-# Kororā, the little blue penguin. Friends all wear a knitted scarf.
+# Two-Shoes, the little blue penguin (id korora; was Kororā). Friends all wear a knitted scarf.
 KORORA = ('Korora, a cute small New Zealand little blue penguin, slate blue back and head, a clean white tummy and chin, a short '
           'dark beak, big round friendly dark eyes, rosy cheeks, small pink webbed feet, chubby round body, wearing a little knitted red scarf, ')
 
@@ -48,9 +48,9 @@ KORORA_POSES = {
     'cheer': 'jumping for joy with both flippers up high, beak open in a big smile, tiny sparkles around',
 }
 
-# The pebbles carry nothing (numbers are drawn in code on separate answer stones), so the middle stays smooth.
-PEBBLE = ('One big smooth rounded beach pebble, oval and a little flat, seen from slightly above, the same simple shape every time, '
-          'its top smooth and plain, ')
+# The stepping stones (and answer stones) carry nothing: numbers are drawn in code, so the top stays smooth and flat.
+PEBBLE = ('One big flat stepping stone rock, wide and low with a flat smooth top to stand on, rounded edges, seen from slightly above, '
+          'the same simple shape every time, its top smooth and plain, ')
 PEBBLES = {
     'grey': 'soft warm grey stone, matte and gentle',
     'gold': f'the whole pebble covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
@@ -63,13 +63,14 @@ THINGS = {
     'chick-wait': CHICK + 'sitting and waiting hopefully, looking up, small smile',
     'chick-happy': CHICK + 'flapping its tiny wings with joy, beak open in a happy smile',
     'fish': FISH + 'lying flat on its side, side view',
-    'golden-fish': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold with a soft warm glow, side view, alone',
-    'golden-fish-cushion': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold, side view, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
+    # The prize: a pair of dancing shoes. Painted gold; bronze and silver are tinted from it so all three match.
+    'shoes-gold': (f'a pair of dazzling little dancing shoes side by side, made of {SHINE} in shining yellow gold, a small heel and a '
+                   'pink satin ribbon bow on each, three tiny gold sparkles around, a prize'),
     'splash': 'a lively splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
-    'sparkle': f'three {SHINE} gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, every star solid shining gold, flat like stickers, only gold stars on plain white',
+    'sparkle': f'three {SHINE} bright yellow gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, all three stars the same bright yellow gold colour, flat like stickers, only yellow gold stars on plain white',
 }
 
-# The friend at each later pool, after Kororā's Golden Fish. All birds, so the little ones are always chicks.
+# The friend at each later pool, after Two-Shoes' gold dancing shoes. All birds, so the little ones are always chicks.
 FRIENDS = {
     'hoiho': 'a cute small New Zealand yellow-eyed penguin, a hoiho, slate grey back, white tummy, a pale yellow band around its head and bright yellow eyes, a smile, wearing a little blue knitted scarf, ',
     'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
@@ -77,7 +78,8 @@ FRIENDS = {
              'strong grey legs and big feet, wearing a little yellow knitted scarf, '),
     'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little green knitted scarf, ',
     'kereru': 'a cute plump New Zealand kereru wood pigeon, shiny green and purple head and back, a clean white chest, a small red beak, big kind eyes, wearing a little orange knitted scarf, ',
-    'takahe': 'a cute round chunky New Zealand takahe bird, blue and green feathers, a big red beak and red legs, big kind eyes, wearing a little purple knitted scarf, ',
+    'takahe': ('a cute very big heavy round New Zealand takahe bird, much chunkier than a pukeko, a huge thick bright red beak, olive green back and '
+               'turquoise blue chest, short thick red legs, tiny wings, big kind eyes, wearing a little purple knitted scarf, '),
 }
 FRIEND_POSES = {
     'wait': 'standing calmly and happily, looking ahead with a smile',
@@ -88,9 +90,10 @@ SQUARE = (832, 832)
 WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
 BACK = (' Empty background scenery for a children\'s game, calm soft colours in the middle so things placed on top stand out. '
         'Wide landscape.' + AGE)
-COAST = ('A wide view of a sunny New Zealand rocky shore: smooth plain grey rocks along the bottom, all the rocks grey, a big flat rock ledge across the '
-         'middle with a still, glassy, empty rock pool below it, the sea and a pohutukawa tree far behind, the only colours grey rock, '
-         'green plants, blue water and sky, a tidy uncluttered shore')
+COAST = ('A wide view of a sunny New Zealand coast: a wide calm glassy lagoon of clear water running straight across the whole picture from '
+         'the left edge to the right edge, filling the lower middle, empty water with nothing in it, a low sandy bank with grass on the far '
+         'left and another on the far right, smooth sand along the very bottom edge, the sea and a pohutukawa tree far behind, the only '
+         'colours sand, green plants, blue water and sky, a tidy uncluttered scene')
 
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'korora-{p}': (KORORA + w + ', the whole penguin.' + SPRITE, SQUARE) for p, w in KORORA_POSES.items()},
@@ -98,12 +101,12 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{name: (w[0].upper() + w[1:] + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
     **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
     # Three backgrounds: a sunny day, sparkling silver light for silver days, and a golden evening for gold days.
-    'back-day': (COAST + ', bright blue sky, the pool water clear light blue and calm.' + BACK, WIDE),
-    'back-silver': (COAST + ', soft silvery morning light, bright silver glints sparkling on the sea and the pool, calm plain water in the middle.' + BACK, WIDE),
-    'back-evening': (COAST + ', a warm golden evening, the sky orange and gold, golden light on the rocks and on the still pool.' + BACK, WIDE),
-    'card': (KORORA + 'standing on a flat rock at the edge of a still rock pool, holding a little orange fish, with the same fish and the '
-             'penguin reflected upside down in the glassy water below, two fluffy chicks beside it, a sunny rocky shore, wide landscape picture '
-             'for a game title card.' + AGE, (1216, 688)),
+    'back-across-day': (COAST + ', bright blue sky, the water clear light blue and calm.' + BACK, WIDE),
+    'back-across-silver': (COAST + ', soft silvery morning light, bright silver glints sparkling on the sea and the lagoon, calm plain water in the middle.' + BACK, WIDE),
+    'back-across-evening': (COAST + ', a warm golden evening, the sky orange and gold, golden light on the sand and on the still water.' + BACK, WIDE),
+    'card': (KORORA + 'hopping happily along a row of flat stepping stones across a calm glassy lagoon, reflected in the water below, '
+             'a pair of shining gold dancing shoes with pink ribbons waiting on the grassy bank ahead, a sunny New Zealand coast, wide '
+             'landscape picture for a game title card.' + AGE, (1216, 688)),
 }
 
 
@@ -191,7 +194,7 @@ def destination(name: str) -> tuple[str, str, str] | None:
 
 
 def tint(img, metal: str):
-    """The bronze and silver pebbles, tinted from the gold one (Hop's pads taught that bronze and silver tries come out part
+    """The bronze and silver stones (and dancing shoes), tinted from the gold one (Hop's pads taught that bronze and silver tries come out part
     clay, while gold comes out all metal), so the three metal pebbles keep the same shape."""
     import numpy as np
     from PIL import Image
@@ -260,9 +263,10 @@ def tidy(force: bool):
             session = new_session('isnet-general-use')
         cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
         save(fit(cut, {'fish': 160}.get(name, SIZES[folder])), out, 82)
-        if name == 'pebble-gold':
+        if name in ('pebble-gold', 'shoes-gold'):
             for metal in ('bronze', 'silver'):
-                save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / f'{metal}.webp', 82)
+                tinted = f'{metal}.webp' if name == 'pebble-gold' else f'shoes-{metal}.webp'
+                save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / tinted, 82)
 
 
 if __name__ == '__main__':

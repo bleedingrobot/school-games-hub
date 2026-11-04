@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh korora, then scripts/scratch-test.sh korora supabase/tests/database/korora.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(38);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -77,12 +77,13 @@ select pg_temp.reset();
 select ok(exists (select 1 from public.hub_games where id = 'korora' and switch_column = 'korora_enabled' and counts_fn is not null
   and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
   'Penguin Pairs is registered with its hooks, with nothing for New Season to clear');
-select is((select count(*)::integer from public.achievement_types where game = 'korora'), 6, 'with six achievements, one for each friend''s Golden Fish');
+select is((select count(*)::integer from public.achievement_types where game = 'korora'), 6, 'with six achievements, one for each friend''s gold dancing shoes');
+select is((select name from public.achievement_types where id = 'korora-korora'), 'Two-Shoes’ gold dancing shoes', 'the first is Two-Shoes'' gold dancing shoes');
 select is(public.korora_counts(pg_temp.id('0a')), '{"korora_fish": 0}'::jsonb, 'no Golden Fish after one day');
 update public.korora_progress set days_done = 30 where player = pg_temp.id('0a');
 select is(public.korora_counts(pg_temp.id('0a')), '{"korora_fish": 1}'::jsonb, 'the first Golden Fish after thirty days');
 select public.game_progress_changed(pg_temp.id('0a'), 'korora');
-select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'korora-korora'), '... and Kororā''s achievement with it');
+select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'korora-korora'), '... and Two-Shoes'' achievement with it');
 select ok(not exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'korora-hoiho'), '... not Hoiho''s yet');
 select ok(public.korora_last_played(pg_temp.id('0a')) is not null and public.korora_last_played(pg_temp.id('0b')) is null, 'when a pupil last played comes from their pool');
 select pg_temp.reset();

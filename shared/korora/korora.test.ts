@@ -68,8 +68,13 @@ describe('the magic pebbles', () => {
     expect(poolAfter(10)).toMatchObject({ help: 'faint', today: 'silver', pebbles: Array(10).fill('bronze') });
     expect(poolAfter(21)).toMatchObject({ help: 'none', gold: true, pebbles: ['gold', ...Array(9).fill('silver')] });
     expect(poolAfter(DAYS_PER_FISH)).toMatchObject({ fish: 1, friend: 'hoiho', day: 0 });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false });
+    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, shoesWon: null });
+    expect(finishChallenge(9, null, '2026-11-04')).toMatchObject({ daysDone: 10, shoesWon: 'bronze', goldenFish: false });
+    expect(finishChallenge(19, null, '2026-11-04')).toMatchObject({ daysDone: 20, shoesWon: 'silver' });
+    expect(poolAfter(0).shoes).toBeNull();
+    expect(poolAfter(10).shoes).toBe('bronze');
+    expect(poolAfter(25).shoes).toBe('silver');
     expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, pebbleChanged: null });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true });
+    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true, shoesWon: 'gold' });
   });
 });
