@@ -1,6 +1,6 @@
-# Kororā's Mirror Pool (doubles and halves) — plan
+# Penguin Pairs (doubles and halves) — plan
 
-Short id `korora`. **Status: Stage 0, plan only (4 Nov 2026).** Game B in `docs/EARLY-GAMES-PLAN.md`; the parts every
+Short id `korora`. **Status: built and going live 4 Nov 2026 with clay stand-in art; final paintings in `docs/KORORA-ART-PLAN.md`.** Was called "Kororā's Mirror Pool"; the penguin is still Kororā. Game B in `docs/EARLY-GAMES-PLAN.md`; the parts every
 early game shares are in section 7 there and aren't repeated here.
 
 ## 1. The game in plain words
@@ -70,8 +70,30 @@ One per Golden Fish, per friend.
 0. This plan. 1. Rules and tests. 2. Play screen with stand-ins, preview. 3. Server. 4. Hub, settings, guided first go,
 prize. 5. Go live. **No shared-maths branch**, so this is the quickest of the five.
 
-## 9. Questions for James
+## 9. James's answers (4 Nov 2026)
 
-1. Which look?
-2. Record "fair or not?" (odd and even), which needs a small shared-maths branch, or play it unrecorded?
-3. Name: "Kororā's Mirror Pool"?
+1. **Look:** clay, like Beanstalk.
+2. **Fair or not?** Recorded. Shared maths gained the `oddEven` family (keys `oddeven:n`) and the ladder skill
+   `odd-even` after skip-2 (PR #201). Gold days end with 2 fair-or-not goes.
+3. **Name:** Penguin Pairs (code id stays `korora`).
+4. **Support:** all nine ideas:
+   1. Help fades with the pebbles (bronze full picture, silver faint, gold the number only).
+   2. Hints build after wrong taps: wobble, then the picture comes back and Bella counts, then the hand points.
+   3. Fish sit in rows of five.
+   4. Tap a fish to count it.
+   5. Tap to share fish between the chicks (bronze days share by themselves).
+   6. A double comes just before its half (`pairUp` in `round.ts`).
+   7. Full help returns for the round after 3 wrong first taps in a row.
+   8. A "Hear it again" button.
+   9. Teachers can set picture help to Fades, Always on or Off, and see each child's hardest facts.
+
+## 10. How it was built
+
+- Rules: `shared/korora/` (round, play, progress, server, memoryServices), tests in `korora.test.ts`.
+- Game: `src/games/korora/` (Goes, Pool, KororaGame, clay SVG stand-ins in `KororaArt.tsx`), preview
+  `npm run korora:single` (`preview/korora/`).
+- Server: `supabase/migrations/20261105000100_korora.sql`, function `supabase/functions/korora/`, pgTAP test
+  `supabase/tests/database/korora.test.sql`.
+- Teacher: `src/pages/TeacherKorora.tsx` (switch, picture help, class fish, student panel with hardest facts).
+- Read-aloud: Bella, `public/voice/korora/` from `scripts/voice-clips.py korora`.
+- Art: `scripts/korora-art.py`, plan in `docs/KORORA-ART-PLAN.md`.
