@@ -7363,12 +7363,12 @@ const PUZZLES = [
 		kind: "stones",
 		multipleOf: 3,
 		title: "Stepping stones",
-		says: "Cross the rock pool. Only step on numbers in the 3 times table, or splash!",
+		says: "Cross the rock pool. Count in 3s and only step on numbers in the 3 times table, or splash! Step up, down, left or right.",
 		hint: "Start on the 6, then look for 9, 12, 15, 18…",
 		grid: [
 			"8 14 20 10 25 4",
 			"6 9 11 7 16 22",
-			"13 12 15 18 2 30",
+			"13 12 15 18 2 26",
 			"5 16 23 21 24 27"
 		],
 		prize: {
@@ -7457,13 +7457,13 @@ const PUZZLES = [
 		kind: "stones",
 		multipleOf: 4,
 		title: "Lagoon stones",
-		says: "Cross the lagoon. Only step on numbers in the 4 times table!",
+		says: "Cross the lagoon. Count in 4s and only step on numbers in the 4 times table! Step up, down, left or right.",
 		hint: "Start on the 8, then 12, 16, 20…",
 		grid: [
 			"5 9 14 6 10 15",
 			"8 12 16 20 18 7",
-			"11 22 13 24 21 28",
-			"3 26 17 32 36 40"
+			"11 22 13 24 21 30",
+			"3 26 17 28 32 36"
 		],
 		prize: { egg: "water" }
 	},
