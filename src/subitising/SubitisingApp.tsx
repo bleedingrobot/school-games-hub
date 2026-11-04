@@ -7,6 +7,7 @@ import { buildTrial, type Trial } from '../../shared/subitising/trials';
 import { useReadAloud } from '../speech';
 import { FlashRunner, type AnswerResult } from './FlashRunner';
 import { Garden } from './Garden';
+import { GardenScene } from './Scene';
 import type { SubState } from './store';
 import './subitising.css';
 
@@ -114,15 +115,17 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
   const finishedNow = before ? STAGES.filter((s) => progress.stages[s.id - 1].finished && !before.stages[s.id - 1].finished) : [];
   const allDone = progress.stages.every((s) => s.finished);
 
+  const practising = screen === 'check' || screen === 'session';
   const Frame = onBack ? 'div' : 'main';
   return (
     <Frame className={onBack ? 'sb-app sb-app--hub' : 'sb-app'}>
+      <GardenScene className={practising ? 'sb-scene--faint sb-scene--nobeds' : 'sb-scene--nobeds'} />
       {screen === 'home' && (
+        <>
         <section className="sb-screen">
           <h1>Quick looks</h1>
           <p>A picture flashes. Tap how many you saw. No clock, no score: just you and your garden.</p>
           {gateNote}
-          <Garden progress={progress} />
           {state.placed ? (
             <>
               <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={startSession}>
@@ -157,6 +160,8 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           )}
           {tools}
         </section>
+        <Garden progress={progress} />
+        </>
       )}
       {screen === 'check' && <FlashRunner key={`check-${seed}`} checking total={CONFIG.placementTrials} guidedMode={state.guidedMode} next={nextCheck} onAnswer={(_t, r) => void checkAnswers.current.push(r.correct)} onFinish={() => (checkAnswers.current.length ? finishCheck() : setScreen('home'))} readAloud={readAloud} />}
       {screen === 'checked' && (
@@ -175,6 +180,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
       )}
       {screen === 'session' && <FlashRunner key={`session-${seed}`} total={CONFIG.sessionTrials} guidedMode={state.guidedMode} next={nextPractice} onAnswer={onPracticeAnswer} onFinish={finishSession} readAloud={readAloud} />}
       {screen === 'summary' && (
+        <>
         <section className="sb-screen">
           <h1>Nice looking!</h1>
           <p>You looked at {looked} {looked === 1 ? 'picture' : 'pictures'} today.</p>
@@ -186,11 +192,12 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           ))}
           {allDone && <p className="sb-small">Every plant is in flower. More pictures are coming soon.</p>}
           {gateNote}
-          <Garden progress={progress} />
           <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={() => setScreen('home')}>
             Back to my garden
           </button>
         </section>
+        <Garden progress={progress} grew={grown.map((s) => s.id)} />
+        </>
       )}
     </Frame>
   );

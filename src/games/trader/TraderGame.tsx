@@ -16,6 +16,7 @@ import { applyBatch, type Action, type Game, type Mark, type Settings } from '..
 import { emptyDesign, type SystemDesign } from '../../../shared/trader/system';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
+import { CaptainFace, CaptainPicker } from './Captain';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
@@ -89,6 +90,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const [welcome, setWelcome] = useState(false);
   /** Bolt's help panel is open. */
   const [helpOpen, setHelpOpen] = useState(false);
+  /** The "Choose your captain" picker is open. */
+  const [picking, setPicking] = useState(false);
   const helpButton = useRef<HTMLButtonElement>(null);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
@@ -607,7 +610,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
         />
       ) : (
         <>
-          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} />
+          <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
           <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
@@ -621,7 +624,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                 {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
-                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} />}
+                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} forge={forgeOn} onForge={() => setTab('forge')} onAct={act} onMoon={() => void buyMoon()} captain={game?.captain} onCaptain={() => setPicking(true)} />}
                 {tab === 'forge' && forgeOn && <Forge saved={savedSystem} draft={design} credits={t.credits} ownsMoon={t.moon} busy={panelBusy} lessMotion={lessMotion} level={level} typing={loaded.settings.forgeTyping !== false} onDraft={setDraft} onPlan={planForge} onApply={applyForge} onPicture={savePicture} />}
                 {tab === 'gallery' && forgeOn && <Gallery api={api} lessMotion={lessMotion} />}
                 {tab === 'bank' && (
@@ -673,10 +676,21 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
               onClose={closeHelp}
             />
           )}
+          {picking && phase.k === 'planet' && !pending && (
+            <CaptainPicker
+              current={game?.captain}
+              busy={panelBusy}
+              onPick={(id) => {
+                act({ type: 'captain', id }, 'Welcome aboard, Captain!');
+                setPicking(false);
+              }}
+              onClose={() => setPicking(false)}
+            />
+          )}
           {extra && playing && <div className="st-tools">{extra({ reload: () => void reload() })}</div>}
         </>
       )}
-      {showFlight && flight && !helpOpen && (
+      {showFlight && flight && !helpOpen && !picking && (
         <FlightBubble
           step={flight}
           top={bubbleTop}
@@ -705,7 +719,7 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
   );
 }
 
-function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp }: {
+function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp, captain, onCaptain }: {
   /** The Forge goal (replaces the moon bar when the Forge is open). */
   goal: Goal | null;
   t: Game['t'];
@@ -716,11 +730,21 @@ function Hud({ goal, t, jumpsPerDay, planet, government, onExit, help, helpOpen,
   help: React.RefObject<HTMLButtonElement | null>;
   helpOpen: boolean;
   onHelp: () => void;
+  /** The pupil's captain (shown by the planet's name), and opening the picker when it can be used. */
+  captain?: string;
+  onCaptain?: () => void;
 }) {
   const ship = SHIPS[t.ship];
   return (
     <header className="st-hud" data-coach="hud">
       {onExit && <button type="button" className="st-btn st-btn--small" onClick={onExit}>← Hub</button>}
+      {captain ? (
+        <button type="button" className="st-hud__cap" onClick={onCaptain} disabled={!onCaptain} aria-label="Your captain: change captain">
+          <CaptainFace id={captain} size={40} />
+        </button>
+      ) : onCaptain ? (
+        <button type="button" className="st-btn st-btn--small" onClick={onCaptain}>🧑‍✈️ Choose your captain</button>
+      ) : null}
       <div className="st-hud__place"><strong>{planet}</strong><span className="st-soft">{government}</span></div>
       <div className="st-hud__item" title="Your credits" data-coach="hud-credits"><span aria-hidden="true">💰</span><strong>{t.credits.toLocaleString('en-NZ')}</strong><span className="st-sr">credits</span></div>
       <div className="st-hud__item" title="Fuel: each square you fly uses 1"><span aria-hidden="true">⛽</span><strong>{t.fuel}/{ship.fuelTank}</strong><span className="st-sr">fuel</span></div>

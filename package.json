@@ -27,6 +27,7 @@
     "marble:determinism": "node scripts/marble-determinism.mjs",
     "marble:sim": "node scripts/marble-sim.mjs",
     "marble:preview": "vite build --config vite.marble-preview.config.ts",
+    "hop:single": "HOP_INLINE=1 vite build --config vite.hop-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-hop hops-glow-worm-pond-test-page.html",
     "marble:single": "MARBLE_INLINE=1 vite build --config vite.marble-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-marble marble-rush-test-page.html",
     "monsters:sim": "node scripts/monsters-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
@@ -61,9 +62,12 @@
     "archery:determinism": "node scripts/archery-determinism.mjs",
     "kingdom:sim": "node scripts/kingdom-sim.mjs",
     "kingdom:preview": "vite build --config vite.kingdom-preview.config.ts",
+    "isles:sim": "node scripts/isles-sim.mjs",
+    "isles:preview": "vite build --config vite.isles-preview.config.ts",
     "diamond:sim": "node scripts/diamond-sim.mjs",
     "diamond:preview": "vite build --config vite.diamond-preview.config.ts",
-    "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html"
+    "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html",
+    "beanstalk:single": "BEANSTALK_INLINE=1 vite build --config vite.beanstalk-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-beanstalk kiwis-beanstalk-test-page.html"
   },
   "engines": {
     "node": ">=22"

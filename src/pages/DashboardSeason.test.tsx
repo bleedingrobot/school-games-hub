@@ -44,7 +44,7 @@ describe('the season strip on the home page', () => {
 
   it('shows in the complex maths games when there is a season and the clock is on', async () => {
     await show(season());
-    const strip = screen.getByRole('region', { name: /Season 1, day 24 of 35/ });
+    const strip = await screen.findByRole('region', { name: /Season 1, day 24 of 35/ });
     expect(strip).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open Clan Quest' })).toHaveAttribute('href', '/clan-quest');
     // It sits inside the "Complex maths games" group, with Clan Quest (James, 29 Oct 2026).
@@ -74,19 +74,19 @@ describe('the season strip on the home page', () => {
 
   it('shows for teachers too, so they see what their class sees', async () => {
     await show(season(), { role: 'teacher' });
-    expect(screen.getByRole('region', { name: /Season 1, day 24 of 35/ })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Season 1, day 24 of 35/ })).toBeInTheDocument();
   });
 
   it('shows the Dragon Maths season beside it, each titled with its game', async () => {
     await show(season(), { lordSeason: { start: '2026-10-18', on: true } });
-    expect(screen.getByRole('heading', { name: 'Clan Quest this season' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Dragon Maths this season' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Clan Quest this season' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Dragon Maths this season' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open Dragon Maths' })).toHaveAttribute('href', '/dragon-maths');
   });
 
   it('shows the Dragon Maths season alone, to a teacher too', async () => {
     await show(undefined, { lordSeason: { start: '2026-10-18', on: true }, role: 'teacher' });
-    expect(screen.getByRole('region', { name: /^Dragon Maths\. Season \d+/ })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /^Dragon Maths\. Season \d+/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'This season' })).toBeInTheDocument();
   });
 

@@ -12,7 +12,7 @@ import { addBits, canMake, describeBits, RECIPES, takeBits } from '../quests/bit
 import { addEgg, daysHad, daysNeeded, EGG_LABEL, EGGS, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
 import { afterGiant, canWake, giantById, GIANTS, isAwake, type Giant } from '../quests/giants';
 import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
-import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
+import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, stepHint, talkTo, type Given, type Job } from '../quests/quests';
 import { emptyQuestSave, type EggKind, type ProgressEvent, type QuestSave } from '../quests/types';
 import { spottedToday, WEATHER, WEATHER_LABEL, weatherFor, type Today } from './weather';
 import { AREAS } from './areas';
@@ -112,14 +112,24 @@ export const hasQuest = (person: string) => QUESTS.some((q) => q.giver === perso
 export function questTalk(state: WorldState, person: Thing, opts: QuestOptions): QuestTalk | null {
   if (!hasQuest(person.id)) return null;
   const res = talkTo(questOf(state), person.id, state.team, state.badges.length);
-  if (res.said === 'nothing') return null;
+  if (res.said === 'nothing') {
+    // Still looking for hidden seed pods: the person who asked says the clue again.
+    const mine = QUESTS.find((x) => x.giver === person.id && questOf(state).quests[x.id]);
+    const now = mine && mine.steps[questOf(state).quests[mine.id].step];
+    const p = now?.do === 'solve' ? puzzleById(now.id ?? '') : undefined;
+    return p?.kind === 'pods' ? { state, pages: [`Have you found my ${p.title.toLowerCase()}? You have ${podsFound(questOf(state).flags, p.id)} of ${p.count}.`, `Clue: ${p.hint}`] } : null;
+  }
   const quest = res.quest!;
   const st = res.q.quests[quest.id];
-  const nextHint = st ? quest.steps[st.step].hint.replace('{left}', String((quest.steps[st.step].count ?? 1) - st.n)) : '';
+  const nextHint = st ? stepHint(quest, st) : '';
+  // Hidden seed pods have nothing drawn on them, so whoever sends you to find them says where to look.
+  const step = st ? quest.steps[st.step] : undefined;
+  const pods = step?.do === 'solve' ? puzzleById(step.id ?? '') : undefined;
+  const clue = pods?.kind === 'pods' ? [`Clue: ${pods.hint}`] : [];
   const out = applyGiven(state, res.q, res.given, opts);
   const pages: string[] = [];
-  if (res.said === 'started') pages.push(`Can you help me? ${quest.title}!`, `Here is what to do: ${nextHint}.`);
-  else if (res.said === 'need') pages.push(`Not yet! ${quest.steps[questOf(state).quests[quest.id].step].hint.replace('{left}', '…')}.`);
+  if (res.said === 'started') pages.push(`Can you help me? ${quest.title}!`, `Here is what to do: ${nextHint}.`, ...clue);
+  else if (res.said === 'need') pages.push(`Not yet! ${quest.steps[questOf(state).quests[quest.id].step].hint.replace('{left}', '…')}.`, ...clue);
   else if (res.said === 'advanced') pages.push('Thank you!', `Next: ${nextHint}.`);
   else pages.push(`You did it! ${quest.title}: all done. Thank you so much!`);
   return { state: out.state, pages: [...pages, ...out.lines] };
@@ -258,14 +268,13 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
     const st = q.quests[quest.id];
     if (q.flags.includes(`quest-done:${quest.id}`)) hints.push(`You helped ${who}. Thank you!`);
     else if (st) {
-      const task = quest.steps[st.step];
-      hints.push(`Your quest here: ${task.hint.replace('{left}', String((task.count ?? 1) - st.n))}.`);
+      hints.push(`Your quest here: ${stepHint(quest, st)}.`);
     } else if (canStart(q, quest, state.badges.length)) hints.push(`${who[0].toUpperCase()}${who.slice(1)} needs help. Go and talk to them!`);
   }
   for (const id of new Set(map.things.filter((t) => t.kind === 'puzzle').map((t) => t.puzzle!))) {
     const p = puzzleById(id)!;
     const solved = q.flags.includes(`solved:${id}`);
-    if (p.kind === 'pods') hints.push(solved ? 'You found all the seed pods here.' : `Seed pods are hidden in the trees here. You have found ${podsFound(q.flags, id)} of ${p.count}.`);
+    if (p.kind === 'pods') hints.push(solved ? 'You found all the seed pods here.' : `Seed pods are hidden in the trees here. You have found ${podsFound(q.flags, id)} of ${p.count}. ${p.hint}`);
     else hints.push(solved ? `You solved the ${p.title.toLowerCase()} here.` : `There is a puzzle to solve here: ${p.title.toLowerCase()}.`);
   }
   for (const g of GIANTS.filter((x) => x.map === map.id)) {
@@ -318,6 +327,18 @@ export function badgeStep(state: WorldState): { text: string; target: { map: str
 }
 
 /** People on this map with something quest-y for you now (a quest to start, or a step to hand in): the map shows a "!" over them. */
+/** Trees with a seed pod still in them, while a quest asks you to find them: they twinkle, since nothing else marks them. */
+export function podTwinkles(state: WorldState, map: GameMap): { x: number; y: number }[] {
+  const q = questOf(state);
+  const looking = new Set<string>();
+  for (const quest of QUESTS) {
+    const st = q.quests[quest.id];
+    const step = st && quest.steps[st.step];
+    if (step?.do === 'solve' && step.id && !q.flags.includes(`solved:${step.id}`)) looking.add(step.id);
+  }
+  return map.things.filter((t) => t.kind === 'puzzle' && t.puzzle && looking.has(t.puzzle) && !q.flags.includes(podFlag(t.puzzle, t.id))).map((t) => ({ x: t.x, y: t.y }));
+}
+
 export function questMarks(state: WorldState, map: GameMap): Set<string> {
   const q = questOf(state);
   const out = new Set<string>();

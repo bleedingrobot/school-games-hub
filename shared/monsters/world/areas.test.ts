@@ -9,7 +9,8 @@ import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
-import { questMarks } from './questWorld';
+import { areaHints, podTwinkles, questMarks, questTalk, recordEvent } from './questWorld';
+import { nextStep } from '../quests/nextStep';
 import { fastTravel, worldPlaces } from './worldMap';
 import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
@@ -102,12 +103,58 @@ describe('the six areas, in order', () => {
     const fresh = newWorld(opts, team(), 1);
     expect([...questMarks(fresh, WORLD_MAPS['kauri-bush'])]).toEqual(['kauri-bush:Hermit']);
     expect([...questMarks({ ...fresh, quest: { flags: [], bits: {}, quests: { kauri: { step: 0, n: 0 } }, eggs: [] } }, WORLD_MAPS['kauri-bush'])]).toEqual([]);
+    // The seed pods have nothing drawn on them, so the Hermit and the welcome sign say where to look.
+    const hermit = WORLD_MAPS['kauri-bush'].things.find((t) => t.id === 'kauri-bush:Hermit')!;
+    const asked = questTalk(fresh, hermit, opts)!;
+    expect(asked.pages.join(' ')).toMatch(/Clue: .*Tama.*pond/);
+    expect(questTalk(asked.state, hermit, opts)?.pages.join(' ') ?? '').toMatch(/Clue: /);
+    expect(areaHints(asked.state, WORLD_MAPS['kauri-bush'], WORLD_MAPS, opts).join(' ')).toMatch(/found 0 of 3\. One is in a tree near the old kauri/);
+    // The pod trees twinkle only while you're looking, and each stops once it's found.
+    const bush = WORLD_MAPS['kauri-bush'];
+    expect(podTwinkles(fresh, bush)).toEqual([]);
+    expect(podTwinkles(asked.state, bush)).toHaveLength(3);
+    const pod = bush.things.find((t) => t.kind === 'puzzle')!;
+    const found = interact({ ...asked.state, map: 'kauri-bush', x: pod.x, y: pod.y + 1, facing: 'up' }, opts).state;
+    expect(podTwinkles(found, bush)).toHaveLength(2);
     // The world map: 10 places; a new player has the town and Kauri Bush open, and the bonus areas are secret.
     const places = worldPlaces(fresh, WORLD_MAPS);
     expect(places.map((p) => p.open)).toEqual([true, true, false, false, false, false, false, false, false, false]);
     expect(places.filter((p) => p.bonus).map((p) => p.name)).toEqual(['A secret place', 'A secret place', 'A secret place']);
     expect(places[1].pins.map((p) => p.text)).toContain('Hermit needs your help');
     expect(places[0].pins.map((p) => p.icon)).toEqual(expect.arrayContaining(['❤️', '🔧', '📋']));
+  });
+
+  it('the Hermit’s quest in the world, one part at a time: pods, hand in, catch, hand in', () => {
+    const bush = WORLD_MAPS['kauri-bush'];
+    const hermit = bush.things.find((t) => t.id === 'kauri-bush:Hermit')!;
+    const next = (w: WorldState) => nextStep(w.quest!, { badges: w.badges, playDays: 0 }).text;
+    let w = at('kauri-bush', 'entrance');
+    w = questTalk(w, hermit, opts)!.state;
+    expect(next(w)).toBe('Find the 3 seed pods hidden in Kauri Bush');
+    // Search each real pod tree, standing below it and facing up, as a pupil does.
+    const pages: string[][] = [];
+    for (const pod of bush.things.filter((t) => t.kind === 'puzzle')) {
+      const out = interact({ ...w, x: pod.x, y: pod.y + 1, facing: 'up' }, opts);
+      w = out.state;
+      pages.push(out.talk?.pages ?? []);
+    }
+    expect(pages[2].join(' ')).toMatch(/last seed pod/);
+    expect(w.quest!.quests.kauri).toEqual({ step: 0, n: 1, ready: true });
+    expect(next(w)).toBe('Part done! Go back to the Hermit in Kauri Bush.');
+    expect(areaHints(w, bush, WORLD_MAPS, opts)[0]).toMatch(/^Your quest here: Go back to the Hermit in Kauri Bush./);
+    expect([...questMarks(w, bush)]).toEqual(['kauri-bush:Hermit']);
+    // A Leaf monster caught before handing in doesn't count yet.
+    expect(recordEvent(w, { kind: 'caught', map: 'kauri-bush', area: 1, species: 'digibud-1' }, opts).state.quest!.quests.kauri.step).toBe(0);
+    const handIn = questTalk(w, hermit, opts)!;
+    expect(handIn.pages).toEqual(['Thank you!', 'Next: Catch a Leaf monster for the Hermit’s garden.']);
+    w = handIn.state;
+    expect([...questMarks(w, bush)]).toEqual([]);
+    w = recordEvent(w, { kind: 'caught', map: 'kauri-bush', area: 1, species: 'digibud-1' }, opts).state;
+    expect(next(w)).toBe('Part done! Go back to the Hermit in Kauri Bush.');
+    const done = questTalk(w, hermit, opts)!;
+    expect(done.pages[0]).toBe('You did it! The lost seed pods: all done. Thank you so much!');
+    expect(done.state.quest!.flags).toContain('quest-done:kauri');
+    expect(done.state.quest!.eggs).toHaveLength(1);
   });
 
   it('fast travel: only to open places, free, and you land on a free tile beside the nurse', () => {

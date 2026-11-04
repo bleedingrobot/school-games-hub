@@ -16,11 +16,15 @@ export type PictureType =
   | 'five' // five-frame
   | 'fiveplus' // a full five and a few more in a second colour
   | 'pair' // two colour groups side by side
+  | 'tenfive' // ten-frame with 1 to 5 counters along the top row
   | 'ten' // ten-frame filled along the rows
   | 'tenpair' // ten-frame filled in pairs down the columns
   | 'tenmix'; // ten-frame with the counters in scattered squares
 
-export type StageNumber = 1 | 2 | 3 | 4;
+export type StageNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+/** What a stage asks: count the dots (flash), count the empty squares (gap), or half each (mixed). */
+export type StageActivity = 'flash' | 'gap' | 'mixed';
 
 export interface SubStage {
   id: StageNumber;
@@ -28,20 +32,23 @@ export interface SubStage {
   name: string;
   /** The picture types in this stage. A stage is only finished when every type has been practised. */
   types: readonly PictureType[];
+  /** The numbers the pictures show (dots), or for the gap stage the answers (empty squares). */
   min: number;
   max: number;
   /** How long the picture shows, in milliseconds: at first, then once the stage is going well. */
   flashStartMs: number;
   flashGoodMs: number;
-  /** Does this stage also practise Missing Spots (frames only)? */
-  gaps: boolean;
+  activity: StageActivity;
 }
 
 export const STAGES: readonly SubStage[] = [
-  { id: 1, name: 'A few dots', types: ['line', 'clus', 'angl'], min: 1, max: 3, flashStartMs: 1200, flashGoodMs: 800, gaps: false },
-  { id: 2, name: 'Dice and dots', types: ['dice', 'dicet', 'dots'], min: 4, max: 5, flashStartMs: 1000, flashGoodMs: 1000, gaps: false },
-  { id: 3, name: 'Five-frames', types: ['five', 'fiveplus', 'pair'], min: 3, max: 7, flashStartMs: 1000, flashGoodMs: 600, gaps: true },
-  { id: 4, name: 'Ten-frames', types: ['ten', 'tenpair', 'tenmix'], min: 5, max: 10, flashStartMs: 1000, flashGoodMs: 800, gaps: true },
+  { id: 1, name: 'A few dots', types: ['line', 'clus', 'angl'], min: 1, max: 3, flashStartMs: 1200, flashGoodMs: 800, activity: 'flash' },
+  { id: 2, name: 'Ten-frame to 5', types: ['tenfive'], min: 1, max: 5, flashStartMs: 1200, flashGoodMs: 800, activity: 'flash' },
+  { id: 3, name: 'Dice and dots', types: ['dice', 'dicet', 'dots'], min: 4, max: 5, flashStartMs: 1000, flashGoodMs: 1000, activity: 'flash' },
+  { id: 4, name: 'Five-frames', types: ['five', 'fiveplus', 'pair'], min: 3, max: 7, flashStartMs: 1000, flashGoodMs: 600, activity: 'flash' },
+  { id: 5, name: 'Ten-frame to 10', types: ['ten', 'tenpair'], min: 5, max: 10, flashStartMs: 1000, flashGoodMs: 800, activity: 'flash' },
+  { id: 6, name: 'Empty squares', types: ['five', 'ten', 'tenpair'], min: 1, max: 7, flashStartMs: 1000, flashGoodMs: 800, activity: 'gap' },
+  { id: 7, name: 'Mix it up', types: ['tenmix'], min: 5, max: 10, flashStartMs: 1000, flashGoodMs: 800, activity: 'mixed' },
 ];
 
 export const SUBITISING_CONFIG = {
@@ -70,9 +77,7 @@ export const SUBITISING_CONFIG = {
   /** A session is this many pictures. */
   sessionTrials: 12,
   /** The starting check is this many pictures. */
-  placementTrials: 6,
-  /** In Missing Spots, how often (1 in N) a frame stage gives a gap picture. */
-  gapEvery: 3,
+  placementTrials: 8,
   /** The answers kept in the browser, newest last. */
   keepAnswers: 400,
 } as const;
@@ -82,9 +87,32 @@ export type SubitisingConfig = { [K in keyof typeof SUBITISING_CONFIG]: number }
 
 export const stageOf = (id: StageNumber): SubStage => STAGES[id - 1];
 
-export const STAGE_OF_TYPE: ReadonlyMap<PictureType, StageNumber> = new Map(
-  STAGES.flatMap((s) => s.types.map((t) => [t, s.id] as const)),
+/** Which activity a picture is: counting dots (`sub:` keys) or counting empty squares (`gap:` keys). */
+export type PictureActivity = 'flash' | 'gap';
+
+const FLASH_STAGE_OF_TYPE: ReadonlyMap<PictureType, StageNumber> = new Map(
+  STAGES.filter((s) => s.activity !== 'gap').flatMap((s) => s.types.map((t) => [t, s.id] as const)),
 );
 
-/** How many counters a frame holds (only frame pictures can have Missing Spots). */
-export const FRAME_CAPACITY: Readonly<Partial<Record<PictureType, number>>> = { five: 5, ten: 10, tenpair: 10, tenmix: 10 };
+/** The stage a saved key belongs to: every gap is stage 6 except tenmix (7); dots go by picture type. Undefined if the type has none. */
+export function stageOfKey(activity: PictureActivity, type: PictureType): StageNumber | undefined {
+  if (activity === 'gap') return type === 'tenmix' ? 7 : 6;
+  return FLASH_STAGE_OF_TYPE.get(type);
+}
+
+/** Does this stage give pictures of this activity? */
+export const stageHas = (stage: SubStage, activity: PictureActivity): boolean => stage.activity === 'mixed' || stage.activity === activity;
+
+/** A type practised in one activity. A stage is finished when each of its slots has been seen enough. */
+export const slotOf = (activity: PictureActivity, type: PictureType): string => `${activity}:${type}`;
+
+/** The slots of a stage: each type in each activity the stage gives. */
+export function slotsOf(stage: SubStage): string[] {
+  return (['flash', 'gap'] as const).filter((a) => stageHas(stage, a)).flatMap((a) => stage.types.map((t) => slotOf(a, t)));
+}
+
+/** How many counters a frame holds (only frame pictures can have empty squares; tenfive is never used for gaps). */
+export const FRAME_CAPACITY: Readonly<Partial<Record<PictureType, number>>> = { five: 5, tenfive: 10, ten: 10, tenpair: 10, tenmix: 10 };
+
+/** The counters showing in an empty-squares picture (so 5 - n or 10 - n squares are empty). */
+export const GAP_FILLED: Readonly<Partial<Record<PictureType, readonly [number, number]>>> = { five: [1, 4], ten: [3, 9], tenpair: [3, 9], tenmix: [3, 9] };

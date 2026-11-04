@@ -23,6 +23,7 @@ import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
+import { SceneThumb } from '../subitising/Scene';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -288,7 +289,7 @@ export function Dashboard() {
                     </Link>
                     <Link to="/training?quick=1" className="link-tile">
                       <span className="link-tile__emoji" aria-hidden="true">
-                        👀
+                        <SceneThumb />
                       </span>
                       <span>
                         <strong>Quick looks</strong>

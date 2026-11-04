@@ -4,7 +4,3 @@
 
 # Dragon Maths one season for the school: waits for James's read-only check (docs/TEACHER-VIEW-PLAN.md).
 20261028000400
-
-
-# Star Trader: the Star Forge (docs/TRADER-SYSTEM-PLAN.md). Not ready to go live; take this out in the PR that switches it on.
-20261103000300

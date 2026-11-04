@@ -195,7 +195,7 @@ export function checkItem(raw: unknown, now: number): Checked<CheckedItem> {
       const ok =
         typeof packed === 'object' && packed !== null &&
         typeof packed.placed === 'boolean' && typeof packed.guided === 'boolean' &&
-        isInt(packed.startStage, 1, 4) && isInt(packed.finished, 0, 4);
+        isInt(packed.startStage, 1, 7) && isInt(packed.finished, 0, 7);
       if (!ok) return { ok: false, problem: 'quick' };
       quick = { placed: packed.placed as boolean, startStage: packed.startStage as QuickSettings['startStage'], finished: packed.finished as QuickSettings['finished'], guided: packed.guided as boolean };
     }

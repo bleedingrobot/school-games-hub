@@ -24,10 +24,14 @@ export interface Egg {
   warmed?: true;
 }
 
-/** How far through a story quest: which step (0 = first), and the count towards it. */
+/**
+ * How far through a story quest: which step (0 = first), and the count towards it. `ready`: the step
+ * is done but not handed in yet; the next part starts when you go back to the quest giver.
+ */
 export interface QuestStepState {
   step: number;
   n: number;
+  ready?: true;
 }
 
 /** Today's notice-board jobs: the NZ day they are for, and the count towards each. A job is done when its count is reached. */
@@ -94,6 +98,8 @@ export interface Quest {
   title: string;
   /** The person who gives it (a thing id on a map) and the area it belongs to. */
   giver: string;
+  /** What to do once a part is done: "Go back to the Hermit in Kauri Bush". */
+  back: string;
   area: number;
   /** Needs this flag first (the finale needs every giant woken, for example). */
   needs?: string[];

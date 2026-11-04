@@ -14,7 +14,7 @@ import type { Bits, Egg, ProgressEvent, Quest, QuestSave, Reward, Task } from '.
 
 export const QUESTS: readonly Quest[] = [
   {
-    id: 'kauri', title: 'The lost seed pods', giver: 'kauri-bush:Hermit', area: 1,
+    id: 'kauri', title: 'The lost seed pods', giver: 'kauri-bush:Hermit', back: 'Go back to the Hermit in Kauri Bush', area: 1,
     steps: [
       { do: 'solve', id: 'kauri-seeds', hint: 'Find the 3 seed pods hidden in Kauri Bush' },
       { do: 'catch', type: 'leaf', hint: 'Catch a Leaf monster for the Hermit’s garden' },
@@ -23,7 +23,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { egg: 'leafy', items: { ball: 5 } },
   },
   {
-    id: 'shell', title: 'Clear the rock pools', giver: 'shell-beach:Hine', area: 2,
+    id: 'shell', title: 'Clear the rock pools', giver: 'shell-beach:Hine', back: 'Go back to Hine on Shell Beach', area: 2,
     steps: [
       { do: 'win', area: 2, count: 3, hint: 'Win {left} more battles on Shell Beach' },
       { do: 'solve', id: 'shell-stones', hint: 'Cross the stepping stones in the rock pool' },
@@ -32,7 +32,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { egg: 'water', flag: 'part:lifeguard' },
   },
   {
-    id: 'fire', title: 'The miner’s lanterns', giver: 'fire-mountain:Old Kui', area: 3,
+    id: 'fire', title: 'The miner’s lanterns', giver: 'fire-mountain:Old Kui', back: 'Go back to Old Kui on Fire Mountain', area: 3,
     steps: [
       { do: 'bring', person: 'fire-mountain:Old Kui', type: 'fire', count: 5, hint: 'Bring 5 embers to Old Kui on Fire Mountain' },
       { do: 'solve', id: 'fire-lanterns', hint: 'Light the lanterns in the lava tube in the right order' },
@@ -41,7 +41,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { flag: 'part:miner', items: { 'super-potion': 2 } },
   },
   {
-    id: 'snow', title: 'The warden’s hut', giver: 'snowy-peaks:Ranger Fern', area: 4,
+    id: 'snow', title: 'The warden’s hut', giver: 'snowy-peaks:Ranger Fern', back: 'Go back to Ranger Fern on Snowy Peaks', area: 4,
     steps: [
       { do: 'solve', id: 'snow-slide', hint: 'Find the signpost by the snowy path and slide across the ice to the chest' },
       { do: 'catch', type: 'ice', hint: 'Catch an Ice monster on Snowy Peaks' },
@@ -50,7 +50,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { egg: 'cold' },
   },
   {
-    id: 'caves', title: 'The lost torch', giver: 'glowworm-caves:Glow Gran', area: 5,
+    id: 'caves', title: 'The lost torch', giver: 'glowworm-caves:Glow Gran', back: 'Go back to Glow Gran in the Glowworm Caves', area: 5,
     steps: [
       { do: 'solve', id: 'cave-count', hint: 'Count the glowworm groups and tell the stone door' },
       { do: 'visit', map: 'glowworm-caves', spot: 'torch', hint: 'Find the lost torch deep in the caves' },
@@ -59,7 +59,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { flag: 'part:cave-guide', items: { 'great-ball': 2 } },
   },
   {
-    id: 'harbour', title: 'The busy wharf', giver: 'harbour-city:Captain Tui', area: 6,
+    id: 'harbour', title: 'The busy wharf', giver: 'harbour-city:Captain Tui', back: 'Go back to Captain Tui in Harbour City', area: 6,
     steps: [
       { do: 'solve', id: 'wharf-crates', hint: 'Push the crates off the wharf path' },
       { do: 'win', area: 6, trainer: true, count: 3, hint: 'Beat {left} more trainers in Harbour City' },
@@ -68,7 +68,7 @@ export const QUESTS: readonly Quest[] = [
     reward: { egg: 'stony' },
   },
   {
-    id: 'finale', title: 'The Teacher’s big question', giver: 'harbour-town:Teacher', area: 0, badges: 6,
+    id: 'finale', title: 'The Teacher’s big question', giver: 'harbour-town:Teacher', back: 'Go back to the Teacher in Harbour Town', area: 0, badges: 6,
     needs: ['woke:snorumble', 'woke:drowsea', 'woke:yawnberg'],
     steps: [
       { do: 'talk', person: 'harbour-town:Teacher', hint: 'Hatch an egg of each kind, then see the Teacher' },
@@ -79,6 +79,20 @@ export const QUESTS: readonly Quest[] = [
 
 const QUEST_BY_ID = new Map(QUESTS.map((q) => [q.id, q]));
 export const questById = (id: string) => QUEST_BY_ID.get(id);
+
+/**
+ * Quests are done one part at a time: a part done away from the quest giver (pods, a catch, battles,
+ * a puzzle, a place) waits to be handed in, and the next part starts when you go back and talk to
+ * them. Parts done at a person (bring, show, talk) are handed in as they are done.
+ */
+export const handedInByTalking = (t: Task) => !!t.person;
+
+/** The line for where a started quest is up to: its step's hint, or "go back" once the step waits to be handed in. */
+export function stepHint(quest: Quest, st: { step: number; n: number; ready?: true }): string {
+  if (st.ready) return quest.back;
+  const task = quest.steps[st.step];
+  return task.hint.replace('{left}', String((task.count ?? 1) - st.n));
+}
 
 /** The finale's talk step only counts once an egg of every kind has hatched. */
 export const FINALE_NEEDS = ['hatched:leafy', 'hatched:water', 'hatched:warm', 'hatched:cold', 'hatched:glowing', 'hatched:stony'];
@@ -177,14 +191,10 @@ export function record(prev: QuestSave, ev: ProgressEvent, day?: string, ctx?: J
     if (!quest) continue;
     const st = q.quests[id];
     const task = quest.steps[st.step];
-    if (!task || task.do === 'talk' || !counts(task, ev)) continue;
+    if (!task || st.ready || handedInByTalking(task) || !counts(task, ev)) continue;
     const n = st.n + 1;
-    if (n >= countOf(task)) {
-      if (advance(q, id)) {
-        out.finished.push(id);
-        give(q, quest.reward, out, `quest:${id}`);
-      }
-    } else q.quests = { ...q.quests, [id]: { step: st.step, n } };
+    // A part done: it waits to be handed in to the quest giver (see talkTo).
+    q.quests = { ...q.quests, [id]: n >= countOf(task) ? { step: st.step, n, ready: true } : { step: st.step, n } };
   }
   if (day && ctx) jobsRecord(q, ev, day, ctx, out);
   return { q, given: out };
@@ -203,19 +213,34 @@ export function talkTo(prev: QuestSave, person: string, team: readonly Monster[]
       if (quest.giver === person && canStart(q, quest, badges)) return { q: startQuest(q, quest.id), given: out, said: 'started', quest };
       continue;
     }
-    const task = quest.steps[st.step];
-    if (task.person !== person) continue;
-    let ok = false;
-    if (task.do === 'talk') ok = quest.id !== 'finale' || FINALE_NEEDS.every((f) => q.flags.includes(f));
-    else if (task.do === 'bring') {
-      const need: Bits = { [task.type as TypeId]: countOf(task) };
-      if (hasBits(q.bits, need)) {
-        q = { ...q, bits: takeBits(q.bits, need) };
-        ok = true;
-      }
-    } else if (task.do === 'show') ok = team.some((m) => speciesOf(m.species).type === task.type && m.level >= (task.level ?? 1));
-    if (!ok) return { q, given: out, said: 'need', quest };
-    const done = advance(q, quest.id);
+    const handIn = st.ready && quest.giver === person;
+    if (!handIn && quest.steps[st.step].person !== person) continue;
+    // Hand in a finished part, or do a part that happens at this person; then carry on through any
+    // parts that also happen here (so "catch a monster, then go back to the Hermit" is one talk).
+    let moved = false;
+    let done = false;
+    if (handIn) {
+      done = advance(q, quest.id);
+      moved = true;
+    }
+    while (!done) {
+      const now = q.quests[quest.id];
+      const task = quest.steps[now.step];
+      if (now.ready || task.person !== person) break;
+      let ok = false;
+      if (task.do === 'talk') ok = quest.id !== 'finale' || FINALE_NEEDS.every((f) => q.flags.includes(f));
+      else if (task.do === 'bring') {
+        const need: Bits = { [task.type as TypeId]: countOf(task) };
+        if (hasBits(q.bits, need)) {
+          q = { ...q, bits: takeBits(q.bits, need) };
+          ok = true;
+        }
+      } else if (task.do === 'show') ok = team.some((m) => speciesOf(m.species).type === task.type && m.level >= (task.level ?? 1));
+      if (!ok) break;
+      done = advance(q, quest.id);
+      moved = true;
+    }
+    if (!moved) return { q, given: out, said: 'need', quest };
     if (done) {
       out.finished.push(quest.id);
       give(q, quest.reward, out, `quest:${quest.id}`);

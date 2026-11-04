@@ -286,13 +286,13 @@ describe('Quick looks answers in the same queue', () => {
   });
 
   it('keep the stage reached with the student, and never let it fall behind the answers', () => {
-    const data = { answers: [], student: { typing: {}, autoSubmit: true, sessionsDone: 1, quick: { placed: true, startStage: 1, finished: 2, guided: false } } } as const;
-    expect(quickFrom(ME, data as never).settings).toEqual({ placed: true, startStage: 1, finished: 2, guided: false });
-    // Eight good answers in stage 3 on top of two finished stages finish it, even if the saved number is behind.
+    const data = { answers: [], student: { typing: {}, autoSubmit: true, sessionsDone: 1, quick: { placed: true, startStage: 1, finished: 3, guided: false } } } as const;
+    expect(quickFrom(ME, data as never).settings).toEqual({ placed: true, startStage: 1, finished: 3, guided: false });
+    // Eight good answers in stage 4 on top of three finished stages finish it, even if the saved number is behind.
     const types = ['five', 'fiveplus', 'pair'];
     const at = 1_792_000_000_000;
     const answers = Array.from({ length: 8 }, (_, i) => ({ key: `sub:${types[i % 3]}-${types[i % 3] === 'fiveplus' ? 6 : 4}`, correct: true, ms: 0, typingMs: 0, day: '2026-10-19', at: at + i }));
-    expect(quickFrom(ME, { ...data, answers } as never).settings?.finished).toBe(3);
+    expect(quickFrom(ME, { ...data, answers } as never).settings?.finished).toBe(4);
   });
 
   it('send the settings to the server with the student, and open with them from the typing column', async () => {
@@ -303,7 +303,7 @@ describe('Quick looks answers in the same queue', () => {
     expect(sentItems(0)[0]).toMatchObject({ type: 'student', quick: settings, typing: { 2: [900] } });
 
     rpc.mockResolvedValueOnce({
-      data: { answers: [], student: { typing: { 2: [900], q: { p: 1, s: 2, f: 1, g: 1 } }, autoSubmit: true, sessionsDone: 1 } },
+      data: { answers: [], student: { typing: { 2: [900], q: { p: 1, s: 2, f: 1, g: 1, v: 2 } }, autoSubmit: true, sessionsDone: 1 } },
       error: null,
     });
     const loaded = await loadTraining(ME);

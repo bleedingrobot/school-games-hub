@@ -1,0 +1,346 @@
+[
+ {
+  "slug": "get-ready",
+  "text": "Get ready"
+ },
+ {
+  "slug": "take-your-time-can-you-see-smaller-groups",
+  "text": "Take your time. Can you see smaller groups?"
+ },
+ {
+  "slug": "how-many-empty-squares",
+  "text": "How many empty squares?"
+ },
+ {
+  "slug": "how-many-can-you-see",
+  "text": "How many can you see?"
+ },
+ {
+  "slug": "how-many-did-you-see",
+  "text": "How many did you see?"
+ },
+ {
+  "slug": "yes-1",
+  "text": "Yes! 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-1",
+  "text": "Let me show you again. It was 1."
+ },
+ {
+  "slug": "yes-2",
+  "text": "Yes! 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-2",
+  "text": "Let me show you again. It was 2."
+ },
+ {
+  "slug": "yes-2-1-and-1",
+  "text": "Yes! 2: 1 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-2-1-and-1",
+  "text": "Let me show you again. It was 2: 1 and 1."
+ },
+ {
+  "slug": "yes-3",
+  "text": "Yes! 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-3",
+  "text": "Let me show you again. It was 3."
+ },
+ {
+  "slug": "yes-3-2-and-1",
+  "text": "Yes! 3: 2 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-3-2-and-1",
+  "text": "Let me show you again. It was 3: 2 and 1."
+ },
+ {
+  "slug": "yes-4",
+  "text": "Yes! 4."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-4",
+  "text": "Let me show you again. It was 4."
+ },
+ {
+  "slug": "yes-4-3-and-1",
+  "text": "Yes! 4: 3 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-4-3-and-1",
+  "text": "Let me show you again. It was 4: 3 and 1."
+ },
+ {
+  "slug": "yes-4-2-and-2",
+  "text": "Yes! 4: 2 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-4-2-and-2",
+  "text": "Let me show you again. It was 4: 2 and 2."
+ },
+ {
+  "slug": "yes-5",
+  "text": "Yes! 5."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-5",
+  "text": "Let me show you again. It was 5."
+ },
+ {
+  "slug": "yes-5-4-and-1",
+  "text": "Yes! 5: 4 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-5-4-and-1",
+  "text": "Let me show you again. It was 5: 4 and 1."
+ },
+ {
+  "slug": "yes-5-3-and-2",
+  "text": "Yes! 5: 3 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-5-3-and-2",
+  "text": "Let me show you again. It was 5: 3 and 2."
+ },
+ {
+  "slug": "yes-6",
+  "text": "Yes! 6."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-6",
+  "text": "Let me show you again. It was 6."
+ },
+ {
+  "slug": "yes-6-5-and-1",
+  "text": "Yes! 6: 5 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-6-5-and-1",
+  "text": "Let me show you again. It was 6: 5 and 1."
+ },
+ {
+  "slug": "yes-6-4-and-2",
+  "text": "Yes! 6: 4 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-6-4-and-2",
+  "text": "Let me show you again. It was 6: 4 and 2."
+ },
+ {
+  "slug": "yes-6-3-and-3",
+  "text": "Yes! 6: 3 and 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-6-3-and-3",
+  "text": "Let me show you again. It was 6: 3 and 3."
+ },
+ {
+  "slug": "yes-7",
+  "text": "Yes! 7."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-7",
+  "text": "Let me show you again. It was 7."
+ },
+ {
+  "slug": "yes-7-6-and-1",
+  "text": "Yes! 7: 6 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-7-6-and-1",
+  "text": "Let me show you again. It was 7: 6 and 1."
+ },
+ {
+  "slug": "yes-7-5-and-2",
+  "text": "Yes! 7: 5 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-7-5-and-2",
+  "text": "Let me show you again. It was 7: 5 and 2."
+ },
+ {
+  "slug": "yes-7-4-and-3",
+  "text": "Yes! 7: 4 and 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-7-4-and-3",
+  "text": "Let me show you again. It was 7: 4 and 3."
+ },
+ {
+  "slug": "yes-8",
+  "text": "Yes! 8."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-8",
+  "text": "Let me show you again. It was 8."
+ },
+ {
+  "slug": "yes-8-7-and-1",
+  "text": "Yes! 8: 7 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-8-7-and-1",
+  "text": "Let me show you again. It was 8: 7 and 1."
+ },
+ {
+  "slug": "yes-8-6-and-2",
+  "text": "Yes! 8: 6 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-8-6-and-2",
+  "text": "Let me show you again. It was 8: 6 and 2."
+ },
+ {
+  "slug": "yes-8-5-and-3",
+  "text": "Yes! 8: 5 and 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-8-5-and-3",
+  "text": "Let me show you again. It was 8: 5 and 3."
+ },
+ {
+  "slug": "yes-8-4-and-4",
+  "text": "Yes! 8: 4 and 4."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-8-4-and-4",
+  "text": "Let me show you again. It was 8: 4 and 4."
+ },
+ {
+  "slug": "yes-9",
+  "text": "Yes! 9."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-9",
+  "text": "Let me show you again. It was 9."
+ },
+ {
+  "slug": "yes-9-8-and-1",
+  "text": "Yes! 9: 8 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-9-8-and-1",
+  "text": "Let me show you again. It was 9: 8 and 1."
+ },
+ {
+  "slug": "yes-9-7-and-2",
+  "text": "Yes! 9: 7 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-9-7-and-2",
+  "text": "Let me show you again. It was 9: 7 and 2."
+ },
+ {
+  "slug": "yes-9-6-and-3",
+  "text": "Yes! 9: 6 and 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-9-6-and-3",
+  "text": "Let me show you again. It was 9: 6 and 3."
+ },
+ {
+  "slug": "yes-9-5-and-4",
+  "text": "Yes! 9: 5 and 4."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-9-5-and-4",
+  "text": "Let me show you again. It was 9: 5 and 4."
+ },
+ {
+  "slug": "yes-10",
+  "text": "Yes! 10."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10",
+  "text": "Let me show you again. It was 10."
+ },
+ {
+  "slug": "yes-10-9-and-1",
+  "text": "Yes! 10: 9 and 1."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10-9-and-1",
+  "text": "Let me show you again. It was 10: 9 and 1."
+ },
+ {
+  "slug": "yes-10-8-and-2",
+  "text": "Yes! 10: 8 and 2."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10-8-and-2",
+  "text": "Let me show you again. It was 10: 8 and 2."
+ },
+ {
+  "slug": "yes-10-7-and-3",
+  "text": "Yes! 10: 7 and 3."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10-7-and-3",
+  "text": "Let me show you again. It was 10: 7 and 3."
+ },
+ {
+  "slug": "yes-10-6-and-4",
+  "text": "Yes! 10: 6 and 4."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10-6-and-4",
+  "text": "Let me show you again. It was 10: 6 and 4."
+ },
+ {
+  "slug": "yes-10-5-and-5",
+  "text": "Yes! 10: 5 and 5."
+ },
+ {
+  "slug": "let-me-show-you-again-it-was-10-5-and-5",
+  "text": "Let me show you again. It was 10: 5 and 5."
+ },
+ {
+  "slug": "1-counter-and-4-empty-squares-make-5",
+  "text": "1 counter and 4 empty squares make 5."
+ },
+ {
+  "slug": "2-counters-and-3-empty-squares-make-5",
+  "text": "2 counters and 3 empty squares make 5."
+ },
+ {
+  "slug": "3-counters-and-2-empty-squares-make-5",
+  "text": "3 counters and 2 empty squares make 5."
+ },
+ {
+  "slug": "4-counters-and-1-empty-square-make-5",
+  "text": "4 counters and 1 empty square make 5."
+ },
+ {
+  "slug": "3-counters-and-7-empty-squares-make-10",
+  "text": "3 counters and 7 empty squares make 10."
+ },
+ {
+  "slug": "4-counters-and-6-empty-squares-make-10",
+  "text": "4 counters and 6 empty squares make 10."
+ },
+ {
+  "slug": "5-counters-and-5-empty-squares-make-10",
+  "text": "5 counters and 5 empty squares make 10."
+ },
+ {
+  "slug": "6-counters-and-4-empty-squares-make-10",
+  "text": "6 counters and 4 empty squares make 10."
+ },
+ {
+  "slug": "7-counters-and-3-empty-squares-make-10",
+  "text": "7 counters and 3 empty squares make 10."
+ },
+ {
+  "slug": "8-counters-and-2-empty-squares-make-10",
+  "text": "8 counters and 2 empty squares make 10."
+ },
+ {
+  "slug": "9-counters-and-1-empty-square-make-10",
+  "text": "9 counters and 1 empty square make 10."
+ }
+]

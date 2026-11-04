@@ -46,11 +46,12 @@ export function QuestLogPage({ world }: { world: WorldState }) {
             <h3>{quest.title}</h3>
             <ol className="mq-steps">
               {quest.steps.map((step, i) => (
-                <li key={i} className={i < st.step ? 'is-done' : i === st.step ? 'is-now' : ''}>
-                  {step.hint.replace('{left}', String((step.count ?? 1) - (i === st.step ? st.n : 0)))}
-                  {i < st.step && <span className="sr-only"> (done)</span>}
+                <li key={i} className={i < st.step || (i === st.step && st.ready) ? 'is-done' : i === st.step ? 'is-now' : ''}>
+                  {step.hint.replace('{left}', String(Math.max(0, (step.count ?? 1) - (i === st.step ? st.n : 0))))}
+                  {(i < st.step || (i === st.step && st.ready)) && <span className="sr-only"> (done)</span>}
                 </li>
               ))}
+              {st.ready && <li className="is-now">{quest.back}</li>}
             </ol>
           </section>
         );

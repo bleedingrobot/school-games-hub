@@ -1,0 +1,282 @@
+[
+ {
+  "slug": "who-do-you-want-to-be",
+  "text": "Who do you want to be?"
+ },
+ {
+  "slug": "now-tap-the-leaf-the-hand-points-to",
+  "text": "Now tap the leaf the hand points to."
+ },
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
+  "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 10 to help."
+ },
+ {
+  "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 10 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-kiwi-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10",
+  "text": "Oh no! Kiwi is stuck up a new beanstalk. This time, make pairs that add to 10!"
+ },
+ {
+  "slug": "oh-no-kiwi-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Kiwi is stuck up a new beanstalk. This time, make pairs that add to 10! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-kiwi-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Kiwi can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "tap-two-leaves-that-make-10",
+  "text": "Tap two leaves that make 10."
+ },
+ {
+  "slug": "tap-two-leaves-that-make-10-start-with-the-leaf-the-hand-points-to",
+  "text": "Tap two leaves that make 10. Start with the leaf the hand points to."
+ },
+ {
+  "slug": "1-and-9-make-10",
+  "text": "1 and 9 make 10!"
+ },
+ {
+  "slug": "2-and-8-make-10",
+  "text": "2 and 8 make 10!"
+ },
+ {
+  "slug": "3-and-7-make-10",
+  "text": "3 and 7 make 10!"
+ },
+ {
+  "slug": "4-and-6-make-10",
+  "text": "4 and 6 make 10!"
+ },
+ {
+  "slug": "5-and-5-make-10",
+  "text": "5 and 5 make 10!"
+ },
+ {
+  "slug": "6-and-4-make-10",
+  "text": "6 and 4 make 10!"
+ },
+ {
+  "slug": "7-and-3-make-10",
+  "text": "7 and 3 make 10!"
+ },
+ {
+  "slug": "8-and-2-make-10",
+  "text": "8 and 2 make 10!"
+ },
+ {
+  "slug": "9-and-1-make-10",
+  "text": "9 and 1 make 10!"
+ },
+ {
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 100 to help."
+ },
+ {
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 100 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 100!"
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-tui-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Tūī can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "tap-two-leaves-that-make-100",
+  "text": "Tap two leaves that make 100."
+ },
+ {
+  "slug": "tap-two-leaves-that-make-100-start-with-the-leaf-the-hand-points-to",
+  "text": "Tap two leaves that make 100. Start with the leaf the hand points to."
+ },
+ {
+  "slug": "10-and-90-make-100",
+  "text": "10 and 90 make 100!"
+ },
+ {
+  "slug": "20-and-80-make-100",
+  "text": "20 and 80 make 100!"
+ },
+ {
+  "slug": "30-and-70-make-100",
+  "text": "30 and 70 make 100!"
+ },
+ {
+  "slug": "40-and-60-make-100",
+  "text": "40 and 60 make 100!"
+ },
+ {
+  "slug": "50-and-50-make-100",
+  "text": "50 and 50 make 100!"
+ },
+ {
+  "slug": "60-and-40-make-100",
+  "text": "60 and 40 make 100!"
+ },
+ {
+  "slug": "70-and-30-make-100",
+  "text": "70 and 30 make 100!"
+ },
+ {
+  "slug": "80-and-20-make-100",
+  "text": "80 and 20 make 100!"
+ },
+ {
+  "slug": "90-and-10-make-100",
+  "text": "90 and 10 make 100!"
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 1000 to help."
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 1000 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 1000!"
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-kereru-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Kererū can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "tap-two-leaves-that-make-1000",
+  "text": "Tap two leaves that make 1000."
+ },
+ {
+  "slug": "tap-two-leaves-that-make-1000-start-with-the-leaf-the-hand-points-to",
+  "text": "Tap two leaves that make 1000. Start with the leaf the hand points to."
+ },
+ {
+  "slug": "100-and-900-make-1000",
+  "text": "100 and 900 make 1000!"
+ },
+ {
+  "slug": "200-and-800-make-1000",
+  "text": "200 and 800 make 1000!"
+ },
+ {
+  "slug": "300-and-700-make-1000",
+  "text": "300 and 700 make 1000!"
+ },
+ {
+  "slug": "400-and-600-make-1000",
+  "text": "400 and 600 make 1000!"
+ },
+ {
+  "slug": "500-and-500-make-1000",
+  "text": "500 and 500 make 1000!"
+ },
+ {
+  "slug": "600-and-400-make-1000",
+  "text": "600 and 400 make 1000!"
+ },
+ {
+  "slug": "700-and-300-make-1000",
+  "text": "700 and 300 make 1000!"
+ },
+ {
+  "slug": "800-and-200-make-1000",
+  "text": "800 and 200 make 1000!"
+ },
+ {
+  "slug": "900-and-100-make-1000",
+  "text": "900 and 100 make 1000!"
+ },
+ {
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 10 to help."
+ },
+ {
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 10 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 10!"
+ },
+ {
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 10! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-weta-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Wētā can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "ruru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
+  "text": "Ruru is stuck up the beanstalk! Make pairs that add to 100 to help."
+ },
+ {
+  "slug": "ruru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Ruru is stuck up the beanstalk! Make pairs that add to 100 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-ruru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100",
+  "text": "Oh no! Ruru is stuck up a new beanstalk. This time, make pairs that add to 100!"
+ },
+ {
+  "slug": "oh-no-ruru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Ruru is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-ruru-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Ruru can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "takahe-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
+  "text": "Takahē is stuck up the beanstalk! Make pairs that add to 1000 to help."
+ },
+ {
+  "slug": "takahe-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Takahē is stuck up the beanstalk! Make pairs that add to 1000 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-takahe-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000",
+  "text": "Oh no! Takahē is stuck up a new beanstalk. This time, make pairs that add to 1000!"
+ },
+ {
+  "slug": "oh-no-takahe-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Takahē is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-takahe-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Takahē can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "well-done-a-leaf-turned-bronze",
+  "text": "Well done! A leaf turned bronze!"
+ },
+ {
+  "slug": "well-done-a-leaf-turned-silver",
+  "text": "Well done! A leaf turned silver!"
+ },
+ {
+  "slug": "well-done-a-leaf-turned-gold",
+  "text": "Well done! A leaf turned gold!"
+ }
+]
