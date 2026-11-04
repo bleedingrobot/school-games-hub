@@ -58,6 +58,41 @@ const DESIGNS: { name: string; design: SystemDesign; plans?: boolean }[] = [
       ],
     },
   },
+  // The 14 planet maps repainted on 4 Nov, no clouds so the ground shows.
+  {
+    name: 'Repainted A',
+    design: {
+      v: 1, name: [12, 30], background: 1, beltAfter: 7, comets: null, belt: null,
+      sun: { kind: 'yellow', name: [8, 3], ...B },
+      tech: [],
+      planets: [
+        planet(1, 'donut', { size: 2, surface: 1, clouds: 'none' }),
+        planet(2, 'ringworld', { size: 1, surface: 3 }),
+        planet(3, 'eyeball', { size: 2, surface: 0, clouds: 'none' }),
+        planet(4, 'shattered', { size: 2, surface: 1, clouds: 'none' }),
+        planet(5, 'ocean', { size: 2, surface: 3, clouds: 'none' }),
+        planet(6, 'jungle', { size: 2, surface: 0, clouds: 'none' }),
+        planet(7, 'ice', { size: 2, surface: 2, clouds: 'none' }),
+      ],
+    },
+  },
+  {
+    name: 'Repainted B',
+    design: {
+      v: 1, name: [13, 31], background: 3, beltAfter: 7, comets: null, belt: null,
+      sun: { kind: 'white', name: [9, 4], ...B },
+      tech: [],
+      planets: [
+        planet(1, 'donut', { size: 2, surface: 3, clouds: 'none' }),
+        planet(2, 'ringworld', { size: 1, surface: 1 }),
+        planet(3, 'eyeball', { size: 2, surface: 1, clouds: 'none' }),
+        planet(4, 'eyeball', { size: 2, surface: 2, clouds: 'none' }),
+        planet(5, 'eyeball', { size: 2, surface: 3, clouds: 'none' }),
+        planet(6, 'shattered', { size: 2, surface: 0, clouds: 'none' }),
+        planet(7, 'shattered', { size: 2, surface: 3, clouds: 'none' }),
+      ],
+    },
+  },
   {
     name: 'Plans (holograms)',
     plans: true,

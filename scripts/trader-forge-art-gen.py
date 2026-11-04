@@ -140,7 +140,8 @@ PLANET_LOOKS: dict[str, list[str]] = {
         'a deep blue ocean planet, water from edge to edge with swirling white foam streaks and a few tiny scattered island chains',
         'a bright turquoise shallow-sea planet with ring-shaped coral atolls, pale sandbanks and darker deep channels',
         'a dark teal ocean planet with bright swirling current patterns and a handful of green islands',
-        'close-up of rich blue open sea with long pale sandbars, scattered tiny green islets and white surf lines, spread evenly from edge to edge',
+        # Repainted again 4 Nov: "long pale sandbars" gave one big island in the middle.
+        'close-up of rich blue open sea with many small pale sandbars, scattered tiny green islets and thin white surf lines, all small and spread evenly from edge to edge, no big island',
     ],
     'lava': [
         'a black volcanic planet like Io, a cracked black crust with branching rivers of bright orange molten lava and glowing lava lakes',
@@ -209,7 +210,8 @@ PLANET_LOOKS: dict[str, list[str]] = {
         # Remade 4 Nov: "ring world" made the model draw Earth's map or a ring, so only the ground is described.
         'an alien landscape of long thin blue lakes and green islands with thin straight stripes of farmland between them, all running left to right in even stripes from edge to edge',
         'the inside surface of a giant ring world of grey-green mountain ranges and forest valleys with glinting rivers, laid out in straight bands',
-        'an alien landscape of golden plains and dark green forests in straight bands running left to right, with neat grids of tiny villages, the stripes running straight from edge to edge',
+        # Repainted again 4 Nov: the bands came out upright; the ring band needs them lying flat.
+        'an alien landscape in long flat horizontal bands, one above the other: golden plains and dark green forests, with neat grids of tiny villages, every band runs straight across from the left edge to the right edge',
     ],
 }
 for kind, looks in PLANET_LOOKS.items():

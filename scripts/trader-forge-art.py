@@ -71,7 +71,7 @@ HD_QUALITY = 70
 # The others use their normal size on 'incredible' too. Change a pick and re-run with --force planets.
 HD_PLANETS = {
     'rocky': (1, 3), 'desert': (0, 2), 'ice': (1, 3), 'ocean': (0, 1), 'lava': (0, 3), 'jungle': (1, 2), 'gas': (2, 3),
-    'icegiant': (1, 2), 'crystal': (0, 3), 'toxic': (0, 2), 'eyeball': (0, 2), 'shattered': (0, 2), 'cube': (1, 2),
+    'icegiant': (1, 2), 'crystal': (0, 3), 'toxic': (0, 2), 'eyeball': (0, 2), 'shattered': (0, 1), 'cube': (1, 2),
     'donut': (0, 2), 'ringworld': (0, 2),
 }
 NORMAL_QUALITY = 88
