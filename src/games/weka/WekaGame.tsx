@@ -4,6 +4,7 @@
  * Picnic Basket, and a new friend comes to a fresh stream. The screens only show what the backend says. Copied from
  * Penguin Pairs.
  */
+import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/weka/play';
 import { DAYS_PER_BASKET, STONES, streamAfter } from '../../../shared/weka/progress';
@@ -159,6 +160,7 @@ function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => vo
       <div className="wk-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="wk-day">{WORDS.dayCount(Math.min(stream.day + 1, DAYS_PER_BASKET))}</p>
+        <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         <p className="wk-chip">{WORDS.level(state.level)}</p>
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play wk-play-button" onClick={onPlay}>

@@ -16,6 +16,8 @@ const upFirst = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export const WORDS = {
   title: 'Weka’s Stepping Stones',
+  /** The home page chip's word: "Today's stone is ready". */
+  part: 'stone',
   wants: (name: string) => `${name} wants to cross the stream! Help ${name} hop to the picnic.`,
   nextFriend: (name: string) => `Now ${name} has a new stream to cross!`,
   level: (level: Level) => LEVEL_WORDS[level],

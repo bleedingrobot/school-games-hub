@@ -231,6 +231,18 @@ insert into public.hub_games (id, switch_column, counts_fn, rules_fn, players_fn
 values ('weka', 'weka_enabled', 'public.weka_counts(uuid)', 'public.weka_point_rules()',
   'public.weka_players_list()', null, 'public.weka_last_played(uuid)', true);
 
+-- The NZ day the pupil last changed a stone, for the home page's "next part" chip (20261105000500_next_part_chips.sql).
+create function public.weka_last_day(who uuid)
+returns date
+language sql
+stable
+set search_path = ''
+as $$
+  select w.last_stone_day from public.weka_progress w where w.player = who
+$$;
+revoke execute on function public.weka_last_day(uuid) from public, anon, authenticated;
+update public.hub_games set day_fn = 'public.weka_last_day(uuid)' where id = 'weka';
+
 insert into public.achievement_measures (measure) values ('weka_baskets');
 
 insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values

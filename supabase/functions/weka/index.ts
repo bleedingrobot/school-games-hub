@@ -5059,9 +5059,13 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 		answer: amount * p / 100
 	}, ofMistakes(p, amount));
 });
-/** "p% of ? = x": the whole from a percentage. */
-function wholeFamily$1(key, label, p, xLo, xHi) {
-	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [int(r, xLo, xHi)], (_k, [x]) => {
+/**
+* "p% of ? = x": the whole from a percentage. New questions roll the part x as a multiple of `step`, so the whole is a
+* tidy round number (25% of ? = 35 → 140, not 25% of ? = 37 → 148). Any whole number part in range still makes a question,
+* so questions rolled before this change keep working.
+*/
+function wholeFamily$1(key, label, p, xLo, xHi, step = 1) {
+	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [step * int(r, Math.ceil(xLo / step), Math.floor(xHi / step))], (_k, [x]) => {
 		if (!isInt(x, xLo, xHi)) return null;
 		const parts = [
 			pct(p),
@@ -5197,8 +5201,8 @@ const PERCENT_FAMILIES = Object.fromEntries([
 	ofFamily("pct:three-quarters", "75% of an amount (75% of 60)", OF_TAGS, 75, 4, 2, 50),
 	bigFamily,
 	wholeFamily$1("pct:whole:ten", "The whole from 10% (10% of ? = 7)", 10, 2, 30),
-	wholeFamily$1("pct:whole:fifty", "The whole from 50% (50% of ? = 18)", 50, 5, 60),
-	wholeFamily$1("pct:whole:quarter", "The whole from 25% (25% of ? = 12)", 25, 3, 40)
+	wholeFamily$1("pct:whole:fifty", "The whole from 50% (50% of ? = 15)", 50, 5, 60, 5),
+	wholeFamily$1("pct:whole:quarter", "The whole from 25% (25% of ? = 15)", 25, 3, 40, 5)
 ].map((f) => [f.keys[0], f]));
 const PERCENT_SKILL_KEYS = {
 	"percent-basic": [
