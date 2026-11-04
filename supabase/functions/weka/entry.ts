@@ -51,16 +51,16 @@ Deno.serve(
     },
     async load(player) {
       const saved = await call<Saved | null>('weka_load', { player });
-      // A pupil who has never played has no pool yet.
+      // A pupil who has never played has no stream yet.
       return saved ?? unplayed();
     },
     async facts(player) {
-      // The same records every maths game reads; only the doubles, halves and odd-and-even ones matter here.
+      // The same records every maths game reads; only the adding facts to 20 matter here.
       const context = await call<{ facts?: FactStats[] } | null>('space_maths_context', { player });
       return context === 'busy' ? 'busy' : (context?.facts ?? []);
     },
     start: (player, round: Round) =>
-      call<boolean>('weka_start', { player, seed: round.seed, level: round.level, gold: round.gold, goes: round.goes }),
+      call<boolean>('weka_start', { player, seed: round.seed, level: round.level, day: round.day, goes: round.goes }),
     round: (player, seed) => call<{ open: boolean; round: Round } | null>('weka_round', { player, seed }),
     finish: (player, seed, version, progress, ending) =>
       call<boolean>('weka_finish', {
@@ -72,7 +72,7 @@ Deno.serve(
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'weka');
     },
     async progressChanged(player) {
-      // A Golden Fish: the hub gives its achievement (counted from the finished days in Stage 4's migration).
+      // A Golden Picnic Basket: the hub gives its achievement (counted from the finished days in Stage 4's migration).
       const { error } = await admin.rpc('game_progress_changed', { player, game: 'weka' });
       if (error) console.error(`weka: achievements failed (${error.code ?? 'unknown'})`);
     },

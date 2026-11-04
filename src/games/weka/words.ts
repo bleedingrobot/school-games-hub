@@ -9,6 +9,11 @@ const LEVEL_WORDS: Record<Level, string> = {
   4: 'All mixed up',
 };
 
+const REO_ONES = ['', 'tahi', 'rua', 'toru', 'whā', 'rima', 'ono', 'whitu', 'waru', 'iwa'];
+/** A number to 19 in te reo Māori: 6 "ono", 14 "tekau mā whā" (ten and four), as in Tūī's Ten Tree. */
+export const reo = (n: number): string => (n < 10 ? REO_ONES[n] : n === 10 ? 'tekau' : `tekau mā ${REO_ONES[n - 10]}`);
+const upFirst = (s: string) => s[0].toUpperCase() + s.slice(1);
+
 export const WORDS = {
   title: 'Weka’s Stepping Stones',
   wants: (name: string) => `${name} wants to cross the stream! Help ${name} hop to the picnic.`,
@@ -24,6 +29,9 @@ export const WORDS = {
   /** The second wrong tap on the first step: Bella counts the hops to the big rock with the child. */
   countWithMe: 'Let’s count the hops together.',
   yes: (n: number) => `${n}!`,
+  /** A right answer on a go with help: the te reo number, then the make-ten sentence ("Tekau mā toru. 10 and 3 make 13."). */
+  rightAdd: (n: number, rest: number) => `${upFirst(reo(n))}. 10 and ${rest} make ${n}.`,
+  rightBack: (n: number, rest: number) => `${upFirst(reo(n))}. 10 take away ${rest} is ${n}.`,
   bigRock: 'The big rock is 10.',
   hearAgain: 'Hear it again',
   stoneTurned: (metal: Metal) => `Well done! A stone turned ${metal}!`,

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Paints Weka’s Stepping Stones’ pictures (Weka, a little blue penguin, at a rock pool that mirrors fish: doubles and halves for
-ages 5 to 7; docs/WEKA-PLAN.md, docs/WEKA-ART-PLAN.md) in ComfyUI on James's gaming PC. Runs on a computer that can
+Paints Weka's Stepping Stones' pictures (Weka, a cheeky brown New Zealand bird, hopping across a bush stream on stepping
+stones: adding by making ten for ages 5 to 7; docs/WEKA-PLAN.md, docs/WEKA-ART-PLAN.md) in ComfyUI on James's gaming PC. Runs on a computer that can
 reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"), never in the site build.
-Copied from scripts/hop-art.py: same graph, seeds and tidying, only the words, picture list and paths change.
+Copied from scripts/korora-art.py: same graph, seeds and tidying, only the words, picture list and paths change.
 
   python3 scripts/weka-art.py paint OUT_DIR [names] [--tries 2]          # OUT_DIR/b/<name>-<try>.png
   python3 scripts/weka-art.py paint ~/dragon-art-inbox/weka-art/set     # every picture (tries go to .../set/b/)
@@ -26,7 +26,7 @@ from pathlib import Path
 
 COMFY = 'http://100.97.96.115:8188'
 
-# One style only: clay, the same as Beanstalk's and Hop's style 'b' (James picked clay for Weka’s Stepping Stones, 4 Nov 2026).
+# One style only: clay, the same as Beanstalk's style 'b' (James asked for Beanstalk's art for Weka's Stepping Stones, 4 Nov 2026).
 STYLES = {
     'b': 'Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, '
          'chunky rounded shapes, bright cheerful colours, soft studio light. ',
@@ -35,49 +35,49 @@ AGE = ' Suitable for young children aged 5 to 7.'
 SPRITE = (' Single object, centred, the whole object visible with space around it, on a plain pure white background, '
           'clean empty white all around.' + AGE)
 
-# Weka, the little blue penguin. Friends all wear a knitted scarf.
-WEKA = ('Weka, a cute small New Zealand little blue penguin, slate blue back and head, a clean white tummy and chin, a short '
-          'dark beak, big round friendly dark eyes, rosy cheeks, small pink webbed feet, chubby round body, wearing a little knitted red scarf, ')
+# Weka, the brown bush bird. Friends all wear a knitted scarf. Weka always faces RIGHT: the game turns it round to hop back.
+WEKA = ('Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, '
+        'bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted '
+        'green scarf, facing to the right, side view, ')
 
 SHINE = 'vivid mirror-bright polished metal with strong gleaming highlights and reflections'
 
 WEKA_POSES = {
-    'wait': 'standing upright on its pink feet, flippers down at its sides, calm and happy, looking ahead with a smile',
-    'dive': 'diving forward head first with its flippers swept back, streamlined, eager smile',
-    'gulp': 'standing and happily gulping down a small orange fish, the fish tail sticking out of its beak, eyes closed with joy',
-    'cheer': 'jumping for joy with both flippers up high, beak open in a big smile, tiny sparkles around',
+    'wait': 'standing on both feet, wings folded, calm and happy, looking ahead with a smile',
+    'hop': 'in the middle of a springy hop forwards, both feet tucked up off the ground, wings a little out, eager smile',
+    'land': 'just landed on both feet with knees bent, wings out for balance, pleased smile',
+    'cheer': 'jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around',
 }
 
-# The pebbles carry nothing (numbers are drawn in code on separate answer stones), so the middle stays smooth.
-PEBBLE = ('One big smooth rounded beach pebble, oval and a little flat, seen from slightly above, the same simple shape every time, '
-          'its top smooth and plain, ')
+# The magic stones on the far bank carry nothing; the answer stones and stepping stones get numbers drawn in code, so
+# their middles stay smooth and plain.
+STONE = ('One big smooth rounded river stone, oval and quite flat, seen from slightly above, the same simple shape every time, '
+         'its top smooth and plain, ')
 STONES = {
     'grey': 'soft warm grey stone, matte and gentle',
-    'gold': f'the whole pebble covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
+    'gold': f'the whole stone covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
-CHICK = 'a cute tiny fluffy little blue penguin chick, round soft grey-blue down feathers, a tiny dark beak, big round eyes, '
-FISH = 'one small cute orange fish with a round body, a simple tail fin and one big friendly eye, smiling, '
-
 THINGS = {
-    'chick-wait': CHICK + 'sitting and waiting hopefully, looking up, small smile',
-    'chick-happy': CHICK + 'flapping its tiny wings with joy, beak open in a happy smile',
-    'fish': FISH + 'lying flat on its side, side view',
-    'golden-fish': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold with a soft warm glow, side view, alone',
-    'golden-fish-cushion': f'the Golden Fish, one fish made of {SHINE} in shining yellow gold, side view, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
-    'splash': 'a lively splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
+    # Drawn sixteen to twenty times in a row, small, with a number on top: simple, flat and calm.
+    'step-stone': 'one flat round grey stepping stone with a smooth plain top, seen from slightly above, a little wet at the edges, simple soft shape',
+    # Stone 10: wider, flatter and warmer, so it always stands out among the grey stones.
+    'big-rock': 'one big wide flat sandy-gold coloured rock, a smooth plain flat top like a table, seen from slightly above, sturdy and friendly',
+    'golden-basket': f'the Golden Picnic Basket, a woven picnic basket with a handle made of {SHINE} in shining yellow gold, a red and white checked cloth peeking out, alone',
+    'golden-basket-cushion': f'the Golden Picnic Basket, a woven picnic basket with a handle made of {SHINE} in shining yellow gold, a red and white checked cloth peeking out, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
+    'splash': 'a lively little splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
     'sparkle': f'three {SHINE} gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, every star solid shining gold, flat like stickers, only gold stars on plain white',
 }
 
-# The friend at each later pool, after Weka's Golden Fish. All birds, so the little ones are always chicks.
+# The friend at each later stream, after Weka's Golden Picnic Basket: birds that walk more than they fly. Face right too.
 FRIENDS = {
-    'hoiho': 'a cute small New Zealand yellow-eyed penguin, a hoiho, slate grey back, white tummy, a pale yellow band around its head and bright yellow eyes, a smile, wearing a little blue knitted scarf, ',
     'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
              'downwards, a big round egg-shaped body with fluffy shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
-             'strong grey legs and big feet, wearing a little yellow knitted scarf, '),
-    'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little green knitted scarf, ',
-    'kereru': 'a cute plump New Zealand kereru wood pigeon, shiny green and purple head and back, a clean white chest, a small red beak, big kind eyes, wearing a little orange knitted scarf, ',
-    'takahe': 'a cute round chunky New Zealand takahe bird, blue and green feathers, a big red beak and red legs, big kind eyes, wearing a little purple knitted scarf, ',
+             'strong grey legs and big feet, wearing a little yellow knitted scarf, facing to the right, side view, '),
+    'takahe': 'a cute round chunky New Zealand takahe bird, deep blue head and chest, olive green back, a big red beak and red legs, big kind eyes, wearing a little purple knitted scarf, facing to the right, side view, ',
+    'kakapo': 'a cute round chubby New Zealand kakapo parrot, soft moss green feathers with fine dark speckles, a pale owl-like face with whiskers, a big pale beak, big kind eyes, short strong grey legs, wearing a little red knitted scarf, facing to the right, side view, ',
+    'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little orange knitted scarf, facing to the right, side view, ',
+    'kea': 'a cute round New Zealand kea parrot, olive green feathers with dark edges, a flash of orange under its wings, a long curved grey beak, big cheeky eyes, wearing a little blue knitted scarf, facing to the right, side view, ',
 }
 FRIEND_POSES = {
     'wait': 'standing calmly and happily, looking ahead with a smile',
@@ -88,22 +88,23 @@ SQUARE = (832, 832)
 WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
 BACK = (' Empty background scenery for a children\'s game, calm soft colours in the middle so things placed on top stand out. '
         'Wide landscape.' + AGE)
-COAST = ('A wide view of a sunny New Zealand rocky shore: smooth plain grey rocks along the bottom, all the rocks grey, a big flat rock ledge across the '
-         'middle with a still, glassy, empty rock pool below it, the sea and a pohutukawa tree far behind, the only colours grey rock, '
-         'green plants, blue water and sky, a tidy uncluttered shore')
+# The game lays a straight line of stepping stones across the middle band, so the water there must be calm and plain.
+STREAM = ('A wide view of a sunny New Zealand bush stream seen from the side: a grassy near bank along the bottom, a calm, wide, '
+          'shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, '
+          'a tidy uncluttered scene with an empty middle band of water')
 
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
-    **{f'weka-{p}': (WEKA + w + ', the whole penguin.' + SPRITE, SQUARE) for p, w in WEKA_POSES.items()},
-    **{f'pebble-{k}': (PEBBLE + w + '.' + SPRITE, SQUARE) for k, w in STONES.items()},
+    **{f'weka-{p}': (WEKA + w + ', the whole bird.' + SPRITE, SQUARE) for p, w in WEKA_POSES.items()},
+    **{f'stone-{k}': (STONE + w + '.' + SPRITE, SQUARE) for k, w in STONES.items()},
     **{name: (w[0].upper() + w[1:] + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
     **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
-    # Three backgrounds: a sunny day, sparkling silver light for silver days, and a golden evening for gold days.
-    'back-day': (COAST + ', bright blue sky, the pool water clear light blue and calm.' + BACK, WIDE),
-    'back-silver': (COAST + ', soft silvery morning light, bright silver glints sparkling on the sea and the pool, calm plain water in the middle.' + BACK, WIDE),
-    'back-evening': (COAST + ', a warm golden evening, the sky orange and gold, golden light on the rocks and on the still pool.' + BACK, WIDE),
-    'card': (WEKA + 'standing on a flat rock at the edge of a still rock pool, holding a little orange fish, with the same fish and the '
-             'penguin reflected upside down in the glassy water below, two fluffy chicks beside it, a sunny rocky shore, wide landscape picture '
-             'for a game title card.' + AGE, (1216, 688)),
+    # Three backgrounds: a sunny morning, sparkling silver light for silver days, and a golden evening for gold days.
+    'back-morning': (STREAM + ', bright blue sky, the water clear light blue and calm.' + BACK, WIDE),
+    'back-silver': (STREAM + ', soft silvery morning light, bright silver glints on the water at the edges, calm plain water in the middle.' + BACK, WIDE),
+    'back-evening': (STREAM + ', a warm golden evening, the sky orange and gold, golden light on the bush and on the calm water.' + BACK, WIDE),
+    'card': (WEKA + 'hopping happily along a straight line of round grey stepping stones across a sunny bush stream, a big flat '
+             'sandy-gold rock in the middle of the line, a picnic basket waiting on the far bank, wide landscape picture for a game '
+             'title card.' + AGE, (1216, 688)),
 }
 
 
@@ -172,8 +173,8 @@ ROOT = Path(__file__).resolve().parent.parent
 GAME_ART = ROOT / 'src' / 'games' / 'weka' / 'art' / 'paint'
 INBOX = Path.home() / 'dragon-art-inbox' / 'weka-art' / 'set' / 'b'
 HOME = ROOT / 'src' / 'assets' / 'home'
-SIZES = {'pebbles': 256, 'friends': 320, 'things': 256}
-FRIEND_NAMES = ('weka', 'hoiho', 'kiwi', 'pukeko', 'kereru', 'takahe')
+SIZES = {'stones': 256, 'friends': 320, 'things': 256}
+FRIEND_NAMES = ('weka', 'kiwi', 'takahe', 'kakapo', 'pukeko', 'kea')
 
 
 def destination(name: str) -> tuple[str, str, str] | None:
@@ -183,16 +184,18 @@ def destination(name: str) -> tuple[str, str, str] | None:
     if name.startswith('back-'):
         return 'scene', 'back', name[len('back-'):]
     group, _, key = name.partition('-')
-    if group == 'pebble':
-        return 'cut', 'pebbles', key
+    if group == 'stone':
+        return 'cut', 'stones', key
+    if name == 'step-stone':
+        return 'cut', 'things', 'stone'
     if group in FRIEND_NAMES:
         return 'cut', 'friends', name
     return 'cut', 'things', name
 
 
 def tint(img, metal: str):
-    """The bronze and silver pebbles, tinted from the gold one (Hop's pads taught that bronze and silver tries come out part
-    clay, while gold comes out all metal), so the three metal pebbles keep the same shape."""
+    """The bronze and silver stones, tinted from the gold one (Hop's pads taught that bronze and silver tries come out part
+    clay, while gold comes out all metal), so the three metal stones keep the same shape."""
     import numpy as np
     from PIL import Image
     px = np.asarray(img, dtype=np.float32)
@@ -259,8 +262,8 @@ def tidy(force: bool):
         if session is None:
             session = new_session('isnet-general-use')
         cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
-        save(fit(cut, {'fish': 160}.get(name, SIZES[folder])), out, 82)
-        if name == 'pebble-gold':
+        save(fit(cut, {'step-stone': 160, 'big-rock': 200}.get(name, SIZES[folder])), out, 82)
+        if name == 'stone-gold':
             for metal in ('bronze', 'silver'):
                 save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / f'{metal}.webp', 82)
 

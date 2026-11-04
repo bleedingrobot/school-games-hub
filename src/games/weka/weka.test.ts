@@ -22,7 +22,7 @@ const smallest = (name: string) => Number(css.match(new RegExp(`--wk-${name}: cl
 const perfect = (round: Round): Tap[] => showRound(round).map((g) => ({ pick: g.answer, ms: 1500 }));
 
 describe('Weka’s Stepping Stones screens', () => {
-  it('has 4.5:1 numbers on the pebbles and panel, big targets, and stops moving for pupils who prefer less', () => {
+  it('has 4.5:1 numbers on the stones and panel, big targets, and stops moving for pupils who prefer less', () => {
     expect(contrast(colour('ink'), colour('panel'))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(colour('teal-dark'), colour('panel'))).toBeGreaterThanOrEqual(4.5); // the day count
     expect(smallest('choice')).toBeGreaterThanOrEqual(64);
@@ -34,7 +34,7 @@ describe('Weka’s Stepping Stones screens', () => {
 describe('the trial backend', () => {
   beforeEach(() => localStorage.clear());
 
-  it('changes one pebble a day, moves up from doubles once they are right, refuses an unfinished round, and gives the Golden Fish on day 30', async () => {
+  it('changes one stone a day, moves up from starting on 9 once those are right, refuses an unfinished round, and gives the Golden Picnic Basket on day 30', async () => {
     const { backend, tools } = trialBackend({ storageKey: 'test' });
     expect(await backend.load()).toMatchObject({ daysDone: 0, level: 1, help: 'fade' });
     const go = async () => {
@@ -42,14 +42,18 @@ describe('the trial backend', () => {
       return { round, result: await backend.finish(round.seed, perfect(round)) };
     };
     expect((await go()).result).toMatchObject({ daysDone: 1, stoneChanged: 0, goldenBasket: false, level: 1 });
-    // Again the same day (just for fun): each fact counts once a round, so doubles to 5 are secure after this second round.
-    expect((await go()).result).toMatchObject({ daysDone: 1, stoneChanged: null, levelBefore: 1, level: 2 });
-    expect((await backend.start()).level).toBe(2);
-    const round = await backend.start();
-    await expect(backend.finish(round.seed, perfect(round).slice(0, 3))).rejects.toThrow();
+    // Again the same day (just for fun): each fact counts once a round, so after a few quick perfect rounds starting on 9
+    // is secure, and the help for those facts has faded.
+    let next = 1;
+    for (let i = 0; i < 4 && next === 1; i++) next = (await go()).result.level;
+    expect(next).toBe(2);
+    const eights = await backend.start();
+    expect(eights.level).toBe(2);
+    expect(eights.goes.some((g) => g.h !== 'full')).toBe(true);
+    await expect(backend.finish(eights.seed, perfect(eights).slice(0, 3))).rejects.toThrow();
     tools.jumpTo(DAYS_PER_BASKET - 1);
     const gold = await backend.start();
-    expect(gold.gold).toBe(true);
+    expect(gold.day).toBe('gold');
     expect(await backend.finish(gold.seed, perfect(gold))).toMatchObject({ daysDone: DAYS_PER_BASKET, goldenBasket: true });
   });
 });

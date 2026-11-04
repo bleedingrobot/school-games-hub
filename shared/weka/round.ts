@@ -170,7 +170,8 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   const earlier = level === 4 ? [] : LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
   const backs = day === 'gold' ? BACK_GOES : 0;
   const main = GOES_PER_ROUND - backs;
-  const review = weakest(earlier, Math.min(REVIEW_GOES, earlier.length), box, random);
+  // Review makes room so every fact of today's level still comes (on gold days too).
+  const review = weakest(earlier, Math.min(REVIEW_GOES, earlier.length, Math.max(0, main - today.length)), box, random);
   // Every fact of the level once (the weakest ten, when mixed), then the weakest again, then the review.
   const once = weakest(today, Math.min(today.length, main - review.length), box, random);
   const again = weakest(today, Math.max(0, main - once.length - review.length), box, random);

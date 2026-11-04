@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/weka/memoryServices';
 import type { Tap } from '../../../shared/weka/play';
-import { FAIR_GOES, GUIDED_KEY, levelKeys, showRound, type Round } from '../../../shared/weka/round';
+import { BACK_GOES, GUIDED_KEY, levelKeys, showRound, type Round } from '../../../shared/weka/round';
 import { makeHandler } from './handler';
 
 // Weka’s Stepping Stones’ server tests (the game has 8 tests in all; these are the 2 fairness ones).
@@ -21,7 +21,7 @@ function setup(over: MemoryOptions = {}) {
   // 9 pm NZ time on 4 Nov 2026 (8 am UTC).
   let clock = Date.UTC(2026, 10, 4, 8);
   let seed = 0.1;
-  const log = { answers: [], fish: [] } as NonNullable<MemoryOptions['log']>;
+  const log = { answers: [], baskets: [] } as NonNullable<MemoryOptions['log']>;
   const services = memoryServices({ now: () => clock, random: () => (seed += 0.137) % 1, log, ...over });
   const handler = makeHandler({ ...services, userIdFor: async (t) => (t.startsWith('pupil-') ? t : null) });
   const send = async (who: string | null, body: object) => {
@@ -39,7 +39,8 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   expect((await send(null, { action: 'load' })).status).toBe(401);
 
   const round = await start('pupil-a');
-  expect(round.goes[0].key).toBe(GUIDED_KEY); // the very first challenge starts with double 2
+  expect(round.goes[0].key).toBe(GUIDED_KEY); // the very first challenge starts with 9 + 2, with full help
+  expect(round.goes[0]).toMatchObject({ v: 1, h: 'full' });
   const taps = goodTaps(round, true);
   expect((await send('pupil-a', { action: 'finish', seed: round.seed, taps: taps.slice(0, 4) })).body).toMatchObject({ code: 'not-done' });
   expect((await send('pupil-a', { action: 'finish', seed: round.seed, taps: [{ pick: 999, ms: 900 }] })).status).toBe(400);
@@ -50,16 +51,18 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   expect(log.answers).toHaveLength(1);
   const [{ once, answers }] = log.answers;
   expect(once).toBe(`weka:${round.seed}`);
-  // Each fact once: double 2 wrong (its first pick was wrong), the other doubles right, and no fact twice.
+  // Each fact once: 9 + 2 wrong (its first pick was wrong), the others right, and no fact twice.
   const keys = [...new Set(round.goes.map((g) => g.key))];
   expect(answers.map((a) => [a.key, a.correct])).toEqual(keys.map((k) => [k, k !== GUIDED_KEY]));
 
-  // Records from anywhere on the hub that show doubles to 5 secure move the pupil on to halves, and they never drop back.
+  // Records from anywhere on the hub that show starting on 9 secure move the pupil on to 8, and they never drop back.
+  // The help follows the records: secure facts (box 2) get the faint picture.
   services.data.facts['pupil-a'] = levelKeys(1).map((key) => ({ ...newStats(key), box: 2 }));
-  const halves = await start('pupil-a');
-  expect(halves.level).toBe(2);
-  expect(halves.goes[0].key).not.toBe(GUIDED_KEY);
-  await send('pupil-a', { action: 'finish', seed: halves.seed, taps: goodTaps(halves) });
+  const eights = await start('pupil-a');
+  expect(eights.level).toBe(2);
+  expect(eights.goes[0].key).not.toBe(GUIDED_KEY);
+  for (const g of eights.goes) expect(g.h).toBe(levelKeys(1).includes(g.key) ? 'faint' : 'full');
+  await send('pupil-a', { action: 'finish', seed: eights.seed, taps: goodTaps(eights) });
   services.data.facts['pupil-a'] = [];
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ level: 2, help: 'fade' });
 
@@ -67,7 +70,7 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 });
 
-it('changes one pebble a NZ day by the server’s clock, with fair-or-not recorded on gold days and the Golden Fish on day 30', async () => {
+it('changes one stone a NZ day by the server’s clock, with hop-backs recorded on gold days and the Golden Picnic Basket on day 30', async () => {
   const { send, start, hours, services, log } = setup();
   const finish = async () => {
     const round = await start('pupil-a');
@@ -80,15 +83,17 @@ it('changes one pebble a NZ day by the server’s clock, with fair-or-not record
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
   const day2 = await finish();
   expect(day2.reply).toMatchObject({ daysDone: 2, lastStoneDay: '2026-11-05', stoneChanged: 1 });
-  expect(day2.round.goes.some((g) => g.key.startsWith('oddeven:'))).toBe(false);
+  expect(day2.round.goes.some((g) => g.v !== 1)).toBe(false); // bronze days: bigger number first, no hop-backs
   services.data.players['pupil-a'].daysDone = 29;
   hours(24);
   const last = await finish();
-  expect(last.round.gold).toBe(true);
-  expect(last.round.goes.slice(-FAIR_GOES).every((g) => g.key.startsWith('oddeven:'))).toBe(true);
-  expect(log.answers.at(-1)!.answers.filter((a) => a.key.startsWith('oddeven:'))).toHaveLength(FAIR_GOES);
+  expect(last.round.day).toBe('gold');
+  expect(last.round.goes.slice(-BACK_GOES).every((g) => g.v === 2)).toBe(true);
+  // A hop-back (13 − 5) counts for its adding fact, once a round like any other go.
+  const keys = new Set(last.round.goes.map((g) => g.key));
+  expect(log.answers.at(-1)!.answers.map((a) => a.key).sort()).toEqual([...keys].sort());
   expect(last.reply).toMatchObject({ daysDone: 30, stoneChanged: 9, goldenBasket: true });
-  expect(log.fish).toEqual(['pupil-a']); // the hub gives Weka's Golden Fish achievement
+  expect(log.baskets).toEqual(['pupil-a']); // the hub gives Weka's Golden Picnic Basket achievement
 });
 
 describe('the deployable file', () => {

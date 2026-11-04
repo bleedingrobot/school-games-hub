@@ -27,6 +27,7 @@ import { playSound } from '../sounds';
 import type { Pose } from './art';
 import { backFor, type Scenery } from './Stream';
 import { Friend, Hop, StepStone, Stone } from './WekaArt';
+import { rightLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 1800;
@@ -36,10 +37,11 @@ const COUNT_MS = 700;
 const GUIDE_MS = 2600;
 /** After this many goes in a row with a wrong first tap, full help comes back for the rest of the round. */
 const STRUGGLE_GOES = 3;
-/** The stretch of stream shown: every go starts, lands and passes within 5 to 20. */
-const FIRST = 5;
-const LAST = 20;
-const STONES = Array.from({ length: LAST - FIRST + 1 }, (_, i) => FIRST + i);
+/**
+ * The stones shown: 1 to 20. Every go starts, lands and passes within 5 to 20, so a wide screen shows 5 to 20 in one
+ * line; a narrow one shows two rows of ten (1 to 10 ending at the big rock, then 11 to 20), like a twenty-frame.
+ */
+const STONES = Array.from({ length: 20 }, (_, i) => i + 1);
 
 const MORE: Record<Help, Help> = { none: 'faint', faint: 'full', full: 'full' };
 
@@ -193,7 +195,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     if (!firstWrong) setStreak(0);
     clearTimers();
     setPhase('right');
-    say(WORDS.yes(n));
+    say(rightLine(go, shown));
     if (sound) playSound('badge');
     // Show the whole journey: to the big rock (if not there yet), then on.
     const hopOn = () => hopTo(10, go.answer, () => setPose('cheer'));
@@ -222,6 +224,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const ask = step === 'toTen'
     ? `${go.parts.join(' ').replace(' = ?', '')}: how many hops to 10?`
     : go.parts.join(' ');
+  const stem = (onBigRock || (wrongs >= 2 && step === 'answer') || phase !== 'ask') && shown !== 'none'
+    ? go.kind === 'back' ? `${go.total} − ${go.toTen} = 10, then − ${go.rest}` : `${go.big} + ${go.toTen} = 10, then + ${go.rest}`
+    : '';
   /** The stones on the way to the big rock, shown once Weka has hopped there or a hint lights them. */
   const toStones = new Set(onBigRock || phase !== 'ask' ? between(go.from, 10) : lit);
   const onStones = new Set(phase !== 'ask' ? between(10, go.answer) : []);
@@ -241,13 +246,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       </div>
       <p className="wk-ask" aria-live="polite">{ask}</p>
       {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
-      <p className="wk-stem" aria-live="polite">
-        {(onBigRock || (wrongs >= 2 && step === 'answer') || phase !== 'ask') && shown !== 'none'
-          ? go.kind === 'back'
-            ? `${go.total} − ${go.toTen} = 10, then − ${go.rest}`
-            : `${go.big} + ${go.toTen} = 10, then + ${go.rest}`
-          : ' '}
-      </p>
+      <p className={`wk-stem${stem ? '' : ' wk-stem--empty'}`} aria-live="polite">{stem}</p>
       {/* The hops Weka will make: one group, or split into to-the-rock and after on full help. */}
       {shown !== 'none' && (
         <div className="wk-hops" aria-hidden="true">
@@ -260,7 +259,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
           ))}
         </div>
       )}
-      <div className={`wk-scene wk-scene--${shown}`} key={at} aria-hidden="true">
+      <div className={`wk-scene wk-scene--${shown}${go.kind === 'back' ? ' wk-scene--back' : ''}`} key={at} aria-hidden="true">
         {shown === 'none' && phase === 'ask' ? (
           <div className="wk-water-only">
             <span className="wk-scene__friend wk-scene__friend--bank"><Friend friend={friend} pose={pose} /></span>
@@ -271,14 +270,16 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
               const numbered = shown === 'full' || n % 5 === 0 || phase !== 'ask' || toStones.has(n);
               const mark = toStones.has(n) ? 'to' : onStones.has(n) ? 'on' : null;
               return (
-                <span key={n} className={`wk-path__spot${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
+                <span key={n} className={`wk-path__spot${n < 5 ? ' wk-path__spot--narrow' : ''}${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
                   <StepStone n={n} big={n === 10} shade={(n - 1) % 10 < 5 ? 'light' : 'dark'} number={numbered} mark={mark} />
+                  {n === pos && (
+                    <span className="wk-scene__friend">
+                      <Friend friend={friend} pose={pose} />
+                    </span>
+                  )}
                 </span>
               );
             })}
-            <span className="wk-scene__friend" style={{ left: `${((pos - FIRST + 0.5) / STONES.length) * 100}%` }}>
-              <Friend friend={friend} pose={pose} />
-            </span>
           </div>
         )}
       </div>

@@ -14,7 +14,7 @@ import '../../src/styles.css';
 import './preview.css';
 
 const trial = trialBackend({ storageKey: 'weka-preview-pupil' });
-const HELP_WORDS = { fade: 'fades (bronze, silver, gold)', always: 'always full pictures', off: 'off: words and numbers only' };
+const HELP_WORDS = { fade: 'fades with each fact’s record', always: 'always full help (two steps)', off: 'off: numbers only' };
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>

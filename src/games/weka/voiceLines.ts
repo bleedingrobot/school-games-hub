@@ -4,7 +4,7 @@
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/weka/progress';
-import { ALL_KEYS, askLine, fromTenLine, parseKey, stemLine, toTenLine, type Kind, type Level } from '../../../shared/weka/round';
+import { ALL_KEYS, askLine, fromTenLine, parseKey, stemLine, toTenLine, type Go, type Help, type Kind, type Level } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 
@@ -14,6 +14,12 @@ export const VOICE_FOLDER = 'voice/weka/';
 /** What the home screen says: who wants to cross, and "come back tomorrow" once today's stone has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
   return doneToday ? `${title} ${WORDS.doneToday}` : title;
+}
+
+/** What Bella says for a right answer: with help, the te reo number and the make-ten sentence; with none, the number. */
+export function rightLine(go: Pick<Go, 'kind' | 'answer' | 'rest'>, help: Help): string {
+  if (help === 'none') return WORDS.yes(go.answer);
+  return go.kind === 'back' ? WORDS.rightBack(go.answer, go.rest) : WORDS.rightAdd(go.answer, go.rest);
 }
 
 /** What the finish screen says, with "next time: starting on 8" when the child moved up a level. */
@@ -35,7 +41,7 @@ export function allVoiceLines(): string[] {
     for (const kind of ['add', 'turn', 'back'] as Kind[]) {
       const toTen = kind === 'back' ? total - 10 : 10 - big;
       const go = { kind, small, big, total, toTen, rest: small - toTen };
-      for (const line of [askLine(go), toTenLine(go), stemLine(go), fromTenLine(go)]) lines.add(line);
+      for (const line of [askLine(go), toTenLine(go), stemLine(go), fromTenLine(go), rightLine({ ...go, answer: kind === 'back' ? big : total }, 'full')]) lines.add(line);
     }
   }
   // The guided first go: 9 + 2, both steps.
