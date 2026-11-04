@@ -31,51 +31,52 @@ INBOX = Path.home() / 'dragon-art-inbox' / 'trader-captains'
 STYLE = ('Friendly animated film character portrait, polished 3D family adventure movie style, warm and kind expression, '
          'suitable for children aged 8 to 12. ')
 TAIL = (' Head and shoulders portrait, facing the viewer, centred, softly lit, a starship bridge with glowing screens and stars '
-        'gently blurred behind, square picture, smart starship captain uniform fully covering the shoulders.')
+        'gently blurred behind, square picture, smart starship captain uniform fully covering the shoulders, '
+        'its chest showing only buttons, pockets and shoulder stripes.')
 
 # key: the captain's own words. Ages, looks and backgrounds vary on purpose so every pupil can find someone they like.
 CAPTAINS = {
     # ---- men ----
-    'm01': 'a young captain with short curly black hair and dark brown skin, a big confident grin, navy blue uniform with gold trim',
+    'm01': 'a cheerful man captain with dark brown skin, short curly black hair and a big confident grin, navy blue uniform with gold trim and a gold star badge',
     'm02': 'a cheerful older captain with a neat white beard and pale skin, kind blue eyes, deep red uniform with silver stars',
     'm03': 'a young East Asian captain with spiky black hair and a headset microphone, bright teal uniform',
-    'm04': 'a Māori captain with a warm smile, short dark hair and a carved greenstone pendant, black and silver uniform',
+    'm04': 'a Māori man captain with a warm smile, short dark hair and a small smooth greenstone koru pendant, plain black and silver uniform',
     'm05': 'a South Asian captain with a tidy dark beard and a navy turban, calm wise smile, white and gold uniform',
     'm06': 'a red-haired freckled young captain with goggles pushed up on his forehead, orange and grey pilot jacket',
     'm07': 'a tall captain with a shaved head and dark skin, round glasses, thoughtful smile, purple uniform',
     'm08': 'a Pacific Islander captain with long wavy black hair tied back, broad friendly smile, ocean blue uniform',
     'm09': 'a Latino captain with a thick moustache and laughing eyes, green uniform with a captain\'s badge',
-    'm10': 'a grandfatherly captain with silver hair and a captain\'s peaked cap, olive skin, crimson uniform',
+    'm10': 'an elderly grandfatherly captain with wrinkles, laughter lines, bushy silver eyebrows and silver hair under a captain\'s peaked cap, olive skin, crimson uniform with a round gold star badge on the chest',
     'm11': 'a young blond captain with a quiff hairstyle and a cheeky wink, sky blue uniform',
     'm12': 'a Middle Eastern captain with short wavy dark hair and a trimmed beard, gentle smile, sand coloured uniform',
-    'm13': 'a friendly green-skinned alien captain with large dark eyes and two small antennae, silver uniform',
+    'm13': 'a friendly alien captain with smooth mint green skin, a round head, two big golden eyes, small frilly fins on the sides of the head and one curly antenna, shiny silver uniform',
     'm14': 'a captain who is a brave robot with a rounded shiny blue metal head, glowing friendly eyes, captain\'s sash',
     'm15': 'a young captain with dreadlocks tied up, brown skin, an excited smile, yellow and black uniform',
     'm16': 'a Japanese captain with neat grey hair and a calm smile, deep navy uniform with a white collar',
-    'm17': 'a captain with a cybernetic glowing blue eyepatch and a friendly smile, light brown skin, black uniform',
+    'm17': 'a man captain with a glowing blue cybernetic eyepatch over his left eye, short black hair and a friendly smile, light brown skin, black uniform',
     'm18': 'a scruffy-haired adventurous young captain with a scarf, tanned skin, brown leather flight jacket',
     'm19': 'a cheerful round-faced captain with rosy cheeks and a curly brown beard, forest green uniform',
     'm20': 'a friendly furry alien captain who looks like a red panda, standing upright, wearing a blue captain\'s jacket',
     # ---- women ----
     'f01': 'a young captain with dark brown skin and a big puff of natural curly hair, confident smile, navy blue uniform with gold trim',
-    'f02': 'a silver-haired older captain with a short bob and pale skin, kind eyes, deep red uniform with silver stars',
+    'f02': 'an older woman captain with a silver bob haircut, a soft gentle face, pearl earrings and pale skin, kind eyes, deep red uniform with silver stars',
     'f03': 'a young East Asian captain with a high black ponytail and a headset microphone, bright teal uniform',
     'f04': 'a Māori captain with long dark wavy hair and a carved greenstone pendant, warm smile, black and silver uniform',
-    'f05': 'a South Asian captain with a long dark braid over one shoulder, calm proud smile, white and gold uniform',
+    'f05': 'a South Asian woman captain with a long dark braid over one shoulder, small gold earrings, calm proud smile, white and gold uniform',
     'f06': 'a red-haired freckled young captain with flying goggles on her forehead, orange and grey pilot jacket',
-    'f07': 'a captain with short cropped hair and dark skin, round glasses, clever smile, purple uniform',
+    'f07': 'a woman captain with short natural curly hair, dark skin, long eyelashes, round glasses and gold hoop earrings, clever smile, purple uniform',
     'f08': 'a Pacific Islander captain with a flower tucked behind her ear and long black hair, broad smile, ocean blue uniform',
     'f09': 'a Latina captain with curly brown hair tied up and laughing eyes, green uniform with a captain\'s badge',
-    'f10': 'a grandmotherly captain with white hair in a bun and a captain\'s peaked cap, olive skin, crimson uniform',
+    'f10': 'an elderly grandmotherly woman captain with wrinkles, laughter lines, rosy cheeks and white hair in a bun, a small captain\'s cap, olive skin, crimson uniform',
     'f11': 'a young blonde captain with two short plaits and a cheeky wink, sky blue uniform',
-    'f12': 'a captain wearing a soft blue headscarf, warm brown eyes and a gentle smile, sand coloured uniform',
+    'f12': 'a young woman captain wearing a soft blue hijab headscarf that wraps around her hair and neck, warm brown eyes and a gentle smile, sand coloured uniform',
     'f13': 'a friendly purple-skinned alien captain with large sparkly eyes and two small antennae, silver uniform',
     'f14': 'a captain who is a brave robot with a rounded shiny pink and white metal head, glowing friendly eyes, captain\'s sash',
     'f15': 'a young captain with long box braids, brown skin, an excited smile, yellow and black uniform',
     'f16': 'a Korean captain with a neat dark bob and a calm smile, deep navy uniform with a white collar',
-    'f17': 'a captain with a glowing blue cybernetic ear piece and short silver-dyed hair, light brown skin, black uniform',
-    'f18': 'an adventurous young captain with messy brown hair and a scarf, tanned skin, brown leather flight jacket',
-    'f19': 'a cheerful round-faced captain with rosy cheeks and curly ginger hair, forest green uniform',
+    'f17': 'a woman captain with a short silver pixie haircut, long eyelashes, a glowing blue cybernetic ear piece, light brown skin, black uniform',
+    'f18': 'an adventurous young woman captain with messy shoulder-length brown hair, long eyelashes and a scarf, tanned skin, brown leather flight jacket',
+    'f19': 'a cheerful round-faced woman captain with rosy cheeks and long curly ginger hair, a loose roomy forest green uniform jacket',
     'f20': 'a friendly furry alien captain who looks like an arctic fox, standing upright, wearing a blue captain\'s jacket',
 }
 

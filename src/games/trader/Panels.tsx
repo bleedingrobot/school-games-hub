@@ -9,6 +9,7 @@ import type { Action } from '../../../shared/trader/server';
 import { NEWS_MAX } from '../../../shared/trader/config';
 import { newsAbout, type NewsItem } from '../../../shared/trader/news';
 import { bestSales } from '../../../shared/trader/priceGuide';
+import { CaptainCard } from './Captain';
 import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { fuelCost, hasShipyard, holdsOf, tradeInValue, usedHolds, type Trader } from '../../../shared/trader/state';
 import { shipArt } from './art/paint';
@@ -300,7 +301,7 @@ function Suggests({ s }: { s: ShipSuggestion }) {
   return <span className="st-ribbon"><strong>🤖 {COACH_NAME} suggests:</strong> {s.why}</span>;
 }
 
-export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, onAct, onMoon }: {
+export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, onAct, onMoon, captain, onCaptain }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -310,6 +311,9 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, o
   /** Do a move (the game checks it with the shared rules and tells the pupil if it can't be done). */
   onAct: (action: Action, done: string) => void;
   onMoon: () => void;
+  /** The pupil's captain and opening the picker ("Choose your captain"). */
+  captain?: string;
+  onCaptain?: () => void;
 }) {
   const yard = hasShipyard(galaxy, t);
   const planet = galaxy.planets[t.location];
@@ -337,6 +341,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, o
           {stat('Trade-in value', cr(tradeInValue(t)))}
         </ul>
       </div>
+      {onCaptain && <CaptainCard captain={captain} busy={busy} onOpen={onCaptain} />}
       <div className="st-actions">
         <button type="button" className="st-btn" disabled={busy || tank < 1} onClick={() => onAct({ type: 'refuel', units: tank }, 'Tank filled.')} data-coach="ship-fuel">
           Fill the tank ({tank} fuel, {cr(fuelCost(t.ship, tank))})
