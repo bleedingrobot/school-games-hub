@@ -55,8 +55,8 @@ PAD = ('One big round lily pad seen from above at a slight angle, floating flat 
        'into its edge, the middle of the pad flat, smooth and plain, ')
 PADS = {
     'green': 'fresh bright green, soft and alive',
-    'bronze': f'the whole pad wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze',
-    'silver': f'the whole pad wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every part of it silver',
+    'bronze': f'the pad completely covered edge to edge in one smooth sheet of crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, all bronze from rim to centre, the middle flat and smooth',
+    'silver': f'the pad completely covered edge to edge in one smooth sheet of crinkled silver foil like a chrome mirror, {SHINE}, all silver from rim to centre',
     'gold': f'the whole pad wrapped smoothly in shiny crinkled yellow gold foil, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
@@ -76,22 +76,22 @@ GLOWWORMS = {
 }
 
 THINGS = {
-    'pad-gap': 'an empty glowing ring floating on the water, a pale soft blue-green glowing outline of a round lily pad with a small notch, '
-               'clearly a place where something goes, the inside calm and empty',
+    'pad-gap': 'one thin ring of pale soft blue-green light, a round glowing outline with one small notch in its edge, '
+               'empty and white inside, a single ring alone',
     'party': 'the far bank of a night pond: a cave mouth in a mound of bush with glow-worm threads hanging down glowing blue, little '
              'lanterns, and a tiny party with colourful bunting',
-    'jar': 'the Golden Glow Jar, a round shining gold jar lantern full of glowing blue glow-worm lights, with a warm glow',
-    'jar-cushion': 'the Golden Glow Jar, a round shining gold jar lantern full of glowing blue glow-worm lights, resting on a round plump red velvet cushion with gold tassels, a prize',
-    'sparkle': 'three shiny gold foil four-pointed stars of different sizes standing on their own, nothing else',
-    'splash': 'a little ring of water splash, a round crown of clear blue water drops',
-    'glow-dot': 'one soft round blue glowing dot with a gentle glow',
+    'jar': f'the Golden Glow Jar, a round lantern jar with a {SHINE} gold lid, handle and base, a clear glass body full of tiny glowing blue-green lights, a warm glow',
+    'jar-cushion': f'the Golden Glow Jar, a round lantern jar with a {SHINE} gold lid, handle and base, a clear glass body full of tiny glowing blue-green lights, resting on a plain plump red velvet cushion with gold tassels at its corners, a prize',
+    'sparkle': f'three {SHINE} gold four-pointed stars of different sizes floating in the air with space between them',
+    'splash': 'a crown-shaped splash of glossy clear blue water drops in a ring, all blue',
+    'glow-dot': 'one single small round glowing blue glass marble with a soft cyan glow, alone',
 }
 
 # The friend stuck on each later pond, after Hop's Golden Glow Jar. Each keeps a knitted scarf of its own colour.
 FRIENDS = {
     'gecko': 'a cute green New Zealand gecko with bright yellow spots, big round friendly eyes and a smile, wearing a little red knitted scarf, ',
     'weta': 'a cute friendly New Zealand weta insect, a round shiny brown body with stripes, six long spiky back legs, long thin feelers, big kind eyes and a smile, wearing a little green knitted scarf, ',
-    'tuatara': 'a cute friendly green-grey New Zealand tuatara with a soft spiky crest down its back, big kind eyes and a smile, wearing a little orange knitted scarf, ',
+    'tuatara': 'a cute friendly green-grey New Zealand tuatara lizard with a long tail and a row of soft spikes down its back, big kind eyes and a smile, wearing a little orange knitted scarf, ',
     'kiwi': ('a cute round New Zealand kiwi bird: a big round egg-shaped body with fluffy shaggy brown feathers, no neck, a '
              'tailless round bottom, small bright dark eyes, rosy cheeks, and a very long slender pale beak like a drinking straw, '
              'as long as its whole body, curving gently down towards the ground, tiny wings, thick strong grey legs and big feet, wearing a little yellow knitted scarf, '),
