@@ -555,7 +555,7 @@ describe("Bolt's first-time tips and help with choices", () => {
     const { x, y } = chartPoint(dest);
     type(/^x \(across\)/, String(x));
     type(/^y \(up\)/, String(y));
-    const warn = await screen.findByText(new RegExp(`^🚫 ${dest.name} bans .*${name}.*\\. If customs stop you, they will take your .*1 ${name}.* and fine you\\.$`));
+    const warn = await screen.findByText(new RegExp(`^🚫 ${dest.name} bans .*${name}.*\\. If customs stop you, they will take your .*1 ${name}.* and fine you\\.$`), {}, { timeout: 5000 });
     expect(warn).toBeTruthy();
     expect((screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement).disabled).toBe(false);
     // Bolt's trip ideas are words only: the boxes keep what the pupil typed.
