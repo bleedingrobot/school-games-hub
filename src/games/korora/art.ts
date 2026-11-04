@@ -11,12 +11,12 @@ export const paint = (path: string): string | undefined => FILES[`./art/paint/${
 
 export type Pose = 'wait' | 'dive' | 'gulp' | 'cheer';
 
-/** A friend in a pose. Only Kororā has every pose; the others fall back to waiting or cheering. */
+/** A friend in a pose. Only Two-Shoes (id korora) has every pose; the others fall back to waiting or cheering. */
 export const friendArt = (friend: Friend, pose: Pose) =>
   paint(`friends/${friend}-${pose}`) ?? paint(`friends/${friend}-${pose === 'cheer' || pose === 'gulp' ? 'cheer' : 'wait'}`);
 
 export const FRIEND_NAMES: Record<Friend, string> = {
-  korora: 'Kororā',
+  korora: 'Two-Shoes',
   hoiho: 'Hoiho',
   kiwi: 'Kiwi',
   pukeko: 'Pūkeko',

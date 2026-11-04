@@ -1,7 +1,8 @@
 /**
- * Penguin Pairs (docs/KORORA-PLAN.md): each day, ten goes of doubles and halves at Kororā's mirror pool. Each day's
- * first finish changes one magic pebble (bronze, then silver, then gold); thirty days win the Golden Fish, and a new
- * friend comes to a fresh pool. The screens only show what the backend says. Copied from Hop's Glow-worm Pond.
+ * Penguin Pairs (docs/KORORA-PLAN.md): each day, ten goes of doubles and halves with Two-Shoes the penguin. Each day's
+ * first finish changes one magic stepping stone across the water (bronze, then silver, then gold); each crossing wins a
+ * pair of dancing shoes (bronze, silver, then dazzling gold after thirty days), and then a new friend comes to a fresh
+ * pool. The screens only show what the backend says. Copied from Hop's Glow-worm Pond.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/korora/play';
@@ -12,10 +13,10 @@ import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
 import { playSound } from '../sounds';
-import { FRIEND_NAMES, paint } from './art';
+import { FRIEND_NAMES } from './art';
 import { KororaError, type KororaBackend, type KororaFinish, type KororaState } from './backend';
 import { Goes } from './Goes';
-import { Fish } from './KororaArt';
+import { DancingShoes } from './KororaArt';
 import { Pool } from './Pool';
 import { WORDS } from './words';
 import './korora.css';
@@ -158,7 +159,14 @@ function Home({ state, say, onPlay }: { state: KororaState; say: (t: string) => 
   }, [say, doneToday, title]);
   return (
     <div className="kr-home">
-      <Pool scenery={pool.today} pebbles={pool.pebbles.map((metal) => ({ metal }))} friend={pool.friend} pose="wait" />
+      <Pool
+        scenery={pool.today}
+        pebbles={pool.pebbles.map((metal) => ({ metal }))}
+        friend={pool.friend}
+        pose="wait"
+        at={(pool.day % PEBBLES) - 1}
+        shoes={pool.today}
+      />
       <div className="kr-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="kr-day">{WORDS.dayCount(Math.min(pool.day + 1, DAYS_PER_FISH))}</p>
@@ -167,26 +175,35 @@ function Home({ state, say, onPlay }: { state: KororaState; say: (t: string) => 
         <button type="button" className="button button--play kr-play-button" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}
         </button>
-        {pool.fish > 0 && (
-          <p className="kr-shelf" aria-label={WORDS.fishWon(pool.fish)}>
-            {Array.from({ length: pool.fish }, (_, i) => <span key={i} className="kr-shelf__fish"><Fish golden /></span>)}
-          </p>
-        )}
+        <Shelf gold={pool.fish} best={pool.shoes} />
       </div>
     </div>
   );
 }
 
-/** A pebble changes colour, or, on the thirtieth day, the Golden Fish is won. */
+/** The dancing shoes won so far: every pair of gold ones, and the best pair at this pool. */
+function Shelf({ gold, best }: { gold: number; best: 'bronze' | 'silver' | null }) {
+  if (!gold && !best) return null;
+  const label = [gold ? WORDS.goldShoesWon(gold) : null, best ? WORDS.shoesName(best) : null].filter(Boolean).join(', ');
+  return (
+    <p className="kr-shelf" aria-label={label}>
+      {Array.from({ length: gold }, (_, i) => <span key={i} className="kr-shelf__shoes"><DancingShoes metal="gold" /></span>)}
+      {best && <span className="kr-shelf__shoes"><DancingShoes metal={best} /></span>}
+    </p>
+  );
+}
+
+/** A stepping stone changes colour, or, at the end of a crossing, a pair of dancing shoes is won. */
 function Finish({ result, say, onNext }: { result: KororaFinish; say: (t: string) => void; onNext: () => void }) {
-  // On a Golden Fish day the new pool has already started, so show the one just finished: every pebble gold.
+  // On a gold shoes day the new pool has already started, so show the one just finished: every stone gold.
   const pool = poolAfter(result.goldenFish ? result.daysDone - 1 : result.daysDone);
   const pebbles = result.goldenFish
     ? Array.from({ length: PEBBLES }, () => ({ metal: 'gold' as const, glow: true }))
     : pool.pebbles.map((metal, i) => ({ metal, glow: i === result.pebbleChanged }));
   const changed = result.pebbleChanged === null ? null : pebbles[result.pebbleChanged].metal;
   const name = FRIEND_NAMES[pool.friend];
-  const main = result.goldenFish ? WORDS.goldenFish(name) : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
+  const won = result.shoesWon;
+  const main = won ? WORDS.shoesWon(won, name) : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
   const up = result.level !== result.levelBefore ? result.level : null;
   const line = finishLine(main, up);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -194,14 +211,20 @@ function Finish({ result, say, onNext }: { result: KororaFinish; say: (t: string
     heading.current?.focus();
     say(line);
   }, [say, line]);
-  const cushion = paint('things/golden-fish-cushion');
+  // Before the walk: on the stone that just changed (or where they were). After a crossing: on the far bank.
+  const at = won ? PEBBLES : result.pebbleChanged ?? (pool.day % PEBBLES) - 1;
+  const scenery = result.goldenFish ? 'gold' : won ? (won as 'bronze' | 'silver') : pool.today;
   return (
-    <div className={`kr-home${result.goldenFish ? ' kr-home--prize' : ''}`}>
-      <Pool scenery={result.goldenFish ? 'gold' : pool.today} pebbles={pebbles} friend={pool.friend} pose="cheer" />
+    <div className={`kr-home${won ? ' kr-home--prize' : ''}`}>
+      <Pool scenery={scenery} pebbles={pebbles} friend={pool.friend} pose="cheer" at={at} shoes={won ? null : pool.today} />
       <div className="kr-panel">
         <h2 tabIndex={-1} ref={heading}>{main}</h2>
         {up && <p className="kr-chip">{WORDS.levelUp(up)}</p>}
-        {result.goldenFish && (cushion ? <img className="kr-prize" src={cushion} alt="The Golden Fish" /> : <span className="kr-prize" role="img" aria-label="The Golden Fish"><Fish golden /></span>)}
+        {won && (
+          <span className={`kr-prize kr-prize--${won}`} role="img" aria-label={WORDS.shoesName(won)}>
+            <DancingShoes metal={won} />
+          </span>
+        )}
         <button type="button" className="button button--play kr-play-button" onClick={onNext}>
           OK
         </button>

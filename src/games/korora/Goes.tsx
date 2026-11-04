@@ -1,5 +1,5 @@
 /**
- * Today's challenge at Penguin Pairs: ten goes by Kororā's mirror pool (docs/KORORA-PLAN.md).
+ * Today's challenge at Penguin Pairs: ten goes with Two-Shoes at the mirror pool (docs/KORORA-PLAN.md).
  *
  *  - A double: fish land on the rock and the still pool shows the same fish upside down. How many fish now?
  *  - A half: a pile of fish to share fairly between the two chicks. How many does each chick get?
@@ -10,7 +10,7 @@
  *    share halves out one by one; silver days a faint, rippled reflection and the pile only; gold days the words only;
  *  - hints that build up after wrong taps on a go: a wobble, then the pictures come back and Bella counts the fish, then
  *    the hand points to the right number;
- *  - fish sit in rows of five, like a ten-frame;
+ *  - fish sit in rows of five, like a ten-frame, a short row lined up on the left (James, 4 Nov 2026);
  *  - tap a fish to count it (doubles), or to give it to a chick (halves and fair or not);
  *  - a double comes just before its half, with the same fish (the rules put them together);
  *  - after three goes in a row with a wrong first tap, the full pictures come back for the rest of the round;
@@ -261,23 +261,28 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
   return (
     <div className="kr-mirror">
       <div className={`kr-rock${guide === 0 ? ' kr-guide' : ''}`}>
-        {rock.map(({ r, count, start }) => (
-          <div key={r} className="kr-row">
-            {Array.from({ length: count }, (_, i) => (
-              <FishSpot key={i} id={`r${start + i}`} counted={counted} onTap={() => onFish(`r${start + i}`)} className={help === 'full' ? 'kr-fish--linked' : ''} />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className={`kr-water${reflection ? ` kr-water--${reflection}` : ''}${guide === 1 ? ' kr-guide' : ''}`}>
-        {reflection &&
-          [...rock].reverse().map(({ r, count, start }) => (
-            <div key={r} className="kr-row kr-row--mirror">
+        <div className="kr-rows">
+          {rock.map(({ r, count, start }) => (
+            <div key={r} className="kr-row">
               {Array.from({ length: count }, (_, i) => (
-                <FishSpot key={i} id={`w${start + i}`} counted={counted} onTap={() => onFish(`w${start + i}`)} className="kr-fish--mirror" />
+                <FishSpot key={i} id={`r${start + i}`} counted={counted} onTap={() => onFish(`r${start + i}`)} className={help === 'full' ? 'kr-fish--linked' : ''} />
               ))}
             </div>
           ))}
+        </div>
+      </div>
+      <div className={`kr-water${reflection ? ` kr-water--${reflection}` : ''}${guide === 1 ? ' kr-guide' : ''}`}>
+        {reflection && (
+          <div className="kr-rows">
+            {[...rock].reverse().map(({ r, count, start }) => (
+              <div key={r} className="kr-row kr-row--mirror">
+                {Array.from({ length: count }, (_, i) => (
+                  <FishSpot key={i} id={`w${start + i}`} counted={counted} onTap={() => onFish(`w${start + i}`)} className="kr-fish--mirror" />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
         {!reflection && <span className="kr-water__ripple" aria-hidden="true" />}
       </div>
     </div>
@@ -295,7 +300,7 @@ function Share({ go, help, phase, counted, shared, onFish }: {
   const nest = (items: number[], happy: boolean, side: string) => (
     <div className={`kr-nest kr-nest--${side}`}>
       <span className="kr-chick"><Chick happy={happy} /></span>
-      <div className="kr-nest__fish">
+      <div className="kr-nest__fish kr-rows">
         {rowsOf(items.length).map((count, r) => (
           <div key={r} className="kr-row kr-row--small">
             {items.slice(r * 5, r * 5 + count).map((i) => (
@@ -312,13 +317,15 @@ function Share({ go, help, phase, counted, shared, onFish }: {
       {nest(left, done, 'left')}
       <div className="kr-pile">
         {pileShown ? (
-          rowsOf(still.length).map((count, r) => (
-            <div key={r} className="kr-row">
-              {still.slice(r * 5, r * 5 + count).map((i) => (
-                <FishSpot key={i} id={`p${i}`} counted={counted} onTap={() => onFish(`p${i}`, i)} className={done ? 'kr-fish--left-over' : ''} />
-              ))}
-            </div>
-          ))
+          <div className="kr-rows">
+            {rowsOf(still.length).map((count, r) => (
+              <div key={r} className="kr-row">
+                {still.slice(r * 5, r * 5 + count).map((i) => (
+                  <FishSpot key={i} id={`p${i}`} counted={counted} onTap={() => onFish(`p${i}`, i)} className={done ? 'kr-fish--left-over' : ''} />
+                ))}
+              </div>
+            ))}
+          </div>
         ) : (
           <span className="kr-basket" aria-hidden="true">
             <span className="kr-basket__num">{go.n}</span>

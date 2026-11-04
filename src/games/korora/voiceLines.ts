@@ -11,7 +11,7 @@ import { WORDS } from './words';
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/korora/';
 
-/** What the home screen says: who is hungry, and "come back tomorrow" once today's pebble has changed. */
+/** What the home screen says: who wants dancing shoes, and "come back tomorrow" once today's stepping stone has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
   return doneToday ? `${title} ${WORDS.doneToday}` : title;
 }
@@ -45,7 +45,8 @@ export function allVoiceLines(): string[] {
   }
   // Bella counts along with the child: up to 20 fish.
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
-  const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.pebbleTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenFish)];
+  const shoes = (['bronze', 'silver', 'gold'] as const).flatMap((m) => Object.values(FRIEND_NAMES).map((name) => WORDS.shoesWon(m, name)));
+  const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.pebbleTurned(m)), ...shoes];
   for (const main of mains) for (const up of [null, 2, 3, 4] as const) lines.add(finishLine(main, up));
   return [...lines];
 }

@@ -29,14 +29,15 @@ function KororaIcon({ size = 64 }: { size?: number }) {
 }
 
 /**
- * Penguin Pairs (docs/KORORA-PLAN.md; short id korora): for younger students, ten goes a day of doubles and halves at
- * Kororā's mirror pool, magic pebbles that turn bronze, silver and gold, and a Golden Fish after thirty days. Not ranked,
+ * Penguin Pairs (docs/KORORA-PLAN.md; short id korora): for younger students, ten goes a day of doubles and halves with
+ * Two-Shoes the penguin at the mirror pool, magic stepping stones that turn bronze, silver and gold, and a pair of
+ * dancing shoes after each crossing (dazzling gold after thirty days). Not ranked,
  * no points. On the dashboard only while `kororaOn()` is true and the teacher has the game on for the pupil's class.
  */
 export const penguinPairs: GameDefinition = {
   id: 'korora',
   name: 'Penguin Pairs',
-  tagline: 'Doubles and halves with Kororā at the mirror pool',
+  tagline: 'Doubles and halves with Two-Shoes the penguin',
   colours: ['#1f5f8b', '#2f7d9e'],
   Icon: KororaIcon,
   Play: KororaPlay,
@@ -44,7 +45,7 @@ export const penguinPairs: GameDefinition = {
   noBots: true,
   group: 'foundational',
   useTeacherSwitch: useKororaEnabled,
-  // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Fish in the
+  // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's gold dancing shoes in the
   // Maths column, and a drawer with the help setting.
   teacher: {
     switch: { useValue: useKororaClassSwitch, save: saveKororaEnabled, about: KORORA_ABOUT },

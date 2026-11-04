@@ -14,9 +14,9 @@ const lines = allVoiceLines().map((text) => ({ slug: voiceSlug(text), text }));
 describe('Penguin Pairs voice clips', () => {
   if (process.env.WRITE_VOICE_LINES) writeFileSync(listFile, `${JSON.stringify(lines, null, 1)}\n`);
 
-  it('gives every line its own clip name, with plain letters (Kororā is korora)', () => {
+  it('gives every line its own clip name, with plain letters (Pūkeko is pukeko)', () => {
     expect(new Set(lines.map((l) => l.slug)).size).toBe(lines.length);
-    expect(lines.find((l) => l.text.startsWith('Kororā is hungry'))?.slug).toMatch(/^korora-is-hungry/);
+    expect(lines.find((l) => l.text.startsWith('Pūkeko wants'))?.slug).toMatch(/^pukeko-wants/);
   });
 
   it('has the list of lines up to date', () => {
