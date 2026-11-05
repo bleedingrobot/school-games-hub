@@ -41,8 +41,9 @@ SHINE = 'vivid mirror-bright polished metal with strong gleaming highlights and 
 
 # Tūī is Beanstalk's tūī friend (dark blue clay, yellow knitted scarf), with the white tuft at the throat where a real
 # tūī has it (Beanstalk's came out with it on the head).
-TUI = ('Tui, a cute small round New Zealand tui bird made of glossy dark blue-green clay, two little white curly feather tufts '
-       'at its throat just above its scarf, big round friendly eyes, a thin curved dark beak, tiny wings, short dark legs, '
+TUI = ('Tui, a cute small round New Zealand tui bird made of glossy dark blue-green clay, a bald smooth round head with '
+       'nothing on top, big round friendly eyes, a white fluffy cotton-ball bow tie on its chest directly below its beak and '
+       'above its scarf, a thin curved dark beak, tiny wings, short dark legs, '
        'wearing a little yellow knitted scarf, ')
 TUI_POSES = {
     'sit': 'perched calmly on a short twig, happy, looking ahead with a smile',
@@ -55,7 +56,7 @@ TUI_POSES = {
 
 # The friend on each later tree, after Tūī's Golden Nest. Each keeps a knitted scarf of its own colour.
 FRIENDS = {
-    'kereru': 'a cute plump New Zealand kereru wood pigeon with a shiny green-purple head and back, a pure white chest, a red beak and red feet, wearing a little blue knitted scarf, ',
+    'kereru': 'a cute plump New Zealand kereru wood pigeon with a shiny green-purple head and back, a soft pale cream chest, a red beak and red feet, wearing a little blue knitted scarf, ',
     'piwakawaka': 'a cute tiny round New Zealand fantail bird, soft brown and cream feathers, a big fanned-out tail like an open fan, big round friendly eyes, wearing a little green knitted scarf, ',
     'korimako': 'a cute small round New Zealand bellbird, soft olive-green feathers, a little dark curved beak, bright red eyes that look kind and friendly, wearing a little orange knitted scarf, ',
     'kaka': 'a cute round New Zealand kaka parrot, olive-brown feathers with a flash of bright red under its wings, a big curved grey beak, big friendly eyes, wearing a little red knitted scarf, ',
@@ -75,17 +76,17 @@ TREE = {
     # The full ten: ten berries tuck into a flax kete, which shuts. The game writes "10" on the tag.
     'kete-open': 'one small round woven flax basket, a Maori kete, woven from green-gold flax strips with two handles, open at the top '
                  'and empty, seen from the front',
-    'kete-full': 'one small round woven flax basket, a Maori kete, woven from green-gold flax strips with two handles, closed and '
-                 'plump and full, a plain round cream clay tag hanging on the front, the tag plain and empty, seen from the front',
+    'kete-full': 'one small round woven flax basket, a Maori kete, woven from green-gold flax strips with two handles, its top shut '
+                 'with a round woven flax lid, the basket plump and round, a plain round cream clay tag hanging on the front, the tag plain and empty, seen from the front',
     # Answers sit on nests; the number is drawn on top.
-    'nest': 'one small round bird nest made of twigs and soft moss, seen from the front and a little above, the inside a calm '
-            'smooth soft brown, empty',
+    'nest': 'one small round bird nest made only of plain brown clay twigs, seen from the front and a little above, plain brown all '
+            'over, the inside a calm smooth soft brown, empty',
 }
 
 # The 10 magic things on the Ten Tree turn bronze, silver and gold, like Beanstalk's leaves. The same shape each time.
 FLOWER = 'One big rounded kowhai flower cluster seen from the front, a soft bunch of curved petals hanging from a short stalk, '
 FLOWERS = {
-    'bud': 'a closed soft green bud, fresh and alive',
+    'bud': 'every petal still closed tight into one soft pale green bud, the whole bud and its stalk fresh spring green, fresh and alive',
     'bronze': f'the whole flower wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze',
     'silver': f'the whole flower wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every part of it silver',
     'gold': f'the whole flower wrapped smoothly in shiny crinkled yellow gold foil, {SHINE}, every part of it gold, three tiny sparkles',
