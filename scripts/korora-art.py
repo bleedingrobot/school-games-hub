@@ -49,11 +49,12 @@ KORORA_POSES = {
 }
 
 # The stepping stones (and answer stones) carry nothing: numbers are drawn in code, so the top stays smooth and flat.
-PEBBLE = ('One big flat stepping stone rock, wide and low with a flat smooth top to stand on, rounded edges, seen from slightly above, '
-          'the same simple shape every time, its top smooth and plain, ')
+PEBBLE = ('One big flat stepping stone, wide and low with a rounded edge, seen from slightly above, the same simple shape every time, '
+          'its top perfectly smooth and flat, one clean even surface, ')
+# Only the grey stone is painted: the clay style always crinkled a painted gold top, so tidy makes the gold, silver and
+# bronze stones from the smooth grey one (stone_metal), and all four keep the same shape.
 PEBBLES = {
-    'grey': 'soft warm grey stone, matte and gentle',
-    'gold': f'the whole pebble covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
+    'grey': 'one solid piece of soft warm grey stone, matte and gentle, the same grey all over',
 }
 
 CHICK = ('a cute tiny baby penguin chick, a round fuzzy ball of soft fluffy grey-brown down all over its body and tummy, very fluffy '
@@ -92,10 +93,11 @@ SQUARE = (832, 832)
 WIDE = (1072, 672)  # backgrounds: about 1600 x 1000 after the 1.5x pass
 BACK = (' Empty background scenery for a children\'s game, calm soft colours in the middle so things placed on top stand out. '
         'Wide landscape.' + AGE)
-COAST = ('A wide view of a sunny New Zealand coast: a wide calm glassy lagoon of clear water running straight across the whole picture from '
-         'the left edge to the right edge, filling the lower middle, empty water with nothing in it, a low sandy bank with grass on the far '
-         'left and another on the far right, smooth sand along the very bottom edge, the sea and a pohutukawa tree far behind, the only '
-         'colours sand, green plants, blue water and sky, a tidy uncluttered scene')
+COAST = ('A side view of a sunny New Zealand stream: one straight, level, calm stream of clear water with two parallel straight banks, '
+         'running across the whole picture from the left edge to the right edge through the lower middle, like a wide flat river seen from the '
+         'side, the water an even straight band of the same width all the way across, empty water, a straight sandy grassy bank along the '
+         'bottom edge of the picture and another straight sandy grassy bank along the top of the water, green hills and a pohutukawa tree '
+         'behind the far bank, the only colours sand, green plants, blue water and sky, a tidy uncluttered scene')
 
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'korora-{p}': (KORORA + w + ', the whole penguin.' + SPRITE, SQUARE) for p, w in KORORA_POSES.items()},
@@ -104,7 +106,7 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'{f}-{p}': (w + pose + '.' + SPRITE, SQUARE) for f, w in FRIENDS.items() for p, pose in FRIEND_POSES.items()},
     # Three backgrounds: a sunny day, sparkling silver light for silver days, and a golden evening for gold days.
     'back-across-day': (COAST + ', bright blue sky, the water clear light blue and calm.' + BACK, WIDE),
-    'back-across-silver': (COAST + ', soft silvery morning light, bright silver glints sparkling on the sea and the lagoon, calm plain water in the middle.' + BACK, WIDE),
+    'back-across-silver': (COAST + ', soft silvery morning light, bright silver glints sparkling along the stream, calm plain water in the middle.' + BACK, WIDE),
     'back-across-evening': (COAST + ', a warm golden evening, the sky orange and gold, golden light on the sand and on the still water.' + BACK, WIDE),
     'card': (KORORA + 'hopping happily along a row of flat stepping stones across a calm glassy lagoon, reflected in the water below, '
              'a pair of shining gold dancing shoes with pink ribbons waiting on the grassy bank ahead, a sunny New Zealand coast, wide '
@@ -196,8 +198,8 @@ def destination(name: str) -> tuple[str, str, str] | None:
 
 
 def tint(img, metal: str):
-    """The bronze and silver stones (and dancing shoes), tinted from the gold one (Hop's pads taught that bronze and silver tries come out part
-    clay, while gold comes out all metal), so the three metal pebbles keep the same shape."""
+    """The bronze and silver dancing shoes, tinted from the gold pair (Hop's pads taught that bronze and silver tries come out part
+    clay, while gold comes out all metal), so the three pairs keep the same shape."""
     import numpy as np
     from PIL import Image
     px = np.asarray(img, dtype=np.float32)
@@ -209,6 +211,31 @@ def tint(img, metal: str):
     }[metal]
     rgb = np.where(light < 0.6, dark + (mid - dark) * light / 0.6, mid + (shine - mid) * (light - 0.6) / 0.4)
     return Image.fromarray(np.dstack([rgb, px[..., 3:]]).clip(0, 255).round().astype(np.uint8), 'RGBA')
+
+
+def stone_metal(img, metal: str):
+    """A smooth polished gold, silver or bronze stone made from the matte grey one: the clay texture is blurred away, the
+    shading kept, and a soft shine added on the top, so the top stays perfectly smooth."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    px = np.asarray(img, dtype=np.float32)
+    alpha, inside = px[..., 3], px[..., 3] > 200
+    light = px[..., :3].mean(axis=2)
+    lo, hi = np.percentile(light[inside], [2, 98])
+    light = ((light - lo) / (hi - lo)).clip(0, 1)
+    light = np.asarray(Image.fromarray((light * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), dtype=np.float32) / 255
+    ys, xs = np.nonzero(inside)
+    tall, wide = ys.max() - ys.min(), xs.max() - xs.min()
+    yy, xx = np.mgrid[:light.shape[0], :light.shape[1]]
+    shine = np.exp(-(((xx - xs.min() - wide * 0.4) / (wide * 0.22)) ** 2 + ((yy - ys.min() - tall * 0.35) / (tall * 0.12)) ** 2))
+    light = (0.15 + 0.75 * light ** 1.3 + 0.5 * shine).clip(0, 1)[..., None]
+    dark, mid, top = {
+        'gold': (np.array([90, 52, 6.]), np.array([222, 170, 40.]), np.array([255, 246, 200.])),
+        'bronze': (np.array([70, 30, 12.]), np.array([190, 112, 50.]), np.array([255, 222, 180.])),
+        'silver': (np.array([48, 54, 64.]), np.array([168, 176, 188.]), np.array([250, 252, 255.])),
+    }[metal]
+    rgb = np.where(light < 0.6, dark + (mid - dark) * light / 0.6, mid + (top - mid) * (light - 0.6) / 0.4)
+    return Image.fromarray(np.dstack([rgb, alpha]).clip(0, 255).round().astype(np.uint8))
 
 
 def tidy(force: bool):
@@ -268,10 +295,12 @@ def tidy(force: bool):
             session = new_session('isnet-general-use')
         cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB'), name == 'splash'))
         save(fit(cut, {'fish': 160}.get(name, SIZES[folder])), out, 82)
-        if name in ('pebble-gold', 'shoes-gold'):
+        if name == 'pebble-grey':
+            for metal in ('gold', 'bronze', 'silver'):
+                save(fit(stone_metal(cut, metal), SIZES[folder]), GAME_ART / folder / f'{metal}.webp', 82)
+        if name == 'shoes-gold':
             for metal in ('bronze', 'silver'):
-                tinted = f'{metal}.webp' if name == 'pebble-gold' else f'shoes-{metal}.webp'
-                save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / tinted, 82)
+                save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / f'shoes-{metal}.webp', 82)
 
 
 if __name__ == '__main__':
