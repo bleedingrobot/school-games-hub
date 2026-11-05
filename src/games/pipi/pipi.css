@@ -149,6 +149,11 @@
   filter: var(--pp-paper); animation: pp-wash-in 0.65s ease-out both;
 }
 .pp-wave--out { animation: pp-wash-out 0.65s ease-in both; }
+/* The painted wave: clay water with a foam crest, stretched across the stage. */
+.pp-wave--painted {
+  background: var(--pp-wave) center top / 100% 100% no-repeat; opacity: 1; border-radius: 0; height: 80%;
+  filter: drop-shadow(0 -4px 8px rgb(20 60 80 / 0.25));
+}
 @keyframes pp-wash-in { from { translate: 0 100%; } }
 @keyframes pp-wash-out { from { translate: 0 0; } to { translate: 0 105%; } }
 

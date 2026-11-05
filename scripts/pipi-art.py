@@ -101,6 +101,11 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     'back/morning': (BEACH + 'a pale blue morning sky with a few soft white clouds.' + BACK, WIDE),
     'back/afternoon': (BEACH + 'a warm peach afternoon sky with a few soft clouds.' + BACK, WIDE),
     'back/sunset': (BEACH + 'a gold and pink sunset sky, the sea glowing softly gold.' + BACK, WIDE),
+    # The tide that washes in over the frame and back out (James, 5 Nov 2026: "an awesome wave or lovely water"). Cut out and
+    # stretched across the stage, so it is wide, fills the frame edge to edge, and its crest runs along the whole top.
+    'tide/wave': ('A wide rolling ocean wave seen from the front, one long wall of glossy see-through turquoise and blue water stretching '
+                  'from the left edge to the right edge, a big curling crest of bubbly white foam along the whole top, little splashes and '
+                  'droplets leaping up, lighter shallow water near the bottom, a flat straight bottom edge.' + SPRITE, (1216, 688)),
     'home/card': (PIPI + 'sitting on a sandy beach waving its foot, a few small pipi shells peeking out of the sand around it, and shells lined along the tideline, '
                   'a calm blue sea behind, wide landscape picture for a game title card.' + AGE, (1216, 688)),
 }
@@ -172,7 +177,7 @@ GAME_ART = ROOT / 'src' / 'games' / 'pipi' / 'art' / 'paint'
 INBOX = Path.home() / 'dragon-art-inbox' / 'pipi-art' / 'set' / 'c'
 HOME = ROOT / 'src' / 'assets' / 'home'
 # The home card goes to src/assets/home/ (docs/GAME_DEVELOPMENT_GUIDE.md, section 2).
-SIZES = {'pipi': 320, 'friends': 320, 'shells': 256, 'things': 256}
+SIZES = {'pipi': 320, 'friends': 320, 'shells': 256, 'things': 256, 'tide': 1200}
 
 
 def destination(name: str) -> tuple[str, str, str]:
