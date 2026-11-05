@@ -75,16 +75,25 @@ function decorationToBuy(island: Island) {
   return can.find((d) => 'help' in d) ?? can.sort((a, b) => b.coins - a.coins)[0] ?? null;
 }
 
+/** "Build a House on your empty spot for 25 coins so more islanders can move in." (fixed words, so Bella can read it) */
+export function buildLine(kind: PlotKind, oneEmpty: boolean): string {
+  const why = kind === 'house' ? ' so more islanders can move in' : '';
+  return `Build a ${KIND_NAME[kind]} on ${oneEmpty ? 'your empty spot' : 'an empty spot'} for ${coins(BUILD_COINS[kind])}${why}.`;
+}
+
+export const RESTING_LINE = 'Your island is resting. See you tomorrow!';
+export const RACE_LINE = `Try a Sky Race! Your first win today brings ${coins(FIRST_WIN_PRIZE.coins)} and ${crystals(FIRST_WIN_PRIZE.crystals)}, and nobody loses anything.`;
+export const END_TURN_LINE = 'Press End turn to collect what your island makes.';
+
 export function nextStep(island: Island): NextStep {
-  if (island.turnsLeft < 1) return { say: 'Your island is resting. See you tomorrow!' };
+  if (island.turnsLeft < 1) return { say: RESTING_LINE };
 
   // An empty spot to build on.
   const empty = island.spots.findIndex((spot) => spot.kind === 'empty');
   if (empty >= 0) {
     const kind = wantedKind(island);
     if (island.coins >= BUILD_COINS[kind]) {
-      const why = kind === 'house' ? ' so more islanders can move in' : '';
-      return { say: `Build a ${KIND_NAME[kind]} on ${emptyWords(island)} for ${coins(BUILD_COINS[kind])}${why}.`, target: `spot-${empty}` };
+      return { say: buildLine(kind, count(island, 'empty') === 1), target: `spot-${empty}` };
     }
   }
 
@@ -111,10 +120,7 @@ export function nextStep(island: Island): NextStep {
 
   // A race.
   if (island.racesToday === 0 && !raceProblem(island, GULL_RIDERS, '')) {
-    return {
-      say: `Try a Sky Race! Your first win today brings ${coins(FIRST_WIN_PRIZE.coins)} and ${crystals(FIRST_WIN_PRIZE.crystals)}, and nobody loses anything.`,
-      target: 'race',
-    };
+    return { say: RACE_LINE, target: 'race' };
   }
 
   // Coins to spare: something pretty (only when nothing above is being saved for).
@@ -139,5 +145,5 @@ export function nextStep(island: Island): NextStep {
   if (island.driftLeft > 0) {
     return { say: `A chunk of land is drifting by. Save up ${coins(chunk)} to anchor it (you have ${coins(island.coins)}).`, target: 'end-turn' };
   }
-  return { say: 'Press End turn to collect what your island makes.', target: 'end-turn' };
+  return { say: END_TURN_LINE, target: 'end-turn' };
 }

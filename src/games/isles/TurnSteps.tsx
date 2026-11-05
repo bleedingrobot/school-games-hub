@@ -27,6 +27,13 @@ export const STEP_PIP: Record<number, string> = {
   [Step.Rest]: 'Race the Gull Riders if you like, then end your turn.',
 };
 
+/** What the question step says once it's answered (or when there's none). */
+export const QUESTION_WORDS = {
+  none: "There's no question this turn.",
+  right: 'You got it right: a fair wind is blowing this turn!',
+  wrong: "Not this time. You haven't lost anything.",
+} as const;
+
 /** The step that holds the button a `data-pip` name means (null: it's on My island, between turns). */
 export function stepOf(target: string | undefined | null): Step | null {
   if (!target) return null;
@@ -122,10 +129,10 @@ export function TurnStep(p: StepProps) {
   switch (step) {
     case Step.Question: {
       const a = p.question?.answered;
-      body = !p.question ? <p>There's no question this turn.</p>
+      body = !p.question ? <p>{QUESTION_WORDS.none}</p>
         : !a ? <p>The sky pilot is asking…</p>
-        : a.right ? <p className="si-wind">You got it right: a fair wind is blowing this turn!</p>
-        : <p>Not this time. You haven't lost anything.</p>;
+        : a.right ? <p className="si-wind">{QUESTION_WORDS.right}</p>
+        : <p>{QUESTION_WORDS.wrong}</p>;
       if (!p.question || a) main = next();
       break;
     }
