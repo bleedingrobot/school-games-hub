@@ -80,6 +80,8 @@ const ART: Record<string, GameCardArt> = {
   'dragon-maths': { card: dragonMaths, small: dragonMathsSmall },
   'clan-quest': { card: clanQuest, small: clanQuestSmall },
   'kingdom': { card: kingdom, small: kingdomSmall },
+  // Royal Decree shares Kingdom Keeper's picture (same town and rulers) until it has its own.
+  'decree': { card: kingdom, small: kingdomSmall },
   'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
   'trader': { card: trader, small: traderSmall, focus: 'center 55%' },
   'diamond': { card: diamond, small: diamondSmall, focus: 'center 80%' },

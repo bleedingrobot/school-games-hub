@@ -18,6 +18,8 @@ import { archeryChallenge } from './archery';
 import { archeryOn } from './archery/switch';
 import { kingdomKeeper } from './kingdom';
 import { kingdomOn } from './kingdom/switch';
+import { royalDecree } from './decree';
+import { decreeOn } from './decree/switch';
 import { starTrader } from './trader';
 import { traderOn } from './trader/switch';
 import { diamondDrop } from './diamond';
@@ -58,10 +60,10 @@ export const DRAGON_MATHS_ON = true;
 export const CLAN_QUEST_ON = true;
 
 /** Every game on the hub. To add a game: make a folder next to chess/, then add it here. */
-export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(kororaOn() ? [penguinPairs] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(tuiOn() ? [tuisTenTree] : [])];
+export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(kororaOn() ? [penguinPairs] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(tuiOn() ? [tuisTenTree] : []), ...(decreeOn() ? [royalDecree] : [])];
 
 /** Every game that can have saved games: the dashboard's, plus Power Clash even while its card is switched off. */
-export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest])];
+export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest]), ...(kingdomOn() ? [] : [kingdomKeeper])];
 
 /** A game's name for lists of saved games, even for Power Clash while its card is off. */
 export const gameLabel = (id: string | undefined) => ALL_GAMES.find((game) => game.id === id)?.name;

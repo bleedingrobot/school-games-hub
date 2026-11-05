@@ -1,0 +1,37 @@
+# Royal Decree people: prompts
+
+Painted 6 November 2026 on James's ComfyUI (Z-Image Turbo, 8 steps, 832x1216, no second pass), script `~/dragon-art-inbox/tools/decree-anim.py` (outside the repo).
+Two tries of each, repainted only when one failed a check. Chosen tries are in [picks.json](picks.json).
+
+Each prompt = style sentence + the text below + ending.
+
+Style sentence: Character design for a cosy animated family film, clean simple cel-shaded shapes with soft outlines, hand-painted gouache texture, warm friendly expression. Suitable for children aged 8 to 11. No writing, letters or numbers anywhere.
+
+Ending: Standing, full figure from head to feet, facing slightly toward the viewer, fully clothed with collars closed. On a plain flat pure white background, nothing else.
+
+- **baker**: Pip the baker: a round, cheerful adult man baker of Pākehā descent with rosy cheeks, a tall white baker hat, a floury cream apron over a high-collared long-sleeved shirt buttoned to the top, carrying a wooden tray of golden bread loaves.
+- **fisher**: Tama the fisher: a strong smiling Māori man in his thirties with dark hair tied back, a woven flax-coloured tunic with a high closed collar and rolled sleeves, a fishing net over one shoulder and a woven basket of fish in the other hand.
+- **knight**: Sir Ash the youngest knight: a nervous skinny teenage boy knight with a worried smile, wearing a silver helmet that is far too big for him, tilting down over his eyes, a plain tabard over chainmail up to the neck, holding a small sword pointing down.
+- **wizard**: Old Fern the castle wizard: a small elderly woman wizard of Māori descent with long silver hair and a kind wrinkled smile, a tall pointed hat and a long deep blue robe covered in gold stars, closed up to the neck, a tiny cute brown owl perched on her shoulder, holding a wooden staff.
+- **goatherd**: Hettie the goat farmer: a sturdy cheerful farm woman of Pākehā descent in her forties with a red headscarf, a long-sleeved shirt buttoned to the top and a patched green skirt, holding a rope lead, with a cute white goat standing beside her.
+- **jester**: Bobbin the jester: a skinny young person in a patchwork jester suit of red, yellow and teal diamonds with a high ruffled collar and a floppy two-pointed hat with little bells, juggling three colourful balls, laughing.
+- **smith**: Ingrid the blacksmith: a strong tall woman in her thirties of Scandinavian descent with a thick blonde braid, big arms, a long-sleeved high-collared shirt under a thick leather apron, holding a big iron hammer and smiling proudly.
+- **shepherd**: Kit the young shepherd: a child of about 10, a boy of Samoan descent with curly black hair and a gap-toothed grin, wearing a warm brown wool tunic buttoned up, carrying a fluffy white lamb in both arms, holding a small crook under his arm.
+- **merchant**: Lady Saffron the spice merchant: a fancy elegant woman of Indian descent in her forties with dark hair in an elegant bun and gold earrings, a rich saffron-orange and gold high-collared long gown, holding a shiny brass balance scale in one hand.
+- **inventor**: Cog the inventor: a young woman of Chinese descent with messy black hair, brass goggles pushed up on her forehead, a leather apron with pockets over a long-sleeved buttoned shirt, holding a funny brass clockwork gadget with cogs and a small spring.
+- **musician**: Lark the musician: a cheerful young man of Tongan descent with a flower behind his ear, a bright green and yellow troubadour tunic with a high closed collar and a feathered cap, playing a wooden lute and smiling.
+- **gardener**: Moss the royal gardener: an old man of Pākehā descent with a white beard and a floppy sun hat, green overalls over a buttoned shirt, hugging a gigantic orange pumpkin as big as himself with both arms, happy.
+- **captain**: Captain Bryn the captain of the guard: a tall confident woman of Welsh descent in her forties with short red hair, a polished silver helmet under her arm, a blue tabard over a high-collared chainmail shirt, holding a big round wooden shield with a gold sun, a stern but kind smile.
+- **scholar**: Ada the librarian: a young woman of Indian descent with round glasses and a long black plait, a long plum-coloured dress with a high closed collar, carrying a very tall wobbly pile of old leather books stacked up to her chin.
+- **explorer**: Rua the explorer: a young adventurous Māori man with a bushy dark beard and a woven hat, a sturdy brown coat buttoned to the neck and boots, holding a rolled-up parchment map under one arm and a brass spyglass in the other hand.
+- **beekeeper**: Honey the beekeeper: a cheerful plump woman of Pacific Islander descent in her fifties, a wide straw hat with a mesh veil pushed back off her face, a white high-collared beekeeper smock closed to the neck, holding a glass jar of golden honey, with three cute tiny bees flying around her.
+- **dragonkeeper**: Wren the dragon keeper: a teenage girl of Korean descent with a short black bob and a big proud smile, a green leather jerkin over a high-collared tunic with thick gloves, holding a small cute round green baby dragon in her arms, the dragon has big eyes and tiny wings.
+- **cook**: Lupe the castle cook: a big warm-hearted woman of Samoan descent in her fifties with black hair in a bun under a white cook cap, a white apron over a long-sleeved high-collared red dress, holding a huge wooden ladle, beaming.
+- **fortune**: Opal the fortune teller: a kindly middle-aged woman of Persian descent with a purple headscarf with little gold coins and dangly earrings, a long purple and teal robe closed at the neck, holding up a softly glowing glass crystal ball in both hands, gentle smile.
+- **taxman**: Penny the tax counter: a neat young woman of Pākehā descent with her hair in a tidy bun and a pencil tucked in it, a tidy grey-blue long dress with a high white collar, holding a wooden abacus with coloured beads, an earnest smile.
+- **ringmaster**: Dash the circus ringmaster: a cheerful moustached man of Pākehā descent in a tall black top hat and a bright red long-tailed coat buttoned to the neck with gold buttons, striped trousers, holding a short cane, one arm flung out in a showman pose.
+- **miller**: Ox the miller: a big, tall, friendly man of Māori descent with a broad smile, a sturdy cream-coloured shirt buttoned to the top with rolled sleeves, a brown vest, covered in flour dust, carrying a large flour sack on one shoulder.
+- **cat**: Sir Whiskers the royal cat: a fluffy ginger cat sitting upright on its haunches like a person, wearing a tiny red royal cape with a white fur collar and a tiny gold clasp, proud and cute, no human, just the cat.
+- **messenger**: Zip the messenger: a quick skinny young boy of Indian descent in a red tunic with a high collar and a feathered cap, running mid-stride, one leg lifted, holding a rolled scroll tied with a ribbon high in one hand, big grin.
+- **queen**: Queen Ysolde the queen from the next kingdom: a friendly graceful adult woman of African descent with dark brown skin, a golden crown over braided hair, a long teal travelling cloak with a fur collar closed at the neck over a long gown, warm smile.
+- **ghost**: Gilbert the friendly castle ghost: a cute round cartoon ghost, pale blue and softly glowing, semi-transparent, with a big happy smile and kind round eyes, wearing an old-fashioned white pleated ruff collar around his neck, floating with little stubby arms waving hello.
