@@ -1,8 +1,8 @@
 # Weka's Stepping Stones — art plan
 
 **Status: all 26 painted 5 Nov 2026 (2 tries each, picks in `docs/weka-art/picks.json`; the tries are on branch
-`weka-art-inbox`).** Weak spots left: the big rock is a stacked bun rather than a wide flat rock, and the takahē still looks
-like the pūkeko (as in Penguin Pairs).
+`weka-art-inbox`).** The big rock, takahē and kiwi were repainted the same night with clearer prompts (tries 3 to 5). Big rock
+try 6 is try 4 with a stray small pebble below it painted out; the kiwi still shows small wings.
 
 The game ships with clay-look SVG stand-ins (`src/games/weka/WekaArt.tsx`). The final pictures are painted in ComfyUI on
 James's gaming PC with `scripts/weka-art.py` (clay style, the same as Kiwi's Beanstalk), the way Penguin Pairs and Pipi
