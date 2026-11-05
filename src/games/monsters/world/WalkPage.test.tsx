@@ -141,8 +141,9 @@ describe('the Walk around test page', () => {
       }
       await user.click(fight);
       await user.click(screen.getAllByRole('button', { name: /power/ })[1]);
-      const q = await screen.findByRole('dialog', { name: /./ });
-      await user.click(within(q).getByRole('button', { name: '4' }));
+      // A wild battle asks one Power up question with its first attack; later attacks ask nothing.
+      const q = screen.queryByRole('dialog', { name: /Power up/ });
+      if (q) await user.click(within(q).getByRole('button', { name: '4' }));
       await passMessages(user);
     }
     await user.click(screen.getByRole('button', { name: 'Continue' }));
@@ -165,7 +166,7 @@ describe('losing', () => {
     press('ArrowRight');
     await screen.findByText(/A wild .* appeared!/);
     await passMessages(user);
-    // Wrong answers only: a graze at best, and the wild monster hits back.
+    // A wrong power-up answer and a level 1 monster on 1 health: the wild monster wins.
     for (let round = 0; round < 40 && !screen.queryByRole('button', { name: 'Continue' }); round++) {
       const fight = screen.queryByRole('button', { name: 'Fight' });
       if (!fight) {
@@ -174,8 +175,9 @@ describe('losing', () => {
       }
       await user.click(fight);
       await user.click(screen.getAllByRole('button', { name: /power/ })[0]);
-      const q = await screen.findByRole('dialog', { name: /./ });
-      await user.click(within(q).getByRole('button', { name: '3' }));
+      // A wild battle asks one Power up question with its first attack; later attacks ask nothing.
+      const q = screen.queryByRole('dialog', { name: /Power up/ });
+      if (q) await user.click(within(q).getByRole('button', { name: '3' }));
       await passMessages(user);
     }
     await user.click(screen.getByRole('button', { name: 'Continue' }));

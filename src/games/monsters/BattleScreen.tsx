@@ -11,7 +11,7 @@ import type { Question, SkillPack } from '../../../shared/maths/skillPack';
 import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import {
   activeFoe, activeMonster, healTeam, isOver, judgeAnswer, newBattle, play, questionFor,
-  type Bag, type BattleAction, type BattleSetup, type BattleState, type ItemId,
+  type Bag, type BattleAction, type BattleEvent, type BattleSetup, type BattleState, type ItemId,
 } from '../../../shared/monsters/engine';
 import { bandFor } from '../../../shared/monsters/bands';
 import { speciesOf } from '../../../shared/monsters/monsterBook';
@@ -64,6 +64,8 @@ export interface BattleScreenProps {
   place?: string;
   /** A trainer battle: the trainer's name, so their picture can say hello before their first monster comes out. */
   trainer?: string;
+  /** A random wild battle: one "Power up!" question with the first attack, then attacks ask nothing. (Trainers and giants ask every attack.) */
+  powerUp?: boolean;
   /** The player's chosen look, shown opposite the trainer while they say hello. */
   look?: string;
   /** Monsters already in the book as owned: the foe's card says whether you have caught one yet. Leave out to say nothing. */
@@ -87,7 +89,7 @@ interface Asking {
   band: number;
   title: string;
   note?: string;
-  action: { kind: 'fight'; attack: number } | { kind: 'catch'; ball?: 'ball' | 'great-ball' };
+  action: { kind: 'fight'; attack: number } | { kind: 'catch'; ball?: 'ball' | 'great-ball' } | { kind: 'power-up'; attack: number };
   back: Mode;
 }
 
@@ -102,7 +104,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look, owned, powerUp = false }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -116,6 +118,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
 
   const start = useMemo(() => newBattle(setup), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [battle, setBattle] = useState<BattleState>(start.state);
+  const wildPowerUp = powerUp && setup.kind === 'wild';
   const [shown, setShown] = useState<Shown>(() => shownFrom(start.state));
   const [mode, setMode] = useState<Mode>('playing');
   const [beats, setBeats] = useState<Beat[]>([]);
@@ -204,6 +207,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         }, 300);
         break;
       }
+      case 'power-up':
+        if (e.answer !== 'wrong') play_('item');
+        break;
       case 'faint':
         (e.side === 'you' ? setMyLook : setFoeLook)('faint');
         play_('end');
@@ -334,16 +340,25 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   }
 
   /** Runs the engine for one action and starts playing what happened. */
-  function run(action: BattleAction, fact?: string) {
+  /** `then` is played straight after (the attack that comes after a power up), with its messages following on. */
+  function run(action: BattleAction, fact?: string, then?: BattleAction) {
     const before = battle;
-    const draws: number[] = [];
-    const { state: next, events } = play(before, action, () => {
-      const n = random();
-      draws.push(n);
-      return n;
-    });
-    steps.current.push({ action, ...(answered.current && (action.kind === 'fight' || action.kind === 'catch') ? { q: answered.current } : {}), randoms: draws });
-    answered.current = null;
+    let next = before;
+    const events: BattleEvent[] = [];
+    for (const a of then ? [action, then] : [action]) {
+      if (isOver(next)) break;
+      const draws: number[] = [];
+      const step = play(next, a, () => {
+        const n = random();
+        draws.push(n);
+        return n;
+      });
+      const asked = a.kind === 'catch' || a.kind === 'power-up' || (a.kind === 'fight' && a.answer !== undefined);
+      steps.current.push({ action: a, ...(answered.current && asked ? { q: answered.current } : {}), randoms: draws });
+      answered.current = null;
+      next = step.state;
+      events.push(...step.events);
+    }
     move.current = { before, next, action };
     log.current.push(...events);
     setAsking(null);
@@ -351,6 +366,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     setShown(shownFrom(before));
     startBeats(beatsFor(events, before.kind, fact));
   }
+
+  /** The attack a power up was asked for, played straight after it. */
+  const thenOf = (a: Asking['action']): BattleAction | undefined => (a.kind === 'power-up' ? { kind: 'fight', attack: a.attack } : undefined);
 
   function packOf(topic: TopicId) {
     let pack = packs.current.get(topic);
@@ -361,8 +379,13 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     return pack;
   }
 
-  /** Asks the question for a fight or catch action (the topic and band come from the engine). */
+  /** Asks the question for a fight, catch or power-up action (the topic and band come from the engine). */
   function ask(action: Asking['action'], back: Mode) {
+    // A random wild battle asks once, with its first attack ("Power up!"); after that attacks go straight in.
+    if (action.kind === 'fight' && wildPowerUp) {
+      if (battle.powerUp !== undefined) return run({ kind: 'fight', attack: action.attack });
+      action = { kind: 'power-up', attack: action.attack };
+    }
     const wanted = questionFor(battle, action);
     if (!wanted) return;
     // A topic the teacher switched off is swapped for the nearest one that is on (and asked at that topic's band for this place).
@@ -370,10 +393,11 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     const spec = topic === wanted.topic ? wanted : { topic, band: bandFor(topic, battle.area, battle.far) };
     const question = packOf(spec.topic).nextQuestion({ level: spec.band, multipleChoice: settings.multipleChoice });
     const answerless = (r: AnswerResult) => ({ ...action, answer: r }) as BattleAction;
-    if (!question) return run(answerless('right')); // nothing can be asked: never block the battle
-    const title = action.kind === 'fight' ? speciesOf(activeMonster(battle).species).attacks[action.attack].name : `Catch ${nameOf(activeFoe(battle).species)}`;
-    const note = action.kind === 'catch'
-      ? 'A right answer makes the catch much more likely'
+    if (!question) return run(answerless('right'), undefined, thenOf(action)); // nothing can be asked: never block the battle
+    const title = action.kind === 'fight' ? speciesOf(activeMonster(battle).species).attacks[action.attack].name
+      : action.kind === 'power-up' ? 'Power up!' : `Catch ${nameOf(activeFoe(battle).species)}`;
+    const note = action.kind === 'catch' ? 'A right answer makes the catch much more likely'
+      : action.kind === 'power-up' ? `Get it right and every attack hits harder this battle${settings.calm ? '' : ' (even harder if you’re quick)'}`
       : settings.calm ? undefined : 'A quick right answer hits extra hard';
     setAsking({ question, topic: spec.topic, band: spec.band, title, note, action, back });
     setMode('question');
@@ -627,7 +651,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         <QuestionModal
           question={asking.question}
           title={asking.title}
-          spot={asking.action.kind === 'fight' ? 'Fight' : 'Catch'}
+          spot={asking.action.kind === 'fight' ? 'Fight' : asking.action.kind === 'power-up' ? 'Power up' : 'Catch'}
           note={asking.note}
           timeScale={timeScale}
           onClose={() => {
@@ -646,10 +670,15 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
               given: answer, ms: Math.round(ms), at: Date.now(),
             };
             judged.current = judgeAnswer({ correct: marked.correct, ms, topic: asking.topic, band: asking.band, calm: settings.calm });
-            const reward = judged.current === 'quick-right' ? (asking.action.kind === 'catch' ? 'Quick! Great throw!' : 'Quick! Critical hit!') : undefined;
+            const reward = judged.current !== 'quick-right' ? undefined
+              : asking.action.kind === 'catch' ? 'Quick! Great throw!' : asking.action.kind === 'power-up' ? 'Quick! Super power up!' : 'Quick! Critical hit!';
             return { ...marked, reward };
           }}
-          onDone={(marked) => run({ ...asking.action, answer: judged.current } as BattleAction, marked.correct ? undefined : marked.fact)}
+          onDone={(marked) => run(
+            (asking.action.kind === 'power-up' ? { kind: 'power-up', answer: judged.current } : { ...asking.action, answer: judged.current }) as BattleAction,
+            marked.correct ? undefined : marked.fact,
+            thenOf(asking.action),
+          )}
         />
       )}
 

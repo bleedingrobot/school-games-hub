@@ -14,7 +14,8 @@
  *  - exp and levels: the monsters you hold now (team + box together, ignoring order and health) are
  *    exactly the ones you held before, with the exp the replayed battles gave, plus what you caught.
  *    So levels cannot jump, and nothing is invented or lost;
- *  - every fight or catch in a battle carries a maths question that is made again here and marked,
+ *  - every fight or catch in a battle carries a maths question that is made again here and marked
+ *    (a random wild battle asks one power-up question at the start instead, and its fights carry none),
  *    and the right / quick-right / wrong result has to agree with it;
  *  - a badge needs a won Tower battle against that Tower's trainer, a trainer pays only once, a chest
  *    opens only once, and you cannot be in an area you have not opened;
@@ -50,7 +51,7 @@ import { markQuestion, type QuestionReport } from './verify';
 
 export interface BattleStep {
   action: BattleAction;
-  /** The maths question: needed for a fight or a catch, never for anything else. */
+  /** The maths question: needed for a power up, a catch or a trainer fight, never for anything else. */
   q?: QuestionReport;
   /** The random numbers the rules drew for this step, in order. */
   randoms: number[];
@@ -321,7 +322,11 @@ function replay(report: unknown, pool: string[], allowance: Bag, hatched: string
     const draws = step.randoms;
     if (!draws.every((n) => typeof n === 'number' && n >= 0 && n < 1)) return 'battle-random';
     const action = step.action as unknown as BattleAction;
-    const asks = action.kind === 'fight' || action.kind === 'catch';
+    // A wild battle asks once at the start (power-up) and its attacks ask nothing; a giant, like a trainer, asks for every attack.
+    const randomWild = setup.kind === 'wild' && r.giant === undefined;
+    if (action.kind === 'power-up' && !randomWild) return 'battle-step';
+    if (action.kind === 'fight' && action.answer === undefined && !randomWild) return 'battle-answer';
+    const asks = action.kind === 'power-up' || action.kind === 'catch' || (action.kind === 'fight' && action.answer !== undefined);
     if (asks) {
       if (state.phase === 'replace') return 'battle-step';
       const spec = questionFor(state, action);

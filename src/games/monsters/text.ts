@@ -49,6 +49,14 @@ export function beatsFor(events: readonly BattleEvent[], kind: BattleState['kind
       case 'start':
         out.push({ event, text: kind === 'wild' ? `A wild ${nameOf(event.foe)} appeared!` : `A trainer wants to battle! They send out ${nameOf(event.foe)}.` });
         break;
+      case 'power-up':
+        out.push({
+          event,
+          text: event.answer === 'quick-right' ? 'Quick! Super power up! Your attacks hit extra hard this battle.'
+            : event.answer === 'right' ? 'Power up! Your attacks hit harder this battle.'
+            : fact ? `Not quite: ${fact}. No power up this time.` : 'Not quite. No power up this time.',
+        });
+        break;
       case 'attack': {
         const who = event.side === 'you' ? nameOf(event.monster) : foeName(event.monster);
         const note = event.effect === 'strong' ? ' It’s super effective!' : event.effect === 'weak' ? ' It’s not very effective.' : '';

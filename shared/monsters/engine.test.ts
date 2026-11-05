@@ -153,6 +153,49 @@ describe('a fight', () => {
   });
 });
 
+describe('the wild power up', () => {
+  const big = () => setup({ foes: [makeMonster('plusplash-1', 40)] });
+  it('is one question that takes no turn: the foe does not act and no random number is drawn', () => {
+    const { state } = newBattle(big());
+    let draws = 0;
+    const out = play(state, { kind: 'power-up', answer: 'right' }, () => (draws++, 0.5));
+    expect(draws).toBe(0);
+    expect(out.events).toEqual([{ kind: 'power-up', answer: 'right' }]);
+    expect(out.state).toMatchObject({ powerUp: 'right', questions: 1, turn: 0 });
+    expect(out.state.team[0].hp).toBe(state.team[0].hp);
+    expect(questionFor(state, { kind: 'power-up' })?.topic).toBe(TYPE_TOPIC.fire);
+  });
+  it('makes every attack after it hit harder, and a wrong answer gives no extra', () => {
+    const after = (answer: 'right' | 'quick-right' | 'wrong') => {
+      const up = play(newBattle(big()).state, { kind: 'power-up', answer }, half).state;
+      const hit = play(up, { kind: 'fight', attack: 0 }, half);
+      expect(hit.state.questions).toBe(1);
+      return hit.events.find((e) => e.kind === 'attack' && e.side === 'you') as { damage: number; answer?: string };
+    };
+    const plain = play(newBattle(big()).state, { kind: 'fight', attack: 0, answer: 'right' }, half).events.find((e) => e.kind === 'attack')!;
+    const wrong = after('wrong');
+    expect(wrong.damage).toBe((plain as { damage: number }).damage);
+    expect(wrong.answer).toBeUndefined();
+    expect(after('right').damage).toBeGreaterThan(wrong.damage);
+    expect(after('quick-right').damage).toBeGreaterThan(after('right').damage);
+  });
+  it('comes once, only in a wild battle, and an attack with no answer needs it first', () => {
+    const { state } = newBattle(big());
+    const up = play(state, { kind: 'power-up', answer: 'right' }, half).state;
+    expect(() => play(up, { kind: 'power-up', answer: 'right' }, half)).toThrow(BattleRuleError);
+    expect(() => play(state, { kind: 'fight', attack: 0 }, half)).toThrow(BattleRuleError);
+    const trainer = newBattle(setup({ kind: 'trainer' })).state;
+    expect(() => play(trainer, { kind: 'power-up', answer: 'right' }, half)).toThrow(BattleRuleError);
+    expect(() => play(trainer, { kind: 'fight', attack: 0 }, half)).toThrow(BattleRuleError);
+  });
+  it('can come after a switch or an item (running away first asks nothing)', () => {
+    const { state } = newBattle(setup({ team: [makeMonster('factorch-1', 10), makeMonster('plusplash-1', 10)], foes: [makeMonster('plusplash-1', 40)] }));
+    const switched = play(state, { kind: 'switch', to: 1 }, half).state;
+    if (switched.phase !== 'choose') return;
+    expect(play(switched, { kind: 'power-up', answer: 'right' }, half).state.powerUp).toBe('right');
+  });
+});
+
 describe('switch, bag and run', () => {
   it('switching costs the turn, a potion heals up to full', () => {
     const hurt = { ...makeMonster('factorch-1', 10), hp: 5 };

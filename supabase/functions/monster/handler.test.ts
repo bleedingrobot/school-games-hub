@@ -84,7 +84,7 @@ describe('the monster server function', () => {
     expect(db.saved?.version).toBe(3);
     expect(db.saved?.world).toEqual(items[2].world);
     expect(db.rows[1].battles).toHaveLength(4);
-    expect(db.rows[1].summary.questions).toBeGreaterThan(8);
+    expect(db.rows[1].summary.questions).toBeGreaterThanOrEqual(4); // each wild battle asks at least its power up
   });
 
   it('puts the answers in the maths records, one batch per topic, once only, however often it is sent', async () => {

@@ -42,7 +42,11 @@ export function HowToPlayBody() {
           <strong>Run</strong> (you can’t run from a trainer). The keys <kbd>1</kbd> to <kbd>4</kbd> pick from the list, and <kbd>Esc</kbd> goes back.
         </p>
         <p>
-          When you pick an attack, a maths question pops up. <strong>Get it right and the attack hits.</strong> A quick right answer hits extra hard.
+          <strong>Wild monsters:</strong> the first time you pick an attack, a <strong>Power up</strong> maths question pops up. Get it right and every attack hits harder for the
+          rest of that battle (a quick answer powers up even more). Get it wrong and the game shows you the right answer, and your attacks hit as normal. After that, attacks ask nothing.
+        </p>
+        <p>
+          <strong>Trainers, Tower leaders and sleeping giants:</strong> every attack asks a maths question. <strong>Get it right and the attack hits.</strong> A quick right answer hits extra hard.
           <strong> Get it wrong</strong> and the attack is only a small hit, and the game shows you the right answer. There is no losing a turn for being slow.
         </p>
         <p>Enemy monsters hit back without asking you anything. If all your monsters get tired, you hurry back to your last healing spot and keep everything.</p>

@@ -8,6 +8,10 @@
  * actions with the same random numbers and you get the same battle: the N.6 server check
  * replays a battle exactly this way (see `replayBattle`).
  *
+ * Wild battles ask one "Power up!" question before their first attack (`power-up`; running away
+ * first still asks nothing) and then attacks need no answer: the result boosts every attack for the rest of the battle (TUNING.powerUp). Trainers,
+ * badge leaders and giants still ask one question per attack (James, 6 Nov 2026).
+ *
  * The engine does not make the maths question. `questionFor` says which topic and band to ask;
  * the screen asks it and passes the result in the action. A quick answer is judged by
  * `judgeAnswer` from how hard the question was, not as a race.
@@ -49,6 +53,8 @@ export interface BattleState {
   phase: Phase;
   turn: number;
   questions: number;
+  /** A wild battle's "Power up!" answer, once it is asked (before its first attack). */
+  powerUp?: AnswerResult;
 }
 
 export interface BattleSetup {
@@ -62,7 +68,10 @@ export interface BattleSetup {
 }
 
 export type BattleAction =
-  | { kind: 'fight'; attack: number; answer: AnswerResult }
+  /** `answer` is left out in a wild battle (the power-up counts instead); a trainer battle needs one. */
+  | { kind: 'fight'; attack: number; answer?: AnswerResult }
+  /** A wild battle's one question, asked before its first attack. Takes no turn: the foe does not act. */
+  | { kind: 'power-up'; answer: AnswerResult }
   | { kind: 'switch'; to: number }
   | { kind: 'item'; item: ItemId; target?: number }
   | { kind: 'catch'; answer: AnswerResult; ball?: 'ball' | 'great-ball' }
@@ -70,6 +79,7 @@ export type BattleAction =
 
 export type BattleEvent =
   | { kind: 'start'; foe: string }
+  | { kind: 'power-up'; answer: AnswerResult }
   | { kind: 'attack'; side: 'you' | 'foe'; monster: string; attack: string; anim: string; damage: number; effect: Effect; answer?: AnswerResult; showAnswer?: boolean }
   | { kind: 'faint'; side: 'you' | 'foe'; monster: string }
   | { kind: 'foe-sent'; foe: string }
@@ -120,7 +130,8 @@ export const activeFoe = (s: BattleState) => s.foes[s.foeActive];
 /** The topic and band the next question for this action should come from. */
 export function questionFor(state: BattleState, action: Pick<BattleAction, 'kind'> & { attack?: number }): { topic: TopicId; band: number } | null {
   let topic: TopicId;
-  if (action.kind === 'fight') {
+  if (action.kind === 'power-up') topic = TYPE_TOPIC[speciesOf(activeMonster(state).species).type];
+  else if (action.kind === 'fight') {
     // An ultra rare's attacks each have their own type; everyone else asks from their own type.
     const species = speciesOf(activeMonster(state).species);
     const attack = action.attack === undefined ? undefined : species.attacks[action.attack];
@@ -177,6 +188,16 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
     return { state: s, events };
   }
 
+  if (action.kind === 'power-up') {
+    if (s.kind !== 'wild') refuse('Only a wild battle has a power up');
+    if (s.powerUp !== undefined) refuse('The power up comes once');
+    if (!['right', 'quick-right', 'wrong'].includes(action.answer)) refuse('Unknown answer result');
+    s.questions += 1;
+    s.powerUp = action.answer;
+    events.push({ kind: 'power-up', answer: action.answer });
+    return { state: s, events };
+  }
+
   s.turn += 1;
   let foeActs = true;
 
@@ -184,13 +205,22 @@ export function play(prev: BattleState, action: BattleAction, random: () => numb
     case 'fight': {
       const attack = speciesOf(me().species).attacks[action.attack];
       if (!attack) refuse('That monster has no such attack');
-      if (!['right', 'quick-right', 'wrong'].includes(action.answer)) refuse('Unknown answer result');
-      s.questions += 1;
-      const hit = damageFor(me(), attack.power, foe(), action.answer, random(), attackType(speciesOf(me().species), attack));
+      const type = attackType(speciesOf(me().species), attack);
+      let hit: ReturnType<typeof damageFor>;
+      if (action.answer === undefined) {
+        // A wild battle's attacks ask nothing: the opening power up boosts them all.
+        if (s.kind !== 'wild') refuse('A trainer battle asks a question for every attack');
+        if (s.powerUp === undefined) refuse('Answer the power up question first');
+        hit = damageFor(me(), attack.power, foe(), 'right', random(), type, s.powerUp ? TUNING.powerUp[s.powerUp] : 1);
+      } else {
+        if (!['right', 'quick-right', 'wrong'].includes(action.answer)) refuse('Unknown answer result');
+        s.questions += 1;
+        hit = damageFor(me(), attack.power, foe(), action.answer, random(), type);
+      }
       foe().hp = Math.max(0, foe().hp - hit.damage);
       events.push({
-        kind: 'attack', side: 'you', monster: me().species, attack: attack.name, anim: attack.anim,
-        damage: hit.damage, effect: hit.effect, answer: action.answer, ...(action.answer === 'wrong' ? { showAnswer: true } : {}),
+        kind: 'attack', side: 'you', monster: me().species, attack: attack.name, anim: attack.anim, damage: hit.damage, effect: hit.effect,
+        ...(action.answer ? { answer: action.answer } : {}), ...(action.answer === 'wrong' ? { showAnswer: true } : {}),
       });
       break;
     }
