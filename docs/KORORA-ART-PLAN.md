@@ -6,7 +6,7 @@ Pipi were painted.
 
 ## Pictures (26)
 
-James's changes (4 Nov 2026): the penguin is Two-Shoes, the stones go across the water and the prize is dancing shoes. Repaint `pebble-grey`, `pebble-gold`, `shoes-gold`, the three `back-across-*`, `card`, `sparkle` and `takahe-*` (the tidy step makes `shoes-bronze` and `shoes-silver` from the gold pair).
+James's changes (4 Nov 2026): the penguin is Two-Shoes, the stones go across the water and the prize is dancing shoes. Repaint `pebble-grey`, `pebble-gold`, `shoes-gold`, the three `back-across-*`, `card`, `sparkle` and `takahe-*` (the tidy step makes `shoes-bronze` and `shoes-silver` from the gold pair). Done 5 Nov 2026; the chicks, `pukeko-wait` and both `kereru-*` were repainted too (sparkle, chick, pukeko and kereru prompts reworded), and tidy now makes a figure's see-through middle solid (not the splash).
 
 | Group | Names | Notes |
 | --- | --- | --- |

@@ -56,7 +56,8 @@ PEBBLES = {
     'gold': f'the whole pebble covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
-CHICK = 'a cute tiny fluffy little blue penguin chick, round soft grey-blue down feathers, a tiny dark beak, big round eyes, '
+CHICK = ('a cute tiny baby penguin chick, a round fuzzy ball of soft fluffy grey-brown down all over its body and tummy, very fluffy '
+         'textured fuzz, a tiny dark beak, big round eyes, tiny stubby wings, ')
 FISH = 'one small cute orange fish with a round body, a simple tail fin and one big friendly eye, smiling, '
 
 THINGS = {
@@ -67,7 +68,8 @@ THINGS = {
     'shoes-gold': (f'a pair of dazzling little dancing shoes side by side, made of {SHINE} in shining yellow gold, a small heel and a '
                    'pink satin ribbon bow on each, three tiny gold sparkles around, a prize'),
     'splash': 'a lively splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
-    'sparkle': f'three {SHINE} bright yellow gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, all three stars the same bright yellow gold colour, flat like stickers, only yellow gold stars on plain white',
+    # Gold metal only: the word yellow kept turning one star into plain yellow clay.
+    'sparkle': f'three identical gold metal four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, each star cast in solid gold, {SHINE}, every star equally shiny gold metal, flat like stickers, only shiny gold metal stars on plain white',
 }
 
 # The friend at each later pool, after Two-Shoes' gold dancing shoes. All birds, so the little ones are always chicks.
@@ -76,8 +78,8 @@ FRIENDS = {
     'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
              'downwards, a big round egg-shaped body with fluffy shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
              'strong grey legs and big feet, wearing a little yellow knitted scarf, '),
-    'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little green knitted scarf, ',
-    'kereru': 'a cute plump New Zealand kereru wood pigeon, shiny green and purple head and back, a clean white chest, a small red beak, big kind eyes, wearing a little orange knitted scarf, ',
+    'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs set wide apart, big friendly eyes, wearing a little green knitted scarf, ',
+    'kereru': 'a cute plump New Zealand kereru wood pigeon, one solid rounded body, shiny green and purple head and back, a short tail joined to its body, a clean white chest, a small red beak, big kind eyes, wearing a little orange knitted scarf, ',
     'takahe': ('a cute very big heavy round New Zealand takahe bird, much chunkier than a pukeko, a huge thick bright red beak, olive green back and '
                'turquoise blue chest, short thick red legs, tiny wings, big kind eyes, wearing a little purple knitted scarf, '),
 }
@@ -231,11 +233,14 @@ def tidy(force: bool):
         ys, xs = np.where(a)
         return img.crop((max(0, xs.min() - pad), max(0, ys.min() - pad), min(img.width, xs.max() + pad + 1), min(img.height, ys.max() + pad + 1)))
 
-    def fill_holes(cut, source):
+    def fill_holes(cut, source, see_through=False):
         # rembg can take a white tummy for background; anything walled in by the figure stays solid, in its painted colours.
-        from scipy.ndimage import binary_fill_holes
+        # It can also leave a white chest half see-through, so the inside of the figure (away from its edge) is made solid too.
+        from scipy.ndimage import binary_erosion, binary_fill_holes
         px = np.asarray(cut).copy()
         hole = binary_fill_holes(px[..., 3] > 128) & (px[..., 3] <= 128)
+        if not see_through:
+            hole |= binary_erosion(binary_fill_holes(px[..., 3] > 20), iterations=4) & (px[..., 3] < 255)
         px[hole, :3] = np.asarray(source)[hole]
         px[hole, 3] = 255
         return Image.fromarray(px, 'RGBA')
@@ -261,7 +266,7 @@ def tidy(force: bool):
             continue
         if session is None:
             session = new_session('isnet-general-use')
-        cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
+        cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB'), name == 'splash'))
         save(fit(cut, {'fish': 160}.get(name, SIZES[folder])), out, 82)
         if name in ('pebble-gold', 'shoes-gold'):
             for metal in ('bronze', 'silver'):
