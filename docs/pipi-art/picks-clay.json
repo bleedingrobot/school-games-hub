@@ -30,5 +30,6 @@
   "back/morning": 1,
   "back/afternoon": 1,
   "back/sunset": 1,
-  "home/card": 2
+  "home/card": 2,
+  "tide/wave": 4
 }
