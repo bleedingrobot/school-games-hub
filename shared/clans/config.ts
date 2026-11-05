@@ -156,6 +156,11 @@ export const CONFIG = {
   rewards: {
     fame: { mineWin: 1, bossWin: 5, warWin: 2, kingdomRaidWin: 2, classRaidWin: 3, villageBuilt: 10 },
     points: { minesPerPoint: 3, boss: 3, war: 2, villageBuilt: 5 },
+    /**
+     * Fame for beating the same boss again this season: the 1st win gets the first number, the 2nd the next, and from the
+     * last number on every win gets that. Each boss has its own count, and a new season starts them all again.
+     */
+    bossFameEachTime: [5, 4, 3, 2, 1],
     /** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
     fightsPerDayRange: { min: 1, max: 30 },
   },

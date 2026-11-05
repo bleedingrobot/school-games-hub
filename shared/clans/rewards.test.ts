@@ -7,7 +7,8 @@ import { nextCryQuestion, replayFight, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { startingDrafts } from './create';
 import { empireOf } from './empire';
-import { ACHIEVEMENTS, addEarned, earnedOrNone, fameFor, measures, NO_STATS, pointsFor, reached } from './rewards';
+import { ACHIEVEMENTS, addEarned, earnedOrNone, fameFor, measures, NO_STATS, pointsFor, reached, recordBossWin } from './rewards';
+import type { Clan } from './types';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../maths/practical';
 
 const SEED = 123456;
@@ -83,6 +84,16 @@ describe('what a request earns', () => {
   it('adds up lifetime counts', () => {
     const s = addEarned(addEarned(NO_STATS, { wins: 2, cries: 3 }), { bosses: 1, wars: 1, kingdomRaids: 1, classRaids: 1 });
     expect(s).toEqual({ mineWins: 2, bossWins: 1, warWins: 1, kingdomRaids: 1, classRaids: 1, cries: 3, villageBuilt: 0, monsterSlain: 0 });
+  });
+});
+
+describe('boss fame', () => {
+  it('shrinks each time the same boss is beaten, per boss, and starts again each season', () => {
+    const clan = { members: [] } as unknown as Clan;
+    expect([1, 2, 3, 4, 5, 6].map(() => recordBossWin(clan, 5, 1))).toEqual([5, 4, 3, 2, 1, 1]);
+    expect(recordBossWin(clan, 10, 1)).toBe(5);
+    expect(recordBossWin(clan, 5, 2)).toBe(5);
+    expect(fameFor({ bosses: 1, bossFame: 2 })).toBe(2);
   });
 });
 

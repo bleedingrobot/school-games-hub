@@ -24,7 +24,7 @@ describe('fame on the test page', () => {
     won.result = 'won';
     expect(finishFight(s, won).fame).toBe(1);
     expect(finishFight(s, won, true).fame).toBe(5);
-    expect(finishFight(finishFight(s, won, true).session, won, true).session.fame).toBe(10);
+    expect(finishFight(finishFight(s, won, true).session, won, true).session.fame).toBe(9); // 5, then 4 for the same boss again
     const lost = newFight(s.clan.members, 0, 5, false);
     lost.result = 'lost';
     expect(finishFight(s, lost).fame).toBe(0);

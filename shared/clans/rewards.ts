@@ -23,6 +23,8 @@ export interface Earned {
   classRaids: number;
   /** Battle Cry questions answered right. */
   cries: number;
+  /** Fame for the bosses in `bosses`, which shrinks each time the same boss is beaten in a season. Missing: `bossWin` each. */
+  bossFame?: number;
 }
 
 export const NOTHING: Earned = { wins: 0, bosses: 0, wars: 0, kingdomRaids: 0, classRaids: 0, cries: 0 };
@@ -30,14 +32,30 @@ export const NOTHING: Earned = { wins: 0, bosses: 0, wars: 0, kingdomRaids: 0, c
 /** Counts for an event, or undefined if it earned nothing (so results stay small). */
 export function earnedOrNone(part: Partial<Earned>): Earned | undefined {
   const e = { ...NOTHING, ...part };
-  return (Object.keys(NOTHING) as (keyof Earned)[]).some((k) => e[k] > 0) ? e : undefined;
+  return (Object.keys(NOTHING) as (keyof Earned)[]).some((k) => (e[k] ?? 0) > 0) ? e : undefined;
 }
 
 /** Fame for these counts. Never negative. */
 export function fameFor(e: Partial<Earned>): number {
   const f = CONFIG.rewards.fame;
-  return (e.wins ?? 0) * f.mineWin + (e.bosses ?? 0) * f.bossWin + (e.wars ?? 0) * f.warWin
+  return (e.wins ?? 0) * f.mineWin + (e.bossFame ?? (e.bosses ?? 0) * f.bossWin) + (e.wars ?? 0) * f.warWin
     + (e.kingdomRaids ?? 0) * f.kingdomRaidWin + (e.classRaids ?? 0) * f.classRaidWin;
+}
+
+/** Fame for the next win over the boss at `depth` this season (5, then 4, 3, 2, and 1 from then on). */
+export function nextBossFame(clan: Clan, depth: number, season: number): number {
+  const list = CONFIG.rewards.bossFameEachTime;
+  const before = clan.bossWins?.season === season ? (clan.bossWins.byDepth[depth] ?? 0) : 0;
+  return list[Math.min(before, list.length - 1)] ?? 0;
+}
+
+/** Count a win over the boss at `depth` this season, and return the fame it earns. */
+export function recordBossWin(clan: Clan, depth: number, season: number): number {
+  const fame = nextBossFame(clan, depth, season);
+  const byDepth = clan.bossWins?.season === season ? { ...clan.bossWins.byDepth } : {};
+  byDepth[depth] = (byDepth[depth] ?? 0) + 1;
+  clan.bossWins = { season, byDepth };
+  return fame;
 }
 
 /**

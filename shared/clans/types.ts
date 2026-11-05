@@ -186,6 +186,8 @@ export interface Clan {
   season?: number;
   /** This season's monster tries and supplies. Missing until the clan buys a supply or tries the monster. */
   monster?: MonsterSave;
+  /** How many times this season the clan has beaten each boss, by mine depth. Missing until the first boss win. */
+  bossWins?: { season: number; byDepth: Record<string, number> };
   /** 2 once the gear is from the class lines (shared/clans/items.ts). Missing: older gear, swapped by `refreshGear` when it loads. */
   gearVersion?: 2;
   /** Set to the season number by a new season's reset: until the clan says "keep" or picks again, it may re-pick each member's race and class. */

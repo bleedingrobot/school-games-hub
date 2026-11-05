@@ -34,7 +34,7 @@ import { classByName, raceByName, refreshGear, rollMember } from './character';
 import { slotSeed } from './create';
 import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
-import { earnedOrNone, type Earned } from './rewards';
+import { earnedOrNone, recordBossWin, type Earned } from './rewards';
 import { buyItem, buyTroopMix, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
@@ -609,7 +609,10 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
         return done(state, { type: 'fightRound', round: action.round, over: true, summary, monster, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
       }
       // An extra fight earns no wins or bosses (the database turns those into fame and hub points); Battle Cries still count.
-      const earned = earnedOrNone({ wins: won && !boss && !open.extra ? 1 : 0, bosses: won && boss && !open.extra ? 1 : 0, cries: rightCry });
+      // The same boss beaten again this season earns less fame each time (CONFIG.rewards.bossFameEachTime).
+      const bossWon = won && boss && !open.extra;
+      const bossFame = bossWon ? recordBossWin(clan, open.depth, clan.season ?? clock?.number ?? 0) : 0;
+      const earned = earnedOrNone({ wins: won && !boss && !open.extra ? 1 : 0, bosses: bossWon ? 1 : 0, ...(bossWon ? { bossFame } : {}), cries: rightCry });
       return done(state, { type: 'fightRound', round: action.round, over: true, summary, ...earnedPart(earned) }, true, effects);
     }
   }
