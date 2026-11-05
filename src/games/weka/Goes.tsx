@@ -20,7 +20,7 @@
  * None of this changes what counts: only the final picks are sent, and the server replays them and records the first
  * pick of each fact. The first step is help only and is never sent.
  */
-import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
 import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, showRound, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
@@ -100,6 +100,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const since = useRef(Date.now());
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
+  const pathRef = useRef<HTMLDivElement>(null);
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
   const clearTimers = () => {
     timers.current.forEach((t) => window.clearTimeout(t));
@@ -295,12 +296,12 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
             <span className="wk-scene__friend wk-scene__friend--bank"><Friend friend={friend} pose={pose} /></span>
           </div>
         ) : (
-          <div className="wk-path">
+          <div className="wk-path" ref={pathRef}>
             {STONES.map((n) => {
               const numbered = shown === 'full' || n % 5 === 0 || phase !== 'ask' || toStones.has(n);
               const mark = toStones.has(n) ? 'to' : onStones.has(n) ? 'on' : null;
               return (
-                <span key={n} className={`wk-path__spot${n < 5 ? ' wk-path__spot--narrow' : ''}${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
+                <span key={n} data-n={n} className={`wk-path__spot${n < 5 ? ' wk-path__spot--narrow' : ''}${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
                   <StepStone n={n} big={n === 10} shade={(n - 1) % 10 < 5 ? 'light' : 'dark'} number={numbered} mark={mark} />
                   {n === pos && (
                     <span className="wk-scene__friend">
@@ -310,6 +311,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
                 </span>
               );
             })}
+            {phase === 'bond' && bond > 0 && <Jumps path={pathRef} go={go} shown={bond} />}
           </div>
         )}
       </div>
@@ -332,6 +334,80 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The two jumps of the split drawn under the stones as arrows (James, 5 Nov 2026): orange from the start to the big rock
+ * ("+1"), then blue from the big rock to where Weka landed ("+4"), each appearing as its part of the bond is filled in.
+ * Measured from the stones, so it works on one line or two rows of ten; a jump across the rows leaves one row and
+ * comes in at the start of the next.
+ */
+function Jumps({ path, go, shown }: { path: React.RefObject<HTMLDivElement | null>; go: Go; shown: number }) {
+  const [box, setBox] = useState<{ w: number; h: number; spots: Record<number, { x: number; y: number; w: number; h: number }> } | null>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = path.current;
+      if (!el) return;
+      const base = el.getBoundingClientRect();
+      const spots: Record<number, { x: number; y: number; w: number; h: number }> = {};
+      el.querySelectorAll<HTMLElement>('[data-n]').forEach((s) => {
+        const step = s.querySelector('.wk-step') ?? s;
+        const r = step.getBoundingClientRect();
+        if (r.width) spots[Number(s.dataset.n)] = { x: r.left - base.left + r.width / 2, y: r.bottom - base.top, w: r.width, h: r.height };
+      });
+      setBox({ w: base.width, h: base.height, spots });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [path]);
+  if (!box) return null;
+  const sign = go.kind === 'back' ? '−' : '+';
+  const jumps: { from: number; to: number; size: number; part: 'to' | 'on' }[] = [
+    { from: go.from, to: 10, size: go.toTen, part: 'to' },
+    { from: 10, to: go.answer, size: go.rest, part: 'on' },
+  ].slice(0, shown) as never;
+  const arc = (x1: number, x2: number, y: number, depth: number) => `M ${x1} ${y} Q ${(x1 + x2) / 2} ${y + depth * 2} ${x2} ${y}`;
+  return (
+    <svg className="wk-jumps" width={box.w} height={box.h} viewBox={`0 0 ${box.w} ${box.h}`} aria-hidden="true">
+      <defs>
+        {(['to', 'on'] as const).map((p) => (
+          <marker key={p} id={`wk-head-${p}`} viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" className={`wk-jumps__head--${p}`} />
+          </marker>
+        ))}
+      </defs>
+      {jumps.map((j) => {
+        const a = box.spots[j.from];
+        const b = box.spots[j.to];
+        if (!a || !b) return null;
+        const depth = Math.max(14, a.h * 0.55);
+        const pieces: string[] = [];
+        let label = { x: (a.x + b.x) / 2, y: Math.max(a.y, b.y) + depth + 4 };
+        if (Math.abs(a.y - b.y) < 4) {
+          const y = Math.max(a.y, b.y) - 2;
+          pieces.push(arc(a.x, b.x, y, depth));
+          label = { x: (a.x + b.x) / 2, y: y + depth + 4 };
+        } else {
+          // Across the two rows: out past the end of one row, in from the start of the other.
+          const forward = j.to > j.from;
+          const edgeA = forward ? box.w : 0;
+          const edgeB = forward ? 0 : box.w;
+          pieces.push(arc(a.x, edgeA, a.y - 2, depth * 0.6));
+          pieces.push(arc(edgeB, b.x, b.y - 2, depth));
+          label = { x: (edgeB + b.x) / 2, y: b.y - 2 + depth + 4 };
+        }
+        return (
+          <g key={j.part} className={`wk-jumps__jump wk-jumps__jump--${j.part}`}>
+            {pieces.map((d, i) => (
+              <path key={i} d={d} markerEnd={i === pieces.length - 1 ? `url(#wk-head-${j.part})` : undefined} />
+            ))}
+            <text x={label.x} y={label.y} dominantBaseline="hanging" textAnchor="middle">{sign}{j.size}</text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 

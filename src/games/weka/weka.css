@@ -200,6 +200,17 @@
 }
 @keyframes wk-nudge { 50% { translate: -50% -14%; } }
 
+/* The split's two jumps under the stones, in the bond's colours. */
+.wk-jumps { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 3; }
+.wk-jumps__jump path { fill: none; stroke-width: 5; stroke-linecap: round; animation: wk-in 0.4s ease-out; }
+.wk-jumps__jump--to path { stroke: var(--wk-to); }
+.wk-jumps__jump--on path { stroke: var(--wk-on); }
+.wk-jumps__head--to { fill: var(--wk-to); stroke: none; }
+.wk-jumps__head--on { fill: var(--wk-on); stroke: none; }
+.wk-jumps__jump text { font: 900 22px system-ui, sans-serif; paint-order: stroke; stroke: #fffdf5; stroke-width: 5px; }
+.wk-jumps__jump--to text { fill: #b4561a; }
+.wk-jumps__jump--on text { fill: #1f5aa6; }
+
 /* The split after each right answer: a part-whole bond, the smaller number on top, the two parts below in the hop colours. */
 .wk-bond-area { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
 .wk-bond { position: relative; width: 190px; height: 150px; flex: none; }
