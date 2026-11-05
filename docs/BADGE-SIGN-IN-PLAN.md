@@ -18,6 +18,10 @@ signs them in with no typing, to the same account they already have.
    (`badge_sign_in`, server key only) whose code it is, then makes a one-time magic-link key on the server
    (`auth.admin.generateLink`, no email is sent) and hands back its hash. The page signs in with
    `supabase.auth.verifyOtp({ token_hash, type: 'magiclink' })`. Whoever was signed in on that device before is replaced.
+   It waits for Supabase's sign-in code to finish starting up first, checks the new sign-in was kept, then loads the
+   home page afresh (a full page load, like coming back from Google), so every part of the site starts signed in as
+   the pupil. 4 Nov: without this, pupils on the school Macs reached the home page but games and the basic facts map
+   went out without the sign-in a few seconds later.
 
 ## Safety decisions
 

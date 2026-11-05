@@ -1,0 +1,1210 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "let-s-count-the-hops-together",
+  "text": "Let’s count the hops together."
+ },
+ {
+  "slug": "today-s-stone-is-ready",
+  "text": "Today’s stone is ready"
+ },
+ {
+  "slug": "next-stone-tomorrow",
+  "text": "Next stone tomorrow"
+ },
+ {
+  "slug": "weka-wants-to-cross-the-stream-help-weka-hop-to-the-picnic",
+  "text": "Weka wants to cross the stream! Help Weka hop to the picnic."
+ },
+ {
+  "slug": "weka-wants-to-cross-the-stream-help-weka-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Weka wants to cross the stream! Help Weka hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-weka-has-a-new-stream-to-cross",
+  "text": "Now Weka has a new stream to cross!"
+ },
+ {
+  "slug": "now-weka-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Weka has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "kiwi-wants-to-cross-the-stream-help-kiwi-hop-to-the-picnic",
+  "text": "Kiwi wants to cross the stream! Help Kiwi hop to the picnic."
+ },
+ {
+  "slug": "kiwi-wants-to-cross-the-stream-help-kiwi-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Kiwi wants to cross the stream! Help Kiwi hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-kiwi-has-a-new-stream-to-cross",
+  "text": "Now Kiwi has a new stream to cross!"
+ },
+ {
+  "slug": "now-kiwi-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Kiwi has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "takahe-wants-to-cross-the-stream-help-takahe-hop-to-the-picnic",
+  "text": "Takahē wants to cross the stream! Help Takahē hop to the picnic."
+ },
+ {
+  "slug": "takahe-wants-to-cross-the-stream-help-takahe-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Takahē wants to cross the stream! Help Takahē hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-takahe-has-a-new-stream-to-cross",
+  "text": "Now Takahē has a new stream to cross!"
+ },
+ {
+  "slug": "now-takahe-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Takahē has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "kakapo-wants-to-cross-the-stream-help-kakapo-hop-to-the-picnic",
+  "text": "Kākāpō wants to cross the stream! Help Kākāpō hop to the picnic."
+ },
+ {
+  "slug": "kakapo-wants-to-cross-the-stream-help-kakapo-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Kākāpō wants to cross the stream! Help Kākāpō hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-kakapo-has-a-new-stream-to-cross",
+  "text": "Now Kākāpō has a new stream to cross!"
+ },
+ {
+  "slug": "now-kakapo-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Kākāpō has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "pukeko-wants-to-cross-the-stream-help-pukeko-hop-to-the-picnic",
+  "text": "Pūkeko wants to cross the stream! Help Pūkeko hop to the picnic."
+ },
+ {
+  "slug": "pukeko-wants-to-cross-the-stream-help-pukeko-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Pūkeko wants to cross the stream! Help Pūkeko hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-pukeko-has-a-new-stream-to-cross",
+  "text": "Now Pūkeko has a new stream to cross!"
+ },
+ {
+  "slug": "now-pukeko-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Pūkeko has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "kea-wants-to-cross-the-stream-help-kea-hop-to-the-picnic",
+  "text": "Kea wants to cross the stream! Help Kea hop to the picnic."
+ },
+ {
+  "slug": "kea-wants-to-cross-the-stream-help-kea-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Kea wants to cross the stream! Help Kea hop to the picnic. Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "now-kea-has-a-new-stream-to-cross",
+  "text": "Now Kea has a new stream to cross!"
+ },
+ {
+  "slug": "now-kea-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Now Kea has a new stream to cross! Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "9-plus-2-weka-is-on-9-and-hops-2-more-where-will-weka-land",
+  "text": "9 plus 2. Weka is on 9 and hops 2 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-2-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 2. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-1-more",
+  "text": "9 and 1 make 10. Then 1 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-1-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 1 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-tahi-10-and-1-make-11",
+  "text": "Tekau mā tahi. 10 and 1 make 11."
+ },
+ {
+  "slug": "2-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "2 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "2-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "2 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "11-take-away-2-weka-is-on-11-and-hops-back-2-where-will-weka-land",
+  "text": "11 take away 2. Weka is on 11 and hops back 2. Where will Weka land?"
+ },
+ {
+  "slug": "11-take-away-2-weka-is-on-11-how-many-hops-back-to-the-big-rock",
+  "text": "11 take away 2. Weka is on 11. How many hops back to the big rock?"
+ },
+ {
+  "slug": "11-back-1-makes-10-then-1-more-back",
+  "text": "11 back 1 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "11-back-1-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "11 back 1 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "iwa-10-take-away-1-is-9",
+  "text": "Iwa. 10 take away 1 is 9."
+ },
+ {
+  "slug": "9-plus-3-weka-is-on-9-and-hops-3-more-where-will-weka-land",
+  "text": "9 plus 3. Weka is on 9 and hops 3 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-3-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 3. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-2-more",
+  "text": "9 and 1 make 10. Then 2 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-2-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 2 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-rua-10-and-2-make-12",
+  "text": "Tekau mā rua. 10 and 2 make 12."
+ },
+ {
+  "slug": "3-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "3 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "3-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "3 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "12-take-away-3-weka-is-on-12-and-hops-back-3-where-will-weka-land",
+  "text": "12 take away 3. Weka is on 12 and hops back 3. Where will Weka land?"
+ },
+ {
+  "slug": "12-take-away-3-weka-is-on-12-how-many-hops-back-to-the-big-rock",
+  "text": "12 take away 3. Weka is on 12. How many hops back to the big rock?"
+ },
+ {
+  "slug": "12-back-2-makes-10-then-1-more-back",
+  "text": "12 back 2 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "12-back-2-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "12 back 2 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-4-weka-is-on-9-and-hops-4-more-where-will-weka-land",
+  "text": "9 plus 4. Weka is on 9 and hops 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-4-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 4. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-3-more",
+  "text": "9 and 1 make 10. Then 3 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-3-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 3 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-toru-10-and-3-make-13",
+  "text": "Tekau mā toru. 10 and 3 make 13."
+ },
+ {
+  "slug": "4-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "4 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "4-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "4 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "13-take-away-4-weka-is-on-13-and-hops-back-4-where-will-weka-land",
+  "text": "13 take away 4. Weka is on 13 and hops back 4. Where will Weka land?"
+ },
+ {
+  "slug": "13-take-away-4-weka-is-on-13-how-many-hops-back-to-the-big-rock",
+  "text": "13 take away 4. Weka is on 13. How many hops back to the big rock?"
+ },
+ {
+  "slug": "13-back-3-makes-10-then-1-more-back",
+  "text": "13 back 3 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "13-back-3-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "13 back 3 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-5-weka-is-on-9-and-hops-5-more-where-will-weka-land",
+  "text": "9 plus 5. Weka is on 9 and hops 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-5-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 5. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-4-more",
+  "text": "9 and 1 make 10. Then 4 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-4-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-wha-10-and-4-make-14",
+  "text": "Tekau mā whā. 10 and 4 make 14."
+ },
+ {
+  "slug": "5-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "5 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "5 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "14-take-away-5-weka-is-on-14-and-hops-back-5-where-will-weka-land",
+  "text": "14 take away 5. Weka is on 14 and hops back 5. Where will Weka land?"
+ },
+ {
+  "slug": "14-take-away-5-weka-is-on-14-how-many-hops-back-to-the-big-rock",
+  "text": "14 take away 5. Weka is on 14. How many hops back to the big rock?"
+ },
+ {
+  "slug": "14-back-4-makes-10-then-1-more-back",
+  "text": "14 back 4 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "14-back-4-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "14 back 4 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-6-weka-is-on-9-and-hops-6-more-where-will-weka-land",
+  "text": "9 plus 6. Weka is on 9 and hops 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-6-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 6. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-5-more",
+  "text": "9 and 1 make 10. Then 5 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-5-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-rima-10-and-5-make-15",
+  "text": "Tekau mā rima. 10 and 5 make 15."
+ },
+ {
+  "slug": "6-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "6 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "6 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "15-take-away-6-weka-is-on-15-and-hops-back-6-where-will-weka-land",
+  "text": "15 take away 6. Weka is on 15 and hops back 6. Where will Weka land?"
+ },
+ {
+  "slug": "15-take-away-6-weka-is-on-15-how-many-hops-back-to-the-big-rock",
+  "text": "15 take away 6. Weka is on 15. How many hops back to the big rock?"
+ },
+ {
+  "slug": "15-back-5-makes-10-then-1-more-back",
+  "text": "15 back 5 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "15-back-5-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "15 back 5 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-7-weka-is-on-9-and-hops-7-more-where-will-weka-land",
+  "text": "9 plus 7. Weka is on 9 and hops 7 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-7-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 7. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-6-more",
+  "text": "9 and 1 make 10. Then 6 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-6-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-ono-10-and-6-make-16",
+  "text": "Tekau mā ono. 10 and 6 make 16."
+ },
+ {
+  "slug": "7-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "7 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "7 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "16-take-away-7-weka-is-on-16-and-hops-back-7-where-will-weka-land",
+  "text": "16 take away 7. Weka is on 16 and hops back 7. Where will Weka land?"
+ },
+ {
+  "slug": "16-take-away-7-weka-is-on-16-how-many-hops-back-to-the-big-rock",
+  "text": "16 take away 7. Weka is on 16. How many hops back to the big rock?"
+ },
+ {
+  "slug": "16-back-6-makes-10-then-1-more-back",
+  "text": "16 back 6 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "16-back-6-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "16 back 6 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-8-weka-is-on-9-and-hops-8-more-where-will-weka-land",
+  "text": "9 plus 8. Weka is on 9 and hops 8 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-8-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 8. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-7-more",
+  "text": "9 and 1 make 10. Then 7 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-7-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 7 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-whitu-10-and-7-make-17",
+  "text": "Tekau mā whitu. 10 and 7 make 17."
+ },
+ {
+  "slug": "8-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "8 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "8 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "17-take-away-8-weka-is-on-17-and-hops-back-8-where-will-weka-land",
+  "text": "17 take away 8. Weka is on 17 and hops back 8. Where will Weka land?"
+ },
+ {
+  "slug": "17-take-away-8-weka-is-on-17-how-many-hops-back-to-the-big-rock",
+  "text": "17 take away 8. Weka is on 17. How many hops back to the big rock?"
+ },
+ {
+  "slug": "17-back-7-makes-10-then-1-more-back",
+  "text": "17 back 7 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "17-back-7-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "17 back 7 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-9-weka-is-on-9-and-hops-9-more-where-will-weka-land",
+  "text": "9 plus 9. Weka is on 9 and hops 9 more. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-9-weka-is-on-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 9. Weka is on 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "9-and-1-make-10-then-8-more",
+  "text": "9 and 1 make 10. Then 8 more."
+ },
+ {
+  "slug": "9-and-1-make-10-then-8-more-where-will-weka-land",
+  "text": "9 and 1 make 10. Then 8 more. Where will Weka land?"
+ },
+ {
+  "slug": "tekau-ma-waru-10-and-8-make-18",
+  "text": "Tekau mā waru. 10 and 8 make 18."
+ },
+ {
+  "slug": "9-plus-9-start-on-the-bigger-number-where-will-weka-land",
+  "text": "9 plus 9. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-9-start-on-the-bigger-number-9-how-many-hops-to-the-big-rock",
+  "text": "9 plus 9. Start on the bigger number, 9. How many hops to the big rock?"
+ },
+ {
+  "slug": "18-take-away-9-weka-is-on-18-and-hops-back-9-where-will-weka-land",
+  "text": "18 take away 9. Weka is on 18 and hops back 9. Where will Weka land?"
+ },
+ {
+  "slug": "18-take-away-9-weka-is-on-18-how-many-hops-back-to-the-big-rock",
+  "text": "18 take away 9. Weka is on 18. How many hops back to the big rock?"
+ },
+ {
+  "slug": "18-back-8-makes-10-then-1-more-back",
+  "text": "18 back 8 makes 10. Then 1 more back."
+ },
+ {
+  "slug": "18-back-8-makes-10-then-1-more-back-where-will-weka-land",
+  "text": "18 back 8 makes 10. Then 1 more back. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-3-weka-is-on-8-and-hops-3-more-where-will-weka-land",
+  "text": "8 plus 3. Weka is on 8 and hops 3 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-3-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 3. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-1-more",
+  "text": "8 and 2 make 10. Then 1 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-1-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 1 more. Where will Weka land?"
+ },
+ {
+  "slug": "3-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "3 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "3-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "3 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "11-take-away-3-weka-is-on-11-and-hops-back-3-where-will-weka-land",
+  "text": "11 take away 3. Weka is on 11 and hops back 3. Where will Weka land?"
+ },
+ {
+  "slug": "11-take-away-3-weka-is-on-11-how-many-hops-back-to-the-big-rock",
+  "text": "11 take away 3. Weka is on 11. How many hops back to the big rock?"
+ },
+ {
+  "slug": "11-back-1-makes-10-then-2-more-back",
+  "text": "11 back 1 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "11-back-1-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "11 back 1 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "waru-10-take-away-2-is-8",
+  "text": "Waru. 10 take away 2 is 8."
+ },
+ {
+  "slug": "8-plus-4-weka-is-on-8-and-hops-4-more-where-will-weka-land",
+  "text": "8 plus 4. Weka is on 8 and hops 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-4-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 4. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-2-more",
+  "text": "8 and 2 make 10. Then 2 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-2-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 2 more. Where will Weka land?"
+ },
+ {
+  "slug": "4-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "4 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "4-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "4 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "12-take-away-4-weka-is-on-12-and-hops-back-4-where-will-weka-land",
+  "text": "12 take away 4. Weka is on 12 and hops back 4. Where will Weka land?"
+ },
+ {
+  "slug": "12-take-away-4-weka-is-on-12-how-many-hops-back-to-the-big-rock",
+  "text": "12 take away 4. Weka is on 12. How many hops back to the big rock?"
+ },
+ {
+  "slug": "12-back-2-makes-10-then-2-more-back",
+  "text": "12 back 2 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "12-back-2-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "12 back 2 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-5-weka-is-on-8-and-hops-5-more-where-will-weka-land",
+  "text": "8 plus 5. Weka is on 8 and hops 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-5-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 5. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-3-more",
+  "text": "8 and 2 make 10. Then 3 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-3-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 3 more. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "5 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "5 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "13-take-away-5-weka-is-on-13-and-hops-back-5-where-will-weka-land",
+  "text": "13 take away 5. Weka is on 13 and hops back 5. Where will Weka land?"
+ },
+ {
+  "slug": "13-take-away-5-weka-is-on-13-how-many-hops-back-to-the-big-rock",
+  "text": "13 take away 5. Weka is on 13. How many hops back to the big rock?"
+ },
+ {
+  "slug": "13-back-3-makes-10-then-2-more-back",
+  "text": "13 back 3 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "13-back-3-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "13 back 3 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-6-weka-is-on-8-and-hops-6-more-where-will-weka-land",
+  "text": "8 plus 6. Weka is on 8 and hops 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-6-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 6. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-4-more",
+  "text": "8 and 2 make 10. Then 4 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-4-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "6 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "6 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "14-take-away-6-weka-is-on-14-and-hops-back-6-where-will-weka-land",
+  "text": "14 take away 6. Weka is on 14 and hops back 6. Where will Weka land?"
+ },
+ {
+  "slug": "14-take-away-6-weka-is-on-14-how-many-hops-back-to-the-big-rock",
+  "text": "14 take away 6. Weka is on 14. How many hops back to the big rock?"
+ },
+ {
+  "slug": "14-back-4-makes-10-then-2-more-back",
+  "text": "14 back 4 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "14-back-4-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "14 back 4 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-7-weka-is-on-8-and-hops-7-more-where-will-weka-land",
+  "text": "8 plus 7. Weka is on 8 and hops 7 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-7-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 7. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-5-more",
+  "text": "8 and 2 make 10. Then 5 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-5-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "7 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "7 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "15-take-away-7-weka-is-on-15-and-hops-back-7-where-will-weka-land",
+  "text": "15 take away 7. Weka is on 15 and hops back 7. Where will Weka land?"
+ },
+ {
+  "slug": "15-take-away-7-weka-is-on-15-how-many-hops-back-to-the-big-rock",
+  "text": "15 take away 7. Weka is on 15. How many hops back to the big rock?"
+ },
+ {
+  "slug": "15-back-5-makes-10-then-2-more-back",
+  "text": "15 back 5 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "15-back-5-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "15 back 5 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-8-weka-is-on-8-and-hops-8-more-where-will-weka-land",
+  "text": "8 plus 8. Weka is on 8 and hops 8 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-8-weka-is-on-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 8. Weka is on 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "8-and-2-make-10-then-6-more",
+  "text": "8 and 2 make 10. Then 6 more."
+ },
+ {
+  "slug": "8-and-2-make-10-then-6-more-where-will-weka-land",
+  "text": "8 and 2 make 10. Then 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-8-start-on-the-bigger-number-where-will-weka-land",
+  "text": "8 plus 8. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "8-plus-8-start-on-the-bigger-number-8-how-many-hops-to-the-big-rock",
+  "text": "8 plus 8. Start on the bigger number, 8. How many hops to the big rock?"
+ },
+ {
+  "slug": "16-take-away-8-weka-is-on-16-and-hops-back-8-where-will-weka-land",
+  "text": "16 take away 8. Weka is on 16 and hops back 8. Where will Weka land?"
+ },
+ {
+  "slug": "16-take-away-8-weka-is-on-16-how-many-hops-back-to-the-big-rock",
+  "text": "16 take away 8. Weka is on 16. How many hops back to the big rock?"
+ },
+ {
+  "slug": "16-back-6-makes-10-then-2-more-back",
+  "text": "16 back 6 makes 10. Then 2 more back."
+ },
+ {
+  "slug": "16-back-6-makes-10-then-2-more-back-where-will-weka-land",
+  "text": "16 back 6 makes 10. Then 2 more back. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-4-weka-is-on-7-and-hops-4-more-where-will-weka-land",
+  "text": "7 plus 4. Weka is on 7 and hops 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-4-weka-is-on-7-how-many-hops-to-the-big-rock",
+  "text": "7 plus 4. Weka is on 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "7-and-3-make-10-then-1-more",
+  "text": "7 and 3 make 10. Then 1 more."
+ },
+ {
+  "slug": "7-and-3-make-10-then-1-more-where-will-weka-land",
+  "text": "7 and 3 make 10. Then 1 more. Where will Weka land?"
+ },
+ {
+  "slug": "4-plus-7-start-on-the-bigger-number-where-will-weka-land",
+  "text": "4 plus 7. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "4-plus-7-start-on-the-bigger-number-7-how-many-hops-to-the-big-rock",
+  "text": "4 plus 7. Start on the bigger number, 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "11-take-away-4-weka-is-on-11-and-hops-back-4-where-will-weka-land",
+  "text": "11 take away 4. Weka is on 11 and hops back 4. Where will Weka land?"
+ },
+ {
+  "slug": "11-take-away-4-weka-is-on-11-how-many-hops-back-to-the-big-rock",
+  "text": "11 take away 4. Weka is on 11. How many hops back to the big rock?"
+ },
+ {
+  "slug": "11-back-1-makes-10-then-3-more-back",
+  "text": "11 back 1 makes 10. Then 3 more back."
+ },
+ {
+  "slug": "11-back-1-makes-10-then-3-more-back-where-will-weka-land",
+  "text": "11 back 1 makes 10. Then 3 more back. Where will Weka land?"
+ },
+ {
+  "slug": "whitu-10-take-away-3-is-7",
+  "text": "Whitu. 10 take away 3 is 7."
+ },
+ {
+  "slug": "7-plus-5-weka-is-on-7-and-hops-5-more-where-will-weka-land",
+  "text": "7 plus 5. Weka is on 7 and hops 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-5-weka-is-on-7-how-many-hops-to-the-big-rock",
+  "text": "7 plus 5. Weka is on 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "7-and-3-make-10-then-2-more",
+  "text": "7 and 3 make 10. Then 2 more."
+ },
+ {
+  "slug": "7-and-3-make-10-then-2-more-where-will-weka-land",
+  "text": "7 and 3 make 10. Then 2 more. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-7-start-on-the-bigger-number-where-will-weka-land",
+  "text": "5 plus 7. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-7-start-on-the-bigger-number-7-how-many-hops-to-the-big-rock",
+  "text": "5 plus 7. Start on the bigger number, 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "12-take-away-5-weka-is-on-12-and-hops-back-5-where-will-weka-land",
+  "text": "12 take away 5. Weka is on 12 and hops back 5. Where will Weka land?"
+ },
+ {
+  "slug": "12-take-away-5-weka-is-on-12-how-many-hops-back-to-the-big-rock",
+  "text": "12 take away 5. Weka is on 12. How many hops back to the big rock?"
+ },
+ {
+  "slug": "12-back-2-makes-10-then-3-more-back",
+  "text": "12 back 2 makes 10. Then 3 more back."
+ },
+ {
+  "slug": "12-back-2-makes-10-then-3-more-back-where-will-weka-land",
+  "text": "12 back 2 makes 10. Then 3 more back. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-6-weka-is-on-7-and-hops-6-more-where-will-weka-land",
+  "text": "7 plus 6. Weka is on 7 and hops 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-6-weka-is-on-7-how-many-hops-to-the-big-rock",
+  "text": "7 plus 6. Weka is on 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "7-and-3-make-10-then-3-more",
+  "text": "7 and 3 make 10. Then 3 more."
+ },
+ {
+  "slug": "7-and-3-make-10-then-3-more-where-will-weka-land",
+  "text": "7 and 3 make 10. Then 3 more. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-7-start-on-the-bigger-number-where-will-weka-land",
+  "text": "6 plus 7. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-7-start-on-the-bigger-number-7-how-many-hops-to-the-big-rock",
+  "text": "6 plus 7. Start on the bigger number, 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "13-take-away-6-weka-is-on-13-and-hops-back-6-where-will-weka-land",
+  "text": "13 take away 6. Weka is on 13 and hops back 6. Where will Weka land?"
+ },
+ {
+  "slug": "13-take-away-6-weka-is-on-13-how-many-hops-back-to-the-big-rock",
+  "text": "13 take away 6. Weka is on 13. How many hops back to the big rock?"
+ },
+ {
+  "slug": "13-back-3-makes-10-then-3-more-back",
+  "text": "13 back 3 makes 10. Then 3 more back."
+ },
+ {
+  "slug": "13-back-3-makes-10-then-3-more-back-where-will-weka-land",
+  "text": "13 back 3 makes 10. Then 3 more back. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-7-weka-is-on-7-and-hops-7-more-where-will-weka-land",
+  "text": "7 plus 7. Weka is on 7 and hops 7 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-7-weka-is-on-7-how-many-hops-to-the-big-rock",
+  "text": "7 plus 7. Weka is on 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "7-and-3-make-10-then-4-more",
+  "text": "7 and 3 make 10. Then 4 more."
+ },
+ {
+  "slug": "7-and-3-make-10-then-4-more-where-will-weka-land",
+  "text": "7 and 3 make 10. Then 4 more. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-7-start-on-the-bigger-number-where-will-weka-land",
+  "text": "7 plus 7. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "7-plus-7-start-on-the-bigger-number-7-how-many-hops-to-the-big-rock",
+  "text": "7 plus 7. Start on the bigger number, 7. How many hops to the big rock?"
+ },
+ {
+  "slug": "14-take-away-7-weka-is-on-14-and-hops-back-7-where-will-weka-land",
+  "text": "14 take away 7. Weka is on 14 and hops back 7. Where will Weka land?"
+ },
+ {
+  "slug": "14-take-away-7-weka-is-on-14-how-many-hops-back-to-the-big-rock",
+  "text": "14 take away 7. Weka is on 14. How many hops back to the big rock?"
+ },
+ {
+  "slug": "14-back-4-makes-10-then-3-more-back",
+  "text": "14 back 4 makes 10. Then 3 more back."
+ },
+ {
+  "slug": "14-back-4-makes-10-then-3-more-back-where-will-weka-land",
+  "text": "14 back 4 makes 10. Then 3 more back. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-5-weka-is-on-6-and-hops-5-more-where-will-weka-land",
+  "text": "6 plus 5. Weka is on 6 and hops 5 more. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-5-weka-is-on-6-how-many-hops-to-the-big-rock",
+  "text": "6 plus 5. Weka is on 6. How many hops to the big rock?"
+ },
+ {
+  "slug": "6-and-4-make-10-then-1-more",
+  "text": "6 and 4 make 10. Then 1 more."
+ },
+ {
+  "slug": "6-and-4-make-10-then-1-more-where-will-weka-land",
+  "text": "6 and 4 make 10. Then 1 more. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-6-start-on-the-bigger-number-where-will-weka-land",
+  "text": "5 plus 6. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "5-plus-6-start-on-the-bigger-number-6-how-many-hops-to-the-big-rock",
+  "text": "5 plus 6. Start on the bigger number, 6. How many hops to the big rock?"
+ },
+ {
+  "slug": "11-take-away-5-weka-is-on-11-and-hops-back-5-where-will-weka-land",
+  "text": "11 take away 5. Weka is on 11 and hops back 5. Where will Weka land?"
+ },
+ {
+  "slug": "11-take-away-5-weka-is-on-11-how-many-hops-back-to-the-big-rock",
+  "text": "11 take away 5. Weka is on 11. How many hops back to the big rock?"
+ },
+ {
+  "slug": "11-back-1-makes-10-then-4-more-back",
+  "text": "11 back 1 makes 10. Then 4 more back."
+ },
+ {
+  "slug": "11-back-1-makes-10-then-4-more-back-where-will-weka-land",
+  "text": "11 back 1 makes 10. Then 4 more back. Where will Weka land?"
+ },
+ {
+  "slug": "ono-10-take-away-4-is-6",
+  "text": "Ono. 10 take away 4 is 6."
+ },
+ {
+  "slug": "6-plus-6-weka-is-on-6-and-hops-6-more-where-will-weka-land",
+  "text": "6 plus 6. Weka is on 6 and hops 6 more. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-6-weka-is-on-6-how-many-hops-to-the-big-rock",
+  "text": "6 plus 6. Weka is on 6. How many hops to the big rock?"
+ },
+ {
+  "slug": "6-and-4-make-10-then-2-more",
+  "text": "6 and 4 make 10. Then 2 more."
+ },
+ {
+  "slug": "6-and-4-make-10-then-2-more-where-will-weka-land",
+  "text": "6 and 4 make 10. Then 2 more. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-6-start-on-the-bigger-number-where-will-weka-land",
+  "text": "6 plus 6. Start on the bigger number. Where will Weka land?"
+ },
+ {
+  "slug": "6-plus-6-start-on-the-bigger-number-6-how-many-hops-to-the-big-rock",
+  "text": "6 plus 6. Start on the bigger number, 6. How many hops to the big rock?"
+ },
+ {
+  "slug": "12-take-away-6-weka-is-on-12-and-hops-back-6-where-will-weka-land",
+  "text": "12 take away 6. Weka is on 12 and hops back 6. Where will Weka land?"
+ },
+ {
+  "slug": "12-take-away-6-weka-is-on-12-how-many-hops-back-to-the-big-rock",
+  "text": "12 take away 6. Weka is on 12. How many hops back to the big rock?"
+ },
+ {
+  "slug": "12-back-2-makes-10-then-4-more-back",
+  "text": "12 back 2 makes 10. Then 4 more back."
+ },
+ {
+  "slug": "12-back-2-makes-10-then-4-more-back-where-will-weka-land",
+  "text": "12 back 2 makes 10. Then 4 more back. Where will Weka land?"
+ },
+ {
+  "slug": "9-plus-2-weka-is-on-9-how-many-hops-to-the-big-rock-tap-the-number-the-hand-points-to",
+  "text": "9 plus 2. Weka is on 9. How many hops to the big rock? Tap the number the hand points to."
+ },
+ {
+  "slug": "9-plus-2-weka-is-on-9-and-hops-2-more-where-will-weka-land-tap-the-number-the-hand-points-to",
+  "text": "9 plus 2. Weka is on 9 and hops 2 more. Where will Weka land? Tap the number the hand points to."
+ },
+ {
+  "slug": "1",
+  "text": "1!"
+ },
+ {
+  "slug": "2",
+  "text": "2!"
+ },
+ {
+  "slug": "3",
+  "text": "3!"
+ },
+ {
+  "slug": "4",
+  "text": "4!"
+ },
+ {
+  "slug": "5",
+  "text": "5!"
+ },
+ {
+  "slug": "6",
+  "text": "6!"
+ },
+ {
+  "slug": "7",
+  "text": "7!"
+ },
+ {
+  "slug": "8",
+  "text": "8!"
+ },
+ {
+  "slug": "9",
+  "text": "9!"
+ },
+ {
+  "slug": "10",
+  "text": "10!"
+ },
+ {
+  "slug": "11",
+  "text": "11!"
+ },
+ {
+  "slug": "12",
+  "text": "12!"
+ },
+ {
+  "slug": "13",
+  "text": "13!"
+ },
+ {
+  "slug": "14",
+  "text": "14!"
+ },
+ {
+  "slug": "15",
+  "text": "15!"
+ },
+ {
+  "slug": "16",
+  "text": "16!"
+ },
+ {
+  "slug": "17",
+  "text": "17!"
+ },
+ {
+  "slug": "18",
+  "text": "18!"
+ },
+ {
+  "slug": "19",
+  "text": "19!"
+ },
+ {
+  "slug": "20",
+  "text": "20!"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-stone",
+  "text": "Well done! Come back tomorrow to change another stone."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "well-done-a-stone-turned-bronze",
+  "text": "Well done! A stone turned bronze!"
+ },
+ {
+  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "Well done! A stone turned bronze! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "Well done! A stone turned bronze! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "Well done! A stone turned bronze! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "well-done-a-stone-turned-silver",
+  "text": "Well done! A stone turned silver!"
+ },
+ {
+  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "Well done! A stone turned silver! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "Well done! A stone turned silver! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "Well done! A stone turned silver! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "well-done-a-stone-turned-gold",
+  "text": "Well done! A stone turned gold!"
+ },
+ {
+  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "Well done! A stone turned gold! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "Well done! A stone turned gold! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "Well done! A stone turned gold! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Weka found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Takahē found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket",
+  "text": "All the stones are gold! Kea found the Golden Picnic Basket!"
+ },
+ {
+  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
+  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
+  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+ },
+ {
+  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
+  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+ }
+]

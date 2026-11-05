@@ -3,6 +3,7 @@
  * first finish changes one magic leaf (bronze, then silver, then gold); thirty days bring the friend down and win the
  * Golden Egg, and the next friend is stuck on a fresh beanstalk. The screens only show what the backend says.
  */
+import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
@@ -202,6 +203,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
       <div className="bs-panel">
         <h2 tabIndex={-1} ref={heading}>{title}</h2>
         <p className="bs-day">{WORDS.dayCount(Math.min(stalk.day + 1, DAYS_PER_EGG))}</p>
+        <NextPartChip noun={WORDS.part} done={doneToday} onHear={say} />
         {doneToday && <p>{WORDS.doneToday}</p>}
         <button type="button" className="button button--play bs-play-button" onClick={onPlay}>
           {doneToday ? WORDS.playAgain : WORDS.play}

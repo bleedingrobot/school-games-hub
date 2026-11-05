@@ -164,7 +164,7 @@ select is((select coalesce(sum(points), 0)::integer from public.scored_games whe
   'imported progress earns no points by itself');
 select is(pg_temp.run('e', 2) ->> 'status', 'saved', 'an imported Key opens the next level');
 
--- ---- Teachers who play are left off the boards (20261105000400) ----
+-- ---- Teachers who play are left off the boards (20261105000500) ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((select count(*)::integer from public.gem_keep_leaderboard() where display_name = (select display_name from public.profiles where id = pg_temp.id('e'))),
   0, 'a teacher with stars is not on the stars board');

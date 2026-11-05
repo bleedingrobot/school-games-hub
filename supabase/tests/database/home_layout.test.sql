@@ -1,4 +1,4 @@
--- Each person's home page layout (migration 20261105000600): folded sections and pinned games, kept on the server.
+-- Each person's home page layout (migration 20261105000700): folded sections and pinned games, kept on the server.
 -- Run on a throw-away copy: scripts/scratch-db.sh layout, then scripts/scratch-test.sh layout supabase/tests/database/home_layout.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;

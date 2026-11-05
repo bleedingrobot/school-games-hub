@@ -23,6 +23,7 @@ import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { useHomeLayout } from '../data/homeLayout';
+import { useNextParts } from '../data/nextParts';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
 // The teacher pages and older tests still find these here.
@@ -190,6 +191,8 @@ export function Dashboard() {
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const nonMathsOpen = useNonMathsGamesOpen();
   const shownGames = useShownGames(nonMathsOpen);
+  // The daily Foundational games' "next part" chips: one request, only when one of them is showing.
+  const nextParts = useNextParts(meId, pupil && shownGames.some((g) => g.nextPart));
   // Chess and checkers, 101 and Power Clash games still going wait quietly while the non-maths games are off.
   const nonMathsShut = nonMathsOpen === false;
   const inProgress = nonMathsShut ? [] : going.inProgress;
@@ -227,6 +230,7 @@ export function Dashboard() {
           level={levelFor(game.id)}
           moves={moves[game.id]}
           note={game.id === 'monsters' ? spottedNote(nzDay(Date.now())) : undefined}
+          nextPartDone={nextParts[game.id]}
           onLevelChange={(level) => {
             setLevels((prev) => ({ ...prev, [game.id]: level }));
             setFeatured(game.id);

@@ -2,7 +2,7 @@
 
 The lines come from public/voice/<game>/lines.json, written by that game's voiceLines.test.ts
 (quick-looks: src/subitising/, beanstalk: src/games/beanstalk/, hop: src/games/hop/,
-pipi: src/games/pipi/, korora: src/games/korora/). Only lines without a clip are
+pipi: src/games/pipi/, korora: src/games/korora/, weka: src/games/weka/). Only lines without a clip are
 recorded, unless --all is given (use it after changing VOICE, SPEED or SAY_AS).
 
 Kokoro lives outside the repo (it is about 340 MB):
@@ -12,7 +12,7 @@ Kokoro lives outside the repo (it is about 340 MB):
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 Then, from the repo:
-    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora> [--all]
+    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka> [--all]
 """
 import json
 import os
@@ -39,6 +39,14 @@ SAY_AS = {
     'Kororā': 'Koh-roh-rah',
     'Hoiho': 'Hoy-ho',
     'Pūkeko': 'Poo-keh-koh',
+    'Kākāpō': 'Kah-kah-poh',
+    'Weka': 'Weh-kah',
+    # Te reo numbers (Weka's Stepping Stones and Tūī's Ten Tree): tekau mā whā is "ten and four". Longest first.
+    'Tekau mā ': 'Teh-koh mah ',
+    'Tekau': 'Teh-koh',
+    'whā': 'fah',
+    'whitu': 'fee-too',
+    'Whitu': 'Fee-too',
     # NZ English says pipi "pee-pee"; Kokoro would say "pippy".
     'Pipi': 'Peepee',
     'pipi': 'peepee',

@@ -8,6 +8,14 @@
   "text": "Well done! Come back tomorrow to change another magic shell."
  },
  {
+  "slug": "today-s-shell-is-ready",
+  "text": "Today’s shell is ready"
+ },
+ {
+  "slug": "next-shell-tomorrow",
+  "text": "Next shell tomorrow"
+ },
+ {
   "slug": "the-tide-is-coming-in-help-pipi-find-the-pipi-hiding-in-the-sand",
   "text": "The tide is coming in! Help Pipi find the pipi hiding in the sand."
  },
