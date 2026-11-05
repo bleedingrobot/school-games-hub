@@ -88,7 +88,8 @@ FLOWER = 'One big rounded kowhai flower cluster seen from the front, a soft bunc
 FLOWERS = {
     'bud': 'every petal still closed tight into one soft pale green bud, the whole bud and its stalk fresh spring green, fresh and alive',
     'bronze': f'the whole flower wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze',
-    'silver': f'the whole flower wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every part of it silver',
+    'silver': f'eight rounded petals around a round centre, each petal, the centre and the stalk wrapped smoothly in shiny crinkled '
+              f'silver foil like a chrome mirror, {SHINE}, the whole flower cool grey-white silver from top to bottom',
     'gold': f'the whole flower wrapped smoothly in shiny crinkled yellow gold foil, {SHINE}, every part of it gold, three tiny sparkles',
 }
 
