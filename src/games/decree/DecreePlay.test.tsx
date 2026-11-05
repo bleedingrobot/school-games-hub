@@ -1,22 +1,29 @@
 import { readFileSync } from 'node:fs';
-import { render, screen, waitForElementToBeRemoved } from '@testing-library/react';
+import { cleanup, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { seededRandom } from '../../../shared/maths/serverQuestions';
 import { DecreePlay } from './DecreePlay';
 import { createTrialBackend } from './trialBackend';
 
-// Royal Decree's screen tests (2 of the game's 7: one plays, one checks the looks).
+const said = vi.hoisted(() => [] as string[]);
+vi.mock('../../speech', () => ({ speak: (text: string) => said.push(text), stopSpeaking: () => {} }));
 
-it('plays a first year: begin, say yes and no, help with a riddle, and reach year 2', async () => {
+// Royal Decree's screen tests (2 of the game's 8: one plays, with the tutorial and then without, one checks the looks).
+
+it('plays a first year with the tutorial, then turns the tutorial off', async () => {
   const u = userEvent.setup();
   render(<DecreePlay backend={createTrialBackend('test', { save: false, random: seededRandom('screen test') })} />);
   await u.click(await screen.findByRole('button', { name: 'Begin your reign' }));
   expect(screen.getByLabelText(/Year 1 of 6, Spring/)).toBeInTheDocument();
+  // The tutorial is on to start with, and the card can't be chosen until Hale says it's your turn.
+  expect(screen.getByText('Tutorial 1 of 8')).toBeInTheDocument();
+  expect(document.querySelector('.rd-btn--yes')).toBeDisabled();
+  expect(said.at(-1)).toMatch(/^Welcome, Your Majesty/); // Hale says it out loud
 
   let riddles = 0;
   const step = async () => {
-    for (const name of ['Got it', 'Next', 'On we go']) {
+    for (const name of ['Next step', 'Start ruling', 'Got it', 'Next', 'On we go']) {
       const b = screen.queryByRole('button', { name });
       if (b) return u.click(b);
     }
@@ -34,7 +41,24 @@ it('plays a first year: begin, say yes and no, help with a riddle, and reach yea
     await step();
   }
   expect(riddles).toBe(1);
+  expect(screen.queryByText(/^Tutorial /)).not.toBeInTheDocument();
   expect(screen.getByText(/Year 2 begins!|Seasons ruled/)).toBeInTheDocument();
+  cleanup();
+
+  // Turning the tutorial and the voice off on the start screen is remembered on this device.
+  const first = render(<DecreePlay backend={createTrialBackend('test', { save: false, random: seededRandom('off') })} />);
+  await u.click(await screen.findByRole('checkbox', { name: /tutorial/ }));
+  await u.click(screen.getByRole('checkbox', { name: /out loud/ }));
+  first.unmount();
+  said.length = 0;
+  render(<DecreePlay backend={createTrialBackend('test', { save: false, random: seededRandom('off') })} />);
+  expect(await screen.findByRole('checkbox', { name: /tutorial/ })).not.toBeChecked();
+  await u.click(screen.getByRole('button', { name: 'Begin your reign' }));
+  expect(screen.queryByText(/^Tutorial /)).not.toBeInTheDocument();
+  expect(said).toEqual([]);
+  await u.keyboard('{ArrowRight}');
+  expect(screen.getByLabelText(/Year 1 of 6, Summer/)).toBeInTheDocument();
+  localStorage.clear();
 });
 
 const css = readFileSync(`${process.cwd()}/src/games/decree/decree.css`, 'utf8');

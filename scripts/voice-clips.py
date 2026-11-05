@@ -3,7 +3,7 @@
 The lines come from public/voice/<game>/lines.json, written by that game's voiceLines.test.ts
 (quick-looks: src/subitising/, beanstalk: src/games/beanstalk/, hop: src/games/hop/,
 pipi: src/games/pipi/, korora: src/games/korora/, weka: src/games/weka/, tui: src/games/tui/,
-isles: src/games/isles/voice.test.ts). Only lines without a clip are
+isles: src/games/isles/voice.test.ts, decree: src/games/decree/voice.test.ts). Only lines without a clip are
 recorded, unless --all is given (use it after changing VOICE, SPEED or SAY_AS).
 
 Kokoro lives outside the repo (it is about 340 MB):
@@ -13,7 +13,7 @@ Kokoro lives outside the repo (it is about 340 MB):
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 Then, from the repo:
-    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka|tui|isles> [--all]
+    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka|tui|isles|decree> [--all]
 """
 import json
 import os
