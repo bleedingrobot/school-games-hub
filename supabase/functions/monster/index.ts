@@ -6956,6 +6956,15 @@ const TUNING = {
 		"quick-right": 1.5,
 		wrong: .25
 	},
+	/**
+	* Wild battles ask one "Power up!" question at the start instead of one per attack (James, 6 Nov 2026):
+	* every attack for the rest of that battle is times this. A wrong answer just means no extra.
+	*/
+	powerUp: {
+		right: 1.25,
+		"quick-right": 1.4,
+		wrong: 1
+	},
 	/** Exp a defeated monster gives = yield × its level ÷ 5, by its stage; trainers give more. */
 	expCurve: 2.5,
 	expYield: [
@@ -7020,14 +7029,14 @@ const maxHpOf = (m) => maxHp(speciesOf(m.species), m.level);
 * `attackType` is the attack's own type for an ultra rare (it has two); otherwise the attacker's.
 * A defender with two types is judged by its first.
 */
-function damageFor(attacker, attackPower, defender, answer, roll, attackType) {
+function damageFor(attacker, attackPower, defender, answer, roll, attackType, boost = 1) {
 	const a = speciesOf(attacker.species);
 	const d = speciesOf(defender.species);
 	const typeMult = typeMultiplier(attackType ?? a.type, d.type);
 	const answerMult = answer ? TUNING.answerMultiplier[answer] : 1;
 	const side = answer ? 1 : TUNING.foeDamageScale;
 	const spread = 1 - roll * TUNING.damageSpread;
-	const raw = attackPower * (power(a.stats.atk, attacker.level) / power(d.stats.def, defender.level)) * TUNING.damageScale * ((attacker.level + 2) / 7) * side * typeMult * answerMult * spread;
+	const raw = attackPower * (power(a.stats.atk, attacker.level) / power(d.stats.def, defender.level)) * TUNING.damageScale * ((attacker.level + 2) / 7) * side * typeMult * answerMult * boost * spread;
 	return {
 		damage: Math.max(1, Math.floor(raw)),
 		effect: typeMult > 1 ? "strong" : typeMult < 1 ? "weak" : "normal"
@@ -7111,7 +7120,8 @@ const activeFoe = (s) => s.foes[s.foeActive];
 /** The topic and band the next question for this action should come from. */
 function questionFor(state, action) {
 	let topic;
-	if (action.kind === "fight") {
+	if (action.kind === "power-up") topic = TYPE_TOPIC[speciesOf(activeMonster(state).species).type];
+	else if (action.kind === "fight") {
 		const species = speciesOf(activeMonster(state).species);
 		const attack = action.attack === void 0 ? void 0 : species.attacks[action.attack];
 		topic = TYPE_TOPIC[attack ? attackType(species, attack) : species.type];
@@ -7158,19 +7168,46 @@ function play(prev, action, random) {
 			events
 		};
 	}
+	if (action.kind === "power-up") {
+		if (s.kind !== "wild") refuse$1("Only a wild battle has a power up");
+		if (s.powerUp !== void 0) refuse$1("The power up comes once");
+		if (![
+			"right",
+			"quick-right",
+			"wrong"
+		].includes(action.answer)) refuse$1("Unknown answer result");
+		s.questions += 1;
+		s.powerUp = action.answer;
+		events.push({
+			kind: "power-up",
+			answer: action.answer
+		});
+		return {
+			state: s,
+			events
+		};
+	}
 	s.turn += 1;
 	let foeActs = true;
 	switch (action.kind) {
 		case "fight": {
 			const attack = speciesOf(me().species).attacks[action.attack];
 			if (!attack) refuse$1("That monster has no such attack");
-			if (![
-				"right",
-				"quick-right",
-				"wrong"
-			].includes(action.answer)) refuse$1("Unknown answer result");
-			s.questions += 1;
-			const hit = damageFor(me(), attack.power, foe(), action.answer, random(), attackType(speciesOf(me().species), attack));
+			const type = attackType(speciesOf(me().species), attack);
+			let hit;
+			if (action.answer === void 0) {
+				if (s.kind !== "wild") refuse$1("A trainer battle asks a question for every attack");
+				if (s.powerUp === void 0) refuse$1("Answer the power up question first");
+				hit = damageFor(me(), attack.power, foe(), "right", random(), type, s.powerUp ? TUNING.powerUp[s.powerUp] : 1);
+			} else {
+				if (![
+					"right",
+					"quick-right",
+					"wrong"
+				].includes(action.answer)) refuse$1("Unknown answer result");
+				s.questions += 1;
+				hit = damageFor(me(), attack.power, foe(), action.answer, random(), type);
+			}
 			foe().hp = Math.max(0, foe().hp - hit.damage);
 			events.push({
 				kind: "attack",
@@ -7180,7 +7217,7 @@ function play(prev, action, random) {
 				anim: attack.anim,
 				damage: hit.damage,
 				effect: hit.effect,
-				answer: action.answer,
+				...action.answer ? { answer: action.answer } : {},
 				...action.answer === "wrong" ? { showAnswer: true } : {}
 			});
 			break;
@@ -35452,7 +35489,10 @@ function replay(report, pool, allowance, hatched) {
 		const draws = step.randoms;
 		if (!draws.every((n) => typeof n === "number" && n >= 0 && n < 1)) return "battle-random";
 		const action = step.action;
-		if (action.kind === "fight" || action.kind === "catch") {
+		const randomWild = setup.kind === "wild" && r.giant === void 0;
+		if (action.kind === "power-up" && !randomWild) return "battle-step";
+		if (action.kind === "fight" && action.answer === void 0 && !randomWild) return "battle-answer";
+		if (action.kind === "power-up" || action.kind === "catch" || action.kind === "fight" && action.answer !== void 0) {
 			if (state.phase === "replace") return "battle-step";
 			if (!questionFor(state, action) || step.q === void 0) return "battle-answer";
 			const marked = markQuestion(step.q, state.area, state.far);

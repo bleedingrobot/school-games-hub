@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSave, LIMITS, type Checked, type SaveItem, type Stored } from './check';
+import { checkSave, LIMITS, type BattleReport, type Checked, type SaveItem, type Stored } from './check';
 import { makeMonster } from '../rules';
 import { AREAS, BADGE_ORDER } from '../world/areas';
 import { addToBag, LOOT } from '../world/rewards';
@@ -60,7 +60,7 @@ describe('honest play is accepted', () => {
     }
     expect(first).toBe(false);
     expect(wins).toBeGreaterThan(10);
-    expect(answers).toBeGreaterThan(80);
+    expect(answers).toBeGreaterThan(40); // a wild battle asks once (its power up), plus any catches
     expect(Object.values(s.world.quest!.bits).reduce((a, b) => a + b!, 0)).toBeGreaterThan(10);
   });
 
@@ -217,6 +217,42 @@ describe('a save the rules cannot have produced is refused', () => {
     refused(checkSave(prev, lied, s.clock.now()), 'battle-answer');
   });
 
+  it('a wild battle with no power-up question, or a power up or question-less attack where they do not belong', () => {
+    const { s, prev } = started();
+    for (let i = 0; i < 3; i++) s.wild();
+    const good = s.save();
+    ok(checkSave(prev, good, s.clock.now()));
+    const fights = (b: BattleReport) => b.steps.filter((st) => st.action.kind === 'fight');
+    const powered = good.battles.find((b) => b.steps.some((st) => st.action.kind === 'power-up'))!;
+    expect(powered).toBeTruthy();
+    expect(fights(powered).every((st) => st.q === undefined && !('answer' in st.action))).toBe(true);
+
+    // The power-up's question taken away.
+    const noQuestion = structuredClone(good);
+    delete noQuestion.battles.find((b) => b.id === powered.id)!.steps.find((st) => st.action.kind === 'power-up')!.q;
+    refused(checkSave(prev, noQuestion, s.clock.now()), 'battle-answer');
+
+    // The power up left out: the attacks then have nothing behind them.
+    const skipped = structuredClone(good);
+    const b = skipped.battles.find((x) => x.id === powered.id)!;
+    b.steps = b.steps.filter((st) => st.action.kind !== 'power-up');
+    refused(checkSave(prev, skipped, s.clock.now()), 'battle-replay');
+
+    // A giant asks for every attack, like a trainer.
+    const giant = structuredClone(good);
+    giant.battles.find((x) => x.id === powered.id)!.giant = 'anything';
+    expect(checkSave(prev, giant, s.clock.now()).ok).toBe(false);
+  });
+
+  it('a wild battle from an older page, with a question for every attack, is still accepted', () => {
+    const { s, prev } = started();
+    s.oldStyle = true;
+    for (let i = 0; i < 3; i++) s.wild();
+    const item = s.save();
+    expect(item.battles.every((b) => !b.steps.some((st) => st.action.kind === 'power-up'))).toBe(true);
+    ok(checkSave(prev, item, s.clock.now()));
+  });
+
   it('a question made up (numbers that the family cannot make), or too easy for the area', () => {
     const { s, prev } = started();
     s.wild();
@@ -234,11 +270,13 @@ describe('a save the rules cannot have produced is refused', () => {
     const { s, prev } = started();
     s.wild();
     const item = s.save();
+    // The first step that drew numbers (a power up draws none).
+    const at = item.battles[0].steps.findIndex((st) => st.randoms.length > 0);
     const bad = structuredClone(item);
-    bad.battles[0].steps[0].randoms = [];
+    bad.battles[0].steps[at].randoms = [];
     refused(checkSave(prev, bad, s.clock.now()), 'battle-random');
     const extra = structuredClone(item);
-    extra.battles[0].steps[0].randoms.push(0.5);
+    extra.battles[0].steps[at].randoms.push(0.5);
     refused(checkSave(prev, extra, s.clock.now()), 'battle-random');
   });
 
@@ -331,7 +369,8 @@ describe('a save the rules cannot have produced is refused', () => {
 
   it('answers faster than a person can give them', () => {
     const { s, prev } = started();
-    for (let i = 0; i < 6; i++) s.wild();
+    s.oldStyle = true; // a question every attack: plenty of answers to squash
+    for (let i = 0; i < 12; i++) s.wild();
     const item = s.save();
     // Squash every answer into a few seconds.
     const qs = item.battles.flatMap((b) => b.steps.flatMap((st) => (st.q ? [st.q] : [])));

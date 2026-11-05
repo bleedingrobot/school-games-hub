@@ -37,11 +37,11 @@ const wild = (over: Partial<BattleSetup> = {}): BattleSetup => ({
   ...over,
 });
 
-function setup(s: BattleSetup, settings: MonsterSettings = choose, random = () => 0.5) {
+function setup(s: BattleSetup, settings: MonsterSettings = choose, random = () => 0.5, powerUp = false) {
   const user = userEvent.setup();
   const packs = fakePacks();
   const onFinish = vi.fn<(r: BattleResult) => void>();
-  render(<BattleScreen setup={s} settings={settings} onFinish={onFinish} random={random} packFor={packs.packFor} timeScale={0} />);
+  render(<BattleScreen setup={s} settings={settings} onFinish={onFinish} random={random} packFor={packs.packFor} timeScale={0} powerUp={powerUp} />);
   return { user, onFinish, ...packs };
 }
 
@@ -60,6 +60,59 @@ async function answer(user: ReturnType<typeof userEvent.setup>, right: boolean) 
   await user.click(within(box).getByRole('button', { name: right ? '4' : '3' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: /Choose|./ })).not.toBeInTheDocument());
 }
+
+describe('a random wild battle (one Power up question)', () => {
+  const big = () => wild({ foes: [makeMonster('digibud-1', 14)] });
+  const calm: MonsterSettings = { ...choose, calm: true }; // answers in tests are instant: calm keeps them plain right
+  const attack = async (user: ReturnType<typeof userEvent.setup>) => {
+    const fight = screen.queryByRole('button', { name: 'Fight' });
+    if (fight) await user.click(fight);
+    await user.click(screen.getAllByRole('button').find((b) => b.classList.contains('mb-move'))!);
+  };
+  it('asks once, with the first attack; after that attacks ask nothing', async () => {
+    const { user, asked } = setup(big(), calm, () => 0.5, true);
+    await passMessages(user);
+    expect(screen.getByRole('button', { name: 'Run' })).toBeInTheDocument(); // running away first asks nothing
+    await attack(user);
+    const box = await screen.findByRole('dialog', { name: /Power up/ });
+    expect(within(box).getByText(/every attack hits harder this battle$/)).toBeInTheDocument();
+    await answer(user, true);
+    expect(message()).toMatch(/^Power up! Your attacks hit harder/);
+    await passMessages(user);
+    expect(asked).toHaveLength(1);
+    await attack(user);
+    expect(screen.queryByRole('dialog', { name: /Power up/ })).not.toBeInTheDocument();
+    expect(message()).toMatch(/used/);
+    await passMessages(user);
+    expect(asked).toHaveLength(1);
+  });
+  it('a wrong answer shows the right one and gives no power up, and Back lets you pick another move', async () => {
+    const { user } = setup(big(), choose, () => 0.5, true);
+    await passMessages(user);
+    await attack(user);
+    const box = await screen.findByRole('dialog', { name: /Power up/ });
+    await user.click(within(box).getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('dialog', { name: /./ })).not.toBeInTheDocument();
+    await attack(user);
+    await answer(user, false);
+    expect(message()).toBe('Not quite: 2 + 2 = 4. No power up this time.');
+  });
+  it('the save has the power up with its question, then attacks with none', async () => {
+    const { user, onFinish } = setup(wild(), calm, () => 0.5, true);
+    await passMessages(user);
+    for (let i = 0; i < 20 && !screen.queryByRole('button', { name: 'Continue' }); i++) {
+      if (screen.queryByRole('dialog', { name: /Power up/ })) await answer(user, true);
+      else if (screen.queryByRole('button', { name: 'Fight' })) await attack(user);
+      await passMessages(user);
+    }
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    const steps = onFinish.mock.calls[0][0].steps;
+    expect(steps[0]).toMatchObject({ action: { kind: 'power-up', answer: 'right' }, randoms: [] });
+    expect(steps[0].q).toBeDefined();
+    expect(steps[1].action).toEqual({ kind: 'fight', attack: 0 });
+    for (const st of steps.slice(1)) expect(st.q).toBeUndefined();
+  });
+});
 
 describe('the battle screen', () => {
   it('opens with the wild monster and both name cards, then shows the menu', async () => {

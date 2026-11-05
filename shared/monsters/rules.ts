@@ -19,6 +19,11 @@ export const TUNING = {
   /** Each hit is between (1 - this) and 1 of its full size. */
   damageSpread: 0.15,
   answerMultiplier: { right: 1, 'quick-right': 1.5, wrong: 0.25 } as Record<AnswerResult, number>,
+  /**
+   * Wild battles ask one "Power up!" question at the start instead of one per attack (James, 6 Nov 2026):
+   * every attack for the rest of that battle is times this. A wrong answer just means no extra.
+   */
+  powerUp: { right: 1.25, 'quick-right': 1.4, wrong: 1 } as Record<AnswerResult, number>,
   /** Exp a defeated monster gives = yield × its level ÷ 5, by its stage; trainers give more. */
   expCurve: 2.5,
   expYield: [14, 20, 27] as readonly number[],
@@ -83,14 +88,14 @@ export interface DamageResult {
  * `attackType` is the attack's own type for an ultra rare (it has two); otherwise the attacker's.
  * A defender with two types is judged by its first.
  */
-export function damageFor(attacker: Monster, attackPower: number, defender: Monster, answer: AnswerResult | undefined, roll: number, attackType?: TypeId): DamageResult {
+export function damageFor(attacker: Monster, attackPower: number, defender: Monster, answer: AnswerResult | undefined, roll: number, attackType?: TypeId, boost = 1): DamageResult {
   const a = speciesOf(attacker.species);
   const d = speciesOf(defender.species);
   const typeMult = typeMultiplier(attackType ?? a.type, d.type);
   const answerMult = answer ? TUNING.answerMultiplier[answer] : 1;
   const side = answer ? 1 : TUNING.foeDamageScale;
   const spread = 1 - roll * TUNING.damageSpread;
-  const raw = attackPower * (power(a.stats.atk, attacker.level) / power(d.stats.def, defender.level)) * TUNING.damageScale * ((attacker.level + 2) / 7) * side * typeMult * answerMult * spread;
+  const raw = attackPower * (power(a.stats.atk, attacker.level) / power(d.stats.def, defender.level)) * TUNING.damageScale * ((attacker.level + 2) / 7) * side * typeMult * answerMult * boost * spread;
   return { damage: Math.max(1, Math.floor(raw)), effect: typeMult > 1 ? 'strong' : typeMult < 1 ? 'weak' : 'normal' };
 }
 

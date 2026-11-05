@@ -46,7 +46,8 @@ let nextUuid = 1;
 export const uuid = () => `00000000-0000-4000-8000-${String(nextUuid++).padStart(12, '0')}`;
 
 /** Plays one battle to the end. */
-export function playBattle(setup: BattleSetup, where: { map: string; trainer?: Thing }, student: Student, dice: Dice, clock: Clock): { report: BattleReport; final: BattleState } {
+/** `oldStyle`: a wild battle played the way browsers did before 6 Nov 2026, a question for every attack (still accepted). */
+export function playBattle(setup: BattleSetup, where: { map: string; trainer?: Thing; oldStyle?: boolean }, student: Student, dice: Dice, clock: Clock): { report: BattleReport; final: BattleState } {
   const packs = new Map<TopicId, ReturnType<typeof makePack>>();
   const pack = (t: TopicId) => {
     if (!packs.has(t)) packs.set(t, makePack(t, [], () => dice.next(), clock.now));
@@ -64,7 +65,8 @@ export function playBattle(setup: BattleSetup, where: { map: string; trainer?: T
     state = play(state, action, random).state;
     steps.push({ action, ...(q ? { q } : {}), randoms });
   };
-  const ask = (kind: 'fight' | 'catch') => {
+  const powerUp = setup.kind === 'wild' && !where.oldStyle;
+  const ask = (kind: 'fight' | 'catch' | 'power-up') => {
     const spec = questionFor(state, { kind })!;
     const topic = effectiveTopic(spec.topic, student.topics);
     const band = topic === spec.topic ? spec.band : bandFor(topic, state.area, state.far);
@@ -93,8 +95,18 @@ export function playBattle(setup: BattleSetup, where: { map: string; trainer?: T
     }
     const me = activeMonster(state);
     const attack = speciesOf(me.species).attacks.length - 1;
+    const pick = Math.min(attack, Math.floor(dice.next() * 2) + (attack > 1 ? 1 : 0));
+    if (powerUp) {
+      // A wild battle asks once, with its first attack; then attacks carry no question.
+      if (state.powerUp === undefined) {
+        const { q, result } = ask('power-up');
+        doStep({ kind: 'power-up', answer: result }, q);
+      }
+      doStep({ kind: 'fight', attack: pick });
+      continue;
+    }
     const { q, result } = ask('fight');
-    doStep({ kind: 'fight', attack: Math.min(attack, Math.floor(dice.next() * 2) + (attack > 1 ? 1 : 0)), answer: result }, q);
+    doStep({ kind: 'fight', attack: pick, answer: result }, q);
   }
   return { final: state, report: { id: uuid(), map: where.map, ...(where.trainer ? { trainer: where.trainer.id } : {}), setup, steps, outcome: state.phase as BattleReport['outcome'] } };
 }
@@ -150,8 +162,11 @@ export class Session {
     return this.fight(trainerBattle(this.world, { maps: this.maps }, t), t);
   }
 
+  /** Play wild battles the old way: a question for every attack. */
+  oldStyle = false;
+
   private fight(setup: BattleSetup, trainer: Thing | undefined): BattleReport {
-    const { report, final } = playBattle(setup, { map: this.world.map, trainer }, this.student, this.dice, this.clock);
+    const { report, final } = playBattle(setup, { map: this.world.map, trainer, oldStyle: this.oldStyle }, this.student, this.dice, this.clock);
     this.battles.push(report);
     const foes = setup.foes.map((f) => f.species);
     const opts = this.quest ? { maps: this.maps, ...this.quest } : undefined;
