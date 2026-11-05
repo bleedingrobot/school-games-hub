@@ -252,7 +252,9 @@
    number, silver the smaller; silver ones are dragged (or tapped) across to fill the first ten. Every pebble is at
    least 56px to grab. */
 .wk-pebbles {
-  --wk-cell: clamp(44px, min(6.5vw, 14vh), 84px);
+  /* Sized from the room the game really has (under the hub's bar on an iPad), so both ten-frames, the sum and Next fit
+     without scrolling: about 300px of buttons and words, plus the frames' 3 cells of height. */
+  --wk-cell: clamp(40px, min(5.6vw, (var(--wk-room, 100dvh) - 300px) / 3.1), 72px);
   display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 12px 16px; margin: auto 0;
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
@@ -296,6 +298,7 @@
 .wk-pebble--arrived { animation: wk-pop 0.5s ease-out; }
 .wk-pebble--hint { animation: wk-wobble 0.9s ease-in-out infinite; }
 .wk-pebbles__hand { font-size: calc(var(--wk-cell) * 0.6); left: 50%; top: 55%; }
+.wk-pebbles__end { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; min-height: 64px; }
 .wk-pebbles__said { margin: 0; min-height: 2rem; font-size: 1.5rem; font-weight: 800; background: var(--wk-panel); padding: 4px 16px; border-radius: 14px; }
 .wk-pebbles__said--empty { visibility: hidden; }
 /* The pebble's picture must not start the browser's own image drag, which cancels ours. */

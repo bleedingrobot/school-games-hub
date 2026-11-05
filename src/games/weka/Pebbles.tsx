@@ -146,14 +146,16 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
           ))}
         </Frame>
       </div>
-      <p className={`wk-pebbles__said${done ? '' : ' wk-pebbles__said--empty'}`} aria-live="polite">
-        {done ? `${go.big} + ${go.toTen} = 10, 10 + ${go.rest} = ${go.total}` : ''}
-      </p>
-      {done && (
-        <button type="button" className="wk-button wk-next" onClick={onNext}>
-          {last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span>
-        </button>
-      )}
+      <div className="wk-pebbles__end">
+        <p className={`wk-pebbles__said${done ? '' : ' wk-pebbles__said--empty'}`} aria-live="polite">
+          {done ? `${go.big} + ${go.toTen} = 10, 10 + ${go.rest} = ${go.total}` : ''}
+        </p>
+        {done && (
+          <button type="button" className="wk-button wk-next" onClick={onNext}>
+            {last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
