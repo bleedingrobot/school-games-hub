@@ -160,8 +160,9 @@
 .tui-card > span { display: block; width: 0.7em; padding: 0.12em 0.06em; text-align: center; }
 .tui-card--ten > span:first-child { color: var(--tui-teal-dark); }
 .tui-card--ones { color: #b4561a; animation: tui-slide 0.7s ease-in-out 0.5s forwards; }
-/* The ten card is two digits wide; the ones card lands on its second digit. */
-@keyframes tui-slide { to { translate: calc(-0.82em - 18px - 3px) 0; } }
+/* The ten card is two digits wide; the ones card lands exactly on its second digit, right edges lined up.
+   Distance = one digit (0.82em) + the 18px gap + the ten card's two 3px borders. */
+@keyframes tui-slide { to { translate: calc(-0.82em - 18px - 6px) 0; } }
 
 /* The nests: three or four, each a big target with its number. */
 .tui-nests { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 22px; }
