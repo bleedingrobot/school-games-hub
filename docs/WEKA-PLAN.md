@@ -72,7 +72,12 @@ A wrong answer drops a fact to box 1, so its full help returns next time. Inside
 
 Also: after three goes in a row with a wrong first tap, full help comes back for the rest of the round; "Hear it again"
 reads the question again; after a right answer with help, Bella says the te reo number and the sentence ("Tekau mā toru.
-10 and 3 make 13."). Teachers can set **Picture help** to Fades (above), Always on, or Off, and see each child's hardest
+10 and 3 make 13."). After every right answer the child fills in **the split they used** as a part-whole bond (James, 5 Nov 2026): the
+smaller number on top, then two empty circles in the hop colours, orange for the hops to the big rock and blue for the hops
+after it. They tap a number for each, and Bella says it in full: "You solved 9 + 5 by splitting the 5 into 1 and 4. You
+added the 1 first to make ten, then the other 4." This makes the hidden step of making ten (NCETM's "partition the second
+number") something the child says back every go, the way part-whole models are used in Pipi's Hidden Shells. It is help
+only and never recorded; after two wrong taps the hand points. Teachers can set **Picture help** to Fades (above), Always on, or Off, and see each child's hardest
 facts.
 
 On narrow phone screens the stones sit in two rows of ten (1 to 10 ending at the big rock, then 11 to 20), like a

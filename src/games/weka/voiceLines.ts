@@ -4,7 +4,7 @@
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/weka/progress';
-import { ALL_KEYS, askLine, fromTenLine, parseKey, stemLine, toTenLine, type Go, type Help, type Kind, type Level } from '../../../shared/weka/round';
+import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, stemLine, toTenLine, type Go, type Help, type Kind, type Level } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -29,7 +29,7 @@ export function finishLine(main: string, levelUp: Level | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, BOND_MORE, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -42,7 +42,7 @@ export function allVoiceLines(): string[] {
     for (const kind of ['add', 'turn', 'back'] as Kind[]) {
       const toTen = kind === 'back' ? total - 10 : 10 - big;
       const go = { kind, small, big, total, toTen, rest: small - toTen };
-      for (const line of [askLine(go), toTenLine(go), stemLine(go), fromTenLine(go), rightLine({ ...go, answer: kind === 'back' ? big : total }, 'full')]) lines.add(line);
+      for (const line of [askLine(go), toTenLine(go), stemLine(go), fromTenLine(go), bondAskLine(go), bondLine(go, true), rightLine({ ...go, answer: kind === 'back' ? big : total }, 'full')]) lines.add(line);
     }
   }
   // The guided first go: 9 + 2, both steps.

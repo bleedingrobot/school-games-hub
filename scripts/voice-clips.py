@@ -40,7 +40,7 @@ SAY_AS = {
     'Hoiho': 'Hoy-ho',
     'Pūkeko': 'Poo-keh-koh',
     'Kākāpō': 'Kah-kah-poh',
-    'Weka': 'Weh-kah',
+    # Weka is left as written: Kokoro says it with a short e (wˈɛkə), as James asked on 5 Nov 2026; "Weh-kah" gave a long "way".
     # Te reo numbers (Weka's Stepping Stones and Tūī's Ten Tree): tekau mā whā is "ten and four". Longest first.
     'Tekau mā ': 'Teh-koh mah ',
     'Tekau': 'Teh-koh',

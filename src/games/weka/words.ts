@@ -36,6 +36,10 @@ export const WORDS = {
   rightBack: (n: number, rest: number) => `${upFirst(reo(n))}. 10 take away ${rest} is ${n}.`,
   bigRock: 'The big rock is 10.',
   hearAgain: 'Hear it again',
+  /** The split after each right answer: the bond's label while it is being filled in, and the button after it. */
+  splitLabel: (n: number) => `How did you split the ${n}?`,
+  next: 'Next',
+  finish: 'Finish',
   stoneTurned: (metal: Metal) => `Well done! A stone turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another stone.',
   levelUp: (level: Level) => `You are so good at this! Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,

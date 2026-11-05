@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
-import { ALL_KEYS, BACK_GOES, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
+import { ALL_KEYS, BACK_GOES, bondLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -77,5 +77,17 @@ describe('the magic stones', () => {
     expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastStoneDay: '2026-11-04', stoneChanged: 0, goldenBasket: false });
     expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, stoneChanged: null });
     expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, stoneChanged: 9, goldenBasket: true });
+  });
+});
+
+describe('the split after each go', () => {
+  it('says how the smaller number was split: to the big rock first, then the rest', () => {
+    const add = { kind: 'add' as const, small: 5, big: 9, total: 14, toTen: 1, rest: 4 };
+    expect(bondLine(add)).toBe('You solved 9 + 5 by splitting the 5 into 1 and 4. You added the 1 first to make ten, then the other 4.');
+    expect(bondLine(add, true)).toMatch(/^You solved 9 plus 5 /);
+    expect(bondLine({ ...add, kind: 'turn', small: 5, big: 8, total: 13, toTen: 2, rest: 3 }))
+      .toBe('You solved 5 + 8 by starting on 8 and splitting the 5 into 2 and 3. You added the 2 first to make ten, then the other 3.');
+    expect(bondLine({ kind: 'back', small: 5, big: 8, total: 13, toTen: 3, rest: 2 }, true))
+      .toBe('You solved 13 take away 5 by splitting the 5 into 3 and 2. You took away the 3 first to get to ten, then the other 2.');
   });
 });

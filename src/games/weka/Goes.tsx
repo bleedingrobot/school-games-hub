@@ -14,14 +14,16 @@
  *  - hints build after wrong taps: a wobble, then the picture comes back and Bella says the make-ten sentence ("8 and 2
  *    make 10. Then 3 more.") or counts the hops to the big rock with the child, then the hand points;
  *  - after three goes in a row with a wrong first tap, full help comes back for the rest of the round;
- *  - "Hear it again" reads the question again.
+ *  - "Hear it again" reads the question again;
+ *  - after every right answer the child fills in the split they used as a part-whole bond (the smaller number on top,
+ *    the hops to the big rock and the hops after it below), and Bella says it in full (James, 5 Nov 2026).
  * None of this changes what counts: only the final picks are sent, and the server replays them and records the first
  * pick of each fact. The first step is help only and is never sent.
  */
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
-import { askLine, fromTenLine, GOES_PER_ROUND, showRound, stemLine, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
+import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, showRound, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
 import type { HelpSetting } from '../../../shared/weka/server';
 import { playSound } from '../sounds';
 import type { Pose } from './art';
@@ -61,7 +63,7 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-type Phase = 'ask' | 'right' | 'done';
+type Phase = 'ask' | 'right' | 'bond' | 'done';
 type Step = 'toTen' | 'answer';
 
 /** The stones between two numbers, not counting the first: 8 → 10 is [9, 10]; 13 → 10 is [12, 11, 10]. */
@@ -92,6 +94,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const [lit, setLit] = useState<number[]>([]);
   const [pose, setPose] = useState<Pose>('wait');
   const [guidePoint, setGuidePoint] = useState(false);
+  /** The split after a right answer: how many parts are filled in (0, 1, 2), and wrong taps on the current part. */
+  const [bond, setBond] = useState(0);
+  const [bondWrongs, setBondWrongs] = useState(0);
   const since = useRef(Date.now());
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -202,16 +207,41 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     if (pos === 10) hopOn();
     else hopTo(go.from, 10, hopOn);
     later(RIGHT_MS + (Math.abs(go.from - go.answer) * HOP_MS), () => {
-      if (at + 1 >= goes.length) {
-        setPhase('done');
-        later(600, () => onDone(next));
-      } else {
-        setAt(at + 1);
-        setPhase('ask');
-        setWrongs(0);
-        setFirstWrong(false);
-      }
+      setPhase('bond');
+      setBond(0);
+      setBondWrongs(0);
+      say(bondAskLine(go));
     });
+  }
+
+  /** Filling in the split: first the hops to the big rock, then the hops after it. Help only: never sent. */
+  function pickBond(n: number) {
+    if (phase !== 'bond' || bond >= 2) return;
+    if (n !== (bond === 0 ? go.toTen : go.rest)) {
+      setBondWrongs((w) => w + 1);
+      setWobble(n);
+      if (sound) playSound('tap');
+      later(WOBBLE_MS, () => setWobble(null));
+      say(WORDS.tryAgain);
+      return;
+    }
+    if (sound) playSound('tap');
+    setBondWrongs(0);
+    setBond(bond + 1);
+    say(bond === 0 ? BOND_MORE : bondLine(go, true));
+  }
+
+  function nextGo() {
+    clearTimers();
+    if (at + 1 >= goes.length) {
+      setPhase('done');
+      later(600, () => onDone(taps));
+    } else {
+      setAt(at + 1);
+      setPhase('ask');
+      setWrongs(0);
+      setFirstWrong(false);
+    }
   }
 
   const choices = step === 'toTen' ? go.toTenChoices : go.choices;
@@ -224,7 +254,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const ask = step === 'toTen'
     ? `${go.parts.join(' ').replace(' = ?', '')}: how many hops to 10?`
     : go.parts.join(' ');
-  const stem = (onBigRock || (wrongs >= 2 && step === 'answer') || phase !== 'ask') && shown !== 'none'
+  const stem = phase !== 'bond' && (onBigRock || (wrongs >= 2 && step === 'answer') || phase !== 'ask') && shown !== 'none'
     ? go.kind === 'back' ? `${go.total} − ${go.toTen} = 10, then − ${go.rest}` : `${go.big} + ${go.toTen} = 10, then + ${go.rest}`
     : '';
   /** The stones on the way to the big rock, shown once Weka has hopped there or a hint lights them. */
@@ -248,7 +278,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
       <p className={`wk-stem${stem ? '' : ' wk-stem--empty'}`} aria-live="polite">{stem}</p>
       {/* The hops Weka will make: one group, or split into to-the-rock and after on full help. */}
-      {shown !== 'none' && (
+      {shown !== 'none' && phase !== 'bond' && (
         <div className="wk-hops" aria-hidden="true">
           <span className="wk-hops__label">{sign}{go.small}</span>
           {Array.from({ length: go.small }, (_, i) => (
@@ -283,6 +313,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
           </div>
         )}
       </div>
+      {phase === 'bond' ? (
+        <Bond go={go} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={at + 1 >= goes.length} onPick={pickBond} onNext={nextGo} />
+      ) : (
       <div className="wk-choices" role="group" aria-label={WORDS.pickNumber}>
         {choices.map((n) => (
           <button
@@ -297,6 +330,56 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
           </button>
         ))}
       </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The split as a part-whole bond: the smaller number on top, the hops to the big rock (orange, like those stones) and
+ * the hops after it (blue) below. The child taps a number for each empty part; after two wrong taps the hand points.
+ */
+function Bond({ go, filled, wrongs, guided, wobble, last, onPick, onNext }: {
+  go: Go; filled: number; wrongs: number; guided: boolean; wobble: number | null; last: boolean;
+  onPick: (n: number) => void; onNext: () => void;
+}) {
+  const target = filled === 0 ? go.toTen : go.rest;
+  const pointAt = filled < 2 && (guided || wrongs >= 2) ? target : null;
+  const part = (n: number, which: 'to' | 'on', i: number) => (
+    <span className={`wk-bond__part wk-bond__part--${which}${filled === i ? ' wk-bond__part--now' : ''}`}>{filled > i ? n : ''}</span>
+  );
+  return (
+    <div className="wk-bond-area">
+      <div className="wk-bond" role="img" aria-label={filled >= 2 ? bondLine(go) : WORDS.splitLabel(go.small)}>
+        <svg className="wk-bond__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="50" y1="30" x2="22" y2="72" />
+          <line x1="50" y1="30" x2="78" y2="72" />
+        </svg>
+        <span className="wk-bond__whole">{go.small}</span>
+        {part(go.toTen, 'to', 0)}
+        {part(go.rest, 'on', 1)}
+      </div>
+      {filled < 2 ? (
+        <div className="wk-choices wk-choices--bond" role="group" aria-label={WORDS.pickNumber}>
+          {toTenChoicesFor(target).map((n) => (
+            <button
+              key={`${filled}-${n}`}
+              type="button"
+              className={`wk-choice${wobble === n ? ' wk-choice--wobble' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
+              onClick={() => onPick(n)}
+              aria-label={`${n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
+            >
+              <Stone metal="grey" value={n} />
+              {n === pointAt && <span className="wk-hand" aria-hidden="true">👆</span>}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="wk-bond__done">
+          <p className="wk-bond__said" aria-live="polite">{bondLine(go)}</p>
+          <button type="button" className="wk-button wk-next" onClick={onNext}>{last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span></button>
+        </div>
+      )}
     </div>
   );
 }

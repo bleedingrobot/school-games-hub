@@ -200,8 +200,31 @@
 }
 @keyframes wk-nudge { 50% { translate: -50% -14%; } }
 
+/* The split after each right answer: a part-whole bond, the smaller number on top, the two parts below in the hop colours. */
+.wk-bond-area { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
+.wk-bond { position: relative; width: 190px; height: 150px; flex: none; }
+.wk-bond__lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wk-bond__lines line { stroke: var(--wk-ink); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.wk-bond__whole, .wk-bond__part {
+  position: absolute; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; translate: -50% -50%;
+  background: var(--wk-panel); border: 5px solid var(--wk-ink); color: var(--wk-ink); font: 900 2rem system-ui, sans-serif; box-sizing: border-box;
+}
+.wk-bond__whole { left: 50%; top: 24%; }
+.wk-bond__part--to { left: 22%; top: 76%; border-color: var(--wk-to); }
+.wk-bond__part--on { left: 78%; top: 76%; border-color: var(--wk-on); }
+.wk-bond__part--now { animation: wk-glow 1.2s ease-in-out infinite; }
+@keyframes wk-glow { 50% { box-shadow: 0 0 0 6px rgb(255 251 208 / 0.9); } }
+.wk-bond__done { display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 520px; }
+.wk-bond__said { margin: 0; padding: 8px 16px; border-radius: 18px; background: var(--wk-panel); font: 800 clamp(1rem, 2.2vw, 1.3rem) / 1.35 system-ui, sans-serif; text-align: center; }
+.wk-next { white-space: nowrap; font-size: 1.3rem; min-height: 64px; padding: 0 28px; }
+
 @media (max-height: 500px) {
   .wk-root { --wk-step: clamp(20px, 8vh, 44px); }
+  .wk-bond { width: 150px; height: 112px; }
+  .wk-bond__whole, .wk-bond__part { width: 50px; height: 50px; font-size: 1.5rem; border-width: 4px; }
+  .wk-bond-area { flex-wrap: nowrap; }
+  .wk-bond__done { flex-direction: row; max-width: 620px; }
+  .wk-bond__said { font-size: 0.95rem; }
   .wk-root { --wk-choice: 72px; }
   .wk-ask { font-size: 1.1rem; }
   .wk-top { padding-right: 280px; }
