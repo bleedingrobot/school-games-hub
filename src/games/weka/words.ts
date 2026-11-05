@@ -34,6 +34,13 @@ export const WORDS = {
   hearAgain: 'Hear it again',
   /** The split after each right answer: the bond's label while it is being filled in, and the button after it. */
   splitLabel: (n: number) => `How did you split the ${n}?`,
+  /** Split-first goes (later in the game): the bond's label while the child splits the number before answering. */
+  splitFirstLabel: (n: number) => `Split the ${n} to get to ten.`,
+  /** The pebble step: the same question again in two ten-frames (James, 6 Nov 2026). */
+  sameQuestion: 'Same question:',
+  pebblesIn: (n: number) => `${n}`,
+  tenFull: '10',
+  movePebble: 'Silver pebble: move it to the first ten-frame',
   next: 'Next',
   finish: 'Finish',
   stoneTurned: (metal: Metal) => `Well done! A stone turned ${metal}!`,

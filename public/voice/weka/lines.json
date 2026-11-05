@@ -144,6 +144,22 @@
   "text": "11! 10 and 1 make 11."
  },
  {
+  "slug": "9-plus-2-split-the-2-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 2. Split the 2 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-2-are-left",
+  "text": "1 gets to ten. How many of the 2 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-2-here-are-9-gold-and-2-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 2. Here are 9 gold and 2 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-1-make-11",
+  "text": "9 and 1 make 10. 10 and 1 make 11."
+ },
+ {
   "slug": "2-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "2 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -154,6 +170,14 @@
  {
   "slug": "you-solved-2-plus-9-by-starting-on-9-and-splitting-the-2-into-1-and-1-you-added-the-1-first-to-make-ten-then-the-other-1",
   "text": "You solved 2 plus 9 by starting on 9 and splitting the 2 into 1 and 1. You added the 1 first to make ten, then the other 1."
+ },
+ {
+  "slug": "2-plus-9-start-on-the-bigger-number-9-split-the-2-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "2 plus 9. Start on the bigger number, 9. Split the 2 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-2-plus-9-here-are-9-gold-and-2-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 2 plus 9. Here are 9 gold and 2 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "11-take-away-2-weka-is-on-11-and-hops-back-2-where-will-weka-land",
@@ -184,6 +208,10 @@
   "text": "9! 10 take away 1 is 9."
  },
  {
+  "slug": "11-take-away-2-split-the-2-to-get-back-to-ten-how-many-hops-back-from-11-to-the-big-rock",
+  "text": "11 take away 2. Split the 2 to get back to ten. How many hops back from 11 to the big rock?"
+ },
+ {
   "slug": "9-plus-3-weka-is-on-9-and-hops-3-more-where-will-weka-land",
   "text": "9 plus 3. Weka is on 9 and hops 3 more. Where will Weka land?"
  },
@@ -212,6 +240,22 @@
   "text": "12! 10 and 2 make 12."
  },
  {
+  "slug": "9-plus-3-split-the-3-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 3. Split the 3 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-3-are-left",
+  "text": "1 gets to ten. How many of the 3 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-3-here-are-9-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 3. Here are 9 gold and 3 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-2-make-12",
+  "text": "9 and 1 make 10. 10 and 2 make 12."
+ },
+ {
   "slug": "3-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "3 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -222,6 +266,14 @@
  {
   "slug": "you-solved-3-plus-9-by-starting-on-9-and-splitting-the-3-into-1-and-2-you-added-the-1-first-to-make-ten-then-the-other-2",
   "text": "You solved 3 plus 9 by starting on 9 and splitting the 3 into 1 and 2. You added the 1 first to make ten, then the other 2."
+ },
+ {
+  "slug": "3-plus-9-start-on-the-bigger-number-9-split-the-3-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "3 plus 9. Start on the bigger number, 9. Split the 3 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-3-plus-9-here-are-9-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 3 plus 9. Here are 9 gold and 3 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "12-take-away-3-weka-is-on-12-and-hops-back-3-where-will-weka-land",
@@ -246,6 +298,14 @@
  {
   "slug": "you-solved-12-take-away-3-by-splitting-the-3-into-2-and-1-you-took-away-the-2-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 12 take away 3 by splitting the 3 into 2 and 1. You took away the 2 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "12-take-away-3-split-the-3-to-get-back-to-ten-how-many-hops-back-from-12-to-the-big-rock",
+  "text": "12 take away 3. Split the 3 to get back to ten. How many hops back from 12 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-3-are-left",
+  "text": "2 gets to ten. How many of the 3 are left?"
  },
  {
   "slug": "9-plus-4-weka-is-on-9-and-hops-4-more-where-will-weka-land",
@@ -276,6 +336,22 @@
   "text": "13! 10 and 3 make 13."
  },
  {
+  "slug": "9-plus-4-split-the-4-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 4. Split the 4 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-4-are-left",
+  "text": "1 gets to ten. How many of the 4 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-4-here-are-9-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 4. Here are 9 gold and 4 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-3-make-13",
+  "text": "9 and 1 make 10. 10 and 3 make 13."
+ },
+ {
   "slug": "4-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "4 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -286,6 +362,14 @@
  {
   "slug": "you-solved-4-plus-9-by-starting-on-9-and-splitting-the-4-into-1-and-3-you-added-the-1-first-to-make-ten-then-the-other-3",
   "text": "You solved 4 plus 9 by starting on 9 and splitting the 4 into 1 and 3. You added the 1 first to make ten, then the other 3."
+ },
+ {
+  "slug": "4-plus-9-start-on-the-bigger-number-9-split-the-4-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "4 plus 9. Start on the bigger number, 9. Split the 4 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-4-plus-9-here-are-9-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 4 plus 9. Here are 9 gold and 4 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "13-take-away-4-weka-is-on-13-and-hops-back-4-where-will-weka-land",
@@ -310,6 +394,14 @@
  {
   "slug": "you-solved-13-take-away-4-by-splitting-the-4-into-3-and-1-you-took-away-the-3-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 13 take away 4 by splitting the 4 into 3 and 1. You took away the 3 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "13-take-away-4-split-the-4-to-get-back-to-ten-how-many-hops-back-from-13-to-the-big-rock",
+  "text": "13 take away 4. Split the 4 to get back to ten. How many hops back from 13 to the big rock?"
+ },
+ {
+  "slug": "3-gets-to-ten-how-many-of-the-4-are-left",
+  "text": "3 gets to ten. How many of the 4 are left?"
  },
  {
   "slug": "9-plus-5-weka-is-on-9-and-hops-5-more-where-will-weka-land",
@@ -340,6 +432,22 @@
   "text": "14! 10 and 4 make 14."
  },
  {
+  "slug": "9-plus-5-split-the-5-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 5. Split the 5 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-5-are-left",
+  "text": "1 gets to ten. How many of the 5 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-5-here-are-9-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 5. Here are 9 gold and 5 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-4-make-14",
+  "text": "9 and 1 make 10. 10 and 4 make 14."
+ },
+ {
   "slug": "5-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "5 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -350,6 +458,14 @@
  {
   "slug": "you-solved-5-plus-9-by-starting-on-9-and-splitting-the-5-into-1-and-4-you-added-the-1-first-to-make-ten-then-the-other-4",
   "text": "You solved 5 plus 9 by starting on 9 and splitting the 5 into 1 and 4. You added the 1 first to make ten, then the other 4."
+ },
+ {
+  "slug": "5-plus-9-start-on-the-bigger-number-9-split-the-5-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "5 plus 9. Start on the bigger number, 9. Split the 5 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-5-plus-9-here-are-9-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 5 plus 9. Here are 9 gold and 5 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "14-take-away-5-weka-is-on-14-and-hops-back-5-where-will-weka-land",
@@ -374,6 +490,14 @@
  {
   "slug": "you-solved-14-take-away-5-by-splitting-the-5-into-4-and-1-you-took-away-the-4-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 14 take away 5 by splitting the 5 into 4 and 1. You took away the 4 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "14-take-away-5-split-the-5-to-get-back-to-ten-how-many-hops-back-from-14-to-the-big-rock",
+  "text": "14 take away 5. Split the 5 to get back to ten. How many hops back from 14 to the big rock?"
+ },
+ {
+  "slug": "4-gets-to-ten-how-many-of-the-5-are-left",
+  "text": "4 gets to ten. How many of the 5 are left?"
  },
  {
   "slug": "9-plus-6-weka-is-on-9-and-hops-6-more-where-will-weka-land",
@@ -404,6 +528,22 @@
   "text": "15! 10 and 5 make 15."
  },
  {
+  "slug": "9-plus-6-split-the-6-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 6. Split the 6 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-6-are-left",
+  "text": "1 gets to ten. How many of the 6 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-6-here-are-9-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 6. Here are 9 gold and 6 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-5-make-15",
+  "text": "9 and 1 make 10. 10 and 5 make 15."
+ },
+ {
   "slug": "6-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "6 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -414,6 +554,14 @@
  {
   "slug": "you-solved-6-plus-9-by-starting-on-9-and-splitting-the-6-into-1-and-5-you-added-the-1-first-to-make-ten-then-the-other-5",
   "text": "You solved 6 plus 9 by starting on 9 and splitting the 6 into 1 and 5. You added the 1 first to make ten, then the other 5."
+ },
+ {
+  "slug": "6-plus-9-start-on-the-bigger-number-9-split-the-6-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "6 plus 9. Start on the bigger number, 9. Split the 6 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-6-plus-9-here-are-9-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 6 plus 9. Here are 9 gold and 6 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "15-take-away-6-weka-is-on-15-and-hops-back-6-where-will-weka-land",
@@ -438,6 +586,14 @@
  {
   "slug": "you-solved-15-take-away-6-by-splitting-the-6-into-5-and-1-you-took-away-the-5-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 15 take away 6 by splitting the 6 into 5 and 1. You took away the 5 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "15-take-away-6-split-the-6-to-get-back-to-ten-how-many-hops-back-from-15-to-the-big-rock",
+  "text": "15 take away 6. Split the 6 to get back to ten. How many hops back from 15 to the big rock?"
+ },
+ {
+  "slug": "5-gets-to-ten-how-many-of-the-6-are-left",
+  "text": "5 gets to ten. How many of the 6 are left?"
  },
  {
   "slug": "9-plus-7-weka-is-on-9-and-hops-7-more-where-will-weka-land",
@@ -468,6 +624,22 @@
   "text": "16! 10 and 6 make 16."
  },
  {
+  "slug": "9-plus-7-split-the-7-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 7. Split the 7 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "1 gets to ten. How many of the 7 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-7-here-are-9-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 7. Here are 9 gold and 7 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-6-make-16",
+  "text": "9 and 1 make 10. 10 and 6 make 16."
+ },
+ {
   "slug": "7-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "7 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -478,6 +650,14 @@
  {
   "slug": "you-solved-7-plus-9-by-starting-on-9-and-splitting-the-7-into-1-and-6-you-added-the-1-first-to-make-ten-then-the-other-6",
   "text": "You solved 7 plus 9 by starting on 9 and splitting the 7 into 1 and 6. You added the 1 first to make ten, then the other 6."
+ },
+ {
+  "slug": "7-plus-9-start-on-the-bigger-number-9-split-the-7-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "7 plus 9. Start on the bigger number, 9. Split the 7 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-9-here-are-9-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 9. Here are 9 gold and 7 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "16-take-away-7-weka-is-on-16-and-hops-back-7-where-will-weka-land",
@@ -502,6 +682,14 @@
  {
   "slug": "you-solved-16-take-away-7-by-splitting-the-7-into-6-and-1-you-took-away-the-6-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 16 take away 7 by splitting the 7 into 6 and 1. You took away the 6 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "16-take-away-7-split-the-7-to-get-back-to-ten-how-many-hops-back-from-16-to-the-big-rock",
+  "text": "16 take away 7. Split the 7 to get back to ten. How many hops back from 16 to the big rock?"
+ },
+ {
+  "slug": "6-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "6 gets to ten. How many of the 7 are left?"
  },
  {
   "slug": "9-plus-8-weka-is-on-9-and-hops-8-more-where-will-weka-land",
@@ -532,6 +720,22 @@
   "text": "17! 10 and 7 make 17."
  },
  {
+  "slug": "9-plus-8-split-the-8-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 8. Split the 8 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-8-are-left",
+  "text": "1 gets to ten. How many of the 8 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-8-here-are-9-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 8. Here are 9 gold and 8 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-7-make-17",
+  "text": "9 and 1 make 10. 10 and 7 make 17."
+ },
+ {
   "slug": "8-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "8 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -542,6 +746,14 @@
  {
   "slug": "you-solved-8-plus-9-by-starting-on-9-and-splitting-the-8-into-1-and-7-you-added-the-1-first-to-make-ten-then-the-other-7",
   "text": "You solved 8 plus 9 by starting on 9 and splitting the 8 into 1 and 7. You added the 1 first to make ten, then the other 7."
+ },
+ {
+  "slug": "8-plus-9-start-on-the-bigger-number-9-split-the-8-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "8 plus 9. Start on the bigger number, 9. Split the 8 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-9-here-are-9-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 9. Here are 9 gold and 8 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "17-take-away-8-weka-is-on-17-and-hops-back-8-where-will-weka-land",
@@ -566,6 +778,14 @@
  {
   "slug": "you-solved-17-take-away-8-by-splitting-the-8-into-7-and-1-you-took-away-the-7-first-to-get-to-ten-then-the-other-1",
   "text": "You solved 17 take away 8 by splitting the 8 into 7 and 1. You took away the 7 first to get to ten, then the other 1."
+ },
+ {
+  "slug": "17-take-away-8-split-the-8-to-get-back-to-ten-how-many-hops-back-from-17-to-the-big-rock",
+  "text": "17 take away 8. Split the 8 to get back to ten. How many hops back from 17 to the big rock?"
+ },
+ {
+  "slug": "7-gets-to-ten-how-many-of-the-8-are-left",
+  "text": "7 gets to ten. How many of the 8 are left?"
  },
  {
   "slug": "9-plus-9-weka-is-on-9-and-hops-9-more-where-will-weka-land",
@@ -596,6 +816,22 @@
   "text": "18! 10 and 8 make 18."
  },
  {
+  "slug": "9-plus-9-split-the-9-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 9. Split the 9 to get to ten. How many hops from 9 to the big rock?"
+ },
+ {
+  "slug": "1-gets-to-ten-how-many-of-the-9-are-left",
+  "text": "1 gets to ten. How many of the 9 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-9-plus-9-here-are-9-gold-and-9-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 9 plus 9. Here are 9 gold and 9 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "9-and-1-make-10-10-and-8-make-18",
+  "text": "9 and 1 make 10. 10 and 8 make 18."
+ },
+ {
   "slug": "9-plus-9-start-on-the-bigger-number-where-will-weka-land",
   "text": "9 plus 9. Start on the bigger number. Where will Weka land?"
  },
@@ -606,6 +842,10 @@
  {
   "slug": "you-solved-9-plus-9-by-starting-on-9-and-splitting-the-9-into-1-and-8-you-added-the-1-first-to-make-ten-then-the-other-8",
   "text": "You solved 9 plus 9 by starting on 9 and splitting the 9 into 1 and 8. You added the 1 first to make ten, then the other 8."
+ },
+ {
+  "slug": "9-plus-9-start-on-the-bigger-number-9-split-the-9-to-get-to-ten-how-many-hops-from-9-to-the-big-rock",
+  "text": "9 plus 9. Start on the bigger number, 9. Split the 9 to get to ten. How many hops from 9 to the big rock?"
  },
  {
   "slug": "18-take-away-9-weka-is-on-18-and-hops-back-9-where-will-weka-land",
@@ -632,6 +872,14 @@
   "text": "You solved 18 take away 9 by splitting the 9 into 8 and 1. You took away the 8 first to get to ten, then the other 1."
  },
  {
+  "slug": "18-take-away-9-split-the-9-to-get-back-to-ten-how-many-hops-back-from-18-to-the-big-rock",
+  "text": "18 take away 9. Split the 9 to get back to ten. How many hops back from 18 to the big rock?"
+ },
+ {
+  "slug": "8-gets-to-ten-how-many-of-the-9-are-left",
+  "text": "8 gets to ten. How many of the 9 are left?"
+ },
+ {
   "slug": "8-plus-3-weka-is-on-8-and-hops-3-more-where-will-weka-land",
   "text": "8 plus 3. Weka is on 8 and hops 3 more. Where will Weka land?"
  },
@@ -652,6 +900,18 @@
   "text": "You solved 8 plus 3 by splitting the 3 into 2 and 1. You added the 2 first to make ten, then the other 1."
  },
  {
+  "slug": "8-plus-3-split-the-3-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 3. Split the 3 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-3-here-are-8-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 3. Here are 8 gold and 3 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-1-make-11",
+  "text": "8 and 2 make 10. 10 and 1 make 11."
+ },
+ {
   "slug": "3-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "3 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -662,6 +922,14 @@
  {
   "slug": "you-solved-3-plus-8-by-starting-on-8-and-splitting-the-3-into-2-and-1-you-added-the-2-first-to-make-ten-then-the-other-1",
   "text": "You solved 3 plus 8 by starting on 8 and splitting the 3 into 2 and 1. You added the 2 first to make ten, then the other 1."
+ },
+ {
+  "slug": "3-plus-8-start-on-the-bigger-number-8-split-the-3-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "3 plus 8. Start on the bigger number, 8. Split the 3 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-3-plus-8-here-are-8-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 3 plus 8. Here are 8 gold and 3 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "11-take-away-3-weka-is-on-11-and-hops-back-3-where-will-weka-land",
@@ -688,6 +956,10 @@
   "text": "8! 10 take away 2 is 8."
  },
  {
+  "slug": "11-take-away-3-split-the-3-to-get-back-to-ten-how-many-hops-back-from-11-to-the-big-rock",
+  "text": "11 take away 3. Split the 3 to get back to ten. How many hops back from 11 to the big rock?"
+ },
+ {
   "slug": "8-plus-4-weka-is-on-8-and-hops-4-more-where-will-weka-land",
   "text": "8 plus 4. Weka is on 8 and hops 4 more. Where will Weka land?"
  },
@@ -708,6 +980,22 @@
   "text": "You solved 8 plus 4 by splitting the 4 into 2 and 2. You added the 2 first to make ten, then the other 2."
  },
  {
+  "slug": "8-plus-4-split-the-4-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 4. Split the 4 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-4-are-left",
+  "text": "2 gets to ten. How many of the 4 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-4-here-are-8-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 4. Here are 8 gold and 4 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-2-make-12",
+  "text": "8 and 2 make 10. 10 and 2 make 12."
+ },
+ {
   "slug": "4-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "4 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -718,6 +1006,14 @@
  {
   "slug": "you-solved-4-plus-8-by-starting-on-8-and-splitting-the-4-into-2-and-2-you-added-the-2-first-to-make-ten-then-the-other-2",
   "text": "You solved 4 plus 8 by starting on 8 and splitting the 4 into 2 and 2. You added the 2 first to make ten, then the other 2."
+ },
+ {
+  "slug": "4-plus-8-start-on-the-bigger-number-8-split-the-4-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "4 plus 8. Start on the bigger number, 8. Split the 4 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-4-plus-8-here-are-8-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 4 plus 8. Here are 8 gold and 4 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "12-take-away-4-weka-is-on-12-and-hops-back-4-where-will-weka-land",
@@ -740,6 +1036,10 @@
   "text": "You solved 12 take away 4 by splitting the 4 into 2 and 2. You took away the 2 first to get to ten, then the other 2."
  },
  {
+  "slug": "12-take-away-4-split-the-4-to-get-back-to-ten-how-many-hops-back-from-12-to-the-big-rock",
+  "text": "12 take away 4. Split the 4 to get back to ten. How many hops back from 12 to the big rock?"
+ },
+ {
   "slug": "8-plus-5-weka-is-on-8-and-hops-5-more-where-will-weka-land",
   "text": "8 plus 5. Weka is on 8 and hops 5 more. Where will Weka land?"
  },
@@ -760,6 +1060,22 @@
   "text": "You solved 8 plus 5 by splitting the 5 into 2 and 3. You added the 2 first to make ten, then the other 3."
  },
  {
+  "slug": "8-plus-5-split-the-5-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 5. Split the 5 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-5-are-left",
+  "text": "2 gets to ten. How many of the 5 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-5-here-are-8-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-3-make-13",
+  "text": "8 and 2 make 10. 10 and 3 make 13."
+ },
+ {
   "slug": "5-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "5 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -770,6 +1086,14 @@
  {
   "slug": "you-solved-5-plus-8-by-starting-on-8-and-splitting-the-5-into-2-and-3-you-added-the-2-first-to-make-ten-then-the-other-3",
   "text": "You solved 5 plus 8 by starting on 8 and splitting the 5 into 2 and 3. You added the 2 first to make ten, then the other 3."
+ },
+ {
+  "slug": "5-plus-8-start-on-the-bigger-number-8-split-the-5-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "5 plus 8. Start on the bigger number, 8. Split the 5 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-5-plus-8-here-are-8-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 5 plus 8. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "13-take-away-5-weka-is-on-13-and-hops-back-5-where-will-weka-land",
@@ -792,6 +1116,14 @@
   "text": "You solved 13 take away 5 by splitting the 5 into 3 and 2. You took away the 3 first to get to ten, then the other 2."
  },
  {
+  "slug": "13-take-away-5-split-the-5-to-get-back-to-ten-how-many-hops-back-from-13-to-the-big-rock",
+  "text": "13 take away 5. Split the 5 to get back to ten. How many hops back from 13 to the big rock?"
+ },
+ {
+  "slug": "3-gets-to-ten-how-many-of-the-5-are-left",
+  "text": "3 gets to ten. How many of the 5 are left?"
+ },
+ {
   "slug": "8-plus-6-weka-is-on-8-and-hops-6-more-where-will-weka-land",
   "text": "8 plus 6. Weka is on 8 and hops 6 more. Where will Weka land?"
  },
@@ -812,6 +1144,22 @@
   "text": "You solved 8 plus 6 by splitting the 6 into 2 and 4. You added the 2 first to make ten, then the other 4."
  },
  {
+  "slug": "8-plus-6-split-the-6-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 6. Split the 6 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-6-are-left",
+  "text": "2 gets to ten. How many of the 6 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-6-here-are-8-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 6. Here are 8 gold and 6 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-4-make-14",
+  "text": "8 and 2 make 10. 10 and 4 make 14."
+ },
+ {
   "slug": "6-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "6 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -822,6 +1170,14 @@
  {
   "slug": "you-solved-6-plus-8-by-starting-on-8-and-splitting-the-6-into-2-and-4-you-added-the-2-first-to-make-ten-then-the-other-4",
   "text": "You solved 6 plus 8 by starting on 8 and splitting the 6 into 2 and 4. You added the 2 first to make ten, then the other 4."
+ },
+ {
+  "slug": "6-plus-8-start-on-the-bigger-number-8-split-the-6-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "6 plus 8. Start on the bigger number, 8. Split the 6 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-6-plus-8-here-are-8-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 6 plus 8. Here are 8 gold and 6 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "14-take-away-6-weka-is-on-14-and-hops-back-6-where-will-weka-land",
@@ -844,6 +1200,14 @@
   "text": "You solved 14 take away 6 by splitting the 6 into 4 and 2. You took away the 4 first to get to ten, then the other 2."
  },
  {
+  "slug": "14-take-away-6-split-the-6-to-get-back-to-ten-how-many-hops-back-from-14-to-the-big-rock",
+  "text": "14 take away 6. Split the 6 to get back to ten. How many hops back from 14 to the big rock?"
+ },
+ {
+  "slug": "4-gets-to-ten-how-many-of-the-6-are-left",
+  "text": "4 gets to ten. How many of the 6 are left?"
+ },
+ {
   "slug": "8-plus-7-weka-is-on-8-and-hops-7-more-where-will-weka-land",
   "text": "8 plus 7. Weka is on 8 and hops 7 more. Where will Weka land?"
  },
@@ -864,6 +1228,22 @@
   "text": "You solved 8 plus 7 by splitting the 7 into 2 and 5. You added the 2 first to make ten, then the other 5."
  },
  {
+  "slug": "8-plus-7-split-the-7-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 7. Split the 7 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "2 gets to ten. How many of the 7 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-7-here-are-8-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 7. Here are 8 gold and 7 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-5-make-15",
+  "text": "8 and 2 make 10. 10 and 5 make 15."
+ },
+ {
   "slug": "7-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "7 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -874,6 +1254,14 @@
  {
   "slug": "you-solved-7-plus-8-by-starting-on-8-and-splitting-the-7-into-2-and-5-you-added-the-2-first-to-make-ten-then-the-other-5",
   "text": "You solved 7 plus 8 by starting on 8 and splitting the 7 into 2 and 5. You added the 2 first to make ten, then the other 5."
+ },
+ {
+  "slug": "7-plus-8-start-on-the-bigger-number-8-split-the-7-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "7 plus 8. Start on the bigger number, 8. Split the 7 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-8-here-are-8-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 8. Here are 8 gold and 7 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "15-take-away-7-weka-is-on-15-and-hops-back-7-where-will-weka-land",
@@ -896,6 +1284,14 @@
   "text": "You solved 15 take away 7 by splitting the 7 into 5 and 2. You took away the 5 first to get to ten, then the other 2."
  },
  {
+  "slug": "15-take-away-7-split-the-7-to-get-back-to-ten-how-many-hops-back-from-15-to-the-big-rock",
+  "text": "15 take away 7. Split the 7 to get back to ten. How many hops back from 15 to the big rock?"
+ },
+ {
+  "slug": "5-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "5 gets to ten. How many of the 7 are left?"
+ },
+ {
   "slug": "8-plus-8-weka-is-on-8-and-hops-8-more-where-will-weka-land",
   "text": "8 plus 8. Weka is on 8 and hops 8 more. Where will Weka land?"
  },
@@ -916,6 +1312,22 @@
   "text": "You solved 8 plus 8 by splitting the 8 into 2 and 6. You added the 2 first to make ten, then the other 6."
  },
  {
+  "slug": "8-plus-8-split-the-8-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 8. Split the 8 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "2-gets-to-ten-how-many-of-the-8-are-left",
+  "text": "2 gets to ten. How many of the 8 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-8-plus-8-here-are-8-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 8 plus 8. Here are 8 gold and 8 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "8-and-2-make-10-10-and-6-make-16",
+  "text": "8 and 2 make 10. 10 and 6 make 16."
+ },
+ {
   "slug": "8-plus-8-start-on-the-bigger-number-where-will-weka-land",
   "text": "8 plus 8. Start on the bigger number. Where will Weka land?"
  },
@@ -926,6 +1338,10 @@
  {
   "slug": "you-solved-8-plus-8-by-starting-on-8-and-splitting-the-8-into-2-and-6-you-added-the-2-first-to-make-ten-then-the-other-6",
   "text": "You solved 8 plus 8 by starting on 8 and splitting the 8 into 2 and 6. You added the 2 first to make ten, then the other 6."
+ },
+ {
+  "slug": "8-plus-8-start-on-the-bigger-number-8-split-the-8-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
+  "text": "8 plus 8. Start on the bigger number, 8. Split the 8 to get to ten. How many hops from 8 to the big rock?"
  },
  {
   "slug": "16-take-away-8-weka-is-on-16-and-hops-back-8-where-will-weka-land",
@@ -948,6 +1364,14 @@
   "text": "You solved 16 take away 8 by splitting the 8 into 6 and 2. You took away the 6 first to get to ten, then the other 2."
  },
  {
+  "slug": "16-take-away-8-split-the-8-to-get-back-to-ten-how-many-hops-back-from-16-to-the-big-rock",
+  "text": "16 take away 8. Split the 8 to get back to ten. How many hops back from 16 to the big rock?"
+ },
+ {
+  "slug": "6-gets-to-ten-how-many-of-the-8-are-left",
+  "text": "6 gets to ten. How many of the 8 are left?"
+ },
+ {
   "slug": "7-plus-4-weka-is-on-7-and-hops-4-more-where-will-weka-land",
   "text": "7 plus 4. Weka is on 7 and hops 4 more. Where will Weka land?"
  },
@@ -968,6 +1392,18 @@
   "text": "You solved 7 plus 4 by splitting the 4 into 3 and 1. You added the 3 first to make ten, then the other 1."
  },
  {
+  "slug": "7-plus-4-split-the-4-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "7 plus 4. Split the 4 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-4-here-are-7-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 4. Here are 7 gold and 4 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "7-and-3-make-10-10-and-1-make-11",
+  "text": "7 and 3 make 10. 10 and 1 make 11."
+ },
+ {
   "slug": "4-plus-7-start-on-the-bigger-number-where-will-weka-land",
   "text": "4 plus 7. Start on the bigger number. Where will Weka land?"
  },
@@ -978,6 +1414,14 @@
  {
   "slug": "you-solved-4-plus-7-by-starting-on-7-and-splitting-the-4-into-3-and-1-you-added-the-3-first-to-make-ten-then-the-other-1",
   "text": "You solved 4 plus 7 by starting on 7 and splitting the 4 into 3 and 1. You added the 3 first to make ten, then the other 1."
+ },
+ {
+  "slug": "4-plus-7-start-on-the-bigger-number-7-split-the-4-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "4 plus 7. Start on the bigger number, 7. Split the 4 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-4-plus-7-here-are-7-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 4 plus 7. Here are 7 gold and 4 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "11-take-away-4-weka-is-on-11-and-hops-back-4-where-will-weka-land",
@@ -1004,6 +1448,10 @@
   "text": "7! 10 take away 3 is 7."
  },
  {
+  "slug": "11-take-away-4-split-the-4-to-get-back-to-ten-how-many-hops-back-from-11-to-the-big-rock",
+  "text": "11 take away 4. Split the 4 to get back to ten. How many hops back from 11 to the big rock?"
+ },
+ {
   "slug": "7-plus-5-weka-is-on-7-and-hops-5-more-where-will-weka-land",
   "text": "7 plus 5. Weka is on 7 and hops 5 more. Where will Weka land?"
  },
@@ -1024,6 +1472,18 @@
   "text": "You solved 7 plus 5 by splitting the 5 into 3 and 2. You added the 3 first to make ten, then the other 2."
  },
  {
+  "slug": "7-plus-5-split-the-5-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "7 plus 5. Split the 5 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-5-here-are-7-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 5. Here are 7 gold and 5 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "7-and-3-make-10-10-and-2-make-12",
+  "text": "7 and 3 make 10. 10 and 2 make 12."
+ },
+ {
   "slug": "5-plus-7-start-on-the-bigger-number-where-will-weka-land",
   "text": "5 plus 7. Start on the bigger number. Where will Weka land?"
  },
@@ -1034,6 +1494,14 @@
  {
   "slug": "you-solved-5-plus-7-by-starting-on-7-and-splitting-the-5-into-3-and-2-you-added-the-3-first-to-make-ten-then-the-other-2",
   "text": "You solved 5 plus 7 by starting on 7 and splitting the 5 into 3 and 2. You added the 3 first to make ten, then the other 2."
+ },
+ {
+  "slug": "5-plus-7-start-on-the-bigger-number-7-split-the-5-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "5 plus 7. Start on the bigger number, 7. Split the 5 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-5-plus-7-here-are-7-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 5 plus 7. Here are 7 gold and 5 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "12-take-away-5-weka-is-on-12-and-hops-back-5-where-will-weka-land",
@@ -1056,6 +1524,10 @@
   "text": "You solved 12 take away 5 by splitting the 5 into 2 and 3. You took away the 2 first to get to ten, then the other 3."
  },
  {
+  "slug": "12-take-away-5-split-the-5-to-get-back-to-ten-how-many-hops-back-from-12-to-the-big-rock",
+  "text": "12 take away 5. Split the 5 to get back to ten. How many hops back from 12 to the big rock?"
+ },
+ {
   "slug": "7-plus-6-weka-is-on-7-and-hops-6-more-where-will-weka-land",
   "text": "7 plus 6. Weka is on 7 and hops 6 more. Where will Weka land?"
  },
@@ -1076,6 +1548,22 @@
   "text": "You solved 7 plus 6 by splitting the 6 into 3 and 3. You added the 3 first to make ten, then the other 3."
  },
  {
+  "slug": "7-plus-6-split-the-6-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "7 plus 6. Split the 6 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "3-gets-to-ten-how-many-of-the-6-are-left",
+  "text": "3 gets to ten. How many of the 6 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-6-here-are-7-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 6. Here are 7 gold and 6 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "7-and-3-make-10-10-and-3-make-13",
+  "text": "7 and 3 make 10. 10 and 3 make 13."
+ },
+ {
   "slug": "6-plus-7-start-on-the-bigger-number-where-will-weka-land",
   "text": "6 plus 7. Start on the bigger number. Where will Weka land?"
  },
@@ -1086,6 +1574,14 @@
  {
   "slug": "you-solved-6-plus-7-by-starting-on-7-and-splitting-the-6-into-3-and-3-you-added-the-3-first-to-make-ten-then-the-other-3",
   "text": "You solved 6 plus 7 by starting on 7 and splitting the 6 into 3 and 3. You added the 3 first to make ten, then the other 3."
+ },
+ {
+  "slug": "6-plus-7-start-on-the-bigger-number-7-split-the-6-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "6 plus 7. Start on the bigger number, 7. Split the 6 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-6-plus-7-here-are-7-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 6 plus 7. Here are 7 gold and 6 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "13-take-away-6-weka-is-on-13-and-hops-back-6-where-will-weka-land",
@@ -1108,6 +1604,10 @@
   "text": "You solved 13 take away 6 by splitting the 6 into 3 and 3. You took away the 3 first to get to ten, then the other 3."
  },
  {
+  "slug": "13-take-away-6-split-the-6-to-get-back-to-ten-how-many-hops-back-from-13-to-the-big-rock",
+  "text": "13 take away 6. Split the 6 to get back to ten. How many hops back from 13 to the big rock?"
+ },
+ {
   "slug": "7-plus-7-weka-is-on-7-and-hops-7-more-where-will-weka-land",
   "text": "7 plus 7. Weka is on 7 and hops 7 more. Where will Weka land?"
  },
@@ -1128,6 +1628,22 @@
   "text": "You solved 7 plus 7 by splitting the 7 into 3 and 4. You added the 3 first to make ten, then the other 4."
  },
  {
+  "slug": "7-plus-7-split-the-7-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "7 plus 7. Split the 7 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "3-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "3 gets to ten. How many of the 7 are left?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-7-plus-7-here-are-7-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 7 plus 7. Here are 7 gold and 7 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "7-and-3-make-10-10-and-4-make-14",
+  "text": "7 and 3 make 10. 10 and 4 make 14."
+ },
+ {
   "slug": "7-plus-7-start-on-the-bigger-number-where-will-weka-land",
   "text": "7 plus 7. Start on the bigger number. Where will Weka land?"
  },
@@ -1138,6 +1654,10 @@
  {
   "slug": "you-solved-7-plus-7-by-starting-on-7-and-splitting-the-7-into-3-and-4-you-added-the-3-first-to-make-ten-then-the-other-4",
   "text": "You solved 7 plus 7 by starting on 7 and splitting the 7 into 3 and 4. You added the 3 first to make ten, then the other 4."
+ },
+ {
+  "slug": "7-plus-7-start-on-the-bigger-number-7-split-the-7-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
+  "text": "7 plus 7. Start on the bigger number, 7. Split the 7 to get to ten. How many hops from 7 to the big rock?"
  },
  {
   "slug": "14-take-away-7-weka-is-on-14-and-hops-back-7-where-will-weka-land",
@@ -1160,6 +1680,14 @@
   "text": "You solved 14 take away 7 by splitting the 7 into 4 and 3. You took away the 4 first to get to ten, then the other 3."
  },
  {
+  "slug": "14-take-away-7-split-the-7-to-get-back-to-ten-how-many-hops-back-from-14-to-the-big-rock",
+  "text": "14 take away 7. Split the 7 to get back to ten. How many hops back from 14 to the big rock?"
+ },
+ {
+  "slug": "4-gets-to-ten-how-many-of-the-7-are-left",
+  "text": "4 gets to ten. How many of the 7 are left?"
+ },
+ {
   "slug": "6-plus-5-weka-is-on-6-and-hops-5-more-where-will-weka-land",
   "text": "6 plus 5. Weka is on 6 and hops 5 more. Where will Weka land?"
  },
@@ -1180,6 +1708,18 @@
   "text": "You solved 6 plus 5 by splitting the 5 into 4 and 1. You added the 4 first to make ten, then the other 1."
  },
  {
+  "slug": "6-plus-5-split-the-5-to-get-to-ten-how-many-hops-from-6-to-the-big-rock",
+  "text": "6 plus 5. Split the 5 to get to ten. How many hops from 6 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-6-plus-5-here-are-6-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 6 plus 5. Here are 6 gold and 5 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "6-and-4-make-10-10-and-1-make-11",
+  "text": "6 and 4 make 10. 10 and 1 make 11."
+ },
+ {
   "slug": "5-plus-6-start-on-the-bigger-number-where-will-weka-land",
   "text": "5 plus 6. Start on the bigger number. Where will Weka land?"
  },
@@ -1190,6 +1730,14 @@
  {
   "slug": "you-solved-5-plus-6-by-starting-on-6-and-splitting-the-5-into-4-and-1-you-added-the-4-first-to-make-ten-then-the-other-1",
   "text": "You solved 5 plus 6 by starting on 6 and splitting the 5 into 4 and 1. You added the 4 first to make ten, then the other 1."
+ },
+ {
+  "slug": "5-plus-6-start-on-the-bigger-number-6-split-the-5-to-get-to-ten-how-many-hops-from-6-to-the-big-rock",
+  "text": "5 plus 6. Start on the bigger number, 6. Split the 5 to get to ten. How many hops from 6 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-5-plus-6-here-are-6-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 5 plus 6. Here are 6 gold and 5 silver. Drag silver pebbles to fill the first ten."
  },
  {
   "slug": "11-take-away-5-weka-is-on-11-and-hops-back-5-where-will-weka-land",
@@ -1216,6 +1764,10 @@
   "text": "6! 10 take away 4 is 6."
  },
  {
+  "slug": "11-take-away-5-split-the-5-to-get-back-to-ten-how-many-hops-back-from-11-to-the-big-rock",
+  "text": "11 take away 5. Split the 5 to get back to ten. How many hops back from 11 to the big rock?"
+ },
+ {
   "slug": "6-plus-6-weka-is-on-6-and-hops-6-more-where-will-weka-land",
   "text": "6 plus 6. Weka is on 6 and hops 6 more. Where will Weka land?"
  },
@@ -1236,6 +1788,18 @@
   "text": "You solved 6 plus 6 by splitting the 6 into 4 and 2. You added the 4 first to make ten, then the other 2."
  },
  {
+  "slug": "6-plus-6-split-the-6-to-get-to-ten-how-many-hops-from-6-to-the-big-rock",
+  "text": "6 plus 6. Split the 6 to get to ten. How many hops from 6 to the big rock?"
+ },
+ {
+  "slug": "the-same-question-with-pebbles-6-plus-6-here-are-6-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
+  "text": "The same question with pebbles: 6 plus 6. Here are 6 gold and 6 silver. Drag silver pebbles to fill the first ten."
+ },
+ {
+  "slug": "6-and-4-make-10-10-and-2-make-12",
+  "text": "6 and 4 make 10. 10 and 2 make 12."
+ },
+ {
   "slug": "6-plus-6-start-on-the-bigger-number-where-will-weka-land",
   "text": "6 plus 6. Start on the bigger number. Where will Weka land?"
  },
@@ -1246,6 +1810,10 @@
  {
   "slug": "you-solved-6-plus-6-by-starting-on-6-and-splitting-the-6-into-4-and-2-you-added-the-4-first-to-make-ten-then-the-other-2",
   "text": "You solved 6 plus 6 by starting on 6 and splitting the 6 into 4 and 2. You added the 4 first to make ten, then the other 2."
+ },
+ {
+  "slug": "6-plus-6-start-on-the-bigger-number-6-split-the-6-to-get-to-ten-how-many-hops-from-6-to-the-big-rock",
+  "text": "6 plus 6. Start on the bigger number, 6. Split the 6 to get to ten. How many hops from 6 to the big rock?"
  },
  {
   "slug": "12-take-away-6-weka-is-on-12-and-hops-back-6-where-will-weka-land",
@@ -1266,6 +1834,10 @@
  {
   "slug": "you-solved-12-take-away-6-by-splitting-the-6-into-2-and-4-you-took-away-the-2-first-to-get-to-ten-then-the-other-4",
   "text": "You solved 12 take away 6 by splitting the 6 into 2 and 4. You took away the 2 first to get to ten, then the other 4."
+ },
+ {
+  "slug": "12-take-away-6-split-the-6-to-get-back-to-ten-how-many-hops-back-from-12-to-the-big-rock",
+  "text": "12 take away 6. Split the 6 to get back to ten. How many hops back from 12 to the big rock?"
  },
  {
   "slug": "9-plus-2-weka-is-on-9-how-many-hops-to-the-big-rock-tap-the-number-the-hand-points-to",
