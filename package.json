@@ -70,7 +70,8 @@
     "diamond:single": "DIAMOND_INLINE=1 vite build --config vite.diamond-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-diamond diamond-drop-test-page.html",
     "beanstalk:single": "BEANSTALK_INLINE=1 vite build --config vite.beanstalk-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-beanstalk kiwis-beanstalk-test-page.html",
     "korora:single": "KORORA_INLINE=1 vite build --config vite.korora-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-korora penguin-pairs-test-page.html",
-    "weka:single": "WEKA_INLINE=1 vite build --config vite.weka-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-weka wekas-stepping-stones-test-page.html"
+    "weka:single": "WEKA_INLINE=1 vite build --config vite.weka-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-weka wekas-stepping-stones-test-page.html",
+    "tui:preview": "TUI_INLINE=1 vite build --config vite.tui-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-tui tuis-ten-tree-test-page.html"
   },
   "engines": {
     "node": ">=22"
