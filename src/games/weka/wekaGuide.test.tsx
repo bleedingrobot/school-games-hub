@@ -12,7 +12,7 @@ describe('Weka’s Stepping Stones help', () => {
   beforeEach(() => localStorage.clear());
   afterEach(cleanup);
 
-  it('guides the very first go in two steps (to the big rock, then on), then gives hints after wrong taps: the make-ten sentence, then the hand', async () => {
+  it('guides the very first go in two steps (to the big rock, then on) and the split after it, then gives hints after wrong taps: the make-ten sentence, then the hand', async () => {
     const trial = trialBackend({ storageKey: 'guide' });
     render(<SoundProvider><WekaGame backend={trial.backend} /></SoundProvider>);
     await userEvent.click(await screen.findByRole('button', { name: 'Play' }));
@@ -23,6 +23,17 @@ describe('Weka’s Stepping Stones help', () => {
     await userEvent.click(hand()!.closest('button')!);
     await waitFor(() => expect(document.querySelector('.wk-stem')!.textContent).toBe('9 + 1 = 10, then + 1'), { timeout: 4000 });
     await waitFor(() => expect(label()).toBe('11, try this one'), { timeout: 6000 });
+    // Then the split as a bond: the 2 is 1 to the big rock and 1 more, with the hand showing each part on the guided go.
+    await userEvent.click(hand()!.closest('button')!);
+    await waitFor(() => expect(document.querySelector('.wk-bond__whole')!.textContent).toBe('2'), { timeout: 8000 });
+    expect(label()).toBe('1, try this one');
+    await userEvent.click(hand()!.closest('button')!);
+    expect(document.querySelector('.wk-bond__part--to')!.textContent).toBe('1');
+    await userEvent.click(hand()!.closest('button')!);
+    expect(document.querySelector('.wk-bond__said')!.textContent)
+      .toBe('You solved 9 + 2 by splitting the 2 into 1 and 1. You added the 1 first to make ten, then the other 1.');
+    await userEvent.click(screen.getByRole('button', { name: /Next/ }));
+    await waitFor(() => expect(document.querySelector('.wk-bond')).toBeNull());
     cleanup();
 
     // A later day with help off: one tap, no hand until the third wrong tap; the second brings back the picture and sentence.
@@ -43,5 +54,5 @@ describe('Weka’s Stepping Stones help', () => {
     expect(hand()).toBeNull();
     await userEvent.click(wrong[2]);
     expect(label()).toBe(`${right}, try this one`);
-  }, 20000);
+  }, 30000);
 });

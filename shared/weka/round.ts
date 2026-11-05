@@ -264,3 +264,32 @@ export function stemLine(go: Said): string {
 
 /** The second step of a full-help go, once Weka is on the big rock. */
 export const fromTenLine = (go: Said): string => `${stemLine(go)} Where will Weka land?`;
+
+// ---------------------------------------------------------------- the split, after each right answer
+
+/**
+ * After every right answer the child fills in the split they used as a part-whole bond: the smaller number on top, and
+ * below it the hops to the big rock and the hops after it (James, 5 Nov 2026). Help only: never sent or recorded.
+ */
+export function bondAskLine(go: Said): string {
+  return `How did you split the ${go.small}? How many hops ${go.kind === 'back' ? 'back ' : ''}to the big rock?`;
+}
+
+/** The second part of the split: the hops after the big rock. */
+export const BOND_MORE = 'And how many more?';
+
+/**
+ * The split said in full once both parts are in: "You solved 9 + 5 by splitting the 5 into 1 and 4. You added the 1
+ * first to make ten, then the other 4." `words` gives the read-aloud version ("9 plus 5").
+ */
+export function bondLine(go: Said, words = false): string {
+  const plus = words ? 'plus' : '+';
+  const sum = go.kind === 'back'
+    ? `${go.total} ${words ? 'take away' : '−'} ${go.small}`
+    : go.kind === 'turn' ? `${go.small} ${plus} ${go.big}` : `${go.big} ${plus} ${go.small}`;
+  const how = go.kind === 'turn' ? `starting on ${go.big} and splitting` : 'splitting';
+  const then = go.kind === 'back'
+    ? `You took away the ${go.toTen} first to get to ten, then the other ${go.rest}.`
+    : `You added the ${go.toTen} first to make ten, then the other ${go.rest}.`;
+  return `You solved ${sum} by ${how} the ${go.small} into ${go.toTen} and ${go.rest}. ${then}`;
+}
