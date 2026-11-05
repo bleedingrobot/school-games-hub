@@ -1,6 +1,6 @@
 # Royal Decree: plan
 
-**Status:** being built on branch `decree` (worktree `~/games-hub-decree`). Not live.
+**Status:** live from 6 Nov 2026 (James: "Go live now"), switched on for every class. Kingdom Keeper's card is off (its data is kept).
 
 *Asked for by James on 6 Nov 2026 as the full rewrite of Kingdom Keeper ("kids don't like it, find it unfun and confusing"). Why it is being rewritten, with the live numbers: [KINGDOM-REWORK-IDEAS.md](https://github.com/bleedingrobot/school-games-hub/blob/isles-live-notes/docs/KINGDOM-REWORK-IDEAS.md). Built by following [GAME_DEVELOPMENT_GUIDE.md](GAME_DEVELOPMENT_GUIDE.md). Choices marked **(chosen)** were made for James and are easy to change.*
 
@@ -84,8 +84,8 @@ At `start` the server reads `space_maths_context(player)`, makes 8 questions wit
 | D.3 | Art: 26 new villager portraits on the gaming PC (helper agent); rulers, 6 advisers and a few scenes copied from Kingdom Keeper | Done (6 Nov) |
 | D.4 | Screens: start, the swipe card, meters, riddles, year turn, ending, album; trial backend and preview | Done (6 Nov) |
 | D.5 | Server function, migration, hub hooks, teacher switch, How to play | Done (6 Nov), not live |
-| D.6 | Guide for new players (Hale), checks, screenshots, preview for James | |
-| D.7 | Go live (switched on), Kingdom Keeper's card off | |
+| D.6 | Guide for new players (Hale), checks, screenshots, preview for James | Done (6 Nov) |
+| D.7 | Go live (switched on), Kingdom Keeper's card off | Done (6 Nov) |
 
 ## 7. Stage results
 
@@ -98,3 +98,5 @@ At `start` the server reads `space_maths_context(player)`, makes 8 questions wit
 - **Tests:** 7 (2 rules, 3 server, 2 screens).
 - **Fixed while testing:** after a reload, a riddle already answered on the server had no button to move on.
 
+
+**D.7 go live (6 Nov 2026).** Code switch on; `decree` added to the games list (Easy maths games, using Kingdom Keeper's card picture for now) and to `FUNCTIONS`. Kingdom Keeper's code switch is off; it stays in `ALL_GAMES` so teachers still see its row and old points keep its name. The migration and the `decree` function go live when the PR merges.

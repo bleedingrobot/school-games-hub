@@ -39,7 +39,7 @@ export const royalDecree: GameDefinition = {
   Play: DecreePlay,
   ranked: false,
   noBots: true,
-  group: 'complex-maths',
+  group: 'easy-maths',
   useTeacherSwitch: useDecreeEnabled,
   teacher: {
     switch: { useValue: useDecreeClassSwitch, save: (on, classId) => saveDecreeEnabled(on, classId), about: DECREE_ABOUT },
