@@ -2,7 +2,7 @@
 
 The lines come from public/voice/<game>/lines.json, written by that game's voiceLines.test.ts
 (quick-looks: src/subitising/, beanstalk: src/games/beanstalk/, hop: src/games/hop/,
-pipi: src/games/pipi/, korora: src/games/korora/, weka: src/games/weka/,
+pipi: src/games/pipi/, korora: src/games/korora/, weka: src/games/weka/, tui: src/games/tui/,
 isles: src/games/isles/voice.test.ts). Only lines without a clip are
 recorded, unless --all is given (use it after changing VOICE, SPEED or SAY_AS).
 
@@ -13,7 +13,7 @@ Kokoro lives outside the repo (it is about 340 MB):
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 Then, from the repo:
-    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka|isles> [--all]
+    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka|tui|isles> [--all]
 """
 import json
 import os
@@ -41,6 +41,11 @@ SAY_AS = {
     'Hoiho': 'Hoy-ho',
     'Pūkeko': 'Poo-keh-koh',
     'Kākāpō': 'Kah-kah-poh',
+    # Tūī's Ten Tree's friends (6 Nov 2026). Kākā after Kākāpō, so the longer name is replaced first.
+    'Pīwakawaka': 'Pee-wah-kah-wah-kah',
+    'Korimako': 'Koh-ree-mah-koh',
+    'Kākā': 'Kah-kah',
+    'kete': 'keh-teh',
     # Weka is left as written: Kokoro says it with a short e (wˈɛkə), as James asked on 5 Nov 2026; "Weh-kah" gave a long "way".
     # Te reo numbers (Weka's Stepping Stones and Tūī's Ten Tree): tekau mā whā is "ten and four". Longest first.
     'Tekau mā ': 'Teh-koh mah ',

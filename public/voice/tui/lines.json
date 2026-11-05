@@ -1,0 +1,650 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "ten-and-ten-is-twenty",
+  "text": "Ten and ten is twenty!"
+ },
+ {
+  "slug": "today-s-flower-is-ready",
+  "text": "Today’s flower is ready"
+ },
+ {
+  "slug": "next-flower-tomorrow",
+  "text": "Next flower tomorrow"
+ },
+ {
+  "slug": "tui-is-filling-up-for-winter-on-the-ten-tree-help-tui-count-the-berries",
+  "text": "Tūī is filling up for winter on the Ten Tree! Help Tūī count the berries."
+ },
+ {
+  "slug": "tui-is-filling-up-for-winter-on-the-ten-tree-help-tui-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Tūī is filling up for winter on the Ten Tree! Help Tūī count the berries. Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "now-tui-has-a-ten-tree-to-fill-up",
+  "text": "Now Tūī has a Ten Tree to fill up!"
+ },
+ {
+  "slug": "now-tui-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Now Tūī has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "kereru-is-filling-up-for-winter-on-the-ten-tree-help-kereru-count-the-berries",
+  "text": "Kererū is filling up for winter on the Ten Tree! Help Kererū count the berries."
+ },
+ {
+  "slug": "kereru-is-filling-up-for-winter-on-the-ten-tree-help-kereru-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Kererū is filling up for winter on the Ten Tree! Help Kererū count the berries. Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "now-kereru-has-a-ten-tree-to-fill-up",
+  "text": "Now Kererū has a Ten Tree to fill up!"
+ },
+ {
+  "slug": "now-kereru-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Now Kererū has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "piwakawaka-is-filling-up-for-winter-on-the-ten-tree-help-piwakawaka-count-the-berries",
+  "text": "Pīwakawaka is filling up for winter on the Ten Tree! Help Pīwakawaka count the berries."
+ },
+ {
+  "slug": "piwakawaka-is-filling-up-for-winter-on-the-ten-tree-help-piwakawaka-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Pīwakawaka is filling up for winter on the Ten Tree! Help Pīwakawaka count the berries. Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "now-piwakawaka-has-a-ten-tree-to-fill-up",
+  "text": "Now Pīwakawaka has a Ten Tree to fill up!"
+ },
+ {
+  "slug": "now-piwakawaka-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Now Pīwakawaka has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "korimako-is-filling-up-for-winter-on-the-ten-tree-help-korimako-count-the-berries",
+  "text": "Korimako is filling up for winter on the Ten Tree! Help Korimako count the berries."
+ },
+ {
+  "slug": "korimako-is-filling-up-for-winter-on-the-ten-tree-help-korimako-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Korimako is filling up for winter on the Ten Tree! Help Korimako count the berries. Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "now-korimako-has-a-ten-tree-to-fill-up",
+  "text": "Now Korimako has a Ten Tree to fill up!"
+ },
+ {
+  "slug": "now-korimako-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Now Korimako has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "kaka-is-filling-up-for-winter-on-the-ten-tree-help-kaka-count-the-berries",
+  "text": "Kākā is filling up for winter on the Ten Tree! Help Kākā count the berries."
+ },
+ {
+  "slug": "kaka-is-filling-up-for-winter-on-the-ten-tree-help-kaka-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Kākā is filling up for winter on the Ten Tree! Help Kākā count the berries. Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "now-kaka-has-a-ten-tree-to-fill-up",
+  "text": "Now Kākā has a Ten Tree to fill up!"
+ },
+ {
+  "slug": "now-kaka-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Now Kākā has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-1-more-how-many-berries",
+  "text": "Ten berries on the branch, and 1 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-1-how-many",
+  "text": "Ten plus 1. How many?"
+ },
+ {
+  "slug": "how-many",
+  "text": "How many?"
+ },
+ {
+  "slug": "11-10-and-1-is-11",
+  "text": "11! 10 and 1 is 11."
+ },
+ {
+  "slug": "1-berry-and-ten-more-on-the-branch-how-many-berries",
+  "text": "1 berry, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "1-plus-ten-how-many",
+  "text": "1 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-11-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 11 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-11",
+  "text": "Ten plus how many makes 11?"
+ },
+ {
+  "slug": "how-many-more",
+  "text": "How many more?"
+ },
+ {
+  "slug": "1-10-and-1-is-11",
+  "text": "1! 10 and 1 is 11."
+ },
+ {
+  "slug": "11-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "11 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "11-take-away-ten-how-many-are-left",
+  "text": "11 take away ten. How many are left?"
+ },
+ {
+  "slug": "how-many-are-left",
+  "text": "How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-2-more-how-many-berries",
+  "text": "Ten berries on the branch, and 2 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-2-how-many",
+  "text": "Ten plus 2. How many?"
+ },
+ {
+  "slug": "12-10-and-2-is-12",
+  "text": "12! 10 and 2 is 12."
+ },
+ {
+  "slug": "2-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "2 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "2-plus-ten-how-many",
+  "text": "2 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-12-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 12 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-12",
+  "text": "Ten plus how many makes 12?"
+ },
+ {
+  "slug": "2-10-and-2-is-12",
+  "text": "2! 10 and 2 is 12."
+ },
+ {
+  "slug": "12-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "12 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "12-take-away-ten-how-many-are-left",
+  "text": "12 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-3-more-how-many-berries",
+  "text": "Ten berries on the branch, and 3 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-3-how-many",
+  "text": "Ten plus 3. How many?"
+ },
+ {
+  "slug": "13-10-and-3-is-13",
+  "text": "13! 10 and 3 is 13."
+ },
+ {
+  "slug": "3-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "3 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "3-plus-ten-how-many",
+  "text": "3 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-13-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 13 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-13",
+  "text": "Ten plus how many makes 13?"
+ },
+ {
+  "slug": "3-10-and-3-is-13",
+  "text": "3! 10 and 3 is 13."
+ },
+ {
+  "slug": "13-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "13 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "13-take-away-ten-how-many-are-left",
+  "text": "13 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-4-more-how-many-berries",
+  "text": "Ten berries on the branch, and 4 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-4-how-many",
+  "text": "Ten plus 4. How many?"
+ },
+ {
+  "slug": "14-10-and-4-is-14",
+  "text": "14! 10 and 4 is 14."
+ },
+ {
+  "slug": "4-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "4 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "4-plus-ten-how-many",
+  "text": "4 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-14-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 14 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-14",
+  "text": "Ten plus how many makes 14?"
+ },
+ {
+  "slug": "4-10-and-4-is-14",
+  "text": "4! 10 and 4 is 14."
+ },
+ {
+  "slug": "14-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "14 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "14-take-away-ten-how-many-are-left",
+  "text": "14 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-5-more-how-many-berries",
+  "text": "Ten berries on the branch, and 5 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-5-how-many",
+  "text": "Ten plus 5. How many?"
+ },
+ {
+  "slug": "15-10-and-5-is-15",
+  "text": "15! 10 and 5 is 15."
+ },
+ {
+  "slug": "5-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "5 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "5-plus-ten-how-many",
+  "text": "5 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-15-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 15 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-15",
+  "text": "Ten plus how many makes 15?"
+ },
+ {
+  "slug": "5-10-and-5-is-15",
+  "text": "5! 10 and 5 is 15."
+ },
+ {
+  "slug": "15-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "15 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "15-take-away-ten-how-many-are-left",
+  "text": "15 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-6-more-how-many-berries",
+  "text": "Ten berries on the branch, and 6 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-6-how-many",
+  "text": "Ten plus 6. How many?"
+ },
+ {
+  "slug": "16-10-and-6-is-16",
+  "text": "16! 10 and 6 is 16."
+ },
+ {
+  "slug": "6-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "6 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "6-plus-ten-how-many",
+  "text": "6 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-16-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 16 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-16",
+  "text": "Ten plus how many makes 16?"
+ },
+ {
+  "slug": "6-10-and-6-is-16",
+  "text": "6! 10 and 6 is 16."
+ },
+ {
+  "slug": "16-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "16 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "16-take-away-ten-how-many-are-left",
+  "text": "16 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-7-more-how-many-berries",
+  "text": "Ten berries on the branch, and 7 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-7-how-many",
+  "text": "Ten plus 7. How many?"
+ },
+ {
+  "slug": "17-10-and-7-is-17",
+  "text": "17! 10 and 7 is 17."
+ },
+ {
+  "slug": "7-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "7 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "7-plus-ten-how-many",
+  "text": "7 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-17-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 17 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-17",
+  "text": "Ten plus how many makes 17?"
+ },
+ {
+  "slug": "7-10-and-7-is-17",
+  "text": "7! 10 and 7 is 17."
+ },
+ {
+  "slug": "17-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "17 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "17-take-away-ten-how-many-are-left",
+  "text": "17 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-8-more-how-many-berries",
+  "text": "Ten berries on the branch, and 8 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-8-how-many",
+  "text": "Ten plus 8. How many?"
+ },
+ {
+  "slug": "18-10-and-8-is-18",
+  "text": "18! 10 and 8 is 18."
+ },
+ {
+  "slug": "8-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "8 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "8-plus-ten-how-many",
+  "text": "8 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-18-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 18 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-18",
+  "text": "Ten plus how many makes 18?"
+ },
+ {
+  "slug": "8-10-and-8-is-18",
+  "text": "8! 10 and 8 is 18."
+ },
+ {
+  "slug": "18-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "18 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "18-take-away-ten-how-many-are-left",
+  "text": "18 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-berries-on-the-branch-and-9-more-how-many-berries",
+  "text": "Ten berries on the branch, and 9 more. How many berries?"
+ },
+ {
+  "slug": "ten-plus-9-how-many",
+  "text": "Ten plus 9. How many?"
+ },
+ {
+  "slug": "19-10-and-9-is-19",
+  "text": "19! 10 and 9 is 19."
+ },
+ {
+  "slug": "9-berries-and-ten-more-on-the-branch-how-many-berries",
+  "text": "9 berries, and ten more on the branch. How many berries?"
+ },
+ {
+  "slug": "9-plus-ten-how-many",
+  "text": "9 plus ten. How many?"
+ },
+ {
+  "slug": "tui-needs-19-berries-here-is-a-kete-of-ten-how-many-more-berries",
+  "text": "Tūī needs 19 berries. Here is a kete of ten. How many more berries?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-19",
+  "text": "Ten plus how many makes 19?"
+ },
+ {
+  "slug": "9-10-and-9-is-19",
+  "text": "9! 10 and 9 is 19."
+ },
+ {
+  "slug": "19-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "19 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "19-take-away-ten-how-many-are-left",
+  "text": "19 take away ten. How many are left?"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower",
+  "text": "Well done! Come back tomorrow to change another flower."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze",
+  "text": "Well done! A flower turned bronze!"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "Well done! A flower turned bronze! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "Well done! A flower turned bronze! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "Well done! A flower turned bronze! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A flower turned bronze! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-flower-turned-silver",
+  "text": "Well done! A flower turned silver!"
+ },
+ {
+  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "Well done! A flower turned silver! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "Well done! A flower turned silver! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "Well done! A flower turned silver! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A flower turned silver! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold",
+  "text": "Well done! A flower turned gold!"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "Well done! A flower turned gold! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "Well done! A flower turned gold! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "Well done! A flower turned gold! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A flower turned gold! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest",
+  "text": "All the flowers are gold! Tūī won the Golden Nest!"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest",
+  "text": "All the flowers are gold! Kererū won the Golden Nest!"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest!"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest",
+  "text": "All the flowers are gold! Korimako won the Golden Nest!"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest",
+  "text": "All the flowers are gold! Kākā won the Golden Nest!"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
+  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: turn it round"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
+  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: how many more?"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
+  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: take the ten away"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: all mixed"
+ }
+]

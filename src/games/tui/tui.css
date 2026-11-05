@@ -1,0 +1,210 @@
+/* Tūī’s Ten Tree. Clay kōwhai tree in spring sun: every number sits dark on a light disc, and every target is at least
+   64px for children of 5 to 7. Berries 1 to 5 are orange, 6 to 10 a deeper red-orange (tinted in code). */
+.tui-root {
+  --tui-ink: #1b2340;
+  --tui-panel: #fffdf5;
+  --tui-sky: #d6ecf4;
+  --tui-leaf: #4a5d1f;
+  --tui-teal-dark: #0f5c66;
+  --tui-gold: #f5c518;
+  --tui-cell: clamp(22px, min(4.2vw, 6.4vh), 52px);
+  --tui-nest: clamp(80px, min(15vw, 19vh), 132px);
+  position: relative;
+  min-height: var(--tui-room, 100dvh);
+  display: flex;
+  flex-direction: column;
+  background: var(--tui-sky);
+  color: var(--tui-ink);
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+}
+.tui-root--cover { position: fixed; inset: 0; z-index: 20; }
+.tui-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.tui-message { margin: auto; font-size: 1.6rem; padding: 24px; text-align: center; }
+
+.tui-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
+.tui-button {
+  min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--tui-teal-dark);
+  background: var(--tui-panel); color: var(--tui-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;
+}
+
+/* The scene: the painted background once downloaded (--tui-back), a drawn sky and tree until then. */
+.tui-tree, .tui-play {
+  position: relative;
+  background:
+    var(--tui-back, none) center / cover no-repeat,
+    radial-gradient(ellipse 60% 40% at 50% 30%, #8fb84a, transparent 70%),
+    linear-gradient(var(--tui-sky) 0 70%, #9bc46a 70% 100%);
+}
+.tui-scene--silver { --tui-sky: #e2eef5; }
+.tui-scene--gold { --tui-sky: #ffe2a8; }
+
+/* Home and finish: the tree with its ten flowers, and a panel beside it (below on a narrow screen). */
+.tui-home { flex: 1; display: flex; min-height: var(--tui-room, 100dvh); }
+.tui-tree { flex: 1; min-height: var(--tui-room, 100dvh); --tui-flower: clamp(40px, min(6.4vw, 10vh), 84px); }
+.tui-tree__flowers {
+  position: absolute; left: 2%; width: 44%; top: 6%;
+  display: grid; grid-template-columns: repeat(5, var(--tui-flower)); justify-content: center; gap: 2% 4%;
+}
+.tui-tree__spot { width: var(--tui-flower); }
+.tui-tree__friend { position: absolute; left: 8%; bottom: 6%; width: calc(var(--tui-flower) * 2.4); }
+.tui-panel {
+  align-self: center; width: min(380px, 40vw); margin: 16px; padding: 20px 22px; border-radius: 28px;
+  background: var(--tui-panel); box-shadow: 0 6px 0 var(--tui-teal-dark), 0 8px 24px rgb(0 0 0 / 0.18); text-align: center;
+}
+.tui-panel h2 { margin: 0 0 8px; font-size: clamp(1.3rem, 2.6vw, 1.8rem); line-height: 1.25; }
+.tui-panel h2:focus { outline: none; }
+.tui-panel h2:focus-visible { outline: 3px solid var(--tui-gold); }
+.tui-day { font-size: 1.3rem; font-weight: 800; color: var(--tui-teal-dark); margin: 6px 0; }
+.tui-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #eef6d8; color: var(--tui-leaf); font-weight: 800; }
+.tui-play-button { width: 100%; margin-top: 10px; }
+.tui-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.tui-shelf__nest { width: 52px; }
+.tui-prize { display: block; width: min(200px, 60%); margin: 8px auto; }
+@media (max-height: 500px) {
+  .tui-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .tui-panel h2 { font-size: 1.2rem; }
+  .tui-panel p { margin: 4px 0; }
+  .tui-play-button { margin-top: 4px; }
+  .tui-prize { width: min(90px, 40%); }
+}
+@media (max-width: 700px) {
+  .tui-home { flex-direction: column; }
+  .tui-tree { min-height: 55dvh; }
+  .tui-panel { width: auto; }
+}
+
+/* The pictures. */
+.tui-friend { display: block; width: 100%; }
+.tui-friend img { width: 100%; object-fit: contain; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.tui-friend__drawn { display: block; font-size: 4rem; text-align: center; }
+.tui-friend--cheer, .tui-friend--sing { animation: tui-flap 0.5s ease-in-out 3; }
+.tui-friend--eat { animation: tui-flap 0.4s ease-in-out 2; }
+@keyframes tui-flap { 50% { translate: 0 -10%; } }
+.tui-flower { display: block; width: 100%; }
+.tui-flower img { width: 100%; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.tui-flower__drawn { display: block; aspect-ratio: 1; border-radius: 50%; background: #e7c74a; }
+.tui-flower--bud .tui-flower__drawn { background: #9bb36a; }
+.tui-flower--glow img { animation: tui-glow 1.2s ease-in-out 3; }
+@keyframes tui-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--tui-gold)); scale: 1.25; } }
+.tui-golden { position: relative; display: block; width: 100%; }
+.tui-golden img { width: 100%; }
+.tui-golden__cushion { display: block; }
+.tui-golden__cushion + .tui-golden__nest { position: absolute; left: 15%; width: 70%; bottom: 30%; }
+
+/* One berry: the painted clay berry; 6 to 10 tinted deeper. An empty space is a dashed circle. */
+.tui-berry { display: block; width: 100%; aspect-ratio: 1; }
+.tui-berry img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.3)); }
+.tui-berry--deep img { filter: hue-rotate(-18deg) saturate(1.35) brightness(0.82) drop-shadow(0 2px 1px rgb(0 0 0 / 0.3)); }
+.tui-berry__drawn { display: block; width: 86%; height: 86%; margin: 7%; border-radius: 50%; background: #f08a24; }
+.tui-berry--deep .tui-berry__drawn { background: #c9481c; }
+.tui-berry--empty { border: 3px dashed var(--tui-ink); border-radius: 50%; box-sizing: border-box; width: 86%; margin: 7%; opacity: 0.7; }
+.tui-berry--pop { animation: tui-pop-in 0.35s ease-out both; animation-delay: calc(0.5s + var(--tui-pop, 0) * 0.55s); }
+@keyframes tui-pop-in { from { scale: 0; } 70% { scale: 1.2; } }
+
+/* A ten-frame: two rows of five on a light card. The full branch's card is leafy. */
+.tui-frame {
+  display: grid; grid-template-columns: repeat(5, var(--tui-cell)); gap: 4px; padding: 8px;
+  border-radius: 14px; background: rgb(255 253 245 / 0.92); border: 3px solid var(--tui-leaf);
+}
+.tui-frame--branch { background: #f1f6df; }
+.tui-frame__cell { width: var(--tui-cell); aspect-ratio: 1; border-radius: 6px; background: rgb(74 93 31 / 0.08); }
+
+/* The kete: the painted kete with its "10" tag drawn in code on the round tag. */
+.tui-kete { position: relative; display: block; width: calc(var(--tui-cell) * 4.4); }
+.tui-kete img { width: 100%; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.3)); }
+.tui-kete__drawn { display: block; aspect-ratio: 1.1; border-radius: 20% 20% 40% 40%; background: #6f8a2c; }
+.tui-kete__tag {
+  position: absolute; left: 50%; top: 58%; translate: -50% -50%; display: grid; place-items: center;
+  width: 38%; aspect-ratio: 1; border-radius: 50%; background: var(--tui-panel); border: 3px solid var(--tui-ink);
+  font: 900 calc(var(--tui-cell) * 0.9) / 1 system-ui, sans-serif; color: var(--tui-ink);
+}
+.tui-kete--in { animation: tui-tuck 0.6s ease-out both; }
+@keyframes tui-tuck { from { scale: 0.4; opacity: 0; } 70% { scale: 1.08; } }
+.tui-kete--late { animation-delay: 0.6s; }
+
+/* Playing: the go counter, the berries, the sum, and the nests. */
+.tui-play {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px;
+  min-height: var(--tui-room, 100dvh); padding: 10px 10px 16px; box-sizing: border-box;
+}
+.tui-top { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-right: 300px; }
+.tui-progress { display: flex; gap: 8px; padding: 6px 8px 0; }
+.tui-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--tui-teal-dark); }
+.tui-pip--done { background: var(--tui-gold); }
+
+.tui-stage { position: relative; flex: 1; width: min(100%, 1000px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: tui-in 0.4s ease-out; }
+@keyframes tui-in { from { opacity: 0; translate: 0 10px; } }
+.tui-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(80px, 13vw, 170px); pointer-events: none; }
+.tui-picture { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 36px); flex-wrap: wrap; }
+.tui-picture--faint { opacity: 0.55; scale: 0.72; }
+.tui-ten, .tui-ones { position: relative; }
+.tui-ten--fly { animation: tui-fly 1.2s ease-in 1.6s forwards; }
+@keyframes tui-fly { to { translate: -30vw -40vh; rotate: -20deg; scale: 0.3; opacity: 0; } }
+.tui-gap {
+  display: grid; place-items: center; width: calc(var(--tui-cell) * 2); aspect-ratio: 1; border-radius: 50%;
+  border: 4px dashed var(--tui-ink); background: rgb(255 253 245 / 0.8); font: 900 calc(var(--tui-cell) * 1.1) system-ui, sans-serif;
+}
+.tui-sum {
+  margin: 0; padding: 4px 22px; border-radius: 999px; background: var(--tui-panel);
+  font: 900 clamp(1.4rem, 3.4vw, 2.2rem) system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+.tui-sum--big { font-size: clamp(2.2rem, 7vw, 4.2rem); padding: 6px 30px; }
+.tui-peek { min-height: 64px; }
+
+/* The arrow cards after a right answer: the ones card slides onto the 0 of the "10". */
+.tui-cards { position: relative; display: flex; align-items: center; gap: 18px; font: 900 clamp(2.4rem, 7vw, 4rem) / 1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.tui-card { display: inline-flex; background: var(--tui-panel); border: 3px solid var(--tui-ink); border-radius: 10px; box-shadow: 0 4px 0 rgb(0 0 0 / 0.2); }
+.tui-card > span { display: block; width: 0.7em; padding: 0.12em 0.06em; text-align: center; }
+.tui-card--ten > span:first-child { color: var(--tui-teal-dark); }
+.tui-card--ones { color: #b4561a; animation: tui-slide 0.7s ease-in-out 0.5s forwards; }
+/* The ten card is two digits wide; the ones card lands on its second digit. */
+@keyframes tui-slide { to { translate: calc(-0.82em - 18px - 3px) 0; } }
+
+/* The nests: three or four, each a big target with its number. */
+.tui-nests { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 22px; }
+.tui-choice { position: relative; width: var(--tui-nest); min-height: 64px; padding: 0; border: 0; background: none; cursor: pointer; }
+.tui-choice:focus-visible { outline: 4px solid var(--tui-teal-dark); outline-offset: 4px; border-radius: 40%; }
+.tui-nest { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 1.4; }
+.tui-nest img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.3)); }
+.tui-nest__drawn { position: absolute; inset: 20% 4% 4%; border-radius: 0 0 50% 50%; background: #8a6233; }
+.tui-nest__value {
+  position: relative; display: grid; place-items: center; min-width: 46%; aspect-ratio: 1.3; padding: 0 4px; border-radius: 999px;
+  background: var(--tui-panel); color: var(--tui-ink); font: 900 calc(var(--tui-nest) * 0.3) / 1 system-ui, sans-serif;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}
+.tui-choice--wobble { animation: tui-wobble 0.5s ease-in-out; }
+@keyframes tui-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
+.tui-choice--right { animation: tui-right 0.6s ease-out forwards; }
+@keyframes tui-right { 50% { scale: 1.25; } 100% { scale: 1.1; } }
+.tui-choice--off { opacity: 0.35; }
+
+/* The guiding hand: at the branch, then the loose berries, then hovering over all the nests (never at the answer). */
+.tui-hand {
+  position: absolute; left: 50%; bottom: -10%; font-size: calc(var(--tui-cell) * 2); line-height: 1;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: tui-nudge 0.9s ease-in-out infinite; z-index: 3;
+}
+@keyframes tui-nudge { 50% { translate: 0 -14%; } }
+.tui-hand--hover { bottom: auto; top: 40%; left: 0; animation: tui-hover 3s ease-in-out infinite; }
+@keyframes tui-hover { 0%, 100% { left: 5%; } 50% { left: 85%; } }
+
+/* The gold-day finale: two full kete, ten and ten. */
+.tui-finale { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+.tui-finale__kete { display: flex; align-items: center; gap: 24px; --tui-cell: clamp(30px, 6vw, 56px); }
+.tui-finale__and { font: 900 3rem system-ui, sans-serif; }
+
+@media (max-height: 500px) {
+  .tui-root { --tui-cell: clamp(18px, 5.4vh, 30px); --tui-nest: 76px; }
+  .tui-top { padding-right: 280px; }
+  .tui-sum--big { font-size: 2rem; }
+  .tui-cards { font-size: 2.2rem; }
+}
+@media (max-width: 640px) {
+  .tui-top { padding-right: 0; padding-top: 64px; }
+  .tui-stage__friend { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tui-root *, .tui-root *::before, .tui-root *::after { animation: none !important; transition: none !important; }
+  .tui-card--ones { translate: calc(-0.82em - 18px - 3px) 0; }
+  .tui-ten--fly { opacity: 0.15; }
+}
