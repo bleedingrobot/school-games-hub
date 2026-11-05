@@ -1093,6 +1093,17 @@ const CONFIG = {
 			war: 2,
 			villageBuilt: 5
 		},
+		/**
+		* Fame for beating the same boss again this season: the 1st win gets the first number, the 2nd the next, and from the
+		* last number on every win gets that. Each boss has its own count, and a new season starts them all again.
+		*/
+		bossFameEachTime: [
+			5,
+			4,
+			3,
+			2,
+			1
+		],
 		/** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
 		fightsPerDayRange: {
 			min: 1,
@@ -11907,6 +11918,14 @@ function buySupply(clan, season, kind, count) {
 }
 //#endregion
 //#region shared/clans/rewards.ts
+/**
+* What a request earns (stage C.6 part B): fame, points and the counts the eight achievements are measured by.
+*
+* The rules make an `Earned` (counts only) for a request after the server has replayed and paid it, and keep it inside the
+* result that is saved. A database trigger turns the counts into fame, points and achievements in the same transaction as the
+* save, so a request earns once however many times it is sent. The browser can never supply one. The numbers are in
+* `CONFIG.rewards`; the same ones are in the SQL function clan_reward_rules (a test keeps them equal).
+*/
 const NOTHING = {
 	wins: 0,
 	bosses: 0,
@@ -11921,7 +11940,24 @@ function earnedOrNone(part) {
 		...NOTHING,
 		...part
 	};
-	return Object.keys(NOTHING).some((k) => e[k] > 0) ? e : void 0;
+	return Object.keys(NOTHING).some((k) => (e[k] ?? 0) > 0) ? e : void 0;
+}
+/** Fame for the next win over the boss at `depth` this season (5, then 4, 3, 2, and 1 from then on). */
+function nextBossFame(clan, depth, season) {
+	const list = CONFIG.rewards.bossFameEachTime;
+	const before = clan.bossWins?.season === season ? clan.bossWins.byDepth[depth] ?? 0 : 0;
+	return list[Math.min(before, list.length - 1)] ?? 0;
+}
+/** Count a win over the boss at `depth` this season, and return the fame it earns. */
+function recordBossWin(clan, depth, season) {
+	const fame = nextBossFame(clan, depth, season);
+	const byDepth = clan.bossWins?.season === season ? { ...clan.bossWins.byDepth } : {};
+	byDepth[depth] = (byDepth[depth] ?? 0) + 1;
+	clan.bossWins = {
+		season,
+		byDepth
+	};
+	return fame;
 }
 //#endregion
 //#region shared/clans/play.ts
@@ -13417,9 +13453,12 @@ function applyInner(saved, action, ctx, flags) {
 					...earnedPart(earnedOrNone({ cries: rightCry }))
 				}, true, effects);
 			}
+			const bossWon = won && boss && !open.extra;
+			const bossFame = bossWon ? recordBossWin(clan, open.depth, clan.season ?? clock?.number ?? 0) : 0;
 			const earned = earnedOrNone({
 				wins: won && !boss && !open.extra ? 1 : 0,
-				bosses: won && boss && !open.extra ? 1 : 0,
+				bosses: bossWon ? 1 : 0,
+				...bossWon ? { bossFame } : {},
 				cries: rightCry
 			});
 			return done(state, {

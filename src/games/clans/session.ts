@@ -12,7 +12,7 @@ import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/pl
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
 import type { SeasonClock } from '../../../shared/clans/season';
 import type { Clan, Member } from '../../../shared/clans/types';
-import { addEarned, fameFor, measures, NO_STATS, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
+import { addEarned, fameFor, measures, NO_STATS, reached, recordBossWin, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
 
 export { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft };
@@ -92,7 +92,8 @@ export function finishFight(s: Session, fight: FightState, boss = false): { sess
   const clan = structuredClone(s.clan);
   const summary = payFight(clan, fight);
   const won = summary.result === 'won';
-  const earned: Partial<Earned> = { wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0 };
+  const bossFame = won && boss ? recordBossWin(clan, fight.depth, clan.season ?? s.season ?? 1) : 0;
+  const earned: Partial<Earned> = { wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0, ...(won && boss ? { bossFame } : {}) };
   const paid = earn({ ...s, clan, fightsLeft: Math.max(0, s.fightsLeft - 1), fightNo: s.fightNo + 1 }, earned);
   return { session: paid, summary, fame: fameFor(earned) };
 }

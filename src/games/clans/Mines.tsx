@@ -1,4 +1,5 @@
 import { bossAt } from '../../../shared/clans/fight';
+import { nextBossFame } from '../../../shared/clans/rewards';
 import { CONFIG } from '../../../shared/clans/config';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { fightsLabel } from './fightView';
@@ -32,7 +33,7 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
       <p className="cq-soft">{ZONE_TEXT[zoneForDepth(session.depth)]}</p>
       <div className="cq-actions">
         <button type="button" className="cq-btn cq-btn--hot" disabled={!canGo} onClick={() => onGo(false)}>Into the Mines!</button>
-        {boss && <button type="button" className="cq-btn" disabled={!canGo} onClick={() => onGo(true)}>Take on the boss: {boss.name}</button>}
+        {boss && <button type="button" className="cq-btn" disabled={!canGo} onClick={() => onGo(true)}>Take on the boss: {boss.name} (+{nextBossFame(session.clan, session.depth, session.clan.season ?? session.season ?? 1)} fame)</button>}
         <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
       {locked && <p className="cq-note">{locked}</p>}

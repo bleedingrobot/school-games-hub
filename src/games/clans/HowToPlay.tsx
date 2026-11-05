@@ -84,7 +84,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-fame">
           <h3 id="htp-fame">Fame and the Scoreboard</h3>
-          <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss, <strong>{R.fame.warWin}</strong> for a practice battle, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>
+          <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss (less each time you beat the same boss this season), <strong>{R.fame.warWin}</strong> for a practice battle, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>
           <p>Fame never goes down, and it never comes from maths scores. The Scoreboard shows clan names and fame only.</p>
         </section>
         <section aria-labelledby="htp-ach">
