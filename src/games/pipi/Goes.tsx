@@ -7,14 +7,18 @@
  * leave a dashed outline; on silver days the frame goes and the outlines are faint; on gold days the hiding ones leave
  * no mark at all, so only "7 altogether" and the pipi still showing are there to go on.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
 import { GOES_PER_ROUND, showRound, type Go, type Round } from '../../../shared/pipi/round';
 import { playSound } from '../sounds';
 import { backFor, PaperLayers, type Scenery } from './Beach';
+import { paint } from './art';
 import { Friend, Hidden, NumberShell, Pipi } from './PipiArt';
 import { WORDS } from './words';
+
+/** The painted tide (scripts/pipi-art.py `tide/wave`); the plain drawn wave until it is painted. */
+const WAVE = paint('tide/wave');
 
 /** How long the wave takes to wash in and the pipi to dig down, before the shells can be tapped. */
 export const TIDE_MS = 1300;
@@ -155,7 +159,13 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
         {phase !== 'tide' && <span className="pp-sign__ask">{ask}</span>}
       </div>
       <div className="pp-stage" key={at}>
-        {(phase === 'tide') && <span className={`pp-wave${tideIn ? ' pp-wave--out' : ''}`} aria-hidden="true" />}
+        {(phase === 'tide') && (
+          <span
+            className={`pp-wave${WAVE ? ' pp-wave--painted' : ''}${tideIn ? ' pp-wave--out' : ''}`}
+            style={WAVE ? ({ '--pp-wave': `url(${WAVE})` } as CSSProperties) : undefined}
+            aria-hidden="true"
+          />
+        )}
         <div
           className={`pp-frame pp-frame--${framed ? (spots.length === 5 ? 'five' : 'ten') : 'row'} pp-frame--${help}`}
           role="img"
