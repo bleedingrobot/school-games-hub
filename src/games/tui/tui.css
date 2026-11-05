@@ -43,8 +43,9 @@
 .tui-home { flex: 1; display: flex; min-height: var(--tui-room, 100dvh); }
 .tui-tree { flex: 1; min-height: var(--tui-room, 100dvh); --tui-flower: clamp(40px, min(6.4vw, 10vh), 84px); }
 .tui-tree__flowers {
-  position: absolute; left: 2%; width: 44%; top: 6%;
-  display: grid; grid-template-columns: repeat(5, var(--tui-flower)); justify-content: center; gap: 2% 4%;
+  /* From the left edge inwards, never past it: the painted canopy starts at the screen's left edge. */
+  position: absolute; left: 7%; top: 7%;
+  display: grid; grid-template-columns: repeat(5, var(--tui-flower)); gap: calc(var(--tui-flower) * 0.25) calc(var(--tui-flower) * 0.3);
 }
 .tui-tree__spot { width: var(--tui-flower); }
 .tui-tree__friend { position: absolute; left: 8%; bottom: 6%; width: calc(var(--tui-flower) * 2.4); }
