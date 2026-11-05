@@ -15,6 +15,7 @@ import { QuestionModal } from '../../maths/QuestionModal';
 import { backgroundArt, boatArt, keeperArt, pipArt } from './art';
 import type { IslesBackend, PublicRace } from './backend';
 import { Art } from './Island';
+import { Say } from './Say';
 import { n, plural } from './words';
 
 const LEG_MS = 700;
@@ -49,8 +50,20 @@ function resumeAt(race: PublicRace | null): number {
 /** Which stretch the boats are on (or have just finished) at this point of the path, from 1. */
 const stretchAt = (point: number) => Math.min(STRETCHES, [...RACE_STOPS, RACE_LEGS].findIndex((stop) => point <= stop) + 1);
 
+/** What Pip says in a race that never changes, so each line can have a recording in Bella's voice. */
+export const RACE_WORDS = {
+  explain: 'The race stops for questions on the way. Each right answer is a gust of wind for your boat.',
+  welcomeBack: 'Welcome back! Your race carries on from where you stopped.',
+  offYouGo: 'Off you go! The first question comes at the first stop.',
+  sailOn: 'Sail on to the next stop!',
+  won: 'You won the Sky Race!',
+  wellRaced: 'Well raced!',
+  gust: (last: boolean) => `Whoosh! A gust fills your sails${last ? ' for the last stretch' : ''}!`,
+  noGust: (last: boolean) => `No gust this time, keep sailing!${last ? ' Here comes the finish.' : ''}`,
+};
+
 /** The words for the other boat: the Gull Riders, or a classmate's island. */
-function rivalWords(name: string | undefined) {
+export function rivalWords(name: string | undefined) {
   return name
     ? { who: `${name}'s island`, title: `${name}'s island`, boat: `${name}'s boat`, ahead: `${name}'s boat is ahead.`, ready: `${name}'s island is getting ready…`, faster: `${name}'s island was faster this time.` }
     : { who: 'The Gull Riders', title: 'the Gull Riders', boat: "The Gull Riders' boat", ahead: 'The Gull Riders are ahead.', ready: 'The Gull Riders are getting ready…', faster: 'The Gull Riders were faster this time.' };
@@ -62,7 +75,7 @@ function whoLeads(paths: RaceSoFar, point: number, ahead: string): string {
   return Math.abs(gap) < 0.01 ? 'The boats are side by side.' : gap > 0 ? 'Your boat is ahead.' : ahead;
 }
 
-export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabel = 'Back to my island' }: {
+export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabel = 'Back to my island', say }: {
   backend: IslesBackend;
   /** A race already open (carried on from the same stop, with the same questions), or null to start one. */
   open: PublicRace | null;
@@ -73,6 +86,8 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
   /** The way-back button's words ("Back to my turn" for a race from a turn's last step). */
   backLabel?: string;
   onProblem: (message: string) => void;
+  /** Bella reads Pip's race lines (only the recorded ones). */
+  say?: (text: string | null | undefined) => void;
 }) {
   const [race, setRace] = useState<PublicRace | null>(open);
   const [point, setPoint] = useState(() => resumeAt(open));
@@ -143,15 +158,15 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
   const stretch = stretchAt(Math.max(1, point + (sailing && point < end ? 1 : 0)));
   const gust = !!paths && sailing && point > 0 && paths.gustLegs.includes(point - 1) && !asking;
   const title = over
-    ? (result.won ? 'You won the Sky Race!' : 'Well raced!')
+    ? (result.won ? RACE_WORDS.won : RACE_WORDS.wellRaced)
     : sailing ? `Sky Race: stretch ${stretch} of ${STRETCHES}` : `Sky Race: you and ${them.title}`;
   const pipLine = !race
     ? them.ready
     : !sailing
       ? point === 0
-        ? `The race stops for questions on the way. Each right answer is a gust of wind for your boat.`
-        : 'Welcome back! Your race carries on from where you stopped.'
-      : said ?? (stretch === 1 ? 'Off you go! The first question comes at the first stop.' : 'Sail on to the next stop!');
+        ? RACE_WORDS.explain
+        : RACE_WORDS.welcomeBack
+      : said ?? (stretch === 1 ? RACE_WORDS.offYouGo : RACE_WORDS.sailOn);
   const prize = race?.prize ?? { coins: 0, crystals: 0 };
 
   // Focus follows each new heading: the start, each stretch, the result.
@@ -161,6 +176,7 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
 
   return (
     <section className={`si-race${sailing && !over ? ' si-race--sailing' : ''}`} aria-labelledby="si-race-title">
+      {say && <Say text={over ? title : pipLine} say={say} />}
       <h2 id="si-race-title" ref={heading} tabIndex={-1}>{title}</h2>
       {!over && (
         <div className="si-pipsays si-race__bar">
@@ -222,9 +238,7 @@ export function Race({ backend, open, keeper, rival, onDone, onProblem, backLabe
             const got = reply.current;
             reply.current = null;
             const last = next.slot === race.questions.length - 1;
-            setSaid(marked.correct
-              ? `Whoosh! A gust fills your sails${last ? ' for the last stretch' : ''}!`
-              : `No gust this time, keep sailing!${last ? ' Here comes the finish.' : ''}`);
+            setSaid(marked.correct ? RACE_WORDS.gust(last) : RACE_WORDS.noGust(last));
             setRace((r) => got ?? (r && { ...r, answered: { ...r.answered, [String(next.slot)]: { value: 0, right: marked.correct } } }));
           }}
         />

@@ -189,7 +189,7 @@
 .si-step .si-buildgrid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 5px; }
 .si-step .si-choice__button { min-height: 44px; padding: 6px 12px; font-size: 0.95rem; line-height: 1.2; white-space: normal; }
 .si-step .si-build__job { font-size: 0.78rem; }
-.si .si-stop { min-height: 44px; padding: 4px 12px; font-size: 0.85rem; width: auto; flex: 0 0 auto; }
+.si .si-stop, .si .si-voice { min-height: 44px; padding: 4px 12px; font-size: 0.85rem; width: auto; flex: 0 0 auto; }
 .si-spot--still { cursor: default; }
 
 /* The decoration shelf, and choosing a decoration's place. */
@@ -362,4 +362,9 @@
 @media (prefers-reduced-motion: reduce) {
   .si-newland__glow, .si-newland__ring, .si-newland__sparks > span { animation: none; }
   .si-newland__sparks > span { opacity: 0.9; transform: rotate(var(--si-spark)) translateY(calc(var(--si-far) * -0.7)); }
+}
+
+/* Bella's voice button: just the speaker during a turn on a small screen, where the top bar is full. */
+@media (max-width: 600px), (max-height: 480px) {
+  .si-top--turn .si-voice__words { display: none; }
 }

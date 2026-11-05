@@ -5,7 +5,7 @@
  *
  * Words are kept plain, for a 9-year-old reading on their own.
  */
-import { BUILD_COINS, TURNS_PER_DAY } from '../../../shared/isles/config';
+import { BUILD_COINS, TURNS_PER_DAY, type PlotKind } from '../../../shared/isles/config';
 import type { Island } from '../../../shared/isles/engine';
 import { KIND_NAME, wantedKind } from '../../../shared/isles/nextStep';
 import { Step, type BuildView } from './TurnSteps';
@@ -29,17 +29,32 @@ export interface GuideAt {
   picks: number;
 }
 
+/** Pip's guide lines that never change, so each can have a recording in Bella's voice. */
+export const GUIDE = {
+  welcome: `Welcome to your island! You get ${TURNS_PER_DAY} turns a day. Press Play a turn to start your first one.`,
+  question: 'Each turn starts with a question from the sky pilot. When you\'ve answered, press Next.',
+  collect: 'Every building makes coins each turn. Watch them pop, then press Next to build.',
+  rest: 'Last step! Press End turn and your island grows. Sky Races can wait until you\'ve had a look around.',
+  wellDone: 'Well done! That will be built when the turn ends. Press Done building.',
+  taken: 'This spot has a building already. Go back to the island and tap your empty spot.',
+  chooseHere: 'Choose what to do here, or go back to the island.',
+  decoration: 'Choose a decoration, or go back to the island to build.',
+} as const;
+
+/** "Choose Farm: crops for coins." */
+export const chooseLine = (kind: PlotKind) => `Choose ${KIND_NAME[kind]}: ${KIND_JOB[kind]}.`;
+
 export function guideLine(at: GuideAt): GuideLine {
   const { island } = at;
   switch (at.step) {
     case null:
-      return { say: `Welcome to your island! You get ${TURNS_PER_DAY} turns a day. Press Play a turn to start your first one.`, target: 'play' };
+      return { say: GUIDE.welcome, target: 'play' };
     case Step.Question:
-      return { say: 'Each turn starts with a question from the sky pilot. When you\'ve answered, press Next.', target: 'next' };
+      return { say: GUIDE.question, target: 'next' };
     case Step.Collect:
-      return { say: 'Every building makes coins each turn. Watch them pop, then press Next to build.', target: 'next' };
+      return { say: GUIDE.collect, target: 'next' };
     case Step.Rest:
-      return { say: 'Last step! Press End turn and your island grows. Sky Races can wait until you\'ve had a look around.', target: 'end-turn' };
+      return { say: GUIDE.rest, target: 'end-turn' };
   }
 
   // The Build step.
@@ -47,16 +62,16 @@ export function guideLine(at: GuideAt): GuideLine {
   const kind = wantedKind(island);
   const canBuild = empty >= 0 && island.coins >= BUILD_COINS[kind];
   if (at.again || (at.build.kind === 'island' && (at.picks > 0 || !canBuild))) {
-    return { say: 'Well done! That will be built when the turn ends. Press Done building.', target: 'next' };
+    return { say: GUIDE.wellDone, target: 'next' };
   }
   if (at.build.kind === 'spot') {
     const here = island.spots[at.build.spot];
     if (here?.kind === 'empty' && island.coins >= BUILD_COINS[kind]) {
-      return { say: `Choose ${KIND_NAME[kind]}: ${KIND_JOB[kind]}.`, target: `build-${kind}` };
+      return { say: chooseLine(kind), target: `build-${kind}` };
     }
-    return { say: canBuild ? 'This spot has a building already. Go back to the island and tap your empty spot.' : 'Choose what to do here, or go back to the island.', target: canBuild ? 'back-to-island' : undefined };
+    return { say: canBuild ? GUIDE.taken : GUIDE.chooseHere, target: canBuild ? 'back-to-island' : undefined };
   }
-  if (at.build.kind !== 'island') return { say: 'Choose a decoration, or go back to the island to build.', target: 'back-to-island' };
+  if (at.build.kind !== 'island') return { say: GUIDE.decoration, target: 'back-to-island' };
   return { say: `Build time! You have ${island.coins} coins. Tap your empty spot (it's glowing) to build on it.`, target: `spot-${empty}` };
 }
 

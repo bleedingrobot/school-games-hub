@@ -26,7 +26,8 @@ import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, typ
 import { Art, Card, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
-import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
+import { QUESTION_WORDS, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
+import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
 import './isles.css';
 
@@ -118,6 +119,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   /** Land anchored last turn (spot numbers from…to), sparkling on My island until the next turn starts. */
   const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const voice = useIslesVoice();
   const [problem, setProblem] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -366,6 +368,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           open={screen.open}
           keeper={view.keeper}
           rival={screen.rival}
+          say={voice.say}
           backLabel={screen.inTurn ? 'Back to my turn' : screen.back ? 'Back to the class sky' : undefined}
           onProblem={(message) => {
             setProblem(message);
@@ -392,7 +395,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const pipSays = guideNow ? guideNow.say
     : resting ? 'Your island is resting. See you tomorrow!'
     : !pipHere ? STEP_PIP[turnStep!]
-    : nextTurn ? `Next turn: ${step.say[0].toLowerCase()}${step.say.slice(1)}`
+    : nextTurn ? nextTurnLine(step.say)
     : step.say;
   const lastTurn = screen.kind === 'home' && island.turn > 0
     ? [...(grew ? [`✨ Your island grew! ${plural(grew.to - grew.from, 'new building spot')}: ${grew.to} spots now.`] : []), ...reportLines(report)]
@@ -417,6 +420,14 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     </div>
   );
   const tip = screen.kind === 'home' && helpNow === 'lots' && !guideNow && !cheer ? tipNow(island, report, post.length > 0, seen) : null;
+  // What Bella reads now (only recorded lines are read): the cheer, a tip, the question's result, or Pip's line.
+  const answered = turnStep === Step.Question ? view.question?.answered : null;
+  const voiceLine = screen.kind === 'home' && cheer ? cheerLine(cheer)
+    : tip ? TIPS[tip]
+    : turnStep === Step.Question && !view.question ? QUESTION_WORDS.none
+    : answered ? (answered.right ? QUESTION_WORDS.right : QUESTION_WORDS.wrong)
+    : pipLine ? pipSays
+    : null;
   const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
   const raceWords = !view.races ? 'Sky Races are switched off for your class.' : raceWhy ? PROBLEM_TEXT[raceWhy] : null;
   const back = () => setScreen(screen.kind === 'decorations' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
@@ -428,6 +439,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
 
   return (
     <div className="si">
+      <Say text={voiceLine} say={voice.say} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
         {screen.kind === 'turn' ? <h2>Your turn</h2> : (
           // A named island is called by its name at the top (James, 4 Nov 2026); until then it's "My island".
@@ -439,6 +451,11 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
         <div className="si-top__right">
           {turnStep !== null && canStop(turnStep) && <button type="button" className="button button--light si-stop" onClick={leave}>Stop, back to my island</button>}
           <TurnPips left={island.turnsLeft} unlimited={unlimited} />
+          {voice.available && (
+            <button type="button" className="button button--light si-voice" aria-label="Read aloud" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
+              <span aria-hidden="true">{voice.on ? '🔊' : '🔇'}</span><span className="si-voice__words" aria-hidden="true"> {voice.on ? 'Voice on' : 'Voice off'}</span>
+            </button>
+          )}
           {view.keeper && (
             <button type="button" className="si-keeperbtn" onClick={() => setScreen({ kind: 'keeper', first: false })} aria-label="Change your Sky Keeper">
               <Art src={keeperArt(view.keeper, true)} fallback={<span className="si-keeper__drawn">?</span>} />
