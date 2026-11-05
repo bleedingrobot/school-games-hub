@@ -58,7 +58,7 @@ SHELLS = {
     # Beanstalk found clay asked to be "metal" comes out matt; wrapped in foil it shines (4 Nov 2026).
     'bronze': f'the whole shell wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze, the middle flat and smooth',
     'silver': f'the whole shell wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every ridge and the middle the same grey metallic silver',
-    'gold': f'the whole shell wrapped smoothly in shiny crinkled yellow gold foil, {SHINE}, every part of it gold, three tiny sparkles',
+    'gold': f'the whole shell wrapped smoothly in shiny crinkled metallic gold foil like a gold chocolate coin wrapper, {SHINE}, every ridge and the middle the same rich metallic gold, three tiny sparkles',
 }
 
 PEARL = f'the Golden Pearl, one big round smooth pearl in {SHINE} in shining yellow gold with a soft warm glow'
@@ -75,7 +75,7 @@ FRIENDS = {
     'weta': 'a cute friendly small New Zealand weta insect, a round shiny brown body with stripes, six long spiky back legs, long thin feelers, big kind eyes and a smile, wearing a little green knitted scarf, ',
     'kiwi': ('a cute small round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, pointing straight out forward '
              'and slightly down, as long as its whole body, long and slender like a sharpened pencil, with a little round nostril at the tip, '
-             'the beak clearly the longest part of the bird; a big round egg-shaped body with fluffy shaggy brown feathers, a round bottom, '
+             'the beak clearly the longest part of the bird; seen from the side, its small round head sitting low and snug on a big round egg-shaped body with fluffy shaggy brown feathers, a round bottom, '
              'small bright dark eyes, rosy cheeks, tiny wings, thick strong grey legs and big feet with three toes, wearing a little yellow knitted scarf, '),
     'tui': 'a cute small round New Zealand tui bird with glossy dark blue-green feathers, a little white tuft at its throat, big round friendly eyes, a small dark beak and a smile, wearing a little purple knitted scarf, ',
 }

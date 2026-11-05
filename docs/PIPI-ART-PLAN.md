@@ -36,3 +36,4 @@ out matt. The page's shadows are soft (clay) instead of the hard paper edge (`--
 - Positive wording only: the model draws whatever is named.
 - No numbers or writing in any picture.
 - Sprites on plain white so rembg can cut them out.
+- Gold foil: say "metallic gold", not "yellow gold" (yellow comes out as yellow clay). Kiwi: "seen from the side", head low on the body, or it grows a neck.
