@@ -11,7 +11,7 @@ import { FRIEND_NAMES } from '../games/weka/art';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
 const HELP_CHOICES = [
-  { value: 'fade', label: 'Fades', detail: 'Each fact gets help to match the child’s record of it: every stone and two steps (to the big rock, then on) while they are learning it, faint stones once it is secure, numbers only once they know it well. Help comes back if they slip.' },
+  { value: 'fade', label: 'Fades', detail: 'Each fact gets help to match the child’s record of it: every stone and two steps (to the big rock, then on) while they are learning it, then the child splitting the number first, faint stones once it is fluent, numbers only once they know it well. Pebble ten-frames follow a right answer while help is full or split. Help comes back if they slip.' },
   { value: 'always', label: 'Always on', detail: 'Every stone numbered and the two steps on every go: “8 and 2 make 10, then 3 more”.' },
   { value: 'off', label: 'Off', detail: 'Numbers only, from the first day. Hints still come after wrong taps.' },
 ] as const;

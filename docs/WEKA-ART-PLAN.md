@@ -8,7 +8,11 @@ The game ships with clay-look SVG stand-ins (`src/games/weka/WekaArt.tsx`). The 
 James's gaming PC with `scripts/weka-art.py` (clay style, the same as Kiwi's Beanstalk), the way Penguin Pairs and Pipi
 were painted. Each picture shows up in the game as soon as it is tidied in; anything not painted keeps its stand-in.
 
-## Pictures (26)
+**6 Nov 2026: one new picture, `ten-frame` (27 in all).** It is the ten-frame tray for the pebbles (group `frames`, try
+5 of 8, in `src/games/weka/art/paint/frames/ten-frame.webp`). Painted wide, 1152x480, honey-coloured clay tray with two
+rows of five hollows. The pebbles reuse the existing gold and silver magic stones, so no other new art.
+
+## Pictures (27)
 
 | Group | Names | Notes |
 | --- | --- | --- |
@@ -18,6 +22,7 @@ were painted. Each picture shows up in the game as soon as it is tidied in; anyt
 | Things | `golden-basket`, `golden-basket-cushion`, `splash`, `sparkle` | the Golden Picnic Basket is the 30-day prize |
 | Friends | `kiwi`, `takahe`, `kakapo`, `pukeko`, `kea` × `wait`, `cheer` | one new friend per Golden Picnic Basket, all facing right |
 | Backs | `back-morning`, `back-silver`, `back-evening` | a bush stream from the side, calm plain water across the middle band for the line of stones |
+| Frames | `ten-frame` | the ten-frame tray for the pebble step (6 Nov 2026), honey clay with 2x5 hollows, painted wide 1152x480; the pebbles on it are the gold and silver magic stones |
 | Home card | `card` | goes to `src/assets/home/weka.webp` (then add one line to `src/components/gameCardArt.ts`) |
 
 ## Steps
