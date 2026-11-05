@@ -311,7 +311,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
                 </span>
               );
             })}
-            {phase === 'bond' && bond > 0 && <Jumps path={pathRef} go={go} shown={bond} />}
+            {phase === 'bond' && <Jumps path={pathRef} go={go} shown={2} />}
           </div>
         )}
       </div>
@@ -339,7 +339,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
 /**
  * The two jumps of the split drawn under the stones as arrows (James, 5 Nov 2026): orange from the start to the big rock
- * ("+1"), then blue from the big rock to where Weka landed ("+4"), each appearing as its part of the bond is filled in.
+ * ("+1"), then blue from the big rock to where Weka landed ("+4"), both shown as soon as the bond's circles appear (James).
  * Measured from the stones, so it works on one line or two rows of ten; a jump across the rows leaves one row and
  * comes in at the start of the next.
  */
