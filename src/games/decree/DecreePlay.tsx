@@ -18,6 +18,8 @@ import { personArt, rulerArt, rulerThumb, sceneArt, type SceneId } from './art';
 import type { AnswerReply, DecreeBackend, LoadReply, ReignReply } from './backend';
 import { factText } from './factText';
 import { HowToPlayBody } from './HowToPlay';
+import { speak, stopSpeaking } from '../../speech';
+import { haleVoiceOn, setHaleVoiceOn, setTutorialOn, spoken, TIPS, TOUR, tutorialOn, VOICE_FOLDER, YOUR_TURN, type Spot } from './tutorial';
 import './decree.css';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
@@ -46,9 +48,9 @@ function MeterIcon({ meter, size = 26 }: { meter: Meter; size?: number }) {
 }
 
 /** The four meters, with arrows for what the choice being looked at would do. */
-function MeterBar({ meters, hint, changed }: { meters: Meters; hint: Partial<Record<Meter, number>> | null; changed: Partial<Record<Meter, number>> | null }) {
+function MeterBar({ meters, hint, changed, spot = false }: { meters: Meters; hint: Partial<Record<Meter, number>> | null; changed: Partial<Record<Meter, number>> | null; spot?: boolean }) {
   return (
-    <ul className="rd-meters" aria-label="Your kingdom">
+    <ul className={`rd-meters${spot ? ' rd-spot' : ''}`} aria-label="Your kingdom">
       {METERS.map((m) => {
         const h = hint?.[m] ?? 0;
         const c = changed?.[m] ?? 0;
@@ -90,10 +92,10 @@ function Effects({ choice }: { choice: Choice }) {
 }
 
 /** Six years of four seasons, as dots. */
-function Road({ turn }: { turn: number }) {
+function Road({ turn, spot = false }: { turn: number; spot?: boolean }) {
   const n = Math.min(CARDS_IN_REIGN, turn + 1);
   return (
-    <div className="rd-road" aria-label={`Year ${yearOf(n)} of ${YEARS}, ${SEASON_NAMES[seasonOf(n)]}`}>
+    <div className={`rd-road${spot ? ' rd-spot' : ''}`} aria-label={`Year ${yearOf(n)} of ${YEARS}, ${SEASON_NAMES[seasonOf(n)]}`}>
       <span className="rd-road__label">Year {yearOf(n)} of {YEARS} · {SEASON_NAMES[seasonOf(n)]}</span>
       <span className="rd-road__dots" aria-hidden="true">
         {Array.from({ length: CARDS_IN_REIGN }, (_, i) => (
@@ -122,11 +124,30 @@ function Tip({ children, onClose }: { children: React.ReactNode; onClose: () => 
   );
 }
 
+/** One step of Hale's tutorial (./tutorial.ts). The player's-turn step has no Next: they make the choice themselves. */
+function TourBubble({ step, onNext, onSkip }: { step: number; onNext: () => void; onSkip: () => void }) {
+  const s = TOUR[step];
+  const last = step === TOUR.length - 1;
+  return (
+    <div className="rd-tip rd-tour" role="status">
+      {personArt('steward') && <img src={personArt('steward')} alt="" className="rd-tip__face" />}
+      <p><span className="rd-tour__count">Tutorial {step + 1} of {TOUR.length}</span><strong>Hale:</strong> {s.text}</p>
+      <span className="rd-tour__buttons">
+        {!s.yourTurn && <button key={step} type="button" className="rd-btn rd-btn--hot" autoFocus onClick={onNext}>{last ? 'Start ruling' : 'Next step'}</button>}
+        {!last && <button type="button" className="rd-btn rd-btn--quiet" onClick={onSkip}>Skip the tutorial</button>}
+      </span>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------- the card
 
 /** A villager's request. Drag it, use the buttons, or press ← and →. */
-function RequestCard({ who, text, no, yes, onChoose, onLean }: {
+function RequestCard({ who, text, no, yes, onChoose, onLean, locked = false, spot = 'none' }: {
   who: string; text: string; no: Choice; yes: Choice; onChoose: (side: Side) => void; onLean: (side: Side | null) => void;
+  /** The tutorial is still explaining: the card can't be chosen yet. */
+  locked?: boolean;
+  spot?: Spot;
 }) {
   const [dx, setDx] = useState(0);
   const start = useRef<number | null>(null);
@@ -135,7 +156,7 @@ function RequestCard({ who, text, no, yes, onChoose, onLean }: {
   useEffect(() => onLean(lean), [lean, onLean]);
 
   const down = (e: ReactPointerEvent) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || locked) return;
     start.current = e.clientX;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
@@ -153,7 +174,7 @@ function RequestCard({ who, text, no, yes, onChoose, onLean }: {
   return (
     <div className="rd-deal">
       <div
-        className={`rd-card${lean ? ` is-leaning-${lean}` : ''}`}
+        className={`rd-card${lean ? ` is-leaning-${lean}` : ''}${spot === 'card' ? ' rd-spot' : ''}`}
         style={{ transform: `translateX(${dx}px) rotate(${dx / 18}deg)` }}
         onPointerDown={down}
         onPointerMove={move}
@@ -166,12 +187,12 @@ function RequestCard({ who, text, no, yes, onChoose, onLean }: {
         <p className="rd-card__who"><strong>{v?.name}</strong>, {v?.role}</p>
         <p className="rd-card__text">{text}</p>
       </div>
-      <div className="rd-choices">
-        <button type="button" className="rd-btn rd-btn--no" onClick={() => onChoose('no')} onMouseEnter={() => onLean('no')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('no')} onBlur={() => onLean(null)}>
+      <div className={`rd-choices${spot === 'choices' ? ' rd-spot' : ''}`}>
+        <button type="button" className="rd-btn rd-btn--no" disabled={locked} onClick={() => onChoose('no')} onMouseEnter={() => onLean('no')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('no')} onBlur={() => onLean(null)}>
           <span className="rd-choice__label"><span aria-hidden="true">← </span>{no.label}</span>
           <Effects choice={no} />
         </button>
-        <button type="button" className="rd-btn rd-btn--yes" onClick={() => onChoose('yes')} onMouseEnter={() => onLean('yes')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('yes')} onBlur={() => onLean(null)}>
+        <button type="button" className="rd-btn rd-btn--yes" disabled={locked} onClick={() => onChoose('yes')} onMouseEnter={() => onLean('yes')} onMouseLeave={() => onLean(null)} onFocus={() => onLean('yes')} onBlur={() => onLean(null)}>
           <span className="rd-choice__label">{yes.label}<span aria-hidden="true"> →</span></span>
           <Effects choice={yes} />
         </button>
@@ -210,6 +231,11 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
   const [points, setPoints] = useState<number | null>(null);
   const [tips, setTips] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  // The tutorial: the step showing (null when it isn't), whether it ran this reign, and the start screen's switch.
+  const [tour, setTour] = useState<number | null>(null);
+  const [toured, setToured] = useState(false);
+  const [wantTour, setWantTour] = useState(tutorialOn);
+  const [voice, setVoice] = useState(haleVoiceOn);
   const pending = useRef<Move[]>([]);
   const savedTurn = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -252,6 +278,8 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
       setChanged(null);
       setPoints(null);
       setTips([]);
+      setTour(wantTour ? 0 : null);
+      setToured(wantTour);
       setScreen('play');
     } catch (e) {
       setError((e as Error).message);
@@ -313,12 +341,14 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
 
   function choose(side: Side) {
     if (!next || next.kind !== 'card' || after) return;
+    if (tour !== null && tour !== YOUR_TURN) return;
     const choice = next.card[side];
+    if (tour === YOUR_TURN) setTour(tour + 1);
     moveOn(side, false, choice.reply ? { kind: 'reply', who: next.card.who, text: choice.reply } : null);
   }
 
   useEffect(() => {
-    if (screen !== 'play' || after || asking || next?.kind !== 'card') return;
+    if (screen !== 'play' || after || asking || next?.kind !== 'card' || (tour !== null && tour !== YOUR_TURN)) return;
     const key = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
       if (e.key === 'ArrowLeft') choose('no');
@@ -342,16 +372,23 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
 
   // Hale's tips for a first reign (and the low-meter warning, once a reign).
   const tip = (() => {
-    if (!local || after || asking || screen !== 'play') return null;
+    if (!local || after || asking || screen !== 'play' || tour !== null) return null;
     const show = (id: string, text: string) => (tips.includes(id) ? null : { id, text });
     const lowMeter = METERS.find((m) => local.meters[m] <= 2);
-    if (lowMeter) return show(`low-${lowMeter}`, `${METER_NAME[lowMeter]} is getting low! If it reaches 0, your reign ends. Look for choices with ▲ on ${METER_NAME[lowMeter]}.`);
-    if (!firstReign) return null;
-    if (local.turn === 0) return show('swipe', 'Drag the card right to say yes, or left to say no. You can press the buttons too.');
-    if (local.turn === 1) return show('arrows', 'Before you choose, look at the arrows on the meters. ▲ goes up, ▼ goes down.');
-    if (next?.kind === 'riddle') return show('riddle', `Every third visitor needs help with a maths question. A right answer gives +${RIDDLE_BONUS}!`);
+    if (lowMeter) return show(`low-${lowMeter}`, TIPS.low(lowMeter));
+    if (!firstReign || toured) return null;
+    if (local.turn === 0) return show('swipe', TIPS.swipe);
+    if (local.turn === 1) return show('arrows', TIPS.arrows);
+    if (next?.kind === 'riddle') return show('riddle', TIPS.riddle);
     return null;
   })();
+
+  // Hale says each tutorial step and tip out loud (in Bella's voice), unless the voice is off.
+  const haleSays = tour !== null ? TOUR[tour].text : tip?.text ?? null;
+  useEffect(() => {
+    if (voice && haleSays) speak(spoken(haleSays), VOICE_FOLDER);
+  }, [voice, haleSays]);
+  useEffect(() => stopSpeaking, []);
 
   // ---------------------------------------------------------------- screens
 
@@ -440,6 +477,14 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
             <button type="button" className="rd-btn" onClick={() => setScreen('album')}>Royal Album{album ? ` (${album.met.length}/${CAST.length})` : ''}</button>
             <button type="button" className="rd-btn rd-btn--quiet" onClick={() => setScreen('howto')}>How to play</button>
           </p>
+          <label className="rd-switch">
+            <input type="checkbox" checked={wantTour} onChange={(e) => { setWantTour(e.target.checked); setTutorialOn(e.target.checked); }} />
+            <span>Show me the tutorial when I start a reign</span>
+          </label>
+          <label className="rd-switch">
+            <input type="checkbox" checked={voice} onChange={(e) => { setVoice(e.target.checked); setHaleVoiceOn(e.target.checked); if (!e.target.checked) stopSpeaking(); }} />
+            <span>Hale reads the tips out loud</span>
+          </label>
           {!backend.trial && <p className="rd-soft">{pointsLeft > 0 ? `Reigns that give points today: ${pointsLeft}.` : 'You’ve had today’s points. You can still play!'}</p>}
         </div>
       </>,
@@ -479,13 +524,16 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
   const council = sceneArt('council');
   const hint = lean && next?.kind === 'card' ? hintFor(next.card[lean]) : null;
   const q = next?.kind === 'riddle' ? pub.questions[next.slot] : undefined;
+  const spot: Spot = tour === null ? 'none' : TOUR[tour].spot;
+  const endTour = () => setTour(null);
   return frame(
     <>
-      <Road turn={local.turn} />
-      <MeterBar meters={local.meters} hint={hint} changed={after ? changed : null} />
+      <Road turn={local.turn} spot={spot === 'road'} />
+      <MeterBar meters={local.meters} hint={hint} changed={after ? changed : null} spot={spot === 'meters'} />
       <div className="rd-hall" style={council.wide ? { backgroundImage: `url("${council.wide}")` } : undefined}>
         <h2 ref={heading} tabIndex={-1} className="rd-sr">The throne room</h2>
         {rulerArt(pub.look) && <img className="rd-ruler" src={rulerArt(pub.look)} alt="" />}
+        {tour !== null && <TourBubble step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
         {tip && <Tip onClose={() => setTips((t) => [...t, tip.id])}>{tip.text}</Tip>}
 
         {after?.kind === 'reply' && (
@@ -506,7 +554,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
         )}
 
         {!after && next?.kind === 'card' && (
-          <RequestCard key={next.card.id} who={next.card.who} text={next.card.text} no={next.card.no} yes={next.card.yes} onChoose={choose} onLean={setLean} />
+          <RequestCard key={next.card.id} who={next.card.who} text={next.card.text} no={next.card.no} yes={next.card.yes} onChoose={choose} onLean={setLean} locked={tour !== null && tour !== YOUR_TURN} spot={spot} />
         )}
 
         {!after && next?.kind === 'riddle' && (

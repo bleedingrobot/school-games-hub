@@ -179,3 +179,12 @@ img.rd-portrait { width: auto; border: 0; border-radius: 0; background: none; bo
 img.rd-portrait--big { height: 170px; }
 @media (max-height: 700px) { img.rd-portrait--big { height: 130px; } }
 @media (max-height: 440px) { img.rd-portrait--big { height: 70px; } }
+
+/* Hale's tutorial (tutorial.ts): the part being explained glows. */
+.rd-spot { position: relative; z-index: 3; outline: 4px solid #f59e0b; outline-offset: 3px; border-radius: 12px; animation: rd-spot 1.4s ease-in-out infinite; }
+@keyframes rd-spot { 50% { outline-color: #fde68a; } }
+.rd-tour { border-color: #f59e0b; }
+.rd-tour__count { display: block; font-size: 0.8rem; color: var(--rd-soft); }
+.rd-tour__buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.rd-switch { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.rd-switch input { width: 24px; height: 24px; accent-color: #1f5f94; }

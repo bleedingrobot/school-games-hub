@@ -5,7 +5,7 @@ import { CARDS_IN_REIGN, METER_MOST, METERS } from './config';
 import { newReign, nextCard, play, playAll, pointsFor, type Move, type Reign } from './engine';
 import { DECK } from './server';
 
-// Royal Decree's rules: 2 tests here, 3 for the server (supabase/functions/decree), 2 for the screens. 7 in all.
+// Royal Decree's rules: 2 tests here, 3 for the server (supabase/functions/decree), 2 for the screens, 1 for Hale's voice. 8 in all.
 
 describe('Royal Decree rules', () => {
   it('the deck is sound: every villager exists, every story can start, every effect is small', () => {
