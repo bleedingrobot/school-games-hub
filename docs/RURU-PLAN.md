@@ -224,10 +224,10 @@ the question and sentence lines, te reo numbers). Pictures: `docs/RURU-ART-PLAN.
 5. Hub (group `foundational`), teacher settings, guided first go, the Golden Moon moment, Bella's voice.
 6. Go live (on for every class by default). Paintings go in whenever James has painted them.
 
-## 9. Questions for James
+## 9. Settled
 
-1. Stop at 20 in this game (recommended: the 0 to 20 trail is where 5 to 7 year olds are, and Hop already has the
-   hundreds board), or add a third trail to 100 (tens posts, "ten more") after step 7?
+- **Stop at 20** (James, 5 Nov 2026): the game covers the 0 to 10 and 0 to 20 trails only. A trail to 100 can be a later
+  game; Hop already has the hundreds board.
 
 ## Sources
 
