@@ -43,8 +43,17 @@ export function Hidden({ outline }: { outline: 'full' | 'faint' | 'none' }) {
   );
 }
 
-/** A number shell to tap: a paper scallop with its number on it. */
+/** A number shell to tap: the painted sand shell (or a paper scallop) with its number drawn on it. */
 export function NumberShell({ value }: { value: number }) {
+  const art = paint('shells/shell-sand');
+  if (art) {
+    return (
+      <svg className="pp-shell pp-shell--painted" viewBox="0 0 100 90" aria-hidden="true">
+        <image href={art} x="0" y="0" width="100" height="90" preserveAspectRatio="xMidYMid meet" />
+        <text x="50" y="54" textAnchor="middle" className="pp-shell__number">{value}</text>
+      </svg>
+    );
+  }
   return (
     <svg className="pp-shell" viewBox="0 0 100 90" aria-hidden="true">
       <path d="M50 4 C82 4 98 30 94 60 L62 84 L38 84 L6 60 C2 30 18 4 50 4 Z" fill="#e89a8c" />

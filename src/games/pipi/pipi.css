@@ -151,7 +151,7 @@
 .pp-wave--out { animation: pp-wash-out 0.65s ease-in both; }
 /* The painted wave: clay water with a foam crest, stretched across the stage. */
 .pp-wave--painted {
-  background: var(--pp-wave) center top / 100% 100% no-repeat; opacity: 1; border-radius: 0; height: 80%;
+  background: var(--pp-wave) center top / cover no-repeat; opacity: 1; border-radius: 0; height: 62%;
   filter: drop-shadow(0 -4px 8px rgb(20 60 80 / 0.25));
 }
 @keyframes pp-wash-in { from { translate: 0 100%; } }
@@ -168,6 +168,7 @@
 .pp-shellbtn:focus-visible { outline: 4px solid var(--pp-gold); outline-offset: 4px; border-radius: 30%; }
 .pp-shell { width: 100%; height: 100%; display: block; }
 .pp-shell__number { font: 900 38px system-ui, sans-serif; fill: var(--pp-ink); }
+.pp-shell--painted .pp-shell__number { paint-order: stroke; stroke: rgb(255 248 240 / 0.85); stroke-width: 6px; stroke-linejoin: round; }
 .pp-shellbtn--wobble { animation: pp-wobble 0.5s ease-in-out; }
 @keyframes pp-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
 .pp-shellbtn--right { animation: pp-right 0.8s ease-out forwards; }

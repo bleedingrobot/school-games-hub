@@ -9,7 +9,7 @@ set is painted and tidied over them. Same 32 picture names, same sizes, same see
 The metal shells use Beanstalk's foil wording ("wrapped in shiny crinkled foil"), because clay asked to be metal comes
 out matt. The page's shadows are soft (clay) instead of the hard paper edge (`--pp-paper` in `pipi.css`).
 
-## Pictures (32)
+## Pictures (33)
 
 | Group | Names | Notes |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ out matt. The page's shadows are soft (clay) instead of the hard paper edge (`--
 | Shells | `shells/shell-sand`, `-bronze`, `-silver`, `-gold` | the number is drawn on top in code, so the middle stays plain |
 | Things | `things/pearl`, `things/pearl-cushion` | the Golden Pearl prize |
 | Backs | `back/morning`, `back/afternoon`, `back/sunset` | calm sand across the lower half for the frame and shells |
+| Tide | `tide/wave` | the wave that washes over the frame each go (James, 5 Nov 2026); cut out, 1200 wide, covers the stage |
 | Home card | `home/card` | goes to `src/assets/home/pipi.webp` (+ `-small`), Marble Rush card style |
 
 ## Painting steps (this evening, on the Mac via Remote Control, ComfyUI on the gaming PC)
