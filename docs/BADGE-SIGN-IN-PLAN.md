@@ -1,6 +1,6 @@
 # QR sign-in badges for Years 1–4
 
-**Status:** LIVE 4 Nov 2026 (PR #199: migration applied, `badge` function deployed, site published). James picked "QR badges" from three options. Not yet tried with a real pupil badge on the live site.
+**Status:** LIVE 4 Nov 2026 (PR #199: migration applied, `badge` function deployed, site published). James picked "QR badges" from three options. Tried on the school Macs 4-5 Nov: sign-in fix (PR #215) confirmed working by James.
 
 ## Why
 
