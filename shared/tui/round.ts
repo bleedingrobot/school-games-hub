@@ -1,0 +1,261 @@
+/**
+ * One day's challenge at Tūī's Ten Tree (docs/TUI-PLAN.md sections 3 and 4): ten goes, each a teen number seen as a
+ * full ten and some more ("10 and 4 → 14"), with three or four nests to choose from.
+ *
+ * The facts are the hub's shared "ten and" facts (`tenand:4` in shared/maths/skillPacks/earlyFacts.ts, ladder skill
+ * `ten-and`). Nothing here works out a sum itself: the shared pack makes each question and its wrong choices from the
+ * key and its variant (the "way"), exactly as anywhere else on the hub. The ways: 0 "10 + 4", 1 "4 + 10",
+ * 2 "10 + ? = 14" (how many more?) and 3 "14 − 10" (take the ten away).
+ *
+ * Two things move separately, both from the child's own challenges and both kept by the server:
+ * - the **step** (which ways are asked): 1 How many?, 2 Turn it round, 3 How many more?, 4 Take the ten away, 5 All
+ *   mixed. A step is passed after two good challenges at it (8 or more of 10 right at the first tap). Never drops back.
+ * - the **help level** (how much picture): 5 every berry counted in, down to 0 numbers only (see `levelAfter`).
+ */
+import type { FactStats } from '../maths/leitner';
+import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
+import { seeded } from '../seededRandom';
+
+export const GOES_PER_ROUND = 10;
+/** From step 2 on (until all mixed), this many goes are the earlier ways (the rest are the new way). */
+export const REVIEW_GOES = 3;
+/** Right at the first tap on this many goes (of 10) makes a good challenge. */
+export const GOOD = 8;
+/** This many or fewer makes a hard one. */
+export const HARD = 4;
+/** Good challenges at a step that pass it. */
+export const GOOD_TO_PASS = 2;
+/** Good challenges in a row that take the help down one level. */
+export const GOOD_TO_FADE = 2;
+/** Help levels go back up this many when a new step starts. */
+export const NEW_STEP_HELP = 2;
+export const TOP_LEVEL = 5;
+/** Box 2 or more on this many of the nine facts when they first play: start at `KNOWN_START`. */
+export const KNOWN_FACTS = 7;
+export const KNOWN_START = { step: 3 as Step, level: 2 as HelpLevel };
+
+export const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
+
+export const STEPS = [
+  { step: 1, name: 'How many?', ways: [0] },
+  { step: 2, name: 'Turn it round', ways: [0, 1] },
+  { step: 3, name: 'How many more?', ways: [0, 1, 2] },
+  { step: 4, name: 'Take the ten away', ways: [0, 1, 2, 3] },
+  { step: 5, name: 'All mixed', ways: [0, 1, 2, 3] },
+] as const;
+export type Step = (typeof STEPS)[number]['step'];
+export type Way = 0 | 1 | 2 | 3;
+/** 5 every berry counted in, 4 every berry, 3 the kete of ten, 2 small and faint, 1 numbers with a peek, 0 numbers only. */
+export type HelpLevel = 0 | 1 | 2 | 3 | 4 | 5;
+export type HelpSetting = 'fade' | 'always' | 'off';
+
+/** The guided first go (plan section 6): 10 and 2, at level 5. */
+export const GUIDED_KEY = 'tenand:2';
+
+export const MAX_SEED = 2147483647;
+export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_SEED;
+export const isStep = (n: unknown): n is Step => STEPS.some((s) => s.step === n);
+export const isLevel = (n: unknown): n is HelpLevel => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= TOP_LEVEL;
+export const stepName = (step: Step) => STEPS.find((s) => s.step === step)!.name;
+
+/** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
+export const shownLevel = (level: HelpLevel, help: HelpSetting): HelpLevel => (help === 'always' ? 4 : help === 'off' ? 0 : level);
+
+/** A child who already knows most of the facts when they first play starts further on, with less help. */
+export function startFor(stats: Iterable<FactStats>): { step: Step; level: HelpLevel } {
+  const box = new Map([...stats].map((s) => [s.key, s.box]));
+  return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= KNOWN_FACTS ? KNOWN_START : { step: 1, level: TOP_LEVEL };
+}
+
+/** Where a child is: their step, help level and the good challenges counted towards the next change. */
+export interface Place {
+  step: Step;
+  level: HelpLevel;
+  /** Good challenges in a row (two take the help down a level). */
+  goodInRow: number;
+  /** Good challenges at this step (two pass it). */
+  goodAtStep: number;
+}
+
+/**
+ * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
+ * less help and the next step. Hard: one level more help at once. A new step brings two levels of help back.
+ */
+export function placeAfter(p: Place, right: number): Place {
+  const good = right >= GOOD;
+  const hard = right <= HARD;
+  let level = p.level;
+  let goodInRow = good ? p.goodInRow + 1 : 0;
+  if (goodInRow >= GOOD_TO_FADE) {
+    level = Math.max(0, level - 1) as HelpLevel;
+    goodInRow = 0;
+  }
+  if (hard) level = Math.min(TOP_LEVEL, level + 1) as HelpLevel;
+  let { step } = p;
+  let goodAtStep = good ? p.goodAtStep + 1 : p.goodAtStep;
+  if (goodAtStep >= GOOD_TO_PASS && step < 5) {
+    step = (step + 1) as Step;
+    goodAtStep = 0;
+    goodInRow = 0;
+    level = Math.min(TOP_LEVEL, level + NEW_STEP_HELP) as HelpLevel;
+  }
+  return { step, level, goodInRow, goodAtStep };
+}
+
+/** One go as saved: the fact, the way it is asked and the help level it is shown at. */
+export interface GoPlan {
+  key: string;
+  v: Way;
+  l: HelpLevel;
+}
+
+/** What the server saves when a challenge starts, and the browser is sent. */
+export interface Round {
+  seed: number;
+  step: Step;
+  /** The child's own help level when the challenge started (the goes may be shown at another, by the teacher's setting). */
+  level: HelpLevel;
+  /** The teacher's help setting when it started: Off means no Peek. */
+  help: HelpSetting;
+  goes: GoPlan[];
+}
+
+/** A go as shown. */
+export interface Go extends GoPlan {
+  /** The ones: 4 in 10 and 4. */
+  n: number;
+  /** The teen number: 14. */
+  teen: number;
+  answer: number;
+  /** The shared pack's question, as parts: ["10", "+", "4", "=", "?"]. */
+  parts: string[];
+  /** The nests, smallest first: three at help levels 5 and 4, four from 3 down. */
+  choices: number[];
+}
+
+const shuffle = <T>(items: T[], random: () => number): T[] => {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
+/** The same fact never comes twice in a row: a repeat swaps with a later go where it fits. */
+function spreadOut(keys: string[]): string[] {
+  const out = [...keys];
+  for (let i = 1; i < out.length; i++) {
+    if (out[i] !== out[i - 1]) continue;
+    const j = out.findIndex((k, x) => x > i && k !== out[i] && out[x - 1] !== out[i - 1] && (x + 1 >= out.length || out[x + 1] !== out[i]));
+    const back = out.findIndex((k, x) => x < i - 1 && k !== out[i] && (x === 0 || out[x - 1] !== out[i]) && out[x + 1] !== out[i]);
+    const at = j !== -1 ? j : back;
+    if (at !== -1) [out[i], out[at]] = [out[at], out[i]];
+  }
+  return out;
+}
+
+/** The ways of a step's ten goes: step 1 all "10 + n"; then 7 of the new way and 3 earlier; all mixed, evenly. */
+function waysFor(step: Step, random: () => number): Way[] {
+  const { ways } = STEPS.find((s) => s.step === step)!;
+  if (step === 1) return Array(GOES_PER_ROUND).fill(0);
+  if (step === 5) return shuffle(Array.from({ length: GOES_PER_ROUND }, (_, i) => ways[i % ways.length] as Way), random);
+  const fresh = ways[ways.length - 1] as Way;
+  const earlier = ways.slice(0, -1) as Way[];
+  const review = Array.from({ length: REVIEW_GOES }, (_, i) => earlier[Math.floor(random() * earlier.length + i) % earlier.length]);
+  return shuffle([...Array(GOES_PER_ROUND - REVIEW_GOES).fill(fresh), ...review], random);
+}
+
+/**
+ * Today's challenge from a fresh seed, the child's records, their place and the teacher's help setting. Every fact
+ * once and the weakest again, weakest first; on the very first challenge 10 and 2 comes first at level 5. The same
+ * inputs always give the same round.
+ */
+export function makeRound(
+  seed: number,
+  stats: Iterable<FactStats>,
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+): Round {
+  if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+  const step = opts.step ?? 1;
+  const level = opts.level ?? TOP_LEVEL;
+  const help = opts.help ?? 'fade';
+  const random = seeded(seed);
+  random(); random(); // the first draws of this generator are close together for close seeds
+  const box = new Map([...stats].map((s) => [s.key, s.box]));
+  const byWeak = shuffle(KEYS, random)
+    .map((k, i) => ({ k, i }))
+    .sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i)
+    .map((x) => x.k);
+  // Every fact once, weakest first, and the weakest again at the end.
+  let keys = [...byWeak, byWeak[0]];
+  if (opts.guided) {
+    const rest = [...keys];
+    rest.splice(rest.indexOf(GUIDED_KEY), 1);
+    keys = spreadOut([GUIDED_KEY, ...rest]);
+  }
+  const ways = waysFor(step, random);
+  const shown = shownLevel(level, help);
+  const goes = keys.map((key, i): GoPlan => (opts.guided && i === 0 ? { key, v: 0, l: TOP_LEVEL } : { key, v: ways[i], l: shown }));
+  return { seed, step, level, help, goes };
+}
+
+const pack = earlyFactsPack();
+
+/** How many nests a go has: three while every berry is drawn, then four. */
+export const nestsFor = (l: HelpLevel) => (l >= 4 ? 3 : 4);
+
+/** The reversal a child who hears "fourteen" might pick: 41 for 14 (only when the ones aren't 1, so it differs). */
+export const reversalOf = (n: number) => n * 10 + 1;
+
+/** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
+export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+  const m = /^tenand:([1-9])$/.exec(plan.key);
+  if (!m || ![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
+  const n = Number(m[1]);
+  const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+  const q = pack.rebuild(plan.key, [n, plan.v], true, random);
+  const answer = plan.v >= 2 ? n : 10 + n;
+  if (!q || !q.choices || q.answer !== answer) return null;
+  let wrong = q.choices.filter((c) => c !== answer);
+  // The reversal is one of the wrong nests on "how many?" goes, so the slip shows up in the records.
+  if (plan.v <= 1 && n >= 2) wrong = [reversalOf(n), ...wrong.filter((c) => c !== reversalOf(n))];
+  const choices = [answer, ...wrong.slice(0, nestsFor(plan.l) - 1)].sort((a, b) => a - b);
+  return { ...plan, n, teen: 10 + n, answer, parts: q.parts, choices };
+}
+
+/** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */
+export function showRound(round: Round): Go[] {
+  return round.goes.map((plan, i) => {
+    const go = showGo(round, i, plan);
+    if (!go) throw new Error(`Go ${i} (${plan.key}) can't be made`);
+    return go;
+  });
+}
+
+/**
+ * The picture for a go after some wrong taps (plan section 4, "Help inside one go"): the first wrong tap brings one
+ * level more (at level 0 the kete picture; at level 1 the Peek opens), the second brings every berry counted in, and the
+ * third fades the wrong nests to leave two. The answer is never shown.
+ */
+export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: number, tapped: readonly number[] = []): {
+  level: HelpLevel;
+  peekOpen: boolean;
+  /** The nests still to tap: after three wrong taps, the answer and one other. */
+  nests: number[];
+} {
+  let level = go.l;
+  let peekOpen = false;
+  if (wrongTaps >= 2) level = TOP_LEVEL;
+  else if (wrongTaps === 1) {
+    if (go.l === 0) level = 3;
+    else if (go.l === 1) peekOpen = true;
+    else level = Math.min(TOP_LEVEL, go.l + 1) as HelpLevel;
+  }
+  let nests = go.choices;
+  if (wrongTaps >= 3) {
+    const other = go.choices.find((c) => c !== go.answer && !tapped.includes(c)) ?? go.choices.find((c) => c !== go.answer)!;
+    nests = go.choices.filter((c) => c === go.answer || c === other);
+  }
+  return { level, peekOpen, nests };
+}
