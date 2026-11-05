@@ -95,7 +95,14 @@ STREAM = ('A wide view of a sunny New Zealand bush stream seen from the side: a 
           'shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, '
           'a tidy uncluttered scene with an empty middle band of water')
 
+# The ten-frame step: a tray seen from above (the game lays pebbles over its hollows).
+FRAME_WIDE = (1152, 480)
+TRAY = ('Top-down flat-on view of a chunky wide rectangular ten-frame tray made of one single honey-coloured clay, a smooth '
+        'board with a raised rounded rim, and ten round shallow dents pressed into the board, all the same size, all the same honey '
+        'colour as the board, in a perfect grid of two straight rows of five, evenly spaced, tidy and symmetrical, wide landscape.')
+
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
+    'ten-frame': (TRAY + ' Single object, centred, the whole tray visible with space around it, on a plain pure white background, clean empty white all around.' + AGE, FRAME_WIDE),
     **{f'weka-{p}': (WEKA + w + ', the whole bird.' + SPRITE, SQUARE) for p, w in WEKA_POSES.items()},
     **{f'stone-{k}': (STONE + w + '.' + SPRITE, SQUARE) for k, w in STONES.items()},
     **{name: (w[0].upper() + w[1:] + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
@@ -175,7 +182,7 @@ ROOT = Path(__file__).resolve().parent.parent
 GAME_ART = ROOT / 'src' / 'games' / 'weka' / 'art' / 'paint'
 INBOX = Path.home() / 'dragon-art-inbox' / 'weka-art' / 'set' / 'b'
 HOME = ROOT / 'src' / 'assets' / 'home'
-SIZES = {'stones': 256, 'friends': 320, 'things': 256}
+SIZES = {'frames': 256, 'stones': 256, 'friends': 320, 'things': 256}
 FRIEND_NAMES = ('weka', 'kiwi', 'takahe', 'kakapo', 'pukeko', 'kea')
 
 
@@ -185,6 +192,8 @@ def destination(name: str) -> tuple[str, str, str] | None:
         return 'card', '', 'weka'
     if name.startswith('back-'):
         return 'scene', 'back', name[len('back-'):]
+    if name == 'ten-frame':
+        return 'cut', 'frames', name
     group, _, key = name.partition('-')
     if group == 'stone':
         return 'cut', 'stones', key
@@ -264,7 +273,7 @@ def tidy(force: bool):
         if session is None:
             session = new_session('isnet-general-use')
         cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
-        save(fit(cut, {'step-stone': 160, 'big-rock': 200}.get(name, SIZES[folder])), out, 82)
+        save(fit(cut, {'step-stone': 160, 'big-rock': 200, 'ten-frame': 1000}.get(name, SIZES[folder])), out, 82)
         if name == 'stone-gold':
             for metal in ('bronze', 'silver'):
                 save(fit(tint(cut, metal), SIZES[folder]), GAME_ART / folder / f'{metal}.webp', 82)

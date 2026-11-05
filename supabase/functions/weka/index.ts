@@ -850,6 +850,12 @@ const LEVELS = [
 		]
 	}
 ];
+const HELPS = [
+	"full",
+	"split",
+	"faint",
+	"none"
+];
 /** The guided first go (plan section 6): 9 + 2. */
 const GUIDED_KEY = "add:2+9";
 const MAX_SEED = 2147483647;
@@ -884,8 +890,16 @@ function levelFor(stats, reached = 1) {
 	const next = LEVELS.find((l) => l.level >= reached && levelShare(list, l.level) < .7);
 	return next ? next.level : 4;
 }
-/** The help for a fact from its box: learning (0 to 1) full, secure (2) faint, known well (3 to 4) none. */
-const helpForBox = (box) => box >= 3 ? "none" : box >= 2 ? "faint" : "full";
+/**
+* The help for a fact from its record (made to last longer, James 6 Nov 2026): full until it is secure (box 2) and has
+* been right quickly on two different days; split-first until it is fluent (box 4) and right 8 times; faint until right
+* 12 times; then none. A wrong answer drops the fact to box 1, so full help comes back.
+*/
+function helpForStats(stats) {
+	if (!stats || stats.box < 2 || stats.quickDays.length < 2) return "full";
+	if (stats.box < 4 || stats.correct < 8) return "split";
+	return stats.correct < 12 ? "faint" : "none";
+}
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -926,6 +940,7 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	random();
 	const box = new Map(list.map((s) => [s.key, s.box]));
+	const record = new Map(list.map((s) => [s.key, s]));
 	const today = levelKeys(level);
 	const earlier = level === 4 ? [] : LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
 	const backs = day === "gold" ? 2 : 0;
@@ -954,7 +969,7 @@ function makeRound(seed, stats, opts = {}) {
 			return {
 				key,
 				v: i >= 10 - backs ? 2 : day !== "bronze" && !(opts.guided && i === 0) && random() < .3 ? 0 : 1,
-				h: opts.guided && i === 0 ? "full" : helpForBox(box.get(key) ?? 0)
+				h: opts.guided && i === 0 ? "full" : helpForStats(record.get(key))
 			};
 		})
 	};
@@ -983,11 +998,7 @@ function showGo(round, index, plan) {
 		0,
 		1,
 		2
-	].includes(plan.v) || ![
-		"full",
-		"faint",
-		"none"
-	].includes(plan.h)) return null;
+	].includes(plan.v) || !HELPS.includes(plan.h)) return null;
 	const { small, big } = fact;
 	const total = small + big;
 	const q = pack.rebuild(plan.key, [

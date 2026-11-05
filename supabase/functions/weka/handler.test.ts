@@ -56,12 +56,12 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   expect(answers.map((a) => [a.key, a.correct])).toEqual(keys.map((k) => [k, k !== GUIDED_KEY]));
 
   // Records from anywhere on the hub that show starting on 9 secure move the pupil on to 8, and they never drop back.
-  // The help follows the records: secure facts (box 2) get the faint picture.
-  services.data.facts['pupil-a'] = levelKeys(1).map((key) => ({ ...newStats(key), box: 2 }));
+  // The help follows the records: secure facts (box 2, quick on two days) get the split-first help.
+  services.data.facts['pupil-a'] = levelKeys(1).map((key) => ({ ...newStats(key), box: 2, correct: 3, quickDays: ['2026-11-04', '2026-11-05'] }));
   const eights = await start('pupil-a');
   expect(eights.level).toBe(2);
   expect(eights.goes[0].key).not.toBe(GUIDED_KEY);
-  for (const g of eights.goes) expect(g.h).toBe(levelKeys(1).includes(g.key) ? 'faint' : 'full');
+  for (const g of eights.goes) expect(g.h).toBe(levelKeys(1).includes(g.key) ? 'split' : 'full');
   await send('pupil-a', { action: 'finish', seed: eights.seed, taps: goodTaps(eights) });
   services.data.facts['pupil-a'] = [];
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ level: 2, help: 'fade' });

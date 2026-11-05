@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
-import { ALL_KEYS, BACK_GOES, bondLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
+import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -60,11 +60,22 @@ describe('the level and the help', () => {
     expect(levelFor(recordsFor(4))).toBe(4);
     expect(levelFor(inBox(ALL_KEYS, 4))).toBe(4);
     expect(levelFor([], 3)).toBe(3);
-    // Learning (box 0 or 1): full help; secure (2): faint; known well (3 or 4): numbers only.
-    const records = [...inBox(one.slice(0, 2), 1), ...inBox(one.slice(2, 4), 2), ...inBox(one.slice(4, 5), 3)];
+    // Full until secure and quick on two days; split-first until fluent and right 8 times; faint until right 12; then none.
+    const two = ['2026-11-04', '2026-11-05'];
+    const rec = (key: string, box: number, correct: number, quickDays: string[]): FactStats => ({ ...newStats(key), box, correct, quickDays });
+    const records = [
+      rec(one[0], 1, 1, two.slice(0, 1)), // learning
+      rec(one[1], 3, 3, two.slice(0, 1)), // secure but only one day: still full
+      rec(one[2], 2, 4, two), // secure on two days: split first
+      rec(one[3], 4, 6, two), // fluent, not yet right 8 times: split first
+      rec(one[4], 4, 9, two), // faint
+      rec(one[5], 4, 12, two), // numbers only
+    ];
     const help = new Map(makeRound(7, records).goes.map((g) => [g.key, g.h]));
-    const want = (i: number) => (i === 2 || i === 3 ? 'faint' : i === 4 ? 'none' : 'full');
-    one.forEach((k, i) => expect(help.get(k)).toBe(want(i)));
+    const want = ['full', 'full', 'split', 'split', 'faint', 'none', 'full', 'full'];
+    one.forEach((k, i) => expect(help.get(k)).toBe(want[i]));
+    expect(helpForStats(undefined)).toBe('full');
+    expect(pebblesFor('full') && pebblesFor('split') && !pebblesFor('faint') && !pebblesFor('none')).toBe(true);
   });
 });
 
@@ -89,5 +100,16 @@ describe('the split after each go', () => {
       .toBe('You solved 5 + 8 by starting on 8 and splitting the 5 into 2 and 3. You added the 2 first to make ten, then the other 3.');
     expect(bondLine({ kind: 'back', small: 5, big: 8, total: 13, toTen: 3, rest: 2 }, true))
       .toBe('You solved 13 take away 5 by splitting the 5 into 3 and 2. You took away the 3 first to get to ten, then the other 2.');
+  });
+});
+
+describe('split first and the pebbles', () => {
+  it('asks for the part that gets to ten, then the rest, and repeats the same question with pebbles', () => {
+    const add = { kind: 'add' as const, small: 5, big: 8, total: 13, toTen: 2, rest: 3 };
+    expect(splitFirstLine(add)).toBe('8 plus 5. Split the 5 to get to ten. How many hops from 8 to the big rock?');
+    expect(splitRestLine(add)).toBe('2 gets to ten. How many of the 5 are left?');
+    expect(pebbleAskLine(add)).toBe('The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten.');
+    expect(pebbleAskLine({ ...add, kind: 'turn' })).toMatch(/^The same question with pebbles: 5 plus 8\./);
+    expect(pebbleDoneLine(add)).toBe('8 and 2 make 10. 10 and 3 make 13.');
   });
 });

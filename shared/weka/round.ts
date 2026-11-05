@@ -12,10 +12,11 @@
  * The level (starting on 9, on 8, on 7 or 6, then mixed) comes from the child's records, as Hop picks its step: a level
  * is passed when 70% of its facts are in box 2 or higher, and the server keeps the furthest level reached.
  *
- * How much each go helps comes from the child's own record of that fact (plan section 4): a fact they are still
- * learning (box 0 or 1) gets the full picture and the two steps (to the big rock, then on); a secure one (box 2) the faint
- * picture and one tap; a fact they know well (box 3 or 4) the numbers only. So the help fades fact by fact as the
- * records show it is known, and comes back if they slip (a wrong answer drops a fact to box 1).
+ * How much each go helps comes from the child's own record of that fact (plan section 4, made to last longer on
+ * 6 Nov 2026): 'full' (the picture, the two steps, then the pebbles) until it has been right quickly on two different
+ * days; then 'split' (the child splits the number to get to ten before answering, then the pebbles) until it is fluent
+ * and right 8 times; then 'faint' (one tap) until right 12 times; then 'none'. So the help fades fact by fact as the
+ * records show it is known, and comes back if they slip (a wrong answer drops a fact to box 1, back to full help).
  */
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
@@ -40,8 +41,16 @@ export type Level = (typeof LEVELS)[number]['level'];
 
 /** How a go is asked: bigger number first, smaller first, or hopping back from the total. */
 export type Kind = 'add' | 'turn' | 'back';
-/** How much a go's picture helps: every stone and the two steps, every fifth stone and one tap, or the numbers only. */
-export type Help = 'full' | 'faint' | 'none';
+/**
+ * How much a go helps: 'full' every stone and the two steps (hops to the big rock, then on); 'split' the child splits
+ * the number they add first (what gets to ten, and the rest), then answers; 'faint' every fifth stone and one tap;
+ * 'none' the numbers only. Full and split goes also repeat the question with pebbles in two ten-frames after a right
+ * answer (James, 6 Nov 2026).
+ */
+export type Help = 'full' | 'split' | 'faint' | 'none';
+export const HELPS: readonly Help[] = ['full', 'split', 'faint', 'none'];
+/** Whether a go's help repeats the question with pebbles in ten-frames (adding goes only; hop-backs skip it). */
+export const pebblesFor = (help: Help): boolean => help === 'full' || help === 'split';
 /** The kind of day, from the stones' colours: silver and gold days mix in smaller-first goes, gold days end hopping back. */
 export type Day = 'bronze' | 'silver' | 'gold';
 
@@ -84,8 +93,20 @@ export function levelFor(stats: Iterable<FactStats>, reached: Level = 1): Level 
   return next ? next.level : 4;
 }
 
-/** The help for a fact from its box: learning (0 to 1) full, secure (2) faint, known well (3 to 4) none. */
-export const helpForBox = (box: number): Help => (box >= 3 ? 'none' : box >= 2 ? 'faint' : 'full');
+/** Right answers before the split-first help gives way to the faint picture, and before that gives way to none. */
+export const SPLIT_UNTIL_RIGHT = 8;
+export const FAINT_UNTIL_RIGHT = 12;
+
+/**
+ * The help for a fact from its record (made to last longer, James 6 Nov 2026): full until it is secure (box 2) and has
+ * been right quickly on two different days; split-first until it is fluent (box 4) and right 8 times; faint until right
+ * 12 times; then none. A wrong answer drops the fact to box 1, so full help comes back.
+ */
+export function helpForStats(stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help {
+  if (!stats || stats.box < 2 || stats.quickDays.length < 2) return 'full';
+  if (stats.box < 4 || stats.correct < SPLIT_UNTIL_RIGHT) return 'split';
+  return stats.correct < FAINT_UNTIL_RIGHT ? 'faint' : 'none';
+}
 
 /** One go as saved: the fact, how the shared pack asks it (0 smaller first, 1 bigger first, 2 hop back) and its help. */
 export interface GoPlan {
@@ -166,6 +187,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
+  const record = new Map(list.map((s) => [s.key, s]));
   const today = levelKeys(level);
   const earlier = level === 4 ? [] : LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
   const backs = day === 'gold' ? BACK_GOES : 0;
@@ -187,7 +209,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   }
   const goes = keys.map((key, i): GoPlan => {
     const v: GoPlan['v'] = i >= GOES_PER_ROUND - backs ? 2 : day !== 'bronze' && !(opts.guided && i === 0) && random() < TURN_SHARE ? 0 : 1;
-    const h = opts.guided && i === 0 ? 'full' : helpForBox(box.get(key) ?? 0);
+    const h = opts.guided && i === 0 ? 'full' : helpForStats(record.get(key));
     return { key, v, h };
   });
   return { seed, level, day, goes };
@@ -208,7 +230,7 @@ export function toTenChoicesFor(toTen: number): number[] {
 /** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   const fact = parseKey(plan.key);
-  if (!fact || ![0, 1, 2].includes(plan.v) || !['full', 'faint', 'none'].includes(plan.h)) return null;
+  if (!fact || ![0, 1, 2].includes(plan.v) || !HELPS.includes(plan.h)) return null;
   const { small, big } = fact;
   const total = small + big;
   const q = pack.rebuild(plan.key, [small, big, plan.v], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
@@ -277,6 +299,41 @@ export function bondAskLine(go: Said): string {
 
 /** The second part of the split: the hops after the big rock. */
 export const BOND_MORE = 'And how many more?';
+
+// ---------------------------------------------------------------- split first (help 'split', later in the game)
+
+/**
+ * On split-first goes (James, 6 Nov 2026) the child splits the number they add before anything else: first the part that
+ * gets to ten, then the rest, then where Weka lands. Help only: never sent or recorded.
+ */
+export function splitFirstLine(go: Said): string {
+  return go.kind === 'back'
+    ? `${go.total} take away ${go.small}. Split the ${go.small} to get back to ten. How many hops back from ${go.total} to the big rock?`
+    : go.kind === 'turn'
+      ? `${go.small} plus ${go.big}. Start on the bigger number, ${go.big}. Split the ${go.small} to get to ten. How many hops from ${go.big} to the big rock?`
+      : `${go.big} plus ${go.small}. Split the ${go.small} to get to ten. How many hops from ${go.big} to the big rock?`;
+}
+
+/** The second part of the split-first: what is left of the number after the big rock. */
+export const splitRestLine = (go: Said): string => `${go.toTen} gets to ten. How many of the ${go.small} are left?`;
+
+/** Both parts in: "8 and 2 make 10. Then 3 more. Where will Weka land?" */
+export const splitDoneLine = (go: Said): string => fromTenLine(go);
+
+// ---------------------------------------------------------------- the pebbles: the same question in ten-frames
+
+/**
+ * After a right answer on a full or split go (adding only), the same question again with pebbles (James, 6 Nov 2026):
+ * the bigger number as gold pebbles in the first ten-frame, the smaller as silver in the second; the child drags silver
+ * across until the first ten-frame is full. Help only: never sent or recorded.
+ */
+export function pebbleAskLine(go: Said): string {
+  const sum = go.kind === 'turn' ? `${go.small} plus ${go.big}` : `${go.big} plus ${go.small}`;
+  return `The same question with pebbles: ${sum}. Here are ${go.big} gold and ${go.small} silver. Drag silver pebbles to fill the first ten.`;
+}
+
+/** The first ten-frame is full: "8 and 2 make 10. 10 and 3 make 13." */
+export const pebbleDoneLine = (go: Said): string => `${go.big} and ${go.toTen} make 10. 10 and ${go.rest} make ${go.total}.`;
 
 /**
  * The split said in full once both parts are in: "You solved 9 + 5 by splitting the 5 into 1 and 4. You added the 1
