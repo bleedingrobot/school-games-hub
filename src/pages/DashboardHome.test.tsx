@@ -43,7 +43,8 @@ async function show(world: World, role?: string) {
   await settle();
 }
 
-const asked = () => sent.filter((s) => s !== 'from app_settings');
+// The home layout (folded sections, pinned games) is asked once while the site is open, not each time the page opens.
+const asked = () => sent.filter((s) => s !== 'from app_settings' && s !== 'rpc my_home_layout');
 const statsRow = (table: string, game: string) =>
   within(screen.getByRole('table', { name: table }))
     .getByRole('rowheader', { name: game })
@@ -55,6 +56,7 @@ describe('the home page in one request', () => {
     await show(busyPupil());
     expect(asked()).toEqual(['rpc my_home_page']);
     expect(sent.filter((s) => s === 'from app_settings').length).toBeLessThanOrEqual(1);
+    expect(sent.filter((s) => s === 'rpc my_home_layout').length).toBeLessThanOrEqual(1);
   });
 
   it('shows a busy pupil the same cards and numbers', async () => {
