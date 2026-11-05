@@ -72,7 +72,8 @@ branch always holds exactly ten berries, and ten berries always fill one flax ke
   the 10 goes are the new way and 3 are earlier ways (so old ways stay fresh). Only 9 facts, so a round has repeats;
   `makeRound` spreads them and puts weak facts (low box) first.
 - **A child who already knows it** (7 of the 9 `tenand` keys at box 2 or more when they first play) starts at step 3
-  and help level 2, so the game doesn't babysit them.
+  and help level 4 (ten-frames, sum shown), so the game doesn't babysit them but still shows the ten (changed 6 Nov 2026:
+  level 2 skipped the ten-frames altogether).
 - **Choices:** 3 nests at help levels 5 and 4, then 4. The wrong ones come from the shared family (one more, one less,
   ten more) plus the game's own reversal (41 for 14, on ways 0 and 1 when n ≥ 2). Answers on ways 2 and 3 are 1 to 9.
 - **Recording** (Way A, shared section 7): each go is recorded once with `recordMathsAnswers`, right only if the first
@@ -99,13 +100,13 @@ Ways 2 and 3 use the same levels: on "how many more?" the missing berries are em
 
 ### How a child's help level moves (between challenges)
 
-- A new child starts at **level 5** (or level 2 if they already know it, section 3).
+- A new child starts at **level 5** (or level 4 if they already know it, section 3).
 - After each day's first challenge (the counted one):
   - **8 or more of 10 right at the first tap:** a *good* challenge. **Two good challenges in a row** take the child down
     one level. So going from 5 to 0 takes at least ten school days, and usually most of the 30.
   - **4 or fewer right:** a *hard* challenge. Up one level straight away.
   - Anything else: stay.
-- **When a new step starts (section 3), help goes back up two levels** (to at most 5): a new way of asking needs the
+- **When a new step starts (section 3), help goes back up two levels** (to at most 5, and never below level 4, the ten-frames): a new way of asking needs the
   picture again, then fades again.
 - The server saves the level in `tui_progress`. Play-again goes later that day use the same level and never move it.
 

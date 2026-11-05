@@ -946,7 +946,7 @@ function seeded(seed) {
 }
 const KNOWN_START = {
 	step: 3,
-	level: 2
+	level: 4
 };
 const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
 const STEPS = [
@@ -1007,7 +1007,8 @@ function startFor(stats) {
 }
 /**
 * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
-* less help and the next step. Hard: one level more help at once. A new step brings two levels of help back.
+* less help and the next step. Hard: one level more help at once. A new step brings two levels of help back, and
+* always the ten-frames: the kete comes only once a way of asking is going well.
 */
 function placeAfter(p, right) {
 	const good = right >= 8;
@@ -1025,7 +1026,7 @@ function placeAfter(p, right) {
 		step = step + 1;
 		goodAtStep = 0;
 		goodInRow = 0;
-		level = Math.min(5, level + 2);
+		level = Math.max(4, Math.min(5, level + 2));
 	}
 	return {
 		step,

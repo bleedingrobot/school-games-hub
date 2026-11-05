@@ -119,6 +119,7 @@
   width: 38%; aspect-ratio: 1; border-radius: 50%; background: var(--tui-panel); border: 3px solid var(--tui-ink);
   font: 900 calc(var(--tui-cell) * 0.9) / 1 system-ui, sans-serif; color: var(--tui-ink);
 }
+.tui-kete__tag--painted { top: 64.5%; width: 37%; background: none; border: 0; font-size: calc(var(--tui-cell) * 1.05); }
 .tui-kete--in { animation: tui-tuck 0.6s ease-out both; }
 @keyframes tui-tuck { from { scale: 0.4; opacity: 0; } 70% { scale: 1.08; } }
 .tui-kete--late { animation-delay: 0.6s; }
