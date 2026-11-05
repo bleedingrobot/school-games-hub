@@ -1,5 +1,5 @@
-/* Pipi's Hidden Shells, in layered paper (James, 4 Nov 2026): flat colours, soft wavy edges, a small hard shadow under
-   every piece as if cut from card. Numbers sit dark on light shells, and every target is at least 64px for children of 5
+/* Pipi's Hidden Shells, in clay like the other Foundational skills games (James, 4 Nov 2026; it began in layered paper):
+   rounded shapes and a soft shadow under every piece. Numbers sit dark on light shells, and every target is at least 64px for children of 5
    to 7. */
 .pp-root {
   --pp-ink: #2b2233;
@@ -13,7 +13,7 @@
   --pp-red: #d1453b;
   --pp-leaf: #2f6b45;
   --pp-gold: #f2b928;
-  --pp-paper: drop-shadow(0 3px 0 rgb(60 40 20 / 0.18));
+  --pp-paper: drop-shadow(0 4px 6px rgb(60 40 20 / 0.22));
   position: relative;
   min-height: var(--pp-room, 100dvh);
   display: flex;
@@ -83,7 +83,7 @@
 .pp-tideline__spot { width: var(--pp-shell-size); translate: 0 calc(sin(var(--pp-i) * 0.9rad) * 12px); }
 .pp-magic { width: 100%; display: block; filter: var(--pp-paper); }
 .pp-magic--glow { animation: pp-glow 1.4s ease-in-out 2; }
-@keyframes pp-glow { 50% { scale: 1.25; filter: drop-shadow(0 0 14px #fff2a8) drop-shadow(0 3px 0 rgb(60 40 20 / 0.18)); } }
+@keyframes pp-glow { 50% { scale: 1.25; filter: drop-shadow(0 0 14px #fff2a8) drop-shadow(0 4px 6px rgb(60 40 20 / 0.22)); } }
 .pp-beach__friend { position: absolute; left: 3%; top: 54%; width: clamp(90px, 16vw, 200px); }
 .pp-friend { display: block; width: 100%; filter: var(--pp-paper); }
 .pp-friend--cheer, .pp-friend--wave { animation: pp-bob 0.9s ease-in-out infinite; }
