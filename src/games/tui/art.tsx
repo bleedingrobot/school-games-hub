@@ -70,7 +70,7 @@ export function Kete({ className = '', label }: { className?: string; label?: st
   return (
     <span className={`tui-kete ${className}`} role={label ? 'img' : undefined} aria-label={label}>
       {src ? <img src={src} alt="" draggable={false} /> : <span className="tui-kete__drawn" />}
-      <span className="tui-kete__tag" aria-hidden="true">10</span>
+      <span className={`tui-kete__tag${src ? ' tui-kete__tag--painted' : ''}`} aria-hidden="true">10</span>
     </span>
   );
 }

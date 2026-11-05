@@ -27,12 +27,14 @@ export const HARD = 4;
 export const GOOD_TO_PASS = 2;
 /** Good challenges in a row that take the help down one level. */
 export const GOOD_TO_FADE = 2;
-/** Help levels go back up this many when a new step starts. */
+/** Help levels go back up this many when a new step starts, and never below `FRAMES_LEVEL`. */
 export const NEW_STEP_HELP = 2;
 export const TOP_LEVEL = 5;
+/** The lowest level with ten-frames (below it the ten is a kete): every new step starts here at least. */
+export const FRAMES_LEVEL = 4;
 /** Box 2 or more on this many of the nine facts when they first play: start at `KNOWN_START`. */
 export const KNOWN_FACTS = 7;
-export const KNOWN_START = { step: 3 as Step, level: 2 as HelpLevel };
+export const KNOWN_START = { step: 3 as Step, level: FRAMES_LEVEL as HelpLevel };
 
 export const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
 
@@ -79,7 +81,8 @@ export interface Place {
 
 /**
  * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
- * less help and the next step. Hard: one level more help at once. A new step brings two levels of help back.
+ * less help and the next step. Hard: one level more help at once. A new step brings two levels of help back, and
+ * always the ten-frames: the kete comes only once a way of asking is going well.
  */
 export function placeAfter(p: Place, right: number): Place {
   const good = right >= GOOD;
@@ -97,7 +100,7 @@ export function placeAfter(p: Place, right: number): Place {
     step = (step + 1) as Step;
     goodAtStep = 0;
     goodInRow = 0;
-    level = Math.min(TOP_LEVEL, level + NEW_STEP_HELP) as HelpLevel;
+    level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, level + NEW_STEP_HELP)) as HelpLevel;
   }
   return { step, level, goodInRow, goodAtStep };
 }

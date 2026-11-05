@@ -62,8 +62,10 @@ describe('the help level and the step', () => {
     expect(placeAfter(at({ level: 5 }), 0).level).toBe(5);
     // A second good challenge at a step passes it: help drops a level, then two come back for the new way.
     expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
+    // A new step always brings the ten-frames back, even from numbers only.
+    expect(placeAfter(at({ step: 2, level: 0, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 4 }));
     // A child who already knows it starts at step 3, help level 2.
-    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 2 });
+    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 4 });
     expect(startFor(inBox(KEYS.slice(0, 6), 3))).toEqual({ step: 1, level: 5 });
   });
 
