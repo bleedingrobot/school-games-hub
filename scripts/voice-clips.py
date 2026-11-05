@@ -48,9 +48,9 @@ SAY_AS = {
     'whā': 'fah',
     'whitu': 'fee-too',
     'Whitu': 'Fee-too',
-    # NZ English says pipi "pee-pee"; Kokoro would say "pippy".
-    'Pipi': 'Peepee',
-    'pipi': 'peepee',
+    # Te reo: a short i like "pit", then a long "ee" (James, 5 Nov 2026). "Pippee" gives pˈɪpiː; "Peepee" gave two long ees.
+    'Pipi': 'Pippee',
+    'pipi': 'pippee',
 }
 
 ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
