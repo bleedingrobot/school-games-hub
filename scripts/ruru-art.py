@@ -68,7 +68,7 @@ LANTERNS = {
 
 THINGS = {
     # Drawn 11 to 21 times in a row, small, with a number on a plate in code: simple, light and calm.
-    'post': 'one short plain pale cream wooden fence post with a flat top, seen from the front, smooth and simple',
+    'post': 'one single short round pale cream wooden pole standing upright on its own, a plain stump with a flat round top, just one lone upright, seen from the front, smooth and simple',
     # The track at help levels 5 and 4: one square per number, light so a dark number reads clearly on it.
     'lantern-square': 'one flat square paving stone glowing soft warm cream light, seen from slightly above, smooth plain top, simple soft shape',
     'moth': 'one small friendly fluffy pale moth with soft round wings, gentle and cute',
