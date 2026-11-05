@@ -39,7 +39,8 @@ are numbered and come in fives (light, then dark); stone 10 is one big flat rock
    10 ... remove the ten frame"; Kalyuga's expertise reversal: help that a child no longer needs slows them down). So the
    help fades fact by fact, from the child's own record, and comes back if they slip.
 8. **Say it the same way every time** (NCETM stem sentences): "8 and 2 make 10. Then 3 more." Tūī's Ten Tree uses the
-   same words ("ten and four is fourteen"), and both games say the te reo number after a right answer ("Tekau mā toru").
+   same words ("ten and four is fourteen"). Weka says the number in English after a right answer ("Thirteen!"); the te reo
+   numbers were taken out on 5 Nov 2026 because they did not sound right (James).
 
 ## 3. The maths
 
@@ -71,7 +72,7 @@ A wrong answer drops a fact to box 1, so its full help returns next time. Inside
 3. Third: the hand points to the right number.
 
 Also: after three goes in a row with a wrong first tap, full help comes back for the rest of the round; "Hear it again"
-reads the question again; after a right answer with help, Bella says the te reo number and the sentence ("Tekau mā toru.
+reads the question again; after a right answer with help, Bella says the number and the sentence ("13!
 10 and 3 make 13."). After every right answer the child fills in **the split they used** as a part-whole bond (James, 5 Nov 2026): the
 smaller number on top, then two empty circles in the hop colours, orange for the hops to the big rock and blue for the hops
 after it. They tap a number for each, and Bella says it in full: "You solved 9 + 5 by splitting the 5 into 1 and 4. You
