@@ -25,6 +25,24 @@ export function useAuth(): AuthState {
   return auth;
 }
 
+/** How long to wait before each extra try at loading the profile. */
+export const PROFILE_RETRY_MS = [1000, 2500];
+
+/**
+ * Loads the profile, trying again twice if it fails. Failing signs the pupil out, and a junior can only get back in
+ * with their QR badge, so one Wi-Fi hiccup while the page starts (or reloads for a new version) mustn't do that.
+ */
+async function fetchProfileWithRetries(id: string): Promise<Profile> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchMyProfile(id);
+    } catch (error) {
+      if (attempt >= PROFILE_RETRY_MS.length) throw error;
+      await new Promise((resolve) => setTimeout(resolve, PROFILE_RETRY_MS[attempt]));
+    }
+  }
+}
+
 /** Keeps track of who's signed in and loads their profile. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
@@ -46,9 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     forgetSettings(); // someone else signed in on this device
     userId.current = session.user.id;
     try {
-      setProfile(await fetchMyProfile(session.user.id));
+      const profile = await fetchProfileWithRetries(session.user.id);
+      if (userId.current !== session.user.id) return; // someone else signed in meanwhile
+      setProfile(profile);
       setStatus('signed-in');
     } catch (error) {
+      if (userId.current !== session.user.id) return;
       // Signed in but no profile: treat as signed out, with a gentle message.
       userId.current = null;
       await supabase.auth.signOut({ scope: 'local' });
