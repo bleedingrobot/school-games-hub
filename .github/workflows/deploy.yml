@@ -68,6 +68,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+      # Put back the files the last publish used for a while, so pages already open still load their games.
+      - run: node scripts/keep-old-assets.mjs dist
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
