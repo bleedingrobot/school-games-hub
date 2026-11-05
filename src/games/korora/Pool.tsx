@@ -22,7 +22,7 @@ export const backFor = (scenery: Scenery): CSSProperties => {
 export const pebblePlace = (i: number) => ({ x: 15 + i * 7.8, y: 66 + (i % 2 === 0 ? -2 : 2) });
 
 /** Where the walker stands: on the near bank before the first stone, on a stone, or on the far bank with the shoes. */
-const standAt = (at: number) => (at < 0 ? { x: 6, y: 56 } : at >= 10 ? { x: 93, y: 56 } : { ...pebblePlace(at), y: pebblePlace(at).y - 3 });
+const standAt = (at: number) => (at < 0 ? { x: 6, y: 56 } : at >= 10 ? { x: 93, y: 56 } : { ...pebblePlace(at), y: pebblePlace(at).y + 1 });
 
 interface Props {
   scenery: Scenery;

@@ -17,7 +17,7 @@ export function homeLine(title: string, doneToday: boolean): string {
   return doneToday ? `${title} ${WORDS.doneToday}` : title;
 }
 
-/** What Bella says for a right answer: with help, the te reo number and the make-ten sentence; with none, the number. */
+/** What Bella says for a right answer: with help, the number and the make-ten sentence; with none, the number. */
 export function rightLine(go: Pick<Go, 'kind' | 'answer' | 'rest'>, help: Help): string {
   if (help === 'none') return WORDS.yes(go.answer);
   return go.kind === 'back' ? WORDS.rightBack(go.answer, go.rest) : WORDS.rightAdd(go.answer, go.rest);

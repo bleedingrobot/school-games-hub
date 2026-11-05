@@ -4,10 +4,10 @@ Paints Pipi's Hidden Shells pictures (a cute little New Zealand pipi shellfish a
 docs/PIPI-PLAN.md) in ComfyUI on James's gaming PC. Runs on a computer that can reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"), never in the site build.
 Copied from scripts/hop-art.py: same graph, seeds and tidying, only the words, picture list and paths change.
 
-  python3 scripts/pipi-art.py paint OUT_DIR [names] [--style b] [--tries 2]   # OUT_DIR/<style>/<name>-<try>.png ("/" in a name becomes "_")
-  python3 scripts/pipi-art.py paint ~/dragon-art-inbox/pipi-art/set back/morning  # one style try (tries go to ~/dragon-art-inbox/pipi-art/set/b/)
+  python3 scripts/pipi-art.py paint OUT_DIR [names] [--style c] [--tries 2]   # OUT_DIR/<style>/<name>-<try>.png ("/" in a name becomes "_")
+  python3 scripts/pipi-art.py paint ~/dragon-art-inbox/pipi-art/set back/morning  # one style try (tries go to ~/dragon-art-inbox/pipi-art/set/c/)
   python3 scripts/pipi-art.py list                                            # every picture name
-  ~/.cache/rembg-venv/bin/python scripts/pipi-art.py tidy [--force]           # picks (docs/pipi-art/picks.json) → the game
+  ~/.cache/rembg-venv/bin/python scripts/pipi-art.py tidy [--force]           # picks (docs/pipi-art/picks-clay.json) → the game
 
 Tries go to ~/dragon-art-inbox/pipi-art/. The graph is Diamond Drop's (Z-Image Turbo, 8 steps, a 1.5x second pass); only the words, sizes and seeds
 change. Seeds are fixed, so a try can be painted again exactly. Use only positive wording: this model draws whatever a prompt names,
@@ -26,10 +26,11 @@ from pathlib import Path
 
 COMFY = 'http://100.97.96.115:8188'
 
-# One style only: paper cut-out, which James picked on 4 Nov 2026.
+# One style only: clay, the same words as Beanstalk, Hop and Penguin Pairs (James, 4 Nov 2026: "in the style of the other
+# foundational skills"). The first set was paper cut-out (style 'b' in ~/dragon-art-inbox/pipi-art/set/b/); the clay set is style 'c'.
 STYLES = {
-    'b': 'Layered paper cut-out craft illustration, every shape cut from flat matte coloured card with clean soft edges and a small soft shadow '
-         'under each layer, simple flat colours, gentle and calm, like a children\'s picture book made of paper. ',
+    'c': 'Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, '
+         'chunky rounded shapes, bright cheerful colours, soft studio light. ',
 }
 AGE = ' Suitable for young children aged 5 to 7.'
 SPRITE = (' Single object, centred, the whole object visible with space around it, on a plain pure white background, '
@@ -53,10 +54,11 @@ PIPI_POSES = {
 SHELL = ('One fan-shaped scallop shell seen from above, the same simple shape every time, with soft ridges fanning out from a small hinge '
          'at the bottom, the flat middle of the shell calm, smooth and plain, ')
 SHELLS = {
-    'sand': 'soft sandy beige and pale pink, matte and gentle',
-    'bronze': f'the whole shell covered edge to edge in coppery bronze, {SHINE}, all bronze from rim to centre, the middle flat and smooth',
-    'silver': f'the whole shell made of solid cool grey chrome silver foil like a shiny new spoon, {SHINE}, every ridge and the middle the same grey metallic silver, a cool blue-grey sheen',
-    'gold': f'the whole shell covered edge to edge in shining yellow gold, {SHINE}, every part of it gold, three tiny sparkles',
+    'sand': 'soft sandy beige and pale pink clay, matte and gentle',
+    # Beanstalk found clay asked to be "metal" comes out matt; wrapped in foil it shines (4 Nov 2026).
+    'bronze': f'the whole shell wrapped smoothly in shiny crinkled coppery bronze foil like a chocolate coin wrapper, {SHINE}, every part of it bronze, the middle flat and smooth',
+    'silver': f'the whole shell wrapped smoothly in shiny crinkled silver foil like a chrome mirror, {SHINE}, every ridge and the middle the same grey metallic silver',
+    'gold': f'the whole shell wrapped smoothly in shiny crinkled metallic gold foil like a gold chocolate coin wrapper, {SHINE}, every ridge and the middle the same rich metallic gold, three tiny sparkles',
 }
 
 PEARL = f'the Golden Pearl, one big round smooth pearl in {SHINE} in shining yellow gold with a soft warm glow'
@@ -73,7 +75,7 @@ FRIENDS = {
     'weta': 'a cute friendly small New Zealand weta insect, a round shiny brown body with stripes, six long spiky back legs, long thin feelers, big kind eyes and a smile, wearing a little green knitted scarf, ',
     'kiwi': ('a cute small round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, pointing straight out forward '
              'and slightly down, as long as its whole body, long and slender like a sharpened pencil, with a little round nostril at the tip, '
-             'the beak clearly the longest part of the bird; a big round egg-shaped body with fluffy shaggy brown feathers, a round bottom, '
+             'the beak clearly the longest part of the bird; seen from the side, its small round head sitting low and snug on a big round egg-shaped body with fluffy shaggy brown feathers, a round bottom, '
              'small bright dark eyes, rosy cheeks, tiny wings, thick strong grey legs and big feet with three toes, wearing a little yellow knitted scarf, '),
     'tui': 'a cute small round New Zealand tui bird with glossy dark blue-green feathers, a little white tuft at its throat, big round friendly eyes, a small dark beak and a smile, wearing a little purple knitted scarf, ',
 }
@@ -99,6 +101,11 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     'back/morning': (BEACH + 'a pale blue morning sky with a few soft white clouds.' + BACK, WIDE),
     'back/afternoon': (BEACH + 'a warm peach afternoon sky with a few soft clouds.' + BACK, WIDE),
     'back/sunset': (BEACH + 'a gold and pink sunset sky, the sea glowing softly gold.' + BACK, WIDE),
+    # The tide that washes in over the frame and back out (James, 5 Nov 2026: "an awesome wave or lovely water"). Cut out and
+    # stretched across the stage, so it is wide, fills the frame edge to edge, and its crest runs along the whole top.
+    'tide/wave': ('A wide rolling ocean wave seen from the front, one long wall of glossy see-through turquoise and blue water stretching '
+                  'from the left edge to the right edge, a big curling crest of bubbly white foam along the whole top, little splashes and '
+                  'droplets leaping up, lighter shallow water near the bottom, a flat straight bottom edge.' + SPRITE, (1216, 688)),
     'home/card': (PIPI + 'sitting on a sandy beach waving its foot, a few small pipi shells peeking out of the sand around it, and shells lined along the tideline, '
                   'a calm blue sea behind, wide landscape picture for a game title card.' + AGE, (1216, 688)),
 }
@@ -163,14 +170,14 @@ def paint(out: Path, names: list[str], style: str, tries: int):
 
 
 
-# ---- Tidying: the chosen try of each picture → src/games/hop/art/paint/<group>/<name>.webp ----
+# ---- Tidying: the chosen try of each picture → src/games/pipi/art/paint/<group>/<name>.webp ----
 
 ROOT = Path(__file__).resolve().parent.parent
 GAME_ART = ROOT / 'src' / 'games' / 'pipi' / 'art' / 'paint'
-INBOX = Path.home() / 'dragon-art-inbox' / 'pipi-art' / 'set' / 'b'
+INBOX = Path.home() / 'dragon-art-inbox' / 'pipi-art' / 'set' / 'c'
 HOME = ROOT / 'src' / 'assets' / 'home'
 # The home card goes to src/assets/home/ (docs/GAME_DEVELOPMENT_GUIDE.md, section 2).
-SIZES = {'pipi': 320, 'friends': 320, 'shells': 256, 'things': 256}
+SIZES = {'pipi': 320, 'friends': 320, 'shells': 256, 'things': 256, 'tide': 1200}
 
 
 def destination(name: str) -> tuple[str, str, str]:
@@ -188,7 +195,7 @@ def tidy(force: bool):
     from PIL import Image
     from rembg import new_session, remove
     session = None
-    picks = json.loads((ROOT / 'docs' / 'pipi-art' / 'picks.json').read_text())
+    picks = json.loads((ROOT / 'docs' / 'pipi-art' / 'picks-clay.json').read_text())
 
     def save(img, out: Path, quality: int):
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -237,7 +244,7 @@ if __name__ == '__main__':
         sys.exit()
     if len(args) < 2 or args[0] != 'paint':
         sys.exit(__doc__)
-    opts = {'--tries': '2', '--style': 'b'}
+    opts = {'--tries': '2', '--style': 'c'}
     for flag in opts:
         if flag in args:
             i = args.index(flag)

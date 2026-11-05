@@ -62,7 +62,7 @@ THINGS = {
     # Drawn sixteen to twenty times in a row, small, with a number on top: simple, flat and calm.
     'step-stone': 'one flat round grey stepping stone with a smooth plain top, seen from slightly above, a little wet at the edges, simple soft shape',
     # Stone 10: wider, flatter and warmer, so it always stands out among the grey stones.
-    'big-rock': 'one big wide flat sandy-gold coloured rock, a smooth plain flat top like a table, seen from slightly above, sturdy and friendly',
+    'big-rock': 'one big wide low flat oval stepping stone slab of sandy-gold clay, three times wider than it is tall, a single flat layer with one smooth flat top, seen from slightly above, like a big flat pebble lying on the ground',
     'golden-basket': f'the Golden Picnic Basket, a woven picnic basket with a handle made of {SHINE} in shining yellow gold, a red and white checked cloth peeking out, alone',
     'golden-basket-cushion': f'the Golden Picnic Basket, a woven picnic basket with a handle made of {SHINE} in shining yellow gold, a red and white checked cloth peeking out, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize',
     'splash': 'a lively little splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water',
@@ -71,10 +71,12 @@ THINGS = {
 
 # The friend at each later stream, after Weka's Golden Picnic Basket: birds that walk more than they fly. Face right too.
 FRIENDS = {
-    'kiwi': ('a cute round New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
-             'downwards, a big round egg-shaped body with fluffy shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
+    'kiwi': ('a cute round wingless New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved '
+             'downwards, a big round smooth egg-shaped body covered all over in fluffy hair-like shaggy brown feathers, small bright dark eyes, rosy cheeks, thick '
              'strong grey legs and big feet, wearing a little yellow knitted scarf, facing to the right, side view, '),
-    'takahe': 'a cute round chunky New Zealand takahe bird, deep blue head and chest, olive green back, a big red beak and red legs, big kind eyes, wearing a little purple knitted scarf, facing to the right, side view, ',
+    'takahe': ('a cute very plump heavy New Zealand takahe bird shaped like a big round ball, short thick sturdy red legs close under its body, '
+               'a huge thick triangular red beak, shimmering turquoise and peacock-blue head and chest, an olive green and teal back with '
+               'tiny stubby wings, big kind eyes, wearing a little purple knitted scarf, facing to the right, side view, '),
     'kakapo': 'a cute round chubby New Zealand kakapo parrot, soft moss green feathers with fine dark speckles, a pale owl-like face with whiskers, a big pale beak, big kind eyes, short strong grey legs, wearing a little red knitted scarf, facing to the right, side view, ',
     'pukeko': 'a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little orange knitted scarf, facing to the right, side view, ',
     'kea': 'a cute round New Zealand kea parrot, olive green feathers with dark edges, a flash of orange under its wings, a long curved grey beak, big cheeky eyes, wearing a little blue knitted scarf, facing to the right, side view, ',
