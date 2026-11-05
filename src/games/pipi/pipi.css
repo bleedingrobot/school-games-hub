@@ -149,10 +149,16 @@
   filter: var(--pp-paper); animation: pp-wash-in 0.65s ease-out both;
 }
 .pp-wave--out { animation: pp-wash-out 0.65s ease-in both; }
-/* The painted wave: clay water with a foam crest, stretched across the stage. */
+/* The painted wave: the clay crest on top of deep water that runs on past the bottom of the screen, so the beach never
+   shows under it as it rises (James, 5 Nov 2026). The crest overlaps the water by its solid lower half. */
 .pp-wave--painted {
-  background: var(--pp-wave) center top / cover no-repeat; opacity: 1; border-radius: 0; height: 62%;
+  top: auto; bottom: -50vh; height: calc(50vh + 45%); opacity: 1; border-radius: 0;
+  background: linear-gradient(#4b93c6, #3a7fb3 30%, #2c6a9a);
   filter: drop-shadow(0 -4px 8px rgb(20 60 80 / 0.25));
+}
+.pp-wave--painted::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%; aspect-ratio: 1200 / 366; margin-bottom: -17%;
+  background: var(--pp-wave) center top / 100% 100% no-repeat;
 }
 @keyframes pp-wash-in { from { translate: 0 100%; } }
 @keyframes pp-wash-out { from { translate: 0 0; } to { translate: 0 105%; } }
@@ -197,4 +203,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .pp-root *, .pp-root *::before, .pp-root *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+/* On a narrow screen the crest is taller than its shape, so it stays big enough to read. */
+@media (max-width: 700px) {
+  .pp-wave--painted::before { aspect-ratio: auto; height: 190px; margin-bottom: -60px; background-size: cover; }
 }
