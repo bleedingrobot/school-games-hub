@@ -119,7 +119,6 @@ function UnlimitedTurns({ classId }: { classId: string }) {
         {UNLIMITED_GAMES.map((g) => (
           <SettingToggle
             key={g.id}
-            compact
             label={g.name}
             about={`Unlimited ${g.lifts} today.`}
             value={on.value ? on.value[g.id] : null}
