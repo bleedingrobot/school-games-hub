@@ -1,4 +1,4 @@
--- Royal Decree (migration 20261105000900): reigns, riddle answers, saving, the switch and the hub hooks.
+-- Royal Decree (migration 20261106000200): reigns, riddle answers, saving, the switch and the hub hooks.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh decree, then scripts/scratch-test.sh decree supabase/tests/database/decree.test.sql
 begin;

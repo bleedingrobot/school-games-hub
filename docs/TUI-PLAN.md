@@ -1,6 +1,6 @@
 # Tūī's Ten Tree (teen numbers as ten and some more) — plan
 
-Short id `tui`. **Status: Stage 0, plan written 4 Nov 2026 (this version replaces the short first plan).** Game C in
+Short id `tui`. **Status: Stages 1–4 built 6 Nov 2026 on branch `tui` (rules, play screen and preview, server, teacher page, voice clips); going live switched on for every class.** Game C in
 `docs/EARLY-GAMES-PLAN.md`; the parts every early game shares are in section 7 there and aren't repeated here.
 
 **Settled by James, 4 Nov 2026:** the look and voice are Kiwi's Beanstalk's (clay, style B, and Bella), and the plan has
@@ -27,7 +27,9 @@ branch always holds exactly ten berries, and ten berries always fill one flax ke
    **So:** the game always *shows* the ten first and the ones after, the spoken question always says "ten and four"
    before the number word, and a reversal (41 for 14) is one of the wrong choices so the slip shows up in the records.
 2. **Te reo Māori is one of the clear languages.** 14 is *tekau mā whā*, "ten and four". Many NZ classrooms already
-   count in te reo. **So:** Bella says the te reo number in the right-answer moment on the easier help levels (James, 4 Nov).
+   count in te reo. **So:** Bella now says the number in English only, not te reo, to match Weka's Stepping Stones
+   (James, 5 Nov 2026). The right-answer line is "14! 10 and 4 is 14."
+
 3. **Ten has to become "one thing" (unitising).** Children first see 14 as fourteen ones. The big step is seeing one ten
    and four ones (Cobb and Wheatley; Clements and Sarama's composing trajectory: "10 and some more" comes before tens
    and ones to 100). **So:** the kete. Ten loose berries visibly tuck into one kete with a "10" tag, and from then on the
@@ -185,11 +187,11 @@ If a try keeps failing (the beak, the kete tag picking up writing), change only 
 
 Bella (Kokoro `af_bella`, speed 0.9) for every line, recorded with `scripts/voice-clips.py tui` (add `tui` to its list)
 from `src/games/tui/voiceLines.ts`, with a `voiceLines.test.ts` that writes `public/voice/tui/lines.json`. `SAY_AS`
-already says Tūī as "Too-ee" and Kererū; add Pīwakawaka, Korimako, Kākā, kōwhai, kete, and the te reo numbers *tekau mā
-tahi* to *tekau mā iwa* (James said yes, 4 Nov). About 150 lines: every question at every voice level for the nine facts
+already says Tūī as "Too-ee" and Kererū; add Pīwakawaka, Korimako, Kākā, kōwhai and kete.
+No te reo numbers: English only (James, 5 Nov 2026). About 150 lines: every question at every voice level for the nine facts
 and four ways, the "ten… and n more" lines, praise, the guided first go, and the prize. Bella reads the question, never
 the answer before a right tap; after a right tap she says the whole fact as a stem sentence, "Ten and four is fourteen" (the
-same words as Weka's "10 and 3 make 13": "and", never "equals"), with the arrow-cards moment. Listen to the te reo clips before they go live: Kokoro is an English voice.
+same words as Weka's "10 and 3 make 13": "and", never "equals"), with the arrow-cards moment.
 
 ## 9. Achievements
 
@@ -206,8 +208,8 @@ stand-ins drawn in code and a preview (`preview/tui`). 3. Server (migration `<ne
 ## 11. James's answers (4 Nov 2026)
 
 1. **How help fades: by the child's results** (section 4), not by the days. The colours still mark days.
-2. **Te reo numbers: yes, on the easier help levels.** After a right answer on help levels 5 to 3 Bella says
-   "Tekau mā whā. Ten and four is fourteen." Check the te reo clips by ear before they go live.
+2. **Te reo numbers: changed on 5 Nov 2026.** Bella says the number in English only, to match Weka. The right-answer
+   line is "14! 10 and 4 is 14." (First said yes on 4 Nov, with te reo on the easier help levels.)
 3. **Painting waits until James is home from work** (the gaming PC). The first try from a Mac session on 4 Nov stopped
    before it painted anything (`extra_usage_unavailable`). Steps are in section 7.
 
@@ -235,3 +237,24 @@ Later idea (parked): grow into tens and ones to 100 with several kete. That need
 - Te reo Māori counting (tekau mā tahi …): https://www.languagesandnumbers.com/how-to-count-in-maori/en/mri/
 - NZ Ministry of Education, Mathematics and Statistics, Phase 1:
   https://newzealandcurriculum.tahurangi.education.govt.nz/
+
+## Build notes (6 Nov 2026)
+
+Stages 1–4 are built on branch `tui`.
+
+- `shared/tui`: `round.ts`, `play.ts`, `progress.ts`, `server.ts`, `memoryServices.ts`, and `tui.test.ts` (4 tests).
+- `supabase/migrations/20261106000100_tui.sql`: tables `tui_progress` and `tui_rounds`; settings `tui_enabled` (default true)
+  and `tui_help` (default 'fade'); `teacher_set_tui`, `teacher_tui_class`, `teacher_tui_student`; `hub_games` hooks; five
+  achievements, one per Golden Nest per friend.
+- `supabase/functions/tui`: the server function.
+- `src/games/tui`: `TuiGame`, `Goes`, `art.tsx`, `tui.css`, words, `voiceLines`, and 162 Kokoro `af_bella` clips in
+  `public/voice/tui`.
+- `src/pages/TeacherTui.tsx`: the teacher page.
+- `preview/tui`: the preview. Run it with `npx vite --config vite.tui-preview.config.ts`.
+
+Two small choices made while building:
+
+1. The sum is always written on "how many more?" and "take the ten away" goes, even at level 5, because the picture can't
+   say the target number.
+2. The guided first go's hand points at the full branch, then the loose berries, then sweeps across all the nests. It never
+   stops on the answer.

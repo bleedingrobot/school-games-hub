@@ -4,7 +4,7 @@ import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
   it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner, Archery Challenge, Star Trader, Diamond Drop, Sky Isles and Royal Decree (Kingdom Keeper is off, kept for teachers)', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'decree']);
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'tui', 'decree']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -32,16 +32,16 @@ describe('game registry', () => {
   it('puts every game in a dashboard group, in the same order as before games said their own group', () => {
     const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
-    expect(inGroup('foundational')).toEqual(['beanstalk', 'hop', 'pipi', 'korora', 'weka']);
+    expect(inGroup('foundational')).toEqual(['beanstalk', 'hop', 'pipi', 'korora', 'weka', 'tui']);
     expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'marble', 'bond-match', 'mine', 'archery', 'diamond', 'isles', 'decree']);
     expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'trader', 'kingdom']);
     expect(ALL_GAMES.filter((g) => !g.group)).toEqual([]);
   });
 
   it('the games with a teacher switch and teacher parts say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'decree', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'tui', 'decree', 'kingdom']);
     // The teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3).
-    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'decree', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'beanstalk', 'hop', 'pipi', 'korora', 'weka', 'tui', 'decree', 'kingdom']);
   });
 
   it('finds games by id', () => {

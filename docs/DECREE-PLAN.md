@@ -94,7 +94,7 @@ At `start` the server reads `space_maths_context(player)`, makes 8 questions wit
 - **Balance** (`npx tsx scripts/decree-sim.ts`, 2,000 reigns each): a careful player lives a full reign nearly every time; a random tapper about 25% of the time (about 50% if they get 70% of riddles right); "always yes" runs out of gold in about 10 cards. Riddles clearly help but aren't needed.
 - **Art:** 26 villagers painted on the gaming PC (Z-Image Turbo), cut out, 720 px + 240 px WebPs (about 1.5 MB). Contact sheet: `docs/decree-art/contact-sheet.png`. Three needed repaints (Pip had a pig snout, Captain Bryn looked like a man, Ox had horns).
 - **Screens:** each yes/no button shows its arrows (tablets have no hover); the meters show them too while you drag. Hale gives first-reign tips and warns once when a meter is low. Fits 1366×640 and 844×390.
-- **Server:** function `decree`, migration `20261105000900_decree.sql` (pgTAP 24/24 on a scratch database), `decree_enabled` default on, hub hooks and 6 achievements.
+- **Server:** function `decree`, migration `20261106000200_decree.sql` (pgTAP 24/24 on a scratch database), `decree_enabled` default on, hub hooks and 6 achievements.
 - **Tests:** 7 (2 rules, 3 server, 2 screens).
 - **Fixed while testing:** after a reload, a riddle already answered on the server had no button to move on.
 
