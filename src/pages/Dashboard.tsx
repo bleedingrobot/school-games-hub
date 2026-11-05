@@ -192,7 +192,8 @@ export function Dashboard() {
   const nonMathsOpen = useNonMathsGamesOpen();
   const shownGames = useShownGames(nonMathsOpen);
   // The daily Foundational games' "next part" chips: one request, only when one of them is showing.
-  const nextParts = useNextParts(meId, pupil && shownGames.some((g) => g.nextPart));
+  // Teachers get them too, for their own goes, so they see what the class sees (James, 5 Nov 2026).
+  const nextParts = useNextParts(meId, shownGames.some((g) => g.nextPart));
   // Chess and checkers, 101 and Power Clash games still going wait quietly while the non-maths games are off.
   const nonMathsShut = nonMathsOpen === false;
   const inProgress = nonMathsShut ? [] : going.inProgress;
