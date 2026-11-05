@@ -32,7 +32,7 @@
 .tui-tree, .tui-play {
   position: relative;
   background:
-    var(--tui-back, none) center / cover no-repeat,
+    var(--tui-back, none) left bottom / cover no-repeat,
     radial-gradient(ellipse 60% 40% at 50% 30%, #8fb84a, transparent 70%),
     linear-gradient(var(--tui-sky) 0 70%, #9bc46a 70% 100%);
 }
