@@ -1,0 +1,59 @@
+[
+ {
+  "id": "R1",
+  "kind": "fix",
+  "title": "Fix Tūī's fading bug",
+  "games": [
+   "Tūī"
+  ],
+  "effort": "S",
+  "impact": "High",
+  "why": "A strong child's help is wiped back to level 5 on every step pass; make the fade stick.",
+  "plan": "docs/plans/maths-review/R1-tui-fading-bug.md",
+  "prompt": "Work in /Users/jriley/games-hub-isles. Create a new branch and worktree from origin/main called fix/tui-fading. Read docs/GAME_DEVELOPMENT_GUIDE.md first, then docs/plans/maths-review/R1-tui-fading-bug.md and follow it. Steps: (1) in shared/tui/round.ts change NEW_STEP_HELP to 1 and change placeAfter so a step pass that happens on the same go as a fade keeps the fade (new step adds nothing), and a pass with no fade adds NEW_STEP_HELP, always floored at FRAMES_LEVEL and capped at TOP_LEVEL; update the comments. (2) Update shared/tui/tui.test.ts as the plan says: fix the existing step-pass expectations, add the no-fade-pass test and the 8-challenge strong-child test (step 5 reached at level 4 or lower). (3) Update the TUI_ABOUT text in src/games/tui/teacher.ts. (4) Rebuild only the tui function: npm run build:functions -- tui, and commit its index.ts. (5) Run the Tūī tests, typecheck and lint. Do not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step; open a PR when done."
+ },
+ {
+  "id": "R2",
+  "kind": "fix",
+  "title": "Fair step-up for careful children (junior quick time, clock starts after the voice)",
+  "games": [
+   "Hop",
+   "Penguin Pairs",
+   "Pipi",
+   "Beanstalk",
+   "Tūī",
+   "Weka"
+  ],
+  "effort": "S",
+  "impact": "High",
+  "why": "The 5-second rule starts while the voice is still reading and is too short for juniors, so careful children never move up.",
+  "plan": "docs/plans/maths-review/R2-fair-step-up.md",
+  "prompt": "Work in /Users/jriley/games-hub-isles. This is two branches, in order. Read docs/GAME_DEVELOPMENT_GUIDE.md first, then docs/plans/maths-review/R2-fair-step-up.md and follow it.\n\nBranch 1: create maths-junior-quick from origin/main (own worktree). It is shared code, so tell James what it touches before starting. Steps: (1) src/speech.ts: speak(text, clipFolder?, onEnd?) calls onEnd once when the clip or browser voice finishes (also on error or fallback end), never when cancelled, and straight away if there is no voice. (2) New shared/juniorQuick.ts exporting JUNIOR_QUICK_MS = 10_000. (3) supabase/functions/_shared/recordAnswers.ts: new optional last parameter quickMs, used as quick_ms ahead of quickMsForPack(pack); extend recordAnswers.test.ts. (4) Add shared/juniorQuick.test.ts as in the plan. (5) Rebuild every function index.ts that bundles recordAnswers (npm run build:functions), run all checks. Do not touch shared/maths. Stop and tell James before any live step (this redeploys about 20 functions, so it should merge outside school hours); open a PR when done.\n\nBranch 2 (after branch 1 has merged): create junior-quick-games from origin/main. It touches the six game folders (hop, korora = Penguin Pairs, pipi, tui, weka, beanstalk) only because each change is one line per game. Steps: (1) in each *Game.tsx change say to (text, onEnd?) => { if (on) speak(text, VOICE_FOLDER, onEnd); else onEnd?.(); } and widen the say prop type. (2) in each game's clock lines (Hops.tsx:56, korora/Goes.tsx:92, pipi/Goes.tsx:92, tui/Goes.tsx:80, weka/Goes.tsx:142, :203, :273, beanstalk/Round.tsx:64) keep since.current = Date.now() and also reset it from the question line's say callback, guarded by a live flag (cleared in the effect cleanup) and a tapped flag. (3) in supabase/functions/<game>/entry.ts pass undefined, JUNIOR_QUICK_MS to recordMathsAnswers; use JUNIOR_QUICK_MS in shared/hop/server.ts, shared/korora/server.ts, shared/pipi/server.ts, shared/weka/server.ts and shared/tui/memoryServices.ts instead of quickMsForPack. (4) rebuild only those six functions (npm run build:functions -- hop korora pipi tui weka beanstalk) and commit their index.ts. (5) at most one new test (Hop: say is called with a callback and it resets the clock), then run the six games' tests, typecheck and lint. Stop and tell James before any live step; open a PR when done."
+ },
+ {
+  "id": "R3",
+  "kind": "fix",
+  "title": "Quick looks fixes",
+  "games": [
+   "Quick looks"
+  ],
+  "effort": "S",
+  "impact": "Med",
+  "why": "Keep-picture practice shouldn't pass stages, save the reaction time, add a demo first, and fix two help wordings.",
+  "plan": "docs/plans/maths-review/R3-quick-looks-fixes.md",
+  "prompt": "Work in /Users/jriley/games-hub-isles. Create a new branch and worktree from origin/main called quick-looks-fixes. Read docs/GAME_DEVELOPMENT_GUIDE.md first, then docs/plans/maths-review/R3-quick-looks-fixes.md and follow it. Everything is inside src/subitising (client only). Steps: (1) keep-picture practice: add guided to AnswerResult in FlashRunner.tsx, save guided answers as helped (subh:/gaph: keys, ignored by progressFrom) in SubitisingApp.tsx onPracticeAnswer, count a round's pictures with a ref so a guided round still finishes, and add the summary line when guided mode is on. (2) save reaction time: thinkingMs on QuickAnswerEvent, ms: Math.round(thinkingMs) in saving.ts, typingMs stays 0. (3) a demo first: a new 'demo' screen before the starting check for a new pupil (one stage 1 line of 3 dots, picture stays, answer saved nowhere), with an intro prop on FlashRunner and the words in the plan. (4) help-prompt wording: three helped lines (groups, one dot, empty squares) chosen in FlashRunner, and gapFeedback gets Yes! / Not quite. (5) update allVoiceLines and refresh the list with WRITE_VOICE_LINES=1 npx vitest run src/subitising/voiceLines.test.ts; tell James the new clips need making with scripts/voice-clips.py quick-looks on his Mac. (6) tests: saving.test.ts, the guided-mode test in SubitisingApp.test.tsx; run the checks. Do not touch shared/maths, shared/training, src/maths, src/styles.css or src/components. Stop and tell James before any live step; open a PR when done."
+ },
+ {
+  "id": "R4",
+  "kind": "fix",
+  "title": "Beanstalk: show the target, no duplicate numbers, a bridge from 10 to 100",
+  "games": [
+   "Beanstalk"
+  ],
+  "effort": "S",
+  "impact": "Med",
+  "why": "The target is only spoken, the same number can float twice, and 10 to 100 has no bridge.",
+  "plan": "docs/plans/maths-review/R4-beanstalk-target-and-bridge.md",
+  "prompt": "Work in /Users/jriley/games-hub-isles. Create a new branch and worktree from origin/main called beanstalk-target-bridge. Read docs/GAME_DEVELOPMENT_GUIDE.md first, then docs/plans/maths-review/R4-beanstalk-target-and-bridge.md and follow it. Steps: (1) Round.tsx: a visible \"Make 10/100/1000\" badge above the tray with a Hear it again button (speaks the existing tapTwo line); keep the heading for screen readers; styles in beanstalk.css; words in words.ts. (2) shared/beanstalk/round.ts: change the order leaves arrive so no number is on screen twice except the 5+5 pair (first three pairs with different numbers; each new pair is the next in the queue whose numbers aren't on screen, else the next in order), computed in floating/replay so server and browser agree; the round must still always be finishable. (3) the bridge: on the first challenge of a new 100 or 1000 beanstalk, turn on the guide hand and show and speak the one-line bridge (\"Each dot is a ten. 7 tens and 3 tens make 10 tens. That is 100.\", with the first pair's real numbers; hundreds for 1000); add the lines to allVoiceLines in voiceLines.ts and refresh the lines list, and tell James the new clips need making with scripts/voice-clips.py beanstalk on his Mac. (4) tests as in the plan (no duplicates over 200 seeds and shuffled right-pair orders, replay unchanged, badge and bridge screens). (5) rebuild only the beanstalk function (npm run build:functions -- beanstalk) and commit its index.ts; run the checks. Do not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step (merge outside school hours: a round in progress could be refused); open a PR when done."
+ }
+]
