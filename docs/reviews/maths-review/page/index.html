@@ -299,7 +299,7 @@ html { scroll-behavior: smooth; }
         <div class="num" aria-hidden="true">${n}</div>
         <h3>${esc(r.title)}</h3>
         <div class="chips">
-          <span class="chip kind">${r.kind === 'new-game' ? 'New game' : 'Fix'} ${esc(r.id)}</span>
+          <span class="chip kind">${r.kind === 'new-game' ? 'New game' : r.kind === 'kit' ? 'Game kit' : 'Fix'} ${esc(r.id)}</span>
           <span class="chip">Effort ${esc(r.effort)}</span>
           <span class="chip">Impact ${esc(r.impact)}</span>
           ${(r.games || []).map((g) => `<span class="chip">${esc(g)}</span>`).join('')}

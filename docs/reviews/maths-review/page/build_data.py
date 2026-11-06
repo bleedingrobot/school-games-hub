@@ -8,7 +8,7 @@ for name in ['data-quick.json', 'data-fixes.json', 'data-new.json']:
     if p.exists():
         for r in json.loads(p.read_text()):
             recs_by_id[r['id']] = r
-ORDER = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'N1', 'N2', 'R8', 'N3', 'N4', 'R9', 'N5', 'N6']
+ORDER = ['R1', 'R2', 'R3', 'R4', 'R5', 'K1', 'R6', 'R7', 'N1', 'N2', 'R8', 'N3', 'N4', 'R9', 'N5', 'N6']
 recs = [recs_by_id[i] for i in ORDER if i in recs_by_id]
 repo = root.parent.parent.parent
 for r in recs:
