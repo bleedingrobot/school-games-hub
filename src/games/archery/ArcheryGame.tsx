@@ -141,10 +141,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     }
   }
 
-  async function answer(id: number, accept: boolean) {
+  async function answer(id: number, accept: boolean, snooze = false) {
     setDuelBusy(true);
     setAskProblem('');
-    const r = await api.duelAnswer(id, accept);
+    const r = await (snooze ? api.duelSnooze(id) : api.duelAnswer(id, accept));
     setDuelBusy(false);
     if (!accept || (!r.ok && (r.code === 'late' || r.code === 'busy'))) {
       duels.forget(id);
@@ -404,7 +404,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       {ask && (
         <ChallengeAsk
           key={ask.duel} ask={ask} serverNow={duels.serverNow} busy={duelBusy} problem={askProblem}
-          onAccept={() => void answer(ask.duel, true)} onDecline={() => void answer(ask.duel, false)} onGone={() => duels.forget(ask.duel)}
+          onAccept={() => void answer(ask.duel, true)} onDecline={() => void answer(ask.duel, false)}
+          onSnooze={() => void answer(ask.duel, false, true)} onGone={() => duels.forget(ask.duel)}
         />
       )}
     </div>

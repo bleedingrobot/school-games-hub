@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chooseForRun } from '../../../shared/archery/bot';
-import { CHALLENGE_MS, DUEL_GRACE_MS, DUEL_IDLE_MS, DUEL_MAX_TIMEOUTS, DUEL_TURN_MS, HERE_FOR_MS, PACK_MS } from '../../../shared/archery/config';
+import { CHALLENGE_MS, DUEL_GRACE_MS, DUEL_IDLE_MS, DUEL_MAX_TIMEOUTS, DUEL_TURN_MS, HERE_FOR_MS, PACK_MS, SNOOZE_MS } from '../../../shared/archery/config';
 import { duelSetup, replayDuel, type DuelRow } from '../../../shared/archery/duel';
 import { DUEL_POINTS, DUEL_WIN_POINTS } from '../../../shared/archery/points';
 import type { PlayerSetup } from '../../../shared/archery/types';
@@ -95,6 +95,25 @@ describe('challenging a classmate', () => {
     expect(late.body.code).toBe('late');
     h.hub.here(ANA);
     expect(h.row(again.body.duel.id).status).toBe('expired');
+  });
+
+  it('snooze says no, and the sender cannot challenge that classmate again for 30 minutes (the other way still works)', async () => {
+    const h = setup();
+    const c = await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'city' });
+    expect((await h.send(ANA, { action: 'duel-answer', duel: c.body.duel.id, accept: false, snooze: true })).status).toBe(403);
+    const snoozed = await h.send(BEN, { action: 'duel-answer', duel: c.body.duel.id, accept: false, snooze: true });
+    expect(snoozed.body.duel.status).toBe('declined');
+    expect(h.hub.here(ANA).online.find((m) => m.id === BEN)?.snoozed).toBe(true);
+    expect(h.hub.here(BEN).online.find((m) => m.id === ANA)?.snoozed).toBe(false);
+    const refused = await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'city' });
+    expect(refused.body.code).toBe('snoozed');
+    const back = await h.send(BEN, { action: 'duel-challenge', request: h.req(), other: ANA, world: 'city' });
+    expect(back.status).toBe(200);
+    await h.send(BEN, { action: 'leave', duel: back.body.duel.id });
+    h.clock.now += SNOOZE_MS + 1;
+    h.hub.here(ANA);
+    h.hub.here(BEN);
+    expect((await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'city' })).status).toBe(200);
   });
 
   it('counts a challenge sent twice once, and a new one replaces the old', async () => {
@@ -339,7 +358,7 @@ describe('a classmate fight', () => {
     expect(h.hub.readDuel(ANA, id)?.id).toBe(id);
     expect(h.hub.readDuel(CAT, id)).toBeNull();
     expect(h.hub.here(CAT).online.map((o) => o.id)).toEqual([]);
-    expect(Object.keys(h.hub.here(BEN).online[0])).toEqual(['id', 'name', 'avatar', 'busy']);
+    expect(Object.keys(h.hub.here(BEN).online[0])).toEqual(['id', 'name', 'avatar', 'busy', 'snoozed']);
   });
 });
 

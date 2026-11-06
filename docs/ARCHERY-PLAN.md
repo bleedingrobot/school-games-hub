@@ -573,3 +573,15 @@ The classmate fight numbers are from the two-player preview, which runs **both**
 **Step 4, checked from outside 22 Oct 2026 (nothing changed):** signed out, every Archery table (including `archery_duels`) and every Archery function, `archery_here` and `teacher_archery_summary` included, answers 42501. As a real pupil, inside a transaction rolled back afterwards: the five server-only tables 42501; `archery_state`, `archery_note`, `archery_counts` and `archery_duel_challenge` 42501; `teacher_set_archery` and `teacher_archery_summary` refused (42501); `archery_here()` answers `{"off": true}` (the game is off); no classmate fights to see. Afterwards still no Archery rows anywhere and the switch off everywhere. **Next: step 5 (the merge-step edits and merging to `main`), only on James's word.**
 
 **Step 5, the merge (pull request, James's choice), 22 Oct 2026:** the merge-step additions: `archeryChallenge` appended to `GAMES` behind `archeryOn()` (and the registry test), `'archery'` at the end of `FUNCTIONS`, the four `archery:*` scripts at the end of `package.json`, `dist-preview-archery/` in `.gitignore`, Archery's lines in `shared/README.md` and `docs/PRIVACY-SUMMARY.md`, and **`ON = true`** in `src/games/archery/switch.ts` (the card still hides while the teacher switch is off). `origin/main` merged again (up to date). `npm run test:all` 4,683 passed, typecheck and build fine. **Next, after James merges:** watch "Test and publish" go green, then step 6 (try it as a teacher, and a classmate fight on two devices with two pupil accounts in the same class).
+
+## Snooze a challenge (6 Nov 2026)
+
+**James asked:** when a classmate challenges you, a button to snooze them for 30 minutes, and they can't challenge you again in that time.
+
+**Built** (branch `archery-snooze`):
+- The challenge pop-up has a third button: **"Snooze Speedy Otter 7 for 30 min"**. It says no to this challenge (the sender sees the usual "said no") and the sender can't challenge this pupil again for 30 minutes (`SNOOZE_MS` in `shared/archery/config.ts`). It's one way: the pupil who snoozed can still challenge the other.
+- The snoozed pupil's Challenge a classmate list says **"Not now"** beside that classmate instead of a Challenge button (it updates with the next "I'm here", within 30 s). If they try anyway, the server says "That classmate isn't taking challenges from you just now. Try again later, or fight a bot!"
+- Migration **`20261106000400_archery_snooze.sql`**: `archery_snoozes` (who snoozed whom, until when; no pupil access), `archery_duel_snooze()` (server only), and `archery_duel_challenge()`, `archery_here()` and `archery_season()` re-made as before plus the snooze (New Season clears snoozes).
+- The server function: `duel-answer` with `{ accept: false, snooze: true }`.
+
+**Tests:** database `archery_snooze.test.sql` 9 checks pass on a throw-away copy (as do `archery`, `archery_classmates`, `archery_hub`, `game_hooks`); one new function test; the pop-up test presses Snooze. Tried in the two-player preview: Ben snoozed Ana, Ana saw "said no" and then "Not now" beside Ben.

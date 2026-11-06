@@ -201,6 +201,8 @@ export function archeryApi(send: Transport, player = 'me') {
     // ---- Classmate fights: every reply has the fight as it now is (also when it was refused, if there is one) ----
     duelChallenge: (other: string, world: WorldId, request = requestId()) => duel({ action: 'duel-challenge', request, other, world }),
     duelAnswer: (id: number, accept: boolean) => duel({ action: 'duel-answer', duel: id, accept }),
+    /** Says no and snoozes whoever sent it (SNOOZE_MS): they can't challenge this pupil again until it runs out. */
+    duelSnooze: (id: number) => duel({ action: 'duel-answer', duel: id, accept: false, snooze: true }),
     duelPack: (id: number, pack: PlayerSetup) => duel({ action: 'duel-pack', duel: id, pack }),
     /** `version` is the fight the screen is looking at, so a shot sent twice is played once. */
     duelShot: (id: number, version: number, shot: Shot) => duel({ action: 'shot', duel: id, version, shot }),

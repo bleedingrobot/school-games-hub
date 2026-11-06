@@ -156,6 +156,8 @@ export interface Classmate {
   avatar: Record<string, unknown>;
   /** In a classmate fight already. */
   busy: boolean;
+  /** They pressed "Snooze" on your challenge: you can't challenge them for a while. */
+  snoozed: boolean;
 }
 
 /** A challenge waiting for this pupil's answer. */
@@ -185,7 +187,7 @@ export function parseHere(raw: unknown): HereReply | null {
   if (raw.duels === false) return { duelsOff: true, online: [], asks: [], duel: null };
   const online = Array.isArray(raw.online)
     ? raw.online.filter(isObj).filter((o) => typeof o.id === 'string' && typeof o.name === 'string')
-      .map((o) => ({ id: o.id as string, name: o.name as string, avatar: isObj(o.avatar) ? o.avatar : {}, busy: o.busy === true }))
+      .map((o) => ({ id: o.id as string, name: o.name as string, avatar: isObj(o.avatar) ? o.avatar : {}, busy: o.busy === true, snoozed: o.snoozed === true }))
     : [];
   const asks = Array.isArray(raw.asks)
     ? raw.asks.filter(isObj).filter((a) => Number.isSafeInteger(Number(a.duel)) && typeof a.deadline === 'string')

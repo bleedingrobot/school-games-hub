@@ -133,6 +133,9 @@ Deno.serve(
     async duelAnswer(player, duel, accept, packMs) {
       return withDuel(await call<{ result: 'ok' | 'late' | 'busy' | 'not-yours'; duel?: unknown }>('archery_duel_answer', { player, duel, accept, pack_ms: packMs }));
     },
+    async duelSnooze(player, duel, snoozeMs) {
+      return withDuel(await call<{ result: 'ok' | 'not-yours'; duel?: unknown }>('archery_duel_snooze', { player, duel, snooze_ms: snoozeMs }));
+    },
     async duelPack(player, duel, pack, turnMs) {
       return withDuel(await call<{ result: 'ok' | 'already' | 'gear' | 'late' | 'not-yours'; duel?: unknown; state?: never }>('archery_duel_pack', { player, duel, pack, turn_ms: turnMs }));
     },

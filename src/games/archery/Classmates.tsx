@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Ask, Classmate } from '../../../shared/archery/duel';
+import { SNOOZE_MS } from '../../../shared/archery/config';
 import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
 import { WORLD_HINTS, WORLD_NAMES } from './text';
 
@@ -62,7 +63,7 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
           {online.map((c) => (
             <li key={c.id} className="ar-mate">
               <span className="ar-mate__name">{c.name}</span>
-              {c.busy ? <span className="ar-mate__busy">In a fight</span> : (
+              {c.snoozed ? <span className="ar-mate__busy">Not now</span> : c.busy ? <span className="ar-mate__busy">In a fight</span> : (
                 <button type="button" className="button button--play ar-btn" disabled={sending} aria-label={`Challenge ${c.name} in the ${WORLD_NAMES[world]}`} onClick={() => onChallenge(c)}>
                   Challenge
                 </button>
@@ -79,13 +80,15 @@ export function ClassmatesScreen({ online, offline, world, sending, problem, onW
 }
 
 /** Someone has challenged you: a pop-up over whatever screen you're on, answered with a tap or the keyboard. */
-export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDecline, onGone }: {
+export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDecline, onSnooze, onGone }: {
   ask: Ask;
   serverNow: () => number;
   busy: boolean;
   problem: string;
   onAccept: () => void;
   onDecline: () => void;
+  /** Say no, and they can't challenge you again for SNOOZE_MS. */
+  onSnooze: () => void;
   /** Its minute ran out. */
   onGone?: () => void;
 }) {
@@ -105,6 +108,7 @@ export function ChallengeAsk({ ask, serverNow, busy, problem, onAccept, onDeclin
         <div className="ar-row">
           <button type="button" className="button button--play ar-btn" disabled={busy} onClick={onAccept}>Accept</button>
           <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onDecline}>Say no</button>
+          <button type="button" className="button button--light ar-btn" disabled={busy} onClick={onSnooze}>Snooze {ask.from} for {SNOOZE_MS / 60_000} min</button>
         </div>
       </div>
     </div>

@@ -6791,6 +6791,8 @@ const DUEL_GRACE_MS = 2e3;
 const CHALLENGE_MS = 6e4;
 /** Once a challenge is accepted, both have this long to pack their quivers. */
 const PACK_MS = 12e4;
+/** "Snooze for 30 min" on a challenge: whoever sent it can't challenge you again for this long (James, 6 Nov 2026). */
+const SNOOZE_MS = 18e5;
 const ARROWS = [
 	{
 		id: "plain",
@@ -10209,7 +10211,8 @@ var RateLimiter = class {
 * their turn, plays the shot with the game's own engine and saves "only if nothing has changed since it looked".
 *
 *   duel-challenge  {request, other, world}   sends a challenge (same school and class only);
-*   duel-answer     {duel, accept}            the classmate says yes (both pack) or no;
+*   duel-answer     {duel, accept, snooze?}   the classmate says yes (both pack) or no (snooze: and the sender can't challenge
+*                                             them again for SNOOZE_MS);
 *   duel-pack       {duel, pack}              packs a quiver (the gear comes out of the bag); both packed = the fight starts;
 *   shot            {duel, version, shot}     a shot on your own turn;
 *   times-up        {duel}                    the turn's time ran out (the server checks its own clock): the turn is used up;
@@ -10240,6 +10243,7 @@ const SAY = {
 	otherClass: "You can only challenge classmates in your own class.",
 	inFight: "One of you is already in a fight. Try again when it's over.",
 	theirsOff: "Archery Challenge isn't switched on for their class.",
+	snoozed: "That classmate isn't taking challenges from you just now. Try again later, or fight a bot!",
 	late: "That challenge has run out.",
 	notStarted: "The fight hasn't started yet.",
 	over: "This fight has already ended.",
@@ -10290,7 +10294,7 @@ async function handleDuel(services, player, action, body, switches, everything) 
 		if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
 		const why = r.value.result;
 		if (why !== "ok" || r.value.duel === null) {
-			const words = why === "away" ? SAY.away : why === "class" ? SAY.otherClass : why === "busy" ? SAY.inFight : why === "off" ? SAY.theirsOff : SAY.bad;
+			const words = why === "away" ? SAY.away : why === "class" ? SAY.otherClass : why === "busy" ? SAY.inFight : why === "off" ? SAY.theirsOff : why === "snoozed" ? SAY.snoozed : SAY.bad;
 			return no(409, words, { code: why });
 		}
 		const loaded = await services.duelLoad(r.value.duel);
@@ -10330,6 +10334,12 @@ async function handleDuel(services, player, action, body, switches, everything) 
 	});
 	if (action === "duel-answer") {
 		if (typeof body.accept !== "boolean") return no(400, SAY.bad);
+		if (body.snooze === true && !body.accept) {
+			const r = await services.duelSnooze(player, id, SNOOZE_MS);
+			if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
+			if (r.value.result === "not-yours") return no(403, SAY.notYours);
+			return ok({ duel: r.value.duel });
+		}
 		const r = await services.duelAnswer(player, id, body.accept, PACK_MS);
 		if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
 		const { result, duel } = r.value;
@@ -10931,6 +10941,13 @@ Deno.serve(makeHandler({
 			duel,
 			accept,
 			pack_ms: packMs
+		}));
+	},
+	async duelSnooze(player, duel, snoozeMs) {
+		return withDuel(await call("archery_duel_snooze", {
+			player,
+			duel,
+			snooze_ms: snoozeMs
 		}));
 	},
 	async duelPack(player, duel, pack, turnMs) {

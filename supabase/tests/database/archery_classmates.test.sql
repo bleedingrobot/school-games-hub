@@ -68,7 +68,7 @@ select is(public.archery_here() -> 'online', '[]'::jsonb, 'Ana is here, alone');
 select pg_temp.ben();
 select is(jsonb_array_length(public.archery_here() -> 'online'), 1, 'Ben sees Ana');
 select is(public.archery_here() -> 'online' -> 0 ->> 'id', pg_temp.id('0a')::text, '... by id');
-select is((select array_agg(k order by k) from jsonb_object_keys(public.archery_here() -> 'online' -> 0) k), array['avatar', 'busy', 'id', 'name'],
+select is((select array_agg(k order by k) from jsonb_object_keys(public.archery_here() -> 'online' -> 0) k), array['avatar', 'busy', 'id', 'name', 'snoozed'],
   '... with a display name and avatar only (no coins or maths)');
 select pg_temp.cat();
 select is(public.archery_here() -> 'online', '[]'::jsonb, 'Cat (another class) sees nobody');
