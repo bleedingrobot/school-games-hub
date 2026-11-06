@@ -26,6 +26,7 @@
  * pick of each fact. The first step is help only and is never sent.
  */
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { helpWithSetting, STRUGGLE_GOES } from '../../../shared/kit/help';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
 import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
@@ -43,8 +44,6 @@ const WOBBLE_MS = 500;
 const HOP_MS = 260;
 const COUNT_MS = 700;
 const GUIDE_MS = 2600;
-/** After this many goes in a row with a wrong first tap, full help comes back for the rest of the round. */
-const STRUGGLE_GOES = 3;
 /**
  * The stones shown: 1 to 20. Every go starts, lands and passes within 5 to 20, so a wide screen shows 5 to 20 in one
  * line; a narrow one shows two rows of ten (1 to 10 ending at the big rock, then 11 to 20), like a twenty-frame.
@@ -55,7 +54,7 @@ const STONES = Array.from({ length: 20 }, (_, i) => i + 1);
 const MORE: Record<Help, Help> = { none: 'faint', faint: 'full', split: 'full', full: 'full' };
 
 /** The teacher's setting on top of the go's own help. */
-export const helpFor = (go: Help, setting: HelpSetting): Help => (setting === 'always' ? 'full' : setting === 'off' ? 'none' : go);
+export const helpFor = (go: Help, setting: HelpSetting): Help => helpWithSetting(go, setting, { always: 'full', off: 'none' });
 
 interface Props {
   round: Round;
