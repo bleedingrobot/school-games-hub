@@ -8,8 +8,8 @@
   "text": "Now tap the leaf the hand points to."
  },
  {
-  "slug": "try-again",
-  "text": "Try again!"
+  "slug": "let-s-look-together",
+  "text": "Let's look together."
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
@@ -86,6 +86,206 @@
  {
   "slug": "9-and-1-make-10",
   "text": "9 and 1 make 10!"
+ },
+ {
+  "slug": "1-and-2-make-3-not-enough",
+  "text": "1 and 2 make 3. Not enough."
+ },
+ {
+  "slug": "1-and-3-make-4-not-enough",
+  "text": "1 and 3 make 4. Not enough."
+ },
+ {
+  "slug": "1-and-4-make-5-not-enough",
+  "text": "1 and 4 make 5. Not enough."
+ },
+ {
+  "slug": "1-and-5-make-6-not-enough",
+  "text": "1 and 5 make 6. Not enough."
+ },
+ {
+  "slug": "1-and-6-make-7-not-enough",
+  "text": "1 and 6 make 7. Not enough."
+ },
+ {
+  "slug": "1-and-7-make-8-not-enough",
+  "text": "1 and 7 make 8. Not enough."
+ },
+ {
+  "slug": "1-and-8-make-9-just-one-more-would-make-10",
+  "text": "1 and 8 make 9. Just one more would make 10."
+ },
+ {
+  "slug": "1-and-1-2-3-4-5-6-7-8-9-more-make-10",
+  "text": "1 and 1, 2, 3, 4, 5, 6, 7, 8, 9 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-1",
+  "text": "Now you try: what goes with 1?"
+ },
+ {
+  "slug": "2-and-3-make-5-not-enough",
+  "text": "2 and 3 make 5. Not enough."
+ },
+ {
+  "slug": "2-and-4-make-6-not-enough",
+  "text": "2 and 4 make 6. Not enough."
+ },
+ {
+  "slug": "2-and-5-make-7-not-enough",
+  "text": "2 and 5 make 7. Not enough."
+ },
+ {
+  "slug": "2-and-6-make-8-not-enough",
+  "text": "2 and 6 make 8. Not enough."
+ },
+ {
+  "slug": "2-and-7-make-9-just-one-more-would-make-10",
+  "text": "2 and 7 make 9. Just one more would make 10."
+ },
+ {
+  "slug": "2-and-9-make-11-just-one-too-many",
+  "text": "2 and 9 make 11. Just one too many."
+ },
+ {
+  "slug": "2-and-1-2-3-4-5-6-7-8-more-make-10",
+  "text": "2 and 1, 2, 3, 4, 5, 6, 7, 8 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-2",
+  "text": "Now you try: what goes with 2?"
+ },
+ {
+  "slug": "3-and-4-make-7-not-enough",
+  "text": "3 and 4 make 7. Not enough."
+ },
+ {
+  "slug": "3-and-5-make-8-not-enough",
+  "text": "3 and 5 make 8. Not enough."
+ },
+ {
+  "slug": "3-and-6-make-9-just-one-more-would-make-10",
+  "text": "3 and 6 make 9. Just one more would make 10."
+ },
+ {
+  "slug": "3-and-8-make-11-just-one-too-many",
+  "text": "3 and 8 make 11. Just one too many."
+ },
+ {
+  "slug": "3-and-9-make-12-that-is-too-many",
+  "text": "3 and 9 make 12. That is too many."
+ },
+ {
+  "slug": "3-and-1-2-3-4-5-6-7-more-make-10",
+  "text": "3 and 1, 2, 3, 4, 5, 6, 7 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-3",
+  "text": "Now you try: what goes with 3?"
+ },
+ {
+  "slug": "4-and-5-make-9-just-one-more-would-make-10",
+  "text": "4 and 5 make 9. Just one more would make 10."
+ },
+ {
+  "slug": "4-and-7-make-11-just-one-too-many",
+  "text": "4 and 7 make 11. Just one too many."
+ },
+ {
+  "slug": "4-and-8-make-12-that-is-too-many",
+  "text": "4 and 8 make 12. That is too many."
+ },
+ {
+  "slug": "4-and-9-make-13-that-is-too-many",
+  "text": "4 and 9 make 13. That is too many."
+ },
+ {
+  "slug": "4-and-1-2-3-4-5-6-more-make-10",
+  "text": "4 and 1, 2, 3, 4, 5, 6 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-4",
+  "text": "Now you try: what goes with 4?"
+ },
+ {
+  "slug": "5-and-6-make-11-just-one-too-many",
+  "text": "5 and 6 make 11. Just one too many."
+ },
+ {
+  "slug": "5-and-7-make-12-that-is-too-many",
+  "text": "5 and 7 make 12. That is too many."
+ },
+ {
+  "slug": "5-and-8-make-13-that-is-too-many",
+  "text": "5 and 8 make 13. That is too many."
+ },
+ {
+  "slug": "5-and-9-make-14-that-is-too-many",
+  "text": "5 and 9 make 14. That is too many."
+ },
+ {
+  "slug": "5-and-1-2-3-4-5-more-make-10",
+  "text": "5 and 1, 2, 3, 4, 5 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-5",
+  "text": "Now you try: what goes with 5?"
+ },
+ {
+  "slug": "6-and-7-make-13-that-is-too-many",
+  "text": "6 and 7 make 13. That is too many."
+ },
+ {
+  "slug": "6-and-8-make-14-that-is-too-many",
+  "text": "6 and 8 make 14. That is too many."
+ },
+ {
+  "slug": "6-and-9-make-15-that-is-too-many",
+  "text": "6 and 9 make 15. That is too many."
+ },
+ {
+  "slug": "6-and-1-2-3-4-more-make-10",
+  "text": "6 and 1, 2, 3, 4 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-6",
+  "text": "Now you try: what goes with 6?"
+ },
+ {
+  "slug": "7-and-8-make-15-that-is-too-many",
+  "text": "7 and 8 make 15. That is too many."
+ },
+ {
+  "slug": "7-and-9-make-16-that-is-too-many",
+  "text": "7 and 9 make 16. That is too many."
+ },
+ {
+  "slug": "7-and-1-2-3-more-make-10",
+  "text": "7 and 1, 2, 3 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-7",
+  "text": "Now you try: what goes with 7?"
+ },
+ {
+  "slug": "8-and-9-make-17-that-is-too-many",
+  "text": "8 and 9 make 17. That is too many."
+ },
+ {
+  "slug": "8-and-1-2-more-make-10",
+  "text": "8 and 1, 2 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-8",
+  "text": "Now you try: what goes with 8?"
+ },
+ {
+  "slug": "9-and-1-more-make-10",
+  "text": "9 and 1 more make 10."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-9",
+  "text": "Now you try: what goes with 9?"
  },
  {
   "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
@@ -188,6 +388,206 @@
   "text": "Each dot is a ten. 9 tens and 1 ten make 10 tens. That is 100."
  },
  {
+  "slug": "10-and-20-make-30-not-enough",
+  "text": "10 and 20 make 30. Not enough."
+ },
+ {
+  "slug": "10-and-30-make-40-not-enough",
+  "text": "10 and 30 make 40. Not enough."
+ },
+ {
+  "slug": "10-and-40-make-50-not-enough",
+  "text": "10 and 40 make 50. Not enough."
+ },
+ {
+  "slug": "10-and-50-make-60-not-enough",
+  "text": "10 and 50 make 60. Not enough."
+ },
+ {
+  "slug": "10-and-60-make-70-not-enough",
+  "text": "10 and 60 make 70. Not enough."
+ },
+ {
+  "slug": "10-and-70-make-80-not-enough",
+  "text": "10 and 70 make 80. Not enough."
+ },
+ {
+  "slug": "10-and-80-make-90-1-ten-and-8-tens-is-9-tens-not-10",
+  "text": "10 and 80 make 90. 1 ten and 8 tens is 9 tens, not 10."
+ },
+ {
+  "slug": "1-ten-and-1-2-3-4-5-6-7-8-9-more-make-10-tens-that-is-100",
+  "text": "1 ten and 1, 2, 3, 4, 5, 6, 7, 8, 9 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-10",
+  "text": "Now you try: what goes with 10?"
+ },
+ {
+  "slug": "20-and-30-make-50-not-enough",
+  "text": "20 and 30 make 50. Not enough."
+ },
+ {
+  "slug": "20-and-40-make-60-not-enough",
+  "text": "20 and 40 make 60. Not enough."
+ },
+ {
+  "slug": "20-and-50-make-70-not-enough",
+  "text": "20 and 50 make 70. Not enough."
+ },
+ {
+  "slug": "20-and-60-make-80-not-enough",
+  "text": "20 and 60 make 80. Not enough."
+ },
+ {
+  "slug": "20-and-70-make-90-2-tens-and-7-tens-is-9-tens-not-10",
+  "text": "20 and 70 make 90. 2 tens and 7 tens is 9 tens, not 10."
+ },
+ {
+  "slug": "20-and-90-make-110-2-tens-and-9-tens-is-11-tens-not-10",
+  "text": "20 and 90 make 110. 2 tens and 9 tens is 11 tens, not 10."
+ },
+ {
+  "slug": "2-tens-and-1-2-3-4-5-6-7-8-more-make-10-tens-that-is-100",
+  "text": "2 tens and 1, 2, 3, 4, 5, 6, 7, 8 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-20",
+  "text": "Now you try: what goes with 20?"
+ },
+ {
+  "slug": "30-and-40-make-70-not-enough",
+  "text": "30 and 40 make 70. Not enough."
+ },
+ {
+  "slug": "30-and-50-make-80-not-enough",
+  "text": "30 and 50 make 80. Not enough."
+ },
+ {
+  "slug": "30-and-60-make-90-3-tens-and-6-tens-is-9-tens-not-10",
+  "text": "30 and 60 make 90. 3 tens and 6 tens is 9 tens, not 10."
+ },
+ {
+  "slug": "30-and-80-make-110-3-tens-and-8-tens-is-11-tens-not-10",
+  "text": "30 and 80 make 110. 3 tens and 8 tens is 11 tens, not 10."
+ },
+ {
+  "slug": "30-and-90-make-120-that-is-too-many",
+  "text": "30 and 90 make 120. That is too many."
+ },
+ {
+  "slug": "3-tens-and-1-2-3-4-5-6-7-more-make-10-tens-that-is-100",
+  "text": "3 tens and 1, 2, 3, 4, 5, 6, 7 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-30",
+  "text": "Now you try: what goes with 30?"
+ },
+ {
+  "slug": "40-and-50-make-90-4-tens-and-5-tens-is-9-tens-not-10",
+  "text": "40 and 50 make 90. 4 tens and 5 tens is 9 tens, not 10."
+ },
+ {
+  "slug": "40-and-70-make-110-4-tens-and-7-tens-is-11-tens-not-10",
+  "text": "40 and 70 make 110. 4 tens and 7 tens is 11 tens, not 10."
+ },
+ {
+  "slug": "40-and-80-make-120-that-is-too-many",
+  "text": "40 and 80 make 120. That is too many."
+ },
+ {
+  "slug": "40-and-90-make-130-that-is-too-many",
+  "text": "40 and 90 make 130. That is too many."
+ },
+ {
+  "slug": "4-tens-and-1-2-3-4-5-6-more-make-10-tens-that-is-100",
+  "text": "4 tens and 1, 2, 3, 4, 5, 6 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-40",
+  "text": "Now you try: what goes with 40?"
+ },
+ {
+  "slug": "50-and-60-make-110-5-tens-and-6-tens-is-11-tens-not-10",
+  "text": "50 and 60 make 110. 5 tens and 6 tens is 11 tens, not 10."
+ },
+ {
+  "slug": "50-and-70-make-120-that-is-too-many",
+  "text": "50 and 70 make 120. That is too many."
+ },
+ {
+  "slug": "50-and-80-make-130-that-is-too-many",
+  "text": "50 and 80 make 130. That is too many."
+ },
+ {
+  "slug": "50-and-90-make-140-that-is-too-many",
+  "text": "50 and 90 make 140. That is too many."
+ },
+ {
+  "slug": "5-tens-and-1-2-3-4-5-more-make-10-tens-that-is-100",
+  "text": "5 tens and 1, 2, 3, 4, 5 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-50",
+  "text": "Now you try: what goes with 50?"
+ },
+ {
+  "slug": "60-and-70-make-130-that-is-too-many",
+  "text": "60 and 70 make 130. That is too many."
+ },
+ {
+  "slug": "60-and-80-make-140-that-is-too-many",
+  "text": "60 and 80 make 140. That is too many."
+ },
+ {
+  "slug": "60-and-90-make-150-that-is-too-many",
+  "text": "60 and 90 make 150. That is too many."
+ },
+ {
+  "slug": "6-tens-and-1-2-3-4-more-make-10-tens-that-is-100",
+  "text": "6 tens and 1, 2, 3, 4 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-60",
+  "text": "Now you try: what goes with 60?"
+ },
+ {
+  "slug": "70-and-80-make-150-that-is-too-many",
+  "text": "70 and 80 make 150. That is too many."
+ },
+ {
+  "slug": "70-and-90-make-160-that-is-too-many",
+  "text": "70 and 90 make 160. That is too many."
+ },
+ {
+  "slug": "7-tens-and-1-2-3-more-make-10-tens-that-is-100",
+  "text": "7 tens and 1, 2, 3 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-70",
+  "text": "Now you try: what goes with 70?"
+ },
+ {
+  "slug": "80-and-90-make-170-that-is-too-many",
+  "text": "80 and 90 make 170. That is too many."
+ },
+ {
+  "slug": "8-tens-and-1-2-more-make-10-tens-that-is-100",
+  "text": "8 tens and 1, 2 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-80",
+  "text": "Now you try: what goes with 80?"
+ },
+ {
+  "slug": "9-tens-and-1-more-make-10-tens-that-is-100",
+  "text": "9 tens and 1 more make 10 tens. That is 100."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-90",
+  "text": "Now you try: what goes with 90?"
+ },
+ {
   "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
   "text": "Kererū is stuck up the beanstalk! Make pairs that add to 1000 to help."
  },
@@ -286,6 +686,206 @@
  {
   "slug": "each-dot-is-a-hundred-9-hundreds-and-1-hundred-make-10-hundreds-that-is-1000",
   "text": "Each dot is a hundred. 9 hundreds and 1 hundred make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "100-and-200-make-300-not-enough",
+  "text": "100 and 200 make 300. Not enough."
+ },
+ {
+  "slug": "100-and-300-make-400-not-enough",
+  "text": "100 and 300 make 400. Not enough."
+ },
+ {
+  "slug": "100-and-400-make-500-not-enough",
+  "text": "100 and 400 make 500. Not enough."
+ },
+ {
+  "slug": "100-and-500-make-600-not-enough",
+  "text": "100 and 500 make 600. Not enough."
+ },
+ {
+  "slug": "100-and-600-make-700-not-enough",
+  "text": "100 and 600 make 700. Not enough."
+ },
+ {
+  "slug": "100-and-700-make-800-not-enough",
+  "text": "100 and 700 make 800. Not enough."
+ },
+ {
+  "slug": "100-and-800-make-900-1-hundred-and-8-hundreds-is-9-hundreds-not-10",
+  "text": "100 and 800 make 900. 1 hundred and 8 hundreds is 9 hundreds, not 10."
+ },
+ {
+  "slug": "1-hundred-and-1-2-3-4-5-6-7-8-9-more-make-10-hundreds-that-is-1000",
+  "text": "1 hundred and 1, 2, 3, 4, 5, 6, 7, 8, 9 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-100",
+  "text": "Now you try: what goes with 100?"
+ },
+ {
+  "slug": "200-and-300-make-500-not-enough",
+  "text": "200 and 300 make 500. Not enough."
+ },
+ {
+  "slug": "200-and-400-make-600-not-enough",
+  "text": "200 and 400 make 600. Not enough."
+ },
+ {
+  "slug": "200-and-500-make-700-not-enough",
+  "text": "200 and 500 make 700. Not enough."
+ },
+ {
+  "slug": "200-and-600-make-800-not-enough",
+  "text": "200 and 600 make 800. Not enough."
+ },
+ {
+  "slug": "200-and-700-make-900-2-hundreds-and-7-hundreds-is-9-hundreds-not-10",
+  "text": "200 and 700 make 900. 2 hundreds and 7 hundreds is 9 hundreds, not 10."
+ },
+ {
+  "slug": "200-and-900-make-1100-2-hundreds-and-9-hundreds-is-11-hundreds-not-10",
+  "text": "200 and 900 make 1100. 2 hundreds and 9 hundreds is 11 hundreds, not 10."
+ },
+ {
+  "slug": "2-hundreds-and-1-2-3-4-5-6-7-8-more-make-10-hundreds-that-is-1000",
+  "text": "2 hundreds and 1, 2, 3, 4, 5, 6, 7, 8 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-200",
+  "text": "Now you try: what goes with 200?"
+ },
+ {
+  "slug": "300-and-400-make-700-not-enough",
+  "text": "300 and 400 make 700. Not enough."
+ },
+ {
+  "slug": "300-and-500-make-800-not-enough",
+  "text": "300 and 500 make 800. Not enough."
+ },
+ {
+  "slug": "300-and-600-make-900-3-hundreds-and-6-hundreds-is-9-hundreds-not-10",
+  "text": "300 and 600 make 900. 3 hundreds and 6 hundreds is 9 hundreds, not 10."
+ },
+ {
+  "slug": "300-and-800-make-1100-3-hundreds-and-8-hundreds-is-11-hundreds-not-10",
+  "text": "300 and 800 make 1100. 3 hundreds and 8 hundreds is 11 hundreds, not 10."
+ },
+ {
+  "slug": "300-and-900-make-1200-that-is-too-many",
+  "text": "300 and 900 make 1200. That is too many."
+ },
+ {
+  "slug": "3-hundreds-and-1-2-3-4-5-6-7-more-make-10-hundreds-that-is-1000",
+  "text": "3 hundreds and 1, 2, 3, 4, 5, 6, 7 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-300",
+  "text": "Now you try: what goes with 300?"
+ },
+ {
+  "slug": "400-and-500-make-900-4-hundreds-and-5-hundreds-is-9-hundreds-not-10",
+  "text": "400 and 500 make 900. 4 hundreds and 5 hundreds is 9 hundreds, not 10."
+ },
+ {
+  "slug": "400-and-700-make-1100-4-hundreds-and-7-hundreds-is-11-hundreds-not-10",
+  "text": "400 and 700 make 1100. 4 hundreds and 7 hundreds is 11 hundreds, not 10."
+ },
+ {
+  "slug": "400-and-800-make-1200-that-is-too-many",
+  "text": "400 and 800 make 1200. That is too many."
+ },
+ {
+  "slug": "400-and-900-make-1300-that-is-too-many",
+  "text": "400 and 900 make 1300. That is too many."
+ },
+ {
+  "slug": "4-hundreds-and-1-2-3-4-5-6-more-make-10-hundreds-that-is-1000",
+  "text": "4 hundreds and 1, 2, 3, 4, 5, 6 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-400",
+  "text": "Now you try: what goes with 400?"
+ },
+ {
+  "slug": "500-and-600-make-1100-5-hundreds-and-6-hundreds-is-11-hundreds-not-10",
+  "text": "500 and 600 make 1100. 5 hundreds and 6 hundreds is 11 hundreds, not 10."
+ },
+ {
+  "slug": "500-and-700-make-1200-that-is-too-many",
+  "text": "500 and 700 make 1200. That is too many."
+ },
+ {
+  "slug": "500-and-800-make-1300-that-is-too-many",
+  "text": "500 and 800 make 1300. That is too many."
+ },
+ {
+  "slug": "500-and-900-make-1400-that-is-too-many",
+  "text": "500 and 900 make 1400. That is too many."
+ },
+ {
+  "slug": "5-hundreds-and-1-2-3-4-5-more-make-10-hundreds-that-is-1000",
+  "text": "5 hundreds and 1, 2, 3, 4, 5 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-500",
+  "text": "Now you try: what goes with 500?"
+ },
+ {
+  "slug": "600-and-700-make-1300-that-is-too-many",
+  "text": "600 and 700 make 1300. That is too many."
+ },
+ {
+  "slug": "600-and-800-make-1400-that-is-too-many",
+  "text": "600 and 800 make 1400. That is too many."
+ },
+ {
+  "slug": "600-and-900-make-1500-that-is-too-many",
+  "text": "600 and 900 make 1500. That is too many."
+ },
+ {
+  "slug": "6-hundreds-and-1-2-3-4-more-make-10-hundreds-that-is-1000",
+  "text": "6 hundreds and 1, 2, 3, 4 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-600",
+  "text": "Now you try: what goes with 600?"
+ },
+ {
+  "slug": "700-and-800-make-1500-that-is-too-many",
+  "text": "700 and 800 make 1500. That is too many."
+ },
+ {
+  "slug": "700-and-900-make-1600-that-is-too-many",
+  "text": "700 and 900 make 1600. That is too many."
+ },
+ {
+  "slug": "7-hundreds-and-1-2-3-more-make-10-hundreds-that-is-1000",
+  "text": "7 hundreds and 1, 2, 3 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-700",
+  "text": "Now you try: what goes with 700?"
+ },
+ {
+  "slug": "800-and-900-make-1700-that-is-too-many",
+  "text": "800 and 900 make 1700. That is too many."
+ },
+ {
+  "slug": "8-hundreds-and-1-2-more-make-10-hundreds-that-is-1000",
+  "text": "8 hundreds and 1, 2 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-800",
+  "text": "Now you try: what goes with 800?"
+ },
+ {
+  "slug": "9-hundreds-and-1-more-make-10-hundreds-that-is-1000",
+  "text": "9 hundreds and 1 more make 10 hundreds. That is 1000."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-900",
+  "text": "Now you try: what goes with 900?"
  },
  {
   "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",

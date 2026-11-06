@@ -7,7 +7,8 @@
  *   choose  be Jack or Jill;
  *   start   makes today's challenge from a fresh seed and keeps it (any other open challenge is closed);
  *   finish  replays the taps on the server's own round (its sum, 10, 100 or 1000, from the saved beanstalk), records
- *           each pair for the maths records (a wrong pair counts against the first leaf's pair), and changes a leaf on
+ *           the first tap of each go for the maths records (a wrong pair counts against the first leaf's pair; taps
+ *           after it in the go are not scored, maths review R5), and changes a leaf on
  *           the first finish of the NZ day. A Golden Egg is an
  *           achievement (Stage 4's migration counts eggs from the finished days).
  *
@@ -155,7 +156,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
       const kept = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (kept === 'busy') return busy();
       if (kept) {
-        // One answer a pair tapped, as bonds to 10, 100 or 1000: once per challenge, so a finish sent again never counts twice.
+        // One answer a go (its first tap), as bonds to 10, 100 or 1000: once per challenge, so a finish sent again never counts twice.
         const at = services.now();
         await services.recordAnswers(player, `beanstalk:${seed}`, played.answers.map((a) => ({ ...a, at })));
         if (result.egg) await services.progressChanged(player);

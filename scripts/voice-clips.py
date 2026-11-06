@@ -63,11 +63,11 @@ TENS = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'ei
 
 
 def number(n: int) -> str:
-    """Whole numbers to 1000 in words (the games say no others)."""
+    """Whole numbers to 1999 in words (the games say no others: Beanstalk's wrong pairs reach 1700)."""
     if n <= 10:
         return ONES[n]
-    if n == 1000:
-        return 'one thousand'
+    if n >= 1000:
+        return 'one thousand' + (' ' + number(n - 1000) if n > 1000 else '')
     if n >= 100:
         rest = n % 100
         return ONES[n // 100] + ' hundred' + (' and ' + number(rest) if rest else '')

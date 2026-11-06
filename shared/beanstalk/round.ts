@@ -79,12 +79,23 @@ export interface Tap {
 
 export interface Replay {
   pairsMade: number;
+  /** Wrong pairs tapped. */
   mistakes: number;
   done: boolean;
   /** Leaves still floating, by index. */
   onScreen: number[];
-  /** One answer per pair tapped. A wrong pair counts against the first leaf's pair: that is the partner the child was after. */
+  /**
+   * One answer a go, from its first tap (a go runs until a right pair): right first time, or wrong, counted against the
+   * first leaf's pair, the partner the child was after. Later taps in a go are not scored, so a pair found after a
+   * "Let's look together" is never a clean right (maths review R5).
+   */
   answers: Omit<FactAnswer, 'at'>[];
+  /** Every wrong pair tapped (`pairId`): the browser won't let a tried pair be tapped again. */
+  tried: string[];
+  /** Wrong pairs since the last right pair: 1 shows why, 2 is "Let's look together". */
+  wrongInGo: number;
+  /** Right pairs made after two or more wrong ones in their go: shown pairs. */
+  shown: number;
 }
 
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
@@ -92,43 +103,87 @@ const floating = (inPlay: readonly number[], used: ReadonlySet<number>): number[
   inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
 
 /**
- * Brings in waiting pairs, in order, while there is room and neither of a pair's numbers is floating. `inPlay` (pairs
- * that have come in) grows; the leaves floating are theirs, less the `used` ones. Server and browser both get this from
- * the taps, through `replay`.
+ * A wrong pair, by its total S against the sum T (maths review R5): `close` is one unit off (one dot out, or one square
+ * empty), `over` and `under` are two or more; on the 100 and 1000 beanstalks one unit off is `digit` instead, the slip of
+ * adding tens as if they were ones (30 + 60 = 90 is 9 tens, not 10). Null for a right pair.
+ */
+export type MistakeKind = 'over' | 'under' | 'close' | 'digit';
+export function mistakeKind(total: number, target: Target): MistakeKind | null {
+  const units = (total - target) / (target / 10);
+  if (units === 0) return null;
+  if (Math.abs(units) === 1) return target === 10 ? 'close' : 'digit';
+  return units > 0 ? 'over' : 'under';
+}
+
+/** True when two of the floating numbers are one unit off the sum: the tempting near-miss every full tray has. */
+const hasNearMiss = (numbers: readonly number[], target: Target): boolean =>
+  numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === target / 10));
+
+/**
+ * Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
+ * come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
+ * fills the tray is the first free one that gives it a near miss (a 3 with a 6, say), so every tray of six has one; if
+ * none does, the tray waits at four leaves (maths review R5).
+ * Server and browser both get this from the taps, through `replay`.
  */
 function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void {
   const floatingNow = () => floating(inPlay, used);
-  for (let k = 0; k < PAIRS_PER_ROUND && floatingNow().length < ON_SCREEN; k++) {
-    if (inPlay.includes(k)) continue;
+  const free = (numbers: number[]) => (k: number) =>
+    !inPlay.includes(k) && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
+  while (floatingNow().length < ON_SCREEN) {
     const numbers = floatingNow().map((i) => round.leaves[i]);
-    if (!numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1])) inPlay.push(k);
+    const waiting = Array.from({ length: PAIRS_PER_ROUND }, (_, k) => k).filter(free(numbers));
+    if (!waiting.length) return;
+    const fills = numbers.length + 2 >= ON_SCREEN;
+    if (!fills) {
+      inPlay.push(waiting[0]);
+      continue;
+    }
+    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target));
+    // None does (only ever 1 + 9, 3 + 7 and 5 + 5 together): the tray stays at four leaves until a pair is made.
+    if (tempting === undefined) return;
+    inPlay.push(tempting);
   }
 }
+
+/** A pair of leaves the same either way round, so a tried pair is found whichever leaf was tapped first. */
+export const pairId = (a: number, b: number): string => (a < b ? `${a}-${b}` : `${b}-${a}`);
 
 /** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
 export function replay(round: Round, taps: readonly Tap[]): Replay {
   const used = new Set<number>();
   const answers: Replay['answers'] = [];
+  const tried: string[] = [];
   const inPlay: number[] = [];
   letIn(round, inPlay, used);
   let pairsMade = 0;
+  let wrongInGo = 0;
+  let shown = 0;
   for (const { a, b, ms } of taps) {
     if (pairsMade === PAIRS_PER_ROUND) throw new Error('Taps after the round was done');
     const now = floating(inPlay, used);
     if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
     const right = round.leaves[a] + round.leaves[b] === round.target;
-    answers.push({ key: bondKey(round.leaves[a], round.target), correct: right, ms });
+    if (wrongInGo === 0) answers.push({ key: bondKey(round.leaves[a], round.target), correct: right, ms });
     if (right) {
       used.add(a).add(b);
       pairsMade++;
+      if (wrongInGo >= 2) shown++;
+      wrongInGo = 0;
       letIn(round, inPlay, used);
+    } else {
+      wrongInGo++;
+      if (!tried.includes(pairId(a, b))) tried.push(pairId(a, b));
     }
   }
   return {
     pairsMade,
-    mistakes: answers.length - pairsMade,
+    mistakes: taps.length - pairsMade,
     done: pairsMade === PAIRS_PER_ROUND,
     onScreen: floating(inPlay, used),
     answers,
+    tried,
+    wrongInGo,
+    shown,
   };
 }

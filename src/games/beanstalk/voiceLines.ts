@@ -17,7 +17,7 @@ export function homeLine(title: string, doneToday: boolean): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.tryAgain, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.lookTogether, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   // Friends and sums go round together (6 friends, 3 sums), so one lap of 6 beanstalks has every pairing.
   for (let e = 0; e < 6; e++) {
     const { friend, target } = stalkAfter(e * DAYS_PER_EGG);
@@ -32,6 +32,13 @@ export function allVoiceLines(): string[] {
     const step = target / 10;
     for (let a = 1; a <= 9; a++) lines.add(WORDS.right(a * step, target - a * step));
     if (target > 10) for (let a = 1; a <= 9; a++) lines.add(WORDS.bridge(target, a * step, target - a * step));
+    // Mistakes that teach (maths review R5): why every wrong pair of two different numbers is wrong (no number floats
+    // twice but the 5s of 5 + 5), and the "Let's look together" lines for every leaf.
+    for (let a = 1; a <= 9; a++) {
+      for (let b = a + 1; b <= 9; b++) if (a + b !== 10) lines.add(WORDS.why(a * step, b * step, target));
+      lines.add(WORDS.fillUp(a * step, target));
+      lines.add(WORDS.nowTry(a * step));
+    }
   }
   for (const metal of METALS.slice(1)) lines.add(WORDS.leafTurned(metal));
   return [...lines];
