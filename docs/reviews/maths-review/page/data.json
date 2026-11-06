@@ -212,6 +212,37 @@
    "prompt": "Work in /Users/jriley/games-hub-isles. Create a new branch and worktree from origin/main called beanstalk-target-bridge. Read docs/GAME_DEVELOPMENT_GUIDE.md first, then docs/plans/maths-review/R4-beanstalk-target-and-bridge.md and follow it. Steps: (1) Round.tsx: a visible \"Make 10/100/1000\" badge above the tray with a Hear it again button (speaks the existing tapTwo line); keep the heading for screen readers; styles in beanstalk.css; words in words.ts. (2) shared/beanstalk/round.ts: change the order leaves arrive so no number is on screen twice except the 5+5 pair (first three pairs with different numbers; each new pair is the next in the queue whose numbers aren't on screen, else the next in order), computed in floating/replay so server and browser agree; the round must still always be finishable. (3) the bridge: on the first challenge of a new 100 or 1000 beanstalk, turn on the guide hand and show and speak the one-line bridge (\"Each dot is a ten. 7 tens and 3 tens make 10 tens. That is 100.\", with the first pair's real numbers; hundreds for 1000); add the lines to allVoiceLines in voiceLines.ts and refresh the lines list, and tell James the new clips need making with scripts/voice-clips.py beanstalk on his Mac. (4) tests as in the plan (no duplicates over 200 seeds and shuffled right-pair orders, replay unchanged, badge and bridge screens). (5) rebuild only the beanstalk function (npm run build:functions -- beanstalk) and commit its index.ts; run the checks. Do not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step (merge outside school hours: a round in progress could be refused); open a PR when done."
   },
   {
+   "id": "K1",
+   "kind": "kit",
+   "title": "Game kit K1: shared help, replay and gold-day rewards",
+   "games": [
+    "Weka",
+    "then Beanstalk, Hop, Penguin Pairs, Pipi"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "why": "Build the help rule once so R6 is not done four times by hand. Weka moves onto it first with nothing changing for children.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 5) and docs/plans/GAME-KIT-PLAN.md.\n\nBuild stage K1 of the game kit: shared/kit/help.ts, replay.ts and dayArc.ts, lifted from Weka's helpForStats (shared/weka/round.ts), Tūī's placeAfter (shared/tui/round.ts), and Hop's progress.ts and play.ts. Keep game words out (games pass their own step names and nouns). Then move Weka onto them with no change a child or teacher can see (same help per go on the same seeds: prove it with one test comparing old and new on many seeds, then drop the old code). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K1 results\" to GAME-KIT-PLAN.md, and tell me in plain words what's ready and which game's R6 should use it next."
+  },
+  {
+   "id": "K2",
+   "kind": "kit",
+   "title": "Game kit K2: shared mistakes that teach and the show-why screen",
+   "games": [
+    "Beanstalk",
+    "then Hop, Penguin Pairs, Pipi, Tūī, Weka"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "why": "Lift what Beanstalk learned in R5 into one shared part, so R5 for the other five games is not built five times.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-mistakes. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 7) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K2 of the game kit: shared/kit/mistakes.ts (wrong choices with a kind, the \"at most 2 share the tell\" check, the near-miss check, and the two-tap cap flow as a small state machine), src/kit/ShowWhy, and the misconception bank in docs/kit/README.md, lifted from Beanstalk (mistakeKind and hasNearMiss in shared/beanstalk/round.ts, Round.tsx). Then move Beanstalk onto them with no change a child or teacher can see. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K2 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next.",
+   "waits": [
+    "K1"
+   ]
+  },
+  {
    "id": "R5",
    "kind": "fix",
    "title": "Mistakes that teach: wrong choices show why",
@@ -228,6 +259,9 @@
    "why": "Wrong taps become a short lesson using the game's own picture, then the child redoes the question.",
    "plan": "docs/plans/maths-review/R5-mistakes-that-teach.md",
    "prompt": "Work in /Users/jriley/games-hub-isles. Start by running: git fetch origin, then make your own worktree and branch from origin/main named r5-beanstalk-mistakes (see section 6 of the guide). Read /Users/jriley/games-hub-isles/CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, and the plan docs/plans/maths-review/R5-mistakes-that-teach.md (sections 3.1 and 3.2 are yours). Also read docs/reviews/maths-review/games/beanstalk.md and docs/reviews/maths-review/DECISIONS.md.\n\nBuild \"mistakes that teach\" for Kiwi's Beanstalk only:\n1. In shared/beanstalk/round.ts: classify a wrong pair by its total against the target (over, under, close, digit) for targets 10, 100 and 1000; each tray of six leaves must have at least one close temptation; a wrong pair is remembered as tried so it cannot be tapped twice. Keep the server replay and the saved taps unchanged (only the first tap of a pair is scored to the facts).\n2. In src/games/beanstalk/Round.tsx and Leaf.tsx: after wrong tap 1 show the two leaves' frames joining with the extra dots out or the empty squares glowing, and read the line. After wrong tap 2 play \"Let's look together\": one leaf pulses, its frame fills with the partner's dots, then ask \"Now you try: what goes with N?\" with the partner not marked. That pair counts for the round but is a shown pair, never a clean right.\n3. Add every why-line to words.ts and voiceLines.ts (allVoiceLines loops for all pairs and the three targets), keep the lines short and in the style of the plan. Do not make clips yourself unless the Kokoro folder exists; tell James the exact command.\n4. Add at most 8 tests (kind from total, removed duplicates not required, replay unchanged, tried pair cannot repeat, flow state, voice lines).\n5. Rebuild the function with npm run build:functions -- beanstalk. Do not touch shared/maths, src/maths, src/styles.css, src/components or any other game.\n6. Run typecheck, npm run test:changed, and play the preview (npm run beanstalk:preview) on bronze, silver and gold days and the 100 beanstalk, making each kind of mistake.\nStop and tell James before any live step. Open a PR when done and say in it that merging deploys the rebuilt beanstalk function. Add a short \"Mistakes that teach\" results section to docs/BEANSTALK-PLAN.md.",
+   "waits": [
+    "K2"
+   ],
    "prompts": [
     {
      "label": "Beanstalk (lowest score, do first)",
@@ -256,20 +290,6 @@
    ]
   },
   {
-   "id": "K1",
-   "kind": "kit",
-   "title": "Game kit K1: shared help, replay and gold-day rewards",
-   "games": [
-    "Weka",
-    "then Beanstalk, Hop, Penguin Pairs, Pipi"
-   ],
-   "effort": "M",
-   "impact": "High",
-   "why": "Build the help rule once so R6 is not done four times by hand. Weka moves onto it first with nothing changing for children.",
-   "plan": "docs/plans/GAME-KIT-PLAN.md",
-   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 5) and docs/plans/GAME-KIT-PLAN.md.\n\nBuild stage K1 of the game kit: shared/kit/help.ts, replay.ts and dayArc.ts, lifted from Weka's helpForStats (shared/weka/round.ts), Tūī's placeAfter (shared/tui/round.ts), and Hop's progress.ts and play.ts. Keep game words out (games pass their own step names and nouns). Then move Weka onto them with no change a child or teacher can see (same help per go on the same seeds: prove it with one test comparing old and new on many seeds, then drop the old code). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K1 results\" to GAME-KIT-PLAN.md, mark K1 done on the review page (status/K1 in artifact N8ihakWr1PeFxe2WbYCUVQ), and tell me in plain words what's ready and which game's R6 should use it next."
-  },
-  {
    "id": "R6",
    "kind": "fix",
    "title": "Help that follows the child, not the calendar",
@@ -284,6 +304,9 @@
    "why": "Pictures fade when the child is secure and come back after a struggle, like Weka and Quick looks.",
    "plan": "docs/plans/maths-review/R6-help-follows-the-child.md",
    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r6-beanstalk-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/plans/maths-review/R6-help-follows-the-child.md (sections 3.1 to 3.4, the Beanstalk part, are yours), docs/reviews/maths-review/games/beanstalk.md and, as models, shared/tui/round.ts (placeAfter) and shared/weka/round.ts (helpForStats).\n\nMake Kiwi's Beanstalk's dots follow the child, not the calendar:\n1. Add columns help (0 full, 1 small, 2 none) and good_in_row to beanstalk_progress in a NEW migration (get the number from node scripts/migration-numbers.mjs; backfill help from days_done; replace beanstalk_finish and beanstalk_load; lock the functions as the existing migration does). Add a database test.\n2. In shared/beanstalk: a placeAfter for the help (good round = 8 or more of 10 pairs right first time, 2 good in a row fades one step, 4 or fewer first-time pairs brings one step back, moves only on the day's first finish, reset to full when a new sum starts). The server returns help from load and saves it with the round; the teacher's dots switch off still forces none. Leaf colours and eggs stay on days.\n3. In src/games/beanstalk: use the saved help for the dots; after 3 pairs in a row with a wrong first tap show full dots for the rest of the round, with the line \"Here are the dots again to help.\" (add to words.ts and voiceLines.ts).\n4. At most 8 tests (placeAfter, reset at new sum, replay does not move it, database test). Rebuild with npm run build:functions -- beanstalk. Typecheck, npm run test:changed, play the preview.\nDo not touch shared/maths or any shared file. Stop and tell James before any live step (the migration applies when the PR merges). Open a PR when done.",
+   "waits": [
+    "K1"
+   ],
    "prompts": [
     {
      "label": "Beanstalk",
@@ -304,6 +327,22 @@
    ]
   },
   {
+   "id": "K5",
+   "kind": "kit",
+   "title": "Game kit K5: teacher helpers for class grid rows and stuck flags",
+   "games": [
+    "Teacher pages"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "why": "R7's first stage. It touches shared files, so it needs James's OK before those parts are changed.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-teacher. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K5 of the game kit: the teacher Foundational helpers (class grid rows and stuck flags) as the R7 plan describes (docs/plans/maths-review/R7-teacher-foundational-view.md). It touches shared files, so stop and ask me before changing them. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K5 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next.",
+   "waits": [
+    "K1"
+   ]
+  },
+  {
    "id": "R7",
    "kind": "fix",
    "title": "Teacher Foundational skills grid and Today alerts",
@@ -321,6 +360,9 @@
    "why": "Teachers see who is stuck on which early idea without opening each game.",
    "plan": "docs/plans/maths-review/R7-teacher-foundational-view.md",
    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r7-foundational-teacher. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md (especially sections 3 and 5), docs/plans/maths-review/R7-teacher-foundational-view.md, docs/TEACHER-VIEW-PLAN.md, src/games/types.ts (TeacherContract, HardestRow, TeacherAlert), src/teacher/useClassAlerts.ts, src/teacher/Hardest.tsx, src/pages/SkillMap.tsx, shared/maths/skillMap.ts, and supabase/migrations/20261019000400_maths_teacher_views.sql.\n\nBuild Stage 1 only (no shared files, see section 4 of the plan):\n1. A new migration (number from node scripts/migration-numbers.mjs) with teacher_foundational_class(target uuid) and teacher_quick_looks_class(target uuid) as in section 5 of the plan, the same guard as teacher_class_skill_map, locked with revoke/grant, and a database test file (a teacher of another class is refused with 42501).\n2. src/data/foundational.ts calling both and the existing fetchClassMap, cached with shortCache.\n3. src/teacher/foundational/config.ts (thresholds in one place), ideas.ts (idea to keys, ideaLevel using LEVELS and the 70% rule from shared/maths), flags.ts (stuckFlags with reason lines), and the grid component FoundationalGrid.tsx with its css and test (not yet mounted anywhere: that is Stage 2).\n4. teacher.alerts and teacher.hardest on the six game definitions (beanstalk, hop, korora, pipi, tui, weka) in their own index.tsx/teacher.ts, using made-up names only; fix Beanstalk's Maths column (class line) and the student line (the pupil's own sum).\n5. At most 8 tests in all. Do not edit TeacherShell.tsx, App.tsx, useClassAlerts.ts, StudentPage.tsx, shared/maths, src/components or any other shared file. List in the PR exactly what Stage 2 needs.\nStop and tell James before any live step (the migration applies when the PR merges). Open a PR when done.",
+   "waits": [
+    "K5"
+   ],
    "prompts": [
     {
      "label": "Stage 1, own files and the migration",
@@ -333,6 +375,36 @@
    ]
   },
   {
+   "id": "K3",
+   "kind": "kit",
+   "title": "Game kit K3: shared ten-frame, number line and dot picture",
+   "games": [
+    "New games first",
+    "old games when next touched"
+   ],
+   "effort": "M",
+   "impact": "Med",
+   "why": "N1 to N5 all need these pictures. Build them once so each new game does not draw its own.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-models. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (section 3) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K3 of the game kit: src/kit TenFrame (with highlighted, empty, extra and faint squares), NumberLine (arcs, labels, landmarks) and DotPicture in SVG, lifted from Tūī art.tsx, Weka Pebbles.tsx and Quick looks PictureSvg.tsx. Do not move the old games onto them yet unless one is a clean, no-change swap. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K3 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next.",
+   "waits": [
+    "K1"
+   ]
+  },
+  {
+   "id": "K6",
+   "kind": "kit",
+   "title": "Game kit K6: one art script and one voice list",
+   "games": [
+    "The next game painted"
+   ],
+   "effort": "S",
+   "impact": "Med",
+   "why": "New games each copy a 300-line art script. One script with a small settings file saves that before N1 is painted.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-art-tools. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K6 of the game kit: one scripts/game_art.py that reads a per-game docs/<game>-art/config.json (picture list, prompts, sizes, cut-outs); make scripts/voice-clips.py find games from public/voice/*/lines.json instead of a hard-coded list; add art.test.ts and CREDITS.md for the junior games. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K6 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
+  },
+  {
    "id": "N1",
    "kind": "new-game",
    "title": "Kererū's Number Line: reading, placing and jumping on lines to 100 and 1000",
@@ -343,7 +415,10 @@
    "impact": "High",
    "why": "Gap 1 beyond Ruru: Ruru's planned trail stops at 20; nothing teaches where 63 or 640 goes, reading an unmarked point, or ten more and nearest ten.",
    "plan": "docs/plans/maths-review/new-games/N1-number-line.md",
-   "prompt": "You are building a new Games Hub game: Kererū's Number Line (id kereru). Work in /Users/jriley/games-hub-isles. Create branch kereru from origin/main in its own worktree. Read docs/GAME_DEVELOPMENT_GUIDE.md (especially section 1a, section 2 and section 8) and the plan docs/plans/maths-review/new-games/N1-number-line.md by path first; also read docs/TUI-PLAN.md, docs/WEKA-PLAN.md and docs/EARLY-GAMES-PLAN.md section 7, and look at shared/tui, shared/weka and src/games/weka for how an early game is built. Do not re-decide anything the plan settles.\nSteps: (1) Tell James that the small shared branch maths-kereru-keys (new ladderOnly families in shared/maths/skillPacks/earlyFacts.ts and ladder.ts) is needed first, and build it on its own branch only if he says so; until it is live, work against the same keys in your own test fixtures. (2) Copy the plan to docs/KERERU-PLAN.md. (3) Write shared/kereru/ (config of every tuning number, round, play, progress, server, memory services) with the levels, wrong cards and help rules from the plan. (4) Write supabase/functions/kereru/ and one migration (take the number from node scripts/migration-numbers.mjs) with the tables, settings, hub_games row, five achievements and teacher functions. (5) Write src/games/kereru/ with the screens, stand-in art drawn in code, Bella voice lines, the guided first go and next-step line, Lots/Some/Off help, and the teacher line; add src/data/kereru.ts, the preview folder and vite config, and scripts/kereru-sim.mjs. (6) Add the registry and card-art lines on their own small branch only after asking James.\nTests: at most 8 for the game, as listed in section 6 of the plan, plus the preview checks there. Run npm test, the type check and the lint.\nStop and tell James before any live step (applying the migration, deploying the function, merging, switching on). Open a PR when done."
+   "prompt": "You are building a new Games Hub game: Kererū's Number Line (id kereru). Work in /Users/jriley/games-hub-isles. Create branch kereru from origin/main in its own worktree. Read docs/GAME_DEVELOPMENT_GUIDE.md (especially section 1a, section 2 and section 8) and the plan docs/plans/maths-review/new-games/N1-number-line.md by path first; also read docs/TUI-PLAN.md, docs/WEKA-PLAN.md and docs/EARLY-GAMES-PLAN.md section 7, and look at shared/tui, shared/weka and src/games/weka for how an early game is built. Do not re-decide anything the plan settles.\nSteps: (1) Tell James that the small shared branch maths-kereru-keys (new ladderOnly families in shared/maths/skillPacks/earlyFacts.ts and ladder.ts) is needed first, and build it on its own branch only if he says so; until it is live, work against the same keys in your own test fixtures. (2) Copy the plan to docs/KERERU-PLAN.md. (3) Write shared/kereru/ (config of every tuning number, round, play, progress, server, memory services) with the levels, wrong cards and help rules from the plan. (4) Write supabase/functions/kereru/ and one migration (take the number from node scripts/migration-numbers.mjs) with the tables, settings, hub_games row, five achievements and teacher functions. (5) Write src/games/kereru/ with the screens, stand-in art drawn in code, Bella voice lines, the guided first go and next-step line, Lots/Some/Off help, and the teacher line; add src/data/kereru.ts, the preview folder and vite config, and scripts/kereru-sim.mjs. (6) Add the registry and card-art lines on their own small branch only after asking James.\nTests: at most 8 for the game, as listed in section 6 of the plan, plus the preview checks there. Run npm test, the type check and the lint.\nStop and tell James before any live step (applying the migration, deploying the function, merging, switching on). Open a PR when done.",
+   "waits": [
+    "K3"
+   ]
   },
   {
    "id": "N2",
@@ -355,6 +430,23 @@
    "why": "Gap 2: no game touches \"equals means the same as\" (8 = ? + 5), the misconception that blocks algebra.",
    "plan": "docs/plans/maths-review/new-games/N2-balance.md",
    "prompt": "You are building a new Games Hub game: Kea's See-saw (id kea). Work in /Users/jriley/games-hub-isles. Create branch kea from origin/main in its own worktree. Read docs/GAME_DEVELOPMENT_GUIDE.md (especially section 1a, section 2 and section 8) and the plan docs/plans/maths-review/new-games/N2-balance.md by path first; also read docs/TUI-PLAN.md, docs/WEKA-PLAN.md and docs/EARLY-GAMES-PLAN.md section 7, and look at shared/tui, shared/weka and src/games/weka for how an early game is built. Do not re-decide anything the plan settles.\nSteps: (1) Tell James that the small shared branch maths-kea-keys (new ladderOnly families in shared/maths/skillPacks/earlyFacts.ts and ladder.ts) is needed first, and build it on its own branch only if he says so; until it is live, work against the same keys in your own test fixtures. (2) Copy the plan to docs/KEA-PLAN.md. (3) Write shared/kea/ (config of every tuning number, round, play, progress, server, memory services) with the levels, wrong cards and help rules from the plan. (4) Write supabase/functions/kea/ and one migration (take the number from node scripts/migration-numbers.mjs) with the tables, settings, hub_games row, five achievements and teacher functions. (5) Write src/games/kea/ with the screens, stand-in art drawn in code, Bella voice lines, the guided first go and next-step line, Lots/Some/Off help, and the teacher line; add src/data/kea.ts, the preview folder and vite config, and scripts/kea-sim.mjs. (6) Add the registry and card-art lines on their own small branch only after asking James.\nTests: at most 8 for the game, as listed in section 6 of the plan, plus the preview checks there. Run npm test, the type check and the lint.\nStop and tell James before any live step (applying the migration, deploying the function, merging, switching on). Open a PR when done."
+  },
+  {
+   "id": "K4",
+   "kind": "kit",
+   "title": "Game kit K4: Hear it again, pointing hand, guided first go, what is next",
+   "games": [
+    "R8",
+    "new games"
+   ],
+   "effort": "M",
+   "impact": "Med",
+   "why": "R8 needs the what's-next card, and every new game needs these small junior parts.",
+   "plan": "docs/plans/GAME-KIT-PLAN.md",
+   "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-junior-bits. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 2) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K4 of the game kit: src/kit HearAgain, PointingHand, useGuidedFirstGo, WhatsNext and FirstTimeTip, and a voiceLinesSuite(game, allVoiceLines) test helper, lifted from Weka, Penguin Pairs and Star Trader TipCard. Move Weka onto them with no change a child or teacher can see. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K4 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next.",
+   "waits": [
+    "K1"
+   ]
   },
   {
    "id": "R8",
@@ -371,6 +463,9 @@
    "why": "Quick children get new levels and a signpost to the next game.",
    "plan": "docs/plans/maths-review/R8-longer-ladders-whats-next.md",
    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r8-korora-ladder. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md and docs/plans/maths-review/R8-longer-ladders-whats-next.md (sections 3.1 and 3.2, Stage A only).\n\nMake Penguin Pairs go further:\n1. Add level 5, near doubles 5+6 to 8+9, in shared/korora/round.ts using Weka's add:a+b keys (first check those records can be read from the Penguin Pairs round without changing shared/maths; if not, stop and tell James). Picture: two equal groups plus one extra penguin. Add the voice lines and run scripts/voice-clips.py korora.\n2. Level 5 appears only when level 4 is secure (70 percent of its facts at box 2 or more). Bronze, silver and gold days keep working.\n3. Add the \"what's next\" card to the finish screen inside src/games/korora (do not use NextPartChip): shown only when the top level is secure and Weka is switched on in readSettings(), opens Weka, line \"Doubles help with 6 + 7 too. Try Weka.\"\n4. The reached column only allows 1 to 4: if the migration is needed to save level 5, add a NEW migration (number from node scripts/migration-numbers.mjs) widening it. Do not edit the old one.\n5. At most 8 tests. Rebuild with npm run build:functions -- korora. Typecheck, npm run test:changed, play the preview on a phone width.\nDo not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step (the migration applies when the PR merges). Open a PR when done.",
+   "waits": [
+    "K4"
+   ],
    "prompts": [
     {
      "label": "Penguin Pairs (Stage A)",
@@ -1338,5 +1433,6 @@
    }
   ]
  },
- "reportPath": "docs/reviews/fundamental-maths-review.md"
+ "reportPath": "docs/reviews/fundamental-maths-review.md",
+ "pageUrl": "https://claude.ai/artifact/KLQLGLyrmxKf2cp5DfCam7"
 }

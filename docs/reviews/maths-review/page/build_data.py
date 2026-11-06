@@ -8,8 +8,14 @@ for name in ['data-quick.json', 'data-fixes.json', 'data-new.json']:
     if p.exists():
         for r in json.loads(p.read_text()):
             recs_by_id[r['id']] = r
-ORDER = ['R1', 'R2', 'R3', 'R4', 'R5', 'K1', 'R6', 'R7', 'N1', 'N2', 'R8', 'N3', 'N4', 'R9', 'N5', 'N6']
+ORDER = ['R1', 'R2', 'R3', 'R4', 'K1', 'K2', 'R5', 'R6', 'K5', 'R7', 'K3', 'K6', 'N1', 'N2', 'K4', 'R8', 'N3', 'N4', 'R9', 'N5', 'N6']
+# A card can't start until these are done (docs/plans/GAME-KIT-PLAN.md section 4).
+WAITS = {'K2': ['K1'], 'K3': ['K1'], 'K4': ['K1'], 'K5': ['K1'], 'R5': ['K2'], 'R6': ['K1'], 'R7': ['K5'], 'N1': ['K3'], 'R8': ['K4']}
+PAGE_URL = 'https://claude.ai/artifact/KLQLGLyrmxKf2cp5DfCam7'
 recs = [recs_by_id[i] for i in ORDER if i in recs_by_id]
+for r in recs:
+    if r['id'] in WAITS:
+        r['waits'] = WAITS[r['id']]
 repo = root.parent.parent.parent
 for r in recs:
     pf = repo / r['plan']
@@ -139,6 +145,7 @@ data = dict(
             dict(big='15 · 10 · 10', label='pupils so far on Beanstalk, Hop and Penguin Pairs'),
         ]),
     reportPath='docs/reviews/fundamental-maths-review.md',
+    pageUrl=PAGE_URL,
 )
 out = pathlib.Path(__file__).with_name('data.json')
 out.write_text(json.dumps(data, ensure_ascii=False, indent=1))
