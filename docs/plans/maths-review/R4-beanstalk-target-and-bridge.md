@@ -1,5 +1,7 @@
 # R4: Beanstalk: show the target, no duplicate numbers, a bridge from 10 to 100
 
+**Status (7 Nov 2026):** built on branch `beanstalk-target-bridge`, not live yet. One change from the plan, James's pick: when the only waiting pairs share a number with one floating, the pair **waits** instead of coming in anyway (with "next in order", about 56% of rounds would still show a repeated number near the end). So near the end there can be 4 or 2 leaves floating. The 18 bridge clips are recorded (Kokoro af_bella).
+
 ## 1. The problem
 Three things make Kiwi's Beanstalk harder to understand or too easy to beat.
 

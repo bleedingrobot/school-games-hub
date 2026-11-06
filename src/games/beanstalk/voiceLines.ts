@@ -31,6 +31,7 @@ export function allVoiceLines(): string[] {
     lines.add(WORDS.guideStart(target));
     const step = target / 10;
     for (let a = 1; a <= 9; a++) lines.add(WORDS.right(a * step, target - a * step));
+    if (target > 10) for (let a = 1; a <= 9; a++) lines.add(WORDS.bridge(target, a * step, target - a * step));
   }
   for (const metal of METALS.slice(1)) lines.add(WORDS.leafTurned(metal));
   return [...lines];
