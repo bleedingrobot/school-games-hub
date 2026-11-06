@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DAYS_PER_EGG, finishChallenge, stalkAfter } from './progress';
-import { bondKey, makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, TARGETS, type Target, type Tap } from './round';
+import { seeded } from '../seededRandom';
+import { bondKey, makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
 
 const TARGET = 10;
 
@@ -18,6 +19,12 @@ function perfectTaps(seed: number, target: Target = 10): Tap[] {
     taps.push({ a, b: b!, ms: 1000 });
   }
   return taps;
+}
+
+/** No number floats twice, except the two 5s of 5 + 5 (maths review R4). */
+function expectNoTwins(round: Round, onScreen: number[], where: string) {
+  const numbers = onScreen.map((i) => round.leaves[i]).filter((n) => n !== round.target / 2);
+  expect(new Set(numbers).size, `${where}: ${numbers.join(', ')}`).toBe(numbers.length);
 }
 
 describe('the round', () => {
@@ -43,6 +50,26 @@ describe('the round', () => {
     expect(() => makeRound(1, 50 as Target)).toThrow();
   });
 
+  it('never floats the same number twice, whichever right pairs a child taps first (200 seeds, every sum)', () => {
+    for (const target of TARGETS) {
+      for (const seed of seeds) {
+        const round = makeRound(seed, target);
+        const random = seeded(seed + 7);
+        for (const order of ['in order', 'shuffled'] as const) {
+          const taps: Tap[] = [];
+          for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
+            expectNoTwins(round, r.onScreen, `seed ${seed}, ${target}, ${order}, after ${taps.length} pairs`);
+            // Any leaf with a partner floating; a shuffled child picks one at random.
+            const pairs = r.onScreen.flatMap((a) => r.onScreen.filter((b) => b > a && round.leaves[a] + round.leaves[b] === target).map((b) => ({ a, b, ms: 900 })));
+            expect(pairs.length, `seed ${seed}: nothing to pair`).toBeGreaterThan(0);
+            taps.push(order === 'in order' ? pairs[0] : pairs[Math.floor(random() * pairs.length)]);
+          }
+          expect(taps).toHaveLength(PAIRS_PER_ROUND);
+        }
+      }
+    }
+  });
+
   it('marks a wrong pair against the first leaf and leaves both floating', () => {
     const round = makeRound(42);
     const [a] = replay(round, []).onScreen;
@@ -53,7 +80,10 @@ describe('the round', () => {
     expect(r.onScreen).toContain(a);
     expect(r.onScreen).toContain(b);
     expect(() => replay(round, [{ a, b: a, ms: 1 }])).toThrow();
-    expect(() => replay(round, [{ a, b: 19, ms: 1 }])).toThrow(); // the last leaf isn't floating yet
+    const waiting = round.leaves.findIndex((_, i) => !replay(round, []).onScreen.includes(i));
+    expect(() => replay(round, [{ a, b: waiting, ms: 1 }])).toThrow(); // a leaf that hasn't come in yet
+    // The same taps always give the same answers and the same leaves floating (the server's replay is the browser's).
+    expect(replay(round, perfectTaps(42))).toEqual(replay(makeRound(42), perfectTaps(42)));
   });
 });
 

@@ -39,14 +39,19 @@ interface Props {
   /** What a pair adds up to on this beanstalk. */
   target: Target;
   child: Child;
-  /** The child's very first challenge: a hand shows them a right pair, until they have made one. */
+  /** The child's very first challenge, or the first on a new 100 or 1000 beanstalk: a hand shows them a right pair, until they have made one. */
   guide: boolean;
+  /**
+   * The first challenge on a new 100 or 1000 beanstalk: a line linking it to the bonds to 10 ("7 tens and 3 tens make 10
+   * tens"), shown and read before the usual line (maths review R4).
+   */
+  bridge?: boolean;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, child, guide, sound, say, onDone }: Props) {
+export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, child, guide, bridge = false, sound, say, onDone }: Props) {
   const round = useMemo(() => makeRound(seed, target), [seed, target]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
@@ -59,6 +64,12 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const { pairsMade } = replay(round, taps);
+  // The bridge uses the numbers of the pair the hand first points at (the first leaf in the tray with a partner).
+  const [bridgeLine] = useState(() => {
+    if (!bridge || target === 10) return null;
+    const first = slots.find((i) => i !== null && slots.some((j) => j !== null && j !== i && round.leaves[i] + round.leaves[j] === target));
+    return first == null ? null : WORDS.bridge(target, round.leaves[first], target - round.leaves[first]);
+  });
 
   useEffect(() => {
     heading.current?.focus();
@@ -66,9 +77,16 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
     let live = true;
     tappedYet.current = false;
     since.current = Date.now();
-    say(guide ? WORDS.guideStart(target) : WORDS.tapTwo(target), () => {
+    const opening = guide ? WORDS.guideStart(target) : WORDS.tapTwo(target);
+    const heard = () => {
       if (live && !tappedYet.current) since.current = Date.now();
-    });
+    };
+    // A tap during the bridge cuts it off, and a line cut off never calls back, so the opening line isn't said over it.
+    if (bridgeLine)
+      say(bridgeLine, () => {
+        if (live) say(opening, heard);
+      });
+    else say(opening, heard);
     const pending = timers.current;
     return () => {
       live = false;
@@ -106,7 +124,8 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
     later(FLY_MS, () => {
       const after = replay(round, next);
       const newcomers = after.onScreen.filter((i) => !slots.includes(i));
-      setSlots(shuffled(slots.map((s) => (s !== null && pair.includes(s) ? (newcomers.shift() ?? null) : s))));
+      // Newcomers take the pair's places and any gaps (a pair can wait while its numbers are floating: round.ts).
+      setSlots(shuffled(slots.map((s) => (s === null || pair.includes(s) ? (newcomers.shift() ?? null) : s))));
       setFlying([]);
       if (after.done) onDone(next);
     });
@@ -136,6 +155,15 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
         {Array.from({ length: PAIRS_PER_ROUND }, (_, i) => (
           <span key={i} className={i < pairsMade ? 'bs-pip bs-pip--done' : 'bs-pip'} />
         ))}
+      </div>
+      <div className="bs-target">
+        <p className="bs-target__badge" aria-hidden="true">
+          {WORDS.makeTarget(target)}
+        </p>
+        <button type="button" className="bs-hear" onClick={() => say(WORDS.tapTwo(target))}>
+          <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
+        </button>
+        {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>

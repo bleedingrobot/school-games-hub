@@ -278,3 +278,27 @@
   .bs-root *, .bs-root *::before, .bs-root *::after { animation: none !important; transition: none !important; }
   .bs-leaf--flying { opacity: 0; }
 }
+
+/* The sum, on screen as well as read aloud (maths review R4): "Make 100" and a button to hear the line again. */
+.bs-target {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px;
+  padding: 8px 10px 0; background: #7cc56b;
+}
+.bs-target__badge {
+  margin: 0; padding: 4px 18px; border-radius: 999px; border: 3px solid var(--bs-green-dark);
+  background: var(--bs-panel); color: var(--bs-ink); font: 900 clamp(1.4rem, 4vw, 2.2rem) / 1.2 system-ui, sans-serif;
+}
+.bs-hear {
+  min-height: 48px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--bs-green-dark);
+  background: var(--bs-panel); color: var(--bs-ink); font: 700 1rem system-ui, sans-serif; cursor: pointer;
+}
+.bs-hear:focus-visible { outline: 4px solid var(--bs-gold); outline-offset: 2px; }
+/* The bridge from bonds to 10, on a new 100 or 1000 beanstalk's first challenge. */
+.bs-bridge {
+  flex-basis: 100%; margin: 0; padding: 6px 12px; border-radius: 12px; text-align: center;
+  background: var(--bs-panel); color: var(--bs-ink); font: 800 clamp(1rem, 2.6vw, 1.3rem) / 1.3 system-ui, sans-serif;
+}
+@media (max-height: 500px) {
+  .bs-target { padding-top: 4px; }
+  .bs-target__badge { font-size: 1.2rem; padding: 2px 14px; }
+}

@@ -5565,16 +5565,31 @@ const bondKey = (n, target = 10) => {
 	const lo = Math.min(n, 10 - n);
 	return `bond10:${lo}+${10 - lo}`;
 };
-/** The leaves floating once some pairs are made. */
-const floating = (round, used, pairsMade) => round.leaves.map((_, i) => i).slice(0, 6 + 2 * pairsMade).filter((i) => !used.has(i));
+/** The leaves floating: those of the pairs that have come in, less the ones already paired. */
+const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
+/**
+* Brings in waiting pairs, in order, while there is room and neither of a pair's numbers is floating. `inPlay` (pairs
+* that have come in) grows; the leaves floating are theirs, less the `used` ones. Server and browser both get this from
+* the taps, through `replay`.
+*/
+function letIn(round, inPlay, used) {
+	const floatingNow = () => floating(inPlay, used);
+	for (let k = 0; k < 10 && floatingNow().length < 6; k++) {
+		if (inPlay.includes(k)) continue;
+		const numbers = floatingNow().map((i) => round.leaves[i]);
+		if (!numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1])) inPlay.push(k);
+	}
+}
 /** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
 function replay(round, taps) {
 	const used = new Set();
 	const answers = [];
+	const inPlay = [];
+	letIn(round, inPlay, used);
 	let pairsMade = 0;
 	for (const { a, b, ms } of taps) {
 		if (pairsMade === 10) throw new Error("Taps after the round was done");
-		const now = floating(round, used, pairsMade);
+		const now = floating(inPlay, used);
 		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
 		const right = round.leaves[a] + round.leaves[b] === round.target;
 		answers.push({
@@ -5585,13 +5600,14 @@ function replay(round, taps) {
 		if (right) {
 			used.add(a).add(b);
 			pairsMade++;
+			letIn(round, inPlay, used);
 		}
 	}
 	return {
 		pairsMade,
 		mistakes: answers.length - pairsMade,
 		done: pairsMade === 10,
-		onScreen: floating(round, used, pairsMade),
+		onScreen: floating(inPlay, used),
 		answers
 	};
 }

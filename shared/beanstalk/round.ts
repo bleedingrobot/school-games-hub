@@ -2,9 +2,14 @@
  * One day's challenge: ten pairs that make the beanstalk's sum (10, then 100, then 1000: progress.ts), and the replay of a child's taps (docs/BEANSTALK-PLAN.md section 3).
  * The server makes the round from a seed and replays the taps; the browser shows the same thing from the same seed.
  *
- * Leaves come in pair by pair: leaf 2k and 2k+1 are pair k. Six leaves float at a time, and each pair made lets the next
- * pair in. Any two leaves that make 10 are a right pair (a 3 from one pair and a 7 from another is fine), and what is
- * left on screen can always still be paired, because every right pair takes out an n and its 10 - n.
+ * Leaves come in pair by pair: leaf 2k and 2k+1 are pair k. Up to six leaves (three pairs) float at a time. No number is
+ * on screen twice, except the two 5s of 5 + 5 (James, 7 Nov 2026, maths review R4): otherwise a child could tick off
+ * "the same looking" numbers without knowing the bond. So a pair comes in only when neither of its numbers is floating:
+ * at the start, the first three pairs in order with different numbers; after each right pair, the next pairs in order
+ * that are free. A pair with no free place waits, so near the end there can be fewer than six leaves. Any two leaves
+ * that make 10 are a right pair (a 3 from one pair and a 7 from another is fine), and what is left on screen can always
+ * still be paired, because every right pair takes out an n and its 10 - n; an empty screen lets any pair in, so the
+ * round can always be finished.
  *
  * Bonds to 100 and 1000 are the same pairs in tens and hundreds (James, 4 Nov 2026): 30 + 70, 300 + 700. 0 + 100 and
  * 0 + 1000 are left out, as 0 + 10 is.
@@ -82,31 +87,48 @@ export interface Replay {
   answers: Omit<FactAnswer, 'at'>[];
 }
 
-/** The leaves floating once some pairs are made. */
-const floating = (round: Round, used: ReadonlySet<number>, pairsMade: number): number[] =>
-  round.leaves.map((_, i) => i).slice(0, ON_SCREEN + 2 * pairsMade).filter((i) => !used.has(i));
+/** The leaves floating: those of the pairs that have come in, less the ones already paired. */
+const floating = (inPlay: readonly number[], used: ReadonlySet<number>): number[] =>
+  inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
+
+/**
+ * Brings in waiting pairs, in order, while there is room and neither of a pair's numbers is floating. `inPlay` (pairs
+ * that have come in) grows; the leaves floating are theirs, less the `used` ones. Server and browser both get this from
+ * the taps, through `replay`.
+ */
+function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void {
+  const floatingNow = () => floating(inPlay, used);
+  for (let k = 0; k < PAIRS_PER_ROUND && floatingNow().length < ON_SCREEN; k++) {
+    if (inPlay.includes(k)) continue;
+    const numbers = floatingNow().map((i) => round.leaves[i]);
+    if (!numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1])) inPlay.push(k);
+  }
+}
 
 /** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
 export function replay(round: Round, taps: readonly Tap[]): Replay {
   const used = new Set<number>();
   const answers: Replay['answers'] = [];
+  const inPlay: number[] = [];
+  letIn(round, inPlay, used);
   let pairsMade = 0;
   for (const { a, b, ms } of taps) {
     if (pairsMade === PAIRS_PER_ROUND) throw new Error('Taps after the round was done');
-    const now = floating(round, used, pairsMade);
+    const now = floating(inPlay, used);
     if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
     const right = round.leaves[a] + round.leaves[b] === round.target;
     answers.push({ key: bondKey(round.leaves[a], round.target), correct: right, ms });
     if (right) {
       used.add(a).add(b);
       pairsMade++;
+      letIn(round, inPlay, used);
     }
   }
   return {
     pairsMade,
     mistakes: answers.length - pairsMade,
     done: pairsMade === PAIRS_PER_ROUND,
-    onScreen: floating(round, used, pairsMade),
+    onScreen: floating(inPlay, used),
     answers,
   };
 }

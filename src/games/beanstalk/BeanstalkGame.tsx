@@ -44,6 +44,12 @@ function useVoice() {
   return { on, setOn, say, available: canReadAloud() };
 }
 
+/** The first challenge on a new 100 or 1000 beanstalk: the hand comes back, with a line bridging from bonds to 10 (maths review R4). */
+function newBigStalk(daysDone: number): boolean {
+  const stalk = stalkAfter(daysDone);
+  return stalk.eggs > 0 && stalk.day === 0 && stalk.target > 10;
+}
+
 type Screen =
   | { kind: 'loading' }
   | { kind: 'choose' }
@@ -137,7 +143,8 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
         friend={stalkAfter(state.daysDone).friend}
         target={stalkAfter(state.daysDone).target}
         child={state.child}
-        guide={state.daysDone === 0 && state.lastLeafDay === null}
+        guide={(state.daysDone === 0 && state.lastLeafDay === null) || newBigStalk(state.daysDone)}
+        bridge={newBigStalk(state.daysDone)}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.seed, taps)}

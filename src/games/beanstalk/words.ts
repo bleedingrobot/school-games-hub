@@ -15,6 +15,19 @@ export const WORDS = {
   tapTwo: (target: number) => `Tap two leaves that make ${target}.`,
   guideStart: (target: number) => `Tap two leaves that make ${target}. Start with the leaf the hand points to.`,
   guideNext: 'Now tap the leaf the hand points to.',
+  /** The badge above the tray, so the sum is on screen with Voice off (maths review R4). */
+  makeTarget: (target: number) => `Make ${target}`,
+  hearAgain: 'Hear it again',
+  /**
+   * The first challenge on a new 100 or 1000 beanstalk: the same bonds, in tens or hundreds, with the numbers of the
+   * pair the hand points at ("Each dot is a ten. 7 tens and 3 tens make 10 tens. That is 100.").
+   */
+  bridge: (target: number, a: number, b: number) => {
+    const step = target / 10;
+    const unit = step === 100 ? 'hundred' : 'ten';
+    const of = (n: number) => `${n / step} ${n === step ? unit : `${unit}s`}`;
+    return `Each dot is a ${unit}. ${of(a)} and ${of(b)} make 10 ${unit}s. That is ${target}.`;
+  },
   guideHere: 'try this one',
   right: (a: number, b: number) => `${a} and ${b} make ${a + b}!`,
   /** Under the ten-frame on the 100 and 1000 beanstalks: each dot is a ten (or a hundred). */
