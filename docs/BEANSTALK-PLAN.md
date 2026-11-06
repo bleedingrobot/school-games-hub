@@ -458,3 +458,35 @@ How it works:
   **PR #177** turned the code switch on. The card is in **Easy maths games**.
 - **Not done:** the players tracker artifact couldn't be opened from this session, so Kiwi's Beanstalk (table
   `beanstalk_rounds`, columns `started_at` and `finished_at`) still needs adding to its query.
+
+## Mistakes that teach (maths review R5, 7 Nov 2026)
+
+Plan: `docs/plans/maths-review/R5-mistakes-that-teach.md`, sections 3.1 and 3.2. Branch `r5-beanstalk-mistakes`.
+
+- **Kinds of wrong pair** (`shared/beanstalk/round.ts`, `mistakeKind`): by the total against the sum. `close` is one
+  off (11 or 9), `over` and `under` two or more; on the 100 and 1000 beanstalks one ten or hundred off is `digit`
+  (90, 110, 900, 1100: "3 tens and 6 tens is 9 tens, not 10").
+- **A near miss in every tray of six:** the pair that fills the tray is the first free one that gives a pair one off the
+  sum. If none does (only ever 1 + 9, 3 + 7 and 5 + 5 together, about 1 full tray in 55 before), the tray waits at four
+  leaves until a pair is made. Checked on 2,000 seeds: no full tray without one.
+- **Wrong pair 1:** the leaves wobble; a panel over the foot of the scene joins the two leaves' dots in one frame (smaller
+  number first): the extra dots hang out of the frame glowing, or the empty squares glow. The line is read ("4 and 8 make
+  12. That is too many."). While a leaf is picked, the leaves already tried with it are grey and can't be tapped.
+- **Wrong pair 2 in a go** (a go runs until a right pair): "Let's look together". The first leaf pulses, its frame fills
+  with its partner's dots one at a time ("7 and 1, 2, 3 more make 10."), "My turn" appears after 3 seconds, then "Now you
+  try: what goes with 7?" with the 7 still picked and pulsing and the partner not marked. Wrong pairs after that show
+  why again; the 7 stays picked.
+- **Scoring:** only the first tap of each go is scored to the maths records (before, every tap was). So a pair found after
+  a mistake, and above all after "Let's look together", is never a clean right. The taps saved, the mistakes count and
+  the replay check (leaves, pairs, finish) are unchanged. The day still counts and the leaf still turns.
+- **Voice:** 151 new Kokoro clips (af_bella): why-lines for the 32 wrong pairs on each beanstalk, the fill-up and "Now you
+  try" lines for every leaf, and "Let's look together". "Try again!" is no longer said, and its clip is gone.
+  `scripts/voice-clips.py` can now say numbers up to 1999 (it stopped at 1000; 1100 to 1700 are wrong-pair totals).
+- **Tests:** 5 new (kind from total, near miss in every tray, scoring and tried pairs in the replay, the play-screen flow,
+  the voice lines); the server test now expects one answer a go. Function rebuilt.
+- **Played in the preview:** bronze (day 5), silver (15), gold (25), the tūī's 100 beanstalk on its guided first day (30:
+  the hand hides during the look) and the kererū's 1000 (60). Made an over, under, close and digit mistake, the look
+  together, a wrong pair in the redo, and finished a round (the leaf turned silver). The preview's jump buttons now
+  include 30, 45 and 60.
+- **On deploy:** a child mid-round when the function goes live may have a different tray from the server's (the near-miss
+  rule), and that one finish would fail. Merge outside school hours.

@@ -25,7 +25,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             <p>Only in this preview. Nothing is saved to the school.</p>
             <button type="button" onClick={() => { trial.tools.nextDay(); h.reload(); }}>Pretend it is tomorrow</button>
             <p>Jump to after this many finished days:</p>
-            {[0, 5, 9, 10, 15, 20, 25, 29, 59].map((n) => (
+            {[0, 5, 9, 10, 15, 20, 25, 29, 30, 45, 59, 60].map((n) => (
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
             <p>

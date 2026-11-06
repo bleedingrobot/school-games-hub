@@ -37,7 +37,7 @@ function setup(over: MemoryOptions = {}) {
   return { send, start, log, services, hours: (h: number) => (clock += h * 3_600_000) };
 }
 
-it('finishes only a pupil’s own, finished challenge, once, and records each pair as a bond to 10', async () => {
+it('finishes only a pupil’s own, finished challenge, once, and records each go as a bond to 10', async () => {
   const { send, start, log } = setup();
   expect((await send(null, { action: 'load' })).status).toBe(401);
   expect((await send('pupil-a', { action: 'start' })).body).toMatchObject({ code: 'no-child' });
@@ -53,11 +53,11 @@ it('finishes only a pupil’s own, finished challenge, once, and records each pa
 
   expect((await send('pupil-a', { action: 'finish', seed, taps })).body).toMatchObject({ daysDone: 1, leafChanged: 0 });
   expect((await send('pupil-a', { action: 'finish', seed, taps })).body).toMatchObject({ code: 'ended' });
-  // One answer a pair tapped, once, the wrong pair counted against the first leaf's pair.
+  // One answer a go (its first tap), once, the wrong pair counted against the first leaf's pair; the right pair after it isn't scored (maths review R5).
   expect(log.answers).toHaveLength(1);
   const [{ once, answers }] = log.answers;
   expect(once).toBe(`beanstalk:${seed}`);
-  expect(answers).toHaveLength(11);
+  expect(answers).toHaveLength(10);
   expect(answers.every((a) => /^bond10:[1-5]\+[5-9]$/.test(a.key))).toBe(true);
   expect(answers[0]).toMatchObject({ key: bondKey(makeRound(seed).leaves[taps[0].a]), correct: false });
 

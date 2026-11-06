@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DAYS_PER_EGG, finishChallenge, stalkAfter } from './progress';
 import { seeded } from '../seededRandom';
-import { bondKey, makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
+import { bondKey, makeRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
 
 const TARGET = 10;
 
@@ -84,6 +84,53 @@ describe('the round', () => {
     expect(() => replay(round, [{ a, b: waiting, ms: 1 }])).toThrow(); // a leaf that hasn't come in yet
     // The same taps always give the same answers and the same leaves floating (the server's replay is the browser's).
     expect(replay(round, perfectTaps(42))).toEqual(replay(makeRound(42), perfectTaps(42)));
+  });
+});
+
+describe('mistakes that teach (maths review R5)', () => {
+  it('names a wrong pair by its total: over, under, one off (close), and on 100 and 1000 one ten or hundred off (digit)', () => {
+    expect([12, 7, 11, 9, 3, 17, 10].map((n) => mistakeKind(n, 10))).toEqual(['over', 'under', 'close', 'close', 'under', 'over', null]);
+    expect([90, 110, 120, 80, 30, 100].map((n) => mistakeKind(n, 100))).toEqual(['digit', 'digit', 'over', 'under', 'under', null]);
+    expect([900, 1100, 1700, 300, 1000].map((n) => mistakeKind(n, 1000))).toEqual(['digit', 'digit', 'over', 'under', null]);
+  });
+
+  it('gives every tray of six a near miss, one off the sum, whatever pairs a child makes (200 seeds, every sum)', () => {
+    for (const target of TARGETS) {
+      for (const seed of seeds) {
+        const round = makeRound(seed, target);
+        const random = seeded(seed + 3);
+        const taps: Tap[] = [];
+        for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
+          const n = r.onScreen.map((i) => round.leaves[i]);
+          if (n.length === ON_SCREEN) expect(n.some((x, i) => n.some((y, j) => j > i && mistakeKind(x + y, target) === (target === 10 ? 'close' : 'digit'))), `seed ${seed}: ${n}`).toBe(true);
+          const pairs = r.onScreen.flatMap((a) => r.onScreen.filter((b) => b > a && round.leaves[a] + round.leaves[b] === target).map((b) => ({ a, b, ms: 900 })));
+          taps.push(pairs[Math.floor(random() * pairs.length)]);
+        }
+      }
+    }
+  });
+
+  it('replays wrong pairs as before but scores only the first tap of each go, and remembers the pairs tried', () => {
+    const round = makeRound(42);
+    const right = perfectTaps(42);
+    const start = replay(round, []).onScreen;
+    const a = right[0].a;
+    const [w1, w2] = start.filter((j) => j !== a && round.leaves[a] + round.leaves[j] !== TARGET);
+    const ka = bondKey(round.leaves[a]);
+    // Go 1: two wrong pairs ("Let's look together"), then the right one. Go 2: right first time. Go 3: one wrong, then right.
+    const c = right[2].a;
+    const wc = replay(round, right.slice(0, 2)).onScreen.find((j) => j !== c && round.leaves[c] + round.leaves[j] !== TARGET)!;
+    const taps = [{ a, b: w1, ms: 5 }, { a: w2, b: a, ms: 6 }, right[0], right[1], { a: c, b: wc, ms: 7 }, ...right.slice(2)];
+    const mid = replay(round, taps.slice(0, 2));
+    expect(mid).toMatchObject({ wrongInGo: 2, tried: [pairId(a, w1), pairId(w2, a)], pairsMade: 0, onScreen: start });
+    const end = replay(round, taps);
+    const perfect = replay(round, right);
+    // The leaves, the pairs and the finish are the same as with no mistakes: the server replays it the same way.
+    expect(end).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND, mistakes: 3, onScreen: [], shown: 1, wrongInGo: 0 });
+    expect(end.answers).toHaveLength(PAIRS_PER_ROUND);
+    expect(end.answers[0]).toEqual({ key: ka, correct: false, ms: 5 });
+    expect(end.answers.filter((x) => !x.correct)).toHaveLength(2);
+    expect(end.answers.slice(1)).toEqual([perfect.answers[1], { ...perfect.answers[2], correct: false, ms: 7 }, ...perfect.answers.slice(3)]);
   });
 });
 

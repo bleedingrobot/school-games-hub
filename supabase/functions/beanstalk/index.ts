@@ -5567,32 +5567,53 @@ const bondKey = (n, target = 10) => {
 };
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
 const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
+/** True when two of the floating numbers are one unit off the sum: the tempting near-miss every full tray has. */
+const hasNearMiss = (numbers, target) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === target / 10));
 /**
-* Brings in waiting pairs, in order, while there is room and neither of a pair's numbers is floating. `inPlay` (pairs
-* that have come in) grows; the leaves floating are theirs, less the `used` ones. Server and browser both get this from
-* the taps, through `replay`.
+* Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
+* come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
+* fills the tray is the first free one that gives it a near miss (a 3 with a 6, say), so every tray of six has one; if
+* none does, the tray waits at four leaves (maths review R5).
+* Server and browser both get this from the taps, through `replay`.
 */
 function letIn(round, inPlay, used) {
 	const floatingNow = () => floating(inPlay, used);
-	for (let k = 0; k < 10 && floatingNow().length < 6; k++) {
-		if (inPlay.includes(k)) continue;
+	const free = (numbers) => (k) => !inPlay.includes(k) && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
+	while (floatingNow().length < 6) {
 		const numbers = floatingNow().map((i) => round.leaves[i]);
-		if (!numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1])) inPlay.push(k);
+		const waiting = Array.from({ length: 10 }, (_, k) => k).filter(free(numbers));
+		if (!waiting.length) return;
+		if (!(numbers.length + 2 >= 6)) {
+			inPlay.push(waiting[0]);
+			continue;
+		}
+		const tempting = waiting.find((k) => hasNearMiss([
+			...numbers,
+			round.leaves[2 * k],
+			round.leaves[2 * k + 1]
+		], round.target));
+		if (tempting === void 0) return;
+		inPlay.push(tempting);
 	}
 }
+/** A pair of leaves the same either way round, so a tried pair is found whichever leaf was tapped first. */
+const pairId = (a, b) => a < b ? `${a}-${b}` : `${b}-${a}`;
 /** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
 function replay(round, taps) {
 	const used = new Set();
 	const answers = [];
+	const tried = [];
 	const inPlay = [];
 	letIn(round, inPlay, used);
 	let pairsMade = 0;
+	let wrongInGo = 0;
+	let shown = 0;
 	for (const { a, b, ms } of taps) {
 		if (pairsMade === 10) throw new Error("Taps after the round was done");
 		const now = floating(inPlay, used);
 		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
 		const right = round.leaves[a] + round.leaves[b] === round.target;
-		answers.push({
+		if (wrongInGo === 0) answers.push({
 			key: bondKey(round.leaves[a], round.target),
 			correct: right,
 			ms
@@ -5600,15 +5621,23 @@ function replay(round, taps) {
 		if (right) {
 			used.add(a).add(b);
 			pairsMade++;
+			if (wrongInGo >= 2) shown++;
+			wrongInGo = 0;
 			letIn(round, inPlay, used);
+		} else {
+			wrongInGo++;
+			if (!tried.includes(pairId(a, b))) tried.push(pairId(a, b));
 		}
 	}
 	return {
 		pairsMade,
-		mistakes: answers.length - pairsMade,
+		mistakes: taps.length - pairsMade,
 		done: pairsMade === 10,
 		onScreen: floating(inPlay, used),
-		answers
+		answers,
+		tried,
+		wrongInGo,
+		shown
 	};
 }
 const METALS = [

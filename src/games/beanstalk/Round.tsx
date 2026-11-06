@@ -1,13 +1,20 @@
 /**
  * Today's challenge: tap two floating leaves that make the beanstalk's sum (10, 100 or 1000). A right pair flies up to the stalk and the stalk grows towards
- * the friend; a wrong pair wobbles and stays (no penalty, nothing shown: the dots are the help). Ten pairs reach the top.
+ * the friend. Ten pairs reach the top.
+ *
+ * Mistakes that teach (maths review R5). A go runs until a right pair. The first wrong pair of a go wobbles, and the two
+ * leaves' dots join in one frame with the extra dots out or the empty squares glowing, and the line says why ("4 and 8
+ * make 12. That is too many."). A tried pair can't be tapped together again. The second wrong pair stops the free taps:
+ * "Let's look together". The first leaf of that pair pulses and its frame fills with its partner's dots, counted, then
+ * "Now you try: what goes with 7?" with the 7 still picked and the partner not marked. The pair then made counts for the
+ * round, but only a go's first tap is scored (round.ts), so it is a shown pair, not a clean right.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
 import { playSound } from '../sounds';
 import type { Child } from './backend';
-import { Leaf, type LeafLook } from './Leaf';
+import { JoinedFrame, Leaf, type LeafLook } from './Leaf';
 import { Scene } from './Scene';
 import { WORDS } from './words';
 
@@ -27,6 +34,18 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 const WOBBLE_MS = 500;
+/** "Let's look together": a dot of the partner every so often, and the child can move on after 3 seconds. */
+const FILL_DOT_MS = 450;
+const LOOK_SKIP_MS = 3000;
+/** If the voice never says it has finished (a line cut off), the look still ends. */
+const LOOK_LONGEST_MS = 12000;
+
+/** "Let's look together" for this leaf, with its partner's dots counted into its frame (`filled` so far). */
+interface Look {
+  anchor: number;
+  filled: number;
+  canSkip: boolean;
+}
 
 interface Props {
   seed: number;
@@ -58,12 +77,19 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
   const [flying, setFlying] = useState<number[]>([]);
   const [wobble, setWobble] = useState<number[]>([]);
+  /** The last wrong pair, shown joined with its why-line until the next pair is tapped. */
+  const [why, setWhy] = useState<{ a: number; b: number } | null>(null);
+  const [look, setLook] = useState<Look | null>(null);
+  /** After "Let's look together": the leaf the child now finds the partner of. It stays picked. */
+  const [redo, setRedo] = useState<number | null>(null);
+  /** Counts each "Let's look together", so its late timers and voice callbacks do nothing once it has ended. */
+  const lookRun = useRef(0);
   const since = useRef(Date.now());
   /** Set by the first tap, so the end of the opening line no longer restarts the clock. */
   const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
-  const { pairsMade } = replay(round, taps);
+  const { pairsMade, tried } = replay(round, taps);
   // The bridge uses the numbers of the pair the hand first points at (the first leaf in the tray with a partner).
   const [bridgeLine] = useState(() => {
     if (!bridge || target === 10) return null;
@@ -96,9 +122,57 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
 
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
 
+  /** The second wrong pair of a go: show the first leaf's partner filling its frame, then ask the child to find it. */
+  function lookTogether(anchor: number) {
+    const run = ++lookRun.current;
+    const live = () => lookRun.current === run;
+    const n = round.leaves[anchor];
+    const dotsToAdd = (target - n) / (target / 10);
+    let said = false;
+    let filled = false;
+    const end = () => {
+      if (!live()) return;
+      lookRun.current++;
+      setLook(null);
+      setRedo(anchor);
+      setPicked(anchor);
+      since.current = Date.now();
+      say(WORDS.nowTry(n));
+    };
+    const endIfDone = () => {
+      if (said && filled) later(700, end);
+    };
+    let started = false;
+    const fill = () => {
+      if (!live() || started) return;
+      started = true;
+      say(WORDS.fillUp(n, target), () => {
+        said = true;
+        if (live()) endIfDone();
+      });
+      for (let d = 1; d <= dotsToAdd; d++) later(d * FILL_DOT_MS, () => live() && setLook((l) => l && { ...l, filled: d }));
+      later(dotsToAdd * FILL_DOT_MS + 300, () => {
+        filled = true;
+        if (live()) endIfDone();
+      });
+    };
+    setWhy(null);
+    setPicked(null);
+    setLook({ anchor, filled: 0, canSkip: false });
+    say(WORDS.lookTogether, fill);
+    later(1800, fill); // the voice is off or slow: count anyway
+    later(LOOK_SKIP_MS, () => live() && setLook((l) => l && { ...l, canSkip: true }));
+    later(LOOK_LONGEST_MS, end);
+    skipLook.current = end;
+  }
+  const skipLook = useRef<() => void>(() => {});
+
   function tap(leaf: number) {
-    if (flying.length) return;
+    if (flying.length || look) return;
     tappedYet.current = true;
+    // "Now you try": the leaf from "Let's look together" stays picked, so a tap on it does nothing.
+    if (redo !== null && leaf === redo) return;
+    if (picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))) return; // a pair tried already
     if (picked === null || picked === leaf) {
       setPicked(picked === leaf ? null : leaf);
       if (sound) playSound('tap');
@@ -109,14 +183,24 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
     const next = [...taps, { a: picked, b: leaf, ms: now - since.current }];
     since.current = now;
     setTaps(next);
-    setPicked(null);
+    setPicked(redo);
     const [x, y] = [round.leaves[picked], round.leaves[leaf]];
     if (x + y !== target) {
+      const first = picked;
       setWobble([picked, leaf]);
-      say(WORDS.tryAgain);
       later(WOBBLE_MS, () => setWobble([]));
+      // The second wrong pair of a go (not counting those after "Let's look together"): look together at the first leaf.
+      if (redo === null && replay(round, next).wrongInGo === 2) {
+        lookTogether(first);
+        return;
+      }
+      setWhy({ a: picked, b: leaf });
+      say(WORDS.why(x, y, target));
       return;
     }
+    setWhy(null);
+    setRedo(null);
+    setPicked(null);
     const pair = [picked, leaf];
     setFlying(pair);
     say(WORDS.right(x, y));
@@ -135,10 +219,19 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
   // leaf floating has a partner (round.ts), so it always has somewhere to point. Gone after the first right pair.
   const onScreen = slots.filter((s): s is number => s !== null && !flying.includes(s));
   const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === target);
-  const pointAt = !guide || pairsMade > 0 || flying.length ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
+  const pointAt = !guide || pairsMade > 0 || flying.length || look || redo !== null ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
 
-  const look = (leaf: number): LeafLook =>
-    flying.includes(leaf) ? 'flying' : wobble.includes(leaf) ? 'wobble' : picked === leaf ? 'picked' : 'resting';
+  const lookOf = (leaf: number): LeafLook =>
+    flying.includes(leaf)
+      ? 'flying'
+      : picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))
+        ? 'tried'
+        : wobble.includes(leaf)
+          ? 'wobble'
+          : picked === leaf
+            ? 'picked'
+            : 'resting';
+  const step = target / 10;
 
   return (
     <div className="bs-play">
@@ -160,10 +253,35 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
         <p className="bs-target__badge" aria-hidden="true">
           {WORDS.makeTarget(target)}
         </p>
-        <button type="button" className="bs-hear" onClick={() => say(WORDS.tapTwo(target))}>
+        <button
+          type="button"
+          className="bs-hear"
+          disabled={look !== null}
+          onClick={() => say(redo !== null ? WORDS.nowTry(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target))}
+        >
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
         {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
+        {why && (
+          <div className="bs-why" role="status" key={`${why.a}-${why.b}-${taps.length}`}>
+            {/* Smaller number first, as the line says it. */}
+            <JoinedFrame a={Math.min(round.leaves[why.a], round.leaves[why.b])} b={Math.max(round.leaves[why.a], round.leaves[why.b])} step={step} />
+            <p>{WORDS.why(round.leaves[why.a], round.leaves[why.b], target)}</p>
+          </div>
+        )}
+        {look && (
+          <div className="bs-why bs-why--look" role="status">
+            <p className="bs-why__title">{WORDS.lookTogether}</p>
+            <JoinedFrame a={round.leaves[look.anchor]} b={target - round.leaves[look.anchor]} step={step} more={look.filled} />
+            <p>{WORDS.fillUp(round.leaves[look.anchor], target)}</p>
+            {look.canSkip && (
+              <button type="button" className="bs-hear" onClick={() => skipLook.current()}>
+                {WORDS.goOn}
+              </button>
+            )}
+          </div>
+        )}
+        {redo !== null && !why && <p className="bs-why bs-why--try">{WORDS.nowTry(round.leaves[redo])}</p>}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>
@@ -176,9 +294,10 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
               step={target / 10}
               dots={dots}
               metal={trayMetal}
-              look={look(leaf)}
+              look={lookOf(leaf)}
               slot={slot}
               pointed={leaf === pointAt}
+              pulse={look?.anchor === leaf || redo === leaf}
               onTap={() => tap(leaf)}
             />
           ),

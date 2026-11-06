@@ -1,12 +1,14 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DAYS_PER_EGG } from '../../../shared/beanstalk/progress';
 import { trialBackend } from './backend';
 import { BeanstalkGame } from './BeanstalkGame';
 
 describe("Kiwi's Beanstalk play screen", () => {
   beforeEach(() => localStorage.clear());
+  afterEach(() => vi.useRealTimers());
 
   it('shows the sum to make, and the bridge from bonds to 10 only on the first challenge of a new 100 or 1000 beanstalk', async () => {
     localStorage.setItem('beanstalk-voice', 'off');
@@ -44,5 +46,43 @@ describe("Kiwi's Beanstalk play screen", () => {
     await playAfter(2 * DAYS_PER_EGG);
     expect(screen.getByText('Make 1000')).toBeInTheDocument();
     expect(bridge()).toHaveTextContent(/^Each dot is a hundred\. \d hundreds? and \d hundreds? make 10 hundreds\. That is 1000\.$/);
+  });
+
+  it('shows why after a wrong pair, greys the tried pair, then looks together and asks for the partner (maths review R5)', async () => {
+    localStorage.setItem('beanstalk-voice', 'off');
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { backend, tools } = trialBackend({ storageKey: 'round-test' });
+    await backend.choose('jack');
+    tools.jumpTo(3);
+    render(<BeanstalkGame backend={backend} />);
+    await u.click(await screen.findByRole('button', { name: 'Play' }));
+    await screen.findByRole('button', { name: 'Hear it again' });
+    const leaves = () => screen.getAllByRole('button').filter((b) => /^\d+$/.test(b.getAttribute('aria-label') ?? ''));
+    const leaf = (n: number) => leaves().find((b) => b.getAttribute('aria-label') === String(n))!;
+    const numbers = leaves().map((b) => Number(b.getAttribute('aria-label')));
+    const a = numbers[0];
+    const [w1, w2] = numbers.filter((n) => n !== a && n + a !== 10);
+    const lo = (x: number, y: number) => (x < y ? [x, y] : [y, x]);
+
+    // Wrong pair 1: the line says why, and with the first leaf picked again, the tried leaf can't be tapped.
+    await u.click(leaf(a));
+    await u.click(leaf(w1));
+    const [p, q] = lo(a, w1);
+    expect(screen.getByRole('status')).toHaveTextContent(new RegExp(`^${p} and ${q} make ${p + q}\\.`));
+    await u.click(leaf(a));
+    expect(leaf(w1)).toBeDisabled();
+    expect(leaf(w2)).toBeEnabled();
+
+    // Wrong pair 2: "Let's look together" fills the first leaf's frame, then "Now you try" with it still picked.
+    await u.click(leaf(w2));
+    expect(screen.getByRole('status')).toHaveTextContent("Let's look together.");
+    await u.click(leaf(10 - a)); // no taps while it shows
+    expect(screen.getByLabelText('0 of 10 pairs')).toBeInTheDocument();
+    await act(() => vi.advanceTimersByTimeAsync(12000));
+    expect(screen.getByText(`Now you try: what goes with ${a}?`)).toBeInTheDocument();
+    expect(leaf(a)).toHaveAttribute('aria-pressed', 'true');
+    await u.click(leaf(10 - a));
+    expect(screen.getByLabelText('1 of 10 pairs')).toBeInTheDocument();
   });
 });
