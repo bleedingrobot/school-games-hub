@@ -6153,7 +6153,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`)) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -6167,7 +6167,7 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 				...a,
 				ms: keptMs(a.ms)
 			})),
-			quick_ms: quickMsForPack(pack),
+			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
 			top_box: 4
 		});
