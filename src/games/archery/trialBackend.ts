@@ -38,6 +38,8 @@ export interface TrialData {
   nextDuel?: number;
   /** When each pupil last said "I'm here" (ms). */
   here?: Record<string, number>;
+  /** archery_snoozes: `${player}:${other}` → until (ms): `other` can't challenge `player` till then. */
+  snoozes?: Record<string, number>;
   /** Achievement counts per pupil (archery_players.stats), and the once-only keys already counted (Stage 7). */
   stats?: Record<string, StatsAdd>;
   noted?: string[];
@@ -109,6 +111,7 @@ export function trialServices(opts: TrialOptions = {}) {
   const on = (id: string) => (opts.enabled ? opts.enabled(id) : true);
   const duelsOn = (id: string) => on(id) && (opts.duels ? opts.duels(id) : true);
   const duels = () => (data.duels ??= {});
+  const snoozed = (player: string, other: string) => ((data.snoozes ??= {})[`${player}:${other}`] ?? 0) > now();
   const busy = (id: string) => Object.values(duels()).some((d) => (d.status === 'packing' || d.status === 'playing') && (d.seat_a === id || d.seat_b === id));
   /** Saves a change to a fight and tells the listeners (Realtime, in the real thing). */
   const changed = (d: DuelRow) => {
@@ -254,11 +257,12 @@ export function trialServices(opts: TrialOptions = {}) {
       if (key in data.requests) return { ok: true, value: data.requests[key] as never };
       const me = profile(player), them = opts.pupils?.[other];
       const seen = (data.here ??= {})[other];
-      let result: 'ok' | 'away' | 'class' | 'busy' | 'off' = 'ok';
+      let result: 'ok' | 'away' | 'class' | 'busy' | 'off' | 'snoozed' = 'ok';
       let id: number | null = null;
       if (!them || other === player || seen === undefined || now() - seen > HERE_FOR_MS) result = 'away';
       else if ((them.school ?? 1) !== (me.school ?? 1) || !me.classId || me.classId !== them.classId) result = 'class';
       else if (!on(other)) result = 'off';
+      else if (snoozed(other, player)) result = 'snoozed';
       else if (busy(player) || busy(other)) result = 'busy';
       else {
         for (const old of Object.values(duels())) if (old.seat_a === player && old.status === 'asked') close(old, 'cancelled', null, null, null, null, null, null);
@@ -283,6 +287,12 @@ export function trialServices(opts: TrialOptions = {}) {
       d.status = 'packing';
       d.deadline = iso(now() + packMs);
       return { ok: true, value: { result: 'ok', duel: changed(d) } };
+    },
+    async duelSnooze(player, duel, snoozeMs) {
+      const d = duels()[duel];
+      if (!d || d.seat_b !== player) return { ok: true, value: { result: 'not-yours' } };
+      (data.snoozes ??= {})[`${d.seat_b}:${d.seat_a}`] = now() + snoozeMs;
+      return { ok: true, value: { result: 'ok', duel: d.status === 'asked' ? close(d, 'declined', null, null, null, null, null, null) : clone(d) } };
     },
     async duelPack(player, duel, pack, turnMs) {
       const d = duels()[duel];
@@ -353,7 +363,7 @@ export function trialServices(opts: TrialOptions = {}) {
         const p = opts.pupils?.[id];
         return !!p && p.classId === me.classId && (p.school ?? 1) === (me.school ?? 1);
       })
-      .map(([id]) => ({ id, name: opts.pupils![id].name, avatar: {}, busy: busy(id) }))
+      .map(([id]) => ({ id, name: opts.pupils![id].name, avatar: {}, busy: busy(id), snoozed: snoozed(id, player) }))
       .sort((a, b) => a.name.localeCompare(b.name));
     const all = Object.values(duels());
     const asks = all

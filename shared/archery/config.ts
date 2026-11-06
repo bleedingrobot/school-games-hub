@@ -274,6 +274,8 @@ export const DUEL_MAX_TIMEOUTS = 3;
 export const CHALLENGE_MS = 60_000;
 /** Once a challenge is accepted, both have this long to pack their quivers. */
 export const PACK_MS = 120_000;
+/** "Snooze for 30 min" on a challenge: whoever sent it can't challenge you again for this long (James, 6 Nov 2026). */
+export const SNOOZE_MS = 30 * 60_000;
 /** While the game is open, the screen says "I'm here" this often (and gets the classmates who are). */
 export const HERE_EVERY_MS = 30_000;
 /** Seen within this long counts as here (a missed beat or two is fine). */

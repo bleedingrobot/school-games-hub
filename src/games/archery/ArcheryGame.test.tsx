@@ -292,13 +292,15 @@ describe('fights against classmates', () => {
       <ChallengeAsk
         ask={{ duel: 1, from: 'Speedy Otter 7', world: 'snow', deadline: new Date(Date.now() + 60_000).toISOString() }}
         serverNow={() => Date.now()} busy={false} problem="" onAccept={() => answered.push('yes')} onDecline={() => answered.push('no')}
+        onSnooze={() => answered.push('snooze')}
       />,
     );
     await waitFor(() => expect(document.activeElement?.id).toBe('ar-ask-title'));
     expect(screen.getByRole('alertdialog', { name: 'Speedy Otter 7 challenges you!' }).textContent).toMatch(/Snow: one round.*within (59|60) seconds/);
     screen.getByRole('button', { name: 'Say no' }).focus();
     fireEvent.click(document.activeElement!);
-    expect(answered).toEqual(['no']);
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze Speedy Otter 7 for 30 min' }));
+    expect(answered).toEqual(['no', 'snooze']);
   });
 
   it('hides everything to do with classmates while the teacher has classmate fights off', async () => {

@@ -5,7 +5,8 @@
  * their turn, plays the shot with the game's own engine and saves "only if nothing has changed since it looked".
  *
  *   duel-challenge  {request, other, world}   sends a challenge (same school and class only);
- *   duel-answer     {duel, accept}            the classmate says yes (both pack) or no;
+ *   duel-answer     {duel, accept, snooze?}   the classmate says yes (both pack) or no (snooze: and the sender can't challenge
+ *                                             them again for SNOOZE_MS);
  *   duel-pack       {duel, pack}              packs a quiver (the gear comes out of the bag); both packed = the fight starts;
  *   shot            {duel, version, shot}     a shot on your own turn;
  *   times-up        {duel}                    the turn's time ran out (the server checks its own clock): the turn is used up;
@@ -19,7 +20,7 @@
  * time either player asks anything (gear back to both, nobody gets points). Achievement counts for a fight played to
  * the finish go to both players through `note` (shared/archery/stats.ts).
  */
-import { CHALLENGE_MS, DUEL_GRACE_MS, DUEL_TURN_MS, PACK_MS } from '../../../shared/archery/config';
+import { CHALLENGE_MS, DUEL_GRACE_MS, DUEL_TURN_MS, PACK_MS, SNOOZE_MS } from '../../../shared/archery/config';
 import {
   PASS, duelOpen, duelSetup, readShot, replayDuel, seatOf, timeoutsAfter, tooManyTimeouts,
   type DuelEnding, type DuelRow,
@@ -34,8 +35,10 @@ import type { ArmoryState, Outcome } from './handler';
 export interface DuelServices {
   /** The fight, whether the game is on for each player's class and whether classmate fights are, or null if there's no such fight. */
   duelLoad(duel: number): Promise<{ duel: DuelRow; on: [boolean, boolean]; duels: [boolean, boolean] } | null | 'busy'>;
-  duelChallenge(player: string, request: string, other: string, world: WorldId, seed: number, waitMs: number): Promise<Outcome<{ result: 'ok' | 'away' | 'class' | 'busy' | 'off'; duel: number | null }>>;
+  duelChallenge(player: string, request: string, other: string, world: WorldId, seed: number, waitMs: number): Promise<Outcome<{ result: 'ok' | 'away' | 'class' | 'busy' | 'off' | 'snoozed'; duel: number | null }>>;
   duelAnswer(player: string, duel: number, accept: boolean, packMs: number): Promise<Outcome<{ result: 'ok' | 'late' | 'busy' | 'not-yours'; duel?: DuelRow }>>;
+  /** Says no to the challenge (if it's still waiting) and snoozes whoever sent it for `snoozeMs`. */
+  duelSnooze(player: string, duel: number, snoozeMs: number): Promise<Outcome<{ result: 'ok' | 'not-yours'; duel?: DuelRow }>>;
   duelPack(player: string, duel: number, pack: PlayerSetup, turnMs: number): Promise<Outcome<{ result: 'ok' | 'already' | 'gear' | 'late' | 'not-yours'; duel?: DuelRow; state?: ArmoryState }>>;
   /** Saves a played turn only if the fight is still at `version`; null if it had changed. */
   duelMove(duel: number, version: number, turns: Shot[], used: DuelRow['used'], timeouts: [number, number], deadlineMs: number, real: boolean): Promise<DuelRow | null | 'busy'>;
@@ -66,6 +69,7 @@ const SAY = {
   otherClass: 'You can only challenge classmates in your own class.',
   inFight: "One of you is already in a fight. Try again when it's over.",
   theirsOff: "Archery Challenge isn't switched on for their class.",
+  snoozed: "That classmate isn't taking challenges from you just now. Try again later, or fight a bot!",
   late: 'That challenge has run out.',
   notStarted: "The fight hasn't started yet.",
   over: 'This fight has already ended.',
@@ -119,7 +123,7 @@ export async function handleDuel(services: DuelServices, player: string, action:
     if (!r.ok) return r.why === 'refused' ? no(400, SAY.bad) : no(503, SAY.busy);
     const why = r.value.result;
     if (why !== 'ok' || r.value.duel === null) {
-      const words = why === 'away' ? SAY.away : why === 'class' ? SAY.otherClass : why === 'busy' ? SAY.inFight : why === 'off' ? SAY.theirsOff : SAY.bad;
+      const words = why === 'away' ? SAY.away : why === 'class' ? SAY.otherClass : why === 'busy' ? SAY.inFight : why === 'off' ? SAY.theirsOff : why === 'snoozed' ? SAY.snoozed : SAY.bad;
       return no(409, words, { code: why });
     }
     const loaded = await services.duelLoad(r.value.duel);
@@ -153,6 +157,12 @@ export async function handleDuel(services: DuelServices, player: string, action:
 
   if (action === 'duel-answer') {
     if (typeof body.accept !== 'boolean') return no(400, SAY.bad);
+    if (body.snooze === true && !body.accept) {
+      const r = await services.duelSnooze(player, id, SNOOZE_MS);
+      if (!r.ok) return r.why === 'refused' ? no(400, SAY.bad) : no(503, SAY.busy);
+      if (r.value.result === 'not-yours') return no(403, SAY.notYours);
+      return ok({ duel: r.value.duel });
+    }
     const r = await services.duelAnswer(player, id, body.accept, PACK_MS);
     if (!r.ok) return r.why === 'refused' ? no(400, SAY.bad) : no(503, SAY.busy);
     const { result, duel } = r.value;
