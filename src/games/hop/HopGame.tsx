@@ -38,7 +38,10 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
-  const say = useCallback((text: string) => on && speak(text, VOICE_FOLDER), [on]);
+  const say = useCallback((text: string, onEnd?: () => void) => {
+    if (on) speak(text, VOICE_FOLDER, onEnd);
+    else onEnd?.();
+  }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
 

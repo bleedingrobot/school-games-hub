@@ -2,6 +2,14 @@
 // then run `npm run build:functions`. Deploy this file as the "beanstalk" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -5919,7 +5927,7 @@ Deno.serve(makeHandler({
 		mistakes: ending.mistakes
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "beanstalk");
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "beanstalk", void 0, JUNIOR_QUICK_MS);
 	},
 	async progressChanged(player) {
 		const { error } = await admin.rpc("game_progress_changed", {

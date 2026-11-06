@@ -29,7 +29,7 @@ interface Props {
   /** The child's very first challenge: a hand shows them the right glow-worm on the first hop. */
   guide?: boolean;
   sound: boolean;
-  say: (text: string) => void;
+  say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
@@ -42,6 +42,8 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   const [phase, setPhase] = useState<Phase>('ask');
   const [wobble, setWobble] = useState<number | null>(null);
   const since = useRef(Date.now());
+  /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
+  const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
@@ -53,8 +55,16 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   // Each new hop is read aloud once (the shared pack's words: "Counting in tens: 20, 30, something, 50. What is missing?").
   useEffect(() => {
     if (at === 0) heading.current?.focus();
+    // The clock starts now (a tap during the voice is still timed) and again once the question has been heard.
+    let live = true;
+    tappedYet.current = false;
     since.current = Date.now();
-    say(hopLine(hops[at].spoken, guide && at === 0));
+    say(hopLine(hops[at].spoken, guide && at === 0), () => {
+      if (live && !tappedYet.current) since.current = Date.now();
+    });
+    return () => {
+      live = false;
+    };
     // Read again only when the hop changes, not when the guide ends.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, hops, say]);
@@ -67,6 +77,7 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
 
   function pick(n: number) {
     if (phase !== 'ask') return;
+    tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;

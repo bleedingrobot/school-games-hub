@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { FactStats } from '../../../shared/maths/leitner';
 import type { Round } from '../../../shared/weka/round';
 import { HELP_SETTINGS, unplayed, type HelpSetting, type Saved } from '../../../shared/weka/server';
+import { JUNIOR_QUICK_MS } from '../../../shared/juniorQuick';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
@@ -69,7 +70,7 @@ Deno.serve(
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
-      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'weka');
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'weka', undefined, JUNIOR_QUICK_MS);
     },
     async progressChanged(player) {
       // A Golden Picnic Basket: the hub gives its achievement (counted from the finished days in Stage 4's migration).

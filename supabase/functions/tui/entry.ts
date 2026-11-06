@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { FactStats } from '../../../shared/maths/leitner';
 import type { HelpSetting, Round } from '../../../shared/tui/round';
 import { HELP_SETTINGS, unplayed, type Saved } from '../../../shared/tui/server';
+import { JUNIOR_QUICK_MS } from '../../../shared/juniorQuick';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
@@ -70,7 +71,7 @@ Deno.serve(
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
-      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'tui');
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'tui', undefined, JUNIOR_QUICK_MS);
     },
     async progressChanged(player) {
       // A Golden Nest: the hub gives its achievement (counted from the finished days).
