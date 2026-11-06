@@ -1,6 +1,6 @@
 # Building a new game for School Games Hub
 
-*A practical guide for a Claude session building one game on its own, alongside other sessions building other games, and getting it live without clashing or breaking the live site. Written 20 October 2026 from the code on `main` (c33f69b) and the branches `marble`, `bond-match`, `dragon-maths`, `clans` and `maths-focus`. Everything here was checked in the code. Anything marked **PROPOSED** does not exist yet. Tidied 21 October 2026: Marble Rush and the section 10 fixes are now on `main`. Brought up to date 1 November 2026 (main `c040682`): new folder paths, `docs/TESTING.md`, home page card art, painted game art, the teacher contract's newer parts, and what Kingdom Keeper's and Star Trader's go-lives taught.*
+*A practical guide for a Claude session building one game on its own, alongside other sessions building other games, and getting it live without clashing or breaking the live site. Written 20 October 2026 from the code on `main` (c33f69b) and the branches `marble`, `bond-match`, `dragon-maths`, `clans` and `maths-focus`. Everything here was checked in the code. Anything marked **PROPOSED** does not exist yet. Tidied 21 October 2026: Marble Rush and the section 10 fixes are now on `main`. Brought up to date 1 November 2026 (main `c040682`): new folder paths, `docs/TESTING.md`, home page card art, painted game art, the teacher contract's newer parts, and what Kingdom Keeper's and Star Trader's go-lives taught. Updated 7 November 2026 after the Foundational maths review: learning-design rules now live in [LEARNING-DESIGN.md](LEARNING-DESIGN.md) (section 1a item 8), the junior games' shared helpers are listed, and shared game parts are planned in [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md).*
 
 ---
 
@@ -18,8 +18,10 @@
 10. **Stop after each stage** and tell James what's ready and what he needs to decide.
 11. **Settle the design first.** Your plan answers the questions in [section 1a](#1a-design-decisions-to-settle-in-the-plan-before-building): the big goal, seasons, moves a day, progress bars, achievements, card art and a built-in guide for new players.
 12. **Keep tests few.** Read [docs/TESTING.md](TESTING.md) before writing any: a new game gets **at most 8 tests** in all ([section 7](#7-running-and-testing-the-game-on-its-own)).
+13. **Design for learning.** If your game has maths in it, read [docs/LEARNING-DESIGN.md](LEARNING-DESIGN.md) before you plan: the maths is the move, help that fades with the child and comes back, mistakes that show why, fair timing, and evidence a teacher can use. Your plan answers its design check ([section 1a](#1a-design-decisions-to-settle-in-the-plan-before-building), item 8).
+14. **Reuse before you copy.** Check [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md) for shared parts that already exist (help levels, wrong-answer kinds, ten-frames, Hear it again). Until they do, copy the best example named in LEARNING-DESIGN.md and keep game words out of the logic so it can move into the kit later.
 
-The best example to copy is **Marble Rush** (on `main`). The newest games built from this guide, **Kingdom Keeper** (`docs/KINGDOM-PLAN.md`) and **Star Trader** (`docs/TRADER-PLAN.md`, with its "Went live" section), are good, up-to-date examples of the whole route from plan to live. It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Dragon Maths' maths and Clan Quest's quest and shop maths are the older year-band kind, so don't copy that part (Clan Quest's Battle Cry is way A, like Marble).
+The best example to copy is **Marble Rush** (on `main`). **Star Trader** (`docs/TRADER-PLAN.md`, with its "Went live" section) and **Royal Decree** (`docs/DECREE-PLAN.md`, the rewrite of Kingdom Keeper after it flopped) are good, up-to-date examples of the whole route from plan to live. For a **junior game (ages 5 to 8)** copy **Weka's Stepping Stones** (`docs/WEKA-PLAN.md`, the review's top scorer) and Beanstalk's mistakes that teach (R5); LEARNING-DESIGN.md section 5 lists the shape. It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Dragon Maths' maths and Clan Quest's quest and shop maths are the older year-band kind, so don't copy that part (Clan Quest's Battle Cry is way A, like Marble).
 
 ---
 
@@ -42,6 +44,8 @@ Each game that went smoothly followed the same shape:
 | Go-live prompt | `docs/prompts/<game>-golive.md`, step by step | `clans-golive.md`, `lord-golive.md` |
 | Painted art (optional, often a later stage) | `src/games/<game>/art/`, made by `scripts/<game>-art.py` from James's paintings, with drawn art as the fallback | Star Trader, Dragon Maths, Clan Quest ([section 2](#painted-art)) |
 | A painted home page card | `src/assets/home/<id>.webp` + one line in `src/components/gameCardArt.ts` | all 14 games before Star Trader |
+| Read-aloud voice (every junior game) | `src/games/<game>/voiceLines.ts` (`allVoiceLines()`), `words.ts`, `voiceLines.test.ts`; Kokoro af_bella clips in `public/voice/<game>/`, made on James's Mac with `scripts/voice-clips.py <game>`; played by `speak(text, clipFolder, onEnd)` in `src/speech.ts` | Weka, Tūī, Beanstalk, Quick looks |
+| Learning design (help ladder, wrong-answer kinds, show why, what's next) | rules in `shared/<game>/round.ts`, screens in `Goes.tsx`, written up in the plan (section 1a item 8) | Weka (help), Beanstalk (mistakes) |
 
 ---
 
@@ -83,10 +87,20 @@ Write a short answer to each of these in `docs/<GAME>-PLAN.md` and give James a 
 - **Rules:** never block, never decide, and **never help with the maths questions themselves** (those stay the pupil's own work). Keep it all inside your game's folder, in your game's own words, with a simple guide character that suits the game. Moves on screen respect reduced motion.
 - It is a stage of its own in the plan, before go-live if possible, and James tries the guided first go himself.
 
+**8. Learning design.** If the game has maths in it, answer the design check in [LEARNING-DESIGN.md](LEARNING-DESIGN.md) section 6 in the plan, with a recommendation where there's a choice. In short:
+- **The maths is the move:** what the child does that *is* the maths, and how you stop winning without it (a cap of 2 free wrong taps, no give-away choices, only the first tap counts).
+- **Structure and materials:** which model (ten-frame, number line, bundles …; LEARNING-DESIGN section 3) and its help ladder from picture to number.
+- **Support and fading:** help arrives by itself after a mistake, a demo the first time a new kind appears, and help that fades with *this* child's success and comes back when they struggle. The calendar is for rewards and looks only.
+- **Progression:** levels in research order, move up on steady success, review of old facts, a ladder long enough for a term, and the "what's next" game at the top.
+- **Mistakes:** a wrong-answer table (misconception, its choice, its "why" line, what the picture does), and the show-why flow.
+- **Timing:** the clock starts after the voice; juniors use `JUNIOR_QUICK_MS`.
+- **Evidence:** what's saved per answer (first tap, time, the wrong choice's kind, help shown) and the teacher's stuck signal.
+After building, score it against the 25-point checklist in `docs/reviews/maths-review/research-design.md`; aim for a 3 on every line before going live.
+
 **Also worth deciding:**
 - **Lesson fit.** One sitting should fit 10 to 15 minutes and save as it goes, so the bell never loses work. Say what a pupil does in their first 5 minutes.
 - **Who plays with whom.** Solo, with classmates, or in clans; what happens with an odd number or someone away. Classmates only, never other schools.
-- **Maths that nudges, not decides.** Where maths sits in the game and how much it helps, so a pupil weaker at maths can still enjoy it (Dragon Maths' riddles give "a small edge"). Never rank pupils by maths.
+- **Maths that nudges, not decides** (games where maths is a side part, not the move). Where maths sits in the game and how much it helps, so a pupil weaker at maths can still enjoy it (Dragon Maths' riddles give "a small edge"). Never rank pupils by maths. Even here, a wrong answer shows the right one with a reason, not only "wrong" (LEARNING-DESIGN rule 7).
 - **What the teacher needs.** Settings (keep them few), the class report, `hardest` and `alerts` for the teacher's Today page, and what a teacher can reset (section 3, Teacher page).
 - **Rewards and coins.** Where coins come from and go, with the simulator checking nothing piles up unused (Clan Quest's gold after a full village).
 
@@ -119,6 +133,8 @@ docs/<GAME>-PLAN.md, docs/<GAME>-RULES.md, docs/prompts/<game>-*.md
 - `readSettings()` (`src/data/classSettings.ts`) for your switches. It shares one remembered request with every other game.
 - `fetchMyFocus()` (`src/data/focus.ts`), only if your browser needs the focus (section 4).
 - `AvatarImage` (`src/avatar/`), `useSound()` / `playSound()` (`src/sound.tsx`, `src/games/sounds.ts`), `MuteButton`.
+- `speak(text, clipFolder, onEnd)` from `src/speech.ts` for read-aloud (`onEnd` runs when the line finishes: start the answer clock there), and `JUNIOR_QUICK_MS` from `shared/juniorQuick.ts` for ages 5 to 8 (pass it as `recordMathsAnswers`' last argument).
+- Shared learning parts from the game kit as they arrive (`shared/kit/`, `src/kit/`; [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md)). Like `shared/maths/`, they're reuse-freely but never changed from a game branch.
 - `_shared/signIn.ts` (`userIdFromToken`), `_shared/recordAnswers.ts` (`recordMathsAnswers`), `_shared/stamp.ts`, `_shared/limits.ts`, `_shared/http.ts` in your server function, and `shared/maths/serverQuestions.ts` (`seededRandom`, `publicQuestion`).
 
 ### Looking like the hub
@@ -169,6 +185,8 @@ There is no shared art pipeline; each game copies the last one. The pattern that
 ## 4. Maths questions: the one approved way
 
 Maths is the most important shared system. A student has **one maths focus** at a time, decided by the server: a teacher focus for the student, then for their group, then for their class, then the student's own choice (if the class allows it), then **auto** (the ladder of 31 skills from bonds to 10 up to fractions, decimals and percentages). Plan: `docs/MATHS-FOCUS-PLAN.md`. Code: `shared/maths/`.
+
+**Junior games (ages 5 to 8) are different.** Beanstalk, Hop, Penguin Pairs, Pipi, Tūī and Weka don't use `makeFocusPack`: each makes its own round from the child's early-facts records (`shared/maths/skillPacks/earlyFacts.ts` keys, or its own), replays the taps on the server, and records the first tap of each go with `recordMathsAnswers(…, JUNIOR_QUICK_MS)`. Copy Weka for this, and follow LEARNING-DESIGN.md section 5.
 
 **Which games do it this way today:** Gem Keep (questions made in the browser, marked again on the server), Wormholes & Black Holes / Mission Control (both ways), the placement warm-up, and Marble Rush, Mine Runner, Archery Challenge, Kingdom Keeper and Star Trader (questions made and marked on the server, recorded with `recordMathsAnswers`). **Maths Monsters and Dragon Maths don't make their questions this way**, and nor do Clan Quest's quests and shop. They ask their own year-band questions (`shared/maths/banded.ts`, `practical.ts`), which don't follow the focus and don't move a student up the ladder. (Exception: Dragon Maths' bank interest question uses way A since 29 Oct 2026; see `bank` in `shared/lord/server.ts`.) Don't copy their maths. **Decided by James (20 Oct 2026): Monsters' and Dragon Maths' answers should count towards the ladder place and the focus results.** Monsters and Dragon Maths already save times tables, adding and division in the same records and keys the ladder reads; what they lacked is the two steps after saving. Monsters has had them since 1 Nov 2026 (#107: `syncPlace` once after new answers, `countForFocuses` for each batch the records took for the first time, in `monster/handler.ts`). **Dragon Maths still needs the same** (in `lord/entry.ts` and its handler; not done as of 1 Nov 2026). **Clan Quest's Battle Cry now uses way A and counts (James, 20 Oct 2026, replacing his earlier "stays out"; branch `clans-ladder`).** The server makes a ladder fight's 8 questions from `space_maths_context` when the fight starts (`makeRunQuestions`, now in `shared/maths/serverQuestions.ts` and shared with Marble), keeps them with the open fight (`clan_fights.questions` and `marks`), sends only `publicQuestion`s, marks each answer with a `cryCheck` action (one try per question) and records it with `recordMathsAnswers`. A browser asks for this with `fightStart { ladder: true }`, so an older page still open gets an old-style fight. Quest puzzles and the shop keep their practical questions and their own `clan-quest` records. **Basic facts training** keeps its own separate records (`training_answers`) on purpose. Don't copy that for a game either.
 
@@ -362,6 +380,7 @@ Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). James has pre-ap
 - [ ] How to play reads its numbers from the config.
 - [ ] The plan answers section 1a (big goal, seasons, moves a day, progress bars, achievements table, card art, new-player guide), and what was built matches it.
 - [ ] A new pupil can get through their first go with no adult help: the guided first go works, can be skipped and replayed, and the next-step line always has something useful to say.
+- [ ] Learning design (maths games): tapping every choice or guessing doesn't win; a wrong answer shows why on the same picture and the child tries again; help fades with the child's success and comes back after struggle (not by the calendar); the answer clock starts after the voice; the teacher can see who is stuck. Scored against the research checklist with a 3 or better on every line (LEARNING-DESIGN.md section 6).
 - [ ] No more than 8 tests of your own (`docs/TESTING.md`), plus the database test file.
 - [ ] Your id is in `src/games/registry.test.ts` in the PR that turns the code switch on; a card picture in `gameCardArt.ts` if James has painted one.
 - [ ] `docs/PRIVACY-SUMMARY.md`, `shared/README.md` and your plan are updated.
