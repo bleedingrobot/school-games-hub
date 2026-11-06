@@ -53,20 +53,33 @@ describe('the round', () => {
 });
 
 describe('the help level and the step', () => {
-  it('fade after two good challenges, come back after a hard one, and a new step brings two levels back', () => {
+  it('fade after two good challenges, come back after a hard one, and a new step brings one back only without a fade', () => {
     const at = (p: Partial<Place>): Place => ({ step: 1, level: 5, goodInRow: 0, goodAtStep: 0, ...p });
     expect(placeAfter(at({}), 9)).toEqual(at({ goodInRow: 1, goodAtStep: 1 }));
     expect(placeAfter(at({ step: 5, goodInRow: 1 }), 8)).toEqual(at({ step: 5, level: 4, goodAtStep: 1 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 6)).toEqual(at({ level: 2 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 4)).toEqual(at({ level: 3 }));
     expect(placeAfter(at({ level: 5 }), 0).level).toBe(5);
-    // A second good challenge at a step passes it: help drops a level, then two come back for the new way.
+    // A pass on the same go as a fade keeps the fade (the new step adds nothing), never below the ten-frames.
     expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
+    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
+    // A pass with no fade (a middling challenge broke the row) brings one level back, capped at the top.
+    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
+    expect(placeAfter(at({ step: 2, level: 5, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     // A new step always brings the ten-frames back, even from numbers only.
     expect(placeAfter(at({ step: 2, level: 0, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 4 }));
     // A child who already knows it starts at step 3, help level 2.
     expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 4 });
     expect(startFor(inBox(KEYS.slice(0, 6), 3))).toEqual({ step: 1, level: 5 });
+  });
+
+  it('a child who gets every go right loses the counted-in berries straight away and reaches numbers only', () => {
+    let p: Place = { step: 1, level: 5, goodInRow: 0, goodAtStep: 0 };
+    for (let i = 0; i < 8; i++) p = placeAfter(p, 10);
+    expect(p.step).toBe(5);
+    expect(p.level).toBeLessThanOrEqual(4);
+    for (let i = 0; i < 8; i++) p = placeAfter(p, 10);
+    expect(p.level).toBe(0);
   });
 
   it('a wrong tap brings more picture for that go, and never shows the answer', () => {
