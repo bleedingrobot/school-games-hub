@@ -1,5 +1,7 @@
 # R7. Teacher view for Foundational skills (class grid, stuck flags, Today alerts)
 
+> **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../GAME-KIT-PLAN.md) first. If kit stage K5 (teacher Foundational helpers; this plan is its first stage) is merged, use it instead of copying another game's code; if not, write this so it can move into the kit later.
+
 Status: plan only, nothing built. Written 7 Nov 2026. Covers all seven Foundational activities: Kiwi's Beanstalk, Hop, Penguin Pairs (`korora`), Pipi, Tūī, Weka and Quick looks.
 
 ## 1. The problem

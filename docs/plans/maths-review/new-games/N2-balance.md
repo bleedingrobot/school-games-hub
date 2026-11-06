@@ -1,5 +1,7 @@
 # Kea's See-saw (equals means the same amount, and missing numbers): plan N2
 
+> **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../../GAME-KIT-PLAN.md) first. Use any merged kit parts (K3 has `TenFrame`, `NumberLine`, `DotPicture`) instead of copying another game's code; for anything not in the kit yet, write it so it can move there later.
+
 Short id `kea`. **Status: plan written 7 Nov 2026 for the fundamental maths review (docs/reviews/maths-review/DECISIONS.md, gap 2). Not built, no code changed.** Guide: the Kea. Chosen from `docs/plans/maths-review/new-games/IDEAS.md`.
 
 ## 1. The problem

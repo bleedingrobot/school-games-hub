@@ -1,5 +1,7 @@
 # R8. Longer ladders and "what's next" links (Penguin Pairs, Tūī, Beanstalk, Hop)
 
+> **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../GAME-KIT-PLAN.md) first. If kit stage K4 (`WhatsNext` card) and `mastery` from K1 is merged, use it instead of copying another game's code; if not, write this so it can move into the kit later.
+
 Status: plan only, nothing built. Written 7 Nov 2026. Games: Penguin Pairs (folder `korora`), Tūī's Ten Tree, Kiwi's Beanstalk, Hop's Glow-worm Pond. Quick-win items first, shared-maths items marked.
 
 ## 1. The problem

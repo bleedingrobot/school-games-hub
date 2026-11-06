@@ -1,5 +1,7 @@
 # R6. Help that follows the child (Beanstalk, Hop, Penguin Pairs, Pipi)
 
+> **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../GAME-KIT-PLAN.md) first. If kit stage K1 (`help`, `replay`, `dayArc`) is merged, use it instead of copying another game's code; if not, write this so it can move into the kit later.
+
 Status: plan only, nothing built. Written 7 Nov 2026. Games: Kiwi's Beanstalk, Hop's Glow-worm Pond, Penguin Pairs (folder `korora`), Pipi's Hidden Shells. Tūī already has its own per-child help level (with one bug, R1) and Weka and Quick looks already fade per child; they are the models.
 
 ## 1. The problem
