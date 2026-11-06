@@ -254,7 +254,7 @@ describe('Quick looks inside Training', () => {
     expect(data.enqueueStudent).not.toHaveBeenCalled();
   });
 
-  it('saves a practice answer as a Quick looks answer, with nothing typed and no time', async () => {
+  it('saves a practice answer as a Quick looks answer, with nothing typed and its thinking time', async () => {
     flags.on = true;
     const user = userEvent.setup();
     data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings } });
@@ -273,7 +273,8 @@ describe('Quick looks inside Training', () => {
     await waitFor(() => expect(data.addAnswer).toHaveBeenCalledTimes(1));
     const [player, saved] = data.addAnswer.mock.calls[0];
     expect(player).toBe('u1');
-    expect(saved).toMatchObject({ given: n, ms: 0, typingMs: 0, day: dayString(new Date()), seed: expect.any(Number) });
+    expect(saved).toMatchObject({ given: n, ms: expect.any(Number), typingMs: 0, day: dayString(new Date()), seed: expect.any(Number) });
+    expect(Number.isInteger(saved.ms) && saved.ms >= 0).toBe(true);
     expect(saved.key).toMatch(/^sub:(line|clus|angl)-[123]$/);
     // The stage reached is unchanged by one answer, so no settings are sent yet.
     expect(data.enqueueStudent).not.toHaveBeenCalled();

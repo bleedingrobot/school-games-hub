@@ -6,13 +6,14 @@ import type { QuickAnswerEvent } from './SubitisingApp';
 import type { SubState } from './store';
 
 /**
- * An answer given with the picture on screen after a struggle is saved under its own "helped" key, so it
- * never counts towards a stage. Nothing is typed and nothing is timed: a tap answer saves no speed at all.
+ * An answer given with the picture on screen (after a struggle, or with "keep the picture on the screen"
+ * ticked) is saved under its own "helped" key, so it never counts towards a stage. The time is from the
+ * buttons unlocking to the tap (0 when the picture stayed); nothing is typed.
  */
 export const toTrainingAnswer = (a: QuickAnswerEvent): AnswerEvent => ({
   key: a.helped ? helpedKey(a.key) : a.key,
   given: a.given,
-  ms: 0,
+  ms: Math.round(a.thinkingMs),
   typingMs: 0,
   at: a.at,
   day: a.day,

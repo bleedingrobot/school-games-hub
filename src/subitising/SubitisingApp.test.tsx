@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SUBITISING_CONFIG as C } from '../../shared/subitising/config';
-import { SubitisingApp } from './SubitisingApp';
+import { SubitisingApp, type QuickAnswerEvent } from './SubitisingApp';
 import { emptySubState, type SubState } from './store';
 
 function setup(initial: SubState) {
@@ -80,7 +80,7 @@ describe('Quick looks', () => {
     answerWrong();
     answerWrong();
     // The third picture stays on screen, with its groups outlined, and the buttons need no wait.
-    expect(screen.getByText(/smaller groups/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /^Take your time\. / })).toBeTruthy();
     expect(dotsShown()).toBeGreaterThan(0);
     expect(screen.getAllByRole('button').filter((b) => /^\d+$/.test(b.textContent ?? '')).every((b) => !(b as HTMLButtonElement).disabled)).toBe(true);
     advance(5000);
@@ -98,6 +98,12 @@ describe('Quick looks', () => {
   it('runs the starting check and then says where practice starts', () => {
     const t = setup(emptySubState());
     fireEvent.click(screen.getByRole('button', { name: 'Start with a quick check' }));
+    // A new student first gets a demo picture that stays on screen; its answer is saved nowhere.
+    expect(screen.getByRole('heading', { name: /This is how it works/ })).toBeTruthy();
+    advance(10_000);
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(dotsShown()))!);
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(t.answered).toHaveLength(0);
     for (let i = 0; i < C.placementTrials; i++) {
       advance(C.gapReadyMs + 10);
       const n = dotsShown();
@@ -142,9 +148,10 @@ describe('Quick looks', () => {
     function round(answer: number) {
       const rounds: number[] = [];
       const ended: number[] = [];
+      const answered: QuickAnswerEvent[] = [];
       let state: SubState = { ...emptySubState(), placed: true, guidedMode: true };
       const ui = (s: SubState) => (
-        <SubitisingApp state={s} onState={(n) => (state = n)} today="2026-10-21" onSessionEnd={() => ended.push(rounds.length)} onRoundFinished={(seed) => rounds.push(seed)} />
+        <SubitisingApp state={s} onState={(n) => (state = n)} today="2026-10-21" onAnswered={(a) => answered.push(a)} onSessionEnd={() => ended.push(rounds.length)} onRoundFinished={(seed) => rounds.push(seed)} />
       );
       const view = render(ui(state));
       fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
@@ -154,14 +161,20 @@ describe('Quick looks', () => {
         view.rerender(ui(state));
         if (i < C.sessionTrials - 1) fireEvent.click(screen.getByRole('button', { name: 'Next' }));
       }
-      return { rounds, ended };
+      view.rerender(ui(state));
+      return { rounds, ended, answered, state: () => state };
     }
 
-    it('says so after all the pictures, before the session ends', () => {
-      const { rounds, ended } = round(C.sessionTrials);
+    it('says so after all the pictures, before the session ends, though kept-on pictures grow nothing', () => {
+      const { rounds, ended, state, answered } = round(C.sessionTrials);
       fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
       expect(rounds).toHaveLength(1);
       expect(ended).toEqual([1]);
+      // Practice only: saved as helped, so no stage finishes and no plant grows.
+      expect(answered.every((a) => a.helped && a.thinkingMs === 0)).toBe(true);
+      expect(state().finished).toBe(0);
+      expect(screen.queryByText(/grew!|You finished/)).toBeNull();
+      expect(screen.getByText(/your plants are waiting/)).toBeTruthy();
     });
 
     it('not when it is stopped early', () => {

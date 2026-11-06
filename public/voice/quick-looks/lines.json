@@ -12,6 +12,14 @@
   "text": "Take your time. Can you see smaller groups?"
  },
  {
+  "slug": "take-your-time-look-carefully",
+  "text": "Take your time. Look carefully."
+ },
+ {
+  "slug": "take-your-time-how-many-empty-squares",
+  "text": "Take your time. How many empty squares?"
+ },
+ {
   "slug": "how-many-empty-squares",
   "text": "How many empty squares?"
  },
@@ -22,6 +30,14 @@
  {
   "slug": "how-many-did-you-see",
   "text": "How many did you see?"
+ },
+ {
+  "slug": "this-is-how-it-works-a-picture-shows-then-hides-tap-how-many-dots-you-saw-this-one-stays-so-you-can-practise",
+  "text": "This is how it works. A picture shows, then hides. Tap how many dots you saw. This one stays so you can practise."
+ },
+ {
+  "slug": "the-picture-stayed-on-today-so-your-plants-are-waiting-switch-flashing-back-on-and-they-will-grow",
+  "text": "The picture stayed on today, so your plants are waiting. Switch flashing back on and they will grow."
  },
  {
   "slug": "yes-1",
@@ -304,47 +320,91 @@
   "text": "Let me show you again. It was 10: 5 and 5."
  },
  {
-  "slug": "1-counter-and-4-empty-squares-make-5",
-  "text": "1 counter and 4 empty squares make 5."
+  "slug": "yes-1-counter-and-4-empty-squares-make-5",
+  "text": "Yes! 1 counter and 4 empty squares make 5."
  },
  {
-  "slug": "2-counters-and-3-empty-squares-make-5",
-  "text": "2 counters and 3 empty squares make 5."
+  "slug": "not-quite-1-counter-and-4-empty-squares-make-5",
+  "text": "Not quite. 1 counter and 4 empty squares make 5."
  },
  {
-  "slug": "3-counters-and-2-empty-squares-make-5",
-  "text": "3 counters and 2 empty squares make 5."
+  "slug": "yes-2-counters-and-3-empty-squares-make-5",
+  "text": "Yes! 2 counters and 3 empty squares make 5."
  },
  {
-  "slug": "4-counters-and-1-empty-square-make-5",
-  "text": "4 counters and 1 empty square make 5."
+  "slug": "not-quite-2-counters-and-3-empty-squares-make-5",
+  "text": "Not quite. 2 counters and 3 empty squares make 5."
  },
  {
-  "slug": "3-counters-and-7-empty-squares-make-10",
-  "text": "3 counters and 7 empty squares make 10."
+  "slug": "yes-3-counters-and-2-empty-squares-make-5",
+  "text": "Yes! 3 counters and 2 empty squares make 5."
  },
  {
-  "slug": "4-counters-and-6-empty-squares-make-10",
-  "text": "4 counters and 6 empty squares make 10."
+  "slug": "not-quite-3-counters-and-2-empty-squares-make-5",
+  "text": "Not quite. 3 counters and 2 empty squares make 5."
  },
  {
-  "slug": "5-counters-and-5-empty-squares-make-10",
-  "text": "5 counters and 5 empty squares make 10."
+  "slug": "yes-4-counters-and-1-empty-square-make-5",
+  "text": "Yes! 4 counters and 1 empty square make 5."
  },
  {
-  "slug": "6-counters-and-4-empty-squares-make-10",
-  "text": "6 counters and 4 empty squares make 10."
+  "slug": "not-quite-4-counters-and-1-empty-square-make-5",
+  "text": "Not quite. 4 counters and 1 empty square make 5."
  },
  {
-  "slug": "7-counters-and-3-empty-squares-make-10",
-  "text": "7 counters and 3 empty squares make 10."
+  "slug": "yes-3-counters-and-7-empty-squares-make-10",
+  "text": "Yes! 3 counters and 7 empty squares make 10."
  },
  {
-  "slug": "8-counters-and-2-empty-squares-make-10",
-  "text": "8 counters and 2 empty squares make 10."
+  "slug": "not-quite-3-counters-and-7-empty-squares-make-10",
+  "text": "Not quite. 3 counters and 7 empty squares make 10."
  },
  {
-  "slug": "9-counters-and-1-empty-square-make-10",
-  "text": "9 counters and 1 empty square make 10."
+  "slug": "yes-4-counters-and-6-empty-squares-make-10",
+  "text": "Yes! 4 counters and 6 empty squares make 10."
+ },
+ {
+  "slug": "not-quite-4-counters-and-6-empty-squares-make-10",
+  "text": "Not quite. 4 counters and 6 empty squares make 10."
+ },
+ {
+  "slug": "yes-5-counters-and-5-empty-squares-make-10",
+  "text": "Yes! 5 counters and 5 empty squares make 10."
+ },
+ {
+  "slug": "not-quite-5-counters-and-5-empty-squares-make-10",
+  "text": "Not quite. 5 counters and 5 empty squares make 10."
+ },
+ {
+  "slug": "yes-6-counters-and-4-empty-squares-make-10",
+  "text": "Yes! 6 counters and 4 empty squares make 10."
+ },
+ {
+  "slug": "not-quite-6-counters-and-4-empty-squares-make-10",
+  "text": "Not quite. 6 counters and 4 empty squares make 10."
+ },
+ {
+  "slug": "yes-7-counters-and-3-empty-squares-make-10",
+  "text": "Yes! 7 counters and 3 empty squares make 10."
+ },
+ {
+  "slug": "not-quite-7-counters-and-3-empty-squares-make-10",
+  "text": "Not quite. 7 counters and 3 empty squares make 10."
+ },
+ {
+  "slug": "yes-8-counters-and-2-empty-squares-make-10",
+  "text": "Yes! 8 counters and 2 empty squares make 10."
+ },
+ {
+  "slug": "not-quite-8-counters-and-2-empty-squares-make-10",
+  "text": "Not quite. 8 counters and 2 empty squares make 10."
+ },
+ {
+  "slug": "yes-9-counters-and-1-empty-square-make-10",
+  "text": "Yes! 9 counters and 1 empty square make 10."
+ },
+ {
+  "slug": "not-quite-9-counters-and-1-empty-square-make-10",
+  "text": "Not quite. 9 counters and 1 empty square make 10."
  }
 ]
