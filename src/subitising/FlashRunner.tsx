@@ -6,7 +6,7 @@ import type { Trial } from '../../shared/subitising/trials';
 import { speak, stopSpeaking } from '../speech';
 import { Friend } from './Friend';
 import { BlankPicture, PictureSvg } from './PictureSvg';
-import { flashFeedback, gapFeedback, PROMPTS, VOICE_FOLDER } from './voiceLines';
+import { flashFeedback, gapFeedback, helpedPrompt, PROMPTS, VOICE_FOLDER } from './voiceLines';
 
 export interface AnswerResult {
   given: number;
@@ -15,12 +15,14 @@ export interface AnswerResult {
   thinkingMs: number;
   /** The picture stayed on screen with help (after a struggle), so it doesn't count towards a stage. */
   helped: boolean;
+  /** "Keep the picture on the screen" was on: practice only, so it doesn't count towards a stage either. */
+  guided: boolean;
   peeked: boolean;
 }
 
 interface Props {
   total: number;
-  /** Pictures never flash: they stay until the student answers. Answers still count. */
+  /** Pictures never flash: they stay until the student answers. The answers are practice only (`guided` on each). */
   guidedMode: boolean;
   /** The starting check: no help pictures and no peeking, so the check shows where the student really is. */
   checking?: boolean;
@@ -30,13 +32,15 @@ interface Props {
   onFinish: () => void;
   /** Read the prompts aloud (never the answer before it has been given). Undefined = no read-aloud button at all. */
   readAloud?: { on: boolean; onChange: (on: boolean) => void };
+  /** Replaces the question heading while answering (the demo before the starting check). Read aloud like the other prompts. */
+  intro?: string;
 }
 
 type Phase = 'ready' | 'show' | 'answer' | 'peek' | 'feedback';
 
 /** The line said after an answer. It names the answer, so it is only used once the student has answered. */
 function feedbackText(trial: Trial, result: AnswerResult): string {
-  if (trial.activity === 'gap') return gapFeedback(trial.n, trial.answer, FRAME_CAPACITY[trial.type] ?? 0);
+  if (trial.activity === 'gap') return gapFeedback(trial.n, trial.answer, FRAME_CAPACITY[trial.type] ?? 0, result.correct);
   return flashFeedback(result.correct, trial.answer, groupSizes(trial.picture));
 }
 
@@ -49,7 +53,7 @@ function EmptySquareIcon() {
   );
 }
 
-export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud }: Props) {
+export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud, intro }: Props) {
   const [index, setIndex] = useState(0);
   const [trial, setTrial] = useState<Trial>(() => next(0, null));
   const [phase, setPhase] = useState<Phase>(() => (guidedMode ? 'answer' : 'ready'));
@@ -107,7 +111,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
     (value: number) => {
       if (phase !== 'answer' || locked) return;
       const thinkingMs = staticPicture ? 0 : Math.max(0, performance.now() - unlockedAt.current);
-      const r: AnswerResult = { given: value, correct: value === trial.answer, thinkingMs, helped, peeked };
+      const r: AnswerResult = { given: value, correct: value === trial.answer, thinkingMs, helped, guided: guidedMode, peeked };
       setResult(r);
       setPhase('feedback');
       if (helped) {
@@ -159,8 +163,8 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   useEffect(() => {
     if (!reading) return;
     if (phase === 'ready') speak(trial.activity === 'gap' ? PROMPTS.readyGap : PROMPTS.readyFlash, VOICE_FOLDER);
-    else if (phase === 'answer') speak(helped ? PROMPTS.helped : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash, VOICE_FOLDER);
-  }, [reading, phase, helped, trial, guidedMode]);
+    else if (phase === 'answer') speak(intro ?? (helped ? helpedPrompt(trial.activity, trial.answer) : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash), VOICE_FOLDER);
+  }, [reading, phase, helped, trial, guidedMode, intro]);
   useEffect(() => {
     if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result), VOICE_FOLDER);
   }, [reading, phase, result, trial]);
@@ -184,6 +188,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   };
 
   const gap = trial.activity === 'gap';
+  const one = !gap && trial.answer === 1;
   const prompt = gap ? (
     <span>
       How many <strong>empty squares</strong>? <EmptySquareIcon />
@@ -199,7 +204,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   return (
     <section className="sb-screen" aria-label="Quick looks">
       <h1 ref={heading} tabIndex={-1} className="sb-prompt">
-        {phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : helped && phase === 'answer' ? 'Take your time. Can you see smaller groups?' : prompt}
+        {phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : intro && phase === 'answer' ? intro : helped && phase === 'answer' ? helpedPrompt(trial.activity, trial.answer) : prompt}
       </h1>
       <div className="sb-stage">
         <div className="sb-board">
@@ -212,7 +217,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
             ? 'The picture has gone. How many empty squares?'
             : 'The picture has gone. How many?'
           : phase === 'answer'
-            ? `The picture is staying on the screen. ${gap ? 'How many empty squares?' : 'Look for the groups. How many?'}`
+            ? `The picture is staying on the screen. ${gap ? 'How many empty squares?' : one ? 'Look carefully. How many?' : 'Look for the groups. How many?'}`
             : phase === 'feedback'
               ? feedback
               : ''}

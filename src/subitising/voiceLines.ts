@@ -11,11 +11,23 @@ export const VOICE_FOLDER = 'voice/quick-looks/';
 export const PROMPTS = {
   readyFlash: 'Get ready: how many dots?',
   readyGap: 'Get ready: how many empty squares?',
-  helped: 'Take your time. Can you see smaller groups?',
+  helpedGroups: 'Take your time. Can you see smaller groups?',
+  helpedOne: 'Take your time. Look carefully.',
+  helpedGap: 'Take your time. How many empty squares?',
   gap: 'How many empty squares?',
   guided: 'How many can you see?',
   flash: 'How many did you see?',
+  /** The demo picture before a new student's starting check. */
+  demo: 'This is how it works. A picture shows, then hides. Tap how many dots you saw. This one stays so you can practise.',
+  /** The end of a round played with the picture kept on screen: those answers don't grow the garden. */
+  guidedSummary: 'The picture stayed on today, so your plants are waiting. Switch flashing back on and they will grow.',
 } as const;
+
+/** The heading and voice line when the picture stays on screen after a struggle. */
+export function helpedPrompt(activity: 'flash' | 'gap', answer: number): string {
+  if (activity === 'gap') return PROMPTS.helpedGap;
+  return answer === 1 ? PROMPTS.helpedOne : PROMPTS.helpedGroups;
+}
 
 /** "Yes! 5: 3 and 2." / "Let me show you again. It was 5: 3 and 2." (parts left out for one group). */
 export function flashFeedback(correct: boolean, answer: number, parts: readonly number[]): string {
@@ -23,8 +35,9 @@ export function flashFeedback(correct: boolean, answer: number, parts: readonly 
   return correct ? `Yes! ${answer}${p}.` : `Let me show you again. It was ${answer}${p}.`;
 }
 
-export function gapFeedback(counters: number, empty: number, capacity: number): string {
-  return `${counters} ${counters === 1 ? 'counter' : 'counters'} and ${empty} empty ${empty === 1 ? 'square' : 'squares'} make ${capacity}.`;
+/** "Yes! 3 counters and 2 empty squares make 5." / "Not quite. 3 counters ..." */
+export function gapFeedback(counters: number, empty: number, capacity: number, correct: boolean): string {
+  return `${correct ? 'Yes!' : 'Not quite.'} ${counters} ${counters === 1 ? 'counter' : 'counters'} and ${empty} empty ${empty === 1 ? 'square' : 'squares'} make ${capacity}.`;
 }
 
 /** n as one group or two, biggest first (groupSizes sorts the same way). Pictures never have more groups (voiceLines.test.ts checks). */
@@ -45,7 +58,10 @@ export function allVoiceLines(): string[] {
   }
   for (const [type, range] of Object.entries(GAP_FILLED) as [PictureType, readonly [number, number]][]) {
     const capacity = FRAME_CAPACITY[type] ?? 0;
-    for (let filled = range[0]; filled <= range[1]; filled++) lines.add(gapFeedback(filled, capacity - filled, capacity));
+    for (let filled = range[0]; filled <= range[1]; filled++) {
+      lines.add(gapFeedback(filled, capacity - filled, capacity, true));
+      lines.add(gapFeedback(filled, capacity - filled, capacity, false));
+    }
   }
   return [...lines];
 }
