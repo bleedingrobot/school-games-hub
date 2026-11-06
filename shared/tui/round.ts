@@ -27,8 +27,11 @@ export const HARD = 4;
 export const GOOD_TO_PASS = 2;
 /** Good challenges in a row that take the help down one level. */
 export const GOOD_TO_FADE = 2;
-/** Help levels go back up this many when a new step starts, and never below `FRAMES_LEVEL`. */
-export const NEW_STEP_HELP = 2;
+/**
+ * Help levels go back up this many when a new step starts, unless the help faded on that same go (then the fade
+ * stands). Either way never below `FRAMES_LEVEL`.
+ */
+export const NEW_STEP_HELP = 1;
 export const TOP_LEVEL = 5;
 /** The lowest level with ten-frames (below it the ten is a kete): every new step starts here at least. */
 export const FRAMES_LEVEL = 4;
@@ -81,17 +84,21 @@ export interface Place {
 
 /**
  * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
- * less help and the next step. Hard: one level more help at once. A new step brings two levels of help back, and
- * always the ten-frames: the kete comes only once a way of asking is going well.
+ * less help and the next step. Hard: one level more help at once. A new step brings `NEW_STEP_HELP` level back only
+ * if the help didn't fade on this same go (a pass and a fade usually land together, and the fade must stand, or a
+ * strong child keeps every berry counted in until step 5). Either way a new step always has the ten-frames: the kete
+ * comes only once a way of asking is going well.
  */
 export function placeAfter(p: Place, right: number): Place {
   const good = right >= GOOD;
   const hard = right <= HARD;
   let level = p.level;
   let goodInRow = good ? p.goodInRow + 1 : 0;
+  let faded = false;
   if (goodInRow >= GOOD_TO_FADE) {
     level = Math.max(0, level - 1) as HelpLevel;
     goodInRow = 0;
+    faded = true;
   }
   if (hard) level = Math.min(TOP_LEVEL, level + 1) as HelpLevel;
   let { step } = p;
@@ -100,7 +107,7 @@ export function placeAfter(p: Place, right: number): Place {
     step = (step + 1) as Step;
     goodAtStep = 0;
     goodInRow = 0;
-    level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, level + NEW_STEP_HELP)) as HelpLevel;
+    level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, faded ? level : level + NEW_STEP_HELP)) as HelpLevel;
   }
   return { step, level, goodInRow, goodAtStep };
 }

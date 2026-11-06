@@ -1007,17 +1007,21 @@ function startFor(stats) {
 }
 /**
 * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
-* less help and the next step. Hard: one level more help at once. A new step brings two levels of help back, and
-* always the ten-frames: the kete comes only once a way of asking is going well.
+* less help and the next step. Hard: one level more help at once. A new step brings `NEW_STEP_HELP` level back only
+* if the help didn't fade on this same go (a pass and a fade usually land together, and the fade must stand, or a
+* strong child keeps every berry counted in until step 5). Either way a new step always has the ten-frames: the kete
+* comes only once a way of asking is going well.
 */
 function placeAfter(p, right) {
 	const good = right >= 8;
 	const hard = right <= 4;
 	let level = p.level;
 	let goodInRow = good ? p.goodInRow + 1 : 0;
+	let faded = false;
 	if (goodInRow >= 2) {
 		level = Math.max(0, level - 1);
 		goodInRow = 0;
+		faded = true;
 	}
 	if (hard) level = Math.min(5, level + 1);
 	let { step } = p;
@@ -1026,7 +1030,7 @@ function placeAfter(p, right) {
 		step = step + 1;
 		goodAtStep = 0;
 		goodInRow = 0;
-		level = Math.max(4, Math.min(5, level + 2));
+		level = Math.max(4, Math.min(5, faded ? level : level + 1));
 	}
 	return {
 		step,
