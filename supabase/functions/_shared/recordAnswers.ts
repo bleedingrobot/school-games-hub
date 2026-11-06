@@ -37,6 +37,8 @@ export async function recordMathsAnswers(
   // A game that made its own batch ids before this helper existed keeps making them the same way, so a save sent again
   // after the switch still counts once.
   batchId: (once: string, pack: string) => Promise<string> = (o, pack) => batchIdFor(`${from}:${o}:${pack}`),
+  // A game for young children can give its own quick time (shared/juniorQuick.ts) instead of each pack's own.
+  quickMs?: number,
 ): Promise<Recorded> {
   const result: Recorded = { saved: 0, failed: 0 };
   for (const [pack, group] of groupByPack(answers)) {
@@ -47,7 +49,7 @@ export async function recordMathsAnswers(
         batch_id: await batchId(once, pack),
         // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
         answers: group.map((a) => ({ ...a, ms: keptMs(a.ms) })),
-        quick_ms: quickMsForPack(pack),
+        quick_ms: quickMs ?? quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,
       });

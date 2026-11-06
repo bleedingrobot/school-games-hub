@@ -66,6 +66,12 @@ describe('saving marked maths answers', () => {
     expect(rpc.mock.calls.filter(([n]) => n === 'record_fact_answers').map(([, a]) => a.batch_id)).toEqual(['seed-1/times-tables', 'seed-1/generated']);
   });
 
+  it('a game can give its own quick time; without one each pack keeps its own', async () => {
+    const rpc = fakeDb();
+    await recordMathsAnswers(rpc, 'student-1', [tables, rounding], 'x', 'hop', undefined, 10_000);
+    expect(rpc.mock.calls.filter(([n]) => n === 'record_fact_answers').map(([, a]) => a.quick_ms)).toEqual([10_000, 10_000]);
+  });
+
   it('keeps each time to at most two minutes', async () => {
     const rpc = fakeDb();
     await recordMathsAnswers(rpc, 'student-1', [{ ...tables, ms: 600_000 }], 'x', 'marble');
