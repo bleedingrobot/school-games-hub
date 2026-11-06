@@ -66,7 +66,7 @@ interface Props {
   /** The child's very first challenge: a hand shows them the way on the first go. */
   guide?: boolean;
   sound: boolean;
-  say: (text: string) => void;
+  say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
@@ -106,6 +106,19 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const [bond, setBond] = useState(0);
   const [bondWrongs, setBondWrongs] = useState(0);
   const since = useRef(Date.now());
+  /** Goes up with each clock start (and when a go ends), so the end of an older line can't restart a newer clock. */
+  const asking = useRef(0);
+  /** Set by the first tap after a clock start, so the end of its read-aloud no longer restarts the clock. */
+  const tappedYet = useRef(false);
+  /** Starts the answer clock now (a tap during the voice is still timed) and again once `line` has been heard. */
+  function askAloud(line: string) {
+    const mine = ++asking.current;
+    tappedYet.current = false;
+    since.current = Date.now();
+    say(line, () => {
+      if (asking.current === mine && !tappedYet.current) since.current = Date.now();
+    });
+  }
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const pathRef = useRef<HTMLDivElement>(null);
@@ -139,7 +152,6 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   // Each new go is read aloud once and Weka waits on the starting stone.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
-    since.current = Date.now();
     const s: Step = twoStep ? 'toTen' : splitFirst ? 'split' : 'answer';
     setStep(s);
     setBond(0);
@@ -148,8 +160,11 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setPose('wait');
     setLit([]);
     setGuidePoint(false);
-    say(s === 'toTen' ? toTenLine(go, guided) : s === 'split' ? splitFirstLine(go) : askLine(go, guided));
+    askAloud(s === 'toTen' ? toTenLine(go, guided) : s === 'split' ? splitFirstLine(go) : askLine(go, guided));
     if (guided) later(GUIDE_MS, () => setGuidePoint(true));
+    return () => {
+      asking.current++;
+    };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
@@ -190,6 +205,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
   function pick(n: number) {
     if (phase !== 'ask') return;
+    tappedYet.current = true;
     if (step === 'toTen') {
       // Help only: never sent, never recorded.
       if (n !== go.toTen) return wrong(n);
@@ -200,8 +216,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       if (sound) playSound('tap');
       hopTo(go.from, 10, () => {
         setStep('answer');
-        since.current = Date.now();
-        say(fromTenLine(go));
+        askAloud(fromTenLine(go));
         if (guided) later(GUIDE_MS, () => setGuidePoint(true));
       });
       return;
@@ -238,6 +253,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   /** Split-first goes: the part of the number that gets to ten, then the rest, then Weka hops to the big rock. Help only. */
   function pickSplit(n: number) {
     if (phase !== 'ask' || step !== 'split' || bond >= 2) return;
+    tappedYet.current = true;
     if (n !== (bond === 0 ? go.toTen : go.rest)) {
       const w = bondWrongs + 1;
       setBondWrongs(w);
@@ -270,8 +286,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setLit([]);
     hopTo(go.from, 10, () => {
       setStep('answer');
-      since.current = Date.now();
-      say(splitDoneLine(go));
+      askAloud(splitDoneLine(go));
     });
   }
 

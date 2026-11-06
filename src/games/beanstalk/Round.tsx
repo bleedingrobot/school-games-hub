@@ -42,7 +42,7 @@ interface Props {
   /** The child's very first challenge: a hand shows them a right pair, until they have made one. */
   guide: boolean;
   sound: boolean;
-  say: (text: string) => void;
+  say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
@@ -54,21 +54,33 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
   const [flying, setFlying] = useState<number[]>([]);
   const [wobble, setWobble] = useState<number[]>([]);
   const since = useRef(Date.now());
+  /** Set by the first tap, so the end of the opening line no longer restarts the clock. */
+  const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const { pairsMade } = replay(round, taps);
 
   useEffect(() => {
     heading.current?.focus();
-    say(guide ? WORDS.guideStart(target) : WORDS.tapTwo(target));
+    // The first pair's clock starts now (a tap during the voice is still timed) and again once the opening line has been heard.
+    let live = true;
+    tappedYet.current = false;
+    since.current = Date.now();
+    say(guide ? WORDS.guideStart(target) : WORDS.tapTwo(target), () => {
+      if (live && !tappedYet.current) since.current = Date.now();
+    });
     const pending = timers.current;
-    return () => pending.forEach((t) => window.clearTimeout(t));
+    return () => {
+      live = false;
+      pending.forEach((t) => window.clearTimeout(t));
+    };
   }, [seed]); // only when the round starts
 
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
 
   function tap(leaf: number) {
     if (flying.length) return;
+    tappedYet.current = true;
     if (picked === null || picked === leaf) {
       setPicked(picked === leaf ? null : leaf);
       if (sound) playSound('tap');

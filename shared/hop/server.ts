@@ -14,7 +14,7 @@
  * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
  * the pads come from the saved count of finished days. A challenge finishes once.
  */
-import { quickMsForPack } from '../maths/config';
+import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import type { SkipStep } from '../maths/skillPacks/earlyFacts';
 import { replay, type Tap } from './play';
@@ -99,7 +99,7 @@ function readTaps(v: unknown): Tap[] | null {
 /** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
 export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
   const byKey = new Map(facts.map((s) => [s.key, s]));
-  const quick = quickMsForPack('early-facts');
+  const quick = JUNIOR_QUICK_MS;
   for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
   return [...byKey.values()];
 }

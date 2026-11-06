@@ -33,7 +33,7 @@ interface Props {
   /** The child's very first challenge: a hand shows them the right shell on the first go. */
   guide?: boolean;
   sound: boolean;
-  say: (text: string) => void;
+  say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
@@ -72,6 +72,8 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   const [tideIn, setTideIn] = useState(false);
   const [wobble, setWobble] = useState<number | null>(null);
   const since = useRef(Date.now());
+  /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
+  const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
@@ -87,12 +89,18 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
     setTideIn(false);
     if (sound) playSound('tap');
     const half = window.setTimeout(() => setTideIn(true), TIDE_MS / 2);
+    // The clock starts when the shells can be tapped (a tap during the voice is still timed) and again once the question has been heard.
+    let live = true;
     const ask = window.setTimeout(() => {
       setPhase('ask');
+      tappedYet.current = false;
       since.current = Date.now();
-      say(guide && at === 0 ? `${goes[0].spoken} ${WORDS.guideStart}` : goes[at].spoken);
+      say(guide && at === 0 ? `${goes[0].spoken} ${WORDS.guideStart}` : goes[at].spoken, () => {
+        if (live && !tappedYet.current) since.current = Date.now();
+      });
     }, TIDE_MS);
     return () => {
+      live = false;
       window.clearTimeout(half);
       window.clearTimeout(ask);
     };
@@ -108,6 +116,7 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
 
   function pick(n: number) {
     if (phase !== 'ask') return;
+    tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;

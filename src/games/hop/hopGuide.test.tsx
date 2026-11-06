@@ -1,9 +1,12 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeRound, showRound } from '../../../shared/hop/round';
 import { SoundProvider } from '../../sound';
 import { trialBackend } from './backend';
 import { HopGame } from './HopGame';
+import { Hops } from './Hops';
+import { WORDS } from './words';
 
 const hand = () => document.querySelector('.hp-hand');
 
@@ -50,5 +53,36 @@ describe("Hop's hundreds board", () => {
     expect(thirty.getAttribute('aria-pressed')).toBe('false');
     await userEvent.click(screen.getByRole('button', { name: /Hide board/ }));
     expect(screen.queryByRole('group', { name: 'Hundreds board' })).toBeNull();
+  });
+});
+
+describe("Hop's answer clock", () => {
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('restarts once the question has been read aloud, and an old line ending never moves a newer clock', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    vi.setSystemTime(0);
+    const round = makeRound(1, [], { gold: false });
+    const hops = showRound(round);
+    const say = vi.fn();
+    const onDone = vi.fn();
+    render(<Hops round={round} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={onDone} />);
+    const heard = () => say.mock.calls.filter(([, onEnd]) => onEnd).map(([, onEnd]) => onEnd as () => void);
+    const tap = (n: number) => fireEvent.click(within(screen.getByRole('group', { name: WORDS.pickWorm })).getByRole('button', { name: String(n) }));
+    for (let i = 0; i < hops.length; i++) {
+      act(() => vi.advanceTimersByTime(5000)); // the question is being read
+      if (i === 1) heard()[0](); // the first hop's line ends late: no effect on this one
+      else heard()[i]();
+      act(() => vi.advanceTimersByTime(3000));
+      tap(hops[i].answer);
+      heard()[i](); // and a line ending after the tap changes nothing
+      act(() => vi.advanceTimersByTime(2500)); // Hop jumps (and, after the last hop, the round ends)
+    }
+    const ms = onDone.mock.calls[0][0].map((t: { ms: number }) => t.ms);
+    expect(ms[0]).toBe(3000);
+    expect(ms[1]).toBe(8000);
   });
 });

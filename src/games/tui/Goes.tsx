@@ -39,7 +39,7 @@ interface Props {
   /** A gold day's first challenge: two full kete, "ten and ten", after the last go. */
   finale?: boolean;
   sound: boolean;
-  say: (text: string) => void;
+  say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
@@ -58,6 +58,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   const [pointAt, setPointAt] = useState<Guide>(null);
   const [pose, setPose] = useState<Pose>('sit');
   const since = useRef(Date.now());
+  /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
+  const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
@@ -77,15 +79,23 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   // Each new go is read aloud once.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
+    // The clock starts now (a tap during the voice is still timed) and again once the question has been heard.
+    let live = true;
+    tappedYet.current = false;
     since.current = Date.now();
     setPose('sit');
     setPeek(false);
-    say(askLine(go));
+    say(askLine(go), () => {
+      if (live && !tappedYet.current) since.current = Date.now();
+    });
     if (guided) {
       later(GUIDE_AT.branch, () => setPointAt('branch'));
       later(GUIDE_AT.loose, () => setPointAt('loose'));
       later(GUIDE_AT.nests, () => setPointAt('nests'));
     } else setPointAt(null);
+    return () => {
+      live = false;
+    };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
@@ -113,6 +123,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
 
   function pick(n: number) {
     if (phase !== 'ask') return;
+    tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;
