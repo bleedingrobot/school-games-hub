@@ -1,0 +1,87 @@
+[
+  {
+    "id": "R5",
+    "kind": "fix",
+    "title": "Mistakes that teach: wrong choices show why",
+    "games": [
+      "Beanstalk",
+      "Hop",
+      "Penguin Pairs",
+      "Pipi",
+      "Tūī",
+      "Weka"
+    ],
+    "effort": "L",
+    "impact": "Very high",
+    "why": "Wrong taps become a short lesson using the game's own picture, then the child redoes the question.",
+    "plan": "docs/plans/maths-review/R5-mistakes-that-teach.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. Start by running: git fetch origin, then make your own worktree and branch from origin/main named r5-beanstalk-mistakes (see section 6 of the guide). Read /Users/jriley/games-hub-isles/CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, and the plan docs/plans/maths-review/R5-mistakes-that-teach.md (sections 3.1 and 3.2 are yours). Also read docs/reviews/maths-review/games/beanstalk.md and docs/reviews/maths-review/DECISIONS.md.\n\nBuild \"mistakes that teach\" for Kiwi's Beanstalk only:\n1. In shared/beanstalk/round.ts: classify a wrong pair by its total against the target (over, under, close, digit) for targets 10, 100 and 1000; each tray of six leaves must have at least one close temptation; a wrong pair is remembered as tried so it cannot be tapped twice. Keep the server replay and the saved taps unchanged (only the first tap of a pair is scored to the facts).\n2. In src/games/beanstalk/Round.tsx and Leaf.tsx: after wrong tap 1 show the two leaves' frames joining with the extra dots out or the empty squares glowing, and read the line. After wrong tap 2 play \"Let's look together\": one leaf pulses, its frame fills with the partner's dots, then ask \"Now you try: what goes with N?\" with the partner not marked. That pair counts for the round but is a shown pair, never a clean right.\n3. Add every why-line to words.ts and voiceLines.ts (allVoiceLines loops for all pairs and the three targets), keep the lines short and in the style of the plan. Do not make clips yourself unless the Kokoro folder exists; tell James the exact command.\n4. Add at most 8 tests (kind from total, removed duplicates not required, replay unchanged, tried pair cannot repeat, flow state, voice lines).\n5. Rebuild the function with npm run build:functions -- beanstalk. Do not touch shared/maths, src/maths, src/styles.css, src/components or any other game.\n6. Run typecheck, npm run test:changed, and play the preview (npm run beanstalk:preview) on bronze, silver and gold days and the 100 beanstalk, making each kind of mistake.\nStop and tell James before any live step. Open a PR when done and say in it that merging deploys the rebuilt beanstalk function. Add a short \"Mistakes that teach\" results section to docs/BEANSTALK-PLAN.md."
+  },
+  {
+    "id": "R6",
+    "kind": "fix",
+    "title": "Help that follows the child, not the calendar",
+    "games": [
+      "Beanstalk",
+      "Hop",
+      "Penguin Pairs",
+      "Pipi"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "why": "Pictures fade when the child is secure and come back after a struggle, like Weka and Quick looks.",
+    "plan": "docs/plans/maths-review/R6-help-follows-the-child.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r6-beanstalk-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/plans/maths-review/R6-help-follows-the-child.md (sections 3.1 to 3.4, the Beanstalk part, are yours), docs/reviews/maths-review/games/beanstalk.md and, as models, shared/tui/round.ts (placeAfter) and shared/weka/round.ts (helpForStats).\n\nMake Kiwi's Beanstalk's dots follow the child, not the calendar:\n1. Add columns help (0 full, 1 small, 2 none) and good_in_row to beanstalk_progress in a NEW migration (get the number from node scripts/migration-numbers.mjs; backfill help from days_done; replace beanstalk_finish and beanstalk_load; lock the functions as the existing migration does). Add a database test.\n2. In shared/beanstalk: a placeAfter for the help (good round = 8 or more of 10 pairs right first time, 2 good in a row fades one step, 4 or fewer first-time pairs brings one step back, moves only on the day's first finish, reset to full when a new sum starts). The server returns help from load and saves it with the round; the teacher's dots switch off still forces none. Leaf colours and eggs stay on days.\n3. In src/games/beanstalk: use the saved help for the dots; after 3 pairs in a row with a wrong first tap show full dots for the rest of the round, with the line \"Here are the dots again to help.\" (add to words.ts and voiceLines.ts).\n4. At most 8 tests (placeAfter, reset at new sum, replay does not move it, database test). Rebuild with npm run build:functions -- beanstalk. Typecheck, npm run test:changed, play the preview.\nDo not touch shared/maths or any shared file. Stop and tell James before any live step (the migration applies when the PR merges). Open a PR when done."
+  },
+  {
+    "id": "R7",
+    "kind": "fix",
+    "title": "Teacher Foundational skills grid and Today alerts",
+    "games": [
+      "Beanstalk",
+      "Hop",
+      "Penguin Pairs",
+      "Pipi",
+      "Tūī",
+      "Weka",
+      "Quick looks"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "why": "Teachers see who is stuck on which early idea without opening each game.",
+    "plan": "docs/plans/maths-review/R7-teacher-foundational-view.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r7-foundational-teacher. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md (especially sections 3 and 5), docs/plans/maths-review/R7-teacher-foundational-view.md, docs/TEACHER-VIEW-PLAN.md, src/games/types.ts (TeacherContract, HardestRow, TeacherAlert), src/teacher/useClassAlerts.ts, src/teacher/Hardest.tsx, src/pages/SkillMap.tsx, shared/maths/skillMap.ts, and supabase/migrations/20261019000400_maths_teacher_views.sql.\n\nBuild Stage 1 only (no shared files, see section 4 of the plan):\n1. A new migration (number from node scripts/migration-numbers.mjs) with teacher_foundational_class(target uuid) and teacher_quick_looks_class(target uuid) as in section 5 of the plan, the same guard as teacher_class_skill_map, locked with revoke/grant, and a database test file (a teacher of another class is refused with 42501).\n2. src/data/foundational.ts calling both and the existing fetchClassMap, cached with shortCache.\n3. src/teacher/foundational/config.ts (thresholds in one place), ideas.ts (idea to keys, ideaLevel using LEVELS and the 70% rule from shared/maths), flags.ts (stuckFlags with reason lines), and the grid component FoundationalGrid.tsx with its css and test (not yet mounted anywhere: that is Stage 2).\n4. teacher.alerts and teacher.hardest on the six game definitions (beanstalk, hop, korora, pipi, tui, weka) in their own index.tsx/teacher.ts, using made-up names only; fix Beanstalk's Maths column (class line) and the student line (the pupil's own sum).\n5. At most 8 tests in all. Do not edit TeacherShell.tsx, App.tsx, useClassAlerts.ts, StudentPage.tsx, shared/maths, src/components or any other shared file. List in the PR exactly what Stage 2 needs.\nStop and tell James before any live step (the migration applies when the PR merges). Open a PR when done."
+  },
+  {
+    "id": "R8",
+    "kind": "fix",
+    "title": "Longer ladders and what's-next links",
+    "games": [
+      "Penguin Pairs",
+      "Tūī",
+      "Beanstalk",
+      "Hop"
+    ],
+    "effort": "M",
+    "impact": "Medium",
+    "why": "Quick children get new levels and a signpost to the next game.",
+    "plan": "docs/plans/maths-review/R8-longer-ladders-whats-next.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r8-korora-ladder. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md and docs/plans/maths-review/R8-longer-ladders-whats-next.md (sections 3.1 and 3.2, Stage A only).\n\nMake Penguin Pairs go further:\n1. Add level 5, near doubles 5+6 to 8+9, in shared/korora/round.ts using Weka's add:a+b keys (first check those records can be read from the Penguin Pairs round without changing shared/maths; if not, stop and tell James). Picture: two equal groups plus one extra penguin. Add the voice lines and run scripts/voice-clips.py korora.\n2. Level 5 appears only when level 4 is secure (70 percent of its facts at box 2 or more). Bronze, silver and gold days keep working.\n3. Add the \"what's next\" card to the finish screen inside src/games/korora (do not use NextPartChip): shown only when the top level is secure and Weka is switched on in readSettings(), opens Weka, line \"Doubles help with 6 + 7 too. Try Weka.\"\n4. The reached column only allows 1 to 4: if the migration is needed to save level 5, add a NEW migration (number from node scripts/migration-numbers.mjs) widening it. Do not edit the old one.\n5. At most 8 tests. Rebuild with npm run build:functions -- korora. Typecheck, npm run test:changed, play the preview on a phone width.\nDo not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step (the migration applies when the PR merges). Open a PR when done."
+  },
+  {
+    "id": "R9",
+    "kind": "fix",
+    "title": "Game-specific depth",
+    "games": [
+      "Hop",
+      "Penguin Pairs",
+      "Weka",
+      "Tūī"
+    ],
+    "effort": "M",
+    "impact": "Medium",
+    "why": "Close four gaps where a child can pass without the real idea.",
+    "plan": "docs/plans/maths-review/R9-game-specific-depth.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r9-weka-pebbles. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md and docs/plans/maths-review/R9-game-specific-depth.md (section 3.3).\n\nMake Weka's pebble step a real choice:\n1. In src/games/weka/Pebbles.tsx stop ending the step when the first ten-frame fills. The child drags as many silver pebbles as they think make ten, then taps Check (or the step counts when they stop for a moment, your call; keep it simple for a 6 year old).\n2. Result lines in words.ts and voiceLines.ts: right (\"10 is full. 2 gone, 3 left.\"), too few, too many (put one back). A wrong first try means the go is not counted right first time. After two wrong tries move the right number across to show it. Keep the hint hand for bronze help.\n3. Run scripts/voice-clips.py weka for the new lines.\n4. At most 8 tests. npm run build:functions -- weka if shared/weka changes. Typecheck, npm run test:changed, play the preview with touch.\nDo not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step. Open a PR when done."
+  }
+]
