@@ -48,7 +48,7 @@ export function FoundationalGrid({
                 Student
               </th>
               {IDEAS.map((idea) => (
-                <th key={idea.id} scope="col" className="fg__idea">
+                <th key={idea.id} scope="col" className="fg__idea" title={idea.note}>
                   {idea.label}
                 </th>
               ))}

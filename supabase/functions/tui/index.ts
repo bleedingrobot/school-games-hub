@@ -821,12 +821,15 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+* "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+* Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+*/
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -864,6 +867,42 @@ const tenAnd = {
 				answer - 1,
 				answer + 10,
 				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess = {
+	label: "\"Ten less\" facts (14 − 10)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+		const t = String(10 + n);
+		const parts = v === 0 ? [
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		] : [
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
 				20,
 				1 + n
 			]
@@ -1693,6 +1732,7 @@ const EARLY_FACTS = {
 		...equalsFamilies,
 		...arrayFamilies,
 		tenAnd,
+		tenLess,
 		tenUp: tenMove(true),
 		tenDown: tenMove(false),
 		oddEven,
@@ -1712,6 +1752,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"tenLess",
 		"tenUp",
 		"tenDown",
 		"oddEven",
@@ -1744,7 +1785,11 @@ const KNOWN_START = {
 	step: 3,
 	level: 4
 };
+/** The nine "ten and" facts (10 + 4, 4 + 10), and the nine "ten less" ones (14 − 10, 10 + ? = 14), kept as separate records (R9). */
 const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
+const LESS_KEYS = Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`);
+/** The record a go counts towards: ways 0 and 1 are "ten and", ways 2 and 3 "ten less". */
+const keyFor = (n, way) => `${way >= 2 ? "tenless" : "tenand"}:${n}`;
 const STEPS = [
 	{
 		step: 1,
@@ -1786,8 +1831,7 @@ const STEPS = [
 		]
 	}
 ];
-/** The guided first go (plan section 6): 10 and 2, at level 5. */
-const GUIDED_KEY = "tenand:2";
+const GUIDED_N = 2;
 const MAX_SEED = 2147483647;
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 const isLevel = (n) => Number.isInteger(n) && n >= 0 && n <= 5;
@@ -1836,12 +1880,13 @@ function placeAfter(p, right) {
 	};
 }
 /**
-* The top step is secure (R8, the "what's next" card): at least 70% of the nine "ten and" facts at box 2 or more, the
-* same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Seven of nine.
+* The top step is secure (R8, the "what's next" card): at least 70% of the eighteen facts (nine "ten and", nine "ten less")
+* at box 2 or more, the same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Thirteen of eighteen.
 */
 function topSecure(stats) {
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(KEYS.length * STEP_SECURE_SHARE);
+	const all = [...KEYS, ...LESS_KEYS];
+	return all.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(all.length * STEP_SECURE_SHARE);
 }
 const shuffle = (items, random) => {
 	const out = [...items];
@@ -1887,15 +1932,17 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	random();
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	const byWeak = shuffle(KEYS, random).map((k, i) => ({
-		k,
+	const stepWays = STEPS.find((x) => x.step === step).ways;
+	const weakness = (n) => Math.min(...stepWays.map((w) => box.get(keyFor(n, w)) ?? 0));
+	const byWeak = shuffle(KEYS.map((_, i) => i + 1), random).map((n, i) => ({
+		n,
 		i
-	})).sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i).map((x) => x.k);
-	let keys = [...byWeak, byWeak[0]];
+	})).sort((a, b) => weakness(a.n) - weakness(b.n) || a.i - b.i).map((x) => x.n);
+	let ns = [...byWeak, byWeak[0]];
 	if (opts.guided) {
-		const rest = [...keys];
-		rest.splice(rest.indexOf(GUIDED_KEY), 1);
-		keys = spreadOut([GUIDED_KEY, ...rest]);
+		const rest = [...ns];
+		rest.splice(rest.indexOf(GUIDED_N), 1);
+		ns = spreadOut([GUIDED_N, ...rest]);
 	}
 	const ways = waysFor(step, random);
 	const shown = shownLevel(level, help);
@@ -1904,12 +1951,12 @@ function makeRound(seed, stats, opts = {}) {
 		step,
 		level,
 		help,
-		goes: keys.map((key, i) => opts.guided && i === 0 ? {
-			key,
+		goes: ns.map((n, i) => opts.guided && i === 0 ? {
+			key: keyFor(n, 0),
 			v: 0,
 			l: 5
 		} : {
-			key,
+			key: keyFor(n, ways[i]),
 			v: ways[i],
 			l: shown
 		})
@@ -1970,16 +2017,16 @@ function wrongNests(n, v, random) {
 }
 /** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
 function showGo(round, index, plan) {
-	const m = /^tenand:([1-9])$/.exec(plan.key);
+	const m = /^ten(and|less):([1-9])$/.exec(plan.key);
 	if (!m || ![
 		0,
 		1,
 		2,
 		3
-	].includes(plan.v) || !isLevel(plan.l)) return null;
-	const n = Number(m[1]);
+	].includes(plan.v) || !isLevel(plan.l) || m[1] === "less" && plan.v < 2) return null;
+	const n = Number(m[2]);
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
-	const q = pack.rebuild(plan.key, [n, plan.v], true, random);
+	const q = pack.rebuild(plan.key, [n, m[1] === "less" ? 3 - plan.v : plan.v], true, random);
 	const answer = plan.v >= 2 ? n : 10 + n;
 	if (!q || !q.choices || q.answer !== answer) return null;
 	const wrongs = wrongNests(n, plan.v, random);
@@ -6938,7 +6985,7 @@ const LADDER = [
 		label: "Ten and a number (10 + 4)",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys: earlyKeys("tenAnd"),
+		keys: [...earlyKeys("tenAnd"), ...earlyKeys("tenLess")],
 		built: true
 	},
 	{
@@ -7214,7 +7261,7 @@ function packIdOfKey(key) {
 	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
-	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;

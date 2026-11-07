@@ -34,6 +34,8 @@ export interface Idea {
   game: FoundationalGameId | typeof QUICK_LOOKS_ID;
   /** Empty for Quick looks, which has stages not facts. */
   parts: IdeaPart[];
+  /** A line shown when a teacher hovers the column heading. */
+  note?: string;
 }
 
 export const IDEAS: readonly Idea[] = [
@@ -49,7 +51,7 @@ export const IDEAS: readonly Idea[] = [
       { label: '1000', keys: skillKeys('bonds-1000') },
     ],
   },
-  { id: 'ten-and', label: 'Ten and some', game: 'tui', parts: [{ keys: skillKeys('ten-and') }] },
+  { id: 'ten-and', label: 'Ten and some', game: 'tui', parts: [{ keys: skillKeys('ten-and') }], note: 'Counts 10 + n and n − 10 separately (from 8 Nov 2026), so a child who knew 10 + n may show as learning until the minus facts are known.' },
   { id: 'make-ten', label: 'Make ten, add through ten', game: 'weka', parts: [{ keys: crossTen() }] },
   { id: 'doubles', label: 'Doubles and halves', game: 'korora', parts: [{ keys: skillKeys('dbl-half-10', 'dbl-half-20', 'odd-even') }] },
   { id: 'steps', label: 'Counting in steps', game: 'hop', parts: [{ keys: skillKeys('skip-10', 'skip-5', 'skip-2') }] },
@@ -106,6 +108,8 @@ export function keyWords(key: string): string {
   if (m) return `Half of ${m[1]}`;
   m = /^tenand:(\d+)$/.exec(key);
   if (m) return `10 + ${m[1]}`;
+  m = /^tenless:(\d+)$/.exec(key);
+  if (m) return `1${m[1]} − 10`;
   m = /^add:(\d+)\+(\d+)$/.exec(key);
   if (m) return `${m[1]} + ${m[2]}`;
   m = /^part(\d+):(\d+)$/.exec(key);
