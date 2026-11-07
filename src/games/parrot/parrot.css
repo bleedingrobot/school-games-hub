@@ -1,0 +1,191 @@
+/* Parrot’s See-saw. A snowy tarn at sunrise: every number sits dark on a light block, and every target is at least 56px
+   for children of 5 to 7. Stand-in pictures drawn in code (art/CREDITS.md). */
+.pr-root {
+  --pr-ink: #1b2340;
+  --pr-panel: #fffdf5;
+  --pr-sky: #cfe8f2;
+  --pr-teal: #2f6f6a;
+  --pr-teal-dark: #0f5c66;
+  --pr-gold: #f5c518;
+  --pr-green: #4a5d1f;
+  --pr-room-min: var(--pr-room, 100dvh);
+  position: relative;
+  min-height: var(--pr-room-min);
+  display: flex;
+  flex-direction: column;
+  background: var(--pr-sky);
+  color: var(--pr-ink);
+  font-family: system-ui, sans-serif;
+  overflow-x: hidden;
+}
+.pr-root--cover { position: fixed; inset: 0; z-index: 20; overflow: auto; }
+.pr-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.pr-message { margin: auto; font-size: 1.6rem; padding: 24px; text-align: center; }
+
+.pr-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.pr-button, .pr-hear {
+  min-height: 48px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--pr-teal-dark);
+  background: var(--pr-panel); color: var(--pr-ink); font: 700 1.05rem system-ui, sans-serif; cursor: pointer;
+}
+.pr-button:focus-visible, .pr-hear:focus-visible, .pr-choice:focus-visible, .pr-heapbtn:focus-visible { outline: 4px solid var(--pr-teal-dark); outline-offset: 3px; }
+.pr-button:disabled { opacity: 0.4; cursor: default; }
+
+/* The scene: pale sky, snowy ridge, a green bank below. */
+.pr-scene {
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 30% at 50% 66%, #f4f8fb 0 60%, transparent 61%),
+    linear-gradient(var(--pr-sky) 0 62%, #9bc46a 62% 100%);
+}
+
+/* Home and finish: the rope and a panel beside it (below on a narrow screen). */
+.pr-home { flex: 1; display: flex; min-height: var(--pr-room-min); }
+.pr-ropebox { flex: 1; min-height: var(--pr-room-min); display: flex; flex-direction: column; justify-content: space-between; padding: 64px 16px 16px; box-sizing: border-box; }
+.pr-ropebox__friend { display: block; width: clamp(90px, 18vw, 170px); }
+.pr-panel {
+  align-self: center; width: min(380px, 40vw); margin: 16px; padding: 18px 20px; border-radius: 28px; box-sizing: border-box;
+  background: var(--pr-panel); box-shadow: 0 6px 0 var(--pr-teal-dark), 0 8px 24px rgb(0 0 0 / 0.18); text-align: center;
+}
+.pr-panel h2 { margin: 0 0 8px; font-size: clamp(1.25rem, 2.6vw, 1.7rem); line-height: 1.25; }
+.pr-panel h2:focus { outline: none; }
+.pr-panel h2:focus-visible { outline: 3px solid var(--pr-gold); }
+.pr-day { font-size: 1.25rem; font-weight: 800; color: var(--pr-teal-dark); margin: 6px 0; }
+.pr-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #dff0ee; color: var(--pr-teal-dark); font-weight: 800; }
+.pr-play-button { width: 100%; min-height: 56px; margin-top: 10px; }
+.pr-hear-home { margin-top: 8px; }
+.pr-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 8px 0 0; }
+.pr-shelf__bell { width: 36px; }
+.pr-prize { display: block; width: min(120px, 40%); margin: 8px auto; }
+.pr-home--prize .pr-prize { animation: pr-ring 1.2s ease-in-out 3; transform-origin: 50% 0; }
+@keyframes pr-ring { 25% { rotate: 12deg; } 75% { rotate: -12deg; } }
+@media (max-height: 500px) {
+  .pr-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .pr-panel h2 { font-size: 1.15rem; }
+  .pr-panel p { margin: 4px 0; }
+  .pr-play-button { margin-top: 4px; }
+  .pr-prize { width: min(70px, 30%); }
+}
+@media (max-width: 700px) {
+  .pr-home { flex-direction: column; }
+  .pr-ropebox { min-height: 50dvh; }
+  .pr-panel { width: auto; }
+}
+
+/* The birds. */
+.pr-friend { display: block; width: 100%; }
+.pr-bird { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.pr-friend--cheer { animation: pr-hop 0.5s ease-in-out 3; }
+.pr-friend--laugh { animation: pr-sway 0.6s ease-in-out 2; }
+@keyframes pr-hop { 50% { translate: 0 -10%; } }
+@keyframes pr-sway { 25% { rotate: -6deg; } 75% { rotate: 6deg; } }
+
+/* The bell rope: five shiny things to a row, hanging from the rope. */
+.pr-rope { --pr-thing: clamp(44px, min(8vw, 11vh), 84px); display: grid; grid-template-columns: repeat(5, var(--pr-thing)); row-gap: calc(var(--pr-thing) * 0.35); column-gap: 0; justify-content: center; margin: 0 auto; }
+.pr-rope__spot { position: relative; display: block; width: var(--pr-thing); padding-top: 10px; }
+.pr-rope__spot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; border-radius: 3px; background: #b08a4e; box-shadow: 0 2px 0 rgb(0 0 0 / 0.2); }
+.pr-shiny { display: block; width: 100%; }
+.pr-shiny svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.pr-shiny--glow svg { animation: pr-glow 1.2s ease-in-out 3; }
+@keyframes pr-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--pr-gold)); scale: 1.25; } }
+.pr-golden { display: block; width: 100%; height: auto; }
+
+/* Playing: the go counter, the see-saw, the equation, the cards or the stones. */
+.pr-play {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: var(--pr-room-min); padding: 10px 10px 16px; box-sizing: border-box;
+}
+.pr-top { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-right: 300px; }
+.pr-progress { display: flex; gap: 6px; padding: 6px 8px 0; flex-wrap: wrap; }
+.pr-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--pr-teal-dark); }
+.pr-pip--done { background: var(--pr-gold); }
+.pr-stage { position: relative; flex: 1; width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: pr-in 0.4s ease-out; }
+@keyframes pr-in { from { opacity: 0; translate: 0 10px; } }
+.pr-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(70px, 11vw, 140px); pointer-events: none; }
+
+.pr-saw { display: block; width: min(100%, 460px); height: auto; max-height: 38dvh; }
+.pr-saw--small { width: min(100%, 240px); }
+.pr-saw__plank { transition: transform 0.7s cubic-bezier(0.3, 1.4, 0.5, 1); }
+.pr-saw--wobble { animation: pr-wobble 0.6s ease-in-out; }
+@keyframes pr-wobble { 20% { rotate: -2.5deg; } 40% { rotate: 2deg; } 60% { rotate: -1.2deg; } 80% { rotate: 0.6deg; } }
+
+.pr-eq {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.3em; margin: 0; padding: 4px 20px; border-radius: 999px;
+  background: var(--pr-panel); font: 900 clamp(1.5rem, 6vw, 2.2rem) system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+.pr-eq--big { font-size: clamp(2.2rem, 9vw, 4rem); padding: 6px 28px; }
+.pr-eq__gap { display: inline-grid; place-items: center; min-width: 1.3em; border: 3px dashed var(--pr-ink); border-radius: 0.3em; color: var(--pr-ink); }
+.pr-eq__gap--filled { border-style: solid; background: #ffd9a8; }
+.pr-peek { min-height: 56px; }
+
+/* The cards: three or four, each a big target with its number. */
+.pr-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; }
+.pr-choice {
+  position: relative; display: grid; place-items: center; gap: 2px; min-width: 76px; min-height: 76px; padding: 6px 10px; border-radius: 18px;
+  border: 3px solid var(--pr-ink); background: #f4c20d; color: var(--pr-ink); cursor: pointer; box-shadow: 0 5px 0 rgb(0 0 0 / 0.25);
+}
+.pr-choice__value { font: 900 2.2rem / 1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.pr-cards--tf .pr-choice { min-width: 96px; }
+.pr-choice__word { font: 800 0.95rem system-ui, sans-serif; }
+.pr-glyph { width: 64px; height: auto; }
+.pr-choice:disabled { cursor: default; }
+.pr-choice--off { opacity: 0.35; }
+.pr-choice--wobble { animation: pr-shake 0.5s ease-in-out; }
+@keyframes pr-shake { 20% { rotate: -10deg; } 40% { rotate: 8deg; } 60% { rotate: -5deg; } 80% { rotate: 3deg; } }
+.pr-choice--right { animation: pr-pop 0.6s ease-out forwards; }
+.pr-choice--hint { box-shadow: 0 0 0 5px #fff, 0 0 0 9px var(--pr-teal-dark); }
+@keyframes pr-pop { 50% { scale: 1.2; } 100% { scale: 1.08; } }
+
+/* The stones: the heap to take from, a way to take one back, and Check. */
+.pr-stones { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 16px; }
+.pr-heapbtn {
+  position: relative; display: grid; place-items: center; min-width: 96px; min-height: 76px; padding: 4px 10px; border-radius: 22px;
+  border: 3px solid var(--pr-ink); background: rgb(255 253 245 / 0.9); cursor: pointer; box-shadow: 0 5px 0 rgb(0 0 0 / 0.25);
+}
+.pr-heapbtn:disabled { opacity: 0.4; cursor: default; }
+.pr-heap { width: 84px; height: auto; }
+.pr-heapbtn__plus { position: absolute; right: 6px; top: 4px; padding: 0 8px; border-radius: 999px; background: var(--pr-gold); font: 900 1rem system-ui, sans-serif; }
+.pr-check { min-width: 140px; min-height: 64px; }
+.pr-check:disabled { opacity: 0.4; cursor: default; }
+
+/* Mistakes that teach: the why-panel, "Let's look together", "Now you try". */
+.pr-why {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(94%, 520px); margin: 0 auto; padding: 8px 14px; box-sizing: border-box;
+  border-radius: 16px; border: 3px solid var(--pr-teal-dark); background: var(--pr-panel); color: var(--pr-ink); text-align: center;
+  font: 800 clamp(1rem, 2.6vw, 1.25rem) / 1.3 system-ui, sans-serif; box-shadow: 0 4px 0 rgb(0 0 0 / 0.15); animation: pr-why-in 0.25s ease-out;
+}
+.pr-why p { margin: 0; }
+.pr-why__title { font-size: 1.15em; color: var(--pr-teal-dark); }
+.pr-why--try { padding: 6px 14px; }
+@keyframes pr-why-in { from { opacity: 0; translate: 0 12px; } }
+.pr-whypic .pr-saw { max-height: 22dvh; }
+.pr-why .pr-saw { max-height: 22dvh; }
+
+/* The guiding hand, drawn inside the button it points at. */
+.pr-hand {
+  position: absolute; left: 50%; top: 55%; font-size: 2.6rem; line-height: 1; translate: -50% 0;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: pr-nudge 0.9s ease-in-out infinite; z-index: 3;
+}
+@keyframes pr-nudge { 50% { translate: -50% -14%; } }
+
+/* The first-time tip: in line at the top of the home panel. */
+.pr-coach { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 10px; padding: 10px 12px; border-radius: 16px; border: 3px solid var(--pr-gold); background: #fff8dc; text-align: center; }
+.pr-coach__say { margin: 0; font-weight: 700; line-height: 1.3; }
+.pr-tip__face { display: block; width: 56px; }
+.pr-tip__btns { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.pr-soft { color: #55607a; font-size: 0.9rem; }
+.pr-btn { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--pr-teal-dark); background: var(--pr-panel); color: var(--pr-ink); font: 700 1rem system-ui, sans-serif; cursor: pointer; }
+.pr-btn--primary { background: var(--pr-gold); border-color: #c79a00; }
+.pr-tip__x { min-width: 44px; padding: 0; }
+
+@media (max-height: 500px) {
+  .pr-top { padding-right: 280px; }
+  .pr-saw { max-height: 44dvh; }
+}
+@media (max-width: 640px) {
+  .pr-top { padding-right: 0; padding-top: 64px; }
+  .pr-stage__friend { display: none; }
+  .pr-bar { left: 8px; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pr-root *, .pr-root *::before, .pr-root *::after { animation: none !important; transition: none !important; }
+}

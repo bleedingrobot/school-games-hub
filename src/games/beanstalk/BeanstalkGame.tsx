@@ -4,9 +4,11 @@
  * Golden Egg, and the next friend is stuck on a fresh beanstalk. The screens only show what the backend says.
  */
 import { NextPartChip } from '../../components/NextPartChip';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
+import { SIGNPOST_FROM, type Signpost } from './signpost';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
@@ -65,6 +67,8 @@ interface Props {
   backend: BeanstalkBackend;
   /** Back to the hub's home page (the preview has none). */
   onExit?: () => void;
+  /** The finish screen's card on to Weka (maths review R8). Without it (a preview with no Weka) there is no card. */
+  signpost?: Signpost;
   /** Preview tools, shown under the game. */
   extra?: (h: Helpers) => ReactNode;
 }
@@ -95,7 +99,7 @@ function useFitBelow(root: RefObject<HTMLDivElement | null>) {
   }, [root]);
 }
 
-export function BeanstalkGame({ backend, onExit, extra }: Props) {
+export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
   const [state, setState] = useState<BeanstalkState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -152,7 +156,7 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
       />
     );
   else if (screen.kind === 'finish' && state.child)
-    body = <Finish result={screen.result} child={state.child} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
+    body = <Finish result={screen.result} child={state.child} say={voice.say} signpost={signpost} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
@@ -230,7 +234,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
 }
 
 /** A leaf changes colour, or, on the thirtieth day, the friend climbs down and the Golden Egg is won. */
-function Finish({ result, child, say, onNext }: { result: FinishResult; child: Child; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, child, say, signpost, onNext }: { result: FinishResult; child: Child; say: (t: string, onEnd?: () => void) => void; signpost?: Signpost; onNext: () => void }) {
   // On an egg day the new beanstalk has already started, so show the one just finished: every leaf gold.
   const stalk = stalkAfter(result.egg ? result.daysDone - 1 : result.daysDone);
   const leaves = result.egg
@@ -240,10 +244,22 @@ function Finish({ result, child, say, onNext }: { result: FinishResult; child: C
   const name = FRIEND_NAMES[stalk.friend];
   const text = result.egg ? WORDS.egg(name) : changed ? WORDS.leafTurned(changed) : WORDS.doneToday;
   const heading = useRef<HTMLHeadingElement>(null);
+  // The card comes once today's line has been heard (it reads its own line aloud, so it would cut this one off).
+  const [heard, setHeard] = useState(false);
+  const [secure, setSecure] = useState(false);
+  const wekaOn = signpost?.wekaOn === true;
   useEffect(() => {
     heading.current?.focus();
-    say(text);
+    say(text, () => setHeard(true));
   }, [say, text]);
+  useEffect(() => {
+    if (!signpost || !wekaOn || stalk.target < SIGNPOST_FROM) return;
+    let current = true;
+    signpost.secure(stalk.target).then((v) => current && setSecure(v), () => undefined);
+    return () => {
+      current = false;
+    };
+  }, [signpost, wekaOn, stalk.target]);
   return (
     <div className={`bs-home${result.egg ? ' bs-home--egg' : ''}`}>
       {result.egg ? (
@@ -257,6 +273,9 @@ function Finish({ result, child, say, onNext }: { result: FinishResult; child: C
         <button type="button" className="button button--play bs-play-button" onClick={onNext}>
           OK
         </button>
+        {signpost && wekaOn && secure && heard && (
+          <WhatsNext prefix="bs-next" title={WORDS.nextTitle} buttonLabel={WORDS.nextButton} say={say} onNext={signpost.open} />
+        )}
       </div>
     </div>
   );

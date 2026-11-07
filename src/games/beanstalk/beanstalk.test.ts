@@ -57,8 +57,11 @@ describe('the trial backend', () => {
     tools.jumpTo(DAYS_PER_EGG - 1);
     expect(await go()).toMatchObject({ daysDone: DAYS_PER_EGG, egg: true });
     expect(await backend.load()).toMatchObject({ child: 'jill', daysDone: DAYS_PER_EGG });
-    // The tūī's beanstalk is bonds to 100.
+    // The next beanstalk is bonds to 20 (R8), the one after it bonds to 100.
+    const next = await backend.start();
+    expect(await backend.finish(next.seed, perfectTaps(next.seed, 20))).toMatchObject({ daysDone: DAYS_PER_EGG, leafChanged: null });
+    tools.jumpTo(2 * DAYS_PER_EGG);
     const tui = await backend.start();
-    expect(await backend.finish(tui.seed, perfectTaps(tui.seed, 100))).toMatchObject({ daysDone: DAYS_PER_EGG, leafChanged: null });
+    expect(await backend.finish(tui.seed, perfectTaps(tui.seed, 100))).toMatchObject({ daysDone: 2 * DAYS_PER_EGG + 1, leafChanged: 0 });
   });
 });

@@ -24,6 +24,8 @@ export interface KororaFinish extends FinishResult {
   /** The level for next time, and the one this challenge was at: different when the child moved up. */
   level: Level;
   levelBefore: Level;
+  /** The near doubles' facts are secure (70% or more at box 2): the "what's next" card may show. */
+  topSecure: boolean;
 }
 
 export interface KororaBackend {
