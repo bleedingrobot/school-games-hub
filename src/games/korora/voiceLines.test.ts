@@ -40,7 +40,7 @@ describe('Penguin Pairs voice clips', () => {
     for (const key of LEVELS.flatMap((l) => levelKeys(l.level))) {
       const { kind, n } = parseKey(key)!;
       if (kind === 'fair') continue;
-      expect(said.has(kind === 'double' ? WORDS.lookDouble(n) : WORDS.lookHalf(n))).toBe(true);
+      expect(said.has(kind === 'double' ? WORDS.lookDouble(n) : kind === 'near' ? WORDS.lookNear(n) : WORDS.lookHalf(n))).toBe(true);
       for (let seed = 1; seed <= 40; seed++)
         for (const w of mistakeChoices(kind, n, seeded(seed)).wrongs) expect(said.has(whyLine({ kind, n }, w.kind))).toBe(true);
     }
