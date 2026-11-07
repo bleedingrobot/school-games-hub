@@ -115,7 +115,8 @@ export function PipiGame({ backend, onExit, extra }: Props) {
     body = (
       <Goes
         round={screen.round}
-        help={state.help ? beach.help : 'none'}
+        help={beach.help}
+        helpOn={state.help}
         scenery={beach.today}
         friend={beach.friend}
         guide={state.guided}

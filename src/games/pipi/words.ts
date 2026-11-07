@@ -22,6 +22,8 @@ export const WORDS = {
   parts: (here: number, popped: number) => `${here} and ${popped}`,
   hereAndPopped: 'here and popped up',
   howManyNow: 'Splash! Now how many are hiding?',
+  /** Said once in a round, when three goes in a row began with a wrong shell and the frame and outlines come back (R6). */
+  outlinesBack: 'Here are the outlines again to help.',
   guideStart: 'Look at the sand. Then tap the shell the hand points to.',
   guideHere: 'try this one',
   /** Wrong shell 2 of a go (maths review R5): the sand lifts and the split is read out. */

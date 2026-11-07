@@ -24,7 +24,7 @@ function wrongPossible(go: { answer: number; showing: number; whole: number; hid
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.outlinesBack, WORDS.lookTogether, WORDS.nowTry, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (let p = 0; p < 6; p++) {
     const name = FRIEND_NAMES[beachAfter(p * DAYS_PER_PEARL).friend];
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
