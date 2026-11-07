@@ -1,0 +1,373 @@
+{
+  "game": "weka",
+  "filename_prefix": "weka/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/weka-art/set",
+  "picks": "docs/weka-art/picks.json",
+  "art_dir": "src/games/weka/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "ten-frame",
+      "prompt": "Top-down flat-on view of a chunky wide rectangular ten-frame tray made of one single honey-coloured clay, a smooth board with a raised rounded rim, and ten round shallow dents pressed into the board, all the same size, all the same honey colour as the board, in a perfect grid of two straight rows of five, evenly spaced, tidy and symmetrical, wide landscape. Single object, centred, the whole tray visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        480
+      ],
+      "kind": "cut",
+      "folder": "frames",
+      "file": "ten-frame",
+      "max": 1000
+    },
+    {
+      "name": "weka-wait",
+      "prompt": "Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, standing on both feet, wings folded, calm and happy, looking ahead with a smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "weka-wait",
+      "max": 320
+    },
+    {
+      "name": "weka-hop",
+      "prompt": "Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, in the middle of a springy hop forwards, both feet tucked up off the ground, wings a little out, eager smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "weka-hop",
+      "max": 320
+    },
+    {
+      "name": "weka-land",
+      "prompt": "Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, just landed on both feet with knees bent, wings out for balance, pleased smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "weka-land",
+      "max": 320
+    },
+    {
+      "name": "weka-cheer",
+      "prompt": "Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "weka-cheer",
+      "max": 320
+    },
+    {
+      "name": "stone-grey",
+      "prompt": "One big smooth rounded river stone, oval and quite flat, seen from slightly above, the same simple shape every time, its top smooth and plain, soft warm grey stone, matte and gentle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "stones",
+      "file": "grey",
+      "max": 256
+    },
+    {
+      "name": "stone-gold",
+      "prompt": "One big smooth rounded river stone, oval and quite flat, seen from slightly above, the same simple shape every time, its top smooth and plain, the whole stone covered edge to edge in shining yellow gold, vivid mirror-bright polished metal with strong gleaming highlights and reflections, every part of it gold, three tiny sparkles. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "stones",
+      "file": "gold",
+      "max": 256,
+      "tints": {
+        "bronze": "bronze",
+        "silver": "silver"
+      }
+    },
+    {
+      "name": "step-stone",
+      "prompt": "One flat round grey stepping stone with a smooth plain top, seen from slightly above, a little wet at the edges, simple soft shape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "stone",
+      "max": 160
+    },
+    {
+      "name": "big-rock",
+      "prompt": "One big wide low flat oval stepping stone slab of sandy-gold clay, three times wider than it is tall, a single flat layer with one smooth flat top, seen from slightly above, like a big flat pebble lying on the ground. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "big-rock",
+      "max": 200
+    },
+    {
+      "name": "golden-basket",
+      "prompt": "The Golden Picnic Basket, a woven picnic basket with a handle made of vivid mirror-bright polished metal with strong gleaming highlights and reflections in shining yellow gold, a red and white checked cloth peeking out, alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "golden-basket",
+      "max": 256
+    },
+    {
+      "name": "golden-basket-cushion",
+      "prompt": "The Golden Picnic Basket, a woven picnic basket with a handle made of vivid mirror-bright polished metal with strong gleaming highlights and reflections in shining yellow gold, a red and white checked cloth peeking out, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "golden-basket-cushion",
+      "max": 256
+    },
+    {
+      "name": "splash",
+      "prompt": "A lively little splash of shiny see-through light blue water, droplets leaping up and outwards, sculpted from glossy translucent blue clay, all blue water. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "splash",
+      "max": 256
+    },
+    {
+      "name": "sparkle",
+      "prompt": "Three vivid mirror-bright polished metal with strong gleaming highlights and reflections gold four-pointed twinkle stars of different sizes spaced apart in a loose diagonal row, every star solid shining gold, flat like stickers, only gold stars on plain white. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "things",
+      "file": "sparkle",
+      "max": 256
+    },
+    {
+      "name": "kiwi-wait",
+      "prompt": "a cute round wingless New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved downwards, a big round smooth egg-shaped body covered all over in fluffy hair-like shaggy brown feathers, small bright dark eyes, rosy cheeks, thick strong grey legs and big feet, wearing a little yellow knitted scarf, facing to the right, side view, standing calmly and happily, looking ahead with a smile. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kiwi-wait",
+      "max": 320
+    },
+    {
+      "name": "kiwi-cheer",
+      "prompt": "a cute round wingless New Zealand kiwi bird with a pale pink beak that reaches far out in front of its face, long, thin and gently curved downwards, a big round smooth egg-shaped body covered all over in fluffy hair-like shaggy brown feathers, small bright dark eyes, rosy cheeks, thick strong grey legs and big feet, wearing a little yellow knitted scarf, facing to the right, side view, jumping for joy with both wings up high, a big smile, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kiwi-cheer",
+      "max": 320
+    },
+    {
+      "name": "takahe-wait",
+      "prompt": "a cute very plump heavy New Zealand takahe bird shaped like a big round ball, short thick sturdy red legs close under its body, a huge thick triangular red beak, shimmering turquoise and peacock-blue head and chest, an olive green and teal back with tiny stubby wings, big kind eyes, wearing a little purple knitted scarf, facing to the right, side view, standing calmly and happily, looking ahead with a smile. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "takahe-wait",
+      "max": 320
+    },
+    {
+      "name": "takahe-cheer",
+      "prompt": "a cute very plump heavy New Zealand takahe bird shaped like a big round ball, short thick sturdy red legs close under its body, a huge thick triangular red beak, shimmering turquoise and peacock-blue head and chest, an olive green and teal back with tiny stubby wings, big kind eyes, wearing a little purple knitted scarf, facing to the right, side view, jumping for joy with both wings up high, a big smile, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "takahe-cheer",
+      "max": 320
+    },
+    {
+      "name": "kakapo-wait",
+      "prompt": "a cute round chubby New Zealand kakapo parrot, soft moss green feathers with fine dark speckles, a pale owl-like face with whiskers, a big pale beak, big kind eyes, short strong grey legs, wearing a little red knitted scarf, facing to the right, side view, standing calmly and happily, looking ahead with a smile. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kakapo-wait",
+      "max": 320
+    },
+    {
+      "name": "kakapo-cheer",
+      "prompt": "a cute round chubby New Zealand kakapo parrot, soft moss green feathers with fine dark speckles, a pale owl-like face with whiskers, a big pale beak, big kind eyes, short strong grey legs, wearing a little red knitted scarf, facing to the right, side view, jumping for joy with both wings up high, a big smile, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kakapo-cheer",
+      "max": 320
+    },
+    {
+      "name": "pukeko-wait",
+      "prompt": "a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little orange knitted scarf, facing to the right, side view, standing calmly and happily, looking ahead with a smile. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pukeko-wait",
+      "max": 320
+    },
+    {
+      "name": "pukeko-cheer",
+      "prompt": "a cute round New Zealand pukeko bird, deep shiny blue feathers, a bright red beak and red forehead shield, long orange legs, big friendly eyes, wearing a little orange knitted scarf, facing to the right, side view, jumping for joy with both wings up high, a big smile, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pukeko-cheer",
+      "max": 320
+    },
+    {
+      "name": "kea-wait",
+      "prompt": "a cute round New Zealand kea parrot, olive green feathers with dark edges, a flash of orange under its wings, a long curved grey beak, big cheeky eyes, wearing a little blue knitted scarf, facing to the right, side view, standing calmly and happily, looking ahead with a smile. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kea-wait",
+      "max": 320
+    },
+    {
+      "name": "kea-cheer",
+      "prompt": "a cute round New Zealand kea parrot, olive green feathers with dark edges, a flash of orange under its wings, a long curved grey beak, big cheeky eyes, wearing a little blue knitted scarf, facing to the right, side view, jumping for joy with both wings up high, a big smile, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kea-cheer",
+      "max": 320
+    },
+    {
+      "name": "back-morning",
+      "prompt": "A wide view of a sunny New Zealand bush stream seen from the side: a grassy near bank along the bottom, a calm, wide, shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, a tidy uncluttered scene with an empty middle band of water, bright blue sky, the water clear light blue and calm. Empty background scenery for a children's game, calm soft colours in the middle so things placed on top stand out. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1072,
+        672
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "morning"
+    },
+    {
+      "name": "back-silver",
+      "prompt": "A wide view of a sunny New Zealand bush stream seen from the side: a grassy near bank along the bottom, a calm, wide, shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, a tidy uncluttered scene with an empty middle band of water, soft silvery morning light, bright silver glints on the water at the edges, calm plain water in the middle. Empty background scenery for a children's game, calm soft colours in the middle so things placed on top stand out. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1072,
+        672
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "silver"
+    },
+    {
+      "name": "back-evening",
+      "prompt": "A wide view of a sunny New Zealand bush stream seen from the side: a grassy near bank along the bottom, a calm, wide, shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, a tidy uncluttered scene with an empty middle band of water, a warm golden evening, the sky orange and gold, golden light on the bush and on the calm water. Empty background scenery for a children's game, calm soft colours in the middle so things placed on top stand out. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1072,
+        672
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "evening"
+    },
+    {
+      "name": "card",
+      "prompt": "Weka, a cute round New Zealand weka bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, hopping happily along a straight line of round grey stepping stones across a sunny bush stream, a big flat sandy-gold rock in the middle of the line, a picnic basket waiting on the far bank, wide landscape picture for a game title card. Suitable for young children aged 5 to 7.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "weka"
+    }
+  ]
+}

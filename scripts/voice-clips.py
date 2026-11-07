@@ -1,10 +1,9 @@
 """Records a game's read-aloud lines with Kokoro (Apache-2.0, https://github.com/hexgrad/kokoro).
 
-The lines come from public/voice/<game>/lines.json, written by that game's voiceLines.test.ts
-(quick-looks: src/subitising/, beanstalk: src/games/beanstalk/, hop: src/games/hop/,
-pipi: src/games/pipi/, korora: src/games/korora/, weka: src/games/weka/, tui: src/games/tui/,
-isles: src/games/isles/voice.test.ts, decree: src/games/decree/voice.test.ts). Only lines without a clip are
-recorded, unless --all is given (use it after changing VOICE, SPEED or SAY_AS).
+The lines come from public/voice/<game>/lines.json, written by that game's voice test (voiceLines.test.ts, or
+voice.test.ts). The games are found by looking for those files, so a new game needs no change here: run
+`python3 scripts/voice-clips.py --list` to see them (it needs no Kokoro). Only lines without a clip are recorded,
+unless --all is given (use it after changing VOICE, SPEED or SAY_AS).
 
 Kokoro lives outside the repo (it is about 340 MB):
     brew install uv
@@ -13,16 +12,12 @@ Kokoro lives outside the repo (it is about 340 MB):
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 Then, from the repo:
-    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <quick-looks|beanstalk|hop|pipi|korora|weka|tui|isles|decree> [--all]
+    ~/kokoro/.venv/bin/python -I scripts/voice-clips.py <game> [--all]
 """
 import json
 import os
 import re
 import sys
-
-import numpy as np
-import soundfile as sf
-from kokoro_onnx import Kokoro
 
 VOICE = 'af_bella'  # picked by James, 4 Nov 2026
 LANG = 'en-us'
@@ -85,8 +80,9 @@ def spoken(text: str) -> str:
     return re.sub(r'(^|[.!?] )([a-z])', lambda m: m.group(1) + m.group(2).upper(), text)
 
 
-def trimmed(audio: np.ndarray, sr: int) -> np.ndarray:
+def trimmed(audio, sr: int):
     """Cut the silence at each end, keeping a short breath so the start isn't clipped."""
+    import numpy as np
     loud = np.where(np.abs(audio) > 0.01)[0]
     if not len(loud):
         return audio
@@ -94,10 +90,21 @@ def trimmed(audio: np.ndarray, sr: int) -> np.ndarray:
     return audio[max(0, loud[0] - pad):loud[-1] + pad]
 
 
+def find_games() -> list[str]:
+    """Every game with a public/voice/<game>/lines.json, in alphabetical order."""
+    return sorted(d for d in os.listdir(VOICES) if os.path.isfile(os.path.join(VOICES, d, 'lines.json')))
+
+
 def main() -> None:
+    found = find_games()
+    if '--list' in sys.argv:
+        print('\n'.join(found))
+        return
     games = [a for a in sys.argv[1:] if not a.startswith('--')]
     if len(games) != 1:
-        sys.exit('Which game? e.g. voice-clips.py beanstalk')
+        sys.exit('Which game? One of: ' + ', '.join(found))
+    if games[0] not in found:
+        sys.exit(f'No public/voice/{games[0]}/lines.json. Games with lines: ' + ', '.join(found))
     folder = os.path.join(VOICES, games[0])
     redo = '--all' in sys.argv
     with open(os.path.join(folder, 'lines.json')) as f:
@@ -106,6 +113,8 @@ def main() -> None:
     print(f'{games[0]}: {len(todo)} of {len(lines)} lines to record with {VOICE}')
     if not todo:
         return
+    import soundfile as sf
+    from kokoro_onnx import Kokoro
     kokoro = Kokoro(os.path.join(KOKORO, 'kokoro-v1.0.onnx'), os.path.join(KOKORO, 'voices-v1.0.bin'))
     for i, line in enumerate(todo, 1):
         audio, sr = kokoro.create(spoken(line['text']), voice=VOICE, speed=SPEED, lang=LANG)
