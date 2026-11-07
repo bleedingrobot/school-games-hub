@@ -84,6 +84,7 @@ $$, array[
   'teacher_set_weka', 'teacher_weka_class', 'teacher_weka_student',
   'teacher_set_tui', 'teacher_tui_class', 'teacher_tui_student',
   'teacher_set_pigeon', 'teacher_pigeon_class', 'teacher_pigeon_student',
+  'teacher_set_parrot', 'teacher_parrot_class', 'teacher_parrot_student',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',
   'teacher_class_badges', 'teacher_renew_badge',
