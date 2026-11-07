@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { DotPicture, NumberLine, TenFrame, frameSquares, gridDots, lineTicks, lineX } from '.';
+import { DotPicture, NumberLine, TenFrame, frameSquares, gridDots, lineTicks, lineX, valueAtX } from '.';
 
 const circles = (html: string) => (html.match(/<circle/g) ?? []).length;
 
@@ -43,6 +43,36 @@ describe('kit pictures', () => {
     expect(html).toContain('-6');
     expect(html).not.toContain('NaN');
     expect(html).not.toContain('Infinity');
+  });
+
+  it('a number line can zoom into one gap with a lens, be tapped for the value under the tap, and colour a point by part', () => {
+    // 28 is the line's left end and 572 its right end, so the middle is 300.
+    expect(valueAtX(300, 0, 100)).toBe(50);
+    expect(valueAtX(300, 40, 50)).toBe(45);
+    expect(valueAtX(-50, 0, 100)).toBe(0);
+    expect(valueAtX(900, 0, 100)).toBe(100);
+    expect(valueAtX(10, 5, 5)).toBe(5);
+    const plain = renderToStaticMarkup(<NumberLine min={0} max={100} step={10} label="A line" />);
+    expect(plain).not.toContain('stroke-dasharray');
+    expect(plain).not.toContain('data-pick');
+    const html = renderToStaticMarkup(
+      <NumberLine
+        min={0}
+        max={100}
+        step={10}
+        labelEvery={5}
+        lens={{ from: 40, to: 50, step: 1, labelEvery: 5, points: [{ value: 47, label: '?', look: 'ring', tone: 'arc' }] }}
+        onPick={() => undefined}
+        colors={{ arc: 'var(--game-arc)' }}
+        label="A line from 0 to 100 zoomed in on 40 to 50"
+      />,
+    );
+    expect(html).toContain('stroke-dasharray');
+    expect(html).toContain('data-pick="lens"');
+    expect(html).toContain('var(--game-arc)');
+    expect(html).toContain('>45<');
+    expect(html).not.toContain('NaN');
+    expect(renderToStaticMarkup(<NumberLine min={0} max={100} lens={{ from: 40, to: 50 }} onPick={() => undefined} pickOn="line" label="x" />)).toContain('data-pick="line"');
   });
 
   it('a dot picture draws every dot, the frame, the gaps and the groups, and arrays come out in neat rows', () => {
