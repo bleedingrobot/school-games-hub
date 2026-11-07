@@ -3,21 +3,43 @@
  * before the glowing gap. The child taps the glow-worm with the missing number and Hop jumps onto the pad; a wrong
  * glow-worm wobbles and drifts back, with no penalty. The step ("+2") shows on each hop's arc on bronze days, faintly on
  * silver days, and not at all on gold days, when the last three hops count back as Hop hops home.
+ *
+ * Mistakes that teach (maths review R5, shared/kit/mistakes.ts). The first wrong glow-worm of a hop greys out (and can't be
+ * tapped again) and a small row of pads shows the mistake behind it, with its line read aloud. The second stops the free
+ * taps: "Let's look together", Hop hops the row from its first pad saying each number while the 100 board lights them,
+ * then the same hop comes back as "Now you try" with all four glow-worms in a new order and the labels at the child's own
+ * level. Only the first glow-worm of a hop is scored (shared/hop/play.ts), so a hop found after looking is not a clean right.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Tap } from '../../../shared/hop/play';
 import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/progress';
-import { HOPS_PER_ROUND, showRound, type Round } from '../../../shared/hop/round';
+import { HOPS_PER_ROUND, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
+import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { Friend, GlowWorm, LilyPad } from './HopArt';
 import { HundredsBoard } from './HundredsBoard';
 import { backFor, type Scenery } from './Pond';
+import { WhyPicture } from './WhyPicture';
 import { WORDS } from './words';
 import { hopLine } from './voiceLines';
 
 const JUMP_MS = 650;
 const LAND_MS = 750;
 const WOBBLE_MS = 500;
+
+/** The 100 board only opens by itself where it sits beside the pond (CSS: 900px and wider); on a phone it would cover the pads. */
+const wideBoard = () => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 900px)').matches;
+
+/** The glow-worms in a new order, for "Now you try" (only where they sit changes, not which is which). */
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
 interface Props {
   round: Round;
@@ -41,6 +63,16 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   const [at, setAt] = useState(0);
   const [phase, setPhase] = useState<Phase>('ask');
   const [wobble, setWobble] = useState<number | null>(null);
+  /** The wrong glow-worms tapped on this hop: greyed out, and not tappable again until "Now you try". */
+  const [tried, setTried] = useState<number[]>([]);
+  /** The last wrong glow-worm, shown with its picture and line until the next tap. */
+  const [why, setWhy] = useState<{ n: number; kind: HopMistake } | null>(null);
+  /** The hop's place in the two-tap flow: the second wrong glow-worm is "Let's look together". */
+  const go = useRef(NEW_GO);
+  const [redo, setRedo] = useState(false);
+  /** How many times "Now you try" has come round on this hop: each reshuffles the glow-worms. */
+  const [redoCount, setRedoCount] = useState(0);
+  const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -75,8 +107,30 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   const back = round.hops[at]?.key.includes(':back:');
   const sign = back ? '−' : '+';
 
+  const worms = useMemo(() => (redoCount > 0 ? shuffled(hops[Math.min(at, hops.length - 1)].choices) : hops[Math.min(at, hops.length - 1)].choices), [hops, at, redoCount]);
+
+  /** The second wrong glow-worm of a hop: Hop hops the row from its first pad to the answer, saying each number. */
+  function lookTogether() {
+    const counted = hop.terms.slice(0, hop.gap + 1);
+    setWhy(null);
+    startLook({
+      anchor: hop.gap,
+      steps: counted.length,
+      openingLine: WORDS.lookTogether,
+      fillLine: WORDS.lookCount(round.step, hop.back, counted),
+      onEnd: () => {
+        go.current = stepGo(go.current, 'lookDone');
+        setTried([]);
+        setRedo(true);
+        setRedoCount((c) => c + 1);
+        since.current = Date.now();
+        say(WORDS.nowTry);
+      },
+    });
+  }
+
   function pick(n: number) {
-    if (phase !== 'ask') return;
+    if (phase !== 'ask' || look || tried.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -84,11 +138,22 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
     setTaps(next);
     if (n !== hop.answer) {
       setWobble(n);
-      say(WORDS.tryAgain);
+      setTried([...tried, n]);
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
+      go.current = stepGo(go.current, 'wrong');
+      if (go.current.phase === 'look') {
+        lookTogether();
+        return;
+      }
+      const kind = hop.wrongs.find((w) => w.n === n)!.kind;
+      setWhy({ n, kind });
+      say(WORDS.why(kind, round.step, hop.before, hop.answer, hop.back));
       return;
     }
+    go.current = stepGo(go.current, 'right');
+    setWhy(null);
+    setRedo(false);
     setPhase('jump');
     say(WORDS.yes(n));
     if (sound) playSound('hop');
@@ -98,14 +163,18 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
         later(LAND_MS, () => onDone(next));
       } else {
         setAt(at + 1);
+        setTried([]);
+        setRedoCount(0);
         setPhase('ask');
       }
     });
   }
 
   // The guided first go: the hand points at the right glow-worm on the first hop, until it is picked.
-  const pointAt = guide && at === 0 && phase === 'ask' ? hop.answer : null;
-  const sitting = phase === 'ask' ? gap - 1 : gap;
+  const pointAt = guide && at === 0 && phase === 'ask' && !look ? hop.answer : null;
+  // In "Let's look together" Hop sits on the pad being counted, from the first pad to the answer.
+  const counted = look ? Math.max(look.filled, 0) : null;
+  const sitting = counted !== null ? Math.max(counted - 1, 0) : phase === 'ask' ? gap - 1 : gap;
   const made = at + (phase === 'ask' ? 0 : 1);
 
   return (
@@ -118,9 +187,30 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
             <span key={i} className={i < made ? 'hp-pip hp-pip--done' : 'hp-pip'} />
           ))}
         </div>
-        <HundredsBoard />
+        <HundredsBoard counting={look && wideBoard() ? hop.terms.slice(0, look.filled) : null} />
       </div>
       <p className="hp-ask" aria-live="polite">{hop.prompt}</p>
+      <div className="hp-stage">
+      {why && (
+        <ShowWhy
+          prefix="hp"
+          tapKey={taps.length}
+          picture={<WhyPicture hop={hop} kind={why.kind} wrong={why.n} step={round.step} friend={friend} />}
+          line={WORDS.why(why.kind, round.step, hop.before, hop.answer, hop.back)}
+        />
+      )}
+      {look && (
+        <LookTogether
+          prefix="hp"
+          title={WORDS.lookTogether}
+          picture={<p className="hp-counted">{hop.terms.slice(0, look.filled).join(', ') || '\u00a0'}</p>}
+          line={WORDS.lookCount(round.step, hop.back, hop.terms.slice(0, hop.gap + 1))}
+          skipLabel={WORDS.goOn}
+          canSkip={look.canSkip}
+          onSkip={skipLook}
+        />
+      )}
+      {redo && !why && !look && <NowYouTry prefix="hp" line={WORDS.nowTry} />}
       <div className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>
         {pads.slice(0, -1).map((_, i) => (
           <span key={`arc${i}`} className={`hp-arc hp-arc--${help}${i === gap - 1 ? ' hp-arc--next' : ''}`} style={{ ['--hp-i' as string]: i }}>
@@ -129,19 +219,26 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
         ))}
         {pads.map((n, i) => (
           <span key={i} className="hp-row__spot" style={{ ['--hp-i' as string]: i }}>
-            <LilyPad metal={padMetal} value={i === gap ? (phase === 'ask' ? null : hop.answer) : n} gap={i === gap && phase === 'ask'} glow={i === gap && phase !== 'ask'} />
+            <LilyPad
+              metal={padMetal}
+              value={i === gap ? (phase === 'ask' && !(counted !== null && counted > gap) ? null : hop.answer) : n}
+              gap={i === gap && phase === 'ask' && !(counted !== null && counted > gap)}
+              glow={(i === gap && phase !== 'ask') || (counted !== null && i < counted)}
+            />
           </span>
         ))}
         <span className={`hp-row__frog${phase === 'jump' ? ' hp-row__frog--jump' : ''}`} style={{ ['--hp-i' as string]: sitting }}>
           <Friend friend={friend} pose={phase === 'done' ? 'cheer' : phase === 'jump' ? 'leap' : 'wait'} />
         </span>
       </div>
-      <div className="hp-worms" role="group" aria-label={WORDS.pickWorm}>
-        {hop.choices.map((n, i) => (
+      </div>
+      <div className={`hp-worms${look ? ' hp-worms--off' : ''}`} role="group" aria-label={WORDS.pickWorm}>
+        {worms.map((n, i) => (
           <button
             key={`${at}-${n}`}
             type="button"
-            className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}${n === pointAt ? ' hp-worm--pointed' : ''}`}
+            disabled={tried.includes(n) || look !== null}
+            className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${tried.includes(n) ? ' hp-worm--tried' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}${n === pointAt ? ' hp-worm--pointed' : ''}`}
             style={{ ['--hp-i' as string]: i }}
             onClick={() => pick(n)}
             aria-label={n === pointAt ? `${n}, ${WORDS.guideHere}` : String(n)}

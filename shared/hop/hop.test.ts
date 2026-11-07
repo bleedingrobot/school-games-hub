@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
 import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
-import { BACK_HOPS, HOPS_PER_ROUND, makeRound, showRound, stepFor, stepKeys, STEPS, type Round } from './round';
+import { seeded } from '../seededRandom';
+import { EARLY_FACTS, earlyFactsPack } from '../maths/skillPacks/earlyFacts';
+import { BACK_HOPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -44,6 +46,61 @@ describe('the round', () => {
       const gold = makeRound(seed, [], { gold: true }).hops.map((h) => h.key.includes(':back:'));
       expect(gold).toEqual([...Array(HOPS_PER_ROUND - BACK_HOPS).fill(false), ...Array(BACK_HOPS).fill(true)]);
     }
+  });
+});
+
+describe('the glow-worms (mistakes that teach)', () => {
+  it('are the answer, one more on the same step and two with other endings, for every hop the pack can make', () => {
+    const kinds = new Set<string>();
+    for (const step of STEPS) {
+      for (const key of EARLY_FACTS.families[`skip${step}`].keys) {
+        for (const at of [1, 2, 3, 4]) {
+          for (const seed of [1, 2, 3, 4, 5, 6]) {
+            const answer = Number(key.split(':')[2]);
+            const hop = showHop({ seed }, 0, { key, answer, at });
+            // Whenever the shared pack can make the hop, so can we (the server would refuse the round otherwise).
+            const makes = !!earlyFactsPack().rebuild(key, [answer, at], true, seeded(seed));
+            expect(!!hop).toBe(makes);
+            if (!hop) continue;
+            const { choices, wrongs } = hop;
+            expect(new Set(choices).size).toBe(4);
+            expect(choices).toContain(answer);
+            expect(wrongs.map((w) => w.n).sort()).toEqual(choices.filter((c) => c !== answer).sort());
+            // Exactly two end like the answer (it, and one more hop on the same step): never the lone one.
+            expect(choices.filter(tellOf(step))).toHaveLength(2);
+            expect(choices.every((c) => c >= 0 && c <= 100)).toBe(true);
+            for (const w of wrongs) {
+              kinds.add(w.kind);
+              if (w.kind === 'off1') expect(Math.abs(w.n - answer)).toBe(1);
+              if (w.kind === 'stay') expect(w.n).toBe(hop.before);
+              if (w.kind === 'far') expect(Math.abs(w.n - hop.before)).toBe(2 * step);
+              if (w.kind === 'way') expect(hop.back && w.n === hop.before + step).toBe(true);
+              if (w.kind === 'step') expect((w.n - hop.before) * (hop.back ? -1 : 1)).not.toBe(step);
+            }
+            // The same seed puts the glow-worms in the same order (the server builds them again).
+            expect(showHop({ seed }, 0, { key, answer, at })).toEqual(hop);
+          }
+        }
+      }
+    }
+    expect([...kinds].sort()).toEqual(['far', 'off1', 'stay', 'step', 'way']);
+  });
+
+  it('count only the first glow-worm of a hop, however many wrong ones follow', () => {
+    const round = makeRound(7, [], { gold: true });
+    const hops = showRound(round);
+    // Hop 0: two wrong, then the right one (a shown hop); hop 1: right first; the rest right first.
+    const wrong = hops[0].wrongs.map((w) => w.n);
+    const taps: Tap[] = [
+      { pick: wrong[0], ms: 3000 },
+      { pick: wrong[1], ms: 3500 },
+      { pick: wrong[2], ms: 3600 },
+      ...hops.map((h) => ({ pick: h.answer, ms: 2000 })),
+    ];
+    const end = replay(round, taps);
+    expect(end).toMatchObject({ done: true, mistakes: 3 });
+    expect(end.answers.map((a) => a.correct)).toEqual([false, ...Array(HOPS_PER_ROUND - 1).fill(true)]);
+    expect(end.answers[0]).toMatchObject({ key: hops[0].key, ms: 3000 });
   });
 });
 

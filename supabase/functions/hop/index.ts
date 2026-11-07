@@ -155,6 +155,28 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
+}
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -979,6 +1001,13 @@ function stepFor(stats, reached = 10) {
 	const at = STEPS.findIndex((s, i) => i >= from && stepShare(list, s) < .7);
 	return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
+/**
+* What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
+* Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
+*/
+const tellOf = (step) => (n) => n % step === 0;
+/** The numbers on the 100 board and in the game: no landing is below 0 or above 100. */
+const inRange = (n) => n >= 0 && n <= 100;
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1027,16 +1056,67 @@ function makeRound(seed, stats, opts = {}) {
 		})
 	};
 }
-/** A hop made again from its plan by the shared pack, with its glow-worms in an order fixed by the seed. Null if the plan isn't one the pack could make. */
+/**
+* A hop made again from its plan by the shared pack, with its glow-worms built here and put in an order fixed by the
+* seed (the shared pack's own wrong numbers are not used: "ends in 0" would win on tens). The four are the answer, one
+* more on the same step (the pad Hop sits on, one hop too far, or when counting back the number going up), then two that
+* do not share the answer's ending: one more or less than the answer, and where a different step would land. Null if the
+* plan isn't one the pack could make.
+*/
 function showHop(round, index, plan) {
-	const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
-	if (!q || !q.choices || q.answer !== plan.answer) return null;
+	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+	const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, random);
+	const m = /^skip(10|5|2):(up|next|back):\d+$/.exec(plan.key);
+	if (!q || !q.choices || q.answer !== plan.answer || !m) return null;
+	const step = Number(m[1]);
+	const back = m[2] === "back";
+	const terms = q.parts.map((p) => p.startsWith("?") ? plan.answer : Number(p.replace(/,$/, "")));
+	const gap = q.parts.findIndex((p) => p.startsWith("?"));
+	if (gap < 1 || terms.some((n) => !Number.isInteger(n))) return null;
+	const before = terms[gap - 1];
+	const dir = back ? -1 : 1;
+	const a = plan.answer;
+	const tell = tellOf(step);
+	const taken = new Set([a]);
+	const fresh = (n) => inRange(n) && !taken.has(n);
+	const sameStep = [[before, "stay"]];
+	if (fresh(a + dir * step)) sameStep.push([a + dir * step, "far"]);
+	if (back && fresh(before + step)) sameStep.push([before + step, "way"]);
+	const [same, sameKind] = sameStep[Math.floor(random() * sameStep.length)];
+	taken.add(same);
+	const other = [
+		10,
+		5,
+		2,
+		1
+	].filter((s) => s !== step).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
+	if (other === void 0) return null;
+	taken.add(other);
+	const off = (random() < .5 ? [1, -1] : [-1, 1]).map((d) => a + d).find((n) => fresh(n) && !tell(n));
+	if (off === void 0) return null;
+	const kinds = new Map([
+		[same, sameKind],
+		[other, "step"],
+		[off, "off1"]
+	]);
+	const wrongs = tagWrongs([
+		off,
+		same,
+		other
+	], (n) => kinds.get(n) ?? null);
+	const choices = shuffle([a, ...wrongs.map((w) => w.n)], random);
+	if (new Set(choices).size !== 4 || !atMostShareTell(a, choices, tell) || sharingTell(a, choices, tell) !== 2) return null;
 	return {
 		...plan,
 		parts: q.parts,
+		terms,
+		gap,
+		before,
+		back,
 		prompt: q.prompt ?? "",
 		spoken: q.spoken,
-		choices: q.choices
+		choices,
+		wrongs
 	};
 }
 /** Every hop of a round as shown. Throws if a saved round has a hop the pack can't make. */

@@ -2,7 +2,7 @@
 
 > **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../GAME-KIT-PLAN.md) first. If kit stage K2 (`mistakes` and `ShowWhy`, lifted from Beanstalk) is merged, use it instead of copying another game's code; if not, write this so it can move into the kit later.
 
-Status: Beanstalk LIVE 7 Nov 2026 (#252); the other five games are not built and wait for game kit K2. Written 7 Nov 2026. Games: Kiwi's Beanstalk, Hop's Glow-worm Pond, Penguin Pairs (folder `korora`), Pipi's Hidden Shells, Tūī's Ten Tree, Weka's Stepping Stones. Quick looks is not in R5 (its feedback fixes are in R3).
+Status: Beanstalk LIVE 7 Nov 2026 (#252). Hop is built and waiting for review on branch `r5-hop-mistakes` (not live yet; see the Hop status at the end of section 3.3). The other four games are not built. Written 7 Nov 2026. Games: Kiwi's Beanstalk, Hop's Glow-worm Pond, Penguin Pairs (folder `korora`), Pipi's Hidden Shells, Tūī's Ten Tree, Weka's Stepping Stones. Quick looks is not in R5 (its feedback fixes are in R3).
 
 ## 1. The problem
 
@@ -76,6 +76,8 @@ Model: the row of pads with arcs and the "+10" step label (`Hops.tsx:121-135`), 
 Tap 2: "Let's look together." Hop hops the whole row from the start, saying each number ("10, 20, 30, 40"), the 100 board opens with the pads' numbers lit, the right pad glows; then "Now you try" asks the same hop again with the labels at the child's own level.
 
 Rule for choices: the "ends in 0" tell is no longer enough: on tens, answer and answer ± 10 both end in 0 (two tells), and the two misconceptions do not.
+
+**Hop status (7 Nov 2026, built, not merged, not live).** Every hop now has four glow-worms built in `shared/hop/round.ts`: the right one, one more on the same step (the pad Hop sits on, one hop too far, or when counting back the number going up), one more or less than the answer, and where a different step would land. Exactly two of the four end like the answer, so tapping "the one ending in 0" no longer wins. A wrong first tap greys that glow-worm (it cannot be tapped again), shows a small row of pads with the mistake, and Hop says why. A second wrong tap stops the free taps: "Let's look together", Hop hops the row from its first pad to the answer saying each number, the 100 board lights them (where the board sits beside the pond; on a phone it is left alone so it does not cover the pads), then "Now you try" asks the same hop again with all four glow-worms back in a new order and the labels at the child's own level. Only the first tap of each hop is saved to the facts, as before. Differences from the table above: the "off by one" line leaves out the wrong number ("30, then 10 more is 40.") so one clip serves 39 and 41; the line for a different step says the game's step, so it is one line per step; on twos the different-step landing is a hop of 5 (not 10), because a hop of 10 lands on an even number and would share the right answer's ending. Voice: 206 new Bella clips, the old "Try again!" clip removed. Merging redeploys the `hop` function.
 
 ### 3.4 Penguin Pairs (korora)
 
