@@ -116,6 +116,8 @@ Also remove the no-hint wobble loop: shells that were tapped wrong stay greyed.
 
 ### 3.6 Tūī (ten and some)
 
+**Status (7 Nov 2026): built, PR open, not merged.** Every go now has four nests at every help level (it was three while every berry was drawn), each wrong one tagged: the reversal (41), 20, the loose berries alone, one berry out, the whole, and the ten put on. The right answer is never the only teen-shaped nest. A first wrong tap greys that nest for good and says why with a picture; none of these says the answer. A second wrong tap plays "Let's look together" (the arrow cards play the whole sum), then "Now you try!" asks the same go again at the child's own level with the nests in a new order. Only the first tap of a go is scored, so a shown go never counts as first-right. "Hear it again" now says the go's own line. 32 new voice clips; the old "Try again!" clip is gone. Merging redeploys the `tui` function. A child with the old page open at that moment may get "Something went wrong" when finishing that one round (the server's nests differ); a refresh starts a fresh challenge.
+
 Model: the full ten-frame and the loose berries, the nests, and the arrow cards sliding "4" onto "10" (`Goes.tsx`, `pictureFor` at `shared/tui/round.ts:244-270`). Today the wrong taps bring more picture (level up one, then every berry counted, then nests thin to two). Keep that idea but add the explanation; the answer is still not shown until tap 2.
 
 | Way asked | Wrong choice (kind) | The mistake | Show why | Voice line |
