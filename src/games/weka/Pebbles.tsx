@@ -6,6 +6,7 @@
  * from the keyboard. Help only: never sent or recorded.
  */
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { PointingHand } from '../../kit/PointingHand';
 import { pebbleAskLine, pebbleDoneLine, type Go } from '../../../shared/weka/round';
 import { playSound } from '../sounds';
 import { paint } from './art';
@@ -139,7 +140,7 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
                   aria-label={`${WORDS.movePebble}${hintAt === i ? `, ${WORDS.guideHere}` : ''}`}
                 >
                   <Stone metal="silver" />
-                  {hintAt === i && <span className="wk-hand wk-pebbles__hand" aria-hidden="true">👆</span>}
+                  {hintAt === i && <PointingHand prefix="wk" className="wk-pebbles__hand" />}
                 </button>
               )}
             </span>
