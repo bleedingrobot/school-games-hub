@@ -11,92 +11,32 @@
   "home_dir": "src/assets/home",
   "pictures": [
     {
-      "name": "parrot-wait",
-      "prompt": "Parrot, a cute round green parrot with a red-orange chest and a short curved beak, sitting upright and looking friendly, one wing raised a little. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/parrot-sit",
+      "prompt": "Parrot, a cute round New Zealand kea mountain parrot, olive-green feathers, bright orange-red under the wings and tail, a strong curved grey hooked beak, bright round friendly eyes, grey legs, facing to the right, side view, sitting calmly and cheekily on a bare spot, wings folded, a small smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
       ],
       "kind": "cut",
-      "folder": "parrot",
-      "file": "parrot-wait",
-      "max": 1000
+      "folder": "friends",
+      "file": "parrot-sit",
+      "max": 320
     },
     {
-      "name": "parrot-happy",
-      "prompt": "Parrot, a cute round green parrot with a red-orange chest, wings spread wide, beak open in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/parrot-cheer",
+      "prompt": "Parrot, a cute round New Zealand kea mountain parrot, olive-green feathers, bright orange-red under the wings and tail, a strong curved grey hooked beak, bright round friendly eyes, grey legs, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
       ],
       "kind": "cut",
-      "folder": "parrot",
-      "file": "parrot-happy",
-      "max": 1000
+      "folder": "friends",
+      "file": "parrot-cheer",
+      "max": 320
     },
     {
-      "name": "seesaw",
-      "prompt": "A chunky wooden see-saw plank balanced level on a round triangular pivot, a flat round pan at each end on a short chain, perfectly level, side view, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        1152,
-        576
-      ],
-      "kind": "cut",
-      "folder": "seesaw",
-      "file": "seesaw",
-      "max": 1000
-    },
-    {
-      "name": "stone",
-      "prompt": "A single smooth round grey river stone made of clay, glossy, shown alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        384,
-        384
-      ],
-      "kind": "cut",
-      "folder": "seesaw",
-      "file": "stone",
-      "max": 256
-    },
-    {
-      "name": "heap",
-      "prompt": "A small heap of six round smooth grey stones in a pile, ready to pick up. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        576,
-        480
-      ],
-      "kind": "cut",
-      "folder": "seesaw",
-      "file": "heap",
-      "max": 500
-    },
-    {
-      "name": "bell",
-      "prompt": "A shiny golden bell with a little ribbon bow on top, chunky and cheerful. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        576,
-        576
-      ],
-      "kind": "cut",
-      "folder": "rope",
-      "file": "bell",
-      "max": 500
-    },
-    {
-      "name": "rope",
-      "prompt": "A thick twisted rope hanging straight down from the top with ten small round beads threaded along it, evenly spaced, each bead plain pale grey, tall portrait. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        480,
-        1152
-      ],
-      "kind": "cut",
-      "folder": "rope",
-      "file": "rope",
-      "max": 1000
-    },
-    {
-      "name": "robin",
-      "prompt": "Robin, a cute round little robin bird with a bright red breast, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/robin-sit",
+      "prompt": "Robin, a cute round little New Zealand robin, grey-black feathers, a small pale cream-yellow chest, thin dark beak, bright round eyes, long thin dark legs, facing to the right, side view, standing happily with a small smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
@@ -104,11 +44,11 @@
       "kind": "cut",
       "folder": "friends",
       "file": "robin",
-      "max": 1000
+      "max": 320
     },
     {
-      "name": "kiwi",
-      "prompt": "Kiwi, a cute round brown kiwi bird with a long thin beak, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/kiwi-sit",
+      "prompt": "Kiwi, a cute round chubby New Zealand kiwi bird with shaggy dark brown feathers like fur, a VERY LONG thin pale curved beak that is as long as its whole head and body, tiny dark eyes, short strong little legs, no visible wings, facing to the right, side view, standing happily, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
@@ -116,11 +56,11 @@
       "kind": "cut",
       "folder": "friends",
       "file": "kiwi",
-      "max": 1000
+      "max": 320
     },
     {
-      "name": "duck",
-      "prompt": "Duck, a cute round yellow duck with an orange beak, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/duck-sit",
+      "prompt": "Duck, a cute round yellow duck with soft fluffy feathers, a wide orange flat beak, bright round eyes, orange webbed feet, facing to the right, side view, standing happily with a small smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
@@ -128,11 +68,11 @@
       "kind": "cut",
       "folder": "friends",
       "file": "duck",
-      "max": 1000
+      "max": 320
     },
     {
-      "name": "owl",
-      "prompt": "Owl, a cute round brown owl with big round eyes, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/owl-sit",
+      "prompt": "Owl, a cute round brown morepork owl with a speckled cream chest, big round golden eyes, small beak, feathery ear tufts, short strong feet, facing to the right, side view, standing happily with a small smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
@@ -140,19 +80,172 @@
       "kind": "cut",
       "folder": "friends",
       "file": "owl",
+      "max": 320
+    },
+    {
+      "name": "seesaw/plank",
+      "prompt": "A single long thin flat strip of smooth light wood, like a giant wooden craft stick, a very long narrow rectangle with rounded ends, seen from the side, bare and clean, lying alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        256
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "plank",
       "max": 1000
     },
     {
-      "name": "parrot-home",
-      "prompt": "A sunny garden playground with a wooden see-saw in the middle of the grass, a rope with a golden bell hanging from a tree on the right, soft blue sky, wide landscape, no characters. Suitable for young children aged 5 to 7.",
+      "name": "seesaw/pivot",
+      "prompt": "A single chunky wooden triangular wedge block like a doorstop, a smooth clay triangle prism in light brown wood with a flat base and a pointed top, seen from the front. The wedge alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        1152,
-        768
+        576,
+        576
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "pivot",
+      "max": 300
+    },
+    {
+      "name": "seesaw/stone",
+      "prompt": "A single smooth round grey river stone made of clay, glossy, shown alone, seen from the side. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        384,
+        384
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "stone",
+      "max": 128,
+      "tints": {
+        "orange": "orange"
+      }
+    },
+    {
+      "name": "seesaw/heap",
+      "prompt": "A small heap of round smooth grey stones piled in a pyramid, ready to pick up. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        576,
+        480
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "heap",
+      "max": 300
+    },
+    {
+      "name": "rope/bud",
+      "prompt": "A single small closed green leaf bud on a short stalk, plump and pointed, smooth clay, shown alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "rope",
+      "file": "bud",
+      "max": 160
+    },
+    {
+      "name": "rope/bell",
+      "prompt": "A single shiny golden bell hanging from a small ring at the top, chunky and plain, with a little round clapper at the bottom, no ribbon. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        512,
+        576
+      ],
+      "kind": "cut",
+      "folder": "rope",
+      "file": "bell",
+      "max": 160,
+      "tints": {
+        "bronze": "bronze",
+        "silver": "silver"
+      }
+    },
+    {
+      "name": "rope/golden-bell",
+      "prompt": "The Golden Bell, one large shining mirror-bright polished gold bell with a small ring at the top and a round clapper, a little red ribbon bow tied above, a few small sparkles around it. The bell alone, no cushion, no stand. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        640,
+        704
+      ],
+      "kind": "cut",
+      "folder": "rope",
+      "file": "golden-bell",
+      "max": 480
+    },
+    {
+      "name": "scene",
+      "prompt": "A wide calm view across a snowy New Zealand mountain lake at sunrise, pale blue sky with soft pink clouds, snowy mountain peaks in the distance, still water, a smooth green grassy shore. A peaceful landscape, the grass bare and smooth, plain open middle. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
       ],
       "kind": "scene",
-      "folder": "scenes",
-      "file": "home",
-      "max": 1280
+      "folder": "back",
+      "file": "home"
+    },
+    {
+      "name": "card",
+      "prompt": "Parrot, a cute round olive-green mountain parrot with orange under-wings and a curved grey beak, sitting cheekily on the left end of a wooden see-saw log over a snowy mountain tarn at sunrise, a small pile of shiny golden bells and a button on the right end, the see-saw tipped down on Parrot's side, sparkles on the ridge behind, wide landscape picture for a game.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "parrot"
     }
-  ]
+  ],
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    },
+    "orange": {
+      "dark": [
+        90,
+        40,
+        10
+      ],
+      "mid": [
+        224,
+        145,
+        76
+      ],
+      "shine": [
+        255,
+        225,
+        190
+      ]
+    }
+  }
 }

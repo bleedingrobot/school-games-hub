@@ -1,11 +1,23 @@
 /**
- * Parrot’s See-saw's pictures: stand-ins drawn in code (SVG) until the painted art pass (see art/CREDITS.md). Parrot and
- * the friends, the see-saw with its pans, stones and numbered weights, the heap, the shiny things on the bell rope and
- * the Golden Bell. Every number is drawn here in code, so a count is always exact.
+ * Parrot’s See-saw's pictures: the painted ones (scripts/game_art.py parrot, tidied into ./art/paint/, picks in
+ * docs/parrot-art/picks.json) and, as a fallback when a picture is missing, the stand-ins drawn in code (SVG). Parrot and
+ * the friends, the see-saw plank and pivot, stones, the heap, the shiny things on the bell rope and the Golden Bell.
+ * Every number is drawn here in code over the pictures, so a count is always exact. The pictures download when shown.
  */
 import type { CSSProperties } from 'react';
 import { FRIEND_NAMES, type Friend as FriendName } from '../../../shared/parrot/config';
 import type { Metal } from '../../../shared/parrot/progress';
+
+const FILES = import.meta.glob('./art/paint/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+export const paint = (path: string): string | undefined => FILES[`./art/paint/${path}.webp`];
+
+/** The home and finish background (a snowy tarn), as CSS variables. Nothing if it is not painted. */
+export function sceneStyle(): CSSProperties | undefined {
+  const full = paint('back/home');
+  if (!full) return undefined;
+  return { '--pr-back': `url(${full})`, '--pr-back-small': `url(${paint('back/home-800') ?? full})` } as CSSProperties;
+}
 
 export type Pose = 'sit' | 'cheer' | 'laugh';
 
@@ -48,6 +60,8 @@ function Bill({ look, open }: { look: BirdLook; open: boolean }) {
 export function Bird({ friend, pose = 'sit' }: { friend: FriendName; pose?: Pose }) {
   const look = LOOKS[friend];
   const raised = pose === 'cheer';
+  const src = paint(friend === 'parrot' ? `friends/parrot-${pose === 'sit' ? 'sit' : 'cheer'}` : `friends/${friend}`);
+  if (src) return <img className={`pr-bird pr-bird--${pose} pr-bird--painted`} src={src} alt="" draggable={false} />;
   return (
     <svg className={`pr-bird pr-bird--${pose}`} viewBox="0 0 100 100" role="img" aria-label={FRIEND_NAMES[friend]}>
       <path d="M30 80 L14 96 L38 90 Z" fill={look.wing} />
@@ -112,6 +126,16 @@ const PLANK_Y = 166;
 const widthOf = (item: Item): number => (item.t === 'stones' ? Math.min(5, Math.max(item.n, 1)) * STEP : 40);
 
 function StonePile({ n, tint = 'a' }: { n: number; tint?: 'a' | 'b' }) {
+  const src = paint(tint === 'a' ? 'seesaw/stone' : 'seesaw/orange');
+  if (src) {
+    return (
+      <>
+        {Array.from({ length: n }, (_, i) => (
+          <image key={i} href={src} x={(i % 5) * STEP - 0.5} y={-(Math.floor(i / 5) * 9 + 10)} width="13" height="9.5" style={{ filter: 'brightness(1.2)' }} />
+        ))}
+      </>
+    );
+  }
   const fills = tint === 'a' ? ['#9a958c', '#aaa59b', '#8a867d'] : ['#e0914c', '#ee9f5a', '#cf8340'];
   return (
     <>
@@ -160,25 +184,40 @@ function PanItems({ items, from }: { items: Item[]; from: number }) {
  */
 export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '', wobble = false }: { left: Item[]; right: Item[]; tilt: Tilt; label?: string; className?: string; wobble?: boolean }) {
   const style: CSSProperties = { transform: `rotate(${ANGLE[tilt]}deg)`, transformOrigin: '220px 172px' };
+  const plank = paint('seesaw/plank');
+  const pivot = paint('seesaw/pivot');
+  const painted = Boolean(plank && pivot);
   return (
     <svg className={`pr-saw ${className}${wobble ? ' pr-saw--wobble' : ''}`} viewBox="0 0 440 250" role="img" aria-label={label}>
       <ellipse cx="220" cy="236" rx="120" ry="9" fill="rgb(0 0 0 / 0.15)" />
-      <polygon points="192,232 248,232 220,174" fill="#7a5a34" stroke={INK} strokeWidth="2" />
-      <text x="220" y="224" textAnchor="middle" fontSize="26" fontWeight="900" fill="#fff" fontFamily="system-ui, sans-serif">=</text>
+      {painted ? (
+        <image href={pivot} x="190" y="184" width="60" height="52" preserveAspectRatio="none" />
+      ) : (
+        <polygon points="192,232 248,232 220,174" fill="#7a5a34" stroke={INK} strokeWidth="2" />
+      )}
+      <text x="220" y="226" textAnchor="middle" fontSize="26" fontWeight="900" fill="#fff" stroke={painted ? INK : undefined} strokeWidth={painted ? 5 : undefined} paintOrder="stroke" fontFamily="system-ui, sans-serif">=</text>
       <g className="pr-saw__plank" style={style}>
-        <rect x="18" y="166" width="404" height="14" rx="7" fill="#c9954d" stroke={INK} strokeWidth="2" />
-        <rect x="26" y="160" width="190" height="8" rx="4" fill="#e6c98e" stroke={INK} strokeWidth="1.5" />
-        <rect x="224" y="160" width="190" height="8" rx="4" fill="#e6c98e" stroke={INK} strokeWidth="1.5" />
+        {painted ? (
+          <image href={plank} x="12" y="164" width="416" height="24" preserveAspectRatio="none" />
+        ) : (
+          <>
+            <rect x="18" y="166" width="404" height="14" rx="7" fill="#c9954d" stroke={INK} strokeWidth="2" />
+            <rect x="26" y="160" width="190" height="8" rx="4" fill="#e6c98e" stroke={INK} strokeWidth="1.5" />
+            <rect x="224" y="160" width="190" height="8" rx="4" fill="#e6c98e" stroke={INK} strokeWidth="1.5" />
+          </>
+        )}
         <PanItems items={left} from={34} />
         <PanItems items={right} from={232} />
       </g>
-      <circle cx="220" cy="173" r="6" fill="#f4c20d" stroke={INK} strokeWidth="2" />
+      {!painted && <circle cx="220" cy="173" r="6" fill="#f4c20d" stroke={INK} strokeWidth="2" />}
     </svg>
   );
 }
 
 /** The heap of stones to take from. */
 export function StoneHeap() {
+  const src = paint('seesaw/heap');
+  if (src) return <img className="pr-heap pr-heap--painted" src={src} alt="" aria-hidden="true" draggable={false} />;
   const spots: [number, number][] = [[20, 60], [44, 60], [68, 60], [92, 60], [32, 42], [56, 42], [80, 42], [44, 24], [68, 24], [56, 8]];
   return (
     <svg className="pr-heap" viewBox="0 0 112 76" aria-hidden="true">
@@ -210,6 +249,14 @@ const METAL_FILL: Record<Exclude<Metal, 'bud'>, [string, string]> = { bronze: ['
 
 /** One shiny thing on the rope: a green bud, or a bell in bronze, silver or gold. */
 export function Shiny({ metal, glow = false }: { metal: Metal; glow?: boolean }) {
+  const src = paint(metal === 'bud' ? 'rope/bud' : metal === 'gold' ? 'rope/bell' : `rope/${metal}`);
+  if (src) {
+    return (
+      <span className={`pr-shiny pr-shiny--${metal}${glow ? ' pr-shiny--glow' : ''}`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className={`pr-shiny pr-shiny--${metal}${glow ? ' pr-shiny--glow' : ''}`}>
       {metal === 'bud' ? (
@@ -245,6 +292,8 @@ export function BellRope({ things, glowAt = null }: { things: { metal: Metal }[]
 
 /** The Golden Bell, the shiniest thing of all. */
 export function GoldenBell() {
+  const src = paint('rope/golden-bell');
+  if (src) return <img className="pr-golden pr-golden--painted" src={src} alt="The Golden Bell" draggable={false} />;
   return (
     <svg className="pr-golden" viewBox="0 0 120 140" role="img" aria-label="The Golden Bell">
       <circle cx="60" cy="12" r="9" fill="none" stroke="#b88a00" strokeWidth="5" />
