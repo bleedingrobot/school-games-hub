@@ -23,6 +23,11 @@ describe('the round', () => {
         expect(showRound(round)).toHaveLength(GOES);
       }
     }
+    for (const seed of seeds) {
+      const g = makeRound(seed, [], { step: 1, level: 5, guided: true });
+      expect(g.goes).toHaveLength(GOES);
+      expect(g.goes[0]).toMatchObject({ key: GUIDED_KEY, l: TOP_LEVEL });
+    }
     // The weakest keys come first: with every step-3 key but two at box 3, those two are asked.
     const keys = STEP_PLAN[3].fresh[0].keys;
     const records = keys.slice(0, 3).map((k) => rec(k, 3));

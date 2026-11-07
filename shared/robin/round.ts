@@ -137,7 +137,12 @@ export function makeRound(
   const fresh = plan.fresh.flatMap((p) => weak(p.keys, p.goes));
   const review = plan.review.length === 0 ? [] : Array.from({ length: REVIEW_GOES }, (_, i) => weak(plan.review[i % plan.review.length], REVIEW_GOES)[i]);
   let keys = [...fresh, ...review];
-  if (opts.guided) keys = [GUIDED_KEY, ...shuffle(keys.filter((k) => k !== GUIDED_KEY), random).slice(0, GOES_PER_ROUND - 1)];
+  if (opts.guided) {
+    const rest = [...keys];
+    const at = rest.indexOf(GUIDED_KEY);
+    if (at !== -1) rest.splice(at, 1); // one go of it is the guided one; its second ask stays
+    keys = [GUIDED_KEY, ...shuffle(rest, random).slice(0, GOES_PER_ROUND - 1)];
+  }
   const ordered = opts.guided ? keys : spreadPicks(shuffle(keys, random).map((key) => ({ key }))).map((k) => k.key);
   const goes = ordered.map((key, i): GoPlan => (opts.guided && i === 0 ? { key, l: TOP_LEVEL } : { key, l: shown }));
   return { seed, step, level, help, goes };
