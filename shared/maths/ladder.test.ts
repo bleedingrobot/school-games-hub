@@ -51,6 +51,9 @@ function solve(parts: string[]): number {
   return NaN;
 }
 
+// The number-line keys are pictures in the game; their typed form is checked by solveLine below.
+const LINE_KEY = /^(place100|read100|tens100|near10|near100|zoom|place1000|read1000):/;
+
 describe('the early facts pack', () => {
   const pack = earlyFactsPack([], randomFromSeed(String(3)));
   const keys = Object.values(EARLY_FACTS.families).flatMap((f) => f.keys);
@@ -64,7 +67,7 @@ describe('the early facts pack', () => {
   });
 
   it('asks only correct questions, with a distinct right answer among the choices', () => {
-    for (const key of keys.filter((k) => !k.startsWith('oddeven:'))) {
+    for (const key of keys.filter((k) => !k.startsWith('oddeven:') && !LINE_KEY.test(k))) {
       for (let i = 0; i < 12; i++) {
         const q = pack.questionFor(key, 'focus', { multipleChoice: true });
         expect(q.factKey).toBe(key);
@@ -373,7 +376,7 @@ describe('skip counting in tens, fives and twos', () => {
   const ids = LADDER.map((s) => s.id);
 
   it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
-    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'tables-2-5-10']);
+    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'number-line-100', 'ten-more-less', 'number-line-1000', 'tables-2-5-10']);
     const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
     const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
     expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');
@@ -511,5 +514,28 @@ describe('odd and even to 20, for Penguin Pairs', () => {
       expect(solveParts(q.parts)).toEqual({ answer: q.answer, keys: [key] });
     }
     expect(pack.rebuild('oddeven:7', [8])).toBeNull();
+  });
+});
+
+describe('the number-line keys, for Kererū\'s Number Line', () => {
+  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
+    const counts: Record<string, number> = { 'number-line-100': 30 + 30 + 36 + 20, 'ten-more-less': 20, 'number-line-1000': 40 + 40 + 20 };
+    const all: string[] = [];
+    for (const [id, count] of Object.entries(counts)) {
+      const skill = LADDER.find((s) => s.id === id)!;
+      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
+      expect(skill.keys, id).toHaveLength(count);
+      all.push(...skill.keys);
+    }
+    expect(new Set(all).size).toBe(all.length);
+    const pack = earlyFactsPack();
+    for (const key of all) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key), key).toBe('early-facts');
+      const q = pack.questionFor(key, 'focus');
+      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
+      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
+    }
+    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(place|read|tens|near|zoom)/.test(k))).toBe(false);
   });
 });
