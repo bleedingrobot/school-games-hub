@@ -51,6 +51,8 @@ import weka from '../assets/home/weka.webp';
 import wekaSmall from '../assets/home/weka-small.webp';
 import pigeon from '../assets/home/pigeon.webp';
 import pigeonSmall from '../assets/home/pigeon-small.webp';
+import parrot from '../assets/home/parrot.webp';
+import parrotSmall from '../assets/home/parrot-small.webp';
 import lizard from '../assets/home/lizard.webp';
 import lizardSmall from '../assets/home/lizard-small.webp';
 import swamphen from '../assets/home/swamphen.svg';
@@ -100,6 +102,7 @@ const ART: Record<string, GameCardArt> = {
   'korora': { card: korora, small: kororaSmall, focus: 'center 45%' },
   'weka': { card: weka, small: wekaSmall, focus: 'center 45%' },
   'pigeon': { card: pigeon, small: pigeonSmall, focus: 'center 45%' },
+  'parrot': { card: parrot, small: parrotSmall, focus: 'center 45%' },
   'robin': { card: robin, small: robinSmall, focus: 'center 45%' },
   'lizard': { card: lizard, small: lizardSmall, focus: 'center 50%' },
   'swamphen': { card: swamphen, small: swamphenSmall, focus: 'center 45%' },
