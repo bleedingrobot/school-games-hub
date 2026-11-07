@@ -3,7 +3,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
 import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
-import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
+import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -109,9 +109,14 @@ describe('split first and the pebbles', () => {
     const add = { kind: 'add' as const, small: 5, big: 8, total: 13, toTen: 2, rest: 3 };
     expect(splitFirstLine(add)).toBe('8 plus 5. Split the 5 to get to ten. How many hops from 8 to the big rock?');
     expect(splitRestLine(add)).toBe('2 gets to ten. How many of the 5 are left?');
-    expect(pebbleAskLine(add)).toBe('The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten.');
+    expect(pebbleAskLine(add)).toBe('The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check.');
     expect(pebbleAskLine({ ...add, kind: 'turn' })).toMatch(/^The same question with pebbles: 5 plus 8\./);
     expect(pebbleDoneLine(add)).toBe('8 and 2 make 10. 10 and 3 make 13.');
+    expect(pebbleRightLine(add)).toBe('10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
+    expect(pebbleFewLine(1)).toBe('Not full yet. 1 more space.');
+    expect(pebbleFewLine(3)).toBe('Not full yet. 3 more spaces.');
+    expect(pebbleManyLine(1)).toBe('That is more than ten: 1 too many. Put it back.');
+    expect(pebbleShowLine(add)).toBe('Let me show you. 10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
   });
 });
 

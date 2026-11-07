@@ -4,7 +4,7 @@
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/weka/progress';
-import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleDoneLine, splitFirstLine, splitRestLine, stemLine, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
+import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, splitFirstLine, splitRestLine, stemLine, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -67,7 +67,11 @@ export function allVoiceLines(): string[] {
       else kinds.push('double', ...(big + go.rest !== 10 ? (['part'] as const) : []));
       for (const k of kinds) lines.add(whyLine(mine, k));
       // The pebbles: adding goes only.
-      if (kind !== 'back') for (const line of [pebbleAskLine(go), pebbleDoneLine(go)]) lines.add(line);
+      if (kind !== 'back') {
+        for (const line of [pebbleAskLine(go), pebbleRightLine(go), pebbleShowLine(go)]) lines.add(line);
+        for (let n = 1; n < go.toTen; n++) lines.add(pebbleFewLine(n));
+        for (let n = 1; n <= go.rest; n++) lines.add(pebbleManyLine(n));
+      }
     }
   }
   // The guided first go: 9 + 2, both steps.

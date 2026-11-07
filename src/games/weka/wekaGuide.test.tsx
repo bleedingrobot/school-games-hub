@@ -29,6 +29,9 @@ describe('Weka’s Stepping Stones help', () => {
     expect(document.querySelectorAll('.wk-pebble--move')).toHaveLength(2);
     await waitFor(() => expect(label()).toMatch(/move it to the first ten-frame, try this one$/));
     await userEvent.click(hand()!.closest('button')!);
+    // Nothing stops by itself: the child taps Check.
+    expect(screen.queryByRole('button', { name: /Next/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Check' }));
     expect(document.querySelector('.wk-pebbles__said')!.textContent).toBe('9 + 1 = 10, 10 + 1 = 11');
     expect(document.querySelectorAll('.wk-pebble--move')).toHaveLength(1);
     await userEvent.click(screen.getByRole('button', { name: /Next/ }));

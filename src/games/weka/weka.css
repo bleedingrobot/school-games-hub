@@ -254,8 +254,8 @@
 .wk-pebbles {
   /* Sized from the room the game really has (under the hub's bar on an iPad), so both ten-frames, the sum and Next fit
      without scrolling: about 300px of buttons and words, plus the frames' 3 cells of height. */
-  --wk-cell: clamp(40px, min(5.6vw, (var(--wk-room, 100dvh) - 300px) / 3.1), 72px);
-  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 12px 16px; margin: auto 0;
+  --wk-cell: clamp(40px, min(5.6vw, (var(--wk-room, 100dvh) - 360px) / 3.1), 72px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 12px 8px; margin: auto 0;
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .wk-pebbles__same {
@@ -263,7 +263,7 @@
   font-size: 1.6rem; font-weight: 800; display: flex; gap: 10px; align-items: baseline;
 }
 .wk-pebbles__tag { font-size: 1.1rem; font-weight: 700; color: var(--wk-teal-dark); }
-.wk-pebbles__frames { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 28px; }
+.wk-pebbles__frames { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 28px; }
 .wk-frame-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .wk-frame {
   position: relative; padding: calc(var(--wk-cell) * 0.22);
@@ -295,11 +295,14 @@
 .wk-pebble--move { cursor: grab; touch-action: none; }
 .wk-pebble--move:focus-visible { outline: 4px solid var(--wk-teal-dark); outline-offset: 2px; border-radius: 50%; }
 .wk-pebble--held { cursor: grabbing; z-index: 10; scale: 1.15; }
+.wk-frame__extra { display: flex; justify-content: center; gap: 4px; height: calc(var(--wk-cell) * 0.85); width: 100%; }
+.wk-frame__extra .wk-pebble { width: calc(var(--wk-cell) * 0.85); }
+.wk-pebble--back { cursor: pointer; touch-action: none; }
 .wk-pebble--arrived { animation: wk-pop 0.5s ease-out; }
 .wk-pebble--hint { animation: wk-wobble 0.9s ease-in-out infinite; }
 .wk-pebbles__hand { font-size: calc(var(--wk-cell) * 0.6); left: 50%; top: 55%; }
-.wk-pebbles__end { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; min-height: 64px; }
-.wk-pebbles__said { margin: 0; min-height: 2rem; font-size: 1.5rem; font-weight: 800; background: var(--wk-panel); padding: 4px 16px; border-radius: 14px; }
+.wk-pebbles__end { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; min-height: 64px; }
+.wk-pebbles__said { margin: 0; min-height: 3.2rem; display: grid; align-items: center; text-align: center; font-size: 1.05rem; line-height: 1.2; font-weight: 800; background: var(--wk-panel); padding: 4px 16px; border-radius: 14px; }
 .wk-pebbles__said--empty { visibility: hidden; }
 /* The pebble's picture must not start the browser's own image drag, which cancels ours. */
 .wk-pebbles img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
