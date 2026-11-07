@@ -5,6 +5,7 @@
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import type { HelpLevel } from '../../shared/beanstalk/progress';
 import { fromServer, type BeanstalkBackend } from '../games/beanstalk/backend';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -67,9 +68,9 @@ export async function fetchBeanstalkClass(classId: string): Promise<{ players: n
   return data as { players: number; eggs: number };
 }
 
-/** One student's finished days, or null if they haven't played. */
-export async function fetchBeanstalkStudent(student: string): Promise<{ daysDone: number; lastLeafDay: string | null } | null> {
+/** One student's finished days and dots help (0 full, 1 small, 2 none), or null if they haven't played. */
+export async function fetchBeanstalkStudent(student: string): Promise<{ daysDone: number; lastLeafDay: string | null; help: HelpLevel } | null> {
   const { data, error } = await supabase.rpc('teacher_beanstalk_student', { student });
   if (error) throw new FriendlyError('We couldn’t load Kiwi’s Beanstalk for this student.');
-  return (data ?? null) as { daysDone: number; lastLeafDay: string | null } | null;
+  return (data ?? null) as { daysDone: number; lastLeafDay: string | null; help: HelpLevel } | null;
 }

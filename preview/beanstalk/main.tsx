@@ -28,6 +28,10 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             {[0, 5, 9, 10, 15, 20, 25, 29, 30, 45, 59, 60].map((n) => (
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
+            <p>This pupil's dots (they follow how the days go; two good days fade them, a hard day brings one back):</p>
+            {([['Full', 0], ['Small', 1], ['None', 2]] as const).map(([name, level]) => (
+              <button key={name} type="button" onClick={() => { trial.tools.setHelp(level); h.reload(); }}>{name}</button>
+            ))}
             <p>
               <label>
                 <input type="checkbox" defaultChecked={trial.tools.dotsOn()} onChange={(e) => { trial.tools.setDots(e.target.checked); h.reload(); }} />{' '}

@@ -157,3 +157,17 @@ Make Pipi's frame and outlines follow the child, per fact:
 3. At most 8 tests; no migration; rebuild with npm run build:functions -- pipi; typecheck; npm run test:changed; play the preview on a new level.
 Stay inside Pipi's own folders. Stop and tell James before any live step. Open a PR when done.
 ```
+
+## 9. Results: Kiwi's Beanstalk (built 7 Nov 2026, branch `r6-beanstalk-help`)
+
+What a child sees: the dots on the leaves now belong to the child, not the calendar. Everyone starts with full dots. After two good days in a row (8 or more of the 10 pairs right at the first tap) the dots go small, and after two more good days they go. A hard day (4 or fewer right first time) brings one step back. Days in between (5 to 7) change nothing and break the run of good days. Playing again the same day never moves them. When a Golden Egg is won and the next beanstalk starts (a new sum), the dots start full again. Inside a round, after three goes in a row that began with a wrong first tap, the full dots come back for the rest of that round and Bella says "Here are the dots again to help." (the line is said once, only if the dots were not already full; it is not saved, so the next round starts at the child's own level).
+
+What a teacher sees: the "Dots on the leaves" switch is still the override (off means numbers only for everyone, and the three-in-a-row boost does not turn them back on). The drawer text and the game's "about" text now say the dots follow each student. A student's page says what the leaves will show next time for that student and how it moves, read from the saved level, not from the day count.
+
+What stays on the calendar: leaf colours (bronze, silver, gold), the tray colour, the Golden Egg and the friend.
+
+How it is built: new columns `help` (0 full, 1 small, 2 none) and `good_in_row` on `beanstalk_progress`. Existing pupils are backfilled from where the calendar had them, `least(2, (days_done % 30) / 10)`, so nobody's picture jumps on the day this goes live. The rule is `placeAfter` in `shared/beanstalk/progress.ts`, which uses the kit's `fadeAfter` and the kit's `STRUGGLE_GOES`; the server counts the pairs right first time from its own replay of the taps, saves the new level with the finish, and returns it from `load` and `finish`. The new `beanstalk_finish` takes the two new values as last arguments that default to null (keep what is saved), so the function already deployed keeps working in the gap between the migration and the new function going out.
+
+Checked: typecheck, the changed tests (ten runs each, no flakes), the site build and `npm run build:functions -- beanstalk`. The database test is extended but was not run here (no Docker); CI runs it. Played in the preview: see the pull request.
+
+Next, from this plan: Hop, Penguin Pairs and Pipi do the per-fact version (Weka style, `helpForFact` in the kit), with no migration; each saves a help `h` on every go in `makeRound`, falls back to the calendar help for a saved round with no `h`, keeps the teacher's switch as the override, and adds its own "help is back" line after three goes in a row with a wrong first tap. Because R5 touched the same files, build them one after the other.
