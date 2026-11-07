@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh korora, then scripts/scratch-test.sh korora supabase/tests/database/korora.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -71,6 +71,9 @@ select ok(public.korora_start(pg_temp.id('0a'), 779, 1::smallint, false, pg_temp
 select ok(not public.korora_finish(pg_temp.id('0a'), 779, 2, 2, '2026-11-05', 1::smallint, '[{"pick":10,"ms":900}]', 0), '... but cannot drop back a level');
 select is(public.korora_load(pg_temp.id('0a')), '{"daysDone": 1, "lastPebbleDay": "2026-11-04", "reached": 2, "version": 2}'::jsonb,
   'the pool is saved');
+-- Level 5, near doubles (R8): a challenge can start at 5 and finish there,.
+select ok(public.korora_start(pg_temp.id('0a'), 780, 5::smallint, false, pg_temp.goes()), 'a level 5 challenge starts');
+select ok(public.korora_finish(pg_temp.id('0a'), 780, 2, 1, '2026-11-04', 5::smallint, '[{"pick":10,"ms":900}]', 0), '... and finishes, reaching level 5');
 select pg_temp.reset();
 
 -- ---- In the hub: registered, one achievement per Golden Fish, no points ----

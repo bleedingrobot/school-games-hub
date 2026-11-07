@@ -2,6 +2,7 @@
  * Today's challenge at Penguin Pairs: ten goes with Two-Shoes at the mirror pool (docs/KORORA-PLAN.md).
  *
  *  - A double: fish land on the rock and the still pool shows the same fish upside down. How many fish now?
+ *  - A near double (level 5, 6 + 7): the rock's fish and the water's, with one extra fish in the water. How many fish?
  *  - A half: a pile of fish to share fairly between the two chicks. How many does each chick get?
  *  - Fair or not (gold days): can the two chicks share this many fish fairly, or is one left over?
  *
@@ -73,8 +74,8 @@ function reordered(items: number[]): number[] {
 
 /** The ids of a go's fish in the order they are counted: the rock's then the water's (doubles), or the pile's. */
 const fishIdsOf = (go: Go): string[] =>
-  go.kind === 'double'
-    ? [...Array.from({ length: go.n }, (_, i) => `r${i}`), ...Array.from({ length: go.n }, (_, i) => `w${i}`)]
+  go.kind === 'double' || go.kind === 'near'
+    ? [...Array.from({ length: go.n }, (_, i) => `r${i}`), ...Array.from({ length: go.n + (go.kind === 'near' ? 1 : 0) }, (_, i) => `w${i}`)]
     : Array.from({ length: go.n }, (_, i) => `p${i}`);
 
 /** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
@@ -126,7 +127,9 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const helpAt = (i: number): Help => helpWithSetting(round.goes[i]?.h ?? help, setting, { always: 'full', off: 'none' });
   const ownHelp = helpAt(at);
   const shown: Help = (boost && setting !== 'off') || flow.phase === 'look' ? 'full' : ownHelp;
-  const lookIds = go.kind === 'double' ? fishIdsOf(go) : fishIdsOf(go).filter((_, i) => i % 2 === 0);
+  const mirror = go.kind === 'double' || go.kind === 'near';
+  const lookLine = go.kind === 'near' ? WORDS.lookNear(go.n) : go.kind === 'double' ? WORDS.lookDouble(go.n) : WORDS.lookHalf(go.n);
+  const lookIds = mirror ? fishIdsOf(go) : fishIdsOf(go).filter((_, i) => i % 2 === 0);
 
   // Each new go is read aloud once; bronze-day halves share themselves out while the child watches.
   useEffect(() => {
@@ -165,9 +168,9 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     if (go.kind === 'half') shareAll(go.n, 1000);
     startLook({
       anchor: 0,
-      steps: go.kind === 'double' ? 2 * go.n : go.n / 2,
+      steps: mirror ? go.answer : go.n / 2,
       openingLine: WORDS.lookTogether,
-      fillLine: go.kind === 'double' ? WORDS.lookDouble(go.n) : WORDS.lookHalf(go.n),
+      fillLine: lookLine,
       onEnd: () => {
         setFlow((f) => stepGo(f, 'lookDone'));
         setGreyed([]);
@@ -233,8 +236,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     say(go.kind === 'fair' ? (go.answer === 1 ? WORDS.fairYes : WORDS.notFairYes) : WORDS.yes(n));
     if (sound) playSound('badge');
     // Show it is fair: the rest of the pile goes to the chicks.
-    if (go.kind !== 'double') shareAll(go.n);
-    const wait = go.kind === 'double' ? RIGHT_MS : Math.max(RIGHT_MS, go.n * SHARE_MS + 600);
+    if (!mirror) shareAll(go.n);
+    const wait = mirror ? RIGHT_MS : Math.max(RIGHT_MS, go.n * SHARE_MS + 600);
     later(wait, () => {
       if (at + 1 >= goes.length) {
         setPhase('done');
@@ -265,7 +268,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const lookCounted = look ? lookIds.slice(0, look.filled) : counted;
   const pointAt = phase === 'ask' && !look && ((guided && guideStep === 2) || hand) ? go.answer : null;
   const made = at + (phase === 'ask' ? 0 : 1);
-  const pose = phase === 'right' || phase === 'done' ? (go.kind === 'double' ? 'gulp' : 'cheer') : 'wait';
+  const pose = phase === 'right' || phase === 'done' ? (mirror ? 'gulp' : 'cheer') : 'wait';
   const style = { ...backFor(scenery) } as CSSProperties;
 
   return (
@@ -283,10 +286,10 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       </div>
       <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish: fair or not?` : go.parts.join(' ')}</p>
       <div className="kr-scene" key={at}>
-        <span className={`kr-scene__friend${go.kind === 'double' ? '' : ' kr-scene__friend--low'}`}>
+        <span className={`kr-scene__friend${mirror ? '' : ' kr-scene__friend--low'}`}>
           <Friend friend={friend} pose={pose} />
         </span>
-        {go.kind === 'double' ? (
+        {mirror ? (
           <Mirror go={go} help={shown} phase={phase} counted={lookCounted} guide={guided && phase === 'ask' ? guideStep : null} onFish={tapFish} />
         ) : (
           <Share go={go} help={shown} phase={phase} counted={lookCounted} shared={shared} onFish={tapFish} />
@@ -299,7 +302,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
             prefix="kr"
             title={WORDS.lookTogether}
             picture={null}
-            line={go.kind === 'double' ? WORDS.lookDouble(go.n) : WORDS.lookHalf(go.n)}
+            line={lookLine}
             skipLabel={WORDS.goOn}
             canSkip={look.canSkip}
             onSkip={skipLook}
@@ -379,6 +382,11 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
                 ))}
               </div>
             ))}
+            {go.kind === 'near' && (
+              <div className="kr-row kr-row--mirror">
+                <FishSpot id={`w${go.n}`} counted={counted} onTap={() => onFish(`w${go.n}`)} className="kr-fish--mirror kr-fish--extra" />
+              </div>
+            )}
           </div>
         )}
         {!reflection && <span className="kr-water__ripple" aria-hidden="true" />}

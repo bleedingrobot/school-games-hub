@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DAYS_PER_EGG, dotsFor, finishChallenge, placeAfter, shownDots, stalkAfter, START_PLACE, type Place } from './progress';
 import { seeded } from '../seededRandom';
-import { bondKey, makeRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
+import type { FactAnswer } from '../maths/leitner';
+import { handleBeanstalk } from './server';
+import { memoryServices } from './memoryServices';
+import { bondKey, factKeys, isMissingGo, makeRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
 
 const TARGET = 10;
 
@@ -28,7 +31,7 @@ function expectNoTwins(round: Round, onScreen: number[], where: string) {
 }
 
 describe('the round', () => {
-  it('is ten pairs to 10, 100 or 1000 that can always be finished, the same for the same seed (200 seeds)', () => {
+  it('is ten pairs to 10, 20, 100 or 1000 that can always be finished, the same for the same seed (200 seeds)', () => {
     for (const target of TARGETS) {
       const step = target / 10;
       for (const seed of seeds) {
@@ -36,13 +39,25 @@ describe('the round', () => {
         expect(round).toEqual(makeRound(seed, target));
         expect(round.target).toBe(target);
         expect(round.leaves).toHaveLength(2 * PAIRS_PER_ROUND);
-        // Whole tens (or hundreds) from 1 to 9 of them: no 0 + 100 (James, 4 Nov 2026), the same shape as the round to 10.
-        expect(round.leaves.every((n) => n % step === 0 && n >= step && n <= 9 * step)).toBe(true);
-        expect(round.leaves.map((n) => n / step)).toEqual(makeRound(seed).leaves);
+        if (target === 20) {
+          // Bonds to 20 (R8): 1 + 19 to 9 + 11 once each and one more, never 10 + 10.
+          const small = round.leaves.filter((n) => n < 10);
+          expect(small).toHaveLength(PAIRS_PER_ROUND);
+          expect([1, 2, 3, 4, 5, 6, 7, 8, 9].every((n) => small.includes(n))).toBe(true);
+          expect(round.leaves.includes(10)).toBe(false);
+          expect(round.leaves.every((n) => n >= 1 && n <= 19)).toBe(true);
+          expect(round.leaves.filter((_, i) => i % 2 === 0).map((n, i) => n + round.leaves[2 * i + 1]).every((t) => t === 20)).toBe(true);
+          expect(bondKey(7, 20)).toBe('bond20:7+13');
+          expect(bondKey(13, 20)).toBe('bond20:7+13');
+        } else {
+          // Whole tens (or hundreds) from 1 to 9 of them: no 0 + 100 (James, 4 Nov 2026), the same shape as the round to 10.
+          expect(round.leaves.every((n) => n % step === 0 && n >= step && n <= 9 * step)).toBe(true);
+          expect(round.leaves.map((n) => n / step)).toEqual(makeRound(seed).leaves);
+        }
         expect(replay(round, []).onScreen).toHaveLength(ON_SCREEN);
         const end = replay(round, perfectTaps(seed, target));
         expect(end).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND, mistakes: 0, onScreen: [] });
-        expect(end.answers.every((a) => a.key === bondKey(round.leaves[0], target))).toBe(target !== 10);
+        expect(end.answers.every((a) => a.key === bondKey(round.leaves[0], target))).toBe(target > 20);
       }
     }
     expect(bondKey(30, 100)).toBe('bond100:tens');
@@ -102,7 +117,7 @@ describe('mistakes that teach (maths review R5)', () => {
         const taps: Tap[] = [];
         for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
           const n = r.onScreen.map((i) => round.leaves[i]);
-          if (n.length === ON_SCREEN) expect(n.some((x, i) => n.some((y, j) => j > i && mistakeKind(x + y, target) === (target === 10 ? 'close' : 'digit'))), `seed ${seed}: ${n}`).toBe(true);
+          if (n.length === ON_SCREEN) expect(n.some((x, i) => n.some((y, j) => j > i && mistakeKind(x + y, target) === (target <= 20 ? 'close' : 'digit'))), `seed ${seed}: ${n}`).toBe(true);
           const pairs = r.onScreen.flatMap((a) => r.onScreen.filter((b) => b > a && round.leaves[a] + round.leaves[b] === target).map((b) => ({ a, b, ms: 900 })));
           taps.push(pairs[Math.floor(random() * pairs.length)]);
         }
@@ -141,8 +156,8 @@ describe('the magic leaves', () => {
     expect(stalkAfter(10)).toMatchObject({ leaves: Array(10).fill('bronze') });
     expect(stalkAfter(21)).toMatchObject({ leaves: ['gold', ...Array(9).fill('silver')] });
     expect(stalkAfter(DAYS_PER_EGG)).toMatchObject({ eggs: 1, friend: 'tui', day: 0, leaves: Array(10).fill('green') });
-    // Kiwi's pairs make 10, the tūī's 100, the kererū's 1000, then round again (James, 4 Nov 2026).
-    expect([0, 1, 2, 3, 4, 5].map((eggs) => stalkAfter(eggs * DAYS_PER_EGG + 7).target)).toEqual([10, 100, 1000, 10, 100, 1000]);
+    // Kiwi's pairs make 10, the tūī's 100, the kererū's 1000, then round again (James, 4 Nov 2026), with bonds to 20 between 10 and 100 (R8).
+    expect([0, 1, 2, 3, 4, 5].map((eggs) => stalkAfter(eggs * DAYS_PER_EGG + 7).target)).toEqual([10, 20, 100, 1000, 10, 20]);
   });
 
   it('change one leaf on the first finish of a NZ day only', () => {
@@ -179,5 +194,23 @@ describe('the dots follow the child, not the calendar (maths review R6)', () => 
     expect(placeAfter({ help: 1, goodInRow: 0 }, 0, { leafChanged: null, egg: false })).toEqual({ help: 1, goodInRow: 0 });
     expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, true))).toEqual(['full', 'small', 'none']);
     expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, false))).toEqual(['none', 'none', 'none']);
+  });
+});
+
+describe('bonds to 20 and the missing leaf (maths review R8)', () => {
+  it('lets the server finish a bonds to 20 round, scoring each go against a bond20 record the maths records know', async () => {
+    const log = { answers: [] as { player: string; once: string; answers: FactAnswer[] }[] };
+    const services = memoryServices({ log, now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
+    services.data.players.p = { child: 'jill', daysDone: DAYS_PER_EGG, lastLeafDay: null, help: 0, goodInRow: 0, version: 1 };
+    const { body: { seed } } = await handleBeanstalk(services, 'p', { action: 'start' });
+    const reply = await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTaps(seed as number, 20) });
+    expect(reply).toMatchObject({ status: 200, body: { daysDone: DAYS_PER_EGG + 1, leafChanged: 0 } });
+    const keys = log.answers[0].answers.map((a) => a.key);
+    expect(keys).toHaveLength(PAIRS_PER_ROUND);
+    expect(keys.every((k) => /^bond20:\d\+\d+$/.test(k) && factKeys(20).includes(k))).toBe(true);
+    expect(factKeys(10)).toHaveLength(5);
+    expect(factKeys(100)).toEqual(['bond100:tens']);
+    // The missing leaf is only on the screen (the taps are the same two leaves): on the 4th, 7th and 10th go.
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(isMissingGo)).toEqual([3, 6, 9]);
   });
 });

@@ -14,6 +14,8 @@ interface Props {
   value: number;
   /** What one dot is worth: 1, 10 or 100. */
   step: number;
+  /** Squares in the frame: 10, or 20 (two ten-frames) on the bonds to 20 beanstalk. */
+  cells?: number;
   dots: Dots;
   /** The leaves are the beanstalk's colour so far: green, then bronze after 10 days, then silver after 20. */
   metal: Metal;
@@ -27,7 +29,7 @@ interface Props {
   onTap: () => void;
 }
 
-export function Leaf({ value, step, dots, metal, look, slot, pointed = false, pulse = false, onTap }: Props) {
+export function Leaf({ value, step, cells = 10, dots, metal, look, slot, pointed = false, pulse = false, onTap }: Props) {
   return (
     <button
       type="button"
@@ -40,8 +42,8 @@ export function Leaf({ value, step, dots, metal, look, slot, pointed = false, pu
     >
       <span className={`bs-leaf__number bs-leaf__number--digits${String(value).length}`} aria-hidden="true">{value}</span>
       {dots !== 'none' && (
-        <span className={`bs-frame bs-frame--${dots}`} aria-hidden="true">
-          {Array.from({ length: 10 }, (_, i) => (
+        <span className={`bs-frame bs-frame--${dots}${cells > 10 ? ' bs-frame--twenty' : ''}`} aria-hidden="true">
+          {Array.from({ length: cells }, (_, i) => (
             <span key={i} className={i < value / step ? 'bs-dot bs-dot--on' : 'bs-dot'} />
           ))}
         </span>
@@ -57,7 +59,7 @@ export function Leaf({ value, step, dots, metal, look, slot, pointed = false, pu
  * Over the sum, the extra dots hang out of the frame, glowing; under it, the empty squares glow. Each dot is a one, a
  * ten or a hundred, as on the leaves. `more` dots of the second leaf are shown (all of them unless it is counting in).
  */
-export function JoinedFrame({ a, b, step, more = b / step }: { a: number; b: number; step: number; more?: number }) {
+export function JoinedFrame({ a, b, step, cells = 10, more = b / step }: { a: number; b: number; step: number; cells?: number; more?: number }) {
   const first = a / step;
   const total = first + more;
   const done = more === b / step;
@@ -65,15 +67,15 @@ export function JoinedFrame({ a, b, step, more = b / step }: { a: number; b: num
     i < first ? 'bs-dot bs-dot--on' : i < total ? 'bs-dot bs-dot--join' : done ? 'bs-dot bs-dot--missing' : 'bs-dot';
   return (
     <span className="bs-joined" aria-hidden="true">
-      <span className="bs-frame bs-frame--joined">
-        {Array.from({ length: 10 }, (_, i) => (
+      <span className={`bs-frame bs-frame--joined${cells > 10 ? ' bs-frame--twenty' : ''}`}>
+        {Array.from({ length: cells }, (_, i) => (
           <span key={i} className={dot(i)} style={{ '--i': Math.max(0, i - first) } as CSSProperties} />
         ))}
       </span>
-      {total > 10 && (
+      {total > cells && (
         <span className="bs-extra">
-          {Array.from({ length: total - 10 }, (_, i) => (
-            <span key={i} className="bs-dot bs-dot--join bs-dot--extra" style={{ '--i': 10 - first + i } as CSSProperties} />
+          {Array.from({ length: total - cells }, (_, i) => (
+            <span key={i} className="bs-dot bs-dot--join bs-dot--extra" style={{ '--i': cells - first + i } as CSSProperties} />
           ))}
         </span>
       )}

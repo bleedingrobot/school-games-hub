@@ -8,5 +8,5 @@ import { KororaGame } from './KororaGame';
 
 export function KororaPlay() {
   const navigate = useNavigate();
-  return <KororaGame backend={liveKorora} onExit={() => navigate('/')} />;
+  return <KororaGame backend={liveKorora} onExit={() => navigate('/')} onOpenWeka={() => navigate('/weka')} />;
 }
