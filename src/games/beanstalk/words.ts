@@ -25,6 +25,8 @@ export const WORDS = {
   guideNext: 'Now tap the leaf the hand points to.',
   /** The badge above the tray, so the sum is on screen with Voice off (maths review R4). */
   makeTarget: (target: number) => `Make ${target}`,
+  /** Said once in a round, when three goes in a row began with a wrong tap and the full dots come back (R6). */
+  dotsBack: 'Here are the dots again to help.',
   hearAgain: 'Hear it again',
   /**
    * The first challenge on a new 100 or 1000 beanstalk: the same bonds, in tens or hundreds, with the numbers of the

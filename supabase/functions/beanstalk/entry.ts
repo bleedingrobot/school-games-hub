@@ -50,7 +50,7 @@ Deno.serve(
     async load(player) {
       const saved = await call<Saved | null>('beanstalk_load', { player });
       // A pupil who has never played has no beanstalk yet.
-      return saved ?? { child: null, daysDone: 0, lastLeafDay: null, version: 0 };
+      return saved ?? { child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, version: 0 };
     },
     choose: (player, child) => call<boolean>('beanstalk_choose', { player, child }),
     start: (player, seed) => call<boolean>('beanstalk_start', { player, seed }),
@@ -58,6 +58,7 @@ Deno.serve(
     finish: (player, seed, version, progress, ending) =>
       call<boolean>('beanstalk_finish', {
         player, seed, version, days_done: progress.daysDone, last_leaf_day: progress.lastLeafDay, taps: ending.taps, mistakes: ending.mistakes,
+        help: progress.help, good_in_row: progress.goodInRow,
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.

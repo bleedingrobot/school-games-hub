@@ -5512,6 +5512,34 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region shared/kit/help.ts
+/** The numbers in LEARNING-DESIGN rule 5, for a round of ten goes. The game adds its `topLevel`. */
+const ROUND_OF_TEN = {
+	good: 8,
+	hard: 4,
+	goodToFade: 2
+};
+/**
+* The help after a counted round with `right` goes right at the first tap: enough good rounds in a row take it down one
+* level, a hard round brings one level back at once. `faded` says it went down on this round.
+*/
+function fadeAfter(p, right, rules) {
+	let { level } = p;
+	let goodInRow = right >= rules.good ? p.goodInRow + 1 : 0;
+	let faded = false;
+	if (goodInRow >= rules.goodToFade) {
+		level = Math.max(0, level - 1);
+		goodInRow = 0;
+		faded = true;
+	}
+	if (right <= rules.hard) level = Math.min(rules.topLevel, level + 1);
+	return {
+		level,
+		goodInRow,
+		faded
+	};
+}
+//#endregion
 //#region shared/kit/mistakes.ts
 /** True when two of the numbers on screen are one unit off the target: the tempting near miss every full tray has. */
 const hasNearMiss = (numbers, target, unit = 1) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === unit));
@@ -5675,12 +5703,7 @@ function stalkAfter(daysDone) {
 		friend: FRIENDS[eggs % FRIENDS.length],
 		target: targetFor(eggs),
 		day,
-		leaves,
-		dots: [
-			"full",
-			"small",
-			"none"
-		][round]
+		leaves
 	};
 }
 /** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
@@ -5704,6 +5727,34 @@ function finishChallenge(daysDone, lastLeafDay, today) {
 		lastLeafDay: today,
 		leafChanged: daysDone % 10,
 		egg: next % DAYS_PER_EGG === 0
+	};
+}
+/** First challenge: full dots. */
+const START_PLACE = {
+	help: 0,
+	goodInRow: 0
+};
+/** Right at the first tap on this many pairs of 10 or more makes a good challenge, this many or fewer a hard one (shared/kit/help.ts). */
+const RULES = {
+	...ROUND_OF_TEN,
+	topLevel: 2
+};
+/**
+* The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
+* finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
+* (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
+* wins the egg) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+*/
+function placeAfter(place, right, result) {
+	if (result.leafChanged === null) return place;
+	if (result.egg) return START_PLACE;
+	const { level, goodInRow } = fadeAfter({
+		level: 2 - place.help,
+		goodInRow: place.goodInRow
+	}, right, RULES);
+	return {
+		help: 2 - level,
+		goodInRow
 	};
 }
 //#endregion
@@ -5755,6 +5806,7 @@ async function handleBeanstalk(services, player, body) {
 			daysDone: s.daysDone,
 			lastLeafDay: s.lastLeafDay,
 			today: today(),
+			help: s.help,
 			dots: settings.dots
 		});
 	}
@@ -5795,10 +5847,15 @@ async function handleBeanstalk(services, player, body) {
 			}
 			if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
 			const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
+			const place = placeAfter({
+				help: s.help,
+				goodInRow: s.goodInRow
+			}, played.answers.filter((a) => a.correct).length, result);
 			const progress = {
 				child: s.child,
 				daysDone: result.daysDone,
-				lastLeafDay: result.lastLeafDay
+				lastLeafDay: result.lastLeafDay,
+				...place
 			};
 			const kept = await services.finish(player, seed, s.version, progress, {
 				taps,
@@ -5812,7 +5869,10 @@ async function handleBeanstalk(services, player, body) {
 					at
 				})));
 				if (result.egg) await services.progressChanged(player);
-				return ok({ ...result });
+				return ok({
+					...result,
+					help: place.help
+				});
 			}
 			const again = await services.round(player, seed);
 			if (again === "busy") return busy();
@@ -5949,6 +6009,8 @@ Deno.serve(makeHandler({
 			child: null,
 			daysDone: 0,
 			lastLeafDay: null,
+			help: 0,
+			goodInRow: 0,
 			version: 0
 		};
 	},
@@ -5971,7 +6033,9 @@ Deno.serve(makeHandler({
 		days_done: progress.daysDone,
 		last_leaf_day: progress.lastLeafDay,
 		taps: ending.taps,
-		mistakes: ending.mistakes
+		mistakes: ending.mistakes,
+		help: progress.help,
+		good_in_row: progress.goodInRow
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "beanstalk", void 0, JUNIOR_QUICK_MS);

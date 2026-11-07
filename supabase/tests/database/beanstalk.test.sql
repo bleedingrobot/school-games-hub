@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh beanstalk, then scripts/scratch-test.sh beanstalk supabase/tests/database/beanstalk.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(39);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -35,6 +35,7 @@ select throws_ok($$ select * from public.beanstalk_rounds $$, '42501', null, '..
 select throws_ok($$ select public.beanstalk_load(auth.uid()) $$, '42501', null, '... or load through the server functions');
 select throws_ok($$ select public.beanstalk_start(auth.uid(), 5) $$, '42501', null, '... or start their own challenge');
 select throws_ok($$ select public.beanstalk_finish(auth.uid(), 5, 1, 29, '2026-11-04', '[]', 0) $$, '42501', null, '... or finish one with any day count');
+select throws_ok($$ select public.beanstalk_finish(auth.uid(), 5, 1, 29, '2026-11-04', '[]', 0, 0::smallint, 0::smallint) $$, '42501', null, '... or finish one with their own dots help');
 select throws_ok($$ select public.teacher_set_beanstalk(true) $$, null, null, 'a pupil cannot switch the game on');
 
 -- ---- The teacher's switch and dots ----
@@ -61,8 +62,25 @@ select ok(not public.beanstalk_finish(pg_temp.id('0a'), 777, 1, 2, '2026-11-04',
 select ok(not public.beanstalk_finish(pg_temp.id('0a'), 777, 5, 1, '2026-11-04', '[{"a":0,"b":1,"ms":900}]', 0), '... and so is an old version');
 select ok(public.beanstalk_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', '[{"a":0,"b":1,"ms":900}]', 1), 'the challenge finishes');
 select ok(not public.beanstalk_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', '[{"a":0,"b":1,"ms":900}]', 1), '... once');
-select is(public.beanstalk_load(pg_temp.id('0a')), '{"child": "jill", "daysDone": 1, "lastLeafDay": "2026-11-04", "version": 2}'::jsonb,
-  'the beanstalk is saved');
+select is(public.beanstalk_load(pg_temp.id('0a')), '{"child": "jill", "daysDone": 1, "lastLeafDay": "2026-11-04", "version": 2, "help": 0, "goodInRow": 0}'::jsonb,
+  'the beanstalk is saved, a new one with full dots (help 0) and no good days in a row');
+
+-- ---- The dots follow the child (maths review R6): help and good_in_row are saved with the finish ----
+select ok(public.beanstalk_start(pg_temp.id('0a'), 778), 'a second day''s challenge starts');
+select ok(public.beanstalk_finish(pg_temp.id('0a'), 778, 2, 2, '2026-11-05', '[{"a":0,"b":1,"ms":900}]', 0, 1::smallint, 1::smallint),
+  'it finishes with the child''s dots (small) and one good day in a row');
+select is(public.beanstalk_load(pg_temp.id('0a')), '{"child": "jill", "daysDone": 2, "lastLeafDay": "2026-11-05", "version": 3, "help": 1, "goodInRow": 1}'::jsonb,
+  '... and load gives them back');
+select public.beanstalk_start(pg_temp.id('0a'), 779);
+select ok(public.beanstalk_finish(pg_temp.id('0a'), 779, 3, 2, '2026-11-05', '[{"a":0,"b":1,"ms":900}]', 0),
+  'a finish sent without them (the function deployed before this migration) still saves');
+select is((select help::text || ',' || good_in_row::text from public.beanstalk_progress where player = pg_temp.id('0a')), '1,1',
+  '... and leaves the dots as they were');
+select public.beanstalk_start(pg_temp.id('0a'), 780);
+select throws_ok($$ select public.beanstalk_finish(pg_temp.id('0a'), 780, 4, 3, '2026-11-06', '[]', 0, 3::smallint, 0::smallint) $$, '22023', null,
+  'dots help can only be 0, 1 or 2');
+select is((select array_agg(least(2, (d % 30) / 10) order by d) from unnest(array[0, 9, 10, 19, 20, 29, 30, 45, 59]) d), array[0, 0, 1, 1, 2, 2, 0, 1, 2],
+  'the backfill puts an existing pupil where the calendar had them: full for days 0-9 of a beanstalk, small for 10-19, none for 20-29');
 
 -- ---- In the hub: registered, one achievement per Golden Egg, no points ----
 select ok(exists (select 1 from public.hub_games where id = 'beanstalk' and switch_column = 'beanstalk_enabled' and counts_fn is not null

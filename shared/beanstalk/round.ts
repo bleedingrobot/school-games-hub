@@ -139,6 +139,13 @@ function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void 
   }
 }
 
+/** Goes in a row, the latest first, whose first tap was wrong: three bring full dots back for the rest of the round (R6). */
+export const wrongFirstRun = (answers: readonly { correct: boolean }[]): number => {
+  let run = 0;
+  for (let i = answers.length - 1; i >= 0 && !answers[i].correct; i--) run++;
+  return run;
+};
+
 /** A pair of leaves the same either way round, so a tried pair is found whichever leaf was tapped first. */
 export const pairId = (a: number, b: number): string => (a < b ? `${a}-${b}` : `${b}-${a}`);
 
