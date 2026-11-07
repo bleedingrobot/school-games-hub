@@ -4,8 +4,8 @@
  * chicks: how many each?"), and four numbers to choose from.
  *
  * The facts are the shared doubles and halves (`dbl:7`, `half:14` in shared/maths/skillPacks/earlyFacts.ts, families
- * dblHalf10 and dblHalf20). Nothing here works out a double itself: the shared pack makes each question, its wording and
- * its wrong choices from the key, exactly as it would anywhere else on the hub.
+ * dblHalf10 and dblHalf20). Nothing here works out a double itself: the shared pack makes each question and its wording
+ * from the key. The wrong choices are this game's own (`mistakeChoices`, maths review R5): each is a real mistake.
  *
  * The level (doubles 1 to 5, halves 2 to 10, doubles 6 to 10, halves 12 to 20) comes from the child's records, as Hop
  * picks its step: a level is passed when 70% of its facts are in box 2 or higher, and the server keeps the furthest level
@@ -15,6 +15,7 @@
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
+import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
 
 export const GOES_PER_ROUND = 10;
@@ -98,7 +99,16 @@ export interface Go extends GoPlan {
   spoken: string;
   /** Four numbers, the right one among them; for fair or not, 0 (one left over: odd) and 1 (fair: even). */
   choices: number[];
+  /** The three wrong numbers among the choices and the mistake behind each (maths review R5). Empty for fair or not (R9). */
+  wrongs: Wrong<WrongKind>[];
 }
+
+/**
+ * The mistake behind a wrong number (docs/kit/README.md, "Doubles and halves"). Doubles: `same` (n, forgot to double),
+ * `plus1` (n + 1), `plus2` (n + 2, from n of 3), `miscount` (2n off by 1, or 2 where the others run short). Halves: `all`
+ * (n, did not share), `minus2` (n - 2), `double` (2n), `miscount` (n/2 off by 1, or 2).
+ */
+export type WrongKind = 'same' | 'plus1' | 'plus2' | 'miscount' | 'all' | 'minus2' | 'double';
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -202,6 +212,38 @@ export function spokenFor(kind: Kind, n: number, guided = false): string {
   return guided ? `${line} Tap the number the hand points to.` : line;
 }
 
+/**
+ * The three wrong numbers of a double or a half, each tagged with its kind, and the four choices in an order fixed by the
+ * seed. Never the pack's n times n (25 for 5 + 5, a times-tables slip). The tell is parity: at most two of the four share
+ * the right answer's, so shape alone can't pick it out (shared/kit/mistakes.ts). Of the choices that fit, the one showing
+ * the most different kinds wins, ties broken by the seed.
+ */
+export function mistakeChoices(kind: 'double' | 'half', n: number, random: () => number): { choices: number[]; wrongs: Wrong<WrongKind>[] } {
+  const answer = kind === 'double' ? 2 * n : n / 2;
+  const core: [number, WrongKind][] =
+    kind === 'double'
+      ? [[n, 'same'], [n + 1, 'plus1'], [answer - 1, 'miscount'], [answer + 1, 'miscount'], ...(n >= 3 ? ([[n + 2, 'plus2']] as [number, WrongKind][]) : [])]
+      : [[n, 'all'], [n - 2, 'minus2'], [2 * n, 'double'], [answer - 1, 'miscount'], [answer + 1, 'miscount']];
+  // Short of three (small numbers, where kinds land on the answer or on each other): a count that is two or three off.
+  const spare: [number, WrongKind][] = [answer + 2, answer - 2, answer + 3, answer - 3].map((x) => [x, 'miscount']);
+  const make = (list: [number, WrongKind][]) => {
+    const kinds = new Map<number, WrongKind>();
+    for (const [x, k] of list) if (!kinds.has(x)) kinds.set(x, k);
+    return tagWrongs([...kinds.keys()].filter((x) => x >= 1 && x !== answer), (x) => kinds.get(x) ?? null);
+  };
+  let pool = make(core);
+  if (pool.length < 3) pool = make([...core, ...spare]);
+  const parity = (x: number) => x % 2;
+  const combos: Wrong<WrongKind>[][] = [];
+  for (let a = 0; a < pool.length; a++)
+    for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) combos.push([pool[a], pool[b], pool[c]]);
+  const rank = (c: Wrong<WrongKind>[]) => (atMostShareTell(answer, c.map((w) => w.n), parity) ? 10 : 0) + new Set(c.map((w) => w.kind)).size;
+  const best = Math.max(...combos.map(rank));
+  const top = combos.filter((c) => rank(c) === best);
+  const wrongs = top[Math.floor(random() * top.length)];
+  return { choices: shuffle([answer, ...wrongs.map((w) => w.n)], random), wrongs };
+}
+
 /** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   const fact = parseKey(plan.key);
@@ -209,7 +251,12 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const q = pack.rebuild(plan.key, [fact.n, plan.v], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
   const answer = fact.kind === 'double' ? 2 * fact.n : fact.kind === 'half' ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
   if (!q || !q.choices || q.answer !== answer) return null;
-  return { ...plan, kind: fact.kind, n: fact.n, answer, parts: q.parts, spoken: spokenFor(fact.kind, fact.n), choices: q.choices };
+  const base = { ...plan, kind: fact.kind, n: fact.n, answer, parts: q.parts, spoken: spokenFor(fact.kind, fact.n) };
+  if (fact.kind === 'fair') return { ...base, choices: q.choices, wrongs: [] }; // R9
+  // Our own choices, from a stream of the seed apart from the pack's (the server rebuilds the same ones).
+  const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+  random(); random();
+  return { ...base, ...mistakeChoices(fact.kind, fact.n, random) };
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */

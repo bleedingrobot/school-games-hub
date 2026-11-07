@@ -108,3 +108,7 @@ prize. 5. Go live. **No shared-maths branch**, so this is the quickest of the fi
 - Teacher: `src/pages/TeacherKorora.tsx` (switch, picture help, class fish, student panel with hardest facts).
 - Read-aloud: Bella, `public/voice/korora/` from `scripts/voice-clips.py korora`.
 - Art: `scripts/korora-art.py`, plan in `docs/KORORA-ART-PLAN.md`.
+
+## 12. Mistakes that teach (maths review R5, 7 Nov 2026)
+
+Each double and half now offers three real mistakes and the right number (`mistakeChoices` in `shared/korora/round.ts`, tagged with `WrongKind`; the shared pack is not touched and n times n is gone). Doubles: `same`, `plus1`, `plus2` (n of 3 or more), `miscount`. Halves: `all`, `minus2`, `double`, `miscount`. Where small numbers make kinds land on the answer or on each other, a count two or three off fills the gap (also `miscount`). At most two of the four stones are odd (or even) like the answer. The first wrong tap of a go greys that stone and shows a small picture (`WhyPicture.tsx`) with a line; the second is "Let's look together" (full picture, Bella explains and the fish are counted), then "Now you try": the same go, every stone back in a new order, at the child's own help level, wrong stones show why again and the hand points after two. Only the first tap of a go is scored (`replay` is unchanged). Fair or not is unchanged (R9). The old "Let's count them together" line is gone; 46 new clips.
