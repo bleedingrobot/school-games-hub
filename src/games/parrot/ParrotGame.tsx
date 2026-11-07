@@ -15,7 +15,7 @@ import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { BellRope, Bird, Friend, GoldenBell } from './art';
+import { BellRope, Bird, Friend, GoldenBell, sceneStyle } from './art';
 import { ParrotError, type ParrotBackend, type ParrotFinish, type ParrotState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
@@ -157,7 +157,7 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
 /** The bell rope on the home and finish screens: ten shiny things, and whose see-saw it is. */
 function Rope({ things, friend, glowAt = null, pose }: { things: { metal: 'bud' | 'bronze' | 'silver' | 'gold' }[]; friend: FriendName; glowAt?: number | null; pose: 'sit' | 'cheer' }) {
   return (
-    <div className="pr-ropebox pr-scene">
+    <div className="pr-ropebox pr-scene" style={sceneStyle()}>
       <BellRope things={things} glowAt={glowAt} />
       <span className="pr-ropebox__friend">
         <Friend friend={friend} pose={pose} />

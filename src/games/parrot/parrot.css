@@ -38,6 +38,10 @@
     linear-gradient(var(--pr-sky) 0 62%, #9bc46a 62% 100%);
 }
 
+/* Painted background (art.tsx sets --pr-back; without it the gradient above shows). */
+.pr-scene[style*="--pr-back"] { background: var(--pr-back) center top / cover no-repeat, #7eba5c; }
+@media (max-width: 700px) { .pr-scene[style*="--pr-back"] { background: var(--pr-back-small) center top / cover no-repeat, #7eba5c; } }
+
 /* Home and finish: the rope and a panel beside it (below on a narrow screen). */
 .pr-home { flex: 1; display: flex; min-height: var(--pr-room-min); }
 .pr-ropebox { flex: 1; min-height: var(--pr-room-min); display: flex; flex-direction: column; justify-content: space-between; padding: 64px 16px 16px; box-sizing: border-box; }
@@ -74,6 +78,7 @@
 /* The birds. */
 .pr-friend { display: block; width: 100%; }
 .pr-bird { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.pr-bird--painted { object-fit: contain; }
 .pr-friend--cheer { animation: pr-hop 0.5s ease-in-out 3; }
 .pr-friend--laugh { animation: pr-sway 0.6s ease-in-out 2; }
 @keyframes pr-hop { 50% { translate: 0 -10%; } }
@@ -84,10 +89,13 @@
 .pr-rope__spot { position: relative; display: block; width: var(--pr-thing); padding-top: 10px; }
 .pr-rope__spot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; border-radius: 3px; background: #b08a4e; box-shadow: 0 2px 0 rgb(0 0 0 / 0.2); }
 .pr-shiny { display: block; width: 100%; }
+.pr-shiny img { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.pr-shiny--glow img { animation: pr-glow 1.2s ease-in-out 3; }
 .pr-shiny svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 .pr-shiny--glow svg { animation: pr-glow 1.2s ease-in-out 3; }
 @keyframes pr-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--pr-gold)); scale: 1.25; } }
 .pr-golden { display: block; width: 100%; height: auto; }
+.pr-golden--painted { filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 
 /* Playing: the go counter, the see-saw, the equation, the cards or the stones. */
 .pr-play {

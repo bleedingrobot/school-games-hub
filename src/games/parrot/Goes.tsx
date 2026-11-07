@@ -26,7 +26,7 @@ import { PointingHand } from '../../kit/PointingHand';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { playSound } from '../sounds';
-import { Friend, SeeSaw, StoneHeap, TipGlyph, type Item, type Pose, type Tilt } from './art';
+import { Friend, SeeSaw, StoneHeap, TipGlyph, sceneStyle, type Item, type Pose, type Tilt } from './art';
 import { askLine, eqLine, modelLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -292,7 +292,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const rightTilt: Tilt = go.kind === 'tf' ? leanWith(go, 0) : 'level';
 
   return (
-    <div className="pr-play pr-scene">
+    <div className="pr-play pr-scene" style={sceneStyle()}>
       <h2 className="pr-sr" tabIndex={-1} ref={heading}>{go.kind === 'tf' ? WORDS.pickTilt : stones ? WORDS.stoneCheck : WORDS.pickCard}</h2>
       <div className="pr-top">
         <div className="pr-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
