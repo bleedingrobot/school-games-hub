@@ -206,6 +206,28 @@ function helpForFact(stats, rungs) {
 	return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
 }
 //#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
+}
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -1051,21 +1073,66 @@ function makeRound(seed, stats, opts = {}) {
 	};
 }
 const pack = addSubPack();
-/** The first step's four numbers: the hops to the big rock and three near it, all 1 to 9, smallest first. */
-function toTenChoicesFor(toTen) {
-	const out = [toTen];
-	for (const d of [
-		1,
-		-1,
-		2,
-		-2,
-		3,
-		4
-	]) {
-		const n = toTen + d;
-		if (n >= 1 && n <= 9 && out.length < 4) out.push(n);
+/** The first step's wrong numbers: the whole small number, the rock's 10 and one near miss. */
+function toTenWrongsFor(toTen, small) {
+	const kinds = new Map();
+	for (const [n, kind] of [
+		[small, "other"],
+		[10, "ten"],
+		[toTen + 1, "near"],
+		[toTen - 1, "near"],
+		[toTen + 2, "near"]
+	]) if (n >= 1 && n !== toTen && !kinds.has(n)) kinds.set(n, kind);
+	return tagWrongs([...kinds.keys()], (n) => kinds.get(n) ?? null).slice(0, 3);
+}
+const hopsChoicesFor = (toTen, small) => [toTen, ...toTenWrongsFor(toTen, small).map((w) => w.n)].sort((a, b) => a - b);
+/** The same digit at the end: the shape that gives a wrong choice away (docs/kit/README.md). */
+const ending = (n) => n % 10;
+/**
+* Three wrong choices for where Weka lands, each with its mistake (maths review R5). Every kind has a turn: the seed
+* leaves one out when there are more than three, and the choices are checked so no more than two end the same way as the
+* answer. Built here, not in the shared pack, so the server rebuilds the same ones from the seed.
+*/
+function landingWrongs(fact, random) {
+	const { small, big, rest, kind } = fact;
+	const total = small + big;
+	const answer = kind === "back" ? big : total;
+	const pairs = kind === "back" ? [
+		[10, "rock"],
+		[total + small, "add"],
+		[answer + (random() < .5 ? 1 : -1), "off1"],
+		[answer + 1, "off1"],
+		[answer - 1, "off1"],
+		[answer + 2, "off1"],
+		[answer - 2, "off1"]
+	] : [
+		[10, "rock"],
+		[10 + small, "double"],
+		[big + rest, "part"],
+		[answer + (random() < .5 ? 1 : -1), "off1"],
+		[answer + 1, "off1"],
+		[answer - 1, "off1"],
+		[answer + 2, "off1"],
+		[answer - 2, "off1"]
+	];
+	const kinds = new Map();
+	for (const [n, k] of pairs) if (n >= 1 && n !== answer && !kinds.has(n)) kinds.set(n, k);
+	const all = tagWrongs([...kinds.keys()], (n) => kinds.get(n) ?? null);
+	const firsts = [
+		"rock",
+		"double",
+		"part",
+		"add",
+		"off1"
+	].flatMap((k) => all.find((w) => w.kind === k) ?? []);
+	if (firsts.length > 3) firsts.splice(Math.floor(random() * firsts.length), 1);
+	const picked = [];
+	for (const w of [...firsts, ...all.filter((w) => !firsts.includes(w))]) {
+		if (picked.length === 3) break;
+		if (atMostShareTell(answer, [...picked.map((p) => p.n), w.n], ending)) picked.push(w);
 	}
-	return out.sort((a, b) => a - b);
+	for (const w of all) if (picked.length < 3 && !picked.includes(w)) picked.push(w);
+	return picked;
 }
 /** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
 function showGo(round, index, plan) {
@@ -1086,6 +1153,16 @@ function showGo(round, index, plan) {
 	const answer = kind === "back" ? big : total;
 	if (!q || !q.choices || q.answer !== answer) return null;
 	const toTen = kind === "back" ? total - 10 : 10 - big;
+	const rest = small - toTen;
+	const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+	random();
+	random();
+	const wrongs = landingWrongs({
+		small,
+		big,
+		rest,
+		kind
+	}, random);
 	return {
 		...plan,
 		kind,
@@ -1094,11 +1171,13 @@ function showGo(round, index, plan) {
 		total,
 		from: kind === "back" ? total : big,
 		toTen,
-		rest: small - toTen,
+		rest,
 		answer,
 		parts: q.parts,
-		choices: q.choices,
-		toTenChoices: toTenChoicesFor(toTen)
+		choices: shuffle([answer, ...wrongs.map((w) => w.n)], random),
+		wrongs,
+		toTenChoices: hopsChoicesFor(toTen, small),
+		toTenWrongs: toTenWrongsFor(toTen, small)
 	};
 }
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */
@@ -6296,7 +6375,7 @@ const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
 *
 * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
 * keys (the facts or question types that make it up) and its questions come from the pack
-* that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+* that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
 * their place in the list, but auto skips them and they don't count towards progress yet.
 */
 const earlyKeys = (family) => EARLY_FACTS.families[family].keys;

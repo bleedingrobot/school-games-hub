@@ -4,7 +4,7 @@ import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
 import { EARLY_FACTS, earlyFactsPack } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, helpForStats, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, type Round } from './round';
+import { BACK_HOPS, helpForStats, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, topSecure, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -132,6 +132,19 @@ describe('the step', () => {
     expect(stepFor(secure([...stepKeys(10), ...stepKeys(5), ...stepKeys(2)]))).toBe(2);
     // A child who reached 5s and then forgot some 10s stays on 5s.
     expect(stepFor([], 5)).toBe(5);
+  });
+});
+
+describe("the finish screen's signpost (R8)", () => {
+  it('is for a child who has reached twos and has 70% of them secure, and not before', () => {
+    const twos = stepKeys(2);
+    const most = secure(twos.slice(0, Math.ceil(twos.length * 0.7)));
+    const fewer = secure(twos.slice(0, Math.ceil(twos.length * 0.7) - 1));
+    expect(topSecure(recordsFor[2], 2)).toBe(false); // on twos, none of them known yet
+    expect(topSecure([...recordsFor[2], ...most], 2)).toBe(true);
+    expect(topSecure([...recordsFor[2], ...fewer], 2)).toBe(false);
+    // Twos known but the tens and fives never reached: the child is not on twos yet.
+    expect(topSecure(most, 10)).toBe(false);
   });
 });
 

@@ -3,7 +3,9 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_NEST, finishChallenge, treeAfter } from './progress';
 import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, nestShape, pictureFor, placeAfter, showRound, startFor, STEPS, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, nestShape, pictureFor, placeAfter, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { emptyData, memoryServices } from './memoryServices';
+import { handleTui } from './server';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -147,5 +149,23 @@ describe('the kōwhai flowers', () => {
     expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastFlowerDay: '2026-11-04', flowerChanged: 0, goldenNest: false });
     expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, flowerChanged: null });
     expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, flowerChanged: 9, goldenNest: true });
+  });
+});
+
+describe('the what’s next card (R8)', () => {
+  it('is secure at seven of the nine ten-and facts, and the finish reply says so', async () => {
+    expect(topSecure(inBox(KEYS.slice(0, 7), 2))).toBe(true);
+    expect(topSecure(inBox(KEYS.slice(0, 6), 2))).toBe(false);
+    for (const [count, secure] of [[7, true], [6, false]] as const) {
+      const data = emptyData();
+      data.facts.p = inBox(KEYS.slice(0, count), 2);
+      const services = memoryServices({ data, now: () => Date.UTC(2026, 10, 7, 22) });
+      const started = await handleTui(services, 'p', { action: 'start' });
+      const round = started.body.round as Round;
+      const taps: Tap[] = showRound(round).map((go) => ({ pick: go.answer, ms: 1000 }));
+      const done = await handleTui(services, 'p', { action: 'finish', seed: round.seed, taps });
+      expect(done.status).toBe(200);
+      expect(done.body.topSecure).toBe(secure);
+    }
   });
 });

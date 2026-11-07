@@ -5,12 +5,14 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { NextPartChip } from '../../components/NextPartChip';
+import { fetchWekaEnabled } from '../../data/weka';
 import type { Tap } from '../../../shared/tui/play';
 import { DAYS_PER_NEST, FLOWERS, FRIEND_NAMES, treeAfter, type Friend as FriendName, type Metal } from '../../../shared/tui/progress';
 import type { Round } from '../../../shared/tui/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { backFor, Flower, Friend, GoldenNest, type Pose, type Scenery } from './art';
 import { TuiError, type TuiBackend, type TuiFinish, type TuiState } from './backend';
 import { Goes } from './Goes';
@@ -54,6 +56,8 @@ interface Props {
   backend: TuiBackend;
   /** Back to the hub's home page (the preview has none). */
   onExit?: () => void;
+  /** Opens Weka's Stepping Stones from the "what's next" card (the hub's game page). */
+  onOpenWeka?: () => void;
   /** Preview tools, shown over the game. */
   extra?: (h: Helpers) => ReactNode;
 }
@@ -77,7 +81,7 @@ function useFitBelow(root: RefObject<HTMLDivElement | null>) {
   }, [root]);
 }
 
-export function TuiGame({ backend, onExit, extra }: Props) {
+export function TuiGame({ backend, onExit, onOpenWeka, extra }: Props) {
   const [state, setState] = useState<TuiState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export function TuiGame({ backend, onExit, extra }: Props) {
         onDone={(taps) => done(screen.round.seed, taps)}
       />
     );
-  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
+  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onOpenWeka={onOpenWeka} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
@@ -195,8 +199,11 @@ function Home({ state, say, onPlay }: { state: TuiState; say: (t: string) => voi
   );
 }
 
-/** A flower changes colour, or, on the thirtieth day, the Golden Nest is won. */
-function Finish({ result, say, onNext }: { result: TuiFinish; say: (t: string) => void; onNext: () => void }) {
+/**
+ * A flower changes colour, or, on the thirtieth day, the Golden Nest is won. With the top step secure and Weka on for the
+ * class, the "what's next" card (R8) follows: its line is read after the finish line, and its button opens Weka.
+ */
+export function Finish({ result, say, onOpenWeka, onNext }: { result: TuiFinish; say: (t: string, onEnd?: () => void) => void; onOpenWeka?: () => void; onNext: () => void }) {
   // On a Golden Nest day the new tree has already started, so show the one just finished: every flower gold.
   const tree = treeAfter(result.goldenNest ? result.daysDone - 1 : result.daysDone);
   const flowers = result.goldenNest
@@ -207,22 +214,34 @@ function Finish({ result, say, onNext }: { result: TuiFinish; say: (t: string) =
   const main = result.goldenNest ? WORDS.goldenNest(name) : changed ? WORDS.flowerTurned(changed) : WORDS.doneToday;
   const up = result.step !== result.stepBefore ? result.step : null;
   const line = finishLine(main, up);
-  const heading = useRef<HTMLHeadingElement>(null);
+  // Weka's switch is read once the card could show; until then the panel waits, so the line is not said twice.
+  const [wekaOn, setWekaOn] = useState<boolean | null>(result.topSecure && onOpenWeka ? null : false);
   useEffect(() => {
-    heading.current?.focus();
-    say(line);
-  }, [say, line]);
+    if (wekaOn !== null) return;
+    let current = true;
+    fetchWekaEnabled().then((v) => current && setWekaOn(v), () => current && setWekaOn(false));
+    return () => {
+      current = false;
+    };
+  }, [wekaOn]);
+  const card = wekaOn === true;
+  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
   return (
     <div className={`tui-home${result.goldenNest ? ' tui-home--prize' : ''}`}>
       <Tree scenery={result.goldenNest ? 'gold' : tree.today} flowers={flowers} friend={tree.friend} pose="cheer" />
-      <div className="tui-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {up && <p className="tui-chip">{WORDS.nextStep(up)}</p>}
-        {result.goldenNest && <span className="tui-prize"><GoldenNest cushion /></span>}
-        <button type="button" className="button button--play tui-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+      {wekaOn !== null && (
+        <WhatsNext prefix="tui" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+          {result.goldenNest && <span className="tui-prize"><GoldenNest cushion /></span>}
+          {card && (
+            <div className="tui-next-game">
+              <p>{WORDS.whatsNext}</p>
+              <button type="button" className="button button--play" onClick={onOpenWeka}>
+                {WORDS.tryWeka}
+              </button>
+            </div>
+          )}
+        </WhatsNext>
+      )}
     </div>
   );
 }

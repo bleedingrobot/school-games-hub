@@ -517,7 +517,7 @@ describe('odd and even to 20, for Penguin Pairs', () => {
   });
 });
 
-describe('the number-line keys, for Kererū\'s Number Line', () => {
+describe('the number-line keys, for Pigeon\'s Number Line', () => {
   it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
     const counts: Record<string, number> = { 'number-line-100': 30 + 30 + 36 + 20, 'ten-more-less': 20, 'number-line-1000': 40 + 40 + 20 };
     const all: string[] = [];

@@ -137,6 +137,8 @@ Tap 2: arrow cards play the sum, then "Now you try". Because Tūī passes steps 
 
 ### 3.7 Weka (make ten)
 
+**Status (Weka): built on branch `r5-weka-mistakes`, waiting for James to review and merge; not live.** Landing wrong choices are rock (10), double (10 + the small number), part (the big number plus only the leftover, e.g. 11 for 8 + 5) and off by one; hop-backs use rock, add and off by one; hops to ten use the small number, 10 and a near miss. A wrong tap greys the number out and shows why, the second is "Let's look together" (Weka hops the make-ten sentence while pebbles fill the first ten-frame), then the same question again at the child's own help. Only the first tap counts. Not played through: a full hop-back round in the preview (checked by tests).
+
 Model: stepping stones with the big rock at 10, "9 + 1 = 10, then + 6", pebbles in two ten-frames (`Goes.tsx`, `Pebbles.tsx`). Weka asks two things per full go: "how many hops to 10?" and "where will Weka land?" Both get tagged wrong choices (rebuilt in `shared/weka/round.ts`, keeping the server's rebuild check).
 
 | Question | Wrong choice (kind) | The mistake | Show why | Voice line |

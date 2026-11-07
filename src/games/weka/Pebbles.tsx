@@ -162,7 +162,7 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
 }
 
 /** One ten-frame: the painted tray when there is one (a clay board drawn in code until then), two rows of five. */
-function Frame({ label, src, children, refEl, glow, full }: {
+export function Frame({ label, src, children, refEl, glow, full }: {
   label: string; src?: string; children: React.ReactNode; refEl?: React.RefObject<HTMLDivElement | null>; glow?: boolean; full?: boolean;
 }) {
   return (

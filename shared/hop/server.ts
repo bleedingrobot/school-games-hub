@@ -9,6 +9,7 @@
  *           back on gold days) and keeps the round itself (any other open challenge is closed);
  *   finish  replays the taps on the kept round, records each hop for the maths records (right only if the first glow-worm
  *           picked was right), changes a pad on the first finish of the NZ day, and keeps the furthest step reached.
+ *           Load and finish also say whether the top step is secure, for the finish screen's signpost on (R8).
  *           A Golden Glow Jar is an achievement (Stage 4's migration counts jars from the finished days).
  *
  * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
@@ -19,7 +20,7 @@ import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths
 import type { SkipStep } from '../maths/skillPacks/earlyFacts';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, pondAfter } from './progress';
-import { isSeed, isStep, makeRound, MAX_SEED, stepFor, type Round } from './round';
+import { isSeed, isStep, makeRound, MAX_SEED, stepFor, topSecure, type Round } from './round';
 
 export type HopAction = 'load' | 'start' | 'finish';
 
@@ -113,7 +114,7 @@ export async function handleHop(services: HopServices, player: string, body: Rec
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: stepFor(facts, s.reached), labels: settings.labels });
+    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: stepFor(facts, s.reached), topSecure: topSecure(facts, s.reached), labels: settings.labels });
   }
 
   if (body.action === 'start') {
@@ -162,7 +163,8 @@ export async function handleHop(services: HopServices, player: string, body: Rec
         // One answer a hop, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `hop:${seed}`, answers);
         if (result.jar) await services.progressChanged(player);
-        return ok({ ...result, step: reached, stepBefore });
+        const secureNow = facts === 'busy' ? false : topSecure(withAnswers(facts, answers), reached);
+        return ok({ ...result, step: reached, stepBefore, topSecure: secureNow });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

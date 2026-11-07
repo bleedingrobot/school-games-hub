@@ -5,7 +5,7 @@
  *
  * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
  * keys (the facts or question types that make it up) and its questions come from the pack
- * that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+ * that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
  * their place in the list, but auto skips them and they don't count towards progress yet.
  */
 import { CAMPAIGN_STEPS, HARD_TABLES, HARD_TABLE_WEIGHT, TABLES } from './config';
@@ -100,7 +100,7 @@ export const LADDER: LadderSkill[] = [
   ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
   // Odd and even to 20 sits beside the ladder (`inAuto`): Penguin Pairs asks it on gold days from its own rules, and a teacher can choose it.
   { id: 'odd-even', label: 'Odd and even numbers to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('oddEven'), built: true, inWarmUp: false, inAuto: false },
-  // The number line (Kererū's Number Line) sits beside the ladder (`inAuto`): the game draws and marks its own questions (a line is a picture), and only records these keys like any early fact. Typed, they read as a short sentence.
+  // The number line (Pigeon's Number Line) sits beside the ladder (`inAuto`): the game draws and marks its own questions (a line is a picture), and only records these keys like any early fact. Typed, they read as a short sentence.
   { id: 'number-line-100', label: 'The number line to 100', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('place100'), ...earlyKeys('read100'), ...earlyKeys('near10'), ...earlyKeys('zoom')], built: true, inWarmUp: false, inAuto: false },
   { id: 'ten-more-less', label: 'Ten more and ten less', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: earlyKeys('tens100'), built: true, inWarmUp: false, inAuto: false },
   { id: 'number-line-1000', label: 'The number line to 1000', stage: 'place-value', curriculumTags: ['MS.Y4.NUM.NS.P1'], keys: [...earlyKeys('place1000'), ...earlyKeys('read1000'), ...earlyKeys('near100')], built: true, inWarmUp: false, inAuto: false },
