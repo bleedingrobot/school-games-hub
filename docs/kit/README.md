@@ -10,10 +10,9 @@ What the shared parts are and how a game uses them. The plan is [docs/plans/GAME
 | Tap replay | `shared/kit/replay.ts` | Replays a child's taps, scores the first tap of each go | Weka |
 | Day arc | `shared/kit/dayArc.ts` | Bronze, silver and gold days, the golden reward, New Zealand dates | Weka |
 | Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk, Penguin Pairs |
-| Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
+| Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Pigeon |
 | Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk, Penguin Pairs |
 | Junior bits | `src/kit/` `HearAgain`, `PointingHand`, `useGuidedFirstGo`, `WhatsNext`, `FirstTimeTip`; test helper `voiceLinesSuite` | Hear it again button, the pointing hand and its "try this one" label, the first-go hand timing, the end-of-round panel, a helper's first-time tip, the four voice-clip checks. A game passes its words, clip folder and CSS prefix | Weka (all but `FirstTimeTip`) |
-| Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
 
 ### Using mistakes and show-why in a game
 

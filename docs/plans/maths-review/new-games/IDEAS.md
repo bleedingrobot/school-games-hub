@@ -6,9 +6,9 @@ Gaps 1 to 6 are ranked in `docs/reviews/maths-review/DECISIONS.md`. For each: on
 
 **Already planned:** Ruru's Number Trail (`docs/RURU-PLAN.md`) covers one more, one less, which is more and where does it go on 0 to 10 and 0 to 20, for ages 5 to 7. Build it as planned. What it leaves open is the line to 100 and 1000, reading unmarked points, zooming and nearest ten. The concepts below fill that.
 
-- **A. Kererū's Number Line** (a wood pigeon flies a great branch; 0 to 100 then 0 to 1000). Core mechanic: the child taps where a number goes, or reads where the arrow is, on a line whose marks fade; the maths *is* the line. Age and level: 7 to 9, NZ Phase 1 end to Phase 2 start (Years 3 to 4). Support: six levels from a ruler of ticks to just the ends with a Peek; landmarks (middle, then tens) go last. Records: `place100`, `read100`, `tens100`, `near10`, `zoom`, `place1000`, `near100` keys, plus tap distance. Size: L (the line component is the large part; it is copied from Ruru's).
+- **A. Pigeon's Number Line** (a wood pigeon flies a great branch; 0 to 100 then 0 to 1000). Core mechanic: the child taps where a number goes, or reads where the arrow is, on a line whose marks fade; the maths *is* the line. Age and level: 7 to 9, NZ Phase 1 end to Phase 2 start (Years 3 to 4). Support: six levels from a ruler of ticks to just the ends with a Peek; landmarks (middle, then tens) go last. Records: `place100`, `read100`, `tens100`, `near10`, `zoom`, `place1000`, `near100` keys, plus tap distance. Size: L (the line component is the large part; it is copied from Ruru's).
 - **B. Pīwakawaka's Washing Line** (a fantail pegs number cards on a line in order). Core mechanic: order three to five numbers by dragging. Age 5 to 8. Support: spacing hints fade. Records: order keys. Size: M. *Not picked:* ordering is a weaker task than placing on a proportional line, and Ruru's "which is more" and Kererū's gold-day "order three" cover it.
-- **C. Kiwi's Magnifier** (a lens zooms into 40 to 50). Core mechanic: zooming as a tool. Age 8 to 10. Size: M. *Not picked as its own game:* it becomes Kererū's step 6 (zoom in).
+- **C. Kiwi's Magnifier** (a lens zooms into 40 to 50). Core mechanic: zooming as a tool. Age 8 to 10. Size: M. *Not picked as its own game:* it becomes Pigeon's step 6 (zoom in).
 
 **Pick: A, built on Ruru.** It extends rather than duplicates. The plan says what to do if James would rather add steps to Ruru.
 
@@ -56,7 +56,7 @@ Gaps 1 to 6 are ranked in `docs/reviews/maths-review/DECISIONS.md`. For each: on
 
 | Gap | Pick | Id | Age | Size | Plan |
 |---|---|---|---|---|---|
-| 1 | Kererū's Number Line (on Ruru) | `kereru` | 7 to 9 | L | N1-number-line.md |
+| 1 | Pigeon's Number Line (on Ruru) | `pigeon` | 7 to 9 | L | N1-number-line.md |
 | 2 | Kea's See-saw | `kea` | 5 to 8 | M | N2-balance.md |
 | 3 | Tuatara's Bundles | `tuatara` | 6 to 9 | L | N3-place-value.md |
 | 4 | Pūkeko's Raupō Rows | `pukeko` | 7 to 10 | L | N4-arrays.md |
