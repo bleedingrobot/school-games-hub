@@ -88,7 +88,7 @@
 .sh-progress { display: flex; gap: 8px; padding: 6px 8px 0; }
 .sh-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--sh-leaf-dark); }
 .sh-pip--done { background: var(--sh-gold); }
-.sh-stage { position: relative; flex: 1; width: min(100%, 1000px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; animation: sh-in 0.4s ease-out; }
+.sh-stage { position: relative; box-sizing: border-box; flex: 1; width: min(100%, 1180px); padding-left: calc(clamp(80px, 13vw, 170px) + 12px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; animation: sh-in 0.4s ease-out; }
 @keyframes sh-in { from { opacity: 0; translate: 0 10px; } }
 .sh-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(80px, 13vw, 170px); pointer-events: none; }
 .sh-ask { margin: 0; padding: 6px 22px; border-radius: 999px; background: var(--sh-panel); text-align: center; font: 900 clamp(1.3rem, 3.2vw, 2rem) system-ui, sans-serif; }
@@ -128,6 +128,7 @@
 }
 @media (max-width: 640px) {
   .sh-top { padding-right: 0; padding-top: 64px; }
+  .sh-stage { padding-left: 0; }
   .sh-stage__friend { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

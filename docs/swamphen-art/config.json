@@ -187,7 +187,7 @@
     },
     {
       "name": "back/bronze",
-      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, warm bronze dawn light, golden-green sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "prompt": "A calm swamp, wide landscape: soft blue-green still water filling the whole lower half of the picture right down to the bottom edge, a few tall green reed leaves rising out of the water only at the far left and right edges, a low green hill far across the water, warm bronze dawn light, a golden-green sky, no animals, no text. Suitable for young children aged 5 to 7.",
       "size": [
         1088,
         640
@@ -198,7 +198,7 @@
     },
     {
       "name": "back/silver",
-      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, soft silver-blue misty morning, pale sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "prompt": "A calm swamp, wide landscape: soft blue-green still water filling the whole lower half of the picture right down to the bottom edge, a few tall green reed leaves rising out of the water only at the far left and right edges, a low green hill far across the water, a soft silver-blue misty morning, a pale sky, no animals, no text. Suitable for young children aged 5 to 7.",
       "size": [
         1088,
         640
@@ -209,7 +209,7 @@
     },
     {
       "name": "back/gold",
-      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, glowing golden sunset, warm orange and gold sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "prompt": "A calm swamp, wide landscape: soft blue-green still water filling the whole lower half of the picture right down to the bottom edge, a few tall green reed leaves rising out of the water only at the far left and right edges, a low green hill far across the water, a glowing golden sunset, a warm orange and gold sky, no animals, no text. Suitable for young children aged 5 to 7.",
       "size": [
         1088,
         640
@@ -228,6 +228,24 @@
       "kind": "card",
       "folder": "",
       "file": "swamphen"
+    },
+    {
+      "name": "garden/mat",
+      "prompt": "Top-down flat view of a plain woven flax mat, simple over-and-under basket weave of flat pale golden-tan flax strips, perfectly flat and even, filling the whole frame edge to edge, uniform texture all over, nothing on it, no objects, no border, no fringe, no shadows. Wide flat texture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "texture",
+      "folder": "garden",
+      "file": "mat",
+      "max": 384,
+      "region": [
+        0.3,
+        0.05,
+        0.95,
+        0.6
+      ]
     }
   ],
   "tints": {

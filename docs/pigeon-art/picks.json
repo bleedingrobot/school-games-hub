@@ -1,6 +1,6 @@
 {
   "friends/pigeon-sit": 1,
-  "friends/pigeon-eat": 2,
+  "friends/pigeon-eat": 3,
   "friends/pigeon-cheer": 3,
   "friends/sparrow-sit": 1,
   "friends/sparrow-eat": 1,
@@ -15,7 +15,8 @@
   "friends/parrot-eat": 3,
   "friends/parrot-cheer": 1,
   "berries/cluster-gold": 2,
-  "berries/golden-branch": 1,
+  "berries/cluster-silver": 4,
+  "berries/golden-branch": 3,
   "back/bronze": 1,
   "back/silver": 2,
   "back/gold": 1,
