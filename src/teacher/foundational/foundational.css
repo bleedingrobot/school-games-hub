@@ -1,0 +1,159 @@
+/* The Foundational skills grid. Levels match the skill map; every level also has a letter, never colour alone. */
+.fg__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.fg__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fg__scroll {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 10px;
+}
+.fg__scroll:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 2px;
+}
+.fg__table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.85rem;
+  width: max-content;
+  min-width: 100%;
+}
+.fg__table th,
+.fg__table td {
+  vertical-align: middle;
+}
+.fg__table thead th {
+  color: var(--ink);
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  max-width: 110px;
+}
+.fg__table thead .fg__who,
+.fg__table thead .fg__flags {
+  text-align: left;
+}
+/* The first column stays put while the rest scrolls sideways. */
+.fg__table tbody th.fg__who {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface, #fff);
+  text-align: left;
+  min-width: 130px;
+  max-width: 180px;
+  padding: 3px 8px 3px 4px;
+  font-weight: 400;
+}
+.fg__name {
+  display: block;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.fg__real {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.fg__cell {
+  text-align: center;
+  white-space: nowrap;
+}
+.fg__mark,
+.fg__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 34px;
+  height: 28px;
+  padding: 0 4px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.fg__mark + .fg__mark {
+  margin-left: 3px;
+}
+.fg__swatch {
+  min-width: 24px;
+  height: 24px;
+}
+.fg__part {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+:is(.fg__mark, .fg__swatch)[data-level='off'] {
+  background: repeating-linear-gradient(135deg, var(--surface, #fff) 0 4px, var(--line, #ddd) 4px 5px);
+  color: var(--ink-soft);
+}
+:is(.fg__mark, .fg__swatch)[data-level='not-started'] {
+  background: var(--surface, #fff);
+  box-shadow: inset 0 0 0 1px var(--line, #ddd);
+  color: var(--ink-soft);
+}
+:is(.fg__mark, .fg__swatch)[data-level='learning'] {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+:is(.fg__mark, .fg__swatch)[data-level='secure'] {
+  background: #fde68a;
+  color: #713f12;
+}
+:is(.fg__mark, .fg__swatch)[data-level='fluent'] {
+  background: #86efac;
+  color: #14532d;
+}
+.fg__flags {
+  text-align: left;
+  min-width: 190px;
+  max-width: 280px;
+}
+.fg__flaglist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+.fg__flaglist li {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 0.8rem;
+}
+.fg__bang {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  background: #fde68a;
+  color: #713f12;
+}
+/* A grey flag (gone quiet) is not a warning. */
+.fg__flaglist li[data-quiet] .fg__bang {
+  background: var(--line, #ddd);
+  color: var(--ink-soft);
+}
+.fg__flaglist li[data-quiet] {
+  color: var(--ink-soft);
+}

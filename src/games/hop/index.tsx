@@ -55,5 +55,8 @@ export const hopsGlowwormPond: GameDefinition = {
     Settings: HopTeacherSettings,
     StudentPanel: HopStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherHop').then((m) => m.hopStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('hop', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('hop', classId)),
   },
 };

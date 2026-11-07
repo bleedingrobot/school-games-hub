@@ -50,5 +50,8 @@ export const kiwisBeanstalk: GameDefinition = {
     Settings: BeanstalkTeacherSettings,
     StudentPanel: BeanstalkStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherBeanstalk').then((m) => m.beanstalkStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('beanstalk', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('beanstalk', classId)),
   },
 };
