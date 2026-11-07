@@ -18,6 +18,7 @@
  * and right 8 times; then 'faint' (one tap) until right 12 times; then 'none'. So the help fades fact by fact as the
  * records show it is known, and comes back if they slip (a wrong answer drops a fact to box 1, back to full help).
  */
+import { helpForFact, type FactRung } from '../kit/help';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { addSubPack } from '../maths/skillPacks/addSub';
@@ -102,11 +103,13 @@ export const FAINT_UNTIL_RIGHT = 12;
  * been right quickly on two different days; split-first until it is fluent (box 4) and right 8 times; faint until right
  * 12 times; then none. A wrong answer drops the fact to box 1, so full help comes back.
  */
-export function helpForStats(stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help {
-  if (!stats || stats.box < 2 || stats.quickDays.length < 2) return 'full';
-  if (stats.box < 4 || stats.correct < SPLIT_UNTIL_RIGHT) return 'split';
-  return stats.correct < FAINT_UNTIL_RIGHT ? 'faint' : 'none';
-}
+const HELP_LADDER: readonly FactRung<Help>[] = [
+  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'split', until: { box: 4, correct: SPLIT_UNTIL_RIGHT } },
+  { help: 'faint', until: { correct: FAINT_UNTIL_RIGHT } },
+  { help: 'none' },
+];
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
 
 /** One go as saved: the fact, how the shared pack asks it (0 smaller first, 1 bigger first, 2 hop back) and its help. */
 export interface GoPlan {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
+import { seeded } from '../seededRandom';
 import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
 import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
@@ -111,5 +112,33 @@ describe('split first and the pebbles', () => {
     expect(pebbleAskLine(add)).toBe('The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten.');
     expect(pebbleAskLine({ ...add, kind: 'turn' })).toMatch(/^The same question with pebbles: 5 plus 8\./);
     expect(pebbleDoneLine(add)).toBe('8 and 2 make 10. 10 and 3 make 13.');
+  });
+});
+
+describe('moving onto the game kit (stage K1)', () => {
+  /**
+   * Weka moved onto shared/kit on 7 Nov 2026 with no change a child or teacher can see: old and new code were compared on
+   * 4,000 rounds and 16,000 tap runs before the old code went. This digest is of the old code's results. It doesn't depend
+   * on the wrong choices the shared pack makes. If Weka's help, goes or stones change on purpose, update the number.
+   */
+  it('keeps the same help, goes, answers and stones as before the move', () => {
+    const days = ['2026-11-01', '2026-11-02', '2026-11-03'];
+    const out: unknown[] = [];
+    for (let i = 0; i < 300; i++) {
+      const r = seeded(i * 7919 + 13);
+      const records = ALL_KEYS.filter(() => r() < 0.7).map((key): FactStats => ({ ...newStats(key), box: Math.floor(r() * 6), correct: Math.floor(r() * 16), quickDays: days.slice(0, Math.floor(r() * 4)) }));
+      const opts = { reached: (1 + Math.floor(r() * 4)) as Level, day: (['bronze', 'silver', 'gold'] as const)[Math.floor(r() * 3)], guided: r() < 0.1 };
+      const round = makeRound(Math.floor(r() * 2147483647), records, opts);
+      const taps = showRound(round).flatMap((go) => [
+        ...go.choices.filter((c) => c !== go.answer).slice(0, Math.floor(r() * 3)).map((pick) => ({ pick, ms: 4000 })),
+        { pick: go.answer, ms: Math.floor(r() * 9000) },
+      ]);
+      const { goesDone, mistakes, done, answers } = replay(round, taps);
+      out.push(round, goesDone, mistakes, done, answers);
+    }
+    for (let d = 0; d < 100; d++) out.push(streamAfter(d), finishChallenge(d, null, days[0]), finishChallenge(d, days[0], days[0]));
+    let hash = 5381;
+    for (const ch of JSON.stringify(out)) hash = (hash * 33 + ch.charCodeAt(0)) % 2147483647;
+    expect(hash).toBe(1136503410);
   });
 });

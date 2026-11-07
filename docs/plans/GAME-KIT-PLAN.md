@@ -1,6 +1,6 @@
 # Game kit: one place for shared learning parts and resources
 
-Status: plan only, nothing built. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
+Status: K1 built (results below); K2 to K6 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
 
 ## 1. The problem
 
@@ -73,3 +73,24 @@ Until a kit part is merged, copy the best example named in LEARNING-DESIGN.md an
 ## 6. Session prompt for K1 (ready to paste)
 
 > Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 5) and docs/plans/GAME-KIT-PLAN.md. Build stage K1 of the game kit on a new branch `kit-help` from origin/main: `shared/kit/help.ts`, `replay.ts` and `dayArc.ts`, lifted from Weka's `helpForStats` (`shared/weka/round.ts`), Tūī's `placeAfter` (`shared/tui/round.ts`), and Hop's `progress.ts` and `play.ts`. Keep game words out (games pass their own step names and nouns). Then move Weka onto them with no change a child or teacher can see (same help per go on the same seeds: prove it with one test comparing old and new on many seeds, then drop the old code). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, `test:changed`, build. Open a PR, merge once checks pass, add "Stage K1 results" to GAME-KIT-PLAN.md, and tell me in plain words what's ready and which game's R6 should use it next.
+
+## 7. Stage K1 results (7 Nov 2026, branch `kit-help`)
+
+**Built, `shared/kit/`:**
+- `help.ts`: `helpForFact` (per fact: the game passes its own ladder, `FactRung`, with the numbers to pass each step), `fadeAfter` (per child, no steps; Beanstalk's R6 uses this) and `placeAfter` (per child, with steps), `helpWithSetting` (the teacher's fade, always, off), `STRUGGLE_GOES`, `ROUND_OF_TEN`.
+- `replay.ts`: `replayTaps(goes, taps, { goesPerRound, oncePerFact })`. Weka and Tūī count a fact once a round (`oncePerFact: true`); Hop counts every hop (`false`). It also gives `firstRight`, for good and hard rounds.
+- `dayArc.ts`: `arcAfter`, `finishDay`, `daysPerReward`, `nzDate`. The game keeps its own words (`streamAfter`, `lastStoneDay`) in a thin wrapper, because the saved columns and replies use them. Calendar help (Hop's `help`, `gold`) stays in the game until its R6.
+
+**Decisions:**
+- The boost and the teacher's setting went in although the prompt didn't name them: R6 uses both in all four games, and Weka now uses them too. Only the count and the rule are in the kit. Each game's screen still keeps its own streak.
+- Levels run as Tūī's do: higher means more help. Beanstalk's R6 plan numbers its column the other way (0 full, 2 none), so it should convert, or number its column to match, when it uses `fadeAfter`.
+- Weka's `Replay` now also has `firstRight`. Nothing sends it: the server reads only `done`, `answers` and `mistakes`.
+- Not moved: Tūī, Hop and the others keep their own copies until an R-plan next touches them (section 3).
+
+**Weka moved, nothing a child or teacher sees changes.** The old code was compared with the new before it was deleted: all 735 mixes of box, right count and quick days; 4,000 rounds on random records, days and levels (every go as shown, choices included); 16,000 runs of taps, including refused ones (same error words); 400 day counts with their finishes; and the NZ date. All the same. A digest of the old code's results stays in `shared/weka/weka.test.ts`.
+
+**Tests: 3 new.** Help rules with fade and step-up together and every place a Tūī child can be (`shared/kit/kit.test.ts`); replay and day arc against Hop's and Tūī's own copies, so their moves are safe (same file); Weka's digest. Typecheck, `test:changed` (50 files, 585 tests) and the build pass. Only the `weka` function bundles the kit, so only it was rebuilt.
+
+**Played in the preview:** with the teacher's help off on day 5, a full round to the finish (a stone turned bronze); then wrong first taps on three goes in a row, and on the third the pebbles came back (full help for the rest of the round). The guided first go still shows full help. No console errors.
+
+**Next:** Hop's R6 is the best first user: it needs `helpForFact` with `full`, `faint`, `none`, and its `replayTaps` and `arcAfter` moves are already proved by the test. Then Penguin Pairs and Pipi. Beanstalk last, as it also needs a migration (and `fadeAfter`).

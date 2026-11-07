@@ -17,6 +17,7 @@
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import type { HelpSetting } from '../kit/help';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, streamAfter } from './progress';
@@ -40,10 +41,9 @@ export interface Saved extends Progress {
 
 export const unplayed = (): Saved => ({ daysDone: 0, lastStoneDay: null, reached: 1, version: 0 });
 
-/** The class's settings for the game (null if they can't be read). */
-export type HelpSetting = 'fade' | 'always' | 'off';
-export const HELP_SETTINGS: readonly HelpSetting[] = ['fade', 'always', 'off'];
+export { HELP_SETTINGS, type HelpSetting } from '../kit/help';
 
+/** The class's settings for the game (null if they can't be read). */
 export interface Settings {
   enabled: boolean;
   /**

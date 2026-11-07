@@ -155,6 +155,57 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/replay.ts
+/** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, throws: the browser never sends them. */
+function replayTaps(goes, taps, rules) {
+	const answers = [];
+	const counted = new Set();
+	let goesDone = 0;
+	let mistakes = 0;
+	let firstRight = 0;
+	let triedThisGo = false;
+	for (const { pick, ms } of taps) {
+		const go = goes[goesDone];
+		if (!go) throw new Error("Taps after the round was done");
+		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
+		const right = pick === go.answer;
+		if (!triedThisGo) {
+			if (right) firstRight++;
+			if (!rules.oncePerFact || !counted.has(go.key)) answers.push({
+				key: go.key,
+				correct: right,
+				ms
+			});
+			counted.add(go.key);
+		}
+		triedThisGo = true;
+		if (right) {
+			goesDone++;
+			triedThisGo = false;
+		} else mistakes++;
+	}
+	return {
+		goesDone,
+		mistakes,
+		firstRight,
+		done: goesDone === goes.length && goes.length === rules.goesPerRound,
+		answers
+	};
+}
+//#endregion
+//#region shared/kit/help.ts
+const HELP_SETTINGS = [
+	"fade",
+	"always",
+	"off"
+];
+/** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
+function helpForFact(stats, rungs) {
+	if (!stats) return rungs[0].help;
+	const stays = ({ until = {} }) => stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0);
+	return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
+}
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -903,11 +954,28 @@ function levelFor(stats, reached = 1) {
 * been right quickly on two different days; split-first until it is fluent (box 4) and right 8 times; faint until right
 * 12 times; then none. A wrong answer drops the fact to box 1, so full help comes back.
 */
-function helpForStats(stats) {
-	if (!stats || stats.box < 2 || stats.quickDays.length < 2) return "full";
-	if (stats.box < 4 || stats.correct < 8) return "split";
-	return stats.correct < 12 ? "faint" : "none";
-}
+const HELP_LADDER = [
+	{
+		help: "full",
+		until: {
+			box: 2,
+			quickDays: 2
+		}
+	},
+	{
+		help: "split",
+		until: {
+			box: 4,
+			correct: 8
+		}
+	},
+	{
+		help: "faint",
+		until: { correct: 12 }
+	},
+	{ help: "none" }
+];
+const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1043,48 +1111,82 @@ function showRound(round) {
 }
 //#endregion
 //#region shared/weka/play.ts
+/**
+* The replay of a child's taps on a round (docs/WEKA-PLAN.md section 3). The browser plays it as the child taps; the
+* server replays the same taps on its own saved round, so nothing that counts comes from the browser.
+*
+* Each tap is a number picked for the current go (the stone where Weka lands). The first step of a full-help go ("how
+* many hops to the big rock?") is help only: the browser never sends it. The right number moves on; a wrong one wobbles
+* back, with no penalty, and the child tries again. For the maths records each fact counts once a
+* round: right if the first pick at its first go was right, with the time to that pick. A fact asked a second time in the
+* same round is practice only.
+*/
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
-function replay(round, taps) {
-	const goes = showRound(round);
-	const answers = [];
-	const counted = new Set();
-	let goesDone = 0;
-	let mistakes = 0;
-	let triedThisGo = false;
-	for (const { pick, ms } of taps) {
-		const go = goes[goesDone];
-		if (!go) throw new Error("Taps after the round was done");
-		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
-		const right = pick === go.answer;
-		if (!triedThisGo && !counted.has(go.key)) {
-			answers.push({
-				key: go.key,
-				correct: right,
-				ms
-			});
-			counted.add(go.key);
-		}
-		triedThisGo = true;
-		if (right) {
-			goesDone++;
-			triedThisGo = false;
-		} else mistakes++;
-	}
-	return {
-		goesDone,
-		mistakes,
-		done: goesDone === goes.length && goes.length === 10,
-		answers
-	};
-}
-const METALS = [
-	"grey",
+const replay = (round, taps) => replayTaps(showRound(round), taps, {
+	goesPerRound: 10,
+	oncePerFact: true
+});
+//#endregion
+//#region shared/kit/dayArc.ts
+/**
+* Game kit: the day arc of a junior game (docs/plans/GAME-KIT-PLAN.md). A row of items (stones, pads, flowers): one changes
+* on each NZ day a child finishes the challenge, bronze for the first time along the row, then silver, then gold, then a
+* golden reward and a new friend. Days are counted, not dates, so a missed day loses nothing. The calendar is for rewards
+* and looks only, never for how much help a child gets (LEARNING-DESIGN rule 5).
+*
+* Games wrap these in their own words (`streamAfter`, `lastStoneDay`) and pass the row's length, what an item is before it
+* has changed, and the friends.
+*/
+const DAY_METALS = [
 	"bronze",
 	"silver",
 	"gold"
 ];
-/** Ten stones, three changes each: thirty finished days to a Golden Picnic Basket. */
-const DAYS_PER_BASKET = 10 * (METALS.length - 1);
+/** Finished days to a golden reward: once along the row for each metal. */
+const daysPerReward = (items) => items * DAY_METALS.length;
+/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
+const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+const wholeCount = (n) => {
+	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
+	return n;
+};
+/** Everything about the arc, from the count of finished days alone. */
+function arcAfter(daysDone, shape) {
+	const perReward = daysPerReward(shape.items);
+	const rewards = Math.floor(wholeCount(daysDone) / perReward);
+	const day = daysDone % perReward;
+	const round = Math.floor(day / shape.items);
+	const metals = [shape.base, ...DAY_METALS];
+	return {
+		rewards,
+		friend: shape.friends[rewards % shape.friends.length],
+		day,
+		row: Array.from({ length: shape.items }, (_, i) => metals[round + (i < day % shape.items ? 1 : 0)]),
+		today: DAY_METALS[round]
+	};
+}
+/** A finished challenge: one item changes on the first finish of each NZ day; playing again the same day is just for fun. */
+function finishDay(daysDone, lastDay, today, items) {
+	if (lastDay === today) return {
+		daysDone: wholeCount(daysDone),
+		lastDay,
+		changed: null,
+		reward: false
+	};
+	const next = wholeCount(daysDone) + 1;
+	return {
+		daysDone: next,
+		lastDay: today,
+		changed: daysDone % items,
+		reward: next % daysPerReward(items) === 0
+	};
+}
+daysPerReward(10);
 /**
 * Who crosses the stream, in order: Weka first, then a new New Zealand bird friend at a fresh stream after each Golden
 * Picnic Basket. Birds that walk more than they fly, so stepping stones make sense. The friends after Weka are painted
@@ -1098,47 +1200,28 @@ const FRIENDS = [
 	"pukeko",
 	"kea"
 ];
-const wholeCount = (n) => {
-	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
-	return n;
-};
 function streamAfter(daysDone) {
-	const baskets = Math.floor(wholeCount(daysDone) / DAYS_PER_BASKET);
-	const day = daysDone % DAYS_PER_BASKET;
-	const round = Math.floor(day / 10);
+	const { rewards, friend, day, row, today } = arcAfter(daysDone, {
+		items: 10,
+		base: "grey",
+		friends: FRIENDS
+	});
 	return {
-		baskets,
-		friend: FRIENDS[baskets % FRIENDS.length],
+		baskets: rewards,
+		friend,
 		day,
-		stones: Array.from({ length: 10 }, (_, i) => METALS[round + (i < day % 10 ? 1 : 0)]),
-		today: [
-			"bronze",
-			"silver",
-			"gold"
-		][round]
+		stones: row,
+		today
 	};
 }
-/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
-const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
-	timeZone: "Pacific/Auckland",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit"
-}).format(now);
 /** A finished challenge: one stone changes on the first finish of each NZ day; playing again the same day is just for fun. */
 function finishChallenge(daysDone, lastStoneDay, today) {
-	if (lastStoneDay === today) return {
-		daysDone: wholeCount(daysDone),
-		lastStoneDay,
-		stoneChanged: null,
-		goldenBasket: false
-	};
-	const next = wholeCount(daysDone) + 1;
+	const { daysDone: done, lastDay, changed, reward } = finishDay(daysDone, lastStoneDay, today, 10);
 	return {
-		daysDone: next,
-		lastStoneDay: today,
-		stoneChanged: daysDone % 10,
-		goldenBasket: next % DAYS_PER_BASKET === 0
+		daysDone: done,
+		lastStoneDay: lastDay,
+		stoneChanged: changed,
+		goldenBasket: reward
 	};
 }
 //#endregion
@@ -1167,11 +1250,6 @@ const unplayed = () => ({
 	reached: 1,
 	version: 0
 });
-const HELP_SETTINGS = [
-	"fade",
-	"always",
-	"off"
-];
 /** The longest a tap is said to have taken (the maths records keep at most two minutes anyway). */
 const MAX_TAP_MS = 6e5;
 /** Tries at a save before giving up (another request saved in between). */
