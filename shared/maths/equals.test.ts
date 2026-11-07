@@ -38,8 +38,8 @@ describe('the equals keys, for Parrot\'s See-saw', () => {
         expect(level, key).toBe(true);
         expect(q.answer, key).toBeGreaterThan(0);
       }
-      // Never read as some other fact when typed.
-      expect(solveParts(q.parts)?.keys.some((k) => k !== key) ?? false, key).toBe(false);
+      // Typed, it reads back as this key and answer.
+      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
     }
     const answers = ALL_KEYS.slice(0, 3).map((key) => ({ key, correct: true, ms: 1000, at: 0 }));
     expect([...groupByPack(answers).keys()]).toEqual(['early-facts']);

@@ -460,6 +460,19 @@ const equalsFamilies: Record<string, Family> = {
   eqtf: equals('True or false: is the see-saw level?', EQUALS_KEYS.tf),
 };
 
+/** An equals-sign question read back from its parts (["Level", "see-saw:", "8", "=", "5", "+", "?"]): its answer and key, or null when it isn't one. */
+export function solveEquals(parts: readonly string[]): { answer: number; key: string } | null {
+  if (!parts.some((x) => x === 'see-saw:' || x === 'false?')) return null;
+  for (const family of Object.values(equalsFamilies)) {
+    for (const key of family.keys) {
+      const n = equalsNumbers(key);
+      const made = family.make(key, n);
+      if (made && made.parts.length === parts.length && made.parts.every((x, k) => x === parts[k])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
 const families: Record<string, Family> = {
   ...lineFamilies,
   ...equalsFamilies,
