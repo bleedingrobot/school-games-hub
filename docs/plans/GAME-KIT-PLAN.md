@@ -1,6 +1,6 @@
 # Game kit: one place for shared learning parts and resources
 
-Status: K1 built (results below); K2 to K6 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
+Status: K1, K3 and K6 built (results below); K2, K4 and K5 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
 
 ## 1. The problem
 
@@ -106,3 +106,18 @@ Built 7 Nov 2026 on branch `kit-art-tools`. Nothing a child sees has changed, no
 - No server function bundles any of these files, so no function rebuild was needed.
 
 **What should use it next**: the next game painted (N1 to N5 or the next junior game). Copy `docs/weka-art/config.json` to `docs/<game>-art/config.json`, replace the style words, pictures and folders, run `--dry-run`, paint, pick, `tidy`. Do not write a new `<game>-art.py`. The old six junior scripts stay for now (`quick-looks-card-art.py` imports `weka-art.py`); move a game's settings across the next time its art is touched, as with every kit part.
+
+## 9. Stage K3 results (maths pictures)
+
+Built 7 Nov 2026 on branch `kit-models`. Nothing a child sees has changed: no old game was moved onto these.
+
+**What is ready, in `src/kit/`**
+- **`TenFrame`**: a frame of squares (2 rows of 5 unless told otherwise). Each square is filled, highlighted, extra, empty (a dashed space) or faint (a ghost counter). Shape as well as colour tells them apart.
+- **`NumberLine`**: any range, small marks, landmarks (with or without a label), jumps drawn as arcs above or below the line with a label, and points (a dot or a ring, for example a `?`). It also gives the position of any value, so a game's tapping lines up with what is drawn.
+- **`DotPicture`**: dots in a box, an optional frame behind them, outlined and coloured groups, tinted gaps and ghost dots, and `gridDots` for neat rows (arrays).
+- All three: no game words, colours passed in or taken from CSS variables (the text colour if neither), and a text alternative that is required, so a game cannot forget it. One test file, 3 tests; the line is checked for position, range and no broken numbers. Looked at in a browser for the ten-frame, line and dots. Short list in `src/kit/README.md` (K2's `docs/kit/README.md` was not on main yet; move the lines there when it lands).
+
+**Decisions:** no old game was moved. Tūī's frame is painted berries in HTML, Weka's is painted pebbles you drag, and Quick looks' picture is styled by its own CSS classes and draws a die, so none is a swap with nothing visible changing. The kit's `DotPicture` takes its own plain data, not Quick looks' `Picture` type, so the kit does not import from a game. Painted art stays in the games: a game that wants berries or pebbles draws them on top of the kit's frame positions, or keeps its own.
+
+**What should use it next:** the new games. N1 (Kererū's number line) needs `NumberLine` first; N3 and N5 need `TenFrame`; N4 needs `DotPicture` for arrays. The first of them to be built should check the pictures at phone width and add what it needs (for example a zoom lens) as its own small kit change.
+
