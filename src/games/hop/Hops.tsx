@@ -2,7 +2,7 @@
  * Today's challenge: ten hops. Each hop is a row of lily pads counting in equal steps, with Hop sitting on the pad
  * before the glowing gap. The child taps the glow-worm with the missing number and Hop jumps onto the pad; a wrong
  * glow-worm wobbles and drifts back, with no penalty. The step ("+2") shows on each hop's arc on bronze days, faintly on
- * silver days, and not at all on gold days, when the last three hops count back as Hop hops home.
+ * silver days, and not at all on gold days. The last hop or hops count back: one from the first day a step is secure going forward, up to three, and three on gold days as Hop hops home.
  *
  * Mistakes that teach (maths review R5, shared/kit/mistakes.ts). The first wrong glow-worm of a hop greys out (and can't be
  * tapped again) and a small row of pads shows the mistake behind it, with its line read aloud. The second stops the free

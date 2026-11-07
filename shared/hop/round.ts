@@ -9,8 +9,8 @@
  * Which step (10s, 5s or 2s) comes from the child's maths records, not from the auto ladder: a 5-year-old on auto is
  * usually still on an earlier rung (facts to 10), so `makeFocusPack` would never serve them skip counting. A step is
  * passed when 70% of its counting-up and what-comes-next facts are in box 2 or higher (the hub's usual secure rule).
- * Counting back is left out of that share because it is only asked on gold days; counting it would keep every child on
- * 10s until day 21. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
+ * Counting back is left out of that share so a child who is secure going forward moves on, and gets the counting-back
+ * hops (`backPlan`) for the steps behind them. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
  * of them but never drops a child back a step.
  */
 import { helpForFact, type FactRung } from '../kit/help';
@@ -24,6 +24,12 @@ import type { Help } from './progress';
 export const HOPS_PER_ROUND = 10;
 /** On gold days the last three hops count back, as Hop hops home (James, 4 Nov 2026). */
 export const BACK_HOPS = 3;
+/**
+ * Counting back on any day (R9): once a child is secure going forward on a step, one hop of each round counts back on it
+ * (the fact keys already say which way: `skip10:back:60`, so each has its own record). Two once a third of that step's back
+ * facts are at box 2, three once the usual 70% are. Gold days always ask three, as before.
+ */
+export const BACK_TWO_SHARE = 1 / 3;
 /** On gold days, two hops start off a multiple, once their step is secure (R8). */
 export const GOLD_FROM_HOPS = 2;
 /**
@@ -101,6 +107,29 @@ export function stepFor(stats: Iterable<FactStats>, reached: HopStep = 10): HopS
 export function topSecure(stats: Iterable<FactStats>, reached: HopStep = 10): boolean {
   return STEPS.indexOf(reached) >= STEPS.indexOf(2) && stepShare(stats, 2) >= STEP_SECURE_SHARE;
 }
+
+/** Share of a step's counting-back facts that are secure (box 2 or higher). */
+function backShare(stats: Iterable<FactStats>, step: HopStep): number {
+  const box = new Map([...stats].map((s) => [s.key, s.box]));
+  const keys = keysOf(step, 'back');
+  return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
+}
+
+/**
+ * Where counting back comes from and how many hops: the latest step, up to today's, that is secure going forward (70% of its
+ * up and next facts at box 2 or more), with 1, 2 or 3 hops by how secure its back facts are. A child with no such step has
+ * none. On a gold day it is today's step and three hops, as it always was.
+ */
+export function backPlan(stats: Iterable<FactStats>, step: HopStep, gold: boolean): { from: HopStep; count: number } | null {
+  const list = [...stats];
+  if (gold) return { from: step, count: Math.max(BACK_HOPS, backCount(list, step)) };
+  const from = STEPS.slice(0, STEPS.indexOf(step) + 1).reverse().find((s) => stepShare(list, s) >= STEP_SECURE_SHARE);
+  return from === undefined ? null : { from, count: backCount(list, from) };
+}
+const backCount = (list: FactStats[], step: HopStep): number => {
+  const share = backShare(list, step);
+  return share >= STEP_SECURE_SHARE ? 3 : share >= BACK_TWO_SHARE ? 2 : 1;
+};
 
 /** The steps this child has passed (secure by the 70% rule), so their non-multiple starts may be asked on a gold day. */
 const securedSteps = (stats: FactStats[]): HopStep[] => STEPS.filter((s) => offsetKeys(s).length > 0 && stepShare(stats, s) >= STEP_SECURE_SHARE);
@@ -217,14 +246,15 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
   const byKey = new Map(list.map((s) => [s.key, s]));
-  const back = gold ? BACK_HOPS : 0;
+  const plan = backPlan(list, step, gold);
+  const back = plan?.count ?? 0;
   // On a gold day, two hops start off a multiple ("start at 3, hop by 10"), but only for steps the child has passed.
   const passed = gold ? securedSteps(list) : [];
   const offs = passed.length ? pickKeys(passed.flatMap(offsetKeys), GOLD_FROM_HOPS, box, random) : [];
   const keys = [
     ...pickKeys(stepKeys(step), HOPS_PER_ROUND - back - offs.length, box, random),
     ...offs,
-    ...pickKeys(keysOf(step, 'back'), back, box, random),
+    ...(plan ? pickKeys(keysOf(plan.from, 'back'), back, box, random) : []),
   ];
   // The shared family rolls each question's numbers (the answer and where the gap is), from the seed.
   const hops = keys.map((key) => {
