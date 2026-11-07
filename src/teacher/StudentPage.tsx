@@ -16,6 +16,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { whenPlayed } from '../components/MyGames';
+import { fetchQuickLooksStudent, type QuickLooksStudent } from '../data/foundational';
 import { fetchStudentCard, type StudentCard } from '../data/classOverview';
 import { moveStudent } from '../data/classes';
 import { FriendlyError } from '../data/profile';
@@ -24,6 +25,8 @@ import { ALL_GAMES, gameLabel } from '../games/registry';
 import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
 import { share } from '../pages/TeacherQuestionSkips';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
+import { STAGES } from '../../shared/subitising/config';
+import { FLAG_RULES } from './foundational/config';
 import { DangerAction } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { focusText, ladderText } from './Students';
@@ -173,6 +176,8 @@ function StudentDetail({ card }: { card: StudentCard }) {
         <GameLines student={card.id} />
       </section>
 
+      {card.role === 'student' && <QuickLooksPanel student={card.id} />}
+
       {detail && detail.recent.length > 0 && (
         <section className="panel" aria-labelledby="recent-title">
           <h2 id="recent-title" className="panel__title">
@@ -182,6 +187,52 @@ function StudentDetail({ card }: { card: StudentCard }) {
         </section>
       )}
     </>
+  );
+}
+
+/** Quick looks has no game definition (it is a Training activity), so its panel is here. One call, made when the page opens. */
+function QuickLooksPanel({ student }: { student: string }) {
+  const [q, setQ] = useState<QuickLooksStudent | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
+  useEffect(() => {
+    let current = true;
+    setQ(null);
+    setFailed(null);
+    fetchQuickLooksStudent(student, FLAG_RULES.recentAnswers).then(
+      (d) => current && setQ(d),
+      (error) => current && setFailed(errorText(error)),
+    );
+    return () => {
+      current = false;
+    };
+  }, [student]);
+  const stage = q ? STAGES[Math.min(q.finished, STAGES.length - 1)] : null;
+  return (
+    <section className="panel" aria-labelledby="quick-title">
+      <h2 id="quick-title" className="panel__title">
+        Quick looks
+      </h2>
+      {failed ? (
+        <p className="panel__empty">{failed}</p>
+      ) : !q ? (
+        <p className="panel__empty">Loading…</p>
+      ) : !q.used ? (
+        <p className="panel__empty">Has not used Quick looks yet.</p>
+      ) : (
+        <dl className="student-page__facts-list">
+          <dt>Working on</dt>
+          <dd>{q.finished >= STAGES.length ? `All ${STAGES.length} stages finished` : `Stage ${stage!.id}: ${stage!.name}`}</dd>
+          <dt>Stages finished</dt>
+          <dd>
+            {q.finished} of {STAGES.length}
+          </dd>
+          <dt>Recent pictures</dt>
+          <dd>{q.answered > 0 ? `${q.correct} of the last ${q.answered} right (${Math.round((q.correct / q.answered) * 100)}%)` : 'None counted yet'}</dd>
+          <dt>Keeps the picture on the screen</dt>
+          <dd>{q.guided ? 'On' : 'Off'}</dd>
+        </dl>
+      )}
+    </section>
   );
 }
 

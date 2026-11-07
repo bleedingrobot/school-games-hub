@@ -4,6 +4,7 @@
  * refuses anyone who does not teach the class (migration 20261107000100). `foundationalClass` asks them together and shares
  * the answer for a few seconds, so Today's alerts and "Hardest right now" make one set of requests, not one for each game.
  */
+import { quickAnswersFrom, unpackSettings } from '../../shared/subitising/saved';
 import { supabase } from '../lib/supabase';
 import { shortCache } from '../teacher/shortCache';
 import { FriendlyError } from './profile';
@@ -135,3 +136,50 @@ export async function fetchFoundationalClass(classId: string): Promise<Foundatio
 
 /** The same answer for everyone who asks within a few seconds (Today asks once for each game). */
 export const foundationalClass = (classId: string): Promise<FoundationalClass> => shortCache(`foundational:${classId}`, () => fetchFoundationalClass(classId));
+
+/** One pupil's Quick looks for their page: the settings that follow them, and how the last counted pictures went. */
+export interface QuickLooksStudent {
+  /** Never used it: no settings saved and no pictures answered. */
+  used: boolean;
+  placed: boolean;
+  startStage: number;
+  /** Stages finished in a row, 0 to 7. */
+  finished: number;
+  /** "Keeps the picture on the screen" (no flashing). */
+  guided: boolean;
+  sessions: number;
+  /** The newest counted pictures (up to `recent`), not counting ones the pupil was helped with. */
+  answered: number;
+  correct: number;
+}
+
+/** From `teacher_training_student`'s answer. Pure, so it is tested without a database. */
+export function parseQuickLooksStudent(raw: unknown, recent: number): QuickLooksStudent {
+  const r = object(raw);
+  const student = object(r.student);
+  const settings = unpackSettings(object(student.typing).q);
+  const answers = quickAnswersFrom(
+    (Array.isArray(r.answers) ? r.answers : []).map((a) => {
+      const o = object(a);
+      return { key: typeof o.key === 'string' ? o.key : '', correct: o.correct === true, at: whole(o.at) };
+    }),
+  ).filter((a) => !a.helped);
+  const newest = answers.slice(-recent);
+  return {
+    used: settings !== null || answers.length > 0,
+    placed: settings?.placed ?? false,
+    startStage: settings?.startStage ?? 1,
+    finished: settings?.finished ?? 0,
+    guided: settings?.guided ?? false,
+    sessions: whole(student.sessionsDone),
+    answered: newest.length,
+    correct: newest.filter((a) => a.correct).length,
+  };
+}
+
+/** The teacher's read of one pupil's Quick looks (the existing `teacher_training_student`, which checks the teacher teaches them). */
+export async function fetchQuickLooksStudent(studentId: string, recent: number): Promise<QuickLooksStudent> {
+  const { data, error } = await supabase.rpc('teacher_training_student', { student: studentId });
+  if (error) throw new FriendlyError('We couldn’t load Quick looks for this student.');
+  return parseQuickLooksStudent(data, recent);
+}

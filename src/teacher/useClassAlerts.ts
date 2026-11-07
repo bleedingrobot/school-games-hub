@@ -8,10 +8,27 @@ import { fetchClassOverview } from '../data/classOverview';
 import { ALL_GAMES } from '../games/registry';
 import type { GameDefinition, TeacherAlert } from '../games/types';
 import { HIGH_SKIP_SHARE } from '../pages/TeacherQuestionSkips';
+import { GRID_SECTION, quickLooksAlerts } from './foundational/alerts';
 import { shortCache } from './shortCache';
 
 /** Below this many questions in 7 days, a student's skip share says too little to flag. */
 export const SKIP_ALERT_MIN_SHOWN = 5;
+
+/** Today shows at most this many Foundational lines (R7 plan, 3.3); the rest fold into one "and N more". */
+export const MAX_FOUNDATIONAL_LINES = 5;
+const isFoundational = (a: TeacherAlert) => a.id.startsWith('foundational-');
+
+/** The Foundational games' lines (ids `foundational-<game>`) kept to five, with the rest counted. Other alerts are left alone. */
+export function foldFoundational(alerts: TeacherAlert[]): TeacherAlert[] {
+  const lines = alerts.filter(isFoundational);
+  if (lines.length <= MAX_FOUNDATIONAL_LINES) return alerts;
+  const extra = lines.length - MAX_FOUNDATIONAL_LINES;
+  const kept = new Set(lines.slice(0, MAX_FOUNDATIONAL_LINES));
+  return [
+    ...alerts.filter((a) => !isFoundational(a) || kept.has(a)),
+    { id: 'foundational-more', text: `and ${extra} more Foundational skills alert${extra === 1 ? '' : 's'}`, section: GRID_SECTION },
+  ];
+}
 
 export const classOverview = (classId: string) => shortCache(`overview:${classId}`, () => fetchClassOverview(classId));
 
@@ -34,9 +51,9 @@ export function useClassAlerts(classId: string, games: GameDefinition[] = ALL_GA
       ];
     });
     // A game that can't be asked just adds nothing: its own report still shows everything.
-    void Promise.allSettled([skips, ...withAlerts.map((g) => g.teacher!.alerts!(classId))]).then((settled) => {
+    void Promise.allSettled([skips, ...withAlerts.map((g) => g.teacher!.alerts!(classId)), quickLooksAlerts(classId)]).then((settled) => {
       if (!current) return;
-      setAlerts(settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : [])));
+      setAlerts(foldFoundational(settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []))));
     });
     return () => {
       current = false;
