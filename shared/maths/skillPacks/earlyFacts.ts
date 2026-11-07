@@ -288,6 +288,29 @@ export const ZOOM_KEYS = [
   'zoom:300-400:350',
 ];
 
+// ---- Tens and ones (Lizard's Bundles, docs/plans/maths-review/new-games/N3-place-value.md) ---------------------------
+// More ladder-only keys, recorded as plain right or wrong at the first "That's it" or first tap. The game builds its own
+// pictures (bundles and sticks) and wrong cards; the number is always the key's last digits.
+//   pvbuild:t30 / pvbuild:n47    build 30 / 47 on the mat with bundles and sticks (9 tens + 36 others)
+//   pvread:n47                   read 4 bundles and 7 sticks (36 others)
+//   pvzero:n40                   read bundles with an empty ones place (9 tens)
+//   pvregroup:b23 / pvregroup:s47  tie 23 loose sticks into bundles / 47 is 3 bundles and 17 sticks (12 + 18)
+//   pvten:+47 / pvten:-47        ten more / ten less than 47 as a bundle added or taken (12 + 12)
+//   pvbuild3:t300 / pvbuild3:n306, pvread3:... (9 hundreds + 27 others each; zeros in the middle and at the end)
+//   pvhun:+347 / pvhun:-347      a hundred more / less (6 + 6)
+const PV_TENS = range(1, 9).map((n) => n * 10);
+/** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
+const PV_OTHERS = range(1, 9).flatMap((t) => [1, 3, 5, 7].map((j) => t * 10 + ((t + j) % 9) + 1));
+export const PV_REGROUP_BUNDLE = [23, 31, 38, 42, 46, 54, 59, 25, 37, 48, 51, 33];
+export const PV_REGROUP_SWAP = [32, 41, 47, 53, 56, 62, 65, 71, 74, 78, 83, 86, 29, 35, 44, 58, 67, 92];
+export const PV_TEN_MORE = [14, 27, 35, 42, 56, 63, 78, 85, 91, 49, 68, 73];
+export const PV_TEN_LESS = [19, 32, 47, 54, 61, 76, 83, 98, 25, 66, 39, 72];
+const PV_HUNDREDS = range(1, 9).map((h) => h * 100);
+/** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
+const PV3_OTHERS = range(1, 9).flatMap((h) => [h * 100 + (((h * 3) % 9) + 1) * 10 + ((h * 2) % 9) + 1, h * 100 + ((h * 2) % 9) + 1, h * 100 + (((h + 4) % 9) + 1) * 10]);
+export const PV_HUN_MORE = [147, 232, 356, 418, 563, 694];
+export const PV_HUN_LESS = [320, 451, 587, 642, 778, 905];
+
 /** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
 const lineNumber = (key: string) => Number(/(\d+)$/.exec(key)![1]);
 /** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
@@ -312,6 +335,14 @@ const lineFamilies: Record<string, Family> = {
   place1000: numLine('Where a number goes on a 0 to 1000 line', 'MS.Y4.NUM.NS.P1', [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => ['Place', String(n), 'on', 'the', '1000', 'line'], (n) => `Where does ${n} go on the line to 1000?`),
   read1000: numLine('Reading a point on a 0 to 1000 line', 'MS.Y4.NUM.NS.P1', [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => ['Read', String(n), 'on', 'the', '1000', 'line'], () => 'What number is at the arrow?'),
   near100: numLine('Which hundred a number is closer to', 'MS.Y4.NUM.NS.P5', [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => ['Nearest', 'hundred', 'to', String(n)], (n) => nearWords(n, 100)),
+  pvbuild: numLine('Build a number with bundles and sticks', 'MS.Y2.NUM.NS.P1', [...PV_TENS.map((n) => `pvbuild:t${n}`), ...PV_OTHERS.map((n) => `pvbuild:n${n}`)], (n) => ['Build', String(n), 'with', 'bundles'], (n) => `Build ${n} with bundles and sticks.`),
+  pvread: numLine('Read bundles and sticks as a number', 'MS.Y2.NUM.NS.P1', PV_OTHERS.map((n) => `pvread:n${n}`), (n) => ['Read', String(n), 'from', 'bundles'], () => 'What number is this?'),
+  pvzero: numLine('Read bundles with no sticks left over', 'MS.Y2.NUM.NS.P1', PV_TENS.map((n) => `pvzero:n${n}`), (n) => ['Read', String(n), 'from', 'bundles', 'only'], () => 'What number is this?'),
+  pvregroup: numLine('Tie sticks into bundles and untie a bundle', 'MS.Y2.NUM.NS.P2', [...PV_REGROUP_BUNDLE.map((n) => `pvregroup:b${n}`), ...PV_REGROUP_SWAP.map((n) => `pvregroup:s${n}`)], (n, key) => (key.includes(':b') ? ['Tie', String(n), 'sticks', 'into', 'bundles'] : ['Untie', 'a', 'bundle', 'of', String(n)]), (n, key) => (key.includes(':b') ? `Tie ${n} sticks into bundles.` : `${n} is one bundle fewer and ten more sticks.`)),
+  pvten: numLine('Ten more and ten less with bundles', 'MS.Y2.NUM.NS.P1', [...PV_TEN_MORE.map((n) => `pvten:+${n}`), ...PV_TEN_LESS.map((n) => `pvten:-${n}`)], (n, key) => ['Bundle', key.includes('+') ? 'added' : 'taken', 'from', String(n)], (n, key) => `What is ten ${key.includes('+') ? 'more' : 'less'} than ${n}?`),
+  pvbuild3: numLine('Build a number with rafts, bundles and sticks', 'MS.Y3.NUM.NS.P1', [...PV_HUNDREDS.map((n) => `pvbuild3:t${n}`), ...PV3_OTHERS.map((n) => `pvbuild3:n${n}`)], (n) => ['Build', String(n), 'with', 'rafts'], (n) => `Build ${n} with rafts, bundles and sticks.`),
+  pvread3: numLine('Read rafts, bundles and sticks as a number', 'MS.Y3.NUM.NS.P1', [...PV_HUNDREDS.map((n) => `pvread3:t${n}`), ...PV3_OTHERS.map((n) => `pvread3:n${n}`)], (n) => ['Read', String(n), 'from', 'rafts'], () => 'What number is this?'),
+  pvhun: numLine('A hundred more and a hundred less', 'MS.Y3.NUM.NS.P1', [...PV_HUN_MORE.map((n) => `pvhun:+${n}`), ...PV_HUN_LESS.map((n) => `pvhun:-${n}`)], (n, key) => ['Raft', key.includes('+') ? 'added' : 'taken', 'from', String(n)], (n, key) => `What is a hundred ${key.includes('+') ? 'more' : 'less'} than ${n}?`),
 };
 export const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
 
