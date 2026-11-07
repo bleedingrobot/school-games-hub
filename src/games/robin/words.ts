@@ -40,7 +40,7 @@ export const WORDS = {
       case 'under': return 'That is not enough yet. Add some more.';
       case 'double': return 'One berry was counted twice. Touch each berry only once.';
       case 'skip': return 'One berry was missed. Count every berry.';
-      case 'row': return 'A whole row was missed. Count every row.';
+      case 'row': return 'Some berries were missed. Count every berry.';
       case 'lots': return 'That is a lot more than there are. Count again.';
       case 'same': return 'That is how many were under the cloth. One more has come.';
       case 'again': return 'Only one more berry came. Not two.';

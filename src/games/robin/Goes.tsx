@@ -270,6 +270,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
         <HearAgain prefix="rb" label={WORDS.hearAgain} onHear={() => say(askLine(go))} />
       </div>
 
+      {go.kind === 'give' && <p className="rb-ask" aria-hidden="true">Give me <strong>{go.n}</strong></p>}
+
       <div className="rb-stage" key={at}>
         <span className="rb-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
 
