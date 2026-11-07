@@ -335,17 +335,19 @@ export const placeRight = (go: Pick<Go, 'n' | 'lo' | 'hi' | 'tol'>, permille: nu
 // ---------------------------------------------------------------- what the branch shows
 
 /**
- * The numbers marked on a line at a help level (plan section 4): 5 every number on the 100 line, 4 every ten (every hundred on
- * the long branch), 3 the tens as ticks and 0, 50, 100 named, 2 the middle and the ends named, 1 and 0 the two ends only.
+ * The numbers marked on a line at a help level (plan section 4): 5 every ten named with a small mark for every one (every hundred
+ * named on the long branch, a mark for every ten), 4 every ten named, 3 the tens as small marks with the middle and the ends
+ * named, 2 the middle and the ends named, 1 and 0 the two ends only.
  * `ticks` are unnamed marks; `named` carry a number.
  */
 export function marksFor(level: HelpLevel, lo: number, hi: number): { named: number[]; ticks: number[] } {
   const width = hi - lo;
-  const unit = width >= 500 ? 100 : width <= 10 ? 1 : 10;
-  const every = (step: number) => Array.from({ length: Math.floor(width / step) + 1 }, (_, i) => lo + i * step);
+  // Ten spaces on a long line (100 or 1000), a space a whole number wide on a short lens, ten spaces on a lens in between.
+  const unit = width >= 500 ? 100 : width <= 10 ? 1 : width <= 100 ? 10 : width / 10;
+  const every = (step: number) => Array.from({ length: Math.round(width / step) + 1 }, (_, i) => lo + i * step);
   const ends = [lo, hi];
   const mid = [lo, lo + width / 2, hi];
-  if (level >= 5) return { named: every(unit), ticks: unit === 10 ? every(1) : unit === 100 ? every(10) : [] };
+  if (level >= 5) return { named: every(unit), ticks: unit >= 10 ? every(unit / 10) : [] };
   if (level === 4) return { named: every(unit), ticks: [] };
   if (level === 3) return { named: mid, ticks: every(unit) };
   if (level === 2) return { named: mid, ticks: [] };

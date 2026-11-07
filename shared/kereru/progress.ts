@@ -19,6 +19,8 @@ export const DAYS_PER_BRANCH = daysPerReward(CLUSTERS);
 export const FRIENDS = ['kereru', 'tui', 'piwakawaka', 'korimako', 'kaka'] as const;
 export type Friend = (typeof FRIENDS)[number];
 
+export const FRIEND_NAMES: Record<Friend, string> = { kereru: 'Kererū', tui: 'Tūī', piwakawaka: 'Pīwakawaka', korimako: 'Korimako', kaka: 'Kākā' };
+
 export interface Branch {
   /** Golden Berry Branches won so far. */
   prizes: number;

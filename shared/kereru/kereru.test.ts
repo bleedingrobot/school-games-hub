@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newStats, type FactStats } from '../maths/leitner';
+import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { BERRY_CLUSTERS } from './config';
 import { DAYS_PER_BRANCH, branchAfter, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
@@ -112,7 +112,7 @@ describe('the berry clusters', () => {
 
 describe('the server', () => {
   it('starts a challenge, replays the taps, records each key once, counts the day once, and moves the step', async () => {
-    const log = { answers: [] as { player: string; once: string; answers: unknown[] }[], nests: [] as string[] };
+    const log = { answers: [] as { player: string; once: string; answers: FactAnswer[] }[], branches: [] as string[] };
     let seedCounter = 0.37;
     let clock = Date.parse('2026-11-08T02:00:00Z');
     const services = memoryServices({ now: () => clock, random: () => (seedCounter = (seedCounter * 7919 + 0.137) % 1), log });
