@@ -58,12 +58,12 @@ describe('the trial backend', () => {
     expect(await backend.finish(gold.seed, perfect(gold))).toMatchObject({ daysDone: DAYS_PER_JAR, jar: true });
   });
 
-  it('says the twos are secure only once they are, in the finish reply, and keeps asking twos', async () => {
+  it('says the twos are secure only once they are, in the finish reply, and goes on to threes', async () => {
     const { backend, tools } = trialBackend({ storageKey: 'signpost' });
     expect((await backend.load()).topSecure).toBe(false);
     tools.makeSecure(2);
-    expect(await backend.load()).toMatchObject({ step: 2, topSecure: true });
+    expect(await backend.load()).toMatchObject({ step: 3, topSecure: true }); // twos done, so threes next, and the signpost shows
     const round = await backend.start();
-    expect(await backend.finish(round.seed, perfect(round))).toMatchObject({ step: 2, stepBefore: 2, topSecure: true });
+    expect(await backend.finish(round.seed, perfect(round))).toMatchObject({ step: 3, stepBefore: 3, topSecure: true });
   });
 });

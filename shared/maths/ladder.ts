@@ -110,6 +110,10 @@ export const LADDER: LadderSkill[] = [
   { id: 'number-line-100', label: 'The number line to 100', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('place100'), ...earlyKeys('read100'), ...earlyKeys('near10'), ...earlyKeys('zoom')], built: true, inWarmUp: false, inAuto: false },
   { id: 'ten-more-less', label: 'Ten more and ten less', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: earlyKeys('tens100'), built: true, inWarmUp: false, inAuto: false },
   { id: 'number-line-1000', label: 'The number line to 1000', stage: 'place-value', curriculumTags: ['MS.Y4.NUM.NS.P1'], keys: [...earlyKeys('place1000'), ...earlyKeys('read1000'), ...earlyKeys('near100')], built: true, inWarmUp: false, inAuto: false },
+  // Parrot's See-saw (the equals sign) sits beside the ladder (`inAuto`): the game makes and marks its own questions and only records these keys like any early fact. Typed, they read as short see-saw sentences.
+  { id: 'balance-10', label: 'The equals sign: a missing number to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqmiss'), ...earlyKeys('eqswap')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'balance-20', label: 'The equals sign: two numbers each side, and taking away', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqboth'), ...earlyKeys('eqsub')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'true-false', label: 'The equals sign: true or false', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('eqtf'), built: true, inWarmUp: false, inAuto: false },
   // Tens and ones (Lizard's Bundles) sit beside the ladder too (`inAuto`): the game draws bundles and sticks and marks them itself; these keys are only recorded.
   { id: 'bundles-50', label: 'Bundles of ten and tens and ones to 50', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) <= 50), built: true, inWarmUp: false, inAuto: false },
   { id: 'place-value-100', label: 'Tens and ones to 100, and zero', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...[...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) > 50), ...earlyKeys('pvzero')], built: true, inWarmUp: false, inAuto: false },
@@ -298,6 +302,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
+  if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
   if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';

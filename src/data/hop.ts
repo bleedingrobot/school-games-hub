@@ -70,8 +70,8 @@ export async function fetchHopClass(classId: string): Promise<{ players: number;
 export interface HopStudent {
   daysDone: number;
   lastPadDay: string | null;
-  /** The furthest step reached: counting in 10s, 5s or 2s. */
-  reached: 10 | 5 | 2;
+  /** The furthest step reached: counting in 10s, 5s, 2s, 3s, 4s, or 200 for tens past 100. */
+  reached: 10 | 5 | 2 | 3 | 4 | 200;
   lastPlayed: string;
 }
 

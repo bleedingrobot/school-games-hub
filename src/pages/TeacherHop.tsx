@@ -25,7 +25,7 @@ export function HopTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const STEP_WORD = { 10: 'tens', 5: 'fives', 2: 'twos' } as const;
+const STEP_WORD = { 10: 'tens', 5: 'fives', 2: 'twos', 3: 'threes', 4: 'fours', 200: 'tens past 100' } as const;
 
 /** "Day 12 of 30 · counting in fives · 1 Golden Glow Jar", or null if they haven't played. */
 export async function hopStudentSummary(student: string): Promise<string | null> {

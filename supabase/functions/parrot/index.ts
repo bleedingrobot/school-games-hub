@@ -120,24 +120,15 @@ function seeded(seed) {
 		return seed / 2147483648;
 	};
 }
-/** The kit's rules for this game: two good challenges pass a step, a new step brings help back by two. */
-const STEP_RULES = {
-	...ROUND_OF_TEN,
-	topLevel: 5,
-	goodToPass: 2,
-	topStep: 6,
-	newStepHelp: 2,
-	newStepLevel: 0
-};
-const KNOWN_START = {
-	step: 3,
-	level: 3
-};
 //#endregion
-//#region shared/parrot/round.ts
-const MAX_SEED = 2147483647;
-const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
-const isLevel = (n) => Number.isInteger(n) && n >= 0 && n <= 5;
+//#region shared/maths/skillPacks/equalsKeys.ts
+/**
+* The keys Parrot's See-saw records (docs/PARROT-PLAN.md): equations with a missing number that keeps a see-saw level.
+* They live here, beside the early facts that own them (`equals` families in earlyFacts.ts), and shared/parrot/round.ts
+* reads them from here so there is one list.
+*
+*   eqmiss:8=5+?       eqswap:3+5       eqboth:6+7=8+?       eqsub:3=8-? and eqsub:9-4=2+?       eqtf:5+3=4+4
+*/
 /** `eqmiss:8=5+?`: a = b + ?, a 3 to 10. */
 const missKeys = () => {
 	const out = [];
@@ -252,6 +243,24 @@ const KEYS = {
 	tf: tfKeys()
 };
 const ALL_KEYS = Object.values(KEYS).flat();
+/** The kit's rules for this game: two good challenges pass a step, a new step brings help back by two. */
+const STEP_RULES = {
+	...ROUND_OF_TEN,
+	topLevel: 5,
+	goodToPass: 2,
+	topStep: 6,
+	newStepHelp: 2,
+	newStepLevel: 0
+};
+const KNOWN_START = {
+	step: 3,
+	level: 3
+};
+//#endregion
+//#region shared/parrot/round.ts
+const MAX_SEED = 2147483647;
+const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
+const isLevel = (n) => Number.isInteger(n) && n >= 0 && n <= 5;
 const kindOfKey = (key) => key.startsWith("eqmiss:") ? "miss" : key.startsWith("eqswap:") ? "swap" : key.startsWith("eqboth:") ? "both" : key.startsWith("eqsub:") ? "sub" : key.startsWith("eqtf:") ? "tf" : null;
 /** The keys asked at each step: its new ones, and the earlier ones that come back. */
 const STEP_KEYS = {
@@ -3607,11 +3616,78 @@ const lineFamilies = {
 	], (n, key) => `What is a hundred ${key.includes("+") ? "more" : "less"} than ${n}?`)
 };
 const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
+const equalsNumbers = (key) => (key.split(":")[1].match(/\d+/g) ?? []).map(Number);
+const equalsParts = (key, n) => {
+	const w = (...x) => [
+		"Level",
+		"see-saw:",
+		...x.map(String)
+	];
+	if (key.startsWith("eqmiss:")) return w(n[0], "=", n[1], "+", "?");
+	if (key.startsWith("eqswap:")) return w(n[0], "+", n[1], "=", n[1], "+", "?");
+	if (key.startsWith("eqboth:")) return w(n[0], "+", n[1], "=", n[2], "+", "?");
+	if (key.startsWith("eqtf:")) return [
+		"True",
+		"or",
+		"false?",
+		String(n[0]),
+		"+",
+		String(n[1]),
+		"=",
+		String(n[2]),
+		"+",
+		String(n[3])
+	];
+	return key.includes("-?") ? w(n[0], "=", n[1], "-", "?") : w(n[0], "-", n[1], "=", n[2], "+", "?");
+};
+const equalsAnswer = (key, n) => {
+	if (key.startsWith("eqmiss:")) return n[0] - n[1];
+	if (key.startsWith("eqswap:")) return n[0];
+	if (key.startsWith("eqboth:")) return n[0] + n[1] - n[2];
+	if (key.startsWith("eqtf:")) return n[0] + n[1] === n[2] + n[3] ? 0 : 1;
+	return key.includes("-?") ? n[1] - n[0] : n[0] - n[1] - n[2];
+};
+const equals = (label, keys) => ({
+	label,
+	curriculumTags: [],
+	keys,
+	roll: (key) => equalsNumbers(key),
+	make: (key, params) => {
+		const n = equalsNumbers(key);
+		if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+		const answer = equalsAnswer(key, n);
+		const parts = equalsParts(key, n);
+		if (key.startsWith("eqtf:")) return {
+			parts,
+			spoken: `True or false: ${n[0]} plus ${n[1]} equals ${n[2]} plus ${n[3]}?`,
+			answer,
+			pick: ["True", "False"]
+		};
+		return {
+			parts,
+			spoken: `What number keeps the see-saw level?`,
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 2
+			]
+		};
+	}
+});
+const equalsFamilies = {
+	eqmiss: equals("See-saw with a missing number (to 10)", KEYS.miss),
+	eqswap: equals("Swapping the two numbers of a sum", KEYS.swap),
+	eqboth: equals("See-saw with two numbers on each side (to 20)", KEYS.both),
+	eqsub: equals("See-saw with taking away", KEYS.sub),
+	eqtf: equals("True or false: is the see-saw level?", KEYS.tf)
+};
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
 	families: {
 		...lineFamilies,
+		...equalsFamilies,
 		tenAnd,
 		tenUp: tenMove(true),
 		tenDown: tenMove(false),
@@ -3639,7 +3715,8 @@ const EARLY_FACTS = {
 		"parts10",
 		...SKIP_STEPS.map(({ step }) => `skip${step}`),
 		...SKIP_MORE_FAMILY_NAMES,
-		...LINE_FAMILY_NAMES
+		...LINE_FAMILY_NAMES,
+		...Object.keys(equalsFamilies)
 	]
 };
 //#endregion
@@ -6747,6 +6824,36 @@ const LADDER = [
 		inAuto: false
 	},
 	{
+		id: "balance-10",
+		label: "The equals sign: a missing number to 10",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("eqmiss"), ...earlyKeys("eqswap")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "balance-20",
+		label: "The equals sign: two numbers each side, and taking away",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("eqboth"), ...earlyKeys("eqsub")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "true-false",
+		label: "The equals sign: true or false",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: earlyKeys("eqtf"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
 		id: "bundles-50",
 		label: "Bundles of ten and tens and ones to 50",
 		stage: "place-value",
@@ -6833,6 +6940,7 @@ const LADDER = [
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
+	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
 	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
