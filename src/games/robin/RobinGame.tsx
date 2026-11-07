@@ -15,7 +15,7 @@ import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { BasketLog, Bird, Friend, GoldenFeast } from './art';
+import { BasketLog, Bird, Friend, GoldenFeast, sceneStyle } from './art';
 import { RobinError, type RobinBackend, type RobinFinish, type RobinState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
@@ -157,7 +157,7 @@ export function RobinGame({ backend, onExit, extra }: Props) {
 /** The log on the home and finish screens: ten baskets, and who is picking berries. */
 function Log({ baskets, friend, glowAt = null, pose }: { baskets: { metal: Metal }[]; friend: FriendName; glowAt?: number | null; pose: 'sit' | 'cheer' }) {
   return (
-    <div className="rb-logbox rb-scene">
+    <div className="rb-logbox rb-scene" style={sceneStyle()}>
       <BasketLog baskets={baskets} glowAt={glowAt} />
       <span className="rb-logbox__friend">
         <Friend friend={friend} pose={pose} />

@@ -57,8 +57,8 @@ import lizard from '../assets/home/lizard.webp';
 import lizardSmall from '../assets/home/lizard-small.webp';
 import swamphen from '../assets/home/swamphen.webp';
 import swamphenSmall from '../assets/home/swamphen-small.webp';
-import robin from '../assets/home/robin.svg';
-import robinSmall from '../assets/home/robin.svg';
+import robin from '../assets/home/robin.webp';
+import robinSmall from '../assets/home/robin-small.webp';
 import tui from '../assets/home/tui.webp';
 import tuiSmall from '../assets/home/tui-small.webp';
 // Quick looks is a Training activity, not a game, but it has a card with the foundational games. Clay painting from

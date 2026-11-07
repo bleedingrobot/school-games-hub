@@ -27,7 +27,7 @@ import { PointingHand } from '../../kit/PointingHand';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { playSound } from '../sounds';
-import { Basket, Berry, BerrySvg, Friend, Plate, type Pose } from './art';
+import { Basket, Berry, BerrySvg, Friend, Plate, sceneStyle, type Pose } from './art';
 import { askLine, countLine, modelLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -259,7 +259,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const countedNow = marked.length;
 
   return (
-    <div className="rb-play rb-scene">
+    <div className="rb-play rb-scene" style={sceneStyle()}>
       <h2 className="rb-sr" tabIndex={-1} ref={heading}>{go.kind === 'give' ? WORDS.pickGive : WORDS.pickCard}</h2>
       <div className="rb-top">
         <div className="rb-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
