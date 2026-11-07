@@ -13,7 +13,7 @@ import type { Round } from '../../../shared/pigeon/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { Cluster, Friend, GoldenBranch, type Pose, type Scenery } from './art';
+import { Cluster, Friend, GoldenBranch, sceneStyle, type Pose, type Scenery } from './art';
 import { PigeonError, type PigeonBackend, type PigeonFinish, type PigeonState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -138,7 +138,7 @@ export function PigeonGame({ backend, onExit, extra }: Props) {
 /** The berry branch on the home and finish screens: ten clusters along the branch, and the friend perched on it. */
 function Branch({ scenery, clusters, friend, pose }: { scenery: Scenery; clusters: { metal: Metal; glow?: boolean }[]; friend: FriendName; pose: Pose }) {
   return (
-    <div className={`pg-tree pg-scene--${scenery}`}>
+    <div className={`pg-tree pg-scene--${scenery}`} style={sceneStyle(scenery)}>
       <div className="pg-tree__clusters" role="img" aria-label={`${clusters.filter((c) => c.metal !== 'green').length} of ${BERRY_CLUSTERS} clusters changed`}>
         {clusters.map((c, i) => (
           <span key={i} className="pg-tree__spot">

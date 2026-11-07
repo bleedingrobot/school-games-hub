@@ -22,7 +22,7 @@ import { tapRight, type Tap } from '../../../shared/pigeon/play';
 import type { Friend as FriendName } from '../../../shared/pigeon/progress';
 import { GOES_PER_ROUND, marksFor, pictureFor, showRound, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
 import { playSound } from '../sounds';
-import { Friend, type Pose, type Scenery } from './art';
+import { Friend, sceneStyle, type Pose, type Scenery } from './art';
 import { PLACE_LINES, SLIP_LINES, askLine, lookLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -188,7 +188,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   );
 
   return (
-    <div className={`pg-play pg-scene--${scenery}`}>
+    <div className={`pg-play pg-scene--${scenery}`} style={sceneStyle(scenery)}>
       <h2 className="pg-sr" tabIndex={-1} ref={heading}>{go.kind === 'place' ? WORDS.tapLine : WORDS.pickCard}</h2>
       <div className="pg-top">
         <div className="pg-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
