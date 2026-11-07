@@ -125,6 +125,10 @@ export const LADDER: LadderSkill[] = [
   { id: 'arrays-turn', label: 'Turning an array round', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P3'], keys: [...earlyKeys('turn'), ...earlyKeys('which')], built: true, inWarmUp: false, inAuto: false },
   { id: 'sharing-rows', label: 'Sharing into equal rows', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P4'], keys: earlyKeys('share'), built: true, inWarmUp: false, inAuto: false },
   { id: 'cut-arrays', label: 'Cutting an array into known parts', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P3'], keys: earlyKeys('cut'), built: true, inWarmUp: false, inAuto: false },
+  // Robin's Berry Basket (counting out a set) sits beside the ladder (`inAuto`): the game makes and marks its own questions and only records these keys like any early fact.
+  { id: 'count-out-10', label: 'Counting out and counting a set to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) <= 10), ...earlyKeys('howMany')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'count-out-20', label: 'Counting out and counting a set to 20', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) > 10), ...earlyKeys('across')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'count-on', label: 'One more: counting on from a covered plate', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('countOn'), built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -309,6 +313,7 @@ export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-
   if (/^(rows|turn|share|cut|which):/.test(key)) return 'early-facts';
   if (isGeneratedKey(key)) return 'generated';
   if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
+  if (/^(give|howmany|counton|across):/.test(key)) return 'early-facts';
   if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';

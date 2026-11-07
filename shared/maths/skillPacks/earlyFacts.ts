@@ -11,6 +11,7 @@
 import { BandedPack, int, isInt, speak, type Family, type PackDefinition } from '../banded';
 import type { FactStats } from '../leitner';
 import { KEYS as EQUALS_KEYS } from './equalsKeys';
+import { COUNT_KEYS, countNumbers } from './countingKeys';
 
 const bondKeys = (prefix: string, total: number, from: number) => {
   const keys: string[] = [];
@@ -521,6 +522,47 @@ export function solveEquals(parts: readonly string[]): { answer: number; key: st
   return null;
 }
 
+// ---- Counting out (Robin's Berry Basket, docs/ROBIN-PLAN.md) -----------------------------------------------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). The game makes its own piles, berries and
+// wrong cards; these families own the keys so records are kept, and read as a short counting sentence if typed.
+//   give:n6   howmany:n6:ring   counton:5+1   across:n12
+const countingTyped = (key: string, n: number[]): { parts: string[]; spoken: string; answer: number } => {
+  if (key.startsWith('give:')) return { parts: ['Count', 'out', String(n[0]), 'berries:', 'how', 'many?'], spoken: `Count out ${n[0]} berries. How many is that?`, answer: n[0] };
+  if (key.startsWith('counton:')) return { parts: ['Plate', 'of', String(n[0]), 'and', 'one', 'more:', 'how', 'many?'], spoken: `A plate of ${n[0]} berries and one more. How many now?`, answer: n[0] + 1 };
+  const layout = key.split(':')[2];
+  return { parts: ['Count', String(n[0]), ...(layout ? [layout] : []), 'berries:', 'how', 'many?'], spoken: `Count the ${n[0]} berries. How many are there?`, answer: n[0] };
+};
+const counting = (label: string, keys: string[]): Family => ({
+  label,
+  curriculumTags: [],
+  keys,
+  roll: (key) => countNumbers(key),
+  make: (key, params) => {
+    const n = countNumbers(key);
+    if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+    const { parts, spoken, answer } = countingTyped(key, n);
+    return { parts, spoken, answer, wrong: [answer + 1, answer - 1, answer + 2, answer - 2] };
+  },
+});
+const countingFamilies: Record<string, Family> = {
+  give: counting('Giving exactly N (count out a set)', COUNT_KEYS.give),
+  howMany: counting('How many berries? (count a set, 1 to 10)', COUNT_KEYS.howmany),
+  countOn: counting('One more (count on from a covered plate)', COUNT_KEYS.counton),
+  across: counting('How many berries? (11 to 20, past ten)', COUNT_KEYS.across),
+};
+
+/** A counting question read back from its parts (["Count", "out", "6", "berries:", "how", "many?"]): its answer and key, or null when it isn't one. */
+export function solveCounting(parts: readonly string[]): { answer: number; key: string } | null {
+  if (!parts.some((x) => x === 'berries:' || x === 'more:')) return null;
+  for (const family of Object.values(countingFamilies)) {
+    for (const key of family.keys) {
+      const made = family.make(key, countNumbers(key));
+      if (made && made.parts.length === parts.length && made.parts.every((x, k) => x === parts[k])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
 // ---- Equal rows and arrays (Swamp Hen's Reed Rows, docs/plans/maths-review/new-games/N4-arrays.md) -------------------
 // Ladder-only keys the game records through `recordMathsAnswers` (first tap only). It also records the plain times
 // table keys ("mul:4x6") for the same go, so the times-table campaign moves too.
@@ -578,6 +620,7 @@ export function solveArray(parts: readonly string[]): { answer: number; key: str
 const families: Record<string, Family> = {
   ...lineFamilies,
   ...equalsFamilies,
+  ...countingFamilies,
   ...arrayFamilies,
   tenAnd,
   tenLess,
@@ -599,7 +642,7 @@ export const EARLY_FACTS: PackDefinition = {
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
   // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
-  ladderOnly: ['tenAnd', 'tenLess', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies), ...ARRAY_FAMILY_NAMES],
+  ladderOnly: ['tenAnd', 'tenLess', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies), ...ARRAY_FAMILY_NAMES, ...Object.keys(countingFamilies)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

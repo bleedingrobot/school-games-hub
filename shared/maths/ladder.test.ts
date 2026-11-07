@@ -52,7 +52,7 @@ function solve(parts: string[]): number {
 }
 
 // The number-line, tens-and-ones and equal-rows keys are pictures in the game; their typed forms are checked by solveLine and solveArray below.
-const LINE_KEY = /^(place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun|eq[a-z]+|rows|turn|share|cut|which):/; // (and Parrot's equals keys, checked in equals.test.ts)
+const LINE_KEY = /^(place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun|eq[a-z]+|rows|turn|share|cut|which|give|howmany|counton|across):/; // (and Parrot's equals keys, checked in equals.test.ts, and Robin's counting keys, in counting.test.ts)
 
 describe('the early facts pack', () => {
   const pack = earlyFactsPack([], randomFromSeed(String(3)));
@@ -376,7 +376,7 @@ describe('skip counting in tens, fives and twos', () => {
   const ids = LADDER.map((s) => s.id);
 
   it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
-    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false', 'bundles-50', 'place-value-100', 'regroup-100', 'ten-more-less-100', 'place-value-1000', 'equal-rows', 'arrays-turn', 'sharing-rows', 'cut-arrays', 'tables-2-5-10']);
+    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false', 'bundles-50', 'place-value-100', 'regroup-100', 'ten-more-less-100', 'place-value-1000', 'equal-rows', 'arrays-turn', 'sharing-rows', 'cut-arrays', 'count-out-10', 'count-out-20', 'count-on', 'tables-2-5-10']);
     const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
     const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
     expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');

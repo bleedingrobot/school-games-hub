@@ -354,6 +354,23 @@ const KEYS$1 = {
 };
 Object.values(KEYS$1).flat();
 //#endregion
+//#region shared/maths/skillPacks/countingKeys.ts
+const LAYOUTS = [
+	"line",
+	"scatter",
+	"ring"
+];
+const range$6 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const COUNT_KEYS = {
+	give: range$6(1, 20).map((n) => `give:n${n}`),
+	howmany: LAYOUTS.flatMap((layout) => range$6(1, 10).map((n) => `howmany:n${n}:${layout}`)),
+	counton: range$6(4, 9).map((s) => `counton:${s}+1`),
+	across: range$6(11, 20).map((n) => `across:n${n}`)
+};
+Object.values(COUNT_KEYS).flat();
+/** The numbers a key names: give:n6 is [6], howmany:n6:ring is [6], counton:5+1 is [5, 1]. */
+const countNumbers = (key) => (key.split(":").slice(1).join(":").match(/\d+/g) ?? []).map(Number);
+//#endregion
 //#region shared/maths/skillPacks/earlyFacts.ts
 /**
 * The first rungs of the maths ladder: number facts a student should know by heart before
@@ -1313,6 +1330,75 @@ const equalsFamilies = {
 	eqsub: equals("See-saw with taking away", KEYS$1.sub),
 	eqtf: equals("True or false: is the see-saw level?", KEYS$1.tf)
 };
+const countingTyped = (key, n) => {
+	if (key.startsWith("give:")) return {
+		parts: [
+			"Count",
+			"out",
+			String(n[0]),
+			"berries:",
+			"how",
+			"many?"
+		],
+		spoken: `Count out ${n[0]} berries. How many is that?`,
+		answer: n[0]
+	};
+	if (key.startsWith("counton:")) return {
+		parts: [
+			"Plate",
+			"of",
+			String(n[0]),
+			"and",
+			"one",
+			"more:",
+			"how",
+			"many?"
+		],
+		spoken: `A plate of ${n[0]} berries and one more. How many now?`,
+		answer: n[0] + 1
+	};
+	const layout = key.split(":")[2];
+	return {
+		parts: [
+			"Count",
+			String(n[0]),
+			...layout ? [layout] : [],
+			"berries:",
+			"how",
+			"many?"
+		],
+		spoken: `Count the ${n[0]} berries. How many are there?`,
+		answer: n[0]
+	};
+};
+const counting = (label, keys) => ({
+	label,
+	curriculumTags: [],
+	keys,
+	roll: (key) => countNumbers(key),
+	make: (key, params) => {
+		const n = countNumbers(key);
+		if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+		const { parts, spoken, answer } = countingTyped(key, n);
+		return {
+			parts,
+			spoken,
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 2,
+				answer - 2
+			]
+		};
+	}
+});
+const countingFamilies = {
+	give: counting("Giving exactly N (count out a set)", COUNT_KEYS.give),
+	howMany: counting("How many berries? (count a set, 1 to 10)", COUNT_KEYS.howmany),
+	countOn: counting("One more (count on from a covered plate)", COUNT_KEYS.counton),
+	across: counting("How many berries? (11 to 20, past ten)", COUNT_KEYS.across)
+};
 const ROWS_KEYS = range$5(2, 5).flatMap((r) => range$5(2, 10).map((c) => `rows:${r}x${c}`));
 const TURN_PAIRS = range$5(2, 6).flatMap((r) => range$5(2, 6).filter((c) => c !== r).map((c) => [r, c]));
 const SHARE_KEYS = [
@@ -1416,6 +1502,7 @@ const EARLY_FACTS = {
 	families: {
 		...lineFamilies,
 		...equalsFamilies,
+		...countingFamilies,
 		...arrayFamilies,
 		tenAnd,
 		tenLess,
@@ -1448,7 +1535,8 @@ const EARLY_FACTS = {
 		...SKIP_MORE_FAMILY_NAMES,
 		...LINE_FAMILY_NAMES,
 		...Object.keys(equalsFamilies),
-		...ARRAY_FAMILY_NAMES
+		...ARRAY_FAMILY_NAMES,
+		...Object.keys(countingFamilies)
 	]
 };
 //#endregion
@@ -7042,6 +7130,36 @@ const LADDER = [
 		inWarmUp: false,
 		inAuto: false
 	},
+	{
+		id: "count-out-10",
+		label: "Counting out and counting a set to 10",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("give").filter((k) => Number(k.slice(6)) <= 10), ...earlyKeys("howMany")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "count-out-20",
+		label: "Counting out and counting a set to 20",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("give").filter((k) => Number(k.slice(6)) > 10), ...earlyKeys("across")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "count-on",
+		label: "One more: counting on from a covered plate",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: earlyKeys("countOn"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -7077,6 +7195,7 @@ function packIdOfKey(key) {
 	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
+	if (/^(give|howmany|counton|across):/.test(key)) return "early-facts";
 	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
