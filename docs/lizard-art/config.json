@@ -83,18 +83,6 @@
       "max": 320
     },
     {
-      "name": "stick",
-      "prompt": "One smooth straight wooden stick, tan brown with a lighter stripe, rounded ends, standing upright, the same simple shape every time, matte and gentle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
-      "size": [
-        480,
-        832
-      ],
-      "kind": "cut",
-      "folder": "pieces",
-      "file": "stick",
-      "max": 160
-    },
-    {
       "name": "bundle",
       "prompt": "Ten identical smooth wooden sticks, tan brown, standing upright side by side in a neat tight bundle, tied around the middle with one band of plain natural flax twine with a small bow, the same simple shape every time. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
       "size": [
@@ -123,18 +111,6 @@
       "max": 256
     },
     {
-      "name": "raft",
-      "prompt": "A small flat raft made of ten bundles of wooden sticks lashed side by side with two broad flax twine bands across, seen from slightly above, a hundred sticks, tidy and symmetrical, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
-      "size": [
-        1152,
-        640
-      ],
-      "kind": "cut",
-      "folder": "pieces",
-      "file": "raft",
-      "max": 400
-    },
-    {
       "name": "golden-raft",
       "prompt": "A small flat raft of ten bundles of sticks lashed side by side, the whole raft covered edge to edge in shining yellow gold, vivid mirror-bright polished metal with strong gleaming highlights, tiny sparkles around, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
       "size": [
@@ -145,6 +121,97 @@
       "folder": "pieces",
       "file": "golden-raft",
       "max": 400
+    },
+    {
+      "name": "kiwi-sit",
+      "prompt": "Kiwi, a cute chunky round New Zealand kiwi bird, soft shaggy brown feathers, a long thin curved pale beak, small bright eyes, strong little legs, no wings visible, facing to the right, side view, sitting calmly and happily on a bare spot, a small smile, looking ahead, the whole animal. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kiwi-sit",
+      "max": 320
+    },
+    {
+      "name": "fantail-sit",
+      "prompt": "Fantail, a cute small round New Zealand pīwakawaka fantail, dark grey-brown back, a cream white belly with a dark band across the chest, a white eyebrow stripe, a tiny black beak, thin dark legs, a big wide tail fanned out like a folding fan with white edges, facing to the right, side view, sitting calmly and happily on a bare spot, a small smile, looking ahead, the whole animal. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "fantail-sit",
+      "max": 320
+    },
+    {
+      "name": "bellbird-sit",
+      "prompt": "Bellbird, a cute small round New Zealand korimako bellbird, olive-green feathers all over, a slightly curved thin dark beak, bright round dark-red eyes, thin dark legs, a rounded tail, facing to the right, side view, sitting calmly and happily on a bare spot, a small smile, looking ahead, the whole animal. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "bellbird-sit",
+      "max": 320
+    },
+    {
+      "name": "kea-sit",
+      "prompt": "Kea, a cute chunky New Zealand kea parrot, olive-green feathers, a long curved grey beak, bright orange feathers under the wings, big friendly eyes, strong grey feet, facing to the right, side view, sitting calmly and happily on a bare spot, a small smile, looking ahead, the whole animal. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kea-sit",
+      "max": 320
+    },
+    {
+      "name": "back/bronze",
+      "prompt": "A wide soft view of a New Zealand forest clearing, tall tree trunks and big green ferns framing the left and right edges and the bottom corners, the whole middle of the picture a wide, empty, perfectly smooth flat green lawn of soft moss, like a plain green tablecloth, completely bare and even, a bright warm morning, soft blue sky glimpses, fresh green leaves. Empty background scenery for a children's game, calm soft colours. Wide landscape. Suitable for young children aged 5 to 8.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "bronze"
+    },
+    {
+      "name": "back/silver",
+      "prompt": "A wide soft view of a New Zealand forest clearing, tall tree trunks and big green ferns framing the left and right edges and the bottom corners, the whole middle of the picture a wide, empty, perfectly smooth flat green lawn of soft moss, like a plain green tablecloth, completely bare and even, a cool bright midday, pale silvery blue light, fresh green leaves. Empty background scenery for a children's game, calm soft colours. Wide landscape. Suitable for young children aged 5 to 8.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "silver"
+    },
+    {
+      "name": "back/gold",
+      "prompt": "A wide soft view of a New Zealand forest clearing, tall tree trunks and big green ferns framing the left and right edges and the bottom corners, the whole middle of the picture a wide, empty, perfectly smooth flat green lawn of soft moss, like a plain green tablecloth, completely bare and even, a warm golden evening, orange and gold light on the ferns and golden glints at the edges. Empty background scenery for a children's game, calm soft colours. Wide landscape. Suitable for young children aged 5 to 8.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "gold"
+    },
+    {
+      "name": "card",
+      "prompt": "Lizard, a cute chunky green New Zealand gecko-style lizard with a long curly tail, smooth bright green skin, big friendly eyes, a gentle smile, wearing a little knitted orange scarf, sitting on a mossy log in a sunny New Zealand forest, three neat bundles of tan wooden sticks tied with twine beside it, wide landscape picture for a game, the lizard on the left, calm open space on the right. No text.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "lizard"
     }
   ]
 }

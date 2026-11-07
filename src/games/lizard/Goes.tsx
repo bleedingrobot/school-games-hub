@@ -24,7 +24,7 @@ import { tapRight, type Tap } from '../../../shared/lizard/play';
 import type { Friend as FriendName } from '../../../shared/lizard/progress';
 import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, type Go, type Mat, type Round } from '../../../shared/lizard/round';
 import { playSound } from '../sounds';
-import { Bundle, Friend, Raft, Stick, type Pose, type Scenery } from './art';
+import { Bundle, Friend, Raft, Stick, sceneStyle, type Pose, type Scenery } from './art';
 import { WHY_LINES, askLine, lookLine, placesWords, type LineKey } from './voiceLines';
 import { WORDS } from './words';
 
@@ -282,7 +282,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const whyLine = (k: LineKey) => WHY_LINES[k];
 
   return (
-    <div className={`lz-play lz-scene--${scenery}`}>
+    <div className={`lz-play lz-scene--${scenery}`} style={sceneStyle(scenery)}>
       <h2 className="lz-sr" tabIndex={-1} ref={heading}>{cardGo ? WORDS.pickCard : WORDS.makeMat}</h2>
       <div className="lz-top">
         <div className="lz-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>

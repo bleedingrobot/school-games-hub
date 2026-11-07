@@ -1,9 +1,24 @@
 /**
- * Lizard's Bundles' pictures. Stand-ins drawn in code (a painted pass comes later, docs/lizard-art/config.json): the sticks, the
- * bundles of ten, the raft of a hundred, Lizard and the friends, the den's bundles and the Golden Raft are plain SVG.
+ * Lizard's Bundles' pictures: the painted ones (scripts/game_art.py lizard, tidied into ./art/paint/, picks in
+ * docs/lizard-art/picks.json) and, as a fallback when a picture is missing, the plain SVG stand-ins drawn in code. The sticks, bundles
+ * and rafts a child counts on the mat are always drawn in code (exactly ten sticks, exactly ten bundles); the painted bundle
+ * shows only in the den. Only the pictures' addresses are bundled; they download when shown.
  */
+import type { CSSProperties } from 'react';
 import type { Friend as FriendName, Metal } from '../../../shared/lizard/progress';
 import { FRIEND_NAMES } from '../../../shared/lizard/progress';
+
+const FILES = import.meta.glob('./art/paint/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+export const paint = (path: string): string | undefined => FILES[`./art/paint/${path}.webp`];
+
+/** The painted background for a day's colour, as CSS variables (a full and a small copy). Nothing if it is not painted. */
+export function sceneStyle(scenery: Scenery): CSSProperties | undefined {
+  const full = paint(`back/${scenery}`);
+  if (!full) return undefined;
+  const small = paint(`back/${scenery}-800`) ?? full;
+  return { '--lz-back': `url(${full})`, '--lz-back-small': `url(${small})` } as CSSProperties;
+}
 
 export type Pose = 'sit' | 'eat' | 'cheer';
 export type Scenery = 'bronze' | 'silver' | 'gold';
@@ -19,6 +34,15 @@ const BODY: Record<FriendName, { body: string; belly: string }> = {
 /** Lizard, a long green lizard with a curly tail, or a round friend in their own colours. */
 export function Friend({ friend, pose }: { friend: FriendName; pose: Pose }) {
   const c = BODY[friend];
+  const src = paint(`friends/${friend}-${pose}`) ?? paint(`friends/${friend}-sit`);
+  if (src) {
+    return (
+      <span className={`lz-friend lz-friend--${pose} lz-friend--painted`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+        <span className="lz-sr">{FRIEND_NAMES[friend]}</span>
+      </span>
+    );
+  }
   return (
     <span className={`lz-friend lz-friend--${pose}`}>
       {friend === 'lizard' ? (
@@ -62,7 +86,15 @@ export function Stick({ tone = 'plain' }: { tone?: 'plain' | 'new' | 'gone' }) {
 }
 
 /** Ten sticks tied with a band. The band is twine at first, and bronze, silver or gold in the den. */
-export function Bundle({ metal = 'twine', tone = 'plain', glow = false }: { metal?: Metal; tone?: 'plain' | 'new' | 'gone'; glow?: boolean }) {
+export function Bundle({ metal = 'twine', tone = 'plain', glow = false, painted = false }: { metal?: Metal; tone?: 'plain' | 'new' | 'gone'; glow?: boolean; painted?: boolean }) {
+  const src = painted ? paint(`pieces/${metal === 'twine' ? 'bundle' : metal === 'gold' ? 'bundle-gold' : metal}`) : undefined;
+  if (src) {
+    return (
+      <span className={`lz-bundle lz-bundle--${tone} lz-bundle--painted${glow ? ' lz-bundle--glow' : ''}`} aria-hidden="true">
+        <img src={src} alt="" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className={`lz-bundle lz-bundle--${tone}${glow ? ' lz-bundle--glow' : ''}`} aria-hidden="true">
       <svg viewBox="0 0 60 64" width="100%" height="100%">
@@ -92,6 +124,14 @@ export function Raft({ tone = 'plain' }: { tone?: 'plain' | 'new' | 'gone' }) {
 }
 
 export function GoldenRaft() {
+  const src = paint('pieces/golden-raft');
+  if (src) {
+    return (
+      <span className="lz-golden" role="img" aria-label="The Golden Raft">
+        <img src={src} alt="" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className="lz-golden" role="img" aria-label="The Golden Raft">
       <svg viewBox="0 0 120 60" width="100%" height="100%" aria-hidden="true">
