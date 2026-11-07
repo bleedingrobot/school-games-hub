@@ -4,7 +4,7 @@
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/weka/progress';
-import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleDoneLine, splitFirstLine, splitRestLine, stemLine, toTenLine, type Go, type Help, type Kind, type Level } from '../../../shared/weka/round';
+import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleDoneLine, splitFirstLine, splitRestLine, stemLine, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -23,13 +23,30 @@ export function rightLine(go: Pick<Go, 'kind' | 'answer' | 'rest'>, help: Help):
   return go.kind === 'back' ? WORDS.rightBack(go.answer, go.rest) : WORDS.rightAdd(go.answer, go.rest);
 }
 
+/**
+ * What Bella says when a wrong first tap has a mistake behind it (maths review R5): why that number is not it. None says
+ * the answer: they say the leftover hops, the split, or ask for a count.
+ */
+export function whyLine(go: Pick<Go, 'kind' | 'small' | 'big' | 'from' | 'toTen' | 'rest'>, kind: LandKind | ToTenKind): string {
+  switch (kind) {
+    case 'rock': return go.kind === 'back' ? WORDS.whyRockBack(go.rest) : WORDS.whyRockAdd(go.rest);
+    case 'double': return WORDS.whyDouble(go.small, go.toTen, go.rest);
+    case 'part': return WORDS.whyPart(go.big, go.toTen, go.rest);
+    case 'off1': return WORDS.whyOff1(go.small);
+    case 'add': return WORDS.whyAdd;
+    case 'other': return WORDS.whyOther(go.from);
+    case 'ten': return WORDS.whyTen;
+    case 'near': return WORDS.whyNear(go.from);
+  }
+}
+
 /** What the finish screen says, with "next time: starting on 8" when the child moved up a level. */
 export function finishLine(main: string, levelUp: Level | null): string {
   return levelUp ? `${main} ${WORDS.levelUp(levelUp)}` : main;
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, BOND_MORE, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, WORDS.lookTogether, WORDS.nowTry, WORDS.whyAdd, WORDS.whyTen, BOND_MORE, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -43,6 +60,12 @@ export function allVoiceLines(): string[] {
       const toTen = kind === 'back' ? total - 10 : 10 - big;
       const go = { kind, small, big, total, toTen, rest: small - toTen };
       for (const line of [askLine(go), toTenLine(go), stemLine(go), fromTenLine(go), bondAskLine(go), bondLine(go, true), rightLine({ ...go, answer: kind === 'back' ? big : total }, 'full'), splitFirstLine(go), splitRestLine(go)]) lines.add(line);
+      // Why a wrong first tap is wrong: every mistake this go can have (round.ts landingWrongs and toTenWrongsFor).
+      const mine = { ...go, from: kind === 'back' ? total : big };
+      const kinds: (LandKind | ToTenKind)[] = ['rock', 'off1', 'other', 'near'];
+      if (kind === 'back') kinds.push('add');
+      else kinds.push('double', ...(big + go.rest !== 10 ? (['part'] as const) : []));
+      for (const k of kinds) lines.add(whyLine(mine, k));
       // The pebbles: adding goes only.
       if (kind !== 'back') for (const line of [pebbleAskLine(go), pebbleDoneLine(go)]) lines.add(line);
     }

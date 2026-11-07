@@ -19,6 +19,7 @@
  * records show it is known, and comes back if they slip (a wrong answer drops a fact to box 1, back to full help).
  */
 import { helpForFact, type FactRung } from '../kit/help';
+import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { addSubPack } from '../maths/skillPacks/addSub';
@@ -143,9 +144,23 @@ export interface Go extends GoPlan {
   parts: string[];
   /** Four numbers, the right one among them. */
   choices: number[];
+  /** The three wrong choices and the mistake behind each (maths review R5). */
+  wrongs: Wrong<LandKind>[];
   /** The first step on full-help goes ("how many hops to the big rock?"): four numbers, smallest first. Help only, never sent. */
   toTenChoices: number[];
+  /** The wrong ones among them, with their mistakes. */
+  toTenWrongs: Wrong<ToTenKind>[];
 }
+
+/**
+ * The mistakes behind the wrong choices (maths review R5 section 3.7).
+ * Where Weka lands: `rock` stopped at the big rock (10); `double` ten and the whole small number (8 + 5: 15, forgetting the
+ * 2 already used); `part` the bigger number and only the leftover (8 + 5: 11, never reaching the rock); `off1` one stone
+ * out (counting the hops by ones); hopping back, `rock` stopped at the rock and `add` hopped up the line (13 + 5).
+ */
+export type LandKind = 'rock' | 'double' | 'part' | 'off1' | 'add';
+/** Hops to the big rock: `other` is the whole small number, `ten` is the rock's own number, `near` is one or two out. */
+export type ToTenKind = 'other' | 'ten' | 'near';
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -220,7 +235,17 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
 
 const pack = addSubPack();
 
-/** The first step's four numbers: the hops to the big rock and three near it, all 1 to 9, smallest first. */
+/** The first step's wrong numbers: the whole small number, the rock's 10 and one near miss. */
+export function toTenWrongsFor(toTen: number, small: number): Wrong<ToTenKind>[] {
+  const kinds = new Map<number, ToTenKind>();
+  for (const [n, kind] of [[small, 'other'], [10, 'ten'], [toTen + 1, 'near'], [toTen - 1, 'near'], [toTen + 2, 'near']] as const) {
+    if (n >= 1 && n !== toTen && !kinds.has(n)) kinds.set(n, kind);
+  }
+  return tagWrongs([...kinds.keys()], (n) => kinds.get(n) ?? null).slice(0, 3);
+}
+export const hopsChoicesFor = (toTen: number, small: number): number[] => [toTen, ...toTenWrongsFor(toTen, small).map((w) => w.n)].sort((a, b) => a - b);
+
+/** Four numbers near `target`, all 1 to 9, smallest first: the choices for each part of the split (a part-whole bond), help only. */
 export function toTenChoicesFor(toTen: number): number[] {
   const out = [toTen];
   for (const d of [1, -1, 2, -2, 3, 4]) {
@@ -229,6 +254,39 @@ export function toTenChoicesFor(toTen: number): number[] {
   }
   return out.sort((a, b) => a - b);
 }
+
+/** The same digit at the end: the shape that gives a wrong choice away (docs/kit/README.md). */
+const ending = (n: number) => n % 10;
+
+/**
+ * Three wrong choices for where Weka lands, each with its mistake (maths review R5). Every kind has a turn: the seed
+ * leaves one out when there are more than three, and the choices are checked so no more than two end the same way as the
+ * answer. Built here, not in the shared pack, so the server rebuilds the same ones from the seed.
+ */
+export function landingWrongs(fact: { small: number; big: number; rest: number; kind: Kind }, random: () => number): Wrong<LandKind>[] {
+  const { small, big, rest, kind } = fact;
+  const total = small + big;
+  const answer = kind === 'back' ? big : total;
+  const pairs: [number, LandKind][] = kind === 'back'
+    ? [[10, 'rock'], [total + small, 'add'], [answer + (random() < 0.5 ? 1 : -1), 'off1'], [answer + 1, 'off1'], [answer - 1, 'off1'], [answer + 2, 'off1'], [answer - 2, 'off1']]
+    : [[10, 'rock'], [10 + small, 'double'], [big + rest, 'part'], [answer + (random() < 0.5 ? 1 : -1), 'off1'], [answer + 1, 'off1'], [answer - 1, 'off1'], [answer + 2, 'off1'], [answer - 2, 'off1']];
+  const kinds = new Map<number, LandKind>();
+  for (const [n, k] of pairs) if (n >= 1 && n !== answer && !kinds.has(n)) kinds.set(n, k);
+  const all = tagWrongs([...kinds.keys()], (n) => kinds.get(n) ?? null);
+  // One of each kind first (the seed drops one when there are four), then the rest.
+  const firsts = ['rock', 'double', 'part', 'add', 'off1'].flatMap((k) => all.find((w) => w.kind === k) ?? []);
+  if (firsts.length > 3) firsts.splice(Math.floor(random() * firsts.length), 1);
+  const picked: Wrong<LandKind>[] = [];
+  for (const w of [...firsts, ...all.filter((w) => !firsts.includes(w))]) {
+    if (picked.length === 3) break;
+    if (atMostShareTell(answer, [...picked.map((p) => p.n), w.n], ending)) picked.push(w);
+  }
+  for (const w of all) if (picked.length < 3 && !picked.includes(w)) picked.push(w);
+  return picked;
+}
+
+/** The mistake behind a wrong tap, or null for the right answer or a number that isn't a choice. */
+export const wrongKind = <K extends string>(wrongs: readonly Wrong<K>[], n: number): K | null => wrongs.find((w) => w.n === n)?.kind ?? null;
 
 /** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
@@ -241,9 +299,16 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const answer = kind === 'back' ? big : total;
   if (!q || !q.choices || q.answer !== answer) return null;
   const toTen = kind === 'back' ? total - 10 : 10 - big;
+  const rest = small - toTen;
+  // The shared pack makes the question; its wrong choices (answer ± 1 and 2) are replaced by ones with a mistake behind
+  // them (R5), in an order fixed by the seed.
+  const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+  random(); random();
+  const wrongs = landingWrongs({ small, big, rest, kind }, random);
   return {
-    ...plan, kind, small, big, total, from: kind === 'back' ? total : big, toTen, rest: small - toTen, answer,
-    parts: q.parts, choices: q.choices, toTenChoices: toTenChoicesFor(toTen),
+    ...plan, kind, small, big, total, from: kind === 'back' ? total : big, toTen, rest, answer,
+    parts: q.parts, choices: shuffle([answer, ...wrongs.map((w) => w.n)], random), wrongs,
+    toTenChoices: hopsChoicesFor(toTen, small), toTenWrongs: toTenWrongsFor(toTen, small),
   };
 }
 
