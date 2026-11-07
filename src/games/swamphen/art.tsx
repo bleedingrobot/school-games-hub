@@ -1,10 +1,24 @@
 /**
- * Swamp Hen's Reed Rows' pictures. Stand-ins drawn in code (a painted pass comes later, docs/SWAMPHEN-ART-PLAN.md). The hen,
- * the reed rows and the Golden Reed Garden are plain SVG; the garden of shoots is drawn by `Garden` below.
+ * Swamp Hen's Reed Rows' pictures: the painted ones (scripts/game_art.py swamphen, tidied into ./art/paint/, picks in
+ * docs/swamphen-art/picks.json) and, as a fallback when a picture is missing, the stand-ins drawn in code (SVG). The garden
+ * of shoots, the mat and the pile are laid out here in code, one painted shoot repeated, so every count is exact. The pictures
+ * download when shown.
  */
+import type { CSSProperties } from 'react';
 import type { Friend as FriendName, Metal } from '../../../shared/swamphen/progress';
 import { FRIEND_NAMES } from '../../../shared/swamphen/progress';
 import type { View } from '../../../shared/swamphen/round';
+
+const FILES = import.meta.glob('./art/paint/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+export const paint = (path: string): string | undefined => FILES[`./art/paint/${path}.webp`];
+
+/** The home and play background for a day's colour, as CSS variables (a full and a small copy). Nothing if it is not painted. */
+export function sceneStyle(scenery: Scenery): CSSProperties | undefined {
+  const full = paint(`back/${scenery}`);
+  if (!full) return undefined;
+  return { '--sh-back': `url(${full})`, '--sh-back-small': `url(${paint(`back/${scenery}-800`) ?? full})` } as CSSProperties;
+}
 
 export type Pose = 'sit' | 'eat' | 'cheer';
 export type Scenery = 'bronze' | 'silver' | 'gold';
@@ -21,6 +35,15 @@ const BODY: Record<FriendName, { body: string; belly: string }> = {
 /** A round bird with a red shield and beak, in each friend's colours. */
 export function Friend({ friend, pose }: { friend: FriendName; pose: Pose }) {
   const c = BODY[friend];
+  const src = paint(`friends/${friend}-${pose === 'cheer' ? 'cheer' : 'sit'}`);
+  if (src) {
+    return (
+      <span className={`sh-friend sh-friend--${pose} sh-friend--painted`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+        <span className="sh-sr">{FRIEND_NAMES[friend]}</span>
+      </span>
+    );
+  }
   return (
     <span className={`sh-friend sh-friend--${pose}`}>
       <svg viewBox="0 0 80 80" width="100%" height="100%" aria-hidden="true">
@@ -44,6 +67,14 @@ const METAL: Record<Metal, string> = { mud: '#8a6e4a', bronze: '#c8803a', silver
 /** One reed row on the home screen: a short line of reeds, mud-brown until it changes. */
 export function ReedRow({ metal, glow = false }: { metal: Metal; glow?: boolean }) {
   const fill = METAL[metal];
+  const reed = paint(`reeds/${metal === 'gold' ? 'reed' : metal === 'mud' ? 'mud' : metal}`);
+  if (reed) {
+    return (
+      <span className={`sh-reedrow sh-reedrow--${metal} sh-reedrow--painted${glow ? ' sh-reedrow--glow' : ''}`}>
+        {Array.from({ length: 6 }, (_, i) => <img key={i} src={reed} alt="" aria-hidden="true" draggable={false} />)}
+      </span>
+    );
+  }
   return (
     <span className={`sh-reedrow sh-reedrow--${metal}${glow ? ' sh-reedrow--glow' : ''}`}>
       <svg viewBox="0 0 120 30" width="100%" height="100%" aria-hidden="true">
@@ -60,6 +91,14 @@ export function ReedRow({ metal, glow = false }: { metal: Metal; glow?: boolean 
 }
 
 export function GoldenGarden() {
+  const src = paint('reeds/golden-garden');
+  if (src) {
+    return (
+      <span className="sh-golden" role="img" aria-label="The Golden Reed Garden">
+        <img src={src} alt="" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className="sh-golden" role="img" aria-label="The Golden Reed Garden">
       <svg viewBox="0 0 120 60" width="100%" height="100%" aria-hidden="true">
@@ -105,6 +144,9 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
   const showShoots = view === 'count' || view === 'rows';
   const shown = planted ?? drawn;
   const x0 = PAD + (small ? 0 : EDGE * 0.5);
+  const green = paint('reeds/green');
+  const amber = paint('reeds/amber');
+  const matSrc = paint('garden/mat');
   const bands = view === 'count' || view === 'rows' || view === 'bars';
   return (
     <svg className={`sh-garden${small ? ' sh-garden--small' : ''}`} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={label}>
@@ -122,8 +164,14 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
             {showShoots && here && !covered &&
               Array.from({ length: cols }, (_, c) => (
                 <g key={c} transform={`translate(${x0 + c * CELL + CELL / 2} ${y + CELL / 2})`}>
-                  <path d="M0 8 V-2" stroke="#2f6b3f" strokeWidth="3" strokeLinecap="round" />
-                  <ellipse cx="0" cy="-6" rx="3.6" ry="6" fill={cut ? '#c9862a' : '#3f8a3f'} />
+                  {(cut ? amber : green) ? (
+                    <image href={cut ? amber : green} x="-9" y="-12" width="18" height="24" preserveAspectRatio="xMidYMid meet" />
+                  ) : (
+                    <>
+                          <path d="M0 8 V-2" stroke="#2f6b3f" strokeWidth="3" strokeLinecap="round" />
+                      <ellipse cx="0" cy="-6" rx="3.6" ry="6" fill={cut ? '#c9862a' : '#3f8a3f'} />
+                    </>
+                  )}
                 </g>
               ))}
             {view === 'count' && here && r < rows - 1 && !covered && !fade && (
@@ -134,8 +182,14 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
       })}
       {mat && drawn > 1 && (
         <g>
-          <rect x={x0} y={PAD + CELL} width={cols * CELL} height={(drawn - 1) * CELL} rx="8" fill="#b8793a" stroke="#6b3f14" strokeWidth="3" />
-          <path d={`M${x0 + 8} ${PAD + CELL + 8} H${x0 + cols * CELL - 8}`} stroke="#d9a064" strokeWidth="3" strokeDasharray="6 5" />
+          {matSrc ? (
+            <image href={matSrc} x={x0} y={PAD + CELL} width={cols * CELL} height={(drawn - 1) * CELL} preserveAspectRatio="none" />
+          ) : (
+            <>
+              <rect x={x0} y={PAD + CELL} width={cols * CELL} height={(drawn - 1) * CELL} rx="8" fill="#b8793a" stroke="#6b3f14" strokeWidth="3" />
+              <path d={`M${x0 + 8} ${PAD + CELL + 8} H${x0 + cols * CELL - 8}`} stroke="#d9a064" strokeWidth="3" strokeDasharray="6 5" />
+            </>
+          )}
         </g>
       )}
       {cutAt !== undefined && <path d={`M${x0 - 6} ${PAD + cutAt * CELL} H${x0 + cols * CELL + 6}`} stroke="#d83a2e" strokeWidth="3.5" strokeDasharray="7 4" />}
@@ -153,11 +207,13 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
 export function Pile({ n, label }: { n: number; label: string }) {
   const per = 10;
   const rowsN = Math.ceil(n / per);
+  const green = paint('reeds/green');
   return (
     <svg className="sh-pile" viewBox={`0 0 ${per * 18 + 12} ${rowsN * 22 + 12}`} role="img" aria-label={label}>
       {Array.from({ length: n }, (_, i) => {
         const x = 12 + (i % per) * 18 + (Math.floor(i / per) % 2) * 5 + ((i * 7) % 5);
         const y = 14 + Math.floor(i / per) * 22 + ((i * 3) % 6);
+        if (green) return <image key={i} href={green} x={x - 7} y={y - 10} width="14" height="20" transform={`rotate(${((i * 37) % 50) - 25} ${x} ${y})`} />;
         return <ellipse key={i} cx={x} cy={y} rx="4" ry="7" fill="#3f8a3f" transform={`rotate(${((i * 37) % 50) - 25} ${x} ${y})`} />;
       })}
     </svg>
