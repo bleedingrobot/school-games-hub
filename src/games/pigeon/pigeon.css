@@ -32,6 +32,13 @@
     radial-gradient(ellipse 60% 40% at 50% 30%, #8fb84a, transparent 70%),
     linear-gradient(var(--pg-sky) 0 70%, #9bc46a 70% 100%);
 }
+/* Painted branch backgrounds (art.tsx sets --pg-back; without it the gradient above shows). */
+.pg-tree[style*="--pg-back"], .pg-play[style*="--pg-back"] {
+  background: var(--pg-back) center / cover no-repeat, var(--pg-sky);
+}
+@media (max-width: 700px) {
+  .pg-tree[style*="--pg-back"], .pg-play[style*="--pg-back"] { background: var(--pg-back-small) center / cover no-repeat, var(--pg-sky); }
+}
 .pg-scene--silver { --pg-sky: #e2eef5; }
 .pg-scene--gold { --pg-sky: #ffe2a8; }
 
@@ -39,7 +46,7 @@
 .pg-home { flex: 1; display: flex; min-height: var(--pg-room, 100dvh); }
 .pg-tree { flex: 1; min-height: var(--pg-room, 100dvh); --pg-cl: clamp(40px, min(6.4vw, 10vh), 84px); }
 .pg-tree__clusters {
-  position: absolute; left: 7%; top: 9%;
+  position: absolute; left: 50%; top: 14%; translate: -50% 0;
   display: grid; grid-template-columns: repeat(5, var(--pg-cl)); gap: calc(var(--pg-cl) * 0.3) calc(var(--pg-cl) * 0.3);
 }
 .pg-tree__spot { width: var(--pg-cl); }
@@ -72,6 +79,9 @@
 
 /* The pictures. */
 .pg-friend, .pg-cluster, .pg-golden { display: block; width: 100%; }
+.pg-friend img, .pg-golden img { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+/* Berry clusters get a pale halo so they stand out from the painted leaves. */
+.pg-cluster img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 3px #fffbe6) drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 .pg-friend svg, .pg-cluster svg, .pg-golden svg { display: block; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 .pg-friend--cheer { animation: pg-flap 0.5s ease-in-out 3; }
 .pg-friend--eat { animation: pg-flap 0.4s ease-in-out 2; }

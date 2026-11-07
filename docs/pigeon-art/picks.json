@@ -1,0 +1,23 @@
+{
+  "friends/pigeon-sit": 1,
+  "friends/pigeon-eat": 2,
+  "friends/pigeon-cheer": 3,
+  "friends/sparrow-sit": 1,
+  "friends/sparrow-eat": 1,
+  "friends/sparrow-cheer": 1,
+  "friends/fantail-sit": 1,
+  "friends/fantail-eat": 1,
+  "friends/fantail-cheer": 3,
+  "friends/bellbird-sit": 3,
+  "friends/bellbird-eat": 2,
+  "friends/bellbird-cheer": 3,
+  "friends/parrot-sit": 3,
+  "friends/parrot-eat": 3,
+  "friends/parrot-cheer": 1,
+  "berries/cluster-gold": 2,
+  "berries/golden-branch": 1,
+  "back/bronze": 1,
+  "back/silver": 2,
+  "back/gold": 1,
+  "card": 2
+}
