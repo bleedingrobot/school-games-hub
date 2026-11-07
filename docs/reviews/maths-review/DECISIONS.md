@@ -50,7 +50,7 @@ Calibration changes from the helper drafts:
 
 ## Gap ranking (main-session judgement; the helper's ranks were mostly tied at 9)
 Tie-breaks: (a) fit for the 5–8 age group that the Foundational group serves; (b) it builds on a game we already have; (c) how often the hub already asks it as a bare quiz (understanding first).
-1. **Comparing, ordering and the number line (one more/one less, where does 37 go?)**: the base for place value, rounding and mental strategies; very game-friendly. Concept: *Kererū's Number Line*.
+1. **Comparing, ordering and the number line (one more/one less, where does 37 go?)**: the base for place value, rounding and mental strategies; very game-friendly. Concept: *Pigeon's Number Line*.
 2. **Equals as balance and missing numbers (8 = ? + 5)**: the classic misconception that blocks algebra; no game touches it. Concept: *Balance scales / see-saw*.
 3. **Place value to 100 and beyond (bundling tens)**: Tūī stops at 20. Concept: *Bundle sticks into tens*.
 4. **Equal groups and arrays (what multiplication means)**: times tables are the most-asked content in the hub, but always as a bare quiz. Concept: *Orchard rows / egg trays*.

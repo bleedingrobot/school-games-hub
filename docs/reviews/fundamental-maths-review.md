@@ -412,7 +412,7 @@ Ranking is the main-session judgement from DECISIONS.md. The helper's own ranks 
 
 | Rank | Gap | Why here | New game concept |
 |---|---|---|---|
-| 1 | Comparing, ordering and the number line (one more or less, where does 37 go?) | The base for place value, rounding and mental strategies; very game-friendly | *Kererū's Number Line* (N1) |
+| 1 | Comparing, ordering and the number line (one more or less, where does 37 go?) | The base for place value, rounding and mental strategies; very game-friendly | *Pigeon's Number Line* (N1) |
 | 2 | Equals as balance and missing numbers (8 = ? + 5) | The classic misconception that blocks algebra; no game touches it | *Balance scales / see-saw* (N2) |
 | 3 | Place value to 100 and beyond (bundling tens) | Tūī stops at 20 | *Bundle sticks into tens* (N3) |
 | 4 | Equal groups and arrays (what multiplication means) | Times tables are the most-asked content in the hub, but always as a bare quiz | *Orchard rows / egg trays* (N4) |
@@ -442,7 +442,7 @@ Effort: S = small, M = medium, L = large. Plan files are in `docs/plans/maths-re
 | 5 | R5 | Mistakes that teach: misconception-based wrong choices, "show why" with the same model, a cap on free taps then a guided redo | All 6 games | L | Very high | [R5-mistakes-that-teach](../plans/maths-review/R5-mistakes-that-teach.md) |
 | 6 | R6 | Help that follows the child: per-child help level that fades with success and returns with struggle (copy Weka) | Beanstalk, Hop, Penguin Pairs, Pipi | M | High | [R6-help-follows-the-child](../plans/maths-review/R6-help-follows-the-child.md) |
 | 7 | R7 | Teacher view for Foundational skills: class grid of stuck and secure pupils, Today alerts, Quick looks wired in | All 7 | M | High | [R7-teacher-foundational-view](../plans/maths-review/R7-teacher-foundational-view.md) |
-| 8 | N1 | Kererū's Number Line: comparing, ordering, one more or less | New | M | High | [N1-number-line](../plans/maths-review/new-games/N1-number-line.md) |
+| 8 | N1 | Pigeon's Number Line: comparing, ordering, one more or less | New | M | High | [N1-number-line](../plans/maths-review/new-games/N1-number-line.md) |
 | 9 | N2 | Balance scales: equals as balance, missing numbers | New | M | High | [N2-balance](../plans/maths-review/new-games/N2-balance.md) |
 | 10 | R8 | Longer ladders and "what's next" links between the Foundational games | Penguin Pairs, Tūī, Beanstalk, Hop | M | Med | [R8-longer-ladders-whats-next](../plans/maths-review/R8-longer-ladders-whats-next.md) |
 | 11 | N3 | Place value: bundle sticks into tens | New | M | High | [N3-place-value](../plans/maths-review/new-games/N3-place-value.md) |

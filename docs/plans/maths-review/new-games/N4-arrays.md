@@ -1,8 +1,8 @@
-# Pūkeko's Raupō Rows (equal groups and arrays, then the times tables): plan N4
+# Swamp Hen's Reed Rows (equal groups and arrays, then the times tables): plan N4
 
 > **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../../GAME-KIT-PLAN.md) first. Use any merged kit parts (K3 has `TenFrame`, `NumberLine`, `DotPicture`) instead of copying another game's code; for anything not in the kit yet, write it so it can move there later.
 
-Short id `pukeko`. **Status: plan written 7 Nov 2026 for the fundamental maths review (docs/reviews/maths-review/DECISIONS.md, gap 4). Not built, no code changed.** Guide: the Pūkeko. Chosen from `docs/plans/maths-review/new-games/IDEAS.md`.
+Short id `swamphen`. **Status: plan written 7 Nov 2026 for the fundamental maths review (docs/reviews/maths-review/DECISIONS.md, gap 4). Not built, no code changed.** Guide: the Swamp Hen. Chosen from `docs/plans/maths-review/new-games/IDEAS.md`.
 
 ## 1. The problem
 
@@ -20,37 +20,37 @@ Short id `pukeko`. **Status: plan written 7 Nov 2026 for the fundamental maths r
 
 ## 3. The change
 
-- **Branch and prerequisites:** create `pukeko` from `origin/main` in its own worktree. The shared maths families are a separate small branch first, `maths-pukeko-keys`, because `shared/maths/` can't be changed from a game branch (GAME_DEVELOPMENT_GUIDE.md section 2). It adds the new `ladderOnly` families to `shared/maths/skillPacks/earlyFacts.ts` and their ladder skills to `shared/maths/ladder.ts` (all `inWarmUp: false, inAuto: false`, so an older pupil's auto practice never meets them), with the curriculum tag checked against the NZ curriculum. It goes live before the game.
+- **Branch and prerequisites:** create `swamphen` from `origin/main` in its own worktree. The shared maths families are a separate small branch first, `maths-swamphen-keys`, because `shared/maths/` can't be changed from a game branch (GAME_DEVELOPMENT_GUIDE.md section 2). It adds the new `ladderOnly` families to `shared/maths/skillPacks/earlyFacts.ts` and their ladder skills to `shared/maths/ladder.ts` (all `inWarmUp: false, inAuto: false`, so an older pupil's auto practice never meets them), with the curriculum tag checked against the NZ curriculum. It goes live before the game.
 - **Built the same way as Tūī and Weka** (`docs/TUI-PLAN.md`, `docs/WEKA-PLAN.md`, `docs/EARLY-GAMES-PLAN.md` section 7): same look (clay, style B), Bella's voice, 10 goes a day, a server that makes and marks every round, a saved `reached` step.
 
 The times-table campaign order and key format are already shared (`shared/maths/ladder.ts`, `shared/maths/facts.ts`), so no shared maths changes except the new `ladderOnly` families.
 
 ### The game in plain words (and the section 1a answers)
 
-Pūkeko stalks the swamp and plants raupō (bulrush) shoots in neat rows for the swamp garden. **Big goal:** the 10 rows of the swamp garden turn from muddy brown to bronze, silver and gold, one change per NZ day played (30 counted days), and the Golden Raupō Garden is the prize. A pupil playing 3 or 4 days a week gets there in 8 to 10 weeks. After it: a new friend's garden (Kererū, Kea, Weka, Tūī, Kōtuku) starts at the child's step.
+Swamp Hen stalks the swamp and plants reed shoots in neat rows for the swamp garden. **Big goal:** the 10 rows of the swamp garden turn from muddy brown to bronze, silver and gold, one change per NZ day played (30 counted days), and the Golden Reed Garden is the prize. A pupil playing 3 or 4 days a week gets there in 8 to 10 weeks. After it: a new friend's garden (Kererū, Kea, Weka, Tūī, Kōtuku) starts at the child's step.
 
 **1a answers, briefly:**
 
-1. **Big goal:** the 10 rows of the swamp garden (see above), 30 finished days, then the Golden Raupō Garden. Recommended: yes; the simulator check is a script `scripts/pukeko-sim.mjs` that plays a pupil at 3 to 4 days a week and checks the prize lands in weeks 8 to 10.
+1. **Big goal:** the 10 rows of the swamp garden (see above), 30 finished days, then the Golden Reed Garden. Recommended: yes; the simulator check is a script `scripts/swamphen-sim.mjs` that plays a pupil at 3 to 4 days a week and checks the prize lands in weeks 8 to 10.
 2. **Season game?** No, because help and steps follow the child and nothing piles up that a late joiner can't catch (as Tūī and Weka: counted days, not dates, a missed day loses nothing). So there is no `season_fn` and no season reset; `keep_achievements` is true. Nothing needs the school's season date.
 3. **Moves a day:** no daily limit, because this is practice and more maths is simply good (Gem Keep, Bond Match). The first finished challenge of each NZ day changes one row of the garden; playing again that day is for fun and changes nothing (as Tūī). No hub points for the daily (the prize and achievements are the reward). So there is nothing for the "Unlimited today" switch or "moves left" to do, and no change to `shared/unlimited.ts` or `my_moves_left()`.
 4. **Progress bars:** in the game, the 10 rows of the swamp garden and a step bar (reuse `LevelBar` from `src/components/Progress.tsx` where it fits); on the home page the hub's level bar and next achievements come for free. A bar never shows maths results to classmates and never ranks.
-5. **Achievements** (built through `hub_games`: `counts_fn`, `achievement_measures`, `achievement_types` with `game = 'pukeko'`; no `rules_fn` points line):
+5. **Achievements** (built through `hub_games`: `counts_fn`, `achievement_measures`, `achievement_types` with `game = 'swamphen'`; no `rules_fn` points line):
 
 | Name | What it's for | Measure | Goal | Roughly who | Survives New Season |
 |---|---|---|---|---|---|
-| First row | Plant your first rows | `pukeko_days` | 1 | 90% of pupils who play | Yes: no season, so nothing resets |
-| Rows and rows | Finish 10 days | `pukeko_days` | 10 | 50% of pupils who play | Yes: no season, so nothing resets |
-| Turn it round | Pass step 2 (turn the garden) | `pukeko_step` | 3 | 40% of pupils who play | Yes: no season, so nothing resets |
-| Cut it up | Pass step 5 (the 6, 7, 8 cuts) | `pukeko_step` | 6 | 15% of pupils who play | Yes: no season, so nothing resets |
-| Golden Raupō Garden | The big goal: 30 finished days | `pukeko_prizes` | 1 | 10% of pupils who play | Yes: no season, so nothing resets |
+| First row | Plant your first rows | `swamphen_days` | 1 | 90% of pupils who play | Yes: no season, so nothing resets |
+| Rows and rows | Finish 10 days | `swamphen_days` | 10 | 50% of pupils who play | Yes: no season, so nothing resets |
+| Turn it round | Pass step 2 (turn the garden) | `swamphen_step` | 3 | 40% of pupils who play | Yes: no season, so nothing resets |
+| Cut it up | Pass step 5 (the 6, 7, 8 cuts) | `swamphen_step` | 6 | 15% of pupils who play | Yes: no season, so nothing resets |
+| Golden Reed Garden | The big goal: 30 finished days | `swamphen_prizes` | 1 | 10% of pupils who play | Yes: no season, so nothing resets |
 
-6. **Card art scene for James to paint** (`docs/HOME-ART-PLAN.md` style, then `src/assets/home/pukeko.webp` and a line in `src/components/gameCardArt.ts`): A golden-green swamp edge at dawn: a blue-purple pūkeko with a red beak and shield wades beside a neat grid of bright raupō shoots (four rows of six) in the mud, reeds behind; flat storybook style, no text.
-7. **Built-in guide:** the Pūkeko herself, in Bella's voice. A first walk through as a new pupil:
+6. **Card art scene for James to paint** (`docs/HOME-ART-PLAN.md` style, then `src/assets/home/swamphen.webp` and a line in `src/components/gameCardArt.ts`): A golden-green swamp edge at dawn: a blue-purple swamp hen with a red beak and shield wades beside a neat grid of bright reed shoots (four rows of six) in the mud, reeds behind; flat storybook style, no text.
+7. **Built-in guide:** the Swamp Hen herself, in Bella's voice. A first walk through as a new pupil:
 
 | Moment | Why a new child gets stuck | The fix |
 |---|---|---|
-| Opens the game | A field, a number sentence, a button | Pūkeko says "Plant a row!"; the first go is one row of 2 shoots |
+| Opens the game | A field, a number sentence, a button | Swamp Hen says "Plant a row!"; the first go is one row of 2 shoots |
 | First row plant | Child may tap the whole field | Only the next row slot is lit |
 | Turn step | The garden spins and the numbers change places | The spin is slow, the shoot colours stay with their shoots |
 | Under the mat | Hidden shoots feel like cheating | Mat edges show the first row and column; the tip says "Use the rows you can see" |
@@ -88,12 +88,12 @@ Wrong cards are the real slips between add and multiply and between rows and col
 | Question | Right | Wrong cards (the slip) |
 |---|---|---|
 | 4 rows of 6 | 24 | **10** (added the numbers: 4 + 6), **20** (skip counted one row short), **64** (joined the digits), **28** (off by a row of 4) |
-| Which garden is 3 × 5 (3 rows of 5) | 3 rows of 5 | **5 rows of 3** (turned: the same total, so Pūkeko says "this one is also 15; the question was rows first"), **3 + 5 shoots in a row** (added), **a scatter of 15** (no rows) |
+| Which garden is 3 × 5 (3 rows of 5) | 3 rows of 5 | **5 rows of 3** (turned: the same total, so Swamp Hen says "this one is also 15; the question was rows first"), **3 + 5 shoots in a row** (added), **a scatter of 15** (no rows) |
 | 24 shoots in 4 equal rows | 6 each | **20** (24 − 4), **28** (added), **4**, **8** (rows of 3: confused rows and columns) |
 | 6 × 7 cut into 5 rows and 1 | 42 | **35** (forgot the extra row), **12** (added), **48**, **13** |
 
-- **Show why with the same model.** A wrong tap *plants it*: the child's number of shoots is drawn into the field and Pūkeko counts them with the rows ("4 rows of 6 only fills 24 spaces; your 28 has four spare"). A "which garden?" miss lights both gardens' rows so the child sees the match.
-- **Free taps are capped:** after two wrong taps Pūkeko plants the rows with the child (the child taps) and the go is redone with fewer cards, recorded wrong. Three first-tap misses in a row keep level 5 for the round.
+- **Show why with the same model.** A wrong tap *plants it*: the child's number of shoots is drawn into the field and Swamp Hen counts them with the rows ("4 rows of 6 only fills 24 spaces; your 28 has four spare"). A "which garden?" miss lights both gardens' rows so the child sees the match.
+- **Free taps are capped:** after two wrong taps Swamp Hen plants the rows with the child (the child taps) and the go is redone with fewer cards, recorded wrong. Three first-tap misses in a row keep level 5 for the round.
 - **No guessing the tables:** the child also has to plant, share or choose a garden, not only tap a number; and each wrong card, when tapped, shows the picture of that wrong answer, so tapping them all still teaches.
 
 ### Help that follows each child (fading)
@@ -111,10 +111,10 @@ Six help levels (movement rules as Tūī: start at 5, two good challenges of 8 o
 
 A child whose records show a times-table skill secure (the hub's own "jumping ahead" rule, `shared/maths/ladder.ts:193-203`, 70 percent of the facts in box 2 or more) starts at step 5 and level 2; a child who has Hop's `skip-5` and `skip-10` secure starts at step 2. Everyone else starts at step 1 and level 5. Tables go in the order: 2, 5, 10, then 3, 4, then 6, 7, 8, then 9 (the hub's campaign order).
 
-- After each day's first (counted) challenge: **8 or more of 10 right at the first tap** is a good challenge; **two good in a row** take the child down one level; **4 or fewer right** is a hard challenge and goes up one straight away; anything else stays. The server saves the level and `good_in_row` in `pukeko_progress`; play-again goes later the same day don't move it.
+- After each day's first (counted) challenge: **8 or more of 10 right at the first tap** is a good challenge; **two good in a row** take the child down one level; **4 or fewer right** is a hard challenge and goes up one straight away; anything else stays. The server saves the level and `good_in_row` in `swamphen_progress`; play-again goes later the same day don't move it.
 - Inside one go, a wrong tap puts help up one level for that go, and a second wrong tap up to level 5 for that go.
 - **The quickMs rule (R2):** the quick-answer clock starts after the voice finishes and uses a junior value, so a careful child isn't stuck in a Leitner box (DECISIONS.md pattern 3); `afterAnswer` already takes a `quickMs` argument, so no shared change is needed.
-- Teacher setting `pukeko_help`: **Fades / Always / Off** (Fades by default, like Tūī): Always keeps level 4; Off means level 0 with no Peek, though a wrong tap still brings the picture back for that go.
+- Teacher setting `swamphen_help`: **Fades / Always / Off** (Fades by default, like Tūī): Always keeps level 4; Off means level 0 with no Peek, though a wrong tap still brings the picture back for that go.
 
 ### What is recorded for teachers
 
@@ -124,25 +124,25 @@ The record per child is the same as Tūī's and Weka's: `gem_keep_facts` (one ro
 
 ### Look and voice
 
-Clay look (style B), Bella reading the question aloud and saying the model sentence after every right answer; the child's help level fades the voice (level 5 counts along; levels 4 to 1 read the question; level 0 says only the short prompt; a speaker button always rereads it). The game's own mute `pukeko-voice`. Pictures are stand-ins drawn in code first; James paints the finals in ComfyUI (`docs/PUKEKO-ART-PLAN.md`, to be written in stage 1 as for `docs/WEKA-ART-PLAN.md`). Reduced motion respected. Wide screens first (Chromebooks, iPads); narrow phones in portrait must work without a second row.
+Clay look (style B), Bella reading the question aloud and saying the model sentence after every right answer; the child's help level fades the voice (level 5 counts along; levels 4 to 1 read the question; level 0 says only the short prompt; a speaker button always rereads it). The game's own mute `swamphen-voice`. Pictures are stand-ins drawn in code first; James paints the finals in ComfyUI (`docs/SWAMPHEN-ART-PLAN.md`, to be written in stage 1 as for `docs/WEKA-ART-PLAN.md`). Reduced motion respected. Wide screens first (Chromebooks, iPads); narrow phones in portrait must work without a second row.
 
 ## 4. Files affected
 
-Mine (new, freely): `shared/pukeko/` (`round.ts`, `play.ts`, `progress.ts`, `server.ts`, `memoryServices.ts`, `pukeko.test.ts`, plus one config file for every tuning number), `src/games/pukeko/` (`index.tsx`, `switch.ts`, `pukeko.css`, `backend.ts`, `words.ts`, `voiceLines.ts` and its test, a guide and teacher.ts, `art/`), `src/data/pukeko.ts`, `supabase/functions/pukeko/` (`handler.ts`, `entry.ts`, `handler.test.ts`, generated `index.ts`), `supabase/migrations/<next free number>_pukeko.sql` (take the number from `node scripts/migration-numbers.mjs`), `supabase/tests/database/pukeko.test.sql`, `preview/pukeko/` + `vite.pukeko-preview.config.ts`, `scripts/pukeko-sim.mjs`, `docs/PUKEKO-PLAN.md` (copied from this file), `docs/prompts/pukeko-golive.md`.
+Mine (new, freely): `shared/swamphen/` (`round.ts`, `play.ts`, `progress.ts`, `server.ts`, `memoryServices.ts`, `swamphen.test.ts`, plus one config file for every tuning number), `src/games/swamphen/` (`index.tsx`, `switch.ts`, `swamphen.css`, `backend.ts`, `words.ts`, `voiceLines.ts` and its test, a guide and teacher.ts, `art/`), `src/data/swamphen.ts`, `supabase/functions/swamphen/` (`handler.ts`, `entry.ts`, `handler.test.ts`, generated `index.ts`), `supabase/migrations/<next free number>_swamphen.sql` (take the number from `node scripts/migration-numbers.mjs`), `supabase/tests/database/swamphen.test.sql`, `preview/swamphen/` + `vite.swamphen-preview.config.ts`, `scripts/swamphen-sim.mjs`, `docs/SWAMPHEN-PLAN.md` (copied from this file), `docs/prompts/swamphen-golive.md`.
 
 **Shared files needing their own small branch (ask James first):**
-- `shared/maths/skillPacks/earlyFacts.ts` and `shared/maths/ladder.ts`: the new families and ladder skills (branch `maths-pukeko-keys`, live first).
-- `src/games/registry.ts` and `registry.test.ts` (the game's id, one line), `src/components/gameCardArt.ts` and `src/assets/home/pukeko.webp` (after James paints it), `scripts/build-functions.mjs` (the `FUNCTIONS` list), `package.json` scripts, `shared/README.md`, `docs/PRIVACY-SUMMARY.md` (the new `pukeko_progress`), `.gitignore` (`dist-preview-pukeko/`).
-- The teacher's Games table line (`teacher_pukeko_class`) is in my migration; the class grid of stuck pupils is R7's.
+- `shared/maths/skillPacks/earlyFacts.ts` and `shared/maths/ladder.ts`: the new families and ladder skills (branch `maths-swamphen-keys`, live first).
+- `src/games/registry.ts` and `registry.test.ts` (the game's id, one line), `src/components/gameCardArt.ts` and `src/assets/home/swamphen.webp` (after James paints it), `scripts/build-functions.mjs` (the `FUNCTIONS` list), `package.json` scripts, `shared/README.md`, `docs/PRIVACY-SUMMARY.md` (the new `swamphen_progress`), `.gitignore` (`dist-preview-swamphen/`).
+- The teacher's Games table line (`teacher_swamphen_class`) is in my migration; the class grid of stuck pupils is R7's.
 
 ## 5. Database / migration needs
 
-One new migration file (`<next free number>_pukeko.sql`), pasted in by hand at go-live like the others, modelled on `supabase/migrations/20261106000100_tui.sql`:
-- `pukeko_progress` (player, days_done, last_day, step, level, good_in_row, good_at_step, version, updated_at) and `pukeko_rounds` (player, seed, round), both with row level security; the round also keeps the slip data (taps, wrong cards).
-- `app_settings` columns `pukeko_enabled boolean default true` and `pukeko_help text default 'fade'` (fade, always, off).
-- `pukeko_counts(uuid)`, `pukeko_point_rules()` (no points line), `pukeko_players_list()`, `pukeko_last_played(uuid)`, `pukeko_last_day(who)` for the home page's next-part chip.
-- A `hub_games` row (`switch_column 'pukeko_enabled'`, `season_fn null`, `keep_achievements true`), `achievement_measures` (`pukeko_days`, `pukeko_step`, `pukeko_prizes`) and the five `achievement_types` above.
-- The teacher functions `teacher_pukeko_class`, `teacher_pukeko_student`. No change to other games' tables. Switched on for every class by default (the hub's rule for new games).
+One new migration file (`<next free number>_swamphen.sql`), pasted in by hand at go-live like the others, modelled on `supabase/migrations/20261106000100_tui.sql`:
+- `swamphen_progress` (player, days_done, last_day, step, level, good_in_row, good_at_step, version, updated_at) and `swamphen_rounds` (player, seed, round), both with row level security; the round also keeps the slip data (taps, wrong cards).
+- `app_settings` columns `swamphen_enabled boolean default true` and `swamphen_help text default 'fade'` (fade, always, off).
+- `swamphen_counts(uuid)`, `swamphen_point_rules()` (no points line), `swamphen_players_list()`, `swamphen_last_played(uuid)`, `swamphen_last_day(who)` for the home page's next-part chip.
+- A `hub_games` row (`switch_column 'swamphen_enabled'`, `season_fn null`, `keep_achievements true`), `achievement_measures` (`swamphen_days`, `swamphen_step`, `swamphen_prizes`) and the five `achievement_types` above.
+- The teacher functions `teacher_swamphen_class`, `teacher_swamphen_student`. No change to other games' tables. Switched on for every class by default (the hub's rule for new games).
 
 ## 6. Test steps
 
@@ -158,17 +158,17 @@ At most 8 automated tests:
 
 Plus the Weka-style `voiceLines.test.ts` and the `wekaGuide`-shaped guide test only if they stay inside the 8 (merge with 1 and 8).
 
-**In the preview** (`npm run preview:pukeko` or its vite config): play a day as a new child (guide, first go, first success, the next-step line), then a wrong tap at each kind (the feedback), a wrong tap three times (the cap), play 3 days to see the help fade and a hard day to see it return, try Lots / Some / Off, mute, a Chromebook width and a phone portrait width, reduced motion, and the teacher's pupil line. Check no screen needs reading beyond the numbers. James tries the guided first go himself.
+**In the preview** (`npm run preview:swamphen` or its vite config): play a day as a new child (guide, first go, first success, the next-step line), then a wrong tap at each kind (the feedback), a wrong tap three times (the cap), play 3 days to see the help fade and a hard day to see it return, try Lots / Some / Off, mute, a Chromebook width and a phone portrait width, reduced motion, and the teacher's pupil line. Check no screen needs reading beyond the numbers. James tries the guided first go himself.
 
 ## 7. Effort and impact
 
-**Effort L, impact Very high.** Gap 4: times tables are the most-asked content in the hub but always as a bare quiz; no game shows why 6 × 4 is 24. Build size: shared/pukeko about 800 lines + tests; src/games/pukeko about 1800 lines (rows planting, the spin, the mat, the cut line); one migration; one function. The largest of the five.
+**Effort L, impact Very high.** Gap 4: times tables are the most-asked content in the hub but always as a bare quiz; no game shows why 6 × 4 is 24. Build size: shared/swamphen about 800 lines + tests; src/games/swamphen about 1800 lines (rows planting, the spin, the mat, the cut line); one migration; one function. The largest of the five.
 
 ## 8. Session prompt (ready to paste)
 
 ```text
-You are building a new Games Hub game: Pūkeko's Raupō Rows (id pukeko). Work in /Users/jriley/games-hub-isles. Create branch pukeko from origin/main in its own worktree. Read docs/GAME_DEVELOPMENT_GUIDE.md (especially section 1a, section 2 and section 8) and the plan docs/plans/maths-review/new-games/N4-arrays.md by path first; also read docs/TUI-PLAN.md, docs/WEKA-PLAN.md and docs/EARLY-GAMES-PLAN.md section 7, and look at shared/tui, shared/weka and src/games/weka for how an early game is built. Do not re-decide anything the plan settles.
-Steps: (1) Tell James that the small shared branch maths-pukeko-keys (new ladderOnly families in shared/maths/skillPacks/earlyFacts.ts and ladder.ts) is needed first, and build it on its own branch only if he says so; until it is live, work against the same keys in your own test fixtures. (2) Copy the plan to docs/PUKEKO-PLAN.md. (3) Write shared/pukeko/ (config of every tuning number, round, play, progress, server, memory services) with the levels, wrong cards and help rules from the plan. (4) Write supabase/functions/pukeko/ and one migration (take the number from node scripts/migration-numbers.mjs) with the tables, settings, hub_games row, five achievements and teacher functions. (5) Write src/games/pukeko/ with the screens, stand-in art drawn in code, Bella voice lines, the guided first go and next-step line, Lots/Some/Off help, and the teacher line; add src/data/pukeko.ts, the preview folder and vite config, and scripts/pukeko-sim.mjs. (6) Add the registry and card-art lines on their own small branch only after asking James.
+You are building a new Games Hub game: Swamp Hen's Reed Rows (id swamphen). Work in /Users/jriley/games-hub-isles. Create branch swamphen from origin/main in its own worktree. Read docs/GAME_DEVELOPMENT_GUIDE.md (especially section 1a, section 2 and section 8) and the plan docs/plans/maths-review/new-games/N4-arrays.md by path first; also read docs/TUI-PLAN.md, docs/WEKA-PLAN.md and docs/EARLY-GAMES-PLAN.md section 7, and look at shared/tui, shared/weka and src/games/weka for how an early game is built. Do not re-decide anything the plan settles.
+Steps: (1) Tell James that the small shared branch maths-swamphen-keys (new ladderOnly families in shared/maths/skillPacks/earlyFacts.ts and ladder.ts) is needed first, and build it on its own branch only if he says so; until it is live, work against the same keys in your own test fixtures. (2) Copy the plan to docs/SWAMPHEN-PLAN.md. (3) Write shared/swamphen/ (config of every tuning number, round, play, progress, server, memory services) with the levels, wrong cards and help rules from the plan. (4) Write supabase/functions/swamphen/ and one migration (take the number from node scripts/migration-numbers.mjs) with the tables, settings, hub_games row, five achievements and teacher functions. (5) Write src/games/swamphen/ with the screens, stand-in art drawn in code, Bella voice lines, the guided first go and next-step line, Lots/Some/Off help, and the teacher line; add src/data/swamphen.ts, the preview folder and vite config, and scripts/swamphen-sim.mjs. (6) Add the registry and card-art lines on their own small branch only after asking James.
 Tests: at most 8 for the game, as listed in section 6 of the plan, plus the preview checks there. Run npm test, the type check and the lint.
 Stop and tell James before any live step (applying the migration, deploying the function, merging, switching on). Open a PR when done.
 ```
