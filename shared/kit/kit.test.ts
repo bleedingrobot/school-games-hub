@@ -5,7 +5,11 @@ import { makeRound as hopRound, showRound as showHops, HOPS_PER_ROUND } from '..
 import { seeded } from '../seededRandom';
 import { replay as tuiReplay } from '../tui/play';
 import { GOES_PER_ROUND as TUI_GOES, makeRound as tuiRound, placeAfter as tuiPlaceAfter, showRound as showTui, type HelpLevel, type Step } from '../tui/round';
+import { createHash } from 'node:crypto';
+import { WORDS as BEANSTALK_WORDS } from '../../src/games/beanstalk/words';
+import { makeRound as beanstalkRound, mistakeKind, replay as beanstalkReplay, TARGETS, type Tap as BeanstalkTap } from '../beanstalk/round';
 import { arcAfter, daysPerReward, finishDay } from './dayArc';
+import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
 import { fadeAfter, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
 import { replayTaps, type ReplayGo, type Tap } from './replay';
 
@@ -80,5 +84,67 @@ describe('the replay and the day arc', () => {
         expect(finishDay(d, last, '2026-11-05', PADS)).toEqual({ daysDone: hop.daysDone, lastDay: hop.lastPadDay, changed: hop.padChanged, reward: hop.jar });
       }
     }
+  });
+});
+
+describe('mistakes that teach', () => {
+  it('tags wrong choices, limits the shared tell, finds near misses and runs the two-tap flow', () => {
+    expect(tagWrongs([14, 41, 41, 20, 14], (n) => (n === 14 ? null : n === 41 ? 'reverse' : 'tens'))).toEqual([{ n: 41, kind: 'reverse' }, { n: 20, kind: 'tens' }]);
+    const endsInZero = (n: number) => n % 10 === 0;
+    expect(atMostShareTell(40, [30, 50, 39], endsInZero)).toBe(false); // three end in 0
+    expect(atMostShareTell(40, [30, 39, 41], endsInZero)).toBe(true);
+    expect(kindByUnits(unitsOff(12, 10), { one: 'c', over: 'o', under: 'u' })).toBe('o');
+    expect(kindByUnits(unitsOff(60, 100, 10), { one: 'c', over: 'o', under: 'u' })).toBe('u');
+    expect(kindByUnits(unitsOff(90, 100, 10), { one: 'c', over: 'o', under: 'u' })).toBe('c');
+    expect(kindByUnits(0, { one: 'c', over: 'o', under: 'u' })).toBeNull();
+    expect(hasNearMiss([3, 6, 8], 10)).toBe(true); // 3 + 6 = 9
+    expect(hasNearMiss([3, 7, 5], 10)).toBe(false);
+    // wrong, wrong: look together; the redo's wrong taps show why but never look again; a right tap ends the go
+    let go = NEW_GO;
+    go = stepGo(go, 'wrong');
+    expect(go.phase).toBe('why');
+    go = stepGo(go, 'wrong');
+    expect(go.phase).toBe('look');
+    expect(stepGo(go, 'wrong')).toBe(go); // taps are off while looking
+    go = stepGo(go, 'lookDone');
+    expect(go.phase).toBe('redo');
+    expect(stepGo(go, 'wrong').phase).toBe('redo');
+    expect(stepGo(go, 'right')).toEqual(NEW_GO);
+    expect(stepGo(stepGo(NEW_GO, 'wrong'), 'right')).toEqual(NEW_GO);
+  });
+
+  it('Beanstalk still makes the same rounds, kinds, lines and scoring as before the move', () => {
+    // Digest of the old Beanstalk code (7 Nov 2026): 1,500 seeds on each sum, played clean and with wrong pairs first, every tray, kind, line and answer.
+    const h = createHash('sha1');
+    for (const t of TARGETS) {
+      for (let a = 1; a <= 9; a++) for (let b = a; b <= 9; b++) h.update(`${t}:${a}:${b}:${BEANSTALK_WORDS.why((a * t) / 10, (b * t) / 10, t)}|`);
+      for (let seed = 0; seed < 1500; seed++) {
+        const round = beanstalkRound(seed, t);
+        h.update(JSON.stringify(round.leaves));
+        for (const mode of [0, 1]) {
+          const taps: BeanstalkTap[] = [];
+          let r = beanstalkReplay(round, taps);
+          for (let guard = 0; !r.done && guard < 100; guard++) {
+            const s = r.onScreen;
+            h.update(JSON.stringify(s));
+            const a = s[0];
+            if (mode === 1 && guard % 3 !== 2) {
+              const wrong = s.flatMap((x) => s.filter((y) => y > x && round.leaves[x] + round.leaves[y] !== t).map((y) => [x, y]))[0];
+              if (wrong) {
+                taps.push({ a: wrong[0], b: wrong[1], ms: 500 });
+                h.update(String(mistakeKind(round.leaves[wrong[0]] + round.leaves[wrong[1]], t)));
+                r = beanstalkReplay(round, taps);
+                h.update(JSON.stringify([r.wrongInGo, r.tried, r.answers]));
+                continue;
+              }
+            }
+            taps.push({ a, b: s.find((j) => j !== a && round.leaves[a] + round.leaves[j] === t)!, ms: 900 });
+            r = beanstalkReplay(round, taps);
+          }
+          h.update(JSON.stringify([r.answers, r.mistakes, r.shown]));
+        }
+      }
+    }
+    expect(h.digest('hex')).toBe('0ed75da9c90d68506c236e53eba1f3160c8f971a');
   });
 });

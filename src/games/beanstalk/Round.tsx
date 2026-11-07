@@ -12,6 +12,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
 import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import type { Child } from './backend';
 import { JoinedFrame, Leaf, type LeafLook } from './Leaf';
@@ -34,18 +36,6 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 const WOBBLE_MS = 500;
-/** "Let's look together": a dot of the partner every so often, and the child can move on after 3 seconds. */
-const FILL_DOT_MS = 450;
-const LOOK_SKIP_MS = 3000;
-/** If the voice never says it has finished (a line cut off), the look still ends. */
-const LOOK_LONGEST_MS = 12000;
-
-/** "Let's look together" for this leaf, with its partner's dots counted into its frame (`filled` so far). */
-interface Look {
-  anchor: number;
-  filled: number;
-  canSkip: boolean;
-}
 
 interface Props {
   seed: number;
@@ -79,11 +69,11 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
   const [wobble, setWobble] = useState<number[]>([]);
   /** The last wrong pair, shown joined with its why-line until the next pair is tapped. */
   const [why, setWhy] = useState<{ a: number; b: number } | null>(null);
-  const [look, setLook] = useState<Look | null>(null);
+  const { look, start: startLook, skip: skipLook } = useLookTogether(say);
+  /** The go's place in the two-tap flow (shared/kit/mistakes.ts): the second wrong pair is "Let's look together". */
+  const go = useRef(NEW_GO);
   /** After "Let's look together": the leaf the child now finds the partner of. It stays picked. */
   const [redo, setRedo] = useState<number | null>(null);
-  /** Counts each "Let's look together", so its late timers and voice callbacks do nothing once it has ended. */
-  const lookRun = useRef(0);
   const since = useRef(Date.now());
   /** Set by the first tap, so the end of the opening line no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -124,48 +114,23 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
 
   /** The second wrong pair of a go: show the first leaf's partner filling its frame, then ask the child to find it. */
   function lookTogether(anchor: number) {
-    const run = ++lookRun.current;
-    const live = () => lookRun.current === run;
     const n = round.leaves[anchor];
-    const dotsToAdd = (target - n) / (target / 10);
-    let said = false;
-    let filled = false;
-    const end = () => {
-      if (!live()) return;
-      lookRun.current++;
-      setLook(null);
-      setRedo(anchor);
-      setPicked(anchor);
-      since.current = Date.now();
-      say(WORDS.nowTry(n));
-    };
-    const endIfDone = () => {
-      if (said && filled) later(700, end);
-    };
-    let started = false;
-    const fill = () => {
-      if (!live() || started) return;
-      started = true;
-      say(WORDS.fillUp(n, target), () => {
-        said = true;
-        if (live()) endIfDone();
-      });
-      for (let d = 1; d <= dotsToAdd; d++) later(d * FILL_DOT_MS, () => live() && setLook((l) => l && { ...l, filled: d }));
-      later(dotsToAdd * FILL_DOT_MS + 300, () => {
-        filled = true;
-        if (live()) endIfDone();
-      });
-    };
     setWhy(null);
     setPicked(null);
-    setLook({ anchor, filled: 0, canSkip: false });
-    say(WORDS.lookTogether, fill);
-    later(1800, fill); // the voice is off or slow: count anyway
-    later(LOOK_SKIP_MS, () => live() && setLook((l) => l && { ...l, canSkip: true }));
-    later(LOOK_LONGEST_MS, end);
-    skipLook.current = end;
+    startLook({
+      anchor,
+      steps: (target - n) / (target / 10),
+      openingLine: WORDS.lookTogether,
+      fillLine: WORDS.fillUp(n, target),
+      onEnd: () => {
+        go.current = stepGo(go.current, 'lookDone');
+        setRedo(anchor);
+        setPicked(anchor);
+        since.current = Date.now();
+        say(WORDS.nowTry(n));
+      },
+    });
   }
-  const skipLook = useRef<() => void>(() => {});
 
   function tap(leaf: number) {
     if (flying.length || look) return;
@@ -190,7 +155,8 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
       setWobble([picked, leaf]);
       later(WOBBLE_MS, () => setWobble([]));
       // The second wrong pair of a go (not counting those after "Let's look together"): look together at the first leaf.
-      if (redo === null && replay(round, next).wrongInGo === 2) {
+      go.current = stepGo(go.current, 'wrong');
+      if (go.current.phase === 'look') {
         lookTogether(first);
         return;
       }
@@ -198,6 +164,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
       say(WORDS.why(x, y, target));
       return;
     }
+    go.current = stepGo(go.current, 'right');
     setWhy(null);
     setRedo(null);
     setPicked(null);
@@ -263,25 +230,26 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
         </button>
         {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
         {why && (
-          <div className="bs-why" role="status" key={`${why.a}-${why.b}-${taps.length}`}>
-            {/* Smaller number first, as the line says it. */}
-            <JoinedFrame a={Math.min(round.leaves[why.a], round.leaves[why.b])} b={Math.max(round.leaves[why.a], round.leaves[why.b])} step={step} />
-            <p>{WORDS.why(round.leaves[why.a], round.leaves[why.b], target)}</p>
-          </div>
+          <ShowWhy
+            prefix="bs"
+            tapKey={`${why.a}-${why.b}-${taps.length}`}
+            // Smaller number first, as the line says it.
+            picture={<JoinedFrame a={Math.min(round.leaves[why.a], round.leaves[why.b])} b={Math.max(round.leaves[why.a], round.leaves[why.b])} step={step} />}
+            line={WORDS.why(round.leaves[why.a], round.leaves[why.b], target)}
+          />
         )}
         {look && (
-          <div className="bs-why bs-why--look" role="status">
-            <p className="bs-why__title">{WORDS.lookTogether}</p>
-            <JoinedFrame a={round.leaves[look.anchor]} b={target - round.leaves[look.anchor]} step={step} more={look.filled} />
-            <p>{WORDS.fillUp(round.leaves[look.anchor], target)}</p>
-            {look.canSkip && (
-              <button type="button" className="bs-hear" onClick={() => skipLook.current()}>
-                {WORDS.goOn}
-              </button>
-            )}
-          </div>
+          <LookTogether
+            prefix="bs"
+            title={WORDS.lookTogether}
+            picture={<JoinedFrame a={round.leaves[look.anchor]} b={target - round.leaves[look.anchor]} step={step} more={look.filled} />}
+            line={WORDS.fillUp(round.leaves[look.anchor], target)}
+            skipLabel={WORDS.goOn}
+            canSkip={look.canSkip}
+            onSkip={skipLook}
+          />
         )}
-        {redo !== null && !why && <p className="bs-why bs-why--try">{WORDS.nowTry(round.leaves[redo])}</p>}
+        {redo !== null && !why && <NowYouTry prefix="bs" line={WORDS.nowTry(round.leaves[redo])} />}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>
