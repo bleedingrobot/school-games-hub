@@ -18,7 +18,7 @@ import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, poolAfter } from './progress';
-import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
+import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, topSecure, type Level, type Round } from './round';
 
 export type KororaAction = 'load' | 'start' | 'finish';
 
@@ -45,7 +45,7 @@ export const HELP_SETTINGS: readonly HelpSetting[] = ['fade', 'always', 'off'];
 export interface Settings {
   enabled: boolean;
   /**
-   * The teacher's help setting: 'fade' (full pictures on bronze days, faint on silver, none on gold), 'always' (full
+   * The teacher's help setting: 'fade' (each go's picture follows how well the child knows that fact, saved on the go as `h`), 'always' (full
    * pictures every day) or 'off' (words and numbers only, from the first day).
    */
   help: HelpSetting;
@@ -168,7 +168,8 @@ export async function handleKorora(services: KororaServices, player: string, bod
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `korora:${seed}`, answers);
         if (result.goldenFish) await services.progressChanged(player);
-        return ok({ ...result, level: reached, levelBefore });
+        // The "what's next" card (R8): the near doubles' records are secure once these answers are in.
+        return ok({ ...result, level: reached, levelBefore, topSecure: facts !== 'busy' && topSecure(withAnswers(facts, answers)) });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

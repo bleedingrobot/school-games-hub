@@ -1,0 +1,57 @@
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeRound, showRound, type Round } from '../../../shared/korora/round';
+import { Goes } from './Goes';
+import { WORDS } from './words';
+
+describe('Fair or not with a real pile (R9)', () => {
+  beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }));
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  /** A round of fair goes only, each with the given help. */
+  const fairRound = (h: 'full' | 'faint' | 'none'): Round => {
+    const base = makeRound(5, [], { gold: true });
+    const fair = base.goes.filter((g) => g.key.startsWith('oddeven:')).map((g) => ({ ...g, h }));
+    return { ...base, goes: [...fair, ...base.goes.slice(0, 8)] }; // fair goes first, then the other eight
+  };
+  const bowls = () => [...document.querySelectorAll('.kr-bowl')].map((b) => b.querySelectorAll('.kr-fish').length);
+  const choice = (n: number) => screen.getByRole('button', { name: new RegExp(n === 1 ? WORDS.fair : n === 0 ? WORDS.tooMany : WORDS.tooFew) });
+
+  it('keeps the choices shut until the pile is shared two at a time, then hints after the second wrong choice and counts one bowl', () => {
+    const say = vi.fn();
+    const full = fairRound('faint');
+    const go = showRound(full)[0];
+    render(<Goes round={full} help="faint" say={say} scenery="bronze" friend="korora" sound={false} onDone={vi.fn()} />);
+    expect(go.kind).toBe('fair');
+    expect(choice(go.answer)).toHaveProperty('disabled', true);
+    const pairs = Math.floor(go.n / 2);
+    for (let i = 0; i < pairs; i++) fireEvent.click(screen.getByRole('button', { name: i < pairs ? WORDS.shareTwo : WORDS.allShared }));
+    expect(bowls()).toEqual([pairs, pairs]);
+    expect(choice(go.answer)).toHaveProperty('disabled', false);
+    // Two wrong choices bring the pairing-off hint; the right one counts one bowl.
+    const wrong = go.choices.filter((c) => c !== go.answer);
+    fireEvent.click(choice(wrong[0]));
+    expect(say).toHaveBeenLastCalledWith(WORDS.tryAgain);
+    fireEvent.click(choice(wrong[1]));
+    expect(say).toHaveBeenLastCalledWith(WORDS.pairOff);
+    fireEvent.click(choice(go.answer));
+    const k = pairs;
+    expect(say).toHaveBeenLastCalledWith(go.answer === 1 ? WORDS.fairYes(k) : WORDS.oddYes(k));
+    act(() => vi.advanceTimersByTime(1000 + k * 450));
+    expect(document.querySelectorAll('.kr-fish__count')).toHaveLength(k);
+  });
+
+  it('shares the first two pairs itself on a bronze go, and the child shares the rest', () => {
+    const full = fairRound('full');
+    const go = showRound(full)[0];
+    render(<Goes round={full} help="full" say={vi.fn()} scenery="bronze" friend="korora" sound={false} onDone={vi.fn()} />);
+    expect(bowls()).toEqual([0, 0]);
+    act(() => vi.advanceTimersByTime(2000));
+    expect(bowls()).toEqual([2, 2]);
+    expect((screen.getAllByRole('button').find((b) => b.className.includes('kr-choice')) as HTMLButtonElement).disabled).toBe(true);
+    expect(go.n).toBeGreaterThanOrEqual(6);
+  });
+});

@@ -15,7 +15,7 @@ import { newMemory, pickFromPools, scheduleRepeat, STEP_SECURE_SHARE, type Pools
 import type { FactAnswer } from './leitner';
 import type { AnswerResult, Question, SkillPack } from './skillPack';
 import { BANDED_PACKS } from './skillPacks';
-import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS } from './skillPacks/earlyFacts';
+import { EARLY_FACTS, earlyFactsPack, SKIP_FROM_STEPS, SKIP_MORE_STEPS, SKIP_STEPS } from './skillPacks/earlyFacts';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
@@ -92,7 +92,7 @@ export const LADDER: LadderSkill[] = [
   { id: 'parts-10', label: 'Parts of numbers to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: earlyKeys('parts10'), built: true, inWarmUp: false, inAuto: false },
   { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s <= 10)], built: true },
   { id: 'dbl-half-10', label: 'Doubles and halves to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P2'], keys: earlyKeys('dblHalf10'), built: true },
-  { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: earlyKeys('tenAnd'), built: true },
+  { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: [...earlyKeys('tenAnd'), ...earlyKeys('tenLess')], built: true },
   { id: 'facts-20', label: 'Number facts to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P1'], keys: [...earlyKeys('bond20'), ...addKeys((s) => s > 10)], built: true },
   { id: 'dbl-half-20', label: 'Doubles and halves to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('dblHalf20'), built: true },
   // Skip counting leads into ×10, ×5 and ×2, so a junior meets tens, then fives, then twos (no curriculum tag checked yet).
@@ -100,10 +100,35 @@ export const LADDER: LadderSkill[] = [
   ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
   // Odd and even to 20 sits beside the ladder (`inAuto`): Penguin Pairs asks it on gold days from its own rules, and a teacher can choose it.
   { id: 'odd-even', label: 'Odd and even numbers to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('oddEven'), built: true, inWarmUp: false, inAuto: false },
+  // More skip counting sits beside the ladder (`inAuto`): Hop asks threes, fours, tens past 100 and counting from a start that isn't a multiple from its own rules (R8), and a teacher can choose them.
+  ...SKIP_MORE_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false, inAuto: false })),
+  { id: 'skip-10-past-100', label: 'Counting in tens past 100', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('skip10h'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'skip-from', label: 'Counting on from a start (3, 13, 23)', stage: 'early-facts', curriculumTags: [], keys: SKIP_FROM_STEPS.flatMap(({ step }) => earlyKeys(`skip${step}o`)), built: true, inWarmUp: false, inAuto: false },
+  // Ten more and ten less on the teens (Tūī's step 6) sits beside the ladder too.
+  { id: 'ten-more-less-teens', label: 'Ten more and ten less (14 + 10, 24 − 10)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: [...earlyKeys('tenUp'), ...earlyKeys('tenDown')], built: true, inWarmUp: false, inAuto: false },
   // The number line (Pigeon's Number Line) sits beside the ladder (`inAuto`): the game draws and marks its own questions (a line is a picture), and only records these keys like any early fact. Typed, they read as a short sentence.
   { id: 'number-line-100', label: 'The number line to 100', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('place100'), ...earlyKeys('read100'), ...earlyKeys('near10'), ...earlyKeys('zoom')], built: true, inWarmUp: false, inAuto: false },
   { id: 'ten-more-less', label: 'Ten more and ten less', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: earlyKeys('tens100'), built: true, inWarmUp: false, inAuto: false },
   { id: 'number-line-1000', label: 'The number line to 1000', stage: 'place-value', curriculumTags: ['MS.Y4.NUM.NS.P1'], keys: [...earlyKeys('place1000'), ...earlyKeys('read1000'), ...earlyKeys('near100')], built: true, inWarmUp: false, inAuto: false },
+  // Parrot's See-saw (the equals sign) sits beside the ladder (`inAuto`): the game makes and marks its own questions and only records these keys like any early fact. Typed, they read as short see-saw sentences.
+  { id: 'balance-10', label: 'The equals sign: a missing number to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqmiss'), ...earlyKeys('eqswap')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'balance-20', label: 'The equals sign: two numbers each side, and taking away', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqboth'), ...earlyKeys('eqsub')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'true-false', label: 'The equals sign: true or false', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('eqtf'), built: true, inWarmUp: false, inAuto: false },
+  // Tens and ones (Lizard's Bundles) sit beside the ladder too (`inAuto`): the game draws bundles and sticks and marks them itself; these keys are only recorded.
+  { id: 'bundles-50', label: 'Bundles of ten and tens and ones to 50', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) <= 50), built: true, inWarmUp: false, inAuto: false },
+  { id: 'place-value-100', label: 'Tens and ones to 100, and zero', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...[...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) > 50), ...earlyKeys('pvzero')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'regroup-100', label: 'Tying and untying bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P2'], keys: earlyKeys('pvregroup'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'ten-more-less-100', label: 'Ten more and ten less with bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: earlyKeys('pvten'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'place-value-1000', label: 'Hundreds, tens and ones', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('pvbuild3'), ...earlyKeys('pvread3'), ...earlyKeys('pvhun')], built: true, inWarmUp: false, inAuto: false },
+  // Equal rows and arrays (Swamp Hen's Reed Rows) sit beside the ladder (`inAuto`): the game draws and marks its own questions and records these keys. Typed, they read as a short sentence.
+  { id: 'equal-rows', label: 'Equal rows (4 rows of 6)', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P3'], keys: earlyKeys('rows'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'arrays-turn', label: 'Turning an array round', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P3'], keys: [...earlyKeys('turn'), ...earlyKeys('which')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'sharing-rows', label: 'Sharing into equal rows', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P4'], keys: earlyKeys('share'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'cut-arrays', label: 'Cutting an array into known parts', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P3'], keys: earlyKeys('cut'), built: true, inWarmUp: false, inAuto: false },
+  // Robin's Berry Basket (counting out a set) sits beside the ladder (`inAuto`): the game makes and marks its own questions and only records these keys like any early fact.
+  { id: 'count-out-10', label: 'Counting out and counting a set to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) <= 10), ...earlyKeys('howMany')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'count-out-20', label: 'Counting out and counting a set to 20', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('give').filter((k) => Number(k.slice(6)) > 10), ...earlyKeys('across')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'count-on', label: 'One more: counting on from a covered plate', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('countOn'), built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -285,8 +310,11 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
+  if (/^(rows|turn|share|cut|which):/.test(key)) return 'early-facts';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return 'early-facts';
+  if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
+  if (/^(give|howmany|counton|across):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;

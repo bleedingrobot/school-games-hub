@@ -40,7 +40,7 @@ he can only jump in equal hops. The pond is a number line: lily pads float acros
 - **Question kinds (James, 4 Nov):**
   - **Missing pad:** 2, 4, _, 8.
   - **What comes next:** 2, 4, 6, _.
-  - **Counting back, on gold days only:** 10, 8, _, 4, as Hop hops home.
+  - **Counting back, from the first day a step is secure going forward (R9), three on gold days:** 10, 8, _, 4, as Hop hops home.
   - Starts not on a multiple of the step (3, 5, 7…) are not used.
 - **Number range:** 10s up to 100, 5s up to 50, 2s up to 20 to start with, and possibly 30 later.
 - **Wrong choices** sit next to the right answer: one more or one less (7 instead of 8), the wrong step (5 instead of
@@ -68,6 +68,12 @@ what-comes-next facts are under 70% secure (box 2 or higher, the hub's rule). Co
 because it is only asked on gold days (9 of each step's 26 keys are `back`, so counting them would keep every child on 10s
 until day 21). The server keeps the furthest step reached (`reached`, saved in `hop_progress` at Stage 3), so a child never
 drops back a step. Once 2s are secure the child stays on 2s.
+
+**R8, 7 Nov 2026: a longer ladder.** After twos come threes (to 30), fours (to 40) and tens past 100 (to 200), saved as `reached`
+3, 4 and 200 (migration 20261107000600 widens the checks); each is passed by the same 70% rule and the last is where a child
+stays. The keys are the shared `skip3`, `skip4` and `skip10h` families, which sit beside the maths ladder, not in auto
+practice. On a gold day two hops start off a multiple ("start at 3, hop by 10", the `skip{step}o` keys) from steps the child
+has already passed. The signpost to Penguin Pairs still shows once twos are secure.
 
 **A round** (`makeRound(seed, records, { reached, gold })`) is 10 different facts of today's step, weakest first (ties by
 the seed), in a shuffled order. On gold days the last 3 hops count back, as Hop hops home. The shared family rolls each

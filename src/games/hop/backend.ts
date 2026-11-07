@@ -3,11 +3,12 @@
  * is reached through src/data/hop.ts; the trial backend below runs the very same rules in this browser for the preview.
  * `fromServer` turns either one's replies into what the screens use.
  */
-import type { SkipStep } from '../../../shared/maths/skillPacks/earlyFacts';
+
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/hop/memoryServices';
 import type { Tap } from '../../../shared/hop/play';
 import type { FinishResult } from '../../../shared/hop/progress';
-import type { Round } from '../../../shared/hop/round';
+import { stepKeys, STEPS, type HopStep, type Round } from '../../../shared/hop/round';
+import { newStats } from '../../../shared/maths/leitner';
 import { handleHop, type HopReply } from '../../../shared/hop/server';
 
 export interface HopState {
@@ -16,15 +17,19 @@ export interface HopState {
   /** Today's NZ date by the server's clock. */
   today: string;
   /** The step the next challenge counts in. */
-  step: SkipStep;
+  step: HopStep;
+  /** The top step (twos) is secure, so the finish screen can point on to Penguin Pairs. */
+  topSecure: boolean;
   /** False when the teacher has turned the hops' step labels off for the class. */
   labels: boolean;
 }
 
 export interface HopFinish extends FinishResult {
   /** The step for next time, and the one this challenge was in: different when the child moved up. */
-  step: SkipStep;
-  stepBefore: SkipStep;
+  step: HopStep;
+  stepBefore: HopStep;
+  /** The top step is secure after this challenge. */
+  topSecure: boolean;
 }
 
 export interface HopBackend {
@@ -111,8 +116,17 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     f(save);
     write();
   };
-  const pupil = (s: TrialSave) => s.data.players[PUPIL] ?? { daysDone: 0, lastPadDay: null, reached: 10 as SkipStep, version: 1 };
+  const pupil = (s: TrialSave) => s.data.players[PUPIL] ?? { daysDone: 0, lastPadDay: null, reached: 10 as HopStep, version: 1 };
   const tools = {
+    /** Counts in this step and makes every fact of it, and of the steps before it, secure (box 3), as if the child had mastered them. */
+    makeSecure: (step: HopStep) =>
+      change((s) => {
+        const p = pupil(s);
+        s.data.players[PUPIL] = { ...p, reached: step, version: p.version + 1 };
+        const have = s.data.facts[PUPIL] ?? [];
+        const keys = new Set(STEPS.slice(0, STEPS.indexOf(step) + 1).flatMap(stepKeys));
+        s.data.facts[PUPIL] = [...have.filter((f) => !keys.has(f.key)), ...[...keys].map((key) => ({ ...newStats(key), attempts: 6, correct: 6, box: 3 }))];
+      }),
     nextDay: () => change((s) => void (s.dayShift += 1)),
     /** Jumps to just after this many finished days, as if each was on its own day. */
     jumpTo: (daysDone: number) =>
@@ -121,7 +135,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
         s.data.players[PUPIL] = { ...p, daysDone, lastPadDay: null, version: p.version + 1 };
       }),
     /** Counts in this step from now on, as if the child's records had just moved them there. */
-    setStep: (step: SkipStep) =>
+    setStep: (step: HopStep) =>
       change((s) => {
         const p = pupil(s);
         s.data.players[PUPIL] = { ...p, reached: step, version: p.version + 1 };

@@ -37,9 +37,13 @@ function groupsFor(go: Go, kind: WrongKind): { groups: Group[]; sign: string } {
       return { groups: [{ count: half, tone: 'lit', chick: true }, { count: half, tone: 'lit', chick: true }], sign: '=' };
     case 'double':
       return { groups: [{ count: n, tone: 'dim', label: 'the pile' }, { count: half, tone: 'lit', chick: true }, { count: half, tone: 'dim', chick: true }], sign: '→' };
+    case 'noExtra':
+      return { groups: [{ count: n, tone: 'lit', label: 'rock' }, { count: n, tone: 'lit', label: 'water' }, { count: 1, tone: 'ghost', label: 'one more' }], sign: '+' };
+    case 'bigger':
+      return { groups: [{ count: n, tone: 'lit', label: 'rock' }, { count: n + 1, tone: 'lit', label: 'water' }], sign: '+' };
     case 'miscount':
-      return go.kind === 'double'
-        ? { groups: [{ count: 2 * n, tone: 'lit', counted: true }], sign: '' }
+      return go.kind !== 'half'
+        ? { groups: [{ count: go.answer, tone: 'lit', counted: true }], sign: '' }
         : { groups: [{ count: half, tone: 'lit', chick: true, counted: true }, { count: half, tone: 'dim', chick: true }], sign: '' };
   }
 }

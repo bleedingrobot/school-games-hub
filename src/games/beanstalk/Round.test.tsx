@@ -23,6 +23,7 @@ describe("Kiwi's Beanstalk play screen", () => {
       await screen.findByRole('button', { name: 'Hear it again' });
     };
     const bridge = () => screen.queryByText(/^Each dot is a/);
+    const bridge20 = () => screen.queryByText(/^Two ten-frames make 20/);
     const hand = () => screen.queryByRole('button', { name: /try this one/ });
 
     await playAfter(3);
@@ -30,20 +31,27 @@ describe("Kiwi's Beanstalk play screen", () => {
     expect(bridge()).toBeNull();
     expect(hand()).toBeNull();
 
-    // A new tūī beanstalk: bonds to 100, with the hand and the bridge, using the numbers of the leaf the hand points at.
+    // The bonds to 20 beanstalk (maths review R8): the hand and a bridge from the ten-frame, using the numbers of the leaf the hand points at.
     await playAfter(DAYS_PER_EGG);
+    expect(screen.getByText('Make 20')).toBeInTheDocument();
+    const lead = Number(hand()!.getAttribute('aria-label')!.split(',')[0]);
+    expect(bridge20()).toHaveTextContent(`Two ten-frames make 20. ${lead} and ${20 - lead} make 20.`);
+    expect(bridge()).toBeNull();
+
+    // A new tūī beanstalk: bonds to 100, with the hand and the bridge, using the numbers of the leaf the hand points at.
+    await playAfter(2 * DAYS_PER_EGG);
     expect(screen.getByText('Make 100')).toBeInTheDocument();
     const first = Number(hand()!.getAttribute('aria-label')!.split(',')[0]);
     const tens = (n: number) => `${n / 10} ten${n === 10 ? '' : 's'}`;
     expect(bridge()).toHaveTextContent(`Each dot is a ten. ${tens(first)} and ${tens(100 - first)} make 10 tens. That is 100.`);
 
     // The next day on the same beanstalk: the badge stays, the bridge and hand don't.
-    await playAfter(DAYS_PER_EGG + 1);
+    await playAfter(2 * DAYS_PER_EGG + 1);
     expect(screen.getByText('Make 100')).toBeInTheDocument();
     expect(bridge()).toBeNull();
     expect(hand()).toBeNull();
 
-    await playAfter(2 * DAYS_PER_EGG);
+    await playAfter(3 * DAYS_PER_EGG);
     expect(screen.getByText('Make 1000')).toBeInTheDocument();
     expect(bridge()).toHaveTextContent(/^Each dot is a hundred\. \d hundreds? and \d hundreds? make 10 hundreds\. That is 1000\.$/);
   });

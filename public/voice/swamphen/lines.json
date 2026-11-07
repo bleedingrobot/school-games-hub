@@ -1,0 +1,978 @@
+[
+ {
+  "slug": "let-s-look-together",
+  "text": "Let’s look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try."
+ },
+ {
+  "slug": "yes-that-is-it",
+  "text": "Yes! That is it."
+ },
+ {
+  "slug": "lovely-you-counted-it",
+  "text": "Lovely! You counted it."
+ },
+ {
+  "slug": "well-done",
+  "text": "Well done!"
+ },
+ {
+  "slug": "hello-i-am-swamp-hen-i-plant-my-shoots-in-equal-rows",
+  "text": "Hello! I am Swamp Hen. I plant my shoots in equal rows."
+ },
+ {
+  "slug": "count-one-row-then-jump-along-the-rows-tap-the-answer",
+  "text": "Count one row, then jump along the rows. Tap the answer."
+ },
+ {
+  "slug": "that-adds-the-numbers-count-equal-rows-instead",
+  "text": "That adds the numbers. Count equal rows instead."
+ },
+ {
+  "slug": "those-two-digits-are-stuck-together-count-the-rows",
+  "text": "Those two digits are stuck together. Count the rows."
+ },
+ {
+  "slug": "that-is-a-row-too-few-count-every-row",
+  "text": "That is a row too few. Count every row."
+ },
+ {
+  "slug": "that-has-an-extra-row-or-a-few-extra-shoots-count-again",
+  "text": "That has an extra row, or a few extra shoots. Count again."
+ },
+ {
+  "slug": "you-left-a-row-out-count-all-the-rows",
+  "text": "You left a row out. Count all the rows."
+ },
+ {
+  "slug": "sharing-is-not-taking-away-deal-the-shoots-into-the-rows",
+  "text": "Sharing is not taking away. Deal the shoots into the rows."
+ },
+ {
+  "slug": "that-is-how-many-rows-there-are-how-many-shoots-in-each-one",
+  "text": "That is how many rows there are. How many shoots in each one?"
+ },
+ {
+  "slug": "that-garden-is-turned-the-other-way-look-at-the-rows-first",
+  "text": "That garden is turned the other way. Look at the rows first."
+ },
+ {
+  "slug": "those-shoots-are-not-in-rows-look-for-equal-rows",
+  "text": "Those shoots are not in rows. Look for equal rows."
+ },
+ {
+  "slug": "not-quite-count-along-the-rows",
+  "text": "Not quite. Count along the rows."
+ },
+ {
+  "slug": "today-s-reed-row-is-ready",
+  "text": "Today’s reed row is ready"
+ },
+ {
+  "slug": "next-reed-row-tomorrow",
+  "text": "Next reed row tomorrow"
+ },
+ {
+  "slug": "swamp-hen-is-planting-a-reed-garden-help-swamp-hen-count-the-shoots",
+  "text": "Swamp Hen is planting a reed garden! Help Swamp Hen count the shoots."
+ },
+ {
+  "slug": "swamp-hen-is-planting-a-reed-garden-help-swamp-hen-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Swamp Hen is planting a reed garden! Help Swamp Hen count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-swamp-hen-has-a-reed-garden-to-plant",
+  "text": "Now Swamp Hen has a reed garden to plant!"
+ },
+ {
+  "slug": "now-swamp-hen-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now Swamp Hen has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "pigeon-is-planting-a-reed-garden-help-pigeon-count-the-shoots",
+  "text": "Pigeon is planting a reed garden! Help Pigeon count the shoots."
+ },
+ {
+  "slug": "pigeon-is-planting-a-reed-garden-help-pigeon-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Pigeon is planting a reed garden! Help Pigeon count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-pigeon-has-a-reed-garden-to-plant",
+  "text": "Now Pigeon has a reed garden to plant!"
+ },
+ {
+  "slug": "now-pigeon-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now Pigeon has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "kea-is-planting-a-reed-garden-help-kea-count-the-shoots",
+  "text": "Kea is planting a reed garden! Help Kea count the shoots."
+ },
+ {
+  "slug": "kea-is-planting-a-reed-garden-help-kea-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Kea is planting a reed garden! Help Kea count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-kea-has-a-reed-garden-to-plant",
+  "text": "Now Kea has a reed garden to plant!"
+ },
+ {
+  "slug": "now-kea-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now Kea has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "weka-is-planting-a-reed-garden-help-weka-count-the-shoots",
+  "text": "Weka is planting a reed garden! Help Weka count the shoots."
+ },
+ {
+  "slug": "weka-is-planting-a-reed-garden-help-weka-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Weka is planting a reed garden! Help Weka count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-weka-has-a-reed-garden-to-plant",
+  "text": "Now Weka has a reed garden to plant!"
+ },
+ {
+  "slug": "now-weka-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now Weka has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "tui-is-planting-a-reed-garden-help-tui-count-the-shoots",
+  "text": "Tui is planting a reed garden! Help Tui count the shoots."
+ },
+ {
+  "slug": "tui-is-planting-a-reed-garden-help-tui-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Tui is planting a reed garden! Help Tui count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-tui-has-a-reed-garden-to-plant",
+  "text": "Now Tui has a reed garden to plant!"
+ },
+ {
+  "slug": "now-tui-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now Tui has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "white-heron-is-planting-a-reed-garden-help-white-heron-count-the-shoots",
+  "text": "White Heron is planting a reed garden! Help White Heron count the shoots."
+ },
+ {
+  "slug": "white-heron-is-planting-a-reed-garden-help-white-heron-count-the-shoots-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "White Heron is planting a reed garden! Help White Heron count the shoots. Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "now-white-heron-has-a-reed-garden-to-plant",
+  "text": "Now White Heron has a reed garden to plant!"
+ },
+ {
+  "slug": "now-white-heron-has-a-reed-garden-to-plant-well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Now White Heron has a reed garden to plant! Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "plant-2-rows-of-2-how-many-shoots",
+  "text": "Plant 2 rows of 2. How many shoots?"
+ },
+ {
+  "slug": "count-one-row-then-jump-along-the-rows",
+  "text": "Count one row, then jump along the rows."
+ },
+ {
+  "slug": "plant-2-rows-of-5-how-many-shoots",
+  "text": "Plant 2 rows of 5. How many shoots?"
+ },
+ {
+  "slug": "plant-2-rows-of-10-how-many-shoots",
+  "text": "Plant 2 rows of 10. How many shoots?"
+ },
+ {
+  "slug": "plant-3-rows-of-2-how-many-shoots",
+  "text": "Plant 3 rows of 2. How many shoots?"
+ },
+ {
+  "slug": "plant-3-rows-of-5-how-many-shoots",
+  "text": "Plant 3 rows of 5. How many shoots?"
+ },
+ {
+  "slug": "plant-3-rows-of-10-how-many-shoots",
+  "text": "Plant 3 rows of 10. How many shoots?"
+ },
+ {
+  "slug": "plant-4-rows-of-2-how-many-shoots",
+  "text": "Plant 4 rows of 2. How many shoots?"
+ },
+ {
+  "slug": "plant-4-rows-of-5-how-many-shoots",
+  "text": "Plant 4 rows of 5. How many shoots?"
+ },
+ {
+  "slug": "plant-4-rows-of-10-how-many-shoots",
+  "text": "Plant 4 rows of 10. How many shoots?"
+ },
+ {
+  "slug": "plant-5-rows-of-2-how-many-shoots",
+  "text": "Plant 5 rows of 2. How many shoots?"
+ },
+ {
+  "slug": "plant-5-rows-of-5-how-many-shoots",
+  "text": "Plant 5 rows of 5. How many shoots?"
+ },
+ {
+  "slug": "plant-5-rows-of-10-how-many-shoots",
+  "text": "Plant 5 rows of 10. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-3-turn-the-garden-how-many-shoots",
+  "text": "2 rows of 3. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "turning-it-round-gives-the-same-shoots",
+  "text": "Turning it round gives the same shoots."
+ },
+ {
+  "slug": "2-rows-of-4-turn-the-garden-how-many-shoots",
+  "text": "2 rows of 4. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-5-turn-the-garden-how-many-shoots",
+  "text": "2 rows of 5. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-6-turn-the-garden-how-many-shoots",
+  "text": "2 rows of 6. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-2-turn-the-garden-how-many-shoots",
+  "text": "3 rows of 2. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-4-turn-the-garden-how-many-shoots",
+  "text": "3 rows of 4. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-5-turn-the-garden-how-many-shoots",
+  "text": "3 rows of 5. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-6-turn-the-garden-how-many-shoots",
+  "text": "3 rows of 6. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-2-turn-the-garden-how-many-shoots",
+  "text": "4 rows of 2. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-3-turn-the-garden-how-many-shoots",
+  "text": "4 rows of 3. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-5-turn-the-garden-how-many-shoots",
+  "text": "4 rows of 5. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-6-turn-the-garden-how-many-shoots",
+  "text": "4 rows of 6. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-2-turn-the-garden-how-many-shoots",
+  "text": "5 rows of 2. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-3-turn-the-garden-how-many-shoots",
+  "text": "5 rows of 3. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-4-turn-the-garden-how-many-shoots",
+  "text": "5 rows of 4. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-6-turn-the-garden-how-many-shoots",
+  "text": "5 rows of 6. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "6-rows-of-2-turn-the-garden-how-many-shoots",
+  "text": "6 rows of 2. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "6-rows-of-3-turn-the-garden-how-many-shoots",
+  "text": "6 rows of 3. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "6-rows-of-4-turn-the-garden-how-many-shoots",
+  "text": "6 rows of 4. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "6-rows-of-5-turn-the-garden-how-many-shoots",
+  "text": "6 rows of 5. Turn the garden. How many shoots?"
+ },
+ {
+  "slug": "which-garden-is-2-rows-of-3",
+  "text": "Which garden is 2 rows of 3?"
+ },
+ {
+  "slug": "look-at-the-rows-first-then-the-shoots-in-one-row",
+  "text": "Look at the rows first, then the shoots in one row."
+ },
+ {
+  "slug": "which-garden-is-2-rows-of-4",
+  "text": "Which garden is 2 rows of 4?"
+ },
+ {
+  "slug": "which-garden-is-2-rows-of-5",
+  "text": "Which garden is 2 rows of 5?"
+ },
+ {
+  "slug": "which-garden-is-2-rows-of-6",
+  "text": "Which garden is 2 rows of 6?"
+ },
+ {
+  "slug": "which-garden-is-3-rows-of-2",
+  "text": "Which garden is 3 rows of 2?"
+ },
+ {
+  "slug": "which-garden-is-3-rows-of-4",
+  "text": "Which garden is 3 rows of 4?"
+ },
+ {
+  "slug": "which-garden-is-3-rows-of-5",
+  "text": "Which garden is 3 rows of 5?"
+ },
+ {
+  "slug": "which-garden-is-3-rows-of-6",
+  "text": "Which garden is 3 rows of 6?"
+ },
+ {
+  "slug": "which-garden-is-4-rows-of-2",
+  "text": "Which garden is 4 rows of 2?"
+ },
+ {
+  "slug": "which-garden-is-4-rows-of-3",
+  "text": "Which garden is 4 rows of 3?"
+ },
+ {
+  "slug": "which-garden-is-4-rows-of-5",
+  "text": "Which garden is 4 rows of 5?"
+ },
+ {
+  "slug": "which-garden-is-4-rows-of-6",
+  "text": "Which garden is 4 rows of 6?"
+ },
+ {
+  "slug": "which-garden-is-5-rows-of-2",
+  "text": "Which garden is 5 rows of 2?"
+ },
+ {
+  "slug": "which-garden-is-5-rows-of-3",
+  "text": "Which garden is 5 rows of 3?"
+ },
+ {
+  "slug": "which-garden-is-5-rows-of-4",
+  "text": "Which garden is 5 rows of 4?"
+ },
+ {
+  "slug": "which-garden-is-5-rows-of-6",
+  "text": "Which garden is 5 rows of 6?"
+ },
+ {
+  "slug": "which-garden-is-6-rows-of-2",
+  "text": "Which garden is 6 rows of 2?"
+ },
+ {
+  "slug": "which-garden-is-6-rows-of-3",
+  "text": "Which garden is 6 rows of 3?"
+ },
+ {
+  "slug": "which-garden-is-6-rows-of-4",
+  "text": "Which garden is 6 rows of 4?"
+ },
+ {
+  "slug": "which-garden-is-6-rows-of-5",
+  "text": "Which garden is 6 rows of 5?"
+ },
+ {
+  "slug": "2-rows-of-3-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 3 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "count-one-row-then-jump-the-same-all-the-way-down",
+  "text": "Count one row. Then jump the same all the way down."
+ },
+ {
+  "slug": "2-rows-of-4-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 4 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-6-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 6 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-7-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 7 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-8-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 8 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "2-rows-of-9-are-under-the-mat-how-many-shoots",
+  "text": "2 rows of 9 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-3-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 3 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-4-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 4 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-6-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 6 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-7-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 7 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-8-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 8 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "3-rows-of-9-are-under-the-mat-how-many-shoots",
+  "text": "3 rows of 9 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-3-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 3 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-4-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 4 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-6-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 6 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-7-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 7 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-8-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 8 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-rows-of-9-are-under-the-mat-how-many-shoots",
+  "text": "4 rows of 9 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-3-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 3 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-4-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 4 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-6-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 6 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-7-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 7 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-8-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 8 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "5-rows-of-9-are-under-the-mat-how-many-shoots",
+  "text": "5 rows of 9 are under the mat. How many shoots?"
+ },
+ {
+  "slug": "4-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "4 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "deal-the-shoots-out-one-for-each-row-again-and-again",
+  "text": "Deal the shoots out, one for each row, again and again."
+ },
+ {
+  "slug": "6-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "6 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "8-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "8 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "10-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "10 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "12-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "12 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "14-shoots-go-into-2-equal-rows-how-many-in-each-row",
+  "text": "14 shoots go into 2 equal rows. How many in each row?"
+ },
+ {
+  "slug": "6-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "6 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "9-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "9 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "12-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "12 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "15-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "15 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "18-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "18 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "21-shoots-go-into-3-equal-rows-how-many-in-each-row",
+  "text": "21 shoots go into 3 equal rows. How many in each row?"
+ },
+ {
+  "slug": "8-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "8 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "12-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "12 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "16-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "16 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "20-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "20 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "24-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "24 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "28-shoots-go-into-4-equal-rows-how-many-in-each-row",
+  "text": "28 shoots go into 4 equal rows. How many in each row?"
+ },
+ {
+  "slug": "10-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "10 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "15-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "15 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "20-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "20 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "25-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "25 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "30-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "30 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "35-shoots-go-into-5-equal-rows-how-many-in-each-row",
+  "text": "35 shoots go into 5 equal rows. How many in each row?"
+ },
+ {
+  "slug": "20-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "20 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "30-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "30 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "40-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "40 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "50-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "50 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "60-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "60 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "70-shoots-go-into-10-equal-rows-how-many-in-each-row",
+  "text": "70 shoots go into 10 equal rows. How many in each row?"
+ },
+ {
+  "slug": "cut-6-rows-of-3-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 3 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-off-five-rows-count-them-then-count-the-rest",
+  "text": "Cut off five rows. Count them, then count the rest."
+ },
+ {
+  "slug": "cut-6-rows-of-4-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 4 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-6-rows-of-5-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 5 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-6-rows-of-6-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 6 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-6-rows-of-7-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 7 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-6-rows-of-8-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 8 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-6-rows-of-9-in-two-how-many-shoots",
+  "text": "Cut 6 rows of 9 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-3-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 3 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-4-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 4 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-5-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 5 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-6-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 6 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-7-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 7 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-8-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 8 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-7-rows-of-9-in-two-how-many-shoots",
+  "text": "Cut 7 rows of 9 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-3-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 3 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-4-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 4 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-5-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 5 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-6-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 6 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-7-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 7 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-8-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 8 in two. How many shoots?"
+ },
+ {
+  "slug": "cut-8-rows-of-9-in-two-how-many-shoots",
+  "text": "Cut 8 rows of 9 in two. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-3-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 3. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "ten-rows-is-easy-then-take-one-row-away",
+  "text": "Ten rows is easy. Then take one row away."
+ },
+ {
+  "slug": "9-rows-of-4-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 4. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-5-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 5. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-6-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 6. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-7-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 7. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-8-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 8. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "9-rows-of-9-that-is-one-row-short-of-ten-how-many-shoots",
+  "text": "9 rows of 9. That is one row short of ten. How many shoots?"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row",
+  "text": "Well done! Come back tomorrow to change another reed row."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "Well done! Come back tomorrow to change another reed row. You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "Well done! Come back tomorrow to change another reed row. You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "Well done! Come back tomorrow to change another reed row. You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "Well done! Come back tomorrow to change another reed row. You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-reed-row-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "Well done! Come back tomorrow to change another reed row. You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze",
+  "text": "Well done! A reed row turned bronze!"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "Well done! A reed row turned bronze! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "Well done! A reed row turned bronze! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "Well done! A reed row turned bronze! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "Well done! A reed row turned bronze! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-bronze-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "Well done! A reed row turned bronze! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver",
+  "text": "Well done! A reed row turned silver!"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "Well done! A reed row turned silver! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "Well done! A reed row turned silver! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "Well done! A reed row turned silver! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "Well done! A reed row turned silver! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-silver-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "Well done! A reed row turned silver! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold",
+  "text": "Well done! A reed row turned gold!"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "Well done! A reed row turned gold! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "Well done! A reed row turned gold! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "Well done! A reed row turned gold! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "Well done! A reed row turned gold! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "well-done-a-reed-row-turned-gold-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "Well done! A reed row turned gold! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-swamp-hen-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! Swamp Hen won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-pigeon-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! Pigeon won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-kea-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! Kea won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-weka-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! Weka won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-tui-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! Tui won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden!"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-turn-the-garden",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden! You are so good at this! Next time: turn the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-under-the-mat",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden! You are so good at this! Next time: under the mat"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-share-them-out",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden! You are so good at this! Next time: share them out"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-cut-the-garden",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden! You are so good at this! Next time: cut the garden"
+ },
+ {
+  "slug": "all-the-reeds-are-gold-white-heron-won-the-golden-reed-garden-you-are-so-good-at-this-next-time-one-row-short",
+  "text": "All the reeds are gold! White Heron won the Golden Reed Garden! You are so good at this! Next time: one row short"
+ }
+]

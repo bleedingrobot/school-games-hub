@@ -7,6 +7,7 @@ const LEVEL_WORDS: Record<Level, string> = {
   2: 'Halves to 10',
   3: 'Doubles to 10',
   4: 'Halves to 20',
+  5: 'Near doubles',
 };
 
 export const WORDS = {
@@ -27,6 +28,8 @@ export const WORDS = {
   lookTogether: 'Let’s look together.',
   /** Said once she has explained, then the question is read again. */
   nowTry: 'Now you try.',
+  /** Said once in a round, when three goes in a row began with a wrong tap and the pictures come back (R6). */
+  picturesBack: 'Here is the picture again to help.',
   /** On the "Let's look together" panel once it can be skipped. */
   goOn: 'My turn',
   /** The double: the whole go, ending on the answer, while the fish are counted. */
@@ -43,12 +46,27 @@ export const WORDS = {
     miscountHalf: 'Share them out, one for you and one for me. Then count one share.',
     minus2: 'Half means two equal groups.',
     double: 'Half is smaller. The pile goes into two nests.',
+    noExtra: 'That is the double. Do not forget the one more fish.',
+    bigger: 'Only one side has the extra fish. Double the small one, then one more.',
   },
+  /** Near doubles: the double, then one more, counted. */
+  lookNear: (n: number) => `Double ${n} is ${2 * n} fish. Then one more fish. Count them all: ${2 * n + 1}.`,
+  /** The "what's next" card on the finish screen (R8), once near doubles are secure and Weka is on for the class. */
+  whatsNext: 'Doubles help with 6 + 7 too. Try Weka.',
+  tryWeka: 'Try Weka',
   yes: (n: number) => `${n}!`,
+  /** Fair or not (R9): the three choices, and what is said when the child is right, counting one bowl together. */
   fair: 'Fair share',
-  notFair: 'One left over',
-  fairYes: 'Yes! They share them fairly.',
-  notFairYes: 'Yes! There is one left over.',
+  tooMany: 'One too many',
+  tooFew: 'One too few',
+  fairYes: (k: number) => `Yes! They share them fairly. Count one bowl: ${k}. The other bowl has ${k} too.`,
+  oddYes: (k: number) => `Yes! Count one bowl: ${k}. The other bowl has ${k} too. One fish is left over.`,
+  /** After the second wrong choice: the fish pair off. It never says which choice is right. */
+  pairOff: 'Let’s pair them off. Does every fish have a partner?',
+  shareTwo: 'Share two fish',
+  allShared: 'All shared!',
+  lonely: 'One fish has no partner',
+  bowlHas: (n: number) => `${n} fish in the bowl`,
   afterDouble: (n: number) => `Double ${n} is ${2 * n}. So what is half of ${2 * n}?`,
   hearAgain: 'Hear it again',
   tapToCount: 'Tap the fish to count them.',

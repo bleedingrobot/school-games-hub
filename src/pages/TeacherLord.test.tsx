@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { dragonMaths } from '../games/lord';
@@ -309,7 +309,13 @@ describe('one season date for the whole school (once its migration is live)', ()
     data.fetchLordSchoolSeason.mockResolvedValue(school());
     data.saveLordSchoolSeason.mockRejectedValueOnce(new FriendlyError('That would take the school back to season 2. Pick a day on or before 31 Aug.'));
     render(<LordTeacherSettings classId="c12" />);
-    const date = within(await schoolBox()).getByLabelText('First day of season 1 (whole school)');
+    const box = await schoolBox();
+    const date = within(box).getByLabelText('First day of season 1 (whole school)');
+    expect(await within(box).findByText('Season 3 for the whole school, 12 days left.')).toBeInTheDocument();
+    // The date copies the loaded season into what it shows in an effect, and that effect can still be waiting to run after the
+    // first paint on a busy machine. If the new date is typed first, the effect puts the old date back over it and nothing is
+    // saved (the flake). So let React finish its pending work before changing the date.
+    await act(async () => {});
     // One change, not typed key by key: on a busy machine the typed date sometimes came out blank ("Pick a date.").
     fireEvent.change(date, { target: { value: '2026-09-20' } });
     fireEvent.blur(date);

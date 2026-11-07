@@ -1,0 +1,1238 @@
+[
+ {
+  "slug": "try-again",
+  "text": "Try again!"
+ },
+ {
+  "slug": "let-s-look-together",
+  "text": "Let’s look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try."
+ },
+ {
+  "slug": "ten-bundles-tied-together-make-a-raft-a-hundred",
+  "text": "Ten bundles tied together make a raft: a hundred."
+ },
+ {
+  "slug": "yes-that-is-it",
+  "text": "Yes! That is it."
+ },
+ {
+  "slug": "lovely-you-did-it",
+  "text": "Lovely! You did it."
+ },
+ {
+  "slug": "well-done",
+  "text": "Well done!"
+ },
+ {
+  "slug": "those-digits-are-the-wrong-way-round-tens-come-first",
+  "text": "Those digits are the wrong way round. Tens come first."
+ },
+ {
+  "slug": "count-the-tens-as-tens-not-as-ones",
+  "text": "Count the tens as tens, not as ones."
+ },
+ {
+  "slug": "look-at-the-zero-it-holds-a-place-and-it-is-only-needed-once",
+  "text": "Look at the zero. It holds a place, and it is only needed once."
+ },
+ {
+  "slug": "the-empty-place-still-counts-look-again",
+  "text": "The empty place still counts. Look again."
+ },
+ {
+  "slug": "ten-more-is-one-more-bundle-the-ones-stay-the-same",
+  "text": "Ten more is one more bundle. The ones stay the same."
+ },
+ {
+  "slug": "look-again-is-it-more-or-less",
+  "text": "Look again. Is it more, or less?"
+ },
+ {
+  "slug": "ten-more-is-one-more-bundle-look-again",
+  "text": "Ten more is one more bundle. Look again."
+ },
+ {
+  "slug": "close-look-at-the-bundles-and-sticks-again",
+  "text": "Close. Look at the bundles and sticks again."
+ },
+ {
+  "slug": "not-quite-count-your-bundles-then-your-sticks",
+  "text": "Not quite. Count your bundles, then your sticks."
+ },
+ {
+  "slug": "you-have-ten-sticks-or-more-tie-ten-into-a-bundle",
+  "text": "You have ten sticks or more. Tie ten into a bundle."
+ },
+ {
+  "slug": "can-you-tie-more-ten-sticks-make-a-bundle",
+  "text": "Can you tie more? Ten sticks make a bundle."
+ },
+ {
+  "slug": "untie-one-bundle-then-count-the-sticks",
+  "text": "Untie one bundle. Then count the sticks."
+ },
+ {
+  "slug": "today-s-bundle-is-ready",
+  "text": "Today’s bundle is ready"
+ },
+ {
+  "slug": "next-bundle-tomorrow",
+  "text": "Next bundle tomorrow"
+ },
+ {
+  "slug": "lizard-is-tying-bundles-help-lizard-count-the-sticks",
+  "text": "Lizard is tying bundles! Help Lizard count the sticks."
+ },
+ {
+  "slug": "lizard-is-tying-bundles-help-lizard-count-the-sticks-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Lizard is tying bundles! Help Lizard count the sticks. Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "now-lizard-has-a-den-to-fill",
+  "text": "Now Lizard has a den to fill!"
+ },
+ {
+  "slug": "now-lizard-has-a-den-to-fill-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Now Lizard has a den to fill! Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "kiwi-is-tying-bundles-help-kiwi-count-the-sticks",
+  "text": "Kiwi is tying bundles! Help Kiwi count the sticks."
+ },
+ {
+  "slug": "kiwi-is-tying-bundles-help-kiwi-count-the-sticks-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Kiwi is tying bundles! Help Kiwi count the sticks. Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "now-kiwi-has-a-den-to-fill",
+  "text": "Now Kiwi has a den to fill!"
+ },
+ {
+  "slug": "now-kiwi-has-a-den-to-fill-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Now Kiwi has a den to fill! Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "fantail-is-tying-bundles-help-fantail-count-the-sticks",
+  "text": "Fantail is tying bundles! Help Fantail count the sticks."
+ },
+ {
+  "slug": "fantail-is-tying-bundles-help-fantail-count-the-sticks-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Fantail is tying bundles! Help Fantail count the sticks. Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "now-fantail-has-a-den-to-fill",
+  "text": "Now Fantail has a den to fill!"
+ },
+ {
+  "slug": "now-fantail-has-a-den-to-fill-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Now Fantail has a den to fill! Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "bellbird-is-tying-bundles-help-bellbird-count-the-sticks",
+  "text": "Bellbird is tying bundles! Help Bellbird count the sticks."
+ },
+ {
+  "slug": "bellbird-is-tying-bundles-help-bellbird-count-the-sticks-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Bellbird is tying bundles! Help Bellbird count the sticks. Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "now-bellbird-has-a-den-to-fill",
+  "text": "Now Bellbird has a den to fill!"
+ },
+ {
+  "slug": "now-bellbird-has-a-den-to-fill-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Now Bellbird has a den to fill! Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "kea-is-tying-bundles-help-kea-count-the-sticks",
+  "text": "Kea is tying bundles! Help Kea count the sticks."
+ },
+ {
+  "slug": "kea-is-tying-bundles-help-kea-count-the-sticks-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Kea is tying bundles! Help Kea count the sticks. Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "now-kea-has-a-den-to-fill",
+  "text": "Now Kea has a den to fill!"
+ },
+ {
+  "slug": "now-kea-has-a-den-to-fill-well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Now Kea has a den to fill! Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "make-10-with-bundles-and-sticks",
+  "text": "Make 10 with bundles and sticks."
+ },
+ {
+  "slug": "count-the-bundles-for-the-tens-then-the-sticks-for-the-ones",
+  "text": "Count the bundles for the tens, then the sticks for the ones."
+ },
+ {
+  "slug": "make-20-with-bundles-and-sticks",
+  "text": "Make 20 with bundles and sticks."
+ },
+ {
+  "slug": "make-30-with-bundles-and-sticks",
+  "text": "Make 30 with bundles and sticks."
+ },
+ {
+  "slug": "make-40-with-bundles-and-sticks",
+  "text": "Make 40 with bundles and sticks."
+ },
+ {
+  "slug": "make-50-with-bundles-and-sticks",
+  "text": "Make 50 with bundles and sticks."
+ },
+ {
+  "slug": "make-13-with-bundles-and-sticks",
+  "text": "Make 13 with bundles and sticks."
+ },
+ {
+  "slug": "make-15-with-bundles-and-sticks",
+  "text": "Make 15 with bundles and sticks."
+ },
+ {
+  "slug": "make-17-with-bundles-and-sticks",
+  "text": "Make 17 with bundles and sticks."
+ },
+ {
+  "slug": "make-19-with-bundles-and-sticks",
+  "text": "Make 19 with bundles and sticks."
+ },
+ {
+  "slug": "make-24-with-bundles-and-sticks",
+  "text": "Make 24 with bundles and sticks."
+ },
+ {
+  "slug": "make-26-with-bundles-and-sticks",
+  "text": "Make 26 with bundles and sticks."
+ },
+ {
+  "slug": "make-28-with-bundles-and-sticks",
+  "text": "Make 28 with bundles and sticks."
+ },
+ {
+  "slug": "make-21-with-bundles-and-sticks",
+  "text": "Make 21 with bundles and sticks."
+ },
+ {
+  "slug": "make-35-with-bundles-and-sticks",
+  "text": "Make 35 with bundles and sticks."
+ },
+ {
+  "slug": "make-37-with-bundles-and-sticks",
+  "text": "Make 37 with bundles and sticks."
+ },
+ {
+  "slug": "make-39-with-bundles-and-sticks",
+  "text": "Make 39 with bundles and sticks."
+ },
+ {
+  "slug": "make-32-with-bundles-and-sticks",
+  "text": "Make 32 with bundles and sticks."
+ },
+ {
+  "slug": "make-46-with-bundles-and-sticks",
+  "text": "Make 46 with bundles and sticks."
+ },
+ {
+  "slug": "make-48-with-bundles-and-sticks",
+  "text": "Make 48 with bundles and sticks."
+ },
+ {
+  "slug": "make-41-with-bundles-and-sticks",
+  "text": "Make 41 with bundles and sticks."
+ },
+ {
+  "slug": "make-43-with-bundles-and-sticks",
+  "text": "Make 43 with bundles and sticks."
+ },
+ {
+  "slug": "1-ten-and-3-ones-what-number-is-that",
+  "text": "1 ten and 3 ones. What number is that?"
+ },
+ {
+  "slug": "1-ten-and-5-ones-what-number-is-that",
+  "text": "1 ten and 5 ones. What number is that?"
+ },
+ {
+  "slug": "1-ten-and-7-ones-what-number-is-that",
+  "text": "1 ten and 7 ones. What number is that?"
+ },
+ {
+  "slug": "1-ten-and-9-ones-what-number-is-that",
+  "text": "1 ten and 9 ones. What number is that?"
+ },
+ {
+  "slug": "2-tens-and-4-ones-what-number-is-that",
+  "text": "2 tens and 4 ones. What number is that?"
+ },
+ {
+  "slug": "2-tens-and-6-ones-what-number-is-that",
+  "text": "2 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "2-tens-and-8-ones-what-number-is-that",
+  "text": "2 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "2-tens-and-1-one-what-number-is-that",
+  "text": "2 tens and 1 one. What number is that?"
+ },
+ {
+  "slug": "3-tens-and-5-ones-what-number-is-that",
+  "text": "3 tens and 5 ones. What number is that?"
+ },
+ {
+  "slug": "3-tens-and-7-ones-what-number-is-that",
+  "text": "3 tens and 7 ones. What number is that?"
+ },
+ {
+  "slug": "3-tens-and-9-ones-what-number-is-that",
+  "text": "3 tens and 9 ones. What number is that?"
+ },
+ {
+  "slug": "3-tens-and-2-ones-what-number-is-that",
+  "text": "3 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "4-tens-and-6-ones-what-number-is-that",
+  "text": "4 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "4-tens-and-8-ones-what-number-is-that",
+  "text": "4 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "4-tens-and-1-one-what-number-is-that",
+  "text": "4 tens and 1 one. What number is that?"
+ },
+ {
+  "slug": "4-tens-and-3-ones-what-number-is-that",
+  "text": "4 tens and 3 ones. What number is that?"
+ },
+ {
+  "slug": "make-60-with-bundles-and-sticks",
+  "text": "Make 60 with bundles and sticks."
+ },
+ {
+  "slug": "make-70-with-bundles-and-sticks",
+  "text": "Make 70 with bundles and sticks."
+ },
+ {
+  "slug": "make-80-with-bundles-and-sticks",
+  "text": "Make 80 with bundles and sticks."
+ },
+ {
+  "slug": "make-90-with-bundles-and-sticks",
+  "text": "Make 90 with bundles and sticks."
+ },
+ {
+  "slug": "make-57-with-bundles-and-sticks",
+  "text": "Make 57 with bundles and sticks."
+ },
+ {
+  "slug": "make-59-with-bundles-and-sticks",
+  "text": "Make 59 with bundles and sticks."
+ },
+ {
+  "slug": "make-52-with-bundles-and-sticks",
+  "text": "Make 52 with bundles and sticks."
+ },
+ {
+  "slug": "make-54-with-bundles-and-sticks",
+  "text": "Make 54 with bundles and sticks."
+ },
+ {
+  "slug": "make-68-with-bundles-and-sticks",
+  "text": "Make 68 with bundles and sticks."
+ },
+ {
+  "slug": "make-61-with-bundles-and-sticks",
+  "text": "Make 61 with bundles and sticks."
+ },
+ {
+  "slug": "make-63-with-bundles-and-sticks",
+  "text": "Make 63 with bundles and sticks."
+ },
+ {
+  "slug": "make-65-with-bundles-and-sticks",
+  "text": "Make 65 with bundles and sticks."
+ },
+ {
+  "slug": "make-79-with-bundles-and-sticks",
+  "text": "Make 79 with bundles and sticks."
+ },
+ {
+  "slug": "make-72-with-bundles-and-sticks",
+  "text": "Make 72 with bundles and sticks."
+ },
+ {
+  "slug": "make-74-with-bundles-and-sticks",
+  "text": "Make 74 with bundles and sticks."
+ },
+ {
+  "slug": "make-76-with-bundles-and-sticks",
+  "text": "Make 76 with bundles and sticks."
+ },
+ {
+  "slug": "make-81-with-bundles-and-sticks",
+  "text": "Make 81 with bundles and sticks."
+ },
+ {
+  "slug": "make-83-with-bundles-and-sticks",
+  "text": "Make 83 with bundles and sticks."
+ },
+ {
+  "slug": "make-85-with-bundles-and-sticks",
+  "text": "Make 85 with bundles and sticks."
+ },
+ {
+  "slug": "make-87-with-bundles-and-sticks",
+  "text": "Make 87 with bundles and sticks."
+ },
+ {
+  "slug": "make-92-with-bundles-and-sticks",
+  "text": "Make 92 with bundles and sticks."
+ },
+ {
+  "slug": "make-94-with-bundles-and-sticks",
+  "text": "Make 94 with bundles and sticks."
+ },
+ {
+  "slug": "make-96-with-bundles-and-sticks",
+  "text": "Make 96 with bundles and sticks."
+ },
+ {
+  "slug": "make-98-with-bundles-and-sticks",
+  "text": "Make 98 with bundles and sticks."
+ },
+ {
+  "slug": "5-tens-and-7-ones-what-number-is-that",
+  "text": "5 tens and 7 ones. What number is that?"
+ },
+ {
+  "slug": "5-tens-and-9-ones-what-number-is-that",
+  "text": "5 tens and 9 ones. What number is that?"
+ },
+ {
+  "slug": "5-tens-and-2-ones-what-number-is-that",
+  "text": "5 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "5-tens-and-4-ones-what-number-is-that",
+  "text": "5 tens and 4 ones. What number is that?"
+ },
+ {
+  "slug": "6-tens-and-8-ones-what-number-is-that",
+  "text": "6 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "6-tens-and-1-one-what-number-is-that",
+  "text": "6 tens and 1 one. What number is that?"
+ },
+ {
+  "slug": "6-tens-and-3-ones-what-number-is-that",
+  "text": "6 tens and 3 ones. What number is that?"
+ },
+ {
+  "slug": "6-tens-and-5-ones-what-number-is-that",
+  "text": "6 tens and 5 ones. What number is that?"
+ },
+ {
+  "slug": "7-tens-and-9-ones-what-number-is-that",
+  "text": "7 tens and 9 ones. What number is that?"
+ },
+ {
+  "slug": "7-tens-and-2-ones-what-number-is-that",
+  "text": "7 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "7-tens-and-4-ones-what-number-is-that",
+  "text": "7 tens and 4 ones. What number is that?"
+ },
+ {
+  "slug": "7-tens-and-6-ones-what-number-is-that",
+  "text": "7 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "8-tens-and-1-one-what-number-is-that",
+  "text": "8 tens and 1 one. What number is that?"
+ },
+ {
+  "slug": "8-tens-and-3-ones-what-number-is-that",
+  "text": "8 tens and 3 ones. What number is that?"
+ },
+ {
+  "slug": "8-tens-and-5-ones-what-number-is-that",
+  "text": "8 tens and 5 ones. What number is that?"
+ },
+ {
+  "slug": "8-tens-and-7-ones-what-number-is-that",
+  "text": "8 tens and 7 ones. What number is that?"
+ },
+ {
+  "slug": "9-tens-and-2-ones-what-number-is-that",
+  "text": "9 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "9-tens-and-4-ones-what-number-is-that",
+  "text": "9 tens and 4 ones. What number is that?"
+ },
+ {
+  "slug": "9-tens-and-6-ones-what-number-is-that",
+  "text": "9 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "9-tens-and-8-ones-what-number-is-that",
+  "text": "9 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "1-ten-and-0-ones-what-number-is-that",
+  "text": "1 ten and 0 ones. What number is that?"
+ },
+ {
+  "slug": "2-tens-and-0-ones-what-number-is-that",
+  "text": "2 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "3-tens-and-0-ones-what-number-is-that",
+  "text": "3 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "4-tens-and-0-ones-what-number-is-that",
+  "text": "4 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "5-tens-and-0-ones-what-number-is-that",
+  "text": "5 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "6-tens-and-0-ones-what-number-is-that",
+  "text": "6 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "7-tens-and-0-ones-what-number-is-that",
+  "text": "7 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "8-tens-and-0-ones-what-number-is-that",
+  "text": "8 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "9-tens-and-0-ones-what-number-is-that",
+  "text": "9 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "tie-the-sticks-into-bundles-ten-sticks-make-a-bundle",
+  "text": "Tie the sticks into bundles. Ten sticks make a bundle."
+ },
+ {
+  "slug": "ten-sticks-tie-into-one-bundle-tie-all-the-tens-you-can",
+  "text": "Ten sticks tie into one bundle. Tie all the tens you can."
+ },
+ {
+  "slug": "untie-one-bundle-then-you-have-ten-more-sticks",
+  "text": "Untie one bundle. Then you have ten more sticks."
+ },
+ {
+  "slug": "one-bundle-is-ten-sticks-untie-one-and-you-get-ten-more-sticks",
+  "text": "One bundle is ten sticks. Untie one and you get ten more sticks."
+ },
+ {
+  "slug": "what-is-ten-more-than-14",
+  "text": "What is ten more than 14?"
+ },
+ {
+  "slug": "ten-more-is-one-more-bundle-ten-less-is-one-bundle-fewer",
+  "text": "Ten more is one more bundle. Ten less is one bundle fewer."
+ },
+ {
+  "slug": "what-is-ten-more-than-27",
+  "text": "What is ten more than 27?"
+ },
+ {
+  "slug": "what-is-ten-more-than-35",
+  "text": "What is ten more than 35?"
+ },
+ {
+  "slug": "what-is-ten-more-than-42",
+  "text": "What is ten more than 42?"
+ },
+ {
+  "slug": "what-is-ten-more-than-56",
+  "text": "What is ten more than 56?"
+ },
+ {
+  "slug": "what-is-ten-more-than-63",
+  "text": "What is ten more than 63?"
+ },
+ {
+  "slug": "what-is-ten-more-than-78",
+  "text": "What is ten more than 78?"
+ },
+ {
+  "slug": "what-is-ten-more-than-85",
+  "text": "What is ten more than 85?"
+ },
+ {
+  "slug": "what-is-ten-more-than-91",
+  "text": "What is ten more than 91?"
+ },
+ {
+  "slug": "what-is-ten-more-than-49",
+  "text": "What is ten more than 49?"
+ },
+ {
+  "slug": "what-is-ten-more-than-68",
+  "text": "What is ten more than 68?"
+ },
+ {
+  "slug": "what-is-ten-more-than-73",
+  "text": "What is ten more than 73?"
+ },
+ {
+  "slug": "what-is-ten-less-than-19",
+  "text": "What is ten less than 19?"
+ },
+ {
+  "slug": "what-is-ten-less-than-32",
+  "text": "What is ten less than 32?"
+ },
+ {
+  "slug": "what-is-ten-less-than-47",
+  "text": "What is ten less than 47?"
+ },
+ {
+  "slug": "what-is-ten-less-than-54",
+  "text": "What is ten less than 54?"
+ },
+ {
+  "slug": "what-is-ten-less-than-61",
+  "text": "What is ten less than 61?"
+ },
+ {
+  "slug": "what-is-ten-less-than-76",
+  "text": "What is ten less than 76?"
+ },
+ {
+  "slug": "what-is-ten-less-than-83",
+  "text": "What is ten less than 83?"
+ },
+ {
+  "slug": "what-is-ten-less-than-98",
+  "text": "What is ten less than 98?"
+ },
+ {
+  "slug": "what-is-ten-less-than-25",
+  "text": "What is ten less than 25?"
+ },
+ {
+  "slug": "what-is-ten-less-than-66",
+  "text": "What is ten less than 66?"
+ },
+ {
+  "slug": "what-is-ten-less-than-39",
+  "text": "What is ten less than 39?"
+ },
+ {
+  "slug": "what-is-ten-less-than-72",
+  "text": "What is ten less than 72?"
+ },
+ {
+  "slug": "make-100-with-bundles-and-sticks",
+  "text": "Make 100 with bundles and sticks."
+ },
+ {
+  "slug": "make-200-with-bundles-and-sticks",
+  "text": "Make 200 with bundles and sticks."
+ },
+ {
+  "slug": "make-300-with-bundles-and-sticks",
+  "text": "Make 300 with bundles and sticks."
+ },
+ {
+  "slug": "make-400-with-bundles-and-sticks",
+  "text": "Make 400 with bundles and sticks."
+ },
+ {
+  "slug": "make-500-with-bundles-and-sticks",
+  "text": "Make 500 with bundles and sticks."
+ },
+ {
+  "slug": "make-600-with-bundles-and-sticks",
+  "text": "Make 600 with bundles and sticks."
+ },
+ {
+  "slug": "make-700-with-bundles-and-sticks",
+  "text": "Make 700 with bundles and sticks."
+ },
+ {
+  "slug": "make-800-with-bundles-and-sticks",
+  "text": "Make 800 with bundles and sticks."
+ },
+ {
+  "slug": "make-900-with-bundles-and-sticks",
+  "text": "Make 900 with bundles and sticks."
+ },
+ {
+  "slug": "make-143-with-bundles-and-sticks",
+  "text": "Make 143 with bundles and sticks."
+ },
+ {
+  "slug": "make-103-with-bundles-and-sticks",
+  "text": "Make 103 with bundles and sticks."
+ },
+ {
+  "slug": "make-160-with-bundles-and-sticks",
+  "text": "Make 160 with bundles and sticks."
+ },
+ {
+  "slug": "make-275-with-bundles-and-sticks",
+  "text": "Make 275 with bundles and sticks."
+ },
+ {
+  "slug": "make-205-with-bundles-and-sticks",
+  "text": "Make 205 with bundles and sticks."
+ },
+ {
+  "slug": "make-270-with-bundles-and-sticks",
+  "text": "Make 270 with bundles and sticks."
+ },
+ {
+  "slug": "make-317-with-bundles-and-sticks",
+  "text": "Make 317 with bundles and sticks."
+ },
+ {
+  "slug": "make-307-with-bundles-and-sticks",
+  "text": "Make 307 with bundles and sticks."
+ },
+ {
+  "slug": "make-380-with-bundles-and-sticks",
+  "text": "Make 380 with bundles and sticks."
+ },
+ {
+  "slug": "make-449-with-bundles-and-sticks",
+  "text": "Make 449 with bundles and sticks."
+ },
+ {
+  "slug": "make-409-with-bundles-and-sticks",
+  "text": "Make 409 with bundles and sticks."
+ },
+ {
+  "slug": "make-490-with-bundles-and-sticks",
+  "text": "Make 490 with bundles and sticks."
+ },
+ {
+  "slug": "make-572-with-bundles-and-sticks",
+  "text": "Make 572 with bundles and sticks."
+ },
+ {
+  "slug": "make-502-with-bundles-and-sticks",
+  "text": "Make 502 with bundles and sticks."
+ },
+ {
+  "slug": "make-510-with-bundles-and-sticks",
+  "text": "Make 510 with bundles and sticks."
+ },
+ {
+  "slug": "make-614-with-bundles-and-sticks",
+  "text": "Make 614 with bundles and sticks."
+ },
+ {
+  "slug": "make-604-with-bundles-and-sticks",
+  "text": "Make 604 with bundles and sticks."
+ },
+ {
+  "slug": "make-620-with-bundles-and-sticks",
+  "text": "Make 620 with bundles and sticks."
+ },
+ {
+  "slug": "make-746-with-bundles-and-sticks",
+  "text": "Make 746 with bundles and sticks."
+ },
+ {
+  "slug": "make-706-with-bundles-and-sticks",
+  "text": "Make 706 with bundles and sticks."
+ },
+ {
+  "slug": "make-730-with-bundles-and-sticks",
+  "text": "Make 730 with bundles and sticks."
+ },
+ {
+  "slug": "make-878-with-bundles-and-sticks",
+  "text": "Make 878 with bundles and sticks."
+ },
+ {
+  "slug": "make-808-with-bundles-and-sticks",
+  "text": "Make 808 with bundles and sticks."
+ },
+ {
+  "slug": "make-840-with-bundles-and-sticks",
+  "text": "Make 840 with bundles and sticks."
+ },
+ {
+  "slug": "make-911-with-bundles-and-sticks",
+  "text": "Make 911 with bundles and sticks."
+ },
+ {
+  "slug": "make-901-with-bundles-and-sticks",
+  "text": "Make 901 with bundles and sticks."
+ },
+ {
+  "slug": "make-950-with-bundles-and-sticks",
+  "text": "Make 950 with bundles and sticks."
+ },
+ {
+  "slug": "1-hundred-0-tens-and-0-ones-what-number-is-that",
+  "text": "1 hundred, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "2-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "2 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "3-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "3 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "4-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "4 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "5-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "5 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "6-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "6 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "7-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "7 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "8-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "8 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "9-hundreds-0-tens-and-0-ones-what-number-is-that",
+  "text": "9 hundreds, 0 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "1-hundred-4-tens-and-3-ones-what-number-is-that",
+  "text": "1 hundred, 4 tens and 3 ones. What number is that?"
+ },
+ {
+  "slug": "1-hundred-0-tens-and-3-ones-what-number-is-that",
+  "text": "1 hundred, 0 tens and 3 ones. What number is that?"
+ },
+ {
+  "slug": "1-hundred-6-tens-and-0-ones-what-number-is-that",
+  "text": "1 hundred, 6 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "2-hundreds-7-tens-and-5-ones-what-number-is-that",
+  "text": "2 hundreds, 7 tens and 5 ones. What number is that?"
+ },
+ {
+  "slug": "2-hundreds-0-tens-and-5-ones-what-number-is-that",
+  "text": "2 hundreds, 0 tens and 5 ones. What number is that?"
+ },
+ {
+  "slug": "2-hundreds-7-tens-and-0-ones-what-number-is-that",
+  "text": "2 hundreds, 7 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "3-hundreds-1-ten-and-7-ones-what-number-is-that",
+  "text": "3 hundreds, 1 ten and 7 ones. What number is that?"
+ },
+ {
+  "slug": "3-hundreds-0-tens-and-7-ones-what-number-is-that",
+  "text": "3 hundreds, 0 tens and 7 ones. What number is that?"
+ },
+ {
+  "slug": "3-hundreds-8-tens-and-0-ones-what-number-is-that",
+  "text": "3 hundreds, 8 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "4-hundreds-4-tens-and-9-ones-what-number-is-that",
+  "text": "4 hundreds, 4 tens and 9 ones. What number is that?"
+ },
+ {
+  "slug": "4-hundreds-0-tens-and-9-ones-what-number-is-that",
+  "text": "4 hundreds, 0 tens and 9 ones. What number is that?"
+ },
+ {
+  "slug": "4-hundreds-9-tens-and-0-ones-what-number-is-that",
+  "text": "4 hundreds, 9 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "5-hundreds-7-tens-and-2-ones-what-number-is-that",
+  "text": "5 hundreds, 7 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "5-hundreds-0-tens-and-2-ones-what-number-is-that",
+  "text": "5 hundreds, 0 tens and 2 ones. What number is that?"
+ },
+ {
+  "slug": "5-hundreds-1-ten-and-0-ones-what-number-is-that",
+  "text": "5 hundreds, 1 ten and 0 ones. What number is that?"
+ },
+ {
+  "slug": "6-hundreds-1-ten-and-4-ones-what-number-is-that",
+  "text": "6 hundreds, 1 ten and 4 ones. What number is that?"
+ },
+ {
+  "slug": "6-hundreds-0-tens-and-4-ones-what-number-is-that",
+  "text": "6 hundreds, 0 tens and 4 ones. What number is that?"
+ },
+ {
+  "slug": "6-hundreds-2-tens-and-0-ones-what-number-is-that",
+  "text": "6 hundreds, 2 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "7-hundreds-4-tens-and-6-ones-what-number-is-that",
+  "text": "7 hundreds, 4 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "7-hundreds-0-tens-and-6-ones-what-number-is-that",
+  "text": "7 hundreds, 0 tens and 6 ones. What number is that?"
+ },
+ {
+  "slug": "7-hundreds-3-tens-and-0-ones-what-number-is-that",
+  "text": "7 hundreds, 3 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "8-hundreds-7-tens-and-8-ones-what-number-is-that",
+  "text": "8 hundreds, 7 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "8-hundreds-0-tens-and-8-ones-what-number-is-that",
+  "text": "8 hundreds, 0 tens and 8 ones. What number is that?"
+ },
+ {
+  "slug": "8-hundreds-4-tens-and-0-ones-what-number-is-that",
+  "text": "8 hundreds, 4 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "9-hundreds-1-ten-and-1-one-what-number-is-that",
+  "text": "9 hundreds, 1 ten and 1 one. What number is that?"
+ },
+ {
+  "slug": "9-hundreds-0-tens-and-1-one-what-number-is-that",
+  "text": "9 hundreds, 0 tens and 1 one. What number is that?"
+ },
+ {
+  "slug": "9-hundreds-5-tens-and-0-ones-what-number-is-that",
+  "text": "9 hundreds, 5 tens and 0 ones. What number is that?"
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-147",
+  "text": "What is a hundred more than 147?"
+ },
+ {
+  "slug": "a-hundred-more-is-one-more-raft-a-hundred-less-is-one-raft-fewer",
+  "text": "A hundred more is one more raft. A hundred less is one raft fewer."
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-232",
+  "text": "What is a hundred more than 232?"
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-356",
+  "text": "What is a hundred more than 356?"
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-418",
+  "text": "What is a hundred more than 418?"
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-563",
+  "text": "What is a hundred more than 563?"
+ },
+ {
+  "slug": "what-is-a-hundred-more-than-694",
+  "text": "What is a hundred more than 694?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-320",
+  "text": "What is a hundred less than 320?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-451",
+  "text": "What is a hundred less than 451?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-587",
+  "text": "What is a hundred less than 587?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-642",
+  "text": "What is a hundred less than 642?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-778",
+  "text": "What is a hundred less than 778?"
+ },
+ {
+  "slug": "what-is-a-hundred-less-than-905",
+  "text": "What is a hundred less than 905?"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle",
+  "text": "Well done! Come back tomorrow to change another bundle."
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-hundreds",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-change-another-bundle-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! Come back tomorrow to change another bundle. You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze",
+  "text": "Well done! A bundle in the den turned bronze!"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-hundreds",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-bronze-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A bundle in the den turned bronze! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver",
+  "text": "Well done! A bundle in the den turned silver!"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-hundreds",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-silver-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A bundle in the den turned silver! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold",
+  "text": "Well done! A bundle in the den turned gold!"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-hundreds",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "well-done-a-bundle-in-the-den-turned-gold-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "Well done! A bundle in the den turned gold! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft",
+  "text": "All the bundles are gold! Lizard won the Golden Raft!"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-hundreds",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-lizard-won-the-golden-raft-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the bundles are gold! Lizard won the Golden Raft! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft!"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-hundreds",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kiwi-won-the-golden-raft-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the bundles are gold! Kiwi won the Golden Raft! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft",
+  "text": "All the bundles are gold! Fantail won the Golden Raft!"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-hundreds",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-fantail-won-the-golden-raft-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the bundles are gold! Fantail won the Golden Raft! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft!"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-hundreds",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-bellbird-won-the-golden-raft-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the bundles are gold! Bellbird won the Golden Raft! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft",
+  "text": "All the bundles are gold! Kea won the Golden Raft!"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-tens-and-ones-to-50",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: tens and ones to 50"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-to-100-and-zero",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: to 100, and zero"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-tie-and-untie",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: tie and untie"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: ten more, ten less"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-hundreds",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: hundreds"
+ },
+ {
+  "slug": "all-the-bundles-are-gold-kea-won-the-golden-raft-you-are-so-good-at-this-next-time-all-mixed",
+  "text": "All the bundles are gold! Kea won the Golden Raft! You are so good at this! Next time: all mixed"
+ }
+]

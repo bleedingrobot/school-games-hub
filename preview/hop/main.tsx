@@ -8,6 +8,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HopGame } from '../../src/games/hop/HopGame';
 import { trialBackend } from '../../src/games/hop/backend';
+import { penguinPairs } from '../../src/games/korora';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 import './preview.css';
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
     <SoundProvider>
       <HopGame
         backend={trial.backend}
+        nextGame={{ name: 'Penguin Pairs', Icon: penguinPairs.Icon, open: () => window.alert('This opens Penguin Pairs in the real game.') }}
         extra={(h) => (
           <details className="hpp-tools">
             <summary>Preview tools</summary>
@@ -29,8 +31,12 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
             <p>Count in:</p>
-            {([10, 5, 2] as const).map((s) => (
-              <button key={s} type="button" onClick={() => { trial.tools.setStep(s); h.reload(); }}>{s}s</button>
+            {([10, 5, 2, 3, 4, 200] as const).map((s) => (
+              <button key={s} type="button" onClick={() => { trial.tools.setStep(s); h.reload(); }}>{s === 200 ? 'tens past 100' : `${s}s`}</button>
+            ))}
+            <p>Make every fact of this step and the ones before it secure (gold days then start off a multiple):</p>
+            {([10, 5, 2, 3, 4, 200] as const).map((s) => (
+              <button key={s} type="button" onClick={() => { trial.tools.makeSecure(s); h.reload(); }}>{s === 200 ? 'tens past 100' : `${s}s`} secure</button>
             ))}
             <p>
               <label>

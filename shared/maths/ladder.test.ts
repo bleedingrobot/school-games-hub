@@ -51,8 +51,8 @@ function solve(parts: string[]): number {
   return NaN;
 }
 
-// The number-line keys are pictures in the game; their typed form is checked by solveLine below.
-const LINE_KEY = /^(place100|read100|tens100|near10|near100|zoom|place1000|read1000):/;
+// The number-line, tens-and-ones and equal-rows keys are pictures in the game; their typed forms are checked by solveLine and solveArray below.
+const LINE_KEY = /^(place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun|eq[a-z]+|rows|turn|share|cut|which|give|howmany|counton|across):/; // (and Parrot's equals keys, checked in equals.test.ts, and Robin's counting keys, in counting.test.ts)
 
 describe('the early facts pack', () => {
   const pack = earlyFactsPack([], randomFromSeed(String(3)));
@@ -376,7 +376,7 @@ describe('skip counting in tens, fives and twos', () => {
   const ids = LADDER.map((s) => s.id);
 
   it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
-    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'number-line-100', 'ten-more-less', 'number-line-1000', 'tables-2-5-10']);
+    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false', 'bundles-50', 'place-value-100', 'regroup-100', 'ten-more-less-100', 'place-value-1000', 'equal-rows', 'arrays-turn', 'sharing-rows', 'cut-arrays', 'count-out-10', 'count-out-20', 'count-on', 'tables-2-5-10']);
     const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
     const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
     expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');
@@ -435,7 +435,7 @@ describe('skip counting in tens, fives and twos', () => {
     }
     expect(solveSkip(['20,', '30,', '?,', '45'])).toBeNull(); // not an even step
     expect(solveSkip(['3,', '5,', '?,', '9'])).toBeNull(); // not multiples of 2
-    expect(solveSkip(['80,', '90,', '100,', '?'])).toBeNull(); // past 100
+    expect(solveSkip(['180,', '190,', '200,', '?'])).toBeNull(); // past 200
     expect(solveSkip(['20', '30', '?', '50'])).toBeNull(); // not as it is shown
     expect(pack.rebuild('skip10:up:40', [40, 3])).toBeNull();
     expect(pack.rebuild('skip10:up:40', [30, 1])).toBeNull();
@@ -537,5 +537,99 @@ describe('the number-line keys, for Pigeon\'s Number Line', () => {
       expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
     }
     expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(place|read|tens|near|zoom)/.test(k))).toBe(false);
+  });
+});
+
+describe('the R8 keys: threes, fours, tens past 100, counting from a start, and ten more on the teens', () => {
+  const pack = earlyFactsPack([], randomFromSeed('r8-keys'));
+  const skills = ['skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens'].map((id) => LADDER.find((s) => s.id === id)!);
+
+  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each shown form back', () => {
+    const all = skills.flatMap((s) => s.keys);
+    for (const skill of skills) expect(skill, skill.id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
+    expect(new Set(all).size).toBe(all.length);
+    expect(all.some((k) => LADDER.filter((s) => !skills.includes(s)).some((s) => s.keys.includes(k)))).toBe(false);
+    for (const key of all) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key), key).toBe('early-facts');
+      for (let i = 0; i < 6; i++) {
+        const q = pack.questionFor(key, 'focus', { multipleChoice: true });
+        expect(q.factKey).toBe(key);
+        expect(q.choices).toContain(q.answer);
+        expect(new Set(q.choices).size).toBe(q.choices!.length);
+        const solved = solveParts(q.parts);
+        expect(solved?.answer, key).toBe(q.answer);
+        expect(solved?.keys, key).toContain(key);
+        expect(pack.rebuild(key, q.params!)?.parts).toEqual(q.parts);
+      }
+      expect(pack.rebuild(key, [1000, 1])).toBeNull();
+    }
+    // The ladder never asks these on its own.
+    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(skip(3|4|10h|\d+o)|tenup|tendown)/.test(k))).toBe(false);
+  });
+
+  it('count right: threes to 30, fours to 40, tens from 100 to 200, and a start that is really the first pad', () => {
+    expect(EARLY_FACTS.families.skip3.keys).toEqual(expect.arrayContaining(['skip3:next:12', 'skip3:up:9', 'skip3:back:21']));
+    expect(EARLY_FACTS.families.skip3.keys.some((k) => Number(k.split(':')[2]) > 30)).toBe(false);
+    expect(EARLY_FACTS.families.skip4.keys).toContain('skip4:next:40');
+    expect(EARLY_FACTS.families.skip10h.keys.map((k) => Number(k.split(':')[2])).every((n) => n > 100 && n <= 200)).toBe(true);
+    expect(pack.rebuild('skip10h:next:110', [110, 3])?.parts).toEqual(['80,', '90,', '100,', '?']);
+    expect(pack.rebuild('skip10o3:next:33', [33, 3])?.parts).toEqual(['3,', '13,', '23,', '?']);
+    expect(pack.rebuild('skip10o3:next:33', [33, 4])).toBeNull(); // 13, 23, 33 would not start at 3
+    expect(solveSkip(['3,', '13,', '?,', '33'])).toEqual({ answer: 23, key: 'skip10o3:up:23' });
+    expect(solveSkip(['1,', '3,', '5,', '?'])).toEqual({ answer: 7, key: 'skip2o1:next:7' });
+    expect(solveSkip(['13,', '23,', '33,', '?'])).toBeNull(); // starts at 13: no record says that
+    expect(solveParts(['14', '+', '10', '=', '?'])?.keys).toEqual(expect.arrayContaining(['tenup:14', 'tendown:24']));
+    expect(solveParts(['10', '+', '10', '=', '?'])?.keys).toContain('tenup:10');
+    expect(pack.rebuild('tenup:14', [14, 0])?.answer).toBe(24);
+    expect(pack.rebuild('tendown:24', [24, 1])?.parts).toEqual(['10', '+', '?', '=', '24']);
+
+  });
+});
+
+describe('the equal-rows keys, for Swamp Hen\'s Reed Rows', () => {
+  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
+    const counts: Record<string, number> = { 'equal-rows': 36, 'arrays-turn': 20 + 20, 'sharing-rows': 30, 'cut-arrays': 28 };
+    const all: string[] = [];
+    for (const [id, count] of Object.entries(counts)) {
+      const skill = LADDER.find((s) => s.id === id)!;
+      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
+      expect(skill.keys, id).toHaveLength(count);
+      all.push(...skill.keys);
+    }
+    expect(new Set(all).size).toBe(all.length);
+    const pack = earlyFactsPack();
+    for (const key of all) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key), key).toBe('early-facts');
+      const q = pack.questionFor(key, 'focus', { multipleChoice: true });
+      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
+      expect(new Set(q.choices).size, key).toBe(4);
+      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
+    }
+    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(rows|turn|share|cut|which):/.test(k))).toBe(false);
+  });
+});
+
+describe('the tens-and-ones keys, for Lizard\'s Bundles', () => {
+  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
+    const counts: Record<string, number> = { 'bundles-50': 5 + 16 + 16, 'place-value-100': 4 + 20 + 20 + 9, 'regroup-100': 30, 'ten-more-less-100': 24, 'place-value-1000': 36 + 36 + 12 };
+    const all: string[] = [];
+    for (const id of Object.keys(counts)) {
+      const skill = LADDER.find((s) => s.id === id)!;
+      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
+      all.push(...skill.keys);
+    }
+    expect(all).toHaveLength(Object.values(counts).reduce((a, b) => a + b, 0));
+    expect(new Set(all).size).toBe(all.length);
+    const pack = earlyFactsPack();
+    for (const key of all) {
+      expect(RECORD_KEY.test(key), key).toBe(true);
+      expect(packIdOfKey(key), key).toBe('early-facts');
+      const q = pack.questionFor(key, 'focus');
+      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
+      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
+    }
+    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^pv/.test(k))).toBe(false);
   });
 });

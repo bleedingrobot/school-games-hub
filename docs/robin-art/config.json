@@ -1,0 +1,74 @@
+{
+  "game": "robin",
+  "filename_prefix": "robin/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/robin-art/set",
+  "picks": "docs/robin-art/picks.json",
+  "art_dir": "src/games/robin/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "robin-wait",
+      "prompt": "Robin, a cute round New Zealand robin with a grey-black head, a bright yellow-cream chest and thin legs, sitting upright and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "robin",
+      "file": "robin-wait",
+      "max": 1000
+    },
+    {
+      "name": "robin-happy",
+      "prompt": "Robin, a cute round New Zealand robin with a yellow-cream chest, wings spread wide, beak open in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "robin",
+      "file": "robin-happy",
+      "max": 1000
+    },
+    {
+      "name": "berry",
+      "prompt": "One plump round red berry with a tiny green leaf on top. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        512,
+        512
+      ],
+      "kind": "cut",
+      "folder": "robin",
+      "file": "berry",
+      "max": 1000
+    },
+    {
+      "name": "basket",
+      "prompt": "A woven wicker basket with a curved handle, empty, seen from slightly above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "robin",
+      "file": "basket",
+      "max": 1000
+    },
+    {
+      "name": "basket-gold",
+      "prompt": "A woven wicker basket overflowing with golden shiny berries, with a gold ribbon on the handle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "robin",
+      "file": "basket-gold",
+      "max": 1000
+    }
+  ]
+}

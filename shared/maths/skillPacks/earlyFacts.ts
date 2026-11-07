@@ -10,6 +10,8 @@
  */
 import { BandedPack, int, isInt, speak, type Family, type PackDefinition } from '../banded';
 import type { FactStats } from '../leitner';
+import { KEYS as EQUALS_KEYS } from './equalsKeys';
+import { COUNT_KEYS, countNumbers } from './countingKeys';
 
 const bondKeys = (prefix: string, total: number, from: number) => {
   const keys: string[] = [];
@@ -71,12 +73,15 @@ function doublesHalves(label: string, tag: string, dblFrom: number, dblTo: numbe
   };
 }
 
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+ * "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+ * Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+ */
 const tenAnd: Family = {
   label: '"Ten and" facts (10 + 4)',
   curriculumTags: ['MS.Y1.NUM.OP.P6'],
   keys: range(1, 9).map((n) => `tenand:${n}`),
-  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 3)],
+  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 1)],
   make: (key, [n, v]) => {
     if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
     const t = String(10 + n);
@@ -89,6 +94,46 @@ const tenAnd: Family = {
   },
 };
 
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess: Family = {
+  label: '"Ten less" facts (14 − 10)',
+  curriculumTags: ['MS.Y1.NUM.OP.P6'],
+  keys: range(1, 9).map((n) => `tenless:${n}`),
+  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 1)],
+  make: (key, [n, v]) => {
+    if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+    const t = String(10 + n);
+    const parts = v === 0 ? [t, '−', '10', '=', '?'] : ['10', '+', '?', '=', t];
+    return { parts, spoken: speak(parts), answer: n, wrong: [n + 1, n - 1, n + 10, 20, 1 + n] };
+  },
+};
+
+/**
+ * Ten more and ten less on the teens (Tūī's step 6), one record for each: "tenup:14" is ten more than 14 (and 10 + 10, "tenup:10"),
+ * "tendown:24" is ten less than 24. The ten-frame shows the ten going on or coming off. Variants for up: 0 "14 + 10 = ?",
+ * 1 "10 + 14 = ?"; for down: 0 "24 − 10 = ?", 1 "10 + ? = 24" (what was left after the ten came off).
+ */
+export const TEN_UP_FROM = 10;
+export const TEN_DOWN_FROM = 20;
+const tenMove = (up: boolean): Family => {
+  const keys = range(up ? TEN_UP_FROM : TEN_DOWN_FROM, (up ? TEN_UP_FROM : TEN_DOWN_FROM) + 9).map((n) => `${up ? 'tenup' : 'tendown'}:${n}`);
+  return {
+    label: up ? 'Ten more than a teen (14 + 10)' : 'Ten less than a number in the twenties (24 − 10)',
+    curriculumTags: ['MS.Y1.NUM.OP.P6'],
+    keys,
+    roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 1)],
+    make: (key, [n, v]) => {
+      if (!keys.includes(key) || key.split(':')[1] !== String(n) || !isInt(v, 0, 1)) return null;
+      const [parts, answer] =
+        up ? (v === 0 ? [[String(n), '+', '10', '=', '?'], n + 10] : [['10', '+', String(n), '=', '?'], n + 10])
+        : v === 0 ? [[String(n), '−', '10', '=', '?'], n - 10]
+        : [['10', '+', '?', '=', String(n)], n - 10];
+      const a = answer as number;
+      return { parts: parts as string[], spoken: speak(parts as string[]), answer: a, wrong: up ? [a - 10, a + 10, a + 1, a - 1, 10 + 1] : [n, a - 10, a + 1, a - 1, n + 10] };
+    },
+  };
+};
+
 /** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
 export const SKIP_STEPS = [
   { step: 10, upTo: 100, word: 'tens' },
@@ -96,32 +141,74 @@ export const SKIP_STEPS = [
   { step: 2, upTo: 20, word: 'twos' },
 ] as const;
 export type SkipStep = (typeof SKIP_STEPS)[number]['step'];
+/**
+ * More skip counting, beside the ladder (ladder-only, so auto practice never meets it; Hop asks it from its own rules):
+ * threes to 30 ("skip3:next:12") and fours to 40 ("skip4:up:20"), the same kinds of question as the first three.
+ */
+export const SKIP_MORE_STEPS = [
+  { step: 3, upTo: 30, word: 'threes' },
+  { step: 4, upTo: 40, word: 'fours' },
+] as const;
+/** Tens past 100, to 200: "skip10h:next:110" (80, 90, 100, ?). Only answers past 100, so no key is also a "skip10" one. */
+export const SKIP_HIGH = { step: 10, from: 100, upTo: 200, word: 'tens past 100' } as const;
+/**
+ * Skip counting from a start that isn't a multiple of the step (start at 3, hop by 10: 3, 13, 23, ?), to 4 hops. The first
+ * pad is always the start, so "skip10o3:next:33" really is "from 3": the key names the start. Offsets are 1 up to one
+ * less than the step.
+ */
+export const SKIP_FROM_STEPS = [
+  { step: 10, word: 'tens' },
+  { step: 5, word: 'fives' },
+  { step: 4, word: 'fours' },
+  { step: 3, word: 'threes' },
+  { step: 2, word: 'twos' },
+] as const;
 /** How a skip-counting question goes: a gap counting up (2, 4, ?, 8), what comes next (2, 4, 6, ?), or a gap counting back (10, 8, ?, 4). */
 export type SkipKind = 'up' | 'next' | 'back';
+
+/** A family of skip counting: its step, how far it goes, the lowest answer, its start (null: any multiple of the step, 0 included) and the family-name prefix of its keys. */
+interface SkipSpec {
+  step: number;
+  upTo: number;
+  word: string;
+  /** Keys read "skip10h:up:110" or "skip10o3:up:23": the prefix before the colon. */
+  prefix: (offset: number) => string;
+  /** Answers must be past this (tens past 100). */
+  above?: number;
+  /** The offsets, when every question starts at one ("from 3"). */
+  offsets?: readonly number[];
+}
 
 /**
  * One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
  * (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
- * the step from 0 to `upTo`.
+ * the step from 0 to `upTo`; with an offset the first pad is the offset itself and counting only goes up.
  */
-function skipTerms(kind: SkipKind, step: number, upTo: number, answer: number, at: number): number[] | null {
+function skipTerms(spec: SkipSpec, kind: SkipKind, answer: number, at: number, offset = 0): number[] | null {
+  const { step, upTo } = spec;
   if (kind === 'next' ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
   const terms =
     kind === 'up' ? range(answer - at * step, answer + (3 - at) * step, step)
     : kind === 'back' ? range(answer - (3 - at) * step, answer + at * step, step).reverse()
     : range(answer - at * step, answer, step);
-  return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
+  if (spec.offsets && (kind === 'back' || terms[0] !== offset)) return null;
+  if (spec.above !== undefined && answer <= spec.above) return null;
+  return terms.every((n) => n >= 0 && n <= upTo) && answer % step === offset ? terms : null;
 }
 
-const skipKeys = (step: number, upTo: number) =>
-  (['up', 'next', 'back'] as const).flatMap((kind) =>
-    range(0, upTo, step)
-      .filter((n) => [1, 2, 3, 4].some((at) => skipTerms(kind, step, upTo, n, at)))
-      .map((n) => `skip${step}:${kind}:${n}`),
+const skipOffsets = (spec: SkipSpec) => spec.offsets ?? [0];
+const skipKeys = (spec: SkipSpec) =>
+  skipOffsets(spec).flatMap((offset) =>
+    (spec.offsets ? (['up', 'next'] as const) : (['up', 'next', 'back'] as const)).flatMap((kind) =>
+      range(offset, spec.upTo, spec.step)
+        .filter((n) => [1, 2, 3, 4].some((at) => skipTerms(spec, kind, n, at, offset)))
+        .map((n) => `${spec.prefix(offset)}:${kind}:${n}`),
+    ),
   );
-const parseSkip = (key: string) => {
-  const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
-  return m ? { step: Number(m[1]), kind: m[2] as SkipKind, answer: Number(m[3]) } : null;
+/** A skip-counting key read apart: "skip10o3:next:33" is step 10, start 3 (offset 3), what comes next, 33; "skip10h:up:110" is high. */
+export const parseSkip = (key: string) => {
+  const m = /^skip(\d+)(?:o(\d+)|(h))?:(up|next|back):(\d+)$/.exec(key);
+  return m ? { step: Number(m[1]), offset: m[2] ? Number(m[2]) : 0, high: !!m[3], kind: m[4] as SkipKind, answer: Number(m[5]) } : null;
 };
 
 /**
@@ -129,22 +216,23 @@ const parseSkip = (key: string) => {
  * the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
  * Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
  */
-function skipCounting(step: number, upTo: number, word: string): Family {
-  const keys = skipKeys(step, upTo);
+function skipCounting(spec: SkipSpec): Family {
+  const { step, word } = spec;
+  const keys = skipKeys(spec);
   const ats = (kind: SkipKind) => (kind === 'next' ? [3, 4] : [1, 2]);
   return {
     label: `Counting in ${word}`,
     curriculumTags: [],
     keys,
     roll: (key, r) => {
-      const { kind, answer } = parseSkip(key)!;
-      const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
+      const { kind, answer, offset } = parseSkip(key)!;
+      const fits = ats(kind).filter((at) => skipTerms(spec, kind, answer, at, offset));
       return [answer, fits[int(r, 0, fits.length - 1)]];
     },
     make: (key, [answer, at]) => {
       const skip = parseSkip(key);
       if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
-      const terms = skipTerms(skip.kind, step, upTo, answer, at);
+      const terms = skipTerms(spec, skip.kind, answer, at, skip.offset);
       if (!terms) return null;
       const gap = terms.indexOf(answer);
       const parts = terms.map((n, i) => (i === gap ? '?' : String(n)) + (i < terms.length - 1 ? ',' : ''));
@@ -155,7 +243,7 @@ function skipCounting(step: number, upTo: number, word: string): Family {
       const wrongSteps = [10, 5, 2, 1].filter((s) => s !== step);
       return {
         parts,
-        spoken: `Counting ${skip.kind === 'back' ? 'back ' : ''}in ${word}: ${said}. ${prompt}`,
+        spoken: `Counting ${skip.kind === 'back' ? 'back ' : ''}in ${word}${skip.offset ? ` from ${skip.offset}` : ''}: ${said}. ${prompt}`,
         prompt,
         answer,
         wrong: [answer + 1, answer - 1, ...wrongSteps.map((s) => before + back * s), ...terms.filter((n) => n !== answer)],
@@ -163,6 +251,19 @@ function skipCounting(step: number, upTo: number, word: string): Family {
     },
   };
 }
+const skipSpec = (step: number, upTo: number, word: string): SkipSpec => ({ step, upTo, word, prefix: () => `skip${step}` });
+const skipFamilies: Record<string, Family> = {
+  ...Object.fromEntries([...SKIP_STEPS, ...SKIP_MORE_STEPS].map(({ step, upTo, word }) => [`skip${step}`, skipCounting(skipSpec(step, upTo, word))])),
+  skip10h: skipCounting({ step: 10, upTo: SKIP_HIGH.upTo, word: SKIP_HIGH.word, above: SKIP_HIGH.from, prefix: () => 'skip10h' }),
+  ...Object.fromEntries(
+    SKIP_FROM_STEPS.map(({ step, word }) => [
+      `skip${step}o`,
+      skipCounting({ step, upTo: step * 5, word, offsets: range(1, step - 1), prefix: (offset) => `skip${step}o${offset}` }),
+    ]),
+  ),
+};
+/** The family names of the skip counting kept beside the ladder (threes, fours, tens past 100, and from a start). */
+export const SKIP_MORE_FAMILY_NAMES = Object.keys(skipFamilies).filter((n) => !SKIP_STEPS.some(({ step }) => n === `skip${step}`));
 
 /** The wholes in each part-whole skill: small wholes first, then up to 10. */
 export const PART_WHOLES = { parts5: [3, 5], parts10: [6, 10] } as const;
@@ -254,10 +355,16 @@ export function solveSkip(parts: readonly string[]): { answer: number; key: stri
   const answer = known[0].n + diff * (gap - known[0].i);
   const kind: SkipKind = gap === parts.length - 1 ? 'next' : diff < 0 ? 'back' : 'up';
   if (kind === 'next' && diff < 0) return null;
-  const key = `skip${step}:${kind}:${answer}`;
-  const family = Object.values(families).find((f) => f.keys.includes(key));
-  const made = family?.make(key, [answer, gap]);
-  return made && made.parts.length === parts.length && made.parts.every((p, i) => p === parts[i]) ? { answer, key } : null;
+  // The same pads could be a multiple-of-the-step question, one past 100, or one from a start (the first pad, below the step).
+  const first = known[0].i === 0 ? known[0].n : NaN;
+  const prefixes = [`skip${step}`, `skip${step}h`, `skip${step}o${first}`];
+  for (const prefix of prefixes) {
+    const key = `${prefix}:${kind}:${answer}`;
+    const family = Object.values(families).find((f) => f.keys.includes(key));
+    const made = family?.make(key, [answer, gap]);
+    if (made && made.parts.length === parts.length && made.parts.every((p, i) => p === parts[i])) return { answer, key };
+  }
+  return null;
 }
 
 // ---- The number line (Pigeon's Number Line, docs/plans/maths-review/new-games/N1-number-line.md) -------------------
@@ -288,6 +395,29 @@ export const ZOOM_KEYS = [
   'zoom:300-400:350',
 ];
 
+// ---- Tens and ones (Lizard's Bundles, docs/plans/maths-review/new-games/N3-place-value.md) ---------------------------
+// More ladder-only keys, recorded as plain right or wrong at the first "That's it" or first tap. The game builds its own
+// pictures (bundles and sticks) and wrong cards; the number is always the key's last digits.
+//   pvbuild:t30 / pvbuild:n47    build 30 / 47 on the mat with bundles and sticks (9 tens + 36 others)
+//   pvread:n47                   read 4 bundles and 7 sticks (36 others)
+//   pvzero:n40                   read bundles with an empty ones place (9 tens)
+//   pvregroup:b23 / pvregroup:s47  tie 23 loose sticks into bundles / 47 is 3 bundles and 17 sticks (12 + 18)
+//   pvten:+47 / pvten:-47        ten more / ten less than 47 as a bundle added or taken (12 + 12)
+//   pvbuild3:t300 / pvbuild3:n306, pvread3:... (9 hundreds + 27 others each; zeros in the middle and at the end)
+//   pvhun:+347 / pvhun:-347      a hundred more / less (6 + 6)
+const PV_TENS = range(1, 9).map((n) => n * 10);
+/** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
+const PV_OTHERS = range(1, 9).flatMap((t) => [1, 3, 5, 7].map((j) => t * 10 + ((t + j) % 9) + 1));
+export const PV_REGROUP_BUNDLE = [23, 31, 38, 42, 46, 54, 59, 25, 37, 48, 51, 33];
+export const PV_REGROUP_SWAP = [32, 41, 47, 53, 56, 62, 65, 71, 74, 78, 83, 86, 29, 35, 44, 58, 67, 92];
+export const PV_TEN_MORE = [14, 27, 35, 42, 56, 63, 78, 85, 91, 49, 68, 73];
+export const PV_TEN_LESS = [19, 32, 47, 54, 61, 76, 83, 98, 25, 66, 39, 72];
+const PV_HUNDREDS = range(1, 9).map((h) => h * 100);
+/** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
+const PV3_OTHERS = range(1, 9).flatMap((h) => [h * 100 + (((h * 3) % 9) + 1) * 10 + ((h * 2) % 9) + 1, h * 100 + ((h * 2) % 9) + 1, h * 100 + (((h + 4) % 9) + 1) * 10]);
+export const PV_HUN_MORE = [147, 232, 356, 418, 563, 694];
+export const PV_HUN_LESS = [320, 451, 587, 642, 778, 905];
+
 /** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
 const lineNumber = (key: string) => Number(/(\d+)$/.exec(key)![1]);
 /** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
@@ -312,6 +442,14 @@ const lineFamilies: Record<string, Family> = {
   place1000: numLine('Where a number goes on a 0 to 1000 line', 'MS.Y4.NUM.NS.P1', [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => ['Place', String(n), 'on', 'the', '1000', 'line'], (n) => `Where does ${n} go on the line to 1000?`),
   read1000: numLine('Reading a point on a 0 to 1000 line', 'MS.Y4.NUM.NS.P1', [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => ['Read', String(n), 'on', 'the', '1000', 'line'], () => 'What number is at the arrow?'),
   near100: numLine('Which hundred a number is closer to', 'MS.Y4.NUM.NS.P5', [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => ['Nearest', 'hundred', 'to', String(n)], (n) => nearWords(n, 100)),
+  pvbuild: numLine('Build a number with bundles and sticks', 'MS.Y2.NUM.NS.P1', [...PV_TENS.map((n) => `pvbuild:t${n}`), ...PV_OTHERS.map((n) => `pvbuild:n${n}`)], (n) => ['Build', String(n), 'with', 'bundles'], (n) => `Build ${n} with bundles and sticks.`),
+  pvread: numLine('Read bundles and sticks as a number', 'MS.Y2.NUM.NS.P1', PV_OTHERS.map((n) => `pvread:n${n}`), (n) => ['Read', String(n), 'from', 'bundles'], () => 'What number is this?'),
+  pvzero: numLine('Read bundles with no sticks left over', 'MS.Y2.NUM.NS.P1', PV_TENS.map((n) => `pvzero:n${n}`), (n) => ['Read', String(n), 'from', 'bundles', 'only'], () => 'What number is this?'),
+  pvregroup: numLine('Tie sticks into bundles and untie a bundle', 'MS.Y2.NUM.NS.P2', [...PV_REGROUP_BUNDLE.map((n) => `pvregroup:b${n}`), ...PV_REGROUP_SWAP.map((n) => `pvregroup:s${n}`)], (n, key) => (key.includes(':b') ? ['Tie', String(n), 'sticks', 'into', 'bundles'] : ['Untie', 'a', 'bundle', 'of', String(n)]), (n, key) => (key.includes(':b') ? `Tie ${n} sticks into bundles.` : `${n} is one bundle fewer and ten more sticks.`)),
+  pvten: numLine('Ten more and ten less with bundles', 'MS.Y2.NUM.NS.P1', [...PV_TEN_MORE.map((n) => `pvten:+${n}`), ...PV_TEN_LESS.map((n) => `pvten:-${n}`)], (n, key) => ['Bundle', key.includes('+') ? 'added' : 'taken', 'from', String(n)], (n, key) => `What is ten ${key.includes('+') ? 'more' : 'less'} than ${n}?`),
+  pvbuild3: numLine('Build a number with rafts, bundles and sticks', 'MS.Y3.NUM.NS.P1', [...PV_HUNDREDS.map((n) => `pvbuild3:t${n}`), ...PV3_OTHERS.map((n) => `pvbuild3:n${n}`)], (n) => ['Build', String(n), 'with', 'rafts'], (n) => `Build ${n} with rafts, bundles and sticks.`),
+  pvread3: numLine('Read rafts, bundles and sticks as a number', 'MS.Y3.NUM.NS.P1', [...PV_HUNDREDS.map((n) => `pvread3:t${n}`), ...PV3_OTHERS.map((n) => `pvread3:n${n}`)], (n) => ['Read', String(n), 'from', 'rafts'], () => 'What number is this?'),
+  pvhun: numLine('A hundred more and a hundred less', 'MS.Y3.NUM.NS.P1', [...PV_HUN_MORE.map((n) => `pvhun:+${n}`), ...PV_HUN_LESS.map((n) => `pvhun:-${n}`)], (n, key) => ['Raft', key.includes('+') ? 'added' : 'taken', 'from', String(n)], (n, key) => `What is a hundred ${key.includes('+') ? 'more' : 'less'} than ${n}?`),
 };
 export const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
 
@@ -329,13 +467,169 @@ export function solveLine(parts: readonly string[]): { answer: number; key: stri
   return null;
 }
 
+// ---- The equals sign (Parrot's See-saw, docs/PARROT-PLAN.md) ----------------------------------------------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). The game makes its own questions and
+// wrong cards; these families own the keys so records are kept, and read as short level-see-saw sentences if typed.
+//   eqmiss:8=5+?  eqswap:3+5 (3 + 5 = 5 + ?)  eqboth:6+7=8+?  eqsub:3=8-? and eqsub:9-4=2+?  eqtf:5+3=4+4 (true or false)
+const equalsNumbers = (key: string) => (key.split(':')[1].match(/\d+/g) ?? []).map(Number);
+const equalsParts = (key: string, n: number[]): string[] => {
+  const w = (...x: (number | string)[]) => ['Level', 'see-saw:', ...x.map(String)];
+  if (key.startsWith('eqmiss:')) return w(n[0], '=', n[1], '+', '?');
+  if (key.startsWith('eqswap:')) return w(n[0], '+', n[1], '=', n[1], '+', '?');
+  if (key.startsWith('eqboth:')) return w(n[0], '+', n[1], '=', n[2], '+', '?');
+  if (key.startsWith('eqtf:')) return ['True', 'or', 'false?', String(n[0]), '+', String(n[1]), '=', String(n[2]), '+', String(n[3])];
+  return key.includes('-?') ? w(n[0], '=', n[1], '-', '?') : w(n[0], '-', n[1], '=', n[2], '+', '?');
+};
+const equalsAnswer = (key: string, n: number[]): number => {
+  if (key.startsWith('eqmiss:')) return n[0] - n[1];
+  if (key.startsWith('eqswap:')) return n[0];
+  if (key.startsWith('eqboth:')) return n[0] + n[1] - n[2];
+  if (key.startsWith('eqtf:')) return n[0] + n[1] === n[2] + n[3] ? 0 : 1;
+  return key.includes('-?') ? n[1] - n[0] : n[0] - n[1] - n[2];
+};
+const equals = (label: string, keys: string[]): Family => ({
+  label,
+  curriculumTags: [],
+  keys,
+  roll: (key) => equalsNumbers(key),
+  make: (key, params) => {
+    const n = equalsNumbers(key);
+    if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+    const answer = equalsAnswer(key, n);
+    const parts = equalsParts(key, n);
+    if (key.startsWith('eqtf:')) return { parts, spoken: `True or false: ${n[0]} plus ${n[1]} equals ${n[2]} plus ${n[3]}?`, answer, pick: ['True', 'False'] };
+    return { parts, spoken: `What number keeps the see-saw level?`, answer, wrong: [answer + 1, answer - 1, answer + 2] };
+  },
+});
+const equalsFamilies: Record<string, Family> = {
+  eqmiss: equals('See-saw with a missing number (to 10)', EQUALS_KEYS.miss),
+  eqswap: equals('Swapping the two numbers of a sum', EQUALS_KEYS.swap),
+  eqboth: equals('See-saw with two numbers on each side (to 20)', EQUALS_KEYS.both),
+  eqsub: equals('See-saw with taking away', EQUALS_KEYS.sub),
+  eqtf: equals('True or false: is the see-saw level?', EQUALS_KEYS.tf),
+};
+
+/** An equals-sign question read back from its parts (["Level", "see-saw:", "8", "=", "5", "+", "?"]): its answer and key, or null when it isn't one. */
+export function solveEquals(parts: readonly string[]): { answer: number; key: string } | null {
+  if (!parts.some((x) => x === 'see-saw:' || x === 'false?')) return null;
+  for (const family of Object.values(equalsFamilies)) {
+    for (const key of family.keys) {
+      const n = equalsNumbers(key);
+      const made = family.make(key, n);
+      if (made && made.parts.length === parts.length && made.parts.every((x, k) => x === parts[k])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
+// ---- Counting out (Robin's Berry Basket, docs/ROBIN-PLAN.md) -----------------------------------------------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). The game makes its own piles, berries and
+// wrong cards; these families own the keys so records are kept, and read as a short counting sentence if typed.
+//   give:n6   howmany:n6:ring   counton:5+1   across:n12
+const countingTyped = (key: string, n: number[]): { parts: string[]; spoken: string; answer: number } => {
+  if (key.startsWith('give:')) return { parts: ['Count', 'out', String(n[0]), 'berries:', 'how', 'many?'], spoken: `Count out ${n[0]} berries. How many is that?`, answer: n[0] };
+  if (key.startsWith('counton:')) return { parts: ['Plate', 'of', String(n[0]), 'and', 'one', 'more:', 'how', 'many?'], spoken: `A plate of ${n[0]} berries and one more. How many now?`, answer: n[0] + 1 };
+  const layout = key.split(':')[2];
+  return { parts: ['Count', String(n[0]), ...(layout ? [layout] : []), 'berries:', 'how', 'many?'], spoken: `Count the ${n[0]} berries. How many are there?`, answer: n[0] };
+};
+const counting = (label: string, keys: string[]): Family => ({
+  label,
+  curriculumTags: [],
+  keys,
+  roll: (key) => countNumbers(key),
+  make: (key, params) => {
+    const n = countNumbers(key);
+    if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+    const { parts, spoken, answer } = countingTyped(key, n);
+    return { parts, spoken, answer, wrong: [answer + 1, answer - 1, answer + 2, answer - 2] };
+  },
+});
+const countingFamilies: Record<string, Family> = {
+  give: counting('Giving exactly N (count out a set)', COUNT_KEYS.give),
+  howMany: counting('How many berries? (count a set, 1 to 10)', COUNT_KEYS.howmany),
+  countOn: counting('One more (count on from a covered plate)', COUNT_KEYS.counton),
+  across: counting('How many berries? (11 to 20, past ten)', COUNT_KEYS.across),
+};
+
+/** A counting question read back from its parts (["Count", "out", "6", "berries:", "how", "many?"]): its answer and key, or null when it isn't one. */
+export function solveCounting(parts: readonly string[]): { answer: number; key: string } | null {
+  if (!parts.some((x) => x === 'berries:' || x === 'more:')) return null;
+  for (const family of Object.values(countingFamilies)) {
+    for (const key of family.keys) {
+      const made = family.make(key, countNumbers(key));
+      if (made && made.parts.length === parts.length && made.parts.every((x, k) => x === parts[k])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
+// ---- Equal rows and arrays (Swamp Hen's Reed Rows, docs/plans/maths-review/new-games/N4-arrays.md) -------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). It also records the plain times
+// table keys ("mul:4x6") for the same go, so the times-table campaign moves too.
+//   rows:4x6    plant 4 rows of 6 (rows 2 to 5, 2 to 10 in a row: 36)
+//   turn:3x5    3 rows of 5 turned round (rows and columns each 2 to 6, not equal: 20)
+//   share:24/4  24 shared into 4 equal rows (rows 2, 3, 4, 5 and 10, 2 to 7 in each: 30)
+//   cut:6x7     6 rows of 7 cut into a row you know and one more (6 to 9 rows, 3 to 9 in a row: 28)
+//   which:3x5   which picture is 3 rows of 5 (rows and columns each 2 to 6, not equal: 20)
+const ROWS_KEYS = range(2, 5).flatMap((r) => range(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range(2, 6).flatMap((r) => range(2, 6).filter((c) => c !== r).map((c) => [r, c] as const));
+const SHARE_KEYS = [2, 3, 4, 5, 10].flatMap((r) => range(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range(6, 9).flatMap((r) => range(3, 9).map((c) => `cut:${r}x${c}`));
+const keyPair = (key: string) => {
+  const m = /(\d+)[x/](\d+)$/.exec(key)!;
+  return [Number(m[1]), Number(m[2])];
+};
+const rowsWords = (r: number, c: number) => `${r} rows of ${c}`;
+const arrayFamily = (label: string, tag: string, keys: string[], parts: (a: number, b: number) => string[], spoken: (a: number, b: number) => string, answer: (a: number, b: number) => number, wrong: (a: number, b: number) => number[]): Family => ({
+  label,
+  curriculumTags: [tag],
+  keys,
+  roll: (key) => keyPair(key),
+  make: (key, [a, b]) => {
+    if (!keys.includes(key)) return null;
+    const [ka, kb] = keyPair(key);
+    if (ka !== a || kb !== b) return null;
+    return { parts: parts(a, b), spoken: spoken(a, b), answer: answer(a, b), wrong: wrong(a, b) };
+  },
+});
+const product = (a: number, b: number) => a * b;
+const arrayFamilies: Record<string, Family> = {
+  rows: arrayFamily('Equal rows (4 rows of 6)', 'MS.Y2.NUM.OP.P3', ROWS_KEYS, (r, c) => ['Plant', String(r), 'rows', 'of', String(c)], (r, c) => `Plant ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [r + c, (r - 1) * c, Number(`${r}${c}`), r * c + r]),
+  turn: arrayFamily('The same array turned round (3 rows of 5 is 5 rows of 3)', 'MS.Y2.NUM.OP.P3', TURN_PAIRS.map(([r, c]) => `turn:${r}x${c}`), (r, c) => ['Turn', String(r), 'rows', 'of', String(c)], (r, c) => `Turn ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [r + c, (r - 1) * c, Number(`${r}${c}`), r * c + c]),
+  share: arrayFamily('Sharing into equal rows (24 into 4 rows)', 'MS.Y3.NUM.OP.P4', SHARE_KEYS, (t, r) => ['Share', String(t), 'into', String(r), 'rows'], (t, r) => `${t} shoots in ${r} equal rows. How many in each row?`, (t, r) => t / r, (t, r) => [t - r, t + r, r, t / r + r]),
+  cut: arrayFamily('Cutting an array into parts you know (6 rows of 7)', 'MS.Y3.NUM.OP.P3', CUT_KEYS, (r, c) => ['Cut', String(r), 'rows', 'of', String(c)], (r, c) => `Cut ${rowsWords(r, c)} into a row you know and one more. How many shoots?`, product, (r, c) => [(r - 1) * c, r + c, r * c + 6, r * c - r]),
+  which: arrayFamily('Which picture is 3 rows of 5', 'MS.Y2.NUM.OP.P3', TURN_PAIRS.map(([r, c]) => `which:${r}x${c}`), (r, c) => ['Which', 'is', String(r), 'rows', 'of', String(c)], (r, c) => `Which garden is ${rowsWords(r, c)}?`, product, (r, c) => [r + c, c * r + r, (r - 1) * c, Number(`${r}${c}`)]),
+};
+export const ARRAY_FAMILY_NAMES = Object.keys(arrayFamilies);
+
+/** An equal-rows question read back from its parts (["Plant", "4", "rows", "of", "6"]): its answer and key, or null when it isn't one. */
+export function solveArray(parts: readonly string[]): { answer: number; key: string } | null {
+  const nums = parts.filter((p) => /^\d{1,3}$/.test(p)).map(Number);
+  if (nums.length !== 2) return null;
+  for (const family of Object.values(arrayFamilies)) {
+    for (const key of family.keys) {
+      const [a, b] = keyPair(key);
+      if (a !== nums[0] || b !== nums[1]) continue;
+      const made = family.make(key, [a, b]);
+      if (made && made.parts.length === parts.length && made.parts.every((x, i) => x === parts[i])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
 const families: Record<string, Family> = {
   ...lineFamilies,
+  ...equalsFamilies,
+  ...countingFamilies,
+  ...arrayFamilies,
   tenAnd,
+  tenLess,
+  tenUp: tenMove(true),
+  tenDown: tenMove(false),
   oddEven,
   parts5: partWhole('Parts of 3, 4 and 5 (5 is 2 and 3)', ...PART_WHOLES.parts5),
   parts10: partWhole('Parts of 6 to 10 (7 is 4 and 3)', ...PART_WHOLES.parts10),
-  ...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
+  ...skipFamilies,
   bond10: bonds('Pairs that make 10', 'MS.Y1.NUM.OP.P1', 'bond10', 10, 0),
   dblHalf10: doublesHalves('Doubles and halves to 10', 'MS.Y1.NUM.OP.P2', 1, 5, 2, 10),
   bond20: bonds('Pairs that make 20', 'MS.Y2.NUM.OP.P1', 'bond20', 20, 1),
@@ -348,7 +642,7 @@ export const EARLY_FACTS: PackDefinition = {
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
   // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
-  ladderOnly: ['tenAnd', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...LINE_FAMILY_NAMES],
+  ladderOnly: ['tenAnd', 'tenLess', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies), ...ARRAY_FAMILY_NAMES, ...Object.keys(countingFamilies)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

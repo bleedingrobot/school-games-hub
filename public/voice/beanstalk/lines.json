@@ -28,6 +28,10 @@
   "text": "Next leaf tomorrow"
  },
  {
+  "slug": "you-know-your-pairs-use-them-to-add-across-ten",
+  "text": "You know your pairs. Use them to add across ten."
+ },
+ {
   "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
   "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 10 to help."
  },
@@ -128,6 +132,14 @@
   "text": "Now you try: what goes with 1?"
  },
  {
+  "slug": "1-and-what-make-10-tap-the-missing-leaf",
+  "text": "1 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-1-is-9",
+  "text": "So 10 take 1 is 9."
+ },
+ {
   "slug": "2-and-3-make-5-not-enough",
   "text": "2 and 3 make 5. Not enough."
  },
@@ -160,6 +172,14 @@
   "text": "Now you try: what goes with 2?"
  },
  {
+  "slug": "2-and-what-make-10-tap-the-missing-leaf",
+  "text": "2 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-2-is-8",
+  "text": "So 10 take 2 is 8."
+ },
+ {
   "slug": "3-and-4-make-7-not-enough",
   "text": "3 and 4 make 7. Not enough."
  },
@@ -188,6 +208,14 @@
   "text": "Now you try: what goes with 3?"
  },
  {
+  "slug": "3-and-what-make-10-tap-the-missing-leaf",
+  "text": "3 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-3-is-7",
+  "text": "So 10 take 3 is 7."
+ },
+ {
   "slug": "4-and-5-make-9-just-one-more-would-make-10",
   "text": "4 and 5 make 9. Just one more would make 10."
  },
@@ -210,6 +238,14 @@
  {
   "slug": "now-you-try-what-goes-with-4",
   "text": "Now you try: what goes with 4?"
+ },
+ {
+  "slug": "4-and-what-make-10-tap-the-missing-leaf",
+  "text": "4 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-4-is-6",
+  "text": "So 10 take 4 is 6."
  },
  {
   "slug": "5-and-6-make-11-just-one-too-many",
@@ -236,6 +272,14 @@
   "text": "Now you try: what goes with 5?"
  },
  {
+  "slug": "5-and-what-make-10-tap-the-missing-leaf",
+  "text": "5 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-5-is-5",
+  "text": "So 10 take 5 is 5."
+ },
+ {
   "slug": "6-and-7-make-13-that-is-too-many",
   "text": "6 and 7 make 13. That is too many."
  },
@@ -256,6 +300,14 @@
   "text": "Now you try: what goes with 6?"
  },
  {
+  "slug": "6-and-what-make-10-tap-the-missing-leaf",
+  "text": "6 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-6-is-4",
+  "text": "So 10 take 6 is 4."
+ },
+ {
   "slug": "7-and-8-make-15-that-is-too-many",
   "text": "7 and 8 make 15. That is too many."
  },
@@ -272,6 +324,14 @@
   "text": "Now you try: what goes with 7?"
  },
  {
+  "slug": "7-and-what-make-10-tap-the-missing-leaf",
+  "text": "7 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-7-is-3",
+  "text": "So 10 take 7 is 3."
+ },
+ {
   "slug": "8-and-9-make-17-that-is-too-many",
   "text": "8 and 9 make 17. That is too many."
  },
@@ -284,6 +344,14 @@
   "text": "Now you try: what goes with 8?"
  },
  {
+  "slug": "8-and-what-make-10-tap-the-missing-leaf",
+  "text": "8 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "so-10-take-8-is-2",
+  "text": "So 10 take 8 is 2."
+ },
+ {
   "slug": "9-and-1-more-make-10",
   "text": "9 and 1 more make 10."
  },
@@ -292,24 +360,984 @@
   "text": "Now you try: what goes with 9?"
  },
  {
-  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
-  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 100 to help."
+  "slug": "9-and-what-make-10-tap-the-missing-leaf",
+  "text": "9 and what make 10? Tap the missing leaf."
  },
  {
-  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 100 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "so-10-take-9-is-1",
+  "text": "So 10 take 9 is 1."
  },
  {
-  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100",
-  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 100!"
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 20 to help."
  },
  {
-  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 20 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 20!"
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 20! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
   "slug": "all-the-leaves-are-gold-tui-can-climb-down-you-win-the-golden-egg",
   "text": "All the leaves are gold! Tūī can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "tap-two-leaves-that-make-20",
+  "text": "Tap two leaves that make 20."
+ },
+ {
+  "slug": "tap-two-leaves-that-make-20-start-with-the-leaf-the-hand-points-to",
+  "text": "Tap two leaves that make 20. Start with the leaf the hand points to."
+ },
+ {
+  "slug": "1-and-19-make-20",
+  "text": "1 and 19 make 20!"
+ },
+ {
+  "slug": "2-and-18-make-20",
+  "text": "2 and 18 make 20!"
+ },
+ {
+  "slug": "3-and-17-make-20",
+  "text": "3 and 17 make 20!"
+ },
+ {
+  "slug": "4-and-16-make-20",
+  "text": "4 and 16 make 20!"
+ },
+ {
+  "slug": "5-and-15-make-20",
+  "text": "5 and 15 make 20!"
+ },
+ {
+  "slug": "6-and-14-make-20",
+  "text": "6 and 14 make 20!"
+ },
+ {
+  "slug": "7-and-13-make-20",
+  "text": "7 and 13 make 20!"
+ },
+ {
+  "slug": "8-and-12-make-20",
+  "text": "8 and 12 make 20!"
+ },
+ {
+  "slug": "9-and-11-make-20",
+  "text": "9 and 11 make 20!"
+ },
+ {
+  "slug": "11-and-9-make-20",
+  "text": "11 and 9 make 20!"
+ },
+ {
+  "slug": "12-and-8-make-20",
+  "text": "12 and 8 make 20!"
+ },
+ {
+  "slug": "13-and-7-make-20",
+  "text": "13 and 7 make 20!"
+ },
+ {
+  "slug": "14-and-6-make-20",
+  "text": "14 and 6 make 20!"
+ },
+ {
+  "slug": "15-and-5-make-20",
+  "text": "15 and 5 make 20!"
+ },
+ {
+  "slug": "16-and-4-make-20",
+  "text": "16 and 4 make 20!"
+ },
+ {
+  "slug": "17-and-3-make-20",
+  "text": "17 and 3 make 20!"
+ },
+ {
+  "slug": "18-and-2-make-20",
+  "text": "18 and 2 make 20!"
+ },
+ {
+  "slug": "19-and-1-make-20",
+  "text": "19 and 1 make 20!"
+ },
+ {
+  "slug": "two-ten-frames-make-20-1-and-19-make-20",
+  "text": "Two ten-frames make 20. 1 and 19 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-2-and-18-make-20",
+  "text": "Two ten-frames make 20. 2 and 18 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-3-and-17-make-20",
+  "text": "Two ten-frames make 20. 3 and 17 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-4-and-16-make-20",
+  "text": "Two ten-frames make 20. 4 and 16 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-5-and-15-make-20",
+  "text": "Two ten-frames make 20. 5 and 15 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-6-and-14-make-20",
+  "text": "Two ten-frames make 20. 6 and 14 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-7-and-13-make-20",
+  "text": "Two ten-frames make 20. 7 and 13 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-8-and-12-make-20",
+  "text": "Two ten-frames make 20. 8 and 12 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-9-and-11-make-20",
+  "text": "Two ten-frames make 20. 9 and 11 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-11-and-9-make-20",
+  "text": "Two ten-frames make 20. 11 and 9 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-12-and-8-make-20",
+  "text": "Two ten-frames make 20. 12 and 8 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-13-and-7-make-20",
+  "text": "Two ten-frames make 20. 13 and 7 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-14-and-6-make-20",
+  "text": "Two ten-frames make 20. 14 and 6 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-15-and-5-make-20",
+  "text": "Two ten-frames make 20. 15 and 5 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-16-and-4-make-20",
+  "text": "Two ten-frames make 20. 16 and 4 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-17-and-3-make-20",
+  "text": "Two ten-frames make 20. 17 and 3 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-18-and-2-make-20",
+  "text": "Two ten-frames make 20. 18 and 2 make 20."
+ },
+ {
+  "slug": "two-ten-frames-make-20-19-and-1-make-20",
+  "text": "Two ten-frames make 20. 19 and 1 make 20."
+ },
+ {
+  "slug": "1-and-8-make-9-not-enough",
+  "text": "1 and 8 make 9. Not enough."
+ },
+ {
+  "slug": "1-and-9-make-10-not-enough",
+  "text": "1 and 9 make 10. Not enough."
+ },
+ {
+  "slug": "1-and-11-make-12-not-enough",
+  "text": "1 and 11 make 12. Not enough."
+ },
+ {
+  "slug": "1-and-12-make-13-not-enough",
+  "text": "1 and 12 make 13. Not enough."
+ },
+ {
+  "slug": "1-and-13-make-14-not-enough",
+  "text": "1 and 13 make 14. Not enough."
+ },
+ {
+  "slug": "1-and-14-make-15-not-enough",
+  "text": "1 and 14 make 15. Not enough."
+ },
+ {
+  "slug": "1-and-15-make-16-not-enough",
+  "text": "1 and 15 make 16. Not enough."
+ },
+ {
+  "slug": "1-and-16-make-17-not-enough",
+  "text": "1 and 16 make 17. Not enough."
+ },
+ {
+  "slug": "1-and-17-make-18-not-enough",
+  "text": "1 and 17 make 18. Not enough."
+ },
+ {
+  "slug": "1-and-18-make-19-just-one-more-would-make-20",
+  "text": "1 and 18 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "1-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-more-make-20",
+  "text": "1 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 more make 20."
+ },
+ {
+  "slug": "1-and-what-make-20-tap-the-missing-leaf",
+  "text": "1 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-1-is-19",
+  "text": "So 20 take 1 is 19."
+ },
+ {
+  "slug": "2-and-7-make-9-not-enough",
+  "text": "2 and 7 make 9. Not enough."
+ },
+ {
+  "slug": "2-and-8-make-10-not-enough",
+  "text": "2 and 8 make 10. Not enough."
+ },
+ {
+  "slug": "2-and-9-make-11-not-enough",
+  "text": "2 and 9 make 11. Not enough."
+ },
+ {
+  "slug": "2-and-11-make-13-not-enough",
+  "text": "2 and 11 make 13. Not enough."
+ },
+ {
+  "slug": "2-and-12-make-14-not-enough",
+  "text": "2 and 12 make 14. Not enough."
+ },
+ {
+  "slug": "2-and-13-make-15-not-enough",
+  "text": "2 and 13 make 15. Not enough."
+ },
+ {
+  "slug": "2-and-14-make-16-not-enough",
+  "text": "2 and 14 make 16. Not enough."
+ },
+ {
+  "slug": "2-and-15-make-17-not-enough",
+  "text": "2 and 15 make 17. Not enough."
+ },
+ {
+  "slug": "2-and-16-make-18-not-enough",
+  "text": "2 and 16 make 18. Not enough."
+ },
+ {
+  "slug": "2-and-17-make-19-just-one-more-would-make-20",
+  "text": "2 and 17 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "2-and-19-make-21-just-one-too-many",
+  "text": "2 and 19 make 21. Just one too many."
+ },
+ {
+  "slug": "2-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-more-make-20",
+  "text": "2 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 more make 20."
+ },
+ {
+  "slug": "2-and-what-make-20-tap-the-missing-leaf",
+  "text": "2 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-2-is-18",
+  "text": "So 20 take 2 is 18."
+ },
+ {
+  "slug": "3-and-6-make-9-not-enough",
+  "text": "3 and 6 make 9. Not enough."
+ },
+ {
+  "slug": "3-and-7-make-10-not-enough",
+  "text": "3 and 7 make 10. Not enough."
+ },
+ {
+  "slug": "3-and-8-make-11-not-enough",
+  "text": "3 and 8 make 11. Not enough."
+ },
+ {
+  "slug": "3-and-9-make-12-not-enough",
+  "text": "3 and 9 make 12. Not enough."
+ },
+ {
+  "slug": "3-and-11-make-14-not-enough",
+  "text": "3 and 11 make 14. Not enough."
+ },
+ {
+  "slug": "3-and-12-make-15-not-enough",
+  "text": "3 and 12 make 15. Not enough."
+ },
+ {
+  "slug": "3-and-13-make-16-not-enough",
+  "text": "3 and 13 make 16. Not enough."
+ },
+ {
+  "slug": "3-and-14-make-17-not-enough",
+  "text": "3 and 14 make 17. Not enough."
+ },
+ {
+  "slug": "3-and-15-make-18-not-enough",
+  "text": "3 and 15 make 18. Not enough."
+ },
+ {
+  "slug": "3-and-16-make-19-just-one-more-would-make-20",
+  "text": "3 and 16 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "3-and-18-make-21-just-one-too-many",
+  "text": "3 and 18 make 21. Just one too many."
+ },
+ {
+  "slug": "3-and-19-make-22-that-is-too-many",
+  "text": "3 and 19 make 22. That is too many."
+ },
+ {
+  "slug": "3-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-more-make-20",
+  "text": "3 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 more make 20."
+ },
+ {
+  "slug": "3-and-what-make-20-tap-the-missing-leaf",
+  "text": "3 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-3-is-17",
+  "text": "So 20 take 3 is 17."
+ },
+ {
+  "slug": "4-and-5-make-9-not-enough",
+  "text": "4 and 5 make 9. Not enough."
+ },
+ {
+  "slug": "4-and-6-make-10-not-enough",
+  "text": "4 and 6 make 10. Not enough."
+ },
+ {
+  "slug": "4-and-7-make-11-not-enough",
+  "text": "4 and 7 make 11. Not enough."
+ },
+ {
+  "slug": "4-and-8-make-12-not-enough",
+  "text": "4 and 8 make 12. Not enough."
+ },
+ {
+  "slug": "4-and-9-make-13-not-enough",
+  "text": "4 and 9 make 13. Not enough."
+ },
+ {
+  "slug": "4-and-11-make-15-not-enough",
+  "text": "4 and 11 make 15. Not enough."
+ },
+ {
+  "slug": "4-and-12-make-16-not-enough",
+  "text": "4 and 12 make 16. Not enough."
+ },
+ {
+  "slug": "4-and-13-make-17-not-enough",
+  "text": "4 and 13 make 17. Not enough."
+ },
+ {
+  "slug": "4-and-14-make-18-not-enough",
+  "text": "4 and 14 make 18. Not enough."
+ },
+ {
+  "slug": "4-and-15-make-19-just-one-more-would-make-20",
+  "text": "4 and 15 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "4-and-17-make-21-just-one-too-many",
+  "text": "4 and 17 make 21. Just one too many."
+ },
+ {
+  "slug": "4-and-18-make-22-that-is-too-many",
+  "text": "4 and 18 make 22. That is too many."
+ },
+ {
+  "slug": "4-and-19-make-23-that-is-too-many",
+  "text": "4 and 19 make 23. That is too many."
+ },
+ {
+  "slug": "4-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-more-make-20",
+  "text": "4 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 more make 20."
+ },
+ {
+  "slug": "4-and-what-make-20-tap-the-missing-leaf",
+  "text": "4 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-4-is-16",
+  "text": "So 20 take 4 is 16."
+ },
+ {
+  "slug": "5-and-6-make-11-not-enough",
+  "text": "5 and 6 make 11. Not enough."
+ },
+ {
+  "slug": "5-and-7-make-12-not-enough",
+  "text": "5 and 7 make 12. Not enough."
+ },
+ {
+  "slug": "5-and-8-make-13-not-enough",
+  "text": "5 and 8 make 13. Not enough."
+ },
+ {
+  "slug": "5-and-9-make-14-not-enough",
+  "text": "5 and 9 make 14. Not enough."
+ },
+ {
+  "slug": "5-and-11-make-16-not-enough",
+  "text": "5 and 11 make 16. Not enough."
+ },
+ {
+  "slug": "5-and-12-make-17-not-enough",
+  "text": "5 and 12 make 17. Not enough."
+ },
+ {
+  "slug": "5-and-13-make-18-not-enough",
+  "text": "5 and 13 make 18. Not enough."
+ },
+ {
+  "slug": "5-and-14-make-19-just-one-more-would-make-20",
+  "text": "5 and 14 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "5-and-16-make-21-just-one-too-many",
+  "text": "5 and 16 make 21. Just one too many."
+ },
+ {
+  "slug": "5-and-17-make-22-that-is-too-many",
+  "text": "5 and 17 make 22. That is too many."
+ },
+ {
+  "slug": "5-and-18-make-23-that-is-too-many",
+  "text": "5 and 18 make 23. That is too many."
+ },
+ {
+  "slug": "5-and-19-make-24-that-is-too-many",
+  "text": "5 and 19 make 24. That is too many."
+ },
+ {
+  "slug": "5-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-more-make-20",
+  "text": "5 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 more make 20."
+ },
+ {
+  "slug": "5-and-what-make-20-tap-the-missing-leaf",
+  "text": "5 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-5-is-15",
+  "text": "So 20 take 5 is 15."
+ },
+ {
+  "slug": "6-and-7-make-13-not-enough",
+  "text": "6 and 7 make 13. Not enough."
+ },
+ {
+  "slug": "6-and-8-make-14-not-enough",
+  "text": "6 and 8 make 14. Not enough."
+ },
+ {
+  "slug": "6-and-9-make-15-not-enough",
+  "text": "6 and 9 make 15. Not enough."
+ },
+ {
+  "slug": "6-and-11-make-17-not-enough",
+  "text": "6 and 11 make 17. Not enough."
+ },
+ {
+  "slug": "6-and-12-make-18-not-enough",
+  "text": "6 and 12 make 18. Not enough."
+ },
+ {
+  "slug": "6-and-13-make-19-just-one-more-would-make-20",
+  "text": "6 and 13 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "6-and-15-make-21-just-one-too-many",
+  "text": "6 and 15 make 21. Just one too many."
+ },
+ {
+  "slug": "6-and-16-make-22-that-is-too-many",
+  "text": "6 and 16 make 22. That is too many."
+ },
+ {
+  "slug": "6-and-17-make-23-that-is-too-many",
+  "text": "6 and 17 make 23. That is too many."
+ },
+ {
+  "slug": "6-and-18-make-24-that-is-too-many",
+  "text": "6 and 18 make 24. That is too many."
+ },
+ {
+  "slug": "6-and-19-make-25-that-is-too-many",
+  "text": "6 and 19 make 25. That is too many."
+ },
+ {
+  "slug": "6-and-1-2-3-4-5-6-7-8-9-10-11-12-13-14-more-make-20",
+  "text": "6 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 more make 20."
+ },
+ {
+  "slug": "6-and-what-make-20-tap-the-missing-leaf",
+  "text": "6 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-6-is-14",
+  "text": "So 20 take 6 is 14."
+ },
+ {
+  "slug": "7-and-8-make-15-not-enough",
+  "text": "7 and 8 make 15. Not enough."
+ },
+ {
+  "slug": "7-and-9-make-16-not-enough",
+  "text": "7 and 9 make 16. Not enough."
+ },
+ {
+  "slug": "7-and-11-make-18-not-enough",
+  "text": "7 and 11 make 18. Not enough."
+ },
+ {
+  "slug": "7-and-12-make-19-just-one-more-would-make-20",
+  "text": "7 and 12 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "7-and-14-make-21-just-one-too-many",
+  "text": "7 and 14 make 21. Just one too many."
+ },
+ {
+  "slug": "7-and-15-make-22-that-is-too-many",
+  "text": "7 and 15 make 22. That is too many."
+ },
+ {
+  "slug": "7-and-16-make-23-that-is-too-many",
+  "text": "7 and 16 make 23. That is too many."
+ },
+ {
+  "slug": "7-and-17-make-24-that-is-too-many",
+  "text": "7 and 17 make 24. That is too many."
+ },
+ {
+  "slug": "7-and-18-make-25-that-is-too-many",
+  "text": "7 and 18 make 25. That is too many."
+ },
+ {
+  "slug": "7-and-19-make-26-that-is-too-many",
+  "text": "7 and 19 make 26. That is too many."
+ },
+ {
+  "slug": "7-and-1-2-3-4-5-6-7-8-9-10-11-12-13-more-make-20",
+  "text": "7 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 more make 20."
+ },
+ {
+  "slug": "7-and-what-make-20-tap-the-missing-leaf",
+  "text": "7 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-7-is-13",
+  "text": "So 20 take 7 is 13."
+ },
+ {
+  "slug": "8-and-9-make-17-not-enough",
+  "text": "8 and 9 make 17. Not enough."
+ },
+ {
+  "slug": "8-and-11-make-19-just-one-more-would-make-20",
+  "text": "8 and 11 make 19. Just one more would make 20."
+ },
+ {
+  "slug": "8-and-13-make-21-just-one-too-many",
+  "text": "8 and 13 make 21. Just one too many."
+ },
+ {
+  "slug": "8-and-14-make-22-that-is-too-many",
+  "text": "8 and 14 make 22. That is too many."
+ },
+ {
+  "slug": "8-and-15-make-23-that-is-too-many",
+  "text": "8 and 15 make 23. That is too many."
+ },
+ {
+  "slug": "8-and-16-make-24-that-is-too-many",
+  "text": "8 and 16 make 24. That is too many."
+ },
+ {
+  "slug": "8-and-17-make-25-that-is-too-many",
+  "text": "8 and 17 make 25. That is too many."
+ },
+ {
+  "slug": "8-and-18-make-26-that-is-too-many",
+  "text": "8 and 18 make 26. That is too many."
+ },
+ {
+  "slug": "8-and-19-make-27-that-is-too-many",
+  "text": "8 and 19 make 27. That is too many."
+ },
+ {
+  "slug": "8-and-1-2-3-4-5-6-7-8-9-10-11-12-more-make-20",
+  "text": "8 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 more make 20."
+ },
+ {
+  "slug": "8-and-what-make-20-tap-the-missing-leaf",
+  "text": "8 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-8-is-12",
+  "text": "So 20 take 8 is 12."
+ },
+ {
+  "slug": "9-and-12-make-21-just-one-too-many",
+  "text": "9 and 12 make 21. Just one too many."
+ },
+ {
+  "slug": "9-and-13-make-22-that-is-too-many",
+  "text": "9 and 13 make 22. That is too many."
+ },
+ {
+  "slug": "9-and-14-make-23-that-is-too-many",
+  "text": "9 and 14 make 23. That is too many."
+ },
+ {
+  "slug": "9-and-15-make-24-that-is-too-many",
+  "text": "9 and 15 make 24. That is too many."
+ },
+ {
+  "slug": "9-and-16-make-25-that-is-too-many",
+  "text": "9 and 16 make 25. That is too many."
+ },
+ {
+  "slug": "9-and-17-make-26-that-is-too-many",
+  "text": "9 and 17 make 26. That is too many."
+ },
+ {
+  "slug": "9-and-18-make-27-that-is-too-many",
+  "text": "9 and 18 make 27. That is too many."
+ },
+ {
+  "slug": "9-and-19-make-28-that-is-too-many",
+  "text": "9 and 19 make 28. That is too many."
+ },
+ {
+  "slug": "9-and-1-2-3-4-5-6-7-8-9-10-11-more-make-20",
+  "text": "9 and 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 more make 20."
+ },
+ {
+  "slug": "9-and-what-make-20-tap-the-missing-leaf",
+  "text": "9 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-9-is-11",
+  "text": "So 20 take 9 is 11."
+ },
+ {
+  "slug": "11-and-12-make-23-that-is-too-many",
+  "text": "11 and 12 make 23. That is too many."
+ },
+ {
+  "slug": "11-and-13-make-24-that-is-too-many",
+  "text": "11 and 13 make 24. That is too many."
+ },
+ {
+  "slug": "11-and-14-make-25-that-is-too-many",
+  "text": "11 and 14 make 25. That is too many."
+ },
+ {
+  "slug": "11-and-15-make-26-that-is-too-many",
+  "text": "11 and 15 make 26. That is too many."
+ },
+ {
+  "slug": "11-and-16-make-27-that-is-too-many",
+  "text": "11 and 16 make 27. That is too many."
+ },
+ {
+  "slug": "11-and-17-make-28-that-is-too-many",
+  "text": "11 and 17 make 28. That is too many."
+ },
+ {
+  "slug": "11-and-18-make-29-that-is-too-many",
+  "text": "11 and 18 make 29. That is too many."
+ },
+ {
+  "slug": "11-and-19-make-30-that-is-too-many",
+  "text": "11 and 19 make 30. That is too many."
+ },
+ {
+  "slug": "11-and-1-2-3-4-5-6-7-8-9-more-make-20",
+  "text": "11 and 1, 2, 3, 4, 5, 6, 7, 8, 9 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-11",
+  "text": "Now you try: what goes with 11?"
+ },
+ {
+  "slug": "11-and-what-make-20-tap-the-missing-leaf",
+  "text": "11 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-11-is-9",
+  "text": "So 20 take 11 is 9."
+ },
+ {
+  "slug": "12-and-13-make-25-that-is-too-many",
+  "text": "12 and 13 make 25. That is too many."
+ },
+ {
+  "slug": "12-and-14-make-26-that-is-too-many",
+  "text": "12 and 14 make 26. That is too many."
+ },
+ {
+  "slug": "12-and-15-make-27-that-is-too-many",
+  "text": "12 and 15 make 27. That is too many."
+ },
+ {
+  "slug": "12-and-16-make-28-that-is-too-many",
+  "text": "12 and 16 make 28. That is too many."
+ },
+ {
+  "slug": "12-and-17-make-29-that-is-too-many",
+  "text": "12 and 17 make 29. That is too many."
+ },
+ {
+  "slug": "12-and-18-make-30-that-is-too-many",
+  "text": "12 and 18 make 30. That is too many."
+ },
+ {
+  "slug": "12-and-19-make-31-that-is-too-many",
+  "text": "12 and 19 make 31. That is too many."
+ },
+ {
+  "slug": "12-and-1-2-3-4-5-6-7-8-more-make-20",
+  "text": "12 and 1, 2, 3, 4, 5, 6, 7, 8 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-12",
+  "text": "Now you try: what goes with 12?"
+ },
+ {
+  "slug": "12-and-what-make-20-tap-the-missing-leaf",
+  "text": "12 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-12-is-8",
+  "text": "So 20 take 12 is 8."
+ },
+ {
+  "slug": "13-and-14-make-27-that-is-too-many",
+  "text": "13 and 14 make 27. That is too many."
+ },
+ {
+  "slug": "13-and-15-make-28-that-is-too-many",
+  "text": "13 and 15 make 28. That is too many."
+ },
+ {
+  "slug": "13-and-16-make-29-that-is-too-many",
+  "text": "13 and 16 make 29. That is too many."
+ },
+ {
+  "slug": "13-and-17-make-30-that-is-too-many",
+  "text": "13 and 17 make 30. That is too many."
+ },
+ {
+  "slug": "13-and-18-make-31-that-is-too-many",
+  "text": "13 and 18 make 31. That is too many."
+ },
+ {
+  "slug": "13-and-19-make-32-that-is-too-many",
+  "text": "13 and 19 make 32. That is too many."
+ },
+ {
+  "slug": "13-and-1-2-3-4-5-6-7-more-make-20",
+  "text": "13 and 1, 2, 3, 4, 5, 6, 7 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-13",
+  "text": "Now you try: what goes with 13?"
+ },
+ {
+  "slug": "13-and-what-make-20-tap-the-missing-leaf",
+  "text": "13 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-13-is-7",
+  "text": "So 20 take 13 is 7."
+ },
+ {
+  "slug": "14-and-15-make-29-that-is-too-many",
+  "text": "14 and 15 make 29. That is too many."
+ },
+ {
+  "slug": "14-and-16-make-30-that-is-too-many",
+  "text": "14 and 16 make 30. That is too many."
+ },
+ {
+  "slug": "14-and-17-make-31-that-is-too-many",
+  "text": "14 and 17 make 31. That is too many."
+ },
+ {
+  "slug": "14-and-18-make-32-that-is-too-many",
+  "text": "14 and 18 make 32. That is too many."
+ },
+ {
+  "slug": "14-and-19-make-33-that-is-too-many",
+  "text": "14 and 19 make 33. That is too many."
+ },
+ {
+  "slug": "14-and-1-2-3-4-5-6-more-make-20",
+  "text": "14 and 1, 2, 3, 4, 5, 6 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-14",
+  "text": "Now you try: what goes with 14?"
+ },
+ {
+  "slug": "14-and-what-make-20-tap-the-missing-leaf",
+  "text": "14 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-14-is-6",
+  "text": "So 20 take 14 is 6."
+ },
+ {
+  "slug": "15-and-16-make-31-that-is-too-many",
+  "text": "15 and 16 make 31. That is too many."
+ },
+ {
+  "slug": "15-and-17-make-32-that-is-too-many",
+  "text": "15 and 17 make 32. That is too many."
+ },
+ {
+  "slug": "15-and-18-make-33-that-is-too-many",
+  "text": "15 and 18 make 33. That is too many."
+ },
+ {
+  "slug": "15-and-19-make-34-that-is-too-many",
+  "text": "15 and 19 make 34. That is too many."
+ },
+ {
+  "slug": "15-and-1-2-3-4-5-more-make-20",
+  "text": "15 and 1, 2, 3, 4, 5 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-15",
+  "text": "Now you try: what goes with 15?"
+ },
+ {
+  "slug": "15-and-what-make-20-tap-the-missing-leaf",
+  "text": "15 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-15-is-5",
+  "text": "So 20 take 15 is 5."
+ },
+ {
+  "slug": "16-and-17-make-33-that-is-too-many",
+  "text": "16 and 17 make 33. That is too many."
+ },
+ {
+  "slug": "16-and-18-make-34-that-is-too-many",
+  "text": "16 and 18 make 34. That is too many."
+ },
+ {
+  "slug": "16-and-19-make-35-that-is-too-many",
+  "text": "16 and 19 make 35. That is too many."
+ },
+ {
+  "slug": "16-and-1-2-3-4-more-make-20",
+  "text": "16 and 1, 2, 3, 4 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-16",
+  "text": "Now you try: what goes with 16?"
+ },
+ {
+  "slug": "16-and-what-make-20-tap-the-missing-leaf",
+  "text": "16 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-16-is-4",
+  "text": "So 20 take 16 is 4."
+ },
+ {
+  "slug": "17-and-18-make-35-that-is-too-many",
+  "text": "17 and 18 make 35. That is too many."
+ },
+ {
+  "slug": "17-and-19-make-36-that-is-too-many",
+  "text": "17 and 19 make 36. That is too many."
+ },
+ {
+  "slug": "17-and-1-2-3-more-make-20",
+  "text": "17 and 1, 2, 3 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-17",
+  "text": "Now you try: what goes with 17?"
+ },
+ {
+  "slug": "17-and-what-make-20-tap-the-missing-leaf",
+  "text": "17 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-17-is-3",
+  "text": "So 20 take 17 is 3."
+ },
+ {
+  "slug": "18-and-19-make-37-that-is-too-many",
+  "text": "18 and 19 make 37. That is too many."
+ },
+ {
+  "slug": "18-and-1-2-more-make-20",
+  "text": "18 and 1, 2 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-18",
+  "text": "Now you try: what goes with 18?"
+ },
+ {
+  "slug": "18-and-what-make-20-tap-the-missing-leaf",
+  "text": "18 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-18-is-2",
+  "text": "So 20 take 18 is 2."
+ },
+ {
+  "slug": "19-and-1-more-make-20",
+  "text": "19 and 1 more make 20."
+ },
+ {
+  "slug": "now-you-try-what-goes-with-19",
+  "text": "Now you try: what goes with 19?"
+ },
+ {
+  "slug": "19-and-what-make-20-tap-the-missing-leaf",
+  "text": "19 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "so-20-take-19-is-1",
+  "text": "So 20 take 19 is 1."
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 100 to help."
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 100 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 100!"
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-kereru-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Kererū can climb down. You win the Golden Egg!"
  },
  {
   "slug": "tap-two-leaves-that-make-100",
@@ -428,6 +1456,14 @@
   "text": "Now you try: what goes with 10?"
  },
  {
+  "slug": "10-and-what-make-100-tap-the-missing-leaf",
+  "text": "10 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-10-is-90",
+  "text": "So 100 take 10 is 90."
+ },
+ {
   "slug": "20-and-30-make-50-not-enough",
   "text": "20 and 30 make 50. Not enough."
  },
@@ -460,6 +1496,14 @@
   "text": "Now you try: what goes with 20?"
  },
  {
+  "slug": "20-and-what-make-100-tap-the-missing-leaf",
+  "text": "20 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-20-is-80",
+  "text": "So 100 take 20 is 80."
+ },
+ {
   "slug": "30-and-40-make-70-not-enough",
   "text": "30 and 40 make 70. Not enough."
  },
@@ -488,6 +1532,14 @@
   "text": "Now you try: what goes with 30?"
  },
  {
+  "slug": "30-and-what-make-100-tap-the-missing-leaf",
+  "text": "30 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-30-is-70",
+  "text": "So 100 take 30 is 70."
+ },
+ {
   "slug": "40-and-50-make-90-4-tens-and-5-tens-is-9-tens-not-10",
   "text": "40 and 50 make 90. 4 tens and 5 tens is 9 tens, not 10."
  },
@@ -510,6 +1562,14 @@
  {
   "slug": "now-you-try-what-goes-with-40",
   "text": "Now you try: what goes with 40?"
+ },
+ {
+  "slug": "40-and-what-make-100-tap-the-missing-leaf",
+  "text": "40 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-40-is-60",
+  "text": "So 100 take 40 is 60."
  },
  {
   "slug": "50-and-60-make-110-5-tens-and-6-tens-is-11-tens-not-10",
@@ -536,6 +1596,14 @@
   "text": "Now you try: what goes with 50?"
  },
  {
+  "slug": "50-and-what-make-100-tap-the-missing-leaf",
+  "text": "50 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-50-is-50",
+  "text": "So 100 take 50 is 50."
+ },
+ {
   "slug": "60-and-70-make-130-that-is-too-many",
   "text": "60 and 70 make 130. That is too many."
  },
@@ -556,6 +1624,14 @@
   "text": "Now you try: what goes with 60?"
  },
  {
+  "slug": "60-and-what-make-100-tap-the-missing-leaf",
+  "text": "60 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-60-is-40",
+  "text": "So 100 take 60 is 40."
+ },
+ {
   "slug": "70-and-80-make-150-that-is-too-many",
   "text": "70 and 80 make 150. That is too many."
  },
@@ -572,6 +1648,14 @@
   "text": "Now you try: what goes with 70?"
  },
  {
+  "slug": "70-and-what-make-100-tap-the-missing-leaf",
+  "text": "70 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-70-is-30",
+  "text": "So 100 take 70 is 30."
+ },
+ {
   "slug": "80-and-90-make-170-that-is-too-many",
   "text": "80 and 90 make 170. That is too many."
  },
@@ -584,6 +1668,14 @@
   "text": "Now you try: what goes with 80?"
  },
  {
+  "slug": "80-and-what-make-100-tap-the-missing-leaf",
+  "text": "80 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "so-100-take-80-is-20",
+  "text": "So 100 take 80 is 20."
+ },
+ {
   "slug": "9-tens-and-1-more-make-10-tens-that-is-100",
   "text": "9 tens and 1 more make 10 tens. That is 100."
  },
@@ -592,24 +1684,32 @@
   "text": "Now you try: what goes with 90?"
  },
  {
-  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
-  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 1000 to help."
+  "slug": "90-and-what-make-100-tap-the-missing-leaf",
+  "text": "90 and what make 100? Tap the missing leaf."
  },
  {
-  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 1000 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "so-100-take-90-is-10",
+  "text": "So 100 take 90 is 10."
  },
  {
-  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000",
-  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 1000!"
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 1000 to help."
  },
  {
-  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 1000 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
-  "slug": "all-the-leaves-are-gold-kereru-can-climb-down-you-win-the-golden-egg",
-  "text": "All the leaves are gold! Kererū can climb down. You win the Golden Egg!"
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 1000!"
+ },
+ {
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-weta-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Wētā can climb down. You win the Golden Egg!"
  },
  {
   "slug": "tap-two-leaves-that-make-1000",
@@ -728,6 +1828,14 @@
   "text": "Now you try: what goes with 100?"
  },
  {
+  "slug": "100-and-what-make-1000-tap-the-missing-leaf",
+  "text": "100 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-100-is-900",
+  "text": "So 1000 take 100 is 900."
+ },
+ {
   "slug": "200-and-300-make-500-not-enough",
   "text": "200 and 300 make 500. Not enough."
  },
@@ -760,6 +1868,14 @@
   "text": "Now you try: what goes with 200?"
  },
  {
+  "slug": "200-and-what-make-1000-tap-the-missing-leaf",
+  "text": "200 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-200-is-800",
+  "text": "So 1000 take 200 is 800."
+ },
+ {
   "slug": "300-and-400-make-700-not-enough",
   "text": "300 and 400 make 700. Not enough."
  },
@@ -788,6 +1904,14 @@
   "text": "Now you try: what goes with 300?"
  },
  {
+  "slug": "300-and-what-make-1000-tap-the-missing-leaf",
+  "text": "300 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-300-is-700",
+  "text": "So 1000 take 300 is 700."
+ },
+ {
   "slug": "400-and-500-make-900-4-hundreds-and-5-hundreds-is-9-hundreds-not-10",
   "text": "400 and 500 make 900. 4 hundreds and 5 hundreds is 9 hundreds, not 10."
  },
@@ -810,6 +1934,14 @@
  {
   "slug": "now-you-try-what-goes-with-400",
   "text": "Now you try: what goes with 400?"
+ },
+ {
+  "slug": "400-and-what-make-1000-tap-the-missing-leaf",
+  "text": "400 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-400-is-600",
+  "text": "So 1000 take 400 is 600."
  },
  {
   "slug": "500-and-600-make-1100-5-hundreds-and-6-hundreds-is-11-hundreds-not-10",
@@ -836,6 +1968,14 @@
   "text": "Now you try: what goes with 500?"
  },
  {
+  "slug": "500-and-what-make-1000-tap-the-missing-leaf",
+  "text": "500 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-500-is-500",
+  "text": "So 1000 take 500 is 500."
+ },
+ {
   "slug": "600-and-700-make-1300-that-is-too-many",
   "text": "600 and 700 make 1300. That is too many."
  },
@@ -856,6 +1996,14 @@
   "text": "Now you try: what goes with 600?"
  },
  {
+  "slug": "600-and-what-make-1000-tap-the-missing-leaf",
+  "text": "600 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-600-is-400",
+  "text": "So 1000 take 600 is 400."
+ },
+ {
   "slug": "700-and-800-make-1500-that-is-too-many",
   "text": "700 and 800 make 1500. That is too many."
  },
@@ -872,6 +2020,14 @@
   "text": "Now you try: what goes with 700?"
  },
  {
+  "slug": "700-and-what-make-1000-tap-the-missing-leaf",
+  "text": "700 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-700-is-300",
+  "text": "So 1000 take 700 is 300."
+ },
+ {
   "slug": "800-and-900-make-1700-that-is-too-many",
   "text": "800 and 900 make 1700. That is too many."
  },
@@ -884,6 +2040,14 @@
   "text": "Now you try: what goes with 800?"
  },
  {
+  "slug": "800-and-what-make-1000-tap-the-missing-leaf",
+  "text": "800 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "so-1000-take-800-is-200",
+  "text": "So 1000 take 800 is 200."
+ },
+ {
   "slug": "9-hundreds-and-1-more-make-10-hundreds-that-is-1000",
   "text": "9 hundreds and 1 more make 10 hundreds. That is 1000."
  },
@@ -892,24 +2056,116 @@
   "text": "Now you try: what goes with 900?"
  },
  {
-  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
-  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 10 to help."
+  "slug": "900-and-what-make-1000-tap-the-missing-leaf",
+  "text": "900 and what make 1000? Tap the missing leaf."
  },
  {
-  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 10 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "so-1000-take-900-is-100",
+  "text": "So 1000 take 900 is 100."
  },
  {
-  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10",
-  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 10!"
+  "slug": "ruru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
+  "text": "Ruru is stuck up the beanstalk! Make pairs that add to 10 to help."
  },
  {
-  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
-  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 10! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+  "slug": "ruru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Ruru is stuck up the beanstalk! Make pairs that add to 10 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
-  "slug": "all-the-leaves-are-gold-weta-can-climb-down-you-win-the-golden-egg",
-  "text": "All the leaves are gold! Wētā can climb down. You win the Golden Egg!"
+  "slug": "oh-no-ruru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10",
+  "text": "Oh no! Ruru is stuck up a new beanstalk. This time, make pairs that add to 10!"
+ },
+ {
+  "slug": "oh-no-ruru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Ruru is stuck up a new beanstalk. This time, make pairs that add to 10! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-ruru-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Ruru can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "takahe-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help",
+  "text": "Takahē is stuck up the beanstalk! Make pairs that add to 20 to help."
+ },
+ {
+  "slug": "takahe-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Takahē is stuck up the beanstalk! Make pairs that add to 20 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-takahe-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20",
+  "text": "Oh no! Takahē is stuck up a new beanstalk. This time, make pairs that add to 20!"
+ },
+ {
+  "slug": "oh-no-takahe-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Takahē is stuck up a new beanstalk. This time, make pairs that add to 20! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "all-the-leaves-are-gold-takahe-can-climb-down-you-win-the-golden-egg",
+  "text": "All the leaves are gold! Takahē can climb down. You win the Golden Egg!"
+ },
+ {
+  "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
+  "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 100 to help."
+ },
+ {
+  "slug": "kiwi-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Kiwi is stuck up the beanstalk! Make pairs that add to 100 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-kiwi-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100",
+  "text": "Oh no! Kiwi is stuck up a new beanstalk. This time, make pairs that add to 100!"
+ },
+ {
+  "slug": "oh-no-kiwi-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-100-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Kiwi is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 1000 to help."
+ },
+ {
+  "slug": "tui-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Tūī is stuck up the beanstalk! Make pairs that add to 1000 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 1000!"
+ },
+ {
+  "slug": "oh-no-tui-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Tūī is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 10 to help."
+ },
+ {
+  "slug": "kereru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-10-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Kererū is stuck up the beanstalk! Make pairs that add to 10 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 10!"
+ },
+ {
+  "slug": "oh-no-kereru-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-10-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Kererū is stuck up a new beanstalk. This time, make pairs that add to 10! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 20 to help."
+ },
+ {
+  "slug": "weta-is-stuck-up-the-beanstalk-make-pairs-that-add-to-20-to-help-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Wētā is stuck up the beanstalk! Make pairs that add to 20 to help. Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
+ },
+ {
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 20!"
+ },
+ {
+  "slug": "oh-no-weta-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-20-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
+  "text": "Oh no! Wētā is stuck up a new beanstalk. This time, make pairs that add to 20! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
   "slug": "ruru-is-stuck-up-the-beanstalk-make-pairs-that-add-to-100-to-help",
@@ -928,10 +2184,6 @@
   "text": "Oh no! Ruru is stuck up a new beanstalk. This time, make pairs that add to 100! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
  },
  {
-  "slug": "all-the-leaves-are-gold-ruru-can-climb-down-you-win-the-golden-egg",
-  "text": "All the leaves are gold! Ruru can climb down. You win the Golden Egg!"
- },
- {
   "slug": "takahe-is-stuck-up-the-beanstalk-make-pairs-that-add-to-1000-to-help",
   "text": "Takahē is stuck up the beanstalk! Make pairs that add to 1000 to help."
  },
@@ -946,10 +2198,6 @@
  {
   "slug": "oh-no-takahe-is-stuck-up-a-new-beanstalk-this-time-make-pairs-that-add-to-1000-well-done-come-back-tomorrow-to-change-another-leaf-you-can-play-as-much-as-you-like-but-only-one-leaf-will-change-a-day",
   "text": "Oh no! Takahē is stuck up a new beanstalk. This time, make pairs that add to 1000! Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day."
- },
- {
-  "slug": "all-the-leaves-are-gold-takahe-can-climb-down-you-win-the-golden-egg",
-  "text": "All the leaves are gold! Takahē can climb down. You win the Golden Egg!"
  },
  {
   "slug": "well-done-a-leaf-turned-bronze",

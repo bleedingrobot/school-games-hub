@@ -5,11 +5,12 @@
  * pool. The screens only show what the backend says. Copied from Hop's Glow-worm Pond.
  */
 import { NextPartChip } from '../../components/NextPartChip';
+import { fetchWekaEnabled } from '../../data/weka';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/korora/play';
-import { DAYS_PER_FISH, PEBBLES, poolAfter, type Help } from '../../../shared/korora/progress';
+import { DAYS_PER_FISH, PEBBLES, poolAfter } from '../../../shared/korora/progress';
 import type { Round } from '../../../shared/korora/round';
-import type { HelpSetting } from '../../../shared/korora/server';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -58,6 +59,8 @@ interface Props {
   backend: KororaBackend;
   /** Back to the hub's home page (the preview has none). */
   onExit?: () => void;
+  /** Opens Weka's Stepping Stones from the "what's next" card (the hub's game page). */
+  onOpenWeka?: () => void;
   /** Preview tools, shown over the game. */
   extra?: (h: Helpers) => ReactNode;
 }
@@ -81,7 +84,7 @@ function useFitBelow(root: RefObject<HTMLDivElement | null>) {
   }, [root]);
 }
 
-export function KororaGame({ backend, onExit, extra }: Props) {
+export function KororaGame({ backend, onExit, onOpenWeka, extra }: Props) {
   const [state, setState] = useState<KororaState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -116,7 +119,8 @@ export function KororaGame({ backend, onExit, extra }: Props) {
     body = (
       <Goes
         round={screen.round}
-        help={helpFor(pool.help, state.help)}
+        help={pool.help}
+        setting={state.help}
         scenery={pool.today}
         friend={pool.friend}
         guide={state.daysDone === 0 && state.lastPebbleDay === null}
@@ -125,7 +129,7 @@ export function KororaGame({ backend, onExit, extra }: Props) {
         onDone={(taps) => done(screen.round.seed, taps)}
       />
     );
-  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
+  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onOpenWeka={onOpenWeka} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
@@ -147,9 +151,6 @@ export function KororaGame({ backend, onExit, extra }: Props) {
     </div>
   );
 }
-
-/** The teacher's help setting on top of the pebbles' fading help. */
-const helpFor = (today: Help, setting: HelpSetting): Help => (setting === 'always' ? 'full' : setting === 'off' ? 'none' : today);
 
 function Home({ state, say, onPlay }: { state: KororaState; say: (t: string) => void; onPlay: () => void }) {
   const pool = poolAfter(state.daysDone);
@@ -198,8 +199,12 @@ function Shelf({ gold, best }: { gold: number; best: 'bronze' | 'silver' | null 
   );
 }
 
-/** A stepping stone changes colour, or, at the end of a crossing, a pair of dancing shoes is won. */
-function Finish({ result, say, onNext }: { result: KororaFinish; say: (t: string) => void; onNext: () => void }) {
+/**
+ * A stepping stone changes colour, or, at the end of a crossing, a pair of dancing shoes is won. With near doubles secure
+ * and Weka on for the class, the "what's next" card (R8) follows: its line is read after the finish line, and its button
+ * opens Weka.
+ */
+export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFinish; say: (t: string, onEnd?: () => void) => void; onOpenWeka?: () => void; onNext: () => void }) {
   // On a gold shoes day the new pool has already started, so show the one just finished: every stone gold.
   const pool = poolAfter(result.goldenFish ? result.daysDone - 1 : result.daysDone);
   const pebbles = result.goldenFish
@@ -211,29 +216,41 @@ function Finish({ result, say, onNext }: { result: KororaFinish; say: (t: string
   const main = won ? WORDS.shoesWon(won, name) : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
   const up = result.level !== result.levelBefore ? result.level : null;
   const line = finishLine(main, up);
-  const heading = useRef<HTMLHeadingElement>(null);
+  // Weka's switch is read once the card could show; until then the panel waits, so the line is not said twice.
+  const [wekaOn, setWekaOn] = useState<boolean | null>(result.topSecure && onOpenWeka ? null : false);
   useEffect(() => {
-    heading.current?.focus();
-    say(line);
-  }, [say, line]);
+    if (wekaOn !== null) return;
+    let current = true;
+    fetchWekaEnabled().then((v) => current && setWekaOn(v), () => current && setWekaOn(false));
+    return () => {
+      current = false;
+    };
+  }, [wekaOn]);
+  const card = wekaOn === true;
+  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
   // Before the walk: on the stone that just changed (or where they were). After a crossing: on the far bank.
   const at = won ? PEBBLES : result.pebbleChanged ?? (pool.day % PEBBLES) - 1;
   const scenery = result.goldenFish ? 'gold' : won ? (won as 'bronze' | 'silver') : pool.today;
   return (
     <div className={`kr-home${won ? ' kr-home--prize' : ''}`}>
       <Pool scenery={scenery} pebbles={pebbles} friend={pool.friend} pose="cheer" at={at} shoes={won ? null : pool.today} />
-      <div className="kr-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {up && <p className="kr-chip">{WORDS.levelUp(up)}</p>}
-        {won && (
-          <span className={`kr-prize kr-prize--${won}`} role="img" aria-label={WORDS.shoesName(won)}>
-            <DancingShoes metal={won} />
-          </span>
-        )}
-        <button type="button" className="button button--play kr-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+      {wekaOn !== null && (
+        <WhatsNext prefix="kr" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+          {won && (
+            <span className={`kr-prize kr-prize--${won}`} role="img" aria-label={WORDS.shoesName(won)}>
+              <DancingShoes metal={won} />
+            </span>
+          )}
+          {card && (
+            <div className="kr-next-game">
+              <p>{WORDS.whatsNext}</p>
+              <button type="button" className="button button--play" onClick={onOpenWeka}>
+                {WORDS.tryWeka}
+              </button>
+            </div>
+          )}
+        </WhatsNext>
+      )}
     </div>
   );
 }

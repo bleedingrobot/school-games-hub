@@ -1,14 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
-import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, parseKey, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
+import { replay, wrongFirstRun, type Tap } from './play';
+import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
 /** Records that put a child on each level. */
 const recordsFor = { 1: [], 2: secure(levelKeys(1)), 3: secure([...levelKeys(1), ...levelKeys(2)]) } as Record<number, FactStats[]>;
 const colours: Colour[] = ['bronze', 'silver', 'gold'];
+
+describe('the help in the sand (R6)', () => {
+  it('follows each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new level', () => {
+    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
+    expect(helpForStats(undefined)).toBe('full');
+    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
+    expect(helpForStats(known)).toBe('none');
+    expect(helpForStats({ ...known, box: 1 })).toBe('full');
+    // A child who knows every split to 5 and has moved to 6 and 7: those splits have no record, so every go starts full.
+    const learned = levelKeys(1).map((key) => ({ ...known, key }));
+    const round = makeRound(7, learned, { reached: 1 });
+    expect(round.level).toBe(2);
+    expect(round.goes.map((g) => g.h)).toEqual(Array(GOES_PER_ROUND).fill('full'));
+    // Today's own record of a split, not another's, sets its help.
+    const mixed = makeRound(7, [{ ...known, key: 'part5:2' }], { reached: 1 });
+    expect(mixed.goes.every((g) => g.h === (g.key === 'part5:2' ? 'none' : 'full'))).toBe(true);
+  });
+
+  it('counts goes in a row, latest first, whose first shell was wrong', () => {
+    const a = (...c: boolean[]) => c.map((correct) => ({ correct }));
+    expect(wrongFirstRun(a())).toBe(0);
+    expect(wrongFirstRun(a(false, true, false, false))).toBe(2);
+    expect(wrongFirstRun(a(false, false, false, true))).toBe(0);
+  });
+});
 
 /** One wrong shell on every go, then the right one. */
 const wobblyTaps = (round: Round): Tap[] =>
@@ -61,7 +86,7 @@ describe('the round', () => {
       }
       for (const c of colours) expect(kinds(c)[0]).toBe('hiding');
       const guided = makeRound(seed, [], { guided: true });
-      expect(guided.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding' });
+      expect(guided.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding', h: 'full' });
       expect(new Set(guided.goes.map((g) => g.key)).size).toBe(GOES_PER_ROUND);
     }
   });
@@ -152,7 +177,7 @@ describe('the server rules', () => {
     const ask = (body: Record<string, unknown>) => handlePipi(services, 'p1', body);
     expect((await ask({ action: 'load' })).body).toMatchObject({ daysDone: 0, level: 1, help: true, guided: true });
     const round = (await ask({ action: 'start' })).body.round as Round;
-    expect(round.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding' });
+    expect(round.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding', h: 'full' });
     const taps = showRound(round).map((g) => ({ pick: g.answer, ms: 1500 }));
     expect((await ask({ action: 'finish', seed: round.seed, taps })).body).toMatchObject({ daysDone: 1, shellChanged: 0, pearl: false, level: 1 });
     expect((await ask({ action: 'finish', seed: round.seed, taps })).status).toBe(409);

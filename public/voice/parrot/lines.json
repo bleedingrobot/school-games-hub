@@ -1,0 +1,2046 @@
+[
+ {
+  "slug": "let-s-look-together",
+  "text": "Let’s look together."
+ },
+ {
+  "slug": "let-us-count-each-side-together",
+  "text": "Let us count each side together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try!"
+ },
+ {
+  "slug": "is-it-level-yet",
+  "text": "Is it level yet?"
+ },
+ {
+  "slug": "put-stones-on-the-empty-side-until-the-see-saw-is-level",
+  "text": "Put stones on the empty side until the see-saw is level."
+ },
+ {
+  "slug": "put-stones-on-the-empty-side-then-press-check",
+  "text": "Put stones on the empty side. Then press Check."
+ },
+ {
+  "slug": "what-number-is-missing",
+  "text": "What number is missing?"
+ },
+ {
+  "slug": "which-way-does-it-tip",
+  "text": "Which way does it tip?"
+ },
+ {
+  "slug": "today-s-shiny-thing-is-ready",
+  "text": "Today’s shiny thing is ready"
+ },
+ {
+  "slug": "next-shiny-thing-tomorrow",
+  "text": "Next shiny thing tomorrow"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-turn-another-shiny-thing",
+  "text": "Well done! Come back tomorrow to turn another shiny thing."
+ },
+ {
+  "slug": "hello-i-am-parrot-i-like-my-see-saw-level-will-you-help-me",
+  "text": "Hello! I am Parrot. I like my see-saw level. Will you help me?"
+ },
+ {
+  "slug": "i-will-talk-to-you-tap-hear-it-again-to-hear-me-again",
+  "text": "I will talk to you. Tap Hear it again to hear me again."
+ },
+ {
+  "slug": "parrot-wants-the-see-saw-level-can-you-help-parrot",
+  "text": "Parrot wants the see-saw level! Can you help Parrot?"
+ },
+ {
+  "slug": "robin-wants-the-see-saw-level-can-you-help-robin",
+  "text": "Robin wants the see-saw level! Can you help Robin?"
+ },
+ {
+  "slug": "now-robin-has-a-see-saw-to-keep-level",
+  "text": "Now Robin has a see-saw to keep level!"
+ },
+ {
+  "slug": "kiwi-wants-the-see-saw-level-can-you-help-kiwi",
+  "text": "Kiwi wants the see-saw level! Can you help Kiwi?"
+ },
+ {
+  "slug": "now-kiwi-has-a-see-saw-to-keep-level",
+  "text": "Now Kiwi has a see-saw to keep level!"
+ },
+ {
+  "slug": "duck-wants-the-see-saw-level-can-you-help-duck",
+  "text": "Duck wants the see-saw level! Can you help Duck?"
+ },
+ {
+  "slug": "now-duck-has-a-see-saw-to-keep-level",
+  "text": "Now Duck has a see-saw to keep level!"
+ },
+ {
+  "slug": "owl-wants-the-see-saw-level-can-you-help-owl",
+  "text": "Owl wants the see-saw level! Can you help Owl?"
+ },
+ {
+  "slug": "now-owl-has-a-see-saw-to-keep-level",
+  "text": "Now Owl has a see-saw to keep level!"
+ },
+ {
+  "slug": "that-adds-up-every-number-it-is-too-many",
+  "text": "That adds up every number. It is too many."
+ },
+ {
+  "slug": "that-is-the-same-as-the-number-next-to-it-look-at-the-other-side",
+  "text": "That is the same as the number next to it. Look at the other side."
+ },
+ {
+  "slug": "that-is-the-whole-amount-we-only-need-the-part-that-is-missing",
+  "text": "That is the whole amount. We only need the part that is missing."
+ },
+ {
+  "slug": "so-close-count-again-one-at-a-time",
+  "text": "So close! Count again, one at a time."
+ },
+ {
+  "slug": "that-is-the-same-number-twice-look-at-each-side",
+  "text": "That is the same number twice. Look at each side."
+ },
+ {
+  "slug": "not-quite-does-it-make-both-sides-the-same",
+  "text": "Not quite. Does it make both sides the same?"
+ },
+ {
+  "slug": "both-sides-have-numbers-but-they-are-not-the-same-amount",
+  "text": "Both sides have numbers, but they are not the same amount."
+ },
+ {
+  "slug": "look-at-both-sides-not-just-the-first-number",
+  "text": "Look at both sides, not just the first number."
+ },
+ {
+  "slug": "the-heavier-side-goes-down-which-side-is-heavier",
+  "text": "The heavier side goes down. Which side is heavier?"
+ },
+ {
+  "slug": "three-is-the-same-as-one-plus-how-many",
+  "text": "Three is the same as one plus how many?"
+ },
+ {
+  "slug": "three-is-one-plus-two",
+  "text": "Three is one plus two."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-three",
+  "text": "One plus how many is the same as three?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-three",
+  "text": "How many plus one is the same as three?"
+ },
+ {
+  "slug": "three-is-the-same-as-how-many-plus-one",
+  "text": "Three is the same as how many plus one?"
+ },
+ {
+  "slug": "three-is-the-same-as-two-plus-how-many",
+  "text": "Three is the same as two plus how many?"
+ },
+ {
+  "slug": "three-is-two-plus-one",
+  "text": "Three is two plus one."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-three",
+  "text": "Two plus how many is the same as three?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-three",
+  "text": "How many plus two is the same as three?"
+ },
+ {
+  "slug": "three-is-the-same-as-how-many-plus-two",
+  "text": "Three is the same as how many plus two?"
+ },
+ {
+  "slug": "four-is-the-same-as-one-plus-how-many",
+  "text": "Four is the same as one plus how many?"
+ },
+ {
+  "slug": "four-is-one-plus-three",
+  "text": "Four is one plus three."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-four",
+  "text": "One plus how many is the same as four?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-four",
+  "text": "How many plus one is the same as four?"
+ },
+ {
+  "slug": "four-is-the-same-as-how-many-plus-one",
+  "text": "Four is the same as how many plus one?"
+ },
+ {
+  "slug": "four-is-the-same-as-two-plus-how-many",
+  "text": "Four is the same as two plus how many?"
+ },
+ {
+  "slug": "four-is-two-plus-two",
+  "text": "Four is two plus two."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-four",
+  "text": "Two plus how many is the same as four?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-four",
+  "text": "How many plus two is the same as four?"
+ },
+ {
+  "slug": "four-is-the-same-as-how-many-plus-two",
+  "text": "Four is the same as how many plus two?"
+ },
+ {
+  "slug": "four-is-the-same-as-three-plus-how-many",
+  "text": "Four is the same as three plus how many?"
+ },
+ {
+  "slug": "four-is-three-plus-one",
+  "text": "Four is three plus one."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-four",
+  "text": "Three plus how many is the same as four?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-four",
+  "text": "How many plus three is the same as four?"
+ },
+ {
+  "slug": "four-is-the-same-as-how-many-plus-three",
+  "text": "Four is the same as how many plus three?"
+ },
+ {
+  "slug": "five-is-the-same-as-one-plus-how-many",
+  "text": "Five is the same as one plus how many?"
+ },
+ {
+  "slug": "five-is-one-plus-four",
+  "text": "Five is one plus four."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-five",
+  "text": "One plus how many is the same as five?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-five",
+  "text": "How many plus one is the same as five?"
+ },
+ {
+  "slug": "five-is-the-same-as-how-many-plus-one",
+  "text": "Five is the same as how many plus one?"
+ },
+ {
+  "slug": "five-is-the-same-as-two-plus-how-many",
+  "text": "Five is the same as two plus how many?"
+ },
+ {
+  "slug": "five-is-two-plus-three",
+  "text": "Five is two plus three."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-five",
+  "text": "Two plus how many is the same as five?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-five",
+  "text": "How many plus two is the same as five?"
+ },
+ {
+  "slug": "five-is-the-same-as-how-many-plus-two",
+  "text": "Five is the same as how many plus two?"
+ },
+ {
+  "slug": "five-is-the-same-as-three-plus-how-many",
+  "text": "Five is the same as three plus how many?"
+ },
+ {
+  "slug": "five-is-three-plus-two",
+  "text": "Five is three plus two."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-five",
+  "text": "Three plus how many is the same as five?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-five",
+  "text": "How many plus three is the same as five?"
+ },
+ {
+  "slug": "five-is-the-same-as-how-many-plus-three",
+  "text": "Five is the same as how many plus three?"
+ },
+ {
+  "slug": "five-is-the-same-as-four-plus-how-many",
+  "text": "Five is the same as four plus how many?"
+ },
+ {
+  "slug": "five-is-four-plus-one",
+  "text": "Five is four plus one."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-five",
+  "text": "Four plus how many is the same as five?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-five",
+  "text": "How many plus four is the same as five?"
+ },
+ {
+  "slug": "five-is-the-same-as-how-many-plus-four",
+  "text": "Five is the same as how many plus four?"
+ },
+ {
+  "slug": "six-is-the-same-as-one-plus-how-many",
+  "text": "Six is the same as one plus how many?"
+ },
+ {
+  "slug": "six-is-one-plus-five",
+  "text": "Six is one plus five."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-six",
+  "text": "One plus how many is the same as six?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-six",
+  "text": "How many plus one is the same as six?"
+ },
+ {
+  "slug": "six-is-the-same-as-how-many-plus-one",
+  "text": "Six is the same as how many plus one?"
+ },
+ {
+  "slug": "six-is-the-same-as-two-plus-how-many",
+  "text": "Six is the same as two plus how many?"
+ },
+ {
+  "slug": "six-is-two-plus-four",
+  "text": "Six is two plus four."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-six",
+  "text": "Two plus how many is the same as six?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-six",
+  "text": "How many plus two is the same as six?"
+ },
+ {
+  "slug": "six-is-the-same-as-how-many-plus-two",
+  "text": "Six is the same as how many plus two?"
+ },
+ {
+  "slug": "six-is-the-same-as-three-plus-how-many",
+  "text": "Six is the same as three plus how many?"
+ },
+ {
+  "slug": "six-is-three-plus-three",
+  "text": "Six is three plus three."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-six",
+  "text": "Three plus how many is the same as six?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-six",
+  "text": "How many plus three is the same as six?"
+ },
+ {
+  "slug": "six-is-the-same-as-how-many-plus-three",
+  "text": "Six is the same as how many plus three?"
+ },
+ {
+  "slug": "six-is-the-same-as-four-plus-how-many",
+  "text": "Six is the same as four plus how many?"
+ },
+ {
+  "slug": "six-is-four-plus-two",
+  "text": "Six is four plus two."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-six",
+  "text": "Four plus how many is the same as six?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-six",
+  "text": "How many plus four is the same as six?"
+ },
+ {
+  "slug": "six-is-the-same-as-how-many-plus-four",
+  "text": "Six is the same as how many plus four?"
+ },
+ {
+  "slug": "six-is-the-same-as-five-plus-how-many",
+  "text": "Six is the same as five plus how many?"
+ },
+ {
+  "slug": "six-is-five-plus-one",
+  "text": "Six is five plus one."
+ },
+ {
+  "slug": "five-plus-how-many-is-the-same-as-six",
+  "text": "Five plus how many is the same as six?"
+ },
+ {
+  "slug": "how-many-plus-five-is-the-same-as-six",
+  "text": "How many plus five is the same as six?"
+ },
+ {
+  "slug": "six-is-the-same-as-how-many-plus-five",
+  "text": "Six is the same as how many plus five?"
+ },
+ {
+  "slug": "seven-is-the-same-as-one-plus-how-many",
+  "text": "Seven is the same as one plus how many?"
+ },
+ {
+  "slug": "seven-is-one-plus-six",
+  "text": "Seven is one plus six."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-seven",
+  "text": "One plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-seven",
+  "text": "How many plus one is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-one",
+  "text": "Seven is the same as how many plus one?"
+ },
+ {
+  "slug": "seven-is-the-same-as-two-plus-how-many",
+  "text": "Seven is the same as two plus how many?"
+ },
+ {
+  "slug": "seven-is-two-plus-five",
+  "text": "Seven is two plus five."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-seven",
+  "text": "Two plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-seven",
+  "text": "How many plus two is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-two",
+  "text": "Seven is the same as how many plus two?"
+ },
+ {
+  "slug": "seven-is-the-same-as-three-plus-how-many",
+  "text": "Seven is the same as three plus how many?"
+ },
+ {
+  "slug": "seven-is-three-plus-four",
+  "text": "Seven is three plus four."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-seven",
+  "text": "Three plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-seven",
+  "text": "How many plus three is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-three",
+  "text": "Seven is the same as how many plus three?"
+ },
+ {
+  "slug": "seven-is-the-same-as-four-plus-how-many",
+  "text": "Seven is the same as four plus how many?"
+ },
+ {
+  "slug": "seven-is-four-plus-three",
+  "text": "Seven is four plus three."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-seven",
+  "text": "Four plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-seven",
+  "text": "How many plus four is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-four",
+  "text": "Seven is the same as how many plus four?"
+ },
+ {
+  "slug": "seven-is-the-same-as-five-plus-how-many",
+  "text": "Seven is the same as five plus how many?"
+ },
+ {
+  "slug": "seven-is-five-plus-two",
+  "text": "Seven is five plus two."
+ },
+ {
+  "slug": "five-plus-how-many-is-the-same-as-seven",
+  "text": "Five plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-five-is-the-same-as-seven",
+  "text": "How many plus five is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-five",
+  "text": "Seven is the same as how many plus five?"
+ },
+ {
+  "slug": "seven-is-the-same-as-six-plus-how-many",
+  "text": "Seven is the same as six plus how many?"
+ },
+ {
+  "slug": "seven-is-six-plus-one",
+  "text": "Seven is six plus one."
+ },
+ {
+  "slug": "six-plus-how-many-is-the-same-as-seven",
+  "text": "Six plus how many is the same as seven?"
+ },
+ {
+  "slug": "how-many-plus-six-is-the-same-as-seven",
+  "text": "How many plus six is the same as seven?"
+ },
+ {
+  "slug": "seven-is-the-same-as-how-many-plus-six",
+  "text": "Seven is the same as how many plus six?"
+ },
+ {
+  "slug": "eight-is-the-same-as-one-plus-how-many",
+  "text": "Eight is the same as one plus how many?"
+ },
+ {
+  "slug": "eight-is-one-plus-seven",
+  "text": "Eight is one plus seven."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-eight",
+  "text": "One plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-eight",
+  "text": "How many plus one is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-one",
+  "text": "Eight is the same as how many plus one?"
+ },
+ {
+  "slug": "eight-is-the-same-as-two-plus-how-many",
+  "text": "Eight is the same as two plus how many?"
+ },
+ {
+  "slug": "eight-is-two-plus-six",
+  "text": "Eight is two plus six."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-eight",
+  "text": "Two plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-eight",
+  "text": "How many plus two is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-two",
+  "text": "Eight is the same as how many plus two?"
+ },
+ {
+  "slug": "eight-is-the-same-as-three-plus-how-many",
+  "text": "Eight is the same as three plus how many?"
+ },
+ {
+  "slug": "eight-is-three-plus-five",
+  "text": "Eight is three plus five."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-eight",
+  "text": "Three plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-eight",
+  "text": "How many plus three is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-three",
+  "text": "Eight is the same as how many plus three?"
+ },
+ {
+  "slug": "eight-is-the-same-as-four-plus-how-many",
+  "text": "Eight is the same as four plus how many?"
+ },
+ {
+  "slug": "eight-is-four-plus-four",
+  "text": "Eight is four plus four."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-eight",
+  "text": "Four plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-eight",
+  "text": "How many plus four is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-four",
+  "text": "Eight is the same as how many plus four?"
+ },
+ {
+  "slug": "eight-is-the-same-as-five-plus-how-many",
+  "text": "Eight is the same as five plus how many?"
+ },
+ {
+  "slug": "eight-is-five-plus-three",
+  "text": "Eight is five plus three."
+ },
+ {
+  "slug": "five-plus-how-many-is-the-same-as-eight",
+  "text": "Five plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-five-is-the-same-as-eight",
+  "text": "How many plus five is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-five",
+  "text": "Eight is the same as how many plus five?"
+ },
+ {
+  "slug": "eight-is-the-same-as-six-plus-how-many",
+  "text": "Eight is the same as six plus how many?"
+ },
+ {
+  "slug": "eight-is-six-plus-two",
+  "text": "Eight is six plus two."
+ },
+ {
+  "slug": "six-plus-how-many-is-the-same-as-eight",
+  "text": "Six plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-six-is-the-same-as-eight",
+  "text": "How many plus six is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-six",
+  "text": "Eight is the same as how many plus six?"
+ },
+ {
+  "slug": "eight-is-the-same-as-seven-plus-how-many",
+  "text": "Eight is the same as seven plus how many?"
+ },
+ {
+  "slug": "eight-is-seven-plus-one",
+  "text": "Eight is seven plus one."
+ },
+ {
+  "slug": "seven-plus-how-many-is-the-same-as-eight",
+  "text": "Seven plus how many is the same as eight?"
+ },
+ {
+  "slug": "how-many-plus-seven-is-the-same-as-eight",
+  "text": "How many plus seven is the same as eight?"
+ },
+ {
+  "slug": "eight-is-the-same-as-how-many-plus-seven",
+  "text": "Eight is the same as how many plus seven?"
+ },
+ {
+  "slug": "nine-is-the-same-as-one-plus-how-many",
+  "text": "Nine is the same as one plus how many?"
+ },
+ {
+  "slug": "nine-is-one-plus-eight",
+  "text": "Nine is one plus eight."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-nine",
+  "text": "One plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-nine",
+  "text": "How many plus one is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-one",
+  "text": "Nine is the same as how many plus one?"
+ },
+ {
+  "slug": "nine-is-the-same-as-two-plus-how-many",
+  "text": "Nine is the same as two plus how many?"
+ },
+ {
+  "slug": "nine-is-two-plus-seven",
+  "text": "Nine is two plus seven."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-nine",
+  "text": "Two plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-nine",
+  "text": "How many plus two is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-two",
+  "text": "Nine is the same as how many plus two?"
+ },
+ {
+  "slug": "nine-is-the-same-as-three-plus-how-many",
+  "text": "Nine is the same as three plus how many?"
+ },
+ {
+  "slug": "nine-is-three-plus-six",
+  "text": "Nine is three plus six."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-nine",
+  "text": "Three plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-nine",
+  "text": "How many plus three is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-three",
+  "text": "Nine is the same as how many plus three?"
+ },
+ {
+  "slug": "nine-is-the-same-as-four-plus-how-many",
+  "text": "Nine is the same as four plus how many?"
+ },
+ {
+  "slug": "nine-is-four-plus-five",
+  "text": "Nine is four plus five."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-nine",
+  "text": "Four plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-nine",
+  "text": "How many plus four is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-four",
+  "text": "Nine is the same as how many plus four?"
+ },
+ {
+  "slug": "nine-is-the-same-as-five-plus-how-many",
+  "text": "Nine is the same as five plus how many?"
+ },
+ {
+  "slug": "nine-is-five-plus-four",
+  "text": "Nine is five plus four."
+ },
+ {
+  "slug": "five-plus-how-many-is-the-same-as-nine",
+  "text": "Five plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-five-is-the-same-as-nine",
+  "text": "How many plus five is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-five",
+  "text": "Nine is the same as how many plus five?"
+ },
+ {
+  "slug": "nine-is-the-same-as-six-plus-how-many",
+  "text": "Nine is the same as six plus how many?"
+ },
+ {
+  "slug": "nine-is-six-plus-three",
+  "text": "Nine is six plus three."
+ },
+ {
+  "slug": "six-plus-how-many-is-the-same-as-nine",
+  "text": "Six plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-six-is-the-same-as-nine",
+  "text": "How many plus six is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-six",
+  "text": "Nine is the same as how many plus six?"
+ },
+ {
+  "slug": "nine-is-the-same-as-seven-plus-how-many",
+  "text": "Nine is the same as seven plus how many?"
+ },
+ {
+  "slug": "nine-is-seven-plus-two",
+  "text": "Nine is seven plus two."
+ },
+ {
+  "slug": "seven-plus-how-many-is-the-same-as-nine",
+  "text": "Seven plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-seven-is-the-same-as-nine",
+  "text": "How many plus seven is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-seven",
+  "text": "Nine is the same as how many plus seven?"
+ },
+ {
+  "slug": "nine-is-the-same-as-eight-plus-how-many",
+  "text": "Nine is the same as eight plus how many?"
+ },
+ {
+  "slug": "nine-is-eight-plus-one",
+  "text": "Nine is eight plus one."
+ },
+ {
+  "slug": "eight-plus-how-many-is-the-same-as-nine",
+  "text": "Eight plus how many is the same as nine?"
+ },
+ {
+  "slug": "how-many-plus-eight-is-the-same-as-nine",
+  "text": "How many plus eight is the same as nine?"
+ },
+ {
+  "slug": "nine-is-the-same-as-how-many-plus-eight",
+  "text": "Nine is the same as how many plus eight?"
+ },
+ {
+  "slug": "ten-is-the-same-as-one-plus-how-many",
+  "text": "Ten is the same as one plus how many?"
+ },
+ {
+  "slug": "ten-is-one-plus-nine",
+  "text": "Ten is one plus nine."
+ },
+ {
+  "slug": "one-plus-how-many-is-the-same-as-ten",
+  "text": "One plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-one-is-the-same-as-ten",
+  "text": "How many plus one is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-one",
+  "text": "Ten is the same as how many plus one?"
+ },
+ {
+  "slug": "ten-is-the-same-as-two-plus-how-many",
+  "text": "Ten is the same as two plus how many?"
+ },
+ {
+  "slug": "ten-is-two-plus-eight",
+  "text": "Ten is two plus eight."
+ },
+ {
+  "slug": "two-plus-how-many-is-the-same-as-ten",
+  "text": "Two plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-two-is-the-same-as-ten",
+  "text": "How many plus two is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-two",
+  "text": "Ten is the same as how many plus two?"
+ },
+ {
+  "slug": "ten-is-the-same-as-three-plus-how-many",
+  "text": "Ten is the same as three plus how many?"
+ },
+ {
+  "slug": "ten-is-three-plus-seven",
+  "text": "Ten is three plus seven."
+ },
+ {
+  "slug": "three-plus-how-many-is-the-same-as-ten",
+  "text": "Three plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-three-is-the-same-as-ten",
+  "text": "How many plus three is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-three",
+  "text": "Ten is the same as how many plus three?"
+ },
+ {
+  "slug": "ten-is-the-same-as-four-plus-how-many",
+  "text": "Ten is the same as four plus how many?"
+ },
+ {
+  "slug": "ten-is-four-plus-six",
+  "text": "Ten is four plus six."
+ },
+ {
+  "slug": "four-plus-how-many-is-the-same-as-ten",
+  "text": "Four plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-four-is-the-same-as-ten",
+  "text": "How many plus four is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-four",
+  "text": "Ten is the same as how many plus four?"
+ },
+ {
+  "slug": "ten-is-the-same-as-five-plus-how-many",
+  "text": "Ten is the same as five plus how many?"
+ },
+ {
+  "slug": "ten-is-five-plus-five",
+  "text": "Ten is five plus five."
+ },
+ {
+  "slug": "five-plus-how-many-is-the-same-as-ten",
+  "text": "Five plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-five-is-the-same-as-ten",
+  "text": "How many plus five is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-five",
+  "text": "Ten is the same as how many plus five?"
+ },
+ {
+  "slug": "ten-is-the-same-as-six-plus-how-many",
+  "text": "Ten is the same as six plus how many?"
+ },
+ {
+  "slug": "ten-is-six-plus-four",
+  "text": "Ten is six plus four."
+ },
+ {
+  "slug": "six-plus-how-many-is-the-same-as-ten",
+  "text": "Six plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-six-is-the-same-as-ten",
+  "text": "How many plus six is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-six",
+  "text": "Ten is the same as how many plus six?"
+ },
+ {
+  "slug": "ten-is-the-same-as-seven-plus-how-many",
+  "text": "Ten is the same as seven plus how many?"
+ },
+ {
+  "slug": "ten-is-seven-plus-three",
+  "text": "Ten is seven plus three."
+ },
+ {
+  "slug": "seven-plus-how-many-is-the-same-as-ten",
+  "text": "Seven plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-seven-is-the-same-as-ten",
+  "text": "How many plus seven is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-seven",
+  "text": "Ten is the same as how many plus seven?"
+ },
+ {
+  "slug": "ten-is-the-same-as-eight-plus-how-many",
+  "text": "Ten is the same as eight plus how many?"
+ },
+ {
+  "slug": "ten-is-eight-plus-two",
+  "text": "Ten is eight plus two."
+ },
+ {
+  "slug": "eight-plus-how-many-is-the-same-as-ten",
+  "text": "Eight plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-eight-is-the-same-as-ten",
+  "text": "How many plus eight is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-eight",
+  "text": "Ten is the same as how many plus eight?"
+ },
+ {
+  "slug": "ten-is-the-same-as-nine-plus-how-many",
+  "text": "Ten is the same as nine plus how many?"
+ },
+ {
+  "slug": "ten-is-nine-plus-one",
+  "text": "Ten is nine plus one."
+ },
+ {
+  "slug": "nine-plus-how-many-is-the-same-as-ten",
+  "text": "Nine plus how many is the same as ten?"
+ },
+ {
+  "slug": "how-many-plus-nine-is-the-same-as-ten",
+  "text": "How many plus nine is the same as ten?"
+ },
+ {
+  "slug": "ten-is-the-same-as-how-many-plus-nine",
+  "text": "Ten is the same as how many plus nine?"
+ },
+ {
+  "slug": "one-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "One plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "one-plus-two-is-the-same-as-two-plus-one",
+  "text": "One plus two is the same as two plus one."
+ },
+ {
+  "slug": "two-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Two plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "two-plus-one-is-the-same-as-one-plus-two",
+  "text": "Two plus one is the same as one plus two."
+ },
+ {
+  "slug": "one-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "One plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "one-plus-three-is-the-same-as-three-plus-one",
+  "text": "One plus three is the same as three plus one."
+ },
+ {
+  "slug": "three-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Three plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "three-plus-one-is-the-same-as-one-plus-three",
+  "text": "Three plus one is the same as one plus three."
+ },
+ {
+  "slug": "one-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "One plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "one-plus-four-is-the-same-as-four-plus-one",
+  "text": "One plus four is the same as four plus one."
+ },
+ {
+  "slug": "four-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Four plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "four-plus-one-is-the-same-as-one-plus-four",
+  "text": "Four plus one is the same as one plus four."
+ },
+ {
+  "slug": "one-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "One plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "one-plus-five-is-the-same-as-five-plus-one",
+  "text": "One plus five is the same as five plus one."
+ },
+ {
+  "slug": "five-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Five plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "five-plus-one-is-the-same-as-one-plus-five",
+  "text": "Five plus one is the same as one plus five."
+ },
+ {
+  "slug": "one-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "One plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "one-plus-six-is-the-same-as-six-plus-one",
+  "text": "One plus six is the same as six plus one."
+ },
+ {
+  "slug": "six-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Six plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "six-plus-one-is-the-same-as-one-plus-six",
+  "text": "Six plus one is the same as one plus six."
+ },
+ {
+  "slug": "one-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "One plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "one-plus-seven-is-the-same-as-seven-plus-one",
+  "text": "One plus seven is the same as seven plus one."
+ },
+ {
+  "slug": "seven-plus-one-is-the-same-as-one-plus-how-many",
+  "text": "Seven plus one is the same as one plus how many?"
+ },
+ {
+  "slug": "seven-plus-one-is-the-same-as-one-plus-seven",
+  "text": "Seven plus one is the same as one plus seven."
+ },
+ {
+  "slug": "two-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "Two plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "two-plus-three-is-the-same-as-three-plus-two",
+  "text": "Two plus three is the same as three plus two."
+ },
+ {
+  "slug": "three-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "Three plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "three-plus-two-is-the-same-as-two-plus-three",
+  "text": "Three plus two is the same as two plus three."
+ },
+ {
+  "slug": "two-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "Two plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "two-plus-four-is-the-same-as-four-plus-two",
+  "text": "Two plus four is the same as four plus two."
+ },
+ {
+  "slug": "four-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "Four plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "four-plus-two-is-the-same-as-two-plus-four",
+  "text": "Four plus two is the same as two plus four."
+ },
+ {
+  "slug": "two-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "Two plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "two-plus-five-is-the-same-as-five-plus-two",
+  "text": "Two plus five is the same as five plus two."
+ },
+ {
+  "slug": "five-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "Five plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "five-plus-two-is-the-same-as-two-plus-five",
+  "text": "Five plus two is the same as two plus five."
+ },
+ {
+  "slug": "two-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "Two plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "two-plus-six-is-the-same-as-six-plus-two",
+  "text": "Two plus six is the same as six plus two."
+ },
+ {
+  "slug": "six-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "Six plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "six-plus-two-is-the-same-as-two-plus-six",
+  "text": "Six plus two is the same as two plus six."
+ },
+ {
+  "slug": "two-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "Two plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "two-plus-seven-is-the-same-as-seven-plus-two",
+  "text": "Two plus seven is the same as seven plus two."
+ },
+ {
+  "slug": "seven-plus-two-is-the-same-as-two-plus-how-many",
+  "text": "Seven plus two is the same as two plus how many?"
+ },
+ {
+  "slug": "seven-plus-two-is-the-same-as-two-plus-seven",
+  "text": "Seven plus two is the same as two plus seven."
+ },
+ {
+  "slug": "three-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "Three plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "three-plus-four-is-the-same-as-four-plus-three",
+  "text": "Three plus four is the same as four plus three."
+ },
+ {
+  "slug": "four-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "Four plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "four-plus-three-is-the-same-as-three-plus-four",
+  "text": "Four plus three is the same as three plus four."
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "Three plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-five-plus-three",
+  "text": "Three plus five is the same as five plus three."
+ },
+ {
+  "slug": "five-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "Five plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "five-plus-three-is-the-same-as-three-plus-five",
+  "text": "Five plus three is the same as three plus five."
+ },
+ {
+  "slug": "three-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "Three plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "three-plus-six-is-the-same-as-six-plus-three",
+  "text": "Three plus six is the same as six plus three."
+ },
+ {
+  "slug": "six-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "Six plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "six-plus-three-is-the-same-as-three-plus-six",
+  "text": "Six plus three is the same as three plus six."
+ },
+ {
+  "slug": "three-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "Three plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "three-plus-seven-is-the-same-as-seven-plus-three",
+  "text": "Three plus seven is the same as seven plus three."
+ },
+ {
+  "slug": "seven-plus-three-is-the-same-as-three-plus-how-many",
+  "text": "Seven plus three is the same as three plus how many?"
+ },
+ {
+  "slug": "seven-plus-three-is-the-same-as-three-plus-seven",
+  "text": "Seven plus three is the same as three plus seven."
+ },
+ {
+  "slug": "four-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "Four plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "four-plus-five-is-the-same-as-five-plus-four",
+  "text": "Four plus five is the same as five plus four."
+ },
+ {
+  "slug": "five-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "Five plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "five-plus-four-is-the-same-as-four-plus-five",
+  "text": "Five plus four is the same as four plus five."
+ },
+ {
+  "slug": "four-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "Four plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "four-plus-six-is-the-same-as-six-plus-four",
+  "text": "Four plus six is the same as six plus four."
+ },
+ {
+  "slug": "six-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "Six plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "six-plus-four-is-the-same-as-four-plus-six",
+  "text": "Six plus four is the same as four plus six."
+ },
+ {
+  "slug": "four-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "Four plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "four-plus-seven-is-the-same-as-seven-plus-four",
+  "text": "Four plus seven is the same as seven plus four."
+ },
+ {
+  "slug": "seven-plus-four-is-the-same-as-four-plus-how-many",
+  "text": "Seven plus four is the same as four plus how many?"
+ },
+ {
+  "slug": "seven-plus-four-is-the-same-as-four-plus-seven",
+  "text": "Seven plus four is the same as four plus seven."
+ },
+ {
+  "slug": "five-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "Five plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "five-plus-six-is-the-same-as-six-plus-five",
+  "text": "Five plus six is the same as six plus five."
+ },
+ {
+  "slug": "six-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "Six plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "six-plus-five-is-the-same-as-five-plus-six",
+  "text": "Six plus five is the same as five plus six."
+ },
+ {
+  "slug": "five-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "Five plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "five-plus-seven-is-the-same-as-seven-plus-five",
+  "text": "Five plus seven is the same as seven plus five."
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-five-plus-how-many",
+  "text": "Seven plus five is the same as five plus how many?"
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-five-plus-seven",
+  "text": "Seven plus five is the same as five plus seven."
+ },
+ {
+  "slug": "six-plus-seven-is-the-same-as-seven-plus-how-many",
+  "text": "Six plus seven is the same as seven plus how many?"
+ },
+ {
+  "slug": "six-plus-seven-is-the-same-as-seven-plus-six",
+  "text": "Six plus seven is the same as seven plus six."
+ },
+ {
+  "slug": "seven-plus-six-is-the-same-as-six-plus-how-many",
+  "text": "Seven plus six is the same as six plus how many?"
+ },
+ {
+  "slug": "seven-plus-six-is-the-same-as-six-plus-seven",
+  "text": "Seven plus six is the same as six plus seven."
+ },
+ {
+  "slug": "ten-plus-ten-is-the-same-as-eleven-plus-how-many",
+  "text": "Ten plus ten is the same as eleven plus how many?"
+ },
+ {
+  "slug": "ten-plus-ten-is-the-same-as-eleven-plus-nine",
+  "text": "Ten plus ten is the same as eleven plus nine."
+ },
+ {
+  "slug": "ten-plus-four-is-the-same-as-twelve-plus-how-many",
+  "text": "Ten plus four is the same as twelve plus how many?"
+ },
+ {
+  "slug": "ten-plus-four-is-the-same-as-twelve-plus-two",
+  "text": "Ten plus four is the same as twelve plus two."
+ },
+ {
+  "slug": "ten-plus-six-is-the-same-as-eleven-plus-how-many",
+  "text": "Ten plus six is the same as eleven plus how many?"
+ },
+ {
+  "slug": "ten-plus-six-is-the-same-as-eleven-plus-five",
+  "text": "Ten plus six is the same as eleven plus five."
+ },
+ {
+  "slug": "ten-plus-seven-is-the-same-as-eleven-plus-how-many",
+  "text": "Ten plus seven is the same as eleven plus how many?"
+ },
+ {
+  "slug": "ten-plus-seven-is-the-same-as-eleven-plus-six",
+  "text": "Ten plus seven is the same as eleven plus six."
+ },
+ {
+  "slug": "ten-plus-nine-is-the-same-as-six-plus-how-many",
+  "text": "Ten plus nine is the same as six plus how many?"
+ },
+ {
+  "slug": "ten-plus-nine-is-the-same-as-six-plus-thirteen",
+  "text": "Ten plus nine is the same as six plus thirteen."
+ },
+ {
+  "slug": "three-plus-ten-is-the-same-as-four-plus-how-many",
+  "text": "Three plus ten is the same as four plus how many?"
+ },
+ {
+  "slug": "three-plus-ten-is-the-same-as-four-plus-nine",
+  "text": "Three plus ten is the same as four plus nine."
+ },
+ {
+  "slug": "three-plus-three-is-the-same-as-two-plus-how-many",
+  "text": "Three plus three is the same as two plus how many?"
+ },
+ {
+  "slug": "three-plus-three-is-the-same-as-two-plus-four",
+  "text": "Three plus three is the same as two plus four."
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-one-plus-how-many",
+  "text": "Three plus five is the same as one plus how many?"
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-one-plus-seven",
+  "text": "Three plus five is the same as one plus seven."
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-four-plus-how-many",
+  "text": "Three plus five is the same as four plus how many?"
+ },
+ {
+  "slug": "three-plus-five-is-the-same-as-four-plus-four",
+  "text": "Three plus five is the same as four plus four."
+ },
+ {
+  "slug": "four-plus-ten-is-the-same-as-eight-plus-how-many",
+  "text": "Four plus ten is the same as eight plus how many?"
+ },
+ {
+  "slug": "four-plus-ten-is-the-same-as-eight-plus-six",
+  "text": "Four plus ten is the same as eight plus six."
+ },
+ {
+  "slug": "four-plus-three-is-the-same-as-two-plus-how-many",
+  "text": "Four plus three is the same as two plus how many?"
+ },
+ {
+  "slug": "four-plus-three-is-the-same-as-two-plus-five",
+  "text": "Four plus three is the same as two plus five."
+ },
+ {
+  "slug": "four-plus-four-is-the-same-as-six-plus-how-many",
+  "text": "Four plus four is the same as six plus how many?"
+ },
+ {
+  "slug": "four-plus-four-is-the-same-as-six-plus-two",
+  "text": "Four plus four is the same as six plus two."
+ },
+ {
+  "slug": "four-plus-five-is-the-same-as-three-plus-how-many",
+  "text": "Four plus five is the same as three plus how many?"
+ },
+ {
+  "slug": "four-plus-five-is-the-same-as-three-plus-six",
+  "text": "Four plus five is the same as three plus six."
+ },
+ {
+  "slug": "four-plus-six-is-the-same-as-three-plus-how-many",
+  "text": "Four plus six is the same as three plus how many?"
+ },
+ {
+  "slug": "four-plus-six-is-the-same-as-three-plus-seven",
+  "text": "Four plus six is the same as three plus seven."
+ },
+ {
+  "slug": "four-plus-seven-is-the-same-as-eight-plus-how-many",
+  "text": "Four plus seven is the same as eight plus how many?"
+ },
+ {
+  "slug": "four-plus-seven-is-the-same-as-eight-plus-three",
+  "text": "Four plus seven is the same as eight plus three."
+ },
+ {
+  "slug": "five-plus-three-is-the-same-as-four-plus-how-many",
+  "text": "Five plus three is the same as four plus how many?"
+ },
+ {
+  "slug": "five-plus-three-is-the-same-as-four-plus-four",
+  "text": "Five plus three is the same as four plus four."
+ },
+ {
+  "slug": "five-plus-eight-is-the-same-as-four-plus-how-many",
+  "text": "Five plus eight is the same as four plus how many?"
+ },
+ {
+  "slug": "five-plus-eight-is-the-same-as-four-plus-nine",
+  "text": "Five plus eight is the same as four plus nine."
+ },
+ {
+  "slug": "five-plus-nine-is-the-same-as-four-plus-how-many",
+  "text": "Five plus nine is the same as four plus how many?"
+ },
+ {
+  "slug": "five-plus-nine-is-the-same-as-four-plus-ten",
+  "text": "Five plus nine is the same as four plus ten."
+ },
+ {
+  "slug": "six-plus-six-is-the-same-as-ten-plus-how-many",
+  "text": "Six plus six is the same as ten plus how many?"
+ },
+ {
+  "slug": "six-plus-six-is-the-same-as-ten-plus-two",
+  "text": "Six plus six is the same as ten plus two."
+ },
+ {
+  "slug": "six-plus-seven-is-the-same-as-ten-plus-how-many",
+  "text": "Six plus seven is the same as ten plus how many?"
+ },
+ {
+  "slug": "six-plus-seven-is-the-same-as-ten-plus-three",
+  "text": "Six plus seven is the same as ten plus three."
+ },
+ {
+  "slug": "seven-plus-three-is-the-same-as-five-plus-how-many",
+  "text": "Seven plus three is the same as five plus how many?"
+ },
+ {
+  "slug": "seven-plus-three-is-the-same-as-five-plus-five",
+  "text": "Seven plus three is the same as five plus five."
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-three-plus-how-many",
+  "text": "Seven plus five is the same as three plus how many?"
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-three-plus-nine",
+  "text": "Seven plus five is the same as three plus nine."
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-eight-plus-how-many",
+  "text": "Seven plus five is the same as eight plus how many?"
+ },
+ {
+  "slug": "seven-plus-five-is-the-same-as-eight-plus-four",
+  "text": "Seven plus five is the same as eight plus four."
+ },
+ {
+  "slug": "seven-plus-nine-is-the-same-as-eleven-plus-how-many",
+  "text": "Seven plus nine is the same as eleven plus how many?"
+ },
+ {
+  "slug": "seven-plus-nine-is-the-same-as-eleven-plus-five",
+  "text": "Seven plus nine is the same as eleven plus five."
+ },
+ {
+  "slug": "eight-plus-nine-is-the-same-as-four-plus-how-many",
+  "text": "Eight plus nine is the same as four plus how many?"
+ },
+ {
+  "slug": "eight-plus-nine-is-the-same-as-four-plus-thirteen",
+  "text": "Eight plus nine is the same as four plus thirteen."
+ },
+ {
+  "slug": "nine-plus-four-is-the-same-as-eight-plus-how-many",
+  "text": "Nine plus four is the same as eight plus how many?"
+ },
+ {
+  "slug": "nine-plus-four-is-the-same-as-eight-plus-five",
+  "text": "Nine plus four is the same as eight plus five."
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-thirteen-plus-how-many",
+  "text": "Nine plus six is the same as thirteen plus how many?"
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-thirteen-plus-two",
+  "text": "Nine plus six is the same as thirteen plus two."
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-five-plus-how-many",
+  "text": "Nine plus six is the same as five plus how many?"
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-five-plus-ten",
+  "text": "Nine plus six is the same as five plus ten."
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-eight-plus-how-many",
+  "text": "Nine plus six is the same as eight plus how many?"
+ },
+ {
+  "slug": "nine-plus-six-is-the-same-as-eight-plus-seven",
+  "text": "Nine plus six is the same as eight plus seven."
+ },
+ {
+  "slug": "nine-plus-eight-is-the-same-as-ten-plus-how-many",
+  "text": "Nine plus eight is the same as ten plus how many?"
+ },
+ {
+  "slug": "nine-plus-eight-is-the-same-as-ten-plus-seven",
+  "text": "Nine plus eight is the same as ten plus seven."
+ },
+ {
+  "slug": "three-is-the-same-as-eight-take-away-how-many",
+  "text": "Three is the same as eight take away how many?"
+ },
+ {
+  "slug": "three-is-the-same-as-eight-take-away-five",
+  "text": "Three is the same as eight take away five."
+ },
+ {
+  "slug": "four-is-the-same-as-nine-take-away-how-many",
+  "text": "Four is the same as nine take away how many?"
+ },
+ {
+  "slug": "four-is-the-same-as-nine-take-away-five",
+  "text": "Four is the same as nine take away five."
+ },
+ {
+  "slug": "five-is-the-same-as-nine-take-away-how-many",
+  "text": "Five is the same as nine take away how many?"
+ },
+ {
+  "slug": "five-is-the-same-as-nine-take-away-four",
+  "text": "Five is the same as nine take away four."
+ },
+ {
+  "slug": "six-is-the-same-as-ten-take-away-how-many",
+  "text": "Six is the same as ten take away how many?"
+ },
+ {
+  "slug": "six-is-the-same-as-ten-take-away-four",
+  "text": "Six is the same as ten take away four."
+ },
+ {
+  "slug": "seven-is-the-same-as-twelve-take-away-how-many",
+  "text": "Seven is the same as twelve take away how many?"
+ },
+ {
+  "slug": "seven-is-the-same-as-twelve-take-away-five",
+  "text": "Seven is the same as twelve take away five."
+ },
+ {
+  "slug": "eight-is-the-same-as-thirteen-take-away-how-many",
+  "text": "Eight is the same as thirteen take away how many?"
+ },
+ {
+  "slug": "eight-is-the-same-as-thirteen-take-away-five",
+  "text": "Eight is the same as thirteen take away five."
+ },
+ {
+  "slug": "nine-is-the-same-as-fourteen-take-away-how-many",
+  "text": "Nine is the same as fourteen take away how many?"
+ },
+ {
+  "slug": "nine-is-the-same-as-fourteen-take-away-five",
+  "text": "Nine is the same as fourteen take away five."
+ },
+ {
+  "slug": "six-is-the-same-as-fifteen-take-away-how-many",
+  "text": "Six is the same as fifteen take away how many?"
+ },
+ {
+  "slug": "six-is-the-same-as-fifteen-take-away-nine",
+  "text": "Six is the same as fifteen take away nine."
+ },
+ {
+  "slug": "twelve-is-the-same-as-seventeen-take-away-how-many",
+  "text": "Twelve is the same as seventeen take away how many?"
+ },
+ {
+  "slug": "twelve-is-the-same-as-seventeen-take-away-five",
+  "text": "Twelve is the same as seventeen take away five."
+ },
+ {
+  "slug": "eleven-is-the-same-as-twenty-take-away-how-many",
+  "text": "Eleven is the same as twenty take away how many?"
+ },
+ {
+  "slug": "eleven-is-the-same-as-twenty-take-away-nine",
+  "text": "Eleven is the same as twenty take away nine."
+ },
+ {
+  "slug": "nine-take-away-four-is-the-same-as-two-plus-how-many",
+  "text": "Nine take away four is the same as two plus how many?"
+ },
+ {
+  "slug": "nine-take-away-four-is-the-same-as-two-plus-three",
+  "text": "Nine take away four is the same as two plus three."
+ },
+ {
+  "slug": "ten-take-away-three-is-the-same-as-four-plus-how-many",
+  "text": "Ten take away three is the same as four plus how many?"
+ },
+ {
+  "slug": "ten-take-away-three-is-the-same-as-four-plus-three",
+  "text": "Ten take away three is the same as four plus three."
+ },
+ {
+  "slug": "twelve-take-away-five-is-the-same-as-three-plus-how-many",
+  "text": "Twelve take away five is the same as three plus how many?"
+ },
+ {
+  "slug": "twelve-take-away-five-is-the-same-as-three-plus-four",
+  "text": "Twelve take away five is the same as three plus four."
+ },
+ {
+  "slug": "eleven-take-away-six-is-the-same-as-two-plus-how-many",
+  "text": "Eleven take away six is the same as two plus how many?"
+ },
+ {
+  "slug": "eleven-take-away-six-is-the-same-as-two-plus-three",
+  "text": "Eleven take away six is the same as two plus three."
+ },
+ {
+  "slug": "fourteen-take-away-six-is-the-same-as-four-plus-how-many",
+  "text": "Fourteen take away six is the same as four plus how many?"
+ },
+ {
+  "slug": "fourteen-take-away-six-is-the-same-as-four-plus-four",
+  "text": "Fourteen take away six is the same as four plus four."
+ },
+ {
+  "slug": "thirteen-take-away-four-is-the-same-as-five-plus-how-many",
+  "text": "Thirteen take away four is the same as five plus how many?"
+ },
+ {
+  "slug": "thirteen-take-away-four-is-the-same-as-five-plus-four",
+  "text": "Thirteen take away four is the same as five plus four."
+ },
+ {
+  "slug": "fifteen-take-away-five-is-the-same-as-six-plus-how-many",
+  "text": "Fifteen take away five is the same as six plus how many?"
+ },
+ {
+  "slug": "fifteen-take-away-five-is-the-same-as-six-plus-four",
+  "text": "Fifteen take away five is the same as six plus four."
+ },
+ {
+  "slug": "sixteen-take-away-seven-is-the-same-as-four-plus-how-many",
+  "text": "Sixteen take away seven is the same as four plus how many?"
+ },
+ {
+  "slug": "sixteen-take-away-seven-is-the-same-as-four-plus-five",
+  "text": "Sixteen take away seven is the same as four plus five."
+ },
+ {
+  "slug": "eighteen-take-away-eight-is-the-same-as-five-plus-how-many",
+  "text": "Eighteen take away eight is the same as five plus how many?"
+ },
+ {
+  "slug": "eighteen-take-away-eight-is-the-same-as-five-plus-five",
+  "text": "Eighteen take away eight is the same as five plus five."
+ },
+ {
+  "slug": "twenty-take-away-nine-is-the-same-as-six-plus-how-many",
+  "text": "Twenty take away nine is the same as six plus how many?"
+ },
+ {
+  "slug": "twenty-take-away-nine-is-the-same-as-six-plus-five",
+  "text": "Twenty take away nine is the same as six plus five."
+ },
+ {
+  "slug": "one-plus-two-is-the-same-as-one-plus-three-which-way-does-it-tip",
+  "text": "One plus two is the same as one plus three. Which way does it tip?"
+ },
+ {
+  "slug": "one-plus-two-is-three-one-plus-three-is-four-it-tips-right",
+  "text": "One plus two is three. One plus three is four. It tips right."
+ },
+ {
+  "slug": "two-plus-seven-is-the-same-as-four-plus-one-which-way-does-it-tip",
+  "text": "Two plus seven is the same as four plus one. Which way does it tip?"
+ },
+ {
+  "slug": "two-plus-seven-is-nine-four-plus-one-is-five-it-tips-left",
+  "text": "Two plus seven is nine. Four plus one is five. It tips left."
+ },
+ {
+  "slug": "two-plus-seven-is-the-same-as-six-plus-three-which-way-does-it-tip",
+  "text": "Two plus seven is the same as six plus three. Which way does it tip?"
+ },
+ {
+  "slug": "two-plus-seven-is-nine-six-plus-three-is-nine-it-is-level",
+  "text": "Two plus seven is nine. Six plus three is nine. It is level."
+ },
+ {
+  "slug": "three-plus-two-is-the-same-as-four-plus-one-which-way-does-it-tip",
+  "text": "Three plus two is the same as four plus one. Which way does it tip?"
+ },
+ {
+  "slug": "three-plus-two-is-five-four-plus-one-is-five-it-is-level",
+  "text": "Three plus two is five. Four plus one is five. It is level."
+ },
+ {
+  "slug": "three-plus-eight-is-the-same-as-five-plus-six-which-way-does-it-tip",
+  "text": "Three plus eight is the same as five plus six. Which way does it tip?"
+ },
+ {
+  "slug": "three-plus-eight-is-eleven-five-plus-six-is-eleven-it-is-level",
+  "text": "Three plus eight is eleven. Five plus six is eleven. It is level."
+ },
+ {
+  "slug": "three-plus-nine-is-the-same-as-seven-plus-five-which-way-does-it-tip",
+  "text": "Three plus nine is the same as seven plus five. Which way does it tip?"
+ },
+ {
+  "slug": "three-plus-nine-is-twelve-seven-plus-five-is-twelve-it-is-level",
+  "text": "Three plus nine is twelve. Seven plus five is twelve. It is level."
+ },
+ {
+  "slug": "four-plus-eight-is-the-same-as-six-plus-six-which-way-does-it-tip",
+  "text": "Four plus eight is the same as six plus six. Which way does it tip?"
+ },
+ {
+  "slug": "four-plus-eight-is-twelve-six-plus-six-is-twelve-it-is-level",
+  "text": "Four plus eight is twelve. Six plus six is twelve. It is level."
+ },
+ {
+  "slug": "five-plus-two-is-the-same-as-four-plus-six-which-way-does-it-tip",
+  "text": "Five plus two is the same as four plus six. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-two-is-seven-four-plus-six-is-ten-it-tips-right",
+  "text": "Five plus two is seven. Four plus six is ten. It tips right."
+ },
+ {
+  "slug": "five-plus-four-is-the-same-as-one-plus-eight-which-way-does-it-tip",
+  "text": "Five plus four is the same as one plus eight. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-four-is-nine-one-plus-eight-is-nine-it-is-level",
+  "text": "Five plus four is nine. One plus eight is nine. It is level."
+ },
+ {
+  "slug": "five-plus-four-is-the-same-as-five-plus-seven-which-way-does-it-tip",
+  "text": "Five plus four is the same as five plus seven. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-four-is-nine-five-plus-seven-is-twelve-it-tips-right",
+  "text": "Five plus four is nine. Five plus seven is twelve. It tips right."
+ },
+ {
+  "slug": "five-plus-four-is-the-same-as-eight-plus-one-which-way-does-it-tip",
+  "text": "Five plus four is the same as eight plus one. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-four-is-nine-eight-plus-one-is-nine-it-is-level",
+  "text": "Five plus four is nine. Eight plus one is nine. It is level."
+ },
+ {
+  "slug": "five-plus-five-is-the-same-as-one-plus-nine-which-way-does-it-tip",
+  "text": "Five plus five is the same as one plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-five-is-ten-one-plus-nine-is-ten-it-is-level",
+  "text": "Five plus five is ten. One plus nine is ten. It is level."
+ },
+ {
+  "slug": "five-plus-six-is-the-same-as-nine-plus-two-which-way-does-it-tip",
+  "text": "Five plus six is the same as nine plus two. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-six-is-eleven-nine-plus-two-is-eleven-it-is-level",
+  "text": "Five plus six is eleven. Nine plus two is eleven. It is level."
+ },
+ {
+  "slug": "five-plus-seven-is-the-same-as-five-plus-six-which-way-does-it-tip",
+  "text": "Five plus seven is the same as five plus six. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-seven-is-twelve-five-plus-six-is-eleven-it-tips-left",
+  "text": "Five plus seven is twelve. Five plus six is eleven. It tips left."
+ },
+ {
+  "slug": "five-plus-seven-is-the-same-as-seven-plus-four-which-way-does-it-tip",
+  "text": "Five plus seven is the same as seven plus four. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-seven-is-twelve-seven-plus-four-is-eleven-it-tips-left",
+  "text": "Five plus seven is twelve. Seven plus four is eleven. It tips left."
+ },
+ {
+  "slug": "five-plus-eight-is-the-same-as-five-plus-nine-which-way-does-it-tip",
+  "text": "Five plus eight is the same as five plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-eight-is-thirteen-five-plus-nine-is-fourteen-it-tips-right",
+  "text": "Five plus eight is thirteen. Five plus nine is fourteen. It tips right."
+ },
+ {
+  "slug": "five-plus-nine-is-the-same-as-seven-plus-ten-which-way-does-it-tip",
+  "text": "Five plus nine is the same as seven plus ten. Which way does it tip?"
+ },
+ {
+  "slug": "five-plus-nine-is-fourteen-seven-plus-ten-is-seventeen-it-tips-right",
+  "text": "Five plus nine is fourteen. Seven plus ten is seventeen. It tips right."
+ },
+ {
+  "slug": "six-plus-one-is-the-same-as-two-plus-five-which-way-does-it-tip",
+  "text": "Six plus one is the same as two plus five. Which way does it tip?"
+ },
+ {
+  "slug": "six-plus-one-is-seven-two-plus-five-is-seven-it-is-level",
+  "text": "Six plus one is seven. Two plus five is seven. It is level."
+ },
+ {
+  "slug": "six-plus-one-is-the-same-as-seven-plus-one-which-way-does-it-tip",
+  "text": "Six plus one is the same as seven plus one. Which way does it tip?"
+ },
+ {
+  "slug": "six-plus-one-is-seven-seven-plus-one-is-eight-it-tips-right",
+  "text": "Six plus one is seven. Seven plus one is eight. It tips right."
+ },
+ {
+  "slug": "six-plus-four-is-the-same-as-five-plus-five-which-way-does-it-tip",
+  "text": "Six plus four is the same as five plus five. Which way does it tip?"
+ },
+ {
+  "slug": "six-plus-four-is-ten-five-plus-five-is-ten-it-is-level",
+  "text": "Six plus four is ten. Five plus five is ten. It is level."
+ },
+ {
+  "slug": "six-plus-four-is-the-same-as-five-plus-nine-which-way-does-it-tip",
+  "text": "Six plus four is the same as five plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "six-plus-four-is-ten-five-plus-nine-is-fourteen-it-tips-right",
+  "text": "Six plus four is ten. Five plus nine is fourteen. It tips right."
+ },
+ {
+  "slug": "six-plus-seven-is-the-same-as-four-plus-nine-which-way-does-it-tip",
+  "text": "Six plus seven is the same as four plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "six-plus-seven-is-thirteen-four-plus-nine-is-thirteen-it-is-level",
+  "text": "Six plus seven is thirteen. Four plus nine is thirteen. It is level."
+ },
+ {
+  "slug": "seven-plus-one-is-the-same-as-five-plus-seven-which-way-does-it-tip",
+  "text": "Seven plus one is the same as five plus seven. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-one-is-eight-five-plus-seven-is-twelve-it-tips-right",
+  "text": "Seven plus one is eight. Five plus seven is twelve. It tips right."
+ },
+ {
+  "slug": "seven-plus-two-is-the-same-as-four-plus-six-which-way-does-it-tip",
+  "text": "Seven plus two is the same as four plus six. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-two-is-nine-four-plus-six-is-ten-it-tips-right",
+  "text": "Seven plus two is nine. Four plus six is ten. It tips right."
+ },
+ {
+  "slug": "seven-plus-three-is-the-same-as-two-plus-eight-which-way-does-it-tip",
+  "text": "Seven plus three is the same as two plus eight. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-three-is-ten-two-plus-eight-is-ten-it-is-level",
+  "text": "Seven plus three is ten. Two plus eight is ten. It is level."
+ },
+ {
+  "slug": "seven-plus-seven-is-the-same-as-five-plus-nine-which-way-does-it-tip",
+  "text": "Seven plus seven is the same as five plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-seven-is-fourteen-five-plus-nine-is-fourteen-it-is-level",
+  "text": "Seven plus seven is fourteen. Five plus nine is fourteen. It is level."
+ },
+ {
+  "slug": "seven-plus-seven-is-the-same-as-eight-plus-seven-which-way-does-it-tip",
+  "text": "Seven plus seven is the same as eight plus seven. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-seven-is-fourteen-eight-plus-seven-is-fifteen-it-tips-right",
+  "text": "Seven plus seven is fourteen. Eight plus seven is fifteen. It tips right."
+ },
+ {
+  "slug": "seven-plus-eight-is-the-same-as-nine-plus-nine-which-way-does-it-tip",
+  "text": "Seven plus eight is the same as nine plus nine. Which way does it tip?"
+ },
+ {
+  "slug": "seven-plus-eight-is-fifteen-nine-plus-nine-is-eighteen-it-tips-right",
+  "text": "Seven plus eight is fifteen. Nine plus nine is eighteen. It tips right."
+ },
+ {
+  "slug": "eight-plus-two-is-the-same-as-one-plus-ten-which-way-does-it-tip",
+  "text": "Eight plus two is the same as one plus ten. Which way does it tip?"
+ },
+ {
+  "slug": "eight-plus-two-is-ten-one-plus-ten-is-eleven-it-tips-right",
+  "text": "Eight plus two is ten. One plus ten is eleven. It tips right."
+ },
+ {
+  "slug": "nine-plus-three-is-the-same-as-five-plus-seven-which-way-does-it-tip",
+  "text": "Nine plus three is the same as five plus seven. Which way does it tip?"
+ },
+ {
+  "slug": "nine-plus-three-is-twelve-five-plus-seven-is-twelve-it-is-level",
+  "text": "Nine plus three is twelve. Five plus seven is twelve. It is level."
+ },
+ {
+  "slug": "well-done-a-shiny-thing-turned-bronze",
+  "text": "Well done! A shiny thing turned bronze!"
+ },
+ {
+  "slug": "well-done-a-shiny-thing-turned-silver",
+  "text": "Well done! A shiny thing turned silver!"
+ },
+ {
+  "slug": "well-done-a-shiny-thing-turned-gold",
+  "text": "Well done! A shiny thing turned gold!"
+ },
+ {
+  "slug": "all-the-shiny-things-are-gold-parrot-won-the-golden-bell",
+  "text": "All the shiny things are gold! Parrot won the Golden Bell!"
+ },
+ {
+  "slug": "all-the-shiny-things-are-gold-robin-won-the-golden-bell",
+  "text": "All the shiny things are gold! Robin won the Golden Bell!"
+ },
+ {
+  "slug": "all-the-shiny-things-are-gold-kiwi-won-the-golden-bell",
+  "text": "All the shiny things are gold! Kiwi won the Golden Bell!"
+ },
+ {
+  "slug": "all-the-shiny-things-are-gold-duck-won-the-golden-bell",
+  "text": "All the shiny things are gold! Duck won the Golden Bell!"
+ },
+ {
+  "slug": "all-the-shiny-things-are-gold-owl-won-the-golden-bell",
+  "text": "All the shiny things are gold! Owl won the Golden Bell!"
+ },
+ {
+  "slug": "next-time-turn-it-round",
+  "text": "Next time: turn it round."
+ },
+ {
+  "slug": "next-time-swap-places",
+  "text": "Next time: swap places."
+ },
+ {
+  "slug": "next-time-both-sides",
+  "text": "Next time: both sides."
+ },
+ {
+  "slug": "next-time-level-or-not",
+  "text": "Next time: level or not?."
+ },
+ {
+  "slug": "next-time-take-away",
+  "text": "Next time: take away."
+ },
+ {
+  "slug": "next-time-a-little-less-help",
+  "text": "Next time: a little less help."
+ },
+ {
+  "slug": "next-time-a-little-more-help",
+  "text": "Next time: a little more help."
+ },
+ {
+  "slug": "next-time-the-same-again",
+  "text": "Next time: the same again."
+ }
+]

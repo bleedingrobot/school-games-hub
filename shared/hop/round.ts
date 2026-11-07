@@ -9,52 +9,130 @@
  * Which step (10s, 5s or 2s) comes from the child's maths records, not from the auto ladder: a 5-year-old on auto is
  * usually still on an earlier rung (facts to 10), so `makeFocusPack` would never serve them skip counting. A step is
  * passed when 70% of its counting-up and what-comes-next facts are in box 2 or higher (the hub's usual secure rule).
- * Counting back is left out of that share because it is only asked on gold days; counting it would keep every child on
- * 10s until day 21. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
+ * Counting back is left out of that share so a child who is secure going forward moves on, and gets the counting-back
+ * hops (`backPlan`) for the steps behind them. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
  * of them but never drops a child back a step.
  */
 import { helpForFact, type FactRung } from '../kit/help';
 import { atMostShareTell, sharingTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
-import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS, type SkipKind, type SkipStep } from '../maths/skillPacks/earlyFacts';
+import { EARLY_FACTS, earlyFactsPack, parseSkip, type SkipKind } from '../maths/skillPacks/earlyFacts';
 import { seeded } from '../seededRandom';
 import type { Help } from './progress';
 
 export const HOPS_PER_ROUND = 10;
 /** On gold days the last three hops count back, as Hop hops home (James, 4 Nov 2026). */
 export const BACK_HOPS = 3;
-export const STEPS: readonly SkipStep[] = SKIP_STEPS.map((s) => s.step);
+/**
+ * Counting back on any day (R9): once a child is secure going forward on a step, one hop of each round counts back on it
+ * (the fact keys already say which way: `skip10:back:60`, so each has its own record). Two once a third of that step's back
+ * facts are at box 2, three once the usual 70% are. Gold days always ask three, as before.
+ */
+export const BACK_TWO_SHARE = 1 / 3;
+/** On gold days, two hops start off a multiple, once their step is secure (R8). */
+export const GOLD_FROM_HOPS = 2;
+/**
+ * The steps in order, each named by what it is saved as (`reached`, a round's `step`): the size of the hop for tens, fives,
+ * twos, threes and fours, and 200 for tens past 100 (tens to 200, whose hop is still 10). Threes, fours and tens past 100
+ * are R8's longer ladder: the shared keys sit beside the maths ladder (shared/maths/skillPacks/earlyFacts.ts), so only this
+ * game asks them, and a step is passed by the same 70% rule.
+ */
+export const HOP_STEPS = [
+  { step: 10, size: 10, family: 'skip10', word: 'tens', top: 100 },
+  { step: 5, size: 5, family: 'skip5', word: 'fives', top: 100 },
+  { step: 2, size: 2, family: 'skip2', word: 'twos', top: 100 },
+  { step: 3, size: 3, family: 'skip3', word: 'threes', top: 100 },
+  { step: 4, size: 4, family: 'skip4', word: 'fours', top: 100 },
+  { step: 200, size: 10, family: 'skip10h', word: 'tens past 100', top: 200 },
+] as const;
+export type HopStep = (typeof HOP_STEPS)[number]['step'];
+export const STEPS: readonly HopStep[] = HOP_STEPS.map((s) => s.step);
+const spec = (step: HopStep) => HOP_STEPS.find((s) => s.step === step)!;
+/** How far one hop goes (10 for tens past 100). */
+export const sizeOf = (step: HopStep): number => spec(step).size;
+/** What the step is called: "tens", "threes", "tens past 100". */
+export const wordOf = (step: HopStep): string => spec(step).word;
+/** The step a key belongs to: skip3:up:9 and skip3o1:next:7 are threes, skip10h:... is tens past 100. */
+export function stepOfKey(key: string): HopStep | null {
+  const k = parseSkip(key);
+  if (!k) return null;
+  const step = k.high ? 200 : k.step;
+  return isStep(step) ? step : null;
+}
+/** The shared family a key belongs to (the one that rolls and makes it). */
+const familyOfKey = (key: string) => {
+  const k = parseSkip(key);
+  return k ? EARLY_FACTS.families[k.high ? 'skip10h' : k.offset ? `skip${k.step}o` : `skip${k.step}`] : undefined;
+};
 
 /** Seeds are whole numbers from 0 up to 2^31 - 1, the range the hub's random generator handles exactly. */
 export const MAX_SEED = 2147483647;
 export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_SEED;
-export const isStep = (n: unknown): n is SkipStep => STEPS.includes(n as SkipStep);
+export const isStep = (n: unknown): n is HopStep => STEPS.includes(n as HopStep);
 
 /** Every fact of one kind for a step: `skip5:next:25` and so on, from the shared pack's own list. */
 const pack = earlyFactsPack();
-const family = (step: SkipStep) => EARLY_FACTS.families[`skip${step}`];
-const keysOf = (step: SkipStep, kind: SkipKind): string[] => family(step).keys.filter((k) => k.startsWith(`skip${step}:${kind}:`));
+const family = (step: HopStep) => EARLY_FACTS.families[spec(step).family];
+const keysOf = (step: HopStep, kind: SkipKind): string[] => family(step).keys.filter((k) => k.includes(`:${kind}:`));
+/** Counting on from a start that isn't a multiple ("start at 3, hop by 10"), for a step that has it (not tens past 100). */
+const offsetKeys = (step: HopStep): string[] => (step === 200 ? [] : EARLY_FACTS.families[`skip${step}o`]?.keys ?? []);
 /** The facts that decide whether a step is passed: counting up and what comes next. */
-export const stepKeys = (step: SkipStep): string[] => [...keysOf(step, 'up'), ...keysOf(step, 'next')];
+export const stepKeys = (step: HopStep): string[] => [...keysOf(step, 'up'), ...keysOf(step, 'next')];
 
 /** Share of a step's deciding facts that are secure (box 2 or higher). */
-export function stepShare(stats: Iterable<FactStats>, step: SkipStep): number {
+export function stepShare(stats: Iterable<FactStats>, step: HopStep): number {
   const box = new Map([...stats].map((s) => [s.key, s.box]));
   const keys = stepKeys(step);
   return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
 
 /**
- * The step for today: the first step not yet secure, but never below the furthest step reached. Once 2s are secure the
- * child stays on 2s (they still need the practice, and 2s are the top of this game).
+ * The step for today: the first step not yet secure, but never below the furthest step reached. Once the last step is
+ * secure the child stays on it (they still need the practice).
  */
-export function stepFor(stats: Iterable<FactStats>, reached: SkipStep = 10): SkipStep {
+export function stepFor(stats: Iterable<FactStats>, reached: HopStep = 10): HopStep {
   const list = [...stats];
   const from = STEPS.indexOf(reached);
   const at = STEPS.findIndex((s, i) => i >= from && stepShare(list, s) < STEP_SECURE_SHARE);
   return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
+
+/**
+ * Is the child ready for the signpost to doubling (R8's "what's next")? Twos are the first step of doubling, so it shows once
+ * the child has reached twos and they are secure by the same 70% rule (a child whose records are only half made never gets
+ * it early). Threes, fours and tens past 100 come after twos and don't hold it back, so the signpost that showed once twos
+ * were secure still shows.
+ */
+export function topSecure(stats: Iterable<FactStats>, reached: HopStep = 10): boolean {
+  return STEPS.indexOf(reached) >= STEPS.indexOf(2) && stepShare(stats, 2) >= STEP_SECURE_SHARE;
+}
+
+/** Share of a step's counting-back facts that are secure (box 2 or higher). */
+function backShare(stats: Iterable<FactStats>, step: HopStep): number {
+  const box = new Map([...stats].map((s) => [s.key, s.box]));
+  const keys = keysOf(step, 'back');
+  return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
+}
+
+/**
+ * Where counting back comes from and how many hops: the latest step, up to today's, that is secure going forward (70% of its
+ * up and next facts at box 2 or more), with 1, 2 or 3 hops by how secure its back facts are. A child with no such step has
+ * none. On a gold day it is today's step and three hops, as it always was.
+ */
+export function backPlan(stats: Iterable<FactStats>, step: HopStep, gold: boolean): { from: HopStep; count: number } | null {
+  const list = [...stats];
+  if (gold) return { from: step, count: Math.max(BACK_HOPS, backCount(list, step)) };
+  const from = STEPS.slice(0, STEPS.indexOf(step) + 1).reverse().find((s) => stepShare(list, s) >= STEP_SECURE_SHARE);
+  return from === undefined ? null : { from, count: backCount(list, from) };
+}
+const backCount = (list: FactStats[], step: HopStep): number => {
+  const share = backShare(list, step);
+  return share >= STEP_SECURE_SHARE ? 3 : share >= BACK_TWO_SHARE ? 2 : 1;
+};
+
+/** The steps this child has passed (secure by the 70% rule), so their non-multiple starts may be asked on a gold day. */
+const securedSteps = (stats: FactStats[]): HopStep[] => STEPS.filter((s) => offsetKeys(s).length > 0 && stepShare(stats, s) >= STEP_SECURE_SHARE);
 
 export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
 export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
@@ -86,7 +164,7 @@ export interface HopPlan {
 /** What the server saves when a challenge starts, and the browser is sent. */
 export interface Round {
   seed: number;
-  step: SkipStep;
+  step: HopStep;
   gold: boolean;
   hops: HopPlan[];
 }
@@ -113,6 +191,11 @@ export interface Hop extends HopPlan {
   before: number;
   /** Counting back: the hop goes down. */
   back: boolean;
+  /** How far one hop goes (10, 5, 2, 3 or 4), from the key and not the round: a gold day mixes steps. */
+  size: number;
+  /** The step the key belongs to (the word for it is `wordOf`), and where counting starts when it isn't a multiple ("from 3"), else 0. */
+  of: HopStep;
+  from: number;
   prompt: string;
   spoken: string;
   /** Four glow-worms in the order fixed by the seed, the right one among them. */
@@ -122,12 +205,13 @@ export interface Hop extends HopPlan {
 }
 
 /**
- * What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
- * Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
+ * What a glow-worm's number can be told by: the right answer is a multiple of the step (or the same distance past one, when
+ * counting starts off a multiple), so is anything on the same step. Exactly two of the four share it (the answer and one
+ * more), so no glow-worm can be picked just for how it ends.
  */
-export const tellOf = (step: SkipStep) => (n: number): boolean => n % step === 0;
-/** The numbers on the 100 board and in the game: no landing is below 0 or above 100. */
-const inRange = (n: number) => n >= 0 && n <= 100;
+export const tellOf = (size: number, rest = 0) => (n: number): boolean => n % size === rest;
+/** The numbers on the board and in the game: no landing is below 0 or above the top (100, or 200 past 100). */
+const inRange = (n: number, top = 100) => n >= 0 && n <= top;
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -153,7 +237,7 @@ function pickKeys(keys: string[], n: number, box: Map<string, number>, random: (
  * The same inputs always give the same round. The server saves the round's hops, so the records changing later doesn't
  * matter when the taps are checked.
  */
-export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: SkipStep; gold?: boolean } = {}): Round {
+export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: HopStep; gold?: boolean } = {}): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const list = [...stats];
   const step = stepFor(list, opts.reached);
@@ -162,14 +246,19 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
   const byKey = new Map(list.map((s) => [s.key, s]));
-  const back = gold ? BACK_HOPS : 0;
+  const plan = backPlan(list, step, gold);
+  const back = plan?.count ?? 0;
+  // On a gold day, two hops start off a multiple ("start at 3, hop by 10"), but only for steps the child has passed.
+  const passed = gold ? securedSteps(list) : [];
+  const offs = passed.length ? pickKeys(passed.flatMap(offsetKeys), GOLD_FROM_HOPS, box, random) : [];
   const keys = [
-    ...pickKeys(stepKeys(step), HOPS_PER_ROUND - back, box, random),
-    ...pickKeys(keysOf(step, 'back'), back, box, random),
+    ...pickKeys(stepKeys(step), HOPS_PER_ROUND - back - offs.length, box, random),
+    ...offs,
+    ...(plan ? pickKeys(keysOf(plan.from, 'back'), back, box, random) : []),
   ];
   // The shared family rolls each question's numbers (the answer and where the gap is), from the seed.
   const hops = keys.map((key) => {
-    const [answer, at] = family(step).roll(key, random);
+    const [answer, at] = familyOfKey(key)!.roll(key, random);
     return { key, answer, at, h: helpForStats(byKey.get(key)) };
   });
   return { seed, step, gold, hops };
@@ -185,28 +274,30 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
 export function showHop(round: Pick<Round, 'seed'>, index: number, plan: HopPlan): Hop | null {
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
   const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, random);
-  const m = /^skip(10|5|2):(up|next|back):\d+$/.exec(plan.key);
-  if (!q || !q.choices || q.answer !== plan.answer || !m) return null;
-  const step = Number(m[1]) as SkipStep;
-  const back = m[2] === 'back';
+  const k = parseSkip(plan.key);
+  const of = k && stepOfKey(plan.key);
+  if (!q || !q.choices || q.answer !== plan.answer || !k || !of) return null;
+  const size = k.step;
+  const top = k.high ? 200 : 100;
+  const back = k.kind === 'back';
   const terms = q.parts.map((p) => (p.startsWith('?') ? plan.answer : Number(p.replace(/,$/, ''))));
   const gap = q.parts.findIndex((p) => p.startsWith('?'));
   if (gap < 1 || terms.some((n) => !Number.isInteger(n))) return null;
   const before = terms[gap - 1];
   const dir = back ? -1 : 1;
   const a = plan.answer;
-  const tell = tellOf(step);
+  const tell = tellOf(size, k.offset);
   const taken = new Set<number>([a]);
-  const fresh = (n: number) => inRange(n) && !taken.has(n);
+  const fresh = (n: number) => inRange(n, top) && !taken.has(n);
 
   // One more on the same step.
   const sameStep: [number, HopMistake][] = [[before, 'stay']];
-  if (fresh(a + dir * step)) sameStep.push([a + dir * step, 'far']);
-  if (back && fresh(before + step)) sameStep.push([before + step, 'way']);
+  if (fresh(a + dir * size)) sameStep.push([a + dir * size, 'far']);
+  if (back && fresh(before + size)) sameStep.push([before + size, 'way']);
   const [same, sameKind] = sameStep[Math.floor(random() * sameStep.length)];
   taken.add(same);
   // Where a different step would land, from the pad Hop sits on: the first of 10, 5, 2, 1 that is not on this step's ending.
-  const other = [10, 5, 2, 1].filter((s) => s !== step).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
+  const other = [10, 5, 2, 1].filter((s) => s !== size).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
   if (other === undefined) return null;
   taken.add(other);
   // One more or one less (the sign by the seed), the other if that one is out of range or taken.
@@ -218,7 +309,7 @@ export function showHop(round: Pick<Round, 'seed'>, index: number, plan: HopPlan
   const wrongs = tagWrongs([off, same, other], (n) => kinds.get(n) ?? null);
   const choices = shuffle([a, ...wrongs.map((w) => w.n)], random);
   if (new Set(choices).size !== 4 || !atMostShareTell(a, choices, tell) || sharingTell(a, choices, tell) !== 2) return null;
-  return { ...plan, parts: q.parts, terms, gap, before, back, prompt: q.prompt ?? '', spoken: q.spoken, choices, wrongs };
+  return { ...plan, parts: q.parts, terms, gap, before, back, size, of, from: k.offset, prompt: q.prompt ?? '', spoken: q.spoken, choices, wrongs };
 }
 
 /** Every hop of a round as shown. Throws if a saved round has a hop the pack can't make. */

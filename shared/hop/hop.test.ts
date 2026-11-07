@@ -3,13 +3,13 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
-import { EARLY_FACTS, earlyFactsPack } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, helpForStats, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, type Round } from './round';
+import { EARLY_FACTS, earlyFactsPack, parseSkip, SKIP_FROM_STEPS } from '../maths/skillPacks/earlyFacts';
+import { BACK_HOPS, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
-/** Records that put a child on each step: none, 10s secure, 10s and 5s secure. */
-const recordsFor = { 10: [], 5: secure(stepKeys(10)), 2: secure([...stepKeys(10), ...stepKeys(5)]) } as Record<number, FactStats[]>;
+/** Records that put a child on each step: none, then every step before it secure (tens, then fives, twos, threes, fours, tens past 100). */
+const recordsFor = Object.fromEntries(STEPS.map((step, i) => [step, secure(STEPS.slice(0, i).flatMap(stepKeys))])) as Record<number, FactStats[]>;
 
 /** One wrong glow-worm on every hop, then the right one. */
 const wobblyTaps = (round: Round): Tap[] =>
@@ -40,11 +40,44 @@ describe('the round', () => {
     }
   });
 
-  it('asks counting back only on gold days, as the last three hops', () => {
+  it('asks counting back once a step is secure going forward (1, then 2, then 3 by how secure the back facts are), and three on every gold day', () => {
+    const backs = (r: Round) => r.hops.map((h) => h.key).filter((k) => k.includes(':back:'));
+    const backKeys = EARLY_FACTS.families.skip10.keys.filter((k) => k.includes(':back:'));
+    const at = (share: number) => secure(backKeys.slice(0, Math.ceil(backKeys.length * share)));
     for (const seed of seeds) {
-      expect(makeRound(seed, [], { gold: false }).hops.every((h) => !h.key.includes(':back:'))).toBe(true);
-      const gold = makeRound(seed, [], { gold: true }).hops.map((h) => h.key.includes(':back:'));
-      expect(gold).toEqual([...Array(HOPS_PER_ROUND - BACK_HOPS).fill(false), ...Array(BACK_HOPS).fill(true)]);
+      // Nothing secure forward: no back hops on an ordinary day; a gold day still has three, on today's step.
+      expect(backs(makeRound(seed, [], { gold: false }))).toHaveLength(0);
+      expect(backs(makeRound(seed, [], { gold: true }))).toHaveLength(BACK_HOPS);
+      // Tens secure going forward (so today is fives): back hops are tens, last in the round, own keys; the count grows with the back facts.
+      for (const [share, count] of [[0, 1], [0.4, 2], [0.8, 3]] as const) {
+        const round = makeRound(seed, [...recordsFor[5], ...at(share)], { gold: false });
+        expect(round.step).toBe(5);
+        const found = backs(round);
+        expect(found).toHaveLength(count);
+        expect(found.every((k) => k.startsWith('skip10:back:'))).toBe(true);
+        expect(round.hops.slice(HOPS_PER_ROUND - count).map((h) => h.key)).toEqual(found);
+      }
+      // Gold days keep three (never fewer), and every back hop lands on a number that counts down.
+      const gold = makeRound(seed, recordsFor[5], { gold: true });
+      expect(backs(gold)).toHaveLength(BACK_HOPS);
+      for (const hop of showRound(makeRound(seed, [...recordsFor[5], ...at(1)], { gold: false })).filter((h) => h.back)) expect(hop.terms[hop.gap]).toBeLessThan(hop.before);
+    }
+  });
+});
+
+describe('non-multiple starts on gold days (R8)', () => {
+  it('come only on a gold day, two hops, from a step the child has passed, and replay like any other hop', () => {
+    const offsetOf = (round: Round) => round.hops.filter((h) => parseSkip(h.key)!.offset > 0);
+    for (const seed of seeds) {
+      expect(offsetOf(makeRound(seed, recordsFor[200], { gold: false }))).toHaveLength(0);
+      expect(offsetOf(makeRound(seed, [], { gold: true }))).toHaveLength(0); // nothing passed yet
+      const round = makeRound(seed, recordsFor[3], { gold: true }); // tens, fives and twos passed
+      const from = offsetOf(round);
+      expect(from).toHaveLength(GOLD_FROM_HOPS);
+      for (const h of from) expect([10, 5, 2]).toContain(parseSkip(h.key)!.step);
+      expect(new Set(round.hops.map((h) => h.key)).size).toBe(HOPS_PER_ROUND);
+      expect(round.hops.slice(-BACK_HOPS).every((h) => h.key.includes(':back:'))).toBe(true);
+      expect(replay(round, wobblyTaps(round))).toMatchObject({ done: true, hopsMade: HOPS_PER_ROUND });
     }
   });
 });
@@ -65,32 +98,34 @@ describe('the step labels (R6)', () => {
 });
 
 describe('the glow-worms (mistakes that teach)', () => {
-  it('are the answer, one more on the same step and two with other endings, for every hop the pack can make', () => {
+  it('are the answer, one more on the same step and two with other endings, for every hop the pack can make (threes, fours, tens past 100 and from a start too)', () => {
     const kinds = new Set<string>();
-    for (const step of STEPS) {
-      for (const key of EARLY_FACTS.families[`skip${step}`].keys) {
+    const names = [...HOP_STEPS.map((h) => h.family), ...SKIP_FROM_STEPS.map(({ step }) => `skip${step}o`)];
+    for (const name of names) {
+      for (const key of EARLY_FACTS.families[name].keys) {
+        const { answer, offset, high, step: size } = parseSkip(key)!;
         for (const at of [1, 2, 3, 4]) {
           for (const seed of [1, 2, 3, 4, 5, 6]) {
-            const answer = Number(key.split(':')[2]);
             const hop = showHop({ seed }, 0, { key, answer, at });
             // Whenever the shared pack can make the hop, so can we (the server would refuse the round otherwise).
             const makes = !!earlyFactsPack().rebuild(key, [answer, at], true, seeded(seed));
             expect(!!hop).toBe(makes);
             if (!hop) continue;
             const { choices, wrongs } = hop;
+            expect(hop).toMatchObject({ size, from: offset, of: high ? 200 : size });
             expect(new Set(choices).size).toBe(4);
             expect(choices).toContain(answer);
             expect(wrongs.map((w) => w.n).sort()).toEqual(choices.filter((c) => c !== answer).sort());
             // Exactly two end like the answer (it, and one more hop on the same step): never the lone one.
-            expect(choices.filter(tellOf(step))).toHaveLength(2);
-            expect(choices.every((c) => c >= 0 && c <= 100)).toBe(true);
+            expect(choices.filter(tellOf(size, offset))).toHaveLength(2);
+            expect(choices.every((c) => c >= 0 && c <= (high ? 200 : 100))).toBe(true);
             for (const w of wrongs) {
               kinds.add(w.kind);
               if (w.kind === 'off1') expect(Math.abs(w.n - answer)).toBe(1);
               if (w.kind === 'stay') expect(w.n).toBe(hop.before);
-              if (w.kind === 'far') expect(Math.abs(w.n - hop.before)).toBe(2 * step);
-              if (w.kind === 'way') expect(hop.back && w.n === hop.before + step).toBe(true);
-              if (w.kind === 'step') expect((w.n - hop.before) * (hop.back ? -1 : 1)).not.toBe(step);
+              if (w.kind === 'far') expect(Math.abs(w.n - hop.before)).toBe(2 * size);
+              if (w.kind === 'way') expect(hop.back && w.n === hop.before + size).toBe(true);
+              if (w.kind === 'step') expect((w.n - hop.before) * (hop.back ? -1 : 1)).not.toBe(size);
             }
             // The same seed puts the glow-worms in the same order (the server builds them again).
             expect(showHop({ seed }, 0, { key, answer, at })).toEqual(hop);
@@ -120,7 +155,7 @@ describe('the glow-worms (mistakes that teach)', () => {
 });
 
 describe('the step', () => {
-  it('moves 10s to 5s to 2s only once 70% of counting up and what comes next is secure, and never drops back', () => {
+  it('moves 10s to 5s to 2s to 3s to 4s to tens past 100 only once 70% of counting up and what comes next is secure, and never drops back', () => {
     const tens = stepKeys(10);
     const need = Math.ceil(tens.length * 0.7);
     expect(stepFor(secure(tens.slice(0, need - 1)))).toBe(10);
@@ -129,9 +164,25 @@ describe('the step', () => {
     const back10 = Array.from({ length: 9 }, (_, i) => `skip10:back:${(i + 1) * 10}`);
     expect(stepFor(secure([...tens.slice(0, need - 1), ...back10]))).toBe(10);
     expect(stepFor(recordsFor[2])).toBe(2);
-    expect(stepFor(secure([...stepKeys(10), ...stepKeys(5), ...stepKeys(2)]))).toBe(2);
+    expect(stepFor(recordsFor[3])).toBe(3);
+    expect(stepFor(recordsFor[200])).toBe(200);
+    expect(stepFor(secure(STEPS.flatMap(stepKeys)))).toBe(200); // the last step is where a child stays
+    expect(STEPS.map(wordOf)).toEqual(['tens', 'fives', 'twos', 'threes', 'fours', 'tens past 100']);
     // A child who reached 5s and then forgot some 10s stays on 5s.
     expect(stepFor([], 5)).toBe(5);
+  });
+});
+
+describe("the finish screen's signpost (R8)", () => {
+  it('is for a child who has reached twos and has 70% of them secure, and not before', () => {
+    const twos = stepKeys(2);
+    const most = secure(twos.slice(0, Math.ceil(twos.length * 0.7)));
+    const fewer = secure(twos.slice(0, Math.ceil(twos.length * 0.7) - 1));
+    expect(topSecure(recordsFor[2], 2)).toBe(false); // on twos, none of them known yet
+    expect(topSecure([...recordsFor[2], ...most], 2)).toBe(true);
+    expect(topSecure([...recordsFor[2], ...fewer], 2)).toBe(false);
+    // Twos known but the tens and fives never reached: the child is not on twos yet.
+    expect(topSecure(most, 10)).toBe(false);
   });
 });
 
