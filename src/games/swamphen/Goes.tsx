@@ -22,7 +22,7 @@ import type { Tap } from '../../../shared/swamphen/play';
 import type { Friend as FriendName } from '../../../shared/swamphen/progress';
 import { GOES_PER_ROUND, pictureFor, pictureOf, showRound, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
 import { playSound } from '../sounds';
-import { Friend, Garden, Lanes, Pile, type Pose, type Scenery } from './art';
+import { Friend, Garden, Lanes, Pile, sceneStyle, type Pose, type Scenery } from './art';
 import { SLIP_LINES, askLine, lookLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -190,7 +190,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const heard = (n: number) => (go.kind === 'which' ? '' : String(n));
 
   return (
-    <div className={`sh-play sh-scene--${scenery}`}>
+    <div className={`sh-play sh-scene--${scenery}`} style={sceneStyle(scenery)}>
       <h2 className="sh-sr" tabIndex={-1} ref={heading}>{go.kind === 'which' ? WORDS.pickGarden : WORDS.pickCard}</h2>
       <div className="sh-top">
         <div className="sh-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>

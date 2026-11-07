@@ -157,3 +157,12 @@
 .sh-tools .sh-hand { left: 58%; top: 30%; }
 .sh-cards--which { display: grid; grid-template-columns: repeat(2, 1fr); max-width: 340px; margin: 0 auto; }
 .sh-cards--which .sh-choice { width: auto; }
+
+/* Painted pictures (art.tsx sets --sh-back; without it the gradient above shows). */
+.sh-tree[style*="--sh-back"], .sh-play[style*="--sh-back"] { background: var(--sh-back) center / cover no-repeat, var(--sh-sky); }
+@media (max-width: 800px) {
+  .sh-tree[style*="--sh-back"], .sh-play[style*="--sh-back"] { background: var(--sh-back-small) center / cover no-repeat, var(--sh-sky); }
+}
+.sh-friend--painted img, .sh-golden img { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.sh-reedrow--painted { display: flex; align-items: flex-end; justify-content: space-between; }
+.sh-reedrow--painted img { display: block; width: 17%; height: auto; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.3)); }

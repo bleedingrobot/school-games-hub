@@ -14,7 +14,7 @@ import type { Round } from '../../../shared/swamphen/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { ReedRow, Friend, GoldenGarden, type Pose, type Scenery } from './art';
+import { ReedRow, Friend, GoldenGarden, sceneStyle, type Pose, type Scenery } from './art';
 import { SwamphenError, type SwamphenBackend, type SwamphenFinish, type SwamphenState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -147,7 +147,7 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
 /** The reed garden on the home and finish screens: ten reed rows, and the friend perched on it. */
 function Branch({ scenery, rows, friend, pose }: { scenery: Scenery; rows: { metal: Metal; glow?: boolean }[]; friend: FriendName; pose: Pose }) {
   return (
-    <div className={`sh-tree sh-scene--${scenery}`}>
+    <div className={`sh-tree sh-scene--${scenery}`} style={sceneStyle(scenery)}>
       <div className="sh-tree__clusters" role="img" aria-label={`${rows.filter((c) => c.metal !== 'mud').length} of ${ROWS} reed rows changed`}>
         {rows.map((c, i) => (
           <span key={i} className="sh-tree__spot">
