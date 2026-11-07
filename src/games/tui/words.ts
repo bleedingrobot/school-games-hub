@@ -60,4 +60,7 @@ export const WORDS = {
   voiceOff: 'Voice off',
   nestsWon: (n: number) => `${n} Golden Nest${n === 1 ? '' : 's'}`,
   tenAndTen: 'Ten and ten is twenty!',
+  /** The "what's next" card on the finish screen (R8), once the top step is secure and Weka is on for the class. */
+  whatsNext: 'You know ten and some. Now make ten to add bigger sums.',
+  tryWeka: 'Try Weka',
 } as const;
