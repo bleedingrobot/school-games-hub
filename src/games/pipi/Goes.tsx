@@ -269,11 +269,6 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
             </span>
           ))}
         </div>
-        <span className="pp-play__friend">
-          <Friend friend={friend} pose={phase === 'right' || phase === 'done' || lifted ? 'cheer' : 'wait'} />
-        </span>
-      </div>
-      <div className="pp-shells" role="group" aria-label={WORDS.pickShell}>
         {why && (
           <ShowWhy
             prefix="pp"
@@ -294,6 +289,11 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
           />
         )}
         {redo && !why && !look && <NowYouTry prefix="pp" line={WORDS.nowTry} />}
+        <span className="pp-play__friend">
+          <Friend friend={friend} pose={phase === 'right' || phase === 'done' || lifted ? 'cheer' : 'wait'} />
+        </span>
+      </div>
+      <div className="pp-shells" role="group" aria-label={WORDS.pickShell}>
         {(order ?? go.choices).map((n, i) => (
           <button
             key={`${at}-${n}`}

@@ -186,7 +186,7 @@
 .pp-shellbtn--tried { animation: none; filter: grayscale(1) opacity(0.45); cursor: default; }
 .pp-shellbtn--tried.pp-shellbtn--wobble { animation: pp-wobble 0.5s ease-in-out; }
 .pp-why {
-  position: absolute; bottom: calc(100% + 6px); left: 50%; translate: -50% 0; z-index: 3;
+  position: absolute; top: 4px; left: 50%; translate: -50% 0; z-index: 3;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   width: min(94%, 460px); margin: 0; padding: 10px 14px; border-radius: 16px; border: 3px solid var(--pp-sea-dark);
   background: var(--pp-panel); color: var(--pp-ink); text-align: center;
