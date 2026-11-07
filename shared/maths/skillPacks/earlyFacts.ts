@@ -260,7 +260,7 @@ export function solveSkip(parts: readonly string[]): { answer: number; key: stri
   return made && made.parts.length === parts.length && made.parts.every((p, i) => p === parts[i]) ? { answer, key } : null;
 }
 
-// ---- The number line (Kererū's Number Line, docs/plans/maths-review/new-games/N1-number-line.md) -------------------
+// ---- The number line (Pigeon's Number Line, docs/plans/maths-review/new-games/N1-number-line.md) -------------------
 // Ladder-only keys the game records through `recordMathsAnswers` as plain right or wrong (first tap only). The game
 // builds its own picture and wrong cards; these families own the keys so records can be checked and kept.
 //   place100:t30 / place100:n63   where does 30 / 63 go on a 0 to 100 line (nine tens, 21 others)
