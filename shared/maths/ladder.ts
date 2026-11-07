@@ -5,7 +5,7 @@
  *
  * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
  * keys (the facts or question types that make it up) and its questions come from the pack
- * that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+ * that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
  * their place in the list, but auto skips them and they don't count towards progress yet.
  */
 import { CAMPAIGN_STEPS, HARD_TABLES, HARD_TABLE_WEIGHT, TABLES } from './config';
@@ -100,6 +100,10 @@ export const LADDER: LadderSkill[] = [
   ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
   // Odd and even to 20 sits beside the ladder (`inAuto`): Penguin Pairs asks it on gold days from its own rules, and a teacher can choose it.
   { id: 'odd-even', label: 'Odd and even numbers to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('oddEven'), built: true, inWarmUp: false, inAuto: false },
+  // The number line (Kererū's Number Line) sits beside the ladder (`inAuto`): the game draws and marks its own questions (a line is a picture), and only records these keys like any early fact. Typed, they read as a short sentence.
+  { id: 'number-line-100', label: 'The number line to 100', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('place100'), ...earlyKeys('read100'), ...earlyKeys('near10'), ...earlyKeys('zoom')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'ten-more-less', label: 'Ten more and ten less', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: earlyKeys('tens100'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'number-line-1000', label: 'The number line to 1000', stage: 'place-value', curriculumTags: ['MS.Y4.NUM.NS.P1'], keys: [...earlyKeys('place1000'), ...earlyKeys('read1000'), ...earlyKeys('near100')], built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -282,7 +286,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;
