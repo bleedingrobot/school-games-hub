@@ -155,6 +155,14 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/help.ts
+/** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
+function helpForFact(stats, rungs) {
+	if (!stats) return rungs[0].help;
+	const stays = ({ until = {} }) => stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0);
+	return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
+}
+//#endregion
 //#region shared/kit/mistakes.ts
 /** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
 function tagWrongs(candidates, kindOf) {
@@ -1002,6 +1010,30 @@ function stepFor(stats, reached = 10) {
 	return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 /**
+* The step label ("+10") for a fact from the child's own record of it (maths review R6, Weka's way with Hop's three
+* states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+* fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full label comes back, and a
+* new step's facts have no record, so they start full.
+*/
+const HELP_LADDER = [
+	{
+		help: "full",
+		until: {
+			box: 2,
+			quickDays: 2
+		}
+	},
+	{
+		help: "faint",
+		until: {
+			box: 4,
+			correct: 6
+		}
+	},
+	{ help: "none" }
+];
+const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
+/**
 * What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
 * Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
 */
@@ -1041,6 +1073,7 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	random();
 	const box = new Map(list.map((s) => [s.key, s.box]));
+	const byKey = new Map(list.map((s) => [s.key, s]));
 	const back = gold ? 3 : 0;
 	return {
 		seed,
@@ -1051,7 +1084,8 @@ function makeRound(seed, stats, opts = {}) {
 			return {
 				key,
 				answer,
-				at
+				at,
+				h: helpForStats(byKey.get(key))
 			};
 		})
 	};

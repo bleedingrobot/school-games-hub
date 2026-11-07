@@ -4,7 +4,7 @@ import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
 import { EARLY_FACTS, earlyFactsPack } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, type Round } from './round';
+import { BACK_HOPS, helpForStats, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -46,6 +46,21 @@ describe('the round', () => {
       const gold = makeRound(seed, [], { gold: true }).hops.map((h) => h.key.includes(':back:'));
       expect(gold).toEqual([...Array(HOPS_PER_ROUND - BACK_HOPS).fill(false), ...Array(BACK_HOPS).fill(true)]);
     }
+  });
+});
+
+describe('the step labels (R6)', () => {
+  it('follow each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new step', () => {
+    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
+    expect(helpForStats(undefined)).toBe('full');
+    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
+    expect(helpForStats(known)).toBe('none');
+    expect(helpForStats({ ...known, box: 1 })).toBe('full');
+    // A child who knows every 10s fact and has just moved to 5s: the 10s facts are not on the round, so every 5s hop starts full.
+    const tens = stepKeys(10).map((key) => ({ ...known, key }));
+    const fives = makeRound(7, tens, { reached: 5 });
+    expect(fives.step).toBe(5);
+    expect(fives.hops.map((h) => h.h)).toEqual(Array(HOPS_PER_ROUND).fill('full'));
   });
 });
 
