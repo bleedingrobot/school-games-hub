@@ -188,12 +188,20 @@
   "text": "2 is 1 and 1. The 1 got Weka to the rock."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-2-here-are-9-gold-and-2-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 2. Here are 9 gold and 2 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-2-here-are-9-gold-and-2-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 2. Here are 9 gold and 2 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-1-make-11",
-  "text": "9 and 1 make 10. 10 and 1 make 11."
+  "slug": "10-is-full-1-gone-1-left-9-and-1-make-10-10-and-1-make-11",
+  "text": "10 is full. 1 gone, 1 left. 9 and 1 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-1-left-9-and-1-make-10-10-and-1-make-11",
+  "text": "Let me show you. 10 is full. 1 gone, 1 left. 9 and 1 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "that-is-more-than-ten-1-too-many-put-it-back",
+  "text": "That is more than ten: 1 too many. Put it back."
  },
  {
   "slug": "2-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -212,8 +220,8 @@
   "text": "2 plus 9. Start on the bigger number, 9. Split the 2 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-2-plus-9-here-are-9-gold-and-2-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 2 plus 9. Here are 9 gold and 2 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-2-plus-9-here-are-9-gold-and-2-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 2 plus 9. Here are 9 gold and 2 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "11-take-away-2-weka-is-on-11-and-hops-back-2-where-will-weka-land",
@@ -312,12 +320,20 @@
   "text": "9 and 1 make 10. We still have 2."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-3-here-are-9-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 3. Here are 9 gold and 3 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-3-here-are-9-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 3. Here are 9 gold and 3 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-2-make-12",
-  "text": "9 and 1 make 10. 10 and 2 make 12."
+  "slug": "10-is-full-1-gone-2-left-9-and-1-make-10-10-and-2-make-12",
+  "text": "10 is full. 1 gone, 2 left. 9 and 1 make 10. 10 and 2 make 12."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-2-left-9-and-1-make-10-10-and-2-make-12",
+  "text": "Let me show you. 10 is full. 1 gone, 2 left. 9 and 1 make 10. 10 and 2 make 12."
+ },
+ {
+  "slug": "that-is-more-than-ten-2-too-many-put-them-back",
+  "text": "That is more than ten: 2 too many. Put them back."
  },
  {
   "slug": "3-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -336,8 +352,8 @@
   "text": "3 plus 9. Start on the bigger number, 9. Split the 3 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-3-plus-9-here-are-9-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 3 plus 9. Here are 9 gold and 3 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-3-plus-9-here-are-9-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 3 plus 9. Here are 9 gold and 3 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "12-take-away-3-weka-is-on-12-and-hops-back-3-where-will-weka-land",
@@ -432,12 +448,20 @@
   "text": "9 and 1 make 10. We still have 3."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-4-here-are-9-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 4. Here are 9 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-4-here-are-9-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 4. Here are 9 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-3-make-13",
-  "text": "9 and 1 make 10. 10 and 3 make 13."
+  "slug": "10-is-full-1-gone-3-left-9-and-1-make-10-10-and-3-make-13",
+  "text": "10 is full. 1 gone, 3 left. 9 and 1 make 10. 10 and 3 make 13."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-3-left-9-and-1-make-10-10-and-3-make-13",
+  "text": "Let me show you. 10 is full. 1 gone, 3 left. 9 and 1 make 10. 10 and 3 make 13."
+ },
+ {
+  "slug": "that-is-more-than-ten-3-too-many-put-them-back",
+  "text": "That is more than ten: 3 too many. Put them back."
  },
  {
   "slug": "4-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -456,8 +480,8 @@
   "text": "4 plus 9. Start on the bigger number, 9. Split the 4 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-4-plus-9-here-are-9-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 4 plus 9. Here are 9 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-4-plus-9-here-are-9-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 4 plus 9. Here are 9 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "13-take-away-4-weka-is-on-13-and-hops-back-4-where-will-weka-land",
@@ -552,12 +576,20 @@
   "text": "9 and 1 make 10. We still have 4."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-5-here-are-9-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 5. Here are 9 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-5-here-are-9-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 5. Here are 9 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-4-make-14",
-  "text": "9 and 1 make 10. 10 and 4 make 14."
+  "slug": "10-is-full-1-gone-4-left-9-and-1-make-10-10-and-4-make-14",
+  "text": "10 is full. 1 gone, 4 left. 9 and 1 make 10. 10 and 4 make 14."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-4-left-9-and-1-make-10-10-and-4-make-14",
+  "text": "Let me show you. 10 is full. 1 gone, 4 left. 9 and 1 make 10. 10 and 4 make 14."
+ },
+ {
+  "slug": "that-is-more-than-ten-4-too-many-put-them-back",
+  "text": "That is more than ten: 4 too many. Put them back."
  },
  {
   "slug": "5-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -576,8 +608,8 @@
   "text": "5 plus 9. Start on the bigger number, 9. Split the 5 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-5-plus-9-here-are-9-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 5 plus 9. Here are 9 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-5-plus-9-here-are-9-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 5 plus 9. Here are 9 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "14-take-away-5-weka-is-on-14-and-hops-back-5-where-will-weka-land",
@@ -672,12 +704,20 @@
   "text": "9 and 1 make 10. We still have 5."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-6-here-are-9-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 6. Here are 9 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-6-here-are-9-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 6. Here are 9 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-5-make-15",
-  "text": "9 and 1 make 10. 10 and 5 make 15."
+  "slug": "10-is-full-1-gone-5-left-9-and-1-make-10-10-and-5-make-15",
+  "text": "10 is full. 1 gone, 5 left. 9 and 1 make 10. 10 and 5 make 15."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-5-left-9-and-1-make-10-10-and-5-make-15",
+  "text": "Let me show you. 10 is full. 1 gone, 5 left. 9 and 1 make 10. 10 and 5 make 15."
+ },
+ {
+  "slug": "that-is-more-than-ten-5-too-many-put-them-back",
+  "text": "That is more than ten: 5 too many. Put them back."
  },
  {
   "slug": "6-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -696,8 +736,8 @@
   "text": "6 plus 9. Start on the bigger number, 9. Split the 6 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-6-plus-9-here-are-9-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 6 plus 9. Here are 9 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-6-plus-9-here-are-9-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 6 plus 9. Here are 9 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "15-take-away-6-weka-is-on-15-and-hops-back-6-where-will-weka-land",
@@ -792,12 +832,20 @@
   "text": "9 and 1 make 10. We still have 6."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-7-here-are-9-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 7. Here are 9 gold and 7 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-7-here-are-9-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 7. Here are 9 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-6-make-16",
-  "text": "9 and 1 make 10. 10 and 6 make 16."
+  "slug": "10-is-full-1-gone-6-left-9-and-1-make-10-10-and-6-make-16",
+  "text": "10 is full. 1 gone, 6 left. 9 and 1 make 10. 10 and 6 make 16."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-6-left-9-and-1-make-10-10-and-6-make-16",
+  "text": "Let me show you. 10 is full. 1 gone, 6 left. 9 and 1 make 10. 10 and 6 make 16."
+ },
+ {
+  "slug": "that-is-more-than-ten-6-too-many-put-them-back",
+  "text": "That is more than ten: 6 too many. Put them back."
  },
  {
   "slug": "7-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -816,8 +864,8 @@
   "text": "7 plus 9. Start on the bigger number, 9. Split the 7 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-9-here-are-9-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 9. Here are 9 gold and 7 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-9-here-are-9-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 9. Here are 9 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "16-take-away-7-weka-is-on-16-and-hops-back-7-where-will-weka-land",
@@ -912,12 +960,20 @@
   "text": "9 and 1 make 10. We still have 7."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-8-here-are-9-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 8. Here are 9 gold and 8 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-8-here-are-9-gold-and-8-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 8. Here are 9 gold and 8 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-7-make-17",
-  "text": "9 and 1 make 10. 10 and 7 make 17."
+  "slug": "10-is-full-1-gone-7-left-9-and-1-make-10-10-and-7-make-17",
+  "text": "10 is full. 1 gone, 7 left. 9 and 1 make 10. 10 and 7 make 17."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-7-left-9-and-1-make-10-10-and-7-make-17",
+  "text": "Let me show you. 10 is full. 1 gone, 7 left. 9 and 1 make 10. 10 and 7 make 17."
+ },
+ {
+  "slug": "that-is-more-than-ten-7-too-many-put-them-back",
+  "text": "That is more than ten: 7 too many. Put them back."
  },
  {
   "slug": "8-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -936,8 +992,8 @@
   "text": "8 plus 9. Start on the bigger number, 9. Split the 8 to get to ten. How many hops from 9 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-9-here-are-9-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 9. Here are 9 gold and 8 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-9-here-are-9-gold-and-8-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 9. Here are 9 gold and 8 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "17-take-away-8-weka-is-on-17-and-hops-back-8-where-will-weka-land",
@@ -1032,12 +1088,20 @@
   "text": "9 and 1 make 10. We still have 8."
  },
  {
-  "slug": "the-same-question-with-pebbles-9-plus-9-here-are-9-gold-and-9-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 9 plus 9. Here are 9 gold and 9 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-9-plus-9-here-are-9-gold-and-9-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 9 plus 9. Here are 9 gold and 9 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "9-and-1-make-10-10-and-8-make-18",
-  "text": "9 and 1 make 10. 10 and 8 make 18."
+  "slug": "10-is-full-1-gone-8-left-9-and-1-make-10-10-and-8-make-18",
+  "text": "10 is full. 1 gone, 8 left. 9 and 1 make 10. 10 and 8 make 18."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-1-gone-8-left-9-and-1-make-10-10-and-8-make-18",
+  "text": "Let me show you. 10 is full. 1 gone, 8 left. 9 and 1 make 10. 10 and 8 make 18."
+ },
+ {
+  "slug": "that-is-more-than-ten-8-too-many-put-them-back",
+  "text": "That is more than ten: 8 too many. Put them back."
  },
  {
   "slug": "9-plus-9-start-on-the-bigger-number-where-will-weka-land",
@@ -1136,12 +1200,20 @@
   "text": "8 and 2 make 10. We still have 1."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-3-here-are-8-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 3. Here are 8 gold and 3 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-3-here-are-8-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 3. Here are 8 gold and 3 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-1-make-11",
-  "text": "8 and 2 make 10. 10 and 1 make 11."
+  "slug": "10-is-full-2-gone-1-left-8-and-2-make-10-10-and-1-make-11",
+  "text": "10 is full. 2 gone, 1 left. 8 and 2 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-1-left-8-and-2-make-10-10-and-1-make-11",
+  "text": "Let me show you. 10 is full. 2 gone, 1 left. 8 and 2 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "not-full-yet-1-more-space",
+  "text": "Not full yet. 1 more space."
  },
  {
   "slug": "3-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1160,8 +1232,8 @@
   "text": "3 plus 8. Start on the bigger number, 8. Split the 3 to get to ten. How many hops from 8 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-3-plus-8-here-are-8-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 3 plus 8. Here are 8 gold and 3 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-3-plus-8-here-are-8-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 3 plus 8. Here are 8 gold and 3 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "11-take-away-3-weka-is-on-11-and-hops-back-3-where-will-weka-land",
@@ -1228,12 +1300,16 @@
   "text": "4 is 2 and 2. The 2 got Weka to the rock."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-4-here-are-8-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 4. Here are 8 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-4-here-are-8-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 4. Here are 8 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-2-make-12",
-  "text": "8 and 2 make 10. 10 and 2 make 12."
+  "slug": "10-is-full-2-gone-2-left-8-and-2-make-10-10-and-2-make-12",
+  "text": "10 is full. 2 gone, 2 left. 8 and 2 make 10. 10 and 2 make 12."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-2-left-8-and-2-make-10-10-and-2-make-12",
+  "text": "Let me show you. 10 is full. 2 gone, 2 left. 8 and 2 make 10. 10 and 2 make 12."
  },
  {
   "slug": "4-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1252,8 +1328,8 @@
   "text": "4 plus 8. Start on the bigger number, 8. Split the 4 to get to ten. How many hops from 8 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-4-plus-8-here-are-8-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 4 plus 8. Here are 8 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-4-plus-8-here-are-8-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 4 plus 8. Here are 8 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "12-take-away-4-weka-is-on-12-and-hops-back-4-where-will-weka-land",
@@ -1316,12 +1392,16 @@
   "text": "8 and 2 make 10. We still have 3."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-5-here-are-8-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-5-here-are-8-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-3-make-13",
-  "text": "8 and 2 make 10. 10 and 3 make 13."
+  "slug": "10-is-full-2-gone-3-left-8-and-2-make-10-10-and-3-make-13",
+  "text": "10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-3-left-8-and-2-make-10-10-and-3-make-13",
+  "text": "Let me show you. 10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13."
  },
  {
   "slug": "5-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1340,8 +1420,8 @@
   "text": "5 plus 8. Start on the bigger number, 8. Split the 5 to get to ten. How many hops from 8 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-5-plus-8-here-are-8-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 5 plus 8. Here are 8 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-5-plus-8-here-are-8-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 5 plus 8. Here are 8 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "13-take-away-5-weka-is-on-13-and-hops-back-5-where-will-weka-land",
@@ -1408,12 +1488,16 @@
   "text": "8 and 2 make 10. We still have 4."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-6-here-are-8-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 6. Here are 8 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-6-here-are-8-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 6. Here are 8 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-4-make-14",
-  "text": "8 and 2 make 10. 10 and 4 make 14."
+  "slug": "10-is-full-2-gone-4-left-8-and-2-make-10-10-and-4-make-14",
+  "text": "10 is full. 2 gone, 4 left. 8 and 2 make 10. 10 and 4 make 14."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-4-left-8-and-2-make-10-10-and-4-make-14",
+  "text": "Let me show you. 10 is full. 2 gone, 4 left. 8 and 2 make 10. 10 and 4 make 14."
  },
  {
   "slug": "6-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1432,8 +1516,8 @@
   "text": "6 plus 8. Start on the bigger number, 8. Split the 6 to get to ten. How many hops from 8 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-6-plus-8-here-are-8-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 6 plus 8. Here are 8 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-6-plus-8-here-are-8-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 6 plus 8. Here are 8 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "14-take-away-6-weka-is-on-14-and-hops-back-6-where-will-weka-land",
@@ -1500,12 +1584,16 @@
   "text": "8 and 2 make 10. We still have 5."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-7-here-are-8-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 7. Here are 8 gold and 7 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-7-here-are-8-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 7. Here are 8 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-5-make-15",
-  "text": "8 and 2 make 10. 10 and 5 make 15."
+  "slug": "10-is-full-2-gone-5-left-8-and-2-make-10-10-and-5-make-15",
+  "text": "10 is full. 2 gone, 5 left. 8 and 2 make 10. 10 and 5 make 15."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-5-left-8-and-2-make-10-10-and-5-make-15",
+  "text": "Let me show you. 10 is full. 2 gone, 5 left. 8 and 2 make 10. 10 and 5 make 15."
  },
  {
   "slug": "7-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1524,8 +1612,8 @@
   "text": "7 plus 8. Start on the bigger number, 8. Split the 7 to get to ten. How many hops from 8 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-8-here-are-8-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 8. Here are 8 gold and 7 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-8-here-are-8-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 8. Here are 8 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "15-take-away-7-weka-is-on-15-and-hops-back-7-where-will-weka-land",
@@ -1592,12 +1680,16 @@
   "text": "8 and 2 make 10. We still have 6."
  },
  {
-  "slug": "the-same-question-with-pebbles-8-plus-8-here-are-8-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 8 plus 8. Here are 8 gold and 8 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-8-plus-8-here-are-8-gold-and-8-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 8 plus 8. Here are 8 gold and 8 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "8-and-2-make-10-10-and-6-make-16",
-  "text": "8 and 2 make 10. 10 and 6 make 16."
+  "slug": "10-is-full-2-gone-6-left-8-and-2-make-10-10-and-6-make-16",
+  "text": "10 is full. 2 gone, 6 left. 8 and 2 make 10. 10 and 6 make 16."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-2-gone-6-left-8-and-2-make-10-10-and-6-make-16",
+  "text": "Let me show you. 10 is full. 2 gone, 6 left. 8 and 2 make 10. 10 and 6 make 16."
  },
  {
   "slug": "8-plus-8-start-on-the-bigger-number-where-will-weka-land",
@@ -1684,12 +1776,20 @@
   "text": "7 and 3 make 10. We still have 1."
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-4-here-are-7-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 4. Here are 7 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-4-here-are-7-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 4. Here are 7 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "7-and-3-make-10-10-and-1-make-11",
-  "text": "7 and 3 make 10. 10 and 1 make 11."
+  "slug": "10-is-full-3-gone-1-left-7-and-3-make-10-10-and-1-make-11",
+  "text": "10 is full. 3 gone, 1 left. 7 and 3 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-3-gone-1-left-7-and-3-make-10-10-and-1-make-11",
+  "text": "Let me show you. 10 is full. 3 gone, 1 left. 7 and 3 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "not-full-yet-2-more-spaces",
+  "text": "Not full yet. 2 more spaces."
  },
  {
   "slug": "4-plus-7-start-on-the-bigger-number-where-will-weka-land",
@@ -1708,8 +1808,8 @@
   "text": "4 plus 7. Start on the bigger number, 7. Split the 4 to get to ten. How many hops from 7 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-4-plus-7-here-are-7-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 4 plus 7. Here are 7 gold and 4 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-4-plus-7-here-are-7-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 4 plus 7. Here are 7 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "11-take-away-4-weka-is-on-11-and-hops-back-4-where-will-weka-land",
@@ -1776,12 +1876,16 @@
   "text": "7 and 3 make 10. We still have 2."
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-5-here-are-7-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 5. Here are 7 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-5-here-are-7-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 5. Here are 7 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "7-and-3-make-10-10-and-2-make-12",
-  "text": "7 and 3 make 10. 10 and 2 make 12."
+  "slug": "10-is-full-3-gone-2-left-7-and-3-make-10-10-and-2-make-12",
+  "text": "10 is full. 3 gone, 2 left. 7 and 3 make 10. 10 and 2 make 12."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-3-gone-2-left-7-and-3-make-10-10-and-2-make-12",
+  "text": "Let me show you. 10 is full. 3 gone, 2 left. 7 and 3 make 10. 10 and 2 make 12."
  },
  {
   "slug": "5-plus-7-start-on-the-bigger-number-where-will-weka-land",
@@ -1800,8 +1904,8 @@
   "text": "5 plus 7. Start on the bigger number, 7. Split the 5 to get to ten. How many hops from 7 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-5-plus-7-here-are-7-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 5 plus 7. Here are 7 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-5-plus-7-here-are-7-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 5 plus 7. Here are 7 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "12-take-away-5-weka-is-on-12-and-hops-back-5-where-will-weka-land",
@@ -1860,12 +1964,16 @@
   "text": "6 is 3 and 3. The 3 got Weka to the rock."
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-6-here-are-7-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 6. Here are 7 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-6-here-are-7-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 6. Here are 7 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "7-and-3-make-10-10-and-3-make-13",
-  "text": "7 and 3 make 10. 10 and 3 make 13."
+  "slug": "10-is-full-3-gone-3-left-7-and-3-make-10-10-and-3-make-13",
+  "text": "10 is full. 3 gone, 3 left. 7 and 3 make 10. 10 and 3 make 13."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-3-gone-3-left-7-and-3-make-10-10-and-3-make-13",
+  "text": "Let me show you. 10 is full. 3 gone, 3 left. 7 and 3 make 10. 10 and 3 make 13."
  },
  {
   "slug": "6-plus-7-start-on-the-bigger-number-where-will-weka-land",
@@ -1884,8 +1992,8 @@
   "text": "6 plus 7. Start on the bigger number, 7. Split the 6 to get to ten. How many hops from 7 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-6-plus-7-here-are-7-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 6 plus 7. Here are 7 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-6-plus-7-here-are-7-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 6 plus 7. Here are 7 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "13-take-away-6-weka-is-on-13-and-hops-back-6-where-will-weka-land",
@@ -1948,12 +2056,16 @@
   "text": "7 and 3 make 10. We still have 4."
  },
  {
-  "slug": "the-same-question-with-pebbles-7-plus-7-here-are-7-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 7 plus 7. Here are 7 gold and 7 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-7-plus-7-here-are-7-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 7 plus 7. Here are 7 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "7-and-3-make-10-10-and-4-make-14",
-  "text": "7 and 3 make 10. 10 and 4 make 14."
+  "slug": "10-is-full-3-gone-4-left-7-and-3-make-10-10-and-4-make-14",
+  "text": "10 is full. 3 gone, 4 left. 7 and 3 make 10. 10 and 4 make 14."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-3-gone-4-left-7-and-3-make-10-10-and-4-make-14",
+  "text": "Let me show you. 10 is full. 3 gone, 4 left. 7 and 3 make 10. 10 and 4 make 14."
  },
  {
   "slug": "7-plus-7-start-on-the-bigger-number-where-will-weka-land",
@@ -2040,12 +2152,20 @@
   "text": "6 and 4 make 10. We still have 1."
  },
  {
-  "slug": "the-same-question-with-pebbles-6-plus-5-here-are-6-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 6 plus 5. Here are 6 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-6-plus-5-here-are-6-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 6 plus 5. Here are 6 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "6-and-4-make-10-10-and-1-make-11",
-  "text": "6 and 4 make 10. 10 and 1 make 11."
+  "slug": "10-is-full-4-gone-1-left-6-and-4-make-10-10-and-1-make-11",
+  "text": "10 is full. 4 gone, 1 left. 6 and 4 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-4-gone-1-left-6-and-4-make-10-10-and-1-make-11",
+  "text": "Let me show you. 10 is full. 4 gone, 1 left. 6 and 4 make 10. 10 and 1 make 11."
+ },
+ {
+  "slug": "not-full-yet-3-more-spaces",
+  "text": "Not full yet. 3 more spaces."
  },
  {
   "slug": "5-plus-6-start-on-the-bigger-number-where-will-weka-land",
@@ -2064,8 +2184,8 @@
   "text": "5 plus 6. Start on the bigger number, 6. Split the 5 to get to ten. How many hops from 6 to the big rock?"
  },
  {
-  "slug": "the-same-question-with-pebbles-5-plus-6-here-are-6-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 5 plus 6. Here are 6 gold and 5 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-5-plus-6-here-are-6-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 5 plus 6. Here are 6 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
   "slug": "11-take-away-5-weka-is-on-11-and-hops-back-5-where-will-weka-land",
@@ -2132,12 +2252,16 @@
   "text": "6 and 4 make 10. We still have 2."
  },
  {
-  "slug": "the-same-question-with-pebbles-6-plus-6-here-are-6-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
-  "text": "The same question with pebbles: 6 plus 6. Here are 6 gold and 6 silver. Drag silver pebbles to fill the first ten."
+  "slug": "the-same-question-with-pebbles-6-plus-6-here-are-6-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
+  "text": "The same question with pebbles: 6 plus 6. Here are 6 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
  {
-  "slug": "6-and-4-make-10-10-and-2-make-12",
-  "text": "6 and 4 make 10. 10 and 2 make 12."
+  "slug": "10-is-full-4-gone-2-left-6-and-4-make-10-10-and-2-make-12",
+  "text": "10 is full. 4 gone, 2 left. 6 and 4 make 10. 10 and 2 make 12."
+ },
+ {
+  "slug": "let-me-show-you-10-is-full-4-gone-2-left-6-and-4-make-10-10-and-2-make-12",
+  "text": "Let me show you. 10 is full. 4 gone, 2 left. 6 and 4 make 10. 10 and 2 make 12."
  },
  {
   "slug": "6-plus-6-start-on-the-bigger-number-where-will-weka-land",

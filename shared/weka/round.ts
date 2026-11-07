@@ -397,11 +397,20 @@ export const splitDoneLine = (go: Said): string => fromTenLine(go);
  */
 export function pebbleAskLine(go: Said): string {
   const sum = go.kind === 'turn' ? `${go.small} plus ${go.big}` : `${go.big} plus ${go.small}`;
-  return `The same question with pebbles: ${sum}. Here are ${go.big} gold and ${go.small} silver. Drag silver pebbles to fill the first ten.`;
+  return `The same question with pebbles: ${sum}. Here are ${go.big} gold and ${go.small} silver. Drag the silver pebbles you need to make ten, then tap Check.`;
 }
 
 /** The first ten-frame is full: "8 and 2 make 10. 10 and 3 make 13." */
 export const pebbleDoneLine = (go: Said): string => `${go.big} and ${go.toTen} make 10. 10 and ${go.rest} make ${go.total}.`;
+
+/** Check with exactly the right number across (R9): "10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13." */
+export const pebbleRightLine = (go: Said): string => `10 is full. ${go.toTen} gone, ${go.rest} left. ${pebbleDoneLine(go)}`;
+/** Check with too few across: how many spaces are still empty. */
+export const pebbleFewLine = (missing: number): string => `Not full yet. ${missing} more ${missing === 1 ? 'space' : 'spaces'}.`;
+/** Check with too many across: how many to put back. */
+export const pebbleManyLine = (extra: number): string => `That is more than ten: ${extra} too many. Put ${extra === 1 ? 'it' : 'them'} back.`;
+/** After two wrong checks the right number moves across by itself. */
+export const pebbleShowLine = (go: Said): string => `Let me show you. ${pebbleRightLine(go)}`;
 
 /**
  * The split said in full once both parts are in: "You solved 9 + 5 by splitting the 5 into 1 and 4. You added the 1

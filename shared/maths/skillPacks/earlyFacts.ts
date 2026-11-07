@@ -72,12 +72,15 @@ function doublesHalves(label: string, tag: string, dblFrom: number, dblTo: numbe
   };
 }
 
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+ * "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+ * Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+ */
 const tenAnd: Family = {
   label: '"Ten and" facts (10 + 4)',
   curriculumTags: ['MS.Y1.NUM.OP.P6'],
   keys: range(1, 9).map((n) => `tenand:${n}`),
-  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 3)],
+  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 1)],
   make: (key, [n, v]) => {
     if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
     const t = String(10 + n);
@@ -87,6 +90,20 @@ const tenAnd: Family = {
       : v === 2 ? [['10', '+', '?', '=', t], n]
       : [[t, '−', '10', '=', '?'], n];
     return { parts: parts as string[], spoken: speak(parts as string[]), answer: answer as number, wrong: [(answer as number) + 1, (answer as number) - 1, (answer as number) + 10, n + 1, 20, 1 + n] };
+  },
+};
+
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess: Family = {
+  label: '"Ten less" facts (14 − 10)',
+  curriculumTags: ['MS.Y1.NUM.OP.P6'],
+  keys: range(1, 9).map((n) => `tenless:${n}`),
+  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 1)],
+  make: (key, [n, v]) => {
+    if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+    const t = String(10 + n);
+    const parts = v === 0 ? [t, '−', '10', '=', '?'] : ['10', '+', '?', '=', t];
+    return { parts, spoken: speak(parts), answer: n, wrong: [n + 1, n - 1, n + 10, 20, 1 + n] };
   },
 };
 
@@ -563,6 +580,7 @@ const families: Record<string, Family> = {
   ...equalsFamilies,
   ...arrayFamilies,
   tenAnd,
+  tenLess,
   tenUp: tenMove(true),
   tenDown: tenMove(false),
   oddEven,
@@ -581,7 +599,7 @@ export const EARLY_FACTS: PackDefinition = {
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
   // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
-  ladderOnly: ['tenAnd', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies), ...ARRAY_FAMILY_NAMES],
+  ladderOnly: ['tenAnd', 'tenLess', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies), ...ARRAY_FAMILY_NAMES],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

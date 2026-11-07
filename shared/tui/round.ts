@@ -2,8 +2,8 @@
  * One day's challenge at Tūī's Ten Tree (docs/TUI-PLAN.md sections 3 and 4): ten goes, each a teen number seen as a
  * full ten and some more ("10 and 4 → 14"), with three or four nests to choose from.
  *
- * The facts are the hub's shared "ten and" facts (`tenand:4` in shared/maths/skillPacks/earlyFacts.ts, ladder skill
- * `ten-and`). Nothing here works out a sum itself: the shared pack makes each question and its wrong choices from the
+ * The facts are the hub's shared "ten and" facts (`tenand:4` for ways 0 and 1, `tenless:4` for ways 2 and 3, in
+ * shared/maths/skillPacks/earlyFacts.ts, ladder skill `ten-and`). Nothing here works out a sum itself: the shared pack makes each question and its wrong choices from the
  * key and its variant (the "way"), exactly as anywhere else on the hub. The ways: 0 "10 + 4", 1 "4 + 10",
  * 2 "10 + ? = 14" (how many more?) and 3 "14 − 10" (take the ten away).
  *
@@ -41,7 +41,11 @@ export const FRAMES_LEVEL = 4;
 export const KNOWN_FACTS = 7;
 export const KNOWN_START = { step: 3 as Step, level: FRAMES_LEVEL as HelpLevel };
 
+/** The nine "ten and" facts (10 + 4, 4 + 10), and the nine "ten less" ones (14 − 10, 10 + ? = 14), kept as separate records (R9). */
 export const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
+export const LESS_KEYS = Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`);
+/** The record a go counts towards: ways 0 and 1 are "ten and", ways 2 and 3 "ten less". */
+export const keyFor = (n: number, way: number): string => `${way >= 2 ? 'tenless' : 'tenand'}:${n}`;
 
 export const STEPS = [
   { step: 1, name: 'How many?', ways: [0] },
@@ -58,6 +62,7 @@ export type HelpSetting = 'fade' | 'always' | 'off';
 
 /** The guided first go (plan section 6): 10 and 2, at level 5. */
 export const GUIDED_KEY = 'tenand:2';
+const GUIDED_N = 2;
 
 export const MAX_SEED = 2147483647;
 export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_SEED;
@@ -115,12 +120,13 @@ export function placeAfter(p: Place, right: number): Place {
 }
 
 /**
- * The top step is secure (R8, the "what's next" card): at least 70% of the nine "ten and" facts at box 2 or more, the
- * same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Seven of nine.
+ * The top step is secure (R8, the "what's next" card): at least 70% of the eighteen facts (nine "ten and", nine "ten less")
+ * at box 2 or more, the same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Thirteen of eighteen.
  */
 export function topSecure(stats: Iterable<FactStats>): boolean {
   const box = new Map([...stats].map((s) => [s.key, s.box]));
-  return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(KEYS.length * STEP_SECURE_SHARE);
+  const all = [...KEYS, ...LESS_KEYS];
+  return all.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(all.length * STEP_SECURE_SHARE);
 }
 
 /** One go as saved: the fact, the way it is asked and the help level it is shown at. */
@@ -166,7 +172,7 @@ const shuffle = <T>(items: T[], random: () => number): T[] => {
 };
 
 /** The same fact never comes twice in a row: a repeat swaps with a later go where it fits. */
-function spreadOut(keys: string[]): string[] {
+function spreadOut<T>(keys: T[]): T[] {
   const out = [...keys];
   for (let i = 1; i < out.length; i++) {
     if (out[i] !== out[i - 1]) continue;
@@ -206,20 +212,24 @@ export function makeRound(
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map([...stats].map((s) => [s.key, s.box]));
-  const byWeak = shuffle(KEYS, random)
-    .map((k, i) => ({ k, i }))
-    .sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i)
-    .map((x) => x.k);
-  // Every fact once, weakest first, and the weakest again at the end.
-  let keys = [...byWeak, byWeak[0]];
+  // Each number once, weakest first: a number is as weak as its weakest fact among the ways this step asks (so a child who
+  // knows 10 + 4 but not 14 − 10 meets 4 early once the minus ways are asked).
+  const stepWays = STEPS.find((x) => x.step === step)!.ways;
+  const weakness = (n: number) => Math.min(...stepWays.map((w) => box.get(keyFor(n, w)) ?? 0));
+  const byWeak = shuffle(KEYS.map((_, i) => i + 1), random)
+    .map((n, i) => ({ n, i }))
+    .sort((a, b) => weakness(a.n) - weakness(b.n) || a.i - b.i)
+    .map((x) => x.n);
+  // Every number once, weakest first, and the weakest again at the end.
+  let ns = [...byWeak, byWeak[0]];
   if (opts.guided) {
-    const rest = [...keys];
-    rest.splice(rest.indexOf(GUIDED_KEY), 1);
-    keys = spreadOut([GUIDED_KEY, ...rest]);
+    const rest = [...ns];
+    rest.splice(rest.indexOf(GUIDED_N), 1);
+    ns = spreadOut([GUIDED_N, ...rest]);
   }
   const ways = waysFor(step, random);
   const shown = shownLevel(level, help);
-  const goes = keys.map((key, i): GoPlan => (opts.guided && i === 0 ? { key, v: 0, l: TOP_LEVEL } : { key, v: ways[i], l: shown }));
+  const goes = ns.map((n, i): GoPlan => (opts.guided && i === 0 ? { key: keyFor(n, 0), v: 0, l: TOP_LEVEL } : { key: keyFor(n, ways[i]), v: ways[i], l: shown }));
   return { seed, step, level, help, goes };
 }
 
@@ -269,11 +279,12 @@ export function wrongNests(n: number, v: Way, random: () => number): WrongNest[]
 
 /** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
-  const m = /^tenand:([1-9])$/.exec(plan.key);
-  if (!m || ![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
-  const n = Number(m[1]);
+  const m = /^ten(and|less):([1-9])$/.exec(plan.key);
+  // A challenge saved before the split can still hold "tenand" with the minus ways, so those are made as they were.
+  if (!m || ![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l) || (m[1] === 'less' && plan.v < 2)) return null;
+  const n = Number(m[2]);
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
-  const q = pack.rebuild(plan.key, [n, plan.v], true, random);
+  const q = pack.rebuild(plan.key, [n, m[1] === 'less' ? 3 - plan.v : plan.v], true, random);
   const answer = plan.v >= 2 ? n : 10 + n;
   if (!q || !q.choices || q.answer !== answer) return null;
   // The pack only vouches for the question and answer; the nests are the game's own, each tagged with its mistake.

@@ -40,7 +40,7 @@ he can only jump in equal hops. The pond is a number line: lily pads float acros
 - **Question kinds (James, 4 Nov):**
   - **Missing pad:** 2, 4, _, 8.
   - **What comes next:** 2, 4, 6, _.
-  - **Counting back, on gold days only:** 10, 8, _, 4, as Hop hops home.
+  - **Counting back, from the first day a step is secure going forward (R9), three on gold days:** 10, 8, _, 4, as Hop hops home.
   - Starts not on a multiple of the step (3, 5, 7…) are not used.
 - **Number range:** 10s up to 100, 5s up to 50, 2s up to 20 to start with, and possibly 30 later.
 - **Wrong choices** sit next to the right answer: one more or one less (7 instead of 8), the wrong step (5 instead of

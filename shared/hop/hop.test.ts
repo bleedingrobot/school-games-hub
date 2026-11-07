@@ -40,11 +40,27 @@ describe('the round', () => {
     }
   });
 
-  it('asks counting back only on gold days, as the last three hops', () => {
+  it('asks counting back once a step is secure going forward (1, then 2, then 3 by how secure the back facts are), and three on every gold day', () => {
+    const backs = (r: Round) => r.hops.map((h) => h.key).filter((k) => k.includes(':back:'));
+    const backKeys = EARLY_FACTS.families.skip10.keys.filter((k) => k.includes(':back:'));
+    const at = (share: number) => secure(backKeys.slice(0, Math.ceil(backKeys.length * share)));
     for (const seed of seeds) {
-      expect(makeRound(seed, [], { gold: false }).hops.every((h) => !h.key.includes(':back:'))).toBe(true);
-      const gold = makeRound(seed, [], { gold: true }).hops.map((h) => h.key.includes(':back:'));
-      expect(gold).toEqual([...Array(HOPS_PER_ROUND - BACK_HOPS).fill(false), ...Array(BACK_HOPS).fill(true)]);
+      // Nothing secure forward: no back hops on an ordinary day; a gold day still has three, on today's step.
+      expect(backs(makeRound(seed, [], { gold: false }))).toHaveLength(0);
+      expect(backs(makeRound(seed, [], { gold: true }))).toHaveLength(BACK_HOPS);
+      // Tens secure going forward (so today is fives): back hops are tens, last in the round, own keys; the count grows with the back facts.
+      for (const [share, count] of [[0, 1], [0.4, 2], [0.8, 3]] as const) {
+        const round = makeRound(seed, [...recordsFor[5], ...at(share)], { gold: false });
+        expect(round.step).toBe(5);
+        const found = backs(round);
+        expect(found).toHaveLength(count);
+        expect(found.every((k) => k.startsWith('skip10:back:'))).toBe(true);
+        expect(round.hops.slice(HOPS_PER_ROUND - count).map((h) => h.key)).toEqual(found);
+      }
+      // Gold days keep three (never fewer), and every back hop lands on a number that counts down.
+      const gold = makeRound(seed, recordsFor[5], { gold: true });
+      expect(backs(gold)).toHaveLength(BACK_HOPS);
+      for (const hop of showRound(makeRound(seed, [...recordsFor[5], ...at(1)], { gold: false })).filter((h) => h.back)) expect(hop.terms[hop.gap]).toBeLessThan(hop.before);
     }
   });
 });
