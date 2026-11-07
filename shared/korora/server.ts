@@ -45,7 +45,7 @@ export const HELP_SETTINGS: readonly HelpSetting[] = ['fade', 'always', 'off'];
 export interface Settings {
   enabled: boolean;
   /**
-   * The teacher's help setting: 'fade' (full pictures on bronze days, faint on silver, none on gold), 'always' (full
+   * The teacher's help setting: 'fade' (each go's picture follows how well the child knows that fact, saved on the go as `h`), 'always' (full
    * pictures every day) or 'off' (words and numbers only, from the first day).
    */
   help: HelpSetting;

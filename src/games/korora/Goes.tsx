@@ -6,8 +6,10 @@
  *  - Fair or not (gold days): can the two chicks share this many fish fairly, or is one left over?
  *
  * The support James chose (4 Nov 2026), all in this screen:
- *  - help that fades with the pebbles: bronze days show a clear reflection with each fish joined to its mirror fish and
- *    share halves out one by one; silver days a faint, rippled reflection and the pile only; gold days the words only;
+ *  - help that follows the child, fact by fact (maths review R6, each go's `h` from shared/korora/round.ts): a fact still
+ *    new shows a clear reflection with each fish joined to its mirror fish and shares halves out one by one; then a
+ *    faint, rippled reflection and the pile only; then the words only. A go with no `h` (a round saved before R6) shows
+ *    the calendar's help for the round: bronze days full, silver faint, gold none. The teacher's setting still wins;
  *  - mistakes that teach (maths review R5, shared/kit/mistakes.ts): every wrong stone of a double or a half is a real
  *    mistake (shared/korora/round.ts). The first wrong tap of a go greys that stone out and shows the mistake's picture
  *    with a line (WhyPicture.tsx). The second stops the free taps: "Let's look together", the full picture and Bella
@@ -17,7 +19,8 @@
  *  - fish sit in rows of five, like a ten-frame, a short row lined up on the left (James, 4 Nov 2026);
  *  - tap a fish to count it (doubles), or to give it to a chick (halves and fair or not);
  *  - a double comes just before its half, with the same fish (the rules put them together);
- *  - after three goes in a row with a wrong first tap, the full pictures come back for the rest of the round;
+ *  - after three goes in a row with a wrong first tap, the full pictures come back for the rest of the round (not
+ *    saved), with a line that says so once. The teacher's "off" keeps them away;
  *  - "Hear it again" reads the question again.
  * None of this changes what counts: the taps are replayed by the server, which records the first pick of each fact.
  */
@@ -25,6 +28,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { Tap } from '../../../shared/korora/play';
 import type { Friend as FriendName, Help } from '../../../shared/korora/progress';
 import { followsItsDouble, GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/korora/round';
+import { helpWithSetting, STRUGGLE_GOES, type HelpSetting } from '../../../shared/kit/help';
 import { LOOK_AT, NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
@@ -37,13 +41,12 @@ import { WORDS } from './words';
 const RIGHT_MS = 1600;
 const WOBBLE_MS = 500;
 const SHARE_MS = 320;
-/** After this many goes in a row with a wrong first tap, the full pictures come back for the rest of the round. */
-const STRUGGLE_GOES = 3;
-
 interface Props {
   round: Round;
-  /** The help for today, from the pebbles and the teacher's setting. */
+  /** The help for a go saved with none of its own (a round open before R6): the calendar's, from the pebbles. */
   help: Help;
+  /** The teacher's setting: 'always' and 'off' win over the child's own help, and 'off' keeps the three-in-a-row boost away too. */
+  setting?: HelpSetting;
   scenery: Scenery;
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the way on the first go. */
@@ -77,7 +80,7 @@ const fishIdsOf = (go: Go): string[] =>
 /** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
 const rowsOf = (n: number) => Array.from({ length: Math.ceil(n / 5) }, (_, r) => Math.min(5, n - r * 5));
 
-export function Goes({ round, help, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, help, setting = 'fade', scenery, friend, guide = false, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -96,6 +99,8 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   /** Goes in a row with a wrong first tap, and whether the full pictures have come back for the round. */
   const [streak, setStreak] = useState(0);
   const [boost, setBoost] = useState(false);
+  /** Set when the boost has just begun and its line is still to be said, after the line for the wrong tap. */
+  const backLine = useRef(false);
   /** Fish tapped (or counted with Bella), in order: their count shows on them. */
   const [counted, setCounted] = useState<string[]>([]);
   /** Fish given to each chick, by their place in the pile. */
@@ -118,7 +123,9 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   const guided = guide && at === 0;
   const line = goLine(go, guided, followsItsDouble(round.goes, at));
   // "Let's look together" shows the full picture; "Now you try" goes back to the child's own help level, not more.
-  const shown: Help = boost || flow.phase === 'look' ? 'full' : help;
+  const helpAt = (i: number): Help => helpWithSetting(round.goes[i]?.h ?? help, setting, { always: 'full', off: 'none' });
+  const ownHelp = helpAt(at);
+  const shown: Help = (boost && setting !== 'off') || flow.phase === 'look' ? 'full' : ownHelp;
   const lookIds = go.kind === 'double' ? fishIdsOf(go) : fishIdsOf(go).filter((_, i) => i % 2 === 0);
 
   // Each new go is read aloud once; bronze-day halves share themselves out while the child watches.
@@ -136,7 +143,7 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
       later(1800, () => setGuideStep(1));
       later(3600, () => setGuideStep(2));
     }
-    if (go.kind === 'half' && help === 'full') shareAll(go.n, 1200);
+    if (go.kind === 'half' && (ownHelp === 'full' || (boost && setting !== 'off'))) shareAll(go.n, 1200);
     return () => {
       live = false;
     };
@@ -167,7 +174,7 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
         setRedoOrder(reordered(go.choices));
         setCounted([]);
         // The pile goes back to how the child's own help level shows it.
-        if (!(go.kind === 'half' && (help === 'full' || boost))) setShared([]);
+        if (!(go.kind === 'half' && (ownHelp === 'full' || (boost && setting !== 'off')))) setShared([]);
         since.current = Date.now();
         say(WORDS.nowTry, () => say(line));
       },
@@ -188,14 +195,21 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
       if (first) {
         const s = streak + 1;
         setStreak(s);
-        if (s >= STRUGGLE_GOES) setBoost(true);
+        if (s >= STRUGGLE_GOES && !boost && setting !== 'off') {
+          setBoost(true);
+          // Said once, after the why-line, and only if some go from here on was not already showing the full picture.
+          if (goes.some((_, i) => i >= at && helpAt(i) !== 'full')) backLine.current = true;
+        }
       }
       setWobble(n);
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
       const kind = go.wrongs.find((x) => x.n === n)?.kind;
       if (!kind) {
-        say(WORDS.tryAgain); // fair or not
+        // fair or not
+        if (backLine.current) say(WORDS.tryAgain, () => say(WORDS.picturesBack));
+        else say(WORDS.tryAgain);
+        backLine.current = false;
         return;
       }
       const after = stepGo(flow, 'wrong');
@@ -204,7 +218,9 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
       if (after.phase === 'look') lookTogether();
       else {
         setWhy({ n, kind, tap: next.length });
-        say(whyLine(go, kind));
+        if (backLine.current) say(whyLine(go, kind), () => say(WORDS.picturesBack));
+        else say(whyLine(go, kind));
+        backLine.current = false;
       }
       return;
     }
