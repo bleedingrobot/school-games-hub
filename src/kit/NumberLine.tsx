@@ -19,10 +19,25 @@ export interface Arc {
 
 export interface LinePoint {
   value: number;
+  /** Which colour part the dot uses. Default `point`. A game that shows a guess and a true place gives one of them `landmark` or `arc`. */
+  tone?: LineColor;
   /** Written beside the dot, for example `?` or a name. */
   label?: string;
   /** `ring` is an empty circle (a guess, a place still to fill); `dot` is solid. Default `dot`. */
   look?: 'dot' | 'ring';
+}
+
+/**
+ * A zoom lens: a second, bigger line under the first that shows only the part between `from` and `to`. The part is
+ * marked on the first line and joined to the lens by two guide lines. The lens has its own marks, landmarks and points.
+ */
+export interface Lens {
+  from: number;
+  to: number;
+  step?: number;
+  labelEvery?: number;
+  landmarks?: readonly Landmark[];
+  points?: readonly LinePoint[];
 }
 
 export interface NumberLineProps {
@@ -36,6 +51,15 @@ export interface NumberLineProps {
   landmarks?: readonly Landmark[];
   arcs?: readonly Arc[];
   points?: readonly LinePoint[];
+  /** A zoom lens under the line (see `Lens`). */
+  lens?: Lens;
+  /**
+   * Makes the line tappable: called with the value under the tap, as a number in the line's own units (not rounded), held
+   * between its two ends. With a lens, the tap is on the lens line unless `pickOn` is `line`. A game decides what counts
+   * as close enough.
+   */
+  onPick?: (value: number) => void;
+  pickOn?: 'line' | 'lens';
   /** The words a screen reader says. Required. Never give the answer away while it is still being worked out. */
   label: string;
   colors?: KitColors<LineColor>;
@@ -45,6 +69,17 @@ export interface NumberLineProps {
 const W = 600;
 const SIDE = 28;
 const LINE_W = W - SIDE * 2;
+/** The height of the lens line below the first line's labels. */
+const LENS_GAP = 56;
+/** How far either side of the line a tap still counts as on it. */
+const TAP_REACH = 30;
+
+/** The value under a tap, from where it landed along the line (`x` in the picture's own 0 to 600 units). Held between the ends. */
+export function valueAtX(x: number, min: number, max: number, width = LINE_W, side = SIDE): number {
+  if (!(max > min)) return min;
+  const t = Math.min(Math.max((x - side) / width, 0), 1);
+  return min + t * (max - min);
+}
 const LABEL_H = 38;
 const POINT_R = 8;
 
@@ -67,24 +102,18 @@ export function lineTicks(min: number, max: number, step: number): number[] {
 /** An arc's height grows with its span but stays inside the picture. */
 const arcHeight = (span: number) => 18 + Math.min(span, LINE_W) * 0.18;
 
-export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], label, colors, className }: NumberLineProps) {
+/** The marks of one line: small marks, the ends, landmarks, then points. Used for the main line and for the lens. */
+function Marks({ min, max, step, labelEvery, landmarks, points, y, colors }: {
+  min: number; max: number; step?: number; labelEvery?: number; landmarks: readonly Landmark[]; points: readonly LinePoint[]; y: number; colors?: KitColors<LineColor>;
+}) {
   const lineC = kitColor(colors, 'line');
   const landC = kitColor(colors, 'landmark', lineC);
-  const arcC = kitColor(colors, 'arc');
-  const pointC = kitColor(colors, 'point');
   const textC = kitColor(colors, 'text');
   const x = (v: number) => SIDE + lineX(v, min, max);
-  const span = (a: Arc) => Math.abs(x(a.to) - x(a.from));
-  const up = arcs.filter((a) => (a.side ?? 'above') === 'above');
-  const down = arcs.filter((a) => a.side === 'below');
-  const top = Math.max(24, ...up.map((a) => arcHeight(span(a)) + (a.label ? 32 : 6)));
-  const bottom = LABEL_H + 14 + Math.max(0, ...down.map((a) => arcHeight(span(a)) + (a.label ? 30 : 6)));
-  const y = top;
-  const H = y + bottom;
   const ticks = lineTicks(min, max, step ?? 0);
   const landValues = new Set(landmarks.map((l) => l.value));
   return (
-    <svg className={className} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{ maxWidth: '100%' }}>
+    <g>
       <line x1={SIDE} y1={y} x2={W - SIDE} y2={y} stroke={lineC} strokeWidth="3" strokeLinecap="round" />
       {ticks.map((t, i) => {
         const named = labelEvery ? i % labelEvery === 0 : i === 0 || i === ticks.length - 1;
@@ -120,6 +149,60 @@ export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = 
           )}
         </g>
       ))}
+      {points.map((p, i) => {
+        const c = kitColor(colors, p.tone ?? 'point');
+        return (
+          <g key={`p${i}`}>
+            <circle cx={x(p.value)} cy={y} r={POINT_R} fill={p.look === 'ring' ? 'var(--kit-fill, transparent)' : c} stroke={c} strokeWidth="3" />
+            {p.label && (
+              <text x={x(p.value)} y={y - 18} textAnchor="middle" fontSize="22" fontWeight="700" fill={textC}>
+                {p.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], lens, onPick, pickOn, label, colors, className }: NumberLineProps) {
+  const lineC = kitColor(colors, 'line');
+  const arcC = kitColor(colors, 'arc');
+  const textC = kitColor(colors, 'text');
+  const x = (v: number) => SIDE + lineX(v, min, max);
+  const span = (a: Arc) => Math.abs(x(a.to) - x(a.from));
+  const up = arcs.filter((a) => (a.side ?? 'above') === 'above');
+  const down = arcs.filter((a) => a.side === 'below');
+  const top = Math.max(24, ...up.map((a) => arcHeight(span(a)) + (a.label ? 32 : 6)));
+  const bottomMain = LABEL_H + 14 + Math.max(0, ...down.map((a) => arcHeight(span(a)) + (a.label ? 30 : 6)));
+  const y = top;
+  // The lens line sits below everything on the first line, with room for its own labels.
+  const lensY = y + bottomMain - 14 + LENS_GAP;
+  const H = lens ? lensY + LABEL_H + 14 : y + bottomMain;
+  const tapOn = onPick ? (lens && pickOn !== 'line' ? 'lens' : 'line') : null;
+  const tap = (e: React.PointerEvent<SVGRectElement>) => {
+    if (!onPick) return;
+    const svg = e.currentTarget.ownerSVGElement;
+    const box = svg?.getBoundingClientRect();
+    if (!box || box.width === 0) return;
+    const px = ((e.clientX - box.left) / box.width) * W;
+    onPick(tapOn === 'lens' && lens ? valueAtX(px, lens.from, lens.to) : valueAtX(px, min, max));
+  };
+  const tapY = tapOn === 'lens' ? lensY : y;
+  return (
+    <svg className={className} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{ maxWidth: '100%', touchAction: onPick ? 'none' : undefined }}>
+      <Marks min={min} max={max} step={step} labelEvery={labelEvery} landmarks={landmarks} points={points} y={y} colors={colors} />
+      {lens && (
+        <g>
+          <rect x={x(lens.from)} y={y - 9} width={Math.max(3, x(lens.to) - x(lens.from))} height="18" rx="4" fill={kitColor(colors, 'landmark', lineC)} opacity="0.35" />
+          <g stroke={lineC} strokeWidth="2" strokeDasharray="5 5" opacity="0.7">
+            <line x1={x(lens.from)} y1={y + 10} x2={SIDE} y2={lensY - 12} />
+            <line x1={x(lens.to)} y1={y + 10} x2={W - SIDE} y2={lensY - 12} />
+          </g>
+          <Marks min={lens.from} max={lens.to} step={lens.step} labelEvery={lens.labelEvery} landmarks={lens.landmarks ?? []} points={lens.points ?? []} y={lensY} colors={colors} />
+        </g>
+      )}
       {arcs.map((a, i) => {
         const x1 = x(a.from);
         const x2 = x(a.to);
@@ -150,16 +233,7 @@ export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = 
           </g>
         );
       })}
-      {points.map((p, i) => (
-        <g key={`p${i}`}>
-          <circle cx={x(p.value)} cy={y} r={POINT_R} fill={p.look === 'ring' ? 'var(--kit-fill, transparent)' : pointC} stroke={pointC} strokeWidth="3" />
-          {p.label && (
-            <text x={x(p.value)} y={y - 18} textAnchor="middle" fontSize="22" fontWeight="700" fill={textC}>
-              {p.label}
-            </text>
-          )}
-        </g>
-      ))}
+      {onPick && <rect data-pick={tapOn} x={0} y={tapY - TAP_REACH} width={W} height={TAP_REACH * 2 + 20} fill="transparent" style={{ cursor: 'pointer' }} onPointerDown={tap} />}
     </svg>
   );
 }
