@@ -224,6 +224,8 @@ const newMemory = () => ({
 	recent: [],
 	repeats: []
 });
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 /** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
 function factWeight(stats) {
 	if (!stats) return BOX_WEIGHTS[0];
@@ -1862,6 +1864,33 @@ function stepFor(stats, reached = 10) {
 function topSecure(stats, reached = 10) {
 	return STEPS.indexOf(reached) >= STEPS.indexOf(2) && stepShare(stats, 2) >= .7;
 }
+/** Share of a step's counting-back facts that are secure (box 2 or higher). */
+function backShare(stats, step) {
+	const box = new Map([...stats].map((s) => [s.key, s.box]));
+	const keys = keysOf(step, "back");
+	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
+}
+/**
+* Where counting back comes from and how many hops: the latest step, up to today's, that is secure going forward (70% of its
+* up and next facts at box 2 or more), with 1, 2 or 3 hops by how secure its back facts are. A child with no such step has
+* none. On a gold day it is today's step and three hops, as it always was.
+*/
+function backPlan(stats, step, gold) {
+	const list = [...stats];
+	if (gold) return {
+		from: step,
+		count: Math.max(3, backCount(list, step))
+	};
+	const from = STEPS.slice(0, STEPS.indexOf(step) + 1).reverse().find((s) => stepShare(list, s) >= STEP_SECURE_SHARE);
+	return from === void 0 ? null : {
+		from,
+		count: backCount(list, from)
+	};
+}
+const backCount = (list, step) => {
+	const share = backShare(list, step);
+	return share >= .7 ? 3 : share >= .3333333333333333 ? 2 : 1;
+};
 /** The steps this child has passed (secure by the 70% rule), so their non-multiple starts may be asked on a gold day. */
 const securedSteps = (stats) => STEPS.filter((s) => offsetKeys(s).length > 0 && stepShare(stats, s) >= .7);
 /**
@@ -1930,7 +1959,8 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	const box = new Map(list.map((s) => [s.key, s.box]));
 	const byKey = new Map(list.map((s) => [s.key, s]));
-	const back = gold ? 3 : 0;
+	const plan = backPlan(list, step, gold);
+	const back = plan?.count ?? 0;
 	const passed = gold ? securedSteps(list) : [];
 	const offs = passed.length ? pickKeys(passed.flatMap(offsetKeys), 2, box, random) : [];
 	return {
@@ -1940,7 +1970,7 @@ function makeRound(seed, stats, opts = {}) {
 		hops: [
 			...pickKeys(stepKeys(step), 10 - back - offs.length, box, random),
 			...offs,
-			...pickKeys(keysOf(step, "back"), back, box, random)
+			...plan ? pickKeys(keysOf(plan.from, "back"), back, box, random) : []
 		].map((key) => {
 			const [answer, at] = familyOfKey(key).roll(key, random);
 			return {
