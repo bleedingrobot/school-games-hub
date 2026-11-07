@@ -24,8 +24,9 @@ export function hopLine(spoken: string, guideStart: boolean): string {
 }
 
 /** What the finish screen says, with "next time we count in fives" when the child moved up a step. */
-export function finishLine(main: string, stepUp: SkipStep | null): string {
-  return stepUp ? `${main} ${WORDS.stepUp(stepUp)}` : main;
+export function finishLine(main: string, stepUp: SkipStep | null, signpost = false): string {
+  const said = stepUp ? `${main} ${WORDS.stepUp(stepUp)}` : main;
+  return signpost ? `${said} ${WORDS.signpost}` : said;
 }
 
 export function allVoiceLines(): string[] {
@@ -60,6 +61,9 @@ export function allVoiceLines(): string[] {
     }
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.padTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.jar)];
-  for (const main of mains) for (const up of [null, 5, 2] as const) lines.add(finishLine(main, up));
+  for (const main of mains) {
+    for (const up of [null, 5, 2] as const) lines.add(finishLine(main, up));
+    lines.add(finishLine(main, null, true)); // with the signpost to Penguin Pairs (the card is not shown when the child just moved up a step)
+  }
   return [...lines];
 }

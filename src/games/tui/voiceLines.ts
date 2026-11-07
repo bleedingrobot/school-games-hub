@@ -48,7 +48,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, WORDS.tenAndTen, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, WORDS.tenAndTen, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

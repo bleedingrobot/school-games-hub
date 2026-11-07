@@ -8,5 +8,5 @@ import { TuiGame } from './TuiGame';
 
 export function TuiPlay() {
   const navigate = useNavigate();
-  return <TuiGame backend={liveTui} onExit={() => navigate('/')} />;
+  return <TuiGame backend={liveTui} onExit={() => navigate('/')} onOpenWeka={() => navigate('/weka')} />;
 }

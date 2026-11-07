@@ -6899,7 +6899,7 @@ function solveGenerated(parts) {
 *
 * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
 * keys (the facts or question types that make it up) and its questions come from the pack
-* that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+* that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
 * their place in the list, but auto skips them and they don't count towards progress yet.
 */
 const earlyKeys = (family) => EARLY_FACTS.families[family].keys;

@@ -29,6 +29,8 @@ export interface TuiFinish extends FinishResult {
   level: HelpLevel;
   stepBefore: Step;
   levelBefore: HelpLevel;
+  /** The top step's facts are secure (70% or more at box 2): the "what's next" card may show. */
+  topSecure: boolean;
 }
 
 export interface TuiBackend {

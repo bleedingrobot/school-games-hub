@@ -4,10 +4,11 @@
  * Golden Glow Jar, and a new friend crosses a fresh pond. The screens only show what the backend says.
  */
 import { NextPartChip } from '../../components/NextPartChip';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/hop/play';
 import { DAYS_PER_JAR, METALS, PADS, pondAfter } from '../../../shared/hop/progress';
 import type { Round } from '../../../shared/hop/round';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -47,6 +48,13 @@ function useVoice() {
 
 type Screen = { kind: 'loading' } | { kind: 'home' } | { kind: 'play'; round: Round } | { kind: 'finish'; result: HopFinish };
 
+/** The game the finish screen can point on to (R8): its name, picture and a way to open it. Left out when it is off for the class. */
+export interface NextGame {
+  name: string;
+  Icon: ComponentType<{ size?: number }>;
+  open: () => void;
+}
+
 export interface Helpers {
   reload: () => void;
 }
@@ -55,6 +63,8 @@ interface Props {
   backend: HopBackend;
   /** Back to the hub's home page (the preview has none). */
   onExit?: () => void;
+  /** Penguin Pairs, once the child has all the twos secure. Null or missing: no signpost. */
+  nextGame?: NextGame | null;
   /** Preview tools, shown over the game. */
   extra?: (h: Helpers) => ReactNode;
 }
@@ -78,7 +88,7 @@ function useFitBelow(root: RefObject<HTMLDivElement | null>) {
   }, [root]);
 }
 
-export function HopGame({ backend, onExit, extra }: Props) {
+export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   const [state, setState] = useState<HopState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -100,7 +110,7 @@ export function HopGame({ backend, onExit, extra }: Props) {
   const play = () => backend.start().then((round) => setScreen({ kind: 'play', round }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then((result) => {
-      setState((s) => s && { ...s, daysDone: result.daysDone, lastPadDay: result.lastPadDay, step: result.step });
+      setState((s) => s && { ...s, daysDone: result.daysDone, lastPadDay: result.lastPadDay, step: result.step, topSecure: result.topSecure });
       setScreen({ kind: 'finish', result });
       if (soundOn) playSound(result.jar ? 'win' : 'badge');
     }, fail);
@@ -124,7 +134,7 @@ export function HopGame({ backend, onExit, extra }: Props) {
         onDone={(taps) => done(screen.round.seed, taps)}
       />
     );
-  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
+  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} nextGame={nextGame} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
@@ -181,7 +191,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
 }
 
 /** A pad changes colour, or, on the thirtieth day, Hop reaches the Glow-worm Party and the Golden Glow Jar is won. */
-function Finish({ result, say, onNext }: { result: HopFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t: string) => void; nextGame?: NextGame | null; onNext: () => void }) {
   // On a jar day the new pond has already started, so show the one just finished: every pad gold.
   const pond = pondAfter(result.jar ? result.daysDone - 1 : result.daysDone);
   const pads = result.jar
@@ -191,12 +201,9 @@ function Finish({ result, say, onNext }: { result: HopFinish; say: (t: string) =
   const name = FRIEND_NAMES[pond.friend];
   const main = result.jar ? WORDS.jar(name) : changed ? WORDS.padTurned(changed) : WORDS.doneToday;
   const stepUp = result.step !== result.stepBefore ? WORDS.stepUp(result.step) : null;
-  const line = finishLine(main, result.step !== result.stepBefore ? result.step : null);
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus();
-    say(line);
-  }, [say, line]);
+  // The signpost on to Penguin Pairs: only when the twos are secure, Penguin Pairs is on, and the child did not just move up a step.
+  const signpost = result.topSecure && result.step === result.stepBefore && nextGame ? nextGame : null;
+  const line = finishLine(main, result.step !== result.stepBefore ? result.step : null, !!signpost);
   const cushion = paint('things/jar-cushion');
   return (
     <div className={`hp-home${result.jar ? ' hp-home--jar' : ''}`}>
@@ -207,14 +214,15 @@ function Finish({ result, say, onNext }: { result: HopFinish; say: (t: string) =
         pose="cheer"
         at={result.jar ? PADS : result.padChanged ?? -1}
       />
-      <div className="hp-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {stepUp && <p className="hp-chip">{stepUp}</p>}
+      <WhatsNext prefix="hp" title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
         {result.jar && (cushion ? <img className="hp-prize" src={cushion} alt="The Golden Glow Jar" /> : <span className="hp-jar hp-jar--big" role="img" aria-label="The Golden Glow Jar" />)}
-        <button type="button" className="button button--play hp-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+        {signpost && (
+          <button type="button" className="hp-signpost" onClick={signpost.open}>
+            <signpost.Icon size={56} />
+            <span>{WORDS.signpost}</span>
+          </button>
+        )}
+      </WhatsNext>
     </div>
   );
 }

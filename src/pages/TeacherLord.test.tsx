@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { dragonMaths } from '../games/lord';
@@ -305,16 +305,15 @@ describe('one season date for the whole school (once its migration is live)', ()
   });
 
   it('says in words when a date would take the school back a season, and puts the date back', async () => {
-    const user = userEvent.setup();
     const { FriendlyError } = await import('../data/profile');
     data.fetchLordSchoolSeason.mockResolvedValue(school());
     data.saveLordSchoolSeason.mockRejectedValueOnce(new FriendlyError('That would take the school back to season 2. Pick a day on or before 31 Aug.'));
     render(<LordTeacherSettings classId="c12" />);
     const date = within(await schoolBox()).getByLabelText('First day of season 1 (whole school)');
-    await user.clear(date);
-    await user.type(date, '2026-09-20');
-    await user.tab();
-    expect(await screen.findByText('That would take the school back to season 2. Pick a day on or before 31 Aug.')).toBeInTheDocument();
+    // One change, not typed key by key: on a busy machine the typed date sometimes came out blank ("Pick a date.").
+    fireEvent.change(date, { target: { value: '2026-09-20' } });
+    fireEvent.blur(date);
+    expect(await screen.findByText('That would take the school back to season 2. Pick a day on or before 31 Aug.', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(date).toHaveValue('2026-08-31');
   });
 

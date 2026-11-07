@@ -186,6 +186,8 @@ const newMemory = () => ({
 	recent: [],
 	repeats: []
 });
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 /** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
 function factWeight(stats) {
 	if (!stats) return BOX_WEIGHTS[0];
@@ -1253,6 +1255,14 @@ function placeAfter(p, right) {
 		goodAtStep
 	};
 }
+/**
+* The top step is secure (R8, the "what's next" card): at least 70% of the nine "ten and" facts at box 2 or more, the
+* same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Seven of nine.
+*/
+function topSecure(stats) {
+	const box = new Map([...stats].map((s) => [s.key, s.box]));
+	return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(KEYS.length * STEP_SECURE_SHARE);
+}
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1624,13 +1634,16 @@ async function handleTui(services, player, body) {
 			if (saved) {
 				await services.recordAnswers(player, `tui:${seed}`, answers);
 				if (result.goldenNest) await services.progressChanged(player);
+				const after = await services.facts(player);
+				const secure = after !== "busy" && topSecure(after);
 				return ok({
 					...result,
 					firstRight: played.firstRight,
 					step: place.step,
 					level: place.level,
 					stepBefore: before.step,
-					levelBefore: before.level
+					levelBefore: before.level,
+					topSecure: secure
 				});
 			}
 			const again = await services.round(player, seed);
@@ -6253,7 +6266,7 @@ const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
 *
 * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
 * keys (the facts or question types that make it up) and its questions come from the pack
-* that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+* that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
 * their place in the list, but auto skips them and they don't count towards progress yet.
 */
 const earlyKeys = (family) => EARLY_FACTS.families[family].keys;

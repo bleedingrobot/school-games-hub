@@ -44,3 +44,10 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   }
   return { goesDone, mistakes, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
 }
+
+/** Goes in a row, the latest first, whose first shell was wrong: three bring the full help back for the rest of the round (R6). */
+export const wrongFirstRun = (answers: readonly { correct: boolean }[]): number => {
+  let run = 0;
+  for (let i = answers.length - 1; i >= 0 && !answers[i].correct; i--) run++;
+  return run;
+};

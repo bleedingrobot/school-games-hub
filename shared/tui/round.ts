@@ -16,6 +16,7 @@ import type { FactStats } from '../maths/leitner';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
+import { STEP_SECURE_SHARE } from '../maths/selector';
 
 export const GOES_PER_ROUND = 10;
 /** From step 2 on (until all mixed), this many goes are the earlier ways (the rest are the new way). */
@@ -111,6 +112,15 @@ export function placeAfter(p: Place, right: number): Place {
     level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, faded ? level : level + NEW_STEP_HELP)) as HelpLevel;
   }
   return { step, level, goodInRow, goodAtStep };
+}
+
+/**
+ * The top step is secure (R8, the "what's next" card): at least 70% of the nine "ten and" facts at box 2 or more, the
+ * same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Seven of nine.
+ */
+export function topSecure(stats: Iterable<FactStats>): boolean {
+  const box = new Map([...stats].map((s) => [s.key, s.box]));
+  return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(KEYS.length * STEP_SECURE_SHARE);
 }
 
 /** One go as saved: the fact, the way it is asked and the help level it is shown at. */

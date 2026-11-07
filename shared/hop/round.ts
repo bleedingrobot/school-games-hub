@@ -56,6 +56,16 @@ export function stepFor(stats: Iterable<FactStats>, reached: SkipStep = 10): Ski
   return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 
+/**
+ * Has the child gone as far as this game goes and got it secure (R8's "what's next")? The top step is secure by the same 70%
+ * rule and the child has reached it, so a child whose records are only half made never gets the signpost early. Only then
+ * does the finish screen point on to Penguin Pairs, because twos are the first step of doubling.
+ */
+export function topSecure(stats: Iterable<FactStats>, reached: SkipStep = 10): boolean {
+  const top = STEPS[STEPS.length - 1];
+  return stepFor(stats, reached) === top && stepShare(stats, top) >= STEP_SECURE_SHARE;
+}
+
 export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
 export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
 

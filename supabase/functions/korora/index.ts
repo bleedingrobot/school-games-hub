@@ -155,6 +155,14 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/help.ts
+/** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
+function helpForFact(stats, rungs) {
+	if (!stats) return rungs[0].help;
+	const stays = ({ until = {} }) => stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0);
+	return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
+}
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -1235,6 +1243,30 @@ function levelFor(stats, reached = 1) {
 	const next = LEVELS.find((l) => l.level >= reached && levelShare(list, l.level) < .7);
 	return next ? next.level : 4;
 }
+/**
+* The picture help for a fact from the child's own record of it (maths review R6, Weka's way with Penguin Pairs' three
+* states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+* fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full picture comes back, and a
+* new level's facts have no record, so they start full.
+*/
+const HELP_LADDER = [
+	{
+		help: "full",
+		until: {
+			box: 2,
+			quickDays: 2
+		}
+	},
+	{
+		help: "faint",
+		until: {
+			box: 4,
+			correct: 6
+		}
+	},
+	{ help: "none" }
+];
+const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1294,6 +1326,7 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	random();
 	const box = new Map(list.map((s) => [s.key, s.box]));
+	const byKey = new Map(list.map((s) => [s.key, s]));
 	const today = levelKeys(level);
 	const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
 	const review = weakest(earlier, Math.min(3, earlier.length), box, random);
@@ -1312,7 +1345,8 @@ function makeRound(seed, stats, opts = {}) {
 	}
 	const goes = keys.map((key) => ({
 		key,
-		v: key.startsWith("dbl:") && random() < .5 ? 0 : key.startsWith("dbl:") ? 1 : 0
+		v: key.startsWith("dbl:") && random() < .5 ? 0 : key.startsWith("dbl:") ? 1 : 0,
+		h: helpForStats(byKey.get(key))
 	}));
 	return {
 		seed,
@@ -6287,7 +6321,7 @@ const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
 *
 * It's only data: to change the order, move a line in `LADDER`. A skill owns a set of mastery
 * keys (the facts or question types that make it up) and its questions come from the pack
-* that owns those keys. Skills with `built: false` are stubs for the later stages: they hold
+* that owns those keys. Skills with `built: true` are stubs for the later stages: they hold
 * their place in the list, but auto skips them and they don't count towards progress yet.
 */
 const earlyKeys = (family) => EARLY_FACTS.families[family].keys;

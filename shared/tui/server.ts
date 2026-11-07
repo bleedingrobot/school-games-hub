@@ -18,7 +18,7 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { isSeed, makeRound, MAX_SEED, placeAfter, startFor, TOP_LEVEL, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, makeRound, MAX_SEED, placeAfter, startFor, topSecure, TOP_LEVEL, type HelpSetting, type Place, type Round } from './round';
 
 export type TuiAction = 'load' | 'start' | 'finish';
 
@@ -160,7 +160,10 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `tui:${seed}`, answers);
         if (result.goldenNest) await services.progressChanged(player);
-        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level });
+        // The "what's next" card (R8): the top step's facts are secure once the answers are in.
+        const after = await services.facts(player);
+        const secure = after !== 'busy' && topSecure(after);
+        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level, topSecure: secure });
       }
       const again = await services.round(player, seed);
       if (again === 'busy') return busy();

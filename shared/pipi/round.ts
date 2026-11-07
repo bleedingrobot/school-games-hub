@@ -13,11 +13,12 @@
  * skills sit beside it). A level is passed when 70% of its facts are in box 2 or higher. The server keeps the furthest
  * level reached, so forgetting a few facts brings more practice of them but never drops a child back.
  */
+import { helpForFact, type FactRung } from '../kit/help';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { seeded } from '../seededRandom';
-import type { Metal } from './progress';
+import type { Help, Metal } from './progress';
 
 export const GOES_PER_ROUND = 10;
 /** Altogether goes on silver and gold days, and two-tides goes on gold days. */
@@ -71,10 +72,30 @@ export function levelFor(stats: Iterable<FactStats>, reached: Level = 1): Level 
   return next ? next.level : 3;
 }
 
-/** One go as saved: the fact it records and how it is asked. */
+export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
+export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
+
+/**
+ * The help in the sand (the frame and the outlines) for a fact from the child's own record of it (maths review R6, Weka's
+ * way with Pipi's three states): full until the fact is secure (box 2) and has been right quickly on two different days;
+ * faint until it is fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full help
+ * comes back, and a new level's splits have no record, so they start full.
+ */
+const HELP_LADDER: readonly FactRung<Help>[] = [
+  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'faint', until: { box: 4, correct: 6 } },
+  { help: 'none' },
+];
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
+
+/**
+ * One go as saved: the fact it records, how it is asked and its help in the sand. `h` is missing on a round saved before
+ * R6: that go shows the calendar's help for the round (the browser falls back).
+ */
 export interface GoPlan {
   key: string;
   kind: Kind;
+  h?: Help;
 }
 
 /** What the server saves when a challenge starts, and the browser is sent. */
@@ -143,6 +164,7 @@ export function makeRound(
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
+  const byKey = new Map(list.map((s) => [s.key, s]));
   const keys = levelKeys(level);
   // "None hiding" and "all hiding" are real answers, but rarer: at most one a round (always one at level 1, which has
   // only nine other splits).
@@ -152,7 +174,7 @@ export function makeRound(
   if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, GOES_PER_ROUND);
   // The other kinds never take the first go or an edge: two tides has nothing to swap, and "4 here and 0 popped up" isn't
   // an altogether question.
-  const goes: GoPlan[] = picked.map((key) => ({ key, kind: 'hiding' }));
+  const goes: GoPlan[] = picked.map((key) => ({ key, kind: 'hiding', h: helpForStats(byKey.get(key)) }));
   const free = shuffle(goes.map((_, i) => i).slice(1), random);
   if (colour === 'gold') {
     free.filter((i) => !isEdge(goes[i].key)).slice(0, TWO_TIDES_GOES).forEach((i) => (goes[i].kind = 'twoTides'));

@@ -9,13 +9,17 @@
  * same go comes back ("Now you try!"), all four shells in a new order, with the child's own help. Only a go's first shell
  * is scored (shared/pipi/play.ts), so a shown go is never a clean right; the finished round still turns its shell.
  *
- * The help fades with the day's colour: on bronze days the pipi sit in a five-frame or ten-frame and the hiding ones
- * leave a dashed outline; on silver days the frame goes and the outlines are faint; on gold days the hiding ones leave
- * no mark at all, so only "7 altogether" and the pipi still showing are there to go on.
+ * The help follows the child, fact by fact (maths review R6, each go's `h` from shared/pipi/round.ts): full is the pipi in
+ * a five-frame or ten-frame and a dashed outline where each hiding one is; faint drops the frame and fades the outlines;
+ * none leaves no mark at all, so only "7 altogether" and the pipi still showing are there to go on. A go with no `h` (a
+ * round saved before R6) shows the calendar's help for the round: bronze days full, silver faint, gold none. After three
+ * goes in a row with a wrong first shell the full help comes back for the rest of the round (not saved), with a line that
+ * says so once. The teacher's help switch still wins: off means none, and the three-in-a-row boost does not bring it back.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
-import type { Tap } from '../../../shared/pipi/play';
+import { replay, wrongFirstRun, type Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
 import { GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
@@ -36,7 +40,10 @@ const WOBBLE_MS = 500;
 
 interface Props {
   round: Round;
+  /** The help for a go saved with none of its own (a round open before R6): the calendar's, from the shells. */
   help: Help;
+  /** False when the teacher has turned the help in the sand off: none at all, and three wrong first shells don't bring it back. */
+  helpOn?: boolean;
   scenery: Scenery;
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the right shell on the first go. */
@@ -82,7 +89,7 @@ function reordered(items: number[]): number[] {
   return out.join() === items.join() && out.length > 1 ? [...out.slice(1), out[0]] : out;
 }
 
-export function Goes({ round, help, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, help, helpOn = true, scenery, friend, guide = false, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -103,6 +110,8 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   /** The shells' order for the redo; null is the go's own order. */
   const [order, setOrder] = useState<number[] | null>(null);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
+  /** Three goes in a row began with a wrong shell: full help for the rest of this round (not saved; the child's own help is). */
+  const [boosted, setBoosted] = useState(false);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -141,10 +150,12 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   }, [at, goes]);
 
   const go = goes[Math.min(at, goes.length - 1)];
+  const helpAt = (i: number): Help => (helpOn ? round.goes[i]?.h ?? help : 'none');
+  const helpNow: Help = boosted ? 'full' : helpAt(at);
   const spots = spotsFor(go, lifted && phase === 'ask' ? 'right' : phase, tideIn);
   // Gold days (or help off): the hiding ones leave no mark, and the spots close up so the gaps don't give it away.
-  const shown = help === 'none' ? spots.filter((s) => s === 'pipi' || s === 'popped') : spots;
-  const framed = help === 'full';
+  const shown = helpNow === 'none' ? spots.filter((s) => s === 'pipi' || s === 'popped') : spots;
+  const framed = helpNow === 'full';
 
   /** Back to a fresh go: nothing tried, no why, the go's own order. */
   function freshGo() {
@@ -191,13 +202,19 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
       flow.current = stepGo(flow.current, 'wrong');
+      // Each go is scored at its first shell: three in a row wrong bring the full help back, and the line says so once.
+      const struggling =
+        helpOn && !boosted && wrongFirstRun(replay(round, next).answers) >= STRUGGLE_GOES && round.goes.some((_, i) => i >= at && helpAt(i) !== 'full');
+      if (struggling) setBoosted(true);
       if (flow.current.phase === 'look') {
         lookTogether();
         return;
       }
       const kind = go.wrongs.find((w) => w.n === n)?.kind ?? 'off1';
       setWhy({ n, kind });
-      say(whyLine(kind, go.kind, go.whole, go.showing, go.hiding));
+      const line = whyLine(kind, go.kind, go.whole, go.showing, go.hiding);
+      if (struggling) say(line, () => say(WORDS.outlinesBack));
+      else say(line);
       return;
     }
     flow.current = stepGo(flow.current, 'right');
@@ -253,7 +270,7 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
           />
         )}
         <div
-          className={`pp-frame pp-frame--${framed ? (spots.length === 5 ? 'five' : 'ten') : 'row'} pp-frame--${help}`}
+          className={`pp-frame pp-frame--${framed ? (spots.length === 5 ? 'five' : 'ten') : 'row'} pp-frame--${helpNow}`}
           role="img"
           aria-label={
             go.kind === 'altogether'
@@ -265,7 +282,7 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
             <span key={i} className={`pp-spot pp-spot--${s}${guide && at === 0 && s === 'hidden' ? ' pp-spot--pointed' : ''}`}>
               {s === 'pipi' && <Pipi pose={phase === 'tide' && tideIn ? 'dig' : phase === 'done' || lifted ? 'wave' : 'sit'} />}
               {s === 'popped' && <Pipi pose="wave" />}
-              {s === 'hidden' && <Hidden outline={help} />}
+              {s === 'hidden' && <Hidden outline={helpNow} />}
             </span>
           ))}
         </div>
