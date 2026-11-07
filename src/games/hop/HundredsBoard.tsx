@@ -6,13 +6,14 @@
 import { useState } from 'react';
 import { WORDS } from './words';
 
-const NUMBERS = Array.from({ length: 100 }, (_, i) => i + 1);
+/** 1 to 100, or 101 to 200 while counting past 100 (the same ten by ten board, so the tens line up). */
+const numbers = (high: boolean) => Array.from({ length: 100 }, (_, i) => i + 1 + (high ? 100 : 0));
 
 /**
  * `counting` (set while Hop counts the row in "Let's look together"): the board is shown open with these numbers lit, in
  * gold, as well as the ones the child lit. They go when the counting ends.
  */
-export function HundredsBoard({ counting = null }: { counting?: readonly number[] | null }) {
+export function HundredsBoard({ counting = null, high = false }: { counting?: readonly number[] | null; high?: boolean }) {
   const [openByChild, setOpen] = useState(false);
   const open = openByChild || counting !== null;
   const [lit, setLit] = useState<ReadonlySet<number>>(new Set());
@@ -27,12 +28,12 @@ export function HundredsBoard({ counting = null }: { counting?: readonly number[
     <>
       <button type="button" className="hp-button hp-board-toggle" aria-expanded={open} aria-controls="hp-board" onClick={() => setOpen(!openByChild)}>
         <span aria-hidden="true">🔢 </span>
-        {open ? WORDS.boardHide : WORDS.boardShow}
+        {open ? WORDS.boardHide : high ? WORDS.boardShowHigh : WORDS.boardShow}
       </button>
       {open && (
         <div className="hp-board" id="hp-board" role="group" aria-label={WORDS.board}>
           <div className="hp-board__grid">
-            {NUMBERS.map((n) => (
+            {numbers(high).map((n) => (
               <button
                 key={n}
                 type="button"

@@ -8,7 +8,6 @@
  */
 import type { Friend as FriendName } from '../../../shared/hop/progress';
 import type { Hop, HopMistake } from '../../../shared/hop/round';
-import type { SkipStep } from '../../../shared/maths/skillPacks/earlyFacts';
 import { Friend } from './HopArt';
 
 interface Props {
@@ -16,7 +15,6 @@ interface Props {
   kind: HopMistake;
   /** The wrong number picked. */
   wrong: number;
-  step: SkipStep;
   friend: FriendName;
 }
 
@@ -28,7 +26,7 @@ const Pad = ({ n, mod = '', children }: { n?: number | null; mod?: string; child
 );
 const Arc = ({ label, mod = '' }: { label?: string; mod?: string }) => <span className={`hp-mini__arc ${mod}`}>{label}</span>;
 
-export function WhyPicture({ hop, kind, wrong, step, friend }: Props) {
+export function WhyPicture({ hop, kind, wrong, friend }: Props) {
   const sign = hop.back ? '−' : '+';
   const frog = (
     <span className="hp-mini__frog" aria-hidden="true">
@@ -40,7 +38,7 @@ export function WhyPicture({ hop, kind, wrong, step, friend }: Props) {
       {frog}
     </Pad>
   );
-  const hopped = `${sign}${step}`;
+  const hopped = `${sign}${hop.size}`;
   const wrongHop = `${wrong > hop.before ? '+' : '−'}${Math.abs(wrong - hop.before)}`;
   let rows: React.ReactNode;
   switch (kind) {
