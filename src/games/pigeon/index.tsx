@@ -42,6 +42,7 @@ export const pigeonNumberLine: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'foundational',
+  inDevelopment: true,
   // The home page card's chip: today's flower ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
   useTeacherSwitch: usePigeonEnabled,

@@ -46,6 +46,7 @@ export const robinsBerryBasket: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'foundational',
+  inDevelopment: true,
   // The home page card's chip: today's basket ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
   useTeacherSwitch: useRobinEnabled,
