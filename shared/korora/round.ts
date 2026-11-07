@@ -7,7 +7,10 @@
  * dblHalf10 and dblHalf20). Nothing here works out a double itself: the shared pack makes each question and its wording
  * from the key. The wrong choices are this game's own (`mistakeChoices`, maths review R5): each is a real mistake.
  *
- * The level (doubles 1 to 5, halves 2 to 10, doubles 6 to 10, halves 12 to 20) comes from the child's records, as Hop
+ * Level 5 (R8, near doubles 5 + 6 to 8 + 9) uses Weka's own add facts (`add:6+7`, the add-sub pack's keys, nothing new in
+ * shared/maths): the picture is the double and one fish more. Its records are the same ones Weka reads.
+ *
+ * The level (doubles 1 to 5, halves 2 to 10, doubles 6 to 10, halves 12 to 20, near doubles) comes from the child's records, as Hop
  * picks its step: a level is passed when 70% of its facts are in box 2 or higher, and the server keeps the furthest level
  * reached, so a child never drops back. Each level has five facts, so a round asks each of today's facts once, then
  * the weakest again, then (from level 2) a few from the levels before. A fact asked twice counts once for the records.
@@ -15,6 +18,8 @@
 import { helpForFact, type FactRung } from '../kit/help';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
+import { BandedPack } from '../maths/banded';
+import { BANDED_PACKS } from '../maths/skillPacks';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
@@ -31,9 +36,13 @@ export const LEVELS = [
   { level: 2, kind: 'half', from: 2, to: 10 },
   { level: 3, kind: 'double', from: 6, to: 10 },
   { level: 4, kind: 'half', from: 12, to: 20 },
+  /** Near doubles: `from` is the smaller number, so 5 is 5 + 6 and 8 is 8 + 9. */
+  { level: 5, kind: 'near', from: 5, to: 8 },
 ] as const;
 export type Level = (typeof LEVELS)[number]['level'];
-export type Kind = 'double' | 'half' | 'fair';
+export type Kind = 'double' | 'half' | 'fair' | 'near';
+/** The top level: once its facts are secure the child stays here. */
+export const TOP_LEVEL = 5 as const;
 
 /** The guided first go (plan section 6): double 2. */
 export const GUIDED_KEY = 'dbl:2';
@@ -42,8 +51,10 @@ export const MAX_SEED = 2147483647;
 export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_SEED;
 export const isLevel = (n: unknown): n is Level => LEVELS.some((l) => l.level === n);
 
-/** `dbl:7` → double 7; `half:14` → half of 14; `oddeven:7` → can 7 fish be shared fairly? */
+/** `dbl:7` → double 7; `half:14` → half of 14; `oddeven:7` → can 7 fish be shared fairly?; `add:6+7` → near double, n is 6. */
 export const parseKey = (key: string): { kind: Kind; n: number } | null => {
+  const near = /^add:(\d+)\+(\d+)$/.exec(key);
+  if (near) return Number(near[2]) === Number(near[1]) + 1 ? { kind: 'near', n: Number(near[1]) } : null;
   const m = /^(dbl|half|oddeven):(\d+)$/.exec(key);
   return m ? { kind: m[1] === 'dbl' ? 'double' : m[1] === 'half' ? 'half' : 'fair', n: Number(m[2]) } : null;
 };
@@ -58,7 +69,7 @@ export const fairKeys = (level: Level): string[] => {
 export function levelKeys(level: Level): string[] {
   const { kind, from, to } = LEVELS.find((l) => l.level === level)!;
   const keys: string[] = [];
-  for (let n = from; n <= to; n += kind === 'half' ? 2 : 1) keys.push(`${kind === 'half' ? 'half' : 'dbl'}:${n}`);
+  for (let n = from; n <= to; n += kind === 'half' ? 2 : 1) keys.push(kind === 'near' ? `add:${n}+${n + 1}` : `${kind === 'half' ? 'half' : 'dbl'}:${n}`);
   return keys;
 }
 
@@ -68,11 +79,14 @@ export function levelShare(stats: Iterable<FactStats>, level: Level): number {
   return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
 
-/** Today's level: the first not yet secure, never below the furthest reached. Once halves to 20 are secure the child stays there. */
+/** Near doubles (the top level) are secure: at least 70% of their facts at box 2 or more. The "what's next" card waits for this. */
+export const topSecure = (stats: Iterable<FactStats>): boolean => levelShare(stats, TOP_LEVEL) >= STEP_SECURE_SHARE;
+
+/** Today's level: the first not yet secure, never below the furthest reached. Once near doubles are secure the child stays there. */
 export function levelFor(stats: Iterable<FactStats>, reached: Level = 1): Level {
   const list = [...stats];
   const next = LEVELS.find((l) => l.level >= reached && levelShare(list, l.level) < STEP_SECURE_SHARE);
-  return next ? next.level : 4;
+  return next ? next.level : TOP_LEVEL;
 }
 
 export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
@@ -128,9 +142,10 @@ export interface Go extends GoPlan {
 /**
  * The mistake behind a wrong number (docs/kit/README.md, "Doubles and halves"). Doubles: `same` (n, forgot to double),
  * `plus1` (n + 1), `plus2` (n + 2, from n of 3), `miscount` (2n off by 1, or 2 where the others run short). Halves: `all`
- * (n, did not share), `minus2` (n - 2), `double` (2n), `miscount` (n/2 off by 1, or 2).
+ * (n, did not share), `minus2` (n - 2), `double` (2n), `miscount` (n/2 off by 1, or 2). Near doubles (n + n+1):
+ * `noExtra` (2n, the double without the extra fish), `bigger` (2n + 2, the bigger number doubled), `miscount` (the answer off by 2).
  */
-export type WrongKind = 'same' | 'plus1' | 'plus2' | 'miscount' | 'all' | 'minus2' | 'double';
+export type WrongKind = 'same' | 'plus1' | 'plus2' | 'miscount' | 'all' | 'minus2' | 'double' | 'noExtra' | 'bigger';
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -224,6 +239,8 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
 }
 
 const pack = earlyFactsPack();
+/** Weka's add facts, which near doubles read from (`add:6+7`). */
+const addPack = new BandedPack(BANDED_PACKS['add-sub']);
 
 /** What is read aloud: the story of the go, never the answer. */
 export function spokenFor(kind: Kind, n: number, guided = false): string {
@@ -231,7 +248,9 @@ export function spokenFor(kind: Kind, n: number, guided = false): string {
     ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?`
     : kind === 'half'
       ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?`
-      : `${n} fish. Can the two chicks share them fairly?`;
+      : kind === 'near'
+        ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?`
+        : `${n} fish. Can the two chicks share them fairly?`;
   return guided ? `${line} Tap the number the hand points to.` : line;
 }
 
@@ -241,10 +260,12 @@ export function spokenFor(kind: Kind, n: number, guided = false): string {
  * the right answer's, so shape alone can't pick it out (shared/kit/mistakes.ts). Of the choices that fit, the one showing
  * the most different kinds wins, ties broken by the seed.
  */
-export function mistakeChoices(kind: 'double' | 'half', n: number, random: () => number): { choices: number[]; wrongs: Wrong<WrongKind>[] } {
-  const answer = kind === 'double' ? 2 * n : n / 2;
+export function mistakeChoices(kind: 'double' | 'half' | 'near', n: number, random: () => number): { choices: number[]; wrongs: Wrong<WrongKind>[] } {
+  const answer = kind === 'double' ? 2 * n : kind === 'near' ? 2 * n + 1 : n / 2;
   const core: [number, WrongKind][] =
-    kind === 'double'
+    kind === 'near'
+      ? [[2 * n, 'noExtra'], [2 * n + 2, 'bigger'], [answer - 2, 'miscount'], [answer + 2, 'miscount']]
+      : kind === 'double'
       ? [[n, 'same'], [n + 1, 'plus1'], [answer - 1, 'miscount'], [answer + 1, 'miscount'], ...(n >= 3 ? ([[n + 2, 'plus2']] as [number, WrongKind][]) : [])]
       : [[n, 'all'], [n - 2, 'minus2'], [2 * n, 'double'], [answer - 1, 'miscount'], [answer + 1, 'miscount']];
   // Short of three (small numbers, where kinds land on the answer or on each other): a count that is two or three off.
@@ -271,15 +292,17 @@ export function mistakeChoices(kind: 'double' | 'half', n: number, random: () =>
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   const fact = parseKey(plan.key);
   if (!fact || (plan.v !== 0 && plan.v !== 1)) return null;
-  const q = pack.rebuild(plan.key, [fact.n, plan.v], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
-  const answer = fact.kind === 'double' ? 2 * fact.n : fact.kind === 'half' ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
+  if (fact.kind === 'near' && plan.v !== 0) return null;
+  const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+  const q = fact.kind === 'near' ? addPack.rebuild(plan.key, [fact.n, fact.n + 1, 0], true, random) : pack.rebuild(plan.key, [fact.n, plan.v], true, random);
+  const answer = fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.kind === 'half' ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
   if (!q || !q.choices || q.answer !== answer) return null;
   const base = { ...plan, kind: fact.kind, n: fact.n, answer, parts: q.parts, spoken: spokenFor(fact.kind, fact.n) };
   if (fact.kind === 'fair') return { ...base, choices: q.choices, wrongs: [] }; // R9
   // Our own choices, from a stream of the seed apart from the pack's (the server rebuilds the same ones).
-  const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
-  random(); random();
-  return { ...base, ...mistakeChoices(fact.kind, fact.n, random) };
+  const own = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+  own(); own();
+  return { ...base, ...mistakeChoices(fact.kind, fact.n, own) };
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */

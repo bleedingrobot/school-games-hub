@@ -202,6 +202,8 @@ const newMemory = () => ({
 	recent: [],
 	repeats: []
 });
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 /** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
 function factWeight(stats) {
 	if (!stats) return BOX_WEIGHTS[0];
@@ -549,1315 +551,6 @@ var BandedPack = class {
 		return (q.params ? this.familyOfKey.get(q.factKey)?.make(q.factKey, q.params) : null)?.fact ?? fillBlank(q.parts, q.answer);
 	}
 };
-//#endregion
-//#region shared/maths/skillPacks/earlyFacts.ts
-/**
-* The first rungs of the maths ladder: number facts a student should know by heart before
-* times tables. One mastery record per fact, like 7 × 8 in times tables.
-*
-* Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`), the number-line keys "place100:n63", "read1000:h300", "tens100:+63", "near10:h65", "zoom:40-50:47" (see `lineFamilies`). Adding and taking away within 20 keeps its own
-* "add:7+8" records (add-sub pack), so nothing already saved changes.
-*
-* Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
-*/
-const bondKeys = (prefix, total, from) => {
-	const keys = [];
-	for (let a = from; a <= total / 2; a++) keys.push(`${prefix}:${a}+${total - a}`);
-	return keys;
-};
-const parseBond = (key) => {
-	const m = /^bond(10|20):(\d+)\+(\d+)$/.exec(key);
-	return m ? {
-		total: Number(m[1]),
-		a: Number(m[2]),
-		b: Number(m[3])
-	} : null;
-};
-/** Variants: 0 a + ? = total, 1 ? + b = total, 2 total − a = ?, 3 total − b = ?. */
-function bonds(label, tag, prefix, total, from) {
-	const keys = bondKeys(prefix, total, from);
-	return {
-		label,
-		curriculumTags: [tag],
-		keys,
-		roll: (key, r) => {
-			const { a, b } = parseBond(key);
-			return [
-				a,
-				b,
-				int(r, 0, 3)
-			];
-		},
-		make: (key, [a, b, v]) => {
-			const bond = parseBond(key);
-			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
-			const t = String(total);
-			const [parts, answer] = v === 0 ? [[
-				String(a),
-				"+",
-				"?",
-				"=",
-				t
-			], b] : v === 1 ? [[
-				"?",
-				"+",
-				String(b),
-				"=",
-				t
-			], a] : v === 2 ? [[
-				t,
-				"−",
-				String(a),
-				"=",
-				"?"
-			], b] : [[
-				t,
-				"−",
-				String(b),
-				"=",
-				"?"
-			], a];
-			return {
-				parts,
-				spoken: speak(parts),
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					total,
-					answer + 2,
-					answer - 2,
-					a + b + 1
-				]
-			};
-		}
-	};
-}
-const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
-/** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
-function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$5(dblFrom, dblTo);
-	const halves = range$5(halfFrom, halfTo, 2);
-	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
-	return {
-		label,
-		curriculumTags: [tag],
-		keys,
-		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
-		make: (key, [n, v]) => {
-			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
-			if (key.startsWith("dbl:")) {
-				const parts = v === 0 ? [
-					String(n),
-					"+",
-					String(n),
-					"=",
-					"?"
-				] : [
-					"Double",
-					String(n),
-					"=",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: 2 * n,
-					wrong: [
-						2 * n + 1,
-						2 * n - 1,
-						2 * n + 2,
-						2 * n - 2,
-						n + 1,
-						n * n
-					]
-				};
-			}
-			const parts = v === 0 ? [
-				"Half",
-				"of",
-				String(n),
-				"=",
-				"?"
-			] : [
-				String(n),
-				"÷",
-				"2",
-				"=",
-				"?"
-			];
-			const answer = n / 2;
-			return {
-				parts,
-				spoken: speak(parts),
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					n,
-					answer + 2,
-					answer - 2
-				]
-			};
-		}
-	};
-}
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
-const tenAnd = {
-	label: "\"Ten and\" facts (10 + 4)",
-	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
-	make: (key, [n, v]) => {
-		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
-		const t = String(10 + n);
-		const [parts, answer] = v === 0 ? [[
-			"10",
-			"+",
-			String(n),
-			"=",
-			"?"
-		], 10 + n] : v === 1 ? [[
-			String(n),
-			"+",
-			"10",
-			"=",
-			"?"
-		], 10 + n] : v === 2 ? [[
-			"10",
-			"+",
-			"?",
-			"=",
-			t
-		], n] : [[
-			t,
-			"−",
-			"10",
-			"=",
-			"?"
-		], n];
-		return {
-			parts,
-			spoken: speak(parts),
-			answer,
-			wrong: [
-				answer + 1,
-				answer - 1,
-				answer + 10,
-				n + 1,
-				20,
-				1 + n
-			]
-		};
-	}
-};
-const tenMove = (up) => {
-	const keys = range$5(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
-	return {
-		label: up ? "Ten more than a teen (14 + 10)" : "Ten less than a number in the twenties (24 − 10)",
-		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys,
-		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
-		make: (key, [n, v]) => {
-			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
-			const [parts, answer] = up ? v === 0 ? [[
-				String(n),
-				"+",
-				"10",
-				"=",
-				"?"
-			], n + 10] : [[
-				"10",
-				"+",
-				String(n),
-				"=",
-				"?"
-			], n + 10] : v === 0 ? [[
-				String(n),
-				"−",
-				"10",
-				"=",
-				"?"
-			], n - 10] : [[
-				"10",
-				"+",
-				"?",
-				"=",
-				String(n)
-			], n - 10];
-			const a = answer;
-			return {
-				parts,
-				spoken: speak(parts),
-				answer: a,
-				wrong: up ? [
-					a - 10,
-					a + 10,
-					a + 1,
-					a - 1,
-					11
-				] : [
-					n,
-					a - 10,
-					a + 1,
-					a - 1,
-					n + 10
-				]
-			};
-		}
-	};
-};
-/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
-const SKIP_STEPS = [
-	{
-		step: 10,
-		upTo: 100,
-		word: "tens"
-	},
-	{
-		step: 5,
-		upTo: 50,
-		word: "fives"
-	},
-	{
-		step: 2,
-		upTo: 20,
-		word: "twos"
-	}
-];
-/**
-* More skip counting, beside the ladder (ladder-only, so auto practice never meets it; Hop asks it from its own rules):
-* threes to 30 ("skip3:next:12") and fours to 40 ("skip4:up:20"), the same kinds of question as the first three.
-*/
-const SKIP_MORE_STEPS = [{
-	step: 3,
-	upTo: 30,
-	word: "threes"
-}, {
-	step: 4,
-	upTo: 40,
-	word: "fours"
-}];
-/** Tens past 100, to 200: "skip10h:next:110" (80, 90, 100, ?). Only answers past 100, so no key is also a "skip10" one. */
-const SKIP_HIGH = {
-	step: 10,
-	from: 100,
-	upTo: 200,
-	word: "tens past 100"
-};
-/**
-* Skip counting from a start that isn't a multiple of the step (start at 3, hop by 10: 3, 13, 23, ?), to 4 hops. The first
-* pad is always the start, so "skip10o3:next:33" really is "from 3": the key names the start. Offsets are 1 up to one
-* less than the step.
-*/
-const SKIP_FROM_STEPS = [
-	{
-		step: 10,
-		word: "tens"
-	},
-	{
-		step: 5,
-		word: "fives"
-	},
-	{
-		step: 4,
-		word: "fours"
-	},
-	{
-		step: 3,
-		word: "threes"
-	},
-	{
-		step: 2,
-		word: "twos"
-	}
-];
-/**
-* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
-* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
-* the step from 0 to `upTo`; with an offset the first pad is the offset itself and counting only goes up.
-*/
-function skipTerms(spec, kind, answer, at, offset = 0) {
-	const { step, upTo } = spec;
-	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
-	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
-	if (spec.offsets && (kind === "back" || terms[0] !== offset)) return null;
-	if (spec.above !== void 0 && answer <= spec.above) return null;
-	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === offset ? terms : null;
-}
-const skipOffsets = (spec) => spec.offsets ?? [0];
-const skipKeys = (spec) => skipOffsets(spec).flatMap((offset) => (spec.offsets ? ["up", "next"] : [
-	"up",
-	"next",
-	"back"
-]).flatMap((kind) => range$5(offset, spec.upTo, spec.step).filter((n) => [
-	1,
-	2,
-	3,
-	4
-].some((at) => skipTerms(spec, kind, n, at, offset))).map((n) => `${spec.prefix(offset)}:${kind}:${n}`)));
-/** A skip-counting key read apart: "skip10o3:next:33" is step 10, start 3 (offset 3), what comes next, 33; "skip10h:up:110" is high. */
-const parseSkip = (key) => {
-	const m = /^skip(\d+)(?:o(\d+)|(h))?:(up|next|back):(\d+)$/.exec(key);
-	return m ? {
-		step: Number(m[1]),
-		offset: m[2] ? Number(m[2]) : 0,
-		high: !!m[3],
-		kind: m[4],
-		answer: Number(m[5])
-	} : null;
-};
-/**
-* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
-* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
-* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
-*/
-function skipCounting(spec) {
-	const { step, word } = spec;
-	const keys = skipKeys(spec);
-	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
-	return {
-		label: `Counting in ${word}`,
-		curriculumTags: [],
-		keys,
-		roll: (key, r) => {
-			const { kind, answer, offset } = parseSkip(key);
-			const fits = ats(kind).filter((at) => skipTerms(spec, kind, answer, at, offset));
-			return [answer, fits[int(r, 0, fits.length - 1)]];
-		},
-		make: (key, [answer, at]) => {
-			const skip = parseSkip(key);
-			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
-			const terms = skipTerms(spec, skip.kind, answer, at, skip.offset);
-			if (!terms) return null;
-			const gap = terms.indexOf(answer);
-			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
-			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
-			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
-			const before = terms[gap - 1];
-			const back = skip.kind === "back" ? -1 : 1;
-			const wrongSteps = [
-				10,
-				5,
-				2,
-				1
-			].filter((s) => s !== step);
-			return {
-				parts,
-				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}${skip.offset ? ` from ${skip.offset}` : ""}: ${said}. ${prompt}`,
-				prompt,
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					...wrongSteps.map((s) => before + back * s),
-					...terms.filter((n) => n !== answer)
-				]
-			};
-		}
-	};
-}
-const skipSpec = (step, upTo, word) => ({
-	step,
-	upTo,
-	word,
-	prefix: () => `skip${step}`
-});
-const skipFamilies = {
-	...Object.fromEntries([...SKIP_STEPS, ...SKIP_MORE_STEPS].map(({ step, upTo, word }) => [`skip${step}`, skipCounting(skipSpec(step, upTo, word))])),
-	skip10h: skipCounting({
-		step: 10,
-		upTo: SKIP_HIGH.upTo,
-		word: SKIP_HIGH.word,
-		above: SKIP_HIGH.from,
-		prefix: () => "skip10h"
-	}),
-	...Object.fromEntries(SKIP_FROM_STEPS.map(({ step, word }) => [`skip${step}o`, skipCounting({
-		step,
-		upTo: step * 5,
-		word,
-		offsets: range$5(1, step - 1),
-		prefix: (offset) => `skip${step}o${offset}`
-	})]))
-};
-/** The family names of the skip counting kept beside the ladder (threes, fours, tens past 100, and from a start). */
-const SKIP_MORE_FAMILY_NAMES = Object.keys(skipFamilies).filter((n) => !SKIP_STEPS.some(({ step }) => n === `skip${step}`));
-/** The wholes in each part-whole skill: small wholes first, then up to 10. */
-const PART_WHOLES = {
-	parts5: [3, 5],
-	parts10: [6, 10]
-};
-const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
-const parsePart = (key) => {
-	const m = /^part(\d+):(\d+)$/.exec(key);
-	return m ? {
-		whole: Number(m[1]),
-		shown: Number(m[2])
-	} : null;
-};
-/**
-* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
-* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
-* number showing, the whole and two more.
-*/
-function partWhole(label, from, to) {
-	const keys = partKeys(from, to);
-	return {
-		label,
-		curriculumTags: ["MS.Y1.NUM.OP.P1"],
-		keys,
-		roll: (key) => {
-			const { whole, shown } = parsePart(key);
-			return [whole, shown];
-		},
-		make: (key, [whole, shown]) => {
-			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
-			const answer = whole - shown;
-			return {
-				parts: [
-					String(whole),
-					"=",
-					String(shown),
-					"+",
-					"?"
-				],
-				spoken: `${whole} is ${shown} and how many more?`,
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					shown,
-					whole,
-					answer + 2
-				]
-			};
-		}
-	};
-}
-const ODD_EVEN_LABELS = ["odd", "even"];
-const oddEven = {
-	label: "Odd and even numbers to 20",
-	curriculumTags: ["MS.Y2.NUM.OP.P2"],
-	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
-	roll: (key) => [Number(key.split(":")[1])],
-	make: (key, [n]) => {
-		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
-		const answer = n % 2 === 0 ? 1 : 0;
-		return {
-			parts: [
-				"Is",
-				String(n),
-				"odd",
-				"or",
-				"even?"
-			],
-			spoken: `Is ${n} odd or even?`,
-			answer,
-			pick: [...ODD_EVEN_LABELS],
-			fact: `${n} is ${ODD_EVEN_LABELS[answer]}`
-		};
-	}
-};
-const LINE_TENS = range$5(1, 9).map((n) => n * 10);
-const LINE_OTHERS_100 = [
-	11,
-	14,
-	18,
-	23,
-	27,
-	32,
-	36,
-	41,
-	45,
-	49,
-	54,
-	58,
-	63,
-	67,
-	72,
-	76,
-	81,
-	85,
-	89,
-	94,
-	97
-];
-const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
-const LINE_OTHERS_1000 = [
-	120,
-	140,
-	170,
-	230,
-	250,
-	270,
-	310,
-	340,
-	360,
-	390,
-	410,
-	450,
-	480,
-	520,
-	540,
-	570,
-	610,
-	640,
-	660,
-	690,
-	720,
-	750,
-	780,
-	810,
-	830,
-	860,
-	880,
-	910,
-	940,
-	960,
-	980
-];
-const TENS_MORE = [
-	14,
-	20,
-	27,
-	35,
-	42,
-	56,
-	63,
-	78,
-	85,
-	90
-];
-const TENS_LESS = [
-	10,
-	19,
-	24,
-	38,
-	47,
-	63,
-	71,
-	86,
-	92,
-	100
-];
-/** Not a tens number and not halfway: every third, so the spread covers the whole line. */
-const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
-const NEAR10_HALF = range$5(5, 95, 10);
-const NEAR100_OTHERS = [
-	130,
-	180,
-	220,
-	280,
-	340,
-	390,
-	430,
-	480,
-	530,
-	580,
-	610,
-	640,
-	680,
-	730,
-	790,
-	830,
-	870,
-	920,
-	960
-].filter((_, i) => i % 2 === 0).concat([440]);
-const NEAR100_HALF = range$5(150, 950, 100);
-const ZOOM_KEYS = [
-	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
-	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
-	"zoom:0-200:130",
-	"zoom:300-400:350"
-];
-/** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
-const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
-/** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
-const numLine = (label, tag, keys, parts, spoken) => ({
-	label,
-	curriculumTags: [tag],
-	keys,
-	roll: (key) => [lineNumber(key)],
-	make: (key, [n]) => {
-		if (!keys.includes(key) || lineNumber(key) !== n) return null;
-		return {
-			parts: parts(n, key),
-			spoken: spoken(n, key),
-			answer: n,
-			wrong: [
-				n + 1,
-				n - 1,
-				n + 10,
-				n + 2
-			]
-		};
-	}
-});
-const nearWords = (n, size) => `Is ${n} closer to ${Math.floor(n / size) * size} or ${Math.floor(n / size) * size + size}?`;
-const lineFamilies = {
-	place100: numLine("Where a number goes on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `place100:t${n}`), ...LINE_OTHERS_100.map((n) => `place100:n${n}`)], (n) => [
-		"Place",
-		String(n),
-		"on",
-		"the",
-		"100",
-		"line"
-	], (n) => `Where does ${n} go on the line to 100?`),
-	read100: numLine("Reading a point on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `read100:t${n}`), ...LINE_OTHERS_100.map((n) => `read100:n${n}`)], (n) => [
-		"Read",
-		String(n),
-		"on",
-		"the",
-		"100",
-		"line"
-	], () => "What number is at the arrow?"),
-	tens100: numLine("Ten more and ten less on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...TENS_MORE.map((n) => `tens100:+${n}`), ...TENS_LESS.map((n) => `tens100:-${n}`)], (n, key) => [
-		"Ten",
-		key.includes("+") ? "more" : "less",
-		"than",
-		String(n)
-	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
-	near10: numLine("Which ten a number is closer to", "MS.Y3.NUM.NS.P5", [...NEAR10_OTHERS.map((n) => `near10:n${n}`), ...NEAR10_HALF.map((n) => `near10:h${n}`)], (n) => [
-		"Nearest",
-		"ten",
-		"to",
-		String(n)
-	], (n) => nearWords(n, 10)),
-	zoom: numLine("Reading and placing on a zoomed line", "MS.Y3.NUM.NS.P1", ZOOM_KEYS, (n, key) => [
-		"Zoom",
-		/zoom:(\d+-\d+)/.exec(key)[1],
-		"at",
-		String(n)
-	], (n) => `Where is ${n} on the zoomed line?`),
-	place1000: numLine("Where a number goes on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => [
-		"Place",
-		String(n),
-		"on",
-		"the",
-		"1000",
-		"line"
-	], (n) => `Where does ${n} go on the line to 1000?`),
-	read1000: numLine("Reading a point on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => [
-		"Read",
-		String(n),
-		"on",
-		"the",
-		"1000",
-		"line"
-	], () => "What number is at the arrow?"),
-	near100: numLine("Which hundred a number is closer to", "MS.Y4.NUM.NS.P5", [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => [
-		"Nearest",
-		"hundred",
-		"to",
-		String(n)
-	], (n) => nearWords(n, 100))
-};
-const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
-const EARLY_FACTS = {
-	id: "early-facts",
-	label: "Early number facts",
-	families: {
-		...lineFamilies,
-		tenAnd,
-		tenUp: tenMove(true),
-		tenDown: tenMove(false),
-		oddEven,
-		parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
-		parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
-		...skipFamilies,
-		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
-		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
-		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
-		dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
-	},
-	bands: [
-		["bond10"],
-		["dblHalf10"],
-		["bond20"],
-		["dblHalf20"]
-	],
-	ladderOnly: [
-		"tenAnd",
-		"tenUp",
-		"tenDown",
-		"oddEven",
-		"parts5",
-		"parts10",
-		...SKIP_STEPS.map(({ step }) => `skip${step}`),
-		...SKIP_MORE_FAMILY_NAMES,
-		...LINE_FAMILY_NAMES
-	]
-};
-const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
-//#endregion
-//#region shared/kit/mistakes.ts
-/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
-function tagWrongs(candidates, kindOf) {
-	const seen = new Set();
-	return candidates.flatMap((n) => {
-		const kind = kindOf(n);
-		if (kind === null || seen.has(n)) return [];
-		seen.add(n);
-		return [{
-			n,
-			kind
-		}];
-	});
-}
-/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
-function sharingTell(answer, choices, tellOf) {
-	const tell = tellOf(answer);
-	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
-}
-/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
-const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
-//#endregion
-//#region shared/seededRandom.ts
-/** A tiny repeatable random number generator, so "random" test games are the same every run. */
-function seeded(seed) {
-	return () => {
-		seed = (seed * 1103515245 + 12345) % 2147483648;
-		return seed / 2147483648;
-	};
-}
-const LEVELS = [
-	{
-		level: 1,
-		kind: "double",
-		from: 1,
-		to: 5
-	},
-	{
-		level: 2,
-		kind: "half",
-		from: 2,
-		to: 10
-	},
-	{
-		level: 3,
-		kind: "double",
-		from: 6,
-		to: 10
-	},
-	{
-		level: 4,
-		kind: "half",
-		from: 12,
-		to: 20
-	}
-];
-/** The guided first go (plan section 6): double 2. */
-const GUIDED_KEY = "dbl:2";
-const MAX_SEED = 2147483647;
-const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
-const isLevel = (n) => LEVELS.some((l) => l.level === n);
-/** `dbl:7` → double 7; `half:14` → half of 14; `oddeven:7` → can 7 fish be shared fairly? */
-const parseKey = (key) => {
-	const m = /^(dbl|half|oddeven):(\d+)$/.exec(key);
-	return m ? {
-		kind: m[1] === "dbl" ? "double" : m[1] === "half" ? "half" : "fair",
-		n: Number(m[2])
-	} : null;
-};
-/** The "fair or not?" facts at a level: fish counts 3 to 10 at levels 1 and 2, 5 to 20 at levels 3 and 4. */
-const fairKeys = (level) => {
-	const [from, to] = level <= 2 ? [3, 10] : [5, 20];
-	return Array.from({ length: to - from + 1 }, (_, i) => `oddeven:${from + i}`);
-};
-/** A level's five facts: `dbl:1` to `dbl:5`, `half:2` to `half:10` and so on. */
-function levelKeys(level) {
-	const { kind, from, to } = LEVELS.find((l) => l.level === level);
-	const keys = [];
-	for (let n = from; n <= to; n += kind === "half" ? 2 : 1) keys.push(`${kind === "half" ? "half" : "dbl"}:${n}`);
-	return keys;
-}
-function levelShare(stats, level) {
-	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	const keys = levelKeys(level);
-	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
-}
-/** Today's level: the first not yet secure, never below the furthest reached. Once halves to 20 are secure the child stays there. */
-function levelFor(stats, reached = 1) {
-	const list = [...stats];
-	const next = LEVELS.find((l) => l.level >= reached && levelShare(list, l.level) < .7);
-	return next ? next.level : 4;
-}
-/**
-* The picture help for a fact from the child's own record of it (maths review R6, Weka's way with Penguin Pairs' three
-* states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
-* fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full picture comes back, and a
-* new level's facts have no record, so they start full.
-*/
-const HELP_LADDER = [
-	{
-		help: "full",
-		until: {
-			box: 2,
-			quickDays: 2
-		}
-	},
-	{
-		help: "faint",
-		until: {
-			box: 4,
-			correct: 6
-		}
-	},
-	{ help: "none" }
-];
-const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
-const shuffle = (items, random) => {
-	const out = [...items];
-	for (let i = out.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[out[i], out[j]] = [out[j], out[i]];
-	}
-	return out;
-};
-/** `n` different facts, weakest first (lowest box), ties broken by the seed. */
-function weakest(keys, n, box, random) {
-	return shuffle(keys, random).map((k, i) => ({
-		k,
-		i
-	})).sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i).slice(0, n).map((x) => x.k);
-}
-/** The same fact never comes twice in a row: a repeat swaps with a later go where it fits. */
-function spreadOut(keys) {
-	const out = [...keys];
-	for (let i = 1; i < out.length; i++) {
-		if (out[i] !== out[i - 1]) continue;
-		const j = out.findIndex((k, x) => x > i && k !== out[i] && out[x - 1] !== out[i - 1] && (x + 1 >= out.length || out[x + 1] !== out[i]));
-		const back = out.findIndex((k, x) => x < i - 1 && k !== out[i] && (x === 0 || out[x - 1] !== out[i]) && out[x + 1] !== out[i]);
-		const at = j !== -1 ? j : back;
-		if (at !== -1) [out[i], out[at]] = [out[at], out[i]];
-	}
-	return out;
-}
-/**
-* A double straight before its half (double 6, then half of 12), when a round has both, so the child sees the same
-* picture run backwards. The half moves to just after its double unless that would put a fact twice in a row.
-*/
-function pairUp(keys) {
-	let out = [...keys];
-	const twiceInARow = (list) => list.some((k, i) => i > 0 && list[i - 1] === k);
-	for (const key of keys) {
-		const fact = parseKey(key);
-		if (fact?.kind !== "double") continue;
-		const half = `half:${2 * fact.n}`;
-		const i = out.indexOf(key);
-		const j = out.indexOf(half);
-		if (j === -1 || j === i + 1) continue;
-		const moved = out.filter((_, x) => x !== j);
-		moved.splice(moved.indexOf(key) + 1, 0, half);
-		if (!twiceInARow(moved)) out = moved;
-	}
-	return out;
-}
-/**
-* Today's challenge from a fresh seed, the child's records, the furthest level reached, whether it is a gold day and
-* whether it is the child's very first challenge (double 2 comes first). The same inputs always give the same round.
-*/
-function makeRound(seed, stats, opts = {}) {
-	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
-	const list = [...stats];
-	const level = levelFor(list, opts.reached);
-	const random = seeded(seed);
-	random();
-	random();
-	const box = new Map(list.map((s) => [s.key, s.box]));
-	const byKey = new Map(list.map((s) => [s.key, s]));
-	const today = levelKeys(level);
-	const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
-	const review = weakest(earlier, Math.min(3, earlier.length), box, random);
-	const fair = opts.gold ? 2 : 0;
-	const again = weakest(today, Math.max(0, 10 - fair - today.length - review.length), box, random);
-	const main = [
-		...today,
-		...again,
-		...review
-	].slice(0, 10 - fair);
-	let keys = [...pairUp(spreadOut(shuffle(main, random))), ...weakest(fairKeys(level), fair, box, random)];
-	if (opts.guided) {
-		const rest = [...keys];
-		rest.splice(rest.indexOf(GUIDED_KEY), 1);
-		keys = spreadOut([GUIDED_KEY, ...rest]);
-	}
-	const goes = keys.map((key) => ({
-		key,
-		v: key.startsWith("dbl:") && random() < .5 ? 0 : key.startsWith("dbl:") ? 1 : 0,
-		h: helpForStats(byKey.get(key))
-	}));
-	return {
-		seed,
-		level,
-		gold: !!opts.gold,
-		goes
-	};
-}
-const pack = earlyFactsPack();
-/** What is read aloud: the story of the go, never the answer. */
-function spokenFor(kind, n, guided = false) {
-	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : `${n} fish. Can the two chicks share them fairly?`;
-	return guided ? `${line} Tap the number the hand points to.` : line;
-}
-/**
-* The three wrong numbers of a double or a half, each tagged with its kind, and the four choices in an order fixed by the
-* seed. Never the pack's n times n (25 for 5 + 5, a times-tables slip). The tell is parity: at most two of the four share
-* the right answer's, so shape alone can't pick it out (shared/kit/mistakes.ts). Of the choices that fit, the one showing
-* the most different kinds wins, ties broken by the seed.
-*/
-function mistakeChoices(kind, n, random) {
-	const answer = kind === "double" ? 2 * n : n / 2;
-	const core = kind === "double" ? [
-		[n, "same"],
-		[n + 1, "plus1"],
-		[answer - 1, "miscount"],
-		[answer + 1, "miscount"],
-		...n >= 3 ? [[n + 2, "plus2"]] : []
-	] : [
-		[n, "all"],
-		[n - 2, "minus2"],
-		[2 * n, "double"],
-		[answer - 1, "miscount"],
-		[answer + 1, "miscount"]
-	];
-	const spare = [
-		answer + 2,
-		answer - 2,
-		answer + 3,
-		answer - 3
-	].map((x) => [x, "miscount"]);
-	const make = (list) => {
-		const kinds = new Map();
-		for (const [x, k] of list) if (!kinds.has(x)) kinds.set(x, k);
-		return tagWrongs([...kinds.keys()].filter((x) => x >= 1 && x !== answer), (x) => kinds.get(x) ?? null);
-	};
-	let pool = make(core);
-	if (pool.length < 3) pool = make([...core, ...spare]);
-	const parity = (x) => x % 2;
-	const combos = [];
-	for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) combos.push([
-		pool[a],
-		pool[b],
-		pool[c]
-	]);
-	const rank = (c) => (atMostShareTell(answer, c.map((w) => w.n), parity) ? 10 : 0) + new Set(c.map((w) => w.kind)).size;
-	const best = Math.max(...combos.map(rank));
-	const top = combos.filter((c) => rank(c) === best);
-	const wrongs = top[Math.floor(random() * top.length)];
-	return {
-		choices: shuffle([answer, ...wrongs.map((w) => w.n)], random),
-		wrongs
-	};
-}
-/** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
-function showGo(round, index, plan) {
-	const fact = parseKey(plan.key);
-	if (!fact || plan.v !== 0 && plan.v !== 1) return null;
-	const q = pack.rebuild(plan.key, [fact.n, plan.v], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
-	const answer = fact.kind === "double" ? 2 * fact.n : fact.kind === "half" ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
-	if (!q || !q.choices || q.answer !== answer) return null;
-	const base = {
-		...plan,
-		kind: fact.kind,
-		n: fact.n,
-		answer,
-		parts: q.parts,
-		spoken: spokenFor(fact.kind, fact.n)
-	};
-	if (fact.kind === "fair") return {
-		...base,
-		choices: q.choices,
-		wrongs: []
-	};
-	const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
-	random();
-	random();
-	return {
-		...base,
-		...mistakeChoices(fact.kind, fact.n, random)
-	};
-}
-/** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */
-function showRound(round) {
-	return round.goes.map((plan, i) => {
-		const go = showGo(round, i, plan);
-		if (!go) throw new Error(`Go ${i} (${plan.key}) can't be made`);
-		return go;
-	});
-}
-//#endregion
-//#region shared/korora/play.ts
-/** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
-function replay(round, taps) {
-	const goes = showRound(round);
-	const answers = [];
-	const counted = new Set();
-	let goesDone = 0;
-	let mistakes = 0;
-	let triedThisGo = false;
-	for (const { pick, ms } of taps) {
-		const go = goes[goesDone];
-		if (!go) throw new Error("Taps after the round was done");
-		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
-		const right = pick === go.answer;
-		if (!triedThisGo && !counted.has(go.key)) {
-			answers.push({
-				key: go.key,
-				correct: right,
-				ms
-			});
-			counted.add(go.key);
-		}
-		triedThisGo = true;
-		if (right) {
-			goesDone++;
-			triedThisGo = false;
-		} else mistakes++;
-	}
-	return {
-		goesDone,
-		mistakes,
-		done: goesDone === goes.length && goes.length === 10,
-		answers
-	};
-}
-const METALS = [
-	"grey",
-	"bronze",
-	"silver",
-	"gold"
-];
-/** Ten stones, three changes each: thirty finished days to the dazzling gold dancing shoes. */
-const DAYS_PER_FISH = 10 * (METALS.length - 1);
-/**
-* Who crosses the stones, in order: Two-Shoes the penguin first (id korora), then a new New Zealand bird friend at a
-* fresh pool after each pair of gold shoes.
-* All birds, so the two little ones are always "chicks". The friends after Kororā are painted later.
-*/
-const FRIENDS = [
-	"korora",
-	"hoiho",
-	"kiwi",
-	"pukeko",
-	"kereru",
-	"takahe"
-];
-const wholeCount = (n) => {
-	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
-	return n;
-};
-function poolAfter(daysDone) {
-	const fish = Math.floor(wholeCount(daysDone) / DAYS_PER_FISH);
-	const day = daysDone % DAYS_PER_FISH;
-	const round = Math.floor(day / 10);
-	const pebbles = Array.from({ length: 10 }, (_, i) => METALS[round + (i < day % 10 ? 1 : 0)]);
-	return {
-		fish,
-		friend: FRIENDS[fish % FRIENDS.length],
-		day,
-		pebbles,
-		shoes: round === 0 ? null : round === 1 ? "bronze" : "silver",
-		today: [
-			"bronze",
-			"silver",
-			"gold"
-		][round],
-		help: [
-			"full",
-			"faint",
-			"none"
-		][round],
-		gold: round === 2
-	};
-}
-/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
-const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
-	timeZone: "Pacific/Auckland",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit"
-}).format(now);
-/** A finished challenge: one pebble changes on the first finish of each NZ day; playing again the same day is just for fun. */
-function finishChallenge(daysDone, lastPebbleDay, today) {
-	if (lastPebbleDay === today) return {
-		daysDone: wholeCount(daysDone),
-		lastPebbleDay,
-		pebbleChanged: null,
-		goldenFish: false,
-		shoesWon: null
-	};
-	const next = wholeCount(daysDone) + 1;
-	const shoesWon = next % 10 === 0 ? [
-		"gold",
-		"bronze",
-		"silver"
-	][next / 10 % 3] : null;
-	return {
-		daysDone: next,
-		lastPebbleDay: today,
-		pebbleChanged: daysDone % 10,
-		goldenFish: next % DAYS_PER_FISH === 0,
-		shoesWon
-	};
-}
-//#endregion
-//#region shared/korora/server.ts
-/**
-* What the `korora` server function does with a request from a signed-in pupil (docs/KORORA-PLAN.md, Penguin Pairs).
-* The function (supabase/functions/korora/handler.ts) checks the sign-in and the rate first; the preview's trial backend
-* calls this with services that keep everything in the browser, so both run exactly the same rules. Copied from Hop.
-*
-*   load    the pupil's pool (a new pupil has none), the level they play next, the class's help setting and today's NZ
-*           date by the server's clock;
-*   start   reads the pupil's maths records, makes today's ten goes from a fresh seed (the level by the 70% rule, "fair
-*           or not?" on gold days, double 2 first on the very first challenge) and keeps the round (any other open
-*           challenge is closed);
-*   finish  replays the taps on the kept round, records each fact once for the maths records (right only if the first
-*           pick was right), changes a pebble on the first finish of the NZ day, and keeps the furthest level reached.
-*           A Golden Fish is an achievement (the hub migration counts them from the finished days).
-*
-* Nothing that counts comes from the browser. A challenge finishes once.
-*/
-const unplayed = () => ({
-	daysDone: 0,
-	lastPebbleDay: null,
-	reached: 1,
-	version: 0
-});
-const HELP_SETTINGS = [
-	"fade",
-	"always",
-	"off"
-];
-/** The longest a tap is said to have taken (the maths records keep at most two minutes anyway). */
-const MAX_TAP_MS = 6e5;
-/** Tries at a save before giving up (another request saved in between). */
-const TRIES = 4;
-const ok = (body) => ({
-	status: 200,
-	body
-});
-const no = (status, error, extra = {}) => ({
-	status,
-	body: {
-		error,
-		...extra
-	}
-});
-const busy = () => no(503, "The pool couldn’t be reached just now. Try again in a moment.");
-const unreadable = () => no(400, "That couldn’t be read.");
-const isWhole = (v, max) => Number.isInteger(v) && v >= 0 && v <= max;
-function readTaps(v) {
-	if (!Array.isArray(v) || v.length > 200) return null;
-	const taps = [];
-	for (const t of v) {
-		if (!t || typeof t !== "object") return null;
-		const { pick, ms } = t;
-		if (!isWhole(pick, 1e3) || !isWhole(ms, MAX_TAP_MS)) return null;
-		taps.push({
-			pick,
-			ms
-		});
-	}
-	return taps;
-}
-/** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
-function withAnswers(facts, answers) {
-	const byKey = new Map(facts.map((s) => [s.key, s]));
-	const quick = JUNIOR_QUICK_MS;
-	for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
-	return [...byKey.values()];
-}
-async function handleKorora(services, player, body) {
-	const settings = await services.settings(player);
-	if (!settings) return busy();
-	if (!settings.enabled) return no(403, "Penguin Pairs is not switched on for your class.", { code: "game-off" });
-	const today = () => nzDate(new Date(services.now()));
-	if (body.action === "load") {
-		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-		if (s === "busy" || facts === "busy") return busy();
-		return ok({
-			daysDone: s.daysDone,
-			lastPebbleDay: s.lastPebbleDay,
-			today: today(),
-			level: levelFor(facts, s.reached),
-			help: settings.help
-		});
-	}
-	if (body.action === "start") {
-		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-		if (s === "busy" || facts === "busy") return busy();
-		const gold = poolAfter(s.daysDone).gold;
-		const guided = s.daysDone === 0 && s.lastPebbleDay === null;
-		for (let tries = 0; tries < TRIES; tries++) {
-			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
-				reached: s.reached,
-				gold,
-				guided
-			});
-			const kept = await services.start(player, round);
-			if (kept === "busy") return busy();
-			if (kept) return ok({ round });
-		}
-		return busy();
-	}
-	if (body.action === "finish") {
-		const seed = body.seed;
-		const taps = readTaps(body.taps);
-		if (!isSeed(seed) || !taps) return unreadable();
-		const kept = await services.round(player, seed);
-		if (kept === "busy") return busy();
-		if (!kept) return no(409, "That isn’t one of your challenges.", { code: "not-yours" });
-		if (!kept.open) return no(409, "That challenge has finished.", { code: "ended" });
-		let played;
-		try {
-			played = replay(kept.round, taps);
-		} catch {
-			return unreadable();
-		}
-		if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
-		const at = services.now();
-		const answers = played.answers.map((a) => ({
-			...a,
-			at
-		}));
-		const facts = await services.facts(player);
-		for (let tries = 0; tries < TRIES; tries++) {
-			const s = await services.load(player);
-			if (s === "busy") return busy();
-			const levelBefore = isLevel(kept.round.level) ? Math.max(kept.round.level, s.reached) : s.reached;
-			const reached = facts === "busy" ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
-			const result = finishChallenge(s.daysDone, s.lastPebbleDay, today());
-			const progress = {
-				daysDone: result.daysDone,
-				lastPebbleDay: result.lastPebbleDay,
-				reached
-			};
-			const saved = await services.finish(player, seed, s.version, progress, {
-				taps,
-				mistakes: played.mistakes
-			});
-			if (saved === "busy") return busy();
-			if (saved) {
-				await services.recordAnswers(player, `korora:${seed}`, answers);
-				if (result.goldenFish) await services.progressChanged(player);
-				return ok({
-					...result,
-					level: reached,
-					levelBefore
-				});
-			}
-			const again = await services.round(player, seed);
-			if (again === "busy") return busy();
-			if (!again?.open) return no(409, "That challenge has finished.", { code: "ended" });
-		}
-		return busy();
-	}
-	return unreadable();
-}
 //#endregion
 //#region shared/maths/skillPacks/addSub.ts
 /**
@@ -3567,6 +2260,1344 @@ const BANDED_PACKS = {
 	decimals: DECIMALS
 };
 PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
+//#endregion
+//#region shared/maths/skillPacks/earlyFacts.ts
+/**
+* The first rungs of the maths ladder: number facts a student should know by heart before
+* times tables. One mastery record per fact, like 7 × 8 in times tables.
+*
+* Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`), the number-line keys "place100:n63", "read1000:h300", "tens100:+63", "near10:h65", "zoom:40-50:47" (see `lineFamilies`). Adding and taking away within 20 keeps its own
+* "add:7+8" records (add-sub pack), so nothing already saved changes.
+*
+* Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
+*/
+const bondKeys = (prefix, total, from) => {
+	const keys = [];
+	for (let a = from; a <= total / 2; a++) keys.push(`${prefix}:${a}+${total - a}`);
+	return keys;
+};
+const parseBond = (key) => {
+	const m = /^bond(10|20):(\d+)\+(\d+)$/.exec(key);
+	return m ? {
+		total: Number(m[1]),
+		a: Number(m[2]),
+		b: Number(m[3])
+	} : null;
+};
+/** Variants: 0 a + ? = total, 1 ? + b = total, 2 total − a = ?, 3 total − b = ?. */
+function bonds(label, tag, prefix, total, from) {
+	const keys = bondKeys(prefix, total, from);
+	return {
+		label,
+		curriculumTags: [tag],
+		keys,
+		roll: (key, r) => {
+			const { a, b } = parseBond(key);
+			return [
+				a,
+				b,
+				int(r, 0, 3)
+			];
+		},
+		make: (key, [a, b, v]) => {
+			const bond = parseBond(key);
+			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
+			const t = String(total);
+			const [parts, answer] = v === 0 ? [[
+				String(a),
+				"+",
+				"?",
+				"=",
+				t
+			], b] : v === 1 ? [[
+				"?",
+				"+",
+				String(b),
+				"=",
+				t
+			], a] : v === 2 ? [[
+				t,
+				"−",
+				String(a),
+				"=",
+				"?"
+			], b] : [[
+				t,
+				"−",
+				String(b),
+				"=",
+				"?"
+			], a];
+			return {
+				parts,
+				spoken: speak(parts),
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					total,
+					answer + 2,
+					answer - 2,
+					a + b + 1
+				]
+			};
+		}
+	};
+}
+const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+/** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
+function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
+	const dbls = range$5(dblFrom, dblTo);
+	const halves = range$5(halfFrom, halfTo, 2);
+	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
+	return {
+		label,
+		curriculumTags: [tag],
+		keys,
+		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+		make: (key, [n, v]) => {
+			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
+			if (key.startsWith("dbl:")) {
+				const parts = v === 0 ? [
+					String(n),
+					"+",
+					String(n),
+					"=",
+					"?"
+				] : [
+					"Double",
+					String(n),
+					"=",
+					"?"
+				];
+				return {
+					parts,
+					spoken: speak(parts),
+					answer: 2 * n,
+					wrong: [
+						2 * n + 1,
+						2 * n - 1,
+						2 * n + 2,
+						2 * n - 2,
+						n + 1,
+						n * n
+					]
+				};
+			}
+			const parts = v === 0 ? [
+				"Half",
+				"of",
+				String(n),
+				"=",
+				"?"
+			] : [
+				String(n),
+				"÷",
+				"2",
+				"=",
+				"?"
+			];
+			const answer = n / 2;
+			return {
+				parts,
+				spoken: speak(parts),
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					n,
+					answer + 2,
+					answer - 2
+				]
+			};
+		}
+	};
+}
+/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+const tenAnd = {
+	label: "\"Ten and\" facts (10 + 4)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenand:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
+		const t = String(10 + n);
+		const [parts, answer] = v === 0 ? [[
+			"10",
+			"+",
+			String(n),
+			"=",
+			"?"
+		], 10 + n] : v === 1 ? [[
+			String(n),
+			"+",
+			"10",
+			"=",
+			"?"
+		], 10 + n] : v === 2 ? [[
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		], n] : [[
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		], n];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 10,
+				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+const tenMove = (up) => {
+	const keys = range$5(up ? 10 : 20, (up ? 10 : 20) + 9).map((n) => `${up ? "tenup" : "tendown"}:${n}`);
+	return {
+		label: up ? "Ten more than a teen (14 + 10)" : "Ten less than a number in the twenties (24 − 10)",
+		curriculumTags: ["MS.Y1.NUM.OP.P6"],
+		keys,
+		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+		make: (key, [n, v]) => {
+			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
+			const [parts, answer] = up ? v === 0 ? [[
+				String(n),
+				"+",
+				"10",
+				"=",
+				"?"
+			], n + 10] : [[
+				"10",
+				"+",
+				String(n),
+				"=",
+				"?"
+			], n + 10] : v === 0 ? [[
+				String(n),
+				"−",
+				"10",
+				"=",
+				"?"
+			], n - 10] : [[
+				"10",
+				"+",
+				"?",
+				"=",
+				String(n)
+			], n - 10];
+			const a = answer;
+			return {
+				parts,
+				spoken: speak(parts),
+				answer: a,
+				wrong: up ? [
+					a - 10,
+					a + 10,
+					a + 1,
+					a - 1,
+					11
+				] : [
+					n,
+					a - 10,
+					a + 1,
+					a - 1,
+					n + 10
+				]
+			};
+		}
+	};
+};
+/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
+const SKIP_STEPS = [
+	{
+		step: 10,
+		upTo: 100,
+		word: "tens"
+	},
+	{
+		step: 5,
+		upTo: 50,
+		word: "fives"
+	},
+	{
+		step: 2,
+		upTo: 20,
+		word: "twos"
+	}
+];
+/**
+* More skip counting, beside the ladder (ladder-only, so auto practice never meets it; Hop asks it from its own rules):
+* threes to 30 ("skip3:next:12") and fours to 40 ("skip4:up:20"), the same kinds of question as the first three.
+*/
+const SKIP_MORE_STEPS = [{
+	step: 3,
+	upTo: 30,
+	word: "threes"
+}, {
+	step: 4,
+	upTo: 40,
+	word: "fours"
+}];
+/** Tens past 100, to 200: "skip10h:next:110" (80, 90, 100, ?). Only answers past 100, so no key is also a "skip10" one. */
+const SKIP_HIGH = {
+	step: 10,
+	from: 100,
+	upTo: 200,
+	word: "tens past 100"
+};
+/**
+* Skip counting from a start that isn't a multiple of the step (start at 3, hop by 10: 3, 13, 23, ?), to 4 hops. The first
+* pad is always the start, so "skip10o3:next:33" really is "from 3": the key names the start. Offsets are 1 up to one
+* less than the step.
+*/
+const SKIP_FROM_STEPS = [
+	{
+		step: 10,
+		word: "tens"
+	},
+	{
+		step: 5,
+		word: "fives"
+	},
+	{
+		step: 4,
+		word: "fours"
+	},
+	{
+		step: 3,
+		word: "threes"
+	},
+	{
+		step: 2,
+		word: "twos"
+	}
+];
+/**
+* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
+* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
+* the step from 0 to `upTo`; with an offset the first pad is the offset itself and counting only goes up.
+*/
+function skipTerms(spec, kind, answer, at, offset = 0) {
+	const { step, upTo } = spec;
+	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
+	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
+	if (spec.offsets && (kind === "back" || terms[0] !== offset)) return null;
+	if (spec.above !== void 0 && answer <= spec.above) return null;
+	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === offset ? terms : null;
+}
+const skipOffsets = (spec) => spec.offsets ?? [0];
+const skipKeys = (spec) => skipOffsets(spec).flatMap((offset) => (spec.offsets ? ["up", "next"] : [
+	"up",
+	"next",
+	"back"
+]).flatMap((kind) => range$5(offset, spec.upTo, spec.step).filter((n) => [
+	1,
+	2,
+	3,
+	4
+].some((at) => skipTerms(spec, kind, n, at, offset))).map((n) => `${spec.prefix(offset)}:${kind}:${n}`)));
+/** A skip-counting key read apart: "skip10o3:next:33" is step 10, start 3 (offset 3), what comes next, 33; "skip10h:up:110" is high. */
+const parseSkip = (key) => {
+	const m = /^skip(\d+)(?:o(\d+)|(h))?:(up|next|back):(\d+)$/.exec(key);
+	return m ? {
+		step: Number(m[1]),
+		offset: m[2] ? Number(m[2]) : 0,
+		high: !!m[3],
+		kind: m[4],
+		answer: Number(m[5])
+	} : null;
+};
+/**
+* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
+* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
+* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
+*/
+function skipCounting(spec) {
+	const { step, word } = spec;
+	const keys = skipKeys(spec);
+	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
+	return {
+		label: `Counting in ${word}`,
+		curriculumTags: [],
+		keys,
+		roll: (key, r) => {
+			const { kind, answer, offset } = parseSkip(key);
+			const fits = ats(kind).filter((at) => skipTerms(spec, kind, answer, at, offset));
+			return [answer, fits[int(r, 0, fits.length - 1)]];
+		},
+		make: (key, [answer, at]) => {
+			const skip = parseSkip(key);
+			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
+			const terms = skipTerms(spec, skip.kind, answer, at, skip.offset);
+			if (!terms) return null;
+			const gap = terms.indexOf(answer);
+			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
+			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
+			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
+			const before = terms[gap - 1];
+			const back = skip.kind === "back" ? -1 : 1;
+			const wrongSteps = [
+				10,
+				5,
+				2,
+				1
+			].filter((s) => s !== step);
+			return {
+				parts,
+				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}${skip.offset ? ` from ${skip.offset}` : ""}: ${said}. ${prompt}`,
+				prompt,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					...wrongSteps.map((s) => before + back * s),
+					...terms.filter((n) => n !== answer)
+				]
+			};
+		}
+	};
+}
+const skipSpec = (step, upTo, word) => ({
+	step,
+	upTo,
+	word,
+	prefix: () => `skip${step}`
+});
+const skipFamilies = {
+	...Object.fromEntries([...SKIP_STEPS, ...SKIP_MORE_STEPS].map(({ step, upTo, word }) => [`skip${step}`, skipCounting(skipSpec(step, upTo, word))])),
+	skip10h: skipCounting({
+		step: 10,
+		upTo: SKIP_HIGH.upTo,
+		word: SKIP_HIGH.word,
+		above: SKIP_HIGH.from,
+		prefix: () => "skip10h"
+	}),
+	...Object.fromEntries(SKIP_FROM_STEPS.map(({ step, word }) => [`skip${step}o`, skipCounting({
+		step,
+		upTo: step * 5,
+		word,
+		offsets: range$5(1, step - 1),
+		prefix: (offset) => `skip${step}o${offset}`
+	})]))
+};
+/** The family names of the skip counting kept beside the ladder (threes, fours, tens past 100, and from a start). */
+const SKIP_MORE_FAMILY_NAMES = Object.keys(skipFamilies).filter((n) => !SKIP_STEPS.some(({ step }) => n === `skip${step}`));
+/** The wholes in each part-whole skill: small wholes first, then up to 10. */
+const PART_WHOLES = {
+	parts5: [3, 5],
+	parts10: [6, 10]
+};
+const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
+const parsePart = (key) => {
+	const m = /^part(\d+):(\d+)$/.exec(key);
+	return m ? {
+		whole: Number(m[1]),
+		shown: Number(m[2])
+	} : null;
+};
+/**
+* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
+* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
+* number showing, the whole and two more.
+*/
+function partWhole(label, from, to) {
+	const keys = partKeys(from, to);
+	return {
+		label,
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys,
+		roll: (key) => {
+			const { whole, shown } = parsePart(key);
+			return [whole, shown];
+		},
+		make: (key, [whole, shown]) => {
+			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
+			const answer = whole - shown;
+			return {
+				parts: [
+					String(whole),
+					"=",
+					String(shown),
+					"+",
+					"?"
+				],
+				spoken: `${whole} is ${shown} and how many more?`,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					shown,
+					whole,
+					answer + 2
+				]
+			};
+		}
+	};
+}
+const ODD_EVEN_LABELS = ["odd", "even"];
+const oddEven = {
+	label: "Odd and even numbers to 20",
+	curriculumTags: ["MS.Y2.NUM.OP.P2"],
+	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
+	roll: (key) => [Number(key.split(":")[1])],
+	make: (key, [n]) => {
+		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
+		const answer = n % 2 === 0 ? 1 : 0;
+		return {
+			parts: [
+				"Is",
+				String(n),
+				"odd",
+				"or",
+				"even?"
+			],
+			spoken: `Is ${n} odd or even?`,
+			answer,
+			pick: [...ODD_EVEN_LABELS],
+			fact: `${n} is ${ODD_EVEN_LABELS[answer]}`
+		};
+	}
+};
+const LINE_TENS = range$5(1, 9).map((n) => n * 10);
+const LINE_OTHERS_100 = [
+	11,
+	14,
+	18,
+	23,
+	27,
+	32,
+	36,
+	41,
+	45,
+	49,
+	54,
+	58,
+	63,
+	67,
+	72,
+	76,
+	81,
+	85,
+	89,
+	94,
+	97
+];
+const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
+const LINE_OTHERS_1000 = [
+	120,
+	140,
+	170,
+	230,
+	250,
+	270,
+	310,
+	340,
+	360,
+	390,
+	410,
+	450,
+	480,
+	520,
+	540,
+	570,
+	610,
+	640,
+	660,
+	690,
+	720,
+	750,
+	780,
+	810,
+	830,
+	860,
+	880,
+	910,
+	940,
+	960,
+	980
+];
+const TENS_MORE = [
+	14,
+	20,
+	27,
+	35,
+	42,
+	56,
+	63,
+	78,
+	85,
+	90
+];
+const TENS_LESS = [
+	10,
+	19,
+	24,
+	38,
+	47,
+	63,
+	71,
+	86,
+	92,
+	100
+];
+/** Not a tens number and not halfway: every third, so the spread covers the whole line. */
+const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
+const NEAR10_HALF = range$5(5, 95, 10);
+const NEAR100_OTHERS = [
+	130,
+	180,
+	220,
+	280,
+	340,
+	390,
+	430,
+	480,
+	530,
+	580,
+	610,
+	640,
+	680,
+	730,
+	790,
+	830,
+	870,
+	920,
+	960
+].filter((_, i) => i % 2 === 0).concat([440]);
+const NEAR100_HALF = range$5(150, 950, 100);
+const ZOOM_KEYS = [
+	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
+	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
+	"zoom:0-200:130",
+	"zoom:300-400:350"
+];
+/** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
+const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
+/** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
+const numLine = (label, tag, keys, parts, spoken) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => [lineNumber(key)],
+	make: (key, [n]) => {
+		if (!keys.includes(key) || lineNumber(key) !== n) return null;
+		return {
+			parts: parts(n, key),
+			spoken: spoken(n, key),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
+				n + 2
+			]
+		};
+	}
+});
+const nearWords = (n, size) => `Is ${n} closer to ${Math.floor(n / size) * size} or ${Math.floor(n / size) * size + size}?`;
+const lineFamilies = {
+	place100: numLine("Where a number goes on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `place100:t${n}`), ...LINE_OTHERS_100.map((n) => `place100:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], (n) => `Where does ${n} go on the line to 100?`),
+	read100: numLine("Reading a point on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `read100:t${n}`), ...LINE_OTHERS_100.map((n) => `read100:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], () => "What number is at the arrow?"),
+	tens100: numLine("Ten more and ten less on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...TENS_MORE.map((n) => `tens100:+${n}`), ...TENS_LESS.map((n) => `tens100:-${n}`)], (n, key) => [
+		"Ten",
+		key.includes("+") ? "more" : "less",
+		"than",
+		String(n)
+	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
+	near10: numLine("Which ten a number is closer to", "MS.Y3.NUM.NS.P5", [...NEAR10_OTHERS.map((n) => `near10:n${n}`), ...NEAR10_HALF.map((n) => `near10:h${n}`)], (n) => [
+		"Nearest",
+		"ten",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 10)),
+	zoom: numLine("Reading and placing on a zoomed line", "MS.Y3.NUM.NS.P1", ZOOM_KEYS, (n, key) => [
+		"Zoom",
+		/zoom:(\d+-\d+)/.exec(key)[1],
+		"at",
+		String(n)
+	], (n) => `Where is ${n} on the zoomed line?`),
+	place1000: numLine("Where a number goes on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], (n) => `Where does ${n} go on the line to 1000?`),
+	read1000: numLine("Reading a point on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], () => "What number is at the arrow?"),
+	near100: numLine("Which hundred a number is closer to", "MS.Y4.NUM.NS.P5", [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => [
+		"Nearest",
+		"hundred",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 100))
+};
+const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
+const EARLY_FACTS = {
+	id: "early-facts",
+	label: "Early number facts",
+	families: {
+		...lineFamilies,
+		tenAnd,
+		tenUp: tenMove(true),
+		tenDown: tenMove(false),
+		oddEven,
+		parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
+		parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
+		...skipFamilies,
+		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
+		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
+		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
+		dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
+	},
+	bands: [
+		["bond10"],
+		["dblHalf10"],
+		["bond20"],
+		["dblHalf20"]
+	],
+	ladderOnly: [
+		"tenAnd",
+		"tenUp",
+		"tenDown",
+		"oddEven",
+		"parts5",
+		"parts10",
+		...SKIP_STEPS.map(({ step }) => `skip${step}`),
+		...SKIP_MORE_FAMILY_NAMES,
+		...LINE_FAMILY_NAMES
+	]
+};
+const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
+//#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
+}
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
+//#endregion
+//#region shared/seededRandom.ts
+/** A tiny repeatable random number generator, so "random" test games are the same every run. */
+function seeded(seed) {
+	return () => {
+		seed = (seed * 1103515245 + 12345) % 2147483648;
+		return seed / 2147483648;
+	};
+}
+const LEVELS = [
+	{
+		level: 1,
+		kind: "double",
+		from: 1,
+		to: 5
+	},
+	{
+		level: 2,
+		kind: "half",
+		from: 2,
+		to: 10
+	},
+	{
+		level: 3,
+		kind: "double",
+		from: 6,
+		to: 10
+	},
+	{
+		level: 4,
+		kind: "half",
+		from: 12,
+		to: 20
+	},
+	(
+	/** Near doubles: `from` is the smaller number, so 5 is 5 + 6 and 8 is 8 + 9. */
+	{
+		level: 5,
+		kind: "near",
+		from: 5,
+		to: 8
+	})
+];
+/** The guided first go (plan section 6): double 2. */
+const GUIDED_KEY = "dbl:2";
+const MAX_SEED = 2147483647;
+const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
+const isLevel = (n) => LEVELS.some((l) => l.level === n);
+/** `dbl:7` → double 7; `half:14` → half of 14; `oddeven:7` → can 7 fish be shared fairly?; `add:6+7` → near double, n is 6. */
+const parseKey = (key) => {
+	const near = /^add:(\d+)\+(\d+)$/.exec(key);
+	if (near) return Number(near[2]) === Number(near[1]) + 1 ? {
+		kind: "near",
+		n: Number(near[1])
+	} : null;
+	const m = /^(dbl|half|oddeven):(\d+)$/.exec(key);
+	return m ? {
+		kind: m[1] === "dbl" ? "double" : m[1] === "half" ? "half" : "fair",
+		n: Number(m[2])
+	} : null;
+};
+/** The "fair or not?" facts at a level: fish counts 3 to 10 at levels 1 and 2, 5 to 20 at levels 3 and 4. */
+const fairKeys = (level) => {
+	const [from, to] = level <= 2 ? [3, 10] : [5, 20];
+	return Array.from({ length: to - from + 1 }, (_, i) => `oddeven:${from + i}`);
+};
+/** A level's five facts: `dbl:1` to `dbl:5`, `half:2` to `half:10` and so on. */
+function levelKeys(level) {
+	const { kind, from, to } = LEVELS.find((l) => l.level === level);
+	const keys = [];
+	for (let n = from; n <= to; n += kind === "half" ? 2 : 1) keys.push(kind === "near" ? `add:${n}+${n + 1}` : `${kind === "half" ? "half" : "dbl"}:${n}`);
+	return keys;
+}
+function levelShare(stats, level) {
+	const box = new Map([...stats].map((s) => [s.key, s.box]));
+	const keys = levelKeys(level);
+	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
+}
+/** Near doubles (the top level) are secure: at least 70% of their facts at box 2 or more. The "what's next" card waits for this. */
+const topSecure = (stats) => levelShare(stats, 5) >= STEP_SECURE_SHARE;
+/** Today's level: the first not yet secure, never below the furthest reached. Once near doubles are secure the child stays there. */
+function levelFor(stats, reached = 1) {
+	const list = [...stats];
+	const next = LEVELS.find((l) => l.level >= reached && levelShare(list, l.level) < .7);
+	return next ? next.level : 5;
+}
+/**
+* The picture help for a fact from the child's own record of it (maths review R6, Weka's way with Penguin Pairs' three
+* states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+* fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full picture comes back, and a
+* new level's facts have no record, so they start full.
+*/
+const HELP_LADDER = [
+	{
+		help: "full",
+		until: {
+			box: 2,
+			quickDays: 2
+		}
+	},
+	{
+		help: "faint",
+		until: {
+			box: 4,
+			correct: 6
+		}
+	},
+	{ help: "none" }
+];
+const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
+const shuffle = (items, random) => {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[out[i], out[j]] = [out[j], out[i]];
+	}
+	return out;
+};
+/** `n` different facts, weakest first (lowest box), ties broken by the seed. */
+function weakest(keys, n, box, random) {
+	return shuffle(keys, random).map((k, i) => ({
+		k,
+		i
+	})).sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i).slice(0, n).map((x) => x.k);
+}
+/** The same fact never comes twice in a row: a repeat swaps with a later go where it fits. */
+function spreadOut(keys) {
+	const out = [...keys];
+	for (let i = 1; i < out.length; i++) {
+		if (out[i] !== out[i - 1]) continue;
+		const j = out.findIndex((k, x) => x > i && k !== out[i] && out[x - 1] !== out[i - 1] && (x + 1 >= out.length || out[x + 1] !== out[i]));
+		const back = out.findIndex((k, x) => x < i - 1 && k !== out[i] && (x === 0 || out[x - 1] !== out[i]) && out[x + 1] !== out[i]);
+		const at = j !== -1 ? j : back;
+		if (at !== -1) [out[i], out[at]] = [out[at], out[i]];
+	}
+	return out;
+}
+/**
+* A double straight before its half (double 6, then half of 12), when a round has both, so the child sees the same
+* picture run backwards. The half moves to just after its double unless that would put a fact twice in a row.
+*/
+function pairUp(keys) {
+	let out = [...keys];
+	const twiceInARow = (list) => list.some((k, i) => i > 0 && list[i - 1] === k);
+	for (const key of keys) {
+		const fact = parseKey(key);
+		if (fact?.kind !== "double") continue;
+		const half = `half:${2 * fact.n}`;
+		const i = out.indexOf(key);
+		const j = out.indexOf(half);
+		if (j === -1 || j === i + 1) continue;
+		const moved = out.filter((_, x) => x !== j);
+		moved.splice(moved.indexOf(key) + 1, 0, half);
+		if (!twiceInARow(moved)) out = moved;
+	}
+	return out;
+}
+/**
+* Today's challenge from a fresh seed, the child's records, the furthest level reached, whether it is a gold day and
+* whether it is the child's very first challenge (double 2 comes first). The same inputs always give the same round.
+*/
+function makeRound(seed, stats, opts = {}) {
+	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+	const list = [...stats];
+	const level = levelFor(list, opts.reached);
+	const random = seeded(seed);
+	random();
+	random();
+	const box = new Map(list.map((s) => [s.key, s.box]));
+	const byKey = new Map(list.map((s) => [s.key, s]));
+	const today = levelKeys(level);
+	const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
+	const review = weakest(earlier, Math.min(3, earlier.length), box, random);
+	const fair = opts.gold ? 2 : 0;
+	const again = weakest(today, Math.max(0, 10 - fair - today.length - review.length), box, random);
+	const main = [
+		...today,
+		...again,
+		...review
+	].slice(0, 10 - fair);
+	let keys = [...pairUp(spreadOut(shuffle(main, random))), ...weakest(fairKeys(level), fair, box, random)];
+	if (opts.guided) {
+		const rest = [...keys];
+		rest.splice(rest.indexOf(GUIDED_KEY), 1);
+		keys = spreadOut([GUIDED_KEY, ...rest]);
+	}
+	const goes = keys.map((key) => ({
+		key,
+		v: key.startsWith("dbl:") && random() < .5 ? 0 : key.startsWith("dbl:") ? 1 : 0,
+		h: helpForStats(byKey.get(key))
+	}));
+	return {
+		seed,
+		level,
+		gold: !!opts.gold,
+		goes
+	};
+}
+const pack = earlyFactsPack();
+/** Weka's add facts, which near doubles read from (`add:6+7`). */
+const addPack = new BandedPack(BANDED_PACKS["add-sub"]);
+/** What is read aloud: the story of the go, never the answer. */
+function spokenFor(kind, n, guided = false) {
+	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : kind === "near" ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?` : `${n} fish. Can the two chicks share them fairly?`;
+	return guided ? `${line} Tap the number the hand points to.` : line;
+}
+/**
+* The three wrong numbers of a double or a half, each tagged with its kind, and the four choices in an order fixed by the
+* seed. Never the pack's n times n (25 for 5 + 5, a times-tables slip). The tell is parity: at most two of the four share
+* the right answer's, so shape alone can't pick it out (shared/kit/mistakes.ts). Of the choices that fit, the one showing
+* the most different kinds wins, ties broken by the seed.
+*/
+function mistakeChoices(kind, n, random) {
+	const answer = kind === "double" ? 2 * n : kind === "near" ? 2 * n + 1 : n / 2;
+	const core = kind === "near" ? [
+		[2 * n, "noExtra"],
+		[2 * n + 2, "bigger"],
+		[answer - 2, "miscount"],
+		[answer + 2, "miscount"]
+	] : kind === "double" ? [
+		[n, "same"],
+		[n + 1, "plus1"],
+		[answer - 1, "miscount"],
+		[answer + 1, "miscount"],
+		...n >= 3 ? [[n + 2, "plus2"]] : []
+	] : [
+		[n, "all"],
+		[n - 2, "minus2"],
+		[2 * n, "double"],
+		[answer - 1, "miscount"],
+		[answer + 1, "miscount"]
+	];
+	const spare = [
+		answer + 2,
+		answer - 2,
+		answer + 3,
+		answer - 3
+	].map((x) => [x, "miscount"]);
+	const make = (list) => {
+		const kinds = new Map();
+		for (const [x, k] of list) if (!kinds.has(x)) kinds.set(x, k);
+		return tagWrongs([...kinds.keys()].filter((x) => x >= 1 && x !== answer), (x) => kinds.get(x) ?? null);
+	};
+	let pool = make(core);
+	if (pool.length < 3) pool = make([...core, ...spare]);
+	const parity = (x) => x % 2;
+	const combos = [];
+	for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) combos.push([
+		pool[a],
+		pool[b],
+		pool[c]
+	]);
+	const rank = (c) => (atMostShareTell(answer, c.map((w) => w.n), parity) ? 10 : 0) + new Set(c.map((w) => w.kind)).size;
+	const best = Math.max(...combos.map(rank));
+	const top = combos.filter((c) => rank(c) === best);
+	const wrongs = top[Math.floor(random() * top.length)];
+	return {
+		choices: shuffle([answer, ...wrongs.map((w) => w.n)], random),
+		wrongs
+	};
+}
+/** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
+function showGo(round, index, plan) {
+	const fact = parseKey(plan.key);
+	if (!fact || plan.v !== 0 && plan.v !== 1) return null;
+	if (fact.kind === "near" && plan.v !== 0) return null;
+	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+	const q = fact.kind === "near" ? addPack.rebuild(plan.key, [
+		fact.n,
+		fact.n + 1,
+		0
+	], true, random) : pack.rebuild(plan.key, [fact.n, plan.v], true, random);
+	const answer = fact.kind === "double" ? 2 * fact.n : fact.kind === "near" ? 2 * fact.n + 1 : fact.kind === "half" ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
+	if (!q || !q.choices || q.answer !== answer) return null;
+	const base = {
+		...plan,
+		kind: fact.kind,
+		n: fact.n,
+		answer,
+		parts: q.parts,
+		spoken: spokenFor(fact.kind, fact.n)
+	};
+	if (fact.kind === "fair") return {
+		...base,
+		choices: q.choices,
+		wrongs: []
+	};
+	const own = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+	own();
+	own();
+	return {
+		...base,
+		...mistakeChoices(fact.kind, fact.n, own)
+	};
+}
+/** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */
+function showRound(round) {
+	return round.goes.map((plan, i) => {
+		const go = showGo(round, i, plan);
+		if (!go) throw new Error(`Go ${i} (${plan.key}) can't be made`);
+		return go;
+	});
+}
+//#endregion
+//#region shared/korora/play.ts
+/** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
+function replay(round, taps) {
+	const goes = showRound(round);
+	const answers = [];
+	const counted = new Set();
+	let goesDone = 0;
+	let mistakes = 0;
+	let triedThisGo = false;
+	for (const { pick, ms } of taps) {
+		const go = goes[goesDone];
+		if (!go) throw new Error("Taps after the round was done");
+		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
+		const right = pick === go.answer;
+		if (!triedThisGo && !counted.has(go.key)) {
+			answers.push({
+				key: go.key,
+				correct: right,
+				ms
+			});
+			counted.add(go.key);
+		}
+		triedThisGo = true;
+		if (right) {
+			goesDone++;
+			triedThisGo = false;
+		} else mistakes++;
+	}
+	return {
+		goesDone,
+		mistakes,
+		done: goesDone === goes.length && goes.length === 10,
+		answers
+	};
+}
+const METALS = [
+	"grey",
+	"bronze",
+	"silver",
+	"gold"
+];
+/** Ten stones, three changes each: thirty finished days to the dazzling gold dancing shoes. */
+const DAYS_PER_FISH = 10 * (METALS.length - 1);
+/**
+* Who crosses the stones, in order: Two-Shoes the penguin first (id korora), then a new New Zealand bird friend at a
+* fresh pool after each pair of gold shoes.
+* All birds, so the two little ones are always "chicks". The friends after Kororā are painted later.
+*/
+const FRIENDS = [
+	"korora",
+	"hoiho",
+	"kiwi",
+	"pukeko",
+	"kereru",
+	"takahe"
+];
+const wholeCount = (n) => {
+	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
+	return n;
+};
+function poolAfter(daysDone) {
+	const fish = Math.floor(wholeCount(daysDone) / DAYS_PER_FISH);
+	const day = daysDone % DAYS_PER_FISH;
+	const round = Math.floor(day / 10);
+	const pebbles = Array.from({ length: 10 }, (_, i) => METALS[round + (i < day % 10 ? 1 : 0)]);
+	return {
+		fish,
+		friend: FRIENDS[fish % FRIENDS.length],
+		day,
+		pebbles,
+		shoes: round === 0 ? null : round === 1 ? "bronze" : "silver",
+		today: [
+			"bronze",
+			"silver",
+			"gold"
+		][round],
+		help: [
+			"full",
+			"faint",
+			"none"
+		][round],
+		gold: round === 2
+	};
+}
+/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
+const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/** A finished challenge: one pebble changes on the first finish of each NZ day; playing again the same day is just for fun. */
+function finishChallenge(daysDone, lastPebbleDay, today) {
+	if (lastPebbleDay === today) return {
+		daysDone: wholeCount(daysDone),
+		lastPebbleDay,
+		pebbleChanged: null,
+		goldenFish: false,
+		shoesWon: null
+	};
+	const next = wholeCount(daysDone) + 1;
+	const shoesWon = next % 10 === 0 ? [
+		"gold",
+		"bronze",
+		"silver"
+	][next / 10 % 3] : null;
+	return {
+		daysDone: next,
+		lastPebbleDay: today,
+		pebbleChanged: daysDone % 10,
+		goldenFish: next % DAYS_PER_FISH === 0,
+		shoesWon
+	};
+}
+//#endregion
+//#region shared/korora/server.ts
+/**
+* What the `korora` server function does with a request from a signed-in pupil (docs/KORORA-PLAN.md, Penguin Pairs).
+* The function (supabase/functions/korora/handler.ts) checks the sign-in and the rate first; the preview's trial backend
+* calls this with services that keep everything in the browser, so both run exactly the same rules. Copied from Hop.
+*
+*   load    the pupil's pool (a new pupil has none), the level they play next, the class's help setting and today's NZ
+*           date by the server's clock;
+*   start   reads the pupil's maths records, makes today's ten goes from a fresh seed (the level by the 70% rule, "fair
+*           or not?" on gold days, double 2 first on the very first challenge) and keeps the round (any other open
+*           challenge is closed);
+*   finish  replays the taps on the kept round, records each fact once for the maths records (right only if the first
+*           pick was right), changes a pebble on the first finish of the NZ day, and keeps the furthest level reached.
+*           A Golden Fish is an achievement (the hub migration counts them from the finished days).
+*
+* Nothing that counts comes from the browser. A challenge finishes once.
+*/
+const unplayed = () => ({
+	daysDone: 0,
+	lastPebbleDay: null,
+	reached: 1,
+	version: 0
+});
+const HELP_SETTINGS = [
+	"fade",
+	"always",
+	"off"
+];
+/** The longest a tap is said to have taken (the maths records keep at most two minutes anyway). */
+const MAX_TAP_MS = 6e5;
+/** Tries at a save before giving up (another request saved in between). */
+const TRIES = 4;
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+const busy = () => no(503, "The pool couldn’t be reached just now. Try again in a moment.");
+const unreadable = () => no(400, "That couldn’t be read.");
+const isWhole = (v, max) => Number.isInteger(v) && v >= 0 && v <= max;
+function readTaps(v) {
+	if (!Array.isArray(v) || v.length > 200) return null;
+	const taps = [];
+	for (const t of v) {
+		if (!t || typeof t !== "object") return null;
+		const { pick, ms } = t;
+		if (!isWhole(pick, 1e3) || !isWhole(ms, MAX_TAP_MS)) return null;
+		taps.push({
+			pick,
+			ms
+		});
+	}
+	return taps;
+}
+/** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
+function withAnswers(facts, answers) {
+	const byKey = new Map(facts.map((s) => [s.key, s]));
+	const quick = JUNIOR_QUICK_MS;
+	for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
+	return [...byKey.values()];
+}
+async function handleKorora(services, player, body) {
+	const settings = await services.settings(player);
+	if (!settings) return busy();
+	if (!settings.enabled) return no(403, "Penguin Pairs is not switched on for your class.", { code: "game-off" });
+	const today = () => nzDate(new Date(services.now()));
+	if (body.action === "load") {
+		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
+		if (s === "busy" || facts === "busy") return busy();
+		return ok({
+			daysDone: s.daysDone,
+			lastPebbleDay: s.lastPebbleDay,
+			today: today(),
+			level: levelFor(facts, s.reached),
+			help: settings.help
+		});
+	}
+	if (body.action === "start") {
+		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
+		if (s === "busy" || facts === "busy") return busy();
+		const gold = poolAfter(s.daysDone).gold;
+		const guided = s.daysDone === 0 && s.lastPebbleDay === null;
+		for (let tries = 0; tries < TRIES; tries++) {
+			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
+				reached: s.reached,
+				gold,
+				guided
+			});
+			const kept = await services.start(player, round);
+			if (kept === "busy") return busy();
+			if (kept) return ok({ round });
+		}
+		return busy();
+	}
+	if (body.action === "finish") {
+		const seed = body.seed;
+		const taps = readTaps(body.taps);
+		if (!isSeed(seed) || !taps) return unreadable();
+		const kept = await services.round(player, seed);
+		if (kept === "busy") return busy();
+		if (!kept) return no(409, "That isn’t one of your challenges.", { code: "not-yours" });
+		if (!kept.open) return no(409, "That challenge has finished.", { code: "ended" });
+		let played;
+		try {
+			played = replay(kept.round, taps);
+		} catch {
+			return unreadable();
+		}
+		if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
+		const at = services.now();
+		const answers = played.answers.map((a) => ({
+			...a,
+			at
+		}));
+		const facts = await services.facts(player);
+		for (let tries = 0; tries < TRIES; tries++) {
+			const s = await services.load(player);
+			if (s === "busy") return busy();
+			const levelBefore = isLevel(kept.round.level) ? Math.max(kept.round.level, s.reached) : s.reached;
+			const reached = facts === "busy" ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
+			const result = finishChallenge(s.daysDone, s.lastPebbleDay, today());
+			const progress = {
+				daysDone: result.daysDone,
+				lastPebbleDay: result.lastPebbleDay,
+				reached
+			};
+			const saved = await services.finish(player, seed, s.version, progress, {
+				taps,
+				mistakes: played.mistakes
+			});
+			if (saved === "busy") return busy();
+			if (saved) {
+				await services.recordAnswers(player, `korora:${seed}`, answers);
+				if (result.goldenFish) await services.progressChanged(player);
+				return ok({
+					...result,
+					level: reached,
+					levelBefore,
+					topSecure: facts !== "busy" && topSecure(withAnswers(facts, answers))
+				});
+			}
+			const again = await services.round(player, seed);
+			if (again === "busy") return busy();
+			if (!again?.open) return no(409, "That challenge has finished.", { code: "ended" });
+		}
+		return busy();
+	}
+	return unreadable();
+}
 //#endregion
 //#region shared/maths/skillPacks/bedmas.ts
 /**
