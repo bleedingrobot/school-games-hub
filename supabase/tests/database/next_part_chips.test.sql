@@ -19,7 +19,7 @@ create function pg_temp.nz_today() returns date language sql as $$ select (now()
 
 -- ---- The daily games have the hook ----
 select is((select array_agg(id order by id) from public.hub_games where day_fn is not null),
-  array['beanstalk', 'hop', 'pigeon', 'korora', 'pipi', 'tui', 'weka'], 'the seven daily games have the day hook');
+  array['beanstalk', 'hop', 'korora', 'pigeon', 'pipi', 'tui', 'weka'], 'the seven daily games have the day hook');
 select throws_ok($$ update public.hub_games set day_fn = 'public.beanstalk_last_played(uuid)' where id = 'beanstalk' $$,
   '22023', null, 'a hook with the wrong shape is refused');
 
