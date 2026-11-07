@@ -1,4 +1,4 @@
--- Parrot’s See-saw (migration 20261107000400, short id parrot): progress, challenges, the switch and the help setting, and
+-- Parrot’s See-saw (migration 20261107000500, short id parrot): progress, challenges, the switch and the help setting, and
 -- the hub hooks with achievements for days, steps and Golden Bells.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh parrot, then scripts/scratch-test.sh parrot supabase/tests/database/parrot.test.sql

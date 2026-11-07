@@ -9,13 +9,13 @@ import { createRoot } from 'react-dom/client';
 import { ParrotGame } from '../../src/games/parrot/ParrotGame';
 import { trialBackend } from '../../src/games/parrot/backend';
 import { SoundProvider } from '../../src/sound';
-import { HELP_SETTINGS } from '../../shared/parrot/server';
-import { STEPS, type HelpLevel, type Step } from '../../shared/parrot/round';
+import { HELP_SETTINGS } from '../../shared/kit/help';
+import { STEPS, type HelpLevel, type Step } from '../../shared/parrot/config';
 import '../../src/styles.css';
 import './preview.css';
 
 const trial = trialBackend({ storageKey: 'parrot-preview' });
-const HELP_WORDS = { fade: 'Fades with the child’s challenges', always: 'Always on (level 4, every berry)', off: 'Off: numbers only' };
+const HELP_WORDS = { fade: 'Fades with the child’s challenges', always: 'Always on (level 4, stones)', off: 'Off: equation only' };
 const LEVELS: HelpLevel[] = [5, 4, 3, 2, 1, 0];
 
 createRoot(document.getElementById('root') as HTMLElement).render(
@@ -36,7 +36,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             {STEPS.map((s) => (
               <button key={s.step} type="button" title={s.name} onClick={() => { trial.tools.setPlace(s.step as Step, trial.tools.place().level); h.reload(); }}>{s.step}</button>
             ))}
-            <p>Help level (5 every berry counted in, 0 numbers only):</p>
+            <p>Help level (5 stones with live tilt, 0 equation only):</p>
             {LEVELS.map((l) => (
               <button key={l} type="button" onClick={() => { trial.tools.setPlace(trial.tools.place().step, l); h.reload(); }}>{l}</button>
             ))}
