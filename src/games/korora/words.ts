@@ -23,8 +23,27 @@ export const WORDS = {
   goesDone: (n: number, of: number) => `${n} of ${of} done`,
   guideHere: 'try this one',
   tryAgain: 'Try again!',
-  /** The second wrong tap: the pictures come back and Bella counts the fish with the child. */
-  countWithMe: 'Let’s count them together.',
+  /** The second wrong tap of a go: Bella explains the whole go (maths review R5). */
+  lookTogether: 'Let’s look together.',
+  /** Said once she has explained, then the question is read again. */
+  nowTry: 'Now you try.',
+  /** On the "Let's look together" panel once it can be skipped. */
+  goOn: 'My turn',
+  /** The double: the whole go, ending on the answer, while the fish are counted. */
+  lookDouble: (n: number) => `Double ${n} is ${n} fish and ${n} fish in the water. Count them all: ${2 * n}.`,
+  /** The half: the fish are dealt out one each, and one chick's share is counted. */
+  lookHalf: (n: number) => `Share ${n} fish, one for you and one for me. Count one chick’s share: ${n / 2}.`,
+  /** Why the first wrong tap of a go is not right, for each mistake (the number it was is on the stone, not in the line). */
+  why: {
+    same: (n: number) => `Double ${n} is ${n} and ${n} again.`,
+    plus1: 'Double means the same again, not one more.',
+    plus2: (n: number) => `Double ${n} is two lots of ${n}, not ${n} and 2.`,
+    miscountDouble: 'Count every fish, the rock and the water, one at a time.',
+    all: 'That is all the fish. Half is one chick’s share.',
+    miscountHalf: 'Share them out, one for you and one for me. Then count one share.',
+    minus2: 'Half means two equal groups.',
+    double: 'Half is smaller. The pile goes into two nests.',
+  },
   yes: (n: number) => `${n}!`,
   fair: 'Fair share',
   notFair: 'One left over',

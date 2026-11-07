@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { seeded } from '../seededRandom';
 import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_FISH, finishChallenge, poolAfter } from './progress';
 import { replay, type Tap } from './play';
-import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Level, type Round } from './round';
+import { sharingTell } from '../kit/mistakes';
+import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, type Level, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -48,6 +50,71 @@ describe('the round', () => {
     expect(paired.filter(({ i, r }) => followsItsDouble(r.goes, i + 1)).length).toBeGreaterThan(paired.length / 2);
     // The very first challenge starts with double 2.
     for (const seed of seeds) expect(makeRound(seed, [], { guided: true }).goes[0].key).toBe(GUIDED_KEY);
+  });
+});
+
+describe('the wrong stones (mistakes that teach)', () => {
+  const doubles = [...Array(10)].map((_, i) => i + 1);
+  const halves = [...Array(10)].map((_, i) => (i + 1) * 2);
+  const allowed: Record<'double' | 'half', WrongKind[]> = { double: ['same', 'plus1', 'plus2', 'miscount'], half: ['all', 'minus2', 'double', 'miscount'] };
+
+  it('are three real mistakes each, tagged, never n times n, never a lone shape, and the same every time for a seed', () => {
+    for (const seed of seeds) {
+      for (const [kind, ns] of [['double', doubles], ['half', halves]] as const) {
+        for (const n of ns) {
+          const answer = kind === 'double' ? 2 * n : n / 2;
+          const a = mistakeChoices(kind, n, seeded(seed));
+          expect(a).toEqual(mistakeChoices(kind, n, seeded(seed)));
+          expect(a.choices).toHaveLength(4);
+          expect(a.choices.filter((c) => c === answer)).toHaveLength(1);
+          expect(new Set(a.choices).size).toBe(4);
+          expect(a.wrongs).toHaveLength(3);
+          expect([...a.wrongs.map((w) => w.n), answer].sort()).toEqual([...a.choices].sort());
+          for (const w of a.wrongs) {
+            expect(allowed[kind]).toContain(w.kind);
+            expect(w.n).toBeGreaterThanOrEqual(1);
+            if (w.kind === 'plus2') expect(n).toBeGreaterThanOrEqual(3);
+            if (w.kind === 'miscount') expect(Math.abs(w.n - answer)).toBeLessThanOrEqual(3);
+          }
+          // No times-tables slip (25 for 5 + 5), unless the miscount happens to be that close.
+          if (kind === 'double' && n * n !== answer && Math.abs(n * n - answer) > 3) expect(a.choices).not.toContain(n * n);
+          // At most two of the four share the answer's shape (odd or even).
+          expect(sharingTell(answer, a.choices, (x) => x % 2)).toBeLessThanOrEqual(2);
+        }
+      }
+    }
+    // Big doubles show the real slips: 5 + 5 never offers 25, and double 6 offers 6 (same) and 8 (plus 2) among its slips.
+    const kinds = new Set(seeds.flatMap((seed) => mistakeChoices('double', 6, seeded(seed)).wrongs.map((w) => `${w.kind}:${w.n}`)));
+    expect(kinds).toContain('same:6');
+    expect(kinds).toContain('plus2:8');
+    expect(kinds).toContain('plus1:7');
+    expect(seeds.some((seed) => mistakeChoices('half', 12, seeded(seed)).wrongs.some((w) => w.kind === 'all' && w.n === 12))).toBe(true);
+  });
+
+  it('are the same on the server (a rebuilt round gives the same stones) and fair or not keeps its two', () => {
+    for (const seed of seeds.slice(0, 20)) {
+      const round = makeRound(seed, recordsFor(4), { gold: true });
+      showRound(round).forEach((go, i, all) => {
+        expect(go).toEqual(showRound(makeRound(seed, recordsFor(4), { gold: true }))[i]);
+        expect(go.wrongs).toHaveLength(go.kind === 'fair' ? 0 : 3);
+        expect(go.choices).toHaveLength(go.kind === 'fair' ? 2 : 4);
+        expect(all).toHaveLength(GOES_PER_ROUND);
+      });
+    }
+  });
+
+  it('score only the first tap of a go: two wrong taps, a wrong one in "Now you try", then right, is one wrong answer', () => {
+    for (const seed of seeds.slice(0, 10)) {
+      const round = makeRound(seed, recordsFor(2));
+      const taps = showRound(round).flatMap((go): Tap[] => {
+        const [a, b] = go.wrongs;
+        return [{ pick: a.n, ms: 3000 }, { pick: b.n, ms: 3000 }, { pick: a.n, ms: 9000 }, { pick: go.answer, ms: 1000 }];
+      });
+      const end = replay(round, taps);
+      expect(end).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, mistakes: 3 * GOES_PER_ROUND });
+      expect(end.answers.every((x) => !x.correct && x.ms === 3000)).toBe(true);
+      expect(end.answers.map((x) => x.key)).toEqual([...new Set(round.goes.map((g) => g.key))]);
+    }
   });
 });
 
