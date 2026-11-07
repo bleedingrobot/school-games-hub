@@ -7,7 +7,8 @@ import type { SkipStep } from '../../../shared/maths/skillPacks/earlyFacts';
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/hop/memoryServices';
 import type { Tap } from '../../../shared/hop/play';
 import type { FinishResult } from '../../../shared/hop/progress';
-import type { Round } from '../../../shared/hop/round';
+import { stepKeys, type Round } from '../../../shared/hop/round';
+import { newStats } from '../../../shared/maths/leitner';
 import { handleHop, type HopReply } from '../../../shared/hop/server';
 
 export interface HopState {
@@ -17,6 +18,8 @@ export interface HopState {
   today: string;
   /** The step the next challenge counts in. */
   step: SkipStep;
+  /** The top step (twos) is secure, so the finish screen can point on to Penguin Pairs. */
+  topSecure: boolean;
   /** False when the teacher has turned the hops' step labels off for the class. */
   labels: boolean;
 }
@@ -25,6 +28,8 @@ export interface HopFinish extends FinishResult {
   /** The step for next time, and the one this challenge was in: different when the child moved up. */
   step: SkipStep;
   stepBefore: SkipStep;
+  /** The top step is secure after this challenge. */
+  topSecure: boolean;
 }
 
 export interface HopBackend {
@@ -113,6 +118,15 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
   };
   const pupil = (s: TrialSave) => s.data.players[PUPIL] ?? { daysDone: 0, lastPadDay: null, reached: 10 as SkipStep, version: 1 };
   const tools = {
+    /** Counts in this step and makes every fact of it secure (box 3), as if the child had mastered it. */
+    makeSecure: (step: SkipStep) =>
+      change((s) => {
+        const p = pupil(s);
+        s.data.players[PUPIL] = { ...p, reached: step, version: p.version + 1 };
+        const have = s.data.facts[PUPIL] ?? [];
+        const keys = new Set(stepKeys(step));
+        s.data.facts[PUPIL] = [...have.filter((f) => !keys.has(f.key)), ...[...keys].map((key) => ({ ...newStats(key), attempts: 6, correct: 6, box: 3 }))];
+      }),
     nextDay: () => change((s) => void (s.dayShift += 1)),
     /** Jumps to just after this many finished days, as if each was on its own day. */
     jumpTo: (daysDone: number) =>
