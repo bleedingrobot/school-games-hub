@@ -13,6 +13,7 @@
  * 10s until day 21. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
  * of them but never drops a child back a step.
  */
+import { atMostShareTell, sharingTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS, type SkipKind, type SkipStep } from '../maths/skillPacks/earlyFacts';
@@ -68,15 +69,43 @@ export interface Round {
   hops: HopPlan[];
 }
 
+/**
+ * The mistake behind a wrong glow-worm (maths review R5, section 3.3). The kind picks the picture and the why-line.
+ *  off1  one more or one less than the answer: counted the jump as a pad (39 or 41 for 40)
+ *  stay  the pad Hop is sitting on: did not hop
+ *  far   one hop too far (counting back: one hop too few): skipped a pad
+ *  step  where a different step would land: lost the step
+ *  way   counting back, the number going up: went the wrong way
+ */
+export type HopMistake = 'off1' | 'stay' | 'far' | 'step' | 'way';
+
 /** A hop as shown: the pads (with '?' for the glowing gap), the words to read aloud and the glow-worms' numbers. */
 export interface Hop extends HopPlan {
   /** The pads left to right, as the shared pack shows them: ["20,", "30,", "?,", "50"]. */
   parts: string[];
+  /** The pads left to right as numbers, the gap's answer in its place: [20, 30, 40, 50]. */
+  terms: number[];
+  /** Where the gap is in `terms`. */
+  gap: number;
+  /** The pad Hop sits on before the hop: the one before the gap. */
+  before: number;
+  /** Counting back: the hop goes down. */
+  back: boolean;
   prompt: string;
   spoken: string;
-  /** Four glow-worms, the right one among them. */
+  /** Four glow-worms in the order fixed by the seed, the right one among them. */
   choices: number[];
+  /** The three wrong ones and the mistake behind each. */
+  wrongs: Wrong<HopMistake>[];
 }
+
+/**
+ * What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
+ * Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
+ */
+export const tellOf = (step: SkipStep) => (n: number): boolean => n % step === 0;
+/** The numbers on the 100 board and in the game: no landing is below 0 or above 100. */
+const inRange = (n: number) => n >= 0 && n <= 100;
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -123,11 +152,50 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   return { seed, step, gold, hops };
 }
 
-/** A hop made again from its plan by the shared pack, with its glow-worms in an order fixed by the seed. Null if the plan isn't one the pack could make. */
+/**
+ * A hop made again from its plan by the shared pack, with its glow-worms built here and put in an order fixed by the
+ * seed (the shared pack's own wrong numbers are not used: "ends in 0" would win on tens). The four are the answer, one
+ * more on the same step (the pad Hop sits on, one hop too far, or when counting back the number going up), then two that
+ * do not share the answer's ending: one more or less than the answer, and where a different step would land. Null if the
+ * plan isn't one the pack could make.
+ */
 export function showHop(round: Pick<Round, 'seed'>, index: number, plan: HopPlan): Hop | null {
-  const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
-  if (!q || !q.choices || q.answer !== plan.answer) return null;
-  return { ...plan, parts: q.parts, prompt: q.prompt ?? '', spoken: q.spoken, choices: q.choices };
+  const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+  const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, random);
+  const m = /^skip(10|5|2):(up|next|back):\d+$/.exec(plan.key);
+  if (!q || !q.choices || q.answer !== plan.answer || !m) return null;
+  const step = Number(m[1]) as SkipStep;
+  const back = m[2] === 'back';
+  const terms = q.parts.map((p) => (p.startsWith('?') ? plan.answer : Number(p.replace(/,$/, ''))));
+  const gap = q.parts.findIndex((p) => p.startsWith('?'));
+  if (gap < 1 || terms.some((n) => !Number.isInteger(n))) return null;
+  const before = terms[gap - 1];
+  const dir = back ? -1 : 1;
+  const a = plan.answer;
+  const tell = tellOf(step);
+  const taken = new Set<number>([a]);
+  const fresh = (n: number) => inRange(n) && !taken.has(n);
+
+  // One more on the same step.
+  const sameStep: [number, HopMistake][] = [[before, 'stay']];
+  if (fresh(a + dir * step)) sameStep.push([a + dir * step, 'far']);
+  if (back && fresh(before + step)) sameStep.push([before + step, 'way']);
+  const [same, sameKind] = sameStep[Math.floor(random() * sameStep.length)];
+  taken.add(same);
+  // Where a different step would land, from the pad Hop sits on: the first of 10, 5, 2, 1 that is not on this step's ending.
+  const other = [10, 5, 2, 1].filter((s) => s !== step).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
+  if (other === undefined) return null;
+  taken.add(other);
+  // One more or one less (the sign by the seed), the other if that one is out of range or taken.
+  const signs = random() < 0.5 ? [1, -1] : [-1, 1];
+  const off = signs.map((d) => a + d).find((n) => fresh(n) && !tell(n));
+  if (off === undefined) return null;
+
+  const kinds = new Map<number, HopMistake>([[same, sameKind], [other, 'step'], [off, 'off1']]);
+  const wrongs = tagWrongs([off, same, other], (n) => kinds.get(n) ?? null);
+  const choices = shuffle([a, ...wrongs.map((w) => w.n)], random);
+  if (new Set(choices).size !== 4 || !atMostShareTell(a, choices, tell) || sharingTell(a, choices, tell) !== 2) return null;
+  return { ...plan, parts: q.parts, terms, gap, before, back, prompt: q.prompt ?? '', spoken: q.spoken, choices, wrongs };
 }
 
 /** Every hop of a round as shown. Throws if a saved round has a hop the pack can't make. */
