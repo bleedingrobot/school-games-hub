@@ -1,6 +1,6 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/beanstalk/progress';
-import { mistakeKind, type Target } from '../../../shared/beanstalk/round';
+import { mistakeKind, unitOf, type Target } from '../../../shared/beanstalk/round';
 
 /** "7 tens", "1 hundred": a number counted in the beanstalk's dots. */
 const inDots = (n: number, target: number) => {
@@ -38,7 +38,16 @@ export const WORDS = {
     const of = (n: number) => `${n / step} ${n === step ? unit : `${unit}s`}`;
     return `Each dot is a ${unit}. ${of(a)} and ${of(b)} make 10 ${unit}s. That is ${target}.`;
   },
+  /** On the 20 beanstalk's first challenge: the same pairs, now two ten-frames full (maths review R8). */
+  bridge20: (a: number, b: number) => `Two ten-frames make 20. ${a} and ${b} make 20.`,
   guideHere: 'try this one',
+  /**
+   * The missing leaf (maths review R8): one leaf is already picked and the child taps the one that is missing, "7 + ? = 10".
+   * After it, the take-away form: "So 10 take 7 is 3."
+   */
+  missingSum: (a: number, target: number) => `${a} + ? = ${target}`,
+  missingAsk: (a: number, target: number) => `${a} and what make ${target}? Tap the missing leaf.`,
+  takeAway: (a: number, target: number) => `So ${target} take ${a} is ${target - a}.`,
   right: (a: number, b: number) => `${a} and ${b} make ${a + b}!`,
   /** Under the ten-frame on the 100 and 1000 beanstalks: each dot is a ten (or a hundred). */
   dotsEach: (step: number) => `${step} each`,
@@ -64,9 +73,9 @@ export const WORDS = {
   /** After the second wrong pair of a go: the game shows a leaf's partner (maths review R5). */
   lookTogether: "Let's look together.",
   /** The leaf's frame fills with its partner's dots, counted: "7 and 1, 2, 3 more make 10." */
-  fillUp: (n: number, target: number) => {
-    const more = Array.from({ length: (target - n) / (target / 10) }, (_, i) => i + 1).join(', ');
-    return target === 10 ? `${n} and ${more} more make 10.` : `${inDots(n, target)} and ${more} more make ${inDots(target, target)}. That is ${target}.`;
+  fillUp: (n: number, target: Target) => {
+    const more = Array.from({ length: (target - n) / unitOf(target) }, (_, i) => i + 1).join(', ');
+    return target <= 20 ? `${n} and ${more} more make ${target}.` : `${inDots(n, target)} and ${more} more make ${inDots(target, target)}. That is ${target}.`;
   },
   nowTry: (n: number) => `Now you try: what goes with ${n}?`,
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
@@ -79,5 +88,8 @@ export const WORDS = {
   home: 'Home',
   voiceOn: 'Voice on',
   voiceOff: 'Voice off',
+  /** The finish screen's "what's next" card (maths review R8): shown when the top sum is secure and Weka is on. */
+  nextTitle: 'You know your pairs. Use them to add across ten.',
+  nextButton: 'Try Weka',
   eggs: (n: number) => `${n} Golden ${n === 1 ? 'Egg' : 'Eggs'}`,
 } as const;
