@@ -5512,6 +5512,10 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region shared/kit/mistakes.ts
+/** True when two of the numbers on screen are one unit off the target: the tempting near miss every full tray has. */
+const hasNearMiss = (numbers, target, unit = 1) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === unit));
+//#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
 function seeded(seed) {
@@ -5567,8 +5571,6 @@ const bondKey = (n, target = 10) => {
 };
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
 const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
-/** True when two of the floating numbers are one unit off the sum: the tempting near-miss every full tray has. */
-const hasNearMiss = (numbers, target) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === target / 10));
 /**
 * Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
 * come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
@@ -5591,7 +5593,7 @@ function letIn(round, inPlay, used) {
 			...numbers,
 			round.leaves[2 * k],
 			round.leaves[2 * k + 1]
-		], round.target));
+		], round.target, round.target / 10));
 		if (tempting === void 0) return;
 		inPlay.push(tempting);
 	}

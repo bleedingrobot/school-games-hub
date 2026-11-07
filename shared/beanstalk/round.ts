@@ -15,6 +15,7 @@
  * 0 + 1000 are left out, as 0 + 10 is.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { hasNearMiss, kindByUnits, unitsOff } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
 
 export const PAIRS_PER_ROUND = 10;
@@ -108,16 +109,8 @@ const floating = (inPlay: readonly number[], used: ReadonlySet<number>): number[
  * adding tens as if they were ones (30 + 60 = 90 is 9 tens, not 10). Null for a right pair.
  */
 export type MistakeKind = 'over' | 'under' | 'close' | 'digit';
-export function mistakeKind(total: number, target: Target): MistakeKind | null {
-  const units = (total - target) / (target / 10);
-  if (units === 0) return null;
-  if (Math.abs(units) === 1) return target === 10 ? 'close' : 'digit';
-  return units > 0 ? 'over' : 'under';
-}
-
-/** True when two of the floating numbers are one unit off the sum: the tempting near-miss every full tray has. */
-const hasNearMiss = (numbers: readonly number[], target: Target): boolean =>
-  numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === target / 10));
+export const mistakeKind = (total: number, target: Target): MistakeKind | null =>
+  kindByUnits(unitsOff(total, target, target / 10), { one: target === 10 ? 'close' : 'digit', over: 'over', under: 'under' });
 
 /**
  * Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
@@ -139,7 +132,7 @@ function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void 
       inPlay.push(waiting[0]);
       continue;
     }
-    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target));
+    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target, round.target / 10));
     // None does (only ever 1 + 9, 3 + 7 and 5 + 5 together): the tray stays at four leaves until a pair is made.
     if (tempting === undefined) return;
     inPlay.push(tempting);

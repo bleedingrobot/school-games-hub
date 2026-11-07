@@ -1,6 +1,7 @@
 # Game kit: one place for shared learning parts and resources
 
 Status: K1, K3 and K6 built (results below); K2, K4 and K5 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
+Status: K1 and K2 built (results below); K3 to K6 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
 
 ## 1. The problem
 
@@ -121,3 +122,21 @@ Built 7 Nov 2026 on branch `kit-models`. Nothing a child sees has changed: no ol
 
 **What should use it next:** the new games. N1 (Kererū's number line) needs `NumberLine` first; N3 and N5 need `TenFrame`; N4 needs `DotPicture` for arrays. The first of them to be built should check the pictures at phone width and add what it needs (for example a zoom lens) as its own small kit change.
 
+## 9. Stage K2 results (7 Nov 2026, branch `kit-mistakes`)
+
+**Built:**
+- `shared/kit/mistakes.ts`: wrong choices with a kind (`Wrong`, `tagWrongs`), the check that at most two choices share the right answer's tell (`atMostShareTell`), how far off a total is (`unitsOff`, `kindByUnits`), the near-miss check (`hasNearMiss`), and the two-tap flow of a go as a small state machine (`stepGo`: wrong once shows why, wrong twice is "Let's look together", then "Now you try", where wrong taps show why again but never look again). No game words: each game passes its own kinds and lines.
+- `src/kit/ShowWhy.tsx`: `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether`, which holds the timing of "Let's look together" (say the opening line, fill one step every 0.45 seconds while the explanation plays, skip after 3 seconds, give up after 12). The game passes its picture, lines, CSS prefix and `say`. The clip folder stays with the game: `say` already plays its own `public/voice/<game>/` clips.
+- `docs/kit/README.md`: new. It lists the kit parts built so far, how a game uses `mistakes` and `ShowWhy`, and the misconception bank (kinds, what each looks like, how to show why, an example line) for Beanstalk (built), Hop, Penguin Pairs, Pipi, Tūī and Weka, taken from R5.
+
+**Beanstalk moved, nothing a child or teacher sees changes.** `mistakeKind` and the near-miss check now call the kit, and `Round.tsx` uses the state machine and the kit screens. A digest of the old code stays in `shared/kit/kit.test.ts`: 1,500 seeds on each of the three sums, played clean and with wrong pairs first, covering every tray, kind, why-line, replay answer, tried pair and shown count. It matched before and after the move. The voice clips are untouched (same lines, same words).
+
+**Decisions:**
+- The state machine tracks only the phase and the wrong count. The game still keeps which choice is picked and which is being redone, because those are about its own pictures.
+- `mistakeKind` stays in `shared/beanstalk/round.ts` as a thin wrapper, because Beanstalk's kinds (`over`, `under`, `close`, `digit`) are its own words.
+- The "tell" check takes a function that names the tell, so each game decides what a tell is (ends in 0, parity, teen shape).
+- The bank lists the kinds from R5 for the five other games as plans, not built code; each game confirms them when its R5 is built.
+
+**Tests: 2 new** (in `shared/kit/kit.test.ts`): the mistakes rules and flow, and Beanstalk's digest. Only the `beanstalk` function bundles the changed files, so only it was rebuilt.
+
+**Next:** R5 for Hop first (its choices are the easiest to tag), then Penguin Pairs, Pipi, Tūī and Weka. Each builds its tagged choices in its own `shared/<game>/round.ts`, uses `atMostShareTell` to check them, and uses `ShowWhy`, `LookTogether` and `useLookTogether` with its own picture.
