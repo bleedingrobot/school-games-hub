@@ -2,6 +2,7 @@
 
 Status: K1, K3 and K6 built (results below); K2, K4 and K5 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
 Status: K1 and K2 built (results below); K3 to K6 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
+Status: K1 built and merged; K5 built on branch `r7-foundational-teacher` (results in section 8, not merged); K2 to K4 and K6 are plans. Written 7 Nov 2026. Goes with [docs/LEARNING-DESIGN.md](../LEARNING-DESIGN.md) (the rules) and [docs/GAME_DEVELOPMENT_GUIDE.md](../GAME_DEVELOPMENT_GUIDE.md) (how to build and go live).
 
 ## 1. The problem
 
@@ -140,3 +141,13 @@ Built 7 Nov 2026 on branch `kit-models`. Nothing a child sees has changed: no ol
 **Tests: 2 new** (in `shared/kit/kit.test.ts`): the mistakes rules and flow, and Beanstalk's digest. Only the `beanstalk` function bundles the changed files, so only it was rebuilt.
 
 **Next:** R5 for Hop first (its choices are the easiest to tag), then Penguin Pairs, Pipi, Tūī and Weka. Each builds its tagged choices in its own `shared/<game>/round.ts`, uses `atMostShareTell` to check them, and uses `ShowWhy`, `LookTogether` and `useLookTogether` with its own picture.
+
+## 11. Stage K5 results (7 Nov 2026, branch `r7-foundational-teacher`; also Stage 1 of R7)
+
+**Where the helpers are:** `shared/kit/teacherGrid.ts`, with no game words. `ideaLevel(keys, facts)` gives Not started / Learning / Secure / Fluent by the skill map's own 70% rule. `stuckFlags(pupil, rules)` gives the small "!" flags and the grey "gone quiet" one. `weakestFacts(pupils, keys, opts)` gives a class's weakest facts. The game passes its own words, level names, unit word and thresholds. Those, the idea table and the grid are in `src/teacher/foundational/` (`config.ts`, `ideas.ts`, `flags.ts`, `alerts.ts`, `FoundationalGrid.tsx`). Any later game uses the same code by adding to `ideas.ts` and `config.ts`.
+
+**Also built:** migration `20261107000100_foundational_teacher_views.sql` (`teacher_foundational_class`, `teacher_quick_looks_class`, same teacher guard as `teacher_class_skill_map`, revoked from `public, anon, authenticated` and granted to `authenticated`); `src/data/foundational.ts` (cached 10 s); `teacher.alerts` and `teacher.hardest` on Beanstalk, Hop, Penguin Pairs, Pipi, Tūī and Weka (lazy, in their own files); Beanstalk's Maths column now names the sums the class is on, and its student line leads with the pupil's own sum. The grid is not mounted anywhere yet.
+
+**Decisions:** "same level" counts distinct finished days at the current level among the last 10 rounds (not 5), so replays on one day do not count twice. Skipped: the "needed the show-me" flag (the answers are not stored per go) and Quick looks' "3 sessions without a stage finishing" (the data does not support it). Quick looks counts as a track, so "gone quiet" covers it. The cap of 5 foundational lines cannot be applied game by game; `useClassAlerts` must do it in Stage 2.
+
+**Checks:** typecheck, `test:changed` (47 files, 573 tests) and the build pass; `build:functions` changes no function. The database test (`foundational_teacher.test.sql`, 16 checks, another class's teacher and a student and anon refused with 42501) was NOT run: no Docker here. **Tests: 3 new** beyond it (`shared/kit/teacherGrid.test.ts` 2, `src/teacher/foundational/foundational.test.tsx` 1).

@@ -55,5 +55,8 @@ export const wekasSteppingStones: GameDefinition = {
     Settings: WekaTeacherSettings,
     StudentPanel: WekaStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherWeka').then((m) => m.wekaStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('weka', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('weka', classId)),
   },
 };

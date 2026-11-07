@@ -56,5 +56,8 @@ export const tuisTenTree: GameDefinition = {
     Settings: TuiTeacherSettings,
     StudentPanel: TuiStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherTui').then((m) => m.tuiStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('tui', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('tui', classId)),
   },
 };

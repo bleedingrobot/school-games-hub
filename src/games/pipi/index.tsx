@@ -52,5 +52,8 @@ export const pipisHiddenShells: GameDefinition = {
     Settings: PipiTeacherSettings,
     StudentPanel: PipiStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherPipi').then((m) => m.pipiStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('pipi', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('pipi', classId)),
   },
 };

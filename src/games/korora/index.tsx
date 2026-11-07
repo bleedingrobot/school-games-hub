@@ -56,5 +56,8 @@ export const penguinPairs: GameDefinition = {
     Settings: KororaTeacherSettings,
     StudentPanel: KororaStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherKorora').then((m) => m.kororaStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('korora', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('korora', classId)),
   },
 };

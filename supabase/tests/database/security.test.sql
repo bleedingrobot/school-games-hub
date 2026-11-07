@@ -84,6 +84,7 @@ $$, array[
   'teacher_set_weka', 'teacher_weka_class', 'teacher_weka_student',
   'teacher_set_tui', 'teacher_tui_class', 'teacher_tui_student',
   'teacher_set_decree',
+  'teacher_foundational_class', 'teacher_quick_looks_class',
   'teacher_class_badges', 'teacher_renew_badge',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',

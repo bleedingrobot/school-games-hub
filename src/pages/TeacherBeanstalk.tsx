@@ -25,12 +25,12 @@ export function BeanstalkTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-/** "Day 12 of 30 · 1 Golden Egg", or null if they haven't played. */
+/** "Bonds to 100 · day 12 of 30 on this beanstalk · 1 Golden Egg" (their own sum), or null if they haven't played. */
 export async function beanstalkStudentSummary(student: string): Promise<string | null> {
   const s = await fetchBeanstalkStudent(student);
   if (!s) return null;
   const stalk = stalkAfter(s.daysDone);
-  const parts = [`${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk (pairs to ${stalk.target})`];
+  const parts = [`Bonds to ${stalk.target}`, `${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk`];
   if (stalk.eggs) parts.push(`${stalk.eggs} Golden ${stalk.eggs === 1 ? 'Egg' : 'Eggs'}`);
   return parts.join(' · ');
 }
