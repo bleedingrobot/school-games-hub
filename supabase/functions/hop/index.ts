@@ -1209,6 +1209,15 @@ function stepFor(stats, reached = 10) {
 	return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 /**
+* Has the child gone as far as this game goes and got it secure (R8's "what's next")? The top step is secure by the same 70%
+* rule and the child has reached it, so a child whose records are only half made never gets the signpost early. Only then
+* does the finish screen point on to Penguin Pairs, because twos are the first step of doubling.
+*/
+function topSecure(stats, reached = 10) {
+	const top = STEPS[STEPS.length - 1];
+	return stepFor(stats, reached) === top && stepShare(stats, top) >= .7;
+}
+/**
 * The step label ("+10") for a fact from the child's own record of it (maths review R6, Weka's way with Hop's three
 * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
 * fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full label comes back, and a
@@ -1475,6 +1484,7 @@ function finishChallenge(daysDone, lastPadDay, today) {
 *           back on gold days) and keeps the round itself (any other open challenge is closed);
 *   finish  replays the taps on the kept round, records each hop for the maths records (right only if the first glow-worm
 *           picked was right), changes a pad on the first finish of the NZ day, and keeps the furthest step reached.
+*           Load and finish also say whether the top step is secure, for the finish screen's signpost on (R8).
 *           A Golden Glow Jar is an achievement (Stage 4's migration counts jars from the finished days).
 *
 * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
@@ -1538,6 +1548,7 @@ async function handleHop(services, player, body) {
 			lastPadDay: s.lastPadDay,
 			today: today(),
 			step: stepFor(facts, s.reached),
+			topSecure: topSecure(facts, s.reached),
 			labels: settings.labels
 		});
 	}
@@ -1596,10 +1607,12 @@ async function handleHop(services, player, body) {
 			if (saved) {
 				await services.recordAnswers(player, `hop:${seed}`, answers);
 				if (result.jar) await services.progressChanged(player);
+				const secureNow = facts === "busy" ? false : topSecure(withAnswers(facts, answers), reached);
 				return ok({
 					...result,
 					step: reached,
-					stepBefore
+					stepBefore,
+					topSecure: secureNow
 				});
 			}
 			const again = await services.round(player, seed);
