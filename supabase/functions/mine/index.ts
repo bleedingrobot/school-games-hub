@@ -2793,12 +2793,15 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+* "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+* Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+*/
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -2836,6 +2839,42 @@ const tenAnd = {
 				answer - 1,
 				answer + 10,
 				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess = {
+	label: "\"Ten less\" facts (14 − 10)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+		const t = String(10 + n);
+		const parts = v === 0 ? [
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		] : [
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
 				20,
 				1 + n
 			]
@@ -3756,6 +3795,7 @@ const families$2 = {
 	...equalsFamilies,
 	...arrayFamilies,
 	tenAnd,
+	tenLess,
 	tenUp: tenMove(true),
 	tenDown: tenMove(false),
 	oddEven,
@@ -3779,6 +3819,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"tenLess",
 		"tenUp",
 		"tenDown",
 		"oddEven",
@@ -6961,7 +7002,7 @@ const LADDER = [
 		label: "Ten and a number (10 + 4)",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys: earlyKeys("tenAnd"),
+		keys: [...earlyKeys("tenAnd"), ...earlyKeys("tenLess")],
 		built: true
 	},
 	{
@@ -7382,7 +7423,7 @@ function packIdOfKey(key) {
 	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
-	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -7614,7 +7655,7 @@ const NUMBER = /^\d{1,4}$/;
 const num = (text) => NUMBER.test(text) ? Number(text) : NaN;
 const whole$1 = (n) => Number.isInteger(n) && n >= 0;
 /** The adding and pairs-that-make-N records for two numbers that add to `total`. */
-function sumKeys(p, q, total) {
+function sumKeys(p, q, total, tenLess = false) {
 	const keys = [];
 	const lo = Math.min(p, q);
 	const hi = Math.max(p, q);
@@ -7622,7 +7663,7 @@ function sumKeys(p, q, total) {
 	if (total === 10) keys.push(`bond10:${lo}+${hi}`);
 	if (total === 20) keys.push(`bond20:${lo}+${hi}`);
 	if (p === q) keys.push(`dbl:${p}`);
-	if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`tenand:${lo}`);
+	if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`${tenLess ? "tenless" : "tenand"}:${lo}`);
 	if (lo === 10 && hi >= 10 && hi <= 19) keys.push(`tenup:${hi}`, `tendown:${hi + 10}`);
 	return keys;
 }
@@ -7711,14 +7752,14 @@ function solveParts(parts) {
 				c
 			];
 			answer = z === "?" ? total : x === "?" ? addendA : addendB;
-			if (whole$1(addendA) && whole$1(addendB)) keys = sumKeys(addendA, addendB, total);
+			if (whole$1(addendA) && whole$1(addendB)) keys = sumKeys(addendA, addendB, total, z !== "?");
 		} else if (op === "−") {
 			if (z === "?") {
 				answer = a - b;
-				if (whole$1(answer)) keys = sumKeys(b, answer, a);
+				if (whole$1(answer)) keys = sumKeys(b, answer, a, true);
 			} else if (y === "?") {
 				answer = a - c;
-				if (whole$1(answer)) keys = sumKeys(c, answer, a);
+				if (whole$1(answer)) keys = sumKeys(c, answer, a, true);
 			}
 		} else if (op === "×") {
 			const [f, g, product] = z === "?" ? [

@@ -32,10 +32,10 @@ export function TuiTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-/** "tenand:4" → "10 + 4". */
+/** "tenand:4" → "10 + 4", "tenless:4" → "14 − 10". */
 export const factWords = (key: string): string => {
-  const n = /^tenand:(\d+)$/.exec(key)?.[1];
-  return n ? `10 + ${n}` : key;
+  const m = /^ten(and|less):(\d+)$/.exec(key);
+  return m ? (m[1] === 'less' ? `1${m[2]} − 10` : `10 + ${m[2]}`) : key;
 };
 
 /** "12 of 30 days done at this tree · Step 3 How many more?, help level 2 · 1 Golden Nest · hardest: 10 + 4, 10 + 7", or null if they haven't played. */

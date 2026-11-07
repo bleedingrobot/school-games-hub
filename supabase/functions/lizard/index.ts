@@ -486,12 +486,15 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+* "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+* Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+*/
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -529,6 +532,42 @@ const tenAnd = {
 				answer - 1,
 				answer + 10,
 				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess = {
+	label: "\"Ten less\" facts (14 − 10)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+		const t = String(10 + n);
+		const parts = v === 0 ? [
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		] : [
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
 				20,
 				1 + n
 			]
@@ -1358,6 +1397,7 @@ const EARLY_FACTS = {
 		...equalsFamilies,
 		...arrayFamilies,
 		tenAnd,
+		tenLess,
 		tenUp: tenMove(true),
 		tenDown: tenMove(false),
 		oddEven,
@@ -1377,6 +1417,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"tenLess",
 		"tenUp",
 		"tenDown",
 		"oddEven",
@@ -6736,7 +6777,7 @@ const LADDER = [
 		label: "Ten and a number (10 + 4)",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys: earlyKeys("tenAnd"),
+		keys: [...earlyKeys("tenAnd"), ...earlyKeys("tenLess")],
 		built: true
 	},
 	{
@@ -7012,7 +7053,7 @@ function packIdOfKey(key) {
 	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
-	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;

@@ -239,7 +239,7 @@ const num = (text: string) => (NUMBER.test(text) ? Number(text) : NaN);
 const whole = (n: number) => Number.isInteger(n) && n >= 0;
 
 /** The adding and pairs-that-make-N records for two numbers that add to `total`. */
-function sumKeys(p: number, q: number, total: number): string[] {
+function sumKeys(p: number, q: number, total: number, tenLess = false): string[] {
   const keys: string[] = [];
   const lo = Math.min(p, q);
   const hi = Math.max(p, q);
@@ -247,8 +247,8 @@ function sumKeys(p: number, q: number, total: number): string[] {
   if (total === 10) keys.push(`bond10:${lo}+${hi}`);
   if (total === 20) keys.push(`bond20:${lo}+${hi}`);
   if (p === q) keys.push(`dbl:${p}`);
-  // "Ten and" facts: 10 + 4, 4 + 10, 14 − 10.
-  if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`tenand:${lo}`);
+  // "Ten and" facts: 10 + 4, 4 + 10; the "ten less" ones (14 − 10, 10 + ? = 14) are their own records.
+  if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`${tenLess ? 'tenless' : 'tenand'}:${lo}`);
   // Ten more and ten less on the teens: 14 + 10, 10 + 14, 24 − 10 (and 10 + 10).
   if (lo === 10 && hi >= 10 && hi <= 19) keys.push(`tenup:${hi}`, `tendown:${hi + 10}`);
   return keys;
@@ -307,15 +307,15 @@ export function solveParts(parts: unknown): Solved | null {
       // x + y = z with one blank.
       const [addendA, addendB, total] = z === '?' ? [a, b, a + b] : x === '?' ? [c - b, b, c] : [a, c - a, c];
       answer = z === '?' ? total : x === '?' ? addendA : addendB;
-      if (whole(addendA) && whole(addendB)) keys = sumKeys(addendA, addendB, total);
+      if (whole(addendA) && whole(addendB)) keys = sumKeys(addendA, addendB, total, z !== '?');
     } else if (op === '−') {
       // x − y = z: the pair is (y, x − y) with total x.
       if (z === '?') {
         answer = a - b;
-        if (whole(answer)) keys = sumKeys(b, answer, a);
+        if (whole(answer)) keys = sumKeys(b, answer, a, true);
       } else if (y === '?') {
         answer = a - c;
-        if (whole(answer)) keys = sumKeys(c, answer, a);
+        if (whole(answer)) keys = sumKeys(c, answer, a, true);
       }
     } else if (op === '×') {
       const [f, g, product] = z === '?' ? [a, b, a * b] : x === '?' ? [c / b, b, c] : [a, c / a, c];

@@ -3,7 +3,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_NEST, finishChallenge, treeAfter } from './progress';
 import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, nestShape, pictureFor, placeAfter, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, keyFor, LESS_KEYS, makeRound, nestShape, pictureFor, placeAfter, showGo, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
 import { emptyData, memoryServices } from './memoryServices';
 import { handleTui } from './server';
 
@@ -24,10 +24,13 @@ describe('the round', () => {
           expect(round).toEqual(makeRound(seed, records, { step, level }));
           expect(round.goes).toHaveLength(GOES_PER_ROUND);
           const keys = round.goes.map((g) => g.key);
-          for (const k of KEYS) expect(keys).toContain(k);
+          const numbers = keys.map((k) => Number(k.split(':')[1]));
+          for (let n = 1; n <= 9; n++) expect(numbers).toContain(n);
           keys.slice(1).forEach((k, i) => expect(k).not.toBe(keys[i]));
-          // Weakest first: the facts still in box 0 come before the secure ones.
-          expect(KEYS.slice(0, 4)).not.toContain(keys[0]);
+          // Each go counts towards the right record: 10 + n and n + 10 to "tenand", the minus ways to "tenless".
+          expect(round.goes.every((g) => g.key === keyFor(Number(g.key.split(':')[1]), g.v) && g.key.startsWith(g.v >= 2 ? 'tenless:' : 'tenand:'))).toBe(true);
+          // Weakest first: while only 10 + n is asked, the numbers still in box 0 come before the secure ones.
+          if (ways.every((w) => w <= 1)) expect(KEYS.slice(0, 4)).not.toContain(keys[0]);
           expect(round.goes.every((g) => (ways as readonly number[]).includes(g.v))).toBe(true);
           // Steps 2 to 4: seven of the new way.
           if (step > 1 && step < 5) expect(round.goes.filter((g) => g.v === ways[ways.length - 1])).toHaveLength(7);
@@ -152,13 +155,32 @@ describe('the kōwhai flowers', () => {
   });
 });
 
+describe('ten and and ten less records (R9)', () => {
+  it('shows a go by its way and key, still shows a challenge saved before the split, and refuses a mismatch', () => {
+    const round = { seed: 5 };
+    const plus = showGo(round, 0, { key: 'tenand:4', v: 1, l: 3 })!;
+    expect([plus.answer, plus.parts.join(' ')]).toEqual([14, '4 + 10 = ?']);
+    expect(showGo(round, 1, { key: 'tenless:4', v: 3, l: 3 })!.parts.join(' ')).toBe('14 − 10 = ?');
+    expect(showGo(round, 2, { key: 'tenless:4', v: 2, l: 3 })!.parts.join(' ')).toBe('10 + ? = 14');
+    expect(showGo(round, 3, { key: 'tenand:4', v: 3, l: 3 })!.answer).toBe(4); // saved before the split
+    expect(showGo(round, 4, { key: 'tenless:4', v: 0, l: 3 })).toBeNull();
+  });
+
+  it('a child who knows 10 + n but nothing of the minus facts still starts at step 3, and old tenand records are all that is read', () => {
+    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 4 });
+    expect(startFor(inBox(LESS_KEYS, 2))).toEqual({ step: 1, level: 5 });
+  });
+});
+
 describe('the what’s next card (R8)', () => {
-  it('is secure at seven of the nine ten-and facts, and the finish reply says so', async () => {
-    expect(topSecure(inBox(KEYS.slice(0, 7), 2))).toBe(true);
-    expect(topSecure(inBox(KEYS.slice(0, 6), 2))).toBe(false);
-    for (const [count, secure] of [[7, true], [6, false]] as const) {
+  it('is secure at 13 of the 18 ten-and and ten-less facts, not at nine plus facts alone, and the finish reply says so', async () => {
+    const all = [...KEYS, ...LESS_KEYS];
+    expect(topSecure(inBox(all.slice(0, 13), 2))).toBe(true);
+    expect(topSecure(inBox(all.slice(0, 12), 2))).toBe(false);
+    expect(topSecure(inBox(KEYS, 3))).toBe(false); // knows 10 + n, not yet the minus facts
+    for (const [count, secure] of [[13, true], [12, false]] as const) {
       const data = emptyData();
-      data.facts.p = inBox(KEYS.slice(0, count), 2);
+      data.facts.p = inBox(all.slice(0, count), 2);
       const services = memoryServices({ data, now: () => Date.UTC(2026, 10, 7, 22) });
       const started = await handleTui(services, 'p', { action: 'start' });
       const round = started.body.round as Round;
