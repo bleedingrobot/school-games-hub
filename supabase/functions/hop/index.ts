@@ -1322,15 +1322,80 @@ function seeded(seed) {
 		return seed / 2147483648;
 	};
 }
-const STEPS = SKIP_STEPS.map((s) => s.step);
+/**
+* The steps in order, each named by what it is saved as (`reached`, a round's `step`): the size of the hop for tens, fives,
+* twos, threes and fours, and 200 for tens past 100 (tens to 200, whose hop is still 10). Threes, fours and tens past 100
+* are R8's longer ladder: the shared keys sit beside the maths ladder (shared/maths/skillPacks/earlyFacts.ts), so only this
+* game asks them, and a step is passed by the same 70% rule.
+*/
+const HOP_STEPS = [
+	{
+		step: 10,
+		size: 10,
+		family: "skip10",
+		word: "tens",
+		top: 100
+	},
+	{
+		step: 5,
+		size: 5,
+		family: "skip5",
+		word: "fives",
+		top: 100
+	},
+	{
+		step: 2,
+		size: 2,
+		family: "skip2",
+		word: "twos",
+		top: 100
+	},
+	{
+		step: 3,
+		size: 3,
+		family: "skip3",
+		word: "threes",
+		top: 100
+	},
+	{
+		step: 4,
+		size: 4,
+		family: "skip4",
+		word: "fours",
+		top: 100
+	},
+	{
+		step: 200,
+		size: 10,
+		family: "skip10h",
+		word: "tens past 100",
+		top: 200
+	}
+];
+const STEPS = HOP_STEPS.map((s) => s.step);
+const spec = (step) => HOP_STEPS.find((s) => s.step === step);
+/** The step a key belongs to: skip3:up:9 and skip3o1:next:7 are threes, skip10h:... is tens past 100. */
+function stepOfKey(key) {
+	const k = parseSkip(key);
+	if (!k) return null;
+	const step = k.high ? 200 : k.step;
+	return isStep(step) ? step : null;
+}
+/** The shared family a key belongs to (the one that rolls and makes it). */
+const familyOfKey = (key) => {
+	const k = parseSkip(key);
+	return k ? EARLY_FACTS.families[k.high ? "skip10h" : k.offset ? `skip${k.step}o` : `skip${k.step}`] : void 0;
+};
 /** Seeds are whole numbers from 0 up to 2^31 - 1, the range the hub's random generator handles exactly. */
 const MAX_SEED = 2147483647;
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 const isStep = (n) => STEPS.includes(n);
 /** Every fact of one kind for a step: `skip5:next:25` and so on, from the shared pack's own list. */
 const pack = earlyFactsPack();
-const family = (step) => EARLY_FACTS.families[`skip${step}`];
-const keysOf = (step, kind) => family(step).keys.filter((k) => k.startsWith(`skip${step}:${kind}:`));
+const family = (step) => EARLY_FACTS.families[spec(step).family];
+const keysOf = (step, kind) => family(step).keys.filter((k) => k.includes(`:${kind}:`));
+/** Counting on from a start that isn't a multiple ("start at 3, hop by 10"), for a step that has it (not tens past 100). */
+const offsetKeys = (step) => step === 200 ? [] : EARLY_FACTS.families[`skip${step}o`]?.keys ?? [];
 /** The facts that decide whether a step is passed: counting up and what comes next. */
 const stepKeys = (step) => [...keysOf(step, "up"), ...keysOf(step, "next")];
 /** Share of a step's deciding facts that are secure (box 2 or higher). */
@@ -1340,8 +1405,8 @@ function stepShare(stats, step) {
 	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
 /**
-* The step for today: the first step not yet secure, but never below the furthest step reached. Once 2s are secure the
-* child stays on 2s (they still need the practice, and 2s are the top of this game).
+* The step for today: the first step not yet secure, but never below the furthest step reached. Once the last step is
+* secure the child stays on it (they still need the practice).
 */
 function stepFor(stats, reached = 10) {
 	const list = [...stats];
@@ -1350,14 +1415,16 @@ function stepFor(stats, reached = 10) {
 	return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 /**
-* Has the child gone as far as this game goes and got it secure (R8's "what's next")? The top step is secure by the same 70%
-* rule and the child has reached it, so a child whose records are only half made never gets the signpost early. Only then
-* does the finish screen point on to Penguin Pairs, because twos are the first step of doubling.
+* Is the child ready for the signpost to doubling (R8's "what's next")? Twos are the first step of doubling, so it shows once
+* the child has reached twos and they are secure by the same 70% rule (a child whose records are only half made never gets
+* it early). Threes, fours and tens past 100 come after twos and don't hold it back, so the signpost that showed once twos
+* were secure still shows.
 */
 function topSecure(stats, reached = 10) {
-	const top = STEPS[STEPS.length - 1];
-	return stepFor(stats, reached) === top && stepShare(stats, top) >= .7;
+	return STEPS.indexOf(reached) >= STEPS.indexOf(2) && stepShare(stats, 2) >= .7;
 }
+/** The steps this child has passed (secure by the 70% rule), so their non-multiple starts may be asked on a gold day. */
+const securedSteps = (stats) => STEPS.filter((s) => offsetKeys(s).length > 0 && stepShare(stats, s) >= .7);
 /**
 * The step label ("+10") for a fact from the child's own record of it (maths review R6, Weka's way with Hop's three
 * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
@@ -1383,12 +1450,13 @@ const HELP_LADDER = [
 ];
 const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
 /**
-* What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
-* Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
+* What a glow-worm's number can be told by: the right answer is a multiple of the step (or the same distance past one, when
+* counting starts off a multiple), so is anything on the same step. Exactly two of the four share it (the answer and one
+* more), so no glow-worm can be picked just for how it ends.
 */
-const tellOf = (step) => (n) => n % step === 0;
-/** The numbers on the 100 board and in the game: no landing is below 0 or above 100. */
-const inRange = (n) => n >= 0 && n <= 100;
+const tellOf = (size, rest = 0) => (n) => n % size === rest;
+/** The numbers on the board and in the game: no landing is below 0 or above the top (100, or 200 past 100). */
+const inRange = (n, top = 100) => n >= 0 && n <= top;
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1424,12 +1492,18 @@ function makeRound(seed, stats, opts = {}) {
 	const box = new Map(list.map((s) => [s.key, s.box]));
 	const byKey = new Map(list.map((s) => [s.key, s]));
 	const back = gold ? 3 : 0;
+	const passed = gold ? securedSteps(list) : [];
+	const offs = passed.length ? pickKeys(passed.flatMap(offsetKeys), 2, box, random) : [];
 	return {
 		seed,
 		step,
 		gold,
-		hops: [...pickKeys(stepKeys(step), 10 - back, box, random), ...pickKeys(keysOf(step, "back"), back, box, random)].map((key) => {
-			const [answer, at] = family(step).roll(key, random);
+		hops: [
+			...pickKeys(stepKeys(step), 10 - back - offs.length, box, random),
+			...offs,
+			...pickKeys(keysOf(step, "back"), back, box, random)
+		].map((key) => {
+			const [answer, at] = familyOfKey(key).roll(key, random);
 			return {
 				key,
 				answer,
@@ -1449,22 +1523,24 @@ function makeRound(seed, stats, opts = {}) {
 function showHop(round, index, plan) {
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
 	const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, random);
-	const m = /^skip(10|5|2):(up|next|back):\d+$/.exec(plan.key);
-	if (!q || !q.choices || q.answer !== plan.answer || !m) return null;
-	const step = Number(m[1]);
-	const back = m[2] === "back";
+	const k = parseSkip(plan.key);
+	const of = k && stepOfKey(plan.key);
+	if (!q || !q.choices || q.answer !== plan.answer || !k || !of) return null;
+	const size = k.step;
+	const top = k.high ? 200 : 100;
+	const back = k.kind === "back";
 	const terms = q.parts.map((p) => p.startsWith("?") ? plan.answer : Number(p.replace(/,$/, "")));
 	const gap = q.parts.findIndex((p) => p.startsWith("?"));
 	if (gap < 1 || terms.some((n) => !Number.isInteger(n))) return null;
 	const before = terms[gap - 1];
 	const dir = back ? -1 : 1;
 	const a = plan.answer;
-	const tell = tellOf(step);
+	const tell = tellOf(size, k.offset);
 	const taken = new Set([a]);
-	const fresh = (n) => inRange(n) && !taken.has(n);
+	const fresh = (n) => inRange(n, top) && !taken.has(n);
 	const sameStep = [[before, "stay"]];
-	if (fresh(a + dir * step)) sameStep.push([a + dir * step, "far"]);
-	if (back && fresh(before + step)) sameStep.push([before + step, "way"]);
+	if (fresh(a + dir * size)) sameStep.push([a + dir * size, "far"]);
+	if (back && fresh(before + size)) sameStep.push([before + size, "way"]);
 	const [same, sameKind] = sameStep[Math.floor(random() * sameStep.length)];
 	taken.add(same);
 	const other = [
@@ -1472,7 +1548,7 @@ function showHop(round, index, plan) {
 		5,
 		2,
 		1
-	].filter((s) => s !== step).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
+	].filter((s) => s !== size).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
 	if (other === void 0) return null;
 	taken.add(other);
 	const off = (random() < .5 ? [1, -1] : [-1, 1]).map((d) => a + d).find((n) => fresh(n) && !tell(n));
@@ -1496,6 +1572,9 @@ function showHop(round, index, plan) {
 		gap,
 		before,
 		back,
+		size,
+		of,
+		from: k.offset,
 		prompt: q.prompt ?? "",
 		spoken: q.spoken,
 		choices,

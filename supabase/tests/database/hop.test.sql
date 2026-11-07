@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh hop, then scripts/scratch-test.sh hop supabase/tests/database/hop.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(37);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -68,6 +68,11 @@ select ok(public.hop_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 5::smalli
 select ok(not public.hop_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 5::smallint, '[{"pick":10,"ms":900}]', 1), '... once');
 select is(public.hop_load(pg_temp.id('0a')), '{"daysDone": 1, "lastPadDay": "2026-11-04", "reached": 5, "version": 2}'::jsonb,
   'the pond is saved');
+-- R8's longer ladder: threes, fours and tens past 100 follow twos (saved as 3, 4 and 200), and the order still only goes on.
+select ok(public.hop_start(pg_temp.id('0a'), 779, 3::smallint, false, pg_temp.hops()), 'a challenge in threes starts');
+select ok(public.hop_finish(pg_temp.id('0a'), 779, 2, 2, '2026-11-05', 200::smallint, '[{"pick":10,"ms":900}]', 0), '... and finishing it can reach tens past 100');
+select ok(public.hop_start(pg_temp.id('0a'), 780, 200::smallint, false, pg_temp.hops())
+  and not public.hop_finish(pg_temp.id('0a'), 780, 3, 3, '2026-11-06', 4::smallint, '[{"pick":10,"ms":900}]', 0), '... but never goes back to fours');
 select pg_temp.reset();
 
 -- ---- In the hub: registered, one achievement per Golden Glow Jar, no points ----

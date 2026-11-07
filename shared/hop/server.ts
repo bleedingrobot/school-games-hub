@@ -17,10 +17,9 @@
  */
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
-import type { SkipStep } from '../maths/skillPacks/earlyFacts';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, pondAfter } from './progress';
-import { isSeed, isStep, makeRound, MAX_SEED, stepFor, topSecure, type Round } from './round';
+import { isSeed, isStep, makeRound, MAX_SEED, stepFor, topSecure, type HopStep, type Round } from './round';
 
 export type HopAction = 'load' | 'start' | 'finish';
 
@@ -30,7 +29,7 @@ export interface Progress {
   /** The NZ day ('2026-11-04') a pad last changed. */
   lastPadDay: string | null;
   /** The furthest step reached: the child never drops back below it. */
-  reached: SkipStep;
+  reached: HopStep;
 }
 
 export interface Saved extends Progress {

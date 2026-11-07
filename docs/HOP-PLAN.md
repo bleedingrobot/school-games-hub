@@ -69,6 +69,12 @@ because it is only asked on gold days (9 of each step's 26 keys are `back`, so c
 until day 21). The server keeps the furthest step reached (`reached`, saved in `hop_progress` at Stage 3), so a child never
 drops back a step. Once 2s are secure the child stays on 2s.
 
+**R8, 7 Nov 2026: a longer ladder.** After twos come threes (to 30), fours (to 40) and tens past 100 (to 200), saved as `reached`
+3, 4 and 200 (migration 20261107000600 widens the checks); each is passed by the same 70% rule and the last is where a child
+stays. The keys are the shared `skip3`, `skip4` and `skip10h` families, which sit beside the maths ladder, not in auto
+practice. On a gold day two hops start off a multiple ("start at 3, hop by 10", the `skip{step}o` keys) from steps the child
+has already passed. The signpost to Penguin Pairs still shows once twos are secure.
+
 **A round** (`makeRound(seed, records, { reached, gold })`) is 10 different facts of today's step, weakest first (ties by
 the seed), in a shuffled order. On gold days the last 3 hops count back, as Hop hops home. The shared family rolls each
 question's numbers from the seed, and `showHop`/`showRound` make the pads, words and four glow-worms with the shared pack's
