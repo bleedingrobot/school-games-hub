@@ -417,8 +417,63 @@ export function solveLine(parts: readonly string[]): { answer: number; key: stri
   return null;
 }
 
+// ---- Equal rows and arrays (Swamp Hen's Reed Rows, docs/plans/maths-review/new-games/N4-arrays.md) -------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). It also records the plain times
+// table keys ("mul:4x6") for the same go, so the times-table campaign moves too.
+//   rows:4x6    plant 4 rows of 6 (rows 2 to 5, 2 to 10 in a row: 36)
+//   turn:3x5    3 rows of 5 turned round (rows and columns each 2 to 6, not equal: 20)
+//   share:24/4  24 shared into 4 equal rows (rows 2, 3, 4, 5 and 10, 2 to 7 in each: 30)
+//   cut:6x7     6 rows of 7 cut into a row you know and one more (6 to 9 rows, 3 to 9 in a row: 28)
+//   which:3x5   which picture is 3 rows of 5 (rows and columns each 2 to 6, not equal: 20)
+const ROWS_KEYS = range(2, 5).flatMap((r) => range(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range(2, 6).flatMap((r) => range(2, 6).filter((c) => c !== r).map((c) => [r, c] as const));
+const SHARE_KEYS = [2, 3, 4, 5, 10].flatMap((r) => range(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range(6, 9).flatMap((r) => range(3, 9).map((c) => `cut:${r}x${c}`));
+const keyPair = (key: string) => {
+  const m = /(\d+)[x/](\d+)$/.exec(key)!;
+  return [Number(m[1]), Number(m[2])];
+};
+const rowsWords = (r: number, c: number) => `${r} rows of ${c}`;
+const arrayFamily = (label: string, tag: string, keys: string[], parts: (a: number, b: number) => string[], spoken: (a: number, b: number) => string, answer: (a: number, b: number) => number, wrong: (a: number, b: number) => number[]): Family => ({
+  label,
+  curriculumTags: [tag],
+  keys,
+  roll: (key) => keyPair(key),
+  make: (key, [a, b]) => {
+    if (!keys.includes(key)) return null;
+    const [ka, kb] = keyPair(key);
+    if (ka !== a || kb !== b) return null;
+    return { parts: parts(a, b), spoken: spoken(a, b), answer: answer(a, b), wrong: wrong(a, b) };
+  },
+});
+const product = (a: number, b: number) => a * b;
+const arrayFamilies: Record<string, Family> = {
+  rows: arrayFamily('Equal rows (4 rows of 6)', 'MS.Y2.NUM.OP.P3', ROWS_KEYS, (r, c) => ['Plant', String(r), 'rows', 'of', String(c)], (r, c) => `Plant ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [r + c, (r - 1) * c, Number(`${r}${c}`), r * c + r]),
+  turn: arrayFamily('The same array turned round (3 rows of 5 is 5 rows of 3)', 'MS.Y2.NUM.OP.P3', TURN_PAIRS.map(([r, c]) => `turn:${r}x${c}`), (r, c) => ['Turn', String(r), 'rows', 'of', String(c)], (r, c) => `Turn ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [r + c, (r - 1) * c, Number(`${r}${c}`), r * c + c]),
+  share: arrayFamily('Sharing into equal rows (24 into 4 rows)', 'MS.Y3.NUM.OP.P4', SHARE_KEYS, (t, r) => ['Share', String(t), 'into', String(r), 'rows'], (t, r) => `${t} shoots in ${r} equal rows. How many in each row?`, (t, r) => t / r, (t, r) => [t - r, t + r, r, t / r + r]),
+  cut: arrayFamily('Cutting an array into parts you know (6 rows of 7)', 'MS.Y3.NUM.OP.P3', CUT_KEYS, (r, c) => ['Cut', String(r), 'rows', 'of', String(c)], (r, c) => `Cut ${rowsWords(r, c)} into a row you know and one more. How many shoots?`, product, (r, c) => [(r - 1) * c, r + c, r * c + 6, r * c - r]),
+  which: arrayFamily('Which picture is 3 rows of 5', 'MS.Y2.NUM.OP.P3', TURN_PAIRS.map(([r, c]) => `which:${r}x${c}`), (r, c) => ['Which', 'is', String(r), 'rows', 'of', String(c)], (r, c) => `Which garden is ${rowsWords(r, c)}?`, product, (r, c) => [r + c, c * r + r, (r - 1) * c, Number(`${r}${c}`)]),
+};
+export const ARRAY_FAMILY_NAMES = Object.keys(arrayFamilies);
+
+/** An equal-rows question read back from its parts (["Plant", "4", "rows", "of", "6"]): its answer and key, or null when it isn't one. */
+export function solveArray(parts: readonly string[]): { answer: number; key: string } | null {
+  const nums = parts.filter((p) => /^\d{1,3}$/.test(p)).map(Number);
+  if (nums.length !== 2) return null;
+  for (const family of Object.values(arrayFamilies)) {
+    for (const key of family.keys) {
+      const [a, b] = keyPair(key);
+      if (a !== nums[0] || b !== nums[1]) continue;
+      const made = family.make(key, [a, b]);
+      if (made && made.parts.length === parts.length && made.parts.every((x, i) => x === parts[i])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
 const families: Record<string, Family> = {
   ...lineFamilies,
+  ...arrayFamilies,
   tenAnd,
   tenUp: tenMove(true),
   tenDown: tenMove(false),
@@ -438,7 +493,7 @@ export const EARLY_FACTS: PackDefinition = {
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
   // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
-  ladderOnly: ['tenAnd', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES],
+  ladderOnly: ['tenAnd', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...ARRAY_FAMILY_NAMES],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);
