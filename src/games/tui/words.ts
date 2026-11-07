@@ -1,6 +1,8 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/tui/progress';
-import { stepName, type Step } from '../../../shared/tui/round';
+import { stepName, type Step, type TuiKind } from '../../../shared/tui/round';
+
+const DIGIT = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
 export const WORDS = {
   title: 'Tūī’s Ten Tree',
@@ -15,7 +17,31 @@ export const WORDS = {
   pickNest: 'Tap the right nest.',
   goesDone: (n: number, of: number) => `${n} of ${of} done`,
   guideHere: 'look here',
-  tryAgain: 'Try again!',
+  /**
+   * Why a wrong nest is wrong (maths review R5), said after the first wrong tap of a go. None says the answer: the number
+   * said is the nest the child tapped. `wrong` is that nest and `way` how the go is asked.
+   */
+  why: (kind: TuiKind, wrong: number, way: number) => {
+    switch (kind) {
+      case 'reverse':
+        return `${wrong} is ${DIGIT[Math.floor(wrong / 10)]} tens and one. We only have one ten.`;
+      case 'tens':
+        return `${wrong} is two tens. We only have one ten.`;
+      case 'ones':
+        return 'That is only the loose berries. Do not forget the ten.';
+      case 'off1':
+        return 'Nearly! Count the berries one at a time.';
+      case 'up':
+        return 'Take away makes it smaller.';
+      default:
+        return way === 2 ? `${wrong} is all the berries together. How many go with the ten?` : `${wrong} is what we start with. Take the ten away. What is left?`;
+    }
+  },
+  /** After the second wrong tap of a go: the game plays the whole sum, then asks again. */
+  lookTogether: "Let's look together.",
+  nowTry: 'Now you try!',
+  /** On the "Let's look together" panel once it has played long enough to be skipped. */
+  goOn: 'My turn',
   hearAgain: 'Hear it again',
   peek: 'Peek',
   /** The kete's tag and the loose berries, for screen readers. */

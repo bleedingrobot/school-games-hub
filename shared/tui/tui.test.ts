@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_NEST, finishChallenge, treeAfter } from './progress';
+import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, pictureFor, placeAfter, showRound, startFor, STEPS, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, nestShape, pictureFor, placeAfter, showRound, startFor, STEPS, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -30,7 +31,7 @@ describe('the round', () => {
           if (step > 1 && step < 5) expect(round.goes.filter((g) => g.v === ways[ways.length - 1])).toHaveLength(7);
           for (const go of showRound(round)) {
             expect(go.choices.filter((c) => c === go.answer)).toHaveLength(1);
-            expect(go.choices).toHaveLength(level >= 4 ? 3 : 4);
+            expect(go.choices).toHaveLength(4);
             expect(go.answer).toBe(go.v >= 2 ? go.n : 10 + go.n);
             // "How many?" goes show the reversal (41 for 14) as a wrong nest.
             if (go.v <= 1 && go.n >= 2) expect(go.choices).toContain(go.n * 10 + 1);
@@ -92,6 +93,49 @@ describe('the help level and the step', () => {
     const third = pictureFor(go, 3, [13, 15, 41]);
     expect(third.nests).toHaveLength(2);
     expect(third.nests).toContain(14);
+  });
+});
+
+describe('mistakes that teach: the nests', () => {
+  const rounds = [1, 7, 99, 2024, 31337].flatMap((seed) => STEPS.map((st) => makeRound(seed, [], { step: st.step, level: 5 })));
+  const goes = rounds.flatMap((r) => showRound(r));
+
+  it('has four nests at every help level, each wrong one tagged with its mistake, and the kinds fit the way asked', () => {
+    for (const level of [0, 1, 2, 3, 4, 5] as HelpLevel[]) {
+      for (const go of showRound(makeRound(5, [], { step: 5, level }))) expect(go.choices).toHaveLength(4);
+    }
+    for (const go of goes) {
+      expect(go.wrongs).toHaveLength(3);
+      expect([...go.choices].sort((a, b) => a - b)).toEqual([go.answer, ...go.wrongs.map((w) => w.n)].sort((a, b) => a - b));
+      const kinds = go.wrongs.map((w) => w.kind);
+      expect(new Set(kinds).size).toBe(3);
+      if (go.v <= 1) expect(kinds).toContain('off1');
+      if (go.v === 2) expect(kinds).toEqual(expect.arrayContaining(['total', 'off1']));
+      if (go.v === 3) expect(kinds).toEqual(expect.arrayContaining(['total', 'up', 'off1']));
+      for (const w of go.wrongs) {
+        if (w.kind === 'reverse') expect(w.n).toBe(go.n * 10 + 1);
+        if (w.kind === 'total') expect(w.n).toBe(go.teen);
+        if (w.kind === 'off1') expect(Math.abs(w.n - go.answer)).toBe(1);
+      }
+    }
+  });
+
+  it('never leaves the right answer the only nest of its shape, or lets three share it', () => {
+    for (const go of goes) {
+      expect(atMostShareTell(go.answer, go.choices, nestShape)).toBe(true);
+      expect(go.choices.filter((c) => nestShape(c) === nestShape(go.answer)).length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('replays two wrong taps, a wrong tap in "Now you try" and then the right one: only the first tap is scored', () => {
+    const round = makeRound(11, [], { step: 1, level: 5 });
+    const taps: Tap[] = showRound(round).flatMap((go) => {
+      const [a, b] = go.wrongs;
+      return [a.n, b.n, a.n, go.answer].map((pick) => ({ pick, ms: 1000 }));
+    });
+    expect(replay(round, taps)).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, mistakes: GOES_PER_ROUND * 3, firstRight: 0 });
+    const clean = showRound(round).map((go) => ({ pick: go.answer, ms: 1000 }));
+    expect(replay(round, clean)).toMatchObject({ done: true, mistakes: 0, firstRight: GOES_PER_ROUND });
   });
 });
 
