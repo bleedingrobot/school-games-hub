@@ -1,0 +1,158 @@
+{
+  "game": "parrot",
+  "filename_prefix": "parrot/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/parrot-art/set",
+  "picks": "docs/parrot-art/picks.json",
+  "art_dir": "src/games/parrot/art/paint",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "parrot-wait",
+      "prompt": "Parrot, a cute round green parrot with a red-orange chest and a short curved beak, sitting upright and looking friendly, one wing raised a little. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "parrot",
+      "file": "parrot-wait",
+      "max": 1000
+    },
+    {
+      "name": "parrot-happy",
+      "prompt": "Parrot, a cute round green parrot with a red-orange chest, wings spread wide, beak open in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "parrot",
+      "file": "parrot-happy",
+      "max": 1000
+    },
+    {
+      "name": "seesaw",
+      "prompt": "A chunky wooden see-saw plank balanced level on a round triangular pivot, a flat round pan at each end on a short chain, perfectly level, side view, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        576
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "seesaw",
+      "max": 1000
+    },
+    {
+      "name": "stone",
+      "prompt": "A single smooth round grey river stone made of clay, glossy, shown alone. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        384,
+        384
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "stone",
+      "max": 256
+    },
+    {
+      "name": "heap",
+      "prompt": "A small heap of six round smooth grey stones in a pile, ready to pick up. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        576,
+        480
+      ],
+      "kind": "cut",
+      "folder": "seesaw",
+      "file": "heap",
+      "max": 500
+    },
+    {
+      "name": "bell",
+      "prompt": "A shiny golden bell with a little ribbon bow on top, chunky and cheerful. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        576,
+        576
+      ],
+      "kind": "cut",
+      "folder": "rope",
+      "file": "bell",
+      "max": 500
+    },
+    {
+      "name": "rope",
+      "prompt": "A thick twisted rope hanging straight down from the top with ten small round beads threaded along it, evenly spaced, each bead plain pale grey, tall portrait. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        480,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "rope",
+      "file": "rope",
+      "max": 1000
+    },
+    {
+      "name": "robin",
+      "prompt": "Robin, a cute round little robin bird with a bright red breast, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "robin",
+      "max": 1000
+    },
+    {
+      "name": "kiwi",
+      "prompt": "Kiwi, a cute round brown kiwi bird with a long thin beak, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kiwi",
+      "max": 1000
+    },
+    {
+      "name": "duck",
+      "prompt": "Duck, a cute round yellow duck with an orange beak, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "duck",
+      "max": 1000
+    },
+    {
+      "name": "owl",
+      "prompt": "Owl, a cute round brown owl with big round eyes, standing happily. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "owl",
+      "max": 1000
+    },
+    {
+      "name": "parrot-home",
+      "prompt": "A sunny garden playground with a wooden see-saw in the middle of the grass, a rope with a golden bell hanging from a tree on the right, soft blue sky, wide landscape, no characters. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        768
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "home",
+      "max": 1280
+    }
+  ]
+}
