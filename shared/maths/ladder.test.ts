@@ -584,6 +584,9 @@ describe('the R8 keys: threes, fours, tens past 100, counting from a start, and 
     expect(pack.rebuild('tenup:14', [14, 0])?.answer).toBe(24);
     expect(pack.rebuild('tendown:24', [24, 1])?.parts).toEqual(['10', '+', '?', '=', '24']);
 
+  });
+});
+
 describe('the equal-rows keys, for Swamp Hen\'s Reed Rows', () => {
   it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
     const counts: Record<string, number> = { 'equal-rows': 36, 'arrays-turn': 20 + 20, 'sharing-rows': 30, 'cut-arrays': 28 };
