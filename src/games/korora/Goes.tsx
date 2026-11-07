@@ -4,7 +4,8 @@
  *  - A double: fish land on the rock and the still pool shows the same fish upside down. How many fish now?
  *  - A near double (level 5, 6 + 7): the rock's fish and the water's, with one extra fish in the water. How many fish?
  *  - A half: a pile of fish to share fairly between the two chicks. How many does each chick get?
- *  - Fair or not (gold days): can the two chicks share this many fish fairly, or is one left over?
+ *  - Fair or not (gold days, R9, FairPile.tsx): a real pile of 6 to 20 fish; the child shares it into two bowls, two fish at a time,
+ *    then picks Fair share, One too many or One too few. Hint after the second wrong pick: the fish pair off. Bella counts one bowl.
  *
  * The support James chose (4 Nov 2026), all in this screen:
  *  - help that follows the child, fact by fact (maths review R6, each go's `h` from shared/korora/round.ts): a fact still
@@ -33,6 +34,7 @@ import { helpWithSetting, STRUGGLE_GOES, type HelpSetting } from '../../../share
 import { LOOK_AT, NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
+import { FairPile, COUNT_MS } from './FairPile';
 import { Chick, Fish, Friend, Pebble } from './KororaArt';
 import { backFor, type Scenery } from './Pool';
 import { goLine, whyLine } from './voiceLines';
@@ -78,6 +80,9 @@ const fishIdsOf = (go: Go): string[] =>
     ? [...Array.from({ length: go.n }, (_, i) => `r${i}`), ...Array.from({ length: go.n + (go.kind === 'near' ? 1 : 0) }, (_, i) => `w${i}`)]
     : Array.from({ length: go.n }, (_, i) => `p${i}`);
 
+/** The three choices of fair or not: 1 fair, 0 one too many, 2 one too few. */
+const fairLabel = (n: number) => (n === 1 ? WORDS.fair : n === 0 ? WORDS.tooMany : WORDS.tooFew);
+
 /** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
 const rowsOf = (n: number) => Array.from({ length: Math.ceil(n / 5) }, (_, r) => Math.min(5, n - r * 5));
 
@@ -106,6 +111,9 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const [counted, setCounted] = useState<string[]>([]);
   /** Fish given to each chick, by their place in the pile. */
   const [shared, setShared] = useState<number[]>([]);
+  /** Fair or not (R9): the pile is shared out (the choices wait for that), and the pairing-off hint after the second wrong choice. */
+  const [sorted, setSorted] = useState(false);
+  const [pairHint, setPairHint] = useState(false);
   /** The guided first go's hand: on the rock's fish, then the water's, then the right number. */
   const [guideStep, setGuideStep] = useState<0 | 1 | 2>(0);
   const since = useRef(Date.now());
@@ -209,9 +217,11 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       later(WOBBLE_MS, () => setWobble(null));
       const kind = go.wrongs.find((x) => x.n === n)?.kind;
       if (!kind) {
-        // fair or not
-        if (backLine.current) say(WORDS.tryAgain, () => say(WORDS.picturesBack));
-        else say(WORDS.tryAgain);
+        // Fair or not: "Try again!", and after the second wrong choice the fish pair off (R9).
+        const line = w === 2 ? WORDS.pairOff : WORDS.tryAgain;
+        if (w === 2) setPairHint(true);
+        if (backLine.current) say(line, () => say(WORDS.picturesBack));
+        else say(line);
         backLine.current = false;
         return;
       }
@@ -233,11 +243,12 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     clearTimers();
     setPhase('right');
     setGuideStep(2);
-    say(go.kind === 'fair' ? (go.answer === 1 ? WORDS.fairYes : WORDS.notFairYes) : WORDS.yes(n));
+    const bowl = Math.floor(go.n / 2);
+    say(go.kind === 'fair' ? (go.answer === 1 ? WORDS.fairYes(bowl) : WORDS.oddYes(bowl)) : WORDS.yes(n));
     if (sound) playSound('badge');
-    // Show it is fair: the rest of the pile goes to the chicks.
-    if (!mirror) shareAll(go.n);
-    const wait = mirror ? RIGHT_MS : Math.max(RIGHT_MS, go.n * SHARE_MS + 600);
+    // The rest of the pile goes to the chicks (a half). Fair or not has been shared by the child already and counts one bowl together.
+    if (!mirror && go.kind !== 'fair') shareAll(go.n);
+    const wait = mirror ? RIGHT_MS : go.kind === 'fair' ? 4800 + bowl * COUNT_MS : Math.max(RIGHT_MS, go.n * SHARE_MS + 600);
     later(wait, () => {
       if (at + 1 >= goes.length) {
         setPhase('done');
@@ -250,6 +261,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         setRedoOrder(null);
         setCounted([]);
         setShared([]);
+        setSorted(false);
+        setPairHint(false);
       }
     });
   }
@@ -264,7 +277,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     setCounted((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
   }
 
-  const hand = go.kind === 'fair' ? wrongs >= 3 : flow.phase === 'redo' && flow.wrong >= LOOK_AT + 2;
+  const locked = go.kind === 'fair' && phase === 'ask' && !sorted;
+  const hand = go.kind === 'fair' ? wrongs >= 3 && sorted : flow.phase === 'redo' && flow.wrong >= LOOK_AT + 2;
   const lookCounted = look ? lookIds.slice(0, look.filled) : counted;
   const pointAt = phase === 'ask' && !look && ((guided && guideStep === 2) || hand) ? go.answer : null;
   const made = at + (phase === 'ask' ? 0 : 1);
@@ -284,13 +298,15 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
           <span aria-hidden="true">👂</span> {WORDS.hearAgain}
         </button>
       </div>
-      <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish: fair or not?` : go.parts.join(' ')}</p>
+      <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish: share them, then fair or not?` : go.parts.join(' ')}</p>
       <div className="kr-scene" key={at}>
         <span className={`kr-scene__friend${mirror ? '' : ' kr-scene__friend--low'}`}>
           <Friend friend={friend} pose={pose} />
         </span>
         {mirror ? (
           <Mirror go={go} help={shown} phase={phase} counted={lookCounted} guide={guided && phase === 'ask' ? guideStep : null} onFish={tapFish} />
+        ) : go.kind === 'fair' ? (
+          <FairPile go={go} help={shown} phase={phase} hint={pairHint} sound={sound} onSorted={setSorted} />
         ) : (
           <Share go={go} help={shown} phase={phase} counted={lookCounted} shared={shared} onFish={tapFish} />
         )}
@@ -309,19 +325,19 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
           />
         )}
         {flow.phase === 'redo' && !why && <NowYouTry prefix="kr" line={WORDS.nowTry} />}
-        <div className={`kr-choices${go.kind === 'fair' ? ' kr-choices--fair' : ''}`} role="group" aria-label={WORDS.pickNumber}>
+        <div className={`kr-choices${go.kind === 'fair' ? ' kr-choices--fair' : ''}${locked ? ' kr-choices--wait' : ''}`} role="group" aria-label={WORDS.pickNumber}>
           {(redoOrder ?? go.choices).map((n) => (
             <button
               key={`${at}-${n}`}
               type="button"
               className={`kr-choice${wobble === n ? ' kr-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' kr-choice--right' : ''}${n === pointAt ? ' kr-choice--pointed' : ''}${greyed.includes(n) ? ' kr-choice--grey' : ''}`}
-              disabled={greyed.includes(n)}
+              disabled={greyed.includes(n) || locked}
               onClick={() => pick(n)}
-              aria-label={`${go.kind === 'fair' ? (n === 1 ? WORDS.fair : WORDS.notFair) : n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
+              aria-label={`${go.kind === 'fair' ? fairLabel(n) : n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
             >
               {go.kind === 'fair' ? (
                 <span className="kr-choice__words">
-                  <span aria-hidden="true">{n === 1 ? '🐟🐟' : '🐟🐟🐟'}</span> {n === 1 ? WORDS.fair : WORDS.notFair}
+                  <span aria-hidden="true">{n === 1 ? '🐟🐟' : n === 0 ? '🐟🐟🐟' : '🐟'}</span> {fairLabel(n)}
                 </span>
               ) : (
                 <Pebble metal="grey" value={n} />

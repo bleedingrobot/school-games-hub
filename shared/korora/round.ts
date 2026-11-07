@@ -59,9 +59,9 @@ export const parseKey = (key: string): { kind: Kind; n: number } | null => {
   return m ? { kind: m[1] === 'dbl' ? 'double' : m[1] === 'half' ? 'half' : 'fair', n: Number(m[2]) } : null;
 };
 
-/** The "fair or not?" facts at a level: fish counts 3 to 10 at levels 1 and 2, 5 to 20 at levels 3 and 4. */
+/** The "fair or not?" facts at a level: a real pile of 6 to 10 fish at levels 1 and 2, 6 to 20 from level 3 (R9). */
 export const fairKeys = (level: Level): string[] => {
-  const [from, to] = level <= 2 ? [3, 10] : [5, 20];
+  const [from, to] = level <= 2 ? [6, 10] : [6, 20];
   return Array.from({ length: to - from + 1 }, (_, i) => `oddeven:${from + i}`);
 };
 
@@ -133,7 +133,7 @@ export interface Go extends GoPlan {
   parts: string[];
   /** The words read aloud. They never say the answer. */
   spoken: string;
-  /** Four numbers, the right one among them; for fair or not, 0 (one left over: odd) and 1 (fair: even). */
+  /** Four numbers, the right one among them; for fair or not three: 1 (fair: even), 0 (one too many: odd) and 2 (one too few). */
   choices: number[];
   /** The three wrong numbers among the choices and the mistake behind each (maths review R5). Empty for fair or not (R9). */
   wrongs: Wrong<WrongKind>[];
@@ -242,6 +242,9 @@ const pack = earlyFactsPack();
 /** Weka's add facts, which near doubles read from (`add:6+7`). */
 const addPack = new BandedPack(BANDED_PACKS['add-sub']);
 
+/** Fair or not has three choices (R9): 1 is fair (an even pile), 0 is one too many (an odd pile), 2 is one too few (never right: no fish is missing). */
+export const FAIR_CHOICES = [1, 0, 2] as const;
+
 /** What is read aloud: the story of the go, never the answer. */
 export function spokenFor(kind: Kind, n: number, guided = false): string {
   const line = kind === 'double'
@@ -250,7 +253,7 @@ export function spokenFor(kind: Kind, n: number, guided = false): string {
       ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?`
       : kind === 'near'
         ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?`
-        : `${n} fish. Can the two chicks share them fairly?`;
+        : `${n} fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?`;
   return guided ? `${line} Tap the number the hand points to.` : line;
 }
 
@@ -298,10 +301,10 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const answer = fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.kind === 'half' ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
   if (!q || !q.choices || q.answer !== answer) return null;
   const base = { ...plan, kind: fact.kind, n: fact.n, answer, parts: q.parts, spoken: spokenFor(fact.kind, fact.n) };
-  if (fact.kind === 'fair') return { ...base, choices: q.choices, wrongs: [] }; // R9
   // Our own choices, from a stream of the seed apart from the pack's (the server rebuilds the same ones).
   const own = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
   own(); own();
+  if (fact.kind === 'fair') return { ...base, choices: shuffle([...FAIR_CHOICES], own), wrongs: [] }; // R9: three choices, no stone mistakes
   return { ...base, ...mistakeChoices(fact.kind, fact.n, own) };
 }
 

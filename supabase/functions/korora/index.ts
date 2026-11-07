@@ -3565,9 +3565,9 @@ const parseKey = (key) => {
 		n: Number(m[2])
 	} : null;
 };
-/** The "fair or not?" facts at a level: fish counts 3 to 10 at levels 1 and 2, 5 to 20 at levels 3 and 4. */
+/** The "fair or not?" facts at a level: a real pile of 6 to 10 fish at levels 1 and 2, 6 to 20 from level 3 (R9). */
 const fairKeys = (level) => {
-	const [from, to] = level <= 2 ? [3, 10] : [5, 20];
+	const [from, to] = level <= 2 ? [6, 10] : [6, 20];
 	return Array.from({ length: to - from + 1 }, (_, i) => `oddeven:${from + i}`);
 };
 /** A level's five facts: `dbl:1` to `dbl:5`, `half:2` to `half:10` and so on. */
@@ -3705,9 +3705,15 @@ function makeRound(seed, stats, opts = {}) {
 const pack = earlyFactsPack();
 /** Weka's add facts, which near doubles read from (`add:6+7`). */
 const addPack = new BandedPack(BANDED_PACKS["add-sub"]);
+/** Fair or not has three choices (R9): 1 is fair (an even pile), 0 is one too many (an odd pile), 2 is one too few (never right: no fish is missing). */
+const FAIR_CHOICES = [
+	1,
+	0,
+	2
+];
 /** What is read aloud: the story of the go, never the answer. */
 function spokenFor(kind, n, guided = false) {
-	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : kind === "near" ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?` : `${n} fish. Can the two chicks share them fairly?`;
+	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : kind === "near" ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?` : `${n} fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?`;
 	return guided ? `${line} Tap the number the hand points to.` : line;
 }
 /**
@@ -3786,14 +3792,14 @@ function showGo(round, index, plan) {
 		parts: q.parts,
 		spoken: spokenFor(fact.kind, fact.n)
 	};
-	if (fact.kind === "fair") return {
-		...base,
-		choices: q.choices,
-		wrongs: []
-	};
 	const own = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
 	own();
 	own();
+	if (fact.kind === "fair") return {
+		...base,
+		choices: shuffle([...FAIR_CHOICES], own),
+		wrongs: []
+	};
 	return {
 		...base,
 		...mistakeChoices(fact.kind, fact.n, own)
