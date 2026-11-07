@@ -13,6 +13,7 @@ What the shared parts are and how a game uses them. The plan is [docs/plans/GAME
 | Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
 | Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk, Penguin Pairs |
 | Junior bits | `src/kit/` `HearAgain`, `PointingHand`, `useGuidedFirstGo`, `WhatsNext`, `FirstTimeTip`; test helper `voiceLinesSuite` | Hear it again button, the pointing hand and its "try this one" label, the first-go hand timing, the end-of-round panel, a helper's first-time tip, the four voice-clip checks. A game passes its words, clip folder and CSS prefix | Weka (all but `FirstTimeTip`) |
+| Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
 
 ### Using mistakes and show-why in a game
 
