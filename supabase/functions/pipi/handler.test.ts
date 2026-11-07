@@ -39,7 +39,7 @@ it('finishes only a pupil’s own, finished challenge, once, and records each go
   expect((await send(null, { action: 'load' })).status).toBe(401);
 
   const round = await start('pupil-a');
-  expect(round.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding' });
+  expect(round.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding', h: 'full' });
   // The browser's word for the round counts for nothing: the server checks the taps against the round it kept.
   const taps = goodTaps(round, true);
   expect((await send('pupil-a', { action: 'finish', seed: round.seed, taps: taps.slice(0, 4) })).body).toMatchObject({ code: 'not-done' });

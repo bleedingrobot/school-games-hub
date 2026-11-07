@@ -43,7 +43,7 @@ export function finishLine(main: string, levelUp: Level | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.picturesBack, WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

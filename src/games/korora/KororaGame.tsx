@@ -7,9 +7,8 @@
 import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/korora/play';
-import { DAYS_PER_FISH, PEBBLES, poolAfter, type Help } from '../../../shared/korora/progress';
+import { DAYS_PER_FISH, PEBBLES, poolAfter } from '../../../shared/korora/progress';
 import type { Round } from '../../../shared/korora/round';
-import type { HelpSetting } from '../../../shared/korora/server';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -116,7 +115,8 @@ export function KororaGame({ backend, onExit, extra }: Props) {
     body = (
       <Goes
         round={screen.round}
-        help={helpFor(pool.help, state.help)}
+        help={pool.help}
+        setting={state.help}
         scenery={pool.today}
         friend={pool.friend}
         guide={state.daysDone === 0 && state.lastPebbleDay === null}
@@ -147,9 +147,6 @@ export function KororaGame({ backend, onExit, extra }: Props) {
     </div>
   );
 }
-
-/** The teacher's help setting on top of the pebbles' fading help. */
-const helpFor = (today: Help, setting: HelpSetting): Help => (setting === 'always' ? 'full' : setting === 'off' ? 'none' : today);
 
 function Home({ state, say, onPlay }: { state: KororaState; say: (t: string) => void; onPlay: () => void }) {
   const pool = poolAfter(state.daysDone);
