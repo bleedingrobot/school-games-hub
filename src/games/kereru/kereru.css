@@ -119,6 +119,9 @@
 .kr-hear { min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--kr-leaf-dark); background: #fff; font: 700 1.1rem system-ui, sans-serif; cursor: pointer; }
 
 .kr-golden { width: 100%; }
+.kr-branch { position: relative; }
+.kr-hand { position: absolute; left: 50%; top: 40%; font-size: 3rem; line-height: 1; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: kr-nudge 0.9s ease-in-out infinite; z-index: 3; }
+@keyframes kr-nudge { 50% { translate: 0 -14%; } }
 @media (max-height: 500px) {
   .kr-root { --kr-card: 72px; }
   .kr-top { padding-right: 280px; }

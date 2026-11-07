@@ -82,7 +82,7 @@ describe('the round', () => {
 });
 
 describe('the help level and the step', () => {
-  it('fade after two good challenges, come back after a hard one, a new step brings two back unless the help faded, and a new line length starts at 3', () => {
+  it('fades help after two good challenges, brings it back after a hard one, and turns the berry clusters', () => {
     const at = (p: Partial<Place>): Place => ({ step: 1, level: 5, goodInRow: 0, goodAtStep: 0, ...p });
     expect(placeAfter(at({}), 9)).toEqual(at({ goodInRow: 1, goodAtStep: 1 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 6)).toEqual(at({ level: 2 }));
@@ -96,11 +96,8 @@ describe('the help level and the step', () => {
     expect(startFor(inBox(Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`), 2))).toEqual({ step: 1, level: 4 });
     expect(startFor(inBox([...Array.from({ length: 20 }, (_, i) => `more1:${i}`), ...Array.from({ length: 20 }, (_, i) => `less1:${i}`)], 2))).toEqual({ step: 3, level: 2 });
     expect(startFor([])).toEqual({ step: 1, level: 5 });
-  });
-});
 
-describe('the berry clusters', () => {
-  it('turn bronze, silver, then gold, one per NZ day, with a Golden Berry Branch and a new friend every 30 days', () => {
+    // The berry clusters: bronze, silver, then gold, one per NZ day, a Golden Berry Branch and a new friend every 30 days.
     expect(branchAfter(0)).toMatchObject({ prizes: 0, friend: 'kereru', today: 'bronze', clusters: Array(BERRY_CLUSTERS).fill('green') });
     expect(branchAfter(21)).toMatchObject({ today: 'gold', clusters: ['gold', ...Array(9).fill('silver')] });
     expect(branchAfter(DAYS_PER_BRANCH)).toMatchObject({ prizes: 1, friend: 'tui', day: 0 });

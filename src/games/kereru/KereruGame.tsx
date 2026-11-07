@@ -4,6 +4,7 @@
  * Branch, and a new friend flies a new branch. The screens only show what the backend says. Copied from Tūī’s Ten Tree.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { NextPartChip } from '../../components/NextPartChip';
 import { BERRY_CLUSTERS } from '../../../shared/kereru/config';
 import type { Tap } from '../../../shared/kereru/play';
@@ -110,7 +111,7 @@ export function KereruGame({ backend, onExit, extra }: Props) {
   else if (!state || screen.kind === 'loading') body = <p className="kr-message">…</p>;
   else if (screen.kind === 'play') {
     const branch = branchAfter(state.daysDone);
-    body = <Goes round={screen.round} scenery={branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
+    body = <Goes guided={state.daysDone === 0} round={screen.round} scenery={branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
   } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
@@ -196,22 +197,12 @@ function Finish({ result, say, onNext }: { result: KereruFinish; say: (t: string
   const main = result.goldenBranch ? WORDS.goldenBranch(name) : changed ? WORDS.clusterTurned(changed) : WORDS.doneToday;
   const up = result.step !== result.stepBefore ? result.step : null;
   const line = finishLine(main, up);
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus();
-    say(line);
-  }, [say, line]);
   return (
     <div className={`kr-home${result.goldenBranch ? ' kr-home--prize' : ''}`}>
       <Branch scenery={result.goldenBranch ? 'gold' : branch.today} clusters={clusters} friend={branch.friend} pose="cheer" />
-      <div className="kr-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {up && <p className="kr-chip">{WORDS.nextStep(up)}</p>}
+      <WhatsNext prefix="kr" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
         {result.goldenBranch && <span className="kr-prize"><GoldenBranch /></span>}
-        <button type="button" className="button button--play kr-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+      </WhatsNext>
     </div>
   );
 }

@@ -13,6 +13,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { NumberLine, type Landmark, type LinePoint, type NumberLineProps } from '../../kit';
+import { HearAgain } from '../../kit/HearAgain';
+import { PointingHand } from '../../kit/PointingHand';
+import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { tapRight, type Tap } from '../../../shared/kereru/play';
@@ -28,7 +31,12 @@ const WOBBLE_MS = 500;
 
 type Phase = 'ask' | 'right' | 'done';
 
+/** The very first go: after this long without a tap the hand points at the line. */
+const GUIDE_MS = 2600;
+
 interface Props {
+  /** The child's very first challenge: the hand points at the line on the first go if nothing is tapped. */
+  guided?: boolean;
   round: Round;
   scenery: Scenery;
   friend: FriendName;
@@ -62,7 +70,7 @@ function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Land
 
 const dedupe = (marks: Landmark[]): Landmark[] => [...new Map(marks.map((m) => [m.value, m])).values()];
 
-export function Goes({ round, scenery, friend, sound, say, onDone }: Props) {
+export function Goes({ guided = false, round, scenery, friend, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -86,6 +94,7 @@ export function Goes({ round, scenery, friend, sound, say, onDone }: Props) {
   };
   useEffect(() => clearTimers, []);
   const { look, start: startLook, skip } = useLookTogether(say);
+  const guideHand = useGuidedFirstGo(guided && at === 0, GUIDE_MS);
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const wrongs = gs.wrong;
@@ -102,6 +111,7 @@ export function Goes({ round, scenery, friend, sound, say, onDone }: Props) {
     since.current = Date.now();
     setPose('sit');
     setPeek(false);
+    guideHand.start();
     say(askLine(go), () => {
       if (live && !tappedYet.current) since.current = Date.now();
     });
@@ -129,6 +139,7 @@ export function Goes({ round, scenery, friend, sound, say, onDone }: Props) {
   function pick(value: number) {
     if (phase !== 'ask' || gs.phase === 'look') return;
     tappedYet.current = true;
+    guideHand.stop();
     const now = Date.now();
     const next = [...taps, { pick: value, ms: now - since.current }];
     since.current = now;
@@ -185,15 +196,16 @@ export function Goes({ round, scenery, friend, sound, say, onDone }: Props) {
             <span key={i} className={i < made ? 'kr-pip kr-pip--done' : 'kr-pip'} />
           ))}
         </div>
-        <button type="button" className="kr-button" onClick={() => say(askLine(go))}>
-          <span aria-hidden="true">👂</span> {WORDS.hearAgain}
-        </button>
+        <HearAgain prefix="kr" label={WORDS.hearAgain} onHear={() => say(askLine(go))} />
       </div>
 
       <div className="kr-stage" key={at}>
         <span className="kr-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
         <p className="kr-ask" aria-live="polite">{askLine(go)}</p>
-        <div className={`kr-branch${canTapLine ? ' kr-branch--tap' : ''}`}>{picture}</div>
+        <div className={`kr-branch${canTapLine ? ' kr-branch--tap' : ''}`}>
+          {picture}
+          {guideHand.pointing && canTapLine && <PointingHand prefix="kr" />}
+        </div>
         {canPeek && !peek && phase === 'ask' && (
           <button type="button" className="kr-button kr-peek" onClick={() => setPeek(true)}>
             <span aria-hidden="true">🍃</span> {WORDS.peek}

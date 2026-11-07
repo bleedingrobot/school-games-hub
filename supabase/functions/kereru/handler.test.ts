@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { memoryServices, type MemoryOptions } from '../../../shared/kereru/memoryServices';
 import type { Tap } from '../../../shared/kereru/play';
 import { GUIDED_KEY, showRound, type Go, type Round } from '../../../shared/kereru/round';
@@ -68,13 +68,13 @@ it('finishes only a pupil’s own, finished challenge, once; records each key on
 
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
-});
 
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions -- kereru` if this fails)', async () => {
+  // The deployable file is up to date with the code (run `npm run build:functions -- kereru` if this fails).
+  {
     // @ts-expect-error: plain JavaScript build script
     const { buildFunction } = await import('../../../scripts/build-functions.mjs');
     const built: string = await buildFunction('kereru');
+    expect(readFileSync(resolve('supabase/functions/kereru/handler.ts'), 'utf8').length).toBeGreaterThan(0);
     expect(readFileSync(resolve('supabase/functions/kereru/index.ts'), 'utf8')).toBe(built);
-  });
+  }
 });
