@@ -55,6 +55,7 @@ Split in two stages. **Stage A (own folder only):** level 5 with Weka's keys, th
 - Tūī eval candidate 4 (show the take-away on the n minus 10 form) is done in R5 and R9, not here.
 
 Stage A (own folder only): the signpost on step 5. Stage B (James's OK): step 6.
+Stage B status (7 Nov 2026): step 6 "Ten more, ten less" built on branch r8-tui-step6, on the `tenup`/`tendown` keys. The migration 20261107000700_tui_step_6.sql widens the step check to 1 to 6 (existing rows stay valid). Mistakes-that-teach: four nests per go, wrongs tagged. Voice clips made with `scripts/voice-clips.py tui`.
 
 ### 3.4 Beanstalk: bonds to 20 and the missing leaf
 

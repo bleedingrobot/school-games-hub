@@ -1306,6 +1306,10 @@ const KNOWN_START = {
 	level: 4
 };
 const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
+/** Step 6's facts (R8): ten more than 10 to 19 ("tenup:14") and ten less than 20 to 29 ("tendown:24"), beside the ladder in the shared maths. */
+const UP_KEYS = EARLY_FACTS.families.tenUp.keys;
+const DOWN_KEYS = EARLY_FACTS.families.tenDown.keys;
+const MOVE_KEYS = [...UP_KEYS, ...DOWN_KEYS];
 const STEPS = [
 	{
 		step: 1,
@@ -1345,6 +1349,11 @@ const STEPS = [
 			2,
 			3
 		]
+	},
+	{
+		step: 6,
+		name: "Ten more, ten less",
+		ways: [0, 1]
 	}
 ];
 /** The guided first go (plan section 6): 10 and 2, at level 5. */
@@ -1383,7 +1392,7 @@ function placeAfter(p, right) {
 	if (hard) level = Math.min(5, level + 1);
 	let { step } = p;
 	let goodAtStep = good ? p.goodAtStep + 1 : p.goodAtStep;
-	if (goodAtStep >= 2 && step < 5) {
+	if (good && goodAtStep >= 2 && step < 6) {
 		step = step + 1;
 		goodAtStep = 0;
 		goodInRow = 0;
@@ -1396,13 +1405,15 @@ function placeAfter(p, right) {
 		goodAtStep
 	};
 }
+/** At least 70% of these facts at box 2 or more, the same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). */
+const secureShare = (box, keys) => keys.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(keys.length * STEP_SECURE_SHARE);
 /**
-* The top step is secure (R8, the "what's next" card): at least 70% of the nine "ten and" facts at box 2 or more, the
-* same share as the teacher skill map's "secure" (STEP_SECURE_SHARE). Seven of nine.
+* The top step is secure (R8, the "what's next" card): the nine "ten and" facts (seven of nine) and step 6's ten more and
+* ten less facts (14 of 20) are at box 2 or more. Step 6 is the top step now, so the card waits for it.
 */
 function topSecure(stats) {
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= Math.ceil(KEYS.length * STEP_SECURE_SHARE);
+	return secureShare(box, KEYS) && secureShare(box, MOVE_KEYS);
 }
 const shuffle = (items, random) => {
 	const out = [...items];
@@ -1434,6 +1445,19 @@ function waysFor(step, random) {
 	const review = Array.from({ length: 3 }, (_, i) => earlier[Math.floor(random() * earlier.length + i) % earlier.length]);
 	return shuffle([...Array(7).fill(fresh), ...review], random);
 }
+/** The weakest `n` of these facts, ties broken by the seed. */
+const weakest = (keys, n, box, random) => shuffle(keys, random).map((k, i) => ({
+	k,
+	i
+})).sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i).slice(0, n).map((x) => x.k);
+/** Step 6's ten goes: the weakest five ten more facts and five ten less facts, in a seeded order, each in one of the pack's two forms. */
+function moveGoes(box, level, random) {
+	return shuffle([...weakest(UP_KEYS, 5, box, random), ...weakest(DOWN_KEYS, 5, box, random)], random).map((key) => ({
+		key,
+		v: random() < .5 ? 0 : 1,
+		l: level
+	}));
+}
 /**
 * Today's challenge from a fresh seed, the child's records, their place and the teacher's help setting. Every fact
 * once and the weakest again, weakest first; on the very first challenge 10 and 2 comes first at level 5. The same
@@ -1448,6 +1472,13 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	random();
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
+	if (step === 6) return {
+		seed,
+		step,
+		level,
+		help,
+		goes: moveGoes(box, shownLevel(level, help), random)
+	};
 	const byWeak = shuffle(KEYS, random).map((k, i) => ({
 		k,
 		i
@@ -1529,17 +1560,82 @@ function wrongNests(n, v, random) {
 	];
 	return tagWrongs(picks.map((w) => w.n), (x) => picks.find((w) => w.n === x)?.kind ?? null).filter((w) => w.n !== answer).slice(0, 3);
 }
+/**
+* Step 6's wrong nests (ten more, ten less), each tagged with its mistake, fixed by the seed:
+* - ten more than 14: the number it started from (`start`, ten not added), ten less instead (`down`, 4; one more instead when
+*   there is no ten to take off, `one`, 11), and one berry out (`off1`);
+* - ten less than 24: the whole it started from (`total`), the ten put on (`up`, 34), and one berry out (`off1`); from 20, where
+*   the ten put on would be one more nest of the answer's kind (10, 20, 30), one less instead (`oneless`, 19).
+* The one berry out goes the way that keeps the nests like the other games': the answer is never the lone nest of its kind
+* (a teen, a single digit, a round-ish other) and never has two others of it (`nestShape`).
+*/
+function moveWrongNests(start, move, random) {
+	const answer = move === "up" ? start + 10 : start - 10;
+	const off1 = {
+		n: answer + (move === "up" ? start === 10 ? -1 : random() < .5 ? 1 : -1 : answer === 11 ? 1 : answer === 19 ? -1 : random() < .5 ? 1 : -1),
+		kind: "off1"
+	};
+	const picks = move === "up" ? [
+		{
+			n: start,
+			kind: "start"
+		},
+		off1,
+		start > 10 ? {
+			n: start - 10,
+			kind: "down"
+		} : {
+			n: start + 1,
+			kind: "one"
+		}
+	] : [
+		{
+			n: start,
+			kind: "total"
+		},
+		start === 20 ? {
+			n: start - 1,
+			kind: "oneless"
+		} : {
+			n: start + 10,
+			kind: "up"
+		},
+		off1
+	];
+	return tagWrongs(picks.map((w) => w.n), (x) => picks.find((w) => w.n === x)?.kind ?? null).filter((w) => w.n !== answer).slice(0, 3);
+}
 /** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
 function showGo(round, index, plan) {
-	const m = /^tenand:([1-9])$/.exec(plan.key);
+	const m = /^(tenand|tenup|tendown):(\d+)$/.exec(plan.key);
 	if (!m || ![
 		0,
 		1,
 		2,
 		3
 	].includes(plan.v) || !isLevel(plan.l)) return null;
-	const n = Number(m[1]);
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
+	if (m[1] !== "tenand") {
+		const start = Number(m[2]);
+		const move = m[1] === "tenup" ? "up" : "down";
+		const answer = move === "up" ? start + 10 : start - 10;
+		const q = plan.v <= 1 ? pack.rebuild(plan.key, [start, plan.v], true, random) : null;
+		if (!q || !q.choices || q.answer !== answer) return null;
+		const wrongs = moveWrongNests(start, move, random);
+		if (wrongs.length !== 3) return null;
+		const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
+		return {
+			...plan,
+			n: start % 10,
+			teen: start,
+			move,
+			answer,
+			parts: q.parts,
+			choices,
+			wrongs
+		};
+	}
+	if (!/^[1-9]$/.test(m[2])) return null;
+	const n = Number(m[2]);
 	const q = pack.rebuild(plan.key, [n, plan.v], true, random);
 	const answer = plan.v >= 2 ? n : 10 + n;
 	if (!q || !q.choices || q.answer !== answer) return null;
@@ -1550,6 +1646,7 @@ function showGo(round, index, plan) {
 		...plan,
 		n,
 		teen: 10 + n,
+		move: null,
 		answer,
 		parts: q.parts,
 		choices,

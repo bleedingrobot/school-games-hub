@@ -3,7 +3,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_NEST, finishChallenge, treeAfter } from './progress';
 import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, nestShape, pictureFor, placeAfter, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { DOWN_KEYS, GOES_PER_ROUND, GUIDED_KEY, KEYS, makeRound, MOVE_KEYS, UP_KEYS, nestShape, pictureFor, placeAfter, showGo, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
 import { emptyData, memoryServices } from './memoryServices';
 import { handleTui } from './server';
 
@@ -16,7 +16,7 @@ const wobblyTaps = (round: Round): Tap[] =>
 
 describe('the round', () => {
   it('is the same for the same seed, asks every fact in its step’s ways, and each fact counts once', () => {
-    for (const { step, ways } of STEPS) {
+    for (const { step, ways } of STEPS.filter((s) => s.step < 6)) {
       for (const level of [5, 3, 0] as HelpLevel[]) {
         for (const seed of seeds) {
           const records = inBox(KEYS.slice(0, 4), 2);
@@ -55,11 +55,55 @@ describe('the round', () => {
   });
 });
 
+describe('step 6, ten more and ten less (R8)', () => {
+  it('asks five ten more and five ten less facts, weakest first, in either form, and the answer is ten more or ten less', () => {
+    const known = inBox(MOVE_KEYS.filter((k, i) => i % 2 === 0 && !k.includes('tenup:10')), 3);
+    for (const seed of seeds) {
+      const round = makeRound(seed, known, { step: 6, level: 3 });
+      expect(round).toEqual(makeRound(seed, known, { step: 6, level: 3 }));
+      const keys = round.goes.map((g) => g.key);
+      expect(new Set(keys).size).toBe(GOES_PER_ROUND);
+      expect(keys.filter((k) => k.startsWith('tenup:'))).toHaveLength(5);
+      expect(keys.filter((k) => DOWN_KEYS.includes(k))).toHaveLength(5);
+      expect(round.goes.every((g) => g.v <= 1 && g.l === 3)).toBe(true);
+      for (const go of showRound(round)) {
+        const start = Number(go.key.split(':')[1]);
+        expect(go).toMatchObject({ teen: start, n: start % 10, move: go.key.startsWith('tenup') ? 'up' : 'down' });
+        expect(go.answer).toBe(go.move === 'up' ? start + 10 : start - 10);
+        expect(go.choices).toHaveLength(4);
+        expect(go.parts.join(' ')).toMatch(go.move === 'up' ? /\+/ : /[−-]|\+ \? =/);
+        expect(go.wrongs.map((w) => w.kind)).toContain('off1');
+      }
+      expect(replay(round, wobblyTaps(round))).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, firstRight: 0 });
+    }
+    // Every fact in both forms, with any seed: four different nests, three kinds of wrong, never the lone nest of its shape.
+    for (const key of MOVE_KEYS) {
+      for (const v of [0, 1] as const) {
+        for (let seed = 1; seed <= 12; seed++) {
+          const go = showGo({ seed }, seed % 10, { key, v, l: 3 })!;
+          expect(go).not.toBeNull();
+          expect(new Set(go.choices).size).toBe(4);
+          expect(new Set(go.wrongs.map((w) => w.kind)).size).toBe(3);
+          expect(atMostShareTell(go.answer, go.choices, nestShape)).toBe(true);
+          expect(go.choices.filter((c) => nestShape(c) === nestShape(go.answer)).length).toBeGreaterThanOrEqual(2);
+          expect(go.choices.every((c) => c >= 0)).toBe(true);
+        }
+      }
+    }
+    // Weakest first: with five of the ten more facts secure, the five asked are the other five.
+    const half = inBox(UP_KEYS.slice(0, 5), 3);
+    const round = makeRound(3, half, { step: 6, level: 3 });
+    expect(round.goes.map((g) => g.key).filter((k) => k.startsWith('tenup:')).sort()).toEqual(UP_KEYS.slice(5).sort());
+  });
+});
+
 describe('the help level and the step', () => {
   it('fade after two good challenges, come back after a hard one, and a new step brings one back only without a fade', () => {
     const at = (p: Partial<Place>): Place => ({ step: 1, level: 5, goodInRow: 0, goodAtStep: 0, ...p });
     expect(placeAfter(at({}), 9)).toEqual(at({ goodInRow: 1, goodAtStep: 1 }));
-    expect(placeAfter(at({ step: 5, goodInRow: 1 }), 8)).toEqual(at({ step: 5, level: 4, goodAtStep: 1 }));
+    expect(placeAfter(at({ step: 5, goodInRow: 1, goodAtStep: 1 }), 8)).toEqual(at({ step: 6, level: 4 })); // the second good challenge at step 5 passes it, and fades the help
+    expect(placeAfter(at({ step: 6, level: 3, goodInRow: 1, goodAtStep: 5 }), 9)).toEqual(at({ step: 6, level: 2, goodAtStep: 6 })); // step 6 is the top
+    expect(placeAfter(at({ step: 5, level: 3, goodAtStep: 7 }), 3).step).toBe(5); // an old step 5 child needs a good challenge to move on
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 6)).toEqual(at({ level: 2 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 4)).toEqual(at({ level: 3 }));
     expect(placeAfter(at({ level: 5 }), 0).level).toBe(5);
@@ -81,8 +125,8 @@ describe('the help level and the step', () => {
     for (let i = 0; i < 8; i++) p = placeAfter(p, 10);
     expect(p.step).toBe(5);
     expect(p.level).toBeLessThanOrEqual(4);
-    for (let i = 0; i < 8; i++) p = placeAfter(p, 10);
-    expect(p.level).toBe(0);
+    for (let i = 0; i < 12; i++) p = placeAfter(p, 10); // on to step 6, which starts with the ten-frames, then down again
+    expect(p).toMatchObject({ step: 6, level: 0 });
   });
 
   it('a wrong tap brings more picture for that go, and never shows the answer', () => {
@@ -153,12 +197,15 @@ describe('the kōwhai flowers', () => {
 });
 
 describe('the what’s next card (R8)', () => {
-  it('is secure at seven of the nine ten-and facts, and the finish reply says so', async () => {
-    expect(topSecure(inBox(KEYS.slice(0, 7), 2))).toBe(true);
-    expect(topSecure(inBox(KEYS.slice(0, 6), 2))).toBe(false);
-    for (const [count, secure] of [[7, true], [6, false]] as const) {
+  it('waits for step 6: seven of the nine ten-and facts and 14 of the 20 ten more and ten less facts, and the finish reply says so', async () => {
+    const tenAnd = inBox(KEYS.slice(0, 7), 2);
+    expect(topSecure([...tenAnd, ...inBox(MOVE_KEYS.slice(0, 14), 2)])).toBe(true);
+    expect(topSecure([...tenAnd, ...inBox(MOVE_KEYS.slice(0, 13), 2)])).toBe(false);
+    expect(topSecure(tenAnd)).toBe(false);
+    expect(topSecure([...inBox(KEYS.slice(0, 6), 2), ...inBox(MOVE_KEYS, 2)])).toBe(false);
+    for (const [count, secure] of [[14, true], [13, false]] as const) {
       const data = emptyData();
-      data.facts.p = inBox(KEYS.slice(0, count), 2);
+      data.facts.p = [...tenAnd, ...inBox(MOVE_KEYS.slice(0, count), 2)];
       const services = memoryServices({ data, now: () => Date.UTC(2026, 10, 7, 22) });
       const started = await handleTui(services, 'p', { action: 'start' });
       const round = started.body.round as Round;
