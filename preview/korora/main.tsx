@@ -31,7 +31,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
             <p>Level:</p>
-            {([1, 2, 3, 4] as const).map((l) => (
+            {([1, 2, 3, 4, 5] as const).map((l) => (
               <button key={l} type="button" onClick={() => { trial.tools.setLevel(l); h.reload(); }}>{l}</button>
             ))}
             <p>The teacher's help setting:</p>

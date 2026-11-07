@@ -33,7 +33,9 @@ export function whyLine(go: Pick<Go, 'kind' | 'n'>, kind: WrongKind): string {
     case 'all': return w.all;
     case 'minus2': return w.minus2;
     case 'double': return w.double;
-    case 'miscount': return go.kind === 'double' ? w.miscountDouble : w.miscountHalf;
+    case 'noExtra': return w.noExtra;
+    case 'bigger': return w.bigger;
+    case 'miscount': return go.kind === 'half' ? w.miscountHalf : w.miscountDouble;
   }
 }
 
@@ -43,20 +45,21 @@ export function finishLine(main: string, levelUp: Level | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.picturesBack, WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.picturesBack, WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
       lines.add(homeLine(title, true));
     }
   }
-  const keys = [...new Set([...LEVELS.flatMap((l) => levelKeys(l.level)), ...fairKeys(1), ...fairKeys(3)])];
+  const keys = [...new Set([...LEVELS.flatMap((l) => levelKeys(l.level)), ...fairKeys(1), ...fairKeys(3), ...fairKeys(5)])];
   for (const key of keys) {
     const fact = parseKey(key)!;
     lines.add(goLine(fact, false, false));
     if (key === 'dbl:2') lines.add(goLine(fact, true, false));
     if (fact.kind === 'half' && fact.n <= 20) lines.add(goLine(fact, false, true));
-    if (fact.kind !== 'fair') lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.n / 2));
+    if (fact.kind !== 'fair') lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.n / 2));
+    if (fact.kind === 'near') lines.add(WORDS.lookNear(fact.n));
   }
   // Mistakes that teach (maths review R5): why a wrong stone is wrong, and the whole go explained after a second wrong tap.
   // The why-lines name the fact (n of 1 to 10 for doubles), never the wrong number; plus2 starts at 3 (a double of 1 or 2 is not n + 2).
@@ -66,7 +69,7 @@ export function allVoiceLines(): string[] {
     lines.add(WORDS.lookDouble(n));
     lines.add(WORDS.lookHalf(2 * n));
   }
-  for (const line of [WORDS.why.plus1, WORDS.why.miscountDouble, WORDS.why.all, WORDS.why.miscountHalf, WORDS.why.minus2, WORDS.why.double]) lines.add(line);
+  for (const line of [WORDS.why.noExtra, WORDS.why.bigger, WORDS.why.plus1, WORDS.why.miscountDouble, WORDS.why.all, WORDS.why.miscountHalf, WORDS.why.minus2, WORDS.why.double]) lines.add(line);
   // Bella counts along with the child: up to 20 fish.
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
   const shoes = (['bronze', 'silver', 'gold'] as const).flatMap((m) => Object.values(FRIEND_NAMES).map((name) => WORDS.shoesWon(m, name)));

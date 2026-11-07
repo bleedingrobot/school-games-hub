@@ -4,7 +4,9 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_FISH, finishChallenge, poolAfter } from './progress';
 import { replay, type Tap } from './play';
 import { sharingTell } from '../kit/mistakes';
-import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, type Level, type Round, type WrongKind } from './round';
+import { emptyData, memoryServices } from './memoryServices';
+import { handleKorora } from './server';
+import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, topSecure, type Level, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -142,8 +144,46 @@ describe('the level', () => {
     expect(levelFor(secure(one.slice(0, 3)))).toBe(1);
     expect(levelFor(secure(one.slice(0, 4)))).toBe(2);
     expect(levelFor(recordsFor(4))).toBe(4);
-    expect(levelFor(secure(LEVELS.flatMap((l) => levelKeys(l.level))))).toBe(4);
+    expect(levelFor(recordsFor(5))).toBe(5);
+    expect(levelFor(secure(LEVELS.flatMap((l) => levelKeys(l.level))))).toBe(5);
     expect(levelFor([], 3)).toBe(3);
+  });
+});
+
+describe('near doubles (R8, level 5)', () => {
+  const near = (n: number) => `add:${n}+${n + 1}`;
+
+  it('asks 5 + 6 to 8 + 9 from Weka\'s add keys, with the right answers, real slips and the double-and-one picture', () => {
+    expect(levelKeys(5)).toEqual([5, 6, 7, 8].map(near));
+    for (const seed of seeds.slice(0, 20)) {
+      const round = makeRound(seed, recordsFor(5), { gold: true });
+      expect(round.level).toBe(5);
+      for (const go of showRound(round).filter((g) => g.kind === 'near')) {
+        expect(go.answer).toBe(2 * go.n + 1);
+        expect(go.parts).toEqual([String(go.n), '+', String(go.n + 1), '=', '?']);
+        expect(go.wrongs).toHaveLength(3);
+        expect(go.wrongs.map((w) => w.kind)).toContain('noExtra');
+        expect(go.choices.filter((c) => c === go.answer)).toHaveLength(1);
+        expect(sharingTell(go.answer, go.choices, (x) => x % 2)).toBeLessThanOrEqual(2);
+      }
+    }
+  });
+
+  it('is reached only when level 4 is secure, is recorded under the add key, and the finish says when near doubles are secure', async () => {
+    expect(topSecure(secure(levelKeys(5).slice(0, 3)))).toBe(true);
+    expect(topSecure(secure(levelKeys(5).slice(0, 2)))).toBe(false);
+    for (const [count, expected] of [[3, true], [2, false]] as const) {
+      const data = emptyData();
+      data.facts.p = secure([...LEVELS.filter((l) => l.level < 5).flatMap((l) => levelKeys(l.level)), ...levelKeys(5).slice(0, count)]);
+      data.players.p = { daysDone: 3, lastPebbleDay: null, reached: 5, version: 1 };
+      const services = memoryServices({ data });
+      const started = await handleKorora(services, 'p', { action: 'start' });
+      const round = started.body.round as Round;
+      const done = await handleKorora(services, 'p', { action: 'finish', seed: round.seed, taps: showRound(round).map((g) => ({ pick: g.answer, ms: 1000 })) });
+      expect(done.body).toMatchObject({ level: 5, topSecure: expected });
+      expect(data.players.p.reached).toBe(5);
+      expect(done.body.topSecure).toBe(expected);
+    }
   });
 });
 

@@ -74,7 +74,7 @@ it('changes one pebble a NZ day by the server’s clock, with fair-or-not record
     const reply = (await send('pupil-a', { action: 'finish', seed: round.seed, taps: goodTaps(round), daysDone: 29, goldenFish: true })).body;
     return { round, reply };
   };
-  expect((await finish()).reply).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, shoesWon: null, level: 1, levelBefore: 1 });
+  expect((await finish()).reply).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, shoesWon: null, level: 1, levelBefore: 1, topSecure: false });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect((await finish()).reply).toMatchObject({ daysDone: 1, pebbleChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
