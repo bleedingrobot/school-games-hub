@@ -4,7 +4,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_FISH, finishChallenge, poolAfter } from './progress';
 import { replay, type Tap } from './play';
 import { sharingTell } from '../kit/mistakes';
-import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, type Level, type Round, type WrongKind } from './round';
+import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, type Level, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -14,6 +14,24 @@ const recordsFor = (level: Level) => secure(LEVELS.filter((l) => l.level < level
 /** One wrong pick on every go, then the right one. */
 const wobblyTaps = (round: Round): Tap[] =>
   showRound(round).flatMap((go) => [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 4000 }, { pick: go.answer, ms: 2000 }]);
+
+describe('the picture help (R6)', () => {
+  it('follows each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new level', () => {
+    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
+    expect(helpForStats(undefined)).toBe('full');
+    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
+    expect(helpForStats(known)).toBe('none');
+    expect(helpForStats({ ...known, box: 1 })).toBe('full');
+    // A child who knows every double to 5 and has just moved to halves to 10: those facts have no record, so every go starts full.
+    const learned = levelKeys(1).map((key) => ({ ...known, key }));
+    const halves = makeRound(7, learned, { reached: 1 });
+    expect(halves.level).toBe(2);
+    const half = halves.goes.filter((g) => g.key.startsWith('half:'));
+    expect(half.length).toBeGreaterThanOrEqual(5);
+    expect(half.every((g) => g.h === 'full')).toBe(true);
+    expect(halves.goes.filter((g) => g.key.startsWith('dbl:')).every((g) => g.h === 'none')).toBe(true);
+  });
+});
 
 describe('the round', () => {
   it('is the same for the same seed, asks every fact of the level, never one twice in a row, and each fact counts once', () => {

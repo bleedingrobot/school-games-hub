@@ -12,11 +12,13 @@
  * reached, so a child never drops back. Each level has five facts, so a round asks each of today's facts once, then
  * the weakest again, then (from level 2) a few from the levels before. A fact asked twice counts once for the records.
  */
+import { helpForFact, type FactRung } from '../kit/help';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
+import type { Help } from './progress';
 
 export const GOES_PER_ROUND = 10;
 /** From level 2 on, this many goes come from the levels before (the rest are today's level). */
@@ -73,10 +75,30 @@ export function levelFor(stats: Iterable<FactStats>, reached: Level = 1): Level 
   return next ? next.level : 4;
 }
 
-/** One go as saved: the fact and how the shared pack words it (0 or 1: "4 + 4" or "Double 4"; halves always "Half of 12"). */
+export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
+export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
+
+/**
+ * The picture help for a fact from the child's own record of it (maths review R6, Weka's way with Penguin Pairs' three
+ * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+ * fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full picture comes back, and a
+ * new level's facts have no record, so they start full.
+ */
+const HELP_LADDER: readonly FactRung<Help>[] = [
+  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'faint', until: { box: 4, correct: 6 } },
+  { help: 'none' },
+];
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
+
+/**
+ * One go as saved: the fact, how the shared pack words it (0 or 1: "4 + 4" or "Double 4"; halves always "Half of 12") and
+ * its picture help. `h` is missing on a round saved before R6: that go shows the calendar's help for the round (the browser falls back).
+ */
 export interface GoPlan {
   key: string;
   v: 0 | 1;
+  h?: Help;
 }
 
 /** What the server saves when a challenge starts, and the browser is sent. */
@@ -180,6 +202,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
+  const byKey = new Map(list.map((s) => [s.key, s]));
   const today = levelKeys(level);
   const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level));
   const review = weakest(earlier, Math.min(REVIEW_GOES, earlier.length), box, random);
@@ -196,7 +219,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   }
   // Doubles are "4 + 4" or "Double 4" (the pack's variants 0 and 1). Halves are always "Half of 12" (variant 0), never
   // "12 ÷ 2", for five-year-olds. Fair or not has one way (0).
-  const goes = keys.map((key): GoPlan => ({ key, v: key.startsWith('dbl:') && random() < 0.5 ? 0 : key.startsWith('dbl:') ? 1 : 0 }));
+  const goes = keys.map((key): GoPlan => ({ key, v: key.startsWith('dbl:') && random() < 0.5 ? 0 : key.startsWith('dbl:') ? 1 : 0, h: helpForStats(byKey.get(key)) }));
   return { seed, level, gold: !!opts.gold, goes };
 }
 

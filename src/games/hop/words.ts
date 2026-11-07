@@ -50,6 +50,9 @@ export const WORDS = {
   doneToday: 'Well done! Come back tomorrow to change another lily pad.',
   stepUp: (step: SkipStep) => `You are so good at this! Next time we count in ${STEP_WORD[step]}.`,
   jar: (name: string) => `All the lily pads are gold! ${name} made it to the Glow-worm Party. You win the Golden Glow Jar!`,
+  /** The finish screen's signpost once the top step is secure and Penguin Pairs is on (maths review R8, section 3.1). */
+  signpost: 'Jumping in twos is doubling. Try Penguin Pairs.',
+  signpostGame: 'Penguin Pairs',
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',
   voiceOn: 'Voice on',
