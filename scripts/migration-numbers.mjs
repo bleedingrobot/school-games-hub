@@ -56,8 +56,12 @@ export function allBranchFiles() {
   const branches = git('for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes').split('\n').filter((b) => b && !b.endsWith('/HEAD') && b !== 'origin');
   const files = [];
   for (const branch of branches) {
-    const listed = git('ls-tree', '--name-only', `${branch}:supabase/migrations`).split('\n');
-    for (const file of listed) if (versionOf(file)) files.push({ branch, file });
+    // Naming the folder as a path (not branch:folder) lists nothing, rather than failing, on a branch without it.
+    const listed = git('ls-tree', '--name-only', branch, 'supabase/migrations/').split('\n');
+    for (const path of listed) {
+      const file = path.split('/').pop();
+      if (versionOf(file)) files.push({ branch, file });
+    }
   }
   return files;
 }
