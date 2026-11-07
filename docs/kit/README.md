@@ -10,6 +10,7 @@ What the shared parts are and how a game uses them. The plan is [docs/plans/GAME
 | Tap replay | `shared/kit/replay.ts` | Replays a child's taps, scores the first tap of each go | Weka |
 | Day arc | `shared/kit/dayArc.ts` | Bronze, silver and gold days, the golden reward, New Zealand dates | Weka |
 | Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk |
+| Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
 | Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk |
 
 ### Using mistakes and show-why in a game
