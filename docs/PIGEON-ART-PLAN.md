@@ -1,4 +1,7 @@
-# Pigeon's Number Line: painted art (to do)
+# Pigeon's Number Line: painted art (done, 8 Nov 2026)
+
+Painted with `python3 scripts/game_art.py pigeon paint|tidy` from `docs/pigeon-art/config.json`; picks are in `docs/pigeon-art/picks.json`; pictures are in `src/games/pigeon/art/paint/` and the home card is `src/assets/home/pigeon.webp`. The code stand-ins in `art.tsx` remain only as a fallback. The list below is the original to-do.
+
 
 Everything is a stand-in drawn in code in `src/games/pigeon/art.tsx` and `src/assets/home/pigeon.svg` (home card). A painted pass, as for Tūī (`scripts/tui-art.py`, made on the gaming PC through ComfyUI), still needs:
 
