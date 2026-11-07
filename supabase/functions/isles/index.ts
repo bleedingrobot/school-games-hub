@@ -2531,7 +2531,7 @@ PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.la
 * times tables. One mastery record per fact, like 7 × 8 in times tables.
 *
 * Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`). Adding and taking away within 20 keeps its own
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`), the number-line keys "place100:n63", "read1000:h300", "tens100:+63", "near10:h65", "zoom:40-50:47" (see `lineFamilies`). Adding and taking away within 20 keeps its own
 * "add:7+8" records (add-sub pack), so nothing already saved changes.
 *
 * Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
@@ -2941,7 +2941,218 @@ function solveSkip(parts) {
 		key
 	} : null;
 }
+const LINE_TENS = range$5(1, 9).map((n) => n * 10);
+const LINE_OTHERS_100 = [
+	11,
+	14,
+	18,
+	23,
+	27,
+	32,
+	36,
+	41,
+	45,
+	49,
+	54,
+	58,
+	63,
+	67,
+	72,
+	76,
+	81,
+	85,
+	89,
+	94,
+	97
+];
+const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
+const LINE_OTHERS_1000 = [
+	120,
+	140,
+	170,
+	230,
+	250,
+	270,
+	310,
+	340,
+	360,
+	390,
+	410,
+	450,
+	480,
+	520,
+	540,
+	570,
+	610,
+	640,
+	660,
+	690,
+	720,
+	750,
+	780,
+	810,
+	830,
+	860,
+	880,
+	910,
+	940,
+	960,
+	980
+];
+const TENS_MORE = [
+	14,
+	20,
+	27,
+	35,
+	42,
+	56,
+	63,
+	78,
+	85,
+	90
+];
+const TENS_LESS = [
+	10,
+	19,
+	24,
+	38,
+	47,
+	63,
+	71,
+	86,
+	92,
+	100
+];
+/** Not a tens number and not halfway: every third, so the spread covers the whole line. */
+const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
+const NEAR10_HALF = range$5(5, 95, 10);
+const NEAR100_OTHERS = [
+	130,
+	180,
+	220,
+	280,
+	340,
+	390,
+	430,
+	480,
+	530,
+	580,
+	610,
+	640,
+	680,
+	730,
+	790,
+	830,
+	870,
+	920,
+	960
+].filter((_, i) => i % 2 === 0).concat([440]);
+const NEAR100_HALF = range$5(150, 950, 100);
+const ZOOM_KEYS = [
+	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
+	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
+	"zoom:0-200:130",
+	"zoom:300-400:350"
+];
+/** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
+const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
+/** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
+const numLine = (label, tag, keys, parts, spoken) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => [lineNumber(key)],
+	make: (key, [n]) => {
+		if (!keys.includes(key) || lineNumber(key) !== n) return null;
+		return {
+			parts: parts(n, key),
+			spoken: spoken(n, key),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
+				n + 2
+			]
+		};
+	}
+});
+const nearWords = (n, size) => `Is ${n} closer to ${Math.floor(n / size) * size} or ${Math.floor(n / size) * size + size}?`;
+const lineFamilies = {
+	place100: numLine("Where a number goes on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `place100:t${n}`), ...LINE_OTHERS_100.map((n) => `place100:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], (n) => `Where does ${n} go on the line to 100?`),
+	read100: numLine("Reading a point on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `read100:t${n}`), ...LINE_OTHERS_100.map((n) => `read100:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], () => "What number is at the arrow?"),
+	tens100: numLine("Ten more and ten less on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...TENS_MORE.map((n) => `tens100:+${n}`), ...TENS_LESS.map((n) => `tens100:-${n}`)], (n, key) => [
+		"Ten",
+		key.includes("+") ? "more" : "less",
+		"than",
+		String(n)
+	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
+	near10: numLine("Which ten a number is closer to", "MS.Y3.NUM.NS.P5", [...NEAR10_OTHERS.map((n) => `near10:n${n}`), ...NEAR10_HALF.map((n) => `near10:h${n}`)], (n) => [
+		"Nearest",
+		"ten",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 10)),
+	zoom: numLine("Reading and placing on a zoomed line", "MS.Y3.NUM.NS.P1", ZOOM_KEYS, (n, key) => [
+		"Zoom",
+		/zoom:(\d+-\d+)/.exec(key)[1],
+		"at",
+		String(n)
+	], (n) => `Where is ${n} on the zoomed line?`),
+	place1000: numLine("Where a number goes on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], (n) => `Where does ${n} go on the line to 1000?`),
+	read1000: numLine("Reading a point on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], () => "What number is at the arrow?"),
+	near100: numLine("Which hundred a number is closer to", "MS.Y4.NUM.NS.P5", [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => [
+		"Nearest",
+		"hundred",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 100))
+};
+const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
+/** A number-line question read back from its parts (["Place", "63", "on", "the", "100", "line"]): its number and key, or null when it isn't one. */
+function solveLine(parts) {
+	const n = parts.map((p) => /^[1-9]\d{0,2}$/.test(p) ? Number(p) : NaN).find((x) => !Number.isNaN(x));
+	if (n === void 0) return null;
+	for (const family of Object.values(lineFamilies)) for (const key of family.keys) {
+		if (lineNumber(key) !== n) continue;
+		const made = family.make(key, [n]);
+		if (made && made.parts.length === parts.length && made.parts.every((x, i) => x === parts[i])) return {
+			answer: n,
+			key
+		};
+	}
+	return null;
+}
 const families$2 = {
+	...lineFamilies,
 	tenAnd,
 	oddEven,
 	parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
@@ -2967,7 +3178,8 @@ const EARLY_FACTS = {
 		"oddEven",
 		"parts5",
 		"parts10",
-		...SKIP_STEPS.map(({ step }) => `skip${step}`)
+		...SKIP_STEPS.map(({ step }) => `skip${step}`),
+		...LINE_FAMILY_NAMES
 	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
@@ -6178,6 +6390,45 @@ const LADDER = [
 		inWarmUp: false,
 		inAuto: false
 	},
+	{
+		id: "number-line-100",
+		label: "The number line to 100",
+		stage: "place-value",
+		curriculumTags: ["MS.Y3.NUM.NS.P1"],
+		keys: [
+			...earlyKeys("place100"),
+			...earlyKeys("read100"),
+			...earlyKeys("near10"),
+			...earlyKeys("zoom")
+		],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "ten-more-less",
+		label: "Ten more and ten less",
+		stage: "place-value",
+		curriculumTags: ["MS.Y3.NUM.NS.P1"],
+		keys: earlyKeys("tens100"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "number-line-1000",
+		label: "The number line to 1000",
+		stage: "place-value",
+		curriculumTags: ["MS.Y4.NUM.NS.P1"],
+		keys: [
+			...earlyKeys("place1000"),
+			...earlyKeys("read1000"),
+			...earlyKeys("near100")
+		],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -6356,7 +6607,7 @@ function focusPools(spec, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -6635,6 +6886,11 @@ function solveParts(parts) {
 	if (oddEven) return isFocusKey(oddEven.key) ? {
 		answer: oddEven.answer,
 		keys: [oddEven.key]
+	} : null;
+	const line = solveLine(p);
+	if (line) return isFocusKey(line.key) ? {
+		answer: line.answer,
+		keys: [line.key]
 	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;
