@@ -121,7 +121,7 @@ Built 7 Nov 2026 on branch `kit-models`. Nothing a child sees has changed: no ol
 
 **Decisions:** no old game was moved. Tūī's frame is painted berries in HTML, Weka's is painted pebbles you drag, and Quick looks' picture is styled by its own CSS classes and draws a die, so none is a swap with nothing visible changing. The kit's `DotPicture` takes its own plain data, not Quick looks' `Picture` type, so the kit does not import from a game. Painted art stays in the games: a game that wants berries or pebbles draws them on top of the kit's frame positions, or keeps its own.
 
-**What should use it next:** the new games. N1 (Kererū's number line) needs `NumberLine` first; N3 and N5 need `TenFrame`; N4 needs `DotPicture` for arrays. The first of them to be built should check the pictures at phone width and add what it needs (for example a zoom lens) as its own small kit change.
+**What should use it next:** the new games. N1 (Pigeon's number line) needs `NumberLine` first; N3 and N5 need `TenFrame`; N4 needs `DotPicture` for arrays. The first of them to be built should check the pictures at phone width and add what it needs (for example a zoom lens) as its own small kit change.
 
 ## 10. Stage K2 results (7 Nov 2026, branch `kit-mistakes`)
 
