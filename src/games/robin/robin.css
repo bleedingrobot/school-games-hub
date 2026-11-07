@@ -1,0 +1,210 @@
+/* Robin’s Berry Basket. A mossy rimu forest at dusk: every number sits dark on a light block, and every target is at least
+   56px for children of 5 to 7. Stand-in pictures drawn in code (art/CREDITS.md). */
+.rb-root {
+  --rb-ink: #1b2340;
+  --rb-panel: #fffdf5;
+  --rb-sky: #cfe6c8;
+  --rb-teal: #3d7a3a;
+  --rb-teal-dark: #1f5a2a;
+  --rb-gold: #f5c518;
+  --rb-green: #4a5d1f;
+  --rb-room-min: var(--rb-room, 100dvh);
+  position: relative;
+  min-height: var(--rb-room-min);
+  display: flex;
+  flex-direction: column;
+  background: var(--rb-sky);
+  color: var(--rb-ink);
+  font-family: system-ui, sans-serif;
+  overflow-x: hidden;
+}
+.rb-root--cover { position: fixed; inset: 0; z-index: 20; overflow: auto; }
+.rb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.rb-message { margin: auto; font-size: 1.6rem; padding: 24px; text-align: center; }
+
+.rb-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.rb-button, .rb-hear {
+  min-height: 48px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--rb-teal-dark);
+  background: var(--rb-panel); color: var(--rb-ink); font: 700 1.05rem system-ui, sans-serif; cursor: pointer;
+}
+.rb-button:focus-visible, .rb-hear:focus-visible, .rb-choice:focus-visible, .rb-heapbtn:focus-visible { outline: 4px solid var(--rb-teal-dark); outline-offset: 3px; }
+.rb-button:disabled { opacity: 0.4; cursor: default; }
+
+/* The scene: pale sky, snowy ridge, a green bank below. */
+.rb-scene {
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 30% at 50% 66%, #e8f3d8 0 60%, transparent 61%),
+    linear-gradient(var(--rb-sky) 0 62%, #8cb85a 62% 100%);
+}
+
+/* Home and finish: the log of baskets and a panel beside it (below on a narrow screen). */
+.rb-home { flex: 1; display: flex; min-height: var(--rb-room-min); }
+.rb-logbox { flex: 1; min-height: var(--rb-room-min); display: flex; flex-direction: column; justify-content: space-between; padding: 64px 16px 16px; box-sizing: border-box; }
+.rb-logbox__friend { display: block; width: clamp(90px, 18vw, 170px); }
+.rb-panel {
+  align-self: center; width: min(380px, 40vw); margin: 16px; padding: 18px 20px; border-radius: 28px; box-sizing: border-box;
+  background: var(--rb-panel); box-shadow: 0 6px 0 var(--rb-teal-dark), 0 8px 24px rgb(0 0 0 / 0.18); text-align: center;
+}
+.rb-panel h2 { margin: 0 0 8px; font-size: clamp(1.25rem, 2.6vw, 1.7rem); line-height: 1.25; }
+.rb-panel h2:focus { outline: none; }
+.rb-panel h2:focus-visible { outline: 3px solid var(--rb-gold); }
+.rb-day { font-size: 1.25rem; font-weight: 800; color: var(--rb-teal-dark); margin: 6px 0; }
+.rb-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #dff0ee; color: var(--rb-teal-dark); font-weight: 800; }
+.rb-play-button { width: 100%; min-height: 56px; margin-top: 10px; }
+.rb-hear-home { margin-top: 8px; }
+.rb-shelf { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 8px 0 0; }
+.rb-shelf__feast { width: 36px; }
+.rb-prize { display: block; width: min(120px, 40%); margin: 8px auto; }
+.rb-home--prize .rb-prize { animation: rb-ring 1.2s ease-in-out 3; transform-origin: 50% 0; }
+@keyframes rb-ring { 25% { rotate: 12deg; } 75% { rotate: -12deg; } }
+@media (max-height: 500px) {
+  .rb-panel { align-self: flex-start; margin-top: 68px; padding: 12px 16px; }
+  .rb-panel h2 { font-size: 1.15rem; }
+  .rb-panel p { margin: 4px 0; }
+  .rb-play-button { margin-top: 4px; }
+  .rb-prize { width: min(70px, 30%); }
+}
+@media (max-width: 700px) {
+  .rb-home { flex-direction: column; }
+  .rb-logbox { min-height: 50dvh; }
+  .rb-panel { width: auto; }
+}
+
+/* The birds. */
+.rb-friend { display: block; width: 100%; }
+.rb-bird { display: block; width: 100%; height: auto; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.rb-friend--cheer { animation: rb-hop 0.5s ease-in-out 3; }
+.rb-friend--laugh { animation: rb-sway 0.6s ease-in-out 2; }
+@keyframes rb-hop { 50% { translate: 0 -10%; } }
+@keyframes rb-sway { 25% { rotate: -6deg; } 75% { rotate: 6deg; } }
+
+/* Playing: the go counter, the see-saw, the equation, the cards or the stones. */
+.rb-play {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: var(--rb-room-min); padding: 10px 10px 16px; box-sizing: border-box;
+}
+.rb-top { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-right: 300px; }
+.rb-progress { display: flex; gap: 6px; padding: 6px 8px 0; flex-wrap: wrap; }
+.rb-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--rb-teal-dark); }
+.rb-pip--done { background: var(--rb-gold); }
+.rb-stage { position: relative; flex: 1; width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: rb-in 0.4s ease-out; }
+@keyframes rb-in { from { opacity: 0; translate: 0 10px; } }
+.rb-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(70px, 11vw, 140px); pointer-events: none; }
+
+/* The cards: three or four, each a big target with its number. */
+.rb-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; }
+.rb-choice {
+  position: relative; display: grid; place-items: center; gap: 2px; min-width: 76px; min-height: 76px; padding: 6px 10px; border-radius: 18px;
+  border: 3px solid var(--rb-ink); background: #f4c20d; color: var(--rb-ink); cursor: pointer; box-shadow: 0 5px 0 rgb(0 0 0 / 0.25);
+}
+.rb-choice__value { font: 900 2.2rem / 1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.rb-choice:disabled { cursor: default; }
+.rb-choice--off { opacity: 0.35; }
+.rb-choice--wobble { animation: rb-shake 0.5s ease-in-out; }
+@keyframes rb-shake { 20% { rotate: -10deg; } 40% { rotate: 8deg; } 60% { rotate: -5deg; } 80% { rotate: 3deg; } }
+.rb-choice--right { animation: rb-pop 0.6s ease-out forwards; }
+.rb-choice--hint { box-shadow: 0 0 0 5px #fff, 0 0 0 9px var(--rb-teal-dark); }
+@keyframes rb-pop { 50% { scale: 1.2; } 100% { scale: 1.08; } }
+
+/* Mistakes that teach: the why-panel, "Let's look together", "Now you try". */
+.rb-why {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(94%, 520px); margin: 0 auto; padding: 8px 14px; box-sizing: border-box;
+  border-radius: 16px; border: 3px solid var(--rb-teal-dark); background: var(--rb-panel); color: var(--rb-ink); text-align: center;
+  font: 800 clamp(1rem, 2.6vw, 1.25rem) / 1.3 system-ui, sans-serif; box-shadow: 0 4px 0 rgb(0 0 0 / 0.15); animation: rb-why-in 0.25s ease-out;
+}
+.rb-why p { margin: 0; }
+.rb-why__title { font-size: 1.15em; color: var(--rb-teal-dark); }
+.rb-why--try { padding: 6px 14px; }
+@keyframes rb-why-in { from { opacity: 0; translate: 0 12px; } }
+
+/* The guiding hand, drawn inside the button it points at. */
+.rb-hand {
+  position: absolute; left: 50%; top: 55%; font-size: 2.6rem; line-height: 1; translate: -50% 0;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: rb-nudge 0.9s ease-in-out infinite; z-index: 3;
+}
+@keyframes rb-nudge { 50% { translate: -50% -14%; } }
+
+/* The first-time tip: in line at the top of the home panel. */
+.rb-coach { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 10px; padding: 10px 12px; border-radius: 16px; border: 3px solid var(--rb-gold); background: #fff8dc; text-align: center; }
+.rb-coach__say { margin: 0; font-weight: 700; line-height: 1.3; }
+.rb-tip__face { display: block; width: 56px; }
+.rb-tip__btns { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.rb-soft { color: #55607a; font-size: 0.9rem; }
+.rb-btn { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--rb-teal-dark); background: var(--rb-panel); color: var(--rb-ink); font: 700 1rem system-ui, sans-serif; cursor: pointer; }
+.rb-btn--primary { background: var(--rb-gold); border-color: #c79a00; }
+.rb-tip__x { min-width: 44px; padding: 0; }
+
+@media (max-height: 500px) {
+  .rb-top { padding-right: 280px; }
+  }
+@media (max-width: 640px) {
+  .rb-top { padding-right: 0; padding-top: 64px; }
+  .rb-stage__friend { display: none; }
+  .rb-bar { left: 8px; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rb-root *, .rb-root *::before, .rb-root *::after { animation: none !important; transition: none !important; }
+}
+
+/* The baskets on the log. */
+.rb-log { --rb-small: clamp(48px, min(9vw, 12vh), 90px); display: grid; grid-template-columns: repeat(5, var(--rb-small)); row-gap: calc(var(--rb-small) * 0.3); justify-content: center; margin: 0 auto; padding: 10px 12px 6px; border-radius: 14px; background: linear-gradient(#8a6238 0 0) bottom / 100% 12px no-repeat; }
+.rb-log__spot { display: block; width: var(--rb-small); }
+.rb-small { display: block; width: 100%; }
+.rb-small svg { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.rb-small--plain { opacity: 0.8; }
+.rb-small--glow svg { animation: rb-glow 1.2s ease-in-out 3; }
+@keyframes rb-glow { 50% { filter: drop-shadow(0 0 16px #fff6b0) drop-shadow(0 0 6px var(--rb-gold)); scale: 1.25; } }
+.rb-golden { display: block; width: 100%; height: auto; }
+
+/* A berry, a pile of berries, and the basket. */
+.rb-berry { position: relative; display: block; width: 100%; height: 100%; }
+.rb-berry--dim { opacity: 0.3; }
+.rb-berry__mark { position: absolute; inset: 0; display: grid; place-items: center; font: 900 1.1rem system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #000; }
+.rb-berrysvg { display: block; width: 100%; height: auto; }
+.rb-pile, .rb-group { position: relative; width: min(100%, 520px); aspect-ratio: 2 / 1; max-height: 30dvh; margin: 0 auto; }
+.rb-berrybtn {
+  position: absolute; width: clamp(48px, 11%, 64px); aspect-ratio: 1; translate: -50% -50%; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; cursor: pointer; display: grid; place-items: center;
+}
+.rb-berrybtn:disabled { cursor: default; }
+.rb-berrybtn:focus-visible { outline: 4px solid var(--rb-teal-dark); outline-offset: 2px; }
+.rb-berrybtn--gone { opacity: 0.12; }
+.rb-berrybtn--peek { box-shadow: 0 0 0 4px var(--rb-gold); }
+.rb-berrybtn--plop { animation: rb-plop 0.3s ease-out; }
+@keyframes rb-plop { 40% { scale: 1.25; } }
+.rb-basket { position: relative; display: flex; flex-direction: column; align-items: center; width: min(100%, 360px); }
+.rb-basket__above { position: absolute; top: -34px; left: 50%; translate: -50% 0; padding: 0 14px; border-radius: 999px; background: var(--rb-panel); font: 900 1.7rem system-ui, sans-serif; z-index: 2; }
+.rb-basket__spaces { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 92%; margin-bottom: -26px; }
+.rb-basket__spaces--heap { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin-bottom: -22px; min-height: 40px; }
+.rb-heapberry { width: 36px; margin: 0 -6px -10px; }
+.rb-slot { display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; background: rgb(255 253 245 / 0.75); border: 2px dashed #7a5a2a; }
+.rb-slot--end { margin-right: 0; }
+.rb-slot--full { background: transparent; border-style: solid; border-color: transparent; animation: rb-plop 0.3s ease-out; }
+.rb-slot--lit { box-shadow: 0 0 0 4px #fff, 0 0 0 8px var(--rb-teal-dark); }
+.rb-slot__n { font: 900 1.1rem system-ui, sans-serif; color: #5a4220; }
+.rb-basketsvg { display: block; width: 100%; height: auto; }
+
+/* Give goes: the pile, the basket and "That's all". */
+.rb-give { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.rb-give__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; }
+.rb-thatsall { min-width: 160px; min-height: 64px; }
+.rb-thatsall:disabled { opacity: 0.45; cursor: default; }
+.rb-needone { display: inline-flex; align-items: center; gap: 4px; font-size: 1.6rem; }
+
+/* How many and one more. */
+.rb-count { display: flex; align-items: center; justify-content: center; min-height: 38px; font: 900 2rem system-ui, sans-serif; }
+.rb-plate { position: relative; width: min(60%, 260px); margin: 0 auto; }
+.rb-plate svg { display: block; width: 100%; height: auto; }
+.rb-plate__n { position: absolute; left: 50%; top: 38%; translate: -50% -50%; padding: 0 14px; border-radius: 999px; background: var(--rb-panel); font: 900 2rem system-ui, sans-serif; }
+.rb-plate__more { position: absolute; right: -10%; bottom: 8%; width: 20%; animation: rb-drop 0.6s ease-out; }
+@keyframes rb-drop { from { translate: 0 -60px; opacity: 0; } }
+
+/* Show me: the button it means glows. */
+.rb-showing .rb-play-button { animation: rb-beacon 0.8s ease-in-out infinite; }
+@keyframes rb-beacon { 50% { box-shadow: 0 0 0 8px #fff, 0 0 0 14px var(--rb-gold); } }
+.rb-showme { margin-top: 8px; }
+.rb-whypic { display: flex; justify-content: center; align-items: center; gap: 4px; max-height: 22dvh; }
+.rb-whypic .rb-berrysvg { width: 34px; }
+.rb-whypic--over .rb-berrysvg { filter: hue-rotate(0deg); }
+.rb-shelf__feast { width: 44px; }

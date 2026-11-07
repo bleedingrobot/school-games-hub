@@ -1,0 +1,506 @@
+[
+ {
+  "slug": "let-s-count-again-together",
+  "text": "Let’s count again together."
+ },
+ {
+  "slug": "let-us-count-them-one-at-a-time",
+  "text": "Let us count them one at a time."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try!"
+ },
+ {
+  "slug": "how-many-berries",
+  "text": "How many berries?"
+ },
+ {
+  "slug": "put-a-berry-in-the-basket-first",
+  "text": "Put a berry in the basket first."
+ },
+ {
+  "slug": "one-more-berry-comes",
+  "text": "One more berry comes."
+ },
+ {
+  "slug": "tap-the-glowing-button-to-go-on",
+  "text": "Tap the glowing button to go on."
+ },
+ {
+  "slug": "today-s-basket-is-ready",
+  "text": "Today’s basket is ready"
+ },
+ {
+  "slug": "next-basket-tomorrow",
+  "text": "Next basket tomorrow"
+ },
+ {
+  "slug": "well-done-come-back-tomorrow-to-turn-another-basket",
+  "text": "Well done! Come back tomorrow to turn another basket."
+ },
+ {
+  "slug": "hello-i-am-robin-i-love-berries-will-you-count-some-out-for-me",
+  "text": "Hello! I am Robin. I love berries. Will you count some out for me?"
+ },
+ {
+  "slug": "i-will-talk-to-you-tap-hear-it-again-to-hear-me-again",
+  "text": "I will talk to you. Tap Hear it again to hear me again."
+ },
+ {
+  "slug": "robin-wants-some-berries-can-you-help-robin",
+  "text": "Robin wants some berries! Can you help Robin?"
+ },
+ {
+  "slug": "kiwi-wants-some-berries-can-you-help-kiwi",
+  "text": "Kiwi wants some berries! Can you help Kiwi?"
+ },
+ {
+  "slug": "now-kiwi-wants-some-berries-too",
+  "text": "Now Kiwi wants some berries too!"
+ },
+ {
+  "slug": "kea-wants-some-berries-can-you-help-kea",
+  "text": "Kea wants some berries! Can you help Kea?"
+ },
+ {
+  "slug": "now-kea-wants-some-berries-too",
+  "text": "Now Kea wants some berries too!"
+ },
+ {
+  "slug": "weka-wants-some-berries-can-you-help-weka",
+  "text": "Weka wants some berries! Can you help Weka?"
+ },
+ {
+  "slug": "now-weka-wants-some-berries-too",
+  "text": "Now Weka wants some berries too!"
+ },
+ {
+  "slug": "pukeko-wants-some-berries-can-you-help-pukeko",
+  "text": "Pūkeko wants some berries! Can you help Pūkeko?"
+ },
+ {
+  "slug": "now-pukeko-wants-some-berries-too",
+  "text": "Now Pūkeko wants some berries too!"
+ },
+ {
+  "slug": "tui-wants-some-berries-can-you-help-tui",
+  "text": "Tūī wants some berries! Can you help Tūī?"
+ },
+ {
+  "slug": "now-tui-wants-some-berries-too",
+  "text": "Now Tūī wants some berries too!"
+ },
+ {
+  "slug": "that-is-too-many-berries-put-some-back",
+  "text": "That is too many berries. Put some back."
+ },
+ {
+  "slug": "that-is-not-enough-yet-add-some-more",
+  "text": "That is not enough yet. Add some more."
+ },
+ {
+  "slug": "one-berry-was-counted-twice-touch-each-berry-only-once",
+  "text": "One berry was counted twice. Touch each berry only once."
+ },
+ {
+  "slug": "one-berry-was-missed-count-every-berry",
+  "text": "One berry was missed. Count every berry."
+ },
+ {
+  "slug": "a-whole-row-was-missed-count-every-row",
+  "text": "A whole row was missed. Count every row."
+ },
+ {
+  "slug": "that-is-a-lot-more-than-there-are-count-again",
+  "text": "That is a lot more than there are. Count again."
+ },
+ {
+  "slug": "that-is-how-many-were-under-the-cloth-one-more-has-come",
+  "text": "That is how many were under the cloth. One more has come."
+ },
+ {
+  "slug": "only-one-more-berry-came-not-two",
+  "text": "Only one more berry came. Not two."
+ },
+ {
+  "slug": "that-is-just-one-berry-count-them-all",
+  "text": "That is just one berry. Count them all."
+ },
+ {
+  "slug": "so-close-count-again-one-at-a-time",
+  "text": "So close! Count again, one at a time."
+ },
+ {
+  "slug": "give-me-one-berry",
+  "text": "Give me one berry."
+ },
+ {
+  "slug": "one-berry",
+  "text": "One berry."
+ },
+ {
+  "slug": "give-me-two-berries",
+  "text": "Give me two berries."
+ },
+ {
+  "slug": "two-berries",
+  "text": "Two berries."
+ },
+ {
+  "slug": "give-me-three-berries",
+  "text": "Give me three berries."
+ },
+ {
+  "slug": "three-berries",
+  "text": "Three berries."
+ },
+ {
+  "slug": "give-me-four-berries",
+  "text": "Give me four berries."
+ },
+ {
+  "slug": "four-berries",
+  "text": "Four berries."
+ },
+ {
+  "slug": "give-me-five-berries",
+  "text": "Give me five berries."
+ },
+ {
+  "slug": "five-berries",
+  "text": "Five berries."
+ },
+ {
+  "slug": "give-me-six-berries",
+  "text": "Give me six berries."
+ },
+ {
+  "slug": "six-berries",
+  "text": "Six berries."
+ },
+ {
+  "slug": "give-me-seven-berries",
+  "text": "Give me seven berries."
+ },
+ {
+  "slug": "seven-berries",
+  "text": "Seven berries."
+ },
+ {
+  "slug": "give-me-eight-berries",
+  "text": "Give me eight berries."
+ },
+ {
+  "slug": "eight-berries",
+  "text": "Eight berries."
+ },
+ {
+  "slug": "give-me-nine-berries",
+  "text": "Give me nine berries."
+ },
+ {
+  "slug": "nine-berries",
+  "text": "Nine berries."
+ },
+ {
+  "slug": "give-me-ten-berries",
+  "text": "Give me ten berries."
+ },
+ {
+  "slug": "ten-berries",
+  "text": "Ten berries."
+ },
+ {
+  "slug": "give-me-eleven-berries",
+  "text": "Give me eleven berries."
+ },
+ {
+  "slug": "eleven-berries",
+  "text": "Eleven berries."
+ },
+ {
+  "slug": "give-me-twelve-berries",
+  "text": "Give me twelve berries."
+ },
+ {
+  "slug": "twelve-berries",
+  "text": "Twelve berries."
+ },
+ {
+  "slug": "give-me-thirteen-berries",
+  "text": "Give me thirteen berries."
+ },
+ {
+  "slug": "thirteen-berries",
+  "text": "Thirteen berries."
+ },
+ {
+  "slug": "give-me-fourteen-berries",
+  "text": "Give me fourteen berries."
+ },
+ {
+  "slug": "fourteen-berries",
+  "text": "Fourteen berries."
+ },
+ {
+  "slug": "give-me-fifteen-berries",
+  "text": "Give me fifteen berries."
+ },
+ {
+  "slug": "fifteen-berries",
+  "text": "Fifteen berries."
+ },
+ {
+  "slug": "give-me-sixteen-berries",
+  "text": "Give me sixteen berries."
+ },
+ {
+  "slug": "sixteen-berries",
+  "text": "Sixteen berries."
+ },
+ {
+  "slug": "give-me-seventeen-berries",
+  "text": "Give me seventeen berries."
+ },
+ {
+  "slug": "seventeen-berries",
+  "text": "Seventeen berries."
+ },
+ {
+  "slug": "give-me-eighteen-berries",
+  "text": "Give me eighteen berries."
+ },
+ {
+  "slug": "eighteen-berries",
+  "text": "Eighteen berries."
+ },
+ {
+  "slug": "give-me-nineteen-berries",
+  "text": "Give me nineteen berries."
+ },
+ {
+  "slug": "nineteen-berries",
+  "text": "Nineteen berries."
+ },
+ {
+  "slug": "give-me-twenty-berries",
+  "text": "Give me twenty berries."
+ },
+ {
+  "slug": "twenty-berries",
+  "text": "Twenty berries."
+ },
+ {
+  "slug": "there-are-four-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are four berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "four-and-one-more-is-five",
+  "text": "Four and one more is five."
+ },
+ {
+  "slug": "there-are-five-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are five berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "five-and-one-more-is-six",
+  "text": "Five and one more is six."
+ },
+ {
+  "slug": "there-are-six-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are six berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "six-and-one-more-is-seven",
+  "text": "Six and one more is seven."
+ },
+ {
+  "slug": "there-are-seven-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are seven berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "seven-and-one-more-is-eight",
+  "text": "Seven and one more is eight."
+ },
+ {
+  "slug": "there-are-eight-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are eight berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "eight-and-one-more-is-nine",
+  "text": "Eight and one more is nine."
+ },
+ {
+  "slug": "there-are-nine-berries-under-the-cloth-one-more-comes-how-many-now",
+  "text": "There are nine berries under the cloth. One more comes. How many now?"
+ },
+ {
+  "slug": "nine-and-one-more-is-ten",
+  "text": "Nine and one more is ten."
+ },
+ {
+  "slug": "one",
+  "text": "One"
+ },
+ {
+  "slug": "two",
+  "text": "Two"
+ },
+ {
+  "slug": "three",
+  "text": "Three"
+ },
+ {
+  "slug": "four",
+  "text": "Four"
+ },
+ {
+  "slug": "five",
+  "text": "Five"
+ },
+ {
+  "slug": "six",
+  "text": "Six"
+ },
+ {
+  "slug": "seven",
+  "text": "Seven"
+ },
+ {
+  "slug": "eight",
+  "text": "Eight"
+ },
+ {
+  "slug": "nine",
+  "text": "Nine"
+ },
+ {
+  "slug": "ten",
+  "text": "Ten"
+ },
+ {
+  "slug": "eleven",
+  "text": "Eleven"
+ },
+ {
+  "slug": "twelve",
+  "text": "Twelve"
+ },
+ {
+  "slug": "thirteen",
+  "text": "Thirteen"
+ },
+ {
+  "slug": "fourteen",
+  "text": "Fourteen"
+ },
+ {
+  "slug": "fifteen",
+  "text": "Fifteen"
+ },
+ {
+  "slug": "sixteen",
+  "text": "Sixteen"
+ },
+ {
+  "slug": "seventeen",
+  "text": "Seventeen"
+ },
+ {
+  "slug": "eighteen",
+  "text": "Eighteen"
+ },
+ {
+  "slug": "nineteen",
+  "text": "Nineteen"
+ },
+ {
+  "slug": "twenty",
+  "text": "Twenty"
+ },
+ {
+  "slug": "twenty-one",
+  "text": "Twenty-one"
+ },
+ {
+  "slug": "twenty-two",
+  "text": "Twenty-two"
+ },
+ {
+  "slug": "twenty-three",
+  "text": "Twenty-three"
+ },
+ {
+  "slug": "twenty-four",
+  "text": "Twenty-four"
+ },
+ {
+  "slug": "well-done-a-basket-turned-bronze",
+  "text": "Well done! A basket turned bronze!"
+ },
+ {
+  "slug": "well-done-a-basket-turned-silver",
+  "text": "Well done! A basket turned silver!"
+ },
+ {
+  "slug": "well-done-a-basket-turned-gold",
+  "text": "Well done! A basket turned gold!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-robin-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Robin has the Golden Berry Feast!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-kiwi-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Kiwi has the Golden Berry Feast!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-kea-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Kea has the Golden Berry Feast!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-weka-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Weka has the Golden Berry Feast!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-pukeko-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Pūkeko has the Golden Berry Feast!"
+ },
+ {
+  "slug": "all-the-baskets-are-gold-tui-has-the-golden-berry-feast",
+  "text": "All the baskets are gold! Tūī has the Golden Berry Feast!"
+ },
+ {
+  "slug": "next-time-how-many-1-to-5",
+  "text": "Next time: how many? 1 to 5."
+ },
+ {
+  "slug": "next-time-give-6-to-10",
+  "text": "Next time: give 6 to 10."
+ },
+ {
+  "slug": "next-time-how-many-6-to-10",
+  "text": "Next time: how many? 6 to 10."
+ },
+ {
+  "slug": "next-time-one-more",
+  "text": "Next time: one more."
+ },
+ {
+  "slug": "next-time-count-to-20",
+  "text": "Next time: count to 20."
+ },
+ {
+  "slug": "next-time-a-little-less-help",
+  "text": "Next time: a little less help."
+ },
+ {
+  "slug": "next-time-a-little-more-help",
+  "text": "Next time: a little more help."
+ },
+ {
+  "slug": "next-time-the-same-again",
+  "text": "Next time: the same again."
+ }
+]

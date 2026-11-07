@@ -23,8 +23,9 @@ describe('the round', () => {
         expect(showRound(round)).toHaveLength(GOES);
       }
     }
-    for (const seed of seeds) {
+    for (let seed = 1; seed <= 200; seed++) {
       const g = makeRound(seed, [], { step: 1, level: 5, guided: true });
+      expect(showRound(g).every((x) => x.kind === 'give' && x.pile > x.answer)).toBe(true);
       expect(g.goes).toHaveLength(GOES);
       expect(g.goes[0]).toMatchObject({ key: GUIDED_KEY, l: TOP_LEVEL });
     }
