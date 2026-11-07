@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, parseKey, showRound, type Colour, type Round } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, parseKey, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -64,6 +64,57 @@ describe('the round', () => {
       expect(guided.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding' });
       expect(new Set(guided.goes.map((g) => g.key)).size).toBe(GOES_PER_ROUND);
     }
+  });
+});
+
+describe('the wrong shells (maths review R5)', () => {
+  const allowed: Record<Kind, WrongKind[]> = { hiding: ['shown', 'whole', 'add', 'off1'], altogether: ['part', 'off1'], twoTides: ['before', 'whole', 'off1'] };
+
+  it('has three tagged wrong shells on every go: no repeat, at most 2 the answer\'s odd or even, always a one-off near miss', () => {
+    for (const kind of Object.keys(allowed) as Kind[]) {
+      for (const { from, to } of LEVELS) {
+        for (let whole = from; whole <= to; whole++) {
+          for (let shown = 0; shown <= whole; shown++) {
+            for (const seed of seeds.slice(0, 12)) {
+              const go = showGo({ seed }, 3, { key: `part${whole}:${shown}`, kind });
+              if (!go) continue;
+              const label = `${kind} part${whole}:${shown} seed ${seed}`;
+              expect(go.choices, label).toHaveLength(4);
+              expect(new Set(go.choices).size, label).toBe(4);
+              expect(go.wrongs.map((w) => w.n).sort(), label).toEqual(go.choices.filter((c) => c !== go.answer).sort());
+              expect(go.wrongs.every((w) => allowed[kind].includes(w.kind)), label).toBe(true);
+              expect(go.choices.filter((c) => c % 2 === go.answer % 2).length, label).toBeLessThanOrEqual(2);
+              expect(go.wrongs.some((w) => Math.abs(w.n - go.answer) === 1), label).toBe(true);
+              expect(showGo({ seed }, 3, { key: go.key, kind })).toEqual(go);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it('tags the number showing, the whole, the sum and the first tide with what they are', () => {
+    for (const seed of seeds.slice(0, 20)) {
+      const hiding = showGo({ seed }, 0, { key: 'part9:3', kind: 'hiding' })!; // answer 6; showing 3; whole 9; sum 12
+      for (const w of hiding.wrongs) expect(w.kind).toBe({ 3: 'shown', 9: 'whole', 12: 'add' }[w.n] ?? 'off1');
+      const tides = showGo({ seed }, 0, { key: 'part9:3', kind: 'twoTides' })!;
+      for (const w of tides.wrongs) expect(w.kind).toBe({ 3: 'before', 9: 'whole' }[w.n] ?? 'off1');
+    }
+    const together = showGo({ seed: 5 }, 0, { key: 'part7:4', kind: 'altogether' })!; // answer 7; the parts are 4 and 3
+    for (const w of together.wrongs) expect(w.kind).toBe({ 4: 'part', 3: 'part' }[w.n] ?? 'off1');
+  });
+
+  it('scores only the first shell of a go, however many wrong ones follow, and takes a redo after two wrong', () => {
+    const round = makeRound(11, [], { colour: 'gold' });
+    const goes = showRound(round);
+    const taps: Tap[] = goes.flatMap((go) => {
+      const [w1, w2, w3] = go.choices.filter((c) => c !== go.answer);
+      // wrong, wrong ("Let's look together"), then the redo: another wrong and the right shell
+      return [w1, w2, w3, go.answer].map((pick, i) => ({ pick, ms: 3000 + i }));
+    });
+    const end = replay(round, taps);
+    expect(end).toMatchObject({ done: true, mistakes: GOES_PER_ROUND * 3 });
+    expect(end.answers).toEqual(goes.map((g) => ({ key: g.key, correct: false, ms: 3000 })));
   });
 });
 

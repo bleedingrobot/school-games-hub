@@ -1,7 +1,11 @@
 [
  {
-  "slug": "try-again",
-  "text": "Try again!"
+  "slug": "let-s-look-together",
+  "text": "Let's look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try!"
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-magic-shell",
@@ -140,244 +144,876 @@
   "text": "3 pipi. How many are hiding?"
  },
  {
+  "slug": "0-are-showing-how-many-are-hiding",
+  "text": "0 are showing. How many are hiding?"
+ },
+ {
+  "slug": "look-1-2-3-hiding",
+  "text": "Look: 1, 2, 3 hiding."
+ },
+ {
+  "slug": "3-is-0-and-3-so-3-are-hiding",
+  "text": "3 is 0 and 3. So 3 are hiding."
+ },
+ {
+  "slug": "1-is-showing-how-many-are-hiding",
+  "text": "1 is showing. How many are hiding?"
+ },
+ {
+  "slug": "3-is-all-the-pipi-some-are-hiding",
+  "text": "3 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-3-the-answer-cannot-be-more",
+  "text": "We started with 3. The answer cannot be more."
+ },
+ {
+  "slug": "look-1-2-hiding",
+  "text": "Look: 1, 2 hiding."
+ },
+ {
+  "slug": "3-is-1-and-2-so-2-are-hiding",
+  "text": "3 is 1 and 2. So 2 are hiding."
+ },
+ {
   "slug": "1-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "1-here-and-2-popped-up-together-that-is-3",
+  "text": "1 here and 2 popped up. Together that is 3."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3",
+  "text": "Let's count all of them: 1, 2, 3."
  },
  {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-3-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 3 pipi. How many are hiding now?"
  },
  {
+  "slug": "the-whole-stays-3-only-the-split-changes",
+  "text": "The whole stays 3. Only the split changes."
+ },
+ {
   "slug": "3-pipi-how-many-are-hiding-look-at-the-sand-then-tap-the-shell-the-hand-points-to",
   "text": "3 pipi. How many are hiding? Look at the sand. Then tap the shell the hand points to."
+ },
+ {
+  "slug": "2-are-showing-how-many-are-hiding",
+  "text": "2 are showing. How many are hiding?"
+ },
+ {
+  "slug": "look-1-hiding",
+  "text": "Look: 1 hiding."
+ },
+ {
+  "slug": "3-is-2-and-1-so-1-is-hiding",
+  "text": "3 is 2 and 1. So 1 is hiding."
  },
  {
   "slug": "2-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 1 popped up. How many pipi altogether?"
  },
  {
+  "slug": "2-here-and-1-popped-up-together-that-is-3",
+  "text": "2 here and 1 popped up. Together that is 3."
+ },
+ {
+  "slug": "3-are-showing-how-many-are-hiding",
+  "text": "3 are showing. How many are hiding?"
+ },
+ {
+  "slug": "look-none-are-hiding",
+  "text": "Look: none are hiding."
+ },
+ {
+  "slug": "3-is-3-and-0-so-none-are-hiding",
+  "text": "3 is 3 and 0. So none are hiding."
+ },
+ {
   "slug": "4-pipi-how-many-are-hiding",
   "text": "4 pipi. How many are hiding?"
+ },
+ {
+  "slug": "look-1-2-3-4-hiding",
+  "text": "Look: 1, 2, 3, 4 hiding."
+ },
+ {
+  "slug": "4-is-0-and-4-so-4-are-hiding",
+  "text": "4 is 0 and 4. So 4 are hiding."
+ },
+ {
+  "slug": "4-is-all-the-pipi-some-are-hiding",
+  "text": "4 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-4-the-answer-cannot-be-more",
+  "text": "We started with 4. The answer cannot be more."
+ },
+ {
+  "slug": "4-is-1-and-3-so-3-are-hiding",
+  "text": "4 is 1 and 3. So 3 are hiding."
  },
  {
   "slug": "1-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 3 popped up. How many pipi altogether?"
  },
  {
+  "slug": "1-here-and-3-popped-up-together-that-is-4",
+  "text": "1 here and 3 popped up. Together that is 4."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4",
+  "text": "Let's count all of them: 1, 2, 3, 4."
+ },
+ {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-4-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 4 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "the-whole-stays-4-only-the-split-changes",
+  "text": "The whole stays 4. Only the split changes."
+ },
+ {
+  "slug": "4-is-2-and-2-so-2-are-hiding",
+  "text": "4 is 2 and 2. So 2 are hiding."
  },
  {
   "slug": "2-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 2 popped up. How many pipi altogether?"
  },
  {
+  "slug": "2-here-and-2-popped-up-together-that-is-4",
+  "text": "2 here and 2 popped up. Together that is 4."
+ },
+ {
+  "slug": "4-is-3-and-1-so-1-is-hiding",
+  "text": "4 is 3 and 1. So 1 is hiding."
+ },
+ {
   "slug": "3-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-1-popped-up-together-that-is-4",
+  "text": "3 here and 1 popped up. Together that is 4."
+ },
+ {
+  "slug": "4-are-showing-how-many-are-hiding",
+  "text": "4 are showing. How many are hiding?"
+ },
+ {
+  "slug": "4-is-4-and-0-so-none-are-hiding",
+  "text": "4 is 4 and 0. So none are hiding."
  },
  {
   "slug": "5-pipi-how-many-are-hiding",
   "text": "5 pipi. How many are hiding?"
  },
  {
+  "slug": "look-1-2-3-4-5-hiding",
+  "text": "Look: 1, 2, 3, 4, 5 hiding."
+ },
+ {
+  "slug": "5-is-0-and-5-so-5-are-hiding",
+  "text": "5 is 0 and 5. So 5 are hiding."
+ },
+ {
+  "slug": "5-is-all-the-pipi-some-are-hiding",
+  "text": "5 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-5-the-answer-cannot-be-more",
+  "text": "We started with 5. The answer cannot be more."
+ },
+ {
+  "slug": "5-is-1-and-4-so-4-are-hiding",
+  "text": "5 is 1 and 4. So 4 are hiding."
+ },
+ {
   "slug": "1-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "1-here-and-4-popped-up-together-that-is-5",
+  "text": "1 here and 4 popped up. Together that is 5."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5."
  },
  {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-5-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 5 pipi. How many are hiding now?"
  },
  {
+  "slug": "the-whole-stays-5-only-the-split-changes",
+  "text": "The whole stays 5. Only the split changes."
+ },
+ {
+  "slug": "5-is-2-and-3-so-3-are-hiding",
+  "text": "5 is 2 and 3. So 3 are hiding."
+ },
+ {
   "slug": "2-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "2-here-and-3-popped-up-together-that-is-5",
+  "text": "2 here and 3 popped up. Together that is 5."
+ },
+ {
+  "slug": "5-is-3-and-2-so-2-are-hiding",
+  "text": "5 is 3 and 2. So 2 are hiding."
  },
  {
   "slug": "3-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 2 popped up. How many pipi altogether?"
  },
  {
+  "slug": "3-here-and-2-popped-up-together-that-is-5",
+  "text": "3 here and 2 popped up. Together that is 5."
+ },
+ {
+  "slug": "5-is-4-and-1-so-1-is-hiding",
+  "text": "5 is 4 and 1. So 1 is hiding."
+ },
+ {
   "slug": "4-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-1-popped-up-together-that-is-5",
+  "text": "4 here and 1 popped up. Together that is 5."
+ },
+ {
+  "slug": "5-are-showing-how-many-are-hiding",
+  "text": "5 are showing. How many are hiding?"
+ },
+ {
+  "slug": "5-is-5-and-0-so-none-are-hiding",
+  "text": "5 is 5 and 0. So none are hiding."
  },
  {
   "slug": "6-pipi-how-many-are-hiding",
   "text": "6 pipi. How many are hiding?"
  },
  {
+  "slug": "look-1-2-3-4-5-6-hiding",
+  "text": "Look: 1, 2, 3, 4, 5, 6 hiding."
+ },
+ {
+  "slug": "6-is-0-and-6-so-6-are-hiding",
+  "text": "6 is 0 and 6. So 6 are hiding."
+ },
+ {
+  "slug": "6-is-all-the-pipi-some-are-hiding",
+  "text": "6 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-6-the-answer-cannot-be-more",
+  "text": "We started with 6. The answer cannot be more."
+ },
+ {
+  "slug": "6-is-1-and-5-so-5-are-hiding",
+  "text": "6 is 1 and 5. So 5 are hiding."
+ },
+ {
   "slug": "1-here-and-5-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "1-here-and-5-popped-up-together-that-is-6",
+  "text": "1 here and 5 popped up. Together that is 6."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5-6",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5, 6."
  },
  {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-6-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 6 pipi. How many are hiding now?"
  },
  {
+  "slug": "the-whole-stays-6-only-the-split-changes",
+  "text": "The whole stays 6. Only the split changes."
+ },
+ {
+  "slug": "6-is-2-and-4-so-4-are-hiding",
+  "text": "6 is 2 and 4. So 4 are hiding."
+ },
+ {
   "slug": "2-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "2-here-and-4-popped-up-together-that-is-6",
+  "text": "2 here and 4 popped up. Together that is 6."
+ },
+ {
+  "slug": "6-is-3-and-3-so-3-are-hiding",
+  "text": "6 is 3 and 3. So 3 are hiding."
  },
  {
   "slug": "3-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 3 popped up. How many pipi altogether?"
  },
  {
+  "slug": "3-here-and-3-popped-up-together-that-is-6",
+  "text": "3 here and 3 popped up. Together that is 6."
+ },
+ {
+  "slug": "6-is-4-and-2-so-2-are-hiding",
+  "text": "6 is 4 and 2. So 2 are hiding."
+ },
+ {
   "slug": "4-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-2-popped-up-together-that-is-6",
+  "text": "4 here and 2 popped up. Together that is 6."
+ },
+ {
+  "slug": "6-is-5-and-1-so-1-is-hiding",
+  "text": "6 is 5 and 1. So 1 is hiding."
  },
  {
   "slug": "5-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "5 here, and 1 popped up. How many pipi altogether?"
  },
  {
+  "slug": "5-here-and-1-popped-up-together-that-is-6",
+  "text": "5 here and 1 popped up. Together that is 6."
+ },
+ {
+  "slug": "6-are-showing-how-many-are-hiding",
+  "text": "6 are showing. How many are hiding?"
+ },
+ {
+  "slug": "6-is-6-and-0-so-none-are-hiding",
+  "text": "6 is 6 and 0. So none are hiding."
+ },
+ {
   "slug": "7-pipi-how-many-are-hiding",
   "text": "7 pipi. How many are hiding?"
+ },
+ {
+  "slug": "look-1-2-3-4-5-6-7-hiding",
+  "text": "Look: 1, 2, 3, 4, 5, 6, 7 hiding."
+ },
+ {
+  "slug": "7-is-0-and-7-so-7-are-hiding",
+  "text": "7 is 0 and 7. So 7 are hiding."
+ },
+ {
+  "slug": "7-is-all-the-pipi-some-are-hiding",
+  "text": "7 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-7-the-answer-cannot-be-more",
+  "text": "We started with 7. The answer cannot be more."
+ },
+ {
+  "slug": "7-is-1-and-6-so-6-are-hiding",
+  "text": "7 is 1 and 6. So 6 are hiding."
  },
  {
   "slug": "1-here-and-6-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 6 popped up. How many pipi altogether?"
  },
  {
+  "slug": "1-here-and-6-popped-up-together-that-is-7",
+  "text": "1 here and 6 popped up. Together that is 7."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5-6-7",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5, 6, 7."
+ },
+ {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-7-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 7 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "the-whole-stays-7-only-the-split-changes",
+  "text": "The whole stays 7. Only the split changes."
+ },
+ {
+  "slug": "7-is-2-and-5-so-5-are-hiding",
+  "text": "7 is 2 and 5. So 5 are hiding."
  },
  {
   "slug": "2-here-and-5-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 5 popped up. How many pipi altogether?"
  },
  {
+  "slug": "2-here-and-5-popped-up-together-that-is-7",
+  "text": "2 here and 5 popped up. Together that is 7."
+ },
+ {
+  "slug": "7-is-3-and-4-so-4-are-hiding",
+  "text": "7 is 3 and 4. So 4 are hiding."
+ },
+ {
   "slug": "3-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-4-popped-up-together-that-is-7",
+  "text": "3 here and 4 popped up. Together that is 7."
+ },
+ {
+  "slug": "7-is-4-and-3-so-3-are-hiding",
+  "text": "7 is 4 and 3. So 3 are hiding."
  },
  {
   "slug": "4-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 3 popped up. How many pipi altogether?"
  },
  {
+  "slug": "4-here-and-3-popped-up-together-that-is-7",
+  "text": "4 here and 3 popped up. Together that is 7."
+ },
+ {
+  "slug": "7-is-5-and-2-so-2-are-hiding",
+  "text": "7 is 5 and 2. So 2 are hiding."
+ },
+ {
   "slug": "5-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "5 here, and 2 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-2-popped-up-together-that-is-7",
+  "text": "5 here and 2 popped up. Together that is 7."
+ },
+ {
+  "slug": "7-is-6-and-1-so-1-is-hiding",
+  "text": "7 is 6 and 1. So 1 is hiding."
  },
  {
   "slug": "6-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "6 here, and 1 popped up. How many pipi altogether?"
  },
  {
+  "slug": "6-here-and-1-popped-up-together-that-is-7",
+  "text": "6 here and 1 popped up. Together that is 7."
+ },
+ {
+  "slug": "7-are-showing-how-many-are-hiding",
+  "text": "7 are showing. How many are hiding?"
+ },
+ {
+  "slug": "7-is-7-and-0-so-none-are-hiding",
+  "text": "7 is 7 and 0. So none are hiding."
+ },
+ {
   "slug": "8-pipi-how-many-are-hiding",
   "text": "8 pipi. How many are hiding?"
+ },
+ {
+  "slug": "look-1-2-3-4-5-6-7-8-hiding",
+  "text": "Look: 1, 2, 3, 4, 5, 6, 7, 8 hiding."
+ },
+ {
+  "slug": "8-is-0-and-8-so-8-are-hiding",
+  "text": "8 is 0 and 8. So 8 are hiding."
+ },
+ {
+  "slug": "8-is-all-the-pipi-some-are-hiding",
+  "text": "8 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-8-the-answer-cannot-be-more",
+  "text": "We started with 8. The answer cannot be more."
+ },
+ {
+  "slug": "8-is-1-and-7-so-7-are-hiding",
+  "text": "8 is 1 and 7. So 7 are hiding."
  },
  {
   "slug": "1-here-and-7-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 7 popped up. How many pipi altogether?"
  },
  {
+  "slug": "1-here-and-7-popped-up-together-that-is-8",
+  "text": "1 here and 7 popped up. Together that is 8."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5-6-7-8",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5, 6, 7, 8."
+ },
+ {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-8-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 8 pipi. How many are hiding now?"
+ },
+ {
+  "slug": "the-whole-stays-8-only-the-split-changes",
+  "text": "The whole stays 8. Only the split changes."
+ },
+ {
+  "slug": "8-is-2-and-6-so-6-are-hiding",
+  "text": "8 is 2 and 6. So 6 are hiding."
  },
  {
   "slug": "2-here-and-6-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 6 popped up. How many pipi altogether?"
  },
  {
+  "slug": "2-here-and-6-popped-up-together-that-is-8",
+  "text": "2 here and 6 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-is-3-and-5-so-5-are-hiding",
+  "text": "8 is 3 and 5. So 5 are hiding."
+ },
+ {
   "slug": "3-here-and-5-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "3-here-and-5-popped-up-together-that-is-8",
+  "text": "3 here and 5 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-is-4-and-4-so-4-are-hiding",
+  "text": "8 is 4 and 4. So 4 are hiding."
  },
  {
   "slug": "4-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 4 popped up. How many pipi altogether?"
  },
  {
+  "slug": "4-here-and-4-popped-up-together-that-is-8",
+  "text": "4 here and 4 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-is-5-and-3-so-3-are-hiding",
+  "text": "8 is 5 and 3. So 3 are hiding."
+ },
+ {
   "slug": "5-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "5 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "5-here-and-3-popped-up-together-that-is-8",
+  "text": "5 here and 3 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-is-6-and-2-so-2-are-hiding",
+  "text": "8 is 6 and 2. So 2 are hiding."
  },
  {
   "slug": "6-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "6 here, and 2 popped up. How many pipi altogether?"
  },
  {
+  "slug": "6-here-and-2-popped-up-together-that-is-8",
+  "text": "6 here and 2 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-is-7-and-1-so-1-is-hiding",
+  "text": "8 is 7 and 1. So 1 is hiding."
+ },
+ {
   "slug": "7-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "7 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "7-here-and-1-popped-up-together-that-is-8",
+  "text": "7 here and 1 popped up. Together that is 8."
+ },
+ {
+  "slug": "8-are-showing-how-many-are-hiding",
+  "text": "8 are showing. How many are hiding?"
+ },
+ {
+  "slug": "8-is-8-and-0-so-none-are-hiding",
+  "text": "8 is 8 and 0. So none are hiding."
  },
  {
   "slug": "9-pipi-how-many-are-hiding",
   "text": "9 pipi. How many are hiding?"
  },
  {
+  "slug": "look-1-2-3-4-5-6-7-8-9-hiding",
+  "text": "Look: 1, 2, 3, 4, 5, 6, 7, 8, 9 hiding."
+ },
+ {
+  "slug": "9-is-0-and-9-so-9-are-hiding",
+  "text": "9 is 0 and 9. So 9 are hiding."
+ },
+ {
+  "slug": "9-is-all-the-pipi-some-are-hiding",
+  "text": "9 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-9-the-answer-cannot-be-more",
+  "text": "We started with 9. The answer cannot be more."
+ },
+ {
+  "slug": "9-is-1-and-8-so-8-are-hiding",
+  "text": "9 is 1 and 8. So 8 are hiding."
+ },
+ {
   "slug": "1-here-and-8-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 8 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "1-here-and-8-popped-up-together-that-is-9",
+  "text": "1 here and 8 popped up. Together that is 9."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5-6-7-8-9",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5, 6, 7, 8, 9."
  },
  {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-9-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 9 pipi. How many are hiding now?"
  },
  {
+  "slug": "the-whole-stays-9-only-the-split-changes",
+  "text": "The whole stays 9. Only the split changes."
+ },
+ {
+  "slug": "9-is-2-and-7-so-7-are-hiding",
+  "text": "9 is 2 and 7. So 7 are hiding."
+ },
+ {
   "slug": "2-here-and-7-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 7 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "2-here-and-7-popped-up-together-that-is-9",
+  "text": "2 here and 7 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-3-and-6-so-6-are-hiding",
+  "text": "9 is 3 and 6. So 6 are hiding."
  },
  {
   "slug": "3-here-and-6-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 6 popped up. How many pipi altogether?"
  },
  {
+  "slug": "3-here-and-6-popped-up-together-that-is-9",
+  "text": "3 here and 6 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-4-and-5-so-5-are-hiding",
+  "text": "9 is 4 and 5. So 5 are hiding."
+ },
+ {
   "slug": "4-here-and-5-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 5 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-5-popped-up-together-that-is-9",
+  "text": "4 here and 5 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-5-and-4-so-4-are-hiding",
+  "text": "9 is 5 and 4. So 4 are hiding."
  },
  {
   "slug": "5-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "5 here, and 4 popped up. How many pipi altogether?"
  },
  {
+  "slug": "5-here-and-4-popped-up-together-that-is-9",
+  "text": "5 here and 4 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-6-and-3-so-3-are-hiding",
+  "text": "9 is 6 and 3. So 3 are hiding."
+ },
+ {
   "slug": "6-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "6 here, and 3 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-3-popped-up-together-that-is-9",
+  "text": "6 here and 3 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-7-and-2-so-2-are-hiding",
+  "text": "9 is 7 and 2. So 2 are hiding."
  },
  {
   "slug": "7-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "7 here, and 2 popped up. How many pipi altogether?"
  },
  {
+  "slug": "7-here-and-2-popped-up-together-that-is-9",
+  "text": "7 here and 2 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-is-8-and-1-so-1-is-hiding",
+  "text": "9 is 8 and 1. So 1 is hiding."
+ },
+ {
   "slug": "8-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "8 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "8-here-and-1-popped-up-together-that-is-9",
+  "text": "8 here and 1 popped up. Together that is 9."
+ },
+ {
+  "slug": "9-are-showing-how-many-are-hiding",
+  "text": "9 are showing. How many are hiding?"
+ },
+ {
+  "slug": "9-is-9-and-0-so-none-are-hiding",
+  "text": "9 is 9 and 0. So none are hiding."
  },
  {
   "slug": "10-pipi-how-many-are-hiding",
   "text": "10 pipi. How many are hiding?"
  },
  {
+  "slug": "look-1-2-3-4-5-6-7-8-9-10-hiding",
+  "text": "Look: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 hiding."
+ },
+ {
+  "slug": "10-is-0-and-10-so-10-are-hiding",
+  "text": "10 is 0 and 10. So 10 are hiding."
+ },
+ {
+  "slug": "10-is-all-the-pipi-some-are-hiding",
+  "text": "10 is all the pipi. Some are hiding."
+ },
+ {
+  "slug": "we-started-with-10-the-answer-cannot-be-more",
+  "text": "We started with 10. The answer cannot be more."
+ },
+ {
+  "slug": "10-is-1-and-9-so-9-are-hiding",
+  "text": "10 is 1 and 9. So 9 are hiding."
+ },
+ {
   "slug": "1-here-and-9-popped-up-how-many-pipi-altogether",
   "text": "1 here, and 9 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "1-here-and-9-popped-up-together-that-is-10",
+  "text": "1 here and 9 popped up. Together that is 10."
+ },
+ {
+  "slug": "let-s-count-all-of-them-1-2-3-4-5-6-7-8-9-10",
+  "text": "Let's count all of them: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10."
  },
  {
   "slug": "splash-the-hiding-ones-pop-up-and-the-others-dig-in-10-pipi-how-many-are-hiding-now",
   "text": "Splash! The hiding ones pop up and the others dig in. 10 pipi. How many are hiding now?"
  },
  {
+  "slug": "the-whole-stays-10-only-the-split-changes",
+  "text": "The whole stays 10. Only the split changes."
+ },
+ {
+  "slug": "10-is-2-and-8-so-8-are-hiding",
+  "text": "10 is 2 and 8. So 8 are hiding."
+ },
+ {
   "slug": "2-here-and-8-popped-up-how-many-pipi-altogether",
   "text": "2 here, and 8 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "2-here-and-8-popped-up-together-that-is-10",
+  "text": "2 here and 8 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-3-and-7-so-7-are-hiding",
+  "text": "10 is 3 and 7. So 7 are hiding."
  },
  {
   "slug": "3-here-and-7-popped-up-how-many-pipi-altogether",
   "text": "3 here, and 7 popped up. How many pipi altogether?"
  },
  {
+  "slug": "3-here-and-7-popped-up-together-that-is-10",
+  "text": "3 here and 7 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-4-and-6-so-6-are-hiding",
+  "text": "10 is 4 and 6. So 6 are hiding."
+ },
+ {
   "slug": "4-here-and-6-popped-up-how-many-pipi-altogether",
   "text": "4 here, and 6 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "4-here-and-6-popped-up-together-that-is-10",
+  "text": "4 here and 6 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-5-and-5-so-5-are-hiding",
+  "text": "10 is 5 and 5. So 5 are hiding."
  },
  {
   "slug": "5-here-and-5-popped-up-how-many-pipi-altogether",
   "text": "5 here, and 5 popped up. How many pipi altogether?"
  },
  {
+  "slug": "5-here-and-5-popped-up-together-that-is-10",
+  "text": "5 here and 5 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-6-and-4-so-4-are-hiding",
+  "text": "10 is 6 and 4. So 4 are hiding."
+ },
+ {
   "slug": "6-here-and-4-popped-up-how-many-pipi-altogether",
   "text": "6 here, and 4 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "6-here-and-4-popped-up-together-that-is-10",
+  "text": "6 here and 4 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-7-and-3-so-3-are-hiding",
+  "text": "10 is 7 and 3. So 3 are hiding."
  },
  {
   "slug": "7-here-and-3-popped-up-how-many-pipi-altogether",
   "text": "7 here, and 3 popped up. How many pipi altogether?"
  },
  {
+  "slug": "7-here-and-3-popped-up-together-that-is-10",
+  "text": "7 here and 3 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-8-and-2-so-2-are-hiding",
+  "text": "10 is 8 and 2. So 2 are hiding."
+ },
+ {
   "slug": "8-here-and-2-popped-up-how-many-pipi-altogether",
   "text": "8 here, and 2 popped up. How many pipi altogether?"
  },
  {
+  "slug": "8-here-and-2-popped-up-together-that-is-10",
+  "text": "8 here and 2 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-is-9-and-1-so-1-is-hiding",
+  "text": "10 is 9 and 1. So 1 is hiding."
+ },
+ {
   "slug": "9-here-and-1-popped-up-how-many-pipi-altogether",
   "text": "9 here, and 1 popped up. How many pipi altogether?"
+ },
+ {
+  "slug": "9-here-and-1-popped-up-together-that-is-10",
+  "text": "9 here and 1 popped up. Together that is 10."
+ },
+ {
+  "slug": "10-are-showing-how-many-are-hiding",
+  "text": "10 are showing. How many are hiding?"
+ },
+ {
+  "slug": "10-is-10-and-0-so-none-are-hiding",
+  "text": "10 is 10 and 0. So none are hiding."
  },
  {
   "slug": "yes-0",
