@@ -1,7 +1,11 @@
 [
  {
-  "slug": "try-again",
-  "text": "Try again!"
+  "slug": "let-s-look-together",
+  "text": "Let's look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try!"
  },
  {
   "slug": "ten-and-ten-is-twenty",
@@ -148,6 +152,14 @@
   "text": "How many are left?"
  },
  {
+  "slug": "11-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "11 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "11-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "11 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "ten-berries-on-the-branch-and-2-more-how-many-berries",
   "text": "Ten berries on the branch, and 2 more. How many berries?"
  },
@@ -186,6 +198,18 @@
  {
   "slug": "12-take-away-ten-how-many-are-left",
   "text": "12 take away ten. How many are left?"
+ },
+ {
+  "slug": "21-is-two-tens-and-one-we-only-have-one-ten",
+  "text": "21 is two tens and one. We only have one ten."
+ },
+ {
+  "slug": "12-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "12 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "12-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "12 is what we start with. Take the ten away. What is left?"
  },
  {
   "slug": "ten-berries-on-the-branch-and-3-more-how-many-berries",
@@ -228,6 +252,18 @@
   "text": "13 take away ten. How many are left?"
  },
  {
+  "slug": "31-is-three-tens-and-one-we-only-have-one-ten",
+  "text": "31 is three tens and one. We only have one ten."
+ },
+ {
+  "slug": "13-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "13 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "13-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "13 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "ten-berries-on-the-branch-and-4-more-how-many-berries",
   "text": "Ten berries on the branch, and 4 more. How many berries?"
  },
@@ -266,6 +302,18 @@
  {
   "slug": "14-take-away-ten-how-many-are-left",
   "text": "14 take away ten. How many are left?"
+ },
+ {
+  "slug": "41-is-four-tens-and-one-we-only-have-one-ten",
+  "text": "41 is four tens and one. We only have one ten."
+ },
+ {
+  "slug": "14-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "14 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "14-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "14 is what we start with. Take the ten away. What is left?"
  },
  {
   "slug": "ten-berries-on-the-branch-and-5-more-how-many-berries",
@@ -308,6 +356,18 @@
   "text": "15 take away ten. How many are left?"
  },
  {
+  "slug": "51-is-five-tens-and-one-we-only-have-one-ten",
+  "text": "51 is five tens and one. We only have one ten."
+ },
+ {
+  "slug": "15-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "15 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "15-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "15 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "ten-berries-on-the-branch-and-6-more-how-many-berries",
   "text": "Ten berries on the branch, and 6 more. How many berries?"
  },
@@ -346,6 +406,18 @@
  {
   "slug": "16-take-away-ten-how-many-are-left",
   "text": "16 take away ten. How many are left?"
+ },
+ {
+  "slug": "61-is-six-tens-and-one-we-only-have-one-ten",
+  "text": "61 is six tens and one. We only have one ten."
+ },
+ {
+  "slug": "16-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "16 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "16-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "16 is what we start with. Take the ten away. What is left?"
  },
  {
   "slug": "ten-berries-on-the-branch-and-7-more-how-many-berries",
@@ -388,6 +460,18 @@
   "text": "17 take away ten. How many are left?"
  },
  {
+  "slug": "71-is-seven-tens-and-one-we-only-have-one-ten",
+  "text": "71 is seven tens and one. We only have one ten."
+ },
+ {
+  "slug": "17-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "17 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "17-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "17 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "ten-berries-on-the-branch-and-8-more-how-many-berries",
   "text": "Ten berries on the branch, and 8 more. How many berries?"
  },
@@ -428,6 +512,18 @@
   "text": "18 take away ten. How many are left?"
  },
  {
+  "slug": "81-is-eight-tens-and-one-we-only-have-one-ten",
+  "text": "81 is eight tens and one. We only have one ten."
+ },
+ {
+  "slug": "18-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "18 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "18-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "18 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "ten-berries-on-the-branch-and-9-more-how-many-berries",
   "text": "Ten berries on the branch, and 9 more. How many berries?"
  },
@@ -466,6 +562,34 @@
  {
   "slug": "19-take-away-ten-how-many-are-left",
   "text": "19 take away ten. How many are left?"
+ },
+ {
+  "slug": "91-is-nine-tens-and-one-we-only-have-one-ten",
+  "text": "91 is nine tens and one. We only have one ten."
+ },
+ {
+  "slug": "19-is-all-the-berries-together-how-many-go-with-the-ten",
+  "text": "19 is all the berries together. How many go with the ten?"
+ },
+ {
+  "slug": "19-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "19 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "20-is-two-tens-we-only-have-one-ten",
+  "text": "20 is two tens. We only have one ten."
+ },
+ {
+  "slug": "that-is-only-the-loose-berries-do-not-forget-the-ten",
+  "text": "That is only the loose berries. Do not forget the ten."
+ },
+ {
+  "slug": "nearly-count-the-berries-one-at-a-time",
+  "text": "Nearly! Count the berries one at a time."
+ },
+ {
+  "slug": "take-away-makes-it-smaller",
+  "text": "Take away makes it smaller."
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-flower",

@@ -9,16 +9,25 @@
  * Each go comes with its help level from the server (plan section 4): 5 every berry, popping in one at a time; 4 every
  * berry at once, with the sum written; 3 the ten tucked into a kete with a "10" tag; 2 the kete small and faint beside a
  * big sum; 1 the sum only, with a Peek; 0 the sum only. A wrong tap brings more picture for that go (pictureFor): the
- * answer is never shown or said. After every right answer, the arrow cards: the ones card slides onto the 0 of the
+ * answer is never shown or said.
+ *
+ * Mistakes that teach (maths review R5). Every go has four nests, each wrong one tagged with its mistake (round.ts). The
+ * first wrong tap greys that nest out for good and says why, with a picture of that kind (arrow cards of 4 tens and 1 for
+ * 41, two full frames for 20, the ten lit, the berries counted in, the whole with the ten greyed, the ten flying off). The
+ * second stops the free taps: "Let's look together", the arrow cards play the whole sum, then "Now you try!": the same go
+ * again at the child's own level, nests back in a new order. Only a go's first tap is scored (play.ts), so a shown go
+ * is never a clean right. After every right answer, the arrow cards: the ones card slides onto the 0 of the
  * "10" and makes the teen number, at every level. Only the picks are sent; the server replays them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Tap } from '../../../shared/tui/play';
 import type { Friend as FriendName } from '../../../shared/tui/progress';
-import { GOES_PER_ROUND, pictureFor, showRound, type Go, type HelpLevel, type Round } from '../../../shared/tui/round';
+import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { GOES_PER_ROUND, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
+import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { backFor, Friend, Kete, Nest, TenFrame, type Pose, type Scenery } from './art';
-import { askLine, storyLine, sumLine } from './voiceLines';
+import { askLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 3400;
@@ -51,7 +60,11 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
   const [phase, setPhase] = useState<Phase>('ask');
-  const [wrongs, setWrongs] = useState(0);
+  /** The go's place in the two-tap flow (shared/kit/mistakes.ts). */
+  const [flow, setFlow] = useState(NEW_GO);
+  /** The last wrong nest's mistake, shown with its line until the next tap. */
+  const [why, setWhy] = useState<{ n: number; kind: TuiKind } | null>(null);
+  const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const [tapped, setTapped] = useState<number[]>([]);
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
@@ -71,10 +84,14 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const guided = guide && at === 0;
-  const pic = pictureFor(go, wrongs, tapped);
+  const redo = flow.phase === 'redo';
+  // "Now you try" is at the child's own level, not the extra help the two wrong taps brought.
+  const pic = pictureFor(go, redo ? 0 : flow.wrong, tapped);
   // Level 1's Peek (opened by the child or by a wrong tap) brings back level 3's picture. Off has no Peek.
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
-  const level: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;
+  const shownLevel: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;
+  // A why-picture needs the berries drawn: the frames, and counted in for a slip of one.
+  const level: HelpLevel = why ? (Math.max(shownLevel, why.kind === 'off1' ? 5 : 4) as HelpLevel) : shownLevel;
 
   // Each new go is read aloud once.
   useEffect(() => {
@@ -105,7 +122,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
     if (at + 1 < goes.length) {
       setAt(at + 1);
       setPhase('ask');
-      setWrongs(0);
+      setFlow(NEW_GO);
+      setWhy(null);
       setTapped([]);
       return;
     }
@@ -122,25 +140,44 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   }
 
   function pick(n: number) {
-    if (phase !== 'ask') return;
+    if (phase !== 'ask' || look || tapped.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
     if (n !== go.answer) {
-      const w = wrongs + 1;
-      setWrongs(w);
+      const after = stepGo(flow, 'wrong');
+      setFlow(after);
       setTapped((t) => [...t, n]);
       setWobble(n);
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
-      // The second wrong tap brings every berry back, and Bella tells the story.
-      say(w === 2 ? storyLine(go) : WORDS.tryAgain);
+      if (after.phase === 'look') {
+        // The second wrong tap: the whole sum is played with the arrow cards, then the same go is asked again.
+        setWhy(null);
+        startLook({
+          anchor: 0,
+          steps: go.n,
+          openingLine: WORDS.lookTogether,
+          fillLine: WORDS.right(go.answer, go.n),
+          onEnd: () => {
+            setFlow((f) => stepGo(f, 'lookDone'));
+            setTapped([]);
+            since.current = Date.now();
+            say(WORDS.nowTry);
+          },
+        });
+        return;
+      }
+      const kind = go.wrongs.find((w) => w.n === n)!.kind;
+      setWhy({ n, kind });
+      say(WORDS.why(kind, n, go.v));
       return;
     }
     clearTimers();
     setPointAt(null);
+    setWhy(null);
     setPhase('right');
     setPose('eat');
     say(WORDS.right(go.answer, go.n));
@@ -150,7 +187,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
 
   const made = at + (phase === 'ask' ? 0 : 1);
   const style = backFor(scenery);
-  const nests = phase === 'ask' ? pic.nests : go.choices;
+  // Four nests always; in "Now you try" they come back in a new order (the server only cares which nest was tapped).
+  const nests = redo ? [...go.choices].reverse() : go.choices;
 
   return (
     <div className={`tui-play tui-scene--${scenery}`} style={style}>
@@ -161,7 +199,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
             <span key={i} className={i < made ? 'tui-pip tui-pip--done' : 'tui-pip'} />
           ))}
         </div>
-        <button type="button" className="tui-button" onClick={() => say(sumLine(go))}>
+        <button type="button" className="tui-button" onClick={() => say(askLine(go))}>
           <span aria-hidden="true">👂</span> {WORDS.hearAgain}
         </button>
       </div>
@@ -179,7 +217,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
         <>
           <div className="tui-stage" key={at}>
             <span className="tui-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
-            <Picture go={go} level={level} pointAt={pointAt} solved={phase !== 'ask'} />
+            <Picture key={why ? `why${taps.length}` : 'p'} go={go} level={level} pointAt={pointAt} solved={phase !== 'ask'} lit={why?.kind ?? null} />
             {/* The sum from level 4 down; on "how many more?" and "take the ten away" always, as the picture can't say the target. */}
             {(level <= 4 || go.v >= 2) && phase === 'ask' && <p className={`tui-sum${level <= 2 ? ' tui-sum--big' : ''}`} aria-live="polite">{written(go)}</p>}
             {phase !== 'ask' && <ArrowCards n={go.n} />}
@@ -189,12 +227,20 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
               </button>
             )}
           </div>
+          {why && phase === 'ask' && (
+            <ShowWhy prefix="tui" tapKey={taps.length} picture={<WhyPicture kind={why.kind} wrong={why.n} />} line={WORDS.why(why.kind, why.n, go.v)} />
+          )}
+          {look && (
+            <LookTogether prefix="tui" title={WORDS.lookTogether} picture={<ArrowCards n={go.n} />} line={WORDS.right(go.answer, go.n)} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
+          )}
+          {redo && !why && phase === 'ask' && <NowYouTry prefix="tui" line={WORDS.nowTry} />}
           <div className={`tui-nests${pointAt === 'nests' ? ' tui-nests--guide' : ''}`} role="group" aria-label={WORDS.pickNest}>
             {nests.map((n) => (
               <button
                 key={`${at}-${n}`}
                 type="button"
-                className={`tui-choice${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
+                disabled={phase === 'ask' && (look !== null || tapped.includes(n))}
+                className={`tui-choice${tapped.includes(n) && phase === 'ask' ? ' tui-choice--off' : ''}${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
                 onClick={() => pick(n)}
                 aria-label={String(n)}
               >
@@ -213,19 +259,19 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
  * The berries for a go at a help level. Levels 5 and 4: two ten-frames (the full branch and the loose berries, or the
  * empty spaces on "how many more?"). Levels 3 and 2: the ten is one kete with a "10" tag. Below 2: no picture.
  */
-function Picture({ go, level, pointAt, solved }: { go: Go; level: HelpLevel; pointAt: Guide; solved: boolean }) {
+function Picture({ go, level, pointAt, solved, lit }: { go: Go; level: HelpLevel; pointAt: Guide; solved: boolean; lit: TuiKind | null }) {
   if (level <= 1) return null;
   const frames = level >= 4;
   const hand = (where: Guide) => pointAt === where && <span className="tui-hand" aria-hidden="true">👆</span>;
   const ten = (
-    <div className={`tui-ten${go.v === 3 ? ' tui-ten--fly' : ''}`} key="ten">
+    <div className={`tui-ten${go.v === 3 ? ' tui-ten--fly' : ''}${lit === 'ones' ? ' tui-lit' : ''}${lit === 'total' && go.v === 2 ? ' tui-grey' : ''}`} key="ten">
       {frames ? <TenFrame count={10} branch label={WORDS.berries(10)} /> : <Kete className="tui-kete--in" label={WORDS.keteOfTen} />}
       {hand('branch')}
     </div>
   );
   const missing = go.v === 2 && !solved;
   const ones = (
-    <div className="tui-ones" key="ones">
+    <div className={`tui-ones${lit === 'ones' || (lit === 'total' && go.v === 2) ? ' tui-lit tui-lit--late' : ''}`} key="ones">
       {frames ? (
         missing ? (
           <TenFrame count={0} empty={go.n} label={WORDS.missing(go.n)} />
@@ -262,4 +308,31 @@ function ArrowCards({ n }: { n: number }) {
       </span>
     </div>
   );
+}
+
+/** What a wrong nest's mistake looks like when it isn't the stage picture itself (the stage lights, greys or counts for the others). */
+function WhyPicture({ kind, wrong }: { kind: TuiKind; wrong: number }) {
+  if (kind === 'reverse') {
+    // 41 is four tens and one: the cards pulled apart, not slid together.
+    return (
+      <div className="tui-cards tui-cards--apart" role="img" aria-label={`${Math.floor(wrong / 10)} tens and ${wrong % 10}`}>
+        <span className="tui-card tui-card--ten">
+          <span>{Math.floor(wrong / 10)}</span>
+          <span>0</span>
+        </span>
+        <span className="tui-card tui-card--plain">
+          <span>{wrong % 10}</span>
+        </span>
+      </div>
+    );
+  }
+  if (kind === 'tens') {
+    return (
+      <div className="tui-twotens" role="img" aria-label="Two tens">
+        <TenFrame count={10} branch label={WORDS.berries(10)} />
+        <TenFrame count={10} branch label={WORDS.berries(10)} />
+      </div>
+    );
+  }
+  return null;
 }

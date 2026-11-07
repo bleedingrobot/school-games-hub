@@ -14,6 +14,7 @@
  */
 import type { FactStats } from '../maths/leitner';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
+import { tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
 
 export const GOES_PER_ROUND = 10;
@@ -139,8 +140,10 @@ export interface Go extends GoPlan {
   answer: number;
   /** The shared pack's question, as parts: ["10", "+", "4", "=", "?"]. */
   parts: string[];
-  /** The nests, smallest first: three at help levels 5 and 4, four from 3 down. */
+  /** The nests, smallest first: four at every help level. */
   choices: number[];
+  /** The three wrong nests, each with the mistake behind it (it picks the why-line and the picture). */
+  wrongs: WrongNest[];
 }
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
@@ -212,11 +215,47 @@ export function makeRound(
 
 const pack = earlyFactsPack();
 
-/** How many nests a go has: three while every berry is drawn, then four. */
-export const nestsFor = (l: HelpLevel) => (l >= 4 ? 3 : 4);
+/** How many nests a go has: always four, at every help level (maths review R5; it was three while every berry was drawn). */
+export const NESTS = 4;
+
+/**
+ * The mistake behind a wrong nest (maths review R5, docs/kit/README.md "Teen numbers"): `reverse` 41 for 14, `tens` 20,
+ * `ones` the loose berries alone, `off1` one berry out, `total` the whole when asked for a part (or when the ten should be
+ * taken away), `up` the ten put on instead of taken off.
+ */
+export type TuiKind = 'reverse' | 'tens' | 'ones' | 'off1' | 'total' | 'up';
+export type WrongNest = Wrong<TuiKind>;
 
 /** The reversal a child who hears "fourteen" might pick: 41 for 14 (only when the ones aren't 1, so it differs). */
 export const reversalOf = (n: number) => n * 10 + 1;
+
+/** The shape of a number the way a child sees it: a teen, a single digit, or something else. At most two nests (the answer and one) share the answer's. */
+export const nestShape = (n: number): string => (n >= 11 && n <= 19 ? 'teen' : n <= 9 ? 'one' : 'other');
+
+/**
+ * The wrong nests of a go, each with its kind, fixed by the seed. Three of them:
+ * - "how many?" (ways 0 and 1): one berry out (a second teen, so the answer is never the lone teen), the reversal when the
+ *   ones aren't 1, and one or two of 20 and the loose berries alone;
+ * - "how many more?" (way 2): the whole, one berry out, 20;
+ * - "take the ten away" (way 3): the whole, the ten put on (24 for 14), one berry out.
+ */
+export function wrongNests(n: number, v: Way, random: () => number): WrongNest[] {
+  const slip = n === 1 ? 1 : n === 9 ? -1 : random() < 0.5 ? 1 : -1;
+  const answer = v >= 2 ? n : 10 + n;
+  const off1: WrongNest = { n: answer + slip, kind: 'off1' };
+  const picks: WrongNest[] =
+    v <= 1
+      ? [off1, ...(n >= 2 ? [{ n: reversalOf(n), kind: 'reverse' as const }] : []), ...shuffle<WrongNest>([{ n: 20, kind: 'tens' }, { n, kind: 'ones' }], random)]
+      : v === 2
+        ? [{ n: 10 + n, kind: 'total' }, off1, { n: 20, kind: 'tens' }]
+        : [{ n: 10 + n, kind: 'total' }, { n: 20 + n, kind: 'up' }, off1];
+  return tagWrongs(
+    picks.map((w) => w.n),
+    (x) => picks.find((w) => w.n === x)?.kind ?? null,
+  )
+    .filter((w) => w.n !== answer)
+    .slice(0, NESTS - 1);
+}
 
 /** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
@@ -227,11 +266,11 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const q = pack.rebuild(plan.key, [n, plan.v], true, random);
   const answer = plan.v >= 2 ? n : 10 + n;
   if (!q || !q.choices || q.answer !== answer) return null;
-  let wrong = q.choices.filter((c) => c !== answer);
-  // The reversal is one of the wrong nests on "how many?" goes, so the slip shows up in the records.
-  if (plan.v <= 1 && n >= 2) wrong = [reversalOf(n), ...wrong.filter((c) => c !== reversalOf(n))];
-  const choices = [answer, ...wrong.slice(0, nestsFor(plan.l) - 1)].sort((a, b) => a - b);
-  return { ...plan, n, teen: 10 + n, answer, parts: q.parts, choices };
+  // The pack only vouches for the question and answer; the nests are the game's own, each tagged with its mistake.
+  const wrongs = wrongNests(n, plan.v, random);
+  if (wrongs.length !== NESTS - 1) return null;
+  const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
+  return { ...plan, n, teen: 10 + n, answer, parts: q.parts, choices, wrongs };
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */
