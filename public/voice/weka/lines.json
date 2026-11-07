@@ -8,6 +8,22 @@
   "text": "Let’s count the hops together."
  },
  {
+  "slug": "let-s-look-together",
+  "text": "Let’s look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try."
+ },
+ {
+  "slug": "hopping-back-means-going-down-the-stones",
+  "text": "Hopping back means going down the stones."
+ },
+ {
+  "slug": "10-is-the-big-rock-how-many-hops-get-there",
+  "text": "10 is the big rock. How many hops get there?"
+ },
+ {
   "slug": "and-how-many-more",
   "text": "And how many more?"
  },
@@ -152,6 +168,26 @@
   "text": "1 gets to ten. How many of the 2 are left?"
  },
  {
+  "slug": "that-is-where-weka-is-1-more-hop",
+  "text": "That is where Weka is. 1 more hop."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-2-hops",
+  "text": "Count Weka’s hops. Is it 2 hops?"
+ },
+ {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-9",
+  "text": "Weka only hops to the big rock. Look how far it is from 9."
+ },
+ {
+  "slug": "count-the-hops-from-9-to-the-big-rock",
+  "text": "Count the hops from 9 to the big rock."
+ },
+ {
+  "slug": "2-is-1-and-1-the-1-got-weka-to-the-rock",
+  "text": "2 is 1 and 1. The 1 got Weka to the rock."
+ },
+ {
   "slug": "the-same-question-with-pebbles-9-plus-2-here-are-9-gold-and-2-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 9 plus 2. Here are 9 gold and 2 silver. Drag silver pebbles to fill the first ten."
  },
@@ -212,6 +248,18 @@
   "text": "11 take away 2. Split the 2 to get back to ten. How many hops back from 11 to the big rock?"
  },
  {
+  "slug": "that-is-the-big-rock-1-more-hop-back",
+  "text": "That is the big rock. 1 more hop back."
+ },
+ {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-11",
+  "text": "Weka only hops to the big rock. Look how far it is from 11."
+ },
+ {
+  "slug": "count-the-hops-from-11-to-the-big-rock",
+  "text": "Count the hops from 11 to the big rock."
+ },
+ {
   "slug": "9-plus-3-weka-is-on-9-and-hops-3-more-where-will-weka-land",
   "text": "9 plus 3. Weka is on 9 and hops 3 more. Where will Weka land?"
  },
@@ -246,6 +294,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-3-are-left",
   "text": "1 gets to ten. How many of the 3 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-2-more-hops",
+  "text": "That is where Weka is. 2 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-3-hops",
+  "text": "Count Weka’s hops. Is it 3 hops?"
+ },
+ {
+  "slug": "3-is-1-and-2-the-1-got-weka-to-the-rock",
+  "text": "3 is 1 and 2. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-2",
+  "text": "9 and 1 make 10. We still have 2."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-3-here-are-9-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -308,6 +372,14 @@
   "text": "2 gets to ten. How many of the 3 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-12",
+  "text": "Weka only hops to the big rock. Look how far it is from 12."
+ },
+ {
+  "slug": "count-the-hops-from-12-to-the-big-rock",
+  "text": "Count the hops from 12 to the big rock."
+ },
+ {
   "slug": "9-plus-4-weka-is-on-9-and-hops-4-more-where-will-weka-land",
   "text": "9 plus 4. Weka is on 9 and hops 4 more. Where will Weka land?"
  },
@@ -342,6 +414,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-4-are-left",
   "text": "1 gets to ten. How many of the 4 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-3-more-hops",
+  "text": "That is where Weka is. 3 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-4-hops",
+  "text": "Count Weka’s hops. Is it 4 hops?"
+ },
+ {
+  "slug": "4-is-1-and-3-the-1-got-weka-to-the-rock",
+  "text": "4 is 1 and 3. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-3",
+  "text": "9 and 1 make 10. We still have 3."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-4-here-are-9-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -404,6 +492,14 @@
   "text": "3 gets to ten. How many of the 4 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-13",
+  "text": "Weka only hops to the big rock. Look how far it is from 13."
+ },
+ {
+  "slug": "count-the-hops-from-13-to-the-big-rock",
+  "text": "Count the hops from 13 to the big rock."
+ },
+ {
   "slug": "9-plus-5-weka-is-on-9-and-hops-5-more-where-will-weka-land",
   "text": "9 plus 5. Weka is on 9 and hops 5 more. Where will Weka land?"
  },
@@ -438,6 +534,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-5-are-left",
   "text": "1 gets to ten. How many of the 5 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-4-more-hops",
+  "text": "That is where Weka is. 4 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-5-hops",
+  "text": "Count Weka’s hops. Is it 5 hops?"
+ },
+ {
+  "slug": "5-is-1-and-4-the-1-got-weka-to-the-rock",
+  "text": "5 is 1 and 4. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-4",
+  "text": "9 and 1 make 10. We still have 4."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-5-here-are-9-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -500,6 +612,14 @@
   "text": "4 gets to ten. How many of the 5 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-14",
+  "text": "Weka only hops to the big rock. Look how far it is from 14."
+ },
+ {
+  "slug": "count-the-hops-from-14-to-the-big-rock",
+  "text": "Count the hops from 14 to the big rock."
+ },
+ {
   "slug": "9-plus-6-weka-is-on-9-and-hops-6-more-where-will-weka-land",
   "text": "9 plus 6. Weka is on 9 and hops 6 more. Where will Weka land?"
  },
@@ -534,6 +654,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-6-are-left",
   "text": "1 gets to ten. How many of the 6 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-5-more-hops",
+  "text": "That is where Weka is. 5 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-6-hops",
+  "text": "Count Weka’s hops. Is it 6 hops?"
+ },
+ {
+  "slug": "6-is-1-and-5-the-1-got-weka-to-the-rock",
+  "text": "6 is 1 and 5. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-5",
+  "text": "9 and 1 make 10. We still have 5."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-6-here-are-9-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -596,6 +732,14 @@
   "text": "5 gets to ten. How many of the 6 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-15",
+  "text": "Weka only hops to the big rock. Look how far it is from 15."
+ },
+ {
+  "slug": "count-the-hops-from-15-to-the-big-rock",
+  "text": "Count the hops from 15 to the big rock."
+ },
+ {
   "slug": "9-plus-7-weka-is-on-9-and-hops-7-more-where-will-weka-land",
   "text": "9 plus 7. Weka is on 9 and hops 7 more. Where will Weka land?"
  },
@@ -630,6 +774,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-7-are-left",
   "text": "1 gets to ten. How many of the 7 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-6-more-hops",
+  "text": "That is where Weka is. 6 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-7-hops",
+  "text": "Count Weka’s hops. Is it 7 hops?"
+ },
+ {
+  "slug": "7-is-1-and-6-the-1-got-weka-to-the-rock",
+  "text": "7 is 1 and 6. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-6",
+  "text": "9 and 1 make 10. We still have 6."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-7-here-are-9-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -692,6 +852,14 @@
   "text": "6 gets to ten. How many of the 7 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-16",
+  "text": "Weka only hops to the big rock. Look how far it is from 16."
+ },
+ {
+  "slug": "count-the-hops-from-16-to-the-big-rock",
+  "text": "Count the hops from 16 to the big rock."
+ },
+ {
   "slug": "9-plus-8-weka-is-on-9-and-hops-8-more-where-will-weka-land",
   "text": "9 plus 8. Weka is on 9 and hops 8 more. Where will Weka land?"
  },
@@ -726,6 +894,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-8-are-left",
   "text": "1 gets to ten. How many of the 8 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-7-more-hops",
+  "text": "That is where Weka is. 7 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-8-hops",
+  "text": "Count Weka’s hops. Is it 8 hops?"
+ },
+ {
+  "slug": "8-is-1-and-7-the-1-got-weka-to-the-rock",
+  "text": "8 is 1 and 7. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-7",
+  "text": "9 and 1 make 10. We still have 7."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-8-here-are-9-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -788,6 +972,14 @@
   "text": "7 gets to ten. How many of the 8 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-17",
+  "text": "Weka only hops to the big rock. Look how far it is from 17."
+ },
+ {
+  "slug": "count-the-hops-from-17-to-the-big-rock",
+  "text": "Count the hops from 17 to the big rock."
+ },
+ {
   "slug": "9-plus-9-weka-is-on-9-and-hops-9-more-where-will-weka-land",
   "text": "9 plus 9. Weka is on 9 and hops 9 more. Where will Weka land?"
  },
@@ -822,6 +1014,22 @@
  {
   "slug": "1-gets-to-ten-how-many-of-the-9-are-left",
   "text": "1 gets to ten. How many of the 9 are left?"
+ },
+ {
+  "slug": "that-is-where-weka-is-8-more-hops",
+  "text": "That is where Weka is. 8 more hops."
+ },
+ {
+  "slug": "count-weka-s-hops-is-it-9-hops",
+  "text": "Count Weka’s hops. Is it 9 hops?"
+ },
+ {
+  "slug": "9-is-1-and-8-the-1-got-weka-to-the-rock",
+  "text": "9 is 1 and 8. The 1 got Weka to the rock."
+ },
+ {
+  "slug": "9-and-1-make-10-we-still-have-8",
+  "text": "9 and 1 make 10. We still have 8."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-9-here-are-9-gold-and-9-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -880,6 +1088,14 @@
   "text": "8 gets to ten. How many of the 9 are left?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-18",
+  "text": "Weka only hops to the big rock. Look how far it is from 18."
+ },
+ {
+  "slug": "count-the-hops-from-18-to-the-big-rock",
+  "text": "Count the hops from 18 to the big rock."
+ },
+ {
   "slug": "8-plus-3-weka-is-on-8-and-hops-3-more-where-will-weka-land",
   "text": "8 plus 3. Weka is on 8 and hops 3 more. Where will Weka land?"
  },
@@ -902,6 +1118,22 @@
  {
   "slug": "8-plus-3-split-the-3-to-get-to-ten-how-many-hops-from-8-to-the-big-rock",
   "text": "8 plus 3. Split the 3 to get to ten. How many hops from 8 to the big rock?"
+ },
+ {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-8",
+  "text": "Weka only hops to the big rock. Look how far it is from 8."
+ },
+ {
+  "slug": "count-the-hops-from-8-to-the-big-rock",
+  "text": "Count the hops from 8 to the big rock."
+ },
+ {
+  "slug": "3-is-2-and-1-the-2-got-weka-to-the-rock",
+  "text": "3 is 2 and 1. The 2 got Weka to the rock."
+ },
+ {
+  "slug": "8-and-2-make-10-we-still-have-1",
+  "text": "8 and 2 make 10. We still have 1."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-3-here-are-8-gold-and-3-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -960,6 +1192,10 @@
   "text": "11 take away 3. Split the 3 to get back to ten. How many hops back from 11 to the big rock?"
  },
  {
+  "slug": "that-is-the-big-rock-2-more-hops-back",
+  "text": "That is the big rock. 2 more hops back."
+ },
+ {
   "slug": "8-plus-4-weka-is-on-8-and-hops-4-more-where-will-weka-land",
   "text": "8 plus 4. Weka is on 8 and hops 4 more. Where will Weka land?"
  },
@@ -986,6 +1222,10 @@
  {
   "slug": "2-gets-to-ten-how-many-of-the-4-are-left",
   "text": "2 gets to ten. How many of the 4 are left?"
+ },
+ {
+  "slug": "4-is-2-and-2-the-2-got-weka-to-the-rock",
+  "text": "4 is 2 and 2. The 2 got Weka to the rock."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-4-here-are-8-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -1066,6 +1306,14 @@
  {
   "slug": "2-gets-to-ten-how-many-of-the-5-are-left",
   "text": "2 gets to ten. How many of the 5 are left?"
+ },
+ {
+  "slug": "5-is-2-and-3-the-2-got-weka-to-the-rock",
+  "text": "5 is 2 and 3. The 2 got Weka to the rock."
+ },
+ {
+  "slug": "8-and-2-make-10-we-still-have-3",
+  "text": "8 and 2 make 10. We still have 3."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-5-here-are-8-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -1152,6 +1400,14 @@
   "text": "2 gets to ten. How many of the 6 are left?"
  },
  {
+  "slug": "6-is-2-and-4-the-2-got-weka-to-the-rock",
+  "text": "6 is 2 and 4. The 2 got Weka to the rock."
+ },
+ {
+  "slug": "8-and-2-make-10-we-still-have-4",
+  "text": "8 and 2 make 10. We still have 4."
+ },
+ {
   "slug": "the-same-question-with-pebbles-8-plus-6-here-are-8-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 8 plus 6. Here are 8 gold and 6 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1234,6 +1490,14 @@
  {
   "slug": "2-gets-to-ten-how-many-of-the-7-are-left",
   "text": "2 gets to ten. How many of the 7 are left?"
+ },
+ {
+  "slug": "7-is-2-and-5-the-2-got-weka-to-the-rock",
+  "text": "7 is 2 and 5. The 2 got Weka to the rock."
+ },
+ {
+  "slug": "8-and-2-make-10-we-still-have-5",
+  "text": "8 and 2 make 10. We still have 5."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-7-here-are-8-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -1320,6 +1584,14 @@
   "text": "2 gets to ten. How many of the 8 are left?"
  },
  {
+  "slug": "8-is-2-and-6-the-2-got-weka-to-the-rock",
+  "text": "8 is 2 and 6. The 2 got Weka to the rock."
+ },
+ {
+  "slug": "8-and-2-make-10-we-still-have-6",
+  "text": "8 and 2 make 10. We still have 6."
+ },
+ {
   "slug": "the-same-question-with-pebbles-8-plus-8-here-are-8-gold-and-8-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 8 plus 8. Here are 8 gold and 8 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1396,6 +1668,22 @@
   "text": "7 plus 4. Split the 4 to get to ten. How many hops from 7 to the big rock?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-7",
+  "text": "Weka only hops to the big rock. Look how far it is from 7."
+ },
+ {
+  "slug": "count-the-hops-from-7-to-the-big-rock",
+  "text": "Count the hops from 7 to the big rock."
+ },
+ {
+  "slug": "4-is-3-and-1-the-3-got-weka-to-the-rock",
+  "text": "4 is 3 and 1. The 3 got Weka to the rock."
+ },
+ {
+  "slug": "7-and-3-make-10-we-still-have-1",
+  "text": "7 and 3 make 10. We still have 1."
+ },
+ {
   "slug": "the-same-question-with-pebbles-7-plus-4-here-are-7-gold-and-4-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 7 plus 4. Here are 7 gold and 4 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1452,6 +1740,10 @@
   "text": "11 take away 4. Split the 4 to get back to ten. How many hops back from 11 to the big rock?"
  },
  {
+  "slug": "that-is-the-big-rock-3-more-hops-back",
+  "text": "That is the big rock. 3 more hops back."
+ },
+ {
   "slug": "7-plus-5-weka-is-on-7-and-hops-5-more-where-will-weka-land",
   "text": "7 plus 5. Weka is on 7 and hops 5 more. Where will Weka land?"
  },
@@ -1474,6 +1766,14 @@
  {
   "slug": "7-plus-5-split-the-5-to-get-to-ten-how-many-hops-from-7-to-the-big-rock",
   "text": "7 plus 5. Split the 5 to get to ten. How many hops from 7 to the big rock?"
+ },
+ {
+  "slug": "5-is-3-and-2-the-3-got-weka-to-the-rock",
+  "text": "5 is 3 and 2. The 3 got Weka to the rock."
+ },
+ {
+  "slug": "7-and-3-make-10-we-still-have-2",
+  "text": "7 and 3 make 10. We still have 2."
  },
  {
   "slug": "the-same-question-with-pebbles-7-plus-5-here-are-7-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
@@ -1556,6 +1856,10 @@
   "text": "3 gets to ten. How many of the 6 are left?"
  },
  {
+  "slug": "6-is-3-and-3-the-3-got-weka-to-the-rock",
+  "text": "6 is 3 and 3. The 3 got Weka to the rock."
+ },
+ {
   "slug": "the-same-question-with-pebbles-7-plus-6-here-are-7-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 7 plus 6. Here are 7 gold and 6 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1636,6 +1940,14 @@
   "text": "3 gets to ten. How many of the 7 are left?"
  },
  {
+  "slug": "7-is-3-and-4-the-3-got-weka-to-the-rock",
+  "text": "7 is 3 and 4. The 3 got Weka to the rock."
+ },
+ {
+  "slug": "7-and-3-make-10-we-still-have-4",
+  "text": "7 and 3 make 10. We still have 4."
+ },
+ {
   "slug": "the-same-question-with-pebbles-7-plus-7-here-are-7-gold-and-7-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 7 plus 7. Here are 7 gold and 7 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1712,6 +2024,22 @@
   "text": "6 plus 5. Split the 5 to get to ten. How many hops from 6 to the big rock?"
  },
  {
+  "slug": "weka-only-hops-to-the-big-rock-look-how-far-it-is-from-6",
+  "text": "Weka only hops to the big rock. Look how far it is from 6."
+ },
+ {
+  "slug": "count-the-hops-from-6-to-the-big-rock",
+  "text": "Count the hops from 6 to the big rock."
+ },
+ {
+  "slug": "5-is-4-and-1-the-4-got-weka-to-the-rock",
+  "text": "5 is 4 and 1. The 4 got Weka to the rock."
+ },
+ {
+  "slug": "6-and-4-make-10-we-still-have-1",
+  "text": "6 and 4 make 10. We still have 1."
+ },
+ {
   "slug": "the-same-question-with-pebbles-6-plus-5-here-are-6-gold-and-5-silver-drag-silver-pebbles-to-fill-the-first-ten",
   "text": "The same question with pebbles: 6 plus 5. Here are 6 gold and 5 silver. Drag silver pebbles to fill the first ten."
  },
@@ -1768,6 +2096,10 @@
   "text": "11 take away 5. Split the 5 to get back to ten. How many hops back from 11 to the big rock?"
  },
  {
+  "slug": "that-is-the-big-rock-4-more-hops-back",
+  "text": "That is the big rock. 4 more hops back."
+ },
+ {
   "slug": "6-plus-6-weka-is-on-6-and-hops-6-more-where-will-weka-land",
   "text": "6 plus 6. Weka is on 6 and hops 6 more. Where will Weka land?"
  },
@@ -1790,6 +2122,14 @@
  {
   "slug": "6-plus-6-split-the-6-to-get-to-ten-how-many-hops-from-6-to-the-big-rock",
   "text": "6 plus 6. Split the 6 to get to ten. How many hops from 6 to the big rock?"
+ },
+ {
+  "slug": "6-is-4-and-2-the-4-got-weka-to-the-rock",
+  "text": "6 is 4 and 2. The 4 got Weka to the rock."
+ },
+ {
+  "slug": "6-and-4-make-10-we-still-have-2",
+  "text": "6 and 4 make 10. We still have 2."
  },
  {
   "slug": "the-same-question-with-pebbles-6-plus-6-here-are-6-gold-and-6-silver-drag-silver-pebbles-to-fill-the-first-ten",

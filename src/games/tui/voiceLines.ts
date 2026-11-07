@@ -48,7 +48,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.tenAndTen, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, WORDS.tenAndTen, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -64,7 +64,12 @@ export function allVoiceLines(): string[] {
       lines.add(shortLine(v));
       lines.add(WORDS.right(v >= 2 ? n : 10 + n, n));
     }
+    // Mistakes that teach (maths review R5): why each kind of wrong nest is wrong. The number said is the nest tapped.
+    if (n >= 2) lines.add(WORDS.why('reverse', n * 10 + 1, 0));
+    lines.add(WORDS.why('total', 10 + n, 2));
+    lines.add(WORDS.why('total', 10 + n, 3));
   }
+  for (const kind of ['tens', 'ones', 'off1', 'up'] as const) lines.add(WORDS.why(kind, 20, 0));
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.flowerTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenNest)];
   for (const main of mains) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
   return [...lines];

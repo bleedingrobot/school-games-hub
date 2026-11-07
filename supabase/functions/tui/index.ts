@@ -1135,6 +1135,21 @@ const EARLY_FACTS = {
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+//#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
 function seeded(seed) {
@@ -1311,10 +1326,58 @@ function makeRound(seed, stats, opts = {}) {
 	};
 }
 const pack = earlyFactsPack();
-/** How many nests a go has: three while every berry is drawn, then four. */
-const nestsFor = (l) => l >= 4 ? 3 : 4;
 /** The reversal a child who hears "fourteen" might pick: 41 for 14 (only when the ones aren't 1, so it differs). */
 const reversalOf = (n) => n * 10 + 1;
+/**
+* The wrong nests of a go, each with its kind, fixed by the seed. Three of them:
+* - "how many?" (ways 0 and 1): one berry out (a second teen, so the answer is never the lone teen), the reversal when the
+*   ones aren't 1, and one or two of 20 and the loose berries alone;
+* - "how many more?" (way 2): the whole, one berry out, 20;
+* - "take the ten away" (way 3): the whole, the ten put on (24 for 14), one berry out.
+*/
+function wrongNests(n, v, random) {
+	const slip = n === 1 ? 1 : n === 9 ? -1 : random() < .5 ? 1 : -1;
+	const answer = v >= 2 ? n : 10 + n;
+	const off1 = {
+		n: answer + slip,
+		kind: "off1"
+	};
+	const picks = v <= 1 ? [
+		off1,
+		...n >= 2 ? [{
+			n: reversalOf(n),
+			kind: "reverse"
+		}] : [],
+		...shuffle([{
+			n: 20,
+			kind: "tens"
+		}, {
+			n,
+			kind: "ones"
+		}], random)
+	] : v === 2 ? [
+		{
+			n: 10 + n,
+			kind: "total"
+		},
+		off1,
+		{
+			n: 20,
+			kind: "tens"
+		}
+	] : [
+		{
+			n: 10 + n,
+			kind: "total"
+		},
+		{
+			n: 20 + n,
+			kind: "up"
+		},
+		off1
+	];
+	return tagWrongs(picks.map((w) => w.n), (x) => picks.find((w) => w.n === x)?.kind ?? null).filter((w) => w.n !== answer).slice(0, 3);
+}
 /** A go made again from its plan by the shared pack, with its nests fixed by the seed. Null if the plan isn't one the pack could make. */
 function showGo(round, index, plan) {
 	const m = /^tenand:([1-9])$/.exec(plan.key);
@@ -1329,16 +1392,17 @@ function showGo(round, index, plan) {
 	const q = pack.rebuild(plan.key, [n, plan.v], true, random);
 	const answer = plan.v >= 2 ? n : 10 + n;
 	if (!q || !q.choices || q.answer !== answer) return null;
-	let wrong = q.choices.filter((c) => c !== answer);
-	if (plan.v <= 1 && n >= 2) wrong = [reversalOf(n), ...wrong.filter((c) => c !== reversalOf(n))];
-	const choices = [answer, ...wrong.slice(0, nestsFor(plan.l) - 1)].sort((a, b) => a - b);
+	const wrongs = wrongNests(n, plan.v, random);
+	if (wrongs.length !== 3) return null;
+	const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
 	return {
 		...plan,
 		n,
 		teen: 10 + n,
 		answer,
 		parts: q.parts,
-		choices
+		choices,
+		wrongs
 	};
 }
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */

@@ -72,12 +72,6 @@ const CAMPAIGN_STEPS = [
 		add: [11, 12]
 	}
 ];
-/** Share of questions from the current focus tables, review of earlier tables, and stretch (next table up). */
-const MIX = {
-	focus: .6,
-	review: .3,
-	stretch: .1
-};
 /**
 * The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
 * the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
@@ -96,19 +90,6 @@ const QUICK_MS = 5e3;
 const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
-/** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
-const BOX_WEIGHTS = [
-	6,
-	5,
-	3,
-	2,
-	1
-];
-/** A fact answered wrongly comes back after this many other questions (a random number in this range). */
-const REPEAT_AFTER = {
-	min: 3,
-	max: 6
-};
 //#endregion
 //#region shared/maths/leitner.ts
 /**
@@ -155,6 +136,28 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
+}
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -181,967 +184,6 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
-//#endregion
-//#region shared/maths/selector.ts
-/**
-* Choosing the next fact to ask. About 60% come from the current focus tables, 30% review
-* earlier tables (weak facts more often) and 10% stretch into the next table up. Within
-* those, facts in lower mastery boxes come up more often, the last few facts asked are
-* skipped, and a fact answered wrongly comes back 3–6 questions later.
-*/
-const newMemory = () => ({
-	asked: 0,
-	recent: [],
-	repeats: []
-});
-/** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
-function factWeight(stats) {
-	if (!stats) return BOX_WEIGHTS[0];
-	const wrongShare = stats.attempts ? (stats.attempts - stats.correct) / stats.attempts : 0;
-	return BOX_WEIGHTS[Math.min(stats.box, BOX_WEIGHTS.length - 1)] * (1 + wrongShare);
-}
-function weightedPick(keys, stats, random, extra) {
-	const weights = keys.map((k) => factWeight(stats.get(k)) * (extra?.(k) ?? 1));
-	let roll = random() * weights.reduce((a, b) => a + b, 0);
-	for (let i = 0; i < keys.length; i++) {
-		roll -= weights[i];
-		if (roll < 0) return keys[i];
-	}
-	return keys[keys.length - 1];
-}
-/**
-* The same picking rules over any pools of keys (the other skill packs build their own
-* pools from difficulty bands). Returns null when every pool is empty.
-*/
-function pickFromPools(pools, ctx, stats, memory, random, extraWeight) {
-	const allowed = new Set([
-		...pools.focus,
-		...pools.review,
-		...pools.stretch
-	]);
-	if (allowed.size === 0) return null;
-	memory.asked++;
-	const due = memory.repeats.find((r) => r.due <= memory.asked && allowed.has(r.key));
-	let choice;
-	if (due) {
-		memory.repeats = memory.repeats.filter((r) => r !== due);
-		choice = {
-			key: due.key,
-			band: "repeat"
-		};
-	} else {
-		const roll = random();
-		const band = [
-			ctx.onlyFocus || roll < MIX.focus ? "focus" : roll < MIX.focus + MIX.review ? "review" : "stretch",
-			"focus",
-			"review",
-			"stretch"
-		].find((b) => pools[b].length > 0);
-		let keys = pools[band];
-		if (ctx.boxes) {
-			const inBoxes = keys.filter((k) => ctx.boxes.includes(stats.get(k)?.box ?? 0));
-			if (inBoxes.length) keys = inBoxes;
-		}
-		const recent = new Set(memory.recent.slice(-3));
-		const fresh = keys.filter((k) => !recent.has(k));
-		if (fresh.length) keys = fresh;
-		choice = {
-			key: weightedPick(keys, stats, random, extraWeight),
-			band
-		};
-	}
-	memory.recent = [...memory.recent, choice.key].slice(-10);
-	return choice;
-}
-/** After a wrong answer: ask this fact again 3–6 questions from now (once). */
-function scheduleRepeat(memory, key, random) {
-	if (memory.repeats.some((r) => r.key === key)) return;
-	const gap = REPEAT_AFTER.min + Math.floor(random() * (REPEAT_AFTER.max - REPEAT_AFTER.min + 1));
-	memory.repeats.push({
-		key,
-		due: memory.asked + gap
-	});
-}
-//#endregion
-//#region shared/maths/banded.ts
-/**
-* The common engine behind every skill pack except times tables. A pack is a list of
-* question families, grouped into difficulty bands (band 1 easiest). `QuestionContext.level`
-* is the band: its families are the focus, easier bands are review, and the next band up is
-* stretch, with the same 60/30/10 mix, mastery boxes and repeats as times tables
-* (`pickFromPools`).
-*
-* A family owns one or more mastery keys. Fact-style families (adding facts, division facts)
-* have one key per fact ("add:7+8"); the rest have a single key for the kind of question
-* ("add:2d+2d:carry"), because "47 + 36" and "58 + 25" are the same skill.
-*
-* Every question is made from a short list of numbers (`params`) by a pure function, so the
-* server can make the question again from its key and numbers to check an answer, without
-* trusting the browser's copy of the question.
-*/
-/** A whole number from lo to hi (both included). */
-const int = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
-const pickOne = (random, items) => items[Math.floor(random() * items.length)];
-function shuffle$1(items, random) {
-	const out = [...items];
-	for (let i = out.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[out[i], out[j]] = [out[j], out[i]];
-	}
-	return out;
-}
-/** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
-const tidy = (n) => Math.round(n * 1e3) / 1e3;
-/** Whole numbers within [lo, hi]. */
-const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
-/** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
-function show(n) {
-	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
-	const grouped = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : whole;
-	return (n < 0 ? "−" : "") + grouped + (frac ? "." + frac : "");
-}
-/** Money in dollars, from cents: 240 → "$2.40". */
-const dollars = (cents) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
-const SPOKEN_WORDS = {
-	"+": "plus",
-	"−": "minus",
-	"×": "times",
-	"÷": "divided by",
-	"=": "equals",
-	"?": "what",
-	r: "remainder",
-	"%": "percent"
-};
-const ORDINAL = {
-	2: ["half", "halves"],
-	3: ["third", "thirds"],
-	4: ["quarter", "quarters"],
-	5: ["fifth", "fifths"],
-	6: ["sixth", "sixths"],
-	7: ["seventh", "sevenths"],
-	8: ["eighth", "eighths"],
-	9: ["ninth", "ninths"],
-	10: ["tenth", "tenths"],
-	12: ["twelfth", "twelfths"],
-	100: ["hundredth", "hundredths"]
-};
-/** A fraction part in words: "3/4" → "3 quarters", "?/8" → "what eighths", "2 1/3" → "2 and 1 third". */
-function spokenFraction(part) {
-	const mixed = /^(\d+|\?) (\d+|\?)\/(\d+)$/.exec(part);
-	if (mixed) return `${mixed[1] === "?" ? "what" : mixed[1]} and ${spokenFraction(`${mixed[2]}/${mixed[3]}`)}`;
-	const m = /^(\d+|\?)\/(\d+|\?)$/.exec(part);
-	if (!m) return part;
-	const [, top, bottom] = m;
-	if (bottom === "?") return `${top} over what`;
-	const names = ORDINAL[Number(bottom)];
-	if (!names) return `${top === "?" ? "what" : top} over ${bottom}`;
-	if (top === "?") return `what ${names[1]}`;
-	return `${top} ${top === "1" ? names[0] : names[1]}`;
-}
-/**
-* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
-* Anything else is read as it is.
-*/
-function spokenLabel(part) {
-	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
-	if (percent) return `${spokenLabel(percent[1])} percent`;
-	if (/^\d+\.\d+$/.test(part)) {
-		const [whole, frac] = part.split(".");
-		return `${whole} point ${frac.split("").join(" ")}`;
-	}
-	return part.includes("/") ? spokenFraction(part) : part;
-}
-/** The spoken version of a question's parts, for screen readers. */
-function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
-	return /[?.!:]$/.test(text) ? text : text + "?";
-}
-/** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */
-const fillBlank = (parts, answer) => parts.map((p) => p.includes("?") ? p.replace("?", show(answer)) : p).join(" ").replace(/\$ /g, "$");
-/** Same answer, allowing for floating-point dust (0.30000000000000004). */
-const sameAnswer = (a, b) => Math.abs(a - b) < 1e-6;
-/** Digits a typed answer needs, allowing one extra so the length doesn't give the answer away. */
-const lengthFor = (answer) => String(tidy(answer)).length;
-/** Four choices: the answer plus believable wrong ones, padded with near misses when short. */
-function choicesFor(answer, wrong, decimal, random) {
-	const ok = (n) => Number.isFinite(n) && n >= 0 && !sameAnswer(n, answer) && (decimal || Number.isInteger(n));
-	const picked = [];
-	for (const n of shuffle$1(wrong.map(tidy), random)) if (ok(n) && !picked.some((p) => sameAnswer(p, n)) && picked.length < 3) picked.push(n);
-	const steps = decimal && !Number.isInteger(answer) ? [
-		.1,
-		1,
-		.01,
-		.2
-	] : [
-		1,
-		10,
-		2,
-		100
-	];
-	for (let i = 1; picked.length < 3; i++) for (const step of steps) for (const n of [tidy(answer + step * i), tidy(answer - step * i)]) if (ok(n) && !picked.some((p) => sameAnswer(p, n)) && picked.length < 3) picked.push(n);
-	return shuffle$1([answer, ...picked], random);
-}
-var BandedPack = class {
-	definition;
-	random;
-	now;
-	id;
-	label;
-	curriculumTags;
-	/** Number of difficulty bands (valid `level`s are 1 to this). */
-	bandCount;
-	familyOfKey = new Map();
-	bandOfKey = new Map();
-	records = new Map();
-	memory = newMemory();
-	listeners = new Set();
-	nextId = 1;
-	constructor(definition, saved = [], random = Math.random, now = Date.now) {
-		this.definition = definition;
-		this.random = random;
-		this.now = now;
-		this.id = definition.id;
-		this.label = definition.label;
-		this.bandCount = definition.bands.length;
-		const families = Object.values(definition.families);
-		this.curriculumTags = [...new Set(families.flatMap((f) => f.curriculumTags))];
-		definition.bands.forEach((names, i) => {
-			for (const name of names) {
-				const family = definition.families[name];
-				if (!family) throw new Error(`${definition.id}: band ${i + 1} names unknown family "${name}"`);
-				for (const key of family.keys) {
-					if (this.familyOfKey.has(key)) throw new Error(`${definition.id}: key "${key}" is in two families or bands`);
-					this.familyOfKey.set(key, family);
-					this.bandOfKey.set(key, i + 1);
-				}
-			}
-		});
-		for (const name of definition.ladderOnly ?? []) {
-			const family = definition.families[name];
-			if (!family) throw new Error(`${definition.id}: ladderOnly names unknown family "${name}"`);
-			for (const key of family.keys) {
-				if (this.familyOfKey.has(key)) throw new Error(`${definition.id}: key "${key}" is in two families or bands`);
-				this.familyOfKey.set(key, family);
-			}
-		}
-		for (const s of saved) if (this.familyOfKey.has(s.key)) this.records.set(s.key, s);
-	}
-	/** Every mastery key in a band (1 = easiest). */
-	keysInBand(band) {
-		return (this.definition.bands[band - 1] ?? []).flatMap((name) => this.definition.families[name].keys);
-	}
-	/** Which band a key belongs to, or undefined if this pack doesn't own it. */
-	bandOf(key) {
-		return this.bandOfKey.get(key);
-	}
-	/** What a key is about, for the teacher: "Adding 2-digit numbers, with regrouping". */
-	labelOf(key) {
-		return this.familyOfKey.get(key)?.label;
-	}
-	/** The focus, review and stretch keys for a band. */
-	poolsFor(level) {
-		const band = Math.min(Math.max(Math.round(level), 1), this.bandCount);
-		return {
-			focus: this.keysInBand(band),
-			review: Array.from({ length: band - 1 }, (_, i) => this.keysInBand(i + 1)).flat(),
-			stretch: band < this.bandCount ? this.keysInBand(band + 1) : []
-		};
-	}
-	onAnswer(listener) {
-		this.listeners.add(listener);
-		return () => this.listeners.delete(listener);
-	}
-	stats() {
-		return [...this.records.values()];
-	}
-	statsFor(key) {
-		return this.records.get(key);
-	}
-	/**
-	* Makes the question for a key and its numbers, exactly as `nextQuestion` would have.
-	* Null if this pack doesn't own the key or the numbers aren't ones it could have rolled.
-	* The server uses this to check answers.
-	*/
-	rebuild(key, params, multipleChoice = false, random = this.random) {
-		const family = this.familyOfKey.get(key);
-		if (!family || !params.every((p) => Number.isFinite(p))) return null;
-		const made = family.make(key, params);
-		if (!made) return null;
-		const answer = tidy(made.answer);
-		const decimal = made.input === "decimal";
-		let choices;
-		let choiceLabels;
-		if (made.pick) {
-			choices = made.pick.map((_, i) => i);
-			choiceLabels = made.pick;
-		} else if (multipleChoice || made.choose) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
-		return {
-			skill: this.id,
-			factKey: key,
-			kind: key,
-			parts: made.parts,
-			spoken: made.spoken,
-			...made.prompt ? { prompt: made.prompt } : {},
-			answer,
-			choices,
-			choiceLabels,
-			input: made.input ?? "whole",
-			maxLength: Math.max(3, lengthFor(answer) + 1),
-			params: [...params]
-		};
-	}
-	nextQuestion(ctx) {
-		const picked = pickFromPools(this.poolsFor(ctx.level ?? 1), ctx, this.records, this.memory, this.random);
-		if (!picked) return null;
-		return this.questionFor(picked.key, picked.band, ctx);
-	}
-	/** Whether this pack owns a mastery key. */
-	owns(key) {
-		return this.familyOfKey.has(key);
-	}
-	/** The question for a chosen key (the picking was done by the caller, e.g. auto mode). */
-	questionFor(key, band, ctx = {}) {
-		const picked = {
-			key,
-			band
-		};
-		const family = this.familyOfKey.get(picked.key);
-		for (let tries = 0; tries < 20; tries++) {
-			const built = this.rebuild(picked.key, family.roll(picked.key, this.random), !!ctx.multipleChoice);
-			if (built) return {
-				...built,
-				id: this.nextId++,
-				band: picked.band
-			};
-		}
-		throw new Error(`${this.id}: family for "${picked.key}" keeps rolling numbers it can't use`);
-	}
-	recordAnswer(q, answer, ms) {
-		const correct = sameAnswer(answer, q.answer);
-		const before = this.records.get(q.factKey) ?? newStats(q.factKey);
-		const at = this.now();
-		const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
-		this.records.set(q.factKey, after);
-		for (const listener of this.listeners) listener({
-			key: q.factKey,
-			correct,
-			ms: Math.round(ms),
-			at
-		});
-		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
-		return {
-			correct,
-			fact: this.factText(q),
-			boxBefore: before.box,
-			boxAfter: after.box
-		};
-	}
-	/** The right answer in full, shown after a wrong answer. */
-	factText(q) {
-		return (q.params ? this.familyOfKey.get(q.factKey)?.make(q.factKey, q.params) : null)?.fact ?? fillBlank(q.parts, q.answer);
-	}
-};
-//#endregion
-//#region shared/maths/skillPacks/earlyFacts.ts
-/**
-* The first rungs of the maths ladder: number facts a student should know by heart before
-* times tables. One mastery record per fact, like 7 × 8 in times tables.
-*
-* Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
-* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`), the number-line keys "place100:n63", "read1000:h300", "tens100:+63", "near10:h65", "zoom:40-50:47" (see `lineFamilies`). Adding and taking away within 20 keeps its own
-* "add:7+8" records (add-sub pack), so nothing already saved changes.
-*
-* Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
-*/
-const bondKeys = (prefix, total, from) => {
-	const keys = [];
-	for (let a = from; a <= total / 2; a++) keys.push(`${prefix}:${a}+${total - a}`);
-	return keys;
-};
-const parseBond = (key) => {
-	const m = /^bond(10|20):(\d+)\+(\d+)$/.exec(key);
-	return m ? {
-		total: Number(m[1]),
-		a: Number(m[2]),
-		b: Number(m[3])
-	} : null;
-};
-/** Variants: 0 a + ? = total, 1 ? + b = total, 2 total − a = ?, 3 total − b = ?. */
-function bonds(label, tag, prefix, total, from) {
-	const keys = bondKeys(prefix, total, from);
-	return {
-		label,
-		curriculumTags: [tag],
-		keys,
-		roll: (key, r) => {
-			const { a, b } = parseBond(key);
-			return [
-				a,
-				b,
-				int(r, 0, 3)
-			];
-		},
-		make: (key, [a, b, v]) => {
-			const bond = parseBond(key);
-			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
-			const t = String(total);
-			const [parts, answer] = v === 0 ? [[
-				String(a),
-				"+",
-				"?",
-				"=",
-				t
-			], b] : v === 1 ? [[
-				"?",
-				"+",
-				String(b),
-				"=",
-				t
-			], a] : v === 2 ? [[
-				t,
-				"−",
-				String(a),
-				"=",
-				"?"
-			], b] : [[
-				t,
-				"−",
-				String(b),
-				"=",
-				"?"
-			], a];
-			return {
-				parts,
-				spoken: speak(parts),
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					total,
-					answer + 2,
-					answer - 2,
-					a + b + 1
-				]
-			};
-		}
-	};
-}
-const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
-/** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
-function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$5(dblFrom, dblTo);
-	const halves = range$5(halfFrom, halfTo, 2);
-	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
-	return {
-		label,
-		curriculumTags: [tag],
-		keys,
-		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
-		make: (key, [n, v]) => {
-			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
-			if (key.startsWith("dbl:")) {
-				const parts = v === 0 ? [
-					String(n),
-					"+",
-					String(n),
-					"=",
-					"?"
-				] : [
-					"Double",
-					String(n),
-					"=",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: 2 * n,
-					wrong: [
-						2 * n + 1,
-						2 * n - 1,
-						2 * n + 2,
-						2 * n - 2,
-						n + 1,
-						n * n
-					]
-				};
-			}
-			const parts = v === 0 ? [
-				"Half",
-				"of",
-				String(n),
-				"=",
-				"?"
-			] : [
-				String(n),
-				"÷",
-				"2",
-				"=",
-				"?"
-			];
-			const answer = n / 2;
-			return {
-				parts,
-				spoken: speak(parts),
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					n,
-					answer + 2,
-					answer - 2
-				]
-			};
-		}
-	};
-}
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
-const tenAnd = {
-	label: "\"Ten and\" facts (10 + 4)",
-	curriculumTags: ["MS.Y1.NUM.OP.P6"],
-	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
-	make: (key, [n, v]) => {
-		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
-		const t = String(10 + n);
-		const [parts, answer] = v === 0 ? [[
-			"10",
-			"+",
-			String(n),
-			"=",
-			"?"
-		], 10 + n] : v === 1 ? [[
-			String(n),
-			"+",
-			"10",
-			"=",
-			"?"
-		], 10 + n] : v === 2 ? [[
-			"10",
-			"+",
-			"?",
-			"=",
-			t
-		], n] : [[
-			t,
-			"−",
-			"10",
-			"=",
-			"?"
-		], n];
-		return {
-			parts,
-			spoken: speak(parts),
-			answer,
-			wrong: [
-				answer + 1,
-				answer - 1,
-				answer + 10,
-				n + 1,
-				20,
-				1 + n
-			]
-		};
-	}
-};
-/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
-const SKIP_STEPS = [
-	{
-		step: 10,
-		upTo: 100,
-		word: "tens"
-	},
-	{
-		step: 5,
-		upTo: 50,
-		word: "fives"
-	},
-	{
-		step: 2,
-		upTo: 20,
-		word: "twos"
-	}
-];
-/**
-* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
-* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
-* the step from 0 to `upTo`.
-*/
-function skipTerms(kind, step, upTo, answer, at) {
-	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
-	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
-	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
-}
-const skipKeys = (step, upTo) => [
-	"up",
-	"next",
-	"back"
-].flatMap((kind) => range$5(0, upTo, step).filter((n) => [
-	1,
-	2,
-	3,
-	4
-].some((at) => skipTerms(kind, step, upTo, n, at))).map((n) => `skip${step}:${kind}:${n}`));
-const parseSkip = (key) => {
-	const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
-	return m ? {
-		step: Number(m[1]),
-		kind: m[2],
-		answer: Number(m[3])
-	} : null;
-};
-/**
-* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
-* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
-* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
-*/
-function skipCounting(step, upTo, word) {
-	const keys = skipKeys(step, upTo);
-	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
-	return {
-		label: `Counting in ${word}`,
-		curriculumTags: [],
-		keys,
-		roll: (key, r) => {
-			const { kind, answer } = parseSkip(key);
-			const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
-			return [answer, fits[int(r, 0, fits.length - 1)]];
-		},
-		make: (key, [answer, at]) => {
-			const skip = parseSkip(key);
-			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
-			const terms = skipTerms(skip.kind, step, upTo, answer, at);
-			if (!terms) return null;
-			const gap = terms.indexOf(answer);
-			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
-			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
-			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
-			const before = terms[gap - 1];
-			const back = skip.kind === "back" ? -1 : 1;
-			const wrongSteps = [
-				10,
-				5,
-				2,
-				1
-			].filter((s) => s !== step);
-			return {
-				parts,
-				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}: ${said}. ${prompt}`,
-				prompt,
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					...wrongSteps.map((s) => before + back * s),
-					...terms.filter((n) => n !== answer)
-				]
-			};
-		}
-	};
-}
-/** The wholes in each part-whole skill: small wholes first, then up to 10. */
-const PART_WHOLES = {
-	parts5: [3, 5],
-	parts10: [6, 10]
-};
-const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
-const parsePart = (key) => {
-	const m = /^part(\d+):(\d+)$/.exec(key);
-	return m ? {
-		whole: Number(m[1]),
-		shown: Number(m[2])
-	} : null;
-};
-/**
-* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
-* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
-* number showing, the whole and two more.
-*/
-function partWhole(label, from, to) {
-	const keys = partKeys(from, to);
-	return {
-		label,
-		curriculumTags: ["MS.Y1.NUM.OP.P1"],
-		keys,
-		roll: (key) => {
-			const { whole, shown } = parsePart(key);
-			return [whole, shown];
-		},
-		make: (key, [whole, shown]) => {
-			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
-			const answer = whole - shown;
-			return {
-				parts: [
-					String(whole),
-					"=",
-					String(shown),
-					"+",
-					"?"
-				],
-				spoken: `${whole} is ${shown} and how many more?`,
-				answer,
-				wrong: [
-					answer + 1,
-					answer - 1,
-					shown,
-					whole,
-					answer + 2
-				]
-			};
-		}
-	};
-}
-const ODD_EVEN_LABELS = ["odd", "even"];
-const oddEven = {
-	label: "Odd and even numbers to 20",
-	curriculumTags: ["MS.Y2.NUM.OP.P2"],
-	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
-	roll: (key) => [Number(key.split(":")[1])],
-	make: (key, [n]) => {
-		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
-		const answer = n % 2 === 0 ? 1 : 0;
-		return {
-			parts: [
-				"Is",
-				String(n),
-				"odd",
-				"or",
-				"even?"
-			],
-			spoken: `Is ${n} odd or even?`,
-			answer,
-			pick: [...ODD_EVEN_LABELS],
-			fact: `${n} is ${ODD_EVEN_LABELS[answer]}`
-		};
-	}
-};
-const LINE_TENS = range$5(1, 9).map((n) => n * 10);
-const LINE_OTHERS_100 = [
-	11,
-	14,
-	18,
-	23,
-	27,
-	32,
-	36,
-	41,
-	45,
-	49,
-	54,
-	58,
-	63,
-	67,
-	72,
-	76,
-	81,
-	85,
-	89,
-	94,
-	97
-];
-const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
-const LINE_OTHERS_1000 = [
-	120,
-	140,
-	170,
-	230,
-	250,
-	270,
-	310,
-	340,
-	360,
-	390,
-	410,
-	450,
-	480,
-	520,
-	540,
-	570,
-	610,
-	640,
-	660,
-	690,
-	720,
-	750,
-	780,
-	810,
-	830,
-	860,
-	880,
-	910,
-	940,
-	960,
-	980
-];
-const TENS_MORE = [
-	14,
-	20,
-	27,
-	35,
-	42,
-	56,
-	63,
-	78,
-	85,
-	90
-];
-const TENS_LESS = [
-	10,
-	19,
-	24,
-	38,
-	47,
-	63,
-	71,
-	86,
-	92,
-	100
-];
-/** Not a tens number and not halfway: every third, so the spread covers the whole line. */
-const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
-const NEAR10_HALF = range$5(5, 95, 10);
-const NEAR100_OTHERS = [
-	130,
-	180,
-	220,
-	280,
-	340,
-	390,
-	430,
-	480,
-	530,
-	580,
-	610,
-	640,
-	680,
-	730,
-	790,
-	830,
-	870,
-	920,
-	960
-].filter((_, i) => i % 2 === 0).concat([440]);
-const NEAR100_HALF = range$5(150, 950, 100);
-const ZOOM_KEYS = [
-	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
-	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
-	"zoom:0-200:130",
-	"zoom:300-400:350"
-];
-/** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
-const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
-/** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
-const numLine = (label, tag, keys, parts, spoken) => ({
-	label,
-	curriculumTags: [tag],
-	keys,
-	roll: (key) => [lineNumber(key)],
-	make: (key, [n]) => {
-		if (!keys.includes(key) || lineNumber(key) !== n) return null;
-		return {
-			parts: parts(n, key),
-			spoken: spoken(n, key),
-			answer: n,
-			wrong: [
-				n + 1,
-				n - 1,
-				n + 10,
-				n + 2
-			]
-		};
-	}
-});
-const nearWords = (n, size) => `Is ${n} closer to ${Math.floor(n / size) * size} or ${Math.floor(n / size) * size + size}?`;
-const lineFamilies = {
-	place100: numLine("Where a number goes on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `place100:t${n}`), ...LINE_OTHERS_100.map((n) => `place100:n${n}`)], (n) => [
-		"Place",
-		String(n),
-		"on",
-		"the",
-		"100",
-		"line"
-	], (n) => `Where does ${n} go on the line to 100?`),
-	read100: numLine("Reading a point on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `read100:t${n}`), ...LINE_OTHERS_100.map((n) => `read100:n${n}`)], (n) => [
-		"Read",
-		String(n),
-		"on",
-		"the",
-		"100",
-		"line"
-	], () => "What number is at the arrow?"),
-	tens100: numLine("Ten more and ten less on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...TENS_MORE.map((n) => `tens100:+${n}`), ...TENS_LESS.map((n) => `tens100:-${n}`)], (n, key) => [
-		"Ten",
-		key.includes("+") ? "more" : "less",
-		"than",
-		String(n)
-	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
-	near10: numLine("Which ten a number is closer to", "MS.Y3.NUM.NS.P5", [...NEAR10_OTHERS.map((n) => `near10:n${n}`), ...NEAR10_HALF.map((n) => `near10:h${n}`)], (n) => [
-		"Nearest",
-		"ten",
-		"to",
-		String(n)
-	], (n) => nearWords(n, 10)),
-	zoom: numLine("Reading and placing on a zoomed line", "MS.Y3.NUM.NS.P1", ZOOM_KEYS, (n, key) => [
-		"Zoom",
-		/zoom:(\d+-\d+)/.exec(key)[1],
-		"at",
-		String(n)
-	], (n) => `Where is ${n} on the zoomed line?`),
-	place1000: numLine("Where a number goes on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => [
-		"Place",
-		String(n),
-		"on",
-		"the",
-		"1000",
-		"line"
-	], (n) => `Where does ${n} go on the line to 1000?`),
-	read1000: numLine("Reading a point on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => [
-		"Read",
-		String(n),
-		"on",
-		"the",
-		"1000",
-		"line"
-	], () => "What number is at the arrow?"),
-	near100: numLine("Which hundred a number is closer to", "MS.Y4.NUM.NS.P5", [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => [
-		"Nearest",
-		"hundred",
-		"to",
-		String(n)
-	], (n) => nearWords(n, 100))
-};
-const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
-const EARLY_FACTS = {
-	id: "early-facts",
-	label: "Early number facts",
-	families: {
-		...lineFamilies,
-		tenAnd,
-		oddEven,
-		parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
-		parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
-		...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
-		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
-		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
-		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
-		dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
-	},
-	bands: [
-		["bond10"],
-		["dblHalf10"],
-		["bond20"],
-		["dblHalf20"]
-	],
-	ladderOnly: [
-		"tenAnd",
-		"oddEven",
-		"parts5",
-		"parts10",
-		...SKIP_STEPS.map(({ step }) => `skip${step}`),
-		...LINE_FAMILY_NAMES
-	]
-};
-const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
@@ -1250,27 +292,80 @@ function makeRound(seed, stats, opts = {}) {
 		goes
 	};
 }
-const pack = earlyFactsPack();
+/** The tell of a shell for the "at most 2 share it" check: odd or even. */
+const parity = (n) => n % 2;
+/**
+* The three wrong shells: the tempting slips first (in an order fixed by the seed), then plain one-off and two-off
+* numbers to fill up. A slip is left out when it would make three shells the same odd or even as the answer, so
+* elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative.
+*/
+function threeWrongs(answer, slips, random) {
+	const side = random() < .5 ? 1 : -1;
+	const near = tagWrongs([answer + side, answer - side], (n) => n < 0 ? null : "off1");
+	const fillers = tagWrongs([
+		answer + 2,
+		answer - 2,
+		answer + 3
+	], (n) => n < 0 ? null : "off1");
+	const pool = [
+		...near.slice(0, 1),
+		...shuffle(slips, random),
+		...near.slice(1),
+		...fillers
+	].filter((w, i, all) => w.n !== answer && w.n >= 0 && all.findIndex((x) => x.n === w.n) === i);
+	const out = [];
+	for (const w of pool) if (out.length < 3 && atMostShareTell(answer, [...out, w].map((x) => x.n), parity)) out.push(w);
+	for (const w of pool) if (out.length < 3 && !out.includes(w)) out.push(w);
+	return out;
+}
 /** A go made again from its plan, with its shells in an order fixed by the seed. Null if the plan isn't one that can be made. */
 function showGo(round, index, plan) {
 	const p = parseKey(plan.key);
 	if (!p) return null;
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
-	const q = pack.rebuild(plan.key, [p.whole, p.shown], true, random);
-	if (!q || !q.choices) return null;
 	const { whole, shown } = p;
 	const hidden = whole - shown;
-	if (plan.kind === "hiding") return {
-		...plan,
-		whole,
-		showing: shown,
-		hiding: hidden,
-		answer: hidden,
-		spoken: `${whole} pipi. How many are hiding?`,
-		choices: q.choices
+	const make = (answer, slips) => {
+		const wrongs = threeWrongs(answer, slips, random);
+		return {
+			wrongs,
+			choices: shuffle([answer, ...wrongs.map((w) => w.n)], random)
+		};
 	};
+	if (plan.kind === "hiding") {
+		const slips = [
+			{
+				n: shown,
+				kind: "shown"
+			},
+			{
+				n: whole,
+				kind: "whole"
+			},
+			{
+				n: whole + shown,
+				kind: "add"
+			}
+		];
+		return {
+			...plan,
+			whole,
+			showing: shown,
+			hiding: hidden,
+			answer: hidden,
+			spoken: `${whole} pipi. How many are hiding?`,
+			...make(hidden, slips)
+		};
+	}
 	if (plan.kind === "twoTides") {
 		if (shown === 0 || shown === whole) return null;
+		const slips = [{
+			n: shown,
+			kind: "before"
+		}, {
+			n: whole,
+			kind: "whole"
+		}];
 		return {
 			...plan,
 			whole,
@@ -1279,18 +374,29 @@ function showGo(round, index, plan) {
 			before: hidden,
 			answer: hidden,
 			spoken: `Splash! The hiding ones pop up and the others dig in. ${whole} pipi. How many are hiding now?`,
-			choices: q.choices
+			...make(hidden, slips)
 		};
 	}
 	if (plan.kind === "altogether") {
 		if (shown === 0 || shown === whole) return null;
-		const choices = choicesFor(whole, [
-			whole + 1,
-			whole - 1,
-			shown,
-			hidden,
-			whole + 2
-		], false, random);
+		const slips = [
+			{
+				n: shown,
+				kind: "part"
+			},
+			{
+				n: hidden,
+				kind: "part"
+			},
+			{
+				n: whole + 1,
+				kind: "off1"
+			},
+			{
+				n: whole - 1,
+				kind: "off1"
+			}
+		];
 		return {
 			...plan,
 			whole,
@@ -1298,7 +404,7 @@ function showGo(round, index, plan) {
 			hiding: hidden,
 			answer: whole,
 			spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`,
-			choices
+			...make(whole, slips)
 		};
 	}
 	return null;
@@ -1565,6 +671,79 @@ async function handlePipi(services, player, body) {
 	}
 	return unreadable();
 }
+//#endregion
+//#region shared/maths/banded.ts
+/** A whole number from lo to hi (both included). */
+const int = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
+const pickOne = (random, items) => items[Math.floor(random() * items.length)];
+/** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
+const tidy = (n) => Math.round(n * 1e3) / 1e3;
+/** Whole numbers within [lo, hi]. */
+const isInt = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
+/** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
+function show(n) {
+	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
+	const grouped = whole.length >= 5 ? whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : whole;
+	return (n < 0 ? "−" : "") + grouped + (frac ? "." + frac : "");
+}
+/** Money in dollars, from cents: 240 → "$2.40". */
+const dollars = (cents) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
+const SPOKEN_WORDS = {
+	"+": "plus",
+	"−": "minus",
+	"×": "times",
+	"÷": "divided by",
+	"=": "equals",
+	"?": "what",
+	r: "remainder",
+	"%": "percent"
+};
+const ORDINAL = {
+	2: ["half", "halves"],
+	3: ["third", "thirds"],
+	4: ["quarter", "quarters"],
+	5: ["fifth", "fifths"],
+	6: ["sixth", "sixths"],
+	7: ["seventh", "sevenths"],
+	8: ["eighth", "eighths"],
+	9: ["ninth", "ninths"],
+	10: ["tenth", "tenths"],
+	12: ["twelfth", "twelfths"],
+	100: ["hundredth", "hundredths"]
+};
+/** A fraction part in words: "3/4" → "3 quarters", "?/8" → "what eighths", "2 1/3" → "2 and 1 third". */
+function spokenFraction(part) {
+	const mixed = /^(\d+|\?) (\d+|\?)\/(\d+)$/.exec(part);
+	if (mixed) return `${mixed[1] === "?" ? "what" : mixed[1]} and ${spokenFraction(`${mixed[2]}/${mixed[3]}`)}`;
+	const m = /^(\d+|\?)\/(\d+|\?)$/.exec(part);
+	if (!m) return part;
+	const [, top, bottom] = m;
+	if (bottom === "?") return `${top} over what`;
+	const names = ORDINAL[Number(bottom)];
+	if (!names) return `${top === "?" ? "what" : top} over ${bottom}`;
+	if (top === "?") return `what ${names[1]}`;
+	return `${top} ${top === "1" ? names[0] : names[1]}`;
+}
+/**
+* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+* Anything else is read as it is.
+*/
+function spokenLabel(part) {
+	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+	if (percent) return `${spokenLabel(percent[1])} percent`;
+	if (/^\d+\.\d+$/.test(part)) {
+		const [whole, frac] = part.split(".");
+		return `${whole} point ${frac.split("").join(" ")}`;
+	}
+	return part.includes("/") ? spokenFraction(part) : part;
+}
+/** The spoken version of a question's parts, for screen readers. */
+function speak(parts) {
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	return /[?.!:]$/.test(text) ? text : text + "?";
+}
+/** Same answer, allowing for floating-point dust (0.30000000000000004). */
+const sameAnswer = (a, b) => Math.abs(a - b) < 1e-6;
 //#endregion
 //#region shared/maths/skillPacks/addSub.ts
 /**
@@ -3274,6 +2453,606 @@ const BANDED_PACKS = {
 	decimals: DECIMALS
 };
 PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
+//#endregion
+//#region shared/maths/skillPacks/earlyFacts.ts
+/**
+* The first rungs of the maths ladder: number facts a student should know by heart before
+* times tables. One mastery record per fact, like 7 × 8 in times tables.
+*
+* Keys: "bond10:3+7" (pairs that make 10), "bond20:8+12" (pairs that make 20), "dbl:7"
+* (double 7), "half:14" (half of 14) and "skip5:next:25" (skip counting: see `skipCounting`), "part7:4" (7 altogether, 4 showing: see `partWhole`), "oddeven:7" (is 7 odd or even? see `oddEven`), the number-line keys "place100:n63", "read1000:h300", "tens100:+63", "near10:h65", "zoom:40-50:47" (see `lineFamilies`). Adding and taking away within 20 keeps its own
+* "add:7+8" records (add-sub pack), so nothing already saved changes.
+*
+* Bands: 1 bonds to 10, 2 doubles and halves to 10, 3 bonds to 20, 4 doubles and halves to 20.
+*/
+const bondKeys = (prefix, total, from) => {
+	const keys = [];
+	for (let a = from; a <= total / 2; a++) keys.push(`${prefix}:${a}+${total - a}`);
+	return keys;
+};
+const parseBond = (key) => {
+	const m = /^bond(10|20):(\d+)\+(\d+)$/.exec(key);
+	return m ? {
+		total: Number(m[1]),
+		a: Number(m[2]),
+		b: Number(m[3])
+	} : null;
+};
+/** Variants: 0 a + ? = total, 1 ? + b = total, 2 total − a = ?, 3 total − b = ?. */
+function bonds(label, tag, prefix, total, from) {
+	const keys = bondKeys(prefix, total, from);
+	return {
+		label,
+		curriculumTags: [tag],
+		keys,
+		roll: (key, r) => {
+			const { a, b } = parseBond(key);
+			return [
+				a,
+				b,
+				int(r, 0, 3)
+			];
+		},
+		make: (key, [a, b, v]) => {
+			const bond = parseBond(key);
+			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
+			const t = String(total);
+			const [parts, answer] = v === 0 ? [[
+				String(a),
+				"+",
+				"?",
+				"=",
+				t
+			], b] : v === 1 ? [[
+				"?",
+				"+",
+				String(b),
+				"=",
+				t
+			], a] : v === 2 ? [[
+				t,
+				"−",
+				String(a),
+				"=",
+				"?"
+			], b] : [[
+				t,
+				"−",
+				String(b),
+				"=",
+				"?"
+			], a];
+			return {
+				parts,
+				spoken: speak(parts),
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					total,
+					answer + 2,
+					answer - 2,
+					a + b + 1
+				]
+			};
+		}
+	};
+}
+const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+/** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
+function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
+	const dbls = range$5(dblFrom, dblTo);
+	const halves = range$5(halfFrom, halfTo, 2);
+	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
+	return {
+		label,
+		curriculumTags: [tag],
+		keys,
+		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+		make: (key, [n, v]) => {
+			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
+			if (key.startsWith("dbl:")) {
+				const parts = v === 0 ? [
+					String(n),
+					"+",
+					String(n),
+					"=",
+					"?"
+				] : [
+					"Double",
+					String(n),
+					"=",
+					"?"
+				];
+				return {
+					parts,
+					spoken: speak(parts),
+					answer: 2 * n,
+					wrong: [
+						2 * n + 1,
+						2 * n - 1,
+						2 * n + 2,
+						2 * n - 2,
+						n + 1,
+						n * n
+					]
+				};
+			}
+			const parts = v === 0 ? [
+				"Half",
+				"of",
+				String(n),
+				"=",
+				"?"
+			] : [
+				String(n),
+				"÷",
+				"2",
+				"=",
+				"?"
+			];
+			const answer = n / 2;
+			return {
+				parts,
+				spoken: speak(parts),
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					n,
+					answer + 2,
+					answer - 2
+				]
+			};
+		}
+	};
+}
+/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+const tenAnd = {
+	label: "\"Ten and\" facts (10 + 4)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenand:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
+		const t = String(10 + n);
+		const [parts, answer] = v === 0 ? [[
+			"10",
+			"+",
+			String(n),
+			"=",
+			"?"
+		], 10 + n] : v === 1 ? [[
+			String(n),
+			"+",
+			"10",
+			"=",
+			"?"
+		], 10 + n] : v === 2 ? [[
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		], n] : [[
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		], n];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 10,
+				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The steps juniors skip count in, how far each goes and its word ("Counting in tens"). Up to 20 for twos to start with. */
+const SKIP_STEPS = [
+	{
+		step: 10,
+		upTo: 100,
+		word: "tens"
+	},
+	{
+		step: 5,
+		upTo: 50,
+		word: "fives"
+	},
+	{
+		step: 2,
+		upTo: 20,
+		word: "twos"
+	}
+];
+/**
+* One way to show a skip-counting question with this answer, or null. `at` is where the gap is: 1 or 2 for up and back
+* (four pads, the gap in the middle), 3 or 4 for next (that many pads shown before the gap). Every pad is a multiple of
+* the step from 0 to `upTo`.
+*/
+function skipTerms(kind, step, upTo, answer, at) {
+	if (kind === "next" ? at !== 3 && at !== 4 : at !== 1 && at !== 2) return null;
+	const terms = kind === "up" ? range$5(answer - at * step, answer + (3 - at) * step, step) : kind === "back" ? range$5(answer - (3 - at) * step, answer + at * step, step).reverse() : range$5(answer - at * step, answer, step);
+	return terms.every((n) => n >= 0 && n <= upTo) && answer % step === 0 ? terms : null;
+}
+const skipKeys = (step, upTo) => [
+	"up",
+	"next",
+	"back"
+].flatMap((kind) => range$5(0, upTo, step).filter((n) => [
+	1,
+	2,
+	3,
+	4
+].some((at) => skipTerms(kind, step, upTo, n, at))).map((n) => `skip${step}:${kind}:${n}`));
+const parseSkip = (key) => {
+	const m = /^skip(10|5|2):(up|next|back):(\d+)$/.exec(key);
+	return m ? {
+		step: Number(m[1]),
+		kind: m[2],
+		answer: Number(m[3])
+	} : null;
+};
+/**
+* Skip counting in tens, fives or twos (NZ Years 1–2), one record for each missing number of each kind: "skip10:up:40" is
+* the 40 in 20, 30, ?, 50 (or 30, ?, 50, 60). The parts are the pads, the gap as "?": ["20,", "30,", "?,", "50"].
+* Wrong choices: one more or less, the wrong step from the pad before, and a number already shown.
+*/
+function skipCounting(step, upTo, word) {
+	const keys = skipKeys(step, upTo);
+	const ats = (kind) => kind === "next" ? [3, 4] : [1, 2];
+	return {
+		label: `Counting in ${word}`,
+		curriculumTags: [],
+		keys,
+		roll: (key, r) => {
+			const { kind, answer } = parseSkip(key);
+			const fits = ats(kind).filter((at) => skipTerms(kind, step, upTo, answer, at));
+			return [answer, fits[int(r, 0, fits.length - 1)]];
+		},
+		make: (key, [answer, at]) => {
+			const skip = parseSkip(key);
+			if (!skip || skip.step !== step || skip.answer !== answer || !keys.includes(key)) return null;
+			const terms = skipTerms(skip.kind, step, upTo, answer, at);
+			if (!terms) return null;
+			const gap = terms.indexOf(answer);
+			const parts = terms.map((n, i) => (i === gap ? "?" : String(n)) + (i < terms.length - 1 ? "," : ""));
+			const said = terms.map((n, i) => i === gap ? skip.kind === "next" ? "" : "something" : String(n)).filter(Boolean).join(", ");
+			const prompt = skip.kind === "next" ? "What comes next?" : "What is missing?";
+			const before = terms[gap - 1];
+			const back = skip.kind === "back" ? -1 : 1;
+			const wrongSteps = [
+				10,
+				5,
+				2,
+				1
+			].filter((s) => s !== step);
+			return {
+				parts,
+				spoken: `Counting ${skip.kind === "back" ? "back " : ""}in ${word}: ${said}. ${prompt}`,
+				prompt,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					...wrongSteps.map((s) => before + back * s),
+					...terms.filter((n) => n !== answer)
+				]
+			};
+		}
+	};
+}
+/** The wholes in each part-whole skill: small wholes first, then up to 10. */
+const PART_WHOLES = {
+	parts5: [3, 5],
+	parts10: [6, 10]
+};
+const partKeys = (from, to) => range$5(from, to).flatMap((w) => range$5(0, w).map((s) => `part${w}:${s}`));
+const parsePart = (key) => {
+	const m = /^part(\d+):(\d+)$/.exec(key);
+	return m ? {
+		whole: Number(m[1]),
+		shown: Number(m[2])
+	} : null;
+};
+/**
+* The part-whole idea (NZ Year 1, composition): "part7:4" is 7 altogether with 4 showing, so 3 hiding. Every split
+* counts, 0 hiding and all hiding too. The parts are ["7", "=", "4", "+", "?"]. Wrong choices: one more or less, the
+* number showing, the whole and two more.
+*/
+function partWhole(label, from, to) {
+	const keys = partKeys(from, to);
+	return {
+		label,
+		curriculumTags: ["MS.Y1.NUM.OP.P1"],
+		keys,
+		roll: (key) => {
+			const { whole, shown } = parsePart(key);
+			return [whole, shown];
+		},
+		make: (key, [whole, shown]) => {
+			if (!keys.includes(key) || key !== `part${whole}:${shown}`) return null;
+			const answer = whole - shown;
+			return {
+				parts: [
+					String(whole),
+					"=",
+					String(shown),
+					"+",
+					"?"
+				],
+				spoken: `${whole} is ${shown} and how many more?`,
+				answer,
+				wrong: [
+					answer + 1,
+					answer - 1,
+					shown,
+					whole,
+					answer + 2
+				]
+			};
+		}
+	};
+}
+const ODD_EVEN_LABELS = ["odd", "even"];
+const oddEven = {
+	label: "Odd and even numbers to 20",
+	curriculumTags: ["MS.Y2.NUM.OP.P2"],
+	keys: range$5(1, 20).map((n) => `oddeven:${n}`),
+	roll: (key) => [Number(key.split(":")[1])],
+	make: (key, [n]) => {
+		if (!isInt(n, 1, 20) || key !== `oddeven:${n}`) return null;
+		const answer = n % 2 === 0 ? 1 : 0;
+		return {
+			parts: [
+				"Is",
+				String(n),
+				"odd",
+				"or",
+				"even?"
+			],
+			spoken: `Is ${n} odd or even?`,
+			answer,
+			pick: [...ODD_EVEN_LABELS],
+			fact: `${n} is ${ODD_EVEN_LABELS[answer]}`
+		};
+	}
+};
+const LINE_TENS = range$5(1, 9).map((n) => n * 10);
+const LINE_OTHERS_100 = [
+	11,
+	14,
+	18,
+	23,
+	27,
+	32,
+	36,
+	41,
+	45,
+	49,
+	54,
+	58,
+	63,
+	67,
+	72,
+	76,
+	81,
+	85,
+	89,
+	94,
+	97
+];
+const LINE_HUNDREDS = range$5(1, 9).map((n) => n * 100);
+const LINE_OTHERS_1000 = [
+	120,
+	140,
+	170,
+	230,
+	250,
+	270,
+	310,
+	340,
+	360,
+	390,
+	410,
+	450,
+	480,
+	520,
+	540,
+	570,
+	610,
+	640,
+	660,
+	690,
+	720,
+	750,
+	780,
+	810,
+	830,
+	860,
+	880,
+	910,
+	940,
+	960,
+	980
+];
+const TENS_MORE = [
+	14,
+	20,
+	27,
+	35,
+	42,
+	56,
+	63,
+	78,
+	85,
+	90
+];
+const TENS_LESS = [
+	10,
+	19,
+	24,
+	38,
+	47,
+	63,
+	71,
+	86,
+	92,
+	100
+];
+/** Not a tens number and not halfway: every third, so the spread covers the whole line. */
+const NEAR10_OTHERS = range$5(1, 99).filter((n) => n % 5 !== 0).filter((_, i) => i % 3 === 0).slice(0, 26);
+const NEAR10_HALF = range$5(5, 95, 10);
+const NEAR100_OTHERS = [
+	130,
+	180,
+	220,
+	280,
+	340,
+	390,
+	430,
+	480,
+	530,
+	580,
+	610,
+	640,
+	680,
+	730,
+	790,
+	830,
+	870,
+	920,
+	960
+].filter((_, i) => i % 2 === 0).concat([440]);
+const NEAR100_HALF = range$5(150, 950, 100);
+const ZOOM_KEYS = [
+	...range$5(41, 49).map((n) => `zoom:40-50:${n}`),
+	...range$5(71, 79).map((n) => `zoom:70-80:${n}`),
+	"zoom:0-200:130",
+	"zoom:300-400:350"
+];
+/** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
+const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
+/** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
+const numLine = (label, tag, keys, parts, spoken) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => [lineNumber(key)],
+	make: (key, [n]) => {
+		if (!keys.includes(key) || lineNumber(key) !== n) return null;
+		return {
+			parts: parts(n, key),
+			spoken: spoken(n, key),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
+				n + 2
+			]
+		};
+	}
+});
+const nearWords = (n, size) => `Is ${n} closer to ${Math.floor(n / size) * size} or ${Math.floor(n / size) * size + size}?`;
+const lineFamilies = {
+	place100: numLine("Where a number goes on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `place100:t${n}`), ...LINE_OTHERS_100.map((n) => `place100:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], (n) => `Where does ${n} go on the line to 100?`),
+	read100: numLine("Reading a point on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...LINE_TENS.map((n) => `read100:t${n}`), ...LINE_OTHERS_100.map((n) => `read100:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"100",
+		"line"
+	], () => "What number is at the arrow?"),
+	tens100: numLine("Ten more and ten less on a 0 to 100 line", "MS.Y3.NUM.NS.P1", [...TENS_MORE.map((n) => `tens100:+${n}`), ...TENS_LESS.map((n) => `tens100:-${n}`)], (n, key) => [
+		"Ten",
+		key.includes("+") ? "more" : "less",
+		"than",
+		String(n)
+	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
+	near10: numLine("Which ten a number is closer to", "MS.Y3.NUM.NS.P5", [...NEAR10_OTHERS.map((n) => `near10:n${n}`), ...NEAR10_HALF.map((n) => `near10:h${n}`)], (n) => [
+		"Nearest",
+		"ten",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 10)),
+	zoom: numLine("Reading and placing on a zoomed line", "MS.Y3.NUM.NS.P1", ZOOM_KEYS, (n, key) => [
+		"Zoom",
+		/zoom:(\d+-\d+)/.exec(key)[1],
+		"at",
+		String(n)
+	], (n) => `Where is ${n} on the zoomed line?`),
+	place1000: numLine("Where a number goes on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `place1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `place1000:n${n}`)], (n) => [
+		"Place",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], (n) => `Where does ${n} go on the line to 1000?`),
+	read1000: numLine("Reading a point on a 0 to 1000 line", "MS.Y4.NUM.NS.P1", [...LINE_HUNDREDS.map((n) => `read1000:h${n}`), ...LINE_OTHERS_1000.map((n) => `read1000:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"on",
+		"the",
+		"1000",
+		"line"
+	], () => "What number is at the arrow?"),
+	near100: numLine("Which hundred a number is closer to", "MS.Y4.NUM.NS.P5", [...NEAR100_OTHERS.map((n) => `near100:n${n}`), ...NEAR100_HALF.map((n) => `near100:h${n}`)], (n) => [
+		"Nearest",
+		"hundred",
+		"to",
+		String(n)
+	], (n) => nearWords(n, 100))
+};
+const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
+const EARLY_FACTS = {
+	id: "early-facts",
+	label: "Early number facts",
+	families: {
+		...lineFamilies,
+		tenAnd,
+		oddEven,
+		parts5: partWhole("Parts of 3, 4 and 5 (5 is 2 and 3)", ...PART_WHOLES.parts5),
+		parts10: partWhole("Parts of 6 to 10 (7 is 4 and 3)", ...PART_WHOLES.parts10),
+		...Object.fromEntries(SKIP_STEPS.map(({ step, upTo, word }) => [`skip${step}`, skipCounting(step, upTo, word)])),
+		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
+		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
+		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
+		dblHalf20: doublesHalves("Doubles and halves to 20", "MS.Y2.NUM.OP.P2", 6, 10, 12, 20)
+	},
+	bands: [
+		["bond10"],
+		["dblHalf10"],
+		["bond20"],
+		["dblHalf20"]
+	],
+	ladderOnly: [
+		"tenAnd",
+		"oddEven",
+		"parts5",
+		"parts10",
+		...SKIP_STEPS.map(({ step }) => `skip${step}`),
+		...LINE_FAMILY_NAMES
+	]
+};
 //#endregion
 //#region shared/maths/skillPacks/bedmas.ts
 /**

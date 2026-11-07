@@ -1,8 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { makeRound, showRound } from '../../../shared/tui/round';
 import { voiceSlug } from '../../speech';
 import { allVoiceLines } from './voiceLines';
+import { WORDS } from './words';
 
 // The list scripts/voice-clips.py records. After changing a line, rewrite it with
 //   WRITE_VOICE_LINES=1 npx vitest run src/games/tui/voiceLines.test.ts
@@ -17,6 +19,15 @@ describe('Tūī’s Ten Tree voice clips', () => {
   it('gives every line its own clip name, with plain letters (Tūī is tui)', () => {
     expect(new Set(lines.map((l) => l.slug)).size).toBe(lines.length);
     expect(lines.find((l) => l.text.startsWith('Tūī is filling'))?.slug).toMatch(/^tui-is-filling/);
+  });
+
+  it('has a why-line for every wrong nest of every go', () => {
+    const said = new Set(allVoiceLines());
+    for (const step of [1, 2, 3, 4, 5] as const) {
+      for (const go of showRound(makeRound(3, [], { step, level: 5 }))) {
+        for (const w of go.wrongs) expect(said.has(WORDS.why(w.kind, w.n, go.v))).toBe(true);
+      }
+    }
   });
 
   it('has the list of lines up to date', () => {

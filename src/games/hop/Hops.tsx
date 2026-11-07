@@ -11,9 +11,10 @@
  * level. Only the first glow-worm of a hop is scored (shared/hop/play.ts), so a hop found after looking is not a clean right.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Tap } from '../../../shared/hop/play';
+import { replay, wrongFirstRun, type Tap } from '../../../shared/hop/play';
 import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/progress';
 import { HOPS_PER_ROUND, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
@@ -43,7 +44,10 @@ function shuffled<T>(items: T[]): T[] {
 
 interface Props {
   round: Round;
+  /** The label for a hop saved with no help of its own (a round open before R6): the calendar's. */
   help: Help;
+  /** False when the teacher has turned the labels off: no labels at all, and three wrong first taps don't bring them back. */
+  labels?: boolean;
   /** The colour the row's pads have reached: green on bronze days, bronze on silver days, silver on gold days. */
   padMetal: Metal;
   scenery: Scenery;
@@ -57,12 +61,14 @@ interface Props {
 
 type Phase = 'ask' | 'jump' | 'done';
 
-export function Hops({ round, help, padMetal, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Hops({ round, help, labels = true, padMetal, scenery, friend, guide = false, sound, say, onDone }: Props) {
   const hops = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
   const [phase, setPhase] = useState<Phase>('ask');
   const [wobble, setWobble] = useState<number | null>(null);
+  /** Three hops in a row began with a wrong glow-worm: full labels for the rest of this round (not saved; the child's own help is). */
+  const [boosted, setBoosted] = useState(false);
   /** The wrong glow-worms tapped on this hop: greyed out, and not tappable again until "Now you try". */
   const [tried, setTried] = useState<number[]>([]);
   /** The last wrong glow-worm, shown with its picture and line until the next tap. */
@@ -106,6 +112,8 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
   const gap = pads.indexOf(null);
   const back = round.hops[at]?.key.includes(':back:');
   const sign = back ? '−' : '+';
+  const helpAt = (i: number): Help => (labels ? round.hops[i]?.h ?? help : 'none');
+  const shown: Help = boosted ? 'full' : helpAt(at);
 
   const worms = useMemo(() => (redoCount > 0 ? shuffled(hops[Math.min(at, hops.length - 1)].choices) : hops[Math.min(at, hops.length - 1)].choices), [hops, at, redoCount]);
 
@@ -142,13 +150,19 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
       go.current = stepGo(go.current, 'wrong');
+      // Each hop is scored at its first glow-worm: three in a row wrong bring the labels back, and the line says so once.
+      const struggling =
+        labels && !boosted && wrongFirstRun(replay(round, next).answers) >= STRUGGLE_GOES && round.hops.some((_, i) => i >= at && helpAt(i) !== 'full');
+      if (struggling) setBoosted(true);
       if (go.current.phase === 'look') {
         lookTogether();
         return;
       }
       const kind = hop.wrongs.find((w) => w.n === n)!.kind;
       setWhy({ n, kind });
-      say(WORDS.why(kind, round.step, hop.before, hop.answer, hop.back));
+      const line = WORDS.why(kind, round.step, hop.before, hop.answer, hop.back);
+      if (struggling) say(line, () => say(WORDS.labelsBack));
+      else say(line);
       return;
     }
     go.current = stepGo(go.current, 'right');
@@ -213,8 +227,8 @@ export function Hops({ round, help, padMetal, scenery, friend, guide = false, so
       {redo && !why && !look && <NowYouTry prefix="hp" line={WORDS.nowTry} />}
       <div className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>
         {pads.slice(0, -1).map((_, i) => (
-          <span key={`arc${i}`} className={`hp-arc hp-arc--${help}${i === gap - 1 ? ' hp-arc--next' : ''}`} style={{ ['--hp-i' as string]: i }}>
-            {help !== 'none' && <span className="hp-arc__label">{sign}{round.step}</span>}
+          <span key={`arc${i}`} className={`hp-arc hp-arc--${shown}${i === gap - 1 ? ' hp-arc--next' : ''}`} style={{ ['--hp-i' as string]: i }}>
+            {shown !== 'none' && <span className="hp-arc__label">{sign}{round.step}</span>}
           </span>
         ))}
         {pads.map((n, i) => (

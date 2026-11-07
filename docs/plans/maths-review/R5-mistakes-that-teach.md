@@ -99,6 +99,8 @@ Tap 2: the picture comes back in full for that go (as the existing second-wrong 
 
 ### 3.5 Pipi (hidden shells, part-whole)
 
+**Pipi status (7 Nov 2026, built, not merged, not live).** Every go now has four shells built in `shared/pipi/round.ts`: the right one, a one-more-or-less near miss always, and the slips from the table below (the number showing, the whole, whole plus showing, the first tide's number, or one part when asked altogether), with at most two the same odd or even. A wrong shell greys out for good and shows its picture and line; the second wrong shell lifts the sand, all the pipi wave and "7 = 4 + 3" fills in, then the same go comes back with all four shells in a new order at the child's own help. Only the first shell of a go is scored. New lines and clips are made. The live function redeploys when this merges. The old "Try again!" line and clip are gone.
+
 Model: the pipi on the sand, the dashed outlines of the hidden ones, the shells with numbers (`Goes.tsx`, `spotsFor`).
 
 | Kind of go | Wrong choice (kind) | The mistake | Show why | Voice line |
@@ -116,6 +118,8 @@ Also remove the no-hint wobble loop: shells that were tapped wrong stay greyed.
 
 ### 3.6 Tūī (ten and some)
 
+**Status (7 Nov 2026): built, PR open, not merged.** Every go now has four nests at every help level (it was three while every berry was drawn), each wrong one tagged: the reversal (41), 20, the loose berries alone, one berry out, the whole, and the ten put on. The right answer is never the only teen-shaped nest. A first wrong tap greys that nest for good and says why with a picture; none of these says the answer. A second wrong tap plays "Let's look together" (the arrow cards play the whole sum), then "Now you try!" asks the same go again at the child's own level with the nests in a new order. Only the first tap of a go is scored, so a shown go never counts as first-right. "Hear it again" now says the go's own line. 32 new voice clips; the old "Try again!" clip is gone. Merging redeploys the `tui` function. A child with the old page open at that moment may get "Something went wrong" when finishing that one round (the server's nests differ); a refresh starts a fresh challenge.
+
 Model: the full ten-frame and the loose berries, the nests, and the arrow cards sliding "4" onto "10" (`Goes.tsx`, `pictureFor` at `shared/tui/round.ts:244-270`). Today the wrong taps bring more picture (level up one, then every berry counted, then nests thin to two). Keep that idea but add the explanation; the answer is still not shown until tap 2.
 
 | Way asked | Wrong choice (kind) | The mistake | Show why | Voice line |
@@ -132,6 +136,8 @@ Also (from the eval, candidate 3): four nests at every help level; all choices t
 Tap 2: arrow cards play the sum, then "Now you try". Because Tūī passes steps on `first_right` (8 of 10 first taps), shown goes do not count as first-right, as today.
 
 ### 3.7 Weka (make ten)
+
+**Status (Weka): built on branch `r5-weka-mistakes`, waiting for James to review and merge; not live.** Landing wrong choices are rock (10), double (10 + the small number), part (the big number plus only the leftover, e.g. 11 for 8 + 5) and off by one; hop-backs use rock, add and off by one; hops to ten use the small number, 10 and a near miss. A wrong tap greys the number out and shows why, the second is "Let's look together" (Weka hops the make-ten sentence while pebbles fill the first ten-frame), then the same question again at the child's own help. Only the first tap counts. Not played through: a full hop-back round in the preview (checked by tests).
 
 Model: stepping stones with the big rock at 10, "9 + 1 = 10, then + 6", pebbles in two ten-frames (`Goes.tsx`, `Pebbles.tsx`). Weka asks two things per full go: "how many hops to 10?" and "where will Weka land?" Both get tagged wrong choices (rebuilt in `shared/weka/round.ts`, keeping the server's rebuild check).
 

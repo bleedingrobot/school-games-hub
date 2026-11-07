@@ -31,6 +31,20 @@ export const WORDS = {
   rightAdd: (n: number, rest: number) => `${n}! 10 and ${rest} make ${n}.`,
   rightBack: (n: number, rest: number) => `${n}! 10 take away ${rest} is ${n}.`,
   bigRock: 'The big rock is 10.',
+  /** Mistakes that teach (maths review R5): the second wrong tap of a question, and the same question again. */
+  lookTogether: 'Let’s look together.',
+  nowTry: 'Now you try.',
+  goOn: 'Go on',
+  /** The first wrong tap: why that number is not it, one line for each mistake (never the answer). */
+  whyRockAdd: (rest: number) => `That is where Weka is. ${rest} more ${rest === 1 ? 'hop' : 'hops'}.`,
+  whyRockBack: (rest: number) => `That is the big rock. ${rest} more ${rest === 1 ? 'hop' : 'hops'} back.`,
+  whyDouble: (small: number, toTen: number, rest: number) => `${small} is ${toTen} and ${rest}. The ${toTen} got Weka to the rock.`,
+  whyPart: (big: number, toTen: number, rest: number) => `${big} and ${toTen} make 10. We still have ${rest}.`,
+  whyOff1: (small: number) => `Count Weka’s hops. Is it ${small} hops?`,
+  whyAdd: 'Hopping back means going down the stones.',
+  whyOther: (from: number) => `Weka only hops to the big rock. Look how far it is from ${from}.`,
+  whyTen: '10 is the big rock. How many hops get there?',
+  whyNear: (from: number) => `Count the hops from ${from} to the big rock.`,
   hearAgain: 'Hear it again',
   /** The split after each right answer: the bond's label while it is being filled in, and the button after it. */
   splitLabel: (n: number) => `How did you split the ${n}?`,
