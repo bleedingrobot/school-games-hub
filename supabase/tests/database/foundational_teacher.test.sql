@@ -15,6 +15,9 @@ select pg_temp.uid(n), 's' || n || '@douglaspark.school.nz' from generate_series
 insert into auth.users (id, email) values
   (pg_temp.uid(11), 't11@douglaspark.school.nz'), (pg_temp.uid(12), 't12@douglaspark.school.nz');
 update public.profiles set role = 'teacher' where id in (pg_temp.uid(11), pg_temp.uid(12));
+-- New pupils start in the school's default class, and teacher_add_to_class only takes pupils who have no class.
+update public.schools set default_class = null;
+delete from public.class_members;
 
 create temp table emails as select id, email from auth.users;
 grant select on emails to public;
