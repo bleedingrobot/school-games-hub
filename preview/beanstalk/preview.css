@@ -3,3 +3,4 @@ html, body { margin: 0; height: 100%; }
 .bsp-tools summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; }
 .bsp-tools p { margin: 4px 0; }
 .bsp-tools button { margin: 3px; min-height: 44px; padding: 2px 12px; border-radius: 8px; border: 1px solid #24661f; background: #f2fbe9; cursor: pointer; font: inherit; }
+.bsp-opened { position: fixed; top: 8px; left: 50%; translate: -50% 0; z-index: 50; margin: 0; padding: 8px 14px; border-radius: 12px; background: #fff3a8; color: #1d2b13; font: 700 1rem system-ui, sans-serif; }

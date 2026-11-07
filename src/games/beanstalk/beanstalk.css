@@ -336,3 +336,18 @@
 @keyframes bs-missing { to { background: #ffe14d; box-shadow: 0 0 8px 3px #ffe98a; } }
 .bs-why--look .bs-dot--join { animation-delay: 0s; }
 .bs-why--try { padding: 6px 14px; }
+
+/* Bonds to 20 (maths review R8): two ten-frames, one above the other, so a leaf's 20 squares fill rows of five. */
+.bs-frame--twenty { width: 52%; gap: 1px; padding: 2px; }
+.bs-frame--twenty.bs-frame--small { width: 40%; }
+.bs-frame--twenty.bs-frame--joined { width: 150px; gap: 2px; padding: 3px; }
+/* The missing leaf's take-away line, after the right leaf is found: "So 10 take 7 is 3." */
+.bs-take {
+  flex-basis: 100%; margin: 0; padding: 6px 12px; border-radius: 12px; text-align: center;
+  background: var(--bs-panel); color: var(--bs-ink); font: 800 clamp(1rem, 2.6vw, 1.3rem) / 1.3 system-ui, sans-serif;
+}
+/* "What's next" card on the finish screen (the kit's WhatsNext with the prefix bs-next). */
+.bs-next-panel { margin-top: 14px; padding: 12px 14px; border-radius: 18px; border: 3px solid var(--bs-green-dark); background: #f1fbe9; }
+.bs-next-panel h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.bs-next-chip { display: none; }
+.bs-next-play-button { width: 100%; margin-top: 6px; }

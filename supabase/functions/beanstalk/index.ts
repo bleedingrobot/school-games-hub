@@ -5790,13 +5790,19 @@ function seeded(seed) {
 		return seed / 2147483648;
 	};
 }
-/** What each beanstalk's pairs add up to, in turn: Kiwi 10, tūī 100, kererū 1000, then round again (James, 4 Nov 2026). */
+/**
+* What each beanstalk's pairs add up to, in turn: Kiwi 10, then bonds to 20, tūī 100, kererū 1000, then round again
+* (James, 4 Nov 2026; 20 added by maths review R8, 7 Nov 2026).
+*/
 const TARGETS = [
 	10,
+	20,
 	100,
 	1e3
 ];
 const isTarget = (n) => TARGETS.includes(n);
+/** What one dot on a leaf is worth: 1 on the 10 and 20 beanstalks (20 has two ten-frames), 10 on the 100 and 100 on the 1000. */
+const unitOf = (target) => target === 20 ? 1 : target / 10;
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 /** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
 const SMALL_PARTS = [
@@ -5812,6 +5818,11 @@ function makeRound(seed, target = 10) {
 	const random = seeded(seed);
 	random();
 	random();
+	if (target === 20) return {
+		seed,
+		target,
+		leaves: leavesTo20(random)
+	};
 	const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
 	while (pool.length < 10) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
 	for (let i = pool.length - 1; i > 0; i--) {
@@ -5826,10 +5837,37 @@ function makeRound(seed, target = 10) {
 	};
 }
 /**
+* Bonds to 20 (R8): the pairs 1 + 19 to 9 + 11, each once, and a tenth that is one more of them. 10 + 10 is left out (two
+* equal leaves are too easy, like 5 + 5), and 0 + 20 as 0 + 10 is. The leaves are the numbers themselves, so 11 to 19 turn up.
+*/
+function leavesTo20(random) {
+	const pool = [
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		7,
+		8,
+		9
+	];
+	pool.push(1 + Math.floor(random() * 9));
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[pool[i], pool[j]] = [pool[j], pool[i]];
+	}
+	return pool.flatMap((a) => random() < .5 ? [a, 20 - a] : [20 - a, a]);
+}
+/**
 * The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
 * place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
 */
 const bondKey = (n, target = 10) => {
+	if (target === 20) {
+		const lo = Math.min(n, 20 - n);
+		return `bond20:${lo}+${20 - lo}`;
+	}
 	if (target === 100) return "bond100:tens";
 	if (target === 1e3) return "bond1000:hundreds";
 	const lo = Math.min(n, 10 - n);
@@ -5859,7 +5897,7 @@ function letIn(round, inPlay, used) {
 			...numbers,
 			round.leaves[2 * k],
 			round.leaves[2 * k + 1]
-		], round.target, round.target / 10));
+		], round.target, unitOf(round.target)));
 		if (tempting === void 0) return;
 		inPlay.push(tempting);
 	}
