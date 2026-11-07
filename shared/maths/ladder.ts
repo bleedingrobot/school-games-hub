@@ -120,6 +120,11 @@ export const LADDER: LadderSkill[] = [
   { id: 'regroup-100', label: 'Tying and untying bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P2'], keys: earlyKeys('pvregroup'), built: true, inWarmUp: false, inAuto: false },
   { id: 'ten-more-less-100', label: 'Ten more and ten less with bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: earlyKeys('pvten'), built: true, inWarmUp: false, inAuto: false },
   { id: 'place-value-1000', label: 'Hundreds, tens and ones', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('pvbuild3'), ...earlyKeys('pvread3'), ...earlyKeys('pvhun')], built: true, inWarmUp: false, inAuto: false },
+  // Equal rows and arrays (Swamp Hen's Reed Rows) sit beside the ladder (`inAuto`): the game draws and marks its own questions and records these keys. Typed, they read as a short sentence.
+  { id: 'equal-rows', label: 'Equal rows (4 rows of 6)', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P3'], keys: earlyKeys('rows'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'arrays-turn', label: 'Turning an array round', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P3'], keys: [...earlyKeys('turn'), ...earlyKeys('which')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'sharing-rows', label: 'Sharing into equal rows', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P4'], keys: earlyKeys('share'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'cut-arrays', label: 'Cutting an array into known parts', stage: 'early-facts', curriculumTags: ['MS.Y3.NUM.OP.P3'], keys: earlyKeys('cut'), built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -301,6 +306,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
+  if (/^(rows|turn|share|cut|which):/.test(key)) return 'early-facts';
   if (isGeneratedKey(key)) return 'generated';
   if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
   if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return 'early-facts';

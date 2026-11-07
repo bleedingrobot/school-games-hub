@@ -4295,9 +4295,122 @@ function solveEquals(parts) {
 	}
 	return null;
 }
+const ROWS_KEYS = range$5(2, 5).flatMap((r) => range$5(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range$5(2, 6).flatMap((r) => range$5(2, 6).filter((c) => c !== r).map((c) => [r, c]));
+const SHARE_KEYS = [
+	2,
+	3,
+	4,
+	5,
+	10
+].flatMap((r) => range$5(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range$5(6, 9).flatMap((r) => range$5(3, 9).map((c) => `cut:${r}x${c}`));
+const keyPair = (key) => {
+	const m = /(\d+)[x/](\d+)$/.exec(key);
+	return [Number(m[1]), Number(m[2])];
+};
+const rowsWords = (r, c) => `${r} rows of ${c}`;
+const arrayFamily = (label, tag, keys, parts, spoken, answer, wrong) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => keyPair(key),
+	make: (key, [a, b]) => {
+		if (!keys.includes(key)) return null;
+		const [ka, kb] = keyPair(key);
+		if (ka !== a || kb !== b) return null;
+		return {
+			parts: parts(a, b),
+			spoken: spoken(a, b),
+			answer: answer(a, b),
+			wrong: wrong(a, b)
+		};
+	}
+});
+const product = (a, b) => a * b;
+const arrayFamilies = {
+	rows: arrayFamily("Equal rows (4 rows of 6)", "MS.Y2.NUM.OP.P3", ROWS_KEYS, (r, c) => [
+		"Plant",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Plant ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + r
+	]),
+	turn: arrayFamily("The same array turned round (3 rows of 5 is 5 rows of 3)", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `turn:${r}x${c}`), (r, c) => [
+		"Turn",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Turn ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + c
+	]),
+	share: arrayFamily("Sharing into equal rows (24 into 4 rows)", "MS.Y3.NUM.OP.P4", SHARE_KEYS, (t, r) => [
+		"Share",
+		String(t),
+		"into",
+		String(r),
+		"rows"
+	], (t, r) => `${t} shoots in ${r} equal rows. How many in each row?`, (t, r) => t / r, (t, r) => [
+		t - r,
+		t + r,
+		r,
+		t / r + r
+	]),
+	cut: arrayFamily("Cutting an array into parts you know (6 rows of 7)", "MS.Y3.NUM.OP.P3", CUT_KEYS, (r, c) => [
+		"Cut",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Cut ${rowsWords(r, c)} into a row you know and one more. How many shoots?`, product, (r, c) => [
+		(r - 1) * c,
+		r + c,
+		r * c + 6,
+		r * c - r
+	]),
+	which: arrayFamily("Which picture is 3 rows of 5", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `which:${r}x${c}`), (r, c) => [
+		"Which",
+		"is",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Which garden is ${rowsWords(r, c)}?`, product, (r, c) => [
+		r + c,
+		c * r + r,
+		(r - 1) * c,
+		Number(`${r}${c}`)
+	])
+};
+const ARRAY_FAMILY_NAMES = Object.keys(arrayFamilies);
+/** An equal-rows question read back from its parts (["Plant", "4", "rows", "of", "6"]): its answer and key, or null when it isn't one. */
+function solveArray(parts) {
+	const nums = parts.filter((p) => /^\d{1,3}$/.test(p)).map(Number);
+	if (nums.length !== 2) return null;
+	for (const family of Object.values(arrayFamilies)) for (const key of family.keys) {
+		const [a, b] = keyPair(key);
+		if (a !== nums[0] || b !== nums[1]) continue;
+		const made = family.make(key, [a, b]);
+		if (made && made.parts.length === parts.length && made.parts.every((x, i) => x === parts[i])) return {
+			answer: made.answer,
+			key
+		};
+	}
+	return null;
+}
 const families$2 = {
 	...lineFamilies,
 	...equalsFamilies,
+	...arrayFamilies,
 	tenAnd,
 	tenUp: tenMove(true),
 	tenDown: tenMove(false),
@@ -4330,7 +4443,8 @@ const EARLY_FACTS = {
 		...SKIP_STEPS.map(({ step }) => `skip${step}`),
 		...SKIP_MORE_FAMILY_NAMES,
 		...LINE_FAMILY_NAMES,
-		...Object.keys(equalsFamilies)
+		...Object.keys(equalsFamilies),
+		...ARRAY_FAMILY_NAMES
 	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
@@ -7704,6 +7818,46 @@ const LADDER = [
 		inWarmUp: false,
 		inAuto: false
 	},
+	{
+		id: "equal-rows",
+		label: "Equal rows (4 rows of 6)",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: earlyKeys("rows"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "arrays-turn",
+		label: "Turning an array round",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: [...earlyKeys("turn"), ...earlyKeys("which")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "sharing-rows",
+		label: "Sharing into equal rows",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P4"],
+		keys: earlyKeys("share"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "cut-arrays",
+		label: "Cutting an array into known parts",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P3"],
+		keys: earlyKeys("cut"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -7881,6 +8035,7 @@ function focusPools(spec, opts = {}) {
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
+	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
 	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
@@ -8163,6 +8318,11 @@ function solveParts(parts) {
 	if (line) return isFocusKey(line.key) ? {
 		answer: line.answer,
 		keys: [line.key]
+	} : null;
+	const array = solveArray(p);
+	if (array) return isFocusKey(array.key) ? {
+		answer: array.answer,
+		keys: [array.key]
 	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;

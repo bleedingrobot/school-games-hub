@@ -6,10 +6,10 @@ What the shared parts are and how a game uses them. The plan is [docs/plans/GAME
 
 | Part | Where | What it does | Used by |
 |---|---|---|---|
-| Help that follows the child | `shared/kit/help.ts` | Help steps from a fact's record or from how rounds went, the teacher's fade / always / off, the boost after three wrong first taps | Weka |
-| Tap replay | `shared/kit/replay.ts` | Replays a child's taps, scores the first tap of each go | Weka |
-| Day arc | `shared/kit/dayArc.ts` | Bronze, silver and gold days, the golden reward, New Zealand dates | Weka |
-| Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk, Penguin Pairs |
+| Help that follows the child | `shared/kit/help.ts` | Help steps from a fact's record or from how rounds went, the teacher's fade / always / off, the boost after three wrong first taps | Weka , Swamp Hen |
+| Tap replay | `shared/kit/replay.ts` | Replays a child's taps, scores the first tap of each go | Weka , Swamp Hen |
+| Day arc | `shared/kit/dayArc.ts` | Bronze, silver and gold days, the golden reward, New Zealand dates | Weka , Swamp Hen |
+| Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk, Penguin Pairs , Swamp Hen |
 | Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Pigeon |
 | Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk, Penguin Pairs |
 | Junior bits | `src/kit/` `HearAgain`, `PointingHand`, `useGuidedFirstGo`, `WhatsNext`, `FirstTimeTip`; test helper `voiceLinesSuite` | Hear it again button, the pointing hand and its "try this one" label, the first-go hand timing, the end-of-round panel, a helper's first-time tip, the four voice-clip checks. A game passes its words, clip folder and CSS prefix | Weka (all but `FirstTimeTip`) |

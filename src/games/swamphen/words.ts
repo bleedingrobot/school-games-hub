@@ -1,0 +1,46 @@
+/** Everything the game says. Short, because it is read aloud to children of 6 to 9. */
+import type { Metal } from '../../../shared/swamphen/progress';
+import { stepName, type Step } from '../../../shared/swamphen/round';
+
+export const WORDS = {
+  title: 'Swamp Hen’s Reed Rows',
+  /** The home page chip's word: "Today's reed row is ready". */
+  part: 'reed row',
+  wants: (name: string) => `${name} is planting a reed garden! Help ${name} count the shoots.`,
+  nextFriend: (name: string) => `Now ${name} has a reed garden to plant!`,
+  step: (step: Step) => `Step ${step}: ${stepName(step)}`,
+  dayCount: (day: number) => `Day ${day} of 30`,
+  play: 'Play',
+  playAgain: 'Play again',
+  pickCard: 'Tap the right number.',
+  pickGarden: 'Tap the right garden.',
+  goesDone: (n: number, of: number) => `${n} of ${of} done`,
+  hearAgain: 'Hear it again',
+  plantRow: 'Plant a row',
+  turnIt: 'Turn it round',
+  turnBack: 'Turn it back',
+  peek: 'Peek',
+  mat: 'Mat',
+  shoots: 'shoots',
+  garden: (rows: number, cols: number) => `A garden of ${rows} rows with ${cols} shoots in each row.`,
+  pile: (n: number) => `A pile of ${n} shoots.`,
+  /** After a right answer: three kinds of cheer, picked by the go's place in the round. */
+  right: ['Yes! That is it.', 'Lovely! You counted it.', 'Well done!'],
+  rowTurned: (metal: Exclude<Metal, 'mud'>) => `Well done! A reed row turned ${metal}!`,
+  doneToday: 'Well done! Come back tomorrow to change another reed row.',
+  nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,
+  goldenGarden: (name: string) => `All the reeds are gold! ${name} won the Golden Reed Garden!`,
+  wentWrong: 'Something went wrong. Please try again soon.',
+  home: 'Home',
+  voiceOn: 'Voice on',
+  voiceOff: 'Voice off',
+  prizesWon: (n: number) => `${n} Golden Reed Garden${n === 1 ? '' : 's'}`,
+  lookTitle: 'Let’s look together.',
+  nowYouTry: 'Now you try.',
+  skip: 'Skip',
+  tipName: 'Swamp Hen',
+  tip: ['Hello! I am Swamp Hen. I plant my shoots in equal rows.', 'Count one row, then jump along the rows. Tap the answer.'],
+  tipNext: 'Next',
+  tipLast: 'Got it',
+  tipClose: 'Close the tip',
+} as const;
