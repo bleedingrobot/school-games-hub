@@ -3,7 +3,7 @@
  * keeps the see-saw level ("8 = 5 + ?"), with four numbers to choose from (or, with the stones, any number to build).
  *
  * The keys are the equals-sign keys (`eqmiss`, `eqswap`, `eqboth`, `eqsub`, `eqtf`). The game makes its own questions
- * and wrong cards here, so it doesn't wait for the shared pack (the keys branch `maths-parrot-keys` lets the records count).
+ * and wrong cards here. The key lists live in shared/maths/skillPacks/equalsKeys.ts, where the early facts own them, so the records count.
  *
  * Two things move separately, both from the child's own challenges and kept by the server (see `placeAfter` in the kit):
  * the **step** (which keys are asked, six of them) and the **help level** (how much picture, 5 stones down to 0).
@@ -12,10 +12,11 @@ import type { FactStats } from '../maths/leitner';
 import { tagWrongs, type Wrong } from '../kit/mistakes';
 import { helpWithSetting, type HelpSetting } from '../kit/help';
 import { seeded } from '../seededRandom';
+import { ALL_KEYS, KEYS, type Kind } from '../maths/skillPacks/equalsKeys';
 import { GOES_PER_ROUND, KNOWN_BONDS, KNOWN_START, REVIEW_GOES, TOP_LEVEL, type HelpLevel, type Step } from './config';
 
 export { GOES_PER_ROUND };
-export type Kind = 'miss' | 'swap' | 'both' | 'sub' | 'tf';
+export type { Kind };
 export type ParrotKind = 'all' | 'copy' | 'total' | 'off1' | 'dbl' | 'near' | 'both' | 'first' | 'side';
 export type WrongCard = Wrong<ParrotKind>;
 /** The four ways to write the missing-number go (layouts), and which one a plan asks for. */
@@ -31,54 +32,7 @@ export const MAX_STONES = 20;
 
 // ---------------------------------------------------------------- the keys
 
-/** `eqmiss:8=5+?`: a = b + ?, a 3 to 10. */
-const missKeys = (): string[] => {
-  const out: string[] = [];
-  for (let a = 3; a <= 10; a++) for (let b = 1; b < a; b++) out.push(`eqmiss:${a}=${b}+?`);
-  return out;
-};
-/** `eqswap:3+5`: two different numbers to 7, asked as `x + y = y + ?` and `y + x = x + ?`. */
-const swapKeys = (): string[] => {
-  const out: string[] = [];
-  for (let x = 1; x <= 7; x++) for (let y = x + 1; y <= 7; y++) out.push(`eqswap:${x}+${y}`);
-  return out;
-};
-/** `eqboth:6+7=8+?`: thirty fixed sums to 20, half with the first number moved by one. */
-const bothKeys = (): string[] => {
-  const random = seeded(20261107);
-  const out = new Set<string>();
-  const sums: [number, number][] = [];
-  for (let a = 3; a <= 10; a++) for (let b = 3; b <= 10; b++) sums.push([a, b]);
-  while (out.size < 30) {
-    const [a, b] = sums[Math.floor(random() * sums.length)];
-    const shift = out.size % 2 === 0 ? (random() < 0.5 ? 1 : -1) : (random() < 0.5 ? 2 : -2) * (1 + Math.floor(random() * 2));
-    const c = a + shift;
-    if (c < 1 || c === a || c === b || a + b - c < 1) continue;
-    out.add(`eqboth:${a}+${b}=${c}+?`);
-  }
-  return [...out].sort();
-};
-const SUB1: [number, number][] = [[3, 8], [4, 9], [5, 9], [6, 10], [7, 12], [8, 13], [9, 14], [6, 15], [12, 17], [11, 20]];
-const SUB2: [number, number, number][] = [[9, 4, 2], [10, 3, 4], [12, 5, 3], [11, 6, 2], [14, 6, 4], [13, 4, 5], [15, 5, 6], [16, 7, 4], [18, 8, 5], [20, 9, 6]];
-/** `eqsub:3=8-?` and `eqsub:9-4=2+?`. */
-const subKeys = (): string[] => [...SUB1.map(([a, b]) => `eqsub:${a}=${b}-?`), ...SUB2.map(([a, b, c]) => `eqsub:${a}-${b}=${c}+?`)];
-/** `eqtf:5+3=4+4`: half are true, about a quarter are one out, the rest are further out. */
-const tfKeys = (): string[] => {
-  const random = seeded(20261108);
-  const out = new Set<string>();
-  const pick = (hi: number) => 1 + Math.floor(random() * hi);
-  while (out.size < 30) {
-    const a = pick(9), b = pick(9), c = pick(9);
-    const i = out.size;
-    const d = i % 2 === 0 ? a + b - c : i % 4 === 1 ? a + b - c + (random() < 0.5 ? 1 : -1) : a + b - c + (random() < 0.5 ? 1 : -1) * (2 + pick(2));
-    if (d < 1 || d > 10 || (a === c && b === d) || (a === d && b === c && i % 2 === 0 && out.size % 6 !== 0)) continue;
-    out.add(`eqtf:${a}+${b}=${c}+${d}`);
-  }
-  return [...out].sort();
-};
-
-export const KEYS: Record<Kind, string[]> = { miss: missKeys(), swap: swapKeys(), both: bothKeys(), sub: subKeys(), tf: tfKeys() };
-export const ALL_KEYS = Object.values(KEYS).flat();
+export { KEYS, ALL_KEYS };
 export const kindOfKey = (key: string): Kind | null => (key.startsWith('eqmiss:') ? 'miss' : key.startsWith('eqswap:') ? 'swap' : key.startsWith('eqboth:') ? 'both' : key.startsWith('eqsub:') ? 'sub' : key.startsWith('eqtf:') ? 'tf' : null);
 
 /** The keys asked at each step: its new ones, and the earlier ones that come back. */

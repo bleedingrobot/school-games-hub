@@ -2881,6 +2881,129 @@ const BANDED_PACKS = {
 };
 PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
 //#endregion
+//#region shared/maths/skillPacks/equalsKeys.ts
+/**
+* The keys Parrot's See-saw records (docs/PARROT-PLAN.md): equations with a missing number that keeps a see-saw level.
+* They live here, beside the early facts that own them (`equals` families in earlyFacts.ts), and shared/parrot/round.ts
+* reads them from here so there is one list.
+*
+*   eqmiss:8=5+?       eqswap:3+5       eqboth:6+7=8+?       eqsub:3=8-? and eqsub:9-4=2+?       eqtf:5+3=4+4
+*/
+/** `eqmiss:8=5+?`: a = b + ?, a 3 to 10. */
+const missKeys = () => {
+	const out = [];
+	for (let a = 3; a <= 10; a++) for (let b = 1; b < a; b++) out.push(`eqmiss:${a}=${b}+?`);
+	return out;
+};
+/** `eqswap:3+5`: two different numbers to 7, asked as `x + y = y + ?` and `y + x = x + ?`. */
+const swapKeys = () => {
+	const out = [];
+	for (let x = 1; x <= 7; x++) for (let y = x + 1; y <= 7; y++) out.push(`eqswap:${x}+${y}`);
+	return out;
+};
+/** `eqboth:6+7=8+?`: thirty fixed sums to 20, half with the first number moved by one. */
+const bothKeys = () => {
+	const random = seeded(20261107);
+	const out = new Set();
+	const sums = [];
+	for (let a = 3; a <= 10; a++) for (let b = 3; b <= 10; b++) sums.push([a, b]);
+	while (out.size < 30) {
+		const [a, b] = sums[Math.floor(random() * sums.length)];
+		const c = a + (out.size % 2 === 0 ? random() < .5 ? 1 : -1 : (random() < .5 ? 2 : -2) * (1 + Math.floor(random() * 2)));
+		if (c < 1 || c === a || c === b || a + b - c < 1) continue;
+		out.add(`eqboth:${a}+${b}=${c}+?`);
+	}
+	return [...out].sort();
+};
+const SUB1 = [
+	[3, 8],
+	[4, 9],
+	[5, 9],
+	[6, 10],
+	[7, 12],
+	[8, 13],
+	[9, 14],
+	[6, 15],
+	[12, 17],
+	[11, 20]
+];
+const SUB2 = [
+	[
+		9,
+		4,
+		2
+	],
+	[
+		10,
+		3,
+		4
+	],
+	[
+		12,
+		5,
+		3
+	],
+	[
+		11,
+		6,
+		2
+	],
+	[
+		14,
+		6,
+		4
+	],
+	[
+		13,
+		4,
+		5
+	],
+	[
+		15,
+		5,
+		6
+	],
+	[
+		16,
+		7,
+		4
+	],
+	[
+		18,
+		8,
+		5
+	],
+	[
+		20,
+		9,
+		6
+	]
+];
+/** `eqsub:3=8-?` and `eqsub:9-4=2+?`. */
+const subKeys = () => [...SUB1.map(([a, b]) => `eqsub:${a}=${b}-?`), ...SUB2.map(([a, b, c]) => `eqsub:${a}-${b}=${c}+?`)];
+/** `eqtf:5+3=4+4`: half are true, about a quarter are one out, the rest are further out. */
+const tfKeys = () => {
+	const random = seeded(20261108);
+	const out = new Set();
+	const pick = (hi) => 1 + Math.floor(random() * hi);
+	while (out.size < 30) {
+		const a = pick(9), b = pick(9), c = pick(9);
+		const i = out.size;
+		const d = i % 2 === 0 ? a + b - c : i % 4 === 1 ? a + b - c + (random() < .5 ? 1 : -1) : a + b - c + (random() < .5 ? 1 : -1) * (2 + pick(2));
+		if (d < 1 || d > 10 || a === c && b === d || a === d && b === c && i % 2 === 0 && out.size % 6 !== 0) continue;
+		out.add(`eqtf:${a}+${b}=${c}+${d}`);
+	}
+	return [...out].sort();
+};
+const KEYS = {
+	miss: missKeys(),
+	swap: swapKeys(),
+	both: bothKeys(),
+	sub: subKeys(),
+	tf: tfKeys()
+};
+Object.values(KEYS).flat();
+//#endregion
 //#region shared/maths/skillPacks/earlyFacts.ts
 /**
 * The first rungs of the maths ladder: number facts a student should know by heart before
@@ -3586,11 +3709,78 @@ const lineFamilies = {
 	], (n) => nearWords(n, 100))
 };
 const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
+const equalsNumbers = (key) => (key.split(":")[1].match(/\d+/g) ?? []).map(Number);
+const equalsParts = (key, n) => {
+	const w = (...x) => [
+		"Level",
+		"see-saw:",
+		...x.map(String)
+	];
+	if (key.startsWith("eqmiss:")) return w(n[0], "=", n[1], "+", "?");
+	if (key.startsWith("eqswap:")) return w(n[0], "+", n[1], "=", n[1], "+", "?");
+	if (key.startsWith("eqboth:")) return w(n[0], "+", n[1], "=", n[2], "+", "?");
+	if (key.startsWith("eqtf:")) return [
+		"True",
+		"or",
+		"false?",
+		String(n[0]),
+		"+",
+		String(n[1]),
+		"=",
+		String(n[2]),
+		"+",
+		String(n[3])
+	];
+	return key.includes("-?") ? w(n[0], "=", n[1], "-", "?") : w(n[0], "-", n[1], "=", n[2], "+", "?");
+};
+const equalsAnswer = (key, n) => {
+	if (key.startsWith("eqmiss:")) return n[0] - n[1];
+	if (key.startsWith("eqswap:")) return n[0];
+	if (key.startsWith("eqboth:")) return n[0] + n[1] - n[2];
+	if (key.startsWith("eqtf:")) return n[0] + n[1] === n[2] + n[3] ? 0 : 1;
+	return key.includes("-?") ? n[1] - n[0] : n[0] - n[1] - n[2];
+};
+const equals = (label, keys) => ({
+	label,
+	curriculumTags: [],
+	keys,
+	roll: (key) => equalsNumbers(key),
+	make: (key, params) => {
+		const n = equalsNumbers(key);
+		if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+		const answer = equalsAnswer(key, n);
+		const parts = equalsParts(key, n);
+		if (key.startsWith("eqtf:")) return {
+			parts,
+			spoken: `True or false: ${n[0]} plus ${n[1]} equals ${n[2]} plus ${n[3]}?`,
+			answer,
+			pick: ["True", "False"]
+		};
+		return {
+			parts,
+			spoken: `What number keeps the see-saw level?`,
+			answer,
+			wrong: [
+				answer + 1,
+				answer - 1,
+				answer + 2
+			]
+		};
+	}
+});
+const equalsFamilies = {
+	eqmiss: equals("See-saw with a missing number (to 10)", KEYS.miss),
+	eqswap: equals("Swapping the two numbers of a sum", KEYS.swap),
+	eqboth: equals("See-saw with two numbers on each side (to 20)", KEYS.both),
+	eqsub: equals("See-saw with taking away", KEYS.sub),
+	eqtf: equals("True or false: is the see-saw level?", KEYS.tf)
+};
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
 	families: {
 		...lineFamilies,
+		...equalsFamilies,
 		tenAnd,
 		tenUp: tenMove(true),
 		tenDown: tenMove(false),
@@ -3618,7 +3808,8 @@ const EARLY_FACTS = {
 		"parts10",
 		...SKIP_STEPS.map(({ step }) => `skip${step}`),
 		...SKIP_MORE_FAMILY_NAMES,
-		...LINE_FAMILY_NAMES
+		...LINE_FAMILY_NAMES,
+		...Object.keys(equalsFamilies)
 	]
 };
 //#endregion
@@ -6725,6 +6916,36 @@ const LADDER = [
 		inWarmUp: false,
 		inAuto: false
 	},
+	{
+		id: "balance-10",
+		label: "The equals sign: a missing number to 10",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("eqmiss"), ...earlyKeys("eqswap")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "balance-20",
+		label: "The equals sign: two numbers each side, and taking away",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: [...earlyKeys("eqboth"), ...earlyKeys("eqsub")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "true-false",
+		label: "The equals sign: true or false",
+		stage: "early-facts",
+		curriculumTags: [],
+		keys: earlyKeys("eqtf"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
 	tables[0],
 	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
@@ -6758,6 +6979,7 @@ const LADDER = [
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
+	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
 	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
