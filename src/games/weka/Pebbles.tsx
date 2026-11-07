@@ -1,13 +1,16 @@
 /**
- * The same question again with pebbles (James, 6 Nov 2026): after a right answer on a full or split-first go, two
- * ten-frames show it. The bigger number sits as gold pebbles in the first ten-frame and the smaller as silver in the
- * second; the child drags silver pebbles across until the first ten-frame is full (8 + 5: 2 move, 3 stay), and Bella
- * says "8 and 2 make 10. 10 and 3 make 13." A tap on a silver pebble moves it too, so it works without dragging and
- * from the keyboard. Help only: never sent or recorded.
+ * The same question again with pebbles (James, 6 Nov 2026; a real choice since maths review R9): after a right answer
+ * on a full or split-first go, two ten-frames show it. The bigger number sits as gold pebbles in the first ten-frame
+ * and the smaller as silver in the second. The child drags as many silver pebbles across as they think make ten (8 + 5:
+ * 2 move, 3 stay), then taps Check. Nothing stops by itself. Right: "10 is full. 2 gone, 3 left." Too few or too many:
+ * Bella says how many spaces or how many to put back (a tap on a pebble in the first frame puts it back). A wrong first
+ * check tells the game this go was not right first time (help only; the saved maths record is not changed), and after
+ * two wrong checks the right number moves across to show it. A tap on a silver pebble moves it too, so it works
+ * without dragging and from the keyboard.
  */
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { PointingHand } from '../../kit/PointingHand';
-import { pebbleAskLine, pebbleDoneLine, type Go } from '../../../shared/weka/round';
+import { pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, type Go } from '../../../shared/weka/round';
 import { playSound } from '../sounds';
 import { paint } from './art';
 import { Stone } from './WekaArt';
@@ -24,6 +27,8 @@ interface Props {
   guided?: boolean;
   sound: boolean;
   last: boolean;
+  /** The first wrong Check: this go was not right first time. */
+  onFirstWrong?: () => void;
   say: (text: string) => void;
   onNext: () => void;
 }
@@ -37,15 +42,19 @@ interface Drag {
   moved: boolean;
 }
 
-export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props) {
-  /** Which silver pebbles (by their place in the second ten-frame) are still there, and how many have moved across. */
-  const [left, setLeft] = useState<number[]>(() => Array.from({ length: go.small }, (_, i) => i));
+export function Pebbles({ go, guided = false, sound, last, say, onFirstWrong, onNext }: Props) {
+  /** Which silver pebbles (by their place in the second ten-frame) have moved across, in order. */
+  const [arrived, setArrived] = useState<number[]>([]);
+  const left = Array.from({ length: go.small }, (_, i) => i).filter((i) => !arrived.includes(i));
+  /** Checks that were wrong, the words after the last Check, and whether the step is finished. */
+  const [wrongs, setWrongs] = useState(0);
+  const [result, setResult] = useState('');
+  const [done, setDone] = useState(false);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hint, setHint] = useState(false);
   const [over, setOver] = useState(false);
   const firstFrame = useRef<HTMLDivElement>(null);
-  const moved = go.small - left.length;
-  const done = go.big + moved >= 10;
+  const moved = arrived.length;
 
   useEffect(() => {
     say(pebbleAskLine(go));
@@ -55,21 +64,48 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
 
   // A hand shows the way when the child waits.
   useEffect(() => {
-    setHint(guided && !done);
-    if (done) return;
+    setHint(guided && !done && moved < go.toTen);
+    if (done || moved >= go.toTen) return;
     const t = window.setTimeout(() => setHint(true), HINT_MS);
     return () => window.clearTimeout(t);
-  }, [moved, done]);
+  }, [moved, done, wrongs]);
 
   function moveAcross(index: number) {
     if (done || !left.includes(index)) return;
-    const next = left.filter((i) => i !== index);
-    setLeft(next);
+    setArrived((a) => [...a, index]);
+    setResult('');
     if (sound) playSound('tap');
-    if (go.big + go.small - next.length >= 10) {
-      if (sound) playSound('badge');
-      say(pebbleDoneLine(go));
+  }
+
+  function putBack(index: number) {
+    if (done || !arrived.includes(index)) return;
+    setArrived((a) => a.filter((i) => i !== index));
+    setResult('');
+    if (sound) playSound('tap');
+  }
+
+  function finish(line: string) {
+    setResult(line);
+    setDone(true);
+    if (sound) playSound('badge');
+    say(line);
+  }
+
+  /** Check: right finishes; too few or too many say so; the second wrong check moves the right number across. */
+  function check() {
+    if (done || moved === 0) return;
+    if (moved === go.toTen) return finish(pebbleRightLine(go));
+    const w = wrongs + 1;
+    setWrongs(w);
+    if (w === 1) onFirstWrong?.();
+    if (w >= 2) {
+      setArrived(Array.from({ length: go.toTen }, (_, i) => i));
+      return finish(pebbleShowLine(go));
     }
+    const line = moved < go.toTen ? pebbleFewLine(go.toTen - moved) : pebbleManyLine(moved - go.toTen);
+    setResult(line);
+    if (sound) playSound('tap');
+    say(line);
   }
 
   const inFirst = (x: number, y: number) => {
@@ -110,16 +146,28 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
         <span className="wk-pebbles__tag">{WORDS.sameQuestion}</span> <span className="wk-pebbles__sum">{sum}</span>
       </p>
       <div className="wk-pebbles__frames">
-        <Frame label={done ? WORDS.tenFull : WORDS.pebblesIn(go.big + moved)} src={frameSrc} refEl={firstFrame} glow={over} full={done}>
-          {Array.from({ length: 10 }, (_, i) => (
-            <span key={i} className="wk-frame__cell">
-              {i < go.big ? (
-                <span className="wk-pebble"><Stone metal="gold" /></span>
-              ) : i < go.big + moved ? (
-                <span className="wk-pebble wk-pebble--arrived"><Stone metal="silver" /></span>
-              ) : null}
-            </span>
-          ))}
+        <Frame label={done ? WORDS.tenFull : WORDS.pebblesIn(go.big + moved)} src={frameSrc} refEl={firstFrame} glow={over} full={done} extra={
+          arrived.slice(Math.max(0, 10 - go.big)).map((i) => (
+            <button key={i} type="button" className="wk-pebble wk-pebble--back" onClick={() => putBack(i)} disabled={done} aria-label={WORDS.putBackPebble}>
+              <Stone metal="silver" />
+            </button>
+          ))
+        }>
+          {Array.from({ length: 10 }, (_, i) => {
+            const mine = i - go.big;
+            const index = mine >= 0 ? arrived[mine] : undefined;
+            return (
+              <span key={i} className="wk-frame__cell">
+                {i < go.big ? (
+                  <span className="wk-pebble"><Stone metal="gold" /></span>
+                ) : index !== undefined ? (
+                  <button type="button" className="wk-pebble wk-pebble--arrived wk-pebble--back" onClick={() => putBack(index)} disabled={done} aria-label={WORDS.putBackPebble}>
+                    <Stone metal="silver" />
+                  </button>
+                ) : null}
+              </span>
+            );
+          })}
         </Frame>
         <Frame label={WORDS.pebblesIn(left.length)} src={frameSrc}>
           {Array.from({ length: 10 }, (_, i) => (
@@ -148,12 +196,16 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
         </Frame>
       </div>
       <div className="wk-pebbles__end">
-        <p className={`wk-pebbles__said${done ? '' : ' wk-pebbles__said--empty'}`} aria-live="polite">
-          {done ? `${go.big} + ${go.toTen} = 10, 10 + ${go.rest} = ${go.total}` : ''}
+        <p className={`wk-pebbles__said${result ? '' : ' wk-pebbles__said--empty'}`} aria-live="polite">
+          {done ? `${go.big} + ${go.toTen} = 10, 10 + ${go.rest} = ${go.total}` : result || '.'}
         </p>
-        {done && (
+        {done ? (
           <button type="button" className="wk-button wk-next" onClick={onNext}>
             {last ? WORDS.finish : WORDS.next} <span aria-hidden="true">➜</span>
+          </button>
+        ) : (
+          <button type="button" className="wk-button wk-next" onClick={check} disabled={moved === 0}>
+            {WORDS.check}
           </button>
         )}
       </div>
@@ -162,8 +214,8 @@ export function Pebbles({ go, guided = false, sound, last, say, onNext }: Props)
 }
 
 /** One ten-frame: the painted tray when there is one (a clay board drawn in code until then), two rows of five. */
-export function Frame({ label, src, children, refEl, glow, full }: {
-  label: string; src?: string; children: React.ReactNode; refEl?: React.RefObject<HTMLDivElement | null>; glow?: boolean; full?: boolean;
+export function Frame({ label, src, children, refEl, glow, full, extra }: {
+  label: string; src?: string; children: React.ReactNode; refEl?: React.RefObject<HTMLDivElement | null>; glow?: boolean; full?: boolean; extra?: React.ReactNode;
 }) {
   return (
     <div className="wk-frame-wrap">
@@ -176,6 +228,7 @@ export function Frame({ label, src, children, refEl, glow, full }: {
       >
         <div className="wk-frame__grid">{children}</div>
       </div>
+      {extra !== undefined && <div className="wk-frame__extra">{extra}</div>}
       <span className="wk-frame__label" aria-hidden="true">{label}</span>
     </div>
   );

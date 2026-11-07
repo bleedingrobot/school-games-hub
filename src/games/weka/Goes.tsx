@@ -333,6 +333,15 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     });
   }
 
+  /** A wrong first Check on the pebbles: this go was not right first time, so help comes back sooner (the saved record is not changed). */
+  function pebblesFirstWrong() {
+    if (firstWrong) return;
+    setFirstWrong(true);
+    const s = streak + 1;
+    setStreak(s);
+    if (s >= STRUGGLE_GOES) setBoost(true);
+  }
+
   /** After the pebbles (or straight after a right answer): the split bond, unless the child split first. */
   function afterPebbles() {
     if (splitFirst) return nextGo();
@@ -486,7 +495,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
         )}
       </div>}
       {phase === 'pebbles' ? (
-        <Pebbles key={at} go={go} guided={guided} sound={sound} last={lastGo} say={say} onNext={afterPebbles} />
+        <Pebbles key={at} go={go} guided={guided} sound={sound} last={lastGo} say={say} onFirstWrong={pebblesFirstWrong} onNext={afterPebbles} />
       ) : phase === 'bond' ? (
         <Bond go={go} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickBond} onNext={nextGo} />
       ) : step === 'split' ? (
