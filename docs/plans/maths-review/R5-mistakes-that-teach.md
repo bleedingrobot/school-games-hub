@@ -2,7 +2,7 @@
 
 > **Update 7 Nov 2026:** follow [LEARNING-DESIGN.md](../../LEARNING-DESIGN.md) and check [GAME-KIT-PLAN.md](../GAME-KIT-PLAN.md) first. If kit stage K2 (`mistakes` and `ShowWhy`, lifted from Beanstalk) is merged, use it instead of copying another game's code; if not, write this so it can move into the kit later.
 
-Status: plan only, nothing built. Written 7 Nov 2026. Games: Kiwi's Beanstalk, Hop's Glow-worm Pond, Penguin Pairs (folder `korora`), Pipi's Hidden Shells, Tūī's Ten Tree, Weka's Stepping Stones. Quick looks is not in R5 (its feedback fixes are in R3).
+Status: Beanstalk LIVE 7 Nov 2026 (#252); the other five games are not built and wait for game kit K2. Written 7 Nov 2026. Games: Kiwi's Beanstalk, Hop's Glow-worm Pond, Penguin Pairs (folder `korora`), Pipi's Hidden Shells, Tūī's Ten Tree, Weka's Stepping Stones. Quick looks is not in R5 (its feedback fixes are in R3).
 
 ## 1. The problem
 

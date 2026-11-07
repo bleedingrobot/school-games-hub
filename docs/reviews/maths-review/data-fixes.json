@@ -29,7 +29,7 @@
     "impact": "High",
     "why": "Build the help rule once so R6 is not done four times by hand. Weka moves onto it first with nothing changing for children.",
     "plan": "docs/plans/GAME-KIT-PLAN.md",
-    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 5) and docs/plans/GAME-KIT-PLAN.md.\n\nBuild stage K1 of the game kit: shared/kit/help.ts, replay.ts and dayArc.ts, lifted from Weka's helpForStats (shared/weka/round.ts), Tūī's placeAfter (shared/tui/round.ts), and Hop's progress.ts and play.ts. Keep game words out (games pass their own step names and nouns). Then move Weka onto them with no change a child or teacher can see (same help per go on the same seeds: prove it with one test comparing old and new on many seeds, then drop the old code). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K1 results\" to GAME-KIT-PLAN.md, mark K1 done on the review page (status/K1 in artifact N8ihakWr1PeFxe2WbYCUVQ), and tell me in plain words what's ready and which game's R6 should use it next."
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-help. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 5) and docs/plans/GAME-KIT-PLAN.md.\n\nBuild stage K1 of the game kit: shared/kit/help.ts, replay.ts and dayArc.ts, lifted from Weka's helpForStats (shared/weka/round.ts), Tūī's placeAfter (shared/tui/round.ts), and Hop's progress.ts and play.ts. Keep game words out (games pass their own step names and nouns). Then move Weka onto them with no change a child or teacher can see (same help per go on the same seeds: prove it with one test comparing old and new on many seeds, then drop the old code). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K1 results\" to GAME-KIT-PLAN.md, and tell me in plain words what's ready and which game's R6 should use it next."
   },
   {
     "id": "R6",
@@ -97,5 +97,73 @@
     "why": "Close four gaps where a child can pass without the real idea.",
     "plan": "docs/plans/maths-review/R9-game-specific-depth.md",
     "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named r9-weka-pebbles. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md and docs/plans/maths-review/R9-game-specific-depth.md (section 3.3).\n\nMake Weka's pebble step a real choice:\n1. In src/games/weka/Pebbles.tsx stop ending the step when the first ten-frame fills. The child drags as many silver pebbles as they think make ten, then taps Check (or the step counts when they stop for a moment, your call; keep it simple for a 6 year old).\n2. Result lines in words.ts and voiceLines.ts: right (\"10 is full. 2 gone, 3 left.\"), too few, too many (put one back). A wrong first try means the go is not counted right first time. After two wrong tries move the right number across to show it. Keep the hint hand for bronze help.\n3. Run scripts/voice-clips.py weka for the new lines.\n4. At most 8 tests. npm run build:functions -- weka if shared/weka changes. Typecheck, npm run test:changed, play the preview with touch.\nDo not touch shared/maths, src/maths, src/styles.css or src/components. Stop and tell James before any live step. Open a PR when done."
+  },
+  {
+    "id": "K2",
+    "kind": "kit",
+    "title": "Game kit K2: shared mistakes that teach and the show-why screen",
+    "games": [
+      "Beanstalk",
+      "then Hop, Penguin Pairs, Pipi, Tūī, Weka"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "why": "Lift what Beanstalk learned in R5 into one shared part, so R5 for the other five games is not built five times.",
+    "plan": "docs/plans/GAME-KIT-PLAN.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-mistakes. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 7) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K2 of the game kit: shared/kit/mistakes.ts (wrong choices with a kind, the \"at most 2 share the tell\" check, the near-miss check, and the two-tap cap flow as a small state machine), src/kit/ShowWhy, and the misconception bank in docs/kit/README.md, lifted from Beanstalk (mistakeKind and hasNearMiss in shared/beanstalk/round.ts, Round.tsx). Then move Beanstalk onto them with no change a child or teacher can see. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K2 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
+  },
+  {
+    "id": "K5",
+    "kind": "kit",
+    "title": "Game kit K5: teacher helpers for class grid rows and stuck flags",
+    "games": [
+      "Teacher pages"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "why": "R7's first stage. It touches shared files, so it needs James's OK before those parts are changed.",
+    "plan": "docs/plans/GAME-KIT-PLAN.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-teacher. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K5 of the game kit: the teacher Foundational helpers (class grid rows and stuck flags) as the R7 plan describes (docs/plans/maths-review/R7-teacher-foundational-view.md). It touches shared files, so stop and ask me before changing them. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K5 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
+  },
+  {
+    "id": "K3",
+    "kind": "kit",
+    "title": "Game kit K3: shared ten-frame, number line and dot picture",
+    "games": [
+      "New games first",
+      "old games when next touched"
+    ],
+    "effort": "M",
+    "impact": "Med",
+    "why": "N1 to N5 all need these pictures. Build them once so each new game does not draw its own.",
+    "plan": "docs/plans/GAME-KIT-PLAN.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-models. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (section 3) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K3 of the game kit: src/kit TenFrame (with highlighted, empty, extra and faint squares), NumberLine (arcs, labels, landmarks) and DotPicture in SVG, lifted from Tūī art.tsx, Weka Pebbles.tsx and Quick looks PictureSvg.tsx. Do not move the old games onto them yet unless one is a clean, no-change swap. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K3 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
+  },
+  {
+    "id": "K6",
+    "kind": "kit",
+    "title": "Game kit K6: one art script and one voice list",
+    "games": [
+      "The next game painted"
+    ],
+    "effort": "S",
+    "impact": "Med",
+    "why": "New games each copy a 300-line art script. One script with a small settings file saves that before N1 is painted.",
+    "plan": "docs/plans/GAME-KIT-PLAN.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-art-tools. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K6 of the game kit: one scripts/game_art.py that reads a per-game docs/<game>-art/config.json (picture list, prompts, sizes, cut-outs); make scripts/voice-clips.py find games from public/voice/*/lines.json instead of a hard-coded list; add art.test.ts and CREDITS.md for the junior games. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K6 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
+  },
+  {
+    "id": "K4",
+    "kind": "kit",
+    "title": "Game kit K4: Hear it again, pointing hand, guided first go, what is next",
+    "games": [
+      "R8",
+      "new games"
+    ],
+    "effort": "M",
+    "impact": "Med",
+    "why": "R8 needs the what's-next card, and every new game needs these small junior parts.",
+    "plan": "docs/plans/GAME-KIT-PLAN.md",
+    "prompt": "Work in /Users/jriley/games-hub-isles. git fetch origin, make your own worktree and branch from origin/main named kit-junior-bits. Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 2) and docs/plans/GAME-KIT-PLAN.md (including the results of earlier stages).\n\nBuild stage K4 of the game kit: src/kit HearAgain, PointingHand, useGuidedFirstGo, WhatsNext and FirstTimeTip, and a voiceLinesSuite(game, allVoiceLines) test helper, lifted from Weka, Penguin Pairs and Star Trader TipCard. Move Weka onto them with no change a child or teacher can see. Keep game words out of the kit (games pass their own words, clip folder and class prefix). At most 3 tests. Rebuild the functions that bundle the changed files. Typecheck, test:changed, build. Open a PR, merge once checks pass, add \"Stage K4 results\" to GAME-KIT-PLAN.md, and tell me in plain words what is ready and what should use it next."
   }
 ]
