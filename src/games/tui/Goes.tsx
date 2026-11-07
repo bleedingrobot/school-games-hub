@@ -54,6 +54,8 @@ interface Props {
 
 /** The sum as written: "10 + 4 = ?", with a real minus sign. */
 const written = (go: Go) => go.parts.join(' ').replace(/-/g, '−');
+/** The way the why-lines are worded for: ten less goes read like "take the ten away" (3), the rest by how they are asked. */
+const wayOf = (go: Go): number => (go.move === 'down' ? 3 : go.v);
 
 export function Goes({ round, scenery, friend, guide = false, finale = false, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
@@ -158,9 +160,9 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
         setWhy(null);
         startLook({
           anchor: 0,
-          steps: go.n,
+          steps: go.move ? 1 : go.n,
           openingLine: WORDS.lookTogether,
-          fillLine: WORDS.right(go.answer, go.n),
+          fillLine: WORDS.rightFor(go),
           onEnd: () => {
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);
@@ -172,7 +174,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
       }
       const kind = go.wrongs.find((w) => w.n === n)!.kind;
       setWhy({ n, kind });
-      say(WORDS.why(kind, n, go.v));
+      say(WORDS.why(kind, n, wayOf(go)));
       return;
     }
     clearTimers();
@@ -180,7 +182,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
     setWhy(null);
     setPhase('right');
     setPose('eat');
-    say(WORDS.right(go.answer, go.n));
+    say(WORDS.rightFor(go));
     if (sound) playSound('badge');
     later(RIGHT_MS, () => nextGo(next));
   }
@@ -219,8 +221,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
             <span className="tui-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
             <Picture key={why ? `why${taps.length}` : 'p'} go={go} level={level} pointAt={pointAt} solved={phase !== 'ask'} lit={why?.kind ?? null} />
             {/* The sum from level 4 down; on "how many more?" and "take the ten away" always, as the picture can't say the target. */}
-            {(level <= 4 || go.v >= 2) && phase === 'ask' && <p className={`tui-sum${level <= 2 ? ' tui-sum--big' : ''}`} aria-live="polite">{written(go)}</p>}
-            {phase !== 'ask' && <ArrowCards n={go.n} />}
+            {(level <= 4 || go.v >= 2 || go.move) && phase === 'ask' && <p className={`tui-sum${level <= 2 ? ' tui-sum--big' : ''}`} aria-live="polite">{written(go)}</p>}
+            {phase !== 'ask' && <Cards go={go} />}
             {canPeek && !peek && phase === 'ask' && (
               <button type="button" className="tui-button tui-peek" onClick={() => setPeek(true)}>
                 <span aria-hidden="true">🍃</span> {WORDS.peek}
@@ -228,10 +230,10 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
             )}
           </div>
           {why && phase === 'ask' && (
-            <ShowWhy prefix="tui" tapKey={taps.length} picture={<WhyPicture kind={why.kind} wrong={why.n} />} line={WORDS.why(why.kind, why.n, go.v)} />
+            <ShowWhy prefix="tui" tapKey={taps.length} picture={<WhyPicture kind={why.kind} wrong={why.n} />} line={WORDS.why(why.kind, why.n, wayOf(go))} />
           )}
           {look && (
-            <LookTogether prefix="tui" title={WORDS.lookTogether} picture={<ArrowCards n={go.n} />} line={WORDS.right(go.answer, go.n)} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
+            <LookTogether prefix="tui" title={WORDS.lookTogether} picture={<Cards go={go} />} line={WORDS.rightFor(go)} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
           )}
           {redo && !why && phase === 'ask' && <NowYouTry prefix="tui" line={WORDS.nowTry} />}
           <div className={`tui-nests${pointAt === 'nests' ? ' tui-nests--guide' : ''}`} role="group" aria-label={WORDS.pickNest}>
@@ -262,6 +264,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
 function Picture({ go, level, pointAt, solved, lit }: { go: Go; level: HelpLevel; pointAt: Guide; solved: boolean; lit: TuiKind | null }) {
   if (level <= 1) return null;
   const frames = level >= 4;
+  if (go.move) return <MovePicture go={go} frames={frames} faint={level === 2} lit={lit} />;
   const hand = (where: Guide) => pointAt === where && <span className="tui-hand" aria-hidden="true">👆</span>;
   const ten = (
     <div className={`tui-ten${go.v === 3 ? ' tui-ten--fly' : ''}${lit === 'ones' ? ' tui-lit' : ''}${lit === 'total' && go.v === 2 ? ' tui-grey' : ''}`} key="ten">
@@ -291,6 +294,52 @@ function Picture({ go, level, pointAt, solved, lit }: { go: Go; level: HelpLevel
   return (
     <div className={`tui-picture${level === 2 ? ' tui-picture--faint' : ''}${frames ? '' : ' tui-picture--kete'}`}>
       {go.v === 1 ? [ones, ten] : [ten, ones]}
+    </div>
+  );
+}
+
+/**
+ * Step 6's berries: the number it starts from as full tens and loose berries (14 is one ten and 4, 24 two tens and 4), and
+ * the ten that comes in (ten more: a lit-edged ten arriving) or goes (ten less: the last ten flying away), as full ten-frames
+ * or one kete each. The sum is always shown beside it, since the picture can't say the target.
+ */
+function MovePicture({ go, frames, faint, lit }: { go: Go; frames: boolean; faint: boolean; lit: TuiKind | null }) {
+  const up = go.move === 'up';
+  const tens = Math.floor(go.teen / 10);
+  const ten = (key: string, extra = '') => (
+    <div className={`tui-ten${extra}`} key={key}>
+      {frames ? <TenFrame count={10} branch label={WORDS.berries(10)} /> : <Kete className="tui-kete--in" label={WORDS.keteOfTen} />}
+    </div>
+  );
+  const staying = Array.from({ length: up ? tens : tens - 1 }, (_, i) => ten(`t${i}`));
+  const moving = ten('move', up ? ` tui-ten--come${lit === 'start' || lit === 'one' ? ' tui-lit' : ''}` : ` tui-ten--fly${lit === 'total' ? ' tui-lit' : ''}`);
+  return (
+    <div className={`tui-picture${faint ? ' tui-picture--faint' : ''}${frames ? '' : ' tui-picture--kete'}`}>
+      {staying}
+      {go.n > 0 && (
+        <div className="tui-ones" key="ones">
+          {frames ? <TenFrame count={go.n} label={WORDS.berries(go.n)} /> : <span className="tui-loose" role="img" aria-label={WORDS.berries(go.n)}><TenFrame count={go.n} label={WORDS.berries(go.n)} /></span>}
+        </div>
+      )}
+      {moving}
+    </div>
+  );
+}
+
+/** The cards after a right answer: the ones sliding onto the ten (the "ten and" goes), or the number and the ten more or less that makes the answer (step 6). */
+function Cards({ go }: { go: Go }) {
+  if (!go.move) return <ArrowCards n={go.n} />;
+  const card = (n: number, mod: string) => (
+    <span className={`tui-card ${mod}`}>
+      {[...String(n)].map((d, i) => <span key={i}>{d}</span>)}
+    </span>
+  );
+  const up = go.move === 'up';
+  return (
+    <div className="tui-cards tui-cards--move" role="img" aria-label={`${go.teen} ${up ? 'and ten more is' : 'take away ten is'} ${go.answer}`}>
+      {card(go.teen, 'tui-card--ten')}
+      <span className="tui-card__move">{up ? '+10' : '−10'}</span>
+      {card(go.answer, 'tui-card--ten')}
     </div>
   );
 }

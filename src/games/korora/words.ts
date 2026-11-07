@@ -7,6 +7,7 @@ const LEVEL_WORDS: Record<Level, string> = {
   2: 'Halves to 10',
   3: 'Doubles to 10',
   4: 'Halves to 20',
+  5: 'Near doubles',
 };
 
 export const WORDS = {
@@ -45,7 +46,14 @@ export const WORDS = {
     miscountHalf: 'Share them out, one for you and one for me. Then count one share.',
     minus2: 'Half means two equal groups.',
     double: 'Half is smaller. The pile goes into two nests.',
+    noExtra: 'That is the double. Do not forget the one more fish.',
+    bigger: 'Only one side has the extra fish. Double the small one, then one more.',
   },
+  /** Near doubles: the double, then one more, counted. */
+  lookNear: (n: number) => `Double ${n} is ${2 * n} fish. Then one more fish. Count them all: ${2 * n + 1}.`,
+  /** The "what's next" card on the finish screen (R8), once near doubles are secure and Weka is on for the class. */
+  whatsNext: 'Doubles help with 6 + 7 too. Try Weka.',
+  tryWeka: 'Try Weka',
   yes: (n: number) => `${n}!`,
   fair: 'Fair share',
   notFair: 'One left over',

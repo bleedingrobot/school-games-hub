@@ -19,10 +19,21 @@ import { hasNearMiss, kindByUnits, unitsOff } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
 
 export const PAIRS_PER_ROUND = 10;
-/** What each beanstalk's pairs add up to, in turn: Kiwi 10, tūī 100, kererū 1000, then round again (James, 4 Nov 2026). */
-export const TARGETS = [10, 100, 1000] as const;
+/**
+ * What each beanstalk's pairs add up to, in turn: Kiwi 10, then bonds to 20, tūī 100, kererū 1000, then round again
+ * (James, 4 Nov 2026; 20 added by maths review R8, 7 Nov 2026).
+ */
+export const TARGETS = [10, 20, 100, 1000] as const;
 export type Target = (typeof TARGETS)[number];
 export const isTarget = (n: unknown): n is Target => TARGETS.includes(n as Target);
+/** What one dot on a leaf is worth: 1 on the 10 and 20 beanstalks (20 has two ten-frames), 10 on the 100 and 100 on the 1000. */
+export const unitOf = (target: Target): number => (target === 20 ? 1 : target / 10);
+/**
+ * The missing leaf (R8): on these goes (counting from 0) one leaf of a pair is already picked and the child taps the one
+ * that is missing, "7 + ? = 10". Only the screen changes: the taps are the same two leaves, so the server replays them as usual.
+ */
+export const MISSING_GOES = [3, 6, 9] as const;
+export const isMissingGo = (pairsMade: number): boolean => (MISSING_GOES as readonly number[]).includes(pairsMade);
 /** Leaves floating at once: three pairs. */
 export const ON_SCREEN = 6;
 
@@ -46,6 +57,7 @@ export function makeRound(seed: number, target: Target = 10): Round {
   if (!isTarget(target)) throw new RangeError(`Bad target ${target}`);
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
+  if (target === 20) return { seed, target, leaves: leavesTo20(random) };
   // Every pair turns up: 1+9 to 4+6 twice, 5+5 once (two 5s make one pair, which is easy), and the tenth is one more of 1 to 4.
   const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
   while (pool.length < PAIRS_PER_ROUND) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
@@ -61,15 +73,37 @@ export function makeRound(seed: number, target: Target = 10): Round {
 }
 
 /**
+ * Bonds to 20 (R8): the pairs 1 + 19 to 9 + 11, each once, and a tenth that is one more of them. 10 + 10 is left out (two
+ * equal leaves are too easy, like 5 + 5), and 0 + 20 as 0 + 10 is. The leaves are the numbers themselves, so 11 to 19 turn up.
+ */
+function leavesTo20(random: () => number): number[] {
+  const pool = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  pool.push(1 + Math.floor(random() * 9));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.flatMap((a) => (random() < 0.5 ? [a, 20 - a] : [20 - a, a]));
+}
+
+/**
  * The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
  * place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
  */
 export const bondKey = (n: number, target: Target = 10): string => {
+  if (target === 20) {
+    const lo = Math.min(n, 20 - n);
+    return `bond20:${lo}+${20 - lo}`;
+  }
   if (target === 100) return 'bond100:tens';
   if (target === 1000) return 'bond1000:hundreds';
   const lo = Math.min(n, 10 - n);
   return `bond10:${lo}+${10 - lo}`;
 };
+
+/** The records a sum's pairs use (the ones its right pairs are scored against), for "is this sum secure?". */
+export const factKeys = (target: Target): string[] =>
+  target === 10 ? [1, 2, 3, 4, 5].map((n) => bondKey(n)) : target === 20 ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => bondKey(n, 20)) : [bondKey(1, target)];
 
 /** Two leaves tapped, by index into `Round.leaves`, and how long the child took over it. */
 export interface Tap {
@@ -110,7 +144,7 @@ const floating = (inPlay: readonly number[], used: ReadonlySet<number>): number[
  */
 export type MistakeKind = 'over' | 'under' | 'close' | 'digit';
 export const mistakeKind = (total: number, target: Target): MistakeKind | null =>
-  kindByUnits(unitsOff(total, target, target / 10), { one: target === 10 ? 'close' : 'digit', over: 'over', under: 'under' });
+  kindByUnits(unitsOff(total, target, unitOf(target)), { one: target === 10 || target === 20 ? 'close' : 'digit', over: 'over', under: 'under' });
 
 /**
  * Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
@@ -132,7 +166,7 @@ function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void 
       inPlay.push(waiting[0]);
       continue;
     }
-    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target, round.target / 10));
+    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target, unitOf(round.target)));
     // None does (only ever 1 + 9, 3 + 7 and 5 + 5 together): the tray stays at four leaves until a pair is made.
     if (tempting === undefined) return;
     inPlay.push(tempting);

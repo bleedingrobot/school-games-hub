@@ -13,7 +13,7 @@ import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, u
 import { fadeAfter, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
 import { replayTaps, type ReplayGo, type Tap } from './replay';
 
-const TUI_RULES: StepRules = { ...ROUND_OF_TEN, topLevel: 5, goodToPass: 2, topStep: 5, newStepHelp: 1, newStepLevel: 4 };
+const TUI_RULES: StepRules = { ...ROUND_OF_TEN, topLevel: 5, goodToPass: 2, topStep: 6, newStepHelp: 1, newStepLevel: 4 };
 
 /** Taps for these goes: up to three wrong picks on a go (fewer right first time as `slips` rises), then the right one. */
 function tapsFor(goes: readonly ReplayGo[], seed: number, slips: number): Tap[] {
@@ -49,7 +49,7 @@ describe('help follows the child', () => {
     p = placeAfter(placeAfter(p, 10, TUI_RULES), 10, TUI_RULES);
     expect(p).toEqual({ step: 2, level: 4, goodInRow: 0, goodAtStep: 0 });
     // The same as Tūī's own copy, in every place a child can be.
-    for (const step of [1, 2, 3, 4, 5] as Step[]) for (const level of [0, 1, 2, 3, 4, 5] as HelpLevel[]) for (const goodInRow of [0, 1]) for (const goodAtStep of [0, 1]) for (let right = 0; right <= 10; right++) {
+    for (const step of [1, 2, 3, 4, 5, 6] as Step[]) for (const level of [0, 1, 2, 3, 4, 5] as HelpLevel[]) for (const goodInRow of [0, 1]) for (const goodAtStep of [0, 1]) for (let right = 0; right <= 10; right++) {
       const place = { step, level, goodInRow, goodAtStep };
       expect(placeAfter(place, right, TUI_RULES)).toEqual(tuiPlaceAfter(place, right));
     }
@@ -116,7 +116,7 @@ describe('mistakes that teach', () => {
   it('Beanstalk still makes the same rounds, kinds, lines and scoring as before the move', () => {
     // Digest of the old Beanstalk code (7 Nov 2026): 1,500 seeds on each sum, played clean and with wrong pairs first, every tray, kind, line and answer.
     const h = createHash('sha1');
-    for (const t of TARGETS) {
+    for (const t of TARGETS.filter((x) => x !== 20)) { // 20 is new (R8); the other three must not change
       for (let a = 1; a <= 9; a++) for (let b = a; b <= 9; b++) h.update(`${t}:${a}:${b}:${BEANSTALK_WORDS.why((a * t) / 10, (b * t) / 10, t)}|`);
       for (let seed = 0; seed < 1500; seed++) {
         const round = beanstalkRound(seed, t);

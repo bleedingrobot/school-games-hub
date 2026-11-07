@@ -85,11 +85,11 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
   expect(await finish()).toMatchObject({ daysDone: 30, leafChanged: 9, egg: true });
   expect(log.eggs).toEqual(['pupil-a']); // the hub gives Kiwi's Golden Egg achievement
 
-  // The tūī's beanstalk is bonds to 100, from the saved days whatever the browser sends, and is recorded as one.
+  // The next beanstalk is bonds to 20, from the saved days whatever the browser sends, and is recorded as one.
   hours(24);
   const seed = await start('pupil-a');
-  expect((await send('pupil-a', { action: 'finish', seed, taps: goodTaps(seed, true, 100), target: 10 })).body).toMatchObject({ daysDone: 31, leafChanged: 0 });
-  expect(log.answers.at(-1)!.answers.every((a) => a.key === 'bond100:tens')).toBe(true);
+  expect((await send('pupil-a', { action: 'finish', seed, taps: goodTaps(seed, true, 20), target: 10 })).body).toMatchObject({ daysDone: 31, leafChanged: 0 });
+  expect(log.answers.at(-1)!.answers.every((a) => a.key.startsWith('bond20:'))).toBe(true);
 });
 
 /** Every go starts with a wrong pair (where one floats): a hard day. */

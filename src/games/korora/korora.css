@@ -177,6 +177,7 @@
 }
 .kr-row--mirror { transform: scaleY(-1); }
 .kr-fish--mirror .kr-fish__art { opacity: 0.85; }
+.kr-fish--extra .kr-fish__art { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #fff); opacity: 1; }
 .kr-fish--mirror .kr-fish__count { transform: scaleY(-1); top: auto; bottom: -40%; }
 /* Bronze: each fish joined to its mirror fish by a faint line across the water's edge. */
 .kr-fish--linked::after {
@@ -274,3 +275,6 @@
 @media (prefers-reduced-motion: reduce) {
   .kr-root *, .kr-root *::before, .kr-root *::after { animation: none !important; transition: none !important; }
 }
+
+.kr-next-game { margin: 12px 0 4px; }
+.kr-next-game p { margin: 0 0 8px; font-weight: 700; }

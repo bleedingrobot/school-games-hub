@@ -10,6 +10,7 @@
  */
 import { BandedPack, int, isInt, speak, type Family, type PackDefinition } from '../banded';
 import type { FactStats } from '../leitner';
+import { KEYS as EQUALS_KEYS } from './equalsKeys';
 
 const bondKeys = (prefix: string, total: number, from: number) => {
   const keys: string[] = [];
@@ -417,8 +418,64 @@ export function solveLine(parts: readonly string[]): { answer: number; key: stri
   return null;
 }
 
+// ---- The equals sign (Parrot's See-saw, docs/PARROT-PLAN.md) ----------------------------------------------------------
+// Ladder-only keys the game records through `recordMathsAnswers` (first tap only). The game makes its own questions and
+// wrong cards; these families own the keys so records are kept, and read as short level-see-saw sentences if typed.
+//   eqmiss:8=5+?  eqswap:3+5 (3 + 5 = 5 + ?)  eqboth:6+7=8+?  eqsub:3=8-? and eqsub:9-4=2+?  eqtf:5+3=4+4 (true or false)
+const equalsNumbers = (key: string) => (key.split(':')[1].match(/\d+/g) ?? []).map(Number);
+const equalsParts = (key: string, n: number[]): string[] => {
+  const w = (...x: (number | string)[]) => ['Level', 'see-saw:', ...x.map(String)];
+  if (key.startsWith('eqmiss:')) return w(n[0], '=', n[1], '+', '?');
+  if (key.startsWith('eqswap:')) return w(n[0], '+', n[1], '=', n[1], '+', '?');
+  if (key.startsWith('eqboth:')) return w(n[0], '+', n[1], '=', n[2], '+', '?');
+  if (key.startsWith('eqtf:')) return ['True', 'or', 'false?', String(n[0]), '+', String(n[1]), '=', String(n[2]), '+', String(n[3])];
+  return key.includes('-?') ? w(n[0], '=', n[1], '-', '?') : w(n[0], '-', n[1], '=', n[2], '+', '?');
+};
+const equalsAnswer = (key: string, n: number[]): number => {
+  if (key.startsWith('eqmiss:')) return n[0] - n[1];
+  if (key.startsWith('eqswap:')) return n[0];
+  if (key.startsWith('eqboth:')) return n[0] + n[1] - n[2];
+  if (key.startsWith('eqtf:')) return n[0] + n[1] === n[2] + n[3] ? 0 : 1;
+  return key.includes('-?') ? n[1] - n[0] : n[0] - n[1] - n[2];
+};
+const equals = (label: string, keys: string[]): Family => ({
+  label,
+  curriculumTags: [],
+  keys,
+  roll: (key) => equalsNumbers(key),
+  make: (key, params) => {
+    const n = equalsNumbers(key);
+    if (!keys.includes(key) || n.length !== params.length || n.some((x, i) => x !== params[i])) return null;
+    const answer = equalsAnswer(key, n);
+    const parts = equalsParts(key, n);
+    if (key.startsWith('eqtf:')) return { parts, spoken: `True or false: ${n[0]} plus ${n[1]} equals ${n[2]} plus ${n[3]}?`, answer, pick: ['True', 'False'] };
+    return { parts, spoken: `What number keeps the see-saw level?`, answer, wrong: [answer + 1, answer - 1, answer + 2] };
+  },
+});
+const equalsFamilies: Record<string, Family> = {
+  eqmiss: equals('See-saw with a missing number (to 10)', EQUALS_KEYS.miss),
+  eqswap: equals('Swapping the two numbers of a sum', EQUALS_KEYS.swap),
+  eqboth: equals('See-saw with two numbers on each side (to 20)', EQUALS_KEYS.both),
+  eqsub: equals('See-saw with taking away', EQUALS_KEYS.sub),
+  eqtf: equals('True or false: is the see-saw level?', EQUALS_KEYS.tf),
+};
+
+/** An equals-sign question read back from its parts (["Level", "see-saw:", "8", "=", "5", "+", "?"]): its answer and key, or null when it isn't one. */
+export function solveEquals(parts: readonly string[]): { answer: number; key: string } | null {
+  if (!parts.some((x) => x === 'see-saw:' || x === 'false?')) return null;
+  for (const family of Object.values(equalsFamilies)) {
+    for (const key of family.keys) {
+      const n = equalsNumbers(key);
+      const made = family.make(key, n);
+      if (made && made.parts.length === parts.length && made.parts.every((x, k) => x === parts[k])) return { answer: made.answer, key };
+    }
+  }
+  return null;
+}
+
 const families: Record<string, Family> = {
   ...lineFamilies,
+  ...equalsFamilies,
   tenAnd,
   tenUp: tenMove(true),
   tenDown: tenMove(false),
@@ -438,7 +495,7 @@ export const EARLY_FACTS: PackDefinition = {
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
   // Only the ladder asks the "ten and" facts, the part-whole facts, odd and even and skip counting.
-  ladderOnly: ['tenAnd', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES],
+  ladderOnly: ['tenAnd', 'tenUp', 'tenDown', 'oddEven', 'parts5', 'parts10', ...SKIP_STEPS.map(({ step }) => `skip${step}`), ...SKIP_MORE_FAMILY_NAMES, ...LINE_FAMILY_NAMES, ...Object.keys(equalsFamilies)],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);
