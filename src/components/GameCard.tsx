@@ -90,6 +90,7 @@ export function GameCard({
           <Icon size={44} />
         </div>
       )}
+      {game.inDevelopment && <span className="game-card__dev">In development</span>}
       {onPinChange && <PinBox id={game.id} name={game.name} pinned={pinned} onPinChange={onPinChange} />}
       <div className="game-card__body">
         <div className="game-card__text">
