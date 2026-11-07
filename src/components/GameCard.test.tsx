@@ -17,6 +17,22 @@ describe('GameCard', () => {
     expect(screen.getByRole('group', { name: 'Bot level' })).toBeInTheDocument();
   });
 
+  it('shows the In development sticker only on a game still being worked on', () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <GameCard game={findGame('robin')!} level="medium" onLevelChange={() => {}} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('In development')).toBeInTheDocument();
+    unmount();
+    render(
+      <MemoryRouter>
+        <GameCard game={findGame('weka')!} level="medium" onLevelChange={() => {}} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText('In development')).not.toBeInTheDocument();
+  });
+
   it('a game with no bots has just Play', () => {
     const noBots = findGame('clan-quest')!;
     render(

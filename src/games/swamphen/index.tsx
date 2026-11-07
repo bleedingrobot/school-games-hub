@@ -40,6 +40,7 @@ export const swamphenReedRows: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'foundational',
+  inDevelopment: true,
   nextPart: { noun: WORDS.part },
   useTeacherSwitch: useSwamphenEnabled,
   teacher: {

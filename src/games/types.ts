@@ -34,6 +34,8 @@ export interface GameDefinition {
   ranked?: boolean;
   /** True for games with no bots to pick (Gem Keep): the card just says "Play". */
   noBots?: boolean;
+  /** Still being worked on: its home page card wears a small "In development" sticker. Leave it out for a finished game. */
+  inDevelopment?: boolean;
   /** Where the dashboard lists the game (in GAMES order within a group). A game without one has no dashboard card. */
   group?: DashboardGroup;
   /**
