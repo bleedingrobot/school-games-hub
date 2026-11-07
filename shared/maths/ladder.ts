@@ -15,7 +15,7 @@ import { newMemory, pickFromPools, scheduleRepeat, STEP_SECURE_SHARE, type Pools
 import type { FactAnswer } from './leitner';
 import type { AnswerResult, Question, SkillPack } from './skillPack';
 import { BANDED_PACKS } from './skillPacks';
-import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS } from './skillPacks/earlyFacts';
+import { EARLY_FACTS, earlyFactsPack, SKIP_FROM_STEPS, SKIP_MORE_STEPS, SKIP_STEPS } from './skillPacks/earlyFacts';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
@@ -100,6 +100,12 @@ export const LADDER: LadderSkill[] = [
   ...SKIP_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false })),
   // Odd and even to 20 sits beside the ladder (`inAuto`): Penguin Pairs asks it on gold days from its own rules, and a teacher can choose it.
   { id: 'odd-even', label: 'Odd and even numbers to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('oddEven'), built: true, inWarmUp: false, inAuto: false },
+  // More skip counting sits beside the ladder (`inAuto`): Hop asks threes, fours, tens past 100 and counting from a start that isn't a multiple from its own rules (R8), and a teacher can choose them.
+  ...SKIP_MORE_STEPS.map(({ step, word }): LadderSkill => ({ id: `skip-${step}`, label: `Counting in ${word}`, stage: 'early-facts', curriculumTags: [], keys: earlyKeys(`skip${step}`), built: true, inWarmUp: false, inAuto: false })),
+  { id: 'skip-10-past-100', label: 'Counting in tens past 100', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('skip10h'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'skip-from', label: 'Counting on from a start (3, 13, 23)', stage: 'early-facts', curriculumTags: [], keys: SKIP_FROM_STEPS.flatMap(({ step }) => earlyKeys(`skip${step}o`)), built: true, inWarmUp: false, inAuto: false },
+  // Ten more and ten less on the teens (Tūī's step 6) sits beside the ladder too.
+  { id: 'ten-more-less-teens', label: 'Ten more and ten less (14 + 10, 24 − 10)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: [...earlyKeys('tenUp'), ...earlyKeys('tenDown')], built: true, inWarmUp: false, inAuto: false },
   // The number line (Pigeon's Number Line) sits beside the ladder (`inAuto`): the game draws and marks its own questions (a line is a picture), and only records these keys like any early fact. Typed, they read as a short sentence.
   { id: 'number-line-100', label: 'The number line to 100', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('place100'), ...earlyKeys('read100'), ...earlyKeys('near10'), ...earlyKeys('zoom')], built: true, inWarmUp: false, inAuto: false },
   { id: 'ten-more-less', label: 'Ten more and ten less', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: earlyKeys('tens100'), built: true, inWarmUp: false, inAuto: false },
@@ -291,7 +297,7 @@ export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
   if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
-  if (/^(bond10|bond20|dbl|half|tenand|skip10|skip5|skip2|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;

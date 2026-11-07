@@ -5,7 +5,7 @@ import { earlyFactsPack } from './skillPacks/earlyFacts';
 import { ALL_KEYS } from './skillPacks/equalsKeys';
 import { KEYS } from '../parrot/round';
 
-// The database's key check (supabase/migrations/20261107000600_parrot_keys.sql).
+// The database's key check (supabase/migrations/20261107000800_parrot_keys.sql).
 const DB_KEY = /^[a-z][a-z0-9]{0,9}:[a-z0-9:+/=?-]{1,40}$/;
 
 describe('the equals keys, for Parrot\'s See-saw', () => {

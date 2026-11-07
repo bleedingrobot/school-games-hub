@@ -116,7 +116,7 @@ describe('mistakes that teach', () => {
   it('Beanstalk still makes the same rounds, kinds, lines and scoring as before the move', () => {
     // Digest of the old Beanstalk code (7 Nov 2026): 1,500 seeds on each sum, played clean and with wrong pairs first, every tray, kind, line and answer.
     const h = createHash('sha1');
-    for (const t of TARGETS) {
+    for (const t of TARGETS.filter((x) => x !== 20)) { // 20 is new (R8); the other three must not change
       for (let a = 1; a <= 9; a++) for (let b = a; b <= 9; b++) h.update(`${t}:${a}:${b}:${BEANSTALK_WORDS.why((a * t) / 10, (b * t) / 10, t)}|`);
       for (let seed = 0; seed < 1500; seed++) {
         const round = beanstalkRound(seed, t);

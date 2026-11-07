@@ -11,7 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, wrongFirstRun, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { isMissingGo, makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, unitOf, wrongFirstRun, type Target, type Tap } from '../../../shared/beanstalk/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
@@ -78,6 +78,10 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   /** The go's place in the two-tap flow (shared/kit/mistakes.ts): the second wrong pair is "Let's look together". */
   const go = useRef(NEW_GO);
+  /** The missing leaf (R8): the leaf already picked on a "7 + ? = 10" go. It is also `redo`, so it stays picked and a tap on it does nothing. */
+  const [missing, setMissing] = useState<number | null>(null);
+  /** "So 10 take 7 is 3.": shown after a right missing-leaf go, until the next tap. */
+  const [take, setTake] = useState<string | null>(null);
   /** After "Let's look together": the leaf the child now finds the partner of. It stays picked. */
   const [redo, setRedo] = useState<number | null>(null);
   const since = useRef(Date.now());
@@ -90,7 +94,8 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
   const [bridgeLine] = useState(() => {
     if (!bridge || target === 10) return null;
     const first = slots.find((i) => i !== null && slots.some((j) => j !== null && j !== i && round.leaves[i] + round.leaves[j] === target));
-    return first == null ? null : WORDS.bridge(target, round.leaves[first], target - round.leaves[first]);
+    if (first == null) return null;
+    return target === 20 ? WORDS.bridge20(round.leaves[first], target - round.leaves[first]) : WORDS.bridge(target, round.leaves[first], target - round.leaves[first]);
   });
 
   useEffect(() => {
@@ -125,7 +130,7 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
     setPicked(null);
     startLook({
       anchor,
-      steps: (target - n) / (target / 10),
+      steps: (target - n) / unitOf(target),
       openingLine: WORDS.lookTogether,
       fillLine: WORDS.fillUp(n, target),
       onEnd: () => {
@@ -138,9 +143,17 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
     });
   }
 
+  /** Says the lines one after another (a tap cuts the rest off, as it does any line). */
+  function sayAll(lines: (string | null)[]) {
+    const [first, ...rest] = lines.filter((l): l is string => l !== null);
+    if (first === undefined) return;
+    say(first, rest.length ? () => sayAll(rest) : undefined);
+  }
+
   function tap(leaf: number) {
     if (flying.length || look) return;
     tappedYet.current = true;
+    setTake(null);
     // "Now you try": the leaf from "Let's look together" stays picked, so a tap on it does nothing.
     if (redo !== null && leaf === redo) return;
     if (picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))) return; // a pair tried already
@@ -176,19 +189,32 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
     setPicked(null);
     const pair = [picked, leaf];
     setFlying(pair);
+    // The next go may be a missing-leaf go: its leaf is picked as the pair flies up (every leaf floating has a partner: round.ts).
+    const after = replay(round, next);
+    const nextGo = after.done || !isMissingGo(after.pairsMade) ? null : (() => {
+      const options = after.onScreen.filter((i) => after.onScreen.some((j) => j !== i && round.leaves[i] + round.leaves[j] === target));
+      return options.length ? options[Math.floor(Math.random() * options.length)] : null;
+    })();
+    // The line: the pair, then (after a missing-leaf go) the take-away, the dots coming back, and what the next go asks.
+    const wasMissing = missing !== null ? WORDS.takeAway(round.leaves[missing], target) : null;
+    setMissing(null);
+    if (wasMissing) setTake(wasMissing);
     // Each go is scored at its first tap: three in a row wrong bring the full dots back, and the line says so once.
-    const struggling = canBoost && !boosted && dots !== 'full' && wrongFirstRun(replay(round, next).answers) >= STRUGGLE_GOES;
-    if (struggling) {
-      setBoosted(true);
-      say(WORDS.right(x, y), () => say(WORDS.dotsBack));
-    } else say(WORDS.right(x, y));
+    const struggling = canBoost && !boosted && dots !== 'full' && wrongFirstRun(after.answers) >= STRUGGLE_GOES;
+    if (struggling) setBoosted(true);
+    sayAll([WORDS.right(x, y), wasMissing, struggling ? WORDS.dotsBack : null, nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], target) : null]);
     if (sound) playSound('hop');
     later(FLY_MS, () => {
-      const after = replay(round, next);
       const newcomers = after.onScreen.filter((i) => !slots.includes(i));
       // Newcomers take the pair's places and any gaps (a pair can wait while its numbers are floating: round.ts).
       setSlots(shuffled(slots.map((s) => (s === null || pair.includes(s) ? (newcomers.shift() ?? null) : s))));
       setFlying([]);
+      if (nextGo !== null) {
+        setMissing(nextGo);
+        setPicked(nextGo);
+        setRedo(nextGo);
+        since.current = Date.now();
+      }
       if (after.done) onDone(next);
     });
   }
@@ -209,11 +235,13 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
           : picked === leaf
             ? 'picked'
             : 'resting';
-  const step = target / 10;
+  const step = unitOf(target);
+  const cells = target === 20 ? 20 : 10;
+  const missingLine = missing !== null ? WORDS.missingAsk(round.leaves[missing], target) : null;
 
   return (
     <div className="bs-play">
-      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{WORDS.tapTwo(target)}</h2>
+      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{missingLine ?? WORDS.tapTwo(target)}</h2>
       <Scene
         grow={0.08 + (0.92 * pairsMade) / PAIRS_PER_ROUND}
         leaves={stalkLeaves.slice(0, pairsMade).map((metal) => ({ metal }))}
@@ -229,23 +257,24 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
       </div>
       <div className="bs-target">
         <p className="bs-target__badge" aria-hidden="true">
-          {WORDS.makeTarget(target)}
+          {missing !== null ? WORDS.missingSum(round.leaves[missing], target) : WORDS.makeTarget(target)}
         </p>
         <button
           type="button"
           className="bs-hear"
           disabled={look !== null}
-          onClick={() => say(redo !== null ? WORDS.nowTry(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target))}
+          onClick={() => say(missingLine ?? (redo !== null ? WORDS.nowTry(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
         >
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
         {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
+        {take && !why && <p className="bs-take">{take}</p>}
         {why && (
           <ShowWhy
             prefix="bs"
             tapKey={`${why.a}-${why.b}-${taps.length}`}
             // Smaller number first, as the line says it.
-            picture={<JoinedFrame a={Math.min(round.leaves[why.a], round.leaves[why.b])} b={Math.max(round.leaves[why.a], round.leaves[why.b])} step={step} />}
+            picture={<JoinedFrame cells={cells} a={Math.min(round.leaves[why.a], round.leaves[why.b])} b={Math.max(round.leaves[why.a], round.leaves[why.b])} step={step} />}
             line={WORDS.why(round.leaves[why.a], round.leaves[why.b], target)}
           />
         )}
@@ -253,14 +282,14 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
           <LookTogether
             prefix="bs"
             title={WORDS.lookTogether}
-            picture={<JoinedFrame a={round.leaves[look.anchor]} b={target - round.leaves[look.anchor]} step={step} more={look.filled} />}
+            picture={<JoinedFrame cells={cells} a={round.leaves[look.anchor]} b={target - round.leaves[look.anchor]} step={step} more={look.filled} />}
             line={WORDS.fillUp(round.leaves[look.anchor], target)}
             skipLabel={WORDS.goOn}
             canSkip={look.canSkip}
             onSkip={skipLook}
           />
         )}
-        {redo !== null && !why && <NowYouTry prefix="bs" line={WORDS.nowTry(round.leaves[redo])} />}
+        {redo !== null && missing === null && !why && <NowYouTry prefix="bs" line={WORDS.nowTry(round.leaves[redo])} />}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>
@@ -270,7 +299,8 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
             <Leaf
               key={leaf}
               value={round.leaves[leaf]}
-              step={target / 10}
+              step={step}
+              cells={cells}
               dots={boosted ? 'full' : dots}
               metal={trayMetal}
               look={lookOf(leaf)}

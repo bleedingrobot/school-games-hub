@@ -436,7 +436,7 @@ describe('the longer ladder', () => {
     expect(built).toHaveLength(36); // and the two part-whole skills beside the ladder
     expect(warmUp).toHaveLength(33); // the warm-up walks the same 33 as before skip counting
     expect(built.filter((s) => !warmUp.includes(s)).map((s) => s.id)).toEqual(['skip-10', 'skip-5', 'skip-2']);
-    expect(LADDER.filter((s) => !built.includes(s)).map((s) => s.id)).toEqual(['parts-5', 'parts-10', 'odd-even', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false']);
+    expect(LADDER.filter((s) => !built.includes(s)).map((s) => s.id)).toEqual(['parts-5', 'parts-10', 'odd-even', 'skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false']);
     expect(generated).toHaveLength(23);
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
   });

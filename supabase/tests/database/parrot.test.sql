@@ -87,7 +87,7 @@ update public.parrot_progress set days_done = 30 where player = pg_temp.id('0a')
 select is(public.parrot_counts(pg_temp.id('0a')), '{"parrot_days": 30, "parrot_step": 3, "parrot_prizes": 1}'::jsonb, 'the first Golden Bell after thirty days');
 select public.game_progress_changed(pg_temp.id('0a'), 'parrot');
 select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'parrot-first'), '... and the First level achievement with it');
-select ok(not exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'parrot-bell'), '... not Kererū''s yet');
+select ok(exists (select 1 from public.achievements where player = pg_temp.id('0a') and achievement = 'parrot-bell'), '... and the Golden Bell achievement at thirty days');
 select ok(public.parrot_last_played(pg_temp.id('0a')) is not null and public.parrot_last_played(pg_temp.id('0b')) is null, 'when a pupil last played comes from their rope');
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
