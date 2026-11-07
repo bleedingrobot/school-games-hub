@@ -1,4 +1,4 @@
--- Swamp Hen’s Reed Rows (migration 20261107000800, short id swamphen): progress, challenges, the switch and the help setting, and
+-- Swamp Hen’s Reed Rows (migration 20261107001100, short id swamphen): progress, challenges, the switch and the help setting, and
 -- the hub hooks with five achievements.
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh swamphen, then scripts/scratch-test.sh swamphen supabase/tests/database/swamphen.test.sql

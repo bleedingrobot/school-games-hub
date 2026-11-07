@@ -19,7 +19,7 @@ create function pg_temp.nz_today() returns date language sql as $$ select (now()
 
 -- ---- The daily games have the hook ----
 select is((select array_agg(id order by id) from public.hub_games where day_fn is not null),
-  array['beanstalk', 'hop', 'korora', 'parrot', 'pigeon', 'pipi', 'tui', 'weka'], 'the eight daily games have the day hook');
+  array['beanstalk', 'hop', 'korora', 'parrot', 'pigeon', 'pipi', 'swamphen', 'tui', 'weka'], 'the nine daily games have the day hook');
 select throws_ok($$ update public.hub_games set day_fn = 'public.beanstalk_last_played(uuid)' where id = 'beanstalk' $$,
   '22023', null, 'a hook with the wrong shape is refused');
 
@@ -34,7 +34,7 @@ select is((public.my_next_parts() ->> 'pipi')::boolean, false, 'a game never pla
 select is((public.my_next_parts() ->> 'korora')::boolean, false, '... in every game');
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
-select is(public.my_next_parts(), '{"beanstalk": false, "hop": false, "pigeon": false, "korora": false, "parrot": false, "pipi": false, "tui": false, "weka": false}'::jsonb, 'Ben sees only his own days');
+select is(public.my_next_parts(), '{"beanstalk": false, "hop": false, "pigeon": false, "korora": false, "parrot": false, "pipi": false, "tui": false, "weka": false, "swamphen": false}'::jsonb, 'Ben sees only his own days');
 select throws_ok($$ select public.korora_last_day('00000000-0000-0000-0000-00000000000a') is not null $$, '42501', null,
   'a pupil can''t read another pupil''s progress through a hook');
 select pg_temp.reset();
