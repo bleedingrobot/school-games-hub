@@ -1,9 +1,23 @@
 /**
- * Pigeon's Number Line's pictures. Stand-ins drawn in code (a painted pass comes later, docs/PIGEON-ART-PLAN.md): every
- * number, mark and label is drawn by the NumberLine kit; the bird, the berry clusters and the Golden Berry Branch are plain SVG.
+ * Pigeon's Number Line's pictures: the painted ones (scripts/game_art.py pigeon, tidied into ./art/paint/, picks in
+ * docs/pigeon-art/picks.json) and, as a fallback when a picture is missing, the plain SVG stand-ins drawn in code. Every
+ * number, mark and label is drawn by the NumberLine kit. Only the pictures' addresses are bundled; they download when shown.
  */
+import type { CSSProperties } from 'react';
 import type { Friend as FriendName, Metal } from '../../../shared/pigeon/progress';
 import { FRIEND_NAMES } from '../../../shared/pigeon/progress';
+
+const FILES = import.meta.glob('./art/paint/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+export const paint = (path: string): string | undefined => FILES[`./art/paint/${path}.webp`];
+
+/** The branch background for a day's colour, as CSS variables (a full and a small copy). Nothing if it is not painted. */
+export function sceneStyle(scenery: Scenery): CSSProperties | undefined {
+  const full = paint(`back/${scenery}`);
+  if (!full) return undefined;
+  const small = paint(`back/${scenery}-800`) ?? full;
+  return { '--pg-back': `url(${full})`, '--pg-back-small': `url(${small})` } as CSSProperties;
+}
 
 export type Pose = 'sit' | 'eat' | 'cheer';
 export type Scenery = 'bronze' | 'silver' | 'gold';
@@ -19,6 +33,15 @@ const BODY: Record<FriendName, { body: string; belly: string }> = {
 /** A round bird with a beak, in each friend's colours. */
 export function Friend({ friend, pose }: { friend: FriendName; pose: Pose }) {
   const c = BODY[friend];
+  const src = paint(`friends/${friend}-${pose}`);
+  if (src) {
+    return (
+      <span className={`pg-friend pg-friend--${pose} pg-friend--painted`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+        <span className="pg-sr">{FRIEND_NAMES[friend]}</span>
+      </span>
+    );
+  }
   return (
     <span className={`pg-friend pg-friend--${pose}`}>
       <svg viewBox="0 0 80 80" width="100%" height="100%" aria-hidden="true">
@@ -41,6 +64,14 @@ const METAL: Record<Metal, string> = { green: '#6a9a45', bronze: '#c8803a', silv
 /** One cluster of berries: green until it changes. */
 export function Cluster({ metal, glow = false }: { metal: Metal; glow?: boolean }) {
   const fill = METAL[metal];
+  const src = paint(`berries/${metal}`);
+  if (src) {
+    return (
+      <span className={`pg-cluster pg-cluster--${metal}${glow ? ' pg-cluster--glow' : ''}`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className={`pg-cluster pg-cluster--${metal}${glow ? ' pg-cluster--glow' : ''}`}>
       <svg viewBox="0 0 40 44" width="100%" height="100%" aria-hidden="true">
@@ -55,6 +86,14 @@ export function Cluster({ metal, glow = false }: { metal: Metal; glow?: boolean 
 }
 
 export function GoldenBranch() {
+  const src = paint('berries/golden-branch');
+  if (src) {
+    return (
+      <span className="pg-golden" role="img" aria-label="The Golden Berry Branch">
+        <img src={src} alt="" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className="pg-golden" role="img" aria-label="The Golden Berry Branch">
       <svg viewBox="0 0 120 50" width="100%" height="100%" aria-hidden="true">

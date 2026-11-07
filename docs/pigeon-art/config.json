@@ -1,0 +1,319 @@
+{
+  "game": "pigeon",
+  "filename_prefix": "pigeon/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/pigeon-art/set",
+  "picks": "docs/pigeon-art/picks.json",
+  "art_dir": "src/games/pigeon/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "green": {
+      "dark": [
+        22,
+        56,
+        18
+      ],
+      "mid": [
+        84,
+        150,
+        56
+      ],
+      "shine": [
+        200,
+        240,
+        150
+      ]
+    },
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "friends/pigeon-sit",
+      "prompt": "Pigeon, a cute round New Zealand kerer\u016b wood pigeon, glossy green and bronze-purple head and back feathers, a big snowy white round belly and chest, a short red-orange beak with a pale tip, bright friendly red-orange eyes, bright red-pink legs and feet, a short fan tail, facing to the right, side view, sitting calmly and happily on a bare spot, perched with feet together, wings folded, a small smile, looking ahead, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pigeon-sit",
+      "max": 320
+    },
+    {
+      "name": "friends/pigeon-eat",
+      "prompt": "Pigeon, a cute round New Zealand kerer\u016b wood pigeon, glossy green and bronze-purple head and back feathers, a big snowy white round belly and chest, a short red-orange beak with a pale tip, bright friendly red-orange eyes, bright red-pink legs and feet, a short fan tail, facing to the right, side view, pecking down at a single small round berry in front of it, beak open to eat, a happy look, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pigeon-eat",
+      "max": 320
+    },
+    {
+      "name": "friends/pigeon-cheer",
+      "prompt": "Pigeon, a cute round New Zealand kerer\u016b wood pigeon, glossy green and bronze-purple head and back feathers, a big snowy white round belly and chest, a short red-orange beak with a pale tip, bright friendly red-orange eyes, bright red-pink legs and feet, a short fan tail, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pigeon-cheer",
+      "max": 320
+    },
+    {
+      "name": "friends/sparrow-sit",
+      "prompt": "Sparrow, a cute small round house sparrow, warm chestnut-brown back with dark streaks, soft grey chest and cheeks, a small dark bib at the throat, a short stubby cone-shaped beak, shiny black eyes, pale pink legs, a short tail, facing to the right, side view, sitting calmly and happily on a bare spot, perched with feet together, wings folded, a small smile, looking ahead, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "sparrow-sit",
+      "max": 320
+    },
+    {
+      "name": "friends/sparrow-eat",
+      "prompt": "Sparrow, a cute small round house sparrow, warm chestnut-brown back with dark streaks, soft grey chest and cheeks, a small dark bib at the throat, a short stubby cone-shaped beak, shiny black eyes, pale pink legs, a short tail, facing to the right, side view, pecking down at a single small round berry in front of it, beak open to eat, a happy look, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "sparrow-eat",
+      "max": 320
+    },
+    {
+      "name": "friends/sparrow-cheer",
+      "prompt": "Sparrow, a cute small round house sparrow, warm chestnut-brown back with dark streaks, soft grey chest and cheeks, a small dark bib at the throat, a short stubby cone-shaped beak, shiny black eyes, pale pink legs, a short tail, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "sparrow-cheer",
+      "max": 320
+    },
+    {
+      "name": "friends/fantail-sit",
+      "prompt": "Fantail, a cute small round New Zealand p\u012bwakawaka fantail, dark grey-brown back, a cream white belly with a dark band across the chest, a white eyebrow stripe, a tiny black beak, bright black eyes, thin dark legs, a big wide tail fanned out like a folding fan with white edges, facing to the right, side view, sitting calmly and happily on a bare spot, perched with feet together, wings folded, a small smile, looking ahead, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "fantail-sit",
+      "max": 320
+    },
+    {
+      "name": "friends/fantail-eat",
+      "prompt": "Fantail, a cute small round New Zealand p\u012bwakawaka fantail, dark grey-brown back, a cream white belly with a dark band across the chest, a white eyebrow stripe, a tiny black beak, bright black eyes, thin dark legs, a big wide tail fanned out like a folding fan with white edges, facing to the right, side view, pecking down at a single small round berry in front of it, beak open to eat, a happy look, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "fantail-eat",
+      "max": 320
+    },
+    {
+      "name": "friends/fantail-cheer",
+      "prompt": "Fantail, a cute small round New Zealand p\u012bwakawaka fantail, dark grey-brown back, a cream white belly with a dark band across the chest, a white eyebrow stripe, a tiny black beak, bright black eyes, thin dark legs, a big wide tail fanned out like a folding fan with white edges, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "fantail-cheer",
+      "max": 320
+    },
+    {
+      "name": "friends/bellbird-sit",
+      "prompt": "Bellbird, a cute small round New Zealand korimako bellbird, olive-green feathers all over, a slightly curved thin dark beak, bright round dark-red eyes, thin dark legs, a rounded tail, a little blue-purple sheen on the wings, facing to the right, side view, sitting calmly and happily on a bare spot, perched with feet together, wings folded, a small smile, looking ahead, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "bellbird-sit",
+      "max": 320
+    },
+    {
+      "name": "friends/bellbird-eat",
+      "prompt": "Bellbird, a cute small round New Zealand korimako bellbird, olive-green feathers all over, a slightly curved thin dark beak, bright round dark-red eyes, thin dark legs, a rounded tail, a little blue-purple sheen on the wings, facing to the right, side view, pecking down at a single small round berry in front of it, beak open to eat, a happy look, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "bellbird-eat",
+      "max": 320
+    },
+    {
+      "name": "friends/bellbird-cheer",
+      "prompt": "Bellbird, a cute small round New Zealand korimako bellbird, olive-green feathers all over, a slightly curved thin dark beak, bright round dark-red eyes, thin dark legs, a rounded tail, a little blue-purple sheen on the wings, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "bellbird-cheer",
+      "max": 320
+    },
+    {
+      "name": "friends/parrot-sit",
+      "prompt": "Parrot, a cute round New Zealand k\u0101k\u0101 forest parrot, olive-brown back feathers, a soft grey-white crown on the head, orange-red cheeks and belly, a strong curved grey hooked beak, bright round friendly eyes, grey-brown legs, a short tail, facing to the right, side view, sitting calmly and happily on a bare spot, perched with feet together, wings folded, a small smile, looking ahead, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "parrot-sit",
+      "max": 320
+    },
+    {
+      "name": "friends/parrot-eat",
+      "prompt": "Parrot, a cute round New Zealand k\u0101k\u0101 forest parrot, olive-brown back feathers, a soft grey-white crown on the head, orange-red cheeks and belly, a strong curved grey hooked beak, bright round friendly eyes, grey-brown legs, a short tail, facing to the right, side view, pecking down at a single small round berry in front of it, beak open to eat, a happy look, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "parrot-eat",
+      "max": 320
+    },
+    {
+      "name": "friends/parrot-cheer",
+      "prompt": "Parrot, a cute round New Zealand k\u0101k\u0101 forest parrot, olive-brown back feathers, a soft grey-white crown on the head, orange-red cheeks and belly, a strong curved grey hooked beak, bright round friendly eyes, grey-brown legs, a short tail, facing to the right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles around, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "parrot-cheer",
+      "max": 320
+    },
+    {
+      "name": "berries/cluster-gold",
+      "prompt": "A single small hanging cluster of five round berries joined to one short green stem, the berries plump and round and all the same size, bunched together in a tidy triangle shape, the whole cluster covered edge to edge in shining yellow gold, vivid mirror-bright polished metal with strong gleaming highlights and reflections, every berry gold, one small green leaf at the stem. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "berries",
+      "file": "gold",
+      "max": 192,
+      "tints": {
+        "green": "green",
+        "bronze": "bronze",
+        "silver": "silver"
+      }
+    },
+    {
+      "name": "berries/golden-branch",
+      "prompt": "The Golden Berry Branch, a short curved wooden twig branch with a few green leaves, hung with a row of five round plump berries made of vivid mirror-bright polished metal in shining yellow gold with strong gleaming highlights and reflections, resting on a small plain plump red velvet cushion with gold tassels at its corners, a prize, wide. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        640
+      ],
+      "kind": "cut",
+      "folder": "berries",
+      "file": "golden-branch",
+      "max": 480
+    },
+    {
+      "name": "back/bronze",
+      "prompt": "A wide soft view of a leafy New Zealand native bush tree canopy seen from the front, big green leaves and thin branches framing the left, right and bottom edges, a calm, plain, uncluttered open middle area of soft sky and gentle blurred leaves so things placed on top stand out, a bright warm morning, soft blue sky, fresh green leaves. Empty background scenery for a children's game, calm soft colours in the middle. No birds, no berries. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "bronze"
+    },
+    {
+      "name": "back/silver",
+      "prompt": "A wide soft view of a leafy New Zealand native bush tree canopy seen from the front, big green leaves and thin branches framing the left, right and bottom edges, a calm, plain, uncluttered open middle area of soft sky and gentle blurred leaves so things placed on top stand out, soft silvery light, a pale silvery-blue sky, bright silver glints on the leaves and dew drops at the edges. Empty background scenery for a children's game, calm soft colours in the middle. No birds, no berries. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "silver"
+    },
+    {
+      "name": "back/gold",
+      "prompt": "A wide soft view of a leafy New Zealand native bush tree canopy seen from the front, big green leaves and thin branches framing the left, right and bottom edges, a calm, plain, uncluttered open middle area of soft sky and gentle blurred leaves so things placed on top stand out, a warm golden evening, the sky orange and gold, golden light on the leaves and golden glints at the edges. Empty background scenery for a children's game, calm soft colours in the middle. No birds, no berries. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "gold"
+    },
+    {
+      "name": "card",
+      "prompt": "Pigeon, a cute round New Zealand kerer\u016b wood pigeon, glossy green and bronze-purple feathers, a big snowy white round belly, red-orange beak, bright red-orange eyes, red-pink feet, sitting on a long curved tree branch in a sunny leafy New Zealand bush, five shining gold berry clusters and a few green berry clusters hanging along the branch beneath it, wide landscape picture for a game, the bird on the left, calm open sky on the right.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "pigeon"
+    }
+  ]
+}
