@@ -9,6 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import type { Tap } from '../../../shared/weka/play';
 import { DAYS_PER_BASKET, STONES, streamAfter } from '../../../shared/weka/progress';
 import type { Round } from '../../../shared/weka/round';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -191,23 +192,13 @@ function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) 
   const main = result.goldenBasket ? WORDS.goldenBasket(name) : changed ? WORDS.stoneTurned(changed) : WORDS.doneToday;
   const up = result.level !== result.levelBefore ? result.level : null;
   const line = finishLine(main, up);
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    heading.current?.focus();
-    say(line);
-  }, [say, line]);
   const cushion = paint('things/golden-basket-cushion');
   return (
     <div className={`wk-home${result.goldenBasket ? ' wk-home--prize' : ''}`}>
       <Stream scenery={result.goldenBasket ? 'gold' : stream.today} stones={stones} friend={stream.friend} pose="cheer" />
-      <div className="wk-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {up && <p className="wk-chip">{WORDS.levelUp(up)}</p>}
+      <WhatsNext prefix="wk" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
         {result.goldenBasket && (cushion ? <img className="wk-prize" src={cushion} alt="The Golden Picnic Basket" /> : <span className="wk-prize" role="img" aria-label="The Golden Picnic Basket"><Basket /></span>)}
-        <button type="button" className="button button--play wk-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+      </WhatsNext>
     </div>
   );
 }

@@ -27,6 +27,9 @@
  */
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { helpWithSetting, STRUGGLE_GOES } from '../../../shared/kit/help';
+import { HearAgain } from '../../kit/HearAgain';
+import { PointingHand, pointedLabel } from '../../kit/PointingHand';
+import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
 import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Round } from '../../../shared/weka/round';
@@ -100,7 +103,6 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const [pos, setPos] = useState(0);
   const [lit, setLit] = useState<number[]>([]);
   const [pose, setPose] = useState<Pose>('wait');
-  const [guidePoint, setGuidePoint] = useState(false);
   /** The split after a right answer: how many parts are filled in (0, 1, 2), and wrong taps on the current part. */
   const [bond, setBond] = useState(0);
   const [bondWrongs, setBondWrongs] = useState(0);
@@ -123,6 +125,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const pathRef = useRef<HTMLDivElement>(null);
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
   const clearTimers = () => {
+    guideHand.stop();
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
   };
@@ -130,6 +133,8 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const guided = guide && at === 0;
+  /** The hand on the very first go: it starts pointing after GUIDE_MS and stops when the child moves on. */
+  const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
   const start: Help = boost || guided ? 'full' : helpFor(go.h, setting);
   const twoStep = start === 'full';
   const splitFirst = start === 'split';
@@ -158,9 +163,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setPos(go.from);
     setPose('wait');
     setLit([]);
-    setGuidePoint(false);
+    guideHand.stop();
     askAloud(s === 'toTen' ? toTenLine(go, guided) : s === 'split' ? splitFirstLine(go) : askLine(go, guided));
-    if (guided) later(GUIDE_MS, () => setGuidePoint(true));
+    guideHand.start();
     return () => {
       asking.current++;
     };
@@ -210,13 +215,12 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       if (n !== go.toTen) return wrong(n);
       clearTimers();
       setWrongs(0);
-      setGuidePoint(false);
       setLit([]);
       if (sound) playSound('tap');
       hopTo(go.from, 10, () => {
         setStep('answer');
         askAloud(fromTenLine(go));
-        if (guided) later(GUIDE_MS, () => setGuidePoint(true));
+        guideHand.start();
       });
       return;
     }
@@ -321,7 +325,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
   const choices = step === 'toTen' ? go.toTenChoices : go.choices;
   const target = step === 'toTen' ? go.toTen : go.answer;
-  const pointAt = phase === 'ask' && ((guided && guidePoint) || wrongs >= 3) ? target : null;
+  const pointAt = phase === 'ask' && (guideHand.pointing || wrongs >= 3) ? target : null;
   const lastGo = at + 1 >= goes.length;
   const made = at + (phase === 'ask' ? 0 : 1);
   const style = { ...backFor(scenery) } as CSSProperties;
@@ -347,9 +351,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
             <span key={i} className={i < made ? 'wk-pip wk-pip--done' : 'wk-pip'} />
           ))}
         </div>
-        <button type="button" className="wk-button" onClick={() => say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))}>
-          <span aria-hidden="true">👂</span> {WORDS.hearAgain}
-        </button>
+        <HearAgain prefix="wk" label={WORDS.hearAgain} onHear={() => say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))} />
       </div>
       {phase !== 'pebbles' && <p className="wk-ask" aria-live="polite">{ask}</p>}
       {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
@@ -406,10 +408,10 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
             type="button"
             className={`wk-choice${wobble === n ? ' wk-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' wk-choice--right' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
             onClick={() => pick(n)}
-            aria-label={`${n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
+            aria-label={pointedLabel(n, n === pointAt, WORDS.guideHere)}
           >
             <Stone metal="grey" value={n} />
-            {n === pointAt && <span className="wk-hand" aria-hidden="true">👆</span>}
+            {n === pointAt && <PointingHand prefix="wk" />}
           </button>
         ))}
       </div>
@@ -526,10 +528,10 @@ function Bond({ go, filled, wrongs, guided, wobble, last, onPick, onNext, first 
               type="button"
               className={`wk-choice${wobble === n ? ' wk-choice--wobble' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
               onClick={() => onPick(n)}
-              aria-label={`${n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
+              aria-label={pointedLabel(n, n === pointAt, WORDS.guideHere)}
             >
               <Stone metal="grey" value={n} />
-              {n === pointAt && <span className="wk-hand" aria-hidden="true">👆</span>}
+              {n === pointAt && <PointingHand prefix="wk" />}
             </button>
           ))}
         </div>
