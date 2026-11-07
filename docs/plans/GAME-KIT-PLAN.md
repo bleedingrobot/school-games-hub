@@ -122,7 +122,7 @@ Built 7 Nov 2026 on branch `kit-models`. Nothing a child sees has changed: no ol
 
 **What should use it next:** the new games. N1 (Kererū's number line) needs `NumberLine` first; N3 and N5 need `TenFrame`; N4 needs `DotPicture` for arrays. The first of them to be built should check the pictures at phone width and add what it needs (for example a zoom lens) as its own small kit change.
 
-## 9. Stage K2 results (7 Nov 2026, branch `kit-mistakes`)
+## 10. Stage K2 results (7 Nov 2026, branch `kit-mistakes`)
 
 **Built:**
 - `shared/kit/mistakes.ts`: wrong choices with a kind (`Wrong`, `tagWrongs`), the check that at most two choices share the right answer's tell (`atMostShareTell`), how far off a total is (`unitsOff`, `kindByUnits`), the near-miss check (`hasNearMiss`), and the two-tap flow of a go as a small state machine (`stepGo`: wrong once shows why, wrong twice is "Let's look together", then "Now you try", where wrong taps show why again but never look again). No game words: each game passes its own kinds and lines.

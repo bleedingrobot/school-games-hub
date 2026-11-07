@@ -62,7 +62,7 @@ describe("Kiwi's Beanstalk play screen", () => {
     const leaf = (n: number) => leaves().find((b) => b.getAttribute('aria-label') === String(n))!;
     const numbers = leaves().map((b) => Number(b.getAttribute('aria-label')));
     const a = numbers.find((n) => n !== 5)!; // a 5's partner is the other 5, which this test's leaf() can't tell apart
-    const [w1, w2] = numbers.filter((n) => n !== a && n + a !== 10);
+    const [w1, w2] = [...new Set(numbers)].filter((n) => n !== a && n + a !== 10);
     const lo = (x: number, y: number) => (x < y ? [x, y] : [y, x]);
 
     // Wrong pair 1: the line says why, and with the first leaf picked again, the tried leaf can't be tapped.
