@@ -85,4 +85,33 @@ describe("Kiwi's Beanstalk play screen", () => {
     await u.click(leaf(10 - a));
     expect(screen.getByLabelText('1 of 10 pairs')).toBeInTheDocument();
   });
+  it('shows this child’s own dots, and brings the full dots back for the rest of the round after three goes in a row that began with a wrong tap (maths review R6)', async () => {
+    localStorage.setItem('beanstalk-voice', 'off');
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { backend, tools } = trialBackend({ storageKey: 'round-test' });
+    await backend.choose('jack');
+    tools.jumpTo(3); // the calendar would say full dots; this child has none
+    tools.setHelp(2);
+    render(<BeanstalkGame backend={backend} />);
+    await u.click(await screen.findByRole('button', { name: 'Play' }));
+    await screen.findByRole('button', { name: 'Hear it again' });
+    const frames = () => document.querySelectorAll('.bs-frame--full').length;
+    const leaves = () => screen.getAllByRole('button').filter((b) => /^\d+$/.test(b.getAttribute('aria-label') ?? ''));
+    const leaf = (n: number) => leaves().find((b) => b.getAttribute('aria-label') === String(n))!;
+    expect(frames()).toBe(0);
+    for (let go = 1; go <= 3; go++) {
+      expect(frames()).toBe(0); // not yet, however many wrong taps there have been in a go
+      const shown = leaves().map((b) => Number(b.getAttribute('aria-label')));
+      const a = shown.find((n) => n !== 5 && shown.includes(10 - n))!;
+      const w = shown.find((n) => n !== a && n !== 10 - a && n !== 5)!;
+      await u.click(leaf(a));
+      await u.click(leaf(w)); // a wrong first tap
+      await u.click(leaf(a));
+      await u.click(leaf(10 - a));
+      await act(() => vi.advanceTimersByTimeAsync(1000));
+    }
+    expect(screen.getByLabelText('3 of 10 pairs')).toBeInTheDocument();
+    expect(frames()).toBeGreaterThan(0);
+  });
 });

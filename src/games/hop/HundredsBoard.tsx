@@ -8,8 +8,13 @@ import { WORDS } from './words';
 
 const NUMBERS = Array.from({ length: 100 }, (_, i) => i + 1);
 
-export function HundredsBoard() {
-  const [open, setOpen] = useState(false);
+/**
+ * `counting` (set while Hop counts the row in "Let's look together"): the board is shown open with these numbers lit, in
+ * gold, as well as the ones the child lit. They go when the counting ends.
+ */
+export function HundredsBoard({ counting = null }: { counting?: readonly number[] | null }) {
+  const [openByChild, setOpen] = useState(false);
+  const open = openByChild || counting !== null;
   const [lit, setLit] = useState<ReadonlySet<number>>(new Set());
   const toggle = (n: number) =>
     setLit((was) => {
@@ -20,7 +25,7 @@ export function HundredsBoard() {
 
   return (
     <>
-      <button type="button" className="hp-button hp-board-toggle" aria-expanded={open} aria-controls="hp-board" onClick={() => setOpen(!open)}>
+      <button type="button" className="hp-button hp-board-toggle" aria-expanded={open} aria-controls="hp-board" onClick={() => setOpen(!openByChild)}>
         <span aria-hidden="true">🔢 </span>
         {open ? WORDS.boardHide : WORDS.boardShow}
       </button>
@@ -31,7 +36,7 @@ export function HundredsBoard() {
               <button
                 key={n}
                 type="button"
-                className={`hp-board__cell${lit.has(n) ? ' hp-board__cell--lit' : ''}${n % 10 === 0 ? ' hp-board__cell--ten' : ''}`}
+                className={`hp-board__cell${lit.has(n) || counting?.includes(n) ? ' hp-board__cell--lit' : ''}${n % 10 === 0 ? ' hp-board__cell--ten' : ''}`}
                 aria-pressed={lit.has(n)}
                 onClick={() => toggle(n)}
               >

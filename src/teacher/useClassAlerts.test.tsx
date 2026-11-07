@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RosterStudent } from '../data/classOverview';
 import type { GameDefinition, TeacherAlert } from '../games/types';
 
-const data = vi.hoisted(() => ({ fetchClassOverview: vi.fn(), fetchWarpRequests: vi.fn(async () => []) }));
+const data = vi.hoisted(() => ({ fetchClassOverview: vi.fn(), fetchWarpRequests: vi.fn(async () => []), quickLooksAlerts: vi.fn() }));
+vi.mock('./foundational/alerts', () => ({ GRID_SECTION: 'maths/foundational', quickLooksAlerts: data.quickLooksAlerts }));
 vi.mock('../data/classOverview', async (original) => ({ ...(await original<typeof import('../data/classOverview')>()), fetchClassOverview: data.fetchClassOverview }));
 vi.mock('../data/classes', async (original) => ({ ...(await original<typeof import('../data/classes')>()), fetchWarpRequests: data.fetchWarpRequests }));
 
@@ -21,6 +22,8 @@ const monstersAlert: TeacherAlert = { id: 'monsters:Otter', text: 'Maths Monster
 beforeEach(() => {
   data.fetchClassOverview.mockReset();
   data.fetchClassOverview.mockResolvedValue([]);
+  data.quickLooksAlerts.mockReset();
+  data.quickLooksAlerts.mockResolvedValue([]);
 });
 
 describe('NeedsYou with alerts', () => {
@@ -91,5 +94,24 @@ describe('useClassAlerts', () => {
     const games = [fake('monsters', async () => [monstersAlert])];
     const { result } = renderHook(() => useClassAlerts('c1', games));
     await waitFor(() => expect(result.current).toEqual([monstersAlert]));
+  });
+
+  it('adds the Quick looks line from the class data', async () => {
+    const line: TeacherAlert = { id: 'foundational-quick-looks', text: 'Quick looks: 3 pupils under 60% right on their last 20 pictures (A, B, C)', section: 'maths/foundational' };
+    data.quickLooksAlerts.mockResolvedValue([line]);
+    const { result } = renderHook(() => useClassAlerts('c1', NO_GAMES));
+    await waitFor(() => expect(result.current).toEqual([line]));
+    expect(data.quickLooksAlerts).toHaveBeenCalledWith('c1');
+  });
+
+  it('keeps Foundational lines to 5, folds the rest into "and N more", and leaves other alerts alone', async () => {
+    const line = (n: number): TeacherAlert => ({ id: `foundational-g${n}`, text: `Game ${n}: 2 pupils`, section: 'maths/foundational' });
+    const games = [fake('a', async () => [line(1), line(2), line(3), line(4)]), fake('monsters', async () => [monstersAlert]), fake('b', async () => [line(5), line(6), line(7)])];
+    const { result } = renderHook(() => useClassAlerts('c1', games));
+    await waitFor(() => expect(result.current.length).toBeGreaterThan(0));
+    const texts = result.current.map((a) => a.text);
+    expect(texts.filter((t) => t.startsWith('Game '))).toHaveLength(5);
+    expect(texts).toContain(monstersAlert.text);
+    expect(result.current.at(-1)).toEqual({ id: 'foundational-more', text: 'and 2 more Foundational skills alerts', section: 'maths/foundational' });
   });
 });

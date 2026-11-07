@@ -4,7 +4,7 @@
  * the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/korora/progress';
-import { LEVELS, levelKeys, parseKey, spokenFor, fairKeys, type Go, type Level } from '../../../shared/korora/round';
+import { LEVELS, levelKeys, parseKey, spokenFor, fairKeys, type Go, type Level, type WrongKind } from '../../../shared/korora/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -23,13 +23,27 @@ export function goLine(go: Pick<Go, 'kind' | 'n'>, guided: boolean, afterDouble:
   return spokenFor(go.kind, go.n, guided);
 }
 
+/** Why a wrong stone is wrong, by its kind (maths review R5). The lines name the fact, never the wrong number. */
+export function whyLine(go: Pick<Go, 'kind' | 'n'>, kind: WrongKind): string {
+  const w = WORDS.why;
+  switch (kind) {
+    case 'same': return w.same(go.n);
+    case 'plus1': return w.plus1;
+    case 'plus2': return w.plus2(go.n);
+    case 'all': return w.all;
+    case 'minus2': return w.minus2;
+    case 'double': return w.double;
+    case 'miscount': return go.kind === 'double' ? w.miscountDouble : w.miscountHalf;
+  }
+}
+
 /** What the finish screen says, with "next time: halves to 10" when the child moved up a level. */
 export function finishLine(main: string, levelUp: Level | null): string {
   return levelUp ? `${main} ${WORDS.levelUp(levelUp)}` : main;
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -44,6 +58,15 @@ export function allVoiceLines(): string[] {
     if (fact.kind === 'half' && fact.n <= 20) lines.add(goLine(fact, false, true));
     if (fact.kind !== 'fair') lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.n / 2));
   }
+  // Mistakes that teach (maths review R5): why a wrong stone is wrong, and the whole go explained after a second wrong tap.
+  // The why-lines name the fact (n of 1 to 10 for doubles), never the wrong number; plus2 starts at 3 (a double of 1 or 2 is not n + 2).
+  for (let n = 1; n <= 10; n++) {
+    lines.add(WORDS.why.same(n));
+    if (n >= 3) lines.add(WORDS.why.plus2(n));
+    lines.add(WORDS.lookDouble(n));
+    lines.add(WORDS.lookHalf(2 * n));
+  }
+  for (const line of [WORDS.why.plus1, WORDS.why.miscountDouble, WORDS.why.all, WORDS.why.miscountHalf, WORDS.why.minus2, WORDS.why.double]) lines.add(line);
   // Bella counts along with the child: up to 20 fish.
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
   const shoes = (['bronze', 'silver', 'gold'] as const).flatMap((m) => Object.values(FRIEND_NAMES).map((name) => WORDS.shoesWon(m, name)));

@@ -47,7 +47,8 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
     random: options.random ?? Math.random,
     settings: async () => (options.settings ? options.settings() : { enabled: true, dots: true }),
     async load(player) {
-      return copy(data.players[player] ?? unplayed());
+      // `{ ...unplayed() }` first: a trial pupil saved before the dots followed the child has no help yet.
+      return { ...unplayed(), ...copy(data.players[player] ?? unplayed()) };
     },
     async choose(player, child) {
       const s = data.players[player] ?? unplayed();

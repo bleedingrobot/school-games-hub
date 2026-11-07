@@ -5,7 +5,7 @@
  */
 import { NextPartChip } from '../../components/NextPartChip';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
+import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
 import type { Tap } from '../../../shared/beanstalk/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
@@ -122,7 +122,7 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then(
       (result) => {
-        setState((s) => s && { ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay });
+        setState((s) => s && { ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, help: result.help });
         setScreen({ kind: 'finish', result });
         if (soundOn) playSound(result.egg ? 'win' : 'badge');
       },
@@ -137,7 +137,8 @@ export function BeanstalkGame({ backend, onExit, extra }: Props) {
     body = (
       <Round
         seed={screen.seed}
-        dots={state.dots ? stalkAfter(state.daysDone).dots : 'none'}
+        dots={shownDots(state.help, state.dots)}
+        canBoost={state.dots}
         stalkLeaves={stalkAfter(state.daysDone).leaves}
         trayMetal={METALS[Math.floor(stalkAfter(state.daysDone).day / LEAVES_ON_STALK)]}
         friend={stalkAfter(state.daysDone).friend}

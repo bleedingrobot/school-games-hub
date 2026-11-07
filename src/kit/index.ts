@@ -3,3 +3,8 @@ export { TenFrame, frameSquares, type Square, type SquareCounts, type TenFramePr
 export { NumberLine, lineX, lineTicks, valueAtX, type Lens, type Arc, type Landmark, type LinePoint, type NumberLineProps, type LineColor } from './NumberLine';
 export { DotPicture, gridDots, type PictureDot, type PictureFrame, type DotPictureProps, type PictureColor } from './DotPicture';
 export { kitColor, type KitColors } from './colors';
+export { HearAgain } from './HearAgain';
+export { PointingHand, pointedLabel } from './PointingHand';
+export { useGuidedFirstGo } from './useGuidedFirstGo';
+export { WhatsNext } from './WhatsNext';
+export { FirstTimeTip } from './FirstTimeTip';

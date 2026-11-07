@@ -3,10 +3,10 @@
  * school server is reached through src/data/beanstalk.ts; the trial backend below runs the very same rules in this
  * browser for the preview. `fromServer` turns either one's replies into what the screens use.
  */
-import type { FinishResult } from '../../../shared/beanstalk/progress';
+import type { HelpLevel } from '../../../shared/beanstalk/progress';
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/beanstalk/memoryServices';
 import type { Tap } from '../../../shared/beanstalk/round';
-import { handleBeanstalk, type BeanstalkReply, type Child } from '../../../shared/beanstalk/server';
+import { handleBeanstalk, type BeanstalkReply, type Child, type FinishReply } from '../../../shared/beanstalk/server';
 
 export { isChild, type Child } from '../../../shared/beanstalk/server';
 
@@ -15,6 +15,8 @@ export interface BeanstalkState {
   child: Child | null;
   daysDone: number;
   lastLeafDay: string | null;
+  /** This child's dots: 0 full, 1 small, 2 none. It follows how their challenges go, not the calendar. */
+  help: HelpLevel;
   /** Today's NZ date by the server's clock. */
   today: string;
   /** False when the teacher has turned the leaves' dots off for the class. */
@@ -26,7 +28,7 @@ export interface BeanstalkBackend {
   choose(child: Child): Promise<void>;
   /** Today's challenge: the seed the leaves come from. */
   start(): Promise<{ seed: number }>;
-  finish(seed: number, taps: readonly Tap[]): Promise<FinishResult>;
+  finish(seed: number, taps: readonly Tap[]): Promise<FinishReply>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -51,7 +53,7 @@ export function fromServer(send: Send): BeanstalkBackend {
     load: async () => (await ask({ action: 'load' })) as unknown as BeanstalkState,
     choose: async (child) => void (await ask({ action: 'choose', child })),
     start: async () => (await ask({ action: 'start' })) as unknown as { seed: number },
-    finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as FinishResult,
+    finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as FinishReply,
   };
 }
 
@@ -104,11 +106,17 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
   };
   const tools = {
     nextDay: () => change((s) => void (s.dayShift += 1)),
-    /** Jumps to just after this many finished days, as if each was on its own day. */
+    /** Jumps to just after this many finished days, as if each was on its own day. The dots go where the calendar had them (as the migration does for existing pupils); `setHelp` changes them. */
     jumpTo: (daysDone: number) =>
       change((s) => {
         const p = s.data.players[PUPIL];
-        if (p) s.data.players[PUPIL] = { ...p, daysDone, lastLeafDay: null, version: p.version + 1 };
+        if (p) s.data.players[PUPIL] = { ...p, daysDone, lastLeafDay: null, help: Math.min(2, Math.floor((daysDone % 30) / 10)) as HelpLevel, goodInRow: 0, version: p.version + 1 };
+      }),
+    /** The pretend pupil's own dots: 0 full, 1 small, 2 none. */
+    setHelp: (help: HelpLevel) =>
+      change((s) => {
+        const p = s.data.players[PUPIL];
+        if (p) s.data.players[PUPIL] = { ...p, help, goodInRow: 0, version: p.version + 1 };
       }),
     dotsOn: () => read().dots,
     setDots: (on: boolean) => change((s) => void (s.dots = on)),

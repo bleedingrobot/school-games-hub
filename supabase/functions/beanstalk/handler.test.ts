@@ -73,12 +73,12 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
     const seed = await start('pupil-a');
     return (await send('pupil-a', { action: 'finish', seed, taps: goodTaps(seed), daysDone: 29, leafChanged: 9, egg: true })).body;
   };
-  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false });
+  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false, help: 0 });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect(await finish()).toMatchObject({ daysDone: 1, leafChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
-  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false });
-  expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ child: 'jack', daysDone: 2, today: '2026-11-05', dots: true });
+  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false, help: 1 });
+  expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ child: 'jack', daysDone: 2, today: '2026-11-05', help: 1, dots: true });
   expect(log.eggs).toEqual([]);
   services.data.players['pupil-a'].daysDone = 29;
   hours(24);
@@ -90,6 +90,45 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
   const seed = await start('pupil-a');
   expect((await send('pupil-a', { action: 'finish', seed, taps: goodTaps(seed, true, 100), target: 10 })).body).toMatchObject({ daysDone: 31, leafChanged: 0 });
   expect(log.answers.at(-1)!.answers.every((a) => a.key === 'bond100:tens')).toBe(true);
+});
+
+/** Every go starts with a wrong pair (where one floats): a hard day. */
+function hardTaps(seed: number): Tap[] {
+  const round = makeRound(seed);
+  const taps: Tap[] = [];
+  for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
+    const [a] = r.onScreen;
+    const wrong = r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] !== 10);
+    if (wrong !== undefined) taps.push({ a, b: wrong, ms: 3000 });
+    taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === 10)!, ms: 2500 });
+  }
+  return taps;
+}
+
+it('moves a child’s dots on the day’s first finish only, saves them, and starts them full on a new sum (maths review R6)', async () => {
+  const { send, start, hours, services } = setup();
+  await send('pupil-a', { action: 'choose', child: 'jack' });
+  const finish = async (taps: (seed: number) => Tap[]) => {
+    const seed = await start('pupil-a');
+    return (await send('pupil-a', { action: 'finish', seed, taps: taps(seed) })).body;
+  };
+  const saved = () => services.data.players['pupil-a'];
+  expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ help: 0 });
+  // Day 1 good, then a hard replay the same day: nothing moves. Day 2 good: full to small.
+  expect(await finish(goodTaps)).toMatchObject({ help: 0 });
+  expect(await finish(hardTaps)).toMatchObject({ leafChanged: null, help: 0 });
+  hours(24);
+  expect(await finish(goodTaps)).toMatchObject({ leafChanged: 1, help: 1 });
+  expect(saved()).toMatchObject({ help: 1, goodInRow: 0, daysDone: 2 });
+  // A hard day brings a step back, and the load shows it.
+  hours(24);
+  expect(await finish(hardTaps)).toMatchObject({ help: 0 });
+  expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ help: 0, daysDone: 3 });
+  // The day the egg is won the sum changes: start again at full, even for a child on no dots.
+  Object.assign(saved(), { daysDone: 29, help: 2, goodInRow: 1 });
+  hours(24);
+  expect(await finish(goodTaps)).toMatchObject({ egg: true, help: 0 });
+  expect(saved()).toMatchObject({ daysDone: 30, help: 0, goodInRow: 0 });
 });
 
 describe('the deployable file', () => {

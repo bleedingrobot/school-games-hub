@@ -10,7 +10,23 @@ import './foundational.css';
 
 const LEVEL_KEYS = ['not-started', 'learning', 'secure', 'fluent'] as const;
 
-export function FoundationalGrid({ rows, className }: { rows: readonly PupilRow[]; className: string }) {
+export interface PickedCell {
+  student: string;
+  idea: string;
+}
+
+/** With `onPick`, every cell is a button that opens the facts behind it; without it the grid only shows. */
+export function FoundationalGrid({
+  rows,
+  className,
+  picked,
+  onPick,
+}: {
+  rows: readonly PupilRow[];
+  className: string;
+  picked?: PickedCell | null;
+  onPick?: (cell: PickedCell | null) => void;
+}) {
   return (
     <div className="fg">
       <ul className="fg__legend" aria-label="Key">
@@ -50,20 +66,37 @@ export function FoundationalGrid({ rows, className }: { rows: readonly PupilRow[
                 </th>
                 {row.cells.map((cell) => (
                   <td key={cell.idea.id} className="fg__cell">
-                    {cell.parts.map((part, i) => (
-                      <span key={i} className="fg__mark" data-level={part.level}>
-                        <span aria-hidden="true">{LEVELS[part.level].mark}</span>
-                        <span className="sr-only">
-                          {row.name}, {cell.idea.label}
-                          {part.label ? ` to ${part.label}` : ''}: {LEVELS[part.level].label}
-                        </span>
-                        {part.label && cell.parts.length > 1 && (
-                          <span className="fg__part" aria-hidden="true">
-                            {part.label}
+                    {(() => {
+                      const here = picked?.student === row.id && picked.idea === cell.idea.id;
+                      const marks = cell.parts.map((part, i) => (
+                        <span key={i} className="fg__mark" data-level={part.level}>
+                          <span aria-hidden="true">{LEVELS[part.level].mark}</span>
+                          <span className="sr-only">
+                            {row.name}, {cell.idea.label}
+                            {part.label ? ` to ${part.label}` : ''}: {LEVELS[part.level].label}
                           </span>
-                        )}
-                      </span>
-                    ))}
+                          {part.label && cell.parts.length > 1 && (
+                            <span className="fg__part" aria-hidden="true">
+                              {part.label}
+                            </span>
+                          )}
+                        </span>
+                      ));
+                      return onPick ? (
+                        <button
+                          type="button"
+                          className="fg__open"
+                          aria-pressed={here}
+                          data-picked={here || undefined}
+                          onClick={() => onPick(here ? null : { student: row.id, idea: cell.idea.id })}
+                        >
+                          {marks}
+                          <span className="sr-only">. Press to see the facts</span>
+                        </button>
+                      ) : (
+                        marks
+                      );
+                    })()}
                   </td>
                 ))}
                 <td className="fg__flags">

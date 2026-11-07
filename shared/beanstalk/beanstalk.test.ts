@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAYS_PER_EGG, finishChallenge, stalkAfter } from './progress';
+import { DAYS_PER_EGG, dotsFor, finishChallenge, placeAfter, shownDots, stalkAfter, START_PLACE, type Place } from './progress';
 import { seeded } from '../seededRandom';
 import { bondKey, makeRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
 
@@ -136,10 +136,10 @@ describe('mistakes that teach (maths review R5)', () => {
 
 describe('the magic leaves', () => {
   it('turn bronze, then silver, then gold, bottom leaf first, with an egg and a new friend every 30 days', () => {
-    expect(stalkAfter(0)).toMatchObject({ eggs: 0, friend: 'kiwi', dots: 'full', leaves: Array(10).fill('green') });
+    expect(stalkAfter(0)).toMatchObject({ eggs: 0, friend: 'kiwi', leaves: Array(10).fill('green') });
     expect(stalkAfter(3).leaves.slice(0, 4)).toEqual(['bronze', 'bronze', 'bronze', 'green']);
-    expect(stalkAfter(10)).toMatchObject({ dots: 'small', leaves: Array(10).fill('bronze') });
-    expect(stalkAfter(21)).toMatchObject({ dots: 'none', leaves: ['gold', ...Array(9).fill('silver')] });
+    expect(stalkAfter(10)).toMatchObject({ leaves: Array(10).fill('bronze') });
+    expect(stalkAfter(21)).toMatchObject({ leaves: ['gold', ...Array(9).fill('silver')] });
     expect(stalkAfter(DAYS_PER_EGG)).toMatchObject({ eggs: 1, friend: 'tui', day: 0, leaves: Array(10).fill('green') });
     // Kiwi's pairs make 10, the tūī's 100, the kererū's 1000, then round again (James, 4 Nov 2026).
     expect([0, 1, 2, 3, 4, 5].map((eggs) => stalkAfter(eggs * DAYS_PER_EGG + 7).target)).toEqual([10, 100, 1000, 10, 100, 1000]);
@@ -149,5 +149,35 @@ describe('the magic leaves', () => {
     expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false });
     expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, leafChanged: null });
     expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, leafChanged: 9, egg: true });
+  });
+});
+
+describe('the dots follow the child, not the calendar (maths review R6)', () => {
+  const counted = { leafChanged: 0, egg: false };
+
+  it('fade after two good days in a row, come back after a hard day, and stay put on a middling day', () => {
+    // Two days of 8 or more first-time pairs: full to small, then (two more) small to none, and none stays none.
+    let place: Place = START_PLACE;
+    place = placeAfter(place, 10, counted);
+    expect(place).toEqual({ help: 0, goodInRow: 1 });
+    place = placeAfter(place, 8, counted);
+    expect(place).toEqual({ help: 1, goodInRow: 0 });
+    place = placeAfter(placeAfter(place, 9, counted), 10, counted);
+    expect(dotsFor(place.help)).toBe('none');
+    expect(placeAfter(placeAfter(place, 10, counted), 10, counted).help).toBe(2);
+    // A hard day (4 or fewer) brings one step back at once; 5 to 7 neither fades nor returns, and breaks the run of good days.
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 4, counted)).toEqual({ help: 1, goodInRow: 0 });
+    expect(placeAfter({ help: 0, goodInRow: 0 }, 1, counted).help).toBe(0);
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 6, counted)).toEqual({ help: 1, goodInRow: 0 });
+    // A child who struggles keeps their help on day 21 of the beanstalk, and one who knows it all loses it on day 3.
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 10, counted).help).toBe(2);
+  });
+
+  it('start again at full dots on a new sum, never move on a replay, and lose to the teacher’s dots switch', () => {
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 10, { leafChanged: 9, egg: true })).toEqual(START_PLACE);
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 10, { leafChanged: null, egg: false })).toEqual({ help: 1, goodInRow: 1 });
+    expect(placeAfter({ help: 1, goodInRow: 0 }, 0, { leafChanged: null, egg: false })).toEqual({ help: 1, goodInRow: 0 });
+    expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, true))).toEqual(['full', 'small', 'none']);
+    expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, false))).toEqual(['none', 'none', 'none']);
   });
 });

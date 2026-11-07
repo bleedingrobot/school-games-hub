@@ -4,8 +4,12 @@
   "text": "Try again!"
  },
  {
-  "slug": "let-s-count-them-together",
-  "text": "Let’s count them together."
+  "slug": "let-s-look-together",
+  "text": "Let’s look together."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try."
  },
  {
   "slug": "yes-they-share-them-fairly",
@@ -374,6 +378,182 @@
  {
   "slug": "20-fish-can-the-two-chicks-share-them-fairly",
   "text": "20 fish. Can the two chicks share them fairly?"
+ },
+ {
+  "slug": "double-1-is-1-and-1-again",
+  "text": "Double 1 is 1 and 1 again."
+ },
+ {
+  "slug": "double-1-is-1-fish-and-1-fish-in-the-water-count-them-all-2",
+  "text": "Double 1 is 1 fish and 1 fish in the water. Count them all: 2."
+ },
+ {
+  "slug": "share-2-fish-one-for-you-and-one-for-me-count-one-chick-s-share-1",
+  "text": "Share 2 fish, one for you and one for me. Count one chick’s share: 1."
+ },
+ {
+  "slug": "double-2-is-2-and-2-again",
+  "text": "Double 2 is 2 and 2 again."
+ },
+ {
+  "slug": "double-2-is-2-fish-and-2-fish-in-the-water-count-them-all-4",
+  "text": "Double 2 is 2 fish and 2 fish in the water. Count them all: 4."
+ },
+ {
+  "slug": "share-4-fish-one-for-you-and-one-for-me-count-one-chick-s-share-2",
+  "text": "Share 4 fish, one for you and one for me. Count one chick’s share: 2."
+ },
+ {
+  "slug": "double-3-is-3-and-3-again",
+  "text": "Double 3 is 3 and 3 again."
+ },
+ {
+  "slug": "double-3-is-two-lots-of-3-not-3-and-2",
+  "text": "Double 3 is two lots of 3, not 3 and 2."
+ },
+ {
+  "slug": "double-3-is-3-fish-and-3-fish-in-the-water-count-them-all-6",
+  "text": "Double 3 is 3 fish and 3 fish in the water. Count them all: 6."
+ },
+ {
+  "slug": "share-6-fish-one-for-you-and-one-for-me-count-one-chick-s-share-3",
+  "text": "Share 6 fish, one for you and one for me. Count one chick’s share: 3."
+ },
+ {
+  "slug": "double-4-is-4-and-4-again",
+  "text": "Double 4 is 4 and 4 again."
+ },
+ {
+  "slug": "double-4-is-two-lots-of-4-not-4-and-2",
+  "text": "Double 4 is two lots of 4, not 4 and 2."
+ },
+ {
+  "slug": "double-4-is-4-fish-and-4-fish-in-the-water-count-them-all-8",
+  "text": "Double 4 is 4 fish and 4 fish in the water. Count them all: 8."
+ },
+ {
+  "slug": "share-8-fish-one-for-you-and-one-for-me-count-one-chick-s-share-4",
+  "text": "Share 8 fish, one for you and one for me. Count one chick’s share: 4."
+ },
+ {
+  "slug": "double-5-is-5-and-5-again",
+  "text": "Double 5 is 5 and 5 again."
+ },
+ {
+  "slug": "double-5-is-two-lots-of-5-not-5-and-2",
+  "text": "Double 5 is two lots of 5, not 5 and 2."
+ },
+ {
+  "slug": "double-5-is-5-fish-and-5-fish-in-the-water-count-them-all-10",
+  "text": "Double 5 is 5 fish and 5 fish in the water. Count them all: 10."
+ },
+ {
+  "slug": "share-10-fish-one-for-you-and-one-for-me-count-one-chick-s-share-5",
+  "text": "Share 10 fish, one for you and one for me. Count one chick’s share: 5."
+ },
+ {
+  "slug": "double-6-is-6-and-6-again",
+  "text": "Double 6 is 6 and 6 again."
+ },
+ {
+  "slug": "double-6-is-two-lots-of-6-not-6-and-2",
+  "text": "Double 6 is two lots of 6, not 6 and 2."
+ },
+ {
+  "slug": "double-6-is-6-fish-and-6-fish-in-the-water-count-them-all-12",
+  "text": "Double 6 is 6 fish and 6 fish in the water. Count them all: 12."
+ },
+ {
+  "slug": "share-12-fish-one-for-you-and-one-for-me-count-one-chick-s-share-6",
+  "text": "Share 12 fish, one for you and one for me. Count one chick’s share: 6."
+ },
+ {
+  "slug": "double-7-is-7-and-7-again",
+  "text": "Double 7 is 7 and 7 again."
+ },
+ {
+  "slug": "double-7-is-two-lots-of-7-not-7-and-2",
+  "text": "Double 7 is two lots of 7, not 7 and 2."
+ },
+ {
+  "slug": "double-7-is-7-fish-and-7-fish-in-the-water-count-them-all-14",
+  "text": "Double 7 is 7 fish and 7 fish in the water. Count them all: 14."
+ },
+ {
+  "slug": "share-14-fish-one-for-you-and-one-for-me-count-one-chick-s-share-7",
+  "text": "Share 14 fish, one for you and one for me. Count one chick’s share: 7."
+ },
+ {
+  "slug": "double-8-is-8-and-8-again",
+  "text": "Double 8 is 8 and 8 again."
+ },
+ {
+  "slug": "double-8-is-two-lots-of-8-not-8-and-2",
+  "text": "Double 8 is two lots of 8, not 8 and 2."
+ },
+ {
+  "slug": "double-8-is-8-fish-and-8-fish-in-the-water-count-them-all-16",
+  "text": "Double 8 is 8 fish and 8 fish in the water. Count them all: 16."
+ },
+ {
+  "slug": "share-16-fish-one-for-you-and-one-for-me-count-one-chick-s-share-8",
+  "text": "Share 16 fish, one for you and one for me. Count one chick’s share: 8."
+ },
+ {
+  "slug": "double-9-is-9-and-9-again",
+  "text": "Double 9 is 9 and 9 again."
+ },
+ {
+  "slug": "double-9-is-two-lots-of-9-not-9-and-2",
+  "text": "Double 9 is two lots of 9, not 9 and 2."
+ },
+ {
+  "slug": "double-9-is-9-fish-and-9-fish-in-the-water-count-them-all-18",
+  "text": "Double 9 is 9 fish and 9 fish in the water. Count them all: 18."
+ },
+ {
+  "slug": "share-18-fish-one-for-you-and-one-for-me-count-one-chick-s-share-9",
+  "text": "Share 18 fish, one for you and one for me. Count one chick’s share: 9."
+ },
+ {
+  "slug": "double-10-is-10-and-10-again",
+  "text": "Double 10 is 10 and 10 again."
+ },
+ {
+  "slug": "double-10-is-two-lots-of-10-not-10-and-2",
+  "text": "Double 10 is two lots of 10, not 10 and 2."
+ },
+ {
+  "slug": "double-10-is-10-fish-and-10-fish-in-the-water-count-them-all-20",
+  "text": "Double 10 is 10 fish and 10 fish in the water. Count them all: 20."
+ },
+ {
+  "slug": "share-20-fish-one-for-you-and-one-for-me-count-one-chick-s-share-10",
+  "text": "Share 20 fish, one for you and one for me. Count one chick’s share: 10."
+ },
+ {
+  "slug": "double-means-the-same-again-not-one-more",
+  "text": "Double means the same again, not one more."
+ },
+ {
+  "slug": "count-every-fish-the-rock-and-the-water-one-at-a-time",
+  "text": "Count every fish, the rock and the water, one at a time."
+ },
+ {
+  "slug": "that-is-all-the-fish-half-is-one-chick-s-share",
+  "text": "That is all the fish. Half is one chick’s share."
+ },
+ {
+  "slug": "share-them-out-one-for-you-and-one-for-me-then-count-one-share",
+  "text": "Share them out, one for you and one for me. Then count one share."
+ },
+ {
+  "slug": "half-means-two-equal-groups",
+  "text": "Half means two equal groups."
+ },
+ {
+  "slug": "half-is-smaller-the-pile-goes-into-two-nests",
+  "text": "Half is smaller. The pile goes into two nests."
  },
  {
   "slug": "11",

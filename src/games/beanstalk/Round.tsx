@@ -11,7 +11,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, wrongFirstRun, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
@@ -39,7 +40,10 @@ const WOBBLE_MS = 500;
 
 interface Props {
   seed: number;
+  /** The dots this child sees to start: their own help, or none when the teacher has turned the dots off. */
   dots: Dots;
+  /** False when the teacher has turned the dots off: then three wrong first taps in a row don't bring them back. */
+  canBoost?: boolean;
   /** The magic leaves' colours now, bottom first: the stalk shows them as it grows. */
   stalkLeaves: Metal[];
   /** The floating leaves' colour: the colour every magic leaf has reached (green, bronze or silver). */
@@ -60,12 +64,14 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, child, guide, bridge = false, sound, say, onDone }: Props) {
+export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, friend, target, child, guide, bridge = false, sound, say, onDone }: Props) {
   const round = useMemo(() => makeRound(seed, target), [seed, target]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
   const [flying, setFlying] = useState<number[]>([]);
+  /** Three goes in a row began with a wrong tap: full dots for the rest of this round (not saved; the child's own help is). */
+  const [boosted, setBoosted] = useState(false);
   const [wobble, setWobble] = useState<number[]>([]);
   /** The last wrong pair, shown joined with its why-line until the next pair is tapped. */
   const [why, setWhy] = useState<{ a: number; b: number } | null>(null);
@@ -170,7 +176,12 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
     setPicked(null);
     const pair = [picked, leaf];
     setFlying(pair);
-    say(WORDS.right(x, y));
+    // Each go is scored at its first tap: three in a row wrong bring the full dots back, and the line says so once.
+    const struggling = canBoost && !boosted && dots !== 'full' && wrongFirstRun(replay(round, next).answers) >= STRUGGLE_GOES;
+    if (struggling) {
+      setBoosted(true);
+      say(WORDS.right(x, y), () => say(WORDS.dotsBack));
+    } else say(WORDS.right(x, y));
     if (sound) playSound('hop');
     later(FLY_MS, () => {
       const after = replay(round, next);
@@ -260,7 +271,7 @@ export function Round({ seed, dots, stalkLeaves, trayMetal, friend, target, chil
               key={leaf}
               value={round.leaves[leaf]}
               step={target / 10}
-              dots={dots}
+              dots={boosted ? 'full' : dots}
               metal={trayMetal}
               look={lookOf(leaf)}
               slot={slot}

@@ -157,3 +157,32 @@
 .fg__flaglist li[data-quiet] {
   color: var(--ink-soft);
 }
+
+/* A cell that opens its facts is a plain button around the marks. */
+.fg__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.fg__open:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 1px;
+}
+.fg__open[data-picked] {
+  box-shadow: 0 0 0 2px var(--ink, #1f2937);
+}
+.fg-page__detail {
+  margin-top: 12px;
+}
+.fg-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}

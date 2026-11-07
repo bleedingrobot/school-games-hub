@@ -3,20 +3,20 @@
  * The function (supabase/functions/beanstalk/handler.ts) checks the sign-in and the rate first; the preview's trial
  * backend calls this with services that keep everything in the browser, so both run exactly the same rules.
  *
- *   load    the pupil's beanstalk (a new pupil has none), the class's dots setting and today's NZ date by the server's clock;
+ *   load    the pupil's beanstalk (a new pupil has none), their dots help, the class's dots setting and today's NZ date by the server's clock;
  *   choose  be Jack or Jill;
  *   start   makes today's challenge from a fresh seed and keeps it (any other open challenge is closed);
  *   finish  replays the taps on the server's own round (its sum, 10, 100 or 1000, from the saved beanstalk), records
  *           the first tap of each go for the maths records (a wrong pair counts against the first leaf's pair; taps
  *           after it in the go are not scored, maths review R5), and changes a leaf on
- *           the first finish of the NZ day. A Golden Egg is an
+ *           the first finish of the NZ day, and moves the child's dots help on that same finish (placeAfter, R6). A Golden Egg is an
  *           achievement (Stage 4's migration counts eggs from the finished days).
  *
  * Nothing that counts comes from the browser: the seed is the server's, the round is made again from it, the day is the
  * server's clock, and the leaves come from the saved count of finished days. A challenge finishes once.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { finishChallenge, nzDate, stalkAfter } from './progress';
+import { finishChallenge, nzDate, placeAfter, stalkAfter, type FinishResult, type HelpLevel } from './progress';
 import { makeRound, MAX_SEED, isSeed, replay, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
@@ -31,6 +31,15 @@ export interface Progress {
   daysDone: number;
   /** The NZ day ('2026-11-04') a leaf last changed. */
   lastLeafDay: string | null;
+  /** The leaves' dots for this child: 0 full, 1 small, 2 none (R6). Moves with how the day's first challenge went. */
+  help: HelpLevel;
+  /** Good challenges in a row so far (two take the dots down a step). */
+  goodInRow: number;
+}
+
+/** What `finish` replies: the leaf and egg news, and the dots for the next challenge. */
+export interface FinishReply extends FinishResult {
+  help: HelpLevel;
 }
 
 export interface Saved extends Progress {
@@ -38,7 +47,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, version: 0 });
+export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, version: 0 });
 
 /** The class's settings for the game (null if they can't be read). */
 export interface Settings {
@@ -108,7 +117,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
   if (body.action === 'load') {
     const s = await services.load(player);
     if (s === 'busy') return busy();
-    return ok({ child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), dots: settings.dots });
+    return ok({ child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, dots: settings.dots });
   }
 
   if (body.action === 'choose') {
@@ -152,7 +161,9 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
       }
       if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
       const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
-      const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay };
+      // The dots follow the child: counted from the pairs right at the first tap, on the day's first finish only.
+      const place = placeAfter({ help: s.help, goodInRow: s.goodInRow }, played.answers.filter((a) => a.correct).length, result);
+      const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place };
       const kept = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (kept === 'busy') return busy();
       if (kept) {
@@ -160,7 +171,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
         const at = services.now();
         await services.recordAnswers(player, `beanstalk:${seed}`, played.answers.map((a) => ({ ...a, at })));
         if (result.egg) await services.progressChanged(player);
-        return ok({ ...result });
+        return ok({ ...result, help: place.help });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

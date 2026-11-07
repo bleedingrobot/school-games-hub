@@ -43,6 +43,7 @@ const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 const SetFocus = lazy(() => import('./pages/SetFocus'));
 // The skill map does too (it colours cells with the same maths the games use).
 const SkillMap = lazy(() => import('./pages/SkillMap'));
+const FoundationalSkills = lazy(() => import('./teacher/foundational/FoundationalSkills'));
 // So does the warm-up that finds a student's starting place.
 const Placement = lazy(() => import('./pages/Placement'));
 // The skipped-questions tables, on the teacher's Maths tab.
@@ -80,6 +81,7 @@ export function teacherRoutes() {
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />
           <Route path="skips" element={<Suspense fallback={loading}><QuestionSkipsPanel /></Suspense>} />
           <Route path="hardest" element={<HardestQuestions />} />
+          <Route path="foundational" element={<Suspense fallback={loading}><FoundationalSkills /></Suspense>} />
         </Route>
         <Route path="games" element={<TeacherGames />}>
           {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}

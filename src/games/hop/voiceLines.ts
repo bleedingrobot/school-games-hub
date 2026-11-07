@@ -29,12 +29,18 @@ export function finishLine(main: string, stepUp: SkipStep | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
       lines.add(homeLine(title, true));
     }
+  }
+  // Mistakes that teach (maths review R5): the line for each kind of wrong glow-worm that is the same for every hop, one
+  // for each step; the lines that name a hop's own numbers come with the hops below.
+  for (const step of STEPS) {
+    lines.add(WORDS.why('step', step, 0, 0, false));
+    for (const kind of ['stay', 'far', 'way'] as const) lines.add(WORDS.why(kind, step, 0, 0, false));
   }
   // Every hop the shared pack can make, at every place the gap can be. Only up and next hops can come first.
   for (const step of STEPS) {
@@ -46,6 +52,10 @@ export function allVoiceLines(): string[] {
         lines.add(hopLine(hop.spoken, false));
         if (!key.includes(':back:')) lines.add(hopLine(hop.spoken, true));
         lines.add(WORDS.yes(answer));
+        // One more or less than the answer: "30, then 10 more is 40." (the same for a hop at any place of the gap), and the
+        // whole row counted to the answer in "Let's look together".
+        lines.add(WORDS.why('off1', step, hop.before, answer, hop.back));
+        lines.add(WORDS.lookCount(step, hop.back, hop.terms.slice(0, hop.gap + 1)));
       }
     }
   }

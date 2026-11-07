@@ -301,3 +301,50 @@
   .hp-board { top: 76px; left: 10px; z-index: 6; width: min(440px, 36vw); }
   .hp-play:has(.hp-board) { padding-left: calc(min(440px, 36vw) + 24px); }
 }
+
+/* Mistakes that teach (maths review R5). The stage holds the row of pads; the why panel floats over its top. */
+.hp-stage { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
+/* A wrong glow-worm: grey, calm, and not tappable again until "Now you try". */
+.hp-worm--tried { filter: grayscale(1) opacity(0.45); cursor: default; animation-play-state: paused; }
+.hp-worms--off .hp-worm { opacity: 0.55; }
+.hp-why {
+  position: absolute; top: 0; left: 50%; translate: -50% 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: min(94%, 460px); margin: 0; padding: 10px 14px; box-sizing: border-box; border-radius: 16px; border: 3px solid var(--hp-teal-dark);
+  background: var(--hp-panel); color: var(--hp-ink); text-align: center;
+  font: 800 clamp(1rem, 2.6vw, 1.3rem) / 1.3 system-ui, sans-serif;
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.2);
+  animation: hp-why-in 0.25s ease-out;
+}
+.hp-why p { margin: 0; }
+.hp-why__title { font-size: 1.15em; color: var(--hp-teal-dark); }
+@keyframes hp-why-in { from { opacity: 0; translate: -50% 12px; } }
+/* "Let's look together" sits above the row so the counting Hop does stays in view. */
+.hp-why--look { top: auto; bottom: 100%; margin-bottom: 4px; }
+.hp-counted { min-height: 1.3em; color: var(--hp-teal-dark); }
+.hp-why--try { top: 0; width: auto; padding: 4px 18px; border-radius: 999px; }
+.hp-hear {
+  min-height: 48px; padding: 0 16px; border-radius: 999px; border: 3px solid var(--hp-teal-dark);
+  background: #fff; color: var(--hp-ink); font: 700 1rem system-ui, sans-serif; cursor: pointer;
+}
+.hp-hear:focus-visible { outline: 4px solid var(--hp-gold); outline-offset: 2px; }
+/* The small row of pads that shows the mistake. */
+.hp-mini { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.hp-mini__row { display: flex; align-items: center; gap: 4px; }
+.hp-mini__pad {
+  position: relative; display: grid; place-items: center; min-width: 54px; height: 40px; padding: 0 8px; box-sizing: border-box;
+  border-radius: 50%; background: #d8f3d0; border: 2px solid #6fae63; font: 900 1.25rem / 1 system-ui, sans-serif;
+}
+.hp-mini__pad--here { background: #fff; border-color: var(--hp-teal-dark); margin-top: 6px; }
+.hp-mini__pad--glow { background: #fff8c8; border-color: var(--hp-gold); box-shadow: 0 0 10px 3px rgb(245 197 24 / 0.7); }
+.hp-mini__pad--gap { background: rgb(160 240 255 / 0.25); border: 2px dashed var(--hp-teal-dark); color: var(--hp-teal-dark); }
+.hp-mini__pad--ghost { opacity: 0.55; border-style: dashed; background: #eee; text-decoration: line-through; }
+.hp-mini__frog { position: absolute; left: 50%; bottom: 60%; width: 40px; translate: -50% 0; pointer-events: none; }
+.hp-mini__frog .hp-friend { width: 100%; height: auto; }
+.hp-mini__arc {
+  min-width: 56px; padding: 0 6px; text-align: center; font: 900 1.05rem / 1.1 system-ui, sans-serif;
+  border-bottom: 3px solid var(--hp-teal-dark); color: var(--hp-teal-dark);
+}
+.hp-mini__arc--empty { border-bottom-style: dotted; min-height: 1em; opacity: 0.6; }
+.hp-mini__arc--ghost { border-bottom-style: dashed; color: #777; border-color: #999; text-decoration: line-through; }
+.hp-mini__arc--lit { border-bottom-color: var(--hp-gold); }

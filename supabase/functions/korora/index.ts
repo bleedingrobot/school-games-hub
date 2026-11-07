@@ -1143,6 +1143,28 @@ const EARLY_FACTS = {
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
+//#region shared/kit/mistakes.ts
+/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
+function tagWrongs(candidates, kindOf) {
+	const seen = new Set();
+	return candidates.flatMap((n) => {
+		const kind = kindOf(n);
+		if (kind === null || seen.has(n)) return [];
+		seen.add(n);
+		return [{
+			n,
+			kind
+		}];
+	});
+}
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
+}
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
+//#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
 function seeded(seed) {
@@ -1305,6 +1327,56 @@ function spokenFor(kind, n, guided = false) {
 	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : `${n} fish. Can the two chicks share them fairly?`;
 	return guided ? `${line} Tap the number the hand points to.` : line;
 }
+/**
+* The three wrong numbers of a double or a half, each tagged with its kind, and the four choices in an order fixed by the
+* seed. Never the pack's n times n (25 for 5 + 5, a times-tables slip). The tell is parity: at most two of the four share
+* the right answer's, so shape alone can't pick it out (shared/kit/mistakes.ts). Of the choices that fit, the one showing
+* the most different kinds wins, ties broken by the seed.
+*/
+function mistakeChoices(kind, n, random) {
+	const answer = kind === "double" ? 2 * n : n / 2;
+	const core = kind === "double" ? [
+		[n, "same"],
+		[n + 1, "plus1"],
+		[answer - 1, "miscount"],
+		[answer + 1, "miscount"],
+		...n >= 3 ? [[n + 2, "plus2"]] : []
+	] : [
+		[n, "all"],
+		[n - 2, "minus2"],
+		[2 * n, "double"],
+		[answer - 1, "miscount"],
+		[answer + 1, "miscount"]
+	];
+	const spare = [
+		answer + 2,
+		answer - 2,
+		answer + 3,
+		answer - 3
+	].map((x) => [x, "miscount"]);
+	const make = (list) => {
+		const kinds = new Map();
+		for (const [x, k] of list) if (!kinds.has(x)) kinds.set(x, k);
+		return tagWrongs([...kinds.keys()].filter((x) => x >= 1 && x !== answer), (x) => kinds.get(x) ?? null);
+	};
+	let pool = make(core);
+	if (pool.length < 3) pool = make([...core, ...spare]);
+	const parity = (x) => x % 2;
+	const combos = [];
+	for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) for (let c = b + 1; c < pool.length; c++) combos.push([
+		pool[a],
+		pool[b],
+		pool[c]
+	]);
+	const rank = (c) => (atMostShareTell(answer, c.map((w) => w.n), parity) ? 10 : 0) + new Set(c.map((w) => w.kind)).size;
+	const best = Math.max(...combos.map(rank));
+	const top = combos.filter((c) => rank(c) === best);
+	const wrongs = top[Math.floor(random() * top.length)];
+	return {
+		choices: shuffle([answer, ...wrongs.map((w) => w.n)], random),
+		wrongs
+	};
+}
 /** A go made again from its plan by the shared pack, with its choices in an order fixed by the seed. Null if the plan isn't one the pack could make. */
 function showGo(round, index, plan) {
 	const fact = parseKey(plan.key);
@@ -1312,14 +1384,25 @@ function showGo(round, index, plan) {
 	const q = pack.rebuild(plan.key, [fact.n, plan.v], true, seeded((round.seed + 7919 * (index + 1)) % MAX_SEED));
 	const answer = fact.kind === "double" ? 2 * fact.n : fact.kind === "half" ? fact.n / 2 : fact.n % 2 === 0 ? 1 : 0;
 	if (!q || !q.choices || q.answer !== answer) return null;
-	return {
+	const base = {
 		...plan,
 		kind: fact.kind,
 		n: fact.n,
 		answer,
 		parts: q.parts,
-		spoken: spokenFor(fact.kind, fact.n),
-		choices: q.choices
+		spoken: spokenFor(fact.kind, fact.n)
+	};
+	if (fact.kind === "fair") return {
+		...base,
+		choices: q.choices,
+		wrongs: []
+	};
+	const random = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
+	random();
+	random();
+	return {
+		...base,
+		...mistakeChoices(fact.kind, fact.n, random)
 	};
 }
 /** Every go of a round as shown. Throws if a saved round has a go the pack can't make. */

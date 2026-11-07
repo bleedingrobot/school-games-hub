@@ -9,9 +9,10 @@ What the shared parts are and how a game uses them. The plan is [docs/plans/GAME
 | Help that follows the child | `shared/kit/help.ts` | Help steps from a fact's record or from how rounds went, the teacher's fade / always / off, the boost after three wrong first taps | Weka |
 | Tap replay | `shared/kit/replay.ts` | Replays a child's taps, scores the first tap of each go | Weka |
 | Day arc | `shared/kit/dayArc.ts` | Bronze, silver and gold days, the golden reward, New Zealand dates | Weka |
-| Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk |
+| Mistakes that teach | `shared/kit/mistakes.ts` | Wrong choices with a kind, the "at most 2 share the tell" check, near-miss check, the two-tap flow | Beanstalk, Penguin Pairs |
 | Number line zoom lens and tapping | `src/kit/NumberLine.tsx` (`lens`, `onPick`, `valueAtX`, point `tone`) | A second zoomed line under the first with guide lines, a tappable line that reports the value under the tap, differently coloured points | Kererū |
-| Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk |
+| Show why | `src/kit/ShowWhy.tsx` | `ShowWhy`, `LookTogether`, `NowYouTry` and `useLookTogether` (the timing of "Let's look together") | Beanstalk, Penguin Pairs |
+| Junior bits | `src/kit/` `HearAgain`, `PointingHand`, `useGuidedFirstGo`, `WhatsNext`, `FirstTimeTip`; test helper `voiceLinesSuite` | Hear it again button, the pointing hand and its "try this one" label, the first-go hand timing, the end-of-round panel, a helper's first-time tip, the four voice-clip checks. A game passes its words, clip folder and CSS prefix | Weka (all but `FirstTimeTip`) |
 
 ### Using mistakes and show-why in a game
 
@@ -47,7 +48,7 @@ Look together: one leaf pulses, its frame fills with its partner's dots, counted
 | `step` | Lands by a different step (+5 on tens, +2 on fives): loses the step | Arc label changes to the right step; the wrong landing is crossed off the 100 board | "We are counting in tens. Each hop is 10." |
 | `way` | Counting back, the number goes up: direction | The arc flips to point left | "We are counting back, so we go down." |
 
-### Doubles and halves (Penguin Pairs)
+### Doubles and halves (Penguin Pairs, built 7 Nov 2026: all seven kinds below are live)
 
 | Kind | Looks like | Show why | Line (example) |
 |---|---|---|---|
