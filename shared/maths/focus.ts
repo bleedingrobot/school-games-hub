@@ -249,6 +249,8 @@ function sumKeys(p: number, q: number, total: number): string[] {
   if (p === q) keys.push(`dbl:${p}`);
   // "Ten and" facts: 10 + 4, 4 + 10, 14 − 10.
   if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`tenand:${lo}`);
+  // Ten more and ten less on the teens: 14 + 10, 10 + 14, 24 − 10 (and 10 + 10).
+  if (lo === 10 && hi >= 10 && hi <= 19) keys.push(`tenup:${hi}`, `tendown:${hi + 10}`);
   return keys;
 }
 
