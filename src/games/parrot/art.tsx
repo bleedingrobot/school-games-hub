@@ -119,7 +119,7 @@ export type Tilt = 'left' | 'level' | 'right' | 'rest';
 
 const ANGLE: Record<Tilt, number> = { left: -8, level: 0, right: 8, rest: 0 };
 const INK = '#1b2340';
-const STEP = 12;
+const STEP = 15;
 const GROUP_GAP = 8;
 const PLANK_Y = 166;
 
@@ -131,7 +131,7 @@ function StonePile({ n, tint = 'a' }: { n: number; tint?: 'a' | 'b' }) {
     return (
       <>
         {Array.from({ length: n }, (_, i) => (
-          <image key={i} href={src} x={(i % 5) * STEP - 0.5} y={-(Math.floor(i / 5) * 9 + 10)} width="13" height="9.5" style={{ filter: 'brightness(1.2)' }} />
+          <image key={i} href={src} x={(i % 5) * STEP - 0.5} y={-(Math.floor(i / 5) * 12 + 13)} width="16" height="13.1" style={{ filter: 'contrast(1.12) drop-shadow(0 0.5px 0.4px rgb(20 20 30 / 0.6))' }} />
         ))}
       </>
     );
@@ -140,7 +140,7 @@ function StonePile({ n, tint = 'a' }: { n: number; tint?: 'a' | 'b' }) {
   return (
     <>
       {Array.from({ length: n }, (_, i) => (
-        <circle key={i} cx={(i % 5) * STEP + 6} cy={-(Math.floor(i / 5) * 11 + 6)} r="5.4" fill={fills[i % 3]} stroke={INK} strokeWidth="0.8" />
+        <circle key={i} cx={(i % 5) * STEP + 7} cy={-(Math.floor(i / 5) * 12 + 7)} r="6.4" fill={fills[i % 3]} stroke={INK} strokeWidth="0.8" />
       ))}
     </>
   );

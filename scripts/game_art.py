@@ -31,6 +31,8 @@ Config (all paths are relative to the repo unless they start with ~):
   pictures        a list of {name, prompt, size [w, h], kind, folder, file, max, tints?}
     kind  "cut"   cut out of its white background, trimmed, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
           "scene" kept whole, 1600 px and an 800 px copy -> <art_dir>/<folder>/<file>.webp and <file>-800.webp
+          "texture" a plain flat texture (a mat): a `region` [x0, y0, x1, y1] (fractions of the painting, default the middle half),
+                  optionally `mirror`ed 2x2 so it tiles without a seam, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
           "card"  a home page card, 1600 px and 800 px -> <home_dir>/<file>.webp and <file>-small.webp
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
@@ -45,7 +47,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_COMFY = 'http://100.97.96.115:8188'
-KINDS = ('cut', 'scene', 'card')
+KINDS = ('cut', 'scene', 'card', 'texture')
 QUALITY = {'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78}
 GRAPH = {'steps': 8, 'cfg': 1.0, 'shift': 3.0, 'second_pass_scale': 1.5, 'second_pass_denoise': 0.4}
 
@@ -101,7 +103,7 @@ def check(c: dict) -> list[str]:
         if 'file' not in p or (kind != 'card' and 'folder' not in p):
             bad.append(f'{label}: needs "file"' + ('' if kind == 'card' else ' and "folder"'))
             continue
-        if kind == 'cut' and not isinstance(p.get('max'), int):
+        if kind in ('cut', 'texture') and not isinstance(p.get('max'), int):
             bad.append(f'{label}: a cut-out needs a whole-number "max" size')
         if kind == 'card' and 'home_dir' not in c:
             bad.append(f'{label}: a card needs "home_dir" in the config')
@@ -301,6 +303,18 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
             img = img.convert('RGB')
             save(fit(img, 1600), outs[0], quality['card'])
             save(fit(img, 800), outs[1], quality['card_small'])
+        elif p['kind'] == 'texture':
+            img = img.convert('RGB')
+            w, h = img.size
+            x0, y0, x1, y1 = p.get('region', [0.25, 0.25, 0.75, 0.75])
+            part = img.crop((int(w * x0), int(h * y0), int(w * x1), int(h * y1)))
+            tile = part
+            if p.get('mirror'):
+                flip = part.transpose(Image.FLIP_LEFT_RIGHT)
+                tile = Image.new('RGB', (part.width * 2, part.height * 2))
+                tile.paste(part, (0, 0)); tile.paste(flip, (part.width, 0))
+                tile.paste(part.transpose(Image.FLIP_TOP_BOTTOM), (0, part.height)); tile.paste(flip.transpose(Image.FLIP_TOP_BOTTOM), (part.width, part.height))
+            save(fit(tile, p['max']), outs[0], quality['cut'])
         elif p['kind'] == 'scene':
             img = img.convert('RGB')
             save(fit(img, 1600), outs[0], quality['scene'])

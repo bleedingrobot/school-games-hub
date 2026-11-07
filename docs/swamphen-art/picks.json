@@ -13,8 +13,9 @@
   "friends/heron-cheer": 1,
   "reeds/reed": 1,
   "reeds/golden-garden": 2,
-  "back/bronze": 2,
-  "back/silver": 2,
-  "back/gold": 1,
-  "card": 3
+  "back/bronze": 38,
+  "back/silver": 32,
+  "back/gold": 31,
+  "card": 3,
+  "garden/mat": 7
 }
