@@ -144,6 +144,8 @@
 .tui-picture--faint { opacity: 0.55; scale: 0.72; }
 .tui-ten, .tui-ones { position: relative; }
 .tui-ten--fly { animation: tui-fly 1.2s ease-in 1.6s forwards; }
+.tui-ten--come { animation: tui-come 0.9s ease-out 0.5s both; }
+@keyframes tui-come { from { translate: 30vw -30vh; scale: 0.3; opacity: 0; } }
 @keyframes tui-fly { to { translate: -30vw -40vh; rotate: -20deg; scale: 0.3; opacity: 0; } }
 .tui-gap {
   display: grid; place-items: center; width: calc(var(--tui-cell) * 2); aspect-ratio: 1; border-radius: 50%;
@@ -197,6 +199,8 @@
 .tui-hear { min-height: 48px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--tui-teal-dark); background: var(--tui-panel); color: var(--tui-ink); font: 700 1.05rem system-ui, sans-serif; cursor: pointer; }
 .tui-why .tui-cards { font-size: clamp(1.6rem, 5vw, 2.6rem); }
 .tui-card--plain { color: #b4561a; }
+.tui-cards--move .tui-card > span { width: auto; min-width: 0.62em; }
+.tui-card__move { font-size: 0.55em; color: #b4561a; }
 .tui-twotens { display: flex; gap: 12px; zoom: 0.5; }
 .tui-lit .tui-frame { animation: tui-lit 1s ease-in-out 3 alternate; }
 .tui-lit--late .tui-frame { animation-delay: 1.2s; }
@@ -232,4 +236,5 @@
   .tui-root *, .tui-root *::before, .tui-root *::after { animation: none !important; transition: none !important; }
   .tui-card--ones { translate: calc(-0.82em - 18px - 3px) 0; }
   .tui-ten--fly { opacity: 0.15; }
+  .tui-ten--come { animation: none; }
 }

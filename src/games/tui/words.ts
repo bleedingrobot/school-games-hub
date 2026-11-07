@@ -1,6 +1,6 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/tui/progress';
-import { stepName, type Step, type TuiKind } from '../../../shared/tui/round';
+import { stepName, type Go, type Step, type TuiKind } from '../../../shared/tui/round';
 
 const DIGIT = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
@@ -33,6 +33,15 @@ export const WORDS = {
         return 'Nearly! Count the berries one at a time.';
       case 'up':
         return 'Take away makes it smaller.';
+      // Ten more and ten less (step 6).
+      case 'start':
+        return `${wrong} is where we started. We need ten more.`;
+      case 'one':
+        return `${wrong} is only one more. Ten more is a whole ten.`;
+      case 'oneless':
+        return `${wrong} is only one less. Ten less is a whole ten.`;
+      case 'down':
+        return `${wrong} is ten less. Ten more makes it bigger.`;
       default:
         return way === 2 ? `${wrong} is all the berries together. How many go with the ten?` : `${wrong} is what we start with. Take the ten away. What is left?`;
     }
@@ -48,8 +57,12 @@ export const WORDS = {
   keteOfTen: 'A kete of ten berries',
   berries: (n: number) => `${n} berr${n === 1 ? 'y' : 'ies'}`,
   missing: (n: number) => `${n} empty space${n === 1 ? '' : 's'}`,
+  /** After a right answer on a ten more or ten less go (step 6): "24! 14 and ten more is 24." */
+  rightMove: (start: number, up: boolean, answer: number) => `${answer}! ${start} ${up ? 'and ten more is' : 'take away ten is'} ${answer}.`,
   /** After a right answer: the number, then the stem sentence ("14! 10 and 4 is 14."). English numbers, as Weka (James, 5 Nov 2026). */
   right: (answer: number, n: number) => `${answer}! 10 and ${n} is ${10 + n}.`,
+  /** The line after a right answer for any go. */
+  rightFor: (go: Pick<Go, 'answer' | 'n' | 'teen' | 'move'>) => (go.move ? WORDS.rightMove(go.teen, go.move === 'up', go.answer) : WORDS.right(go.answer, go.n)),
   flowerTurned: (metal: Metal) => `Well done! A flower turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another flower.',
   nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,

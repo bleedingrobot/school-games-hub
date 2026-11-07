@@ -580,20 +580,504 @@
   "text": "19 is what we start with. Take the ten away. What is left?"
  },
  {
-  "slug": "20-is-two-tens-we-only-have-one-ten",
-  "text": "20 is two tens. We only have one ten."
+  "slug": "10-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "10 berries on the branch, and ten more fly in. How many berries?"
  },
  {
-  "slug": "that-is-only-the-loose-berries-do-not-forget-the-ten",
-  "text": "That is only the loose berries. Do not forget the ten."
+  "slug": "10-plus-ten-how-many",
+  "text": "10 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-10-how-many-berries",
+  "text": "Ten berries fly in to join the 10. How many berries?"
+ },
+ {
+  "slug": "ten-plus-10-how-many",
+  "text": "Ten plus 10. How many?"
+ },
+ {
+  "slug": "20-10-and-ten-more-is-20",
+  "text": "20! 10 and ten more is 20."
+ },
+ {
+  "slug": "10-is-where-we-started-we-need-ten-more",
+  "text": "10 is where we started. We need ten more."
  },
  {
   "slug": "nearly-count-the-berries-one-at-a-time",
   "text": "Nearly! Count the berries one at a time."
  },
  {
+  "slug": "11-is-only-one-more-ten-more-is-a-whole-ten",
+  "text": "11 is only one more. Ten more is a whole ten."
+ },
+ {
+  "slug": "11-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "11 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "11-plus-ten-how-many",
+  "text": "11 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-11-how-many-berries",
+  "text": "Ten berries fly in to join the 11. How many berries?"
+ },
+ {
+  "slug": "ten-plus-11-how-many",
+  "text": "Ten plus 11. How many?"
+ },
+ {
+  "slug": "21-11-and-ten-more-is-21",
+  "text": "21! 11 and ten more is 21."
+ },
+ {
+  "slug": "11-is-where-we-started-we-need-ten-more",
+  "text": "11 is where we started. We need ten more."
+ },
+ {
+  "slug": "1-is-ten-less-ten-more-makes-it-bigger",
+  "text": "1 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "12-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "12 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "12-plus-ten-how-many",
+  "text": "12 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-12-how-many-berries",
+  "text": "Ten berries fly in to join the 12. How many berries?"
+ },
+ {
+  "slug": "ten-plus-12-how-many",
+  "text": "Ten plus 12. How many?"
+ },
+ {
+  "slug": "22-12-and-ten-more-is-22",
+  "text": "22! 12 and ten more is 22."
+ },
+ {
+  "slug": "12-is-where-we-started-we-need-ten-more",
+  "text": "12 is where we started. We need ten more."
+ },
+ {
+  "slug": "2-is-ten-less-ten-more-makes-it-bigger",
+  "text": "2 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "13-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "13 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "13-plus-ten-how-many",
+  "text": "13 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-13-how-many-berries",
+  "text": "Ten berries fly in to join the 13. How many berries?"
+ },
+ {
+  "slug": "ten-plus-13-how-many",
+  "text": "Ten plus 13. How many?"
+ },
+ {
+  "slug": "23-13-and-ten-more-is-23",
+  "text": "23! 13 and ten more is 23."
+ },
+ {
+  "slug": "13-is-where-we-started-we-need-ten-more",
+  "text": "13 is where we started. We need ten more."
+ },
+ {
+  "slug": "3-is-ten-less-ten-more-makes-it-bigger",
+  "text": "3 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "14-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "14 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "14-plus-ten-how-many",
+  "text": "14 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-14-how-many-berries",
+  "text": "Ten berries fly in to join the 14. How many berries?"
+ },
+ {
+  "slug": "ten-plus-14-how-many",
+  "text": "Ten plus 14. How many?"
+ },
+ {
+  "slug": "24-14-and-ten-more-is-24",
+  "text": "24! 14 and ten more is 24."
+ },
+ {
+  "slug": "14-is-where-we-started-we-need-ten-more",
+  "text": "14 is where we started. We need ten more."
+ },
+ {
+  "slug": "4-is-ten-less-ten-more-makes-it-bigger",
+  "text": "4 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "15-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "15 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "15-plus-ten-how-many",
+  "text": "15 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-15-how-many-berries",
+  "text": "Ten berries fly in to join the 15. How many berries?"
+ },
+ {
+  "slug": "ten-plus-15-how-many",
+  "text": "Ten plus 15. How many?"
+ },
+ {
+  "slug": "25-15-and-ten-more-is-25",
+  "text": "25! 15 and ten more is 25."
+ },
+ {
+  "slug": "15-is-where-we-started-we-need-ten-more",
+  "text": "15 is where we started. We need ten more."
+ },
+ {
+  "slug": "5-is-ten-less-ten-more-makes-it-bigger",
+  "text": "5 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "16-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "16 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "16-plus-ten-how-many",
+  "text": "16 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-16-how-many-berries",
+  "text": "Ten berries fly in to join the 16. How many berries?"
+ },
+ {
+  "slug": "ten-plus-16-how-many",
+  "text": "Ten plus 16. How many?"
+ },
+ {
+  "slug": "26-16-and-ten-more-is-26",
+  "text": "26! 16 and ten more is 26."
+ },
+ {
+  "slug": "16-is-where-we-started-we-need-ten-more",
+  "text": "16 is where we started. We need ten more."
+ },
+ {
+  "slug": "6-is-ten-less-ten-more-makes-it-bigger",
+  "text": "6 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "17-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "17 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "17-plus-ten-how-many",
+  "text": "17 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-17-how-many-berries",
+  "text": "Ten berries fly in to join the 17. How many berries?"
+ },
+ {
+  "slug": "ten-plus-17-how-many",
+  "text": "Ten plus 17. How many?"
+ },
+ {
+  "slug": "27-17-and-ten-more-is-27",
+  "text": "27! 17 and ten more is 27."
+ },
+ {
+  "slug": "17-is-where-we-started-we-need-ten-more",
+  "text": "17 is where we started. We need ten more."
+ },
+ {
+  "slug": "7-is-ten-less-ten-more-makes-it-bigger",
+  "text": "7 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "18-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "18 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "18-plus-ten-how-many",
+  "text": "18 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-18-how-many-berries",
+  "text": "Ten berries fly in to join the 18. How many berries?"
+ },
+ {
+  "slug": "ten-plus-18-how-many",
+  "text": "Ten plus 18. How many?"
+ },
+ {
+  "slug": "28-18-and-ten-more-is-28",
+  "text": "28! 18 and ten more is 28."
+ },
+ {
+  "slug": "18-is-where-we-started-we-need-ten-more",
+  "text": "18 is where we started. We need ten more."
+ },
+ {
+  "slug": "8-is-ten-less-ten-more-makes-it-bigger",
+  "text": "8 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "19-berries-on-the-branch-and-ten-more-fly-in-how-many-berries",
+  "text": "19 berries on the branch, and ten more fly in. How many berries?"
+ },
+ {
+  "slug": "19-plus-ten-how-many",
+  "text": "19 plus ten. How many?"
+ },
+ {
+  "slug": "ten-berries-fly-in-to-join-the-19-how-many-berries",
+  "text": "Ten berries fly in to join the 19. How many berries?"
+ },
+ {
+  "slug": "ten-plus-19-how-many",
+  "text": "Ten plus 19. How many?"
+ },
+ {
+  "slug": "29-19-and-ten-more-is-29",
+  "text": "29! 19 and ten more is 29."
+ },
+ {
+  "slug": "19-is-where-we-started-we-need-ten-more",
+  "text": "19 is where we started. We need ten more."
+ },
+ {
+  "slug": "9-is-ten-less-ten-more-makes-it-bigger",
+  "text": "9 is ten less. Ten more makes it bigger."
+ },
+ {
+  "slug": "20-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "20 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "20-take-away-ten-how-many-are-left",
+  "text": "20 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-20",
+  "text": "Ten plus how many makes 20?"
+ },
+ {
+  "slug": "10-20-take-away-ten-is-10",
+  "text": "10! 20 take away ten is 10."
+ },
+ {
+  "slug": "20-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "20 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "19-is-only-one-less-ten-less-is-a-whole-ten",
+  "text": "19 is only one less. Ten less is a whole ten."
+ },
+ {
+  "slug": "21-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "21 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "21-take-away-ten-how-many-are-left",
+  "text": "21 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-21",
+  "text": "Ten plus how many makes 21?"
+ },
+ {
+  "slug": "11-21-take-away-ten-is-11",
+  "text": "11! 21 take away ten is 11."
+ },
+ {
+  "slug": "21-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "21 is what we start with. Take the ten away. What is left?"
+ },
+ {
   "slug": "take-away-makes-it-smaller",
   "text": "Take away makes it smaller."
+ },
+ {
+  "slug": "22-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "22 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "22-take-away-ten-how-many-are-left",
+  "text": "22 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-22",
+  "text": "Ten plus how many makes 22?"
+ },
+ {
+  "slug": "12-22-take-away-ten-is-12",
+  "text": "12! 22 take away ten is 12."
+ },
+ {
+  "slug": "22-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "22 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "23-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "23 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "23-take-away-ten-how-many-are-left",
+  "text": "23 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-23",
+  "text": "Ten plus how many makes 23?"
+ },
+ {
+  "slug": "13-23-take-away-ten-is-13",
+  "text": "13! 23 take away ten is 13."
+ },
+ {
+  "slug": "23-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "23 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "24-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "24 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "24-take-away-ten-how-many-are-left",
+  "text": "24 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-24",
+  "text": "Ten plus how many makes 24?"
+ },
+ {
+  "slug": "14-24-take-away-ten-is-14",
+  "text": "14! 24 take away ten is 14."
+ },
+ {
+  "slug": "24-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "24 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "25-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "25 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "25-take-away-ten-how-many-are-left",
+  "text": "25 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-25",
+  "text": "Ten plus how many makes 25?"
+ },
+ {
+  "slug": "15-25-take-away-ten-is-15",
+  "text": "15! 25 take away ten is 15."
+ },
+ {
+  "slug": "25-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "25 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "26-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "26 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "26-take-away-ten-how-many-are-left",
+  "text": "26 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-26",
+  "text": "Ten plus how many makes 26?"
+ },
+ {
+  "slug": "16-26-take-away-ten-is-16",
+  "text": "16! 26 take away ten is 16."
+ },
+ {
+  "slug": "26-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "26 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "27-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "27 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "27-take-away-ten-how-many-are-left",
+  "text": "27 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-27",
+  "text": "Ten plus how many makes 27?"
+ },
+ {
+  "slug": "17-27-take-away-ten-is-17",
+  "text": "17! 27 take away ten is 17."
+ },
+ {
+  "slug": "27-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "27 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "28-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "28 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "28-take-away-ten-how-many-are-left",
+  "text": "28 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-28",
+  "text": "Ten plus how many makes 28?"
+ },
+ {
+  "slug": "18-28-take-away-ten-is-18",
+  "text": "18! 28 take away ten is 18."
+ },
+ {
+  "slug": "28-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "28 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "29-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
+  "text": "29 berries. The kete of ten flies away. How many berries are left?"
+ },
+ {
+  "slug": "29-take-away-ten-how-many-are-left",
+  "text": "29 take away ten. How many are left?"
+ },
+ {
+  "slug": "ten-plus-how-many-makes-29",
+  "text": "Ten plus how many makes 29?"
+ },
+ {
+  "slug": "19-29-take-away-ten-is-19",
+  "text": "19! 29 take away ten is 19."
+ },
+ {
+  "slug": "29-is-what-we-start-with-take-the-ten-away-what-is-left",
+  "text": "29 is what we start with. Take the ten away. What is left?"
+ },
+ {
+  "slug": "20-is-two-tens-we-only-have-one-ten",
+  "text": "20 is two tens. We only have one ten."
+ },
+ {
+  "slug": "that-is-only-the-loose-berries-do-not-forget-the-ten",
+  "text": "That is only the loose berries. Do not forget the ten."
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-flower",
@@ -616,6 +1100,10 @@
   "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: all mixed"
  },
  {
+  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: ten more, ten less"
+ },
+ {
   "slug": "well-done-a-flower-turned-bronze",
   "text": "Well done! A flower turned bronze!"
  },
@@ -634,6 +1122,10 @@
  {
   "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-all-mixed",
   "text": "Well done! A flower turned bronze! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A flower turned bronze! You are so good at this! Next time: ten more, ten less"
  },
  {
   "slug": "well-done-a-flower-turned-silver",
@@ -656,6 +1148,10 @@
   "text": "Well done! A flower turned silver! You are so good at this! Next time: all mixed"
  },
  {
+  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A flower turned silver! You are so good at this! Next time: ten more, ten less"
+ },
+ {
   "slug": "well-done-a-flower-turned-gold",
   "text": "Well done! A flower turned gold!"
  },
@@ -674,6 +1170,10 @@
  {
   "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-all-mixed",
   "text": "Well done! A flower turned gold! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "Well done! A flower turned gold! You are so good at this! Next time: ten more, ten less"
  },
  {
   "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest",
@@ -696,6 +1196,10 @@
   "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: all mixed"
  },
  {
+  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: ten more, ten less"
+ },
+ {
   "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest",
   "text": "All the flowers are gold! Kererū won the Golden Nest!"
  },
@@ -714,6 +1218,10 @@
  {
   "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
   "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: ten more, ten less"
  },
  {
   "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest",
@@ -736,6 +1244,10 @@
   "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: all mixed"
  },
  {
+  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: ten more, ten less"
+ },
+ {
   "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest",
   "text": "All the flowers are gold! Korimako won the Golden Nest!"
  },
@@ -756,6 +1268,10 @@
   "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: all mixed"
  },
  {
+  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: ten more, ten less"
+ },
+ {
   "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest",
   "text": "All the flowers are gold! Kākā won the Golden Nest!"
  },
@@ -774,5 +1290,9 @@
  {
   "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
   "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: all mixed"
+ },
+ {
+  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-ten-more-ten-less",
+  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: ten more, ten less"
  }
 ]

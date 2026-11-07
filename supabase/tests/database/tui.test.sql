@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh tui, then scripts/scratch-test.sh tui supabase/tests/database/tui.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -75,6 +75,8 @@ select is(public.tui_load(pg_temp.id('0a')),
 select is((select first_right from public.tui_rounds where player = pg_temp.id('0a') and seed = 777), 9, '... with how many goes were right first time');
 select ok(public.tui_start(pg_temp.id('0a'), 779, pg_temp.round(779, 1, 5)), 'another challenge starts, leaving the saved tree as it is');
 select is((select step from public.tui_progress where player = pg_temp.id('0a')), 3::smallint, '... (the step is not reset)');
+select ok(public.tui_finish(pg_temp.id('0a'), 779, 2, 2, '2026-11-05', 6::smallint, 5::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10), 'a challenge can finish at step 6 (ten more, ten less)');
+select throws_ok($$ select public.tui_finish(pg_temp.id('0a'), 779, 3, 3, '2026-11-06', 7::smallint, 5::smallint, 0, 0, '[]', 0, 10) $$, '22023', null, '... but not at step 7');
 select pg_temp.reset();
 
 -- ---- In the hub: registered, one achievement per Golden Nest, no points ----
