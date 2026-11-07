@@ -11,7 +11,7 @@ import { FRIEND_NAMES } from '../games/korora/art';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
 const HELP_CHOICES = [
-  { value: 'fade', label: 'Fades', detail: 'Full pictures on the first 10 days, faint for the next 10, then words and numbers only. Hints still come after wrong taps.' },
+  { value: 'fade', label: 'Fades', detail: 'Each go’s picture is full while that fact is new for the student, then faint, then words and numbers only, fact by fact as each student shows they know it. It comes back after a slip, and for the rest of a round after three goes in a row wrong at the first try. Hints still come after wrong taps.' },
   { value: 'always', label: 'Always on', detail: 'The full pictures every day: the reflection with lines to each fish, and halves shared out one by one.' },
   { value: 'off', label: 'Off', detail: 'Words and numbers only, from the first day. Hints still come after wrong taps.' },
 ] as const;

@@ -27,6 +27,8 @@ export const WORDS = {
   lookTogether: 'Let’s look together.',
   /** Said once she has explained, then the question is read again. */
   nowTry: 'Now you try.',
+  /** Said once in a round, when three goes in a row began with a wrong tap and the pictures come back (R6). */
+  picturesBack: 'Here is the picture again to help.',
   /** On the "Let's look together" panel once it can be skipped. */
   goOn: 'My turn',
   /** The double: the whole go, ending on the answer, while the fish are counted. */
