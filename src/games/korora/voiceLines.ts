@@ -45,7 +45,7 @@ export function finishLine(main: string, levelUp: Level | null): string {
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.picturesBack, WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.fairYes, WORDS.notFairYes, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.picturesBack, WORDS.tryAgain, WORDS.lookTogether, WORDS.nowTry, WORDS.pairOff, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -58,7 +58,8 @@ export function allVoiceLines(): string[] {
     lines.add(goLine(fact, false, false));
     if (key === 'dbl:2') lines.add(goLine(fact, true, false));
     if (fact.kind === 'half' && fact.n <= 20) lines.add(goLine(fact, false, true));
-    if (fact.kind !== 'fair') lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.n / 2));
+    if (fact.kind === 'fair') lines.add(fact.n % 2 === 0 ? WORDS.fairYes(fact.n / 2) : WORDS.oddYes((fact.n - 1) / 2));
+    else lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.n / 2));
     if (fact.kind === 'near') lines.add(WORDS.lookNear(fact.n));
   }
   // Mistakes that teach (maths review R5): why a wrong stone is wrong, and the whole go explained after a second wrong tap.

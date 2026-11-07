@@ -278,3 +278,22 @@
 
 .kr-next-game { margin: 12px 0 4px; }
 .kr-next-game p { margin: 0 0 8px; font-weight: 700; }
+
+/* Fair or not (maths review R9): a real pile shared into two bowls, two fish at a time. */
+.kr-pile--fair { cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.kr-pile__share { min-height: 48px; }
+.kr-bowl { box-sizing: border-box; width: 100%; min-height: calc(var(--kr-fish) * 1.5); padding: 6px 6px 10px; border: 3px solid rgb(255 255 255 / 0.7); border-top: 0; border-radius: 0 0 50% 50% / 0 0 40% 40%; background: rgb(255 255 255 / 0.18); }
+.kr-fish--pair .kr-fish__art { filter: drop-shadow(0 0 5px #fff6b0) drop-shadow(0 0 2px var(--kr-gold)); }
+.kr-choices--wait .kr-choice { opacity: 0.45; cursor: default; }
+@media (max-width: 480px) { .kr-choices--fair { gap: 8px 12px; } .kr-choices--fair .kr-choice { min-height: 54px; padding: 0 14px; } }
+/* The pile across the top, the two bowls side by side below it, so five fish in a row fit on a phone. */
+.kr-share--fair { grid-template-columns: 1fr 1fr; align-items: start; row-gap: 6px; }
+.kr-share--fair .kr-pile--fair { grid-column: 1 / -1; grid-row: 1; min-height: 0; padding: 10px 8px; }
+.kr-share--fair { --kr-pile-fish: clamp(24px, min(6.5vw, 4.6vh), 40px); --kr-bowl-fish: clamp(22px, min(6vw, 4.4vh), 34px); }
+.kr-share--fair .kr-pile--fair .kr-row { --kr-fish: var(--kr-pile-fish); }
+/* No jump as the pile empties and the bowls fill: both keep the height of their fullest. */
+.kr-share--fair .kr-pile--fair > .kr-rows { min-height: calc(var(--kr-pile-rows) * var(--kr-pile-fish) * 0.82); }
+.kr-share--fair .kr-bowl { min-height: calc(var(--kr-bowl-fish) * 1.75); }
+.kr-share--fair .kr-nest { grid-row: 2; }
+.kr-share--fair .kr-chick { width: calc(var(--kr-fish) * 1.3); }
+.kr-share--fair .kr-bowl .kr-row { --kr-fish: var(--kr-bowl-fish); }
