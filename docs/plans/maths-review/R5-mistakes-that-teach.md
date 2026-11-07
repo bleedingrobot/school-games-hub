@@ -99,6 +99,8 @@ Tap 2: the picture comes back in full for that go (as the existing second-wrong 
 
 ### 3.5 Pipi (hidden shells, part-whole)
 
+**Pipi status (7 Nov 2026, built, not merged, not live).** Every go now has four shells built in `shared/pipi/round.ts`: the right one, a one-more-or-less near miss always, and the slips from the table below (the number showing, the whole, whole plus showing, the first tide's number, or one part when asked altogether), with at most two the same odd or even. A wrong shell greys out for good and shows its picture and line; the second wrong shell lifts the sand, all the pipi wave and "7 = 4 + 3" fills in, then the same go comes back with all four shells in a new order at the child's own help. Only the first shell of a go is scored. New lines and clips are made. The live function redeploys when this merges. The old "Try again!" line and clip are gone.
+
 Model: the pipi on the sand, the dashed outlines of the hidden ones, the shells with numbers (`Goes.tsx`, `spotsFor`).
 
 | Kind of go | Wrong choice (kind) | The mistake | Show why | Voice line |
