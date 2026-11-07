@@ -51,6 +51,8 @@ import weka from '../assets/home/weka.webp';
 import wekaSmall from '../assets/home/weka-small.webp';
 import pigeon from '../assets/home/pigeon.svg';
 import pigeonSmall from '../assets/home/pigeon.svg';
+import lizard from '../assets/home/lizard.svg';
+import lizardSmall from '../assets/home/lizard.svg';
 import tui from '../assets/home/tui.webp';
 import tuiSmall from '../assets/home/tui-small.webp';
 // Quick looks is a Training activity, not a game, but it has a card with the foundational games. Clay painting from
@@ -94,6 +96,7 @@ const ART: Record<string, GameCardArt> = {
   'korora': { card: korora, small: kororaSmall, focus: 'center 45%' },
   'weka': { card: weka, small: wekaSmall, focus: 'center 45%' },
   'pigeon': { card: pigeon, small: pigeonSmall, focus: 'center 45%' },
+  'lizard': { card: lizard, small: lizardSmall, focus: 'center 50%' },
   'tui': { card: tui, small: tuiSmall, focus: 'center 45%' },
   'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 50%' },
 };

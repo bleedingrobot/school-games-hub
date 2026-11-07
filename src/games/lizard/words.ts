@@ -1,0 +1,53 @@
+/** Everything the game says. Short, because it is read aloud to children of 5 to 8. */
+import type { Metal } from '../../../shared/lizard/progress';
+import { stepName, type Step } from '../../../shared/lizard/round';
+
+export const WORDS = {
+  title: 'Lizard’s Bundles',
+  /** The home page chip's word: "Today's bundle is ready". */
+  part: 'bundle',
+  wants: (name: string) => `${name} is tying bundles! Help ${name} count the sticks.`,
+  nextFriend: (name: string) => `Now ${name} has a den to fill!`,
+  step: (step: Step) => `Step ${step}: ${stepName(step)}`,
+  dayCount: (day: number) => `Day ${day} of 30`,
+  play: 'Play',
+  playAgain: 'Play again',
+  pickCard: 'Tap the right number.',
+  makeMat: 'Make the number with sticks and bundles.',
+  goesDone: (n: number, of: number) => `${n} of ${of} done`,
+  tryAgain: 'Try again!',
+  hearAgain: 'Hear it again',
+  peek: 'Peek',
+  /** The mat. */
+  hundreds: 'Hundreds',
+  tens: 'Tens',
+  ones: 'Ones',
+  addStick: 'Add a stick',
+  takeStick: 'Take a stick away',
+  addBundle: 'Add a bundle',
+  takeBundle: 'Take a bundle away',
+  addRaft: 'Add a raft',
+  takeRaft: 'Take a raft away',
+  tieTen: 'Tie ten',
+  tieRaft: 'Tie a raft',
+  untieOne: 'Untie one',
+  thatsIt: 'That’s it',
+  /** After a right answer: three kinds of cheer, picked by the go's place in the round. */
+  right: ['Yes! That is it.', 'Lovely! You did it.', 'Well done!'],
+  bundleTurned: (metal: Metal) => `Well done! A bundle in the den turned ${metal}!`,
+  doneToday: 'Well done! Come back tomorrow to change another bundle.',
+  nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,
+  goldenRaft: (name: string) => `All the bundles are gold! ${name} won the Golden Raft!`,
+  raftTip: 'Ten bundles tied together make a raft: a hundred.',
+  tipWho: 'Lizard',
+  gotIt: 'Got it',
+  closeTip: 'Close the tip',
+  wentWrong: 'Something went wrong. Please try again soon.',
+  home: 'Home',
+  voiceOn: 'Voice on',
+  voiceOff: 'Voice off',
+  prizesWon: (n: number) => `${n} Golden Raft${n === 1 ? '' : 's'}`,
+  lookTitle: 'Let’s look together.',
+  nowYouTry: 'Now you try.',
+  skip: 'Skip',
+} as const;

@@ -114,6 +114,12 @@ export const LADDER: LadderSkill[] = [
   { id: 'balance-10', label: 'The equals sign: a missing number to 10', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqmiss'), ...earlyKeys('eqswap')], built: true, inWarmUp: false, inAuto: false },
   { id: 'balance-20', label: 'The equals sign: two numbers each side, and taking away', stage: 'early-facts', curriculumTags: [], keys: [...earlyKeys('eqboth'), ...earlyKeys('eqsub')], built: true, inWarmUp: false, inAuto: false },
   { id: 'true-false', label: 'The equals sign: true or false', stage: 'early-facts', curriculumTags: [], keys: earlyKeys('eqtf'), built: true, inWarmUp: false, inAuto: false },
+  // Tens and ones (Lizard's Bundles) sit beside the ladder too (`inAuto`): the game draws bundles and sticks and marks them itself; these keys are only recorded.
+  { id: 'bundles-50', label: 'Bundles of ten and tens and ones to 50', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) <= 50), built: true, inWarmUp: false, inAuto: false },
+  { id: 'place-value-100', label: 'Tens and ones to 100, and zero', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: [...[...earlyKeys('pvbuild'), ...earlyKeys('pvread')].filter((k) => Number(/(\d+)$/.exec(k)![1]) > 50), ...earlyKeys('pvzero')], built: true, inWarmUp: false, inAuto: false },
+  { id: 'regroup-100', label: 'Tying and untying bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P2'], keys: earlyKeys('pvregroup'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'ten-more-less-100', label: 'Ten more and ten less with bundles', stage: 'place-value', curriculumTags: ['MS.Y2.NUM.NS.P1'], keys: earlyKeys('pvten'), built: true, inWarmUp: false, inAuto: false },
+  { id: 'place-value-1000', label: 'Hundreds, tens and ones', stage: 'place-value', curriculumTags: ['MS.Y3.NUM.NS.P1'], keys: [...earlyKeys('pvbuild3'), ...earlyKeys('pvread3'), ...earlyKeys('pvhun')], built: true, inWarmUp: false, inAuto: false },
   tables[0],
   generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
@@ -297,7 +303,7 @@ export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
   if (/^eq(miss|swap|both|sub|tf):/.test(key)) return 'early-facts';
-  if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;
