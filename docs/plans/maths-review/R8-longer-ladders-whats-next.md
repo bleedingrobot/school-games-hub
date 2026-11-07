@@ -65,6 +65,8 @@ Stage A (own folder only): the signpost on step 5. Stage B (James's OK): step 6.
 
 ### 3.5 Hop: steps that go on
 
+Status 7 Nov 2026: built on branch r8-hop-ladder-2 (threes, fours and tens past 100 as steps 3, 4 and 200 after twos; gold-day non-multiple starts; migration 20261107000600; needs the keys PR first).
+
 - Add threes (to 30) and fours (to 40) as steps after twos. Hop currently treats twos as the top, so these become new steps 4 and 5; the step is chosen by the same 70 percent rule.
 - Tens past 100 (to 200) as an extra range of the tens step, after the child is secure to 100.
 - Non-multiple starts ("start at 3, hop by 10") as an extra mode on gold days, shown for a step only after it is secure.

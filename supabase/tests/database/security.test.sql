@@ -85,6 +85,7 @@ $$, array[
   'teacher_set_tui', 'teacher_tui_class', 'teacher_tui_student',
   'teacher_set_pigeon', 'teacher_pigeon_class', 'teacher_pigeon_student',
   'teacher_set_parrot', 'teacher_parrot_class', 'teacher_parrot_student',
+  'teacher_set_lizard', 'teacher_lizard_class', 'teacher_lizard_student',
   'teacher_set_swamphen', 'teacher_swamphen_class', 'teacher_swamphen_student',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',
