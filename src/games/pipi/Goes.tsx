@@ -3,19 +3,28 @@
  * shell with how many are hiding. A right shell lifts the sand and the hiding pipi pop up and wave; a wrong one wobbles
  * back, with no penalty (docs/PIPI-PLAN.md sections 1, 2 and 4).
  *
+ * Mistakes that teach (maths review R5). A wrong shell greys out for good (it can't be tapped again in that try) and the
+ * picture for its kind of mistake shows with a line that says why. The second wrong shell of a go stops the free taps:
+ * "Let's look together" lifts the sand, all the pipi wave and "7 = 4 + 3" fills in, coloured to match the dots. Then the
+ * same go comes back ("Now you try!"), all four shells in a new order, with the child's own help. Only a go's first shell
+ * is scored (shared/pipi/play.ts), so a shown go is never a clean right; the finished round still turns its shell.
+ *
  * The help fades with the day's colour: on bronze days the pipi sit in a five-frame or ten-frame and the hiding ones
  * leave a dashed outline; on silver days the frame goes and the outlines are faint; on gold days the hiding ones leave
  * no mark at all, so only "7 altogether" and the pipi still showing are there to go on.
  */
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import type { Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
-import { GOES_PER_ROUND, showRound, type Go, type Round } from '../../../shared/pipi/round';
+import { GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
+import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { backFor, PaperLayers, type Scenery } from './Beach';
 import { paint } from './art';
 import { Friend, Hidden, NumberShell, Pipi } from './PipiArt';
-import { WORDS } from './words';
+import { SplitSum, WhyPicture } from './WhyPicture';
+import { lookLine, whyLine, WORDS } from './words';
 
 /** The painted tide (scripts/pipi-art.py `tide/wave`); the plain drawn wave until it is painted. */
 const WAVE = paint('tide/wave');
@@ -63,6 +72,16 @@ function spotsFor(go: Go, phase: Phase, tideIn: boolean): Spot[] {
   return spots;
 }
 
+/** The shells in a new order (where they sit only: which number is which stays the same). */
+function reordered(items: number[]): number[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out.join() === items.join() && out.length > 1 ? [...out.slice(1), out[0]] : out;
+}
+
 export function Goes({ round, help, scenery, friend, guide = false, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
@@ -71,6 +90,19 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   /** Halfway through the tide: the wave has covered the sand and the pipi have dug in. */
   const [tideIn, setTideIn] = useState(false);
   const [wobble, setWobble] = useState<number | null>(null);
+  /** The wrong shells tapped in this try of the go: grey, and not tappable again. */
+  const [tried, setTried] = useState<number[]>([]);
+  /** The last wrong shell and its kind, shown with its why-line until the next tap. */
+  const [why, setWhy] = useState<{ n: number; kind: WrongKind } | null>(null);
+  /** The go's place in the two-tap flow (shared/kit/mistakes.ts). */
+  const flow = useRef(NEW_GO);
+  /** "Now you try!": the same go again after "Let's look together". */
+  const [redo, setRedo] = useState(false);
+  /** During "Let's look together" the sand is lifted and all the pipi wave. */
+  const [lifted, setLifted] = useState(false);
+  /** The shells' order for the redo; null is the go's own order. */
+  const [order, setOrder] = useState<number[] | null>(null);
+  const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -109,13 +141,45 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
   }, [at, goes]);
 
   const go = goes[Math.min(at, goes.length - 1)];
-  const spots = spotsFor(go, phase, tideIn);
+  const spots = spotsFor(go, lifted && phase === 'ask' ? 'right' : phase, tideIn);
   // Gold days (or help off): the hiding ones leave no mark, and the spots close up so the gaps don't give it away.
   const shown = help === 'none' ? spots.filter((s) => s === 'pipi' || s === 'popped') : spots;
   const framed = help === 'full';
 
+  /** Back to a fresh go: nothing tried, no why, the go's own order. */
+  function freshGo() {
+    flow.current = NEW_GO;
+    setTried([]);
+    setWhy(null);
+    setRedo(false);
+    setLifted(false);
+    setOrder(null);
+  }
+
+  /** The second wrong shell of a go: lift the sand, read the split out, then ask the same go again. */
+  function lookTogether() {
+    setWhy(null);
+    setLifted(true);
+    startLook({
+      anchor: go.answer,
+      steps: 3,
+      openingLine: WORDS.lookTogether,
+      fillLine: lookLine(go.kind, go.whole, go.showing, go.hiding),
+      onEnd: () => {
+        flow.current = stepGo(flow.current, 'lookDone');
+        setLifted(false);
+        setRedo(true);
+        setTried([]);
+        setOrder(reordered(go.choices));
+        tappedYet.current = false;
+        since.current = Date.now();
+        say(WORDS.nowTry);
+      },
+    });
+  }
+
   function pick(n: number) {
-    if (phase !== 'ask') return;
+    if (phase !== 'ask' || look || tried.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -123,11 +187,21 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
     setTaps(next);
     if (n !== go.answer) {
       setWobble(n);
-      say(WORDS.tryAgain);
+      setTried([...tried, n]);
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
+      flow.current = stepGo(flow.current, 'wrong');
+      if (flow.current.phase === 'look') {
+        lookTogether();
+        return;
+      }
+      const kind = go.wrongs.find((w) => w.n === n)?.kind ?? 'off1';
+      setWhy({ n, kind });
+      say(whyLine(kind, go.kind, go.whole, go.showing, go.hiding));
       return;
     }
+    flow.current = stepGo(flow.current, 'right');
+    setWhy(null);
     setPhase('right');
     say(WORDS.yes(n));
     if (sound) playSound('badge');
@@ -135,7 +209,10 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
       if (at + 1 >= goes.length) {
         setPhase('done');
         later(RIGHT_MS / 2, () => onDone(next));
-      } else setAt(at + 1);
+      } else {
+        freshGo();
+        setAt(at + 1);
+      }
     });
   }
 
@@ -186,23 +263,43 @@ export function Goes({ round, help, scenery, friend, guide = false, sound, say, 
         >
           {shown.map((s, i) => (
             <span key={i} className={`pp-spot pp-spot--${s}${guide && at === 0 && s === 'hidden' ? ' pp-spot--pointed' : ''}`}>
-              {s === 'pipi' && <Pipi pose={phase === 'tide' && tideIn ? 'dig' : phase === 'done' ? 'wave' : 'sit'} />}
+              {s === 'pipi' && <Pipi pose={phase === 'tide' && tideIn ? 'dig' : phase === 'done' || lifted ? 'wave' : 'sit'} />}
               {s === 'popped' && <Pipi pose="wave" />}
               {s === 'hidden' && <Hidden outline={help} />}
             </span>
           ))}
         </div>
+        {why && (
+          <ShowWhy
+            prefix="pp"
+            tapKey={`${why.n}-${taps.length}`}
+            picture={<WhyPicture go={go} kind={why.kind} />}
+            line={whyLine(why.kind, go.kind, go.whole, go.showing, go.hiding)}
+          />
+        )}
+        {look && (
+          <LookTogether
+            prefix="pp"
+            title={WORDS.lookTogether}
+            picture={<SplitSum go={go} filled={look.filled} />}
+            line={lookLine(go.kind, go.whole, go.showing, go.hiding)}
+            skipLabel={WORDS.goOn}
+            canSkip={look.canSkip}
+            onSkip={skipLook}
+          />
+        )}
+        {redo && !why && !look && <NowYouTry prefix="pp" line={WORDS.nowTry} />}
         <span className="pp-play__friend">
-          <Friend friend={friend} pose={phase === 'right' || phase === 'done' ? 'cheer' : 'wait'} />
+          <Friend friend={friend} pose={phase === 'right' || phase === 'done' || lifted ? 'cheer' : 'wait'} />
         </span>
       </div>
       <div className="pp-shells" role="group" aria-label={WORDS.pickShell}>
-        {go.choices.map((n, i) => (
+        {(order ?? go.choices).map((n, i) => (
           <button
             key={`${at}-${n}`}
             type="button"
-            disabled={phase === 'tide'}
-            className={`pp-shellbtn${wobble === n ? ' pp-shellbtn--wobble' : ''}${phase !== 'ask' && phase !== 'tide' && n === go.answer ? ' pp-shellbtn--right' : ''}${n === pointAt ? ' pp-shellbtn--pointed' : ''}`}
+            disabled={phase === 'tide' || look !== null || tried.includes(n)}
+            className={`pp-shellbtn${tried.includes(n) ? ' pp-shellbtn--tried' : ''}${wobble === n ? ' pp-shellbtn--wobble' : ''}${phase !== 'ask' && phase !== 'tide' && n === go.answer ? ' pp-shellbtn--right' : ''}${n === pointAt ? ' pp-shellbtn--pointed' : ''}`}
             style={{ ['--pp-i' as string]: i }}
             onClick={() => pick(n)}
             aria-label={n === pointAt ? `${n}, ${WORDS.guideHere}` : String(n)}

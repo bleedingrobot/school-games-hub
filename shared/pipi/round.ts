@@ -13,10 +13,9 @@
  * skills sit beside it). A level is passed when 70% of its facts are in box 2 or higher. The server keeps the furthest
  * level reached, so forgetting a few facts brings more practice of them but never drops a child back.
  */
-import { choicesFor } from '../maths/banded';
+import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
-import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { seeded } from '../seededRandom';
 import type { Metal } from './progress';
 
@@ -100,7 +99,15 @@ export interface Go extends GoPlan {
   spoken: string;
   /** Four shells, the right one among them. */
   choices: number[];
+  /** The mistake behind each wrong shell (maths review R5): the kind picks the why-line and the picture. */
+  wrongs: Wrong<WrongKind>[];
 }
+
+/**
+ * The mistake behind a wrong shell (docs/kit/README.md, "Part and whole"): the number showing, the whole, whole plus
+ * showing, one off, one part when asked altogether, and the number from the first tide.
+ */
+export type WrongKind = 'shown' | 'whole' | 'add' | 'off1' | 'part' | 'before';
 
 const shuffle = <T>(items: T[], random: () => number): T[] => {
   const out = [...items];
@@ -156,32 +163,57 @@ export function makeRound(
   return { seed, level, colour, goes };
 }
 
-const pack = earlyFactsPack();
+/** The tell of a shell for the "at most 2 share it" check: odd or even. */
+const parity = (n: number) => n % 2;
+
+/**
+ * The three wrong shells: the tempting slips first (in an order fixed by the seed), then plain one-off and two-off
+ * numbers to fill up. A slip is left out when it would make three shells the same odd or even as the answer, so
+ * elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative.
+ */
+function threeWrongs(answer: number, slips: Wrong<WrongKind>[], random: () => number): Wrong<WrongKind>[] {
+  // Every tray holds a one-off number (the tempting near miss); which side is the seed's choice.
+  const side = random() < 0.5 ? 1 : -1;
+  const near = tagWrongs([answer + side, answer - side], (n) => (n < 0 ? null : 'off1'));
+  const fillers = tagWrongs([answer + 2, answer - 2, answer + 3], (n) => (n < 0 ? null : 'off1'));
+  const pool = [...near.slice(0, 1), ...shuffle(slips, random), ...near.slice(1), ...fillers].filter(
+    (w, i, all) => w.n !== answer && w.n >= 0 && all.findIndex((x) => x.n === w.n) === i,
+  );
+  const out: Wrong<WrongKind>[] = [];
+  for (const w of pool) if (out.length < 3 && atMostShareTell(answer, [...out, w].map((x) => x.n), parity)) out.push(w);
+  for (const w of pool) if (out.length < 3 && !out.includes(w)) out.push(w); // only if the check can't be met
+  return out;
+}
 
 /** A go made again from its plan, with its shells in an order fixed by the seed. Null if the plan isn't one that can be made. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   const p = parseKey(plan.key);
   if (!p) return null;
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
-  const q = pack.rebuild(plan.key, [p.whole, p.shown], true, random);
-  if (!q || !q.choices) return null;
   const { whole, shown } = p;
   const hidden = whole - shown;
+  const make = (answer: number, slips: Wrong<WrongKind>[]) => {
+    const wrongs = threeWrongs(answer, slips, random);
+    return { wrongs, choices: shuffle([answer, ...wrongs.map((w) => w.n)], random) };
+  };
   if (plan.kind === 'hiding') {
-    return { ...plan, whole, showing: shown, hiding: hidden, answer: hidden, spoken: `${whole} pipi. How many are hiding?`, choices: q.choices };
+    const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'shown' }, { n: whole, kind: 'whole' }, { n: whole + shown, kind: 'add' }];
+    return { ...plan, whole, showing: shown, hiding: hidden, answer: hidden, spoken: `${whole} pipi. How many are hiding?`, ...make(hidden, slips) };
   }
   if (plan.kind === 'twoTides') {
     if (shown === 0 || shown === whole) return null;
+    // The first tide hid `shown` pipi, so that is the number a child who missed the swap gives.
+    const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'before' }, { n: whole, kind: 'whole' }];
     return {
       ...plan, whole, showing: shown, hiding: hidden, before: hidden, answer: hidden,
       spoken: `Splash! The hiding ones pop up and the others dig in. ${whole} pipi. How many are hiding now?`,
-      choices: q.choices,
+      ...make(hidden, slips),
     };
   }
   if (plan.kind === 'altogether') {
     if (shown === 0 || shown === whole) return null;
-    const choices = choicesFor(whole, [whole + 1, whole - 1, shown, hidden, whole + 2], false, random);
-    return { ...plan, whole, showing: shown, hiding: hidden, answer: whole, spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`, choices };
+    const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'part' }, { n: hidden, kind: 'part' }, { n: whole + 1, kind: 'off1' }, { n: whole - 1, kind: 'off1' }];
+    return { ...plan, whole, showing: shown, hiding: hidden, answer: whole, spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`, ...make(whole, slips) };
   }
   return null;
 }

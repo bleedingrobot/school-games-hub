@@ -4,9 +4,9 @@
  * A line without a clip falls back to the browser's own voice.
  */
 import { beachAfter, DAYS_PER_PEARL, METALS } from '../../../shared/pipi/progress';
-import { GUIDED_KEY, LEVELS, showGo, type Kind } from '../../../shared/pipi/round';
+import { GUIDED_KEY, LEVELS, showGo, type Kind, type WrongKind } from '../../../shared/pipi/round';
 import { FRIEND_NAMES } from './art';
-import { WORDS } from './words';
+import { lookLine, whyLine, WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
@@ -17,8 +17,14 @@ export function homeLine(title: string, doneToday: boolean): string {
   return doneToday ? `${title} ${WORDS.doneToday}` : title;
 }
 
+/** False for a kind of wrong shell that can't turn up in this go because its number is the answer (or can't be a shell). */
+function wrongPossible(go: { answer: number; showing: number; whole: number; hiding: number }, kind: WrongKind): boolean {
+  const n = { shown: go.showing, before: go.showing, whole: go.whole, add: go.whole + go.showing, part: go.showing, off1: go.answer }[kind];
+  return kind === 'off1' || n !== go.answer;
+}
+
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.lookTogether, WORDS.nowTry, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (let p = 0; p < 6; p++) {
     const name = FRIEND_NAMES[beachAfter(p * DAYS_PER_PEARL).friend];
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
@@ -35,6 +41,13 @@ export function allVoiceLines(): string[] {
         const go = showGo({ seed: 1 }, 0, { key: `part${w}:${s}`, kind });
         if (go) lines.add(`part${w}:${s}` === GUIDED_KEY && kind === 'hiding' ? `${go.spoken} ${WORDS.guideStart}` : go.spoken);
         if (go) lines.add(go.spoken);
+        if (go) {
+          // Mistakes that teach (maths review R5): why each kind of wrong shell this go can have is wrong, and the split said
+          // out for "Let's look together". The numbers are the go's own, so the same numbers share a clip.
+          const kindsFor: WrongKind[] = kind === 'hiding' ? ['shown', 'whole', 'add', 'off1'] : kind === 'twoTides' ? ['before', 'whole', 'off1'] : ['part', 'off1'];
+          for (const wrong of kindsFor) if (wrongPossible(go, wrong)) lines.add(whyLine(wrong, kind, go.whole, go.showing, go.hiding));
+          lines.add(lookLine(kind, go.whole, go.showing, go.hiding));
+        }
       }
     }
   }
