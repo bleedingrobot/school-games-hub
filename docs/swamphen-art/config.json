@@ -11,184 +11,310 @@
   "home_dir": "src/assets/home",
   "pictures": [
     {
-      "name": "swamphen-wait",
-      "prompt": "A cute round swamp hen (pukeko) with deep blue-purple feathers, a red beak and red shield above it, long red-orange legs, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/swamphen-sit",
+      "prompt": "a cute round swamp hen (pukeko) with deep blue-purple feathers, a bright red beak and a small red shield on the forehead just above the beak, no red anywhere on the back, long red-orange legs with big feet, a small white patch under the tail, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "swamphen-wait",
-      "max": 1000
+      "file": "swamphen-sit",
+      "max": 320
     },
     {
-      "name": "swamphen-happy",
-      "prompt": "A cute round swamp hen (pukeko) with deep blue-purple feathers, a red beak and red shield above it, long red-orange legs, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/swamphen-cheer",
+      "prompt": "a cute round swamp hen (pukeko) with deep blue-purple feathers, a bright red beak and a small red shield on the forehead just above the beak, no red anywhere on the back, long red-orange legs with big feet, a small white patch under the tail, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "swamphen-happy",
-      "max": 1000
+      "file": "swamphen-cheer",
+      "max": 320
     },
     {
-      "name": "pigeon-wait",
-      "prompt": "A cute plump new zealand kereru wood pigeon with a shiny green-purple head, a pure white chest, a red beak, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/pigeon-sit",
+      "prompt": "a cute plump New Zealand kereru wood pigeon with a shiny green-purple head, a pure white chest, a red beak, red feet, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "pigeon-wait",
-      "max": 1000
+      "file": "pigeon-sit",
+      "max": 320
     },
     {
-      "name": "pigeon-happy",
-      "prompt": "A cute plump new zealand kereru wood pigeon with a shiny green-purple head, a pure white chest, a red beak, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/pigeon-cheer",
+      "prompt": "a cute plump New Zealand kereru wood pigeon with a shiny green-purple head, a pure white chest, a red beak, red feet, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "pigeon-happy",
-      "max": 1000
+      "file": "pigeon-cheer",
+      "max": 320
     },
     {
-      "name": "kea-wait",
-      "prompt": "A cute round new zealand kea parrot, olive green feathers, a long curved grey beak, a flash of orange under its wings, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/kea-sit",
+      "prompt": "a cute round New Zealand kea mountain parrot, olive green feathers, a long curved grey beak, a flash of orange under its wings, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "kea-wait",
-      "max": 1000
+      "file": "kea-sit",
+      "max": 320
     },
     {
-      "name": "kea-happy",
-      "prompt": "A cute round new zealand kea parrot, olive green feathers, a long curved grey beak, a flash of orange under its wings, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/kea-cheer",
+      "prompt": "a cute round New Zealand kea mountain parrot, olive green feathers, a long curved grey beak, a flash of orange under its wings, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "kea-happy",
-      "max": 1000
+      "file": "kea-cheer",
+      "max": 320
     },
     {
-      "name": "weka-wait",
-      "prompt": "A cute round brown new zealand weka with speckled feathers and a short strong beak, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/weka-sit",
+      "prompt": "a cute round brown New Zealand weka with speckled feathers and a short strong beak, strong legs, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "weka-wait",
-      "max": 1000
+      "file": "weka-sit",
+      "max": 320
     },
     {
-      "name": "weka-happy",
-      "prompt": "A cute round brown new zealand weka with speckled feathers and a short strong beak, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/weka-cheer",
+      "prompt": "a cute round brown New Zealand weka with speckled feathers and a short strong beak, strong legs, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "weka-happy",
-      "max": 1000
+      "file": "weka-cheer",
+      "max": 320
     },
     {
-      "name": "tui-wait",
-      "prompt": "A cute new zealand tui, glossy dark blue-green feathers with a small white tuft at the throat, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/tui-sit",
+      "prompt": "a cute New Zealand tui, glossy dark blue-green feathers with a small white tuft at the throat, thin beak, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "tui-wait",
-      "max": 1000
+      "file": "tui-sit",
+      "max": 320
     },
     {
-      "name": "tui-happy",
-      "prompt": "A cute new zealand tui, glossy dark blue-green feathers with a small white tuft at the throat, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/tui-cheer",
+      "prompt": "a cute New Zealand tui, glossy dark blue-green feathers with a small white tuft at the throat, thin beak, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "tui-happy",
-      "max": 1000
+      "file": "tui-cheer",
+      "max": 320
     },
     {
-      "name": "heron-wait",
-      "prompt": "A graceful new zealand white heron (kotuku), pure white feathers, long thin neck, long yellow beak, standing calmly and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/heron-sit",
+      "prompt": "a graceful New Zealand white heron (kotuku), pure white feathers, long thin neck, long yellow beak, long thin dark legs, facing right, side view, standing calmly with a small friendly smile, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "heron-wait",
-      "max": 1000
+      "file": "heron-sit",
+      "max": 320
     },
     {
-      "name": "heron-happy",
-      "prompt": "A graceful new zealand white heron (kotuku), pure white feathers, long thin neck, long yellow beak, wings spread wide in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "friends/heron-cheer",
+      "prompt": "a graceful New Zealand white heron (kotuku), pure white feathers, long thin neck, long yellow beak, long thin dark legs, facing right, side view, jumping for joy with both wings up high, beak open in a big smile, tiny sparkles, the whole bird, with nothing under its feet, no ground, no base, no rock. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
       "folder": "friends",
-      "file": "heron-happy",
-      "max": 1000
+      "file": "heron-cheer",
+      "max": 320
     },
     {
-      "name": "shoot",
-      "prompt": "A small bright green reed shoot sprouting from a lump of mud. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "reeds/reed",
+      "prompt": "A single young reed shoot, one clump of three tall slim pointed blades growing from one small round lump of mud, the whole shoot covered edge to edge in shining yellow gold, vivid polished metal with gleaming highlights, simple and tidy. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         512,
-        512
-      ],
-      "kind": "cut",
-      "folder": "garden",
-      "file": "shoot",
-      "max": 600
-    },
-    {
-      "name": "mat",
-      "prompt": "A woven flax mat, rectangular, flat, seen from above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
-      "size": [
-        768,
         768
       ],
       "kind": "cut",
-      "folder": "garden",
-      "file": "mat",
-      "max": 1000
+      "folder": "reeds",
+      "file": "reed",
+      "max": 200,
+      "tints": {
+        "green": "green",
+        "mud": "mud",
+        "bronze": "bronze",
+        "silver": "silver",
+        "amber": "amber"
+      }
     },
     {
-      "name": "swamphen-home",
-      "prompt": "A golden-green swamp edge at dawn: a blue-purple swamp hen with a red beak and shield wades beside a neat grid of bright reed shoots in the mud, four rows of six, reeds behind, wide landscape, no text. Suitable for young children aged 5 to 7.",
+      "name": "reeds/golden-garden",
+      "prompt": "A small golden garden: a neat low tray of dark mud with three tidy rows of bright golden reed shoots, everything shining yellow gold, polished metal with strong gleaming highlights, seen from a slightly raised front view. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         1152,
-        768
+        640
+      ],
+      "kind": "cut",
+      "folder": "reeds",
+      "file": "golden-garden",
+      "max": 420
+    },
+    {
+      "name": "back/bronze",
+      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, warm bronze dawn light, golden-green sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
       ],
       "kind": "scene",
-      "folder": "scenes",
-      "file": "home",
-      "max": 1280
+      "folder": "back",
+      "file": "bronze"
+    },
+    {
+      "name": "back/silver",
+      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, soft silver-blue misty morning, pale sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "silver"
+    },
+    {
+      "name": "back/gold",
+      "prompt": "A calm empty swamp edge, wide landscape, soft blue-green water with clumps of tall reeds only at the far left and right edges, an empty smooth plain flat green grassy bank in the foreground with nothing lying on it and a wide open middle, nothing at all on the ground, glowing golden sunset, warm orange and gold sky, no animals, no text. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "gold"
+    },
+    {
+      "name": "card",
+      "prompt": "A golden-green swamp edge at dawn, wide landscape: on the right a chubby round blue-purple swamp hen (pukeko) with a bright red beak, a small red shield on its forehead just above the beak, no comb, a plain blue belly with no red on it, and long red-orange legs, wading on green grass; behind it on the left, tall green reeds growing from dark mud, soft dawn sky, no text. Suitable for young children aged 5 to 7.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "folder": "",
+      "file": "swamphen"
     }
-  ]
+  ],
+  "tints": {
+    "green": {
+      "dark": [
+        22,
+        56,
+        18
+      ],
+      "mid": [
+        84,
+        150,
+        56
+      ],
+      "shine": [
+        200,
+        240,
+        150
+      ]
+    },
+    "mud": {
+      "dark": [
+        50,
+        34,
+        18
+      ],
+      "mid": [
+        130,
+        100,
+        64
+      ],
+      "shine": [
+        205,
+        180,
+        140
+      ]
+    },
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    },
+    "amber": {
+      "dark": [
+        90,
+        50,
+        10
+      ],
+      "mid": [
+        214,
+        150,
+        50
+      ],
+      "shine": [
+        255,
+        230,
+        160
+      ]
+    }
+  }
 }
