@@ -44,3 +44,10 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   }
   return { hopsMade, mistakes, done: hopsMade === hops.length && hops.length === HOPS_PER_ROUND, answers };
 }
+
+/** Hops in a row, the latest first, whose first glow-worm was wrong: three bring the step labels back for the rest of the round (R6). */
+export const wrongFirstRun = (answers: readonly { correct: boolean }[]): number => {
+  let run = 0;
+  for (let i = answers.length - 1; i >= 0 && !answers[i].correct; i--) run++;
+  return run;
+};

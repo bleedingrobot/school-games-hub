@@ -13,11 +13,13 @@
  * 10s until day 21. The server keeps the furthest step reached (`reached`), so forgetting a few facts brings more practice
  * of them but never drops a child back a step.
  */
+import { helpForFact, type FactRung } from '../kit/help';
 import { atMostShareTell, sharingTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import type { FactStats } from '../maths/leitner';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 import { EARLY_FACTS, earlyFactsPack, SKIP_STEPS, type SkipKind, type SkipStep } from '../maths/skillPacks/earlyFacts';
 import { seeded } from '../seededRandom';
+import type { Help } from './progress';
 
 export const HOPS_PER_ROUND = 10;
 /** On gold days the last three hops count back, as Hop hops home (James, 4 Nov 2026). */
@@ -54,11 +56,31 @@ export function stepFor(stats: Iterable<FactStats>, reached: SkipStep = 10): Ski
   return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 
-/** One hop: the fact it practises and where the gap is (the shared pack's params are [answer, at]). */
+export const HELPS: readonly Help[] = ['full', 'faint', 'none'];
+export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
+
+/**
+ * The step label ("+10") for a fact from the child's own record of it (maths review R6, Weka's way with Hop's three
+ * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+ * fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full label comes back, and a
+ * new step's facts have no record, so they start full.
+ */
+const HELP_LADDER: readonly FactRung<Help>[] = [
+  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'faint', until: { box: 4, correct: 6 } },
+  { help: 'none' },
+];
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
+
+/**
+ * One hop: the fact it practises, where the gap is (the shared pack's params are [answer, at]) and its step label.
+ * `h` is missing on a round saved before R6: that hop shows the calendar's label for the round (the browser falls back).
+ */
 export interface HopPlan {
   key: string;
   answer: number;
   at: number;
+  h?: Help;
 }
 
 /** What the server saves when a challenge starts, and the browser is sent. */
@@ -139,6 +161,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
+  const byKey = new Map(list.map((s) => [s.key, s]));
   const back = gold ? BACK_HOPS : 0;
   const keys = [
     ...pickKeys(stepKeys(step), HOPS_PER_ROUND - back, box, random),
@@ -147,7 +170,7 @@ export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reac
   // The shared family rolls each question's numbers (the answer and where the gap is), from the seed.
   const hops = keys.map((key) => {
     const [answer, at] = family(step).roll(key, random);
-    return { key, answer, at };
+    return { key, answer, at, h: helpForStats(byKey.get(key)) };
   });
   return { seed, step, gold, hops };
 }
