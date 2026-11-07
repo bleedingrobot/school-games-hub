@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 905" width="1600" height="905">
-<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4ecf5"/><stop offset=".7" stop-color="#e6f3d6"/><stop offset="1" stop-color="#7fae55"/></linearGradient></defs>
-<rect width="1600" height="905" fill="url(#g)"/>
-<path d="M470 560 Q800 760 1130 560 L1090 470 L510 470 Z" fill="#b98a4e" stroke="#7a5528" stroke-width="12"/>
-<path d="M520 470 Q800 240 1080 470" fill="none" stroke="#7a5528" stroke-width="22"/>
-<g fill="#c0392b"><circle cx="640" cy="470" r="46"/><circle cx="740" cy="445" r="46"/><circle cx="850" cy="450" r="46"/><circle cx="950" cy="475" r="46"/><circle cx="800" cy="510" r="46"/></g>
-<g fill="#3d6b3a"><ellipse cx="640" cy="428" rx="14" ry="8"/><ellipse cx="740" cy="403" rx="14" ry="8"/><ellipse cx="850" cy="408" rx="14" ry="8"/><ellipse cx="950" cy="433" rx="14" ry="8"/></g>
-<ellipse cx="1250" cy="640" rx="120" ry="95" fill="#4a4a4a"/><ellipse cx="1250" cy="680" rx="80" ry="70" fill="#f0b25a"/><circle cx="1215" cy="600" r="10" fill="#fff"/><path d="M1180 640 L1130 655 L1180 668 Z" fill="#e8a23a"/>
-</svg>

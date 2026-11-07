@@ -11,64 +11,221 @@
   "home_dir": "src/assets/home",
   "pictures": [
     {
-      "name": "robin-wait",
-      "prompt": "Robin, a cute round New Zealand robin with a grey-black head, a bright yellow-cream chest and thin legs, sitting upright and looking friendly. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "robin-sit",
+      "prompt": "Robin, a cute round New Zealand toutouwai robin, soft grey-black feathers on the head, back and wings, a pale cream-white round breast and belly, thin long dark legs, a small black beak, big bright dark friendly eyes, facing to the right, side view, standing upright and calm on its thin legs, wings folded, a small smile, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
-      "folder": "robin",
-      "file": "robin-wait",
-      "max": 1000
+      "folder": "friends",
+      "file": "robin-sit",
+      "max": 320
     },
     {
-      "name": "robin-happy",
-      "prompt": "Robin, a cute round New Zealand robin with a yellow-cream chest, wings spread wide, beak open in a happy cheer. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "name": "robin-cheer",
+      "prompt": "Robin, a cute round New Zealand toutouwai robin, soft grey-black feathers on the head, back and wings, a pale cream-white round breast and belly, thin long dark legs, a small black beak, big bright dark friendly eyes, facing to the right, side view, wings lifted up and out wide in joy, beak open in a happy cheer, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
-        768,
-        768
+        832,
+        832
       ],
       "kind": "cut",
-      "folder": "robin",
-      "file": "robin-happy",
-      "max": 1000
+      "folder": "friends",
+      "file": "robin-cheer",
+      "max": 320
+    },
+    {
+      "name": "robin-laugh",
+      "prompt": "Robin, a cute round New Zealand toutouwai robin, soft grey-black feathers on the head, back and wings, a pale cream-white round breast and belly, thin long dark legs, a small black beak, big bright dark friendly eyes, facing to the right, side view, head tipped back a little, beak wide open laughing happily, wings folded, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "robin-laugh",
+      "max": 320
+    },
+    {
+      "name": "kiwi-sit",
+      "prompt": "Kiwi, a cute chunky round New Zealand kiwi bird, soft shaggy brown feathers, a long thin curved pale beak, small bright eyes, strong little legs, no wings visible, facing to the right, side view, sitting calmly and happily, a small smile, the whole animal. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kiwi-sit",
+      "max": 320
+    },
+    {
+      "name": "kea-sit",
+      "prompt": "Kea, a cute round New Zealand kea mountain parrot, olive-green feathers, a strong curved dark grey hooked beak, bright friendly eyes, grey legs, a little orange glow under the wing, facing to the right, side view, standing calmly, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "kea-sit",
+      "max": 320
+    },
+    {
+      "name": "weka-sit",
+      "prompt": "Weka, a cute chunky round New Zealand weka bird, streaky brown and black feathers, a short strong pale beak, bright reddish-brown eyes, sturdy legs, small wings, facing to the right, side view, standing calmly and happily, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "weka-sit",
+      "max": 320
+    },
+    {
+      "name": "pukeko-sit",
+      "prompt": "Pukeko, a cute round New Zealand p\u016bkeko swamp bird, deep blue-purple feathers, a black back, a bright red beak and red forehead shield, long red-orange legs with big toes, a white tail patch, facing to the right, side view, standing calmly, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "pukeko-sit",
+      "max": 320
+    },
+    {
+      "name": "tui-sit",
+      "prompt": "Tui, a cute round New Zealand t\u016b\u012b bird, dark glossy blue-green and black feathers, a small tuft of white feathers at the throat, a slim dark beak, bright friendly eyes, thin dark legs, facing to the right, side view, perched calmly, the whole bird. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "tui-sit",
+      "max": 320
     },
     {
       "name": "berry",
-      "prompt": "One plump round red berry with a tiny green leaf on top. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "prompt": "Exactly one single round red berry, a lone perfectly smooth glossy ball of plain red clay with no marks, no dents and no holes on it, with one small green leaf on top, only one berry, nothing next to it. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         512,
         512
       ],
       "kind": "cut",
-      "folder": "robin",
+      "folder": "pieces",
       "file": "berry",
-      "max": 1000
+      "max": 160
     },
     {
       "name": "basket",
-      "prompt": "A woven wicker basket with a curved handle, empty, seen from slightly above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "prompt": "A round woven natural wicker basket bowl with no handle at all, completely empty with nothing inside, wide open top, seen from the front and slightly above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
       ],
       "kind": "cut",
-      "folder": "robin",
+      "folder": "pieces",
       "file": "basket",
-      "max": 1000
+      "max": 360,
+      "tints": {
+        "bronze": "basket-bronze",
+        "silver": "basket-silver"
+      }
     },
     {
       "name": "basket-gold",
-      "prompt": "A woven wicker basket overflowing with golden shiny berries, with a gold ribbon on the handle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "prompt": "A round woven basket bowl with no handle at all, completely empty with nothing inside, wide open top, the whole basket covered edge to edge in shining yellow gold, vivid mirror-bright polished metal with strong gleaming highlights, tiny sparkles. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
       "size": [
         768,
         768
       ],
       "kind": "cut",
-      "folder": "robin",
+      "folder": "pieces",
       "file": "basket-gold",
-      "max": 1000
+      "max": 360
+    },
+    {
+      "name": "feast",
+      "prompt": "The Golden Berry Feast, a round woven basket bowl with no handle, heaped high with many plump round berries made of vivid mirror-bright polished shining yellow gold, strong gleaming highlights, a gold ribbon bow on the front of the basket, tiny sparkles around. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "feast",
+      "max": 480
+    },
+    {
+      "name": "plate",
+      "prompt": "A smooth round blue clay dome cover, like a covered serving dish, sitting on a round white plate, the dome closed all the way down to the plate rim with no gap, nothing visible underneath or around it, seen from the front and slightly above. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        768,
+        768
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "plate",
+      "max": 400
+    },
+    {
+      "name": "back/forest",
+      "prompt": "A wide soft view of a New Zealand rimu forest clearing in pale gentle daylight, tall tree trunks and big green ferns framing the left and right edges and the bottom corners, the whole middle of the picture a wide, empty, perfectly smooth flat green lawn of soft moss, like a plain green tablecloth, completely bare and even, soft pale blue-green sky glimpses between leaves, only greens and soft browns. Empty background scenery for a children's game, calm soft colours. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "forest"
+    },
+    {
+      "name": "card",
+      "prompt": "Robin, a cute round New Zealand toutouwai robin, soft grey-black feathers, a pale cream-white round breast, thin dark legs, big friendly eyes, perched on a mossy log in a sunny New Zealand forest, a woven wicker basket with a handle beside it, wide landscape picture for a game, the robin on the left, calm open space on the right. No text.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "robin"
     }
-  ]
+  ],
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    }
+  }
 }

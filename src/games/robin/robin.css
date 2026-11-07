@@ -1,5 +1,5 @@
 /* Robin’s Berry Basket. A mossy rimu forest at dusk: every number sits dark on a light block, and every target is at least
-   56px for children of 5 to 7. Stand-in pictures drawn in code (art/CREDITS.md). */
+   56px for children of 5 to 7. Painted pictures with stand-ins drawn in code (art/CREDITS.md). */
 .rb-root {
   --rb-ink: #1b2340;
   --rb-panel: #fffdf5;
@@ -176,8 +176,8 @@
 @keyframes rb-plop { 40% { scale: 1.25; } }
 .rb-basket { position: relative; display: flex; flex-direction: column; align-items: center; width: min(100%, 360px); }
 .rb-basket__above { position: absolute; top: -34px; left: 50%; translate: -50% 0; padding: 0 14px; border-radius: 999px; background: var(--rb-panel); font: 900 1.7rem system-ui, sans-serif; z-index: 2; }
-.rb-basket__spaces { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 92%; margin-bottom: -26px; }
-.rb-basket__spaces--heap { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin-bottom: -22px; min-height: 40px; }
+.rb-basket__spaces { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 76%; margin-bottom: -112px; }
+.rb-basket__spaces--heap { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin-bottom: -70px; min-height: 40px; }
 .rb-heapberry { width: 36px; margin: 0 -6px -10px; }
 .rb-slot { display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; background: rgb(255 253 245 / 0.75); border: 2px dashed #7a5a2a; }
 .rb-slot--end { margin-right: 0; }
@@ -209,3 +209,17 @@
 .rb-whypic .rb-berrysvg { width: 34px; }
 .rb-whypic--over .rb-berrysvg { filter: hue-rotate(0deg); }
 .rb-shelf__feast { width: 44px; }
+
+/* Painted pictures (art.tsx). */
+.rb-bird--painted { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+.rb-small svg, .rb-small img { display: block; width: 100%; height: auto; }
+.rb-small--painted img { filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
+.rb-small--glow img { animation: rb-glow 1.2s ease-in-out 3; }
+.rb-plate img { display: block; width: 100%; height: auto; }
+.rb-golden--painted { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.25)); }
+
+/* The painted forest background (art.tsx sets --rb-back; without it the gradient above shows). */
+.rb-scene[style*="--rb-back"] { background: var(--rb-back) center / cover no-repeat, var(--rb-sky); }
+@media (max-width: 700px) {
+  .rb-scene[style*="--rb-back"] { background: var(--rb-back-small) center / cover no-repeat, var(--rb-sky); }
+}

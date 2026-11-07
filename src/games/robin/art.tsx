@@ -1,10 +1,24 @@
 /**
- * Robin's Berry Basket's pictures: stand-ins drawn in code (SVG) until the painted art pass (see art/CREDITS.md). Robin and
- * the friends, a berry, the basket with its numbered slots, the covered plate, the ten baskets on the log and the Golden
- * Berry Feast. Every number is drawn or counted here in code, so a count is always exact.
+ * Robin's Berry Basket's pictures: the painted ones (scripts/game_art.py robin, tidied into ./art/paint/, picks in
+ * docs/robin-art/picks.json) and, as a fallback when a picture is missing, the stand-ins drawn in code (SVG). Robin and the
+ * friends, a berry, the basket with its numbered slots, the covered plate, the ten baskets on the log and the Golden Berry
+ * Feast. The painted basket and plate are empty and the painted berry is one picture repeated by code, so every berry on
+ * screen is counted here and a count is always exact. The pictures download when shown.
  */
+import type { CSSProperties } from 'react';
 import { FRIEND_NAMES, type Friend as FriendName } from '../../../shared/robin/config';
 import type { Metal } from '../../../shared/robin/progress';
+
+const FILES = import.meta.glob('./art/paint/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+export const paint = (path: string): string | undefined => FILES[`./art/paint/${path}.webp`];
+
+/** The painted forest background, as CSS variables (a full and a small copy). Nothing if it is not painted. */
+export function sceneStyle(): CSSProperties | undefined {
+  const full = paint('back/forest');
+  if (!full) return undefined;
+  return { '--rb-back': `url(${full})`, '--rb-back-small': `url(${paint('back/forest-800') ?? full})` } as CSSProperties;
+}
 
 export type Pose = 'sit' | 'cheer' | 'laugh';
 
@@ -35,6 +49,8 @@ function Bill({ look, open }: { look: BirdLook; open: boolean }) {
 export function Bird({ friend, pose = 'sit' }: { friend: FriendName; pose?: Pose }) {
   const look = LOOKS[friend];
   const raised = pose === 'cheer';
+  const src = paint(`friends/${friend}-${pose}`) ?? paint(`friends/${friend}-${pose === 'laugh' ? 'cheer' : 'sit'}`) ?? paint(`friends/${friend}-sit`);
+  if (src) return <img className={`rb-bird rb-bird--${pose} rb-bird--painted`} src={src} alt={FRIEND_NAMES[friend]} draggable={false} />;
   return (
     <svg className={`rb-bird rb-bird--${pose}`} viewBox="0 0 100 100" role="img" aria-label={FRIEND_NAMES[friend]}>
       <path d="M30 80 L14 96 L38 90 Z" fill={look.wing} />
@@ -83,6 +99,8 @@ export function Friend({ friend, pose = 'sit' }: { friend: FriendName; pose?: Po
 
 /** One berry (a red berry with a green leaf). */
 export function BerrySvg() {
+  const src = paint('pieces/berry');
+  if (src) return <img className="rb-berrysvg" src={src} alt="" aria-hidden="true" draggable={false} />;
   return (
     <svg className="rb-berrysvg" viewBox="0 0 40 40" aria-hidden="true">
       <circle cx="20" cy="23" r="13" fill="#d8283c" stroke="#8c1224" strokeWidth="2" />
@@ -104,6 +122,8 @@ export function Berry({ dim = false, mark }: { dim?: boolean; mark?: number | nu
 
 /** A woven basket, front view. */
 export function BasketSvg({ gold = false }: { gold?: boolean }) {
+  const src = paint(gold ? 'pieces/basket-gold' : 'pieces/basket');
+  if (src) return <img className="rb-basketsvg" src={src} alt="" aria-hidden="true" draggable={false} />;
   const [a, b] = gold ? ['#f2c53a', '#b88a00'] : ['#c79a5a', '#7a5a2a'];
   return (
     <svg className="rb-basketsvg" viewBox="0 0 120 70" aria-hidden="true">
@@ -142,11 +162,15 @@ export function Basket({ placed, slots, above, lit = null, label }: { placed: nu
 export function Plate({ n, more }: { n: number; more: boolean }) {
   return (
     <div className="rb-plate" role="img" aria-label={`A plate with ${n} berries under a cloth${more ? ', and one more berry' : ''}`}>
+      {paint('pieces/plate') ? (
+        <img src={paint('pieces/plate')} alt="" aria-hidden="true" draggable={false} />
+      ) : (
       <svg viewBox="0 0 200 110" aria-hidden="true">
         <ellipse cx="100" cy="86" rx="90" ry="16" fill="#e8e2d2" stroke="#9a9078" strokeWidth="3" />
         <path d="M24 84 C24 24 176 24 176 84 Q100 98 24 84 Z" fill="#7aa8d8" stroke="#3a6aa0" strokeWidth="3" />
         <path d="M60 78 Q64 48 76 40 M100 78 V36 M140 78 Q136 48 124 40" stroke="#3a6aa0" strokeWidth="2" fill="none" opacity="0.6" />
       </svg>
+      )}
       <span className="rb-plate__n">{n}</span>
       {more && <span className="rb-plate__more"><BerrySvg /></span>}
     </div>
@@ -160,6 +184,14 @@ const METAL_FILL: Record<Metal, [string, string]> = { plain: ['#c9b48a', '#7a6a4
 /** One small basket on the log: plain wicker, or bronze, silver or gold. */
 export function Small({ metal, glow = false }: { metal: Metal; glow?: boolean }) {
   const [a, b] = METAL_FILL[metal];
+  const src = paint(`pieces/${metal === 'plain' ? 'basket' : metal === 'gold' ? 'basket-gold' : `basket-${metal}`}`);
+  if (src) {
+    return (
+      <span className={`rb-small rb-small--${metal} rb-small--painted${glow ? ' rb-small--glow' : ''}`}>
+        <img src={src} alt="" aria-hidden="true" draggable={false} />
+      </span>
+    );
+  }
   return (
     <span className={`rb-small rb-small--${metal}${glow ? ' rb-small--glow' : ''}`}>
       <svg viewBox="0 0 60 50" aria-hidden="true">
@@ -193,6 +225,8 @@ export function BasketLog({ baskets, glowAt = null }: { baskets: { metal: Metal 
 
 /** The Golden Berry Feast, the grandest basket of all. */
 export function GoldenFeast() {
+  const src = paint('pieces/feast');
+  if (src) return <img className="rb-golden rb-golden--painted" src={src} role="img" alt="The Golden Berry Feast" draggable={false} />;
   return (
     <svg className="rb-golden" viewBox="0 0 140 120" role="img" aria-label="The Golden Berry Feast">
       {[[40, 40], [60, 28], [80, 28], [100, 40], [50, 54], [70, 46], [90, 54]].map(([x, y]) => (
