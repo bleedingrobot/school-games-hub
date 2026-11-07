@@ -117,21 +117,23 @@ describe('the new skills in the ladder', () => {
 describe('ten and facts', () => {
   const pack10 = earlyFactsPack();
   const keys = EARLY_FACTS.families.tenAnd.keys;
+  const lessKeys = EARLY_FACTS.families.tenLess.keys;
 
-  it('nine facts, one record each, in the early-facts pack', () => {
+  it('nine "ten and" and nine "ten less" facts, one record each, in the early-facts pack; the skill counts both', () => {
     expect(keys).toEqual(Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`));
-    for (const key of keys) {
+    expect(lessKeys).toEqual(Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`));
+    for (const key of [...keys, ...lessKeys]) {
       expect(RECORD_KEY.test(key)).toBe(true);
       expect(packIdOfKey(key)).toBe('early-facts');
     }
-    expect(LADDER.find((s) => s.id === 'ten-and')!.keys).toEqual(keys);
+    expect(LADDER.find((s) => s.id === 'ten-and')!.keys).toEqual([...keys, ...lessKeys]);
   });
 
-  it('every variant is a sum worked out the same by plain arithmetic, and the solver counts it towards the fact', () => {
+  it('every variant is a sum worked out the same by plain arithmetic, and the solver counts it towards its own fact', () => {
     const random = randomFromSeed('tenand');
-    for (const key of keys) {
+    for (const key of [...keys, ...lessKeys]) {
       const n = Number(key.split(':')[1]);
-      for (let v = 0; v < 4; v++) {
+      for (let v = 0; v < 2; v++) {
         const q = pack10.rebuild(key, [n, v], true, random)!;
         expect(q, `${key} ${v}`).not.toBeNull();
         expect(q.answer).toBe(solveSum(q.parts));
@@ -139,14 +141,18 @@ describe('ten and facts', () => {
         const solved = solveParts(q.parts)!;
         expect(solved.answer).toBe(q.answer);
         expect(solved.keys).toContain(key);
+        // 10 + 4 and 4 + 10 never count as the minus facts, and 14 − 10 and 10 + ? = 14 never as the plus ones.
+        expect(solved.keys.some((k) => (key.startsWith('tenand') ? k.startsWith('tenless') : k.startsWith('tenand')))).toBe(false);
       }
     }
   });
 
-  it('refuses numbers it would never roll', () => {
+  it('refuses numbers it would never roll, and still makes the old minus variants of "tenand" for a challenge saved earlier', () => {
     expect(pack10.rebuild('tenand:4', [5, 0], false)).toBeNull();
     expect(pack10.rebuild('tenand:4', [4, 4], false)).toBeNull();
     expect(pack10.rebuild('tenand:10', [10, 0], false)).toBeNull();
+    expect(pack10.rebuild('tenless:4', [4, 2], false)).toBeNull();
+    expect(pack10.rebuild('tenand:4', [4, 3], false)!.answer).toBe(4);
   });
 });
 

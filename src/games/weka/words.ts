@@ -54,6 +54,8 @@ export const WORDS = {
   sameQuestion: 'Same question:',
   pebblesIn: (n: number) => `${n}`,
   tenFull: '10',
+  check: 'Check',
+  putBackPebble: 'Silver pebble: put it back',
   movePebble: 'Silver pebble: move it to the first ten-frame',
   next: 'Next',
   finish: 'Finish',

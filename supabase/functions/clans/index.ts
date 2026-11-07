@@ -7239,12 +7239,15 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+* "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+* Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+*/
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 3)],
+	roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -7282,6 +7285,42 @@ const tenAnd = {
 				answer - 1,
 				answer + 10,
 				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess = {
+	label: "\"Ten less\" facts (14 − 10)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+		const t = String(10 + n);
+		const parts = v === 0 ? [
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		] : [
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
 				20,
 				1 + n
 			]
@@ -7760,6 +7799,99 @@ const ZOOM_KEYS = [
 	"zoom:0-200:130",
 	"zoom:300-400:350"
 ];
+const PV_TENS = range$5(1, 9).map((n) => n * 10);
+/** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
+const PV_OTHERS = range$5(1, 9).flatMap((t) => [
+	1,
+	3,
+	5,
+	7
+].map((j) => t * 10 + (t + j) % 9 + 1));
+const PV_REGROUP_BUNDLE = [
+	23,
+	31,
+	38,
+	42,
+	46,
+	54,
+	59,
+	25,
+	37,
+	48,
+	51,
+	33
+];
+const PV_REGROUP_SWAP = [
+	32,
+	41,
+	47,
+	53,
+	56,
+	62,
+	65,
+	71,
+	74,
+	78,
+	83,
+	86,
+	29,
+	35,
+	44,
+	58,
+	67,
+	92
+];
+const PV_TEN_MORE = [
+	14,
+	27,
+	35,
+	42,
+	56,
+	63,
+	78,
+	85,
+	91,
+	49,
+	68,
+	73
+];
+const PV_TEN_LESS = [
+	19,
+	32,
+	47,
+	54,
+	61,
+	76,
+	83,
+	98,
+	25,
+	66,
+	39,
+	72
+];
+const PV_HUNDREDS = range$5(1, 9).map((h) => h * 100);
+/** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
+const PV3_OTHERS = range$5(1, 9).flatMap((h) => [
+	h * 100 + (h * 3 % 9 + 1) * 10 + h * 2 % 9 + 1,
+	h * 100 + h * 2 % 9 + 1,
+	h * 100 + ((h + 4) % 9 + 1) * 10
+]);
+const PV_HUN_MORE = [
+	147,
+	232,
+	356,
+	418,
+	563,
+	694
+];
+const PV_HUN_LESS = [
+	320,
+	451,
+	587,
+	642,
+	778,
+	905
+];
 /** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
 const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
 /** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
@@ -7840,7 +7972,63 @@ const lineFamilies = {
 		"hundred",
 		"to",
 		String(n)
-	], (n) => nearWords(n, 100))
+	], (n) => nearWords(n, 100)),
+	pvbuild: numLine("Build a number with bundles and sticks", "MS.Y2.NUM.NS.P1", [...PV_TENS.map((n) => `pvbuild:t${n}`), ...PV_OTHERS.map((n) => `pvbuild:n${n}`)], (n) => [
+		"Build",
+		String(n),
+		"with",
+		"bundles"
+	], (n) => `Build ${n} with bundles and sticks.`),
+	pvread: numLine("Read bundles and sticks as a number", "MS.Y2.NUM.NS.P1", PV_OTHERS.map((n) => `pvread:n${n}`), (n) => [
+		"Read",
+		String(n),
+		"from",
+		"bundles"
+	], () => "What number is this?"),
+	pvzero: numLine("Read bundles with no sticks left over", "MS.Y2.NUM.NS.P1", PV_TENS.map((n) => `pvzero:n${n}`), (n) => [
+		"Read",
+		String(n),
+		"from",
+		"bundles",
+		"only"
+	], () => "What number is this?"),
+	pvregroup: numLine("Tie sticks into bundles and untie a bundle", "MS.Y2.NUM.NS.P2", [...PV_REGROUP_BUNDLE.map((n) => `pvregroup:b${n}`), ...PV_REGROUP_SWAP.map((n) => `pvregroup:s${n}`)], (n, key) => key.includes(":b") ? [
+		"Tie",
+		String(n),
+		"sticks",
+		"into",
+		"bundles"
+	] : [
+		"Untie",
+		"a",
+		"bundle",
+		"of",
+		String(n)
+	], (n, key) => key.includes(":b") ? `Tie ${n} sticks into bundles.` : `${n} is one bundle fewer and ten more sticks.`),
+	pvten: numLine("Ten more and ten less with bundles", "MS.Y2.NUM.NS.P1", [...PV_TEN_MORE.map((n) => `pvten:+${n}`), ...PV_TEN_LESS.map((n) => `pvten:-${n}`)], (n, key) => [
+		"Bundle",
+		key.includes("+") ? "added" : "taken",
+		"from",
+		String(n)
+	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
+	pvbuild3: numLine("Build a number with rafts, bundles and sticks", "MS.Y3.NUM.NS.P1", [...PV_HUNDREDS.map((n) => `pvbuild3:t${n}`), ...PV3_OTHERS.map((n) => `pvbuild3:n${n}`)], (n) => [
+		"Build",
+		String(n),
+		"with",
+		"rafts"
+	], (n) => `Build ${n} with rafts, bundles and sticks.`),
+	pvread3: numLine("Read rafts, bundles and sticks as a number", "MS.Y3.NUM.NS.P1", [...PV_HUNDREDS.map((n) => `pvread3:t${n}`), ...PV3_OTHERS.map((n) => `pvread3:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"from",
+		"rafts"
+	], () => "What number is this?"),
+	pvhun: numLine("A hundred more and a hundred less", "MS.Y3.NUM.NS.P1", [...PV_HUN_MORE.map((n) => `pvhun:+${n}`), ...PV_HUN_LESS.map((n) => `pvhun:-${n}`)], (n, key) => [
+		"Raft",
+		key.includes("+") ? "added" : "taken",
+		"from",
+		String(n)
+	], (n, key) => `What is a hundred ${key.includes("+") ? "more" : "less"} than ${n}?`)
 };
 const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
 /** A number-line question read back from its parts (["Place", "63", "on", "the", "100", "line"]): its number and key, or null when it isn't one. */
@@ -8017,11 +8205,125 @@ function solveCounting(parts) {
 	}
 	return null;
 }
+const ROWS_KEYS = range$5(2, 5).flatMap((r) => range$5(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range$5(2, 6).flatMap((r) => range$5(2, 6).filter((c) => c !== r).map((c) => [r, c]));
+const SHARE_KEYS = [
+	2,
+	3,
+	4,
+	5,
+	10
+].flatMap((r) => range$5(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range$5(6, 9).flatMap((r) => range$5(3, 9).map((c) => `cut:${r}x${c}`));
+const keyPair = (key) => {
+	const m = /(\d+)[x/](\d+)$/.exec(key);
+	return [Number(m[1]), Number(m[2])];
+};
+const rowsWords = (r, c) => `${r} rows of ${c}`;
+const arrayFamily = (label, tag, keys, parts, spoken, answer, wrong) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => keyPair(key),
+	make: (key, [a, b]) => {
+		if (!keys.includes(key)) return null;
+		const [ka, kb] = keyPair(key);
+		if (ka !== a || kb !== b) return null;
+		return {
+			parts: parts(a, b),
+			spoken: spoken(a, b),
+			answer: answer(a, b),
+			wrong: wrong(a, b)
+		};
+	}
+});
+const product = (a, b) => a * b;
+const arrayFamilies = {
+	rows: arrayFamily("Equal rows (4 rows of 6)", "MS.Y2.NUM.OP.P3", ROWS_KEYS, (r, c) => [
+		"Plant",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Plant ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + r
+	]),
+	turn: arrayFamily("The same array turned round (3 rows of 5 is 5 rows of 3)", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `turn:${r}x${c}`), (r, c) => [
+		"Turn",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Turn ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + c
+	]),
+	share: arrayFamily("Sharing into equal rows (24 into 4 rows)", "MS.Y3.NUM.OP.P4", SHARE_KEYS, (t, r) => [
+		"Share",
+		String(t),
+		"into",
+		String(r),
+		"rows"
+	], (t, r) => `${t} shoots in ${r} equal rows. How many in each row?`, (t, r) => t / r, (t, r) => [
+		t - r,
+		t + r,
+		r,
+		t / r + r
+	]),
+	cut: arrayFamily("Cutting an array into parts you know (6 rows of 7)", "MS.Y3.NUM.OP.P3", CUT_KEYS, (r, c) => [
+		"Cut",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Cut ${rowsWords(r, c)} into a row you know and one more. How many shoots?`, product, (r, c) => [
+		(r - 1) * c,
+		r + c,
+		r * c + 6,
+		r * c - r
+	]),
+	which: arrayFamily("Which picture is 3 rows of 5", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `which:${r}x${c}`), (r, c) => [
+		"Which",
+		"is",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Which garden is ${rowsWords(r, c)}?`, product, (r, c) => [
+		r + c,
+		c * r + r,
+		(r - 1) * c,
+		Number(`${r}${c}`)
+	])
+};
+const ARRAY_FAMILY_NAMES = Object.keys(arrayFamilies);
+/** An equal-rows question read back from its parts (["Plant", "4", "rows", "of", "6"]): its answer and key, or null when it isn't one. */
+function solveArray(parts) {
+	const nums = parts.filter((p) => /^\d{1,3}$/.test(p)).map(Number);
+	if (nums.length !== 2) return null;
+	for (const family of Object.values(arrayFamilies)) for (const key of family.keys) {
+		const [a, b] = keyPair(key);
+		if (a !== nums[0] || b !== nums[1]) continue;
+		const made = family.make(key, [a, b]);
+		if (made && made.parts.length === parts.length && made.parts.every((x, i) => x === parts[i])) return {
+			answer: made.answer,
+			key
+		};
+	}
+	return null;
+}
 const families$2 = {
 	...lineFamilies,
 	...equalsFamilies,
 	...countingFamilies,
+	...arrayFamilies,
 	tenAnd,
+	tenLess,
 	tenUp: tenMove(true),
 	tenDown: tenMove(false),
 	oddEven,
@@ -8045,6 +8347,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"tenLess",
 		"tenUp",
 		"tenDown",
 		"oddEven",
@@ -8054,6 +8357,7 @@ const EARLY_FACTS = {
 		...SKIP_MORE_FAMILY_NAMES,
 		...LINE_FAMILY_NAMES,
 		...Object.keys(equalsFamilies),
+		...ARRAY_FAMILY_NAMES,
 		...Object.keys(countingFamilies)
 	]
 };
@@ -11227,7 +11531,7 @@ const LADDER = [
 		label: "Ten and a number (10 + 4)",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys: earlyKeys("tenAnd"),
+		keys: [...earlyKeys("tenAnd"), ...earlyKeys("tenLess")],
 		built: true
 	},
 	{
@@ -11370,6 +11674,100 @@ const LADDER = [
 		stage: "early-facts",
 		curriculumTags: [],
 		keys: earlyKeys("eqtf"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "bundles-50",
+		label: "Bundles of ten and tens and ones to 50",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: [...earlyKeys("pvbuild"), ...earlyKeys("pvread")].filter((k) => Number(/(\d+)$/.exec(k)[1]) <= 50),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "place-value-100",
+		label: "Tens and ones to 100, and zero",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: [...[...earlyKeys("pvbuild"), ...earlyKeys("pvread")].filter((k) => Number(/(\d+)$/.exec(k)[1]) > 50), ...earlyKeys("pvzero")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "regroup-100",
+		label: "Tying and untying bundles",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P2"],
+		keys: earlyKeys("pvregroup"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "ten-more-less-100",
+		label: "Ten more and ten less with bundles",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: earlyKeys("pvten"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "place-value-1000",
+		label: "Hundreds, tens and ones",
+		stage: "place-value",
+		curriculumTags: ["MS.Y3.NUM.NS.P1"],
+		keys: [
+			...earlyKeys("pvbuild3"),
+			...earlyKeys("pvread3"),
+			...earlyKeys("pvhun")
+		],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "equal-rows",
+		label: "Equal rows (4 rows of 6)",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: earlyKeys("rows"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "arrays-turn",
+		label: "Turning an array round",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: [...earlyKeys("turn"), ...earlyKeys("which")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "sharing-rows",
+		label: "Sharing into equal rows",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P4"],
+		keys: earlyKeys("share"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "cut-arrays",
+		label: "Cutting an array into known parts",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P3"],
+		keys: earlyKeys("cut"),
 		built: true,
 		inWarmUp: false,
 		inAuto: false
@@ -11581,10 +11979,11 @@ function focusPools(spec, opts = {}) {
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
+	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
 	if (/^(give|howmany|counton|across):/.test(key)) return "early-facts";
-	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -11816,7 +12215,7 @@ const NUMBER = /^\d{1,4}$/;
 const num = (text) => NUMBER.test(text) ? Number(text) : NaN;
 const whole$1 = (n) => Number.isInteger(n) && n >= 0;
 /** The adding and pairs-that-make-N records for two numbers that add to `total`. */
-function sumKeys(p, q, total) {
+function sumKeys(p, q, total, tenLess = false) {
 	const keys = [];
 	const lo = Math.min(p, q);
 	const hi = Math.max(p, q);
@@ -11824,7 +12223,7 @@ function sumKeys(p, q, total) {
 	if (total === 10) keys.push(`bond10:${lo}+${hi}`);
 	if (total === 20) keys.push(`bond20:${lo}+${hi}`);
 	if (p === q) keys.push(`dbl:${p}`);
-	if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`tenand:${lo}`);
+	if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`${tenLess ? "tenless" : "tenand"}:${lo}`);
 	if (lo === 10 && hi >= 10 && hi <= 19) keys.push(`tenup:${hi}`, `tendown:${hi + 10}`);
 	return keys;
 }
@@ -11880,6 +12279,11 @@ function solveParts(parts) {
 		answer: line.answer,
 		keys: [line.key]
 	} : null;
+	const array = solveArray(p);
+	if (array) return isFocusKey(array.key) ? {
+		answer: array.answer,
+		keys: [array.key]
+	} : null;
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;
 	let keys = [];
@@ -11913,14 +12317,14 @@ function solveParts(parts) {
 				c
 			];
 			answer = z === "?" ? total : x === "?" ? addendA : addendB;
-			if (whole$1(addendA) && whole$1(addendB)) keys = sumKeys(addendA, addendB, total);
+			if (whole$1(addendA) && whole$1(addendB)) keys = sumKeys(addendA, addendB, total, z !== "?");
 		} else if (op === "−") {
 			if (z === "?") {
 				answer = a - b;
-				if (whole$1(answer)) keys = sumKeys(b, answer, a);
+				if (whole$1(answer)) keys = sumKeys(b, answer, a, true);
 			} else if (y === "?") {
 				answer = a - c;
-				if (whole$1(answer)) keys = sumKeys(c, answer, a);
+				if (whole$1(answer)) keys = sumKeys(c, answer, a, true);
 			}
 		} else if (op === "×") {
 			const [f, g, product] = z === "?" ? [

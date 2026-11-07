@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { replay } from '../../../shared/hop/play';
-import { makeRound, showRound } from '../../../shared/hop/round';
+import { makeRound, showRound, stepKeys } from '../../../shared/hop/round';
+import { newStats } from '../../../shared/maths/leitner';
 import { Hops } from './Hops';
 import { WORDS } from './words';
 
@@ -57,7 +58,7 @@ describe("Hop's mistakes that teach", () => {
     };
     const say = run(true);
     expect(document.querySelectorAll('.hp-arc--full').length).toBeGreaterThan(0);
-    const whyCalls = say.mock.calls.filter(([t]) => t === WORDS.why(hops[2].wrongs[0].kind, 10, hops[2].before, hops[2].answer, false));
+    const whyCalls = say.mock.calls.filter(([t]) => t === WORDS.why(hops[2].wrongs[0].kind, hops[2]));
     expect(whyCalls).toHaveLength(1);
     act(() => whyCalls[0][1]());
     expect(say).toHaveBeenCalledWith(WORDS.labelsBack);
@@ -70,10 +71,26 @@ describe("Hop's mistakes that teach", () => {
     const { hops, say, worms, tap } = setup();
     const [first] = hops[0].wrongs;
     tap(first.n);
-    expect(say).toHaveBeenCalledWith(WORDS.why(first.kind, 10, hops[0].before, hops[0].answer, false));
-    expect(screen.getByRole('status').textContent).toContain(WORDS.why(first.kind, 10, hops[0].before, hops[0].answer, false));
+    expect(say).toHaveBeenCalledWith(WORDS.why(first.kind, hops[0]));
+    expect(screen.getByRole('status').textContent).toContain(WORDS.why(first.kind, hops[0]));
     expect(worms().getByRole('button', { name: String(first.n) }).hasAttribute('disabled')).toBe(true);
     expect(worms().getAllByRole('button').filter((b) => !b.hasAttribute('disabled'))).toHaveLength(3);
+  });
+
+  it('labels and explains threes and tens past 100 with their own hop size and words', () => {
+    const passed = (...steps: (10 | 5 | 2 | 3 | 4)[]) => steps.flatMap(stepKeys).map((key) => ({ ...newStats(key), box: 2 }));
+    const threes = makeRound(3, passed(10, 5, 2), { gold: false });
+    expect(threes.step).toBe(3);
+    const [hop] = showRound(threes);
+    expect(hop.size).toBe(3);
+    expect(WORDS.why('step', hop)).toBe('We are counting in threes. Each hop is 3.');
+    expect(WORDS.why('off1', hop)).toBe(`${hop.before}, then 3 more is ${hop.answer}.`);
+    expect(WORDS.counting(200)).toBe('Counting in tens past 100');
+    const say = vi.fn();
+    render(<Hops round={{ ...threes, hops: threes.hops.map((h) => ({ ...h, h: 'full' as const })) }} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={vi.fn()} />);
+    expect(screen.getAllByText('+3').length).toBeGreaterThan(0);
+    fireEvent.click(within(screen.getByRole('group', { name: WORDS.pickWorm })).getByRole('button', { name: String(hop.wrongs[0].n) }));
+    expect(screen.getByRole('status').textContent).toContain(WORDS.why(hop.wrongs[0].kind, hop));
   });
 
   it('looks together after the second wrong one, then asks the same hop again, and only the first tap is scored', () => {

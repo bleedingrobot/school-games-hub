@@ -1,0 +1,150 @@
+{
+  "game": "lizard",
+  "filename_prefix": "lizard/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/lizard-art/set",
+  "picks": "docs/lizard-art/picks.json",
+  "art_dir": "src/games/lizard/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "lizard-sit",
+      "prompt": "Lizard, a cute chunky green New Zealand gecko-style lizard with a long curly tail, smooth bright green skin, big friendly eyes, a gentle smile, wearing a little knitted orange scarf, facing to the right, side view, sitting calmly on all four feet, tail curled, happy, the whole lizard. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "lizard-sit",
+      "max": 320
+    },
+    {
+      "name": "lizard-eat",
+      "prompt": "Lizard, a cute chunky green New Zealand gecko-style lizard with a long curly tail, smooth bright green skin, big friendly eyes, a gentle smile, wearing a little knitted orange scarf, facing to the right, side view, holding up one bundle of sticks in both front feet, pleased smile, the whole lizard. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "lizard-eat",
+      "max": 320
+    },
+    {
+      "name": "lizard-cheer",
+      "prompt": "Lizard, a cute chunky green New Zealand gecko-style lizard with a long curly tail, smooth bright green skin, big friendly eyes, a gentle smile, wearing a little knitted orange scarf, facing to the right, side view, standing up on its back legs with both front feet in the air, a big smile, tiny sparkles around, the whole lizard. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "friends",
+      "file": "lizard-cheer",
+      "max": 320
+    },
+    {
+      "name": "stick",
+      "prompt": "One smooth straight wooden stick, tan brown with a lighter stripe, rounded ends, standing upright, the same simple shape every time, matte and gentle. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        480,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "stick",
+      "max": 160
+    },
+    {
+      "name": "bundle",
+      "prompt": "Ten identical smooth wooden sticks, tan brown, standing upright side by side in a neat tight bundle, tied around the middle with one band of plain natural flax twine with a small bow, the same simple shape every time. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "bundle",
+      "max": 256,
+      "tints": {
+        "bronze": "bronze",
+        "silver": "silver"
+      }
+    },
+    {
+      "name": "bundle-gold",
+      "prompt": "Ten identical smooth wooden sticks, tan brown, standing upright side by side in a neat tight bundle, tied around the middle with one shining yellow gold band with a small bow, vivid mirror-bright polished gold with strong highlights, three tiny sparkles. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        832,
+        832
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "bundle-gold",
+      "max": 256
+    },
+    {
+      "name": "raft",
+      "prompt": "A small flat raft made of ten bundles of wooden sticks lashed side by side with two broad flax twine bands across, seen from slightly above, a hundred sticks, tidy and symmetrical, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        1152,
+        640
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "raft",
+      "max": 400
+    },
+    {
+      "name": "golden-raft",
+      "prompt": "A small flat raft of ten bundles of sticks lashed side by side, the whole raft covered edge to edge in shining yellow gold, vivid mirror-bright polished metal with strong gleaming highlights, tiny sparkles around, wide landscape. Single object, centred, the whole object visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 8.",
+      "size": [
+        1152,
+        640
+      ],
+      "kind": "cut",
+      "folder": "pieces",
+      "file": "golden-raft",
+      "max": 400
+    }
+  ]
+}

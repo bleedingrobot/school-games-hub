@@ -2,7 +2,7 @@
  * Today's challenge: ten hops. Each hop is a row of lily pads counting in equal steps, with Hop sitting on the pad
  * before the glowing gap. The child taps the glow-worm with the missing number and Hop jumps onto the pad; a wrong
  * glow-worm wobbles and drifts back, with no penalty. The step ("+2") shows on each hop's arc on bronze days, faintly on
- * silver days, and not at all on gold days, when the last three hops count back as Hop hops home.
+ * silver days, and not at all on gold days. The last hop or hops count back: one from the first day a step is secure going forward, up to three, and three on gold days as Hop hops home.
  *
  * Mistakes that teach (maths review R5, shared/kit/mistakes.ts). The first wrong glow-worm of a hop greys out (and can't be
  * tapped again) and a small row of pads shows the mistake behind it, with its line read aloud. The second stops the free
@@ -125,7 +125,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
       anchor: hop.gap,
       steps: counted.length,
       openingLine: WORDS.lookTogether,
-      fillLine: WORDS.lookCount(round.step, hop.back, counted),
+      fillLine: WORDS.lookCount(hop, counted),
       onEnd: () => {
         go.current = stepGo(go.current, 'lookDone');
         setTried([]);
@@ -160,7 +160,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
       }
       const kind = hop.wrongs.find((w) => w.n === n)!.kind;
       setWhy({ n, kind });
-      const line = WORDS.why(kind, round.step, hop.before, hop.answer, hop.back);
+      const line = WORDS.why(kind, hop);
       if (struggling) say(line, () => say(WORDS.labelsBack));
       else say(line);
       return;
@@ -201,7 +201,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
             <span key={i} className={i < made ? 'hp-pip hp-pip--done' : 'hp-pip'} />
           ))}
         </div>
-        <HundredsBoard counting={look && wideBoard() ? hop.terms.slice(0, look.filled) : null} />
+        <HundredsBoard high={hop.of === 200} counting={look && wideBoard() ? hop.terms.slice(0, look.filled) : null} />
       </div>
       <p className="hp-ask" aria-live="polite">{hop.prompt}</p>
       <div className="hp-stage">
@@ -209,8 +209,8 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
         <ShowWhy
           prefix="hp"
           tapKey={taps.length}
-          picture={<WhyPicture hop={hop} kind={why.kind} wrong={why.n} step={round.step} friend={friend} />}
-          line={WORDS.why(why.kind, round.step, hop.before, hop.answer, hop.back)}
+          picture={<WhyPicture hop={hop} kind={why.kind} wrong={why.n} friend={friend} />}
+          line={WORDS.why(why.kind, hop)}
         />
       )}
       {look && (
@@ -218,7 +218,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
           prefix="hp"
           title={WORDS.lookTogether}
           picture={<p className="hp-counted">{hop.terms.slice(0, look.filled).join(', ') || '\u00a0'}</p>}
-          line={WORDS.lookCount(round.step, hop.back, hop.terms.slice(0, hop.gap + 1))}
+          line={WORDS.lookCount(hop, hop.terms.slice(0, hop.gap + 1))}
           skipLabel={WORDS.goOn}
           canSkip={look.canSkip}
           onSkip={skipLook}
@@ -228,7 +228,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
       <div className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>
         {pads.slice(0, -1).map((_, i) => (
           <span key={`arc${i}`} className={`hp-arc hp-arc--${shown}${i === gap - 1 ? ' hp-arc--next' : ''}`} style={{ ['--hp-i' as string]: i }}>
-            {shown !== 'none' && <span className="hp-arc__label">{sign}{round.step}</span>}
+            {shown !== 'none' && <span className="hp-arc__label">{sign}{hop.size}</span>}
           </span>
         ))}
         {pads.map((n, i) => (

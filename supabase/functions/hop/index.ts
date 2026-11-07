@@ -224,6 +224,8 @@ const newMemory = () => ({
 	recent: [],
 	repeats: []
 });
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 /** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
 function factWeight(stats) {
 	if (!stats) return BOX_WEIGHTS[0];
@@ -874,12 +876,15 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		}
 	};
 }
-/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+/**
+* "Ten and" facts, one record for each of the nine, key "tenand:4": 10 + 4 and 4 + 10 (variants 0 and 1, the only ones rolled).
+* Variants 2 and 3 (10 + ? = 14, 14 − 10) are still made, for a Tūī challenge saved before they moved to "tenless:4", but never rolled.
+*/
 const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -917,6 +922,42 @@ const tenAnd = {
 				answer - 1,
 				answer + 10,
 				n + 1,
+				20,
+				1 + n
+			]
+		};
+	}
+};
+/** The same nine numbers taken the other way, kept apart because they are separate memories (R9): variants 0 "14 − 10 = ?", 1 "10 + ? = 14". Key "tenless:4". */
+const tenLess = {
+	label: "\"Ten less\" facts (14 − 10)",
+	curriculumTags: ["MS.Y1.NUM.OP.P6"],
+	keys: range$5(1, 9).map((n) => `tenless:${n}`),
+	roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
+	make: (key, [n, v]) => {
+		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
+		const t = String(10 + n);
+		const parts = v === 0 ? [
+			t,
+			"−",
+			"10",
+			"=",
+			"?"
+		] : [
+			"10",
+			"+",
+			"?",
+			"=",
+			t
+		];
+		return {
+			parts,
+			spoken: speak(parts),
+			answer: n,
+			wrong: [
+				n + 1,
+				n - 1,
+				n + 10,
 				20,
 				1 + n
 			]
@@ -1343,6 +1384,99 @@ const ZOOM_KEYS = [
 	"zoom:0-200:130",
 	"zoom:300-400:350"
 ];
+const PV_TENS = range$5(1, 9).map((n) => n * 10);
+/** Two-digit numbers that are not tens: four ones digits for each ten, spread so no two ends repeat. */
+const PV_OTHERS = range$5(1, 9).flatMap((t) => [
+	1,
+	3,
+	5,
+	7
+].map((j) => t * 10 + (t + j) % 9 + 1));
+const PV_REGROUP_BUNDLE = [
+	23,
+	31,
+	38,
+	42,
+	46,
+	54,
+	59,
+	25,
+	37,
+	48,
+	51,
+	33
+];
+const PV_REGROUP_SWAP = [
+	32,
+	41,
+	47,
+	53,
+	56,
+	62,
+	65,
+	71,
+	74,
+	78,
+	83,
+	86,
+	29,
+	35,
+	44,
+	58,
+	67,
+	92
+];
+const PV_TEN_MORE = [
+	14,
+	27,
+	35,
+	42,
+	56,
+	63,
+	78,
+	85,
+	91,
+	49,
+	68,
+	73
+];
+const PV_TEN_LESS = [
+	19,
+	32,
+	47,
+	54,
+	61,
+	76,
+	83,
+	98,
+	25,
+	66,
+	39,
+	72
+];
+const PV_HUNDREDS = range$5(1, 9).map((h) => h * 100);
+/** Three-digit numbers that are not hundreds: for each hundred, one with every digit, one with a zero in the middle, one with a zero at the end. */
+const PV3_OTHERS = range$5(1, 9).flatMap((h) => [
+	h * 100 + (h * 3 % 9 + 1) * 10 + h * 2 % 9 + 1,
+	h * 100 + h * 2 % 9 + 1,
+	h * 100 + ((h + 4) % 9 + 1) * 10
+]);
+const PV_HUN_MORE = [
+	147,
+	232,
+	356,
+	418,
+	563,
+	694
+];
+const PV_HUN_LESS = [
+	320,
+	451,
+	587,
+	642,
+	778,
+	905
+];
 /** The number a key names ("place100:n63" → 63, "tens100:-63" → 63, "zoom:40-50:47" → 47). */
 const lineNumber = (key) => Number(/(\d+)$/.exec(key)[1]);
 /** A line question typed out, as its parts: each family says its own words, so the parts name the key (see `solveLine`). */
@@ -1423,7 +1557,63 @@ const lineFamilies = {
 		"hundred",
 		"to",
 		String(n)
-	], (n) => nearWords(n, 100))
+	], (n) => nearWords(n, 100)),
+	pvbuild: numLine("Build a number with bundles and sticks", "MS.Y2.NUM.NS.P1", [...PV_TENS.map((n) => `pvbuild:t${n}`), ...PV_OTHERS.map((n) => `pvbuild:n${n}`)], (n) => [
+		"Build",
+		String(n),
+		"with",
+		"bundles"
+	], (n) => `Build ${n} with bundles and sticks.`),
+	pvread: numLine("Read bundles and sticks as a number", "MS.Y2.NUM.NS.P1", PV_OTHERS.map((n) => `pvread:n${n}`), (n) => [
+		"Read",
+		String(n),
+		"from",
+		"bundles"
+	], () => "What number is this?"),
+	pvzero: numLine("Read bundles with no sticks left over", "MS.Y2.NUM.NS.P1", PV_TENS.map((n) => `pvzero:n${n}`), (n) => [
+		"Read",
+		String(n),
+		"from",
+		"bundles",
+		"only"
+	], () => "What number is this?"),
+	pvregroup: numLine("Tie sticks into bundles and untie a bundle", "MS.Y2.NUM.NS.P2", [...PV_REGROUP_BUNDLE.map((n) => `pvregroup:b${n}`), ...PV_REGROUP_SWAP.map((n) => `pvregroup:s${n}`)], (n, key) => key.includes(":b") ? [
+		"Tie",
+		String(n),
+		"sticks",
+		"into",
+		"bundles"
+	] : [
+		"Untie",
+		"a",
+		"bundle",
+		"of",
+		String(n)
+	], (n, key) => key.includes(":b") ? `Tie ${n} sticks into bundles.` : `${n} is one bundle fewer and ten more sticks.`),
+	pvten: numLine("Ten more and ten less with bundles", "MS.Y2.NUM.NS.P1", [...PV_TEN_MORE.map((n) => `pvten:+${n}`), ...PV_TEN_LESS.map((n) => `pvten:-${n}`)], (n, key) => [
+		"Bundle",
+		key.includes("+") ? "added" : "taken",
+		"from",
+		String(n)
+	], (n, key) => `What is ten ${key.includes("+") ? "more" : "less"} than ${n}?`),
+	pvbuild3: numLine("Build a number with rafts, bundles and sticks", "MS.Y3.NUM.NS.P1", [...PV_HUNDREDS.map((n) => `pvbuild3:t${n}`), ...PV3_OTHERS.map((n) => `pvbuild3:n${n}`)], (n) => [
+		"Build",
+		String(n),
+		"with",
+		"rafts"
+	], (n) => `Build ${n} with rafts, bundles and sticks.`),
+	pvread3: numLine("Read rafts, bundles and sticks as a number", "MS.Y3.NUM.NS.P1", [...PV_HUNDREDS.map((n) => `pvread3:t${n}`), ...PV3_OTHERS.map((n) => `pvread3:n${n}`)], (n) => [
+		"Read",
+		String(n),
+		"from",
+		"rafts"
+	], () => "What number is this?"),
+	pvhun: numLine("A hundred more and a hundred less", "MS.Y3.NUM.NS.P1", [...PV_HUN_MORE.map((n) => `pvhun:+${n}`), ...PV_HUN_LESS.map((n) => `pvhun:-${n}`)], (n, key) => [
+		"Raft",
+		key.includes("+") ? "added" : "taken",
+		"from",
+		String(n)
+	], (n, key) => `What is a hundred ${key.includes("+") ? "more" : "less"} than ${n}?`)
 };
 const LINE_FAMILY_NAMES = Object.keys(lineFamilies);
 const equalsNumbers = (key) => (key.split(":")[1].match(/\d+/g) ?? []).map(Number);
@@ -1561,6 +1751,103 @@ const countingFamilies = {
 	countOn: counting("One more (count on from a covered plate)", COUNT_KEYS.counton),
 	across: counting("How many berries? (11 to 20, past ten)", COUNT_KEYS.across)
 };
+const ROWS_KEYS = range$5(2, 5).flatMap((r) => range$5(2, 10).map((c) => `rows:${r}x${c}`));
+const TURN_PAIRS = range$5(2, 6).flatMap((r) => range$5(2, 6).filter((c) => c !== r).map((c) => [r, c]));
+const SHARE_KEYS = [
+	2,
+	3,
+	4,
+	5,
+	10
+].flatMap((r) => range$5(2, 7).map((a) => `share:${r * a}/${r}`));
+const CUT_KEYS = range$5(6, 9).flatMap((r) => range$5(3, 9).map((c) => `cut:${r}x${c}`));
+const keyPair = (key) => {
+	const m = /(\d+)[x/](\d+)$/.exec(key);
+	return [Number(m[1]), Number(m[2])];
+};
+const rowsWords = (r, c) => `${r} rows of ${c}`;
+const arrayFamily = (label, tag, keys, parts, spoken, answer, wrong) => ({
+	label,
+	curriculumTags: [tag],
+	keys,
+	roll: (key) => keyPair(key),
+	make: (key, [a, b]) => {
+		if (!keys.includes(key)) return null;
+		const [ka, kb] = keyPair(key);
+		if (ka !== a || kb !== b) return null;
+		return {
+			parts: parts(a, b),
+			spoken: spoken(a, b),
+			answer: answer(a, b),
+			wrong: wrong(a, b)
+		};
+	}
+});
+const product = (a, b) => a * b;
+const arrayFamilies = {
+	rows: arrayFamily("Equal rows (4 rows of 6)", "MS.Y2.NUM.OP.P3", ROWS_KEYS, (r, c) => [
+		"Plant",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Plant ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + r
+	]),
+	turn: arrayFamily("The same array turned round (3 rows of 5 is 5 rows of 3)", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `turn:${r}x${c}`), (r, c) => [
+		"Turn",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Turn ${rowsWords(r, c)}. How many shoots?`, product, (r, c) => [
+		r + c,
+		(r - 1) * c,
+		Number(`${r}${c}`),
+		r * c + c
+	]),
+	share: arrayFamily("Sharing into equal rows (24 into 4 rows)", "MS.Y3.NUM.OP.P4", SHARE_KEYS, (t, r) => [
+		"Share",
+		String(t),
+		"into",
+		String(r),
+		"rows"
+	], (t, r) => `${t} shoots in ${r} equal rows. How many in each row?`, (t, r) => t / r, (t, r) => [
+		t - r,
+		t + r,
+		r,
+		t / r + r
+	]),
+	cut: arrayFamily("Cutting an array into parts you know (6 rows of 7)", "MS.Y3.NUM.OP.P3", CUT_KEYS, (r, c) => [
+		"Cut",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Cut ${rowsWords(r, c)} into a row you know and one more. How many shoots?`, product, (r, c) => [
+		(r - 1) * c,
+		r + c,
+		r * c + 6,
+		r * c - r
+	]),
+	which: arrayFamily("Which picture is 3 rows of 5", "MS.Y2.NUM.OP.P3", TURN_PAIRS.map(([r, c]) => `which:${r}x${c}`), (r, c) => [
+		"Which",
+		"is",
+		String(r),
+		"rows",
+		"of",
+		String(c)
+	], (r, c) => `Which garden is ${rowsWords(r, c)}?`, product, (r, c) => [
+		r + c,
+		c * r + r,
+		(r - 1) * c,
+		Number(`${r}${c}`)
+	])
+};
+const ARRAY_FAMILY_NAMES = Object.keys(arrayFamilies);
 const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
@@ -1568,7 +1855,9 @@ const EARLY_FACTS = {
 		...lineFamilies,
 		...equalsFamilies,
 		...countingFamilies,
+		...arrayFamilies,
 		tenAnd,
+		tenLess,
 		tenUp: tenMove(true),
 		tenDown: tenMove(false),
 		oddEven,
@@ -1588,6 +1877,7 @@ const EARLY_FACTS = {
 	],
 	ladderOnly: [
 		"tenAnd",
+		"tenLess",
 		"tenUp",
 		"tenDown",
 		"oddEven",
@@ -1597,19 +1887,85 @@ const EARLY_FACTS = {
 		...SKIP_MORE_FAMILY_NAMES,
 		...LINE_FAMILY_NAMES,
 		...Object.keys(equalsFamilies),
+		...ARRAY_FAMILY_NAMES,
 		...Object.keys(countingFamilies)
 	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
-const STEPS = SKIP_STEPS.map((s) => s.step);
+/**
+* The steps in order, each named by what it is saved as (`reached`, a round's `step`): the size of the hop for tens, fives,
+* twos, threes and fours, and 200 for tens past 100 (tens to 200, whose hop is still 10). Threes, fours and tens past 100
+* are R8's longer ladder: the shared keys sit beside the maths ladder (shared/maths/skillPacks/earlyFacts.ts), so only this
+* game asks them, and a step is passed by the same 70% rule.
+*/
+const HOP_STEPS = [
+	{
+		step: 10,
+		size: 10,
+		family: "skip10",
+		word: "tens",
+		top: 100
+	},
+	{
+		step: 5,
+		size: 5,
+		family: "skip5",
+		word: "fives",
+		top: 100
+	},
+	{
+		step: 2,
+		size: 2,
+		family: "skip2",
+		word: "twos",
+		top: 100
+	},
+	{
+		step: 3,
+		size: 3,
+		family: "skip3",
+		word: "threes",
+		top: 100
+	},
+	{
+		step: 4,
+		size: 4,
+		family: "skip4",
+		word: "fours",
+		top: 100
+	},
+	{
+		step: 200,
+		size: 10,
+		family: "skip10h",
+		word: "tens past 100",
+		top: 200
+	}
+];
+const STEPS = HOP_STEPS.map((s) => s.step);
+const spec = (step) => HOP_STEPS.find((s) => s.step === step);
+/** The step a key belongs to: skip3:up:9 and skip3o1:next:7 are threes, skip10h:... is tens past 100. */
+function stepOfKey(key) {
+	const k = parseSkip(key);
+	if (!k) return null;
+	const step = k.high ? 200 : k.step;
+	return isStep(step) ? step : null;
+}
+/** The shared family a key belongs to (the one that rolls and makes it). */
+const familyOfKey = (key) => {
+	const k = parseSkip(key);
+	return k ? EARLY_FACTS.families[k.high ? "skip10h" : k.offset ? `skip${k.step}o` : `skip${k.step}`] : void 0;
+};
 /** Seeds are whole numbers from 0 up to 2^31 - 1, the range the hub's random generator handles exactly. */
 const MAX_SEED = 2147483647;
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 const isStep = (n) => STEPS.includes(n);
 /** Every fact of one kind for a step: `skip5:next:25` and so on, from the shared pack's own list. */
 const pack = earlyFactsPack();
-const family = (step) => EARLY_FACTS.families[`skip${step}`];
-const keysOf = (step, kind) => family(step).keys.filter((k) => k.startsWith(`skip${step}:${kind}:`));
+const family = (step) => EARLY_FACTS.families[spec(step).family];
+const keysOf = (step, kind) => family(step).keys.filter((k) => k.includes(`:${kind}:`));
+/** Counting on from a start that isn't a multiple ("start at 3, hop by 10"), for a step that has it (not tens past 100). */
+const offsetKeys = (step) => step === 200 ? [] : EARLY_FACTS.families[`skip${step}o`]?.keys ?? [];
 /** The facts that decide whether a step is passed: counting up and what comes next. */
 const stepKeys = (step) => [...keysOf(step, "up"), ...keysOf(step, "next")];
 /** Share of a step's deciding facts that are secure (box 2 or higher). */
@@ -1619,8 +1975,8 @@ function stepShare(stats, step) {
 	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
 /**
-* The step for today: the first step not yet secure, but never below the furthest step reached. Once 2s are secure the
-* child stays on 2s (they still need the practice, and 2s are the top of this game).
+* The step for today: the first step not yet secure, but never below the furthest step reached. Once the last step is
+* secure the child stays on it (they still need the practice).
 */
 function stepFor(stats, reached = 10) {
 	const list = [...stats];
@@ -1629,14 +1985,43 @@ function stepFor(stats, reached = 10) {
 	return at === -1 ? STEPS[STEPS.length - 1] : STEPS[at];
 }
 /**
-* Has the child gone as far as this game goes and got it secure (R8's "what's next")? The top step is secure by the same 70%
-* rule and the child has reached it, so a child whose records are only half made never gets the signpost early. Only then
-* does the finish screen point on to Penguin Pairs, because twos are the first step of doubling.
+* Is the child ready for the signpost to doubling (R8's "what's next")? Twos are the first step of doubling, so it shows once
+* the child has reached twos and they are secure by the same 70% rule (a child whose records are only half made never gets
+* it early). Threes, fours and tens past 100 come after twos and don't hold it back, so the signpost that showed once twos
+* were secure still shows.
 */
 function topSecure(stats, reached = 10) {
-	const top = STEPS[STEPS.length - 1];
-	return stepFor(stats, reached) === top && stepShare(stats, top) >= .7;
+	return STEPS.indexOf(reached) >= STEPS.indexOf(2) && stepShare(stats, 2) >= .7;
 }
+/** Share of a step's counting-back facts that are secure (box 2 or higher). */
+function backShare(stats, step) {
+	const box = new Map([...stats].map((s) => [s.key, s.box]));
+	const keys = keysOf(step, "back");
+	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
+}
+/**
+* Where counting back comes from and how many hops: the latest step, up to today's, that is secure going forward (70% of its
+* up and next facts at box 2 or more), with 1, 2 or 3 hops by how secure its back facts are. A child with no such step has
+* none. On a gold day it is today's step and three hops, as it always was.
+*/
+function backPlan(stats, step, gold) {
+	const list = [...stats];
+	if (gold) return {
+		from: step,
+		count: Math.max(3, backCount(list, step))
+	};
+	const from = STEPS.slice(0, STEPS.indexOf(step) + 1).reverse().find((s) => stepShare(list, s) >= STEP_SECURE_SHARE);
+	return from === void 0 ? null : {
+		from,
+		count: backCount(list, from)
+	};
+}
+const backCount = (list, step) => {
+	const share = backShare(list, step);
+	return share >= .7 ? 3 : share >= .3333333333333333 ? 2 : 1;
+};
+/** The steps this child has passed (secure by the 70% rule), so their non-multiple starts may be asked on a gold day. */
+const securedSteps = (stats) => STEPS.filter((s) => offsetKeys(s).length > 0 && stepShare(stats, s) >= .7);
 /**
 * The step label ("+10") for a fact from the child's own record of it (maths review R6, Weka's way with Hop's three
 * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
@@ -1662,12 +2047,13 @@ const HELP_LADDER = [
 ];
 const helpForStats = (stats) => helpForFact(stats, HELP_LADDER);
 /**
-* What a glow-worm's number can be told by: the right answer is a multiple of the step, so is anything on the same step.
-* Exactly two of the four share it (the answer and one more), so no glow-worm can be picked just for how it ends.
+* What a glow-worm's number can be told by: the right answer is a multiple of the step (or the same distance past one, when
+* counting starts off a multiple), so is anything on the same step. Exactly two of the four share it (the answer and one
+* more), so no glow-worm can be picked just for how it ends.
 */
-const tellOf = (step) => (n) => n % step === 0;
-/** The numbers on the 100 board and in the game: no landing is below 0 or above 100. */
-const inRange = (n) => n >= 0 && n <= 100;
+const tellOf = (size, rest = 0) => (n) => n % size === rest;
+/** The numbers on the board and in the game: no landing is below 0 or above the top (100, or 200 past 100). */
+const inRange = (n, top = 100) => n >= 0 && n <= top;
 const shuffle = (items, random) => {
 	const out = [...items];
 	for (let i = out.length - 1; i > 0; i--) {
@@ -1702,13 +2088,20 @@ function makeRound(seed, stats, opts = {}) {
 	random();
 	const box = new Map(list.map((s) => [s.key, s.box]));
 	const byKey = new Map(list.map((s) => [s.key, s]));
-	const back = gold ? 3 : 0;
+	const plan = backPlan(list, step, gold);
+	const back = plan?.count ?? 0;
+	const passed = gold ? securedSteps(list) : [];
+	const offs = passed.length ? pickKeys(passed.flatMap(offsetKeys), 2, box, random) : [];
 	return {
 		seed,
 		step,
 		gold,
-		hops: [...pickKeys(stepKeys(step), 10 - back, box, random), ...pickKeys(keysOf(step, "back"), back, box, random)].map((key) => {
-			const [answer, at] = family(step).roll(key, random);
+		hops: [
+			...pickKeys(stepKeys(step), 10 - back - offs.length, box, random),
+			...offs,
+			...plan ? pickKeys(keysOf(plan.from, "back"), back, box, random) : []
+		].map((key) => {
+			const [answer, at] = familyOfKey(key).roll(key, random);
 			return {
 				key,
 				answer,
@@ -1728,22 +2121,24 @@ function makeRound(seed, stats, opts = {}) {
 function showHop(round, index, plan) {
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
 	const q = pack.rebuild(plan.key, [plan.answer, plan.at], true, random);
-	const m = /^skip(10|5|2):(up|next|back):\d+$/.exec(plan.key);
-	if (!q || !q.choices || q.answer !== plan.answer || !m) return null;
-	const step = Number(m[1]);
-	const back = m[2] === "back";
+	const k = parseSkip(plan.key);
+	const of = k && stepOfKey(plan.key);
+	if (!q || !q.choices || q.answer !== plan.answer || !k || !of) return null;
+	const size = k.step;
+	const top = k.high ? 200 : 100;
+	const back = k.kind === "back";
 	const terms = q.parts.map((p) => p.startsWith("?") ? plan.answer : Number(p.replace(/,$/, "")));
 	const gap = q.parts.findIndex((p) => p.startsWith("?"));
 	if (gap < 1 || terms.some((n) => !Number.isInteger(n))) return null;
 	const before = terms[gap - 1];
 	const dir = back ? -1 : 1;
 	const a = plan.answer;
-	const tell = tellOf(step);
+	const tell = tellOf(size, k.offset);
 	const taken = new Set([a]);
-	const fresh = (n) => inRange(n) && !taken.has(n);
+	const fresh = (n) => inRange(n, top) && !taken.has(n);
 	const sameStep = [[before, "stay"]];
-	if (fresh(a + dir * step)) sameStep.push([a + dir * step, "far"]);
-	if (back && fresh(before + step)) sameStep.push([before + step, "way"]);
+	if (fresh(a + dir * size)) sameStep.push([a + dir * size, "far"]);
+	if (back && fresh(before + size)) sameStep.push([before + size, "way"]);
 	const [same, sameKind] = sameStep[Math.floor(random() * sameStep.length)];
 	taken.add(same);
 	const other = [
@@ -1751,7 +2146,7 @@ function showHop(round, index, plan) {
 		5,
 		2,
 		1
-	].filter((s) => s !== step).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
+	].filter((s) => s !== size).map((s) => before + dir * s).find((n) => fresh(n) && !tell(n));
 	if (other === void 0) return null;
 	taken.add(other);
 	const off = (random() < .5 ? [1, -1] : [-1, 1]).map((d) => a + d).find((n) => fresh(n) && !tell(n));
@@ -1775,6 +2170,9 @@ function showHop(round, index, plan) {
 		gap,
 		before,
 		back,
+		size,
+		of,
+		from: k.offset,
 		prompt: q.prompt ?? "",
 		spoken: q.spoken,
 		choices,
@@ -6739,7 +7137,7 @@ const LADDER = [
 		label: "Ten and a number (10 + 4)",
 		stage: "early-facts",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
-		keys: earlyKeys("tenAnd"),
+		keys: [...earlyKeys("tenAnd"), ...earlyKeys("tenLess")],
 		built: true
 	},
 	{
@@ -6887,6 +7285,100 @@ const LADDER = [
 		inAuto: false
 	},
 	{
+		id: "bundles-50",
+		label: "Bundles of ten and tens and ones to 50",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: [...earlyKeys("pvbuild"), ...earlyKeys("pvread")].filter((k) => Number(/(\d+)$/.exec(k)[1]) <= 50),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "place-value-100",
+		label: "Tens and ones to 100, and zero",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: [...[...earlyKeys("pvbuild"), ...earlyKeys("pvread")].filter((k) => Number(/(\d+)$/.exec(k)[1]) > 50), ...earlyKeys("pvzero")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "regroup-100",
+		label: "Tying and untying bundles",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P2"],
+		keys: earlyKeys("pvregroup"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "ten-more-less-100",
+		label: "Ten more and ten less with bundles",
+		stage: "place-value",
+		curriculumTags: ["MS.Y2.NUM.NS.P1"],
+		keys: earlyKeys("pvten"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "place-value-1000",
+		label: "Hundreds, tens and ones",
+		stage: "place-value",
+		curriculumTags: ["MS.Y3.NUM.NS.P1"],
+		keys: [
+			...earlyKeys("pvbuild3"),
+			...earlyKeys("pvread3"),
+			...earlyKeys("pvhun")
+		],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "equal-rows",
+		label: "Equal rows (4 rows of 6)",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: earlyKeys("rows"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "arrays-turn",
+		label: "Turning an array round",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y2.NUM.OP.P3"],
+		keys: [...earlyKeys("turn"), ...earlyKeys("which")],
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "sharing-rows",
+		label: "Sharing into equal rows",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P4"],
+		keys: earlyKeys("share"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
+		id: "cut-arrays",
+		label: "Cutting an array into known parts",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y3.NUM.OP.P3"],
+		keys: earlyKeys("cut"),
+		built: true,
+		inWarmUp: false,
+		inAuto: false
+	},
+	{
 		id: "count-out-10",
 		label: "Counting out and counting a set to 10",
 		stage: "early-facts",
@@ -6948,10 +7440,11 @@ const LADDER = [
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
+	if (/^(rows|turn|share|cut|which):/.test(key)) return "early-facts";
 	if (isGeneratedKey(key)) return "generated";
 	if (/^eq(miss|swap|both|sub|tf):/.test(key)) return "early-facts";
 	if (/^(give|howmany|counton|across):/.test(key)) return "early-facts";
-	if (/^(bond10|bond20|dbl|half|tenand|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand|tenless|tenup|tendown|skip\d+(?:o\d+|h)?|part\d+|oddeven|place100|read100|tens100|near10|near100|zoom|place1000|read1000|pvbuild3?|pvread3?|pvzero|pvregroup|pvten|pvhun):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
