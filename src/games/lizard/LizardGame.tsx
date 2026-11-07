@@ -14,7 +14,7 @@ import type { Round } from '../../../shared/lizard/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { Bundle, Friend, GoldenRaft, type Pose, type Scenery } from './art';
+import { Bundle, Friend, GoldenRaft, sceneStyle, type Pose, type Scenery } from './art';
 import { LizardError, type LizardBackend, type LizardFinish, type LizardState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -139,11 +139,11 @@ export function LizardGame({ backend, onExit, extra }: Props) {
 /** Lizard's den on the home and finish screens: ten bundles in a row, and the friend beside them. */
 function Den({ scenery, bundles, friend, pose }: { scenery: Scenery; bundles: { metal: Metal; glow?: boolean }[]; friend: FriendName; pose: Pose }) {
   return (
-    <div className={`lz-tree lz-scene--${scenery}`}>
+    <div className={`lz-tree lz-scene--${scenery}`} style={sceneStyle(scenery)}>
       <div className="lz-tree__bundles" role="img" aria-label={`${bundles.filter((c) => c.metal !== 'twine').length} of ${DEN_BUNDLES} bundles changed`}>
         {bundles.map((c, i) => (
           <span key={i} className="lz-tree__spot">
-            <Bundle metal={c.metal} glow={c.glow} />
+            <Bundle metal={c.metal} glow={c.glow} painted />
           </span>
         ))}
       </div>
