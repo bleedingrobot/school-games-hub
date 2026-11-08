@@ -216,10 +216,9 @@ describe('stages', () => {
   });
 
   it('spot struggling', () => {
-    expect(isStruggling([true, false, false], null)).toBe(true);
-    expect(isStruggling([false, true], null)).toBe(false);
-    expect(isStruggling([true], 4500)).toBe(true);
-    expect(isStruggling([true], 3000)).toBe(false);
+    expect(isStruggling([true, false, false])).toBe(true);
+    expect(isStruggling([false, true])).toBe(false);
+    expect(isStruggling([true])).toBe(false); // a slow answer is not a fault: only two wrong in a row count
   });
 
   it('grow the garden from seed to flower', () => {

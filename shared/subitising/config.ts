@@ -63,9 +63,8 @@ export const SUBITISING_CONFIG = {
   stepBackWindow: 5,
   /** When a stage has been finished, this share of practice comes from finished stages. */
   reviewShare: 0.2,
-  /** Struggling = this many wrong in a row, or thinking longer than this (after the answer buttons unlock). */
+  /** Struggling = this many wrong in a row (a slow answer is not a fault). */
   struggleWrongInARow: 2,
-  struggleThinkingMs: 4000,
   /** The answer buttons stay locked this long after the picture goes, so a quick tap can't be a guess. */
   answerLockMs: 1000,
   /** "Get ready" pause before each picture. */

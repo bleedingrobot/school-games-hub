@@ -74,6 +74,10 @@ describe('Quick looks', () => {
       advance(C.answerLockMs);
       const wrong = screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? '') && b.textContent !== String(n))!;
       fireEvent.click(wrong);
+      // The picture comes back once for a second try; a second wrong answer ends the picture.
+      advance(C.peekMs + 10);
+      const again = screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? '') && b.textContent !== String(n) && b !== wrong)!;
+      fireEvent.click(again);
       t.sync();
       fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     };
@@ -203,6 +207,7 @@ describe('Quick looks', () => {
       clips.length = 0;
       clipsWork = false;
       localStorage.clear();
+      localStorage.setItem('sgh-read-aloud', 'false'); // each test below says what it needs
       // A recorded clip: plays when clipsWork, otherwise fails at once (as a missing file would) so the browser voice speaks.
       vi.stubGlobal(
         'Audio',
@@ -230,7 +235,16 @@ describe('Quick looks', () => {
       Reflect.deleteProperty(window, 'SpeechSynthesisUtterance');
     });
 
-    it('says nothing until it is switched on', () => {
+    it('is on when nothing is saved, so a child hears the question without setting anything', () => {
+      localStorage.clear();
+      setup({ ...emptySubState(), placed: true });
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      advance(C.readyMs + 10);
+      advance(1400);
+      expect(said).toEqual(['Get ready: how many dots?', 'How many did you see?']);
+    });
+
+    it('says nothing when it was switched off', () => {
       setup({ ...emptySubState(), placed: true });
       fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
       advance(C.readyMs + 10);
@@ -240,8 +254,8 @@ describe('Quick looks', () => {
     });
 
     it('reads the prompts, never the answer before it has been given, and the feedback after', () => {
+      localStorage.setItem('sgh-read-aloud', 'true');
       const t = setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
       fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
       advance(C.readyMs + 10);
       const n = dotsShown();
@@ -256,8 +270,8 @@ describe('Quick looks', () => {
 
     it('plays the recorded clips when they are there, and the browser voice stays quiet', () => {
       clipsWork = true;
+      localStorage.setItem('sgh-read-aloud', 'true');
       setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
       fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
       advance(C.readyMs + 10);
       advance(1400);
@@ -267,8 +281,8 @@ describe('Quick looks', () => {
     });
 
     it('can be muted from the practice screen, and the choice is remembered on the device', () => {
+      localStorage.removeItem('sgh-read-aloud');
       setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
       fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
       advance(C.readyMs + 10);
       advance(1400);
@@ -279,6 +293,67 @@ describe('Quick looks', () => {
     });
   });
 
+  it('gives one second try after a wrong first answer, and saves only the first tap', () => {
+    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.readyMs + 10);
+    const n = dotsShown();
+    advance(1400);
+    advance(C.answerLockMs);
+    const nums = () => screen.getAllByRole('button').filter((b) => /^\d+$/.test(b.textContent ?? ''));
+    const wrong = nums().find((b) => b.textContent !== String(n))!;
+    fireEvent.click(wrong);
+    expect(dotsShown()).toBe(n); // the picture comes back
+    advance(C.peekMs + 10);
+    expect(screen.getByRole('heading', { name: 'Try once more.' })).toBeTruthy();
+    expect((wrong as HTMLButtonElement).disabled).toBe(true); // the wrong one is greyed
+    fireEvent.click(nums().find((b) => b.textContent === String(n))!);
+    t.sync();
+    expect(screen.getAllByText(new RegExp(`Yes! ${n}`)).length).toBeGreaterThan(0);
+    expect(t.answered).toHaveLength(1);
+    expect(t.state().answers).toHaveLength(1);
+    expect(t.state().answers[0].correct).toBe(false); // the first tap
+  });
+
+  it('a slow correct answer is not a struggle: the next picture is a normal flash', () => {
+    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.readyMs + 10);
+    const n = dotsShown();
+    advance(1400);
+    advance(C.answerLockMs + 12_000);
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
+    t.sync();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.queryByRole('heading', { name: /^Take your time\. / })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Get ready: how many dots?' })).toBeTruthy();
+  });
+
+  it('starts the thinking clock after the spoken question has ended', () => {
+    localStorage.clear();
+    const utterances: { text: string; onend?: () => void }[] = [];
+    vi.stubGlobal('SpeechSynthesisUtterance', class { onend?: () => void; constructor(public text: string) {} });
+    vi.stubGlobal('speechSynthesis', { cancel: () => {}, speak: (u: { text: string; onend?: () => void }) => void utterances.push(u) });
+    Object.defineProperty(window, 'speechSynthesis', { value: (globalThis as { speechSynthesis: unknown }).speechSynthesis, configurable: true });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: (globalThis as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance, configurable: true });
+    vi.stubGlobal('Audio', undefined);
+    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.readyMs + 10);
+    const n = dotsShown();
+    advance(1400);
+    advance(C.answerLockMs + 3000); // the question is still being said
+    const q = utterances.find((u) => u.text === 'How many did you see?')!;
+    act(() => q.onend?.());
+    advance(2000);
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
+    const ms = (t.answered[0] as QuickAnswerEvent).thinkingMs;
+    expect(ms).toBeGreaterThanOrEqual(2000);
+    expect(ms).toBeLessThan(2500);
+    Reflect.deleteProperty(window, 'speechSynthesis');
+    Reflect.deleteProperty(window, 'SpeechSynthesisUtterance');
+  });
+
   it('moves focus to Next after an answer, and answers 10 with the 0 key', () => {
     setup({ ...emptySubState(), placed: true, startStage: 5, guidedMode: true });
     fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
@@ -287,7 +362,7 @@ describe('Quick looks', () => {
     if (labels.includes('10')) {
       fireEvent.keyDown(window, { key: '0' });
     } else {
-      fireEvent.click(screen.getAllByRole('button').find((b) => /^\d+$/.test(b.textContent ?? ''))!);
+      fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(dotsShown()))!);
     }
     expect(document.activeElement).toBe(screen.getByRole('button', { name: /^(Next|Finish)$/ }));
   });
