@@ -363,9 +363,9 @@ export function marksFor(level: HelpLevel, lo: number, hi: number): { named: num
 /**
  * The picture for a go after some wrong taps (plan section 4, "Help inside one go"): the first wrong tap brings one level more
  * (at level 0, level 3; at level 1 the Peek opens), the second brings every ten marked (the middle and the ends named), and the third leaves only the nearest
- * cards, or for a place go a band round the number. The answer is never shown.
+ * cards, or for a place go a band round the number. The answer is never shown. When the child is struggling (the kit's STRUGGLE_GOES) it is always the full picture.
  */
-export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer' | 'kind' | 'n' | 'lo' | 'hi' | 'max'>, wrongTaps: number, tapped: readonly number[] = []): {
+export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer' | 'kind' | 'n' | 'lo' | 'hi' | 'max'>, wrongTaps: number, tapped: readonly number[] = [], struggling = false): {
   level: HelpLevel;
   peekOpen: boolean;
   choices: number[];
@@ -379,6 +379,11 @@ export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer' | 'kind' | 'n
     if (go.l === 0) level = 3;
     else if (go.l === 1) peekOpen = true;
     else level = Math.min(C.TOP_LEVEL, go.l + 1) as HelpLevel;
+  }
+  // Three goes in a row with a wrong first tap: the full picture for the rest of the round (last, so a wrong tap can't lower it).
+  if (struggling) {
+    level = C.TOP_LEVEL as HelpLevel;
+    peekOpen = false;
   }
   let choices = go.choices;
   if (wrongTaps >= 3 && go.kind !== 'place') {

@@ -34,8 +34,6 @@ export const TEN_AND_START = { step: 1, level: 4 } as const;
 export const RURU_KEYS_NEEDED = 30;
 export const RURU_START = { step: 3, level: 2 } as const;
 
-/** Wrong taps in a row on first goes that bring full help back for the rest of the challenge (the kit's rule). */
-export const STRUGGLE_GOES = 3;
 /** At the third wrong tap on one go, only the nearest posts and the arrow stay bright. */
 export const BRIGHT_AT_WRONG = 3;
 
