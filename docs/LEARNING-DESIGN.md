@@ -124,7 +124,7 @@ The research behind it, in short: maths as the game mechanic beats a quiz betwee
 **The "show why" flow** (built in Beanstalk R5; `docs/plans/maths-review/R5-mistakes-that-teach.md`):
 1. **Build wrong choices from real misconceptions,** each tagged with its kind (`over`, `under`, `close`, `digit`, `reversal`, `stopped-at-ten` …). Not just "answer ± 1". Section 3 lists the misconceptions per idea. The server rebuilds the same choices from the seed.
 2. **Wrong tap 1:** that choice greys out, one "why" line is read aloud and shown on the game's own picture ("4 and 8 make 12. That is too many." with the extra dots glowing).
-3. **Wrong tap 2:** "Let's look together": the picture works it through to the right answer (about 6 seconds, skippable after 3), then **"Now you try"**: the same question again with choices reshuffled. The redo isn't saved as a fact answer.
+3. **Wrong tap 2:** "Let's look together": the picture works it through to the right answer (about 6 seconds, skippable after 3), then **"Now you try"**: a **sister question**, the same idea and the same kind of go with the numbers changed by one or two, and no marked card (never the same question with the choices reshuffled, which a child can answer by remembering the position or the number just seen). One go only: a right tap moves on; a wrong tap shows the why once more and marks the original go's right answer, so nobody is stuck. The sister is never saved as a fact answer or sent to the server; the original go still ends on its right pick.
 4. **The day still counts** for under-8s. A finished round still turns the leaf.
 5. **Record the kind** of wrong choice (rule 9), so teachers see the misconception, not just "wrong".
 
