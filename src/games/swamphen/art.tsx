@@ -132,6 +132,16 @@ export interface GardenProps {
   label: string;
 }
 
+export type CellMode = 'full' | 'faint' | 'covered' | 'none';
+
+/** How one cell of a garden is drawn: the first row and column always show; only the inside fades or is covered by the mat. */
+export function cellMode(view: string, r: number, c: number, mat: boolean): CellMode {
+  if (view !== 'count' && view !== 'rows' && view !== 'bars' && view !== 'edges') return 'none';
+  if (mat && r > 0 && c > 0) return 'covered';
+  if (view === 'count' || view === 'rows') return 'full';
+  return r === 0 || c === 0 ? 'full' : 'faint';
+}
+
 /**
  * A garden of shoots. The help level's `view` sets how much it says: 'count' shades the rows and counts along them (not the
  * last one: the child does the last jump), 'rows' shades them, 'bars' draws each row as a bar, 'edges' only the outline and the
@@ -141,7 +151,6 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
   const drawn = short ? rows + 1 : rows;
   const w = cols * CELL + PAD * 2 + (small ? 0 : EDGE) + (view === "count" && !small ? 30 : 0);
   const h = drawn * CELL + PAD * 2 + (small ? 0 : EDGE * 0.8);
-  const showShoots = view === 'count' || view === 'rows';
   const shown = planted ?? drawn;
   const x0 = PAD + (small ? 0 : EDGE * 0.5);
   const green = paint('reeds/green');
@@ -157,13 +166,16 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
         const fade = short && r === rows;
         const colour = cut ? '#e8b04a' : r % 2 ? '#9bd06a' : '#7fbe4f';
         const y = PAD + r * CELL;
-        const covered = mat && r > 0;
+        const rowCovered = mat && r > 0;
         return (
           <g key={r} opacity={here ? (fade ? 0.35 : 1) : 0.15}>
             {bands && here && <rect x={x0} y={y + 1} width={cols * CELL} height={CELL - 2} rx="6" fill={view === 'bars' ? colour : colour} opacity={view === 'bars' ? 0.95 : 0.5} />}
-            {showShoots && here && !covered &&
-              Array.from({ length: cols }, (_, c) => (
-                <g key={c} transform={`translate(${x0 + c * CELL + CELL / 2} ${y + CELL / 2})`}>
+            {here &&
+              Array.from({ length: cols }, (_, c) => {
+                const mode = cellMode(view, r, c, mat);
+                if (mode === 'none' || mode === 'covered') return null;
+                return (
+                <g key={c} opacity={mode === 'faint' ? 0.22 : 1} transform={`translate(${x0 + c * CELL + CELL / 2} ${y + CELL / 2})`}>
                   {(cut ? amber : green) ? (
                     <image href={cut ? amber : green} x="-9" y="-12" width="18" height="24" preserveAspectRatio="xMidYMid meet" />
                   ) : (
@@ -173,21 +185,22 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
                     </>
                   )}
                 </g>
-              ))}
-            {view === 'count' && here && r < rows - 1 && !covered && !fade && (
+                );
+              })}
+            {view === 'count' && here && r < rows - 1 && !rowCovered && !fade && (
               <text x={x0 + cols * CELL + 8} y={y + CELL / 2 + 5} fontSize="14" fontWeight="800" fill="#1b2340">{(r + 1) * cols}</text>
             )}
           </g>
         );
       })}
-      {mat && drawn > 1 && (
+      {mat && drawn > 1 && cols > 1 && (
         <g>
           {matSrc ? (
-            <image href={matSrc} x={x0} y={PAD + CELL} width={cols * CELL} height={(drawn - 1) * CELL} preserveAspectRatio="none" />
+            <image href={matSrc} x={x0 + CELL} y={PAD + CELL} width={(cols - 1) * CELL} height={(drawn - 1) * CELL} preserveAspectRatio="none" />
           ) : (
             <>
-              <rect x={x0} y={PAD + CELL} width={cols * CELL} height={(drawn - 1) * CELL} rx="8" fill="#b8793a" stroke="#6b3f14" strokeWidth="3" />
-              <path d={`M${x0 + 8} ${PAD + CELL + 8} H${x0 + cols * CELL - 8}`} stroke="#d9a064" strokeWidth="3" strokeDasharray="6 5" />
+              <rect x={x0 + CELL} y={PAD + CELL} width={(cols - 1) * CELL} height={(drawn - 1) * CELL} rx="8" fill="#b8793a" stroke="#6b3f14" strokeWidth="3" />
+              <path d={`M${x0 + CELL + 8} ${PAD + CELL + 8} H${x0 + cols * CELL - 8}`} stroke="#d9a064" strokeWidth="3" strokeDasharray="6 5" />
             </>
           )}
         </g>
