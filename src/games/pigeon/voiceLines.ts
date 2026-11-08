@@ -33,16 +33,16 @@ export const SLIP_LINES: Record<Slip, string> = {
 /** After a wrong place tap: which side the child's spot is on. */
 export const PLACE_LINES = { early: 'That is too early. Try further along.', late: 'That is too far. Try nearer the start.' } as const;
 
-/** "Let's look together": what the branch shows, by kind (place goes name the two marks either side). */
-export function lookLine(go: Pick<Go, 'kind' | 'n' | 'max'>): string {
+/** "Let's look together": what the branch draws, by kind (place goes count jumps up to the number). */
+export function lookLine(go: Pick<Go, 'kind' | 'n' | 'max'> & { step10?: number }): string {
   if (go.kind === 'place') {
     const size = go.max >= 1000 ? 100 : 10;
     const low = Math.floor(go.n / size) * size;
-    return low === go.n ? `${go.n} is a mark on the branch. Look for it.` : `${go.n} is between ${low} and ${low + size}. Look in the middle.`;
+    return low === go.n ? `${go.n} is ${go.n / size} ${size === 100 ? 'hundred' : 'ten'}${go.n === size ? '' : 's'}. Count the jumps.` : `${go.n} is ${low} and ${go.n - low} more. Count the jumps.`;
   }
-  if (go.kind === 'read') return 'Find the nearest number you can see, then count the little steps.';
-  if (go.kind === 'tens') return 'Ten more is one ten along. Ten less is one ten back.';
-  return 'Count how far it is from each post. The nearer post wins.';
+  if (go.kind === 'read') return 'Count the little jumps up from the nearest big number.';
+  if (go.kind === 'tens') return `Ten ${(go.step10 ?? 10) > 0 ? 'more is one ten along' : 'less is one ten back'}. The other jump is a different size.`;
+  return 'Count how far it is to each post. The nearer post wins.';
 }
 
 /** What the home screen says: who is flying, and "come back tomorrow" once today's cluster has changed. */
@@ -66,7 +66,7 @@ export function allVoiceLines(): string[] {
       const near = kind === 'near' ? { posts: nearPosts(n, keyLine(key)) } : { posts: null };
       const said = { kind, n, step10: key.includes('-') ? -10 : 10, ...near };
       lines.add(askLine(said));
-      lines.add(lookLine({ kind, n, max: keyLine(key) }));
+      lines.add(lookLine({ kind, n, max: keyLine(key), step10: said.step10 }));
     }
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.clusterTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenBranch)];

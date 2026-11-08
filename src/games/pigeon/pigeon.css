@@ -120,12 +120,16 @@
 @keyframes pg-right { 50% { scale: 1.2; } 100% { scale: 1.08; } }
 .pg-choice--off { opacity: 0.35; }
 
+/* The slot under the branch where the why, look and now-you-try lines show: always there, so the line never moves when one opens. */
+.pg-reason { min-height: 8.5rem; width: 100%; display: flex; align-items: center; justify-content: center; }
+
 /* The "have a look" and "now you try" lines after a slip. */
 .pg-why { margin: 0; padding: 10px 20px; border-radius: 20px; background: var(--pg-panel); border: 3px solid var(--pg-leaf); font: 800 clamp(1.1rem, 2.6vw, 1.5rem) system-ui, sans-serif; text-align: center; max-width: 100%; }
-.pg-why--look { display: flex; flex-direction: column; align-items: center; gap: 8px; border-color: var(--pg-gold); }
+.pg-why--look { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; border-color: var(--pg-gold); }
 .pg-why--try { border-color: var(--pg-leaf-dark); }
-.pg-why__title { margin: 0; font-size: 1.4rem; }
-.pg-why__icon { font-size: 2.4rem; }
+.pg-why__title { margin: 0; font-size: 1.4rem; padding: 0 84px; }
+/* The skip button sits in the corner so the look panel is no taller than the slot it opens in. */
+.pg-why--look .pg-hear { position: absolute; top: 6px; right: 8px; min-height: 44px; padding: 0 14px; font-size: 1rem; }
 .pg-hear { min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--pg-leaf-dark); background: #fff; font: 700 1.1rem system-ui, sans-serif; cursor: pointer; }
 
 .pg-golden { width: 100%; }
@@ -137,6 +141,8 @@
   .pg-top { padding-right: 280px; }
 }
 @media (max-width: 640px) {
+  /* The look title wraps to two lines on a phone, so the slot is taller there. */
+  .pg-reason { min-height: 10.5rem; }
   .pg-top { padding-right: 0; padding-top: 64px; }
   .pg-stage__friend { display: none; }
 }
