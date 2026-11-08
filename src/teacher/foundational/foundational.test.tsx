@@ -19,6 +19,7 @@ import { HOP_STEPS } from '../../../shared/hop/round';
 import { LEVELS as KORORA_LEVELS } from '../../../shared/korora/round';
 import { LEVELS as PIPI_LEVELS } from '../../../shared/pipi/round';
 import { LEVELS as WEKA_LEVELS } from '../../../shared/weka/round';
+import { TARGETS } from '../../../shared/beanstalk/round';
 import { STEPS as TUI_STEPS } from '../../../shared/tui/round';
 import { classRows, tracksOf } from './flags';
 import { FoundationalGrid } from './FoundationalGrid';
@@ -127,10 +128,14 @@ describe('the older games keep up with their longer ladders (S23)', () => {
       pipi: PIPI_LEVELS.map((l) => l.level as number),
       tui: TUI_STEPS.map((s) => s.step as number),
       weka: WEKA_LEVELS.map((l) => l.level as number),
+      beanstalk: TARGETS.map((_, i) => i),
     };
     for (const [id, levels] of Object.entries(reachable)) {
       const words = GAMES[id as keyof typeof GAMES];
-      for (const level of levels) expect(words.levels[level], `${id} level ${level}`).toBeTruthy();
+      for (const level of levels) {
+        expect(words.levels[level], `${id} level ${level}`).toBeTruthy();
+        if (id === 'beanstalk') expect(words.levels[level]).toBe(`Bonds to ${TARGETS[level]}`);
+      }
       expect(Object.keys(words.levels).map(Number).sort((a, b) => a - b), id).toEqual([...levels].sort((a, b) => a - b));
       expect(words.top, id).toBe(levels[levels.length - 1]);
     }
