@@ -146,6 +146,10 @@ function TryPicture({ mat, places, need, picked }: { mat: Mat; places: 2 | 3; ne
   );
 }
 
+/** Does this go have a raft in it? A Bundle or Swap go's answer is bundles x 100 + sticks, so only its starting number counts. */
+export const hasRaft = (go: Pick<Go, 'kind' | 'n' | 'answer'>): boolean =>
+  go.kind === 'bundle' || go.kind === 'swap' ? go.n >= 100 : go.n >= 100 || go.answer >= 100;
+
 export function Goes({ guided = false, round, scenery, friend, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
@@ -205,7 +209,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       if (live && !tappedYet.current) since.current = Date.now();
     });
     // The first go with a raft in it brings Lizard's tip, once on this device.
-    if (go.n >= 100 || go.answer >= 100) {
+    if (hasRaft(go)) {
       let seen = false;
       try {
         seen = localStorage.getItem(RAFT_TIP_KEY) === 'seen';
