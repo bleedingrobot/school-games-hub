@@ -81,6 +81,33 @@ export function fadeAfter(p: Fade, right: number, rules: FadeRules): Fade & { fa
   return { level, goodInRow, faded };
 }
 
+/** The help for each kind of go: a map from the kind's name (the game's own string) to its level and good rounds in a row. */
+export type KindLevels = Record<string, Fade>;
+
+/**
+ * Help for each kind of go, after a counted round. For each kind with at least 2 goes, the goes right at the first tap are
+ * scaled to ten (`Math.round(10 * right / n)`) and `fadeAfter` is run with the rules (use `ROUND_OF_TEN`), so a kind fades
+ * after two good rounds and comes back after a hard one. A kind with fewer than 2 goes is left as it was. A kind not in the
+ * map yet starts at `startLevel` (the child's own level, which already has a new step's full help). Returns a new map; the
+ * kinds the round did not ask keep what they had. The kind is only a string: the game names its own.
+ */
+export function fadeByKind(kindLevels: KindLevels, goes: readonly { kind: string; right: boolean }[], rules: FadeRules, startLevel: number): KindLevels {
+  const tally = new Map<string, { n: number; right: number }>();
+  for (const g of goes) {
+    const t = tally.get(g.kind) ?? { n: 0, right: 0 };
+    t.n += 1;
+    if (g.right) t.right += 1;
+    tally.set(g.kind, t);
+  }
+  const out: KindLevels = { ...kindLevels };
+  for (const [kind, { n, right }] of tally) {
+    if (n < 2) continue;
+    const { level, goodInRow } = fadeAfter(kindLevels[kind] ?? { level: startLevel, goodInRow: 0 }, Math.round((10 * right) / n), rules);
+    out[kind] = { level, goodInRow };
+  }
+  return out;
+}
+
 export interface StepRules extends FadeRules {
   /** Good rounds at a step that pass it. */
   goodToPass: number;

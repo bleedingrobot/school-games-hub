@@ -13,7 +13,7 @@ import { kindsFromFacts, mergeSeen, readKinds } from './seen';
 import { finishBand } from './finishBand';
 import { arcAfter, daysPerReward, finishDay } from './dayArc';
 import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
-import { fadeAfter, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
+import { fadeAfter, fadeByKind, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
 import { replayTaps, type ReplayGo, type Tap } from './replay';
 
 const TUI_RULES: StepRules = { ...ROUND_OF_TEN, topLevel: 5, goodToPass: 2, topStep: 5, newStepHelp: 1, newStepLevel: 4 };
@@ -56,6 +56,25 @@ describe('help follows the child', () => {
       const place = { step, level, goodInRow, goodAtStep };
       expect(placeAfter(place, right, TUI_RULES)).toEqual(tuiPlaceAfter(place, right));
     }
+  });
+});
+
+describe('help for each kind of go', () => {
+  it('scales each kind to ten, leaves a kind with one go, fades after two good rounds, brings help back after a hard one and starts a new kind at the default', () => {
+    const rules = { ...ROUND_OF_TEN, topLevel: 5 };
+    const round = (...rs: [string, boolean][]) => rs.map(([kind, right]) => ({ kind, right }));
+    // Two goes, both right: 10 of ten, a good round. One go: unchanged (not even added).
+    const one = fadeByKind({}, round(['read', true], ['read', true], ['swap', false]), rules, 4);
+    expect(one).toEqual({ read: { level: 4, goodInRow: 1 } });
+    // A second good round fades that kind one level; the other kind is untouched.
+    const two = fadeByKind({ ...one, swap: { level: 3, goodInRow: 0 } }, round(['read', true], ['read', true]), rules, 4);
+    expect(two).toEqual({ read: { level: 3, goodInRow: 0 }, swap: { level: 3, goodInRow: 0 } });
+    // A hard round (1 of 4 right is 3 of ten) brings one level back, while another kind fades on its own.
+    const hard = fadeByKind({ read: { level: 3, goodInRow: 0 }, swap: { level: 2, goodInRow: 1 } }, round(['read', true], ['read', false], ['read', false], ['read', false], ['swap', true], ['swap', true]), rules, 4);
+    expect(hard).toEqual({ read: { level: 4, goodInRow: 0 }, swap: { level: 1, goodInRow: 0 } });
+    // Never past the top or below none.
+    expect(fadeByKind({ read: { level: 5, goodInRow: 0 } }, round(['read', false], ['read', false]), rules, 5).read.level).toBe(5);
+    expect(fadeByKind({ read: { level: 0, goodInRow: 1 } }, round(['read', true], ['read', true]), rules, 5).read.level).toBe(0);
   });
 });
 
