@@ -1,3 +1,4 @@
+import { demoLines } from './demo';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -37,6 +38,14 @@ describe("Pipi's Hidden Shells voice clips", () => {
       }
     }
     expect(parseKey(GUIDED_KEY)).not.toBeNull();
+  });
+
+  it('has the show-me-first lines, and none of them is a number', () => {
+    const wanted = new Set(lines.map((l) => l.text));
+    for (const line of demoLines()) {
+      expect(wanted.has(line), line).toBe(true);
+      expect(line).not.toMatch(/\d/);
+    }
   });
 
   it('has a recorded clip for every line', () => {

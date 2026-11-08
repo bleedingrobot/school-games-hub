@@ -18,10 +18,15 @@
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
+import { kindsFromDays } from './seen';
+import { mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import { beachAfter, finishChallenge, nzDate } from './progress';
 import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
 
-export type PipiAction = 'load' | 'start' | 'finish';
+export type PipiAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go this game has (not only the ones that have a demo). */
+export const KINDS = ['hiding', 'altogether', 'twoTides'] as const;
 
 /** A pupil's beach as it is saved. */
 export interface Progress {
@@ -48,7 +53,7 @@ export interface Settings {
   help: boolean;
 }
 
-export interface PipiServices {
+export interface PipiServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; only the part-whole ones matter here). */
@@ -115,7 +120,19 @@ export async function handlePipi(services: PipiServices, player: string, body: R
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastShellDay: s.lastShellDay, today: today(), level: s.reached, help: settings.help, guided: s.played === 0 });
+    const saved = await services.seen(player);
+    if (saved === 'busy') return busy();
+    // A go's kind is not in the maths records, so children who have played for weeks are known by their days.
+    const seen = mergeSeen(saved, kindsFromDays(s.daysDone, s.played));
+    return ok({ daysDone: s.daysDone, lastShellDay: s.lastShellDay, today: today(), level: s.reached, help: settings.help, guided: s.played === 0, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

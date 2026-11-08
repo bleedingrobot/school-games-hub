@@ -555,6 +555,38 @@ function finishChallenge(daysDone, lastShellDay, today) {
 	};
 }
 //#endregion
+//#region shared/pipi/seen.ts
+/** Which kinds of go a child has surely met, from how far they have played (a go's kind is not in the maths records). */
+/**
+* Altogether goes come on silver and gold days, two tides on gold days only (shared/pipi/round.ts), so a child who has
+* finished a silver day has had altogether, and one who has finished a gold day has had both. Every finished round has had
+* ordinary hiding goes.
+*/
+function kindsFromDays(daysDone, played) {
+	const beach = beachAfter(daysDone);
+	const kinds = played > 0 ? ["hiding"] : [];
+	if (beach.pearls > 0 || beach.day >= 11) kinds.push("altogether");
+	if (beach.pearls > 0 || beach.day >= 21) kinds.push("twoTides");
+	return kinds.sort();
+}
+//#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+//#endregion
 //#region shared/pipi/server.ts
 /**
 * What the `pipi` server function will do with a request from a signed-in pupil (docs/PIPI-PLAN.md section 3, and
@@ -573,6 +605,12 @@ function finishChallenge(daysDone, lastShellDay, today) {
 * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
 * the shells come from the saved count of finished days. A challenge finishes once.
 */
+/** Every kind of go this game has (not only the ones that have a demo). */
+const KINDS = [
+	"hiding",
+	"altogether",
+	"twoTides"
+];
 const unplayed = () => ({
 	daysDone: 0,
 	lastShellDay: null,
@@ -627,14 +665,25 @@ async function handlePipi(services, player, body) {
 	if (body.action === "load") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
+		const saved = await services.seen(player);
+		if (saved === "busy") return busy();
+		const seen = mergeSeen(saved, kindsFromDays(s.daysDone, s.played));
 		return ok({
 			daysDone: s.daysDone,
 			lastShellDay: s.lastShellDay,
 			today: today(),
 			level: s.reached,
 			help: settings.help,
-			guided: s.played === 0
+			guided: s.played === 0,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7368,6 +7417,21 @@ Deno.serve(makeHandler({
 	},
 	async load(player) {
 		return await call("pipi_load", { player }) ?? unplayed();
+	},
+	async seen(player) {
+		const kinds = await call("kit_seen_get", {
+			player,
+			game: "pipi"
+		});
+		return kinds === "busy" ? "busy" : kinds ?? [];
+	},
+	async markSeen(player, kinds) {
+		const next = await call("kit_seen_mark", {
+			player,
+			game: "pipi",
+			kinds
+		});
+		return next === "busy" ? "busy" : next ?? [];
 	},
 	async facts(player) {
 		const context = await call("space_maths_context", { player });

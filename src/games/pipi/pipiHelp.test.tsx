@@ -24,20 +24,20 @@ describe("Pipi's help in the sand follows the child (R6)", () => {
     const r = round((i) => (i === 0 ? 'none' : i === 1 ? undefined : 'full'));
     const goes = showRound(r);
     const u = setup();
-    render(<Goes round={r} help="faint" say={vi.fn()} {...props} />);
+    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={r} help="faint" say={vi.fn()} {...props} />);
     expect(frame()).toContain('pp-frame--none');
     await tide();
     await u.click(shell(goes[0].answer));
     await act(() => vi.advanceTimersByTimeAsync(1600));
     expect(frame()).toContain('pp-frame--faint');
     document.body.innerHTML = '';
-    render(<Goes round={round(() => 'full')} help="full" helpOn={false} say={vi.fn()} {...props} />);
+    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={round(() => 'full')} help="full" helpOn={false} say={vi.fn()} {...props} />);
     expect(frame()).toContain('pp-frame--none');
     // Full help draws no outlines until a shell has been tried on this go; then they come in.
     document.body.innerHTML = '';
     const full = round(() => 'full');
     const g0 = showRound(full)[0];
-    render(<Goes round={full} help="full" say={vi.fn()} {...props} />);
+    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={full} help="full" say={vi.fn()} {...props} />);
     await tide();
     expect(document.querySelectorAll('.pp-hidden--full')).toHaveLength(0);
     expect(document.querySelectorAll('.pp-hidden--none').length).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe("Pipi's help in the sand follows the child (R6)", () => {
     const run = async (helpOn: boolean) => {
       const say = vi.fn();
       const u = setup();
-      const view = render(<Goes round={r} help="none" helpOn={helpOn} say={say} {...props} />);
+      const view = render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={r} help="none" helpOn={helpOn} say={say} {...props} />);
       for (let i = 0; i < 3; i++) {
         await tide();
         await u.click(shell(goes[i].wrongs[0].n));

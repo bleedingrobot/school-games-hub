@@ -16,17 +16,21 @@
  * goes in a row with a wrong first shell the full help comes back for the rest of the round (not saved), with a line that
  * says so once. The teacher's help switch still wins: off means none, and the three-in-a-row boost does not bring it back.
  */
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { replay, wrongFirstRun, type Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
 import { GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
+import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { playSound } from '../sounds';
 import { backFor, PaperLayers, type Scenery } from './Beach';
 import { paint } from './art';
+import { DEMO_KINDS, DEMO_STEPS, demoGo, type DemoKind } from './demo';
 import { Friend, Hidden, NumberShell, Pipi } from './PipiArt';
 import { SplitSum, WhyPicture } from './WhyPicture';
 import { lookLine, whyLine, WORDS } from './words';
@@ -51,6 +55,9 @@ interface Props {
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the right shell on the first go. */
   guide?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (each kind's demo plays once). */
+  seen: readonly string[];
+  onSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -92,7 +99,70 @@ function reordered(items: number[]): number[] {
   return out.join() === items.join() && out.length > 1 ? [...out.slice(1), out[0]] : out;
 }
 
-export function Goes({ round, help, helpOn = true, scenery, friend, guide = false, sound, say, onDone }: Props) {
+/** The made-up go of a "Show me first" demo: the same sand, sign and shells as a real go, with nothing to tap. */
+function DemoView({ kind, round, scenery, friend, step, canSkip, onSkip, heading, done }: {
+  kind: DemoKind; round: Round; scenery: Scenery; friend: FriendName; step: number; canSkip: boolean; onSkip: () => void;
+  heading: RefObject<HTMLHeadingElement | null>; done: number;
+}) {
+  const go = useMemo(() => demoGo(kind, round), [kind, round]);
+  const target = DEMO_STEPS[kind][step]?.target;
+  const tides = kind === 'twoTides';
+  const phase: Phase = tides && step === 0 ? 'tide' : 'ask';
+  const spots = spotsFor(go, phase, tides ? step >= 1 : true);
+  return (
+    <div className={`pp-play pp-scene--${scenery}`} style={backFor(scenery)}>
+      <PaperLayers />
+      <h2 className="pp-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+      <div className="pp-top">
+        <div className="pp-progress" aria-label={WORDS.goesDone(done, GOES_PER_ROUND)}>
+          {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+            <span key={i} className={i < done ? 'pp-pip pp-pip--done' : 'pp-pip'} />
+          ))}
+        </div>
+      </div>
+      <div className="pp-sign" aria-live="polite">
+        {kind === 'altogether' && step < 2 ? (
+          <>
+            <span className="pp-sign__whole">{WORDS.parts(go.showing, go.hiding)}</span>
+            <span className="pp-sign__words">{WORDS.hereAndPopped}</span>
+          </>
+        ) : (
+          <>
+            <span className="pp-sign__whole">{go.whole}</span>
+            <span className="pp-sign__words">altogether</span>
+          </>
+        )}
+      </div>
+      <div className="pp-stage">
+        <div className={`pp-frame pp-frame--${spots.length === 5 ? 'five' : 'ten'} pp-frame--full`} role="img" aria-label={WORDS.altogether(go.whole)}>
+          {spots.map((s, i) => (
+            <span key={i} className={`pp-spot pp-spot--${s}`}>
+              {(s === 'pipi' || s === 'popped') && <Pipi pose={s === 'popped' ? 'wave' : phase === 'tide' ? 'dig' : 'sit'} />}
+              {s === 'hidden' && <Hidden outline="full" />}
+            </span>
+          ))}
+        </div>
+        <span className="pp-play__friend">
+          <Friend friend={friend} pose="wait" />
+        </span>
+      </div>
+      <div className="pp-shells" role="group" aria-label={WORDS.pickShell}>
+        {go.choices.map((n, i) => {
+          const pointed = target === 'shell' && n === go.answer;
+          return (
+            <button key={n} type="button" disabled className={`pp-shellbtn${pointed ? ' pp-shellbtn--pointed' : ''}`} style={{ ['--pp-i' as string]: i }} aria-label={String(n)}>
+              <NumberShell value={n} />
+              {pointed && <span className="pp-hand" aria-hidden="true">👇</span>}
+            </button>
+          );
+        })}
+      </div>
+      <DemoBar prefix="pp" skipLabel={WORDS.skip} canSkip={canSkip} onSkip={onSkip} />
+    </div>
+  );
+}
+
+export function Goes({ round, help, helpOn = true, scenery, friend, guide = false, seen, onSeen, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -117,6 +187,8 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   const [boosted, setBoosted] = useState(false);
   /** Wrong shells that have had their why line and left the row (`go-shell` keys, so a late callback can't hit another go). */
   const [gone, setGone] = useState<string[]>([]);
+  const kinds = useSeenKinds(seen, onSeen);
+  const demoWas = useRef(false);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -131,6 +203,13 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   // Each go: the wave washes in, then the question is read aloud and the shells can be tapped.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
+    // A kind not yet seen is shown first (no tide): its question is read when the demo is over.
+    if (DEMO_KINDS.includes(goes[at].kind) && !kinds.has(goes[at].kind)) {
+      setPhase('ask');
+      setTideIn(true);
+      tappedYet.current = false;
+      return;
+    }
     setPhase('tide');
     setTideIn(false);
     if (sound) playSound('tap');
@@ -155,6 +234,23 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   }, [at, goes]);
 
   const go = goes[Math.min(at, goes.length - 1)];
+  const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' && !redo ? (go.kind as DemoKind) : null;
+  const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMO_STEPS[demoKind] : [], say });
+  // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    since.current = Date.now();
+    tappedYet.current = false;
+    say(go.spoken, () => {
+      if (!tappedYet.current) since.current = Date.now();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
   const helpAt = (i: number): Help => (helpOn ? round.goes[i]?.h ?? help : 'none');
   const helpNow: Help = boosted ? 'full' : helpAt(at);
   const spots = spotsFor(go, lifted && phase === 'ask' ? 'right' : phase, tideIn);
@@ -208,7 +304,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || tried.includes(n)) return;
+    if (phase !== 'ask' || look || demo.playing || tried.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -238,6 +334,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
       return;
     }
     flow.current = stepGo(flow.current, 'right');
+    kinds.mark([go.kind]);
     setWhy(null);
     setPhase('right');
     say(WORDS.yes(n));
@@ -256,6 +353,8 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   const pointAt = guide && at === 0 && phase === 'ask' ? go.answer : null;
   const done = at + (phase === 'right' || phase === 'done' ? 1 : 0);
   const ask = go.kind === 'altogether' ? WORDS.howManyAltogether : go.kind === 'twoTides' ? WORDS.howManyNow : WORDS.howManyHiding;
+
+  if (demo.playing && demoKind) return <DemoView kind={demoKind} round={round} scenery={scenery} friend={friend} step={demo.step} canSkip={demo.canSkip} onSkip={demo.skip} heading={heading} done={done} />;
 
   return (
     <div className={`pp-play pp-scene--${scenery}`} style={backFor(scenery)}>

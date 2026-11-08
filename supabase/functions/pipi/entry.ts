@@ -54,6 +54,14 @@ Deno.serve(
       // A pupil who has never played has no beach yet.
       return saved ?? unplayed();
     },
+    async seen(player) {
+      const kinds = await call<string[] | null>('kit_seen_get', { player, game: 'pipi' });
+      return kinds === 'busy' ? 'busy' : (kinds ?? []);
+    },
+    async markSeen(player, kinds) {
+      const next = await call<string[] | null>('kit_seen_mark', { player, game: 'pipi', kinds });
+      return next === 'busy' ? 'busy' : (next ?? []);
+    },
     async facts(player) {
       // The same records every maths game reads; only the part-whole ones matter here.
       const context = await call<{ facts?: FactStats[] } | null>('space_maths_context', { player });
