@@ -8,6 +8,7 @@ import { GOES_PER_ROUND as TUI_GOES, makeRound as tuiRound, placeAfter as tuiPla
 import { createHash } from 'node:crypto';
 import { WORDS as BEANSTALK_WORDS } from '../../src/games/beanstalk/words';
 import { makeRound as beanstalkRound, mistakeKind, replay as beanstalkReplay, TARGETS, type Tap as BeanstalkTap } from '../beanstalk/round';
+import { kindsFromFacts, mergeSeen, readKinds } from './seen';
 import { arcAfter, daysPerReward, finishDay } from './dayArc';
 import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
 import { fadeAfter, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
@@ -146,5 +147,18 @@ describe('mistakes that teach', () => {
       }
     }
     expect(h.digest('hex')).toBe('0ed75da9c90d68506c236e53eba1f3160c8f971a');
+  });
+
+  it('the seen kinds: a body must name known kinds once each, lists merge sorted, and only answered keys count', () => {
+    const allowed = ['zoom', 'swap', 'pairs'];
+    expect(readKinds(['zoom', 'swap'], allowed)).toEqual(['zoom', 'swap']);
+    expect(readKinds([], allowed)).toEqual([]);
+    expect(readKinds(['zoom', 'nope'], allowed)).toBeNull();
+    expect(readKinds(['zoom', 'zoom'], allowed)).toBeNull();
+    expect(readKinds(['zoom', 'swap', 'pairs'], allowed, 2)).toBeNull();
+    expect(readKinds('zoom', allowed)).toBeNull();
+    expect(mergeSeen(['zoom', 'swap'], ['swap', 'pairs'], [])).toEqual(['pairs', 'swap', 'zoom']);
+    const facts = [{ key: 'a', attempts: 3 }, { key: 'b', attempts: 0 }, { key: 'c', attempts: 1 }, { key: 'd', attempts: 2 }];
+    expect(kindsFromFacts(facts, (k) => (k === 'd' ? null : k === 'a' || k === 'b' ? 'zoom' : 'swap'))).toEqual(['swap', 'zoom']);
   });
 });
