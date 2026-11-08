@@ -1,0 +1,624 @@
+{
+ "issues": [
+  {
+   "game": "Weka",
+   "issue": "Wrong choices were just one or two off the answer",
+   "status": "fixed",
+   "now": "Wrong choices are now tagged mistakes (counted the rock, doubled, off by one and so on), each with its own 'why' line and picture.",
+   "where": "shared/weka/round.ts:266",
+   "plan": "R5"
+  },
+  {
+   "game": "Weka",
+   "issue": "Tapping every choice costs nothing; the stone is for finishing",
+   "status": "not_fixed",
+   "now": "Only the first tap of a go is scored, and a second wrong tap now starts a look-together. But the stone is still given for finishing, with no accuracy needed.",
+   "where": "shared/weka/progress.ts:finishDay; src/games/weka/Goes.tsx:225",
+   "plan": "R5"
+  },
+  {
+   "game": "Weka",
+   "issue": "Pebble and bond steps were done for the child",
+   "status": "partly",
+   "now": "Pebbles: the child now drags or taps pebbles and presses Check (fixed). The bond step still offers four near numbers and says only 'Try again' after a miss.",
+   "where": "src/games/weka/Pebbles.tsx:95; src/games/weka/Goes.tsx:355",
+   "plan": "R9"
+  },
+  {
+   "game": "Weka",
+   "issue": "Level 1 is repetitive (8 facts for 10 goes)",
+   "status": "not_fixed",
+   "now": "Level 1 still repeats facts to fill 10 goes, and repeats are not counted as separate evidence.",
+   "where": "shared/weka/round.ts:215",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Silver and gold days follow the calendar, not the child",
+   "status": "not_fixed",
+   "now": "Day kind still comes from the day count, not from how the child is doing.",
+   "where": "shared/weka/server.ts:129",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Hop-backs are only 2 goes, and only on gold days",
+   "status": "not_fixed",
+   "now": "BACK_GOES is still 2 and only gold days have them.",
+   "where": "shared/weka/round.ts:32",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Teacher had no Today alert or class grid for Weka",
+   "status": "fixed",
+   "now": "Weka is in the teacher Foundational grid and has an alert feed.",
+   "where": "src/teacher/foundational/config.ts:44",
+   "plan": "R7"
+  },
+  {
+   "game": "Weka",
+   "issue": "No round summary of how the child did",
+   "status": "not_fixed",
+   "now": "The finish screen shows the stone and a what's-next card but no accuracy or facts summary.",
+   "where": "src/games/weka/WekaGame.tsx:199",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Rounds are deleted after 30 days",
+   "status": "not_fixed",
+   "now": "The database still removes rounds older than 30 days.",
+   "where": "supabase/migrations/20261105000600_weka.sql:89",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Level 1 'hops to ten' step is always 1, so it can be guessed",
+   "status": "not_fixed",
+   "now": "With a big number of 9 the first hop is always 1.",
+   "where": "shared/weka/round.ts:301",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Pebble step stopped at ten (maths fidelity)",
+   "status": "fixed",
+   "now": "The pebble step now builds the real number and checks it.",
+   "where": "src/games/weka/Pebbles.tsx:95",
+   "plan": "R9"
+  },
+  {
+   "game": "Weka",
+   "issue": "Three or four screens for every go",
+   "status": "not_fixed",
+   "now": "A full-help go still has four phases (hop to ten, answer, pebbles, bond), and Check adds a tap.",
+   "where": "src/games/weka/Goes.tsx:290",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Help fades slowly (about 12 days)",
+   "status": "not_fixed",
+   "now": "Help ladder still needs 2 quick days and box 2 for split, then 8 and 12 right answers per fact.",
+   "where": "shared/weka/round.ts:107",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "5 second quick rule penalised voice-led juniors",
+   "status": "fixed",
+   "now": "Quick time is 10 s for juniors and the clock starts after the voice finishes.",
+   "where": "src/games/weka/Goes.tsx:128",
+   "plan": "R2"
+  },
+  {
+   "game": "Weka",
+   "issue": "Answer clock starts only after the hop-to-ten step",
+   "status": "not_fixed",
+   "now": "The answer time still starts after the first step, so time on the first step is not measured.",
+   "where": "src/games/weka/Goes.tsx:308",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Hints were the same whatever the child chose",
+   "status": "fixed",
+   "now": "Hints now depend on which wrong choice was tapped.",
+   "where": "src/games/weka/Goes.tsx:268",
+   "plan": "R5"
+  },
+  {
+   "game": "Weka",
+   "issue": "Hints used are not saved",
+   "status": "partly",
+   "now": "The help level of the go is saved. Hints and look-togethers inside a go are not.",
+   "where": "src/games/weka/Goes.tsx:290",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Reward is once a day and abstract",
+   "status": "not_fixed",
+   "now": "One stone per finished day or challenge, with no link to what was learned.",
+   "where": "shared/weka/progress.ts",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Choice sets left out the nearest numbers",
+   "status": "fixed",
+   "now": "Choices are now built from named mistakes, so the near numbers appear when they are real mistakes.",
+   "where": "shared/weka/round.ts:239",
+   "plan": "R5"
+  },
+  {
+   "game": "Weka",
+   "issue": "First go is fully told",
+   "status": "not_fixed",
+   "now": "The first go is still a full walk-through. Kept by design.",
+   "where": "src/games/weka/Goes.tsx",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Hop animations stall in a hidden browser",
+   "status": "not_fixed",
+   "now": "Preview only. Could not be checked in code.",
+   "where": "src/games/weka/Goes.tsx:202",
+   "plan": null
+  },
+  {
+   "game": "Weka",
+   "issue": "Answer stones may be cut off at 800x600",
+   "status": "not_fixed",
+   "now": "Code only: no change made to the layout for small screens; best reading is unchanged.",
+   "where": "src/games/weka/Goes.tsx",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "Fading bug: step help and fade cancelled each other",
+   "status": "partly",
+   "now": "The cancel is fixed, but level 4 is kept as a floor on steps 2 to 4, so a perfect child keeps ten-frames for about 8 days.",
+   "where": "shared/tui/round.ts:99",
+   "plan": "R1"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Only 9 facts to practise",
+   "status": "not_fixed",
+   "now": "Still numbers 1 to 9. Keys are now split into 18 (add and take away) but there are no new numbers.",
+   "where": "shared/tui/round.ts:45",
+   "plan": "R9"
+  },
+  {
+   "game": "Tūī",
+   "issue": "'Try again' only; the reversed number (41 for 14) was never named",
+   "status": "fixed",
+   "now": "Wrong nests are tagged (reversal, tens-only and so on) with a why-line.",
+   "where": "shared/tui/round.ts:262; src/games/tui/Goes.tsx:173",
+   "plan": "R5"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Fade after a third wrong tap",
+   "status": "not_fixed",
+   "now": "Dropped. The thinning code is still there but nothing uses it.",
+   "where": "shared/tui/round.ts:311",
+   "plan": "R5"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Three nests could be guessed",
+   "status": "fixed",
+   "now": "Four nests at every level.",
+   "where": "shared/tui/round.ts:239",
+   "plan": "R5"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Nothing on Today / no stuck signal for teachers",
+   "status": "fixed",
+   "now": "Tūī is in the teacher grid and alerts.",
+   "where": "src/teacher/foundational/config.ts:44",
+   "plan": "R7"
+  },
+  {
+   "game": "Tūī",
+   "issue": "3.4 second pause after right answers",
+   "status": "not_fixed",
+   "now": "RIGHT_MS is still 3400.",
+   "where": "src/games/tui/Goes.tsx:33",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "Progression: one range, no spiral, no link to Weka",
+   "status": "partly",
+   "now": "A what's-next card to Weka appears when the child is secure. Still one number range and no step 6 (ten more, ten less).",
+   "where": "src/games/tui/TuiGame.tsx:218",
+   "plan": "R8"
+  },
+  {
+   "game": "Tūī",
+   "issue": "'Hear it again' said a different line",
+   "status": "fixed",
+   "now": "It now says the go's own line.",
+   "where": "src/games/tui/Goes.tsx:202",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "'Take the ten away' picture showed all the berries",
+   "status": "fixed",
+   "now": "The ten now flies away in the picture.",
+   "where": "src/games/tui/Goes.tsx",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "Right answer after a wrong first tap gets full praise",
+   "status": "not_fixed",
+   "now": "After a look-together and redo, the child still gets the same praise as a first-try right.",
+   "where": "src/games/tui/words.ts:53",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "Weakest fact appears twice in a round",
+   "status": "not_fixed",
+   "now": "The weakest fact is still added at the end of the list.",
+   "where": "shared/tui/round.ts:224",
+   "plan": null
+  },
+  {
+   "game": "Tūī",
+   "issue": "Fact keys were not the way (add and take away shared a key)",
+   "status": "fixed",
+   "now": "Separate keys for ten-and and ten-less.",
+   "where": "shared/tui/round.ts:45",
+   "plan": "R9"
+  },
+  {
+   "game": "Tūī",
+   "issue": "5 second quick rule",
+   "status": "fixed",
+   "now": "10 s for juniors and the clock starts after the voice.",
+   "where": "src/games/tui/Goes.tsx:99",
+   "plan": "R2"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Only teen-looking nest was the answer (fidelity)",
+   "status": "fixed",
+   "now": "Wrong nests now also look like teens (reversal and so on).",
+   "where": "shared/tui/round.ts:262",
+   "plan": "R5"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Preview tools panel shown",
+   "status": "not_fixed",
+   "now": "Preview only. Could not be checked.",
+   "where": "src/games/tui/TuiGame.tsx",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "No teacher view",
+   "status": "fixed",
+   "now": "A Quick looks panel on the student page and a class function.",
+   "where": "src/teacher/StudentPage.tsx:193",
+   "plan": "R7"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Keep-the-picture answers counted as progress",
+   "status": "fixed",
+   "now": "Guided answers are saved as helped (practice only).",
+   "where": "src/subitising/SubitisingApp.tsx:100",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Reaction time not saved",
+   "status": "fixed",
+   "now": "Thinking time is saved as ms.",
+   "where": "src/subitising/saving.ts:16",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Starting check short and starts at stage 4",
+   "status": "not_fixed",
+   "now": "Dropped on purpose by R3 (left for James). Still 6 pictures, 2 per test, first test at stage 4.",
+   "where": "shared/subitising/placement.ts:25",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Lucky guesses in the check pass a stage",
+   "status": "not_fixed",
+   "now": "A stage is passed with 2 right out of 2.",
+   "where": "shared/subitising/placement.ts:25",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Single-group feedback taught nothing",
+   "status": "fixed",
+   "now": "Feedback now says the number and the groups, with the parts left out for one group.",
+   "where": "src/subitising/voiceLines.ts:33",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Nothing after stage 7",
+   "status": "not_fixed",
+   "now": "All stages become 'in flower' and the child is told more pictures are coming.",
+   "where": "src/subitising/SubitisingApp.tsx:226",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Maths holes in stages 1, 3 and 6",
+   "status": "not_fixed",
+   "now": "Stage content in config is unchanged.",
+   "where": "shared/subitising/config.ts:45",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "No demo before the first picture",
+   "status": "fixed",
+   "now": "New children see a demo picture that stays on screen.",
+   "where": "src/subitising/SubitisingApp.tsx:185",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Buttons greyed out during 'Get ready'",
+   "status": "not_fixed",
+   "now": "Buttons are disabled until the answer phase, plus a 1 s lock.",
+   "where": "src/subitising/FlashRunner.tsx:240",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Single-dot and gap help wording",
+   "status": "fixed",
+   "now": "Three help lines: look for groups, look carefully, how many empty squares.",
+   "where": "src/subitising/voiceLines.ts:14",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Right and wrong gap answers got the same sentence",
+   "status": "fixed",
+   "now": "Gap feedback begins 'Yes!' or 'Not quite.'",
+   "where": "src/subitising/voiceLines.ts:39",
+   "plan": "R3"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Review pictures in stage 6 used the wrong heading",
+   "status": "not_fixed",
+   "now": "The heading comes from the picture's activity, same as before.",
+   "where": "src/subitising/FlashRunner.tsx:190",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Guided mode only by a manual switch",
+   "status": "not_fixed",
+   "now": "Still a checkbox on the home screen. Struggle gives help pictures but not guided mode.",
+   "where": "src/subitising/SubitisingApp.tsx:171",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Stage 3 to 4 is steep",
+   "status": "not_fixed",
+   "now": "Stages unchanged.",
+   "where": "shared/subitising/config.ts:47",
+   "plan": null
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Wrong answers teach nothing (sections 1 and 5)",
+   "status": "not_fixed",
+   "now": "Quick looks was not in R5. A wrong answer shows the same picture with the number and groups, no named mistake.",
+   "where": "src/subitising/voiceLines.ts:35",
+   "plan": "R5"
+  }
+ ],
+ "new": [
+  {
+   "game": "Weka",
+   "issue": "Redo after look-together can be copied",
+   "detail": "After the look-together shows the answer, all choices come back in the same order and the child taps the stone they just saw. It proves they watched, not that they know.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "src/games/weka/Goes.tsx:225"
+  },
+  {
+   "game": "Weka",
+   "issue": "Five-part go: pebbles now need a Check tap",
+   "detail": "The drag-and-Check pebble step adds one more action to a go that already has four phases. Weaker juniors can run out of patience before the bond step.",
+   "cause": "caused_by_fix",
+   "fix": "R9",
+   "where": "src/games/weka/Pebbles.tsx:95"
+  },
+  {
+   "game": "Weka",
+   "issue": "Split and bond steps still only say 'Try again'",
+   "detail": "The new mistake why-lines were built for the answer step only. Misses in split and bond get no reason.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/games/weka/Goes.tsx:355"
+  },
+  {
+   "game": "Weka",
+   "issue": "A lucky fast guess counts as quick",
+   "detail": "Quick days count speed for any right answer, so guessing can move help down the ladder.",
+   "cause": "other",
+   "fix": null,
+   "where": "shared/weka/round.ts:107"
+  },
+  {
+   "game": "Weka",
+   "issue": "Level-up praise is about ability",
+   "detail": "'You are so good at this!' praises the child, not the effort or the strategy.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/games/weka/words.ts:64"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Redo after look-together can be copied",
+   "detail": "The look-together says and shows the answer, then the redo shows the same four nests reversed. The child can tap the one they were just told.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "src/games/tui/Goes.tsx:191"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Ten-frames stay on for about 8 days for a perfect child",
+   "detail": "Floor of level 4 on steps 2 to 4 was kept on purpose. A child who is right every day still sees full pictures for over a week, which slows fading.",
+   "cause": "caused_by_fix",
+   "fix": "R1",
+   "where": "shared/tui/round.ts:117"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Dead code: picture thinning after wrong taps",
+   "detail": "pictureFor still works out thinner nests but nothing uses it. Misleading for the next person.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "shared/tui/round.ts:311"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Praise for a redo is the same as for first try",
+   "detail": "After a look-together the redo earns 'Well done!' even though the answer was just shown.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "src/games/tui/words.ts:53"
+  },
+  {
+   "game": "Tūī",
+   "issue": "Start step and 'secure' only use the add facts",
+   "detail": "The take-away facts have their own keys now but startFor uses only the add keys, so a child weak at taking away is not noticed.",
+   "cause": "caused_by_fix",
+   "fix": "R9",
+   "where": "shared/tui/round.ts:77"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Reading aloud is off by default",
+   "detail": "The saved setting is false until switched on, so pre-readers get no voice unless a grown-up turns it on, even though all the clips now exist.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/speech.ts:11"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "No second try at the same picture",
+   "detail": "After a wrong answer the child is shown the answer and moves on. They never try the same picture again.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/subitising/FlashRunner.tsx:172"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Slow answer (over 4 seconds) counts as struggling",
+   "detail": "A careful child who thinks for over 4 s gets help pictures and the helped answer does not count towards the stage.",
+   "cause": "other",
+   "fix": null,
+   "where": "shared/subitising/config.ts:68"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Guided mode never grows the garden",
+   "detail": "Because answers with the picture kept on are practice only, a child on this setting can never finish a stage. The summary tells them, but the setting is for children who most need it.",
+   "cause": "caused_by_fix",
+   "fix": "R3",
+   "where": "src/subitising/SubitisingApp.tsx:100"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Stage placement uses only 2 pictures per test",
+   "detail": "One slip or one lucky guess moves the start by several stages.",
+   "cause": "other",
+   "fix": null,
+   "where": "shared/subitising/placement.ts:25"
+  },
+  {
+   "game": "Quick looks",
+   "issue": "Picture label says '1 counters'",
+   "detail": "The spoken picture description gets the plural wrong for one counter, for screen readers.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/subitising/FlashRunner.tsx:200"
+  }
+ ],
+ "moves": [
+  {
+   "game": "Weka",
+   "criterion": "Support",
+   "from": 4,
+   "to": 3,
+   "why": "stricter_reading",
+   "reason": "Support code is unchanged. The second review said a 4 needs a demo for each new skill, and Weka only demos the first go (smaller-first and hop-back have none)."
+  },
+  {
+   "game": "Weka",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "real_change",
+   "reason": "R5 made wrong choices into named mistakes with why-lines, pictures, a look-together and a redo."
+  },
+  {
+   "game": "Tūī",
+   "criterion": "Support",
+   "from": 4,
+   "to": 3,
+   "why": "stricter_reading",
+   "reason": "Same as Weka: graded help is unchanged, but the second review wanted a demo for each new way of asking."
+  },
+  {
+   "game": "Tūī",
+   "criterion": "Fading",
+   "from": 2,
+   "to": 3,
+   "why": "real_change",
+   "reason": "R1 fixed the bug where step help and fade cancelled. Only partly better, as level 4 is a floor on steps 2 to 4."
+  },
+  {
+   "game": "Tūī",
+   "criterion": "Progression",
+   "from": 2,
+   "to": 3,
+   "why": "real_change",
+   "reason": "Step rule is unchanged, but R9 split the keys and R8 added a link on to Weka. A modest gain, partly a kinder reading."
+  },
+  {
+   "game": "Tūī",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "real_change",
+   "reason": "R5 names the reversal and other mistakes, with a why-line, a look-together and a redo."
+  },
+  {
+   "game": "Quick looks",
+   "criterion": "Recording",
+   "from": 2,
+   "to": 3,
+   "why": "real_change",
+   "reason": "R3 saves the thinking time and marks guided answers as helped; R7 added the teacher panel and class function."
+  }
+ ]
+}

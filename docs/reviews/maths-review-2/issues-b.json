@@ -1,0 +1,808 @@
+{
+ "issues": [
+  {
+   "game": "pipi",
+   "issue": "Calendar fading never returns; help follows the day",
+   "status": "fixed",
+   "now": "Help is now per fact (full until box 2 plus 2 quick days, then faint, then none) and comes back after three weak goes in a row.",
+   "where": "shared/pipi/round.ts:84-89; src/games/pipi/Goes.tsx:153,206",
+   "plan": "R6"
+  },
+  {
+   "game": "pipi",
+   "issue": "Tap-all guessing still wins and the shell turns",
+   "status": "partly",
+   "now": "A wrong shell greys out and the second wrong starts a look-together, so tapping all costs time and is recorded as wrong. But the day still counts and a lucky first tap still scores quick and right.",
+   "where": "src/games/pipi/Goes.tsx:171-218; shared/pipi/progress.ts:78-82",
+   "plan": "R5"
+  },
+  {
+   "game": "pipi",
+   "issue": "A wrong answer gets no help or reason",
+   "status": "fixed",
+   "now": "Each wrong shell is a real mistake with a picture and a line; the second wrong gives a guided look-together.",
+   "where": "src/games/pipi/Goes.tsx:171-190",
+   "plan": "R5"
+  },
+  {
+   "game": "pipi",
+   "issue": "No hint or show-me",
+   "status": "fixed",
+   "now": "The look-together shows the parts and total, and full help returns for a new fact.",
+   "where": "src/games/pipi/Goes.tsx:171-190",
+   "plan": "R5"
+  },
+  {
+   "game": "pipi",
+   "issue": "No repeat-the-question button",
+   "status": "not_fixed",
+   "now": "No Hear again button anywhere in the Pipi folder (Penguin Pairs and Beanstalk have one).",
+   "where": "src/games/pipi/Goes.tsx (absent)",
+   "plan": "R3"
+  },
+  {
+   "game": "pipi",
+   "issue": "Teacher sees only days and level",
+   "status": "fixed",
+   "now": "Class grid, per-fact keys and alerts exist for Pipi. Pupil page not rechecked.",
+   "where": "src/teacher/foundational/config.ts:47; ideas.ts:43",
+   "plan": "R7"
+  },
+  {
+   "game": "pipi",
+   "issue": "No number-sentence bridge",
+   "status": "not_fixed",
+   "now": "The sum is shown only in the short why-line, not as a written bridge to a sentence. Code only.",
+   "where": "src/games/pipi/Goes.tsx:250-255",
+   "plan": "R8"
+  },
+  {
+   "game": "pipi",
+   "issue": "A slow careful child can be held on a level, and a slow but correct child never rises",
+   "status": "not_fixed",
+   "now": "The 5 s quick rule was fixed to start after the voice (R2), but the level still needs quick answers and level 3 is the end.",
+   "where": "shared/pipi/round.ts:69-73; src/games/pipi/Goes.tsx:133-141",
+   "plan": "R2"
+  },
+  {
+   "game": "pipi",
+   "issue": "Level jumps on a gold day with no help",
+   "status": "fixed",
+   "now": "Help is per fact, so a new level starts at full help whatever the day.",
+   "where": "shared/pipi/round.ts:84-89",
+   "plan": "R6"
+  },
+  {
+   "game": "pipi",
+   "issue": "Level 1 took 5 days for a quick child",
+   "status": "not_fixed",
+   "now": "The calendar still sets the pace of days; levels move only by the 70% rule on records. Code only.",
+   "where": "shared/pipi/round.ts:69-73",
+   "plan": null
+  },
+  {
+   "game": "pipi",
+   "issue": "Odd edge-split screens",
+   "status": "not_fixed",
+   "now": "Not changed in the code and no plan covered it. Screen layout, so needs playing to settle (code only).",
+   "where": "src/games/pipi/Goes.tsx",
+   "plan": null
+  },
+  {
+   "game": "pipi",
+   "issue": "Altogether goes show no total picture",
+   "status": "not_fixed",
+   "now": "Altogether goes show the parts on the sign and the popped shells only after the answer.",
+   "where": "src/games/pipi/Goes.tsx:250-255",
+   "plan": "R5"
+  },
+  {
+   "game": "pipi",
+   "issue": "The day counts whatever the accuracy",
+   "status": "not_fixed",
+   "now": "A day is counted on the first finish regardless of accuracy.",
+   "where": "shared/pipi/progress.ts:78-82; shared/pipi/server.ts:157-160",
+   "plan": null
+  },
+  {
+   "game": "pipi",
+   "issue": "No round summary; same finish screen for any accuracy; ability praise",
+   "status": "not_fixed",
+   "now": "Finish screen says 'Well done' for every round; level-up says 'You are so good at this!'.",
+   "where": "src/games/pipi/PipiGame.tsx:185-217; words.ts:39",
+   "plan": null
+  },
+  {
+   "game": "pipi",
+   "issue": "No demo for new question kinds (altogether, two tides)",
+   "status": "not_fixed",
+   "now": "Both kinds still arrive by the calendar with no first-time tip.",
+   "where": "shared/pipi/round.ts:179-184",
+   "plan": null
+  },
+  {
+   "game": "pipi",
+   "issue": "Only 3 levels, 30 facts in the top level, and no what's next",
+   "status": "not_fixed",
+   "now": "Still 3 levels and no signpost after level 3. R8 pointed to other games for Pipi but nothing was added.",
+   "where": "shared/pipi/round.ts:29-33; src/games/pipi/PipiGame.tsx:185-217",
+   "plan": "R8"
+  },
+  {
+   "game": "pipi",
+   "issue": "30-day arc is slow and the layout never changes",
+   "status": "not_fixed",
+   "now": "Arc unchanged; no plan covered it.",
+   "where": "shared/pipi/progress.ts",
+   "plan": null
+  },
+  {
+   "game": "korora",
+   "issue": "Calendar fading, and the struggle boost is forgotten after the round",
+   "status": "fixed",
+   "now": "Help is per fact and returns with struggle; the in-round boost is still not saved but the per-fact help now carries the weakness over.",
+   "where": "shared/korora/round.ts:101-106; src/games/korora/Goes.tsx:153,206",
+   "plan": "R6"
+  },
+  {
+   "game": "korora",
+   "issue": "Bronze halves shared out for the child",
+   "status": "partly",
+   "now": "Halves still share themselves on full help, but full help now depends on the fact being new, not the day.",
+   "where": "src/games/korora/Goes.tsx:140-141",
+   "plan": "R6"
+  },
+  {
+   "game": "korora",
+   "issue": "Fair or not is a 50% guess",
+   "status": "fixed",
+   "now": "Three choices with a real pile the child shares first; 'one too few' is never right, so it is not a pure guess.",
+   "where": "shared/korora/round.ts:63-66; src/games/korora/FairPile.tsx",
+   "plan": "R9"
+  },
+  {
+   "game": "korora",
+   "issue": "Only 4 levels of 5 facts, level 4 is the end",
+   "status": "partly",
+   "now": "Level 5 near doubles added; top is still short and has no what's next beyond the signpost.",
+   "where": "shared/korora/round.ts:34-45",
+   "plan": "R8"
+  },
+  {
+   "game": "korora",
+   "issue": "The quick rule is hard on counting",
+   "status": "fixed",
+   "now": "Clock starts after the voice; junior quick time is longer.",
+   "where": "src/games/korora/Goes.tsx:133-141",
+   "plan": "R2"
+  },
+  {
+   "game": "korora",
+   "issue": "Tap each stone and win",
+   "status": "partly",
+   "now": "Wrong stones grey out and a second wrong starts a look-together; the fact is still recorded and the day counts.",
+   "where": "src/games/korora/Goes.tsx:199-218",
+   "plan": "R5"
+  },
+  {
+   "game": "korora",
+   "issue": "Fair-or-not after a wrong tap shows only the right button; icons do not match the pile",
+   "status": "fixed",
+   "now": "Three choices stay and the pile is real. A wrong pick gives a wobble, and after the second a pair-off hint.",
+   "where": "src/games/korora/Goes.tsx:215-225",
+   "plan": "R9"
+  },
+  {
+   "game": "korora",
+   "issue": "Distractors 25 for 5+5 and 100 for 10+10",
+   "status": "fixed",
+   "now": "Choices come from real mistakes; n times n removed.",
+   "where": "shared/korora/round.ts:262-292",
+   "plan": "R5"
+  },
+  {
+   "game": "korora",
+   "issue": "Level 1 repeats each fact twice",
+   "status": "not_fixed",
+   "now": "Still repeats each fact (again). Possibly deliberate practice.",
+   "where": "shared/korora/round.ts:225",
+   "plan": null
+  },
+  {
+   "game": "korora",
+   "issue": "Help depends on day, not level",
+   "status": "fixed",
+   "now": "Help follows the fact.",
+   "where": "shared/korora/round.ts:101-106",
+   "plan": "R6"
+  },
+  {
+   "game": "korora",
+   "issue": "Empty grey box once halves are shared",
+   "status": "not_fixed",
+   "now": "Not rechecked on screen; no plan named it (code only).",
+   "where": "src/games/korora/Goes.tsx",
+   "plan": null
+  },
+  {
+   "game": "korora",
+   "issue": "The 5 s clock runs during the sharing animation",
+   "status": "partly",
+   "now": "The clock now starts after the voice, but halves still share on a timer after the question is read. Code only.",
+   "where": "src/games/korora/Goes.tsx:133-141",
+   "plan": "R2"
+  },
+  {
+   "game": "korora",
+   "issue": "No hint for fair-or-not",
+   "status": "fixed",
+   "now": "After the second wrong pick the fish pair off.",
+   "where": "src/games/korora/Goes.tsx:215-225",
+   "plan": "R9"
+  },
+  {
+   "game": "korora",
+   "issue": "No round summary",
+   "status": "not_fixed",
+   "now": "Finish uses the shared signpost screen with no summary of how the round went.",
+   "where": "src/games/korora/KororaGame.tsx:238",
+   "plan": null
+  },
+  {
+   "game": "korora",
+   "issue": "Hints seen not saved",
+   "status": "partly",
+   "now": "Per-fact help is saved, but the mistake picture or look-together seen is not.",
+   "where": "shared/korora/round.ts:101-106",
+   "plan": "R6"
+  },
+  {
+   "game": "korora",
+   "issue": "No class list or Today alert",
+   "status": "fixed",
+   "now": "Teacher grid and alerts now cover Penguin Pairs.",
+   "where": "src/teacher/foundational/alerts.ts",
+   "plan": "R7"
+  },
+  {
+   "game": "korora",
+   "issue": "Same-day replay moves the level (from the blind note)",
+   "status": "not_fixed",
+   "now": "Level is recomputed on every finish, including a replay.",
+   "where": "shared/korora/server.ts:156-163",
+   "plan": null
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Guessing wins at no cost",
+   "status": "partly",
+   "now": "Tried pairs block and a second wrong starts a look-together, but the blocked pair makes elimination possible. R5 kept this on purpose.",
+   "where": "src/games/beanstalk/Round.tsx:127-159",
+   "plan": "R5"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Calendar fading and progression",
+   "status": "partly",
+   "now": "Help is per child (placeAfter) but the sum still follows the calendar only.",
+   "where": "shared/beanstalk/progress.ts:20,100-105",
+   "plan": "R6"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "A wrong pair gets only a wobble",
+   "status": "fixed",
+   "now": "Why-line with a joined frame, then a look-together.",
+   "where": "src/games/beanstalk/Round.tsx:182-183,272-280",
+   "plan": "R5"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Only one question kind",
+   "status": "fixed",
+   "now": "Missing-leaf goes on the 4th, 7th and 10th goes.",
+   "where": "shared/beanstalk/round.ts:35",
+   "plan": "R8"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Teachers see only days and eggs",
+   "status": "fixed",
+   "now": "Grid and alerts.",
+   "where": "src/teacher/foundational/ideas.ts:44-49",
+   "plan": "R7"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Maths column says Bonds to 10 for all three beanstalks",
+   "status": "fixed",
+   "now": "Built from the sums in use.",
+   "where": "src/games/beanstalk/teacher.ts:18-22",
+   "plan": "R4"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "The target is not written on screen",
+   "status": "fixed",
+   "now": "Visible Make 10, 100 or 1000 badge and a Hear it again button.",
+   "where": "src/games/beanstalk/Round.tsx:258-269",
+   "plan": "R4"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Duplicate numbers on the beanstalk",
+   "status": "fixed",
+   "now": "letIn stops repeats.",
+   "where": "shared/beanstalk/round.ts:156-174",
+   "plan": "R4"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "The 100 beanstalk starts at 70+30 with no bridge",
+   "status": "fixed",
+   "now": "A bridge line shows for new 100, 1000 and 20 beanstalks.",
+   "where": "src/games/beanstalk/Round.tsx:94-99,270",
+   "plan": "R4"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Home screen reads a long sentence every visit",
+   "status": "not_fixed",
+   "now": "Still read each visit. Code only.",
+   "where": "src/games/beanstalk/BeanstalkGame.tsx:215-219",
+   "plan": null
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Jack and Jill buttons have no accessible name",
+   "status": "fixed",
+   "now": "Buttons now carry visible text.",
+   "where": "src/games/beanstalk/BeanstalkGame.tsx:158-161",
+   "plan": "R4"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "The same ten pairs for 30 days; nothing adapts or uses the weak-facts system",
+   "status": "not_fixed",
+   "now": "Pairs are the same for every child.",
+   "where": "shared/beanstalk/round.ts:62-72",
+   "plan": null
+  },
+  {
+   "game": "beanstalk",
+   "issue": "No recall or missing-leaf step",
+   "status": "fixed",
+   "now": "Missing-leaf goes added.",
+   "where": "shared/beanstalk/round.ts:35",
+   "plan": "R8"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "No bonds to 20",
+   "status": "fixed",
+   "now": "Target 20 added to the list.",
+   "where": "shared/beanstalk/round.ts:26",
+   "plan": "R8"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "The 100 and 1000 pairs share one key each",
+   "status": "not_fixed",
+   "now": "Still bond100:tens and bond1000:hundreds.",
+   "where": "shared/beanstalk/round.ts:93-102",
+   "plan": null
+  },
+  {
+   "game": "beanstalk",
+   "issue": "A wrong pair is recorded against the first leaf's pair",
+   "status": "not_fixed",
+   "now": "The wrong tap's key still comes from the first leaf.",
+   "where": "shared/beanstalk/round.ts:201",
+   "plan": null
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Passive hint-less model",
+   "status": "fixed",
+   "now": "Help ladder, why-lines and look-together.",
+   "where": "src/games/beanstalk/Round.tsx:127-144",
+   "plan": "R5"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Short ladder with no what's next",
+   "status": "partly",
+   "now": "Signpost to Weka only from bonds to 20 on, when Weka is on and pairs 70% secure.",
+   "where": "src/games/beanstalk/BeanstalkGame.tsx:237-278",
+   "plan": "R8"
+  },
+  {
+   "game": "hop",
+   "issue": "Wrong choices guessable by last digit or odd/even",
+   "status": "fixed",
+   "now": "Four worms, exactly two share the answer's ending.",
+   "where": "shared/hop/round.ts:274-313",
+   "plan": "R5"
+  },
+  {
+   "game": "hop",
+   "issue": "Wrong taps are free; all four glow-worms can be tapped",
+   "status": "partly",
+   "now": "Tried worms grey out, a second wrong starts a look-together; still recorded wrong and the day counts.",
+   "where": "src/games/hop/Hops.tsx:141,254",
+   "plan": "R5"
+  },
+  {
+   "game": "hop",
+   "issue": "Mistakes teach nothing",
+   "status": "fixed",
+   "now": "Why-lines and a hopping look-together.",
+   "where": "src/games/hop/Hops.tsx:121-138",
+   "plan": "R5"
+  },
+  {
+   "game": "hop",
+   "issue": "Labels fade by day and do not return on a step-up or after struggle",
+   "status": "fixed",
+   "now": "Per-hop help, boost after three weak goes.",
+   "where": "src/games/hop/Hops.tsx:115,154-156; shared/hop/round.ts:146-150",
+   "plan": "R6"
+  },
+  {
+   "game": "hop",
+   "issue": "The 5 s clock starts during the voice",
+   "status": "fixed",
+   "now": "Clock starts after the voice.",
+   "where": "src/games/hop/Hops.tsx:96-102",
+   "plan": "R2"
+  },
+  {
+   "game": "hop",
+   "issue": "Same-day Play again records answers and can move the step",
+   "status": "not_fixed",
+   "now": "Step recomputed on every finish.",
+   "where": "shared/hop/server.ts:56-58",
+   "plan": null
+  },
+  {
+   "game": "hop",
+   "issue": "Counting back first appears on day 21",
+   "status": "fixed",
+   "now": "Counting back from the first secure step.",
+   "where": "shared/hop/round.ts:123-128",
+   "plan": "R9"
+  },
+  {
+   "game": "hop",
+   "issue": "A quick new child can be placed on fives after one day",
+   "status": "not_fixed",
+   "now": "Placement unchanged. Code only.",
+   "where": "shared/hop/round.ts:94-99",
+   "plan": null
+  },
+  {
+   "game": "hop",
+   "issue": "Teacher sees days, pads and step only",
+   "status": "fixed",
+   "now": "Grid and alerts (but see the new issue on steps 3, 4 and 200).",
+   "where": "src/teacher/foundational/config.ts:45",
+   "plan": "R7"
+  },
+  {
+   "game": "hop",
+   "issue": "After day 20 the +10 label vanishes and counting back is not explained",
+   "status": "partly",
+   "now": "Labels return with struggle; no demonstration of counting back.",
+   "where": "src/games/hop/Hops.tsx",
+   "plan": "R6"
+  },
+  {
+   "game": "hop",
+   "issue": "No hint after two wrong taps; 100 board does not open by itself",
+   "status": "partly",
+   "now": "Look-together after two wrongs; the 100 board opens only on wide screens.",
+   "where": "src/games/hop/Hops.tsx:204",
+   "plan": "R5"
+  },
+  {
+   "game": "hop",
+   "issue": "Same finish screen after three wrong as after a perfect round",
+   "status": "not_fixed",
+   "now": "Finish screen only differs by signpost.",
+   "where": "src/games/hop/HopGame.tsx:204-225",
+   "plan": null
+  },
+  {
+   "game": "hop",
+   "issue": "Top is 2s forever, no what's next",
+   "status": "fixed",
+   "now": "Steps 3, 4, 200 added and a signpost to Penguin Pairs.",
+   "where": "shared/hop/round.ts:41-48; src/games/hop/HopGame.tsx:204-225",
+   "plan": "R8"
+  },
+  {
+   "game": "hop",
+   "issue": "No replay button",
+   "status": "not_fixed",
+   "now": "No Hear again in Hops.",
+   "where": "src/games/hop/Hops.tsx",
+   "plan": "R3"
+  },
+  {
+   "game": "All",
+   "issue": "Mistakes teach nothing",
+   "status": "fixed",
+   "now": "Kit gives a why-line, a look-together at the second wrong and a retry (all four games).",
+   "where": "shared/kit/mistakes.ts; src/kit/ShowWhy.tsx",
+   "plan": "R5"
+  },
+  {
+   "game": "All",
+   "issue": "Help fades by the calendar",
+   "status": "fixed",
+   "now": "Per-fact help ladder, back on struggle. Beanstalk's sum still follows the calendar.",
+   "where": "shared/kit/help.ts",
+   "plan": "R6"
+  },
+  {
+   "game": "All",
+   "issue": "The 5 second rule traps careful children",
+   "status": "fixed",
+   "now": "JUNIOR_QUICK_MS 10 s and the clock starts after the voice.",
+   "where": "shared/maths/leitner; src/games/*/Goes.tsx",
+   "plan": "R2"
+  },
+  {
+   "game": "All",
+   "issue": "Teachers cannot see who is stuck",
+   "status": "fixed",
+   "now": "Foundational grid and alerts.",
+   "where": "src/teacher/foundational/alerts.ts",
+   "plan": "R7"
+  },
+  {
+   "game": "All",
+   "issue": "Short ladders with no what's next",
+   "status": "partly",
+   "now": "Hop, Penguin Pairs and Beanstalk have signposts; Pipi has none; the teacher grid lags the longer ladders.",
+   "where": "src/kit/WhatsNext.tsx",
+   "plan": "R8"
+  }
+ ],
+ "new": [
+  {
+   "game": "hop",
+   "issue": "Teacher grid does not know Hop steps 3, 4 and 200",
+   "detail": "Config lists steps 10, 5, 2 only and top 2, so a child on step 3, 4 or 200 shows wrongly and the new keys are not in any grid column.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "src/teacher/foundational/config.ts:45; ideas.ts:57,117"
+  },
+  {
+   "game": "korora",
+   "issue": "Teacher grid does not know Penguin Pairs level 5",
+   "detail": "Config stops at level 4 with top 4, so level 5 has no name and may be flagged 'same level too long'. Near doubles are not in the hardest list.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "src/teacher/foundational/config.ts:46; ideas.ts:56"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Bonds to 20 are invisible to the teacher grid",
+   "detail": "bond20: keys are in no column; the about text still says the next beanstalk makes 100.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "src/teacher/foundational/ideas.ts:44-49; src/games/beanstalk/teacher.ts:45"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "Missing-leaf go arrives with no demonstration and the 10th is forced",
+   "detail": "The leaf is pre-picked with no first-time tip; on the last go only two leaves remain so it is a 50-50.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "shared/beanstalk/round.ts:35; src/games/beanstalk/Round.tsx:192-217"
+  },
+  {
+   "game": "All",
+   "issue": "Redo after look-together can be copied",
+   "detail": "The answer or sum was just shown, so Now you try can be done by copying. In Pipi and Hop the choices are reshuffled, in Beanstalk the frame already holds the partner.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "src/games/pipi/Goes.tsx:171-190; src/games/hop/Hops.tsx:118; src/games/beanstalk/Round.tsx:127-144"
+  },
+  {
+   "game": "All",
+   "issue": "Look-together is long and can only be skipped after 3 seconds",
+   "detail": "Runs up to 12 seconds; counting to 9 or 200 in Hop is slow and a child who already sees the answer must wait.",
+   "cause": "caused_by_fix",
+   "fix": "R5",
+   "where": "src/kit/ShowWhy.tsx:69-70,145"
+  },
+  {
+   "game": "All",
+   "issue": "Full help can last too long on each fact",
+   "detail": "A new fact stays on full help until box 2 plus 2 quick days, and every new level or step starts at full help again, so a keen child may not be stretched.",
+   "cause": "caused_by_fix",
+   "fix": "R6",
+   "where": "shared/kit/help.ts; shared/pipi/round.ts:84-89"
+  },
+  {
+   "game": "korora",
+   "issue": "New question kinds arrive with no demonstration",
+   "detail": "Near doubles at level 5 and the new fair pile start with no first-time tip.",
+   "cause": "caused_by_fix",
+   "fix": "R9",
+   "where": "shared/korora/round.ts:34-45; src/games/korora/FairPile.tsx"
+  },
+  {
+   "game": "hop",
+   "issue": "Counting back and from-3 starts arrive with no demonstration",
+   "detail": "Back hops and non-multiple starts appear on gold days with no tip.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "shared/hop/round.ts:123-128,253-258"
+  },
+  {
+   "game": "beanstalk",
+   "issue": "More sums stretch the 30-day arc",
+   "detail": "Four sums on one calendar mean each gets few days, and the sum is chosen by days not by what the child knows.",
+   "cause": "caused_by_fix",
+   "fix": "R8",
+   "where": "shared/beanstalk/progress.ts:20"
+  },
+  {
+   "game": "pipi",
+   "issue": "Pipi finish screen praises ability and never says what is next",
+   "detail": "Same 'Well done' and 'You are so good at this' whatever the accuracy; no signpost at level 3.",
+   "cause": "other",
+   "fix": null,
+   "where": "src/games/pipi/PipiGame.tsx:185-217; words.ts:39"
+  },
+  {
+   "game": "All",
+   "issue": "Replays the same day can move the level or step",
+   "detail": "Pipi, Penguin Pairs and Hop recompute the level on every finish, so replaying after a bad round can drop or lift it.",
+   "cause": "other",
+   "fix": null,
+   "where": "shared/pipi/server.ts:157-160; shared/korora/server.ts:156-163; shared/hop/server.ts:56-58"
+  }
+ ],
+ "moves": [
+  {
+   "game": "pipi",
+   "criterion": "Fading",
+   "from": 2,
+   "to": 3,
+   "why": "Per-fact help ladder (full, faint, none) that returns after weak goes.",
+   "reason": "real_change"
+  },
+  {
+   "game": "pipi",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "Why-lines and look-together for every wrong shell; none existed before.",
+   "reason": "real_change"
+  },
+  {
+   "game": "pipi",
+   "criterion": "Recording",
+   "from": 2,
+   "to": 3,
+   "why": "Per-fact rows already existed; the teacher grid and alerts are new, but the first reviewer also leaned on a stricter reading of 'who is stuck'.",
+   "reason": "real_change"
+  },
+  {
+   "game": "korora",
+   "criterion": "Fidelity",
+   "from": 2,
+   "to": 3,
+   "why": "Times-itself distractors removed and a real fair pile; but part of the move is the second reader allowing 'one or two loopholes' at 3.",
+   "reason": "real_change"
+  },
+  {
+   "game": "korora",
+   "criterion": "Fading",
+   "from": 2,
+   "to": 3,
+   "why": "Per-fact help (R6).",
+   "reason": "real_change"
+  },
+  {
+   "game": "korora",
+   "criterion": "Progression",
+   "from": 2,
+   "to": 3,
+   "why": "Level 5 added and the real pile; the top is still short, so a stricter reader might hold 2.",
+   "reason": "real_change"
+  },
+  {
+   "game": "korora",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "R5 why-lines and look-together, R9 pair-off hint.",
+   "reason": "real_change"
+  },
+  {
+   "game": "beanstalk",
+   "criterion": "Fidelity",
+   "from": 2,
+   "to": 3,
+   "why": "Duplicates gone, target on screen, bridge; elimination remains but counts as one loophole under the rubric.",
+   "reason": "real_change"
+  },
+  {
+   "game": "beanstalk",
+   "criterion": "Fading",
+   "from": 2,
+   "to": 3,
+   "why": "Per-child dots fade and return (placeAfter).",
+   "reason": "real_change"
+  },
+  {
+   "game": "beanstalk",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "Why-line, frame and look-together replace the wobble.",
+   "reason": "real_change"
+  },
+  {
+   "game": "beanstalk",
+   "criterion": "Recording",
+   "from": 2,
+   "to": 3,
+   "why": "The grid and alerts are new, but per-fact rows already existed in the first review, and 100 and 1000 still share one key each, so this is partly a different reading.",
+   "reason": "stricter_reading"
+  },
+  {
+   "game": "hop",
+   "criterion": "Fidelity",
+   "from": 2,
+   "to": 3,
+   "why": "Endings tell removed; tap-all is now read as one loophole at 3 whereas the first review marked 2 partly for it.",
+   "reason": "real_change"
+  },
+  {
+   "game": "hop",
+   "criterion": "Fading",
+   "from": 2,
+   "to": 3,
+   "why": "Per-hop labels that return.",
+   "reason": "real_change"
+  },
+  {
+   "game": "hop",
+   "criterion": "Progression",
+   "from": 2,
+   "to": 3,
+   "why": "Counting back, steps 3, 4 and 200; but the teacher grid lags and step still moves on replays.",
+   "reason": "real_change"
+  },
+  {
+   "game": "hop",
+   "criterion": "Feedback",
+   "from": 2,
+   "to": 3,
+   "why": "Why-lines and look-together.",
+   "reason": "real_change"
+  },
+  {
+   "game": "hop",
+   "criterion": "Recording",
+   "from": 2,
+   "to": 3,
+   "why": "Grid and alerts; per-fact rows existed already.",
+   "reason": "real_change"
+  },
+  {
+   "game": "beanstalk",
+   "criterion": "Progression",
+   "from": 2,
+   "to": 2,
+   "why": "Not a move: the second review held it at 2 because the sum is calendar-only (the helper's 3 was argued down).",
+   "reason": "stricter_reading"
+  }
+ ]
+}

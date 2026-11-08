@@ -1,0 +1,1191 @@
+{
+ "lede": "The second review (8 November 2026) found the fixes made the older games much better: they went from 148 to 167 points, and six of the seven now reach the bar of a 3 on every line; Beanstalk (Progression) is still under it. Of the newer games, Robin (Maths) is under the bar and Kingfisher is not built yet. This page has one card per fix. The six newer games come first, then the older ones, each in order of how much the fix helps children learn.",
+ "findings": [
+  {
+   "title": "Robin's answer is nearly always the third card",
+   "text": "On card goes the right answer sits in the third place about 95 times in 100, so a child never has to count. Cards S1 and S2."
+  },
+  {
+   "title": "\"Now you try\" can be copied",
+   "text": "After a mistake, the try-again go shows the same question, so children copy the answer they were just shown. In Robin and Parrot the right card is also marked. Cards S16 and S32."
+  },
+  {
+   "title": "No demo for new kinds, and teachers miss the newer games",
+   "text": "No game shows a short demo the first time a new kind of go appears, and the five newer games are not in the teacher grid or Today alerts. Card S11 (the kit remembers seen kinds) comes first, then S12 and S31 for demos and S17 for teachers."
+  }
+ ],
+ "criteria": [
+  "Maths",
+  "Clarity",
+  "Support",
+  "Fading",
+  "Progression",
+  "Feedback",
+  "Recording",
+  "Engagement"
+ ],
+ "games": [
+  {
+   "name": "Pigeon's Number Line",
+   "first": null,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Parrot's See-saw",
+   "first": null,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Lizard's Bundles",
+   "first": null,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Swamp Hen's Reed Rows",
+   "first": null,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Robin's Berry Basket",
+   "first": null,
+   "scores": [
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Kingfisher's Dairy",
+   "first": null,
+   "scores": null
+  },
+  {
+   "name": "Weka's Stepping Stones",
+   "first": 24,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Quick looks",
+   "first": 23,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Tūī's Ten Tree",
+   "first": 22,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Pipi's Hidden Shells",
+   "first": 21,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Penguin Pairs (Kororā)",
+   "first": 20,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Kiwi's Beanstalk",
+   "first": 19,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    2,
+    3,
+    3,
+    3
+   ]
+  },
+  {
+   "name": "Hop's Glow-worm Pond",
+   "first": 19,
+   "scores": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+   ]
+  }
+ ],
+ "recs": [
+  {
+   "id": "S1",
+   "kind": "fix",
+   "title": "Robin: the right card can be in any place",
+   "games": [
+    "Robin"
+   ],
+   "effort": "S",
+   "impact": "Very high",
+   "wrong": "On How many and One more the right card is the third of four about 95% of the time, so a child can pass steps by tapping the third card.",
+   "done": "The right card is first, second, third or fourth about equally often, and One more does not always have a 1 card.",
+   "why": "Guessing a place must not pass a step; the maths has to be the move.",
+   "plan": "docs/plans/maths-review-2/S1-robin-answer-place.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "You are fixing Robin's Berry Basket in the School Games Hub repo (/Users/jriley/games-hub-trader-captains or a fresh worktree).\nCreate branch fix/robin-answer-place from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1 and 7) and docs/plans/maths-review-2/S1-robin-answer-place.md first, then docs/reviews/maths-review-2/games/robin.md.\n\nGoal: on How many and One more the right card must be in any place, not nearly always third.\nSteps:\n1. In shared/robin/round.ts rewrite pickWrongs and its two calls in showGo as in plan section 3: below and above near-miss lists, choose how many wrongs sit below (p) at random from the seeded random among valid values, take nearest first, tag the named slips, sort. One more: swap the lowest below card for \"1\" with chance 1 in 4. Keep at most 2 of 4 cards sharing the answer's parity. Same seed gives the same cards.\n2. Do not add a ninth test (Robin is at 8). Extend the existing \"wrong cards\" test in shared/robin/robin.test.ts: over 1000 seeds per card key no place above 40% overall, spread above 15% for answers of 4 or more, parity tell at most 2, and the \"1\" card sometimes present and sometimes not in One more.\n3. Run npm run build:functions in the same PR (supabase/functions/robin/index.ts), then npm test, npx tsc --noEmit and lint.\n4. Run the preview and play a few card goes by hand to see the answer move.\nDo not touch shared/maths, src/maths, src/styles.css, src/components or any kit file. Do not change the taps, the Slip type or the database.\nStop and tell James before any live step (redeploying the robin function; do it outside school hours). Open a PR when done."
+  },
+  {
+   "id": "S2",
+   "kind": "fix",
+   "title": "Robin: count the berries before you answer",
+   "games": [
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "On How many a child can tap a card without touching a berry, the why picture is not their own count, and the question is not written.",
+   "done": "Cards stay grey until every berry is touched (or Count with me), a wrong card shows the child's own numbered berries, and the question is written.",
+   "why": "Counting is the skill being learned, so it must be needed to answer.",
+   "plan": "docs/plans/maths-review-2/S2-robin-count-first.md",
+   "waits": [
+    "S1"
+   ],
+   "group": "newer",
+   "prompt": "You are fixing Robin's Berry Basket in the School Games Hub repo. Wait: only start after plan S1 (fix/robin-answer-place) is merged to main.\nCreate branch fix/robin-count-first from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 2, 4, 7) and docs/plans/maths-review-2/S2-robin-count-first.md first, then docs/reviews/maths-review-2/games/robin.md.\n\nGoal: on How many? a child must touch every berry (or use Count with me) before a number card works, and a wrong card shows the child's own count.\nSteps (details in the plan, section 3):\n1. src/games/robin/Goes.tsx: let markBerry work at every help level (numbers still follow the level). Grey the cards (rb-choice--wait, aria-disabled) with a written line \"Touch each berry first.\" until every berry is touched; tapping a grey card says \"Touch every berry first.\" once. A pointing hand (kit PointingHand and a second useGuidedFirstGo, 3 s) points at the next untouched berry.\n2. Add a \"Count with me\" button: Bella counts the berries aloud one at a time (countLine clips), stops one short, and the child touches the last berry silently. Timers go in the existing timers/clearTimers.\n3. Show the written question \"How many berries?\" for How many and \"How many now?\" for One more (rb-ask).\n4. Replace WhyPicture for How many wrongs with the child's own numbered berries plus a count badge and the crossed-out wrong card. Say \"You counted N.\" then \"Find the card that says the same.\" (two clips joined with PART_BREAK). The redo (inRedo) is not gated.\n5. Add the new lines to the voiceLines.ts enumerator, make the clips with scripts/voice-clips.py (Kokoro af_bella) into public/voice/robin/, add CSS in robin.css.\nRobin is at 8 tests: add none; the existing voiceLines test covers the new lines. Do not touch shared/maths, src/maths, src/styles.css, src/components or kit files. No server or database change.\nCheck in the preview at levels 5, 3, 2 and 0 and at 375 px wide. npm test, npx tsc --noEmit, lint.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S3",
+   "kind": "fix",
+   "title": "Swamp Hen: always draw the first row and column",
+   "games": [
+    "Swamp Hen"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "Under the mat and at help level 2 the garden is a bare rectangle, so rows times shoots in a row cannot be seen.",
+   "done": "Every garden at level 2 and up, and under the mat, shows at least its first row and first column of reeds; only the inside fades.",
+   "why": "The array picture is the model for multiplication; help should fade the inside, not remove the model.",
+   "plan": "docs/plans/maths-review-2/S3-swamphen-array-edges.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "You are fixing Swamp Hen's Reed Rows in the School Games Hub repo.\nCreate branch fix/swamphen-array-edges from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 3 and 5) and docs/plans/maths-review-2/S3-swamphen-array-edges.md first, then docs/reviews/maths-review-2/games/swamphen.md.\n\nGoal: the garden always shows at least its first row and first column of reeds at help levels 2 and up and under the mat; only the inside fades or is covered.\nSteps (details in the plan, section 3):\n1. In src/games/swamphen/art.tsx add and export cellMode(view, r, c, mat) returning full, faint, covered or none: count and rows full (covered inside a mat); bars and edges full on row 0 and column 0, faint inside, covered inside under a mat; plain and peek none (levels 0 and 1 stay sum-only).\n2. Use it in Garden: draw faint inside cells at about 22% opacity; shrink the mat to the inside only (x0 + CELL, PAD + CELL, (cols - 1) * CELL wide, (drawn - 1) * CELL high; skip when cols < 2 or drawn < 2); keep running totals hidden under the mat; keep cut, short, planted and the which-garden small cards as they are.\n3. Add src/games/swamphen/art.test.ts with one test for cellMode. Swamp Hen has room (3 tests now, limit 8).\n4. Play the preview (npm run swamphen:preview): step 3 at levels 5, 3, 2, step 1 at level 2, levels 0 and 1, a 2 x 2 and a 10 x 5 garden, short and cut gardens, at 375 px wide. npm test, npx tsc --noEmit, lint.\nDo not touch shared/maths, src/maths, src/styles.css, src/components, kit files or shared/swamphen. No database change.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S4",
+   "kind": "fix",
+   "title": "Swamp Hen: deal the shares and answer a turn question",
+   "games": [
+    "Swamp Hen"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "Share shows a pile and empty lanes and the child does nothing; turn cannot be answered wrongly.",
+   "done": "The child deals reeds into lanes by tapping and the game checks fair shares; a turn go asks which garden it becomes and can be wrong.",
+   "why": "Division as fair sharing and turning arrays are ideas a child must do, not watch.",
+   "plan": "docs/plans/maths-review-2/S4-swamphen-share-and-turn.md",
+   "waits": [
+    "S3"
+   ],
+   "group": "newer",
+   "prompt": "You are fixing Swamp Hen's Reed Rows in the School Games Hub repo.\nCreate branch fix/swamphen-share-turn from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 3 and 7) and docs/plans/maths-review-2/S4-swamphen-share-and-turn.md first, then docs/reviews/maths-review-2/games/swamphen.md.\n\nGoal: the child deals the shares by tapping lanes, and a turn go asks a question that can be wrong.\nSteps (details in the plan, section 3):\n1. Share (src/games/swamphen/Goes.tsx, art.tsx): make Lanes clickable HTML buttons, one tap deals one reed from the pile into that lane; always show lanes and pile at every help level; \"Take one back\", \"Deal a round\" (after the child has dealt a first round by hand); glow of the next lane at levels 5 and 4 only. When the pile is empty check fairShare (new pure function in shared/swamphen/round.ts): fair opens the cards (\"Fair shares!\"), unfair says \"Some rows have more. Share them fairly.\" with \"Deal again\". Cards stay shut until fair (like needPlant). Two columns of lanes for 6 or more lanes. The look-together deals one reed per lane per step (useLookTogether steps = cols).\n2. Turn (shared/swamphen/round.ts showGo): the answer becomes the picture of C rows of R (pictureCode(cols, rows)); wrongs are the unturned garden (new slip \"unturned\"), 1 row of R+C (added) and a scatter of the total. New askLine \"R rows of C. Turn the garden. Which garden is it now?\". The garden is not turned before the answer; the Turn it round button shows only at help levels 5 and 4; the garden turns after a right pick. mulKeyOf returns null for turn keys. Add \"unturned\" to Slip, SLIP_LINES and shared/swamphen/teacher.ts SLIP_WORDS.\n3. Add all new lines to the voiceLines.ts enumerator and make the clips with scripts/voice-clips.py into public/voice/swamphen/. Add CSS in swamphen.css.\n4. Two tests in shared/swamphen/swamphen.test.ts (turn go cards and replay; fairShare). Run npm run build:functions in the same PR, then npm test, npx tsc --noEmit and lint.\n5. Play the preview as listed in the plan (step 4 share, step 2 turn, 375 px wide).\nDo not touch shared/maths, src/maths, src/styles.css, src/components or kit files. No database change.\nStop and tell James before any live step (redeploying the swamphen function, outside school hours). Open a PR when done."
+  },
+  {
+   "id": "S5",
+   "kind": "fix",
+   "title": "Lizard: the child ties the bundles on the first three steps",
+   "games": [
+    "Lizard"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "The + bundle button builds a ten for the child, so tying ten sticks is only done on the first go.",
+   "done": "On steps 1 to 3 there is no + bundle button; the child adds sticks and ties ten into a bundle each time.",
+   "why": "Ten ones making one ten is the whole place-value idea, and it is skipped now.",
+   "plan": "docs/plans/maths-review-2/S5-lizard-tying.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Create branch fix/lizard-tying from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S5-lizard-tying.md first.\nDo not touch shared/, src/kit, src/maths, src/styles.css or src/components.\n\nSteps:\n1. In src/games/lizard/Goes.tsx add exported TIE_STEPS = 3 and showBundleButtons(step, firstGuidedGo) = step > 3 && !firstGuidedGo. Use it at the withBundles line (about line 326) with round.step.\n2. On a Build go on steps 1 to 3 add a \"Ten sticks\" button in the ones column: it adds ten loose sticks (disabled if mat.o > MAX_ONES - 10), not on the guided first go. The child must still press Tie ten.\n3. Add WORDS.addTenSticks and WORDS.tieNudge (\"Ten sticks! Tie them into a bundle.\"); say the nudge once per go when the ones first reach 10. Add the nudge to allVoiceLines, rewrite lines.json (WRITE_VOICE_LINES=1 npx vitest run src/games/lizard/voiceLines.test.ts) and make the clip with ~/kokoro/.venv/bin/python -I scripts/voice-clips.py lizard.\n4. Style the new button in src/games/lizard/lizard.css.\n5. Add src/games/lizard/tying.test.ts with one test for showBundleButtons (steps 1-3 false, 4-7 true, guided first go false).\n6. Run npx vitest run shared/lizard src/games/lizard, npm run typecheck, npm run build. Play the preview: step 1 make 30 by tying; step 4 shows \"+ bundle\"; first go unchanged; phone width fits.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S6",
+   "kind": "fix",
+   "title": "Lizard: keep the child's attempt and draw the real bundles",
+   "games": [
+    "Lizard"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "A wrong try wipes the mat, never says what the child made, and shows a thinking emoji; the third wrong in a redo says nothing.",
+   "done": "A wrong try keeps the child's bundles and sticks, says 'You made 34. We need 43.', draws their own mat, and caps at two tries then a look and redo.",
+   "why": "The child sees their own model against the target, so the mistake teaches and rapid guessing stops working.",
+   "plan": "docs/plans/maths-review-2/S6-lizard-attempt.md",
+   "waits": [
+    "S5"
+   ],
+   "group": "newer",
+   "prompt": "Create branch fix/lizard-attempt from origin/main (own worktree). S5 (fix/lizard-tying) must be merged first; if it is not, stop and tell James.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S6-lizard-attempt.md first.\nDo not touch shared/, src/kit, src/maths, src/styles.css or src/components.\n\nSteps (all in src/games/lizard, browser only):\n1. Goes.tsx: delete the setMat(go.from) on a wrong try (about line 240). Add lastTried state; sendable also requires the mat to differ from lastTried. Reset the mat to go.from when \"Let's look together\" ends.\n2. voiceLines.ts: add tryLine(go, mat): Build \"You made 34. We need 43.\"; Bundle and Swap give the bundle and stick counts then the existing line; card goes \"You picked 34.\" then the slip line. Voice says one fixed clip (WORDS.lookAtYours); the numbers are written only.\n3. Replace the emoji picture in ShowWhy with a TryPicture using the existing MatView at a small size (new class lz-mat--small in lizard.css): the child's own bundles and sticks with counts (mat goals) or the picked card's bundles and sticks (card goals). Do not draw the target here; the look-together still does.\n4. In the redo phase show the ShowWhy panel on every wrong try (change the condition at about line 351); NowYouTry only until the first wrong redo try. Point the PointingHand at the tens or ones \"+\" that is wrong (never a number).\n5. Grey \"That's it\" for 2 seconds after a wrong try (a mat change re-enables it).\n6. Add the new words, add lookAtYours to allVoiceLines, rewrite lines.json (WRITE_VOICE_LINES=1 npx vitest run src/games/lizard/voiceLines.test.ts) and make the clip (~/kokoro/.venv/bin/python -I scripts/voice-clips.py lizard).\n7. One test: tryLine for Build, Bundle, Swap and a card go (counts present, no card answer given).\n8. Run npx vitest run shared/lizard src/games/lizard, npm run typecheck, npm run build. Play the preview as listed in the plan (Build 43 with 34, wrong twice, redo, wrong in the redo, a Read go, phone width).\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S7",
+   "kind": "fix",
+   "title": "Pigeon: show the reason on the number line itself",
+   "games": [
+    "Pigeon"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "The reason is a sentence and an emoji, the gap is never drawn, the line jumps when the panel opens, and the read arrow is a dot.",
+   "done": "After the second wrong the line shows counted jumps from the child's mark to the right place, a real arrow on read goes, and the line stays still.",
+   "why": "The gap between the child's answer and the right one is the whole lesson of a number line, and it must be seen on the line.",
+   "plan": "docs/plans/maths-review-2/S7-pigeon-line-reason.md",
+   "waits": [],
+   "group": "newer",
+   "prompts": [
+    {
+     "label": "kit NumberLine (arrow, room, lens arcs)",
+     "text": "Create branch kit/number-line-arrow-room from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S7-pigeon-line-reason.md first (the \"Kit part (Part 1)\" section).\nThis is a kit change: no game words in src/kit. src/kit is browser code so no build:functions is needed.\n\nSteps in src/kit/NumberLine.tsx:\n1. Add look: 'arrow' to LinePoint (a down-pointing arrow above the line, tip on the value, label above it).\n2. Add room?: number and roomBelow?: number props; top = Math.max(24, room ?? 0, ...arc heights); bottomMain gets roomBelow too. A line with room and no arcs is the same height as with arcs.\n3. Add arcs?: readonly Arc[] (plus room, roomBelow) to Lens; pull the arc drawing into a small Arcs helper used by both the main line and the lens; move lensY and H to match.\n5. Extend (do not add) the existing test in src/kit/kit.test.tsx (\"a number line puts values in the right place...\") to check the arrow, room (same height with and without arcs) and a lens arc.\n6. Update src/kit/README.md for the new props.\n7. Run npx vitest run src/kit, npm run typecheck, npm run build.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pigeon reason on the line",
+     "text": "Create branch fix/pigeon-line-reason from origin/main (own worktree). The kit PR (kit/number-line-arrow-room) must be merged first; if it is not, stop and tell James.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S7-pigeon-line-reason.md first.\nDo not touch shared/, src/kit, src/maths, src/styles.css or src/components.\n\nSteps (all in src/games/pigeon, browser only):\n1. Goes.tsx: wrap the ShowWhy, LookTogether and NowYouTry panels in one always-present div.pg-reason with a min-height of 7.5rem (pigeon.css), so the line never moves when a panel opens. Pass room: 110 and roomBelow: 40 to the line in lineFor.\n2. Remove the thinking and eyes emoji pictures from the panels and delete .pg-why__icon.\n3. First wrong: keep a ring at the child's tap (place) or at the tapped card's value (read, tens, near).\n4. New src/games/pigeon/reason.ts: reasonFor(go, tappedValue) returns points and arcs: place = child's ring, right dot, jump arcs in units of 10 (100 on the 1000 line, 1 on a narrow lens) from the big mark below the answer, with a last partial arc; read = real arrow + counted arcs; tens = the right jump above and the child's jump below; near = arcs to each post labelled with the gaps. Draw it at the second wrong (look together) and keep it for the rest of the go.\n5. Replace the \"?\" dot on read goes with the kit arrow point look.\n6. After the look, a wrong redo tap says the slip line again in the reserved slot.\n7. Change lookLine to match the drawing (see the plan, step 12). Rewrite the clips: WRITE_VOICE_LINES=1 npx vitest run src/games/pigeon/voiceLines.test.ts, then ~/kokoro/.venv/bin/python -I scripts/voice-clips.py pigeon.\n8. One test of reasonFor (place 47, the 1000 line, a narrow lens, read, near).\n9. Run npx vitest run shared/pigeon src/games/pigeon, npm run typecheck, npm run build. Play the preview as in the plan (place 47 and tap 33, the 1000 line, a lens, read, ten more, near, third wrong, phone width). The line must not move when a panel opens.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S8",
+   "kind": "fix",
+   "title": "Pigeon: less help at the top, and four cards on closer goes",
+   "games": [
+    "Pigeon"
+   ],
+   "effort": "S to M",
+   "impact": "High",
+   "wrong": "Top help writes every ten on the line so placing is copying, and closer goes have two cards so a guess is right half the time.",
+   "done": "Top help writes only 0, the middle and the end, and closer goes have four cards with at most two sharing a tell.",
+   "why": "Reading size from the picture and passing a step by knowing, not luck, is what the steps are meant to show.",
+   "plan": "docs/plans/maths-review-2/S8-pigeon-hints-cards.md",
+   "waits": [
+    "S7"
+   ],
+   "group": "newer",
+   "prompt": "Create branch fix/pigeon-hints-cards from origin/main (own worktree). S7 (fix/pigeon-line-reason) must be merged first; if it is not, stop and tell James.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S8-pigeon-hints-cards.md first.\nDo not touch shared/maths, src/kit, src/maths, src/styles.css or src/components. shared/pigeon is this game's own folder and is fine to change.\n\nSteps:\n1. shared/pigeon/round.ts marksFor: return { named, ticks, big }. Levels 5 and 4 name only [lo, mid, hi] and put every unit in big; level 5 keeps its ticks; levels 3 to 0 unchanged with big = []. Fix the doc comments.\n2. src/games/pigeon/Goes.tsx lineFor: draw big as landmarks with label: null (before the named ones so named wins in dedupe), on the lens too. Draw go.posts only in the look and redo phases and once solved.\n3. showGo near go: four consecutive posts at the line size, start = low - size*j with j seeded in 0..2, clamped to [0, max - 3*size]. Wrongs: the other true post is 'near', the two outside posts are 'ten'. pictureFor: remove the near exclusion at the three-wrong cut.\n4. voiceLines.ts: askLine near = \"Which ten is N nearest to?\" (\"hundred\" on the 1000 line; add max to Said). New lookLine for near. NEAR_FAR_LINES for outside posts. Update allVoiceLines. Rewrite lines.json (WRITE_VOICE_LINES=1 npx vitest run src/games/pigeon/voiceLines.test.ts) and make clips with ~/kokoro/.venv/bin/python -I scripts/voice-clips.py pigeon.\n5. Update shared/pigeon/pigeon.test.ts: near choices 4 (ascending, both posts, at most two share a parity tell), marksFor assertions (named [0,50,100], big 11), and an answer-slot spread check for near goes inside an existing test. Do not add more than 8 tests in total.\n6. npm run build:functions -- pigeon (commit the rebuilt supabase/functions/pigeon/index.ts). Run npx vitest run shared/pigeon src/games/pigeon, npm run typecheck, npm run build. Play the preview as in the plan (levels 5 and 4, the 1000 line, a lens, near goes at the ends and middle, third wrong, phone width).\nStop and tell James before any live step (deploying the pigeon function). Open a PR when done."
+  },
+  {
+   "id": "S9",
+   "kind": "fix",
+   "title": "Parrot: the see-saw tips toward the heavier side, and the words stop saying equals",
+   "games": [
+    "Parrot"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "True-or-false stays flat after a wrong answer, the post says = even when tipped, and a wrong stone count gets a vague line.",
+   "done": "A wrong answer tips the see-saw toward the heavier side, = shows only when level, true-or-false asks 'Is it the same?', and stone slips are named.",
+   "why": "The symbol must match the model: equal means level, and a wrong answer shows the weight difference.",
+   "plan": "docs/plans/maths-review-2/S9-parrot-seesaw-tilt.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Create branch fix/parrot-seesaw-tilt from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S9-parrot-seesaw-tilt.md first.\nDo not touch shared/maths, src/kit, src/maths, src/styles.css or src/components. shared/parrot is this game's own folder and is fine to change.\n\nSteps:\n1. src/games/parrot/art.tsx SeeSaw: post text from the tilt (\"=\" when level, \"?\" at rest, nothing when tipped). At rest draw two small props under the plank ends that fade out when it tips (CSS in parrot.css).\n2. Goes.tsx WhyPicture: true-or-false uses leanWith(go, 0) with the numbered weights and the pan totals written under each pan. CountingSaw tf branch writes the totals too.\n3. Goes.tsx level 4: after a wrong Check the saw tips with the child's stones (tilt={live || why ? tilt : 'rest'}); a stone change clears why.\n4. Equation: for true-or-false replace \"=\" with a \"?\" chip (hidden text \"is it the same as\"); after solving show the TipGlyph. Add WORDS.sameQ = \"Is it the same?\" above it. Other kinds unchanged.\n5. voiceLines.ts eqLine for tf: \"{left}. {right}. Is it the same? Which way does it tip?\". Update WORDS.promptTilt to \"Is it the same? Which way does it tip?\".\n6. shared/parrot/round.ts: add slipOfPick(go, n) (null when right; the go's wrong kind; total/copy/all/dbl by the go's own sums; off1 when one away; else 'more' or 'less') and add 'more' | 'less' to ParrotKind. Use it at Goes.tsx (the ?? 'near' at about line 265) and shared/parrot/play.ts slipsOf. Keep the teacher mapping in src/data/parrot.ts to copy/total/all/null.\n7. words.ts: why('more') and why('less'); add both to the kind list in voiceLines.ts. Rewrite lines.json (WRITE_VOICE_LINES=1 npx vitest run src/games/parrot/voiceLines.test.ts) and make clips with ~/kokoro/.venv/bin/python -I scripts/voice-clips.py parrot.\n8. Extend the existing \"mistakes that teach\" test in shared/parrot/parrot.test.ts for slipOfPick over every go and every stone count 0..MAX_STONES*2. Do not add an it() (S10 needs the eighth).\n9. npm run build:functions -- parrot (commit the rebuilt supabase/functions/parrot/index.ts). Run npx vitest run shared/parrot src/games/parrot, npm run typecheck, npm run build. Play the preview as in the plan (true-or-false, stone goes at levels 5 and 4, too many and too few stones, card goes, phone width, teacher page).\nStop and tell James before any live step (deploying the parrot function). Open a PR when done."
+  },
+  {
+   "id": "S10",
+   "kind": "fix",
+   "title": "Parrot: wrong cards from near misses, and a redo with no silly card",
+   "games": [
+    "Parrot"
+   ],
+   "effort": "S to M",
+   "impact": "High",
+   "wrong": "The right card is the only one not printed in the sum and never the biggest, and the redo adds the huge sum card.",
+   "done": "Cards are the answer and close numbers, the answer sits in every position, and the redo offers the answer and the nearest card.",
+   "why": "Card goes then need the balance idea, not a pattern, which is the main loophole in this game.",
+   "plan": "docs/plans/maths-review-2/S10-parrot-near-cards.md",
+   "waits": [
+    "S9"
+   ],
+   "group": "newer",
+   "prompt": "Create branch fix/parrot-near-cards from origin/main (own worktree). S9 (fix/parrot-seesaw-tilt) must be merged first; if it is not, stop and tell James.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S10-parrot-near-cards.md first.\nDo not touch shared/maths, src/kit, src/maths, src/styles.css or src/components. shared/parrot is this game's own folder and is fine to change.\n\nSteps (all in shared/parrot, plus the rebuilt function):\n1. round.ts: add nearWrongs(answer, slips, random, max) and use it instead of pickWrongs for miss, swap, both and sub goals (about line 249). Pick the answer's rank (0..3) first, uniformly from the ranks that can be built; optionally (about half the goes) use one printed-number slip card (copy or total, never \"all\") if it fits the rank; fill the rest from answer-3..answer+3 (offset 1 is 'off1', else 'near'; a value equal to a slip value takes that slip's kind). Retry up to 40 times with the go's seeded random until exactly 2 cards share the answer's parity (sharingTell) and atMostShareTell on the last digit holds and at most one card is more than 3 from the answer; otherwise a fixed fallback. Never fewer than 3 wrong cards. True-or-false is unchanged.\n2. round.ts redoCards: the answer plus the untried wrong card nearest to the answer (ties: the lower), never a far one.\n3. parrot.test.ts: add the 8th it() sweeping every card key, layout and 200 seeds: answer rank 0..3 each 15 to 40 percent; answer biggest and smallest in at least 15 percent each; parity and last-digit tells; the \"not printed and not biggest\" pattern leaves about 2.2 or more cards on average (measure, then set the number with margin); at most one card more than 3 away. Update the existing mistakes test for the redo rule. Do not exceed 8 tests.\n4. Check scripts/parrot-sim.mjs still runs (npx tsx scripts/parrot-sim.mjs).\n5. npm run build:functions -- parrot (commit the rebuilt supabase/functions/parrot/index.ts). Run npx vitest run shared/parrot src/games/parrot, npm run typecheck, npm run build. Play the preview as in the plan (7 = 2 + ?, ten goes to see the answer move, layouts, true-or-false, the redo, stone goes).\nStop and tell James before any live step (deploy the parrot function outside school hours Mon to Fri 8:45 to 3:00 NZ; a round started before the deploy could not finish). Open a PR when done."
+  },
+  {
+   "id": "S11",
+   "kind": "kit",
+   "title": "Kit: remember which kinds of go a child has seen",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "No game remembers which kinds of go a child has already met, so nothing can show a demo only the first time.",
+   "done": "A shared kit part saves, on the server, which kinds of go each child has seen, for any game, with its own tests and no game words.",
+   "why": "LEARNING-DESIGN rule 4: help arrives by itself the first time a new kind appears, which needs a memory of what has been seen.",
+   "plan": "docs/plans/maths-review-2/S11-kit-seen-kinds.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 4), docs/plans/GAME-KIT-PLAN.md and docs/plans/maths-review-2/S11-kit-seen-kinds.md. Build the kit part that remembers which kinds of go a child has seen, on a new branch `kit-seen` from origin/main (new worktree, never the main checkout).\nSteps:\n1. git fetch; node scripts/migration-numbers.mjs; take the next free number. Write supabase/migrations/<number>_kit_seen.sql: table kit_seen (player, game, kinds text[], updated_at; primary key player+game; RLS on; revoke from anon and authenticated), functions kit_seen_get and kit_seen_mark exactly as in the plan (check the player with gem_keep_check_player, validate kind names, union and cap, service_role only).\n2. shared/kit/seen.ts: readKinds, mergeSeen, kindsFromFacts, the SeenServices type and memorySeen. No game words.\n3. src/kit/useSeenKinds.ts (mark at once, keep unsent kinds on failure, never block play); export it from src/kit/index.ts; add a short section to src/kit/README.md with the three rules for games.\n4. Tests, three only: one in shared/kit/kit.test.ts, one hook test in src/kit, one pgTAP file supabase/tests/database/kit_seen.test.sql run on a scratch copy (scripts/scratch-db.sh kitseen, scripts/scratch-test.sh ...; drop it after; never supabase db reset).\n5. npm run build:functions; run npx tsc --noEmit (or the repo's typecheck), npm run test:changed and the build.\nDo not touch any game folder, shared/maths or src/styles.css. Stop and tell James before any live step (the migration goes live when the PR merges). Open a PR when done."
+  },
+  {
+   "id": "S12",
+   "kind": "fix",
+   "title": "Show me first: a demo the first time each new kind appears",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "New kinds of go (zoom, true or false, take away, Swap, Bundle, mat, share, cut, How many, One more) appear with no demo.",
+   "done": "The first time a child meets each of those kinds, a short demo with a made-up example shows it, and the kind is marked seen.",
+   "why": "LEARNING-DESIGN rule 4: help arrives by itself the first time a new kind appears.",
+   "plan": "docs/plans/maths-review-2/S12-show-me-first-newer-five.md",
+   "waits": [
+    "S11"
+   ],
+   "group": "newer",
+   "prompts": [
+    {
+     "label": "kit shell",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 4) and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 1). S11 (the seen-kinds kit part) must already be on main; check. Create branch `kit-kind-demo` from origin/main in a new worktree.\nBuild src/kit/useKindDemo.ts and src/kit/DemoBar.tsx exactly as the plan says: no game words; steps with a line and a hold time; says each line with the game's say function and waits for its end; Skip after 3 seconds (copy the timing style of useLookTogether in src/kit/ShowWhy.tsx); gives up after 20 seconds; marks the kind seen once via the mark function it is given; does nothing when the kind is already seen. Export from src/kit/index.ts and add a short README entry. One test in src/kit/kitJunior.test.tsx. npm run build:functions (expect no change), typecheck, test:changed, build.\nDo not touch any game folder. Stop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pigeon",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 2 and the rules for every game). S11 and S12 Part 1 must be on main. Create branch `demo-pigeon` from origin/main in a new worktree.\nSteps: (1) shared/pigeon/server.ts: `load` returns `seen` (mergeSeen of saved and kindsFromFacts with kindOfKey); add the `seen` action with readKinds and services.markSeen; add seen/markSeen to Services, memoryServices.ts and supabase/functions/pigeon/entry.ts. (2) src/games/pigeon: backend markSeen, a made-up zoom example not in KEYS, useKindDemo and DemoBar in Goes.tsx (max 2 demos a round, no demo taps in the saved taps, mark a kind seen when any go of it is finished, mark go 0's kind after the guided first go), words and voice lines in words.ts and voiceLines.ts, styles in pigeon.css. (3) Record the new clips with Kokoro af_bella (python3 scripts/voice-clips.py --list; ~/kokoro/.venv/bin/python -I scripts/voice-clips.py pigeon) and commit them with lines.json. (4) npm run build:functions -- pigeon.\nTests, two at most: the seen action; the example is not in KEYS. Play the preview at a step with zoom (step 6): demo once, Skip after 3 s, no demo on reload. Stop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Parrot",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 3 and the rules for every game). S11 and S12 Part 1 must be on main. Create branch `demo-parrot` from origin/main in a new worktree.\nDo the same steps as Part 2 for Parrot: server `seen` action and `load` (shared/parrot/server.ts, memoryServices.ts, supabase/functions/parrot/entry.ts), backend markSeen, demos for true-or-false (tf) and take-away (sub) with made-up examples not in KEYS, words and voice lines, clips with Kokoro af_bella, npm run build:functions -- parrot. Allowed kinds: miss, swap, both, sub, tf.\nTests, two at most: the seen action; the examples are not in KEYS. Play the preview at steps 5 and 6. Stop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Lizard",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 4 and the rules for every game). S11 and S12 Part 1 must be on main. Create branch `demo-lizard` from origin/main in a new worktree.\nDo the same steps as Part 2 for Lizard: server `seen` action and `load` (shared/lizard/server.ts, memoryServices.ts, supabase/functions/lizard/entry.ts), backend markSeen, demos for Swap and Bundle with made-up examples not in KEYS, words and voice lines, clips with Kokoro af_bella, npm run build:functions -- lizard. Allowed kinds: build, read, bundle, swap, more.\nTests, two at most: the seen action; the examples are not in KEYS. Play the preview at the steps where Swap and Bundle first come. Stop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Swamp Hen",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 5 and the rules for every game). S11 and S12 Part 1 must be on main. Create branch `demo-swamphen` from origin/main in a new worktree.\nDo the same steps as Part 2 for Swamp Hen: server `seen` action and `load` (shared/swamphen/server.ts, memoryServices.ts, supabase/functions/swamphen/entry.ts), backend markSeen, demos for mat, share and cut with made-up examples not in KEYS, words and voice lines, clips with Kokoro af_bella, npm run build:functions -- swamphen. Allowed kinds: plant, mat, turn, which, share, cut, short.\nTests, two at most: the seen action; the examples are not in KEYS. Play the preview at steps 3, 4 and 5. Stop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Robin",
+     "text": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S12-show-me-first-newer-five.md (Part 6 and the rules for every game). S11 and S12 Part 1 must be on main. Create branch `demo-robin` from origin/main in a new worktree.\nDo the same steps as Part 2 for Robin: server `seen` action and `load` (shared/robin/server.ts, memoryServices.ts, supabase/functions/robin/entry.ts), backend markSeen, demos for How many? (howmany) and One more (counton) with made-up examples not in the step keys, words and voice lines, clips with Kokoro af_bella, npm run build:functions -- robin. Allowed kinds: give, howmany, counton (use goKindOf in shared/robin/round.ts).\nTests, two at most: the seen action; the examples are not in the keys. Play the preview at steps 2 and 5. Stop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S13",
+   "kind": "fix",
+   "title": "Three wrong in a row brings full help back: Pigeon, Lizard, Swamp Hen",
+   "games": [
+    "Pigeon",
+    "Lizard",
+    "Swamp Hen"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "STRUGGLE_GOES is not wired in Pigeon, Lizard and Swamp Hen, so a child who gets three wrong in a row keeps the faded help.",
+   "done": "Three wrong first taps in a row bring full help back in those three games, the same way as Robin and Parrot.",
+   "why": "LEARNING-DESIGN rule 5: help fades on steady success and returns on struggle.",
+   "plan": "docs/plans/maths-review-2/S13-three-wrong-brings-help-back.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 4 and 5) and docs/plans/maths-review-2/S13-three-wrong-brings-help-back.md. Create branch `struggle-three-games` from origin/main in a new worktree.\nSteps: (1) In shared/pigeon/round.ts, shared/lizard/round.ts and shared/swamphen/round.ts add a `struggling = false` parameter to pictureFor; after the wrong-tap steps set level to C.TOP_LEVEL and peekOpen to false when it is true. (2) In src/games/pigeon/Goes.tsx, src/games/lizard/Goes.tsx and src/games/swamphen/Goes.tsx add `struggle` state and a `run` ref, import STRUGGLE_GOES from shared/kit/help, count `gs.wrong > 0` at each right tap exactly as src/games/robin/Goes.tsx:213-215 does, and pass `struggle` to pictureFor. (3) Delete the unused local STRUGGLE_GOES in the three config.ts files. (4) One test per game for pictureFor with struggling (levels 0, 1, 3 become 5; one wrong tap keeps 5; no peek). (5) npm run build:functions for pigeon, lizard and swamphen; commit the index.ts files. (6) Only if James says yes in this session: also fix levelFor in shared/robin/round.ts and shared/parrot/round.ts so a first wrong tap does not lower the level while struggling, with one assertion each.\nPlay each preview: three wrong first taps in a row bring the full picture for the rest of the round; a new round starts from the saved level. Typecheck, test:changed, build. Stop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S14",
+   "kind": "kit",
+   "title": "A lucky guess is not a quick answer: minimum think time",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin",
+    "Weka",
+    "Hop",
+    "Penguin Pairs",
+    "Pipi",
+    "Tui",
+    "Beanstalk",
+    "Korora"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "A right tap 9 to 82 ms after the question counts as quick, moves the fact up a box and fades the help.",
+   "done": "A right answer under 600 ms is still saved but is never quick: no box move, no quick day, no count towards a good round. All twelve games use the one shared rule.",
+   "why": "LEARNING-DESIGN rules 1, 5 and 8: guessing must not work, help fades only on steady success, and speed is judged fairly.",
+   "plan": "docs/plans/maths-review-2/S14-lucky-guess-not-quick.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md (section 3, shared files, and the go-live steps), docs/LEARNING-DESIGN.md (rules 1, 5 and 8) and docs/plans/maths-review-2/S14-lucky-guess-not-quick.md. Create branch `kit-think-floor` from origin/main in a new worktree (this is a shared and kit change, not a game branch).\nSteps: (1) shared/juniorQuick.ts: add JUNIOR_MIN_THINK_MS = 600, thoughtOf(ms) and juniorAfterAnswer(stats, correct, ms, at) that calls afterAnswer with quick time -1 when the answer is under the floor (do not change shared/maths/leitner.ts). (2) Replace afterAnswer(..., quick) in every withAnswers (shared/hop, pipi, weka, korora server.ts; shared/pigeon, parrot, lizard, swamphen, robin, tui memoryServices.ts). (3) shared/kit/replay.ts: optional minThinkMs rule so a right first tap under it is not counted in firstRight; pass it from shared/weka/play.ts, parrot/play.ts, swamphen/play.ts, robin/play.ts; use thoughtOf in the own copies shared/pigeon/play.ts, lizard/play.ts, tui/play.ts; check shared/beanstalk/progress.ts and its server for where right is counted and apply the same. (4) New migration (git fetch; node scripts/migration-numbers.mjs for the number) that drops the seven-argument record_fact_answers and creates it again with a last argument min_ms integer default 0 and the test a.ms >= min_ms and a.ms <= quick_ms, with the same revoke and grant as supabase/migrations/20261017001200_fact_answers.sql. (5) supabase/functions/_shared/recordAnswers.ts: optional minMs, sent as min_ms (default 0); each of the eleven entry.ts files that pass JUNIOR_QUICK_MS also passes JUNIOR_MIN_THINK_MS. (6) npm run build:functions (all affected); check every \"index.ts is up to date\" test.\nLeave Quick looks alone (the plan says why). Three tests only (juniorQuick.test.ts, kit.test.ts, one pgTAP file run on a scratch copy; drop it after). Typecheck, test:changed, build. In the PR, say in one line that a tap during a long voice is timed from the start of the go and is not caught (known limit). Stop and tell James before any live step (the migration goes live on merge). Open a PR when done."
+  },
+  {
+   "id": "S15",
+   "kind": "fix",
+   "title": "Honest finish words after a round",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "S to M",
+   "impact": "Med",
+   "wrong": "Every finish screen says Well done whether the child got 10 right or guessed through.",
+   "done": "A finish line says how the round went (most right, some right, tricky today) about what the child did; the day and reward are unchanged; new voice clips.",
+   "why": "LEARNING-DESIGN rule 7: kind but honest words, praise the strategy, the day still counts.",
+   "plan": "docs/plans/maths-review-2/S15-honest-finish-words.md",
+   "waits": [
+    "S14"
+   ],
+   "group": "newer",
+   "prompt": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 7) and docs/plans/maths-review-2/S15-honest-finish-words.md. Do this in two PRs. (1) Kit: branch kit-finish-band from origin/main in a new worktree; add shared/kit/finishBand.ts (finishBand(firstRight, goes = 10) -> 'most' | 'some' | 'tricky', cut-offs from ROUND_OF_TEN in shared/kit/help.ts), export it, add one test in shared/kit/kit.test.ts, run npm run build:functions and commit any changed index.ts. Merge it when checks pass. (2) Games: branch finish-words-newer-five from main after (1); add a `how` object of three lines to words.ts in Pigeon, Parrot, Lizard, Swamp Hen and Robin (wording in the plan), show WORDS.how[finishBand(result.firstRight)] on each finish screen above the next-time note, include it in finishLine and allVoiceLines, and make the new af_bella clips with scripts/voice-clips.py. The day and the reward must not change. Do not hold back the reward (the plan flags that for James). Typecheck, test:changed, build; open a PR."
+  },
+  {
+   "id": "S16",
+   "kind": "fix",
+   "title": "Now you try asks a sister question",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "Now you try repeats the same question with the choices reshuffled, so a child can answer from memory.",
+   "done": "Now you try asks a nearby question of the same kind, numbers changed by one or two, no marked card, not saved. Rule 7 is amended first.",
+   "why": "LEARNING-DESIGN rule 7 and rule 1: a nearby question shows the idea was understood.",
+   "plan": "docs/plans/maths-review-2/S16-now-you-try-sister-question.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "Read CLAUDE.md, docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 7) and docs/plans/maths-review-2/S16-now-you-try-sister-question.md. Do only the part named below.\nStep 1: branch rule7-sister-question from origin/main; amend docs/LEARNING-DESIGN.md line 127 (step 3 of the show-why flow) so \"Now you try\" is a sister question as the plan describes; open a docs-only PR and stop for James to OK the wording.\nStep 2 (only after James says OK): branch kit-sister-go; add shared/kit/sister.ts (sisterNumber), extend the look-together hook in src/kit/ShowWhy.tsx with an optional sister go, one test in shared/kit/kit.test.ts, npm run build:functions. Then one game per session on its own branch sister-<game>: build the sister go from the same key in Goes.tsx, no marked card, not saved or sent to the server, fallback to the old reshuffle if no valid sister; new af_bella clip for \"Now you try one like it.\"; at most one new test. Typecheck, test:changed, build; open a PR."
+  },
+  {
+   "id": "S17",
+   "kind": "fix",
+   "title": "Teachers can see the five newer games in the class grid and Today alerts",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "Teachers cannot see Pigeon, Parrot, Lizard, Swamp Hen or Robin in the class grid or Today alerts.",
+   "done": "Each of the five has a column set in the class grid and its alerts show on the Today page.",
+   "why": "A teacher can only help children who are stuck if the stuck children show up.",
+   "plan": "docs/plans/maths-review-2/S17-teacher-view-newer-five.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "You are building card S17 of the second Foundational maths review for the Games Hub: teachers can't see Pigeon, Parrot, Lizard, Swamp Hen and Robin in the class grid or Today alerts.\n\nCreate your own branch and worktree from origin/main, named foundational-five-games. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/maths-review-2/S17-teacher-view-newer-five.md first. Reply to James in plain, simple words.\n\nSteps:\n1. Check the latest file in supabase/migrations on origin/main and take the next number. Write supabase/migrations/<next>_foundational_teacher_five.sql: create or replace public.teacher_foundational_class(target uuid) with the same guard and the same six game blocks copied exactly from 20261107000100_foundational_teacher_views.sql, plus a block for each of pigeon, parrot, lizard, swamphen and robin as written in the plan (level = the step, taken from progress `step`; recent from the finished rounds with `round ->> 'step'`; `last_day` is a date, use to_char). Check each table and column name against that game's own migration.\n2. src/data/foundational.ts: add the five ids to GAME_IDS.\n3. src/teacher/foundational/config.ts: add the five to GAMES with every step named and the right `top` (table in the plan).\n4. src/teacher/foundational/ideas.ts: add the five columns in the plan, and plain-words cases in keyWords for the new key families.\n5. src/teacher/foundational/alerts.ts: add the five \"enabled\" calls to ENABLED.\n6. Add the two `alerts` and `hardest` lines to the `teacher:` block in src/games/{pigeon,parrot,lizard,swamphen,robin}/index.tsx.\n7. Do NOT change shared/kit, shared/maths, Hop or Penguin Pairs config, or any old migration.\nTests (at most three, in src/teacher/foundational/foundational.test.tsx): every step of every game has a name and `top` is the real top step; a Robin \"same step\" alert reads correctly; keyWords gives words for one key of each new family. Run npm run typecheck and the tests. Try the migration on a throw-away copy (scripts/scratch-db.sh) and check a teacher of another class gets 42501. Check in the preview that the five columns show on a class's Foundational skills page.\nThe players tracker is outside the repo: only check whether the five tables are in it and tell James.\nStop and tell James before any live step (applying the migration, deploying). Open a PR when done."
+  },
+  {
+   "id": "S18",
+   "kind": "fix",
+   "title": "Small fixes found in play in Lizard, Pigeon, Robin and Swamp Hen",
+   "games": [
+    "Lizard",
+    "Pigeon",
+    "Robin",
+    "Swamp Hen"
+   ],
+   "effort": "S",
+   "impact": "Low to Med",
+   "wrong": "A raft tip on a go with no raft, a dot called an arrow, Robin help off the screen and overlapping berries, and Swamp Hen cards that give the answer away by shape.",
+   "done": "Play each game and none of these show: help is in view, berries do not overlap, and the four cards look alike.",
+   "why": "Clear help and fair choices mean the child is thinking about the maths, not the screen.",
+   "plan": "docs/plans/maths-review-2/S18-small-fixes-newer-games.md",
+   "waits": [],
+   "group": "newer",
+   "prompts": [
+    {
+     "label": "Lizard",
+     "text": "You are building part 1 of card S18 (small fixes in the newer games) of the second Foundational maths review for the Games Hub: Lizard's Bundles.\n\nCreate your own branch and worktree from origin/main, named lizard-small-fixes. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S18-small-fixes-newer-games.md (Part 1: Lizard) first. Reply to James in plain, simple words.\n\nSteps:\n1. In src/games/lizard/Goes.tsx:178 the raft tip tests `go.n >= 100 || go.answer >= 100`, but for Bundle and Swap goes the answer is bundles x 100 + sticks (shared/lizard/round.ts:273-274). Add a small pure helper `hasRaft(go)`: build, read and more goes use `go.n >= 100 || go.answer >= 100`; bundle and swap goes use `go.n >= 100` only. Use it in the effect.\n2. On the finish screen (src/games/lizard/LizardGame.tsx, Finish) add, as `children` of WhatsNext, a line \"You got N of 10 right first time.\" using result.firstRight (src/games/lizard/backend.ts:27) and a WORDS.firstTime(n) in words.ts. Text only: do not change the spoken line, so no new voice clips.\n3. Leave step 1's repeated tens alone (it needs new keys in shared/maths, which this branch may not touch). Say so in the PR.\n4. Play step 6 at help 3 in the preview. If a raft looks like a bundle, remove the 3-column raft size override at src/games/lizard/lizard.css:161 (or label the raft 100). If they already look different, change nothing and say so.\nTest (one): hasRaft is false for a Swap go of 29 and a Bundle go of 23, true for a Build of 120 and a read of 305. Run typecheck and the Lizard tests. Check in the preview.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pigeon",
+     "text": "You are building part 2 of card S18 (small fixes in the newer games) of the second Foundational maths review for the Games Hub: Pigeon's Berry Branch.\n\nCreate your own branch and worktree from origin/main, named pigeon-small-fixes. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S18-small-fixes-newer-games.md (Part 2: Pigeon) first. Reply to James in plain, simple words.\n\nSteps:\n1. Look in docs/plans/maths-review-2/ for a card S7 plan. If it already makes the \"arrow\" on Pigeon's read go a real arrow (or changes that line), skip step 2 and tell James.\n2. Otherwise change the read line in src/games/pigeon/voiceLines.ts:19 (and the written and aria text at src/games/pigeon/Goes.tsx:182) to \"What number is at the question mark?\", because the arrow is a dot with a \"?\" (Goes.tsx:176). Record the new clip: ~/kokoro/.venv/bin/python -I scripts/voice-clips.py pigeon (only lines without a clip are recorded; this needs Kokoro on James's Mac, so if it is not there say so and leave the clip to James). Do not change src/kit/NumberLine.tsx.\n3. Stop the line jumping up about 80 px when the reason panel opens: reserve a min-height slot (start with 5.5rem) around the why, look and redo panels in src/games/pigeon/pigeon.css (the .pg-why rules are at :124-127). Check by playing a wrong tap on the preview that nothing moves.\nTest (one, optional): the read go's written line says \"question mark\" and the voice-line test still passes. Run typecheck and the Pigeon tests.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Robin",
+     "text": "You are building part 3 of card S18 (small fixes in the newer games) of the second Foundational maths review for the Games Hub: Robin's Berry Basket.\n\nCreate your own branch and worktree from origin/main, named robin-small-fixes. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S18-small-fixes-newer-games.md (Part 3: Robin) first. Reply to James in plain, simple words.\n\nSteps:\n1. Help in view: in src/games/robin/Goes.tsx (ShowWhy and LookTogether, around :345-348) scroll the panel into view when it appears (`.rb-why`, block 'nearest', smooth). Lower the pile's max-height from 30dvh to 26dvh while a panel is open (a class on the stage). Check at a 1366 x 768 window in the preview that the help and the berries are both in view.\n2. Berries on the stage: in src/games/robin/robin.css:92-93 stop the opacity fade (keep a short move only, 0.2 s) so berries are visible and tappable at once.\n3. Overlap: in shared/robin/round.ts:185-186 change the scatter to a 6 x 4 grid of cells (24 cells) with rows 25% of the height apart and a wobble of about plus or minus 1.5, so neighbouring berries never touch (a berry is up to 11% of the pile width and square; the pile is 2:1). Check the largest scatter is 20 berries. If the pile can show more than 24, keep five rows only for those goes.\n4. Phone: in the max-width 640px rule (src/games/robin/robin.css:141-145) raise padding-top from 64px to 104px so the wrapped top bar never sits on the progress dots. Check at 375 x 812 and say whether \"Preview tools\" is hidden in the real game.\nTest (one): for n from 1 to 20 and a few seeds no two scattered berries are closer than a berry. Run typecheck and the Robin tests. Do not touch shared/kit or shared/maths.\nStop and tell James before any live step (the Robin server function must be redeployed because shared/robin/round.ts changed). Open a PR when done."
+    },
+    {
+     "label": "Swamp Hen",
+     "text": "You are building part 4 of card S18 (small fixes in the newer games) of the second Foundational maths review for the Games Hub: Swamp Hen's Reed Rows.\n\nCreate your own branch and worktree from origin/main, named swamphen-small-fixes. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S18-small-fixes-newer-games.md (Part 4: Swamp Hen) first. Reply to James in plain, simple words.\n\nSteps:\n1. Find the faint text first: in the preview play a \"Which garden\" go and a plant go at 1366 x 768 and take screenshots. If the question (.sh-ask, src/games/swamphen/swamphen.css:94) or a label is faint, give it the dark ink colour on a solid panel; if the faint thing is the tried cards (opacity 0.35, swamphen.css:111) raise it to 0.55 and add a cross. If nothing is faint, change nothing and say so.\n2. Card shapes: in shared/swamphen/round.ts:244-254 (wrongCards) the first three wrong cards are a + b, (a - 1) x b and the two numbers joined (37 for 3 and 7). Make the joined card appear only when it has the same number of digits as the answer; fill the rest from the other named slips and the plain neighbours. Keep atMostShareTell.\n3. Leftover card: in pictureFor (shared/swamphen/round.ts:310-313) after three wrong taps the one wrong card kept is nearly always one already tried. Keep all four cards visible with the tried ones greyed so the answer is not just \"the one not tried\". If it looks no different in play, leave it and say so. Do not spend more than an hour on this step.\nTests (at most two): the joined card appears only with the right digit count; the four cards for 3 x 7 stay in a narrow range. Run typecheck and the Swamp Hen tests. Do not touch shared/kit or shared/maths.\nStop and tell James before any live step (the Swamp Hen server function must be redeployed because shared/swamphen/round.ts changed). Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S19",
+   "kind": "fix",
+   "title": "Help for each kind of go in the newer five games",
+   "games": [
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "L",
+   "impact": "Med to High",
+   "wrong": "Each game keeps one help level for the whole child, so a strong kind of go and a weak kind get the same help.",
+   "done": "Help fades on a kind the child does well and stays on a kind they find hard.",
+   "why": "Help that fits each kind of go keeps hard things supported without over-helping easy ones.",
+   "plan": "docs/plans/maths-review-2/S19-help-per-kind-newer-five.md",
+   "waits": [
+    "S13"
+   ],
+   "group": "newer",
+   "prompts": [
+    {
+     "label": "Kit",
+     "text": "You are building part 1 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: the kit part.\n\nCreate your own small branch and worktree from origin/main, named kit-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 1: Kit) first. First check that card S13 is done; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. Add fadeByKind(kindLevels, goes, rules) to shared/kit/help.ts. goes is a list of { kind: string, right: boolean }. For each kind with at least 2 goes, scale right to ten (Math.round(10 * right / n)) and call the existing fadeAfter with ROUND_OF_TEN; a kind with fewer than 2 goes is unchanged; a kind not in the map starts from a default level you pass in. No game words in the kit.\n2. Add tests (inside the limit): 2 goes both right counts as good; 1 go is unchanged; two good rounds fade one level; one hard round brings one level back; a missing kind starts from the default.\n3. Run npm run build:functions in the same PR and commit the rebuilt functions.\nRun typecheck and tests.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pigeon",
+     "text": "You are building part 2 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: Pigeon's Berry Branch (kinds place, read, tens, near).\n\nCreate your own branch and worktree from origin/main, named pigeon-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 2 to 6) first. The kit part (fadeByKind in shared/kit/help.ts) must already be merged; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. New migration (numbered after the latest in supabase/migrations/) pigeon_kind_levels: add column kind_levels jsonb not null default '{}' (object check) to pigeon_progress; recreate pigeon_load to return kindLevels; drop and recreate pigeon_finish with an extra kind_levels parameter and repeat the revoke and grant from the game's original migration.\n2. shared/pigeon/server.ts (finish, near :153-164): on the day's first finish compute fadeByKind from the round's goes and save it.\n3. shared/pigeon/round.ts: makeRound takes kindLevels and sets each go's l from its kind (shownLevel(kindLevels[kind]?.level ?? level, help)); the guided first go stays at the top level.\n4. Pass kindLevels through src/games/pigeon/backend.ts and the preview backend.\nTests (about two): a hard kind keeps its level while another fades; a kind missing from the map starts at the whole-child level. Run typecheck and the Pigeon tests. Check two days in the preview.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Parrot",
+     "text": "You are building part 3 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: Parrot's Equal Stones (kinds miss, swap, both, sub, tf, from the key prefix by kindOfKey).\n\nCreate your own branch and worktree from origin/main, named parrot-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 2 to 6) first. The kit part (fadeByKind in shared/kit/help.ts) must already be merged; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. New migration (numbered after the latest in supabase/migrations/) parrot_kind_levels: add column kind_levels jsonb not null default '{}' (object check) to parrot_progress; recreate parrot_load to return kindLevels; drop and recreate parrot_finish with an extra kind_levels parameter (keep the slips parameter) and repeat the revoke and grant from the original migration.\n2. shared/parrot/server.ts (placeAfter with STEP_RULES at :35): on the day's first finish compute fadeByKind from the round's goes and save it.\n3. shared/parrot/round.ts: makeRound takes kindLevels and sets each go's l from its kind; the guided first go stays at the top level.\n4. Pass kindLevels through src/games/parrot/backend.ts and the preview backend.\nTests (about two): a hard kind keeps its level while another fades; a kind missing from the map starts at the whole-child level. Run typecheck and the Parrot tests. Check two days in the preview.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Lizard",
+     "text": "You are building part 4 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: Lizard's Bundles (kinds build, read, bundle, swap, more).\n\nCreate your own branch and worktree from origin/main, named lizard-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 2 to 6) first. The kit part (fadeByKind in shared/kit/help.ts) must already be merged; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. New migration (numbered after the latest in supabase/migrations/) lizard_kind_levels: add column kind_levels jsonb not null default '{}' (object check) to lizard_progress; recreate lizard_load to return kindLevels; drop and recreate lizard_finish with an extra kind_levels parameter and repeat the revoke and grant from the original migration.\n2. shared/lizard/server.ts: on the day's first finish compute fadeByKind from the round's goes (placeAfter is at shared/lizard/round.ts:94) and save it.\n3. shared/lizard/round.ts: makeRound takes kindLevels and sets each go's l from its kind; the guided first go stays at the top level.\n4. Pass kindLevels through src/games/lizard/backend.ts and the preview backend.\nTests (about two): a hard kind keeps its level while another fades; a kind missing from the map starts at the whole-child level. Run typecheck and the Lizard tests. Check two days in the preview.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Swamp Hen",
+     "text": "You are building part 5 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: Swamp Hen's Reed Rows (kinds plant, mat, turn, which, share, cut, short).\n\nCreate your own branch and worktree from origin/main, named swamphen-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 2 to 6) first. The kit part (fadeByKind in shared/kit/help.ts) must already be merged; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. New migration (numbered after the latest in supabase/migrations/) swamphen_kind_levels: add column kind_levels jsonb not null default '{}' (object check) to swamphen_progress; recreate swamphen_load to return kindLevels; drop and recreate swamphen_finish with an extra kind_levels parameter and repeat the revoke and grant from the original migration.\n2. shared/swamphen/server.ts: on the day's first finish compute fadeByKind from the round's goes (placeAfter is at shared/swamphen/round.ts:99) and save it.\n3. shared/swamphen/round.ts: makeRound takes kindLevels and sets each go's l from its kind; the guided first go stays at the top level.\n4. Pass kindLevels through src/games/swamphen/backend.ts and the preview backend.\nTests (about two): a hard kind keeps its level while another fades; a kind missing from the map starts at the whole-child level. Run typecheck and the Swamp Hen tests. Check two days in the preview.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Robin",
+     "text": "You are building part 6 of card S19 (help for each kind of go) of the second Foundational maths review for the Games Hub: Robin's Berry Basket (kinds give, howmany, counton).\n\nCreate your own branch and worktree from origin/main, named robin-help-by-kind. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S19-help-per-kind-newer-five.md (Part 2 to 6) first. The kit part (fadeByKind in shared/kit/help.ts) must already be merged; if not, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. New migration (numbered after the latest in supabase/migrations/) robin_kind_levels: add column kind_levels jsonb not null default '{}' (object check) to robin_progress; recreate robin_load to return kindLevels; drop and recreate robin_finish with an extra kind_levels parameter (keep the slips parameter) and repeat the revoke and grant from the original migration.\n2. shared/robin/server.ts: on the day's first finish compute fadeByKind from the round's goes (Robin's own placeAfter is at shared/robin/progress.ts:46) and save it.\n3. shared/robin/round.ts: makeRound takes kindLevels and sets each go's l from its kind; the guided first go stays at the top level.\n4. Pass kindLevels through src/games/robin/backend.ts and the preview backend.\nTests (about two): a hard kind keeps its level while another fades; a kind missing from the map starts at the whole-child level. Run typecheck and the Robin tests. Check two days in the preview.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S20",
+   "kind": "review",
+   "title": "Review Kingfisher's Dairy once it is live",
+   "games": [
+    "Kingfisher's Dairy"
+   ],
+   "effort": "S to M",
+   "impact": "Med",
+   "wrong": "Kingfisher's Dairy has not been scored by the blind review like the other games.",
+   "done": "It has a blind score, a row on the review page and a fix card for each real problem.",
+   "why": "The newest game gets the same check as the rest before more children use it.",
+   "plan": "docs/plans/maths-review-2/S20-review-kingfishers-dairy.md",
+   "waits": [],
+   "group": "newer",
+   "prompt": "You are running card S20 of the second Foundational maths review for the Games Hub: the blind review of Kingfisher's Dairy, which must be live first.\n\nCreate your own branch from origin/main, named review-kingfishers-dairy. Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S20-review-kingfishers-dairy.md first. If Kingfisher's Dairy is not live yet, stop and tell James. Reply to James in plain, simple words.\n\nSteps:\n1. Start a helper to play and score the game blind, following docs/reviews/maths-review-2/EVAL-TASK.md exactly. Tell it not to read the game's plan, docs/plans/maths-review/new-games/IDEAS.md, or any other game's evaluation.\n2. Start a second blind helper to calibrate the score against the rubric in docs/reviews/maths-review/research-design.md and the twelve scores in docs/reviews/maths-review-2/DECISIONS.md.\n3. Write the evaluation to docs/reviews/maths-review-2/games/kingfishers-dairy.md and add a row for the game to docs/reviews/fundamental-maths-review-2.md.\n4. For each real problem found, write a fix card plan in docs/plans/maths-review-2/ using docs/reviews/maths-review-2/PLAN-TEMPLATE.md, with a JSON entry.\nThis card changes no game code and adds no migration. Check that the score uses the same scale as the others and each problem cites what was seen in play.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S21",
+   "kind": "fix",
+   "title": "Beanstalk: the next sum follows the child, not the calendar",
+   "games": [
+    "Beanstalk"
+   ],
+   "effort": "L",
+   "impact": "Very high",
+   "wrong": "The sum (10, 20, 100, 1000) is set by Golden Eggs, so a child who is not secure moves on after 30 days and a fast child waits. Pairs are one sum only and the weakest do not come up more.",
+   "done": "A child stays on a sum until two good days and the facts are secure, steps back after two hard days, and gets about 2 older pairs in 10 with the weakest pairs most often.",
+   "why": "Help and level follow the child, not the calendar; old facts are mixed in.",
+   "plan": "docs/plans/maths-review-2/S21-beanstalk-follows-the-child.md",
+   "waits": [],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Stage state and server",
+     "text": "Branch: create beanstalk-follows-child from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S21-beanstalk-follows-the-child.md first.\nDo the \"Stage state (saved)\" and \"Server\" sections of the plan: new saved stage, good_days and hard_days; move up after two good days with the sum secure, step back after two hard days; the round stored at start; a facts service in entry.ts and memoryServices; the new migration (next free number, new arguments last with a null default). Egg stays calendar only. Never touch shared/maths, src/maths, src/styles.css or src/components.\nRun npm run build:functions. Write tests 1, 2, 3, 5 and 6 from the plan (at most 8 tests for the game). Run the tests.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "The round and the browser",
+     "text": "Branch: continue on beanstalk-follows-child (Part 1 must be merged or on the branch).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S21-beanstalk-follows-the-child.md first.\nDo \"The round\" and \"Browser\" in the plan: weighted pairs, about 2 older pairs last in a second tray with a per-pair target, the badge and voice line change, the finish line when the stage moves, and the teacher about text. Add test 4 from the plan. Check the preview by playing it. Run npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S22",
+   "kind": "fix",
+   "title": "Beanstalk: missing-leaf goes are fair",
+   "games": [
+    "Beanstalk"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "On missing-leaf goes a wrong pair is blocked from a second try, and a go can float only two choices.",
+   "done": "Missing-leaf goes always float at least 3 leaves, a wrong pair can be tried again, and the first one is shown with a pointing hand.",
+   "why": "Guessing must not work, and a mistake should be free to retry; show the first time a new kind appears.",
+   "plan": "docs/plans/maths-review-2/S22-beanstalk-missing-leaf-fair.md",
+   "waits": [
+    "S11"
+   ],
+   "group": "older",
+   "prompt": "Branch: create beanstalk-missing-leaf-fair from origin/main (own worktree). S11 must be merged first (or use the fallback in the plan).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S22-beanstalk-missing-leaf-fair.md first.\nSteps: change MISSING_GOES to [2, 4, 6] in shared/beanstalk/round.ts; stop blocking tried pairs on missing-leaf goes in src/games/beanstalk/Round.tsx (keep it on ordinary goes and keep the look-together); add the first-time demo for the first missing-leaf go with the kit part from S11 (or useGuidedFirstGo, PointingHand and FirstTimeTip). If S21 is on main, build on it. Never touch shared/maths, src/maths, src/styles.css or src/components.\nTests: the 3 tests in the plan (at most 8 for the game). Run npm run build:functions if shared/beanstalk changed. Check the preview.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S23",
+   "kind": "fix",
+   "title": "Teacher view catches up with the longer ladders",
+   "games": [
+    "Hop",
+    "Penguin Pairs",
+    "Beanstalk"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "Hop steps 3, 4 and 200 and Penguin Pairs level 5 have no name in the teacher view, and 'top' is wrong for both.",
+   "done": "Every reachable level has a name, 'top' is the real top, a test fails when a level is added without a name, and Beanstalk shows its sum.",
+   "why": "The teacher needs honest, readable evidence of where each child is.",
+   "plan": "docs/plans/maths-review-2/S23-teacher-view-longer-ladders.md",
+   "waits": [],
+   "group": "older",
+   "prompt": "Branch: create teacher-longer-ladders from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S23-teacher-view-longer-ladders.md first.\nSteps: in src/teacher/foundational/config.ts add the Hop names for steps 3, 4 and 200 with top 200, and the Penguin Pairs name for level 5 with top 5; add the test that every reachable level has a name (compare with HOP_STEPS in shared/hop/round.ts and LEVELS in shared/korora/round.ts); check alerts.ts wording. Only if S21 is merged: send the Beanstalk stage as level in a new migration (next free number) and add its names. Never touch shared/maths, src/maths, src/styles.css or src/components.\nTests: the 2 tests in the plan. Check the teacher view by playing the preview.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S24",
+   "kind": "fix",
+   "title": "Same-day replays must not move the level",
+   "games": [
+    "Pipi",
+    "Penguin Pairs",
+    "Hop"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "The level is worked out again on every finish, so a practice replay can push a child up or change tomorrow's round.",
+   "done": "The level changes only at the day's first finish; replays still save answers but do not move the level.",
+   "why": "Practice replays must not move the level.",
+   "plan": "docs/plans/maths-review-2/S24-replays-do-not-move-the-level.md",
+   "waits": [],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Hop",
+     "text": "Branch: create hop-replay-level from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S24-replays-do-not-move-the-level.md first.\nSteps: in shared/hop/server.ts only change reached when finishChallenge gives padChanged not null (the first finish of the day); otherwise keep s.reached. Add an opts.step to makeRound in shared/hop/round.ts used as is when given, and pass the saved value from load and start. Replays still save their answers.\nTests: a replay with all right does not move reached; the first finish does. Run npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pipi",
+     "text": "Branch: create pipi-replay-level from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S24-replays-do-not-move-the-level.md first.\nSteps: in shared/pipi/server.ts only change reached when finishChallenge gives shellChanged not null; otherwise keep s.reached. Add an opts.level to makeRound in shared/pipi/round.ts used as is when given, and pass the saved value from load and start.\nTests: a replay with all right does not move reached; the first finish does. Run npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Penguin Pairs",
+     "text": "Branch: create korora-replay-level from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S24-replays-do-not-move-the-level.md first.\nSteps: in shared/korora/server.ts only change reached when finishChallenge gives pebbleChanged not null; otherwise keep s.reached. Add an opts.level to makeRound in shared/korora/round.ts used as is when given, and pass the saved value from load and start.\nTests: a replay with all right does not move reached; the first finish does. Run npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S25",
+   "kind": "fix",
+   "title": "Full help ends sooner for a child who already knows it",
+   "games": [
+    "Hop",
+    "Penguin Pairs",
+    "Pipi",
+    "Weka",
+    "Tūī"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "A fact keeps full help until it is right on two different days, and Tūī's level floor cancels the fade so a perfect child stays on level 4 for about 8 days.",
+   "done": "Two quick rights, even on one day, end full help for that fact; a wrong answer brings it back; a perfect Tūī round starts the fade.",
+   "why": "Help follows the child: fade on right-and-quick, return on struggle.",
+   "plan": "docs/plans/maths-review-2/S25-full-help-ends-sooner.md",
+   "waits": [
+    "S14"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Kit",
+     "text": "Branch: create kit-help-early-exit from origin/main (own worktree). S14 must be merged first.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S25-full-help-ends-sooner.md first.\nSteps: in shared/kit/help.ts extend helpForFact so a rung is left early when (box >= 2 and quickDays >= 1) or (attempts equals correct and quickDays >= 1); add attempts to its stats type; add tests to shared/kit/kit.test.ts. No game words in the kit.\nRun npm run build:functions in the same PR.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "The four ladder games",
+     "text": "Branch: create help-fades-sooner from origin/main (own worktree). Part 1 must be merged first.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S25-full-help-ends-sooner.md first.\nSteps: in Hop (shared/hop/round.ts), Penguin Pairs (shared/korora/round.ts), Pipi (shared/pipi/round.ts) and Weka (shared/weka/round.ts) change the first rung of HELP_LADDER from quickDays 2 to quickDays 1. Add one test per game. Do not edit shared/kit here.\nRun npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī",
+     "text": "Branch: create tui-fade-sooner from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S25-full-help-ends-sooner.md first.\nSteps: in shared/tui/round.ts placeAfter (line 117) do not floor the level when the help just faded; count a 10 out of 10 round as two good rounds for the fade. Replays must not count (see S24). Add a test.\nRun npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S26",
+   "kind": "fix",
+   "title": "Penguin Pairs: the child shares the fish, and the near double is true",
+   "games": [
+    "Penguin Pairs"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "At full help the half goes share the fish by themselves, and the near-double picture draws its extra fish inside the reflection.",
+   "done": "The child deals the fish at every help level, and the near double is a true mirror of n plus one separate fish.",
+   "why": "The maths is the move, and pictures must be true.",
+   "plan": "docs/plans/maths-review-2/S26-penguin-pairs-child-deals-fish.md",
+   "waits": [],
+   "group": "older",
+   "prompt": "Branch: create korora-child-deals from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S26-penguin-pairs-child-deals-fish.md first.\nSteps: in src/games/korora/Goes.tsx remove the auto shareAll at line 157 (keep the one in Let's look together); make a tap give a pair of fish like FairPile, pulse the next nest, keep choices locked until all dealt, and restart the answer clock when they unlock; redraw the near double as a true mirror of n plus one separate fish outside the water; update the screen reader label, WhyPicture.tsx and the voice line. Never touch shared/maths, src/maths, src/styles.css or src/components.\nTests: the 3 tests in the plan (at most 8 for the game). Check the preview by playing.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S27",
+   "kind": "fix",
+   "title": "Pipi: outlines do not give the answer, levels mix older sums, wrong shells tidy up",
+   "games": [
+    "Pipi"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "Full and faint help show one outline per hidden pipi, so counting outlines is the answer. Levels never revisit older sums. Wrong shells stay greyed in the row.",
+   "done": "Outlines appear only after a first wrong try, about 2 goes in 10 are from earlier levels, and a wrong shell leaves once its reason is shown.",
+   "why": "Help must not give the answer; mix old facts; mistakes teach then get out of the way.",
+   "plan": "docs/plans/maths-review-2/S27-pipi-outlines-review-tidy.md",
+   "waits": [],
+   "group": "older",
+   "prompt": "Branch: create pipi-outlines-review from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S27-pipi-outlines-review-tidy.md first.\nSteps: (1) in src/games/pipi/Goes.tsx show the dashed outlines only after the first wrong shell on a go, or when the struggle boost is on; (2) in shared/pipi/round.ts add REVIEW_GOES = 2 so about 2 goes in 10 come from earlier levels (weakest first, none at level 1, never the first go, keep the edge and guided rules); (3) take a wrong shell out of the row after its why line, never the answer. Never touch shared/maths, src/maths, src/styles.css or src/components.\nRun npm run build:functions. Tests: the 4 tests in the plan (at most 8 for the game). Check the preview by playing.\nStop and tell James before any live step. Open a PR when done."
+  },
+  {
+   "id": "S28",
+   "kind": "fix",
+   "title": "Quick looks: hear the question, get a second try, drop the 4 second struggle rule",
+   "games": [
+    "Quick looks"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "The question is read only if a child turns the voice on, a wrong answer shows the answer at once with no second try, and thinking over 4 seconds counts as struggling.",
+   "done": "Young children hear the question by default, a wrong first answer brings the picture back for one more try, and only two wrong in a row count as struggling.",
+   "why": "Voice first, mistakes teach, and fair timing.",
+   "plan": "docs/plans/maths-review-2/S28-quick-looks-hear-retry-struggle.md",
+   "waits": [],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Read-aloud default (shared file)",
+     "text": "Branch: create speech-default-on-option from origin/main (own worktree).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S28-quick-looks-hear-retry-struggle.md first.\nSteps: in src/speech.ts let useReadAloud take an optional { defaultOn } used only when nothing is saved; the saved choice always wins; no game words. Add one test. Every other game must keep the current default (off).\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Quick looks",
+     "text": "Branch: create quick-looks-hear-retry from origin/main (own worktree). Part 1 must be merged first.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S28-quick-looks-hear-retry-struggle.md first.\nSteps: call useReadAloud({ defaultOn: true }) in src/subitising/SubitisingApp.tsx; start the thinking clock after the spoken question ends; add one second try after a wrong first answer (only the first tap is saved, the second moves no stage); drop the 4 second rule from isStruggling in shared/subitising/engine.ts and the struggleThinkingMs setting in config.ts, keep two wrong in a row; add any new voice line and clip name. If S29 is on main, build on it (both edit FlashRunner.tsx). Never touch shared/maths, src/maths, src/styles.css or src/components.\nRun npm run build:functions if shared/subitising changed. Tests: the 4 tests in the plan. Check the preview by playing.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S29",
+   "kind": "fix",
+   "title": "Quick looks: placement and small fixes",
+   "games": [
+    "Quick looks"
+   ],
+   "effort": "M",
+   "impact": "Med",
+   "wrong": "The starting check tests each stage with only two pictures, so one slip or one lucky tap decides a stage. Guided mode (picture kept on) never grows the garden. The screen reader says \"1 counters\". A review picture in the Empty squares stage has no sign the question changed.",
+   "done": "The check uses 3 pictures per stage and a 4th only when exactly 2 of 3 are right, so 3 of 4 passes. Plants grow a little in guided mode but never reach In flower. The label says \"1 counter and 4 empty squares\". Review pictures start with \"A look back.\"",
+   "why": "Learning design rule 6 says move a child up on mastery, not one lucky answer, and Quick looks' check is the named example. Children who need the picture kept on should still see growth. Screen-reader children need a correct sentence.",
+   "plan": "docs/plans/maths-review-2/S29-quick-looks-placement-and-fixes.md",
+   "waits": [],
+   "group": "older",
+   "prompt": "You are fixing Quick looks (the dot-flash activity inside Training) in the School Games Hub repo (/Users/jriley/games-hub-trader-captains or a fresh worktree).\nCreate branch fix/quick-looks-placement from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 2, 6 and 10) and docs/plans/maths-review-2/S29-quick-looks-placement-and-fixes.md first, then docs/reviews/maths-review-2/games/quick-looks.md.\n\nGoal: a fairer starting check, plants that grow in guided mode, a proper screen-reader label and a review heading.\nSteps:\n1. Starting check (plan 3a): in shared/subitising/placement.ts add testOutcome (3 pictures; 3 right passes; 0 or 1 right fails; exactly 2 right shows a 4th, which decides), rewrite searchFrom and placementTrial for tests of 3 or 4 pictures with no repeated key and no same type twice in a row, add placementOver, remove PLACEMENT_PER_TEST and placementTrials from config.ts (maximum 12 pictures). In src/subitising/FlashRunner.tsx add the optional over() prop and hide the progress dots in the check; in SubitisingApp.tsx pass total 12 and over.\n2. Garden (plan 3b): in shared/subitising/engine.ts count right helped answers per stage (helpedRight), change growth to min(3, floor((2*right + helpedRight)/8)); finished stays 4. Change the guidedSummary line in voiceLines.ts.\n3. Label (plan 3c): export gapWords from voiceLines.ts, use it in gapFeedback and in the label at FlashRunner.tsx:200.\n4. Review heading (plan 3d): add reviewFlash, reviewGuided, reviewGap to PROMPTS and a questionPrompt function in FlashRunner.tsx used for the heading and the read-aloud.\n5. Tests as in plan section 6: edit the existing placement, garden, check and guided-round tests and add at most 3 new. Do not add more.\n6. Voice (plan 3e): run WRITE_VOICE_LINES=1 npx vitest run src/subitising/voiceLines.test.ts. The clips need James's Mac (Kokoro): stop and ask James to run ~/kokoro/.venv/bin/python -I scripts/voice-clips.py quick-looks, then commit the 4 new clips and delete the old guidedSummary clip. Do not merge before the clips are in.\n7. Run npm run build:functions -- training in the same PR (config.ts is in the Training bundle), then npm test, npx tsc --noEmit and lint.\n8. Play the preview as in plan section 6.\nDo not touch shared/maths, src/maths, src/styles.css, src/components or any kit file. Do not change the saved keys, shared/training or the database.\nStop and tell James before any live step (the rebuilt training function goes live on merge; do it outside school hours). Open a PR when done."
+  },
+  {
+   "id": "S30",
+   "kind": "fix",
+   "title": "Hear the question again",
+   "games": [
+    "Hop",
+    "Pipi",
+    "Tūī"
+   ],
+   "effort": "S",
+   "impact": "High",
+   "wrong": "Hop and Pipi have no \"Hear it again\" button. Tūī drops the voice for the numbers at its lowest help levels, so a child who cannot read the numbers hears only \"How many?\".",
+   "done": "Hop and Pipi show a Hear it again button that says the question or the why-line again. Tūī says the full sum or story at every help level, and its button says it too. No new voice recordings are needed.",
+   "why": "Learning design rule 2 (voice first, Hear it again always visible) and rule 5 (help fades pictures, not the voice for children who cannot read yet).",
+   "plan": "docs/plans/maths-review-2/S30-hear-the-question-again.md",
+   "waits": [],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Hop and Pipi get \"Hear it again\"",
+     "text": "You are adding a \"Hear it again\" button to Hop and Pipi in the School Games Hub repo (/Users/jriley/games-hub-trader-captains or a fresh worktree).\nCreate branch fix/hop-pipi-hear-again from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 2, 5 and 8) and docs/plans/maths-review-2/S30-hear-the-question-again.md (Part 1) first. Read src/kit/HearAgain.tsx and src/games/lizard/Goes.tsx:293 and src/games/weka/Goes.tsx:454 for the pattern.\n\nSteps:\n1. Add hearAgain: 'Hear it again' to src/games/hop/words.ts and src/games/pipi/words.ts.\n2. Hop: in src/games/hop/Hops.tsx add <HearAgain prefix=\"hp\" label={WORDS.hearAgain} onHear={...}/> inside .hp-top next to the progress dots. onHear: nothing while the look-together step is on; say the why-line if a why shows; otherwise say hopLine(hop.spoken, false) and restart the answer clock after the voice if the child has not tapped.\n3. Pipi: in src/games/pipi/Goes.tsx add the same button with prefix \"pp\" beside the progress dots (add a small .pp-top row in pipi.css). onHear: nothing while look-together; the why-line if a why shows; otherwise say go.spoken, then restart the answer clock if the child has not tapped.\n4. No new voice clips are needed (all lines are already in allVoiceLines). Do not change voiceLines.ts in either game.\n5. Tests: add at most one test per game (click the button and check say was called with the question): hopGuide.test.tsx or hopMistakes.test.tsx, and Goes.test.tsx in pipi. Do not add more.\n6. Run npm test, npx tsc --noEmit and lint. Play both games in the preview at phone width: the button shows with voice on, does not cover Home or Voice, is silent with voice off.\nDo not touch src/kit, shared/maths, src/maths, src/styles.css or src/components. No migrations or function changes (so no npm run build:functions).\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī says the numbers at every level",
+     "text": "You are fixing Tūī's Ten Tree so the voice says the numbers at every help level, in the School Games Hub repo (/Users/jriley/games-hub-trader-captains or a fresh worktree).\nCreate branch fix/tui-voice-numbers from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 2 and 5) and docs/plans/maths-review-2/S30-hear-the-question-again.md (Part 2) first.\n\nSteps:\n1. In src/games/tui/voiceLines.ts change askLine to: go.l >= 5 ? storyLine(go) : sumLine(go). Delete shortLine and its line in allVoiceLines. Fix the header comment (lines 6-8).\n2. Optional: replace the hand-made button at src/games/tui/Goes.tsx:202 with the kit <HearAgain prefix=\"tui\" .../> only if it looks the same.\n3. Delete the three orphan clips public/voice/tui/how-many.mp3, how-many-more.mp3 and how-many-are-left.mp3. Rewrite the list with WRITE_VOICE_LINES=1 npx vitest run src/games/tui/voiceLines.test.ts. No new clips are needed, so no Kokoro run.\n4. Update the voice-fade paragraph in docs/TUI-PLAN.md (lines 126-128).\n5. Test: add at most one unit test that askLine at level 0 includes the number. Do not add more.\n6. Run npm test, npx tsc --noEmit and lint. Play Tūī with help Off: the voice says the sum and Hear it again says it too.\nDo not touch src/kit, shared/maths, src/maths, src/styles.css or src/components. No migrations or function changes.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S31",
+   "kind": "fix",
+   "title": "Older games: Show me first for each new kind",
+   "games": [
+    "weka",
+    "hop",
+    "pipi",
+    "korora",
+    "tui",
+    "beanstalk",
+    "subitising"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "New question kinds (hop back, count back, from 3, altogether, two tides, halves, near doubles, fair or not, ways, empty squares) appear with no demo.",
+   "done": "The first time a child meets each new kind, a demo or guided go shows it. The server remembers it was seen.",
+   "why": "LEARNING-DESIGN rule 4: help arrives by itself the first time a new kind appears.",
+   "plan": "docs/plans/maths-review-2/S31-show-me-first-older-games.md",
+   "waits": [
+    "S11",
+    "S12"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Weka",
+     "text": "Create branch s31-weka-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Weka).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add the seen kinds `weka:back` and `weka:turn`. 2. Find the first unseen go and force full help with the guided hand. 3. Mark seen on finish. 4. Add the words.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Hop",
+     "text": "Create branch s31-hop-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Hop).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add seen kinds for back and offset. 2. Find the first unseen go and force full help. 3. Demo says Hop starts at the number said. 4. Mark seen on finish.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pipi",
+     "text": "Create branch s31-pipi-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Pipi).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add seen kinds altogether and twoTides. 2. Demo on the first unseen go with the spotsFor picture. 3. Mark seen on finish.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Penguin Pairs",
+     "text": "Create branch s31-penguin-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Penguin Pairs).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add seen kinds half, near and fair. 2. Demo on the first unseen go (halves use the shared pile). 3. Mark seen on finish.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī",
+     "text": "Create branch s31-tui-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Tūī).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add one seen kind per way. 2. Demo with the frames on the first go of a new way. 3. Mark seen on finish.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Beanstalk",
+     "text": "Create branch s31-beanstalk-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Beanstalk).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n0. Check S22 first. If it already has a missing-leaf demo, stop and tell James. 1. Add the seen kind `beanstalk:missing`. 2. Demo on go 4 of the first round. 3. Mark seen on finish.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Quick looks",
+     "text": "Create branch s31-quick-looks-show-me-first from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S31-show-me-first-older-games.md (Part for Quick looks).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Add a 'demoGap' screen. 2. Show it at stage 6 or 7 when no saved answer has a gap key. 3. Add the voice clip. 4. No saved-settings change.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S32",
+   "kind": "fix",
+   "title": "Older games: Now you try asks a sister question",
+   "games": [
+    "weka",
+    "tui",
+    "hop",
+    "korora",
+    "pipi",
+    "beanstalk"
+   ],
+   "effort": "M",
+   "impact": "High",
+   "wrong": "Now you try asks the same question again, so the child can copy the answer. Tūī praises a redo like a first try.",
+   "done": "Now you try asks a sister question with different numbers. Tūī gives a plain line for a redo.",
+   "why": "LEARNING-DESIGN rule 7: after show-why the child must work it out, not copy.",
+   "plan": "docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md",
+   "waits": [
+    "S16"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Weka",
+     "text": "Create branch s32-weka-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Weka).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Write sisterOf in shared/weka/round.ts. 2. Use it in lookTogether. 3. Follow S16 for the redo tap.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī",
+     "text": "Create branch s32-tui-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Tūī).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Write sisterOf (different n, same way). 2. Use it in the redo. 3. Add WORDS.rightRedo and use it when redo is true. 4. Follow S16 for the redo tap.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Hop",
+     "text": "Create branch s32-hop-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Hop).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Write sisterOf (different key, same step and direction). 2. Use it in the redo instead of worms reshuffling. 3. Follow S16.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Penguin Pairs",
+     "text": "Create branch s32-penguin-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Penguin Pairs).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Write sisterOf (neighbouring n, same kind). 2. Use it in the redo. 3. Follow S16.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pipi",
+     "text": "Create branch s32-pipi-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Pipi).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Write sisterOf (different split). 2. Use it in the redo. 3. Follow S16.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Beanstalk",
+     "text": "Create branch s32-beanstalk-sister-question from origin/main.\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md (Part for Beanstalk).\nDo not touch shared/maths, src/maths, src/styles.css or src/components from this branch.\nSteps:\n1. Pick a different on-screen leaf with a partner as the anchor. 2. Use it in the redo and nowTry. 3. Follow S16.\nTests:\nWrite the tests listed in section 6 of the plan (no more than 8). Run npm test, npm run build and npm run build:functions.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S33",
+   "kind": "fix",
+   "title": "Honest finish words and praise about the strategy, older games",
+   "games": [
+    "Hop",
+    "Weka",
+    "Penguin Pairs",
+    "Pipi",
+    "Tūī",
+    "Beanstalk"
+   ],
+   "effort": "M",
+   "impact": "Med",
+   "wrong": "The finish screen says \"Well done!\" however the day went, even after 9 wrong of 10, and level-up lines praise ability. Pipi never says what is next.",
+   "done": "Finish words change with how many goes were right first time (strong, middle, tricky), level-up lines praise practice, the reward is still paid, and Pipi points on to Kiwi's Beanstalk.",
+   "why": "LEARNING-DESIGN rule 7: praise the strategy, not cleverness, and be honest, while the day still counts for young children.",
+   "plan": "docs/plans/maths-review-2/S33-honest-finish-words-older-games.md",
+   "waits": [
+    "S15"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "the kit part (finish bands)",
+     "text": "Create a branch from origin/main called kit-finish-band (own small kit branch and PR; use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 7) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md. First check whether S15 (docs/plans/maths-review-2/S15-*.md) has already merged a finish-band function in shared/kit; if it has, stop and tell James.\nSteps: 1) add shared/kit/finishBand.ts with type FinishBand = 'strong' | 'middle' | 'tricky' and finishBand(firstRight: number | undefined) built on ROUND_OF_TEN in shared/kit/help.ts (strong 8 to 10, middle 5 to 7, tricky 0 to 4, missing gives middle). No game words in it. 2) add one test in shared/kit/kit.test.ts. 3) run npm run build:functions and check no function bundle changed unexpectedly. 4) run npx vitest run shared/kit and npm run build.\nTests: one test for the three bands and the missing case.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Hop",
+     "text": "Create a branch from origin/main called finish-words-hop (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.1 to 3.4 and the Hop column). Do not touch shared/maths, src/maths, src/styles.css or src/components. The kit file shared/kit/finishBand.ts must already be merged (S33 Part 1 or S15); if not, stop and tell James.\nSteps: 1) in shared/hop/play.ts count firstRight (goes right at the first tap) beside mistakes; return it from the finish reply in shared/hop/server.ts; add firstRight to HopFinish in src/games/hop/backend.ts. 2) in src/games/hop/words.ts replace padTurned and doneToday with band openings plus tails (no \"Well done\"), add the tricky chip line, and change stepUp to \"Your counting practice is paying off. Next time we count in {step}.\" 3) in HopGame.tsx build the title and chip from finishBand(result.firstRight); prize days keep the jar title and put the band line in the chip; keep the signpost. 4) update voiceLines.ts allVoiceLines for every new combination, run WRITE_VOICE_LINES=1 npx vitest run src/games/hop/voiceLines.test.ts, delete the old clips and make the new ones with scripts/voice-clips.py hop on James's Mac (ask James to run it if you cannot). 5) npm run build:functions -- hop.\nTests (inside the 8-per-game limit): the reply carries the right firstRight for a known mix of taps; the finish screen shows the strong words for 10, the tricky words and chip for 3, and never \"Well done\". Check by playing the preview that the pad still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Weka",
+     "text": "Create a branch from origin/main called finish-words-weka (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.1 to 3.4 and the Weka column). Do not touch shared/maths, src/maths, src/styles.css or src/components. shared/kit/finishBand.ts must already be merged; if not, stop and tell James.\nSteps: 1) return firstRight: played.firstRight from the finish reply in shared/weka/server.ts (the kit replay already counts it); add it to WekaFinish in src/games/weka/backend.ts. 2) in src/games/weka/words.ts replace stoneTurned and doneToday with band openings plus tails (no \"Well done\"), add the tricky chip line (\"The tricky ones will come back with more help.\"), and change levelUp to \"Making ten first is paying off. Next time: {level words, lower case}.\" 3) in WekaGame.tsx build the title and chip from finishBand(result.firstRight); the Golden Picnic Basket day keeps its title and shows the band line in the chip. 4) update voiceLines.ts finishLine and allVoiceLines (it loops mains by level-ups, around line 84), rewrite lines.json with WRITE_VOICE_LINES=1, delete old clips, make new clips with scripts/voice-clips.py weka on James's Mac. 5) npm run build:functions -- weka.\nTests: the reply carries firstRight for a tap-all round (3 of 10) and a clean round (10); the finish screen shows strong and tricky words and never \"Well done\". Check by playing the preview that the stone still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Penguin Pairs",
+     "text": "Create a branch from origin/main called finish-words-korora (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.1 to 3.4 and the Penguin Pairs column). Do not touch shared/maths, src/maths, src/styles.css or src/components. shared/kit/finishBand.ts must already be merged; if not, stop and tell James.\nSteps: 1) in shared/korora/play.ts count firstRight (goes right at the first tap, not once per fact) beside mistakes; return it from the finish reply at shared/korora/server.ts (the line that returns level, levelBefore and topSecure); add firstRight to KororaFinish in src/games/korora/backend.ts. 2) in src/games/korora/words.ts replace pebbleTurned and doneToday with band openings plus tails (no \"Well done\"), add the tricky chip line, and change levelUp to \"Your practice is paying off. Next time: {level words, lower case}.\" 3) in KororaGame.tsx build the title and chip from finishBand(result.firstRight); the shoes and golden-fish days keep their titles and show the band line in the chip; keep the Weka card. 4) update voiceLines.ts, rewrite lines.json with WRITE_VOICE_LINES=1, delete old clips, make new clips with scripts/voice-clips.py korora on James's Mac. 5) npm run build:functions -- korora.\nTests: the reply carries firstRight for a tap-all round (3 of 10) and a clean round (10); the finish screen shows strong and tricky words and never \"Well done\". Check by playing the preview that the stone still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pipi (words and what's next)",
+     "text": "Create a branch from origin/main called finish-words-pipi (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 6, 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.1 to 3.4 and the Pipi column). Do not touch shared/maths, src/maths, src/styles.css or src/components. shared/kit/finishBand.ts must already be merged; if not, stop and tell James.\nSteps: 1) in shared/pipi/play.ts count firstRight beside mistakes; in shared/pipi/round.ts add topSecure(stats) = levelShare(stats, 3) >= STEP_SECURE_SHARE (as shared/korora/round.ts:83 does); return both from the finish reply in shared/pipi/server.ts (use withAnswers(facts, answers)); add them to PipiFinish in src/games/pipi/backend.ts. 2) in src/games/pipi/words.ts replace shellTurned and doneToday with band openings plus tails (no \"Well done\"), add the tricky chip line, change levelUp to \"Your practice is paying off. Next time the pipi families are {level words}.\", and add whatsNext \"You know your pairs to ten. Try Kiwi's Beanstalk.\" and the button words \"Try Kiwi's Beanstalk\". 3) in PipiGame.tsx replace the hand-made panel (lines 196 to 226) with the kit's WhatsNext (src/kit/WhatsNext.tsx, prefix \"pp\"), copying the card pattern in TuiGame.tsx (fetchBeanstalkEnabled from src/games/beanstalk/switch.ts; the card shows only when level 3 is secure, the child did not just level up and Beanstalk is on); PipiPlay.tsx passes onOpenBeanstalk={() => navigate('/beanstalk')}. The Golden Pearl day keeps its title and shows the band line in the chip. 4) update voiceLines.ts, rewrite lines.json with WRITE_VOICE_LINES=1, delete old clips, make new clips with scripts/voice-clips.py pipi on James's Mac. 5) npm run build:functions -- pipi.\nTests: the reply carries firstRight; the finish screen shows strong and tricky words and never \"Well done\"; the Beanstalk card shows only when level 3 is secure and Beanstalk is on. Check by playing the preview that the shell still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī",
+     "text": "Create a branch from origin/main called finish-words-tui (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.2 to 3.4 and the Tūī column). Do not touch shared/maths, src/maths, src/styles.css or src/components. shared/kit/finishBand.ts must already be merged; if not, stop and tell James.\nSteps: 1) no server change: the finish reply already has firstRight (shared/tui/server.ts:166, TuiFinish in src/games/tui/backend.ts). 2) in src/games/tui/words.ts replace flowerTurned and doneToday with band openings plus tails (no \"Well done\"), add the tricky chip line \"Tricky ones are good practice. We will try again tomorrow.\" (Tūī moves help for the child on the first finish of a day only), and change nextStep to \"Your practice is paying off. Next time: {step name, lower case}\". 3) in TuiGame.tsx build the title and chip from finishBand(result.firstRight); the Golden Nest day keeps its title and shows the band line in the chip; keep the Weka card. 4) update voiceLines.ts finishLine and allVoiceLines, rewrite lines.json with WRITE_VOICE_LINES=1, delete old clips, make new clips with scripts/voice-clips.py tui on James's Mac. Update src/games/tui/finishCard.test.tsx if it reads the old words.\nTests: the finish screen shows strong and tricky words and never \"Well done\"; the Weka card still shows when the top step is secure. Check by playing the preview that the flower still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Beanstalk",
+     "text": "Create a branch from origin/main called finish-words-beanstalk (use a worktree). Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 7 and 10) and docs/plans/maths-review-2/S33-honest-finish-words-older-games.md (sections 3.1 to 3.4 and the Beanstalk column). Do not touch shared/maths, src/maths, src/styles.css or src/components. shared/kit/finishBand.ts must already be merged; if not, stop and tell James.\nSteps: 1) in shared/beanstalk/server.ts return firstRight (the count already worked out at line 165 for the dots: played.answers.filter((a) => a.correct).length) in the finish reply; add firstRight to FinishResult in src/games/beanstalk/backend.ts. 2) in src/games/beanstalk/words.ts replace leafTurned and doneToday with band openings plus tails (no \"Well done\"; keep the sentence \"You can play as much as you like, but only one leaf will change a day.\"), and add the tricky chip line \"Tricky ones are good practice. We will try again tomorrow.\" 3) in BeanstalkGame.tsx build the title and chip from finishBand(result.firstRight); the Golden Egg day keeps its title and shows the band line in the chip; keep the Weka card. 4) update voiceLines.ts, rewrite lines.json with WRITE_VOICE_LINES=1, delete old clips, make new clips with scripts/voice-clips.py beanstalk on James's Mac. 5) npm run build:functions -- beanstalk. Update src/games/beanstalk/ladder.test.tsx:75, which looks for the heading \"Well done\".\nTests: the reply carries firstRight; the finish screen shows strong and tricky words and never \"Well done\". Check by playing the preview that the leaf still turns after a tricky day.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S34",
+   "kind": "fix",
+   "title": "Save and show the kind of mistake (rule 9)",
+   "games": [
+    "Beanstalk",
+    "Hop",
+    "Penguin Pairs",
+    "Pipi",
+    "Tūī",
+    "Weka",
+    "Quick looks",
+    "Pigeon",
+    "Parrot",
+    "Lizard",
+    "Swamp Hen",
+    "Robin"
+   ],
+   "effort": "M",
+   "impact": "Med to High",
+   "wrong": "Games know the kind of wrong answer but most never save it and no teacher page shows it. Beanstalk files all bonds to 100 under one key.",
+   "done": "Every game's pupil page shows the child's usual slip in plain words once there is enough evidence, and Beanstalk keeps one key per pair with old keys still working.",
+   "why": "LEARNING-DESIGN rule 9: record the kind of wrong choice and show it to the teacher so they know what to teach.",
+   "plan": "docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md",
+   "waits": [
+    "S17"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Kit slip helper and Beanstalk keys",
+     "text": "Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md.\nMake a branch from origin/main called s34-kit-slips.\n1. Add shared/kit/slips.ts with slipsOf(goes, taps) and topSlip(slips, min), plus tests. No game words in the kit.\n2. Make shared/robin/play.ts and shared/parrot/play.ts call it. Keep their tests passing.\n3. Run the kit and Robin and Parrot tests and npm run build.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Part 1b: Beanstalk keys for each pair",
+     "text": "Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md and docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md (Part 1b).\nSTOP FIRST and ask James whether you may change shared/maths for the Beanstalk per-pair keys. Do nothing else until James says yes.\nMake a branch from origin/main called s34-beanstalk-pair-keys.\n1. Teach packIdOfKey and the skill map that bond100:<n>+<n> and bond1000:<n>+<n> belong to the same skill as bond100:tens and bond1000:hundreds. Old keys keep counting.\n2. Change bondKey in shared/beanstalk/round.ts to give one key per pair, with the old key as a fallback in factKeys and signpost.ts.\n3. Add tests: new key, old-key fallback, ladder and generated-pack mapping, gem-keep save. Do the read-only SQL check that no old row changes.\n4. Run npm run build:functions -- beanstalk, the tests and npm run build.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "The six older games save and show the slip",
+     "text": "Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md. Part 1 (shared/kit/slips.ts) must be merged first.\nMake a branch from origin/main called s34-older-slips.\n1. For Hop, Weka, Penguin Pairs, Pipi, Tui and Beanstalk: add slips from slipsOf in each game's play.ts and server.ts finish; add a SLIP_WORDS table in words.ts.\n2. One new migration (number from node scripts/migration-numbers.mjs): add slips jsonb to each <game>_rounds and return slip from each teacher_<game>_student.\n3. Show \"Usual slip: ...\" or \"No single slip stands out yet\" on each Teacher<Game> page; extend each src/data/<game>.ts type.\n4. Tests (max 8 per game), then npm run build:functions -- <name> for each game and npm run build.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Quick looks",
+     "text": "Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9) and docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md (Part 3).\nMake a branch from origin/main called s34-quick-looks-slip.\n1. In src/teacher/StudentPage.tsx QuickLooksPanel, compare each wrong answer's given value with the key's answer and show \"usual slip: too many / too few / one away\", only when it was seen at least 3 times.\n2. No new column. Add tests for the over, under and one-away calls and the \"not enough yet\" case.\n3. Run the tests and npm run build.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "The five newer games, after S17",
+     "text": "Read docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rule 9), docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md and docs/plans/maths-review-2/S17-teacher-view-newer-five.md. S17 and Part 1 must be merged first.\nMake a branch from origin/main called s34-newer-slips.\n1. Pigeon: save slips (new migration, number from node scripts/migration-numbers.mjs) and show \"Usual slip\" on its pupil page next to the distance line.\n2. Parrot: count and word every kind in the SQL and in SLIP_WORDS (TeacherParrot.tsx:41). Robin: add 'near' to SLIP_WORDS (TeacherRobin.tsx:46-49).\n3. Lizard and Swamp Hen: use the shared word list and the \"enough evidence\" rule; keep the screen-side replay.\n4. Show the slip line in S17's pupil view for all five. Tests (max 8 per game), npm run build:functions -- <name> for each, npm run build.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S35",
+   "kind": "fix",
+   "title": "Help per kind of go in Tūī and Beanstalk",
+   "games": [
+    "Tūī",
+    "Beanstalk"
+   ],
+   "effort": "L",
+   "impact": "Med",
+   "wrong": "Both games keep one help level for the whole child, so one new or hard kind of go changes help for all kinds, and Tūī has no three-wrong-in-a-row boost.",
+   "done": "Tūī keeps help per way of asking and Beanstalk per kind of go (pairs, missing leaf); new kinds start with full help while old ones fade; three wrong first taps in a row give full help for the rest of the round.",
+   "why": "Help should follow what the child can do on each kind of go, so strong kinds fade sooner and a new kind gets full help.",
+   "plan": "docs/plans/maths-review-2/S35-help-per-kind-of-go-older-games.md",
+   "waits": [
+    "S25",
+    "S19"
+   ],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Tūī, one help level per way",
+     "text": "You are changing Tūī's Ten Tree in the School Games Hub repo so help is kept for each way of asking, not one level for the whole child. Only start after plans S25 and S19 (help per kind in the newer games) are merged to main; copy their saved shape and names.\nCreate branch fix/tui-help-per-way from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 4 and 5) and docs/plans/maths-review-2/S35-help-per-kind-of-go-older-games.md (Part 1) first, then docs/reviews/maths-review-2/games/tui.md.\n\nSteps (details in the plan, Part 1):\n1. New migration (next free number after supabase/migrations/20261108000200_tui_tenless_hardest.sql; check with node scripts/migration-numbers.mjs): tui_progress.way_help jsonb null; recreate tui_finish and tui_load with the new trailing argument defaulting to null; redo revoke and grant for the exact signature; update supabase/tests/database/tui.test.sql.\n2. shared/tui/play.ts: replay returns right and total per way.\n3. shared/tui/round.ts: per-way levels and goodInRow; each go's l comes from its way's level; new step sets only the new ways to level 4; per-way placeAfter using kit fadeAfter with good = ceil(0.8*g), hard = floor(0.4*g), two good to fade, skip a way with under 2 goes; the headline level is the highest of the ways; step passing stays on the whole round.\n4. shared/tui/server.ts, memoryServices.ts, src/games/tui/backend.ts and supabase/functions/tui/entry.ts: carry wayHelp; a null wayHelp is built from the old level and goodInRow for every way. Levels move only on the day's first finish.\n5. src/games/tui/Goes.tsx: the in-round rule: three wrong first taps in a row show level 5 for the rest of the round, not saved, Off turns it off. Add Bella's line \"Here are the berries again to help.\" to words.ts and voiceLines.ts, make the clip with scripts/voice-clips.py (af_bella) into public/voice/tui/.\n6. src/pages/TeacherTui.tsx: update the Fades text and say line 70's number is the highest of the four ways.\n7. Run npm run build:functions -- tui in the same PR.\nTests (stay within 8 for the game): per-way fade and hard; makeRound levels per way; old row with no way_help; the in-round rule; database test.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. Check in the preview at the levels in the plan and at 375 px wide. Run npm test, npx tsc --noEmit and lint.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Beanstalk, one help level per kind of go",
+     "text": "You are changing Kiwi's Beanstalk in the School Games Hub repo so help is kept for pair goes and missing-leaf goes separately. Only start after plans S25 and S19 are merged to main; copy their saved shape and names.\nCreate branch fix/beanstalk-help-per-kind from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 4 and 5) and docs/plans/maths-review-2/S35-help-per-kind-of-go-older-games.md (Part 2) first, then docs/reviews/maths-review-2/games/beanstalk.md.\n\nSteps (details in the plan, Part 2):\n1. New migration (next free number; check with node scripts/migration-numbers.mjs; copy the pattern of supabase/migrations/20261107000300_beanstalk_help.sql): add help_missing and good_in_row_missing to beanstalk_progress, backfill from help and good_in_row, recreate beanstalk_finish (new trailing args default null) and beanstalk_load, and teacher_beanstalk_student only if it changes; redo revoke and grant.\n2. shared/beanstalk/progress.ts: a second place for the missing kind; placeAfter per kind with kit fadeAfter: pair goes (7) good at 6 or more, hard at 2 or fewer; missing-leaf goes (3) good at 3 of 3, hard at 1 or fewer; two good in a row to fade; a new egg resets both to full; no change on a replay.\n3. shared/beanstalk/server.ts and supabase/functions/beanstalk/entry.ts: split replay.answers by go index (isMissingGo), load and finish carry helpMissing.\n4. src/games/beanstalk/Round.tsx and BeanstalkGame.tsx: two dot settings; the missing-leaf go shows its own. Keep the existing in-round rule (wrongFirstRun >= STRUGGLE_GOES gives full dots to both kinds for the rest of the round). Teacher setting still wins.\n5. Run npm run build:functions -- beanstalk in the same PR.\nTests (stay within 8 for the game): per-kind thresholds and egg reset; backfill; database test.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. Check in the preview and at 375 px wide. Run npm test, npx tsc --noEmit and lint.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  },
+  {
+   "id": "S36",
+   "kind": "fix",
+   "title": "Small fixes in Weka, Tūī, Penguin Pairs and Pipi",
+   "games": [
+    "Weka",
+    "Tūī",
+    "Penguin Pairs",
+    "Pipi"
+   ],
+   "effort": "S",
+   "impact": "Low",
+   "wrong": "Weka's pebble step needs a Check tap and its split steps only say Try again; Tūī's start step ignores ten-less facts and has dead code; Penguin Pairs' fair-or-not is wordy; Pipi can offer a shell bigger than the whole.",
+   "done": "Weka finishes a right pebble count by itself, says why on a wrong split number and skips pebbles after a quick right answer; Tūī starts by both kinds of fact and the dead code is gone; fair or not has two plain choices; Pipi shells never exceed the whole.",
+   "why": "Each makes a go clearer or shorter and stops guessing or silly choices from hiding what a child knows.",
+   "plan": "docs/plans/maths-review-2/S36-small-fixes-older-games.md",
+   "waits": [],
+   "group": "older",
+   "prompts": [
+    {
+     "label": "Weka",
+     "text": "You are making small fixes to Weka's Stepping Stones in the School Games Hub repo.\nCreate branch fix/weka-small-fixes from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 5, 7) and docs/plans/maths-review-2/S36-small-fixes-older-games.md (Part 1) first.\n\nSteps (details in the plan, sections 1 and 3, Part 1):\n1. src/games/weka/Pebbles.tsx: when the child has moved exactly the right number of pebbles and has not touched one for 1.2 seconds, finish by itself with the same sound and line as a right Check. Keep Check for wrong counts (too few or too many lines, the second wrong Check moves them across). Do not auto-finish during a drag. Update the header comment.\n2. src/games/weka/words.ts, Goes.tsx (pickSplit about line 374, pickBond about line 403), voiceLines.ts: replace \"Try again!\" on a wrong split number with the three why lines in the plan (first part add, first part hop-back, rest). They say the tapped number, never the answer. Grey the wrong number. Add every combination to allVoiceLines, make the clips with scripts/voice-clips.py (Kokoro af_bella) into public/voice/weka/. HearAgain says the new line.\n3. shared/weka/round.ts: a small pure function for a shorter go (skip pebbles and split after a right first tap with no wrong hops tap, never on the guided go, but keep pebbles on one go in five). Use it in the right-answer timer in Goes.tsx (about line 329).\n4. Run npm run build:functions -- weka and commit the result if it changes.\nTests (the game stays at 8 or fewer, aim for 3): the skip rule; the why lines say the tapped number and never the answer; the voice-lines test.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. No database change.\nCheck in the preview at 375 px wide (drag the right number and see it finish, too few then Check, a wrong split number, a go right first time). npm test, npx tsc --noEmit, lint.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Tūī",
+     "text": "You are making small fixes to Tūī's Ten Tree in the School Games Hub repo.\nCreate branch fix/tui-small-fixes from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 5 and 7) and docs/plans/maths-review-2/S36-small-fixes-older-games.md (Part 2) first.\n\nSteps (details in the plan, sections 1 and 3, Part 2):\n1. shared/tui/round.ts startFor (about line 77): start at KNOWN_START only when at least 7 of the nine tenand facts AND at least 7 of the nine tenless facts (LESS_KEYS) are at box 2 or more; otherwise step 1, level 5. Fix its comment. Leave topSecure alone (it already counts all 18).\n2. Remove the dead picture-thinning: pictureFor returns only level and peekOpen (no nests, no tapped argument), fix the comment above it, update the call in src/games/tui/Goes.tsx (about line 89). Keep the four nests at every level (round.ts about line 238).\n3. Edit shared/tui/tui.test.ts (about lines 93 and 99-100) so it no longer checks nests; add a startFor test.\n4. Run npm run build:functions -- tui in the same PR.\nTests (stay within 8 for the game, aim for 3): startFor with only tenand known gives step 1, with both gives step 3 level 4; the edited pictureFor test; topSecure unchanged.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. No migration.\nCheck in the preview (npm run tui:preview). npm test, npx tsc --noEmit, lint.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Penguin Pairs",
+     "text": "You are tidying \"fair or not\" in Penguin Pairs in the School Games Hub repo.\nCreate branch fix/korora-fair-tidy from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 1, 2, 7) and docs/plans/maths-review-2/S36-small-fixes-older-games.md (Part 3) first, then read src/games/korora/FairPile.tsx and Goes.tsx.\n\nSteps (details in the plan, section 3, Part 3):\n1. shared/korora/round.ts: FAIR_CHOICES becomes [1, 0] (fair, one left over), fix the comment and the shuffle at about line 307. Remove WORDS.tooFew. Records and keys (oddeven:n) do not change.\n2. src/games/korora/words.ts, Goes.tsx, FairPile.tsx: labels \"Fair\" and \"One left over\", each with a tiny picture (two equal bowls; two bowls with one fish alone), buttons 64 px or more. The written line becomes \"N fish. Is it fair?\".\n3. First wrong choice says \"Count the fish in one bowl.\" (new WORDS.countOneBowl) instead of \"Try again!\". Second wrong choice keeps the pairing-off hint. Nothing says which choice is right.\n4. Update voiceLines.ts (fair lines) and make the new clips with scripts/voice-clips.py (Kokoro af_bella) into public/voice/korora/; remove clips that no line uses.\n5. Run npm run build:functions -- korora and commit the result if it changes.\nTests (the game stays at 8 or fewer, aim for 2): fair goes have two choices; the wrong-tap lines; the voice lines test.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. No database change.\nCheck on a gold day in the preview at 375 px wide. npm test, npx tsc --noEmit, lint.\nStop and tell James before any live step. Open a PR when done."
+    },
+    {
+     "label": "Pipi",
+     "text": "You are fixing silly wrong shells in Pipi's Beach in the School Games Hub repo.\nCreate branch fix/pipi-wrong-shells from origin/main (own worktree, never commit to main, push by branch name).\nRead docs/GAME_DEVELOPMENT_GUIDE.md, docs/LEARNING-DESIGN.md (rules 6 and 7) and docs/plans/maths-review-2/S36-small-fixes-older-games.md (Part 4) first.\n\nSteps (details in the plan, section 3, Part 4):\n1. shared/pipi/round.ts: for hiding and two tides goes, never offer a shell above the whole. Remove the add slip (about line 222). Pass the whole into threeWrongs (about line 196) and drop any slip, near miss or filler above it; fill with answer minus 1, 2, 3 first, then answer plus 1 or 2 only if at most the whole, then any other number from 0 to the whole. Keep: never the answer, no repeat, no negative, at most two shells sharing the answer's odd or even, always one near miss. Altogether goes keep their own rules.\n2. Take 'add' out of the allowed list in shared/pipi/pipi.test.ts (about line 96) and the hiding list in src/games/pipi/voiceLines.ts (about line 47). Leave the type and the words.\n3. Extend the existing wrong-shells test (about lines 98 to 119): for hiding and twoTides every shell is at most the whole.\n4. Run npm run build:functions -- pipi and commit the result if it changes.\nDo not touch shared/kit, shared/maths, src/maths, src/styles.css or src/components. No database change.\nCheck in the preview at every level: no shell is bigger than the number of pipi. npm test, npx tsc --noEmit, lint.\nStop and tell James before any live step. Open a PR when done."
+    }
+   ]
+  }
+ ],
+ "reportPath": "docs/reviews/fundamental-maths-review-2.md",
+ "pageUrl": "https://claude.ai/artifact/XQDGyC5rytsfNV2dAUi8Rd",
+ "compareUrl": "https://claude.ai/artifact/KyXiMPb56SjiRfaAVwNDGS"
+}
