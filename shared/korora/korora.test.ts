@@ -58,7 +58,7 @@ describe('the round', () => {
               expect(go.n).toBeGreaterThanOrEqual(6);
               expect(go.n).toBeLessThanOrEqual(level <= 2 ? 10 : 20);
               expect(go.answer).toBe(go.n % 2 === 0 ? 1 : 0);
-              expect([...go.choices].sort()).toEqual([0, 1, 2]);
+              expect([...go.choices].sort()).toEqual([0, 1]);
             }
           }
           const end = replay(round, wobblyTaps(round));
