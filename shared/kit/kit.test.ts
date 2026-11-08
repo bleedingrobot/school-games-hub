@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { slipsOf, topSlip } from './slips';
 import { replay as hopReplay } from '../hop/play';
 import { DAYS_PER_JAR, finishChallenge as hopFinish, FRIENDS as HOP_FRIENDS, PADS, pondAfter } from '../hop/progress';
 import { makeRound as hopRound, showRound as showHops, HOPS_PER_ROUND } from '../hop/round';
@@ -160,5 +161,20 @@ describe('mistakes that teach', () => {
     expect(mergeSeen(['zoom', 'swap'], ['swap', 'pairs'], [])).toEqual(['pairs', 'swap', 'zoom']);
     const facts = [{ key: 'a', attempts: 3 }, { key: 'b', attempts: 0 }, { key: 'c', attempts: 1 }, { key: 'd', attempts: 2 }];
     expect(kindsFromFacts(facts, (k) => (k === 'd' ? null : k === 'a' || k === 'b' ? 'zoom' : 'swap'))).toEqual(['swap', 'zoom']);
+  });
+});
+
+describe('the usual slip', () => {
+  const kinds = (n: number) => (n > 10 ? 'over' : n < 3 ? 'under' : 'near') as 'over' | 'under' | 'near';
+  const goes = [5, 6, 7].map((answer) => ({ answer, kindOf: kinds }));
+
+  it('names the first wrong tap of each go, null for a go right first time, and counts the commonest kind only with enough evidence', () => {
+    // Go 1: wrong 12 (over) then wrong 1 (not counted), then right. Go 2: right first time. Go 3: wrong 2 (under), never right.
+    const slips = slipsOf(goes, [{ pick: 12 }, { pick: 1 }, { pick: 5 }, { pick: 6 }, { pick: 2 }]);
+    expect(slips).toEqual(['over', null, 'under']);
+    expect(topSlip(['over', 'over', null, 'over', 'under'], 3)).toBe('over');
+    expect(topSlip(['over', 'over', null, 'under'], 3)).toBeNull();
+    expect(topSlip(['over', 'over', 'under', 'under', 'over', 'under'], 3)).toBeNull();
+    expect(topSlip([null, null])).toBeNull();
   });
 });
