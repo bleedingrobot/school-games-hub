@@ -89,8 +89,8 @@
 .rb-ask strong { display: inline-block; min-width: 2.2rem; margin-left: 4px; padding: 0 10px; border-radius: 12px; background: #fff7d6; border: 3px solid #c0392b; font-size: 2.2rem; line-height: 1.2; }.rb-progress { display: flex; gap: 6px; padding: 6px 8px 0; flex-wrap: wrap; }
 .rb-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--rb-teal-dark); }
 .rb-pip--done { background: var(--rb-gold); }
-.rb-stage { position: relative; flex: 1; width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: rb-in 0.4s ease-out; }
-@keyframes rb-in { from { opacity: 0; translate: 0 10px; } }
+.rb-stage { position: relative; flex: 1; width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: rb-in 0.2s ease-out; }
+@keyframes rb-in { from { translate: 0 10px; } }
 .rb-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(70px, 11vw, 140px); pointer-events: none; }
 
 /* The cards: three or four, each a big target with its number. */
@@ -140,7 +140,7 @@
   .rb-top { padding-right: 280px; }
   }
 @media (max-width: 640px) {
-  .rb-top { padding-right: 0; padding-top: 64px; }
+  .rb-top { padding-right: 0; padding-top: 104px; }
   .rb-stage__friend { display: none; }
   .rb-bar { left: 8px; justify-content: flex-start; }
 }
@@ -164,6 +164,7 @@
 .rb-berry__mark { position: absolute; inset: 0; display: grid; place-items: center; font: 900 1.1rem system-ui, sans-serif; color: #fff; text-shadow: 0 1px 2px #000; }
 .rb-berrysvg { display: block; width: 100%; height: auto; }
 .rb-pile, .rb-group { position: relative; width: min(100%, 520px); aspect-ratio: 2 / 1; max-height: 30dvh; margin: 0 auto; }
+.rb-stage--help .rb-pile, .rb-stage--help .rb-group { max-height: 26dvh; }
 .rb-berrybtn {
   position: absolute; width: clamp(48px, 11%, 64px); aspect-ratio: 1; translate: -50% -50%; padding: 0; border: 0; border-radius: 50%;
   background: transparent; cursor: pointer; display: grid; place-items: center;

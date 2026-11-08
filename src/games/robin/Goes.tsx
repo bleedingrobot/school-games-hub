@@ -176,6 +176,12 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
 
+  // A help panel (why, or counting together) is brought into view as it appears, so it is not left below the fold.
+  const helpKey = look ? 'look' : why && asking ? `why${taps.length}` : '';
+  useEffect(() => {
+    if (helpKey) document.querySelector('.rb-why')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [helpKey]);
+
   function nextGo(all: Tap[]) {
     clearTimers();
     guideHand.stop();
@@ -323,6 +329,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const pointing = guideHand.pointing && asking;
   const guidedBlock = guided && go.kind === 'give' && placed !== go.answer;
   const countedNow = marked.length;
+  const helpOpen = (why !== null && asking) || look !== null;
   const waiting = go.kind === 'howmany' && !countedAll;
   const nextToTouch = go.kind === 'howmany' ? go.points.findIndex((_, i) => !marked.includes(i)) : -1;
   const handOnBerry = waiting && !counting && (countHand.pointing || (withMe && marked.length === go.n - 1));
@@ -343,7 +350,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       {go.kind === 'howmany' && <p className="rb-ask" aria-hidden="true">{WORDS.promptHowMany}</p>}
       {go.kind === 'counton' && <p className="rb-ask" aria-hidden="true">{WORDS.promptCountOn}</p>}
 
-      <div className="rb-stage" key={at}>
+      <div className={`rb-stage${helpOpen ? ' rb-stage--help' : ''}`} key={at}>
         <span className="rb-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
 
         {go.kind === 'give' && (

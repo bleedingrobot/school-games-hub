@@ -286,9 +286,9 @@ function layoutPoints(layout, n, random) {
 			y: 50 + 36 * Math.sin(turn + i * 2 * Math.PI / n)
 		});
 	}
-	return shuffle(range$6(0, 29), random).slice(0, n).map((c) => ({
-		x: (c % 6 + .5) * (100 / 6) + (random() - .5) * 6,
-		y: (Math.floor(c / 6) + .5) * 20 + (random() - .5) * 6
+	return shuffle(range$6(0, 23), random).slice(0, n).map((c) => ({
+		x: (c % 6 + .5) * (100 / 6) + (random() - .5) * 3,
+		y: (Math.floor(c / 6) + .5) * 25 + (random() - .5) * 3
 	}));
 }
 /**
