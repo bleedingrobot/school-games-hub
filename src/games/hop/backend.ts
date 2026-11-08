@@ -22,6 +22,8 @@ export interface HopState {
   topSecure: boolean;
   /** False when the teacher has turned the hops' step labels off for the class. */
   labels: boolean;
+  /** The kinds of hop the child has seen (so a demo plays once only). */
+  seen: string[];
 }
 
 export interface HopFinish extends FinishResult {
@@ -37,6 +39,8 @@ export interface HopBackend {
   /** Today's challenge, made and kept by the server. */
   start(): Promise<Round>;
   finish(seed: number, taps: readonly Tap[]): Promise<HopFinish>;
+  /** Remembers that the child has seen these kinds of hop; returns the saved list. */
+  markSeen(kinds: string[]): Promise<string[]>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -61,6 +65,7 @@ export function fromServer(send: Send): HopBackend {
     load: async () => (await ask({ action: 'load' })) as unknown as HopState,
     start: async () => (await ask({ action: 'start' })).round as Round,
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as HopFinish,
+    markSeen: async (kinds) => ((await ask({ action: 'seen', kinds })).seen as string[]) ?? kinds,
   };
 }
 

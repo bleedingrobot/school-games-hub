@@ -30,7 +30,7 @@ export function finishLine(main: string, stepUp: HopStep | null, signpost = fals
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.labelsBack, WORDS.lookTogether, WORDS.nowTry, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.labelsBack, WORDS.lookTogether, WORDS.nowTry, ...WORDS.demoBack, ...WORDS.demoFrom, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

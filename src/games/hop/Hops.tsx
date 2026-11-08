@@ -13,12 +13,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { replay, wrongFirstRun, type Tap } from '../../../shared/hop/play';
 import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/progress';
-import { HOPS_PER_ROUND, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
+import { HOPS_PER_ROUND, kindOfKey, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
+import { DEMO_STEPS, DemoScene, isDemoKind } from './demo';
 import { Friend, GlowWorm, LilyPad } from './HopArt';
 import { HundredsBoard } from './HundredsBoard';
 import { backFor, type Scenery } from './Pond';
@@ -55,6 +59,9 @@ interface Props {
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the right glow-worm on the first hop. */
   guide?: boolean;
+  /** The kinds of hop this child has seen, and how to remember more. */
+  seenKinds: readonly string[];
+  markSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -62,7 +69,7 @@ interface Props {
 
 type Phase = 'ask' | 'jump' | 'done';
 
-export function Hops({ round, help, labels = true, padMetal, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Hops({ round, help, labels = true, padMetal, scenery, friend, guide = false, seenKinds, markSeen, sound, say, onDone }: Props) {
   const hops = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -91,6 +98,18 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
     const pending = timers.current;
     return () => pending.forEach((t) => window.clearTimeout(t));
   }, []);
+  // Show me first: the first time a hop counts back or starts from a number, one made-up hop is shown before the real one.
+  // At most two demos a round. The demo is not an answer: nothing is added to the taps while it plays.
+  const kinds = useSeenKinds(seenKinds, markSeen);
+  const [demoKinds, setDemoKinds] = useState<string[]>([]);
+  const thisKind = kindOfKey(round.hops[Math.min(at, round.hops.length - 1)]?.key ?? '');
+  const demoFor =
+    isDemoKind(thisKind) && !kinds.has(thisKind) && phase === 'ask' && !(guide && at === 0) && (demoKinds.includes(thisKind) || demoKinds.length < 2) ? thisKind : null;
+  useEffect(() => {
+    if (demoFor && !demoKinds.includes(demoFor)) setDemoKinds((d) => [...d, demoFor]);
+  }, [demoFor, demoKinds]);
+  const demo = useKindDemo({ kind: demoFor, seen: kinds, mark: kinds.mark, steps: demoFor ? DEMO_STEPS[demoFor] : [], say });
+  const demoActive = demoFor !== null;
   // Each new hop is read aloud once (the shared pack's words: "Counting in tens: 20, 30, something, 50. What is missing?").
   useEffect(() => {
     if (at === 0) heading.current?.focus();
@@ -98,6 +117,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
     let live = true;
     tappedYet.current = false;
     since.current = Date.now();
+    if (demoActive) return;
     say(hopLine(hops[at].spoken, guide && at === 0), () => {
       if (live && !tappedYet.current) since.current = Date.now();
     });
@@ -106,7 +126,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
     };
     // Read again only when the hop changes, not when the guide ends.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, hops, say]);
+  }, [at, hops, say, demoActive]);
 
   const hop = hops[Math.min(at, hops.length - 1)];
   const pads = hop.parts.map((p) => p.replace(/,$/, '')).map((p) => (p === '?' ? null : Number(p)));
@@ -148,7 +168,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || tried.includes(n)) return;
+    if (phase !== 'ask' || look || demoActive || tried.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -176,6 +196,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
       return;
     }
     go.current = stepGo(go.current, 'right');
+    if (thisKind) kinds.mark([thisKind]);
     setWhy(null);
     setRedo(false);
     setPhase('jump');
@@ -236,7 +257,13 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
         />
       )}
       {redo && !why && !look && <NowYouTry prefix="hp" line={WORDS.nowTry} />}
-      <div className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>
+      {demoFor && (
+        <>
+          <DemoScene kind={demoFor} step={demo.step} padMetal={padMetal} friend={friend} />
+          <DemoBar prefix="hp" skipLabel={WORDS.skipDemo} canSkip={demo.canSkip} onSkip={demo.skip} />
+        </>
+      )}
+      <div hidden={demoActive} className="hp-row" key={at} style={{ ['--hp-n' as string]: pads.length }}>
         {pads.slice(0, -1).map((_, i) => (
           <span key={`arc${i}`} className={`hp-arc hp-arc--${shown}${i === gap - 1 ? ' hp-arc--next' : ''}`} style={{ ['--hp-i' as string]: i }}>
             {shown !== 'none' && <span className="hp-arc__label">{sign}{hop.size}</span>}
@@ -257,12 +284,12 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
         </span>
       </div>
       </div>
-      <div className={`hp-worms${look ? ' hp-worms--off' : ''}`} role="group" aria-label={WORDS.pickWorm}>
+      <div hidden={demoActive} className={`hp-worms${look ? ' hp-worms--off' : ''}`} role="group" aria-label={WORDS.pickWorm}>
         {worms.map((n, i) => (
           <button
             key={`${at}-${n}`}
             type="button"
-            disabled={tried.includes(n) || look !== null}
+            disabled={tried.includes(n) || look !== null || demoActive}
             className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${tried.includes(n) ? ' hp-worm--tried' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}${n === pointAt ? ' hp-worm--pointed' : ''}`}
             style={{ ['--hp-i' as string]: i }}
             onClick={() => pick(n)}

@@ -19,7 +19,7 @@ describe("Hop's mistakes that teach", () => {
     const hops = showRound(round);
     const say = vi.fn();
     const onDone = vi.fn();
-    render(<Hops round={round} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={onDone} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={round} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={onDone} />);
     const worms = () => within(screen.getByRole('group', { name: WORDS.pickWorm }));
     const tap = (n: number) => fireEvent.click(worms().getByRole('button', { name: String(n) }));
     return { round, hops, say, onDone, worms, tap };
@@ -30,13 +30,13 @@ describe("Hop's mistakes that teach", () => {
     const mixed = { ...round, hops: round.hops.map((h, i) => ({ ...h, h: i === 0 ? ('none' as const) : i === 1 ? undefined : ('full' as const) })) };
     const props = { padMetal: 'green' as const, scenery: 'bronze' as const, friend: 'hop' as const, sound: false, say: vi.fn(), onDone: vi.fn() };
     const arcs = () => document.querySelectorAll('.hp-arc--none, .hp-arc--faint, .hp-arc--full');
-    render(<Hops round={mixed} help="faint" {...props} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={mixed} help="faint" {...props} />);
     expect(document.querySelectorAll('.hp-arc--none').length).toBe(arcs().length);
     cleanup();
-    render(<Hops round={{ ...mixed, hops: [mixed.hops[1], ...mixed.hops.slice(1)] }} help="faint" {...props} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={{ ...mixed, hops: [mixed.hops[1], ...mixed.hops.slice(1)] }} help="faint" {...props} />);
     expect(document.querySelectorAll('.hp-arc--faint').length).toBe(arcs().length);
     cleanup();
-    render(<Hops round={{ ...mixed, hops: mixed.hops.map((h) => ({ ...h, h: 'full' as const })) }} help="full" labels={false} {...props} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={{ ...mixed, hops: mixed.hops.map((h) => ({ ...h, h: 'full' as const })) }} help="full" labels={false} {...props} />);
     expect(document.querySelectorAll('.hp-arc--none').length).toBe(arcs().length);
   });
 
@@ -46,7 +46,7 @@ describe("Hop's mistakes that teach", () => {
     const hops = showRound(bare);
     const run = (labels: boolean) => {
       const say = vi.fn();
-      render(<Hops round={bare} help="none" labels={labels} padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={vi.fn()} />);
+      render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={bare} help="none" labels={labels} padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={vi.fn()} />);
       for (let i = 0; i < 3; i++) {
         fireEvent.click(within(screen.getByRole('group', { name: WORDS.pickWorm })).getByRole('button', { name: String(hops[i].wrongs[0].n) }));
         if (i === 0) expect(document.querySelectorAll('.hp-arc--full')).toHaveLength(0);
@@ -99,7 +99,7 @@ describe("Hop's mistakes that teach", () => {
     expect(WORDS.why('off1', hop)).toBe(`${hop.before}, then 3 more is ${hop.answer}.`);
     expect(WORDS.counting(200)).toBe('Counting in tens past 100');
     const say = vi.fn();
-    render(<Hops round={{ ...threes, hops: threes.hops.map((h) => ({ ...h, h: 'full' as const })) }} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={vi.fn()} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={{ ...threes, hops: threes.hops.map((h) => ({ ...h, h: 'full' as const })) }} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={vi.fn()} />);
     expect(screen.getAllByText('+3').length).toBeGreaterThan(0);
     fireEvent.click(within(screen.getByRole('group', { name: WORDS.pickWorm })).getByRole('button', { name: String(hop.wrongs[0].n) }));
     expect(screen.getByRole('status').textContent).toContain(WORDS.why(hop.wrongs[0].kind, hop));

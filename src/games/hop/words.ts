@@ -47,6 +47,11 @@ export const WORDS = {
   lookTogether: "Let's look together.",
   lookCount: (hop: Pick<Hop, 'of' | 'from' | 'back'>, numbers: readonly number[]) => `Counting ${hop.back ? 'back ' : ''}in ${counted(hop)}: ${numbers.join(', ')}.`,
   nowTry: 'Now you try.',
+  /** The "Show me first" demos, the first time a hop counts back or starts off a multiple (made-up examples no round asks). */
+  skipDemo: 'Skip',
+  demoTitle: 'Watch first',
+  demoBack: ['Watch. This time we count back, so the numbers go down.', 'Nine, eight, then one less is seven.'],
+  demoFrom: ['Watch. We count in fives from seven. Hop starts at seven.', 'Seven, twelve, then five more is seventeen.'],
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
   goOn: 'My turn',
   yes: (n: number) => `${n}!`,

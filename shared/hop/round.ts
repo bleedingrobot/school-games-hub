@@ -22,6 +22,18 @@ import { seeded } from '../seededRandom';
 import type { Help } from './progress';
 
 export const HOPS_PER_ROUND = 10;
+
+/** The kinds of hop a child can meet: counting forward, counting back, and counting from a start off a multiple ("from 3"). Names never change once shipped. */
+export type HopKind = 'up' | 'back' | 'offset';
+export const HOP_KINDS: readonly HopKind[] = ['up', 'back', 'offset'];
+/** The kind of a key (counting back wins over a start offset), or null if it is not a skip-counting key. */
+export function kindOfKey(key: string): HopKind | null {
+  const k = parseSkip(key);
+  if (!k) return null;
+  return k.kind === 'back' ? 'back' : k.offset ? 'offset' : 'up';
+}
+/** The made-up examples of the "Show me first" demos: keys no step ever asks (there is no step of ones, and fives start from 1 to 4 only). */
+export const DEMO_KEYS = { back: 'skip1:back:7', offset: 'skip5o7:up:17' } as const;
 /** On gold days the last three hops count back, as Hop hops home (James, 4 Nov 2026). */
 export const BACK_HOPS = 3;
 /**
