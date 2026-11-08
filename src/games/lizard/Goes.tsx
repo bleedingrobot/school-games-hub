@@ -18,18 +18,20 @@ import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
-import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
+import { stepGo, NEW_GO, LOOK_AT, type GoState } from '../../../shared/kit/mistakes';
 import { MAX_ONES } from '../../../shared/lizard/config';
 import { tapRight, type Tap } from '../../../shared/lizard/play';
 import type { Friend as FriendName } from '../../../shared/lizard/progress';
 import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, type Go, type Mat, type Round } from '../../../shared/lizard/round';
 import { playSound } from '../sounds';
 import { Bundle, Friend, Raft, Stick, sceneStyle, type Pose, type Scenery } from './art';
-import { WHY_LINES, askLine, lookLine, placesWords, type LineKey } from './voiceLines';
+import { WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 1900;
 const WOBBLE_MS = 500;
+/** After a wrong try "That's it" waits this long unless the child changes the mat. */
+const THINK_MS = 2000;
 const GUIDE_MS = 2600;
 const MAX_TENS = 19;
 const MAX_HUNDREDS = 9;
@@ -72,6 +74,8 @@ interface MatProps {
   frame: boolean;
   label: string;
   /** Plus and minus buttons per place (a build go). */
+  /** The small picture in a wrong-try panel. */
+  small?: boolean;
   edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; withBundles: boolean; withRafts: boolean; addTen?: () => void; tenOff?: boolean };
 }
 
@@ -93,7 +97,7 @@ function Ones({ o, frame, colours }: { o: number; frame: boolean; colours: boole
   return <>{Array.from({ length: o }, (_, i) => <Stick key={i} tone={colours ? 'plain' : 'gone'} />)}</>;
 }
 
-function MatView({ mat, places, labels, counts, colours, frame, label, edit }: MatProps) {
+function MatView({ mat, places, labels, counts, colours, frame, label, edit, small }: MatProps) {
   const cols: { p: Place; name: string; n: number }[] = [
     ...(places === 3 ? [{ p: 'h' as const, name: WORDS.hundreds, n: mat.h }] : []),
     { p: 't', name: WORDS.tens, n: mat.t },
@@ -101,7 +105,7 @@ function MatView({ mat, places, labels, counts, colours, frame, label, edit }: M
   ];
   const piece = (p: Place, i: number) => (p === 'h' ? <Raft key={i} tone={colours ? 'plain' : 'gone'} /> : <Bundle key={i} tone={colours ? 'plain' : 'gone'} />);
   return (
-    <div className={`lz-mat lz-mat--${places}${colours ? '' : ' lz-mat--plain'}`} role="img" aria-label={label}>
+    <div className={`lz-mat lz-mat--${places}${small ? ' lz-mat--small' : ''}${colours ? '' : ' lz-mat--plain'}`} role="img" aria-label={label}>
       {cols.map(({ p, name, n }) => (
         <div key={p} className={`lz-place lz-place--${p}`}>
           {labels && <span className="lz-place__name">{name}</span>}
@@ -126,6 +130,22 @@ function MatView({ mat, places, labels, counts, colours, frame, label, edit }: M
   );
 }
 
+/** The child's own bundles and sticks (or the card they picked), small, with the number we need beside it. */
+function TryPicture({ mat, places, need, picked }: { mat: Mat; places: 2 | 3; need: number | null; picked?: number }) {
+  const label = picked !== undefined ? `You picked ${picked}: ${spoken(mat, places)}.` : `${WORDS.yourMat}: ${spoken(mat, places)}.`;
+  return (
+    <div className="lz-try">
+      <MatView mat={mat} places={places} labels counts colours frame={false} label={label} small />
+      {need !== null && (
+        <span className="lz-need">
+          {WORDS.weNeed}
+          <b>{need}</b>
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function Goes({ guided = false, round, scenery, friend, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
@@ -133,7 +153,6 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [phase, setPhase] = useState<Phase>('ask');
   const [gs, setGs] = useState<GoState>(NEW_GO);
   const [tapped, setTapped] = useState<number[]>([]);
-  const [lastLine, setLastLine] = useState<LineKey | null>(null);
   const [whyTap, setWhyTap] = useState(0);
   const [wobble, setWobble] = useState<number | null>(null);
   const [shake, setShake] = useState(false);
@@ -141,6 +160,10 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [pose, setPose] = useState<Pose>('sit');
   const [mat, setMat] = useState<Mat>(goes[0].from);
   const [tip, setTip] = useState(false);
+  /** The mat last sent wrong (it cannot be sent twice), and what the panel shows about the last wrong try. */
+  const [lastTried, setLastTried] = useState<Mat | null>(null);
+  const [shown, setShown] = useState<{ mat: Mat; line: string; picked?: number } | null>(null);
+  const [held, setHeld] = useState(false);
   const since = useRef(Date.now());
   /** Set by the first move on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -217,7 +240,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       setPhase('ask');
       setGs(NEW_GO);
       setTapped([]);
-      setLastLine(null);
+      setLastTried(null);
+      setShown(null);
+      setHeld(false);
       return;
     }
     setPhase('done');
@@ -244,12 +269,22 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
         setWobble(null);
         setShake(false);
       });
-      if (!cardGo) setMat(go.from);
       const key = line(value);
-      setLastLine(key);
+      setShown({ mat: cardGo ? matOf(value) : mat, line: tryLine(go, mat, key, value), picked: cardGo ? value : undefined });
+      if (!cardGo) {
+        setLastTried(mat);
+        setHeld(true);
+        later(THINK_MS, () => setHeld(false));
+      }
       if (state.phase === 'look') {
-        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
-      } else say(WHY_LINES[key]);
+        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => {
+            setGs((s) => stepGo(s, 'lookDone'));
+            if (!cardGo) setMat(go.from);
+            setLastTried(null);
+            setShown(null);
+          },
+        });
+      } else say(cardGo || key === 'tie' ? WHY_LINES[key] : WORDS.lookAtYours);
       return;
     }
     clearTimers();
@@ -269,6 +304,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     if (solved || gs.phase === 'look') return;
     tappedYet.current = true;
     guideHand.stop();
+    setHeld(false);
     setMat(f);
   };
   const add = (p: Place) => changeMat((m) => (p === 'o' ? { ...m, o: Math.min(MAX_ONES, m.o + 1) } : p === 't' ? { ...m, t: Math.min(MAX_TENS, m.t + 1) } : { ...m, h: Math.min(MAX_HUNDREDS, m.h + 1) }));
@@ -282,7 +318,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const target = targetMat(go);
   const showMat = cardGo ? pictured : true;
   const editing = go.kind === 'build';
-  const handAt: Place | null = guideHand.pointing && editing ? 'o' : null;
+  const inRedoTry = gs.phase === 'redo' && gs.wrong > LOOK_AT;
+  const wrongPlace: Place | null = !editing || !inRedoTry || !shown ? null : places === 3 && mat.h !== targetMat(go).h ? 'h' : mat.t !== targetMat(go).t ? 't' : 'o';
+  const handAt: Place | null = guideHand.pointing && editing ? 'o' : wrongPlace;
   const withRafts = places === 3;
   const matLabel = cardGo ? `The bundles and sticks: ${spoken(matOf(go.n), places)}.` : `Your mat: ${spoken(mat, places)}.`;
   const canTieTen = mat.o >= 10;
@@ -300,8 +338,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mat.o]);
-  const sendable = !solved && gs.phase !== 'look' && !matsAlike(mat, go.from);
-  const whyLine = (k: LineKey) => WHY_LINES[k];
+  const sendable = !solved && gs.phase !== 'look' && !held && !matsAlike(mat, go.from) && !(lastTried && matsAlike(mat, lastTried));
 
   return (
     <div className={`lz-play lz-scene--${scenery}`} style={sceneStyle(scenery)}>
@@ -370,8 +407,13 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
         )}
       </div>
 
-      {gs.phase === 'why' && lastLine && (
-        <ShowWhy prefix="lz" tapKey={whyTap} picture={<span className="lz-why__icon" aria-hidden="true">🤔</span>} line={whyLine(lastLine)} />
+      {(gs.phase === 'why' || inRedoTry) && shown && (
+        <ShowWhy
+          prefix="lz"
+          tapKey={whyTap}
+          picture={<TryPicture mat={shown.mat} places={places} need={go.kind === 'build' ? go.n : null} picked={shown.picked} />}
+          line={shown.line}
+        />
       )}
       {gs.phase === 'look' && look && (
         <LookTogether
@@ -384,7 +426,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
           onSkip={skip}
         />
       )}
-      {gs.phase === 'redo' && <NowYouTry prefix="lz" line={WORDS.nowYouTry} />}
+      {gs.phase === 'redo' && !inRedoTry && <NowYouTry prefix="lz" line={WORDS.nowYouTry} />}
 
       {cardGo && (
         <div className="lz-cards" role="group" aria-label={WORDS.pickCard}>
