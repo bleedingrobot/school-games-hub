@@ -175,3 +175,19 @@ describe('turning a garden and sharing it out', () => {
     expect(fairShare([])).toBe(false);
   });
 });
+
+describe('the wrong cards', () => {
+  it('put the two digits side by side only when that has the answer’s number of digits, so the cards look alike', () => {
+    for (const key of KEYS.filter((k) => /^(rows|turn|which):/.test(k))) {
+      const [a, b] = keyPair(key);
+      const joined = Number(`${a}${b}`);
+      for (const seed of seeds) {
+        const go = showGo({ seed }, 0, { key, kind: kindOfKey(key)!, l: 3 })!;
+        if (go.kind === 'which' || go.kind === 'turn') continue;
+        if (String(joined).length !== String(go.answer).length) expect(go.choices).not.toContain(joined);
+      }
+    }
+    // 3 rows of 7: the cards stay near 21 (no 37).
+    for (const seed of seeds) expect(showGo({ seed }, 0, { key: 'rows:3x7', kind: kindOfKey('rows:3x7')!, l: 3 })!.choices.every((c) => c >= 7 && c <= 31)).toBe(true);
+  });
+});

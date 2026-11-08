@@ -1831,13 +1831,17 @@ function candidates(kind, a, b, answer) {
 			[a + b, "added"],
 			[10 * b - a, "spare"]
 		];
-		default: return [
-			[a + b, "added"],
-			[(a - 1) * b, "short"],
-			[Number(`${a}${b}`), "joined"],
-			[a * b + a, "spare"],
-			[a * b + b, "spare"]
-		];
+		default: {
+			const joined = Number(`${a}${b}`);
+			const same = String(joined).length === String(answer).length;
+			return [
+				[a + b, "added"],
+				[(a - 1) * b, "short"],
+				[a * b + a, "spare"],
+				[a * b + b, "spare"],
+				...same ? [[joined, "joined"]] : []
+			];
+		}
 	}
 }
 /** Wrong cards for a number go: named slips first, then plain neighbours; at most two cards share the answer's last digit. */
