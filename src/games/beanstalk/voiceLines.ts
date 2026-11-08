@@ -37,6 +37,7 @@ export function allVoiceLines(): string[] {
     lines.add(WORDS.tapTwo(target));
     lines.add(WORDS.guideStart(target));
     lines.add(WORDS.nowThese(target));
+    lines.add(WORDS.missingTip(target));
     lines.add(WORDS.movedUp(target));
     lines.add(WORDS.movedBack(target));
     const numbers = leafNumbers(target);
