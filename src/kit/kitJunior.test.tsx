@@ -2,7 +2,7 @@ import { act, cleanup, render, renderHook, screen } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FirstTimeTip, HearAgain, PointingHand, WhatsNext, pointedLabel, useGuidedFirstGo } from '.';
+import { FirstTimeTip, HearAgain, PointingHand, WhatsNext, pointedLabel, useGuidedFirstGo, useSeenKinds } from '.';
 
 afterEach(() => {
   cleanup();
@@ -53,5 +53,19 @@ describe('kit junior bits', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Got it' }));
     await userEvent.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it('seen kinds show at once, and a failed save is kept and sent with the next mark', async () => {
+    const save = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
+    const { result } = renderHook(() => useSeenKinds(['swap'], save));
+    expect(result.current.has('swap')).toBe(true);
+    expect(result.current.has('zoom')).toBe(false);
+    await act(async () => void (await result.current.mark(['zoom'])));
+    expect(result.current.has('zoom')).toBe(true);
+    await act(async () => void (await result.current.mark(['pairs'])));
+    expect(save).toHaveBeenNthCalledWith(1, ['zoom']);
+    expect(save).toHaveBeenNthCalledWith(2, ['zoom', 'pairs']);
+    await act(async () => void (await result.current.mark(['zoom'])));
+    expect(save).toHaveBeenCalledTimes(2);
   });
 });

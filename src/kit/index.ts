@@ -8,3 +8,4 @@ export { PointingHand, pointedLabel } from './PointingHand';
 export { useGuidedFirstGo } from './useGuidedFirstGo';
 export { WhatsNext } from './WhatsNext';
 export { FirstTimeTip } from './FirstTimeTip';
+export { useSeenKinds } from './useSeenKinds';
