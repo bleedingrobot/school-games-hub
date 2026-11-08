@@ -126,6 +126,11 @@ export function ParrotGame({ backend, onExit, extra }: Props) {
         round={screen.round}
         friend={rope.friend}
         guide={state.daysDone === 0 && state.lastDay === null}
+        seen={state.seen}
+        onSeen={(kinds) => {
+          setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+          return backend.markSeen(kinds);
+        }}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

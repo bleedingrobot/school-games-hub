@@ -14,6 +14,7 @@
 import { FRIEND_NAMES, STEPS } from '../../../shared/parrot/config';
 import { METALS } from '../../../shared/parrot/progress';
 import { ALL_KEYS, isStoneGo, kindOfKey, showGo, type Go, type ParrotKind } from '../../../shared/parrot/round';
+import { demoLines } from './demo';
 import { nextPartWords } from '../../components/NextPartChip';
 import { numWord, WORDS } from './words';
 
@@ -105,5 +106,6 @@ export function allVoiceLines(): string[] {
   lines.add(WORDS.lessHelp);
   lines.add(WORDS.moreHelp);
   lines.add(WORDS.sameAgain);
+  for (const line of demoLines()) lines.add(line);
   return [...lines];
 }

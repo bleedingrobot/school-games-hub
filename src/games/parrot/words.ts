@@ -60,6 +60,8 @@ export const WORDS = {
   nowTry: 'Now you try!',
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
+  skip: 'Skip',
+  demoTitle: 'Watch Parrot show one first.',
   hearAgain: 'Hear it again',
   peek: 'Peek',
   stoneLive: 'Put stones on the empty side until the see-saw is level.',

@@ -21,7 +21,8 @@ import { finishChallenge, nzDate } from './progress';
 import { placeAfter, type Place as KitPlace } from '../kit/help';
 import { HELP_SETTINGS, type HelpSetting } from '../kit/help';
 import { STEP_RULES, TOP_LEVEL, type HelpLevel, type Step } from './config';
-import { isSeed, makeRound, MAX_SEED, startFor, type ParrotKind, type Round } from './round';
+import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
+import { isSeed, kindOfKey, makeRound, MAX_SEED, startFor, type ParrotKind, type Round } from './round';
 
 export { HELP_SETTINGS };
 
@@ -34,7 +35,10 @@ export interface Place {
 }
 const moved = (p: Place, right: number): Place => placeAfter(p as KitPlace, right, STEP_RULES) as Place;
 
-export type ParrotAction = 'load' | 'start' | 'finish';
+export type ParrotAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go this game has (not only the ones that have a demo). */
+export const KINDS = ['miss', 'swap', 'both', 'sub', 'tf'] as const;
 
 /** A pupil's rope as it is saved. */
 export interface Progress extends Place {
@@ -57,7 +61,7 @@ export interface Settings {
   help: HelpSetting;
 }
 
-export interface ParrotServices {
+export interface ParrotServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; only the "ten and" facts matter here). */
@@ -123,8 +127,19 @@ export async function handleParrot(services: ParrotServices, player: string, bod
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
+    const saved = await services.seen(player);
+    if (saved === 'busy') return busy();
     const place = placeOf(s, facts);
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help });
+    const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

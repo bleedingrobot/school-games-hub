@@ -28,6 +28,7 @@
   background: var(--pr-panel); color: var(--pr-ink); font: 700 1.05rem system-ui, sans-serif; cursor: pointer;
 }
 .pr-button:focus-visible, .pr-hear:focus-visible, .pr-choice:focus-visible, .pr-heapbtn:focus-visible { outline: 4px solid var(--pr-teal-dark); outline-offset: 3px; }
+.pr-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; }
 .pr-button:disabled { opacity: 0.4; cursor: default; }
 
 /* The scene: pale sky, snowy ridge, a green bank below. */
