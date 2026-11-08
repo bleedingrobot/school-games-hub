@@ -90,11 +90,10 @@ export function progressFrom(
   return { stages, current, stepBack, recent };
 }
 
-/** Is this student struggling right now? Two wrong in a row, or the last answer took too long to think about. */
-export function isStruggling(recentCorrect: readonly boolean[], lastThinkingMs: number | null, config: SubitisingConfig = SUBITISING_CONFIG): boolean {
+/** Is this student struggling right now? Two wrong in a row. Thinking for a long time is not a fault. */
+export function isStruggling(recentCorrect: readonly boolean[], config: SubitisingConfig = SUBITISING_CONFIG): boolean {
   const n = config.struggleWrongInARow;
-  if (recentCorrect.length >= n && recentCorrect.slice(-n).every((c) => !c)) return true;
-  return lastThinkingMs !== null && lastThinkingMs > config.struggleThinkingMs;
+  return recentCorrect.length >= n && recentCorrect.slice(-n).every((c) => !c);
 }
 
 /** How long a picture shows at this stage: the starting time at first, shorter once the stage is going well. */

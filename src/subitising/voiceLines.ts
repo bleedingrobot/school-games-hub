@@ -14,6 +14,8 @@ export const PROMPTS = {
   helpedGroups: 'Take your time. Can you see smaller groups?',
   helpedOne: 'Take your time. Look carefully.',
   helpedGap: 'Take your time. How many empty squares?',
+  /** After a wrong first answer: the picture comes back once for a second try. */
+  retry: 'Try once more.',
   gap: 'How many empty squares?',
   guided: 'How many can you see?',
   flash: 'How many did you see?',

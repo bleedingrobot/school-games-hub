@@ -20,6 +20,10 @@
   "text": "Take your time. How many empty squares?"
  },
  {
+  "slug": "try-once-more",
+  "text": "Try once more."
+ },
+ {
   "slug": "how-many-empty-squares",
   "text": "How many empty squares?"
  },

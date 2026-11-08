@@ -57,7 +57,7 @@ const seedFor = (today: string, n: number): number => {
 };
 
 export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack, onSessionEnd, onRoundFinished, gateNote }: Props) {
-  const reading = useReadAloud();
+  const reading = useReadAloud({ defaultOn: true });
   const readAloud = reading.available ? { on: reading.on, onChange: reading.setOn } : undefined;
   const [screen, setScreen] = useState<Screen>('home');
   const [seed, setSeed] = useState(1);

@@ -62,10 +62,13 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   const [peekAllowed, setPeekAllowed] = useState(false);
   const [peeked, setPeeked] = useState(false);
   const [result, setResult] = useState<AnswerResult | null>(null);
+  /** The wrong first answer on this picture, while the student has their one second try. */
+  const [tried, setTried] = useState<number | null>(null);
 
   const unlockedAt = useRef(0);
   const recent = useRef<boolean[]>([]);
-  const lastThinking = useRef<number | null>(null);
+  /** When the question stopped being spoken. Infinity while it is being said, so the thinking clock never starts early. */
+  const voiceEnd = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
   const nextButton = useRef<HTMLButtonElement>(null);
   const choicesBox = useRef<HTMLDivElement>(null);
@@ -110,21 +113,35 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   const choose = useCallback(
     (value: number) => {
       if (phase !== 'answer' || locked) return;
-      const thinkingMs = staticPicture ? 0 : Math.max(0, performance.now() - unlockedAt.current);
-      const r: AnswerResult = { given: value, correct: value === trial.answer, thinkingMs, helped, guided: guidedMode, peeked };
-      setResult(r);
-      setPhase('feedback');
+      if (value === tried) return;
+      const correct = value === trial.answer;
+      if (tried !== null) {
+        // The second try: only the feedback changes. It is not saved and moves nothing.
+        setResult({ given: value, correct, thinkingMs: 0, helped, guided: guidedMode, peeked });
+        setPhase('feedback');
+        return;
+      }
+      // The thinking clock starts once the question has been spoken (and the buttons have unlocked).
+      const thinkingMs = staticPicture ? 0 : Math.max(0, performance.now() - Math.max(unlockedAt.current, voiceEnd.current));
+      const r: AnswerResult = { given: value, correct, thinkingMs, helped, guided: guidedMode, peeked };
       if (helped) {
         // A help picture starts again: the next one is judged on its own.
         recent.current = [];
-        lastThinking.current = null;
       } else {
         recent.current = [...recent.current, r.correct].slice(-CONFIG.stepBackWindow);
-        lastThinking.current = guidedMode ? null : thinkingMs;
       }
+      // Only the first tap is saved, so the records stay honest.
       onAnswer(trial, r);
+      if (correct) {
+        setResult(r);
+        setPhase('feedback');
+      } else {
+        // One more go: the picture comes back for a moment (or stays, if it is already staying).
+        setTried(value);
+        if (!staticPicture) setPhase('peek');
+      }
     },
-    [phase, locked, staticPicture, trial, helped, peeked, guidedMode, onAnswer],
+    [phase, locked, staticPicture, trial, helped, peeked, guidedMode, onAnswer, tried],
   );
 
   useEffect(() => {
@@ -163,8 +180,14 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   useEffect(() => {
     if (!reading) return;
     if (phase === 'ready') speak(trial.activity === 'gap' ? PROMPTS.readyGap : PROMPTS.readyFlash, VOICE_FOLDER);
-    else if (phase === 'answer') speak(intro ?? (helped ? helpedPrompt(trial.activity, trial.answer) : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash), VOICE_FOLDER);
-  }, [reading, phase, helped, trial, guidedMode, intro]);
+    else if (phase === 'answer') {
+      const line = tried !== null ? PROMPTS.retry : (intro ?? (helped ? helpedPrompt(trial.activity, trial.answer) : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash));
+      voiceEnd.current = Infinity;
+      speak(line, VOICE_FOLDER, () => {
+        voiceEnd.current = performance.now();
+      });
+    }
+  }, [reading, phase, helped, trial, guidedMode, intro, tried]);
   useEffect(() => {
     if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result), VOICE_FOLDER);
   }, [reading, phase, result, trial]);
@@ -175,11 +198,13 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
       return;
     }
     const i = index + 1;
-    const struggling = !guidedMode && !checking && isStruggling(recent.current, lastThinking.current);
+    const struggling = !guidedMode && !checking && isStruggling(recent.current);
     const t = next(i, trial);
     setTrial(t);
     setIndex(i);
     setResult(null);
+    setTried(null);
+    voiceEnd.current = 0;
     setPeeked(false);
     setHelped(struggling);
     setPeekAllowed(helped && !struggling && !guidedMode && !checking);
@@ -204,7 +229,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   return (
     <section className="sb-screen" aria-label="Quick looks">
       <h1 ref={heading} tabIndex={-1} className="sb-prompt">
-        {phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : intro && phase === 'answer' ? intro : helped && phase === 'answer' ? helpedPrompt(trial.activity, trial.answer) : prompt}
+        {phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : tried !== null && phase === 'answer' ? PROMPTS.retry : intro && phase === 'answer' ? intro : helped && phase === 'answer' ? helpedPrompt(trial.activity, trial.answer) : prompt}
       </h1>
       <div className="sb-stage">
         <div className="sb-board">
@@ -237,12 +262,12 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
         <>
           <div ref={choicesBox} className="sb-choices" role="group" aria-label="Answers">
             {trial.choices.map((c) => (
-              <button key={c} type="button" className="sb-choice" disabled={phase !== 'answer' || locked} onClick={() => choose(c)}>
+              <button key={c} type="button" className={c === tried ? 'sb-choice sb-wobble' : 'sb-choice'} disabled={phase !== 'answer' || locked || c === tried} onClick={() => choose(c)}>
                 {c}
               </button>
             ))}
           </div>
-          {phase === 'answer' && peekAllowed && !peeked && !staticPicture && (
+          {phase === 'answer' && peekAllowed && !peeked && !staticPicture && tried === null && (
             <button
               type="button"
               className="sb-btn"

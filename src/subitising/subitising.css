@@ -467,3 +467,18 @@
     font-size: 0.62rem;
   }
 }
+
+/* The wrong first answer wobbles once while the picture comes back for a second try. */
+.sb-wobble {
+  animation: sb-wobble 0.45s ease-in-out 1;
+}
+@keyframes sb-wobble {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-wobble { animation: none; }
+}
