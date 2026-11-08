@@ -23,8 +23,8 @@ export interface LinePoint {
   tone?: LineColor;
   /** Written beside the dot, for example `?` or a name. */
   label?: string;
-  /** `ring` is an empty circle (a guess, a place still to fill); `dot` is solid. Default `dot`. */
-  look?: 'dot' | 'ring';
+  /** `ring` is an empty circle (a guess, a place still to fill); `dot` is solid; `arrow` is a down-pointing arrow above the line, tip on the value, with the label above it ("what number is at the arrow?"). Default `dot`. */
+  look?: 'dot' | 'ring' | 'arrow';
 }
 
 /**
@@ -38,6 +38,12 @@ export interface Lens {
   labelEvery?: number;
   landmarks?: readonly Landmark[];
   points?: readonly LinePoint[];
+  /** Jumps drawn on the lens line, the same as the first line's `arcs`. */
+  arcs?: readonly Arc[];
+  /** Height kept above the lens line, in picture units, so it does not move when arcs appear later. */
+  room?: number;
+  /** Height kept below the lens line's labels. */
+  roomBelow?: number;
 }
 
 export interface NumberLineProps {
@@ -51,6 +57,10 @@ export interface NumberLineProps {
   landmarks?: readonly Landmark[];
   arcs?: readonly Arc[];
   points?: readonly LinePoint[];
+  /** Height kept above the line, in picture units. A game that will draw arcs or an arrow later passes it now, so the line never moves. */
+  room?: number;
+  /** Height kept below the line's labels (for arcs drawn below later). */
+  roomBelow?: number;
   /** A zoom lens under the line (see `Lens`). */
   lens?: Lens;
   /**
@@ -82,6 +92,10 @@ export function valueAtX(x: number, min: number, max: number, width = LINE_W, si
 }
 const LABEL_H = 38;
 const POINT_R = 8;
+/** How far above the line an arrow point's stem starts. */
+const ARROW_LEN = 38;
+/** Height an arrow point needs above the line (stem plus a label). */
+const ARROW_ROOM = ARROW_LEN + 26;
 
 /** Where a value sits along the line, 0 at the left end and `width` at the right. Values outside the line are held at its ends. */
 export function lineX(value: number, min: number, max: number, width = LINE_W): number {
@@ -101,6 +115,57 @@ export function lineTicks(min: number, max: number, step: number): number[] {
 
 /** An arc's height grows with its span but stays inside the picture. */
 const arcHeight = (span: number) => 18 + Math.min(span, LINE_W) * 0.18;
+
+const upArcs = (arcs: readonly Arc[]) => arcs.filter((a) => (a.side ?? 'above') === 'above');
+const downArcs = (arcs: readonly Arc[]) => arcs.filter((a) => a.side === 'below');
+const arcSpan = (a: Arc, min: number, max: number) => Math.abs(lineX(a.to, min, max) - lineX(a.from, min, max));
+/** Height needed above a line for its arcs above and any arrow point. */
+const roomAbove = (arcs: readonly Arc[], points: readonly LinePoint[], min: number, max: number) =>
+  Math.max(0, ...upArcs(arcs).map((a) => arcHeight(arcSpan(a, min, max)) + (a.label ? 32 : 6)), ...(points.some((p) => p.look === 'arrow') ? [ARROW_ROOM] : []));
+/** Height needed below a line's labels for its arcs below. */
+const roomUnder = (arcs: readonly Arc[], min: number, max: number) =>
+  Math.max(0, ...downArcs(arcs).map((a) => arcHeight(arcSpan(a, min, max)) + (a.label ? 30 : 6)));
+
+/** The jumps of one line, drawn above or below it. Used for the main line and for the lens. */
+function Arcs({ arcs, min, max, y, colors }: { arcs: readonly Arc[]; min: number; max: number; y: number; colors?: KitColors<LineColor> }) {
+  const arcC = kitColor(colors, 'arc');
+  const textC = kitColor(colors, 'text');
+  const x = (v: number) => SIDE + lineX(v, min, max);
+  return (
+    <g>
+        {arcs.map((a, i) => {
+          const x1 = x(a.from);
+          const x2 = x(a.to);
+          const dir = (a.side ?? 'above') === 'above' ? -1 : 1;
+          const h = arcHeight(Math.abs(x2 - x1)) * dir;
+          const mid = (x1 + x2) / 2;
+          const startY = y + dir * 4;
+          // The arrow head sits at the end of the curve, turned to follow it.
+          const tx = x2 - mid;
+          const ty = -h * 2;
+          const len = Math.hypot(tx, ty) || 1;
+          const barb = (turn: number) => {
+            const c = Math.cos(turn);
+            const s = Math.sin(turn);
+            const ux = -tx / len;
+            const uy = -ty / len;
+            return `${x2 + (ux * c - uy * s) * 10} ${startY + (ux * s + uy * c) * 10}`;
+          };
+          return (
+            <g key={`a${i}`} fill="none" stroke={arcC} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d={`M ${x1} ${startY} Q ${mid} ${startY + h * 2} ${x2} ${startY}`} />
+              <path d={`M ${barb(0.5)} L ${x2} ${startY} L ${barb(-0.5)}`} />
+              {a.label && (
+                <text x={mid} y={startY + h + (dir === -1 ? -8 : 24)} textAnchor="middle" fontSize="22" fontWeight="700" fill={textC} stroke="none">
+                  {a.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+    </g>
+  );
+}
 
 /** The marks of one line: small marks, the ends, landmarks, then points. Used for the main line and for the lens. */
 function Marks({ min, max, step, labelEvery, landmarks, points, y, colors }: {
@@ -151,6 +216,20 @@ function Marks({ min, max, step, labelEvery, landmarks, points, y, colors }: {
       ))}
       {points.map((p, i) => {
         const c = kitColor(colors, p.tone ?? 'point');
+        if (p.look === 'arrow') {
+          const px = x(p.value);
+          return (
+            <g key={`p${i}`} fill={c} stroke={c} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1={px} y1={y - ARROW_LEN} x2={px} y2={y - 14} />
+              <path d={`M ${px - 9} ${y - 19} L ${px} ${y - 6} L ${px + 9} ${y - 19} Z`} strokeWidth="2" />
+              {p.label && (
+                <text x={px} y={y - ARROW_LEN - 8} textAnchor="middle" fontSize="22" fontWeight="700" fill={textC} stroke="none">
+                  {p.label}
+                </text>
+              )}
+            </g>
+          );
+        }
         return (
           <g key={`p${i}`}>
             <circle cx={x(p.value)} cy={y} r={POINT_R} fill={p.look === 'ring' ? 'var(--kit-fill, transparent)' : c} stroke={c} strokeWidth="3" />
@@ -166,20 +245,18 @@ function Marks({ min, max, step, labelEvery, landmarks, points, y, colors }: {
   );
 }
 
-export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], lens, onPick, pickOn, label, colors, className }: NumberLineProps) {
+export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], room, roomBelow, lens, onPick, pickOn, label, colors, className }: NumberLineProps) {
   const lineC = kitColor(colors, 'line');
-  const arcC = kitColor(colors, 'arc');
-  const textC = kitColor(colors, 'text');
   const x = (v: number) => SIDE + lineX(v, min, max);
-  const span = (a: Arc) => Math.abs(x(a.to) - x(a.from));
-  const up = arcs.filter((a) => (a.side ?? 'above') === 'above');
-  const down = arcs.filter((a) => a.side === 'below');
-  const top = Math.max(24, ...up.map((a) => arcHeight(span(a)) + (a.label ? 32 : 6)));
-  const bottomMain = LABEL_H + 14 + Math.max(0, ...down.map((a) => arcHeight(span(a)) + (a.label ? 30 : 6)));
+  const top = Math.max(24, room ?? 0, roomAbove(arcs, points, min, max));
+  const bottomMain = LABEL_H + 14 + Math.max(0, roomBelow ?? 0, roomUnder(arcs, min, max));
   const y = top;
-  // The lens line sits below everything on the first line, with room for its own labels.
-  const lensY = y + bottomMain - 14 + LENS_GAP;
-  const H = lens ? lensY + LABEL_H + 14 : y + bottomMain;
+  // The lens line sits below everything on the first line, with room for its own labels and arcs.
+  const lensArcs = lens?.arcs ?? [];
+  const lensTop = lens ? Math.max(0, lens.room ?? 0, roomAbove(lensArcs, lens.points ?? [], lens.from, lens.to)) : 0;
+  const lensBottom = lens ? Math.max(0, lens.roomBelow ?? 0, roomUnder(lensArcs, lens.from, lens.to)) : 0;
+  const lensY = y + bottomMain - 14 + LENS_GAP + lensTop;
+  const H = lens ? lensY + LABEL_H + 14 + lensBottom : y + bottomMain;
   const tapOn = onPick ? (lens && pickOn !== 'line' ? 'lens' : 'line') : null;
   const tap = (e: React.PointerEvent<SVGRectElement>) => {
     if (!onPick) return;
@@ -201,38 +278,10 @@ export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = 
             <line x1={x(lens.to)} y1={y + 10} x2={W - SIDE} y2={lensY - 12} />
           </g>
           <Marks min={lens.from} max={lens.to} step={lens.step} labelEvery={lens.labelEvery} landmarks={lens.landmarks ?? []} points={lens.points ?? []} y={lensY} colors={colors} />
+          <Arcs arcs={lensArcs} min={lens.from} max={lens.to} y={lensY} colors={colors} />
         </g>
       )}
-      {arcs.map((a, i) => {
-        const x1 = x(a.from);
-        const x2 = x(a.to);
-        const dir = (a.side ?? 'above') === 'above' ? -1 : 1;
-        const h = arcHeight(Math.abs(x2 - x1)) * dir;
-        const mid = (x1 + x2) / 2;
-        const startY = y + dir * 4;
-        // The arrow head sits at the end of the curve, turned to follow it.
-        const tx = x2 - mid;
-        const ty = -h * 2;
-        const len = Math.hypot(tx, ty) || 1;
-        const barb = (turn: number) => {
-          const c = Math.cos(turn);
-          const s = Math.sin(turn);
-          const ux = -tx / len;
-          const uy = -ty / len;
-          return `${x2 + (ux * c - uy * s) * 10} ${startY + (ux * s + uy * c) * 10}`;
-        };
-        return (
-          <g key={`a${i}`} fill="none" stroke={arcC} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d={`M ${x1} ${startY} Q ${mid} ${startY + h * 2} ${x2} ${startY}`} />
-            <path d={`M ${barb(0.5)} L ${x2} ${startY} L ${barb(-0.5)}`} />
-            {a.label && (
-              <text x={mid} y={startY + h + (dir === -1 ? -8 : 24)} textAnchor="middle" fontSize="22" fontWeight="700" fill={textC} stroke="none">
-                {a.label}
-              </text>
-            )}
-          </g>
-        );
-      })}
+      <Arcs arcs={arcs} min={min} max={max} y={y} colors={colors} />
       {onPick && <rect data-pick={tapOn} x={0} y={tapY - TAP_REACH} width={W} height={TAP_REACH * 2 + 20} fill="transparent" style={{ cursor: 'pointer' }} onPointerDown={tap} />}
     </svg>
   );
