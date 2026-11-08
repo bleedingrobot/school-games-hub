@@ -130,6 +130,9 @@ export const shownLevel = (level: HelpLevel, help: HelpSetting): HelpLevel => he
 /** The guided first go (plan section 6): 50 on the 100 line, every number marked. */
 export const GUIDED_KEY = 'place100:t50';
 
+/** The made-up example of the "Show me first" demo: a lens no zoom key uses, so a demo never gives away a real go. */
+export const DEMO_KEYS = { zoom: 'zoom:20-30:27' } as const;
+
 /** One go as saved: the key, what the child does with it and the help level it is shown at. */
 export interface GoPlan {
   key: string;

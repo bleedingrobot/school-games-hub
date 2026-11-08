@@ -66,6 +66,14 @@ it('finishes only a pupil’s own, finished challenge, once; records each key on
   expect((await send('pupil-a', { action: 'finish', seed: last.seed, taps: goodTaps(last) })).body).toMatchObject({ daysDone: 30, clusterChanged: 9, goldenBranch: true });
   expect(log.branches).toEqual(['pupil-a']); // the hub gives the Golden Berry Branch achievement
 
+  // Kinds of go seen: a bad kind is unreadable, a good one is saved (twice with no change), and a child's records fill it in.
+  expect((await send('pupil-c', { action: 'seen', kinds: ['nonsense'] })).status).toBe(400);
+  expect((await send('pupil-c', { action: 'seen', kinds: 'zoom' })).status).toBe(400);
+  expect((await send('pupil-c', { action: 'seen', kinds: ['zoom'] })).body).toEqual({ seen: ['zoom'] });
+  expect((await send('pupil-c', { action: 'seen', kinds: ['zoom'] })).body).toEqual({ seen: ['zoom'] });
+  expect((await send('pupil-c', { action: 'load' })).body.seen).toEqual(['zoom']);
+  expect((await send('pupil-d', { action: 'load' })).body.seen).toEqual([]);
+
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 

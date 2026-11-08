@@ -3,7 +3,7 @@ import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { BERRY_CLUSTERS } from './config';
 import { DAYS_PER_BRANCH, branchAfter, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, makeRound, marksFor, pictureFor, placeAfter, placeRight, poolFor, showRound, startFor, tapValue, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { DEMO_KEYS, GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, makeRound, marksFor, pictureFor, placeAfter, placeRight, poolFor, showRound, startFor, tapValue, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handlePigeon, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { placingSummary } from './teacher';
@@ -83,6 +83,8 @@ describe('the round', () => {
     const others = STEP_KEYS[5].filter((k) => !k.includes(':h'));
     expect(poolFor(5, new Map()).some((k) => k.includes(':h'))).toBe(false);
     expect(poolFor(5, new Map(others.map((k) => [k, 2]))).some((k) => k.includes(':h'))).toBe(true);
+    // The zoom demo's made-up example is never asked by any step.
+    expect(KEYS).not.toContain(DEMO_KEYS.zoom);
     // Fewer numbers on the branch as help fades; a wrong tap brings them back.
     expect(marksFor(5, 0, 100).named).toEqual([0, 50, 100]);
     expect(marksFor(5, 0, 100).big).toHaveLength(11);

@@ -2040,7 +2040,42 @@ function finishChallenge(daysDone, lastDay, today) {
 	};
 }
 //#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
+//#endregion
 //#region shared/pigeon/server.ts
+/** Every kind of go this game has (not only the one with a demo); kind names never change once shipped. */
+const ALLOWED_KINDS = [
+	"place",
+	"read",
+	"tens",
+	"near",
+	"zoom"
+];
 const unplayed = () => ({
 	daysDone: 0,
 	lastDay: null,
@@ -2100,17 +2135,30 @@ async function handlePigeon(services, player, body) {
 	if (!settings.enabled) return no(403, "Pigeon’s Number Line is not switched on for your class.", { code: "game-off" });
 	const today = () => nzDate(new Date(services.now()));
 	if (body.action === "load") {
-		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-		if (s === "busy" || facts === "busy") return busy();
+		const [s, facts, saved] = await Promise.all([
+			services.load(player),
+			services.facts(player),
+			services.seen(player)
+		]);
+		if (s === "busy" || facts === "busy" || saved === "busy") return busy();
 		const place = placeOf(s, facts);
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastDay: s.lastDay,
 			today: today(),
 			step: place.step,
 			level: place.level,
-			help: settings.help
+			help: settings.help,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, ALLOWED_KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7502,6 +7550,20 @@ Deno.serve(makeHandler({
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "pigeon", void 0, JUNIOR_QUICK_MS);
+	},
+	async seen(player) {
+		return call("kit_seen_get", {
+			player,
+			game: "pigeon"
+		}).then((r) => r === "busy" ? "busy" : r ?? []);
+	},
+	async markSeen(player, kinds) {
+		const r = await call("kit_seen_mark", {
+			player,
+			game: "pigeon",
+			kinds
+		});
+		return r === "busy" ? "busy" : r ?? kinds;
 	},
 	async progressChanged(player) {
 		const { error } = await admin.rpc("game_progress_changed", {

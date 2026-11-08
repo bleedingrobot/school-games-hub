@@ -18,6 +18,8 @@ export interface PigeonState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The kinds of go the child has seen (so a demo plays once only). */
+  seen: string[];
   /** The class's help setting. */
   help: HelpSetting;
 }
@@ -37,6 +39,8 @@ export interface PigeonBackend {
   /** Today's challenge, made and kept by the server. */
   start(): Promise<Round>;
   finish(seed: number, taps: readonly Tap[]): Promise<PigeonFinish>;
+  /** Remembers that the child has seen these kinds of go; returns the saved list. */
+  markSeen(kinds: string[]): Promise<string[]>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -61,6 +65,7 @@ export function fromServer(send: Send): PigeonBackend {
     load: async () => (await ask({ action: 'load' })) as unknown as PigeonState,
     start: async () => (await ask({ action: 'start' })).round as Round,
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as PigeonFinish,
+    markSeen: async (kinds) => ((await ask({ action: 'seen', kinds })).seen as string[]) ?? kinds,
   };
 }
 
