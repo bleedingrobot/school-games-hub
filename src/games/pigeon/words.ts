@@ -21,6 +21,12 @@ export const WORDS = {
   /** After a right answer: three kinds of cheer, picked by the go's place in the round. */
   right: ['Yes! That is it.', 'Lovely! You found it.', 'Well done!'],
   clusterTurned: (metal: Metal) => `Well done! A berry cluster turned ${metal}!`,
+  /** One honest line on the finish screen about how the round went (S15): about what the child did, not about them. */
+  how: {
+    most: 'You looked carefully and it paid off.',
+    some: 'Some were quick and some were tricky. The tricky ones help you grow.',
+    tricky: 'That was tricky today. We will go slowly and look together.',
+  },
   doneToday: 'Well done! Come back tomorrow to change another cluster.',
   nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,
   goldenBranch: (name: string) => `All the berries are gold! ${name} won the Golden Berry Branch!`,

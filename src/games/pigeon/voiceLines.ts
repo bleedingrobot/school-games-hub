@@ -59,8 +59,8 @@ export function lookLine(go: Pick<Go, 'kind' | 'n' | 'max'> & { step10?: number 
 /** What the home screen says: who is flying, and "come back tomorrow" once today's cluster has changed. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? `${title} ${WORDS.doneToday}` : title);
 
-/** What the finish screen says, with "next time: ..." when the child moved on a step. */
-export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
+/** What the finish screen says: the reward, how the round went, then "next time: ..." when the child moved on a step. */
+export const finishLine = (main: string, how: string, nextStep: Step | null): string => [main, how, nextStep ? WORDS.nextStep(nextStep) : null].filter(Boolean).join(' ');
 
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.demoTiny, WORDS.demoLens, WORDS.demoFind, ...WORDS.right, ...Object.values(SLIP_LINES), ...Object.values(NEAR_FAR_LINES), ...Object.values(PLACE_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
@@ -80,6 +80,6 @@ export function allVoiceLines(): string[] {
     }
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.clusterTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenBranch)];
-  for (const main of mains) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
+  for (const main of mains) for (const how of Object.values(WORDS.how)) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, how, up));
   return [...lines];
 }
