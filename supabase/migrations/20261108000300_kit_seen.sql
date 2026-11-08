@@ -58,8 +58,8 @@ begin
   if cardinality(merged) > 32 then
     raise exception 'Too many kinds saved.' using errcode = '22023';
   end if;
-  insert into public.kit_seen (player, game, kinds) values (player, game, merged)
-  on conflict (player, game) do update set kinds = excluded.kinds, updated_at = now();
+  insert into public.kit_seen (player, game, kinds) values (kit_seen_mark.player, kit_seen_mark.game, merged)
+  on conflict on constraint kit_seen_pkey do update set kinds = excluded.kinds, updated_at = now();
   return merged;
 end;
 $$;
