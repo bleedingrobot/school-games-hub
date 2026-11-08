@@ -9,6 +9,7 @@ import type { Tap } from './play';
 import type { Round } from './round';
 import { afterAnswer, newStats } from '../maths/leitner';
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import { mergeSeen } from '../kit/seen';
 import { unplayed, type RobinServices, type Saved, type Settings } from './server';
 
 export interface MemoryRound {
@@ -27,6 +28,8 @@ export interface MemoryData {
   facts: Record<string, FactStats[]>;
   /** The `once` of every batch of answers recorded, so one sent twice counts once. */
   recorded: string[];
+  /** The kinds of go each pupil has seen (kept here so the preview remembers them). */
+  seen?: Record<string, string[]>;
 }
 
 export interface MemoryOptions {
@@ -89,6 +92,15 @@ export function memoryServices(options: MemoryOptions = {}): RobinServices & { d
       data.facts[player] = withAnswers(data.facts[player] ?? [], answers);
       options.log?.answers.push({ player, once, answers });
       saved();
+    },
+    async seen(player) {
+      return [...(data.seen?.[player] ?? [])];
+    },
+    async markSeen(player, kinds) {
+      const next = mergeSeen(data.seen?.[player] ?? [], kinds);
+      data.seen = { ...data.seen, [player]: next };
+      saved();
+      return [...next];
     },
     async progressChanged(player) {
       options.log?.feasts?.push(player);

@@ -67,7 +67,7 @@ function* everyGo(): Generator<Go> {
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([
     WORDS.lookTogether, WORDS.lookFill, WORDS.nowTry, WORDS.promptHowMany, WORDS.putOneFirst, WORDS.oneMore, WORDS.pressOk,
-    WORDS.touchFirstSay, WORDS.findSame, WORDS.countWithMeSay,
+    WORDS.touchFirstSay, WORDS.demoHowMany, WORDS.demoPickCard, WORDS.demoCountOn, WORDS.demoCountOnAnswer, WORDS.findSame, WORDS.countWithMeSay,
     nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true), WORDS.doneToday, ...WORDS.tip,
   ]);
   const names = Object.entries(FRIEND_NAMES);

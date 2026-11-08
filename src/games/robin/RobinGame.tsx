@@ -128,6 +128,12 @@ export function RobinGame({ backend, onExit, extra }: Props) {
         guide={state.daysDone === 0 && state.lastDay === null}
         sound={soundOn}
         say={voice.say}
+        seenKinds={state.seen}
+        saveSeen={(kinds) => {
+          // Kept in the state too, so playing again in the same sitting remembers.
+          setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+          return backend.markSeen(kinds);
+        }}
         onDone={(taps) => done(screen.round.seed, taps)}
       />
     );

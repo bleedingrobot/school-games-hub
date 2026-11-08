@@ -24,6 +24,10 @@ import type { Tap } from '../../../shared/robin/play';
 import { GOES_PER_ROUND, levelFor, redoCards, showRound, type Go, type Round, type Slip } from '../../../shared/robin/round';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
+import { DemoBar } from '../../kit/DemoBar';
+import { useSeenKinds } from '../../kit/useSeenKinds';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { DEMO_STEPS, DemoScene, isDemoKind, type DemoKind } from './demo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { playSound } from '../sounds';
@@ -51,7 +55,16 @@ interface Props {
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
+  /** The kinds of go the child has seen: a demo plays once for a kind they have not. `mark` remembers them. */
+  seenKinds: readonly string[];
+  saveSeen: (kinds: string[]) => Promise<unknown>;
 }
+
+/** At most this many demos in one round; any others wait for the next. */
+const MAX_DEMOS = 2;
+/** The kind whose demo plays before this go, if it has not been seen and the round has room for it. */
+const demoBefore = (go: Go, seen: { has(kind: string): boolean }, shown: readonly string[]): DemoKind | null =>
+  isDemoKind(go.kind) && !seen.has(go.kind) && shown.length < MAX_DEMOS ? go.kind : null;
 
 /** After a wrong tap: the berries that were counted (or given), as a small row, so the slip can be seen. */
 function WhyPicture({ pick, kind }: { pick: number; kind: Slip }) {
@@ -99,10 +112,17 @@ function CountingPicture({ go, filled }: { go: Go; filled: number }) {
   );
 }
 
-export function Goes({ round, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, friend, guide = false, sound, say, onDone, seenKinds, saveSeen }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
+  const { has, mark } = useSeenKinds(seenKinds, saveSeen);
+  const seen = { has };
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
+  /** The demo before the current go (null: none), and the kinds already demoed this round. */
+  const [demo, setDemo] = useState<{ kind: DemoKind | null; shown: string[] }>(() => {
+    const kind = demoBefore(goes[0], seen, []);
+    return { kind, shown: kind ? [kind] : [] };
+  });
   const [phase, setPhase] = useState<Phase>('ask');
   /** The go's place in the two-tap flow (shared/kit/mistakes.ts). */
   const [flow, setFlow] = useState(NEW_GO);
@@ -140,6 +160,9 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const guided = guide && at === 0;
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
+  const kindDemo = useKindDemo({ kind: demo.kind, seen, mark, steps: demo.kind ? DEMO_STEPS[demo.kind] : [], say });
+  /** True from the go's start until its demo has ended or been skipped: the real go waits, and nothing is tappable. */
+  const demoing = demo.kind !== null && !seen.has(demo.kind);
   const inRedo = flow.phase === 'redo';
   const countedAll = go.kind !== 'howmany' || inRedo || flow.phase === 'look' || marked.length >= go.n;
   const countHand = useGuidedFirstGo(go.kind === 'howmany' && phase === 'ask' && !countedAll, COUNT_HAND_MS);
@@ -159,9 +182,12 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     since.current = Date.now();
     setPose('sit');
     setPeek(false);
-    say(askLine(go), () => {
-      if (live_ && !tappedYet.current) since.current = Date.now();
-    });
+    // A demo goes first (the question is read once it has ended).
+    if (!demoing) {
+      say(askLine(go), () => {
+        if (live_ && !tappedYet.current) since.current = Date.now();
+      });
+    }
     saidWait.current = false;
     setWithMe(false);
     setCounting(false);
@@ -174,7 +200,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, goes]);
+  }, [at, goes, demoing]);
 
   // A help panel (why, or counting together) is brought into view as it appears, so it is not left below the fold.
   const helpKey = look ? 'look' : why && asking ? `why${taps.length}` : '';
@@ -196,6 +222,10 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       setTaken([]);
       setMarked([]);
       setNeedOne(false);
+      setDemo((d) => {
+        const kind = demoBefore(goes[at + 1], seen, d.shown);
+        return { kind, shown: kind ? [...d.shown, kind] : d.shown };
+      });
       return;
     }
     setPhase('done');
@@ -256,6 +286,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       return;
     }
     clearTimers();
+    mark([go.kind]);
     setWhy(null);
     setPhase('right');
     setPose('cheer');
@@ -333,6 +364,27 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const waiting = go.kind === 'howmany' && !countedAll;
   const nextToTouch = go.kind === 'howmany' ? go.points.findIndex((_, i) => !marked.includes(i)) : -1;
   const handOnBerry = waiting && !counting && (countHand.pointing || (withMe && marked.length === go.n - 1));
+
+  if (demoing && demo.kind) {
+    return (
+      <div className="rb-play rb-scene" style={sceneStyle()}>
+        <h2 className="rb-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="rb-top">
+          <div className="rb-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'rb-pip rb-pip--done' : 'rb-pip'} />
+            ))}
+          </div>
+        </div>
+        <p className="rb-ask" aria-live="polite">{DEMO_STEPS[demo.kind][kindDemo.step]?.line}</p>
+        <div className="rb-stage">
+          <span className="rb-stage__friend" aria-hidden="true"><Friend friend={friend} pose="sit" /></span>
+          <DemoScene kind={demo.kind} step={kindDemo.step} />
+        </div>
+        <DemoBar prefix="rb" skipLabel={WORDS.skipDemo} canSkip={kindDemo.canSkip} onSkip={kindDemo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className="rb-play rb-scene" style={sceneStyle()}>

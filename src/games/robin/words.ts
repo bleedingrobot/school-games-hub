@@ -58,6 +58,13 @@ export const WORDS = {
   cloth: 'Under the cloth',
   oneMore: 'One more berry comes.',
   promptHowMany: 'How many berries?',
+  /** The "Show me first" demos, the first time How many? and One more come up (made-up examples the round never asks). */
+  skipDemo: 'Skip',
+  demoTitle: 'Watch first',
+  demoHowMany: 'Watch. Touch each berry as you count.',
+  demoPickCard: 'Then tap the number card.',
+  demoCountOn: 'Watch. There are three berries under the cloth.',
+  demoCountOnAnswer: 'Three and one more is four.',
   /** Written under the cards of a One more go (the voice already asks it). */
   promptCountOn: 'How many now?',
   /** Said once when a grey card is tapped before every berry is touched, and the same words written under the cards. */

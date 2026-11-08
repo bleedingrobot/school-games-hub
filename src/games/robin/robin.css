@@ -241,3 +241,7 @@
 .rb-owncount__badge { display: inline-flex; align-items: center; gap: 6px; min-width: 64px; justify-content: center; padding: 4px 14px; border-radius: 16px; background: #e5f6e0; border: 3px solid #2e8b3d; font: 900 2.2rem system-ui, sans-serif; }
 .rb-owncount__tick { color: #2e8b3d; }
 .rb-owncount__card { position: relative; padding: 2px 12px; border-radius: 12px; border: 2px solid var(--rb-ink); background: #f4c20d; font: 900 1.4rem system-ui, sans-serif; opacity: 0.7; text-decoration: line-through; text-decoration-thickness: 3px; text-decoration-color: #c0392b; }
+
+/* "Show me first": the demo's plate, and the Skip bar under it (in line, never over a card). */
+.rb-demo { display: flex; justify-content: center; min-height: 64px; padding: 4px 0; }
+.rb-demo__plate { position: relative; }
