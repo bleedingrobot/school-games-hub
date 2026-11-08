@@ -3,9 +3,9 @@
  *
  *  - Plant: plant the rows one at a time, then how many shoots?
  *  - Under the mat: a garden with a mat over most of it; how many shoots?
- *  - Turn: the garden turned round; how many shoots?
+ *  - Turn: the garden turned round; which garden is it now? (a picture card, picked before it turns)
  *  - Which garden: four pictures, tap the one that is R rows of C.
- *  - Share: shoots dealt into equal rows; how many in each row?
+ *  - Share: the child deals shoots into equal rows by tapping lanes; once the shares are fair, how many in each row?
  *  - Cut: a big garden cut in two to work out; and one row short of ten.
  *
  * Each go comes with its help level from the server: 5 every row shaded and counted along, down to 0 the sum alone. A wrong tap
@@ -20,9 +20,9 @@ import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/Sho
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import type { Tap } from '../../../shared/swamphen/play';
 import type { Friend as FriendName } from '../../../shared/swamphen/progress';
-import { GOES_PER_ROUND, pictureFor, pictureOf, showRound, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
+import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, showRound, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
 import { playSound } from '../sounds';
-import { Friend, Garden, Lanes, Pile, sceneStyle, type Pose, type Scenery } from './art';
+import { DealLanes, Friend, Garden, Pile, sceneStyle, type Pose, type Scenery } from './art';
 import { SLIP_LINES, askLine, lookLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -57,6 +57,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [peek, setPeek] = useState(false);
   const [planted, setPlanted] = useState(0);
   const [turned, setTurned] = useState(false);
+  const [lanes, setLanes] = useState<number[]>([]);
+  const [dealt, setDealt] = useState<number[]>([]);
+  const [byHand, setByHand] = useState(false);
   const [pose, setPose] = useState<Pose>('sit');
   const since = useRef(Date.now());
   const tappedYet = useRef(false);
@@ -81,6 +84,16 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const plantFirst = go.kind === 'plant' && go.l >= 3;
   const needPlant = plantFirst && planted < go.rows;
   const solved = phase !== 'ask';
+  const isShare = go.kind === 'share';
+  const pictureCards = go.kind === 'which' || go.kind === 'turn';
+  const laneCounts = lanes.length === go.rows ? lanes : Array.from({ length: go.rows }, () => 0);
+  const left = go.total - laneCounts.reduce((x, y) => x + y, 0);
+  const fair = isShare && left === 0 && fairShare(laneCounts);
+  const needDeal = isShare && !fair;
+  const lowest = Math.min(...laneCounts);
+  const more = isShare && left === 0 && !fair ? laneCounts.flatMap((n, i) => (n > lowest ? [i] : [])) : [];
+  const dealtCount = go.total - left;
+  const aids = seen >= 4;
 
   // Each new go is read aloud once.
   useEffect(() => {
@@ -92,6 +105,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     setPeek(false);
     setPlanted(0);
     setTurned(false);
+    setLanes(Array.from({ length: go.rows }, () => 0));
+    setDealt([]);
+    setByHand(false);
     guideHand.start();
     say(askLine(go), () => {
       if (live && !tappedYet.current) since.current = Date.now();
@@ -102,6 +118,43 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
+
+  // Sharing: say whether the shares are fair once the pile is out, and start each round of dealing with a hint at levels 5 and 4.
+  useEffect(() => {
+    if (!isShare || phase !== 'ask' || gs.phase === 'look') return;
+    if (left === 0 && dealtCount > 0) say(fair ? WORDS.fair : WORDS.unfair);
+    else if (aids && dealtCount > 0 && dealtCount % go.rows === 0) say(WORDS.oneEach);
+    // Only when the dealing changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealtCount]);
+
+  function deal(lane: number) {
+    if (phase !== 'ask' || gs.phase === 'look' || left <= 0) return;
+    tappedYet.current = true;
+    const next = laneCounts.map((n, i) => (i === lane ? n + 1 : n));
+    setLanes(next);
+    setDealt((d) => [...d, lane]);
+    if (next.every((n) => n > 0)) setByHand(true);
+    if (sound) playSound('tap');
+  }
+  function dealRound() {
+    if (left < go.rows) return;
+    tappedYet.current = true;
+    setLanes(laneCounts.map((n) => n + 1));
+    setDealt((d) => [...d, ...Array.from({ length: go.rows }, (_, i) => i)]);
+    if (sound) playSound('tap');
+  }
+  function takeBack() {
+    const last = dealt[dealt.length - 1];
+    if (last === undefined) return;
+    setLanes(laneCounts.map((n, i) => (i === last ? n - 1 : n)));
+    setDealt((d) => d.slice(0, -1));
+  }
+  function dealAgain() {
+    setLanes(Array.from({ length: go.rows }, () => 0));
+    setDealt([]);
+    setByHand(false);
+  }
 
   function nextGo(all: Tap[]) {
     clearTimers();
@@ -125,7 +178,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   }
 
   function pick(value: number) {
-    if (phase !== 'ask' || gs.phase === 'look' || needPlant) return;
+    if (phase !== 'ask' || gs.phase === 'look' || needPlant || needDeal) return;
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
@@ -143,7 +196,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       const slip = go.wrongs.find((w) => w.n === value)?.kind ?? 'near';
       setLastSlip(slip);
       if (state.phase === 'look') {
-        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go.kind), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
+        if (go.kind === 'turn') setTurned(true);
+        startLook({ anchor: at, steps: isShare ? go.cols : 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go.kind), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
       } else say(SLIP_LINES[slip]);
       return;
     }
@@ -151,6 +205,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     setGs(stepGo(gs, 'right'));
     setPhase('right');
     setPose('eat');
+    if (go.kind === 'turn') setTurned(true);
     say(WORDS.right[at % WORDS.right.length]);
     if (sound) playSound('badge');
     later(RIGHT_MS, () => nextGo(next));
@@ -163,12 +218,19 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   
   function picture() {
     if (go.kind === 'which') return null;
-    if (go.kind === 'share') {
-      const hidden = view === 'plain' || view === 'peek';
+    if (isShare) {
       return (
         <div className="sh-share">
-          {!hidden && <Lanes rows={go.rows} label={`${go.rows} empty rows`} />}
-          {view !== 'edges' && !hidden && <Pile n={go.total} label={WORDS.pile(go.total)} />}
+          <DealLanes
+            counts={laneCounts}
+            glow={aids && left > 0 && phase === 'ask' ? dealtCount % go.rows : null}
+            more={more}
+            fair={fair}
+            still={phase !== 'ask' || gs.phase === 'look'}
+            onDeal={deal}
+            laneLabel={WORDS.lane}
+          />
+          {left > 0 && <Pile n={left} label={WORDS.pile(left)} />}
         </div>
       );
     }
@@ -186,12 +248,26 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     );
   }
 
+  function lookPicture() {
+    if (isShare) {
+      const each = look?.filled ?? 0;
+      return (
+        <div className="sh-share">
+          <DealLanes counts={Array.from({ length: go.rows }, () => each)} still laneLabel={WORDS.lane} />
+          {go.total - each * go.rows > 0 && <Pile n={go.total - each * go.rows} label="" />}
+        </div>
+      );
+    }
+    if (go.kind === 'turn') return <Garden rows={go.cols} cols={go.rows} view="rows" small label="" />;
+    return <span className="sh-why__icon" aria-hidden="true">👀</span>;
+  }
+
   const cards = phase === 'ask' ? pic.choices : go.choices;
-  const heard = (n: number) => (go.kind === 'which' ? '' : String(n));
+  const heard = (n: number) => (pictureCards ? '' : String(n));
 
   return (
     <div className={`sh-play sh-scene--${scenery}`} style={sceneStyle(scenery)}>
-      <h2 className="sh-sr" tabIndex={-1} ref={heading}>{go.kind === 'which' ? WORDS.pickGarden : WORDS.pickCard}</h2>
+      <h2 className="sh-sr" tabIndex={-1} ref={heading}>{go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : WORDS.pickCard}</h2>
       <div className="sh-top">
         <div className="sh-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
           {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
@@ -204,7 +280,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       <div className="sh-stage" key={at}>
         <span className="sh-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
         <p className="sh-ask" aria-live="polite">{askLine(go)}</p>
-        {go.kind !== 'which' && <div className="sh-field">{picture()}</div>}
+        {isShare && needDeal && phase === 'ask' && <p className="sh-hint">{WORDS.dealIt}</p>}
+        {go.kind !== 'which' && <div className={`sh-field${go.kind === 'turn' && turned ? ' sh-field--turned' : ''}`}>{picture()}</div>}
         <div className="sh-tools">
           {guideHand.pointing && plantFirst && planted === 0 && <PointingHand prefix="sh" />}
           {plantFirst && planted < go.rows && phase === 'ask' && (
@@ -212,7 +289,26 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
               <span aria-hidden="true">🌱</span> {WORDS.plantRow}
             </button>
           )}
-          {go.kind === 'turn' && phase === 'ask' && (
+          {isShare && phase === 'ask' && gs.phase !== 'look' && (
+            <>
+              {dealt.length > 0 && (
+                <button type="button" className="sh-button sh-tool" onClick={takeBack}>
+                  <span aria-hidden="true">↩</span> {WORDS.takeBack}
+                </button>
+              )}
+              {byHand && left >= go.rows && (
+                <button type="button" className="sh-button sh-tool" onClick={dealRound}>
+                  <span aria-hidden="true">🌱</span> {WORDS.dealRound}
+                </button>
+              )}
+              {left === 0 && !fair && (
+                <button type="button" className="sh-button sh-tool" onClick={dealAgain}>
+                  <span aria-hidden="true">🔁</span> {WORDS.dealAgain}
+                </button>
+              )}
+            </>
+          )}
+          {go.kind === 'turn' && phase === 'ask' && level >= 4 && (
             <button type="button" className="sh-button sh-tool" onClick={() => setTurned((t) => !t)}>
               <span aria-hidden="true">🔄</span> {turned ? WORDS.turnBack : WORDS.turnIt}
             </button>
@@ -229,19 +325,19 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
         <ShowWhy prefix="sh" tapKey={whyTap} picture={<span className="sh-why__icon" aria-hidden="true">🤔</span>} line={SLIP_LINES[lastSlip]} />
       )}
       {gs.phase === 'look' && look && (
-        <LookTogether prefix="sh" title={WORDS.lookTitle} picture={<span className="sh-why__icon" aria-hidden="true">👀</span>} line={lookLine(go.kind)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
+        <LookTogether prefix="sh" title={WORDS.lookTitle} picture={lookPicture()} line={lookLine(go.kind)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
       )}
       {gs.phase === 'redo' && <NowYouTry prefix="sh" line={WORDS.nowYouTry} />}
 
-      <div className={`sh-cards sh-cards--${go.kind}`} role="group" aria-label={go.kind === 'which' ? WORDS.pickGarden : WORDS.pickCard}>
+      <div className={`sh-cards sh-cards--${go.kind}`} role="group" aria-label={go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : WORDS.pickCard}>
         {cards.map((n) => {
           const cls = `sh-choice${wobble === n ? ' sh-choice--wobble' : ''}${solved && n === go.answer ? ' sh-choice--right' : ''}${solved && n !== go.answer ? ' sh-choice--off' : ''}`;
-          const p = go.kind === 'which' ? pictureOf(n) : null;
+          const p = pictureCards ? pictureOf(n) : null;
           return (
             <button
               key={`${at}-${n}`}
               type="button"
-              disabled={gs.phase === 'look' || needPlant}
+              disabled={gs.phase === 'look' || needPlant || needDeal}
               className={cls}
               onClick={() => pick(n)}
               aria-label={p ? (p.rows ? WORDS.garden(p.rows, p.cols) : WORDS.pile(p.cols)) : heard(n)}

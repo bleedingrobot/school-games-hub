@@ -1687,9 +1687,9 @@ function kindOfKey(key) {
 		default: return null;
 	}
 }
-/** The plain times-table key a go also records, or null for sharing (no plain key for it). */
+/** The plain times-table key a go also records, or null for sharing and turning (neither states a total to find). */
 function mulKeyOf(key) {
-	if (key.startsWith("share:")) return null;
+	if (key.startsWith("share:") || key.startsWith("turn:")) return null;
 	const [a, b] = keyPair(key);
 	return factKey(a, b);
 }
@@ -1884,6 +1884,32 @@ function showGo(round, index, plan) {
 		};
 	}
 	const total = a * b;
+	if (plan.kind === "turn") {
+		const answer = pictureCode(b, a);
+		const wrongs = [
+			{
+				n: pictureCode(a, b),
+				kind: "unturned"
+			},
+			{
+				n: pictureCode(1, a + b),
+				kind: "added"
+			},
+			{
+				n: total,
+				kind: "scatter"
+			}
+		];
+		return {
+			...plan,
+			rows: a,
+			cols: b,
+			total,
+			answer,
+			wrongs,
+			choices: shuffle([answer, ...wrongs.map((w) => w.n)], random)
+		};
+	}
 	if (plan.kind === "which") {
 		const answer = pictureCode(a, b);
 		const wrongs = [

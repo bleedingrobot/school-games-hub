@@ -8,6 +8,22 @@
   "text": "Now you try."
  },
  {
+  "slug": "one-for-each-row",
+  "text": "One for each row."
+ },
+ {
+  "slug": "fair-shares",
+  "text": "Fair shares!"
+ },
+ {
+  "slug": "some-rows-have-more-share-them-fairly",
+  "text": "Some rows have more. Share them fairly."
+ },
+ {
+  "slug": "deal-the-shoots-into-the-rows",
+  "text": "Deal the shoots into the rows."
+ },
+ {
   "slug": "yes-that-is-it",
   "text": "Yes! That is it."
  },
@@ -58,6 +74,10 @@
  {
   "slug": "that-garden-is-turned-the-other-way-look-at-the-rows-first",
   "text": "That garden is turned the other way. Look at the rows first."
+ },
+ {
+  "slug": "that-is-the-garden-before-it-was-turned",
+  "text": "That is the garden before it was turned."
  },
  {
   "slug": "those-shoots-are-not-in-rows-look-for-equal-rows",
@@ -224,88 +244,88 @@
   "text": "Plant 5 rows of 10. How many shoots?"
  },
  {
-  "slug": "2-rows-of-3-turn-the-garden-how-many-shoots",
-  "text": "2 rows of 3. Turn the garden. How many shoots?"
+  "slug": "2-rows-of-3-turn-the-garden-which-garden-is-it-now",
+  "text": "2 rows of 3. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "turning-it-round-gives-the-same-shoots",
-  "text": "Turning it round gives the same shoots."
+  "slug": "turning-it-round-swaps-the-rows-and-the-shoots-in-a-row",
+  "text": "Turning it round swaps the rows and the shoots in a row."
  },
  {
-  "slug": "2-rows-of-4-turn-the-garden-how-many-shoots",
-  "text": "2 rows of 4. Turn the garden. How many shoots?"
+  "slug": "2-rows-of-4-turn-the-garden-which-garden-is-it-now",
+  "text": "2 rows of 4. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "2-rows-of-5-turn-the-garden-how-many-shoots",
-  "text": "2 rows of 5. Turn the garden. How many shoots?"
+  "slug": "2-rows-of-5-turn-the-garden-which-garden-is-it-now",
+  "text": "2 rows of 5. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "2-rows-of-6-turn-the-garden-how-many-shoots",
-  "text": "2 rows of 6. Turn the garden. How many shoots?"
+  "slug": "2-rows-of-6-turn-the-garden-which-garden-is-it-now",
+  "text": "2 rows of 6. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "3-rows-of-2-turn-the-garden-how-many-shoots",
-  "text": "3 rows of 2. Turn the garden. How many shoots?"
+  "slug": "3-rows-of-2-turn-the-garden-which-garden-is-it-now",
+  "text": "3 rows of 2. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "3-rows-of-4-turn-the-garden-how-many-shoots",
-  "text": "3 rows of 4. Turn the garden. How many shoots?"
+  "slug": "3-rows-of-4-turn-the-garden-which-garden-is-it-now",
+  "text": "3 rows of 4. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "3-rows-of-5-turn-the-garden-how-many-shoots",
-  "text": "3 rows of 5. Turn the garden. How many shoots?"
+  "slug": "3-rows-of-5-turn-the-garden-which-garden-is-it-now",
+  "text": "3 rows of 5. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "3-rows-of-6-turn-the-garden-how-many-shoots",
-  "text": "3 rows of 6. Turn the garden. How many shoots?"
+  "slug": "3-rows-of-6-turn-the-garden-which-garden-is-it-now",
+  "text": "3 rows of 6. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "4-rows-of-2-turn-the-garden-how-many-shoots",
-  "text": "4 rows of 2. Turn the garden. How many shoots?"
+  "slug": "4-rows-of-2-turn-the-garden-which-garden-is-it-now",
+  "text": "4 rows of 2. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "4-rows-of-3-turn-the-garden-how-many-shoots",
-  "text": "4 rows of 3. Turn the garden. How many shoots?"
+  "slug": "4-rows-of-3-turn-the-garden-which-garden-is-it-now",
+  "text": "4 rows of 3. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "4-rows-of-5-turn-the-garden-how-many-shoots",
-  "text": "4 rows of 5. Turn the garden. How many shoots?"
+  "slug": "4-rows-of-5-turn-the-garden-which-garden-is-it-now",
+  "text": "4 rows of 5. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "4-rows-of-6-turn-the-garden-how-many-shoots",
-  "text": "4 rows of 6. Turn the garden. How many shoots?"
+  "slug": "4-rows-of-6-turn-the-garden-which-garden-is-it-now",
+  "text": "4 rows of 6. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "5-rows-of-2-turn-the-garden-how-many-shoots",
-  "text": "5 rows of 2. Turn the garden. How many shoots?"
+  "slug": "5-rows-of-2-turn-the-garden-which-garden-is-it-now",
+  "text": "5 rows of 2. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "5-rows-of-3-turn-the-garden-how-many-shoots",
-  "text": "5 rows of 3. Turn the garden. How many shoots?"
+  "slug": "5-rows-of-3-turn-the-garden-which-garden-is-it-now",
+  "text": "5 rows of 3. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "5-rows-of-4-turn-the-garden-how-many-shoots",
-  "text": "5 rows of 4. Turn the garden. How many shoots?"
+  "slug": "5-rows-of-4-turn-the-garden-which-garden-is-it-now",
+  "text": "5 rows of 4. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "5-rows-of-6-turn-the-garden-how-many-shoots",
-  "text": "5 rows of 6. Turn the garden. How many shoots?"
+  "slug": "5-rows-of-6-turn-the-garden-which-garden-is-it-now",
+  "text": "5 rows of 6. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "6-rows-of-2-turn-the-garden-how-many-shoots",
-  "text": "6 rows of 2. Turn the garden. How many shoots?"
+  "slug": "6-rows-of-2-turn-the-garden-which-garden-is-it-now",
+  "text": "6 rows of 2. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "6-rows-of-3-turn-the-garden-how-many-shoots",
-  "text": "6 rows of 3. Turn the garden. How many shoots?"
+  "slug": "6-rows-of-3-turn-the-garden-which-garden-is-it-now",
+  "text": "6 rows of 3. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "6-rows-of-4-turn-the-garden-how-many-shoots",
-  "text": "6 rows of 4. Turn the garden. How many shoots?"
+  "slug": "6-rows-of-4-turn-the-garden-which-garden-is-it-now",
+  "text": "6 rows of 4. Turn the garden. Which garden is it now?"
  },
  {
-  "slug": "6-rows-of-5-turn-the-garden-how-many-shoots",
-  "text": "6 rows of 5. Turn the garden. How many shoots?"
+  "slug": "6-rows-of-5-turn-the-garden-which-garden-is-it-now",
+  "text": "6 rows of 5. Turn the garden. Which garden is it now?"
  },
  {
   "slug": "which-garden-is-2-rows-of-3",
