@@ -22,6 +22,7 @@ import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { replay, wrongFirstRun, type Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
 import { GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
+import { HearAgain } from '../../kit/HearAgain';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { backFor, PaperLayers, type Scenery } from './Beach';
@@ -174,6 +175,15 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
     setOrder(null);
   }
 
+  /** "Hear it again": the why-line if one is showing, otherwise the question (not the look-together step, and no first-go intro). */
+  function hearAgain() {
+    if (look || phase !== 'ask') return;
+    const line = why ? whyLine(why.kind, go.kind, go.whole, go.showing, go.hiding) : go.spoken;
+    say(line, () => {
+      if (!tappedYet.current) since.current = Date.now();
+    });
+  }
+
   /** The second wrong shell of a go: lift the sand, read the split out, then ask the same go again. */
   function lookTogether() {
     setWhy(null);
@@ -251,10 +261,13 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
     <div className={`pp-play pp-scene--${scenery}`} style={backFor(scenery)}>
       <PaperLayers />
       <h2 className="pp-sr" tabIndex={-1} ref={heading}>{WORDS.pickShell}</h2>
-      <div className="pp-progress" aria-label={WORDS.goesDone(done, GOES_PER_ROUND)}>
-        {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
-          <span key={i} className={i < done ? 'pp-pip pp-pip--done' : 'pp-pip'} />
-        ))}
+      <div className="pp-top">
+        <div className="pp-progress" aria-label={WORDS.goesDone(done, GOES_PER_ROUND)}>
+          {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+            <span key={i} className={i < done ? 'pp-pip pp-pip--done' : 'pp-pip'} />
+          ))}
+        </div>
+        <HearAgain prefix="pp" label={WORDS.hearAgain} onHear={hearAgain} />
       </div>
       <div className="pp-sign" aria-live="polite">
         {go.kind === 'altogether' && phase !== 'right' && phase !== 'done' ? (

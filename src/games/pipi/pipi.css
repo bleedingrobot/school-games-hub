@@ -107,6 +107,7 @@
 
 /* ---- a go: the sign, the frame on the sand, the wave and the number shells ---- */
 .pp-play { flex: 1; display: flex; flex-direction: column; align-items: center; min-height: var(--pp-room, 100dvh); }
+.pp-top { align-self: flex-start; position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .pp-progress { display: flex; gap: 8px; padding: 14px 8px 0; align-self: flex-start; position: relative; }
 .pp-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.55); border: 2px solid var(--pp-sea-dark); }
 .pp-pip--done { background: var(--pp-gold); }

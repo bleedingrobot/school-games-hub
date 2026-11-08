@@ -112,10 +112,6 @@
   "text": "Ten plus 1. How many?"
  },
  {
-  "slug": "how-many",
-  "text": "How many?"
- },
- {
   "slug": "11-10-and-1-is-11",
   "text": "11! 10 and 1 is 11."
  },
@@ -136,10 +132,6 @@
   "text": "Ten plus how many makes 11?"
  },
  {
-  "slug": "how-many-more",
-  "text": "How many more?"
- },
- {
   "slug": "1-10-and-1-is-11",
   "text": "1! 10 and 1 is 11."
  },
@@ -150,10 +142,6 @@
  {
   "slug": "11-take-away-ten-how-many-are-left",
   "text": "11 take away ten. How many are left?"
- },
- {
-  "slug": "how-many-are-left",
-  "text": "How many are left?"
  },
  {
   "slug": "11-is-all-the-berries-together-how-many-go-with-the-ten",

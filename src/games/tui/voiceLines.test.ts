@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { makeRound, showRound } from '../../../shared/tui/round';
 import { voiceSlug } from '../../speech';
-import { allVoiceLines } from './voiceLines';
+import { allVoiceLines, askLine, sumLine } from './voiceLines';
 import { WORDS } from './words';
 
 // The list scripts/voice-clips.py records. After changing a line, rewrite it with
@@ -27,6 +27,14 @@ describe('Tūī’s Ten Tree voice clips', () => {
       for (const go of showRound(makeRound(3, [], { step, level: 5 }))) {
         for (const w of go.wrongs) expect(said.has(WORDS.why(w.kind, w.n, go.v))).toBe(true);
       }
+    }
+  });
+
+  it('says the numbers at level 0, never "How many?" alone', () => {
+    for (const v of [0, 1, 2, 3] as const) {
+      const go = { v, n: 3, teen: 13, l: 0 as const };
+      expect(askLine(go)).toBe(sumLine(go));
+      expect(askLine(go)).toMatch(/3/);
     }
   });
 

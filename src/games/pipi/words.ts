@@ -15,6 +15,7 @@ export const WORDS = {
   play: 'Play',
   playAgain: 'Play again',
   pickShell: 'Tap the shell with the right number.',
+  hearAgain: 'Hear it again',
   goesDone: (n: number, of: number) => `${n} of ${of}`,
   altogether: (n: number) => `${n} altogether`,
   howManyHiding: 'How many are hiding?',
