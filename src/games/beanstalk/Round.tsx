@@ -14,9 +14,13 @@ import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
 import { isMissingGo, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, targetOf, unitOf, wrongFirstRun, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { DemoBar } from '../../kit/DemoBar';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import type { Child } from './backend';
+import { demoLeaf, demoSteps, MISSING_KIND } from './demo';
 import { JoinedFrame, Leaf, type LeafLook } from './Leaf';
 import { Scene } from './Scene';
 import { WORDS } from './words';
@@ -63,12 +67,15 @@ interface Props {
   bridge?: boolean;
   /** The child's very first challenge: the first missing-leaf go (the 3rd) comes with a tip and the hand pointing at the missing leaf (S22). */
   firstEver?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (the missing leaf's demo plays once). */
+  seen?: readonly string[];
+  onSeen?: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, firstEver = false, sound, say, onDone }: Props) {
+export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, firstEver = false, seen = [MISSING_KIND], onSeen = () => Promise.resolve(), sound, say, onDone }: Props) {
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
@@ -98,6 +105,12 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
   const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
+  const kinds = useSeenKinds(seen, onSeen);
+  /** A missing-leaf go not yet met gets its demo first, once; its question is read when the demo is over. */
+  const demoOn = missing !== null && !kinds.has(MISSING_KIND);
+  const demoA = missing !== null ? demoLeaf(round.leaves[missing], target) : 0;
+  const demo = useKindDemo({ kind: demoOn ? MISSING_KIND : null, seen: kinds, mark: kinds.mark, steps: demoOn ? demoSteps(demoA, target) : [], say });
+  const demoWas = useRef(false);
   const { pairsMade, tried } = replay(round, taps);
   // The bridge uses the numbers of the pair the hand first points at (the first leaf in the tray with a partner).
   const [bridgeLine] = useState(() => {
@@ -130,6 +143,19 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     };
   }, [round.seed]); // only when the round starts
 
+  // When the demo ends (or is skipped) the real go is asked and its clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    since.current = Date.now();
+    if (missing !== null) say(WORDS.missingAsk(round.leaves[missing], target));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
+
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
 
   /** The second wrong pair of a go: show the first leaf's partner filling its frame, then ask the child to find it. */
@@ -160,7 +186,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
   }
 
   function tap(leaf: number) {
-    if (flying.length || look) return;
+    if (flying.length || look || demo.playing) return;
     tappedYet.current = true;
     setTake(null);
     setTip(null);
@@ -208,6 +234,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     })();
     // The line: the pair, then (after a missing-leaf go) the take-away, the dots coming back, and what the next go asks.
     const wasMissing = missing !== null ? WORDS.takeAway(round.leaves[missing], target) : null;
+    if (missing !== null) kinds.mark([MISSING_KIND]);
     setMissing(null);
     if (wasMissing) setTake(wasMissing);
     // Each go is scored at its first tap: three in a row wrong bring the full dots back, and the line says so once.
@@ -215,14 +242,16 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     if (struggling) setBoosted(true);
     // The short second tray of older pairs came in: say what these make now (the badge changes as they arrive).
     const trayNext = after.done || !after.onScreen.length ? target : targetOf(round, after.onScreen[0]);
-    const firstTip = firstEver && !tipDone.current && nextGo !== null ? WORDS.missingTip(trayNext) : null;
+    // The first missing-leaf go of all is shown first (the demo), so it has no tip and its question waits for the demo's end.
+    const demoNext = nextGo !== null && !kinds.has(MISSING_KIND);
+    const firstTip = firstEver && !tipDone.current && nextGo !== null && !demoNext ? WORDS.missingTip(trayNext) : null;
     if (firstTip) {
       tipDone.current = true;
       setTip(firstTip);
     }
     sayAll([
       WORDS.right(x, y), wasMissing, struggling ? WORDS.dotsBack : null, trayNext !== target ? WORDS.nowThese(trayNext) : null,
-      firstTip, nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], trayNext) : null,
+      firstTip, nextGo !== null && !demoNext ? WORDS.missingAsk(round.leaves[nextGo], trayNext) : null,
     ]);
     if (sound) playSound('hop');
     later(FLY_MS, () => {
@@ -262,7 +291,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
 
   return (
     <div className="bs-play">
-      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{missingLine ?? WORDS.tapTwo(target)}</h2>
+      <h2 className="bs-sr" tabIndex={-1} ref={heading}>{demo.playing ? WORDS.demoTitle : missingLine ?? WORDS.tapTwo(target)}</h2>
       <Scene
         grow={0.08 + (0.92 * pairsMade) / PAIRS_PER_ROUND}
         leaves={stalkLeaves.slice(0, pairsMade).map((metal) => ({ metal }))}
@@ -283,11 +312,18 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
         <button
           type="button"
           className="bs-hear"
-          disabled={look !== null}
+          disabled={look !== null || demo.playing}
           onClick={() => say(missingLine ?? (redo !== null ? WORDS.nowTry(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
         >
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
+        {demo.playing && missing !== null && (
+          <div className="bs-demo-panel" aria-live="polite">
+            <JoinedFrame cells={cells} a={demoA} b={target - demoA} step={step} more={demo.step >= 1 ? (target - demoA) / step : 0} />
+            <p className="bs-demo-sum">{demo.step >= 1 ? `${demoA} + ${target - demoA} = ${target}` : WORDS.missingSum(demoA, target)}</p>
+            <DemoBar prefix="bs" skipLabel={WORDS.skip} canSkip={demo.canSkip} onSkip={demo.skip} />
+          </div>
+        )}
         {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
         {tip && !why && <p className="bs-take">{tip}</p>}
         {take && !why && <p className="bs-take">{take}</p>}

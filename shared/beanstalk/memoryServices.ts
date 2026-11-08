@@ -6,6 +6,7 @@
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import type { Round, Tap } from './round';
+import { mergeSeen } from '../kit/seen';
 import { unplayed, type BeanstalkServices, type Saved, type Settings } from './server';
 
 export interface MemoryRound {
@@ -23,6 +24,8 @@ export interface MemoryData {
   rounds: MemoryRound[];
   /** Each pupil's maths records, built from the answers recorded (the preview has no maths records of its own). */
   facts?: Record<string, FactStats[]>;
+  /** The kinds of go each pupil has seen (demos). */
+  seen?: Record<string, string[]>;
 }
 
 export interface MemoryOptions {
@@ -50,6 +53,15 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
 
   return {
     data,
+    async seen(player) {
+      return [...(data.seen?.[player] ?? [])];
+    },
+    async markSeen(player, kinds) {
+      const next = mergeSeen(data.seen?.[player] ?? [], kinds);
+      (data.seen ??= {})[player] = next;
+      saved();
+      return next;
+    },
     now: options.now ?? (() => Date.now()),
     random: options.random ?? Math.random,
     settings: async () => (options.settings ? options.settings() : { enabled: true, dots: true }),

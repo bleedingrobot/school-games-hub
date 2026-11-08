@@ -48,6 +48,9 @@ export const WORDS = {
   missingSum: (a: number, target: number) => `${a} + ? = ${target}`,
   missingTip: (target: number) => `One leaf is missing. Which leaf makes ${target}? The hand shows you.`,
   missingAsk: (a: number, target: number) => `${a} and what make ${target}? Tap the missing leaf.`,
+  skip: 'Skip',
+  demoTitle: 'Watch Kiwi show one first.',
+  nowTryDemo: 'Now you try.',
   takeAway: (a: number, target: number) => `So ${target} take ${a} is ${target - a}.`,
   right: (a: number, b: number) => `${a} and ${b} make ${a + b}!`,
   /** Under the ten-frame on the 100 and 1000 beanstalks: each dot is a ten (or a hundred). */

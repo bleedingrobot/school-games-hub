@@ -54,6 +54,14 @@ Deno.serve(
       // A pupil who has never played has no beanstalk yet.
       return saved ?? unplayed();
     },
+    async seen(player) {
+      const kinds = await call<string[] | null>('kit_seen_get', { player, game: 'beanstalk' });
+      return kinds === 'busy' ? 'busy' : (kinds ?? []);
+    },
+    async markSeen(player, kinds) {
+      const next = await call<string[] | null>('kit_seen_mark', { player, game: 'beanstalk', kinds });
+      return next === 'busy' ? 'busy' : (next ?? []);
+    },
     choose: (player, child) => call<boolean>('beanstalk_choose', { player, child }),
     async facts(player) {
       // The same records every maths game reads; only the bond ones matter here.
