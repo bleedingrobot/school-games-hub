@@ -34,8 +34,6 @@ export const TEN_AND_ALL_START = { step: 3, level: 3 } as const;
 export const TEN_AND_SOME = 5;
 export const TEN_AND_SOME_START = { step: 2, level: 4 } as const;
 
-/** Wrong cards in a row on first goes that bring full help back for the rest of the challenge (the kit's rule). */
-export const STRUGGLE_GOES = 3;
 
 // ---------------------------------------------------------------- the cards
 

@@ -314,7 +314,7 @@ export interface Picture {
   choices: number[];
 }
 
-export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTries: number, tried: readonly number[] = []): Picture {
+export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTries: number, tried: readonly number[] = [], struggling = false): Picture {
   let level = go.l;
   let peekOpen = false;
   if (wrongTries >= 2) level = C.TOP_LEVEL as HelpLevel;
@@ -322,6 +322,11 @@ export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTries:
     if (go.l === 0) level = 3;
     else if (go.l === 1) peekOpen = true;
     else level = Math.min(C.TOP_LEVEL, go.l + 1) as HelpLevel;
+  }
+  // Three goes in a row with a wrong first try: the full picture for the rest of the round (last, so a wrong try can't lower it).
+  if (struggling) {
+    level = C.TOP_LEVEL as HelpLevel;
+    peekOpen = false;
   }
   let choices = go.choices;
   if (wrongTries >= 3 && go.choices.length) {
