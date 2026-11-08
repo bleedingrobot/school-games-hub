@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
 import { replay, wrongFirstRun, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -21,10 +21,12 @@ describe('the help in the sand (R6)', () => {
     const learned = levelKeys(1).map((key) => ({ ...known, key }));
     const round = makeRound(7, learned, { reached: 1 });
     expect(round.level).toBe(2);
-    expect(round.goes.map((g) => g.h)).toEqual(Array(GOES_PER_ROUND).fill('full'));
+    // (the review goes from the known earlier splits keep their own, quieter help.)
+    expect(round.goes.filter((g) => !levelKeys(1).includes(g.key)).every((g) => g.h === 'full')).toBe(true);
+    expect(round.goes.filter((g) => levelKeys(1).includes(g.key)).every((g) => g.h === 'none')).toBe(true);
     // Today's own record of a split, not another's, sets its help.
-    const mixed = makeRound(7, [{ ...known, key: 'part5:2' }], { reached: 1 });
-    expect(mixed.goes.every((g) => g.h === (g.key === 'part5:2' ? 'none' : 'full'))).toBe(true);
+    const mixed = makeRound(7, [{ ...known, key: 'part7:2' }], { reached: 1 });
+    expect(mixed.goes.every((g) => g.h === (g.key === 'part7:2' ? 'none' : 'full'))).toBe(true);
   });
 
   it('counts goes in a row, latest first, whose first shell was wrong', () => {
@@ -41,7 +43,7 @@ const wobblyTaps = (round: Round): Tap[] =>
 
 describe('the round', () => {
   it('is the same for the same seed, stays in its level, and can be finished with a right shell on every go', () => {
-    for (const { level, from, to } of LEVELS) {
+    for (const { level, to } of LEVELS) {
       for (const colour of colours) {
         for (const seed of seeds) {
           const round = makeRound(seed, recordsFor[level], { colour });
@@ -51,7 +53,6 @@ describe('the round', () => {
           expect(new Set(round.goes.map((g) => g.key)).size).toBe(GOES_PER_ROUND);
           const goes = showRound(round);
           for (const go of goes) {
-            expect(go.whole).toBeGreaterThanOrEqual(from);
             expect(go.whole).toBeLessThanOrEqual(to);
             expect(go.showing + go.hiding).toBe(go.whole);
             expect(go.answer).toBe(go.kind === 'altogether' ? go.whole : go.hiding);
@@ -60,6 +61,11 @@ describe('the round', () => {
             expect(go.choices.every((c) => Number.isInteger(c) && c >= 0)).toBe(true);
             expect(go.spoken).not.toContain(`${go.answer}?`);
           }
+          // From level 2, two goes (never the first) revisit earlier levels; level 1 has none.
+          const earlier = new Set(LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level)));
+          const reviews = round.goes.map((g, i) => (earlier.has(g.key) ? i : -1)).filter((i) => i >= 0);
+          expect(reviews).toHaveLength(level === 1 ? 0 : REVIEW_GOES);
+          expect(reviews).not.toContain(0);
           // "None hiding" and "all hiding" at most once a round.
           expect(round.goes.filter((g) => { const p = parseKey(g.key)!; return p.shown === 0 || p.shown === p.whole; }).length).toBeLessThanOrEqual(1);
           const end = replay(round, wobblyTaps(round));

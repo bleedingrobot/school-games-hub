@@ -37,6 +37,8 @@ const WAVE = paint('tide/wave');
 export const TIDE_MS = 1300;
 const RIGHT_MS = 1500;
 const WOBBLE_MS = 500;
+/** How long a wrong shell stays after its why line has been said. */
+const WHY_LEAVE_MS = 1200;
 
 interface Props {
   round: Round;
@@ -112,6 +114,8 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   /** Three goes in a row began with a wrong shell: full help for the rest of this round (not saved; the child's own help is). */
   const [boosted, setBoosted] = useState(false);
+  /** Wrong shells that have had their why line and left the row (`go-shell` keys, so a late callback can't hit another go). */
+  const [gone, setGone] = useState<string[]>([]);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -156,11 +160,14 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   // Gold days (or help off): the hiding ones leave no mark, and the spots close up so the gaps don't give it away.
   const shown = helpNow === 'none' ? spots.filter((s) => s === 'pipi' || s === 'popped') : spots;
   const framed = helpNow === 'full';
+  // The outlines show how many hide, so they wait for a first wrong shell on this go (or the struggle boost).
+  const outlineNow: Help = !boosted && tried.length === 0 ? 'none' : helpNow;
 
   /** Back to a fresh go: nothing tried, no why, the go's own order. */
   function freshGo() {
     flow.current = NEW_GO;
     setTried([]);
+    setGone([]);
     setWhy(null);
     setRedo(false);
     setLifted(false);
@@ -181,6 +188,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
         setLifted(false);
         setRedo(true);
         setTried([]);
+        setGone([]);
         setOrder(reordered(go.choices));
         tappedYet.current = false;
         since.current = Date.now();
@@ -213,8 +221,10 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
       const kind = go.wrongs.find((w) => w.n === n)?.kind ?? 'off1';
       setWhy({ n, kind });
       const line = whyLine(kind, go.kind, go.whole, go.showing, go.hiding);
-      if (struggling) say(line, () => say(WORDS.outlinesBack));
-      else say(line);
+      // Once the why line has been said, the wrong shell slips out of the row (a moment later, so it is seen).
+      const slip = () => later(WHY_LEAVE_MS, () => setGone((g) => [...g, `${at}-${n}`]));
+      if (struggling) say(line, () => { slip(); say(WORDS.outlinesBack); });
+      else say(line, slip);
       return;
     }
     flow.current = stepGo(flow.current, 'right');
@@ -282,7 +292,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
             <span key={i} className={`pp-spot pp-spot--${s}${guide && at === 0 && s === 'hidden' ? ' pp-spot--pointed' : ''}`}>
               {s === 'pipi' && <Pipi pose={phase === 'tide' && tideIn ? 'dig' : phase === 'done' || lifted ? 'wave' : 'sit'} />}
               {s === 'popped' && <Pipi pose="wave" />}
-              {s === 'hidden' && <Hidden outline={helpNow} />}
+              {s === 'hidden' && <Hidden outline={outlineNow} />}
             </span>
           ))}
         </div>
@@ -311,7 +321,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
         </span>
       </div>
       <div className="pp-shells" role="group" aria-label={WORDS.pickShell}>
-        {(order ?? go.choices).map((n, i) => (
+        {(order ?? go.choices).filter((n) => n === go.answer || !gone.includes(`${at}-${n}`)).map((n, i) => (
           <button
             key={`${at}-${n}`}
             type="button"

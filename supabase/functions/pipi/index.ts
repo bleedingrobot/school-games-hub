@@ -309,8 +309,13 @@ function makeRound(seed, stats, opts = {}) {
 	const keys = levelKeys(level);
 	const middle = keys.filter((k) => !isEdge(k));
 	const edges = Math.max(10 - middle.length, random() < .5 ? 1 : 0);
-	let picked = shuffle([...weakest(middle, 10 - edges, box, random), ...weakest(keys.filter(isEdge), edges, box, random)], random);
-	if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, 10);
+	const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level)).filter((k) => !isEdge(k));
+	const reviews = earlier.length ? weakest(earlier, 2, box, random) : [];
+	const fresh = 10 - reviews.length;
+	const ownEdges = Math.min(edges, fresh);
+	let picked = shuffle([...weakest(middle, fresh - ownEdges, box, random), ...weakest(keys.filter(isEdge), ownEdges, box, random)], random);
+	if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, fresh);
+	reviews.forEach((k, i) => picked.splice(Math.min(2 + i * 3 + Math.floor(random() * 2), picked.length), 0, k));
 	const goes = picked.map((key) => ({
 		key,
 		kind: "hiding",

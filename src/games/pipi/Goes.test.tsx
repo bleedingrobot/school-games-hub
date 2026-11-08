@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeRound, showRound } from '../../../shared/pipi/round';
 import type { Tap } from '../../../shared/pipi/play';
 import { Goes } from './Goes';
+import { whyLine } from './words';
 
 describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5)", () => {
   afterEach(() => vi.useRealTimers());
@@ -16,13 +17,18 @@ describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5
     const go = showRound(round)[0];
     const [w1, w2] = go.choices.filter((c) => c !== go.answer);
     const done: Tap[][] = [];
-    render(<Goes round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={vi.fn()} onDone={(t) => done.push(t)} />);
+    render(<Goes round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={(t: string, cb?: () => void) => { if (cb && t === whyLine(go.wrongs.find((w) => w.n === w1)!.kind, go.kind, go.whole, go.showing, go.hiding)) cb(); }} onDone={(t) => done.push(t)} />);
     const shell = (n: number) => screen.getByRole('button', { name: String(n) });
     await act(() => vi.advanceTimersByTimeAsync(1500)); // the tide washes in
 
     await u.click(shell(w1));
     expect(screen.getByRole('status')).toHaveTextContent(/\w/);
     expect(shell(w1)).toBeDisabled();
+    // Once its why line has been said, the wrong shell leaves the row; the answer never does.
+    expect(shell(w1)).toBeInTheDocument();
+    await act(() => vi.advanceTimersByTimeAsync(1500));
+    expect(screen.queryByRole('button', { name: String(w1) })).toBeNull();
+    expect(shell(go.answer)).toBeEnabled();
     expect(shell(w2)).toBeEnabled();
 
     await u.click(shell(w2));
