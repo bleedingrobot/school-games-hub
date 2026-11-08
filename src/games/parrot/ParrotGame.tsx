@@ -11,6 +11,7 @@ import type { Tap } from '../../../shared/parrot/play';
 import { DAYS_PER_BELL, ropeAfter } from '../../../shared/parrot/progress';
 import type { Round } from '../../../shared/parrot/round';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
+import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
@@ -248,6 +249,7 @@ function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string
   const changed = result.changed === null ? null : things[result.changed].metal;
   const name = FRIEND_NAMES[rope.friend];
   const main = result.goldenBell ? WORDS.goldenBell(name) : changed ? WORDS.thingTurned(changed) : WORDS.doneToday;
+  const how = WORDS.how[finishBand(result.firstRight)];
   // What changes next time: a new step, or the help, or nothing.
   const next =
     result.step !== result.stepBefore ? WORDS.nextStep(result.step)
@@ -257,7 +259,9 @@ function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string
   return (
     <div className={`pr-home${result.goldenBell ? ' pr-home--prize' : ''}`}>
       <Rope things={things} friend={rope.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="pr" title={main} spoken={finishLine(main, next)} note={next} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="pr" title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+        <p className="pr-chip">{how}</p>
+        <p className="pr-chip">{next}</p>
         {result.goldenBell && <span className="pr-prize"><GoldenBell /></span>}
       </WhatsNext>
     </div>

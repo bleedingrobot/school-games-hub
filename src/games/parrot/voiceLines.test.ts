@@ -37,8 +37,8 @@ describe('Parrot’s See-saw voice lines', () => {
       expect(heard(DEMOS[kind].steps[0].line)).toBe(true);
     }
     for (const title of [WORDS.wants('Robin'), WORDS.nextFriend('Owl')]) expect(heard(homeLine(title, true))).toBe(true);
-    expect(heard(finishLine(WORDS.goldenBell('Kiwi'), WORDS.nextStep(4)))).toBe(true);
-    expect(heard(finishLine(WORDS.thingTurned('silver'), WORDS.sameAgain))).toBe(true);
+    expect(heard(finishLine(WORDS.goldenBell('Kiwi'), WORDS.how.most, WORDS.nextStep(4)))).toBe(true);
+    expect(heard(finishLine(WORDS.thingTurned('silver'), WORDS.how.tricky, WORDS.sameAgain))).toBe(true);
   });
 
   it('reads the equation, and keeps numbers out of the stone levels', () => {
