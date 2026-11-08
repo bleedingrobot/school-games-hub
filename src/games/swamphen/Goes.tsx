@@ -21,6 +21,7 @@ import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import type { Tap } from '../../../shared/swamphen/play';
 import type { Friend as FriendName } from '../../../shared/swamphen/progress';
 import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, showRound, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
@@ -68,6 +69,9 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   const [dealt, setDealt] = useState<number[]>([]);
   const [byHand, setByHand] = useState(false);
   const [pose, setPose] = useState<Pose>('sit');
+  // Three goes in a row with a wrong first tap bring the full picture back for the rest of the round (not saved).
+  const [struggle, setStruggle] = useState(false);
+  const run = useRef(0);
   const since = useRef(Date.now());
   const tappedYet = useRef(false);
   const timers = useRef<number[]>([]);
@@ -92,7 +96,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   const demo = useKindDemo({ kind: demoFor, seen: kinds, mark: kinds.mark, steps: demoFor ? demoSteps(demoFor) : [], say });
   const demoActive = demoFor !== null;
   const wrongs = gs.wrong;
-  const pic = pictureFor(go, wrongs, tapped);
+  const pic = pictureFor(go, wrongs, tapped, struggle);
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
   const level: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;
   const seen: HelpLevel = gs.phase === 'look' || gs.phase === 'redo' ? 5 : level;
@@ -219,6 +223,8 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
     }
     clearTimers();
     kinds.mark([go.kind]);
+    run.current = gs.wrong > 0 ? run.current + 1 : 0;
+    if (run.current >= STRUGGLE_GOES) setStruggle(true);
     setGs(stepGo(gs, 'right'));
     setPhase('right');
     setPose('eat');

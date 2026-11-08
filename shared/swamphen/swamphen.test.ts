@@ -71,6 +71,11 @@ describe('the round', () => {
     expect(pictureFor(go, 2).level).toBe(5);
     expect(pictureFor({ ...go, l: 1 }, 1)).toMatchObject({ level: 1, peekOpen: true });
     expect(pictureFor(go, 3, [8]).choices).toEqual([12, 24]);
+    // Struggling (three goes in a row wrong at the first tap): the full picture whatever the planned level, a wrong tap can't lower it, no Peek.
+    for (const l of [0, 1, 3] as HelpLevel[]) {
+      expect(pictureFor({ ...go, l }, 0, [], true)).toMatchObject({ level: 5, peekOpen: false });
+      expect(pictureFor({ ...go, l }, 1, [], true)).toMatchObject({ level: 5, peekOpen: false });
+    }
   });
 });
 

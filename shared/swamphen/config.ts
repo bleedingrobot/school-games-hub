@@ -31,8 +31,6 @@ export const TABLES_START = { step: 5, level: 2 } as const;
 export const SKIP_SECURE = 0.7;
 export const SKIP_START = { step: 2, level: 5 } as const;
 
-/** Wrong taps in a row on first goes that bring full help back for the rest of the challenge (the kit's rule). */
-export const STRUGGLE_GOES = 3;
 
 // ---------------------------------------------------------------- the cards
 

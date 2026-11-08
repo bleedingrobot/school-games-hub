@@ -311,9 +311,9 @@ export const viewFor = (level: HelpLevel): View => (['plain', 'peek', 'edges', '
 /**
  * The picture for a go after some wrong taps (the kit's "help inside one go"): the first wrong tap brings one level more (at
  * level 0, level 3; at level 1 the Peek opens), the second brings the full picture, and from the third only the right card and
- * one wrong card are left. The answer is never shown.
+ * one wrong card are left. The answer is never shown. When the child is struggling (see the kit's STRUGGLE_GOES) it is always the full picture.
  */
-export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: number, tapped: readonly number[] = []): { level: HelpLevel; peekOpen: boolean; choices: number[] } {
+export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: number, tapped: readonly number[] = [], struggling = false): { level: HelpLevel; peekOpen: boolean; choices: number[] } {
   let level = go.l;
   let peekOpen = false;
   if (wrongTaps >= 2) level = C.TOP_LEVEL as HelpLevel;
@@ -321,6 +321,11 @@ export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: 
     if (go.l === 0) level = 3;
     else if (go.l === 1) peekOpen = true;
     else level = Math.min(C.TOP_LEVEL, go.l + 1) as HelpLevel;
+  }
+  // Three goes in a row with a wrong first tap: the full picture for the rest of the round (last, so a wrong tap can't lower it).
+  if (struggling) {
+    level = C.TOP_LEVEL as HelpLevel;
+    peekOpen = false;
   }
   let choices = go.choices;
   if (wrongTaps >= 3) {
