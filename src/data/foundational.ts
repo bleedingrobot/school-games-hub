@@ -4,6 +4,7 @@
  * refuses anyone who does not teach the class (migration 20261107000100). `foundationalClass` asks them together and shares
  * the answer for a few seconds, so Today's alerts and "Hardest right now" make one set of requests, not one for each game.
  */
+import { parseKey } from '../../shared/subitising/keys';
 import { quickAnswersFrom, unpackSettings } from '../../shared/subitising/saved';
 import { supabase } from '../lib/supabase';
 import { shortCache } from '../teacher/shortCache';
@@ -151,6 +152,29 @@ export interface QuickLooksStudent {
   /** The newest counted pictures (up to `recent`), not counting ones the pupil was helped with. */
   answered: number;
   correct: number;
+  /** The usual slip among the newest wrong pictures: 'over' (too many), 'under' (too few) or 'near' (one away); null until one was seen {@link SLIP_MIN} times. */
+  slip: QuickSlip | null;
+}
+
+export type QuickSlip = 'over' | 'under' | 'near';
+/** How many times a slip must show among the newest counted pictures before it is called usual. */
+export const SLIP_MIN = 3;
+/** The teacher's words for each slip. */
+export const QUICK_SLIP_WORDS: Record<QuickSlip, string> = { over: 'says too many', under: 'says too few', near: 'is one away' };
+
+/** The kind of a wrong answer: one away beats too many or too few. Null for a key that is not a picture, or a right answer. */
+export function quickSlipOf(key: string, given: number): QuickSlip | null {
+  const parsed = parseKey(key);
+  if (!parsed || given === parsed.answer) return null;
+  return Math.abs(given - parsed.answer) === 1 ? 'near' : given > parsed.answer ? 'over' : 'under';
+}
+
+/** The commonest slip, only when seen at least `min` times (the same idea as shared/kit/slips.ts topSlip, kept inline here). */
+export function commonest(slips: QuickSlip[], min = SLIP_MIN): QuickSlip | null {
+  const counts = new Map<QuickSlip, number>();
+  for (const s of slips) counts.set(s, (counts.get(s) ?? 0) + 1);
+  const [top] = [...counts].sort((a, b) => b[1] - a[1]);
+  return top && top[1] >= min ? top[0] : null;
 }
 
 /** From `teacher_training_student`'s answer. Pure, so it is tested without a database. */
@@ -165,6 +189,16 @@ export function parseQuickLooksStudent(raw: unknown, recent: number): QuickLooks
     }),
   ).filter((a) => !a.helped);
   const newest = answers.slice(-recent);
+  // The newest counted pictures (not helped ones) that were wrong, with the number each child gave.
+  const counted = (Array.isArray(r.answers) ? r.answers : [])
+    .map((x, i) => ({ o: object(x), i }))
+    .filter(({ o }) => typeof o.key === 'string' && parseKey(o.key) && !parseKey(o.key)!.helped)
+    .sort((p, q) => whole(p.o.at) - whole(q.o.at) || p.i - q.i)
+    .slice(-recent);
+  const slips = counted
+    .filter(({ o }) => o.correct !== true && typeof o.given === 'number')
+    .map(({ o }) => quickSlipOf(o.key as string, o.given as number))
+    .filter((x): x is QuickSlip => x !== null);
   return {
     used: settings !== null || answers.length > 0,
     placed: settings?.placed ?? false,
@@ -174,6 +208,7 @@ export function parseQuickLooksStudent(raw: unknown, recent: number): QuickLooks
     sessions: whole(student.sessionsDone),
     answered: newest.length,
     correct: newest.filter((a) => a.correct).length,
+    slip: commonest(slips),
   };
 }
 
