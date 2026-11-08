@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { WORDS as BEANSTALK_WORDS } from '../../src/games/beanstalk/words';
 import { makeRound as beanstalkRound, mistakeKind, replay as beanstalkReplay, TARGETS, type Tap as BeanstalkTap } from '../beanstalk/round';
 import { kindsFromFacts, mergeSeen, readKinds } from './seen';
+import { finishBand } from './finishBand';
 import { arcAfter, daysPerReward, finishDay } from './dayArc';
 import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
 import { fadeAfter, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
@@ -176,5 +177,14 @@ describe('the usual slip', () => {
     expect(topSlip(['over', 'over', null, 'under'], 3)).toBeNull();
     expect(topSlip(['over', 'over', 'under', 'under', 'over', 'under'], 3)).toBeNull();
     expect(topSlip([null, null])).toBeNull();
+  });
+});
+
+describe('the finish band', () => {
+  it('says most, some or tricky from the goes right at the first tap, with the help ladder’s cut-offs', () => {
+    expect([10, 8].map((n) => finishBand(n))).toEqual(['most', 'most']);
+    expect([7, 5].map((n) => finishBand(n))).toEqual(['some', 'some']);
+    expect([4, 0].map((n) => finishBand(n))).toEqual(['tricky', 'tricky']);
+    expect(finishBand(4, 5)).toBe('most');
   });
 });
