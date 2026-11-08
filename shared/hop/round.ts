@@ -237,10 +237,11 @@ function pickKeys(keys: string[], n: number, box: Map<string, number>, random: (
  * The same inputs always give the same round. The server saves the round's hops, so the records changing later doesn't
  * matter when the taps are checked.
  */
-export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: HopStep; gold?: boolean } = {}): Round {
+export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: HopStep; step?: HopStep; gold?: boolean } = {}): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const list = [...stats];
-  const step = stepFor(list, opts.reached);
+  // A saved step is used as is, so records from replays can't move it; with none (a new child) it comes from the records.
+  const step = opts.step ?? stepFor(list, opts.reached);
   const gold = !!opts.gold;
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds

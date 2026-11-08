@@ -118,7 +118,7 @@ export async function handleKorora(services: KororaServices, player: string, bod
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastPebbleDay: s.lastPebbleDay, today: today(), level: levelFor(facts, s.reached), help: settings.help });
+    return ok({ daysDone: s.daysDone, lastPebbleDay: s.lastPebbleDay, today: today(), level: s.reached, help: settings.help });
   }
 
   if (body.action === 'start') {
@@ -128,7 +128,7 @@ export async function handleKorora(services: KororaServices, player: string, bod
     const guided = s.daysDone === 0 && s.lastPebbleDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { reached: s.reached, gold, guided });
+      const round = makeRound(seed, facts, { level: s.reached, gold, guided });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -159,8 +159,10 @@ export async function handleKorora(services: KororaServices, player: string, bod
       const s = await services.load(player);
       if (s === 'busy') return busy();
       const levelBefore = isLevel(kept.round.level) ? Math.max(kept.round.level, s.reached) as Level : s.reached;
-      const reached = facts === 'busy' ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
       const result = finishChallenge(s.daysDone, s.lastPebbleDay, today());
+      // The level moves only on the day's first finish. A replay still saves its answers, but keeps the level as it was:
+      // facts improved on a replay can still count at the next day's first finish.
+      const reached = facts === 'busy' || result.pebbleChanged === null ? s.reached : levelFor(withAnswers(facts, answers), levelBefore);
       const progress = { daysDone: result.daysDone, lastPebbleDay: result.lastPebbleDay, reached };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (saved === 'busy') return busy();

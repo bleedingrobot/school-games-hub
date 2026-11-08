@@ -113,7 +113,7 @@ export async function handleHop(services: HopServices, player: string, body: Rec
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: stepFor(facts, s.reached), topSecure: topSecure(facts, s.reached), labels: settings.labels });
+    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: s.reached, topSecure: topSecure(facts, s.reached), labels: settings.labels });
   }
 
   if (body.action === 'start') {
@@ -122,7 +122,7 @@ export async function handleHop(services: HopServices, player: string, body: Rec
     const gold = pondAfter(s.daysDone).gold;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { reached: s.reached, gold });
+      const round = makeRound(seed, facts, { step: s.reached, gold });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -153,8 +153,10 @@ export async function handleHop(services: HopServices, player: string, body: Rec
       const s = await services.load(player);
       if (s === 'busy') return busy();
       const stepBefore = isStep(kept.round.step) ? kept.round.step : s.reached;
-      const reached = facts === 'busy' ? stepBefore : stepFor(withAnswers(facts, answers), stepBefore);
       const result = finishChallenge(s.daysDone, s.lastPadDay, today());
+      // The level moves only on the day's first finish. A replay still saves its answers, but keeps the level as it was: facts
+      // improved on a replay can still count at the next day's first finish.
+      const reached = facts === 'busy' || result.padChanged === null ? s.reached : stepFor(withAnswers(facts, answers), stepBefore);
       const progress = { daysDone: result.daysDone, lastPadDay: result.lastPadDay, reached };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (saved === 'busy') return busy();

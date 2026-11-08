@@ -115,7 +115,7 @@ export async function handlePipi(services: PipiServices, player: string, body: R
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastShellDay: s.lastShellDay, today: today(), level: levelFor(facts, s.reached), help: settings.help, guided: s.played === 0 });
+    return ok({ daysDone: s.daysDone, lastShellDay: s.lastShellDay, today: today(), level: s.reached, help: settings.help, guided: s.played === 0 });
   }
 
   if (body.action === 'start') {
@@ -124,7 +124,7 @@ export async function handlePipi(services: PipiServices, player: string, body: R
     const colour = beachAfter(s.daysDone).today;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { reached: s.reached, colour, guided: s.played === 0 });
+      const round = makeRound(seed, facts, { level: s.reached, colour, guided: s.played === 0 });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -155,8 +155,10 @@ export async function handlePipi(services: PipiServices, player: string, body: R
       const s = await services.load(player);
       if (s === 'busy') return busy();
       const levelBefore: Level = isLevel(kept.round.level) ? (Math.max(kept.round.level, s.reached) as Level) : s.reached;
-      const reached = facts === 'busy' ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
       const result = finishChallenge(s.daysDone, s.lastShellDay, today());
+      // The level moves only on the day's first finish. A replay still saves its answers, but keeps the level as it was:
+      // facts improved on a replay can still count at the next day's first finish.
+      const reached = facts === 'busy' || result.shellChanged === null ? s.reached : levelFor(withAnswers(facts, answers), levelBefore);
       const progress = { daysDone: result.daysDone, lastShellDay: result.lastShellDay, reached, played: s.played + 1 };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (saved === 'busy') return busy();

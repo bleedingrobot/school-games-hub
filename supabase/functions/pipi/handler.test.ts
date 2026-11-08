@@ -35,7 +35,7 @@ function setup(over: MemoryOptions = {}) {
 }
 
 it('finishes only a pupil’s own, finished challenge, once, and records each go once against its part-whole fact', async () => {
-  const { send, start, log, services } = setup();
+  const { send, start, log, services, hours } = setup();
   expect((await send(null, { action: 'load' })).status).toBe(401);
 
   const round = await start('pupil-a');
@@ -56,10 +56,14 @@ it('finishes only a pupil’s own, finished challenge, once, and records each go
 
   // Records from anywhere on the hub that show wholes 3 to 5 secure move the pupil on, and they never drop back.
   services.data.facts['pupil-a'] = levelKeys(1).map((key) => ({ ...newStats(key), box: 2 }));
+  // Only the next day's first finish moves the level: a replay the same day keeps it.
+  const replay = await start('pupil-a');
+  expect(replay.level).toBe(1);
+  expect((await send('pupil-a', { action: 'finish', seed: replay.seed, taps: goodTaps(replay) })).body).toMatchObject({ shellChanged: null, level: 1 });
+  hours(24);
   const next = await start('pupil-a');
-  expect(next.level).toBe(2);
-  expect(next.goes[0].key).not.toBe(GUIDED_KEY);
-  await send('pupil-a', { action: 'finish', seed: next.seed, taps: goodTaps(next) });
+  expect(next.level).toBe(1);
+  expect((await send('pupil-a', { action: 'finish', seed: next.seed, taps: goodTaps(next) })).body).toMatchObject({ level: 2 });
   services.data.facts['pupil-a'] = [];
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ level: 2, guided: false });
 

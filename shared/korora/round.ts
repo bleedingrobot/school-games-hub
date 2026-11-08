@@ -210,10 +210,11 @@ export const followsItsDouble = (goes: readonly GoPlan[], index: number): boolea
  * Today's challenge from a fresh seed, the child's records, the furthest level reached, whether it is a gold day and
  * whether it is the child's very first challenge (double 2 comes first). The same inputs always give the same round.
  */
-export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: Level; gold?: boolean; guided?: boolean } = {}): Round {
+export function makeRound(seed: number, stats: Iterable<FactStats>, opts: { reached?: Level; level?: Level; gold?: boolean; guided?: boolean } = {}): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const list = [...stats];
-  const level = levelFor(list, opts.reached);
+  // A saved level is used as is, so records from replays can't move it; with none it comes from the records.
+  const level = opts.level ?? levelFor(list, opts.reached);
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const box = new Map(list.map((s) => [s.key, s.box]));
