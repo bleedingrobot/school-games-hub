@@ -45,10 +45,10 @@ describe('the trial backend', () => {
     };
     expect((await go()).result).toMatchObject({ daysDone: 1, padChanged: 0, jar: false, step: 10 });
     expect((await go()).result).toMatchObject({ daysDone: 1, padChanged: null }); // again the same day: just for fun
-    // Playing on (for fun, the same day) until the 10s are secure moves the child on to 5s, and the next round counts in 5s.
-    let last = (await go()).result;
-    for (let i = 0; i < 10 && last.step === 10; i++) last = (await go()).result;
-    expect(last).toMatchObject({ stepBefore: 10, step: 5 });
+    // Playing on the same day, even until the 10s are secure, keeps the step: only the next day's first finish moves the child on to 5s.
+    for (let i = 0; i < 10; i++) expect((await go()).result).toMatchObject({ padChanged: null, step: 10 });
+    tools.nextDay();
+    expect((await go()).result).toMatchObject({ stepBefore: 10, step: 5 });
     expect((await backend.start()).step).toBe(5);
     const round = await backend.start();
     await expect(backend.finish(round.seed, perfect(round).slice(0, 3))).rejects.toThrow(); // not finished
@@ -62,8 +62,9 @@ describe('the trial backend', () => {
     const { backend, tools } = trialBackend({ storageKey: 'signpost' });
     expect((await backend.load()).topSecure).toBe(false);
     tools.makeSecure(2);
-    expect(await backend.load()).toMatchObject({ step: 3, topSecure: true }); // twos done, so threes next, and the signpost shows
+    expect(await backend.load()).toMatchObject({ step: 2, topSecure: true }); // twos done, and the signpost shows
+    tools.nextDay();
     const round = await backend.start();
-    expect(await backend.finish(round.seed, perfect(round))).toMatchObject({ step: 3, stepBefore: 3, topSecure: true });
+    expect(await backend.finish(round.seed, perfect(round))).toMatchObject({ step: 3, stepBefore: 2, topSecure: true }); // threes from the first finish of the day
   });
 });

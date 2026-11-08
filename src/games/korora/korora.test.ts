@@ -42,8 +42,10 @@ describe('the trial backend', () => {
       return { round, result: await backend.finish(round.seed, perfect(round)) };
     };
     expect((await go()).result).toMatchObject({ daysDone: 1, pebbleChanged: 0, goldenFish: false, level: 1 });
-    // Again the same day (just for fun): each fact counts once a round, so doubles to 5 are secure after this second round.
-    expect((await go()).result).toMatchObject({ daysDone: 1, pebbleChanged: null, levelBefore: 1, level: 2 });
+    // Again the same day (just for fun): the answers count, but the level stays; the next day's first finish moves it.
+    expect((await go()).result).toMatchObject({ daysDone: 1, pebbleChanged: null, levelBefore: 1, level: 1 });
+    tools.nextDay();
+    expect((await go()).result).toMatchObject({ levelBefore: 1, level: 2 });
     expect((await backend.start()).level).toBe(2);
     const round = await backend.start();
     await expect(backend.finish(round.seed, perfect(round).slice(0, 3))).rejects.toThrow();
