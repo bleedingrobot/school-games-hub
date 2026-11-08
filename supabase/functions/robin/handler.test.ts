@@ -55,6 +55,14 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
   const keys = [...new Set(round.goes.map((g) => g.key))];
   expect(answers.map((a) => [a.key, a.correct])).toEqual(keys.map((k) => [k, k !== GUIDED_KEY]));
 
+  // Kinds of go seen: a bad kind is unreadable, a good one is saved (twice with no change), and a child's records fill it in.
+  expect((await send('pupil-a', { action: 'seen', kinds: ['nonsense'] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'seen', kinds: 'howmany' })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'seen', kinds: ['howmany'] })).body).toEqual({ seen: ['howmany'] });
+  expect((await send('pupil-a', { action: 'seen', kinds: ['howmany'] })).body).toEqual({ seen: ['howmany'] });
+  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['give', 'howmany']); // give: its first go was answered above
+  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual([]);
+
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
 });

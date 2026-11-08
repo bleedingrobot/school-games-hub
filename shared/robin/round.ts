@@ -36,6 +36,9 @@ export const CARDS = 4;
 const MAX_CARD = 30;
 
 export { COUNT_KEYS, ALL_COUNT_KEYS };
+
+/** The made-up examples of the "Show me first" demos: keys no step ever asks, so a demo never gives away a real go. */
+export const DEMO_KEYS = { howmany: 'howmany:n3:ring', counton: 'counton:3+1' } as const;
 export const goKindOf = (key: string): GoKind | null => {
   const k: CountKind | null = kindOfCountKey(key);
   return k === null ? null : k === 'across' ? 'howmany' : k;

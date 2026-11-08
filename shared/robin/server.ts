@@ -20,7 +20,8 @@ import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate, placeAfter } from './progress';
 import { HELP_SETTINGS, type HelpSetting } from '../kit/help';
 import { TOP_LEVEL, type HelpLevel, type Step } from './config';
-import { isSeed, makeRound, MAX_SEED, startFor, type Round, type Slip } from './round';
+import { goKindOf, isSeed, makeRound, MAX_SEED, startFor, type Round, type Slip } from './round';
+import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
 
 export { HELP_SETTINGS };
 
@@ -33,7 +34,10 @@ export interface Place {
 }
 const moved = (p: Place, right: number): Place => placeAfter(p, right) as Place;
 
-export type RobinAction = 'load' | 'start' | 'finish';
+export type RobinAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go this game has (not only the ones with a demo); kind names never change once shipped. */
+export const ALLOWED_KINDS = ['give', 'howmany', 'counton'] as const;
 
 /** A pupil's baskets as it is saved. */
 export interface Progress extends Place {
@@ -74,6 +78,10 @@ export interface RobinServices {
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Berry Feasts went up, so it gives the achievement. A failure is only logged. */
   progressChanged(player: string): Promise<void>;
+  /** The kinds of go this pupil has seen (a demo played, or a go of the kind finished). */
+  seen(player: string): Promise<string[] | 'busy'>;
+  /** Adds kinds to that list and returns the new list. */
+  markSeen(player: string, kinds: string[]): Promise<string[] | 'busy'>;
   random(): number;
   now(): number;
 }
@@ -120,10 +128,20 @@ export async function handleRobin(services: RobinServices, player: string, body:
   const today = () => nzDate(new Date(services.now()));
 
   if (body.action === 'load') {
-    const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-    if (s === 'busy' || facts === 'busy') return busy();
+    const [s, facts, saved] = await Promise.all([services.load(player), services.facts(player), services.seen(player)]);
+    if (s === 'busy' || facts === 'busy' || saved === 'busy') return busy();
     const place = placeOf(s, facts);
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help });
+    // A child who has played for weeks has seen what their records show, so gets no demo for it.
+    const seen = mergeSeen(saved, kindsFromFacts(facts, goKindOf));
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, ALLOWED_KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

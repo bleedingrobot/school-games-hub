@@ -74,6 +74,13 @@ Deno.serve(
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'robin', undefined, JUNIOR_QUICK_MS);
     },
+    async seen(player) {
+      return call<string[] | null>('kit_seen_get', { player, game: 'robin' }).then((r) => (r === 'busy' ? 'busy' : (r ?? [])));
+    },
+    async markSeen(player, kinds) {
+      const r = await call<string[] | null>('kit_seen_mark', { player, game: 'robin', kinds });
+      return r === 'busy' ? 'busy' : (r ?? kinds);
+    },
     async progressChanged(player) {
       // A Golden Berry Feast: the hub gives its achievement (counted from the finished days).
       const { error } = await admin.rpc('game_progress_changed', { player, game: 'robin' });

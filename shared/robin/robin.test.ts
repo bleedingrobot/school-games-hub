@@ -5,7 +5,7 @@ import { BASKETS, FADE_GOOD, GOES_PER_ROUND as GOES, PASS_GOOD, STEPS, TOP_LEVEL
 import { DAYS_PER_FEAST, basketsAfter, finishChallenge, placeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
 import { seeded } from '../seededRandom';
-import { GUIDED_KEY, layoutPoints, STEP_PLAN, levelFor, makeRound, showGo, showRound, startFor, tapsAllowed, type Round } from './round';
+import { DEMO_KEYS, GUIDED_KEY, layoutPoints, stepKeys, STEP_PLAN, levelFor, makeRound, showGo, showRound, startFor, tapsAllowed, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -14,6 +14,8 @@ const at = (p: object) => ({ step: 1, level: 5, goodInRow: 0, goodAtStep: 0, ...
 
 describe('the round', () => {
   it('is the same for the same seed, has 7 new and 3 earlier goes (10 new at steps 1 and 2), weakest keys first, and scattered berries never touch', () => {
+    // The demos' made-up examples are never asked by any step.
+    for (const step of steps) for (const key of Object.values(DEMO_KEYS)) expect(stepKeys(step)).not.toContain(key);
     // A berry is up to 11% of the pile's width and square; the pile is 2:1, so a height point is half a width point.
     for (let n = 1; n <= 24; n++) {
       for (const seed of [1, 2, 3, 4, 5]) {
