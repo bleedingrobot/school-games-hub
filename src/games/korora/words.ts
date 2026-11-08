@@ -47,7 +47,7 @@ export const WORDS = {
     minus2: 'Half means two equal groups.',
     double: 'Half is smaller. The pile goes into two nests.',
     noExtra: 'That is the double. Do not forget the one more fish.',
-    bigger: 'Only one side has the extra fish. Double the small one, then one more.',
+    bigger: 'There is only one extra fish. Double the small number, then add one more.',
   },
   /** Near doubles: the double, then one more, counted. */
   lookNear: (n: number) => `Double ${n} is ${2 * n} fish. Then one more fish. Count them all: ${2 * n + 1}.`,
@@ -71,6 +71,10 @@ export const WORDS = {
   hearAgain: 'Hear it again',
   tapToCount: 'Tap the fish to count them.',
   tapToShare: 'Tap a fish to give it to a chick.',
+  /** Full help on a half: one tap gives a fish to each chick. */
+  tapToDeal: 'Tap the fish to give one to each chick.',
+  /** Near doubles: what the picture shows (read after the question, and the screen reader label). */
+  nearMirror: (n: number) => `${n} and ${n}, and one more.`,
   shareAgain: 'Start again',
   pebbleTurned: (metal: Metal) => `Well done! A stepping stone turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another stepping stone.',

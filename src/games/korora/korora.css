@@ -178,6 +178,14 @@
 .kr-row--mirror { transform: scaleY(-1); }
 .kr-fish--mirror .kr-fish__art { opacity: 0.85; }
 .kr-fish--extra .kr-fish__art { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #fff); opacity: 1; }
+/* Near doubles: the one more fish stands apart from the rock and the water. */
+.kr-rockline { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; }
+.kr-rockline .kr-rock { flex: 1 1 60%; width: auto; }
+.kr-more { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 20px; background: rgb(255 255 255 / 0.35); }
+.kr-more__label { font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+/* Full help on a half: the nests wait for fish. */
+.kr-nest--next .kr-chick { animation: kr-bounce 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .kr-nest--next .kr-chick { animation: none; outline: 3px dashed #fff; outline-offset: 4px; } }
 .kr-fish--mirror .kr-fish__count { transform: scaleY(-1); top: auto; bottom: -40%; }
 /* Bronze: each fish joined to its mirror fish by a faint line across the water's edge. */
 .kr-fish--linked::after {

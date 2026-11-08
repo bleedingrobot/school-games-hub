@@ -324,6 +324,10 @@
   "text": "Double 5 is 10 fish. Then one more fish. Count them all: 11."
  },
  {
+  "slug": "5-and-5-and-one-more",
+  "text": "5 and 5, and one more."
+ },
+ {
   "slug": "6-and-7-6-fish-on-the-rock-and-7-in-the-water-how-many-fish",
   "text": "6 and 7. 6 fish on the rock, and 7 in the water. How many fish?"
  },
@@ -334,6 +338,10 @@
  {
   "slug": "double-6-is-12-fish-then-one-more-fish-count-them-all-13",
   "text": "Double 6 is 12 fish. Then one more fish. Count them all: 13."
+ },
+ {
+  "slug": "6-and-6-and-one-more",
+  "text": "6 and 6, and one more."
  },
  {
   "slug": "7-and-8-7-fish-on-the-rock-and-8-in-the-water-how-many-fish",
@@ -348,6 +356,10 @@
   "text": "Double 7 is 14 fish. Then one more fish. Count them all: 15."
  },
  {
+  "slug": "7-and-7-and-one-more",
+  "text": "7 and 7, and one more."
+ },
+ {
   "slug": "8-and-9-8-fish-on-the-rock-and-9-in-the-water-how-many-fish",
   "text": "8 and 9. 8 fish on the rock, and 9 in the water. How many fish?"
  },
@@ -358,6 +370,10 @@
  {
   "slug": "double-8-is-16-fish-then-one-more-fish-count-them-all-17",
   "text": "Double 8 is 16 fish. Then one more fish. Count them all: 17."
+ },
+ {
+  "slug": "8-and-8-and-one-more",
+  "text": "8 and 8, and one more."
  },
  {
   "slug": "6-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
@@ -636,8 +652,8 @@
   "text": "That is the double. Do not forget the one more fish."
  },
  {
-  "slug": "only-one-side-has-the-extra-fish-double-the-small-one-then-one-more",
-  "text": "Only one side has the extra fish. Double the small one, then one more."
+  "slug": "there-is-only-one-extra-fish-double-the-small-number-then-add-one-more",
+  "text": "There is only one extra fish. Double the small number, then add one more."
  },
  {
   "slug": "double-means-the-same-again-not-one-more",

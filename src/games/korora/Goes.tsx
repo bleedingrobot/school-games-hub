@@ -136,10 +136,17 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const ownHelp = helpAt(at);
   const shown: Help = (boost && setting !== 'off') || flow.phase === 'look' ? 'full' : ownHelp;
   const mirror = go.kind === 'double' || go.kind === 'near';
+  // S26: at full help the child still deals the fish, two at a time (a fish for each nest); the choices wait until all are dealt.
+  // Decided when the go begins, so help that comes back part-way through a go does not lock choices already open.
+  const mustDeal = useMemo(
+    () => go.kind === 'half' && (ownHelp === 'full' || (boost && setting !== 'off')),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [at, goes],
+  );
   const lookLine = go.kind === 'near' ? WORDS.lookNear(go.n) : go.kind === 'double' ? WORDS.lookDouble(go.n) : WORDS.lookHalf(go.n);
   const lookIds = mirror ? fishIdsOf(go) : fishIdsOf(go).filter((_, i) => i % 2 === 0);
 
-  // Each new go is read aloud once; bronze-day halves share themselves out while the child watches.
+  // Each new go is read aloud once; the child deals the fish of a half themselves at every help level.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
     // The clock starts now (a tap during the voice is still timed) and again once the question has been heard.
@@ -148,13 +155,14 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     since.current = Date.now();
     say(line, () => {
       if (live && !tappedYet.current) since.current = Date.now();
+      // Near doubles at a help level that shows the water: the picture said in a line, never the answer.
+      if (live && go.kind === 'near' && shown !== 'none') say(WORDS.nearMirror(go.n));
     });
     setGuideStep(0);
     if (guided) {
       later(1800, () => setGuideStep(1));
       later(3600, () => setGuideStep(2));
     }
-    if (go.kind === 'half' && (ownHelp === 'full' || (boost && setting !== 'off'))) shareAll(go.n, 1200);
     return () => {
       live = false;
     };
@@ -184,8 +192,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         setGreyed([]);
         setRedoOrder(reordered(go.choices));
         setCounted([]);
-        // The pile goes back to how the child's own help level shows it.
-        if (!(go.kind === 'half' && (ownHelp === 'full' || (boost && setting !== 'off')))) setShared([]);
+        // The pile goes back to the pile: the child deals it again.
+        setShared([]);
         since.current = Date.now();
         say(WORDS.nowTry, () => say(line));
       },
@@ -270,14 +278,28 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   /** Tapping a fish: count it (doubles), or give it to the next chick (halves, fair or not) on days the pile shows. */
   function tapFish(id: string, pileIndex?: number) {
     if (pileIndex !== undefined) {
-      setShared((s) => (s.includes(pileIndex) ? s : [...s, pileIndex]));
+      if (phase !== 'ask' || look) return;
+      // Full help: one tap deals a pair, a fish for each nest, the next two in the pile.
+      if (mustDeal) {
+        const rest = Array.from({ length: go.n }, (_, i) => i).filter((i) => !shared.includes(i));
+        if (rest.length >= 2) setShared([...shared, rest[0], rest[1]]);
+      } else setShared((s) => (s.includes(pileIndex) ? s : [...s, pileIndex]));
       if (sound) playSound('tap');
       return;
     }
     setCounted((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
   }
 
-  const locked = go.kind === 'fair' && phase === 'ask' && !sorted;
+  const dealing = mustDeal && shared.length < go.n;
+  const locked = (go.kind === 'fair' && phase === 'ask' && !sorted) || (dealing && phase === 'ask');
+  // The answer clock starts again when the last fish is dealt, so dealing time is not thinking time.
+  useEffect(() => {
+    if (mustDeal && !look && phase === 'ask' && shared.length >= go.n) {
+      tappedYet.current = true;
+      since.current = Date.now();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared.length]);
   const hand = go.kind === 'fair' ? wrongs >= 3 && sorted : flow.phase === 'redo' && flow.wrong >= LOOK_AT + 2;
   const lookCounted = look ? lookIds.slice(0, look.filled) : counted;
   const pointAt = phase === 'ask' && !look && ((guided && guideStep === 2) || hand) ? go.answer : null;
@@ -308,7 +330,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         ) : go.kind === 'fair' ? (
           <FairPile go={go} help={shown} phase={phase} hint={pairHint} sound={sound} onSorted={setSorted} />
         ) : (
-          <Share go={go} help={shown} phase={phase} counted={lookCounted} shared={shared} onFish={tapFish} />
+          <Share go={go} help={shown} phase={phase} counted={lookCounted} shared={shared} deal={mustDeal && !look && flow.phase !== 'look'} onFish={tapFish} />
         )}
       </div>
       <div className="kr-answer">
@@ -377,6 +399,8 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
   });
   return (
     <div className="kr-mirror">
+      {go.kind === 'near' && reflection && <span className="kr-sr">{WORDS.nearMirror(go.n)}</span>}
+      <div className="kr-rockline">
       <div className={`kr-rock${guide === 0 ? ' kr-guide' : ''}`}>
         <div className="kr-rows">
           {rock.map(({ r, count, start }) => (
@@ -388,6 +412,14 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
           ))}
         </div>
       </div>
+      {/* Near doubles: the one more fish sits on its own, out of the water, and is not part of the reflection. */}
+      {go.kind === 'near' && reflection && (
+        <div className="kr-more">
+          <FishSpot id={`w${go.n}`} counted={counted} onTap={() => onFish(`w${go.n}`)} className="kr-fish--extra" />
+          <span className="kr-more__label" aria-hidden="true">+ 1</span>
+        </div>
+      )}
+      </div>
       <div className={`kr-water${reflection ? ` kr-water--${reflection}` : ''}${guide === 1 ? ' kr-guide' : ''}`}>
         {reflection && (
           <div className="kr-rows">
@@ -398,11 +430,6 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
                 ))}
               </div>
             ))}
-            {go.kind === 'near' && (
-              <div className="kr-row kr-row--mirror">
-                <FishSpot id={`w${go.n}`} counted={counted} onTap={() => onFish(`w${go.n}`)} className="kr-fish--mirror kr-fish--extra" />
-              </div>
-            )}
           </div>
         )}
         {!reflection && <span className="kr-water__ripple" aria-hidden="true" />}
@@ -412,15 +439,17 @@ function Mirror({ go, help, phase, counted, guide, onFish }: {
 }
 
 /** A half, or fair or not: the pile of fish, and the two chicks each with the fish they have been given. */
-function Share({ go, help, phase, counted, shared, onFish }: {
-  go: Go; help: Help; phase: Phase; counted: string[]; shared: number[]; onFish: (id: string, pile?: number) => void;
+function Share({ go, help, phase, counted, shared, deal, onFish }: {
+  go: Go; help: Help; phase: Phase; counted: string[]; shared: number[]; deal: boolean; onFish: (id: string, pile?: number) => void;
 }) {
   const pileShown = help !== 'none' || phase !== 'ask' || shared.length > 0;
   const left = shared.filter((_, i) => i % 2 === 0);
   const right = shared.filter((_, i) => i % 2 === 1);
   const still = Array.from({ length: go.n }, (_, i) => i).filter((i) => !shared.includes(i));
+  // The next pair goes to the left nest then the right: the nest due the next fish pulses while the child is dealing.
+  const dealing = deal && phase === 'ask' && still.length > 0;
   const nest = (items: number[], happy: boolean, side: string) => (
-    <div className={`kr-nest kr-nest--${side}`}>
+    <div className={`kr-nest kr-nest--${side}${dealing ? ' kr-nest--next' : ''}`}>
       <span className="kr-chick"><Chick happy={happy} /></span>
       <div className="kr-nest__fish kr-rows">
         {rowsOf(items.length).map((count, r) => (
@@ -453,7 +482,7 @@ function Share({ go, help, phase, counted, shared, onFish }: {
             <span className="kr-basket__num">{go.n}</span>
           </span>
         )}
-        {pileShown && help !== 'full' && phase === 'ask' && shared.length === 0 && <p className="kr-tip">{WORDS.tapToShare}</p>}
+        {pileShown && phase === 'ask' && shared.length === 0 && (deal || help !== 'full') && <p className="kr-tip">{deal ? WORDS.tapToDeal : WORDS.tapToShare}</p>}
       </div>
       {nest(right, done, 'right')}
     </div>
