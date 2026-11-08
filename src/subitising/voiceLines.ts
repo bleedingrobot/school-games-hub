@@ -25,6 +25,8 @@ export const PROMPTS = {
   flash: 'How many did you see?',
   /** The demo picture before a new student's starting check. */
   demo: 'This is how it works. A picture shows, then hides. Tap how many dots you saw. This one stays so you can practise.',
+  /** The demo the first time a child meets Missing Spots (stage 6 or 7): shows how it works, then the real pictures. */
+  demoGap: 'This is a new kind of picture. Some squares have a counter and some are empty. Tap how many squares are empty. This one stays so you can practise.',
   /** The end of a round played with the picture kept on screen: those answers don't grow the garden. */
   guidedSummary: 'The picture stayed on today, so your plants grew a little. Switch flashing back on to finish them.',
 } as const;
