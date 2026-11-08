@@ -1,18 +1,22 @@
 /**
  * Read-aloud for students who can't read yet. A game can give a folder of recorded clips (made with
  * Kokoro, see scripts/voice-clips.py), named by voiceSlug(text); a line with no clip, or a clip
- * that won't play, uses the browser's own voice instead. Nothing is sent anywhere. Off until the student turns it on; the choice is remembered on this device only,
+ * that won't play, uses the browser's own voice instead. Nothing is sent anywhere. Off until the student turns it on (a game may ask for on by default; the saved choice always wins); the choice is remembered on this device only,
  * the same way the sound setting is. A page may never speak an answer before it has been given.
  */
 import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'sgh-read-aloud';
 
-function readSaved(): boolean {
+/** The saved choice wins; with nothing saved (or storage blocked) use `fallback`. */
+export function readSaved(fallback = false): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'true') return true;
+    if (saved === 'false') return false;
+    return fallback;
   } catch {
-    return false;
+    return fallback;
   }
 }
 
@@ -121,8 +125,9 @@ export function stopSpeaking(): void {
 }
 
 /** The "Read to me" setting, shared by every screen that asks for it. */
-export function useReadAloud() {
-  const [on, setOnState] = useState(readSaved);
+export function useReadAloud(options?: { defaultOn?: boolean }) {
+  const defaultOn = options?.defaultOn ?? false;
+  const [on, setOnState] = useState(() => readSaved(defaultOn));
   const setOn = useCallback((value: boolean) => {
     setOnState(value);
     if (!value) stopSpeaking();
