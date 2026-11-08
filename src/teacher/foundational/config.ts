@@ -41,7 +41,7 @@ export interface GameWords {
 
 /** Words for each game. */
 export const GAMES: Record<FoundationalGameId, GameWords> = {
-  beanstalk: { name: 'Beanstalk', levelWord: 'beanstalk', levels: {}, top: null },
+  beanstalk: { name: 'Beanstalk', levelWord: 'sum', levels: { 0: 'Bonds to 10', 1: 'Bonds to 20', 2: 'Bonds to 100', 3: 'Bonds to 1000' }, top: 3 },
   hop: { name: 'Hop', levelWord: 'step', levels: { 10: 'Counting in tens', 5: 'Counting in fives', 2: 'Counting in twos', 3: 'Counting in threes', 4: 'Counting in fours', 200: 'Counting in tens past 100' }, top: 200 },
   korora: { name: 'Penguin Pairs', levelWord: 'level', levels: { 1: 'Doubles to 5', 2: 'Halves to 10', 3: 'Doubles to 10', 4: 'Halves to 20', 5: 'Near doubles' }, top: 5 },
   pipi: { name: 'Pipi', levelWord: 'level', levels: { 1: 'Parts of 3 to 5', 2: 'Parts of 6 and 7', 3: 'Parts of 8 to 10' }, top: 3 },
