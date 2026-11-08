@@ -1925,10 +1925,15 @@ const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 const isLevel = (n) => Number.isInteger(n) && n >= 0 && n <= 5;
 /** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
 const shownLevel = (level, help) => help === "always" ? 4 : help === "off" ? 0 : level;
-/** A child who already knows most of the facts when they first play starts further on, with less help. */
+/**
+* A child who already knows most of the facts when they first play starts further on, with less help: at least
+* `KNOWN_FACTS` of the nine "ten and" facts AND of the nine "ten less" facts at box 2 or more. Knowing only one kind
+* starts at step 1, the safe side.
+*/
 function startFor(stats) {
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= 7 ? KNOWN_START : {
+	const known = (keys) => keys.filter((k) => (box.get(k) ?? 0) >= 2).length >= 7;
+	return known(KEYS) && known(LESS_KEYS) ? KNOWN_START : {
 		step: 1,
 		level: 5
 	};

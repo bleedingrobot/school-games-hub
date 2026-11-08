@@ -53,6 +53,12 @@ export type Help = 'full' | 'split' | 'faint' | 'none';
 export const HELPS: readonly Help[] = ['full', 'split', 'faint', 'none'];
 /** Whether a go's help repeats the question with pebbles in ten-frames (adding goes only; hop-backs skip it). */
 export const pebblesFor = (help: Help): boolean => help === 'full' || help === 'split';
+/**
+ * A shorter go for a child who knows it (S36): after a right first tap (no wrong tap on the hops step either) that is not
+ * the very first guided go, the pebbles and the split are skipped. One go in five (go 0, 5, ...) keeps them for everyone on
+ * full help, so the pebble idea is not lost.
+ */
+export const skipPracticeFor = (firstRight: boolean, guided: boolean, goIndex: number): boolean => firstRight && !guided && goIndex % 5 !== 0;
 /** The kind of day, from the stones' colours: silver and gold days mix in smaller-first goes, gold days end hopping back. */
 export type Day = 'bronze' | 'silver' | 'gold';
 

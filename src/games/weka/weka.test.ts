@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Tap } from '../../../shared/weka/play';
 import { DAYS_PER_BASKET } from '../../../shared/weka/progress';
 import { replay } from '../../../shared/weka/play';
-import { ALL_KEYS, showGo, showRound, wrongKind, type Round } from '../../../shared/weka/round';
-import { allVoiceLines, whyLine } from './voiceLines';
+import { ALL_KEYS, showGo, showRound, skipPracticeFor, toTenChoicesFor, wrongKind, type Round } from '../../../shared/weka/round';
+import { allVoiceLines, splitWhyLine, whyLine } from './voiceLines';
 import { trialBackend } from './backend';
 
 const css = readFileSync(`${process.cwd()}/src/games/weka/weka.css`, 'utf8');
@@ -115,5 +115,23 @@ describe('mistakes that teach', () => {
         expect(whyLine(g, w.kind)).not.toMatch(new RegExp(`\\b${g.toTen}\\b`));
       }
     }
+  });
+
+  it('says what a wrong split number makes, and a quick right child skips the practice except one go in five', () => {
+    const lines = new Set(allVoiceLines());
+    for (const g of goes) {
+      for (const n of toTenChoicesFor(g.toTen).filter((x) => x !== g.toTen)) {
+        const line = splitWhyLine(g, 0, n);
+        expect(lines.has(line)).toBe(true);
+        expect(line.startsWith(g.kind === 'back' ? `${g.total} take away ${n} is ${g.total - n}.` : `${g.big} and ${n} make ${g.big + n}.`)).toBe(true);
+      }
+      for (const n of toTenChoicesFor(g.rest).filter((x) => x !== g.rest)) expect(lines.has(splitWhyLine(g, 1, n))).toBe(true);
+    }
+    expect(splitWhyLine({ kind: 'add', small: 5, big: 8, total: 13, toTen: 2 }, 0, 3)).toBe('8 and 3 make 11. We need to land on 10.');
+    expect(splitWhyLine({ kind: 'add', small: 5, big: 8, total: 13, toTen: 2 }, 1, 2)).toBe('2 and 2 make 4. We have 5.');
+    expect(skipPracticeFor(true, false, 3)).toBe(true);
+    expect(skipPracticeFor(false, false, 3)).toBe(false);
+    expect(skipPracticeFor(true, true, 0)).toBe(false);
+    expect(skipPracticeFor(true, false, 5)).toBe(false);
   });
 });

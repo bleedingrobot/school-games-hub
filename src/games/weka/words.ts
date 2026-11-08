@@ -45,6 +45,10 @@ export const WORDS = {
   whyOther: (from: number) => `Weka only hops to the big rock. Look how far it is from ${from}.`,
   whyTen: '10 is the big rock. How many hops get there?',
   whyNear: (from: number) => `Count the hops from ${from} to the big rock.`,
+  /** A wrong number in the split: what the tapped number makes (never the answer). */
+  whySplitFirstAdd: (big: number, n: number) => `${big} and ${n} make ${big + n}. We need to land on 10.`,
+  whySplitFirstBack: (from: number, n: number) => `${from} take away ${n} is ${from - n}. We need to land on 10.`,
+  whySplitRest: (toTen: number, n: number, small: number) => `${toTen} and ${n} make ${toTen + n}. We have ${small}.`,
   hearAgain: 'Hear it again',
   /** The split after each right answer: the bond's label while it is being filled in, and the button after it. */
   splitLabel: (n: number) => `How did you split the ${n}?`,

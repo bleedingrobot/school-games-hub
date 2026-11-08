@@ -87,7 +87,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   const guided = guide && at === 0;
   const redo = flow.phase === 'redo';
   // "Now you try" is at the child's own level, not the extra help the two wrong taps brought.
-  const pic = pictureFor(go, redo ? 0 : flow.wrong, tapped);
+  const pic = pictureFor(go, redo ? 0 : flow.wrong);
   // Level 1's Peek (opened by the child or by a wrong tap) brings back level 3's picture. Off has no Peek.
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
   const shownLevel: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;

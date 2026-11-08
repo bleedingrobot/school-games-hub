@@ -74,8 +74,8 @@ describe('the help level and the step', () => {
     expect(placeAfter(at({ step: 2, level: 5, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     // A new step always brings the ten-frames back, even from numbers only.
     expect(placeAfter(at({ step: 2, level: 0, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 4 }));
-    // A child who already knows it starts at step 3, help level 2.
-    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 4 });
+    // A child who already knows both kinds of fact starts at step 3, help level 4.
+    expect(startFor(inBox([...KEYS.slice(0, 7), ...LESS_KEYS.slice(0, 7)], 2))).toEqual({ step: 3, level: 4 });
     expect(startFor(inBox(KEYS.slice(0, 6), 3))).toEqual({ step: 1, level: 5 });
   });
 
@@ -90,14 +90,11 @@ describe('the help level and the step', () => {
 
   it('a wrong tap brings more picture for that go, and never shows the answer', () => {
     const go = { l: 0 as HelpLevel, choices: [13, 14, 15, 41], answer: 14 };
-    expect(pictureFor(go, 0)).toEqual({ level: 0, peekOpen: false, nests: go.choices });
+    expect(pictureFor(go, 0)).toEqual({ level: 0, peekOpen: false });
     expect(pictureFor(go, 1).level).toBe(3);
     expect(pictureFor({ ...go, l: 1 }, 1)).toMatchObject({ level: 1, peekOpen: true });
     expect(pictureFor({ ...go, l: 3 }, 1).level).toBe(4);
     expect(pictureFor(go, 2).level).toBe(5);
-    const third = pictureFor(go, 3, [13, 15, 41]);
-    expect(third.nests).toHaveLength(2);
-    expect(third.nests).toContain(14);
   });
 });
 
@@ -166,9 +163,10 @@ describe('ten and and ten less records (R9)', () => {
     expect(showGo(round, 4, { key: 'tenless:4', v: 0, l: 3 })).toBeNull();
   });
 
-  it('a child who knows 10 + n but nothing of the minus facts still starts at step 3, and old tenand records are all that is read', () => {
-    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 3, level: 4 });
+  it('a child who knows only one kind of fact starts at step 1; both kinds start at step 3', () => {
+    expect(startFor(inBox(KEYS.slice(0, 7), 2))).toEqual({ step: 1, level: 5 });
     expect(startFor(inBox(LESS_KEYS, 2))).toEqual({ step: 1, level: 5 });
+    expect(startFor(inBox([...KEYS, ...LESS_KEYS.slice(0, 7)], 2))).toEqual({ step: 3, level: 4 });
   });
 });
 
