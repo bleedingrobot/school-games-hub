@@ -31,8 +31,8 @@ describe('Robin’s Berry Basket voice lines', () => {
 
   it('says home and finish lines from the list, asks the first go without giving the answer away, and is English only', () => {
     for (const title of [WORDS.wants('Robin'), WORDS.nextFriend('Kiwi')]) expect(heard(homeLine(title, true))).toBe(true);
-    expect(heard(finishLine(WORDS.goldenFeast('Kiwi'), WORDS.nextStep(4)))).toBe(true);
-    expect(heard(finishLine(WORDS.basketTurned('silver'), WORDS.sameAgain))).toBe(true);
+    expect(heard(finishLine(WORDS.goldenFeast('Kiwi'), WORDS.how.most, WORDS.nextStep(4)))).toBe(true);
+    expect(heard(finishLine(WORDS.basketTurned('silver'), WORDS.how.tricky, WORDS.sameAgain))).toBe(true);
     const [first] = showRound(makeRound(1, [], { step: 1, level: 5, guided: true }));
     expect(first.key).toBe(GUIDED_KEY);
     expect(askLine(first)).toBe('Give me four berries.');
