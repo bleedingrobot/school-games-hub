@@ -24,6 +24,8 @@ export const GOES_PER_ROUND = 10;
 /** Altogether goes on silver and gold days, and two-tides goes on gold days. */
 export const ALTOGETHER_GOES = 2;
 export const TWO_TIDES_GOES = 2;
+/** Goes a round (from level 2 up) that come from earlier levels' splits, weakest first, so older sums stay known. */
+export const REVIEW_GOES = 2;
 
 /** The wholes at each level, smallest first. */
 export const LEVELS = [
@@ -170,8 +172,15 @@ export function makeRound(
   // only nine other splits).
   const middle = keys.filter((k) => !isEdge(k));
   const edges = Math.max(GOES_PER_ROUND - middle.length, random() < 0.5 ? 1 : 0);
-  let picked = shuffle([...weakest(middle, GOES_PER_ROUND - edges, box, random), ...weakest(keys.filter(isEdge), edges, box, random)], random);
-  if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, GOES_PER_ROUND);
+  // From level 2 up, some goes revisit earlier levels' splits (never edges, never the first go).
+  const earlier = LEVELS.filter((l) => l.level < level).flatMap((l) => levelKeys(l.level)).filter((k) => !isEdge(k));
+  const reviews = earlier.length ? weakest(earlier, REVIEW_GOES, box, random) : [];
+  const fresh = GOES_PER_ROUND - reviews.length;
+  const ownEdges = Math.min(edges, fresh);
+  let picked = shuffle([...weakest(middle, fresh - ownEdges, box, random), ...weakest(keys.filter(isEdge), ownEdges, box, random)], random);
+  if (opts.guided) picked = [GUIDED_KEY, ...picked.filter((k) => k !== GUIDED_KEY)].slice(0, fresh);
+  // Review goes sit in the middle of the round: from the 3rd go on, spread out.
+  reviews.forEach((k, i) => picked.splice(Math.min(2 + i * 3 + Math.floor(random() * 2), picked.length), 0, k));
   // The other kinds never take the first go or an edge: two tides has nothing to swap, and "4 here and 0 popped up" isn't
   // an altogether question.
   const goes: GoPlan[] = picked.map((key) => ({ key, kind: 'hiding', h: helpForStats(byKey.get(key)) }));

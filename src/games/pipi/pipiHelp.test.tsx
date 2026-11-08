@@ -33,6 +33,16 @@ describe("Pipi's help in the sand follows the child (R6)", () => {
     document.body.innerHTML = '';
     render(<Goes round={round(() => 'full')} help="full" helpOn={false} say={vi.fn()} {...props} />);
     expect(frame()).toContain('pp-frame--none');
+    // Full help draws no outlines until a shell has been tried on this go; then they come in.
+    document.body.innerHTML = '';
+    const full = round(() => 'full');
+    const g0 = showRound(full)[0];
+    render(<Goes round={full} help="full" say={vi.fn()} {...props} />);
+    await tide();
+    expect(document.querySelectorAll('.pp-hidden--full')).toHaveLength(0);
+    expect(document.querySelectorAll('.pp-hidden--none').length).toBeGreaterThan(0);
+    await u.click(shell(g0.wrongs[0].n));
+    expect(document.querySelectorAll('.pp-hidden--full').length).toBeGreaterThan(0);
   });
 
   it('brings the full help back after three goes in a row with a wrong first shell, saying so once, unless the teacher turned the help off', async () => {
