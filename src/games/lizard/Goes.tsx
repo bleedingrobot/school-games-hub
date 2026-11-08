@@ -22,6 +22,7 @@ import { PointingHand } from '../../kit/PointingHand';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { stepGo, NEW_GO, LOOK_AT, type GoState } from '../../../shared/kit/mistakes';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { MAX_ONES } from '../../../shared/lizard/config';
 import { tapRight, type Tap } from '../../../shared/lizard/play';
 import type { Friend as FriendName } from '../../../shared/lizard/progress';
@@ -175,6 +176,9 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   const [lastTried, setLastTried] = useState<Mat | null>(null);
   const [shown, setShown] = useState<{ mat: Mat; line: string; picked?: number } | null>(null);
   const [held, setHeld] = useState(false);
+  // Three goes in a row with a wrong first try bring the full picture back for the rest of the round (not saved).
+  const [struggle, setStruggle] = useState(false);
+  const run = useRef(0);
   const since = useRef(Date.now());
   /** Set by the first move on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -194,7 +198,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const cardGo = go.choices.length > 0;
   const wrongs = gs.wrong;
-  const pic = pictureFor(go, wrongs, tapped);
+  const pic = pictureFor(go, wrongs, tapped, struggle);
   const canPeek = cardGo && go.l === 1 && round.help !== 'off' && pic.level <= 1;
   const seeing = gs.phase === 'look' || gs.phase === 'redo';
   const pictured = cardGo ? pic.pictured || peek || seeing : true;
@@ -319,6 +323,8 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
     clearTimers();
     seenKinds.mark([go.kind]);
     onSeen([go.kind]);
+    run.current = gs.wrong > 0 ? run.current + 1 : 0;
+    if (run.current >= STRUGGLE_GOES) setStruggle(true);
     setGs(stepGo(gs, 'right'));
     setPhase('right');
     setPose('eat');
