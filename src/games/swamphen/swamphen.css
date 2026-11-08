@@ -179,3 +179,9 @@
 .sh-friend--painted img, .sh-golden img { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.25)); }
 .sh-reedrow--painted { display: flex; align-items: flex-end; justify-content: space-between; }
 .sh-reedrow--painted img { display: block; width: 17%; height: auto; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.3)); }
+
+/* Show me first: the little bar under a demo, and where its hand points. */
+.sh-demo { display: flex; justify-content: center; gap: 10px; min-height: 64px; }
+.sh-hand--a { left: 12%; top: 16%; }
+.sh-hand--b { left: 40%; top: 45%; }
+.sh-hand--c { left: 40%; top: 74%; }

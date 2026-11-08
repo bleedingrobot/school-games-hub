@@ -107,6 +107,11 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
   }, [backend, fail]);
   useEffect(reload, [reload]);
 
+  const markSeen = (kinds: string[]) => {
+    // Remember it here at once (the next round starts from this list), then tell the server.
+    setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+    return backend.markSeen(kinds);
+  };
   const play = () => backend.start().then((round) => setScreen({ kind: 'play', round }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then((result) => {
@@ -120,7 +125,7 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
   else if (!state || screen.kind === 'loading') body = <p className="sh-message">…</p>;
   else if (screen.kind === 'play') {
     const branch = gardenAfter(state.daysDone);
-    body = <Goes guided={state.daysDone === 0} round={screen.round} scenery={branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
+    body = <Goes guided={state.daysDone === 0} round={screen.round} seenKinds={state.seen} markSeen={markSeen} scenery={branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
   } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
