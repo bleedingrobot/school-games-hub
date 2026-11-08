@@ -1,0 +1,98 @@
+[
+  {
+    "id": "S5",
+    "kind": "fix",
+    "title": "Lizard: the child ties the bundles on the first three steps",
+    "games": [
+      "Lizard"
+    ],
+    "effort": "S",
+    "impact": "High",
+    "wrong": "The + bundle button builds a ten for the child, so tying ten sticks is only done on the first go.",
+    "done": "On steps 1 to 3 there is no + bundle button; the child adds sticks and ties ten into a bundle each time.",
+    "why": "Ten ones making one ten is the whole place-value idea, and it is skipped now.",
+    "plan": "docs/plans/maths-review-2/S5-lizard-tying.md",
+    "waits": []
+  },
+  {
+    "id": "S6",
+    "kind": "fix",
+    "title": "Lizard: keep the child's attempt and draw the real bundles",
+    "games": [
+      "Lizard"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "wrong": "A wrong try wipes the mat, never says what the child made, and shows a thinking emoji; the third wrong in a redo says nothing.",
+    "done": "A wrong try keeps the child's bundles and sticks, says 'You made 34. We need 43.', draws their own mat, and caps at two tries then a look and redo.",
+    "why": "The child sees their own model against the target, so the mistake teaches and rapid guessing stops working.",
+    "plan": "docs/plans/maths-review-2/S6-lizard-attempt.md",
+    "waits": [
+      "S5"
+    ]
+  },
+  {
+    "id": "S7",
+    "kind": "fix",
+    "title": "Pigeon: show the reason on the number line itself",
+    "games": [
+      "Pigeon"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "wrong": "The reason is a sentence and an emoji, the gap is never drawn, the line jumps when the panel opens, and the read arrow is a dot.",
+    "done": "After the second wrong the line shows counted jumps from the child's mark to the right place, a real arrow on read goes, and the line stays still.",
+    "why": "The gap between the child's answer and the right one is the whole lesson of a number line, and it must be seen on the line.",
+    "plan": "docs/plans/maths-review-2/S7-pigeon-line-reason.md",
+    "waits": []
+  },
+  {
+    "id": "S8",
+    "kind": "fix",
+    "title": "Pigeon: less help at the top, and four cards on closer goes",
+    "games": [
+      "Pigeon"
+    ],
+    "effort": "S to M",
+    "impact": "High",
+    "wrong": "Top help writes every ten on the line so placing is copying, and closer goes have two cards so a guess is right half the time.",
+    "done": "Top help writes only 0, the middle and the end, and closer goes have four cards with at most two sharing a tell.",
+    "why": "Reading size from the picture and passing a step by knowing, not luck, is what the steps are meant to show.",
+    "plan": "docs/plans/maths-review-2/S8-pigeon-hints-cards.md",
+    "waits": [
+      "S7"
+    ]
+  },
+  {
+    "id": "S9",
+    "kind": "fix",
+    "title": "Parrot: the see-saw tips toward the heavier side, and the words stop saying equals",
+    "games": [
+      "Parrot"
+    ],
+    "effort": "M",
+    "impact": "High",
+    "wrong": "True-or-false stays flat after a wrong answer, the post says = even when tipped, and a wrong stone count gets a vague line.",
+    "done": "A wrong answer tips the see-saw toward the heavier side, = shows only when level, true-or-false asks 'Is it the same?', and stone slips are named.",
+    "why": "The symbol must match the model: equal means level, and a wrong answer shows the weight difference.",
+    "plan": "docs/plans/maths-review-2/S9-parrot-seesaw-tilt.md",
+    "waits": []
+  },
+  {
+    "id": "S10",
+    "kind": "fix",
+    "title": "Parrot: wrong cards from near misses, and a redo with no silly card",
+    "games": [
+      "Parrot"
+    ],
+    "effort": "S to M",
+    "impact": "High",
+    "wrong": "The right card is the only one not printed in the sum and never the biggest, and the redo adds the huge sum card.",
+    "done": "Cards are the answer and close numbers, the answer sits in every position, and the redo offers the answer and the nearest card.",
+    "why": "Card goes then need the balance idea, not a pattern, which is the main loophole in this game.",
+    "plan": "docs/plans/maths-review-2/S10-parrot-near-cards.md",
+    "waits": [
+      "S9"
+    ]
+  }
+]

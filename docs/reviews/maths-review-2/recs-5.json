@@ -1,0 +1,134 @@
+[
+{
+"id": "S21",
+"kind": "fix",
+"title": "Beanstalk: the next sum follows the child, not the calendar",
+"games": [
+"Beanstalk"
+],
+"effort": "L",
+"impact": "Very high",
+"wrong": "The sum (10, 20, 100, 1000) is set by Golden Eggs, so a child who is not secure moves on after 30 days and a fast child waits. Pairs are one sum only and the weakest do not come up more.",
+"done": "A child stays on a sum until two good days and the facts are secure, steps back after two hard days, and gets about 2 older pairs in 10 with the weakest pairs most often.",
+"why": "Help and level follow the child, not the calendar; old facts are mixed in.",
+"plan": "docs/plans/maths-review-2/S21-beanstalk-follows-the-child.md",
+"waits": []
+},
+{
+"id": "S22",
+"kind": "fix",
+"title": "Beanstalk: missing-leaf goes are fair",
+"games": [
+"Beanstalk"
+],
+"effort": "S",
+"impact": "High",
+"wrong": "On missing-leaf goes a wrong pair is blocked from a second try, and a go can float only two choices.",
+"done": "Missing-leaf goes always float at least 3 leaves, a wrong pair can be tried again, and the first one is shown with a pointing hand.",
+"why": "Guessing must not work, and a mistake should be free to retry; show the first time a new kind appears.",
+"plan": "docs/plans/maths-review-2/S22-beanstalk-missing-leaf-fair.md",
+"waits": [
+"S11"
+]
+},
+{
+"id": "S23",
+"kind": "fix",
+"title": "Teacher view catches up with the longer ladders",
+"games": [
+"Hop",
+"Penguin Pairs",
+"Beanstalk"
+],
+"effort": "S",
+"impact": "High",
+"wrong": "Hop steps 3, 4 and 200 and Penguin Pairs level 5 have no name in the teacher view, and 'top' is wrong for both.",
+"done": "Every reachable level has a name, 'top' is the real top, a test fails when a level is added without a name, and Beanstalk shows its sum.",
+"why": "The teacher needs honest, readable evidence of where each child is.",
+"plan": "docs/plans/maths-review-2/S23-teacher-view-longer-ladders.md",
+"waits": []
+},
+{
+"id": "S24",
+"kind": "fix",
+"title": "Same-day replays must not move the level",
+"games": [
+"Pipi",
+"Penguin Pairs",
+"Hop"
+],
+"effort": "S",
+"impact": "High",
+"wrong": "The level is worked out again on every finish, so a practice replay can push a child up or change tomorrow's round.",
+"done": "The level changes only at the day's first finish; replays still save answers but do not move the level.",
+"why": "Practice replays must not move the level.",
+"plan": "docs/plans/maths-review-2/S24-replays-do-not-move-the-level.md",
+"waits": []
+},
+{
+"id": "S25",
+"kind": "fix",
+"title": "Full help ends sooner for a child who already knows it",
+"games": [
+"Hop",
+"Penguin Pairs",
+"Pipi",
+"Weka",
+"Tūī"
+],
+"effort": "S",
+"impact": "High",
+"wrong": "A fact keeps full help until it is right on two different days, and Tūī's level floor cancels the fade so a perfect child stays on level 4 for about 8 days.",
+"done": "Two quick rights, even on one day, end full help for that fact; a wrong answer brings it back; a perfect Tūī round starts the fade.",
+"why": "Help follows the child: fade on right-and-quick, return on struggle.",
+"plan": "docs/plans/maths-review-2/S25-full-help-ends-sooner.md",
+"waits": [
+"S14"
+]
+},
+{
+"id": "S26",
+"kind": "fix",
+"title": "Penguin Pairs: the child shares the fish, and the near double is true",
+"games": [
+"Penguin Pairs"
+],
+"effort": "S",
+"impact": "High",
+"wrong": "At full help the half goes share the fish by themselves, and the near-double picture draws its extra fish inside the reflection.",
+"done": "The child deals the fish at every help level, and the near double is a true mirror of n plus one separate fish.",
+"why": "The maths is the move, and pictures must be true.",
+"plan": "docs/plans/maths-review-2/S26-penguin-pairs-child-deals-fish.md",
+"waits": []
+},
+{
+"id": "S27",
+"kind": "fix",
+"title": "Pipi: outlines do not give the answer, levels mix older sums, wrong shells tidy up",
+"games": [
+"Pipi"
+],
+"effort": "M",
+"impact": "High",
+"wrong": "Full and faint help show one outline per hidden pipi, so counting outlines is the answer. Levels never revisit older sums. Wrong shells stay greyed in the row.",
+"done": "Outlines appear only after a first wrong try, about 2 goes in 10 are from earlier levels, and a wrong shell leaves once its reason is shown.",
+"why": "Help must not give the answer; mix old facts; mistakes teach then get out of the way.",
+"plan": "docs/plans/maths-review-2/S27-pipi-outlines-review-tidy.md",
+"waits": []
+},
+{
+"id": "S28",
+"kind": "fix",
+"title": "Quick looks: hear the question, get a second try, drop the 4 second struggle rule",
+"games": [
+"Quick looks"
+],
+"effort": "M",
+"impact": "High",
+"wrong": "The question is read only if a child turns the voice on, a wrong answer shows the answer at once with no second try, and thinking over 4 seconds counts as struggling.",
+"done": "Young children hear the question by default, a wrong first answer brings the picture back for one more try, and only two wrong in a row count as struggling.",
+"why": "Voice first, mistakes teach, and fair timing.",
+"plan": "docs/plans/maths-review-2/S28-quick-looks-hear-retry-struggle.md",
+"waits": []
+}
+]

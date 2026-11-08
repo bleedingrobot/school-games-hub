@@ -1,0 +1,356 @@
+<title>Maths Review: Before and After</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Same bush-and-kowhai palette as the first review page, so the two read as a pair.
+     Layout: verdict first, then scores side by side, then issue status, then new issues. */
+  --bg: #f4f6f1; --surface: #ffffff; --ink: #1d2a24; --muted: #5b6b62; --line: #d9e0d6;
+  --accent: #1f6b52; --accent-ink: #ffffff; --kowhai: #e8b417;
+  --s1: #e4a59a; --s2: #f1d189; --s3: #a9d3b4; --s4: #3f8f6b; --s4-ink: #ffffff;
+  --fixed: #3f8f6b; --partly: #e8b417; --notfixed: #c9705f; --worse: #9c2f2f; --chip-ink: #ffffff;
+  --up: #1f6b52; --down: #a4472f;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121915; --surface: #1a241f; --ink: #e6ede8; --muted: #9bb0a4; --line: #2c3a33;
+    --accent: #5cc39a; --accent-ink: #0d1612; --kowhai: #f0c53e;
+    --s1: #7a3c34; --s2: #6e5a1f; --s3: #2f5e44; --s4: #5cc39a; --s4-ink: #0d1612;
+    --fixed: #4fae86; --partly: #d9ae2e; --notfixed: #c27a68; --worse: #e06a6a; --chip-ink: #0d1612;
+    --up: #5cc39a; --down: #e48b72;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121915; --surface: #1a241f; --ink: #e6ede8; --muted: #9bb0a4; --line: #2c3a33;
+  --accent: #5cc39a; --accent-ink: #0d1612; --kowhai: #f0c53e;
+  --s1: #7a3c34; --s2: #6e5a1f; --s3: #2f5e44; --s4: #5cc39a; --s4-ink: #0d1612;
+  --fixed: #4fae86; --partly: #d9ae2e; --notfixed: #c27a68; --worse: #e06a6a; --chip-ink: #0d1612;
+  --up: #5cc39a; --down: #e48b72;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+a { color: var(--accent); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 0 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { padding: 32px 0 8px; display: grid; gap: 12px; }
+.kicker, .label { font: 700 13px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; line-height: 1.05; }
+h2 { font-size: 26px; font-weight: 800; }
+h3 { font-size: 19px; font-weight: 600; }
+p { margin: 0; }
+.lede { max-width: 68ch; font-size: 18px; }
+nav.jump { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); display: flex; gap: 6px; padding: 10px 0; overflow-x: auto; }
+nav.jump a { white-space: nowrap; text-decoration: none; color: var(--ink); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 15px; }
+a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--kowhai); outline-offset: 2px; }
+section { padding-top: 36px; display: grid; gap: 16px; }
+section[id] { scroll-margin-top: calc(70px + env(safe-area-inset-top, 0px)); }
+.sub { color: var(--muted); max-width: 70ch; }
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; }
+.verdict .big { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; }
+.verdict .big div { display: grid; gap: 2px; }
+.verdict .big b { font: 800 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.verdict .big span { color: var(--muted); font-size: 14.5px; }
+.verdict p { max-width: 72ch; }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--kowhai); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+.finding b { font-family: var(--display); font-size: 17px; }
+.finding p { font-size: 15.5px; color: var(--muted); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--line); font-size: 15px; }
+th { font-weight: 700; color: var(--muted); font-size: 13px; vertical-align: bottom; }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); min-width: 170px; }
+tr.group td { background: var(--bg); font-family: var(--display); font-weight: 700; text-align: left; }
+.pair { display: inline-flex; gap: 3px; align-items: center; }
+.pair i { font-style: normal; width: 24px; height: 24px; border-radius: 5px; display: inline-grid; place-items: center; font-weight: 700; font-size: 13px; }
+.pair i.was { opacity: .55; }
+.pair .arrow { color: var(--muted); font-size: 12px; }
+.sc1 { background: var(--s1); } .sc2 { background: var(--s2); } .sc3 { background: var(--s3); } .sc4 { background: var(--s4); color: var(--s4-ink); }
+td.tot { font: 800 18px var(--display); white-space: nowrap; }
+.delta { font-weight: 800; }
+.delta.up { color: var(--up); } .delta.down { color: var(--down); }
+.tag { display: inline-block; font-size: 12.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.new { border-color: var(--kowhai); color: var(--ink); background: color-mix(in srgb, var(--kowhai) 22%, transparent); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
+.moves { display: grid; gap: 8px; }
+.move { display: grid; grid-template-columns: minmax(150px, 220px) 120px 1fr; gap: 6px 14px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.move .what { font-weight: 700; }
+.move .why { color: var(--muted); font-size: 15px; min-width: 0; }
+.kind { font-size: 12.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; justify-self: start; }
+.kind.real { background: var(--fixed); color: var(--chip-ink); }
+.kind.mixed { background: var(--partly); color: #1d2a24; }
+.kind.stricter { background: var(--line); color: var(--ink); }
+.games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px; }
+.game { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.game .head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.game .score { font: 800 22px var(--display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.game .score small { font-size: 14px; color: var(--muted); font-weight: 600; }
+.game p { font-size: 15.5px; }
+.bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); }
+.bar i { display: block; height: 100%; }
+.b-fixed { background: var(--fixed); } .b-partly { background: var(--partly); } .b-not_fixed { background: var(--notfixed); } .b-worse { background: var(--worse); }
+.counts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; color: var(--muted); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.toolbar label { font-size: 15px; color: var(--muted); }
+select, button { font: inherit; }
+select { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+details.gi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+details.gi summary { cursor: pointer; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; list-style: none; }
+details.gi summary::-webkit-details-marker { display: none; }
+details.gi summary::before { content: "▸"; color: var(--muted); }
+details.gi[open] summary::before { content: "▾"; }
+details.gi summary h3 { flex: 1 1 200px; }
+details.gi summary .bar { flex: 0 1 220px; min-width: 120px; }
+.items { list-style: none; margin: 0; padding: 0 16px 14px; display: grid; gap: 8px; }
+.items li { display: grid; grid-template-columns: 96px 1fr; gap: 4px 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+.items .t { font-weight: 700; }
+.items .n { color: var(--muted); font-size: 15px; }
+.items code, .newi code { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.st { font-size: 12.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; justify-self: start; align-self: start; white-space: nowrap; }
+.st.fixed { background: var(--fixed); color: var(--chip-ink); }
+.st.partly { background: var(--partly); color: #1d2a24; }
+.st.not_fixed { background: var(--notfixed); color: #1d2a24; }
+.st.worse { background: var(--worse); color: #ffffff; }
+.newlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 12px; }
+.newi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+.newi.cbf { border-top: 5px solid var(--down); }
+.newi .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.newi p { font-size: 15.5px; }
+.note { font-size: 14px; color: var(--muted); }
+.data { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.stat b { font: 800 24px var(--display); display: block; }
+.stat span { font-size: 14.5px; color: var(--muted); }
+@media (max-width: 560px) {
+  .move { grid-template-columns: 1fr; }
+  .items li { grid-template-columns: 1fr; }
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+<div class="wrap">
+  <header class="top">
+    <div class="kicker">Douglas Park School Games Hub · Second review, 8 November 2026</div>
+    <h1>Did the fixes make the maths games better?</h1>
+    <p class="lede">The Foundational maths games were reviewed again with the same method, criteria and scoring as the first review on 7 November. This page puts the two side by side.</p>
+  </header>
+  <nav class="jump" aria-label="Sections">
+    <a href="#summary">Summary</a>
+    <a href="#scores">Scores</a>
+    <a href="#moves">What moved</a>
+    <a href="#issues">First-review issues</a>
+    <a href="#new">New issues</a>
+    <a href="#newer">Newer games</a>
+    <a href="#data">Live data</a>
+  </nav>
+
+  <section id="summary" aria-labelledby="h-sum">
+    <h2 id="h-sum">In short</h2>
+    <div class="verdict">
+      <div class="big" id="bigNums"></div>
+      <p><b>Yes, the work improved the seven older games.</b> Before, only Weka met the go-live bar of a 3 on every line. Now six of the seven do. Only Kiwi's Beanstalk is still under it, because its sum still moves by the calendar, not by what the child knows. No first-review issue got worse.</p>
+      <p><b>Read the rise with care.</b> About 15 of the 21 points gained are real changes: mistakes that teach, help per fact, longer ladders and the teacher grid. About 6 are partly a kinder reading of the rubric, which allows "one or two loopholes" at a 3. Weka's and Tūī's Support fell from 4 to 3 only because this review asked for a demo for each new kind of go.</p>
+      <p><b>The five newer games have no earlier score.</b> Four meet the bar. Robin's Berry Basket does not. Kingfisher's Dairy is not built yet, so it is not scored.</p>
+      <p class="note">The classes have not played since the fixes went live on the weekend, so the live data can't show the effect yet.</p>
+    </div>
+    <h3>What still matters most</h3>
+    <div class="findings">
+      <div class="finding"><b>1. Robin's cards can be beaten by a pattern</b><p>Tapping the third card is right about 95% of the time. It passes the step without any counting, so the game moves children on without the idea.</p></div>
+      <div class="finding"><b>2. "Now you try" can be copied</b><p>A new problem caused by the fixes, in every game. Look-together shows the answer, then the redo asks the same question with the same cards. In Robin and Parrot the right card is even marked.</p></div>
+      <div class="finding"><b>3. No demo for new kinds, and teachers can't see five games</b><p>No game shows a child how a new kind of go works the first time it appears. Pigeon, Parrot, Lizard, Swamp Hen and Robin are missing from the class grid and Today alerts.</p></div>
+    </div>
+  </section>
+
+  <section id="scores" aria-labelledby="h-scores">
+    <h2 id="h-scores">Scores side by side</h2>
+    <p class="sub">Each cell shows the first score, then today's. Every line is scored 1 to 4 on the same rubric. The go-live bar is a 3 on every line.</p>
+    <div class="legend">
+      <span><i class="sc1"></i>1 missing or harmful</span>
+      <span><i class="sc2"></i>2 there, but weak</span>
+      <span><i class="sc3"></i>3 good</span>
+      <span><i class="sc4"></i>4 best practice</span>
+    </div>
+    <div class="scroll"><table id="scoreTable"></table></div>
+  </section>
+
+  <section id="moves" aria-labelledby="h-moves">
+    <h2 id="h-moves">What moved, and why</h2>
+    <p class="sub">Every line that changed in the seven older games. Each one says whether the game really changed, or whether this review read the rubric differently.</p>
+    <div class="legend">
+      <span><span class="kind real">Real change</span> the game changed</span>
+      <span><span class="kind mixed">Mixed</span> a real change, plus a kinder reading</span>
+      <span><span class="kind stricter">Stricter reading</span> no change to the game</span>
+    </div>
+    <div class="moves" id="moveList"></div>
+  </section>
+
+  <section id="issues" aria-labelledby="h-iss">
+    <h2 id="h-iss">First-review issues: where they stand</h2>
+    <p class="sub">Every issue the first review raised was checked again against today's code. Open a game to see each issue and what is true now.</p>
+    <div class="legend">
+      <span><span class="st fixed">Fixed</span></span>
+      <span><span class="st partly">Partly fixed</span></span>
+      <span><span class="st not_fixed">Not fixed</span></span>
+      <span><span class="st worse">Made worse</span></span>
+    </div>
+    <div class="toolbar">
+      <label for="stFilter">Show</label>
+      <select id="stFilter">
+        <option value="all">Every issue</option>
+        <option value="fixed">Fixed</option>
+        <option value="partly">Partly fixed</option>
+        <option value="not_fixed">Not fixed</option>
+        <option value="worse">Made worse</option>
+      </select>
+      <span class="note" id="stCount"></span>
+    </div>
+    <div class="moves" id="issueList"></div>
+  </section>
+
+  <section id="new" aria-labelledby="h-new">
+    <h2 id="h-new">New issues in the older games</h2>
+    <p class="sub">Problems the first review did not raise. Those with a red top were caused by one of the fixes. The newer games' issues are in their cards below and in the report.</p>
+    <div class="toolbar">
+      <label for="newFilter">Show</label>
+      <select id="newFilter">
+        <option value="all">Every new issue</option>
+        <option value="caused_by_fix">Caused by a fix</option>
+        <option value="other">Other</option>
+      </select>
+      <span class="note" id="newCount"></span>
+    </div>
+    <div class="newlist" id="newList"></div>
+  </section>
+
+  <section id="newer" aria-labelledby="h-newer">
+    <h2 id="h-newer">The six newer games</h2>
+    <p class="sub">New, no earlier score. The first review did not cover them, so there is nothing to compare against.</p>
+    <div class="games" id="newerList"></div>
+  </section>
+
+  <section id="data" aria-labelledby="h-data">
+    <h2 id="h-data">What real pupils are doing</h2>
+    <p class="sub">All-time numbers on 8 November. The fixes went live over the weekend, and nobody has played in class since, so this is a baseline to compare against next week, not a result.</p>
+    <div class="data">
+      <div class="stat"><b>13%</b><span>of Beanstalk rounds had 10 or more wrong taps (was 14%), 30 finished rounds</span></div>
+      <div class="stat"><b>81%</b><span>right in Quick looks, 403 answers from 21 pupils (was 81% of 378)</span></div>
+      <div class="stat"><b>8 of 22</b><span>Pipi rounds finished. Worth watching once classes play.</span></div>
+      <div class="stat"><b>2 of 13</b><span>Weka rounds finished. Worth watching too.</span></div>
+      <div class="stat"><b>Test plays only</b><span>for Pigeon, Parrot and Lizard. Robin and Swamp Hen have none yet.</span></div>
+    </div>
+  </section>
+  <p class="note" id="files"></p>
+</div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const ST = { fixed: 'Fixed', partly: 'Partly fixed', not_fixed: 'Not fixed', worse: 'Made worse' };
+  const KIND = { real: 'Real change', mixed: 'Mixed', stricter: 'Stricter reading' };
+  let D = null;
+
+  function renderBig() {
+    const old = D.games.filter((g) => !g.newer);
+    const f = sum(old.map((g) => sum(g.first))), n = sum(old.map((g) => sum(g.now)));
+    const atBar = (s) => s.every((x) => x >= 3);
+    const c = (st) => D.issues.filter((i) => i.status === st).length;
+    $('bigNums').innerHTML = [
+      [`${f} → ${n}`, 'older games, total out of 224'],
+      [`${old.filter((g) => atBar(g.first)).length} → ${old.filter((g) => atBar(g.now)).length}`, 'of 7 older games at the go-live bar'],
+      [`${c('fixed')} / ${c('partly')} / ${c('not_fixed')}`, `fixed / partly / not fixed, of ${D.issues.length} first-review issues`],
+      [String(c('worse')), 'issues made worse'],
+    ].map(([b, s]) => `<div><b>${esc(b)}</b><span>${esc(s)}</span></div>`).join('');
+  }
+
+  function renderScores() {
+    const crit = D.criteria;
+    let h = '<thead><tr><th>Game</th>' + crit.map((c) => `<th>${esc(c)}</th>`).join('') + '<th>Total /32</th><th>Change</th></tr></thead><tbody>';
+    const row = (g) => {
+      if (!g.now) return `<tr><td>${esc(g.name)}</td><td colspan="${crit.length}" class="note">Not built yet, so not scored</td><td class="tot">–</td><td><span class="tag new">New</span></td></tr>`;
+      const cells = g.now.map((s, i) => {
+        const was = g.first ? g.first[i] : null;
+        const label = `${crit[i]}: ${was == null ? '' : 'was ' + was + ', '}now ${s}`;
+        return `<td aria-label="${esc(label)}"><span class="pair">${was == null ? '' : `<i class="was sc${was}">${was}</i><span class="arrow" aria-hidden="true">→</span>`}<i class="sc${s}">${s}</i></span></td>`;
+      }).join('');
+      const t = sum(g.now);
+      const tot = g.first ? `${sum(g.first)} → ${t}` : String(t);
+      const d = g.first ? t - sum(g.first) : null;
+      const ch = d == null ? '<span class="tag new">New, no earlier score</span>' : `<span class="delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? '+' + d : d === 0 ? '0' : d}</span>`;
+      return `<tr><td>${esc(g.name)}</td>${cells}<td class="tot">${tot}</td><td>${ch}</td></tr>`;
+    };
+    h += `<tr class="group"><td colspan="${crit.length + 3}">The seven games from the first review</td></tr>`;
+    h += D.games.filter((g) => !g.newer).map(row).join('');
+    h += `<tr class="group"><td colspan="${crit.length + 3}">The six newer games</td></tr>`;
+    h += D.games.filter((g) => g.newer).map(row).join('');
+    $('scoreTable').innerHTML = h + '</tbody>';
+  }
+
+  function renderMoves() {
+    const out = [];
+    for (const g of D.games) for (const m of g.moves) {
+      out.push(`<div class="move"><span class="what">${esc(g.name)}: ${esc(m.crit)} <span class="delta ${m.to > m.from ? 'up' : 'down'}">${m.from} → ${m.to}</span></span><span class="kind ${m.kind}">${KIND[m.kind]}</span><span class="why">${esc(m.why)}</span></div>`);
+    }
+    $('moveList').innerHTML = out.join('');
+  }
+
+  function renderIssues() {
+    const f = $('stFilter').value;
+    const open = new Set([...document.querySelectorAll('details.gi[open]')].map((x) => x.dataset.g));
+    const names = [...new Set(D.issues.map((i) => i.game))];
+    const list = D.issues.filter((i) => f === 'all' || i.status === f);
+    $('stCount').textContent = `${list.length} of ${D.issues.length}`;
+    $('issueList').innerHTML = names.map((name) => {
+      const all = D.issues.filter((i) => i.game === name);
+      const shown = list.filter((i) => i.game === name);
+      if (!shown.length) return '';
+      const n = (st) => all.filter((i) => i.status === st).length;
+      const bar = ['fixed', 'partly', 'not_fixed', 'worse'].map((st) => n(st) ? `<i class="b-${st}" style="width:${(100 * n(st) / all.length).toFixed(1)}%"></i>` : '').join('');
+      return `<details class="gi" data-g="${esc(name)}" ${open.has(name) || f !== 'all' ? 'open' : ''}>
+        <summary><h3>${esc(name)}</h3><div class="bar" aria-hidden="true">${bar}</div>
+          <span class="counts"><span>${n('fixed')} fixed</span><span>${n('partly')} partly</span><span>${n('not_fixed')} not fixed</span>${n('worse') ? `<span>${n('worse')} worse</span>` : ''}</span></summary>
+        <ul class="items">${shown.map((i) => `<li><span class="st ${i.status}">${ST[i.status]}</span><div><div class="t">${esc(i.issue)}</div><div class="n">${esc(i.now)}${i.plan ? ' (' + esc(i.plan) + ')' : ''}</div>${i.where ? `<code>${esc(i.where)}</code>` : ''}</div></li>`).join('')}</ul>
+      </details>`;
+    }).join('') || '<p class="sub">Nothing with that status.</p>';
+  }
+
+  function renderNew() {
+    const f = $('newFilter').value;
+    const list = D.new.filter((n) => f === 'all' || n.cause === f);
+    $('newCount').textContent = `${list.length} of ${D.new.length}`;
+    $('newList').innerHTML = list.map((n) => `<article class="newi ${n.cause === 'caused_by_fix' ? 'cbf' : ''}">
+      <div class="meta"><span class="tag">${esc(n.game)}</span>${n.cause === 'caused_by_fix' ? `<span class="tag">Caused by ${esc(n.fixName || n.fix)}</span>` : ''}</div>
+      <h3>${esc(n.issue)}</h3>
+      <p>${esc(n.detail)}</p>
+      ${n.where ? `<code>${esc(n.where)}</code>` : ''}
+    </article>`).join('');
+  }
+
+  function renderNewer() {
+    $('newerList').innerHTML = D.games.filter((g) => g.newer).map((g) => `<article class="game">
+      <div class="head"><h3>${esc(g.name)}</h3><div class="score">${g.now ? sum(g.now) + '<small> /32</small>' : '<small>Not scored</small>'}</div></div>
+      <span class="tag new" style="justify-self:start">${g.now ? 'New, no earlier score' : 'Not built yet'}</span>
+      <p>${esc(g.note)}</p>
+    </article>`).join('');
+  }
+
+  $('stFilter').addEventListener('change', renderIssues);
+  $('newFilter').addEventListener('change', renderNew);
+  fetch('data.json').then((r) => r.json()).then((d) => {
+    D = d;
+    renderBig(); renderScores(); renderMoves(); renderIssues(); renderNew(); renderNewer();
+    $('files').innerHTML = 'Full report in the repo: <code>' + esc(D.reportPath) + '</code>. Issue details: <code>docs/reviews/maths-review-2/issues-a.json</code> and <code>issues-b.json</code>.';
+  }).catch(() => { $('bigNums').textContent = 'The review data could not be loaded. Try reloading the page.'; });
+})();
+</script>

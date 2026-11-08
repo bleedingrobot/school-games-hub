@@ -1,0 +1,167 @@
+[
+ {
+  "id": "S29",
+  "kind": "fix",
+  "title": "Quick looks: placement and small fixes",
+  "games": [
+   "Quick looks"
+  ],
+  "effort": "M",
+  "impact": "Med",
+  "wrong": "The starting check tests each stage with only two pictures, so one slip or one lucky tap decides a stage. Guided mode (picture kept on) never grows the garden. The screen reader says \"1 counters\". A review picture in the Empty squares stage has no sign the question changed.",
+  "done": "The check uses 3 pictures per stage and a 4th only when exactly 2 of 3 are right, so 3 of 4 passes. Plants grow a little in guided mode but never reach In flower. The label says \"1 counter and 4 empty squares\". Review pictures start with \"A look back.\"",
+  "why": "Learning design rule 6 says move a child up on mastery, not one lucky answer, and Quick looks' check is the named example. Children who need the picture kept on should still see growth. Screen-reader children need a correct sentence.",
+  "plan": "docs/plans/maths-review-2/S29-quick-looks-placement-and-fixes.md",
+  "waits": []
+ },
+ {
+  "id": "S30",
+  "kind": "fix",
+  "title": "Hear the question again",
+  "games": [
+   "Hop",
+   "Pipi",
+   "Tūī"
+  ],
+  "effort": "S",
+  "impact": "High",
+  "wrong": "Hop and Pipi have no \"Hear it again\" button. Tūī drops the voice for the numbers at its lowest help levels, so a child who cannot read the numbers hears only \"How many?\".",
+  "done": "Hop and Pipi show a Hear it again button that says the question or the why-line again. Tūī says the full sum or story at every help level, and its button says it too. No new voice recordings are needed.",
+  "why": "Learning design rule 2 (voice first, Hear it again always visible) and rule 5 (help fades pictures, not the voice for children who cannot read yet).",
+  "plan": "docs/plans/maths-review-2/S30-hear-the-question-again.md",
+  "waits": []
+ },
+ {
+  "id": "S31",
+  "kind": "fix",
+  "title": "Older games: Show me first for each new kind",
+  "games": [
+   "weka",
+   "hop",
+   "pipi",
+   "korora",
+   "tui",
+   "beanstalk",
+   "subitising"
+  ],
+  "effort": "M",
+  "impact": "High",
+  "wrong": "New question kinds (hop back, count back, from 3, altogether, two tides, halves, near doubles, fair or not, ways, empty squares) appear with no demo.",
+  "done": "The first time a child meets each new kind, a demo or guided go shows it. The server remembers it was seen.",
+  "why": "LEARNING-DESIGN rule 4: help arrives by itself the first time a new kind appears.",
+  "plan": "docs/plans/maths-review-2/S31-show-me-first-older-games.md",
+  "waits": [
+   "S11",
+   "S12"
+  ]
+ },
+ {
+  "id": "S32",
+  "kind": "fix",
+  "title": "Older games: Now you try asks a sister question",
+  "games": [
+   "weka",
+   "tui",
+   "hop",
+   "korora",
+   "pipi",
+   "beanstalk"
+  ],
+  "effort": "M",
+  "impact": "High",
+  "wrong": "Now you try asks the same question again, so the child can copy the answer. Tūī praises a redo like a first try.",
+  "done": "Now you try asks a sister question with different numbers. Tūī gives a plain line for a redo.",
+  "why": "LEARNING-DESIGN rule 7: after show-why the child must work it out, not copy.",
+  "plan": "docs/plans/maths-review-2/S32-now-you-try-sister-question-older-games.md",
+  "waits": [
+   "S16"
+  ]
+ },
+ {
+  "id": "S33",
+  "kind": "fix",
+  "title": "Honest finish words and praise about the strategy, older games",
+  "games": [
+   "Hop",
+   "Weka",
+   "Penguin Pairs",
+   "Pipi",
+   "Tūī",
+   "Beanstalk"
+  ],
+  "effort": "M",
+  "impact": "Med",
+  "wrong": "The finish screen says \"Well done!\" however the day went, even after 9 wrong of 10, and level-up lines praise ability. Pipi never says what is next.",
+  "done": "Finish words change with how many goes were right first time (strong, middle, tricky), level-up lines praise practice, the reward is still paid, and Pipi points on to Kiwi's Beanstalk.",
+  "why": "LEARNING-DESIGN rule 7: praise the strategy, not cleverness, and be honest, while the day still counts for young children.",
+  "plan": "docs/plans/maths-review-2/S33-honest-finish-words-older-games.md",
+  "waits": [
+   "S15"
+  ]
+ },
+ {
+  "id": "S34",
+  "kind": "fix",
+  "title": "Save and show the kind of mistake (rule 9)",
+  "games": [
+   "Beanstalk",
+   "Hop",
+   "Penguin Pairs",
+   "Pipi",
+   "Tūī",
+   "Weka",
+   "Quick looks",
+   "Pigeon",
+   "Parrot",
+   "Lizard",
+   "Swamp Hen",
+   "Robin"
+  ],
+  "effort": "M",
+  "impact": "Med to High",
+  "wrong": "Games know the kind of wrong answer but most never save it and no teacher page shows it. Beanstalk files all bonds to 100 under one key.",
+  "done": "Every game's pupil page shows the child's usual slip in plain words once there is enough evidence, and Beanstalk keeps one key per pair with old keys still working.",
+  "why": "LEARNING-DESIGN rule 9: record the kind of wrong choice and show it to the teacher so they know what to teach.",
+  "plan": "docs/plans/maths-review-2/S34-save-and-show-mistake-kind.md",
+  "waits": [
+   "S17"
+  ]
+ },
+ {
+  "id": "S35",
+  "kind": "fix",
+  "title": "Help per kind of go in Tūī and Beanstalk",
+  "games": [
+   "Tūī",
+   "Beanstalk"
+  ],
+  "effort": "L",
+  "impact": "Med",
+  "wrong": "Both games keep one help level for the whole child, so one new or hard kind of go changes help for all kinds, and Tūī has no three-wrong-in-a-row boost.",
+  "done": "Tūī keeps help per way of asking and Beanstalk per kind of go (pairs, missing leaf); new kinds start with full help while old ones fade; three wrong first taps in a row give full help for the rest of the round.",
+  "why": "Help should follow what the child can do on each kind of go, so strong kinds fade sooner and a new kind gets full help.",
+  "plan": "docs/plans/maths-review-2/S35-help-per-kind-of-go-older-games.md",
+  "waits": [
+   "S25",
+   "S19"
+  ]
+ },
+ {
+  "id": "S36",
+  "kind": "fix",
+  "title": "Small fixes in Weka, Tūī, Penguin Pairs and Pipi",
+  "games": [
+   "Weka",
+   "Tūī",
+   "Penguin Pairs",
+   "Pipi"
+  ],
+  "effort": "S",
+  "impact": "Low",
+  "wrong": "Weka's pebble step needs a Check tap and its split steps only say Try again; Tūī's start step ignores ten-less facts and has dead code; Penguin Pairs' fair-or-not is wordy; Pipi can offer a shell bigger than the whole.",
+  "done": "Weka finishes a right pebble count by itself, says why on a wrong split number and skips pebbles after a quick right answer; Tūī starts by both kinds of fact and the dead code is gone; fair or not has two plain choices; Pipi shells never exceed the whole.",
+  "why": "Each makes a go clearer or shorter and stops guessing or silly choices from hiding what a child knows.",
+  "plan": "docs/plans/maths-review-2/S36-small-fixes-older-games.md",
+  "waits": []
+ }
+]
