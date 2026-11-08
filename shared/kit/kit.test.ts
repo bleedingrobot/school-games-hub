@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { slipsOf, topSlip } from './slips';
 import { replay as hopReplay } from '../hop/play';
 import { DAYS_PER_JAR, finishChallenge as hopFinish, FRIENDS as HOP_FRIENDS, PADS, pondAfter } from '../hop/progress';
 import { makeRound as hopRound, showRound as showHops, HOPS_PER_ROUND } from '../hop/round';
