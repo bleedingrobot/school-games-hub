@@ -6,6 +6,7 @@
 import { beachAfter, DAYS_PER_PEARL, METALS } from '../../../shared/pipi/progress';
 import { GUIDED_KEY, LEVELS, showGo, type Kind, type WrongKind } from '../../../shared/pipi/round';
 import { FRIEND_NAMES } from './art';
+import { demoLines } from './demo';
 import { lookLine, whyLine, WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
 
@@ -51,6 +52,7 @@ export function allVoiceLines(): string[] {
       }
     }
   }
+  for (const line of demoLines()) lines.add(line);
   for (let n = 0; n <= 10; n++) lines.add(WORDS.yes(n));
   for (const metal of METALS.slice(1)) lines.add(WORDS.shellTurned(metal));
   // A finish that also moves the child up a level says both.

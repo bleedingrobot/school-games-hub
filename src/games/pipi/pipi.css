@@ -252,3 +252,7 @@
 @media (max-width: 700px) {
   .pp-wave--painted::before { aspect-ratio: auto; height: 190px; margin-bottom: -60px; background-size: cover; }
 }
+
+/* Show me first: the Skip bar under a demo go. */
+.pp-demo { display: flex; justify-content: center; gap: 0.75rem; padding: 0.5rem; min-height: 3rem; }
+.pp-shellbtn--pointed { outline: 4px solid #f6c453; border-radius: 50%; }

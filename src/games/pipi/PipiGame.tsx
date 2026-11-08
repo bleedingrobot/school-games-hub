@@ -120,6 +120,11 @@ export function PipiGame({ backend, onExit, extra }: Props) {
         scenery={beach.today}
         friend={beach.friend}
         guide={state.guided}
+        seen={state.seen ?? []}
+        onSeen={(kinds) => {
+          setState((st) => st && { ...st, seen: [...new Set([...(st.seen ?? []), ...kinds])] });
+          return backend.markSeen(kinds);
+        }}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

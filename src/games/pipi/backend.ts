@@ -20,6 +20,8 @@ export interface PipiState {
   help: boolean;
   /** True until the first challenge is finished: it starts with the guided go. */
   guided: boolean;
+  /** The kinds of go this child has seen (so each demo plays once). */
+  seen: string[];
 }
 
 export interface PipiFinish extends FinishResult {
@@ -33,6 +35,8 @@ export interface PipiBackend {
   /** Today's challenge, made and kept by the server. */
   start(): Promise<Round>;
   finish(seed: number, taps: readonly Tap[]): Promise<PipiFinish>;
+  /** Remembers that the child has seen these kinds of go. */
+  markSeen(kinds: string[]): Promise<unknown>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -57,6 +61,7 @@ export function fromServer(send: Send): PipiBackend {
     load: async () => (await ask({ action: 'load' })) as unknown as PipiState,
     start: async () => (await ask({ action: 'start' })).round as Round,
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as PipiFinish,
+    markSeen: (kinds) => ask({ action: 'seen', kinds }),
   };
 }
 

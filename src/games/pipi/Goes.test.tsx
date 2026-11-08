@@ -17,7 +17,7 @@ describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5
     const go = showRound(round)[0];
     const wrong = go.wrongs[0];
     const say = vi.fn();
-    render(<Goes round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={say} onDone={vi.fn()} />);
+    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={say} onDone={vi.fn()} />);
     await act(() => vi.advanceTimersByTimeAsync(1500));
     say.mockClear();
     await u.click(screen.getByRole('button', { name: /Hear it again/ }));
@@ -34,7 +34,7 @@ describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5
     const go = showRound(round)[0];
     const [w1, w2] = go.choices.filter((c) => c !== go.answer);
     const done: Tap[][] = [];
-    render(<Goes round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={(t: string, cb?: () => void) => { if (cb && t === whyLine(go.wrongs.find((w) => w.n === w1)!.kind, go.kind, go.whole, go.showing, go.hiding)) cb(); }} onDone={(t) => done.push(t)} />);
+    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={(t: string, cb?: () => void) => { if (cb && t === whyLine(go.wrongs.find((w) => w.n === w1)!.kind, go.kind, go.whole, go.showing, go.hiding)) cb(); }} onDone={(t) => done.push(t)} />);
     const shell = (n: number) => screen.getByRole('button', { name: String(n) });
     await act(() => vi.advanceTimersByTimeAsync(1500)); // the tide washes in
 

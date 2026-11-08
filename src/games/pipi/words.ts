@@ -30,6 +30,8 @@ export const WORDS = {
   /** Wrong shell 2 of a go (maths review R5): the sand lifts and the split is read out. */
   lookTogether: "Let's look together.",
   nowTry: 'Now you try!',
+  skip: 'Skip',
+  demoTitle: 'Watch Pipi show one first.',
   goOn: 'Go on',
   /** The labels of the two tides in the picture for a wrong answer that is the first tide's number. */
   firstTide: 'before',
