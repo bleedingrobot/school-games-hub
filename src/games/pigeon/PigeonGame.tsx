@@ -4,6 +4,7 @@
  * Branch, and a new friend flies a new branch. The screens only show what the backend says. Copied from Tūī’s Ten Tree (a model, not a dependency).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { NextPartChip } from '../../components/NextPartChip';
 import { BERRY_CLUSTERS } from '../../../shared/pigeon/config';
@@ -203,11 +204,14 @@ function Finish({ result, say, onNext }: { result: PigeonFinish; say: (t: string
   const name = FRIEND_NAMES[branch.friend];
   const main = result.goldenBranch ? WORDS.goldenBranch(name) : changed ? WORDS.clusterTurned(changed) : WORDS.doneToday;
   const up = result.step !== result.stepBefore ? result.step : null;
-  const line = finishLine(main, up);
+  const how = WORDS.how[finishBand(result.firstRight)];
+  const line = finishLine(main, how, up);
   return (
     <div className={`pg-home${result.goldenBranch ? ' pg-home--prize' : ''}`}>
       <Branch scenery={result.goldenBranch ? 'gold' : branch.today} clusters={clusters} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="pg" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="pg" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+        <p className="pg-chip">{how}</p>
+        {up && <p className="pg-chip">{WORDS.nextStep(up)}</p>}
         {result.goldenBranch && <span className="pg-prize"><GoldenBranch /></span>}
       </WhatsNext>
     </div>
