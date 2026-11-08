@@ -158,6 +158,12 @@
 .lz-mat--2 .lz-place--t .lz-place__pieces, .lz-mat--3 .lz-place__pieces { gap: 3px; }
 .lz-mat--3 .lz-bundle { width: 34px; height: 36px; }
 .lz-mat--3 .lz-stick { width: 10px; height: 44px; }
+.lz-try { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+.lz-try .lz-mat { width: auto; transform: scale(0.75); transform-origin: center; margin: -12px; }
+.lz-mat--small .lz-bundle { width: 28px; height: 30px; }
+.lz-mat--small .lz-stick { width: 8px; height: 34px; }
+.lz-need { display: flex; flex-direction: column; align-items: center; font: 800 0.95rem system-ui, sans-serif; }
+.lz-need b { font-size: 2.6rem; line-height: 1; }
 .lz-mat--3 .lz-raft { width: 64px; height: 42px; }
 .lz-stick--gone, .lz-bundle--gone, .lz-raft--gone { filter: grayscale(0.85); }
 .lz-frames { display: flex; flex-direction: column; gap: 6px; align-items: center; }

@@ -4,7 +4,7 @@
  * browser's own voice. No line says the answer to a go before the child has found it.
  */
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/lizard/progress';
-import { KEYS, STEPS, kindOfKey, keyNumber, matOf, type Go, type Slip, type Step } from '../../../shared/lizard/round';
+import { KEYS, STEPS, kindOfKey, keyNumber, matOf, matValue, type Go, type Mat, type Slip, type Step } from '../../../shared/lizard/round';
 import { nextPartWords } from '../../components/NextPartChip';
 import { WORDS } from './words';
 
@@ -53,7 +53,17 @@ export const SLIP_LINES: Record<Slip, string> = {
 };
 
 export type LineKey = Slip | keyof typeof MAT_LINES;
+const SLIPS = new Set<string>(Object.keys(SLIP_LINES));
+
 export const WHY_LINES: Record<LineKey, string> = { ...SLIP_LINES, ...MAT_LINES };
+
+/** What is written (not spoken) after a wrong try: what the child made or picked, then the reason. Never the answer to a card go. */
+export function tryLine(go: Pick<Go, 'kind' | 'n'>, mat: Mat, key: LineKey, picked?: number): string {
+  if (SLIPS.has(key)) return `You picked ${picked}. ${WHY_LINES[key]}`;
+  if (go.kind === 'build') return key === 'tie' ? MAT_LINES.tie : `You made ${matValue(mat)}. We need ${go.n}.`;
+  const have = [...(mat.h > 0 ? [count(mat.h, 'raft', 'rafts')] : []), count(mat.t, 'bundle', 'bundles'), count(mat.o, 'stick', 'sticks')];
+  return `You have ${have.slice(0, -1).join(', ')} and ${have[have.length - 1]}. ${go.kind === 'swap' ? MAT_LINES.swap : MAT_LINES.bundle}`;
+}
 
 /** "Let's look together": what the mat shows, by kind. */
 export function lookLine(go: Pick<Go, 'kind' | 'dir' | 'unit'>): string {
@@ -71,7 +81,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.raftTip, WORDS.tieNudge, ...WORDS.right, ...Object.values(WHY_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.raftTip, WORDS.tieNudge, WORDS.lookAtYours, ...WORDS.right, ...Object.values(WHY_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
