@@ -299,7 +299,7 @@ function weakest(keys, n, box, random) {
 function makeRound(seed, stats, opts = {}) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
 	const list = [...stats];
-	const level = levelFor(list, opts.reached);
+	const level = opts.level ?? levelFor(list, opts.reached);
 	const colour = opts.colour ?? "bronze";
 	const random = seeded(seed);
 	random();
@@ -634,7 +634,7 @@ async function handlePipi(services, player, body) {
 			daysDone: s.daysDone,
 			lastShellDay: s.lastShellDay,
 			today: today(),
-			level: levelFor(facts, s.reached),
+			level: s.reached,
 			help: settings.help,
 			guided: s.played === 0
 		});
@@ -645,7 +645,7 @@ async function handlePipi(services, player, body) {
 		const colour = beachAfter(s.daysDone).today;
 		for (let tries = 0; tries < TRIES; tries++) {
 			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
-				reached: s.reached,
+				level: s.reached,
 				colour,
 				guided: s.played === 0
 			});
@@ -680,8 +680,8 @@ async function handlePipi(services, player, body) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
 			const levelBefore = isLevel(kept.round.level) ? Math.max(kept.round.level, s.reached) : s.reached;
-			const reached = facts === "busy" ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
 			const result = finishChallenge(s.daysDone, s.lastShellDay, today());
+			const reached = facts === "busy" || result.shellChanged === null ? s.reached : levelFor(withAnswers(facts, answers), levelBefore);
 			const progress = {
 				daysDone: result.daysDone,
 				lastShellDay: result.lastShellDay,

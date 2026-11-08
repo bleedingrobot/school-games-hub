@@ -3756,7 +3756,7 @@ function pairUp(keys) {
 function makeRound(seed, stats, opts = {}) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
 	const list = [...stats];
-	const level = levelFor(list, opts.reached);
+	const level = opts.level ?? levelFor(list, opts.reached);
 	const random = seeded(seed);
 	random();
 	random();
@@ -4096,7 +4096,7 @@ async function handleKorora(services, player, body) {
 			daysDone: s.daysDone,
 			lastPebbleDay: s.lastPebbleDay,
 			today: today(),
-			level: levelFor(facts, s.reached),
+			level: s.reached,
 			help: settings.help
 		});
 	}
@@ -4107,7 +4107,7 @@ async function handleKorora(services, player, body) {
 		const guided = s.daysDone === 0 && s.lastPebbleDay === null;
 		for (let tries = 0; tries < TRIES; tries++) {
 			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
-				reached: s.reached,
+				level: s.reached,
 				gold,
 				guided
 			});
@@ -4142,8 +4142,8 @@ async function handleKorora(services, player, body) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
 			const levelBefore = isLevel(kept.round.level) ? Math.max(kept.round.level, s.reached) : s.reached;
-			const reached = facts === "busy" ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
 			const result = finishChallenge(s.daysDone, s.lastPebbleDay, today());
+			const reached = facts === "busy" || result.pebbleChanged === null ? s.reached : levelFor(withAnswers(facts, answers), levelBefore);
 			const progress = {
 				daysDone: result.daysDone,
 				lastPebbleDay: result.lastPebbleDay,

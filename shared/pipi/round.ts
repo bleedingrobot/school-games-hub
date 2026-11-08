@@ -157,11 +157,12 @@ function weakest(keys: string[], n: number, box: Map<string, number>, random: ()
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { reached?: Level; colour?: Colour; guided?: boolean } = {},
+  opts: { reached?: Level; level?: Level; colour?: Colour; guided?: boolean } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const list = [...stats];
-  const level = levelFor(list, opts.reached);
+  // A saved level is used as is, so records from replays can't move it; with none it comes from the records.
+  const level = opts.level ?? levelFor(list, opts.reached);
   const colour = opts.colour ?? 'bronze';
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds

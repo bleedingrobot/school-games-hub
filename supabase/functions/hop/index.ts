@@ -2081,7 +2081,7 @@ function pickKeys(keys, n, box, random) {
 function makeRound(seed, stats, opts = {}) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
 	const list = [...stats];
-	const step = stepFor(list, opts.reached);
+	const step = opts.step ?? stepFor(list, opts.reached);
 	const gold = !!opts.gold;
 	const random = seeded(seed);
 	random();
@@ -2365,7 +2365,7 @@ async function handleHop(services, player, body) {
 			daysDone: s.daysDone,
 			lastPadDay: s.lastPadDay,
 			today: today(),
-			step: stepFor(facts, s.reached),
+			step: s.reached,
 			topSecure: topSecure(facts, s.reached),
 			labels: settings.labels
 		});
@@ -2376,7 +2376,7 @@ async function handleHop(services, player, body) {
 		const gold = pondAfter(s.daysDone).gold;
 		for (let tries = 0; tries < TRIES; tries++) {
 			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
-				reached: s.reached,
+				step: s.reached,
 				gold
 			});
 			const kept = await services.start(player, round);
@@ -2410,8 +2410,8 @@ async function handleHop(services, player, body) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
 			const stepBefore = isStep(kept.round.step) ? kept.round.step : s.reached;
-			const reached = facts === "busy" ? stepBefore : stepFor(withAnswers(facts, answers), stepBefore);
 			const result = finishChallenge(s.daysDone, s.lastPadDay, today());
+			const reached = facts === "busy" || result.padChanged === null ? s.reached : stepFor(withAnswers(facts, answers), stepBefore);
 			const progress = {
 				daysDone: result.daysDone,
 				lastPadDay: result.lastPadDay,

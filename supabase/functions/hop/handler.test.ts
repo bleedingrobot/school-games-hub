@@ -35,7 +35,7 @@ function setup(over: MemoryOptions = {}) {
 }
 
 it('finishes only a pupil’s own, finished challenge, once, and records each hop once against its skip-counting fact', async () => {
-  const { send, start, log, services } = setup();
+  const { send, start, log, services, hours } = setup();
   expect((await send(null, { action: 'load' })).status).toBe(401);
 
   const round = await start('pupil-a');
@@ -53,11 +53,17 @@ it('finishes only a pupil’s own, finished challenge, once, and records each ho
   expect(once).toBe(`hop:${round.seed}`);
   expect(answers.map((a) => [a.key, a.correct])).toEqual(round.hops.map((h, i) => [h.key, i > 0]));
 
-  // Records from anywhere on the hub that show 10s secure move the pupil on to 5s, and they never drop back.
+  // Records from anywhere on the hub that show 10s secure move the pupil on to 5s only at the next day's first finish:
+  // a replay the same day keeps the step. They never drop back.
   services.data.facts['pupil-a'] = stepKeys(10).map((key) => ({ ...newStats(key), box: 2 }));
+  const replay = await start('pupil-a');
+  expect(replay.step).toBe(10);
+  expect((await send('pupil-a', { action: 'finish', seed: replay.seed, taps: goodTaps(replay) })).body).toMatchObject({ padChanged: null, step: 10 });
+  expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ step: 10 });
+  hours(24);
   const fives = await start('pupil-a');
-  expect(fives.step).toBe(5);
-  await send('pupil-a', { action: 'finish', seed: fives.seed, taps: goodTaps(fives) });
+  expect(fives.step).toBe(10);
+  expect((await send('pupil-a', { action: 'finish', seed: fives.seed, taps: goodTaps(fives) })).body).toMatchObject({ padChanged: 1, step: 5 });
   services.data.facts['pupil-a'] = [];
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ step: 5 });
 
