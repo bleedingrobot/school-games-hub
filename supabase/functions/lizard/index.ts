@@ -2,6 +2,33 @@
 // then run `npm run build:functions`. Deploy this file as the "lizard" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
+//#endregion
 //#region shared/juniorQuick.ts
 /**
 * How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
@@ -2018,6 +2045,31 @@ function finishChallenge(daysDone, lastDay, today) {
 }
 //#endregion
 //#region shared/lizard/server.ts
+/**
+* What the `lizard` server function does with a request from a signed-in pupil (docs/LIZARD-PLAN.md, Lizard's Bundles).
+* The function (supabase/functions/lizard/handler.ts) checks the sign-in and the rate first; the preview's trial backend
+* calls this with services that keep everything in the browser, so both run exactly the same rules. Copied from
+* Weka's Stepping Stones (shared/weka/server.ts).
+*
+*   load    the pupil's den (a new pupil has none), their step and help level, the class's help setting and today's
+*           NZ date by the server's clock;
+*   start   reads the pupil's maths records, makes today's ten goes from a fresh seed (the ways from their step, the
+*           pictures from their help level and the teacher's setting, tying ten sticks first on the very first challenge; a
+*           child who already knows Tūī's "ten and" facts starts at step 2 or 3 with less help) and keeps the round;
+*   finish  replays the taps on the kept round, records each fact once (right only if the first try was right),
+*           changes a bundle on the first finish of the NZ day and, on that counted finish only, moves the help level
+*           and the step by how many goes were right at the first tap.
+*
+* Nothing that counts comes from the browser. A challenge finishes once.
+*/
+/** Every kind of go the game has, so every one can be remembered, whether or not it has a demo. */
+const KINDS = [
+	"build",
+	"read",
+	"bundle",
+	"swap",
+	"more"
+];
 const unplayed = () => ({
 	daysDone: 0,
 	lastDay: null,
@@ -2077,17 +2129,30 @@ async function handleLizard(services, player, body) {
 	if (!settings.enabled) return no(403, "Lizard’s Bundles is not switched on for your class.", { code: "game-off" });
 	const today = () => nzDate(new Date(services.now()));
 	if (body.action === "load") {
-		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-		if (s === "busy" || facts === "busy") return busy();
+		const [s, facts, saved] = await Promise.all([
+			services.load(player),
+			services.facts(player),
+			services.seen(player)
+		]);
+		if (s === "busy" || facts === "busy" || saved === "busy") return busy();
 		const place = placeOf(s, facts);
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastDay: s.lastDay,
 			today: today(),
 			step: place.step,
 			level: place.level,
-			help: settings.help
+			help: settings.help,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, KINDS);
+		if (!kinds) return unreadable();
+		const saved = await services.markSeen(player, kinds);
+		if (saved === "busy") return busy();
+		return ok({ seen: saved });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7450,6 +7515,15 @@ Deno.serve(makeHandler({
 	async load(player) {
 		return await call("lizard_load", { player }) ?? unplayed();
 	},
+	seen: (player) => call("kit_seen_get", {
+		player,
+		game: "lizard"
+	}),
+	markSeen: (player, kinds) => call("kit_seen_mark", {
+		player,
+		game: "lizard",
+		kinds
+	}),
 	async facts(player) {
 		const context = await call("space_maths_context", { player });
 		return context === "busy" ? "busy" : context?.facts ?? [];

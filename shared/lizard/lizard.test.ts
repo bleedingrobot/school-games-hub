@@ -131,6 +131,12 @@ describe('the server', () => {
     expect(log.answers).toHaveLength(1);
     expect((log.answers[0].answers as { correct: boolean }[]).every((a) => a.correct)).toBe(true);
     expect((await handleLizard(services, 'p1', { action: 'finish', seed: round.seed, taps: perfect })).body.code).toBe('ended');
+    // Kinds seen: a made-up kind is unreadable, a real one is saved (twice is the same), and load adds the kinds the facts show.
+    expect((await handleLizard(services, 'p1', { action: 'seen', kinds: ['nope'] })).status).toBe(400);
+    await handleLizard(services, 'p1', { action: 'seen', kinds: ['swap'] });
+    expect((await handleLizard(services, 'p1', { action: 'seen', kinds: ['swap'] })).body.seen).toEqual(['swap']);
+    expect((await handleLizard(services, 'p1', { action: 'load' })).body.seen).toEqual(expect.arrayContaining(['swap', 'build']));
+    expect((await handleLizard(services, 'p2', { action: 'load' })).body.seen).toEqual([]);
     clock += 86_400_000;
     const second = (await handleLizard(services, 'p1', { action: 'start' })).body.round as Round;
     const again = await handleLizard(services, 'p1', { action: 'finish', seed: second.seed, taps: showRound(second).map((g) => ({ pick: rightTap(g), ms: 3000 })) });

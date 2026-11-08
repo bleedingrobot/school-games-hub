@@ -20,6 +20,8 @@ export interface LizardState {
   level: HelpLevel;
   /** The class's help setting. */
   help: HelpSetting;
+  /** The kinds of go this child has already seen (no demo for these). */
+  seen: string[];
 }
 
 export interface LizardFinish extends FinishResult {
@@ -37,6 +39,8 @@ export interface LizardBackend {
   /** Today's challenge, made and kept by the server. */
   start(): Promise<Round>;
   finish(seed: number, taps: readonly Tap[]): Promise<LizardFinish>;
+  /** Remembers kinds of go the child has seen. */
+  markSeen(kinds: string[]): Promise<unknown>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -60,6 +64,7 @@ export function fromServer(send: Send): LizardBackend {
   return {
     load: async () => (await ask({ action: 'load' })) as unknown as LizardState,
     start: async () => (await ask({ action: 'start' })).round as Round,
+    markSeen: async (kinds) => ask({ action: 'seen', kinds }),
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as LizardFinish,
   };
 }

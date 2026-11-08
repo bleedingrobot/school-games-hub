@@ -5,6 +5,7 @@
  */
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/lizard/progress';
 import { KEYS, STEPS, kindOfKey, keyNumber, matOf, matValue, type Go, type Mat, type Slip, type Step } from '../../../shared/lizard/round';
+import type { DemoStep } from '../../kit/useKindDemo';
 import { nextPartWords } from '../../components/NextPartChip';
 import { WORDS } from './words';
 
@@ -57,6 +58,33 @@ const SLIPS = new Set<string>(Object.keys(SLIP_LINES));
 
 export const WHY_LINES: Record<LineKey, string> = { ...SLIP_LINES, ...MAT_LINES };
 
+/**
+ * "Show me first": the demo that plays the first time Swap or Bundle comes up. The examples are made up (36 as 3 bundles and
+ * 6 sticks; 15 loose sticks), numbers no real go asks, so a demo never gives away an answer.
+ */
+export const DEMO_KINDS = ['swap', 'bundle'] as const;
+export type DemoKind = (typeof DEMO_KINDS)[number];
+export const DEMO_STEPS: Record<DemoKind, DemoStep[]> = {
+  swap: [
+    { line: WORDS.demoSwap[0], holdMs: 1000 },
+    { line: WORDS.demoSwap[1], target: 'untie' },
+    { line: WORDS.demoSwap[2] },
+    { line: WORDS.nowYouTry, holdMs: 400 },
+  ],
+  bundle: [
+    { line: WORDS.demoBundle[0], holdMs: 1000 },
+    { line: WORDS.demoBundle[1], target: 'tie' },
+    { line: WORDS.demoBundle[2] },
+    { line: WORDS.nowYouTry, holdMs: 400 },
+  ],
+};
+/** The mat the demo shows at each step: before, then after the move. */
+export const demoMat = (kind: DemoKind, step: number): Mat => {
+  const done = step >= 2;
+  if (kind === 'swap') return done ? { h: 0, t: 2, o: 16 } : { h: 0, t: 3, o: 6 };
+  return done ? { h: 0, t: 1, o: 5 } : { h: 0, t: 0, o: 15 };
+};
+
 /** What is written (not spoken) after a wrong try: what the child made or picked, then the reason. Never the answer to a card go. */
 export function tryLine(go: Pick<Go, 'kind' | 'n'>, mat: Mat, key: LineKey, picked?: number): string {
   if (SLIPS.has(key)) return `You picked ${picked}. ${WHY_LINES[key]}`;
@@ -81,7 +109,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.raftTip, WORDS.tieNudge, WORDS.lookAtYours, ...WORDS.right, ...Object.values(WHY_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.raftTip, WORDS.tieNudge, WORDS.lookAtYours, ...WORDS.demoSwap, ...WORDS.demoBundle, ...WORDS.right, ...Object.values(WHY_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

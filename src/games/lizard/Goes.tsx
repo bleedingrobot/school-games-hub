@@ -12,6 +12,9 @@
  * tries are sent; the server replays them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { DemoBar } from '../../kit/DemoBar';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { TenFrame } from '../../kit';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { HearAgain } from '../../kit/HearAgain';
@@ -25,7 +28,7 @@ import type { Friend as FriendName } from '../../../shared/lizard/progress';
 import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, type Go, type Mat, type Round } from '../../../shared/lizard/round';
 import { playSound } from '../sounds';
 import { Bundle, Friend, Raft, Stick, sceneStyle, type Pose, type Scenery } from './art';
-import { WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
+import { DEMO_STEPS, demoMat, type DemoKind, WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 1900;
@@ -43,6 +46,10 @@ type Place = 'h' | 't' | 'o';
 interface Props {
   /** The child's very first challenge: the hand points at the stick button on the first go if nothing is tapped. */
   guided?: boolean;
+  /** The kinds of go this child has already seen, and how to remember more (Show me first). */
+  seen: string[];
+  onMarkSeen: (kinds: string[]) => Promise<unknown>;
+  onSeen: (kinds: string[]) => void;
   round: Round;
   scenery: Scenery;
   friend: FriendName;
@@ -150,7 +157,7 @@ function TryPicture({ mat, places, need, picked }: { mat: Mat; places: 2 | 3; ne
 export const hasRaft = (go: Pick<Go, 'kind' | 'n' | 'answer'>): boolean =>
   go.kind === 'bundle' || go.kind === 'swap' ? go.n >= 100 : go.n >= 100 || go.answer >= 100;
 
-export function Goes({ guided = false, round, scenery, friend, sound, say, onDone }: Props) {
+export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery, friend, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -179,6 +186,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     timers.current = [];
   };
   useEffect(() => clearTimers, []);
+  const seenKinds = useSeenKinds(seen, onMarkSeen);
+  const [demoed, setDemoed] = useState<string[]>([]);
   const { look, start: startLook, skip } = useLookTogether(say);
   const guideHand = useGuidedFirstGo(guided && at === 0, GUIDE_MS);
 
@@ -195,8 +204,24 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const places: 2 | 3 = Math.max(go.n, go.answer >= 100 && go.kind !== 'bundle' && go.kind !== 'swap' ? go.answer : 0) >= 100 ? 3 : 2;
   const solved = phase !== 'ask';
 
+  // Show me first: the first time Swap or Bundle comes up, a made-up example plays before the go (two a round at most).
+  const introKind: DemoKind | null = phase === 'ask' && (go.kind === 'swap' || go.kind === 'bundle') && !seenKinds.has(go.kind) && demoed.length < 2 ? go.kind : null;
+  const demo = useKindDemo({
+    kind: introKind,
+    seen: seenKinds,
+    mark: (kinds) => {
+      setDemoed((d) => [...d, ...kinds.filter((k) => !d.includes(k))]);
+      onSeen(kinds);
+      return seenKinds.mark(kinds);
+    },
+    steps: introKind ? DEMO_STEPS[introKind] : [],
+    say,
+  });
+  const demoing = introKind !== null;
+
   // Each new go is read aloud once.
   useEffect(() => {
+    if (demoing) return;
     if (at === 0) heading.current?.focus();
     let live = true;
     tappedYet.current = false;
@@ -223,7 +248,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, goes]);
+  }, [at, goes, demoing]);
 
   function closeTip() {
     setTip(false);
@@ -292,6 +317,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       return;
     }
     clearTimers();
+    seenKinds.mark([go.kind]);
+    onSeen([go.kind]);
     setGs(stepGo(gs, 'right'));
     setPhase('right');
     setPose('eat');
@@ -343,6 +370,30 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mat.o]);
   const sendable = !solved && gs.phase !== 'look' && !held && !matsAlike(mat, go.from) && !(lastTried && matsAlike(mat, lastTried));
+
+  if (demoing) {
+    const mat = demoMat(introKind, demo.step);
+    const tie = introKind === 'bundle';
+    return (
+      <div className={`lz-play lz-scene--${scenery}`} style={sceneStyle(scenery)}>
+        <h2 className="lz-sr" tabIndex={-1} ref={heading}>{WORDS.makeMat}</h2>
+        <div className="lz-stage" key="demo">
+          <span className="lz-stage__friend" aria-hidden="true"><Friend friend={friend} pose="sit" /></span>
+          <p className="lz-ask" aria-live="polite">{DEMO_STEPS[introKind][demo.step].line}</p>
+          <div className="lz-board lz-board--demo">
+            <MatView mat={mat} places={2} labels counts colours frame={false} label={`${WORDS.yourMat}: ${spoken(mat, 2)}.`} />
+            <div className="lz-actions" aria-hidden="true">
+              <button type="button" tabIndex={-1} className="lz-btn lz-btn--tie lz-btn--lit" disabled>
+                {tie ? WORDS.tieTen : WORDS.untieOne}
+                {demo.target && <PointingHand prefix="lz" />}
+              </button>
+            </div>
+          </div>
+        </div>
+        <DemoBar prefix="lz" skipLabel={WORDS.skipDemo} canSkip={demo.canSkip} onSkip={demo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className={`lz-play lz-scene--${scenery}`} style={sceneStyle(scenery)}>
