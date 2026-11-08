@@ -58,6 +58,19 @@ export const WORDS = {
   cloth: 'Under the cloth',
   oneMore: 'One more berry comes.',
   promptHowMany: 'How many berries?',
+  /** Written under the cards of a One more go (the voice already asks it). */
+  promptCountOn: 'How many now?',
+  /** Said once when a grey card is tapped before every berry is touched, and the same words written under the cards. */
+  touchFirstSay: 'Touch every berry first.',
+  touchFirstWrite: 'Touch each berry first.',
+  countWithMe: 'Count with me',
+  countingNow: 'Counting...',
+  countWithMeSay: 'Count with me.',
+  /** After a wrong card on a How many go: the child's own count, then back to the cards. */
+  youCounted: (n: number): string => `You counted ${numWord(n)}.`,
+  findSame: 'Find the card that says the same.',
+  tappedCard: (n: number) => `The card you tapped, ${n}`,
+  countBadge: (n: number) => `${n} berries counted`,
   tip: [
     'Hello! I am Robin. I love berries. Will you count some out for me?',
     'I will talk to you. Tap Hear it again to hear me again.',

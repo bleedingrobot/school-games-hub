@@ -46,6 +46,9 @@ export const countLine = (n: number): string => cap(numWord(n));
 /** Why a wrong card or count is wrong, then Bella's "Count again". */
 export const whyLine = (kind: Parameters<typeof WORDS.why>[0]): string => WORDS.why(kind);
 
+/** After a wrong card on a How many go: the child's own count, then "Find the card that says the same." (two clips). */
+export const ownCountLine = (answer: number): string => [WORDS.youCounted(answer), WORDS.findSame].join(PART_BREAK);
+
 /** What the home screen says: who wants berries, and "come back tomorrow" once today's basket has turned. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title);
 
@@ -64,6 +67,7 @@ function* everyGo(): Generator<Go> {
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([
     WORDS.lookTogether, WORDS.lookFill, WORDS.nowTry, WORDS.promptHowMany, WORDS.putOneFirst, WORDS.oneMore, WORDS.pressOk,
+    WORDS.touchFirstSay, WORDS.findSame, WORDS.countWithMeSay,
     nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true), WORDS.doneToday, ...WORDS.tip,
   ]);
   const names = Object.entries(FRIEND_NAMES);
@@ -77,6 +81,7 @@ export function allVoiceLines(): string[] {
     lines.add(modelLine(go));
   }
   for (let n = 1; n <= 24; n++) lines.add(countLine(n));
+  for (let n = 1; n <= 20; n++) lines.add(WORDS.youCounted(n));
   const mains = [...METALS.slice(1).map((m) => WORDS.basketTurned(m)), ...names.map(([, name]) => WORDS.goldenFeast(name))];
   for (const main of mains) lines.add(main);
   for (const s of STEPS.slice(1)) lines.add(WORDS.nextStep(s.step));
