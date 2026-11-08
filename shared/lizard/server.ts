@@ -15,13 +15,17 @@
  *
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
+import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { isSeed, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
 import { MAX_PICK, TOP_LEVEL } from './config';
 
-export type LizardAction = 'load' | 'start' | 'finish';
+export type LizardAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go the game has, so every one can be remembered, whether or not it has a demo. */
+export const KINDS = ['build', 'read', 'bundle', 'swap', 'more'];
 
 /** A pupil's den as it is saved. */
 export interface Progress extends Place {
@@ -45,7 +49,7 @@ export interface Settings {
   help: HelpSetting;
 }
 
-export interface LizardServices {
+export interface LizardServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; only the "ten and" facts matter here). */
@@ -109,10 +113,20 @@ export async function handleLizard(services: LizardServices, player: string, bod
   const today = () => nzDate(new Date(services.now()));
 
   if (body.action === 'load') {
-    const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-    if (s === 'busy' || facts === 'busy') return busy();
+    const [s, facts, saved] = await Promise.all([services.load(player), services.facts(player), services.seen(player)]);
+    if (s === 'busy' || facts === 'busy' || saved === 'busy') return busy();
     const place = placeOf(s, facts);
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help });
+    // Children who have played for weeks have already done what a demo would show.
+    const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const saved = await services.markSeen(player, kinds);
+    if (saved === 'busy') return busy();
+    return ok({ seen: saved });
   }
 
   if (body.action === 'start') {

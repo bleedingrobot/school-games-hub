@@ -112,7 +112,7 @@ export function LizardGame({ backend, onExit, extra }: Props) {
   else if (!state || screen.kind === 'loading') body = <p className="lz-message">…</p>;
   else if (screen.kind === 'play') {
     const den = denAfter(state.daysDone);
-    body = <Goes guided={state.daysDone === 0} round={screen.round} scenery={den.today} friend={den.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
+    body = <Goes guided={state.daysDone === 0} seen={state.seen ?? []} onMarkSeen={backend.markSeen} onSeen={(k) => setState((st) => st && { ...st, seen: [...new Set([...(st.seen ?? []), ...k])] })} round={screen.round} scenery={den.today} friend={den.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
   } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 

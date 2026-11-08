@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hasRaft, showBundleButtons } from './Goes';
-import { tryLine } from './voiceLines';
+import { KEYS } from '../../../shared/lizard/round';
+import { DEMO_STEPS, demoMat, tryLine } from './voiceLines';
 
 describe('Lizard: tying the bundles', () => {
   it('hides + bundle on steps 1 to 3 and on the guided first go', () => {
@@ -12,6 +13,11 @@ describe('Lizard: tying the bundles', () => {
     expect(hasRaft({ kind: 'bundle', n: 23, answer: 203 })).toBe(false);
     expect(hasRaft({ kind: 'build', n: 120, answer: 120 })).toBe(true);
     expect(hasRaft({ kind: 'read', n: 305, answer: 305 })).toBe(true);
+    // The Show me first examples are made up: 36 and 15 are not asked as a Swap or a Bundle go.
+    expect(KEYS).not.toContain('pvregroup:s36');
+    expect(KEYS).not.toContain('pvregroup:b15');
+    expect(demoMat('swap', 0)).toEqual({ h: 0, t: 3, o: 6 });
+    expect(DEMO_STEPS.swap.at(-1)?.line).toBe('Now you try.');
     // The written line after a wrong try: the child's count, never a card answer.
     const build = tryLine({ kind: 'build', n: 43 }, { h: 0, t: 3, o: 4 }, 'build');
     expect(build).toContain('34');

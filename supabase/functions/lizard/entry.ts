@@ -55,6 +55,8 @@ Deno.serve(
       // A pupil who has never played has no den yet.
       return saved ?? unplayed();
     },
+    seen: (player) => call<string[]>('kit_seen_get', { player, game: 'lizard' }),
+    markSeen: (player, kinds) => call<string[]>('kit_seen_mark', { player, game: 'lizard', kinds }),
     async facts(player) {
       // The same records every maths game reads; only Tūī's "ten and" facts matter here.
       const context = await call<{ facts?: FactStats[] } | null>('space_maths_context', { player });
