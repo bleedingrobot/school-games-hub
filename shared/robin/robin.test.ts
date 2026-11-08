@@ -4,7 +4,8 @@ import { ALL_COUNT_KEYS } from '../maths/skillPacks/countingKeys';
 import { BASKETS, FADE_GOOD, GOES_PER_ROUND as GOES, PASS_GOOD, STEPS, TOP_LEVEL, type Step } from './config';
 import { DAYS_PER_FEAST, basketsAfter, finishChallenge, placeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
-import { GUIDED_KEY, STEP_PLAN, levelFor, makeRound, showGo, showRound, startFor, tapsAllowed, type Round } from './round';
+import { seeded } from '../seededRandom';
+import { GUIDED_KEY, layoutPoints, STEP_PLAN, levelFor, makeRound, showGo, showRound, startFor, tapsAllowed, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -12,7 +13,14 @@ const rec = (key: string, box: number, attempts = 1): FactStats => ({ ...newStat
 const at = (p: object) => ({ step: 1, level: 5, goodInRow: 0, goodAtStep: 0, ...p });
 
 describe('the round', () => {
-  it('is the same for the same seed, has 7 new and 3 earlier goes (10 new at steps 1 and 2), weakest keys first', () => {
+  it('is the same for the same seed, has 7 new and 3 earlier goes (10 new at steps 1 and 2), weakest keys first, and scattered berries never touch', () => {
+    // A berry is up to 11% of the pile's width and square; the pile is 2:1, so a height point is half a width point.
+    for (let n = 1; n <= 24; n++) {
+      for (const seed of [1, 2, 3, 4, 5]) {
+        const pts = layoutPoints('scatter', n, seeded(seed));
+        for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) expect(Math.hypot(pts[i].x - pts[j].x, (pts[i].y - pts[j].y) / 2)).toBeGreaterThanOrEqual(11 - 1e-9);
+      }
+    }
     for (const step of steps) {
       for (const seed of seeds) {
         const round = makeRound(seed, [], { step, level: 5 });

@@ -182,8 +182,9 @@ export function layoutPoints(layout: Layout, n: number, random: () => number): P
     const turn = random() * Math.PI * 2;
     return Array.from({ length: n }, (_, i) => (n === 1 ? { x: 50, y: 50 } : { x: 50 + 36 * Math.cos(turn + (i * 2 * Math.PI) / n), y: 50 + 36 * Math.sin(turn + (i * 2 * Math.PI) / n) }));
   }
-  const cells = shuffle(range(0, 29), random).slice(0, n);
-  return cells.map((c) => ({ x: ((c % 6) + 0.5) * (100 / 6) + (random() - 0.5) * 6, y: (Math.floor(c / 6) + 0.5) * 20 + (random() - 0.5) * 6 }));
+  // 6 columns by 4 rows (24 cells, the most a pile shows): rows are a quarter of the height apart, so berries never touch.
+  const cells = shuffle(range(0, 23), random).slice(0, n);
+  return cells.map((c) => ({ x: ((c % 6) + 0.5) * (100 / 6) + (random() - 0.5) * 3, y: (Math.floor(c / 6) + 0.5) * 25 + (random() - 0.5) * 3 }));
 }
 
 /**
