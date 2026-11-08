@@ -17,7 +17,7 @@ import { GOES_PER_ROUND, KNOWN_BONDS, KNOWN_START, REVIEW_GOES, TOP_LEVEL, type 
 
 export { GOES_PER_ROUND };
 export type { Kind };
-export type ParrotKind = 'all' | 'copy' | 'total' | 'off1' | 'dbl' | 'near' | 'both' | 'first' | 'side';
+export type ParrotKind = 'all' | 'copy' | 'total' | 'off1' | 'dbl' | 'near' | 'both' | 'first' | 'side' | 'more' | 'less';
 export type WrongCard = Wrong<ParrotKind>;
 /** The four ways to write the missing-number go (layouts), and which one a plan asks for. */
 export type Layout = 0 | 1 | 2 | 3;
@@ -271,6 +271,31 @@ export function levelFor(planned: HelpLevel, wrongTaps: number, struggling: bool
   else if (wrongTaps === 1) level = Math.min(TOP_LEVEL, planned + 1) as HelpLevel;
   // Off keeps the picture away until a wrong tap brings it (plan section 4); Peek is hidden then.
   return { level, peek: help !== 'off' && planned <= 1 };
+}
+
+/**
+ * The slip behind a pick on a go: null when right; the go's own wrong card kind; for a stone count, the same totals the
+ * wrong cards use (total, copy, all, double); one away is off1; otherwise too many ('more') or not enough ('less').
+ */
+export function slipOfPick(go: Go, n: number): ParrotKind | null {
+  if (n === go.answer) return null;
+  const card = go.wrongs.find((w) => w.n === n);
+  if (card) return card.kind;
+  if (go.kind === 'tf') return null;
+  if (go.kind === 'miss') {
+    const total = go.lg.reduce((s, x) => s + x, 0);
+    if (n === total) return 'total';
+    if (n === go.rg[0]) return 'copy';
+    if (n === total + go.rg[0]) return 'all';
+  } else if (go.kind === 'swap') {
+    const total = go.lg.reduce((s, x) => s + x, 0);
+    if (n === total) return 'total';
+    if (n === go.rg[0]) return 'copy';
+    if (n === total + go.rg[0]) return 'all';
+    if (n === 2 * go.answer) return 'dbl';
+  }
+  if (Math.abs(n - go.answer) === 1) return 'off1';
+  return n > go.answer ? 'more' : 'less';
 }
 
 /** After two wrong taps the redo has two cards: the answer and one other, the right one marked. */

@@ -179,8 +179,8 @@ function PanItems({ items, from }: { items: Item[]; from: number }) {
 }
 
 /**
- * The see-saw: a plank on a post, the pans at its ends. It tips (left end down, right end down) or lies flat. The "=" sign is
- * on the post, so the symbol and the model stay linked. `tilt` 'rest' is flat, with nothing judged yet.
+ * The see-saw: a plank on a post, the pans at its ends. It tips (left end down, right end down) or lies flat. The post says
+ * what is true: "=" only when the plank is level, "?" when nothing is judged yet (it rests on two props), nothing when it tips.
  */
 export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '', wobble = false }: { left: Item[]; right: Item[]; tilt: Tilt; label?: string; className?: string; wobble?: boolean }) {
   const style: CSSProperties = { transform: `rotate(${ANGLE[tilt]}deg)`, transformOrigin: '220px 172px' };
@@ -195,7 +195,13 @@ export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '',
       ) : (
         <polygon points="192,232 248,232 220,174" fill="#7a5a34" stroke={INK} strokeWidth="2" />
       )}
-      <text x="220" y="226" textAnchor="middle" fontSize="26" fontWeight="900" fill="#fff" stroke={painted ? INK : undefined} strokeWidth={painted ? 5 : undefined} paintOrder="stroke" fontFamily="system-ui, sans-serif">=</text>
+      {(tilt === 'level' || tilt === 'rest') && (
+        <text x="220" y="226" textAnchor="middle" fontSize="26" fontWeight="900" fill="#fff" stroke={painted ? INK : undefined} strokeWidth={painted ? 5 : undefined} paintOrder="stroke" fontFamily="system-ui, sans-serif">{tilt === 'level' ? '=' : '?'}</text>
+      )}
+      <g className={`pr-saw__props${tilt === 'rest' ? '' : ' pr-saw__props--gone'}`} aria-hidden="true">
+        <rect x="30" y="182" width="16" height="52" rx="5" fill="#7a5a34" stroke={INK} strokeWidth="2" />
+        <rect x="394" y="182" width="16" height="52" rx="5" fill="#7a5a34" stroke={INK} strokeWidth="2" />
+      </g>
       <g className="pr-saw__plank" style={style}>
         {painted ? (
           <image href={plank} x="12" y="164" width="416" height="24" preserveAspectRatio="none" />

@@ -6,7 +6,7 @@
  * cards are not shown, so any count up to 20 is allowed; on a card go the pick must be one of its cards.
  */
 import { replayTaps, type TapReplay, type Tap } from '../kit/replay';
-import { GOES_PER_ROUND, showRound, tapsAllowed, type Round } from './round';
+import { GOES_PER_ROUND, showRound, slipOfPick, tapsAllowed, type Round } from './round';
 
 export type { Tap };
 export type Replay = TapReplay;
@@ -30,7 +30,7 @@ export function slipsOf(round: Round, taps: readonly Tap[]): (import('./round').
       tried = false;
       continue;
     }
-    if (!tried) slips[at] = go.wrongs.find((w) => w.n === pick)?.kind ?? 'near';
+    if (!tried) slips[at] = slipOfPick(go, pick) ?? 'near';
     tried = true;
   }
   return slips;

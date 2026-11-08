@@ -20,7 +20,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import type { Friend as FriendName } from '../../../shared/parrot/config';
 import type { Tap } from '../../../shared/parrot/play';
-import { balance, GOES_PER_ROUND, isStoneGo, levelFor, MAX_STONES, redoCards, showRound, tiltOf, type Go, type ParrotKind, type Round } from '../../../shared/parrot/round';
+import { balance, GOES_PER_ROUND, isStoneGo, levelFor, MAX_STONES, redoCards, showRound, slipOfPick, tiltOf, type Go, type ParrotKind, type Round } from '../../../shared/parrot/round';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
@@ -92,15 +92,39 @@ function Weights({ go, fill, tilt, className = '' }: { go: Go; fill: number | nu
 
 /** The equation as written: "8 = 5 + ?", the gap filled once the go is right. */
 function Equation({ go, fill, big }: { go: Go; fill: number | null; big: boolean }) {
-  return (
+  const tf = go.kind === 'tf';
+  const eq = (
     <p className={`pr-eq${big ? ' pr-eq--big' : ''}`} aria-live="polite">
       {go.parts.map((t, i) =>
-        t === '?' ? (
+        tf && t === '=' ? (
+          <span key={i} className={`pr-eq__op pr-eq__ask${fill === null ? '' : ' pr-eq__glyph'}`}>
+            <span className="pr-sr">{WORDS.sameAs}</span>
+            {fill === null ? <span aria-hidden="true">?</span> : <TipGlyph dir={fill === 0 ? 'left' : fill === 1 ? 'level' : 'right'} />}
+          </span>
+        ) : t === '?' ? (
           <span key={i} className={`pr-eq__gap${fill === null ? '' : ' pr-eq__gap--filled'}`}>{fill === null ? '?' : fill}</span>
         ) : (
           <span key={i} className={/^\d+$/.test(t) ? 'pr-eq__num' : 'pr-eq__op'}>{t}</span>
         ),
       )}
+    </p>
+  );
+  if (!tf) return eq;
+  return (
+    <>
+      <p className="pr-sameq">{WORDS.sameQ}</p>
+      {eq}
+    </>
+  );
+}
+
+/** The weight of each pan written under it. */
+function Totals({ go }: { go: Go }) {
+  const [l, r] = weightsOf(go, null).value;
+  return (
+    <p className="pr-totals" aria-label={`${l} and ${r}`}>
+      <span>{l}</span>
+      <span>{r}</span>
     </p>
   );
 }
@@ -128,15 +152,23 @@ function CountingSaw({ go, filled }: { go: Go; filled: number }) {
     if (shown > 0) right.push({ t: 'stones', n: shown, tint: 'b' });
     tilt = tiltOf(go, shown);
   }
-  return <SeeSaw left={left} right={right} tilt={tilt} className="pr-saw--small" />;
+  const saw = <SeeSaw left={left} right={right} tilt={tilt} className="pr-saw--small" />;
+  if (go.kind !== 'tf' || filled < 1) return saw;
+  return (
+    <>
+      {saw}
+      <Totals go={go} />
+    </>
+  );
 }
 
-/** After a wrong tap: a small see-saw with the slip's number placed, tipping. A true or false go has no number to place, so it stays still. */
+/** After a wrong tap: a small see-saw with the slip's number placed, tipping. A true or false go tips its own way, with the pan totals. */
 function WhyPicture({ go, pick, kind }: { go: Go; pick: number; kind: ParrotKind }) {
   const tf = go.kind === 'tf';
   return (
     <div className={`pr-whypic pr-whypic--${kind}`}>
-      <Weights go={go} fill={tf ? null : pick} tilt={tf ? 'rest' : leanWith(go, pick)} className="pr-saw--small" />
+      <Weights go={go} fill={tf ? null : pick} tilt={leanWith(go, tf ? 0 : pick)} className="pr-saw--small" />
+      {tf && <Totals go={go} />}
     </div>
   );
 }
@@ -262,7 +294,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
         });
         return;
       }
-      const kind = go.wrongs.find((w) => w.n === n)?.kind ?? 'near';
+      const kind = slipOfPick(go, n) ?? 'near';
       setWhy({ pick: n, kind });
       say(whyLine(kind));
       return;
@@ -280,8 +312,16 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     later(RIGHT_MS, () => nextGo(next));
   }
 
-  const addStone = () => asking && !look && placed < MAX_STONES && setPlaced(placed + 1);
-  const takeBack = () => asking && !look && placed > 0 && setPlaced(placed - 1);
+  const addStone = () => {
+    if (!asking || look || placed >= MAX_STONES) return;
+    setWhy(null);
+    setPlaced(placed + 1);
+  };
+  const takeBack = () => {
+    if (!asking || look || placed <= 0) return;
+    setWhy(null);
+    setPlaced(placed - 1);
+  };
   const checkDisabled = !asking || look !== null || placed === 0 || tapped.includes(placed) || (guided && balance(go, placed) !== 0);
   const target = balance(go, placed) === 0 ? 'check' : 'heap';
   const pointing = guideHand.pointing && asking && stones;
@@ -312,7 +352,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
             <Weights go={go} fill={filled} tilt={rightTilt} />
           )
         ) : stones ? (
-          <StoneSaw go={go} placed={placed} tilt={live ? tilt : 'rest'} wobble={wobble !== null} />
+          <StoneSaw go={go} placed={placed} tilt={live || why ? tilt : 'rest'} wobble={wobble !== null} />
         ) : (
           <>
             {cardLevel >= 3 && <Weights go={go} fill={null} tilt="rest" className={wobble !== null ? 'pr-saw--wobble' : ''} />}
