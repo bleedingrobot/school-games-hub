@@ -218,6 +218,9 @@
 }
 .kr-choice:focus-visible { outline: 4px solid var(--kr-teal-dark); outline-offset: 4px; border-radius: 40%; }
 .kr-choices--fair .kr-choice { width: auto; min-height: 76px; padding: 0 22px; border-radius: 999px; background: var(--kr-panel); border: 3px solid var(--kr-teal-dark); }
+.kr-fairicon { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; vertical-align: middle; font-size: 0.8em; }
+.kr-fairicon__bowl { display: inline-block; padding: 1px 6px 3px; border: 2px solid var(--kr-teal-dark); border-radius: 0 0 999px 999px; line-height: 1; }
+.kr-fairicon__alone { margin-left: 2px; }
 .kr-choice__words { font: 800 clamp(1.1rem, 2.6vw, 1.5rem) system-ui, sans-serif; color: var(--kr-ink); }
 .kr-choice--wobble { animation: kr-wobble 0.5s ease-in-out; }
 @keyframes kr-wobble { 20% { rotate: -14deg; } 40% { rotate: 11deg; } 60% { rotate: -7deg; } 80% { rotate: 4deg; } }
@@ -293,7 +296,7 @@
 .kr-bowl { box-sizing: border-box; width: 100%; min-height: calc(var(--kr-fish) * 1.5); padding: 6px 6px 10px; border: 3px solid rgb(255 255 255 / 0.7); border-top: 0; border-radius: 0 0 50% 50% / 0 0 40% 40%; background: rgb(255 255 255 / 0.18); }
 .kr-fish--pair .kr-fish__art { filter: drop-shadow(0 0 5px #fff6b0) drop-shadow(0 0 2px var(--kr-gold)); }
 .kr-choices--wait .kr-choice { opacity: 0.45; cursor: default; }
-@media (max-width: 480px) { .kr-choices--fair { gap: 8px 12px; } .kr-choices--fair .kr-choice { min-height: 54px; padding: 0 14px; } }
+@media (max-width: 480px) { .kr-choices--fair { gap: 8px 12px; } .kr-choices--fair .kr-choice { min-height: 64px; padding: 0 12px; } }
 /* The pile across the top, the two bowls side by side below it, so five fish in a row fit on a phone. */
 .kr-share--fair { grid-template-columns: 1fr 1fr; align-items: start; row-gap: 6px; }
 .kr-share--fair .kr-pile--fair { grid-column: 1 / -1; grid-row: 1; min-height: 0; padding: 10px 8px; }

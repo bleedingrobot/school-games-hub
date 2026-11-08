@@ -56,12 +56,13 @@ export const WORDS = {
   tryWeka: 'Try Weka',
   yes: (n: number) => `${n}!`,
   /** Fair or not (R9): the three choices, and what is said when the child is right, counting one bowl together. */
-  fair: 'Fair share',
-  tooMany: 'One too many',
-  tooFew: 'One too few',
+  fair: 'Fair',
+  tooMany: 'One left over',
   fairYes: (k: number) => `Yes! They share them fairly. Count one bowl: ${k}. The other bowl has ${k} too.`,
   oddYes: (k: number) => `Yes! Count one bowl: ${k}. The other bowl has ${k} too. One fish is left over.`,
   /** After the second wrong choice: the fish pair off. It never says which choice is right. */
+  /** After the first wrong choice: look at one bowl. It never says which choice is right. */
+  countOneBowl: 'Count the fish in one bowl.',
   pairOff: 'Let’s pair them off. Does every fish have a partner?',
   shareTwo: 'Share two fish',
   allShared: 'All shared!',

@@ -5,7 +5,7 @@
  *  - A near double (level 5, 6 + 7): the rock's fish and the water's, with one extra fish in the water. How many fish?
  *  - A half: a pile of fish to share fairly between the two chicks. How many does each chick get?
  *  - Fair or not (gold days, R9, FairPile.tsx): a real pile of 6 to 20 fish; the child shares it into two bowls, two fish at a time,
- *    then picks Fair share, One too many or One too few. Hint after the second wrong pick: the fish pair off. Bella counts one bowl.
+ *    then picks Fair or One left over. Hint after the second wrong pick: the fish pair off. Bella counts one bowl.
  *
  * The support James chose (4 Nov 2026), all in this screen:
  *  - help that follows the child, fact by fact (maths review R6, each go's `h` from shared/korora/round.ts): a fact still
@@ -80,8 +80,19 @@ const fishIdsOf = (go: Go): string[] =>
     ? [...Array.from({ length: go.n }, (_, i) => `r${i}`), ...Array.from({ length: go.n + (go.kind === 'near' ? 1 : 0) }, (_, i) => `w${i}`)]
     : Array.from({ length: go.n }, (_, i) => `p${i}`);
 
-/** The three choices of fair or not: 1 fair, 0 one too many, 2 one too few. */
-const fairLabel = (n: number) => (n === 1 ? WORDS.fair : n === 0 ? WORDS.tooMany : WORDS.tooFew);
+/** The two choices of fair or not: 1 fair, 0 one left over. */
+const fairLabel = (n: number) => (n === 1 ? WORDS.fair : WORDS.tooMany);
+
+/** A tiny picture of a choice: two bowls with the same fish, or two bowls and one fish on its own. */
+function FairIcon({ fair }: { fair: boolean }) {
+  return (
+    <span className="kr-fairicon" aria-hidden="true">
+      <span className="kr-fairicon__bowl">🐟🐟</span>
+      <span className="kr-fairicon__bowl">🐟🐟</span>
+      {!fair && <span className="kr-fairicon__alone">🐟</span>}
+    </span>
+  );
+}
 
 /** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
 const rowsOf = (n: number) => Array.from({ length: Math.ceil(n / 5) }, (_, r) => Math.min(5, n - r * 5));
@@ -225,8 +236,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       later(WOBBLE_MS, () => setWobble(null));
       const kind = go.wrongs.find((x) => x.n === n)?.kind;
       if (!kind) {
-        // Fair or not: "Try again!", and after the second wrong choice the fish pair off (R9).
-        const line = w === 2 ? WORDS.pairOff : WORDS.tryAgain;
+        // Fair or not: look at one bowl, and after the second wrong choice the fish pair off (R9).
+        const line = w === 2 ? WORDS.pairOff : WORDS.countOneBowl;
         if (w === 2) setPairHint(true);
         if (backLine.current) say(line, () => say(WORDS.picturesBack));
         else say(line);
@@ -320,7 +331,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
           <span aria-hidden="true">👂</span> {WORDS.hearAgain}
         </button>
       </div>
-      <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish: share them, then fair or not?` : go.parts.join(' ')}</p>
+      <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish. Is it fair?` : go.parts.join(' ')}</p>
       <div className="kr-scene" key={at}>
         <span className={`kr-scene__friend${mirror ? '' : ' kr-scene__friend--low'}`}>
           <Friend friend={friend} pose={pose} />
@@ -359,7 +370,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
             >
               {go.kind === 'fair' ? (
                 <span className="kr-choice__words">
-                  <span aria-hidden="true">{n === 1 ? '🐟🐟' : n === 0 ? '🐟🐟🐟' : '🐟'}</span> {fairLabel(n)}
+                  <FairIcon fair={n === 1} /> {fairLabel(n)}
                 </span>
               ) : (
                 <Pebble metal="grey" value={n} />
