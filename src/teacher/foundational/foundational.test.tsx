@@ -4,6 +4,17 @@ import type { FoundationalClass } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
 import { parseQuickLooksStudent } from '../../data/foundational';
 import { foundationalAlerts, quickLooksAlerts } from './alerts';
+import { GAMES } from './config';
+import { keyWords } from './ideas';
+import { stepName as pigeonStep } from '../../../shared/pigeon/round';
+import { stepName as lizardStep } from '../../../shared/lizard/round';
+import { stepName as swamphenStep } from '../../../shared/swamphen/round';
+import { stepName as parrotStep, TOP_STEP as PARROT_TOP } from '../../../shared/parrot/config';
+import { stepName as robinStep, TOP_STEP as ROBIN_TOP } from '../../../shared/robin/config';
+import { TOP_STEP as PIGEON_TOP } from '../../../shared/pigeon/config';
+import { TOP_STEP as LIZARD_TOP } from '../../../shared/lizard/config';
+import { TOP_STEP as SWAMPHEN_TOP } from '../../../shared/swamphen/config';
+import { GAME_IDS } from '../../data/foundational';
 import { classRows } from './flags';
 import { FoundationalGrid } from './FoundationalGrid';
 
@@ -17,6 +28,7 @@ const data: FoundationalClass = {
 
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
 vi.mock('../../data/hop', () => ({ fetchHopEnabled: async () => true }));
+vi.mock('../../data/robin', () => ({ fetchRobinEnabled: async () => true }));
 
 describe('Foundational grid', () => {
   it('shows each pupil with a mark for every idea, and the Hop alert names made-up pupils and "and N more"', async () => {
@@ -56,5 +68,35 @@ describe('Foundational grid, stage 2', () => {
     const q = parseQuickLooksStudent({ answers, student: { typing: { q: { p: 1, s: 1, f: 3, g: 1, v: 2 } }, sessionsDone: 4 } }, 20);
     expect(q).toMatchObject({ used: true, finished: 3, guided: true, sessions: 4, answered: 2, correct: 1 });
     expect(parseQuickLooksStudent({ answers: [], student: null }, 20).used).toBe(false);
+  });
+});
+
+describe('the five newer games in the teacher view (S17)', () => {
+  it('names every step of every newer game and has the real top step', () => {
+    const real = { pigeon: [PIGEON_TOP, pigeonStep], parrot: [PARROT_TOP, parrotStep], lizard: [LIZARD_TOP, lizardStep], swamphen: [SWAMPHEN_TOP, swamphenStep], robin: [ROBIN_TOP, robinStep] } as const;
+    for (const [id, [top, name]] of Object.entries(real)) {
+      expect(GAME_IDS).toContain(id);
+      const words = GAMES[id as keyof typeof GAMES];
+      expect(words.top).toBe(top);
+      for (let step = 1; step <= top; step++) expect(words.levels[step], `${id} step ${step}`).toBe(name(step as never));
+    }
+  });
+
+  it('says "Robin: 5 pupils on the same step" when five pupils sit on step 3 for 5 or more days', async () => {
+    const on3 = { daysDone: 6, lastDay: '2026-11-06', level: 3, recent: ['02', '03', '04', '05', '06', '09'].map((d) => ({ day: `2026-11-${d}`, wrong: 0, taps: 8, level: 3 })) };
+    const robin: FoundationalClass = { ...data, pupils: new Map(names.map((_, i) => [`s${i}`, { games: { robin: on3 }, quickLooks: null }])) };
+    const spy = vi.spyOn(await import('../../data/foundational'), 'foundationalClass').mockResolvedValue(robin);
+    const [alert] = await foundationalAlerts('robin', 'c');
+    spy.mockRestore();
+    expect(alert.text).toContain('Robin: 5 pupils on the same step for 5 or more days');
+  });
+
+  it('turns one key of each new family into words', () => {
+    const table: [string, string][] = [
+      ['place100:n63', 'Place 63 on the line to 100'], ['read1000:n140', 'Read 140 on the line'], ['tens100:-63', '63 \u2212 10'], ['pvbuild:n47', 'Build 47 with bundles'],
+      ['pvregroup:b23', 'Tie 23 sticks into bundles'], ['eqmiss:3=1+?', '3 = 1 + ?'], ['eqsub:11=20-?', '11 = 20 \u2212 ?'], ['give:n6', 'Give 6'], ['howmany:n6:ring', 'How many? 6'],
+      ['counton:5+1', 'One more than 5'], ['rows:4x6', '4 rows of 6'], ['share:24/4', '24 shared into 4 rows'], ['cut:6x7', 'Cut 6 rows of 7'], ['which:3x5', 'Which picture is 3 rows of 5?'],
+    ];
+    for (const [key, words] of table) expect(keyWords(key)).toBe(words);
   });
 });

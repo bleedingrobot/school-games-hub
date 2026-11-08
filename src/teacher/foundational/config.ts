@@ -47,6 +47,11 @@ export const GAMES: Record<FoundationalGameId, GameWords> = {
   pipi: { name: 'Pipi', levelWord: 'level', levels: { 1: 'Parts of 3 to 5', 2: 'Parts of 6 and 7', 3: 'Parts of 8 to 10' }, top: 3 },
   tui: { name: 'Tūī', levelWord: 'step', levels: { 1: 'How many?', 2: 'Turn it round', 3: 'How many more?', 4: 'Take the ten away', 5: 'All mixed' }, top: 5 },
   weka: { name: 'Weka', levelWord: 'level', levels: { 1: 'Starting on 9', 2: 'Starting on 8', 3: 'Starting on 7 and 6', 4: 'All mixed' }, top: 4 },
+  pigeon: { name: 'Pigeon', levelWord: 'step', levels: { 1: 'Tens on the branch', 2: 'Read the arrow', 3: 'Place any number', 4: 'Ten more, ten less', 5: 'Which ten is closer?', 6: 'Zoom in', 7: 'The long branch' }, top: 7 },
+  parrot: { name: 'Parrot', levelWord: 'step', levels: { 1: 'Fill the gap', 2: 'Turn it round', 3: 'Swap places', 4: 'Both sides', 5: 'Level or not?', 6: 'Take away' }, top: 6 },
+  lizard: { name: 'Lizard', levelWord: 'step', levels: { 1: 'Bundles of ten', 2: 'Tens and ones to 50', 3: 'To 100, and zero', 4: 'Tie and untie', 5: 'Ten more, ten less', 6: 'Hundreds', 7: 'All mixed' }, top: 7 },
+  swamphen: { name: 'Swamp Hen', levelWord: 'step', levels: { 1: 'Equal rows', 2: 'Turn the garden', 3: 'Under the mat', 4: 'Share them out', 5: 'Cut the garden', 6: 'One row short' }, top: 6 },
+  robin: { name: 'Robin', levelWord: 'step', levels: { 1: 'Give 1 to 5', 2: 'How many? 1 to 5', 3: 'Give 6 to 10', 4: 'How many? 6 to 10', 5: 'One more', 6: 'Count to 20' }, top: 6 },
 };
 
 export const QUICK_LOOKS_ID = 'quick-looks';

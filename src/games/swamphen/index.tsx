@@ -49,5 +49,8 @@ export const swamphenReedRows: GameDefinition = {
     Settings: SwamphenTeacherSettings,
     StudentPanel: SwamphenStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherSwamphen').then((m) => m.swamphenStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('swamphen', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('swamphen', classId)),
   },
 };
