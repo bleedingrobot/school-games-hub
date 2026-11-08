@@ -20,6 +20,7 @@ const wobblyTaps = (round: Round): Tap[] => showRound(round).flatMap((go) => [{ 
 
 describe('the round', () => {
   it('is the same for the same seed, ten goes of today’s step and some review, with fair cards, and the replay marks first taps', () => {
+    const nearSlots = [0, 0, 0, 0];
     for (const step of steps) {
       for (const level of [5, 2, 0] as HelpLevel[]) {
         for (const seed of seeds) {
@@ -41,8 +42,14 @@ describe('the round', () => {
               expect(placeRight(go, wrongTap(go))).toBe(false);
               expect(Math.abs(tapValue(go, rightTap(go)) - go.n)).toBeLessThanOrEqual(0.5);
             } else if (go.kind === 'near') {
-              expect(go.choices).toHaveLength(2);
-              expect(go.posts).toContain(go.answer);
+              const size = go.max === 1000 ? 100 : 10;
+              expect(go.choices).toHaveLength(4);
+              expect([...go.choices]).toEqual([...go.choices].sort((a, b) => a - b));
+              expect(go.choices).toEqual(expect.arrayContaining([...go.posts!, go.answer]));
+              expect(go.choices.every((c) => c >= 0 && c <= go.max && c % size === 0)).toBe(true);
+              // Neighbouring posts alternate odd and even, so at most two cards share the answer's tell.
+              expect(go.choices.filter((c) => (c / size) % 2 === (go.answer / size) % 2).length).toBeLessThanOrEqual(2);
+              nearSlots[go.choices.indexOf(go.answer)]++;
             } else {
               expect(go.choices.filter((c) => c === go.answer)).toHaveLength(1);
               expect(go.choices).toHaveLength(4);
@@ -59,6 +66,13 @@ describe('the round', () => {
         }
       }
     }
+    // The answer's place among the four cards of a nearest go is spread out.
+    const nearTotal = nearSlots.reduce((a, b) => a + b, 0);
+    expect(nearTotal).toBeGreaterThan(100);
+    for (const count of nearSlots) {
+      expect(count / nearTotal).toBeGreaterThanOrEqual(0.15);
+      expect(count / nearTotal).toBeLessThanOrEqual(0.4);
+    }
     // The teacher's setting: Always marks every ten, Off the two ends only.
     for (const [help, l] of [['always', 4], ['off', 0], ['fade', 2]] as [HelpSetting, number][]) {
       expect(makeRound(9, [], { level: 2, help }).goes.every((g) => g.l === l)).toBe(true);
@@ -70,9 +84,11 @@ describe('the round', () => {
     expect(poolFor(5, new Map()).some((k) => k.includes(':h'))).toBe(false);
     expect(poolFor(5, new Map(others.map((k) => [k, 2]))).some((k) => k.includes(':h'))).toBe(true);
     // Fewer numbers on the branch as help fades; a wrong tap brings them back.
-    expect(marksFor(5, 0, 100).named).toHaveLength(11);
+    expect(marksFor(5, 0, 100).named).toEqual([0, 50, 100]);
+    expect(marksFor(5, 0, 100).big).toHaveLength(11);
     expect(marksFor(0, 0, 100).named).toEqual([0, 100]);
-    expect(marksFor(4, 0, 1000).named).toHaveLength(11);
+    expect(marksFor(4, 0, 1000).named).toEqual([0, 500, 1000]);
+    expect(marksFor(4, 0, 1000).big).toHaveLength(11);
     const go = { l: 0 as HelpLevel, kind: 'read' as const, choices: [13, 14, 15, 41], answer: 14, n: 14, lo: 0, hi: 100, max: 100 };
     expect(pictureFor(go, 1).level).toBe(3);
     expect(pictureFor(go, 2).level).toBe(5);

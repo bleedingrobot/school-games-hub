@@ -11,14 +11,14 @@ import { WORDS } from './words';
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/pigeon/';
 
-type Said = Pick<Go, 'kind' | 'n' | 'step10' | 'posts'>;
+type Said = Pick<Go, 'kind' | 'n' | 'step10' | 'max'>;
 
 /** The question a go asks. */
-export function askLine({ kind, n, step10, posts }: Said): string {
+export function askLine({ kind, n, step10, max }: Said): string {
   if (kind === 'place') return `Where does ${n} go on the branch?`;
   if (kind === 'read') return 'What number is at the arrow?';
   if (kind === 'tens') return `What is ten ${step10 > 0 ? 'more' : 'less'} than ${n}?`;
-  return `Is ${n} closer to ${posts![0]} or ${posts![1]}?`;
+  return `Which ${max >= 1000 ? 'hundred' : 'ten'} is ${n} nearest to?`;
 }
 
 /** After the first wrong tap on a card go: a word on the slip, never the answer. */
@@ -29,6 +29,16 @@ export const SLIP_LINES: Record<Slip, string> = {
   mirror: 'That is on the other side of the branch.',
   near: 'Look at which post is nearer.',
 };
+
+/** After a wrong card on a nearest go that is not the other post: it is too far away. */
+export const NEAR_FAR_LINES = { ten: 'That one is too far away. Look at the nearest two.' } as const;
+
+/** The short line after a wrong tap: the place lines, the near go's own far line, or the slip's line. */
+export function slipLine(go: Pick<Go, 'kind'>, slip: string): string {
+  if (go.kind === 'place') return PLACE_LINES[slip as 'early' | 'late'];
+  if (go.kind === 'near' && slip === 'ten') return NEAR_FAR_LINES.ten;
+  return SLIP_LINES[slip as keyof typeof SLIP_LINES];
+}
 
 /** After a wrong place tap: which side the child's spot is on. */
 export const PLACE_LINES = { early: 'That is too early. Try further along.', late: 'That is too far. Try nearer the start.' } as const;
@@ -42,7 +52,8 @@ export function lookLine(go: Pick<Go, 'kind' | 'n' | 'max'> & { step10?: number 
   }
   if (go.kind === 'read') return 'Count the little jumps up from the nearest big number.';
   if (go.kind === 'tens') return `Ten ${(go.step10 ?? 10) > 0 ? 'more is one ten along' : 'less is one ten back'}. The other jump is a different size.`;
-  return 'Count how far it is to each post. The nearer post wins.';
+  const word = go.max >= 1000 ? 'hundred' : 'ten';
+  return `Count how far ${go.n} is from the ${word} below and the ${word} above. The nearer one wins.`;
 }
 
 /** What the home screen says: who is flying, and "come back tomorrow" once today's cluster has changed. */
@@ -52,7 +63,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, ...WORDS.right, ...Object.values(SLIP_LINES), ...Object.values(PLACE_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, ...WORDS.right, ...Object.values(SLIP_LINES), ...Object.values(NEAR_FAR_LINES), ...Object.values(PLACE_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));
@@ -63,8 +74,7 @@ export function allVoiceLines(): string[] {
     const n = keyNumber(key);
     const kinds = kindOfKey(key) === 'zoom' ? (['place', 'read'] as const) : ([kindFor(key)] as const);
     for (const kind of kinds) {
-      const near = kind === 'near' ? { posts: nearPosts(n, keyLine(key)) } : { posts: null };
-      const said = { kind, n, step10: key.includes('-') ? -10 : 10, ...near };
+      const said = { kind, n, step10: key.includes('-') ? -10 : 10, max: keyLine(key) };
       lines.add(askLine(said));
       lines.add(lookLine({ kind, n, max: keyLine(key), step10: said.step10 }));
     }
@@ -72,10 +82,4 @@ export function allVoiceLines(): string[] {
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.clusterTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenBranch)];
   for (const main of mains) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
   return [...lines];
-}
-
-function nearPosts(n: number, max: number): [number, number] {
-  const size = max >= 1000 ? 100 : 10;
-  const low = Math.floor(n / size) * size;
-  return [low, low + size];
 }

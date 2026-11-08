@@ -52,7 +52,7 @@ describe('the reason drawn on the line', () => {
 
     // The line is the same height with and without the reason, for every go the game can ask and every wrong card.
     const height = (go: Go, reason: ReturnType<typeof reasonFor> | null) => {
-      const props = lineFor(go, 5, reason ? reason.points : [], [], reason ? reason.arcs : []);
+      const props = lineFor(go, 5, reason ? reason.points : [], [], reason ? reason.arcs : [], reason !== null);
       return Number(/viewBox="0 0 600 ([\d.]+)"/.exec(renderToStaticMarkup(<NumberLine {...props} label="x" />))?.[1]);
     };
     for (const key of KEYS) {
