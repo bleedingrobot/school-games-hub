@@ -132,6 +132,25 @@ describe('the wrong cards', () => {
         expect(go.points).toHaveLength(go.kind === 'counton' ? go.n : go.n);
       }
     }
+    // The right card sits in any place, the parity tell stays small, and One more sometimes has a "1" card and sometimes not.
+    const places = [0, 0, 0, 0];
+    const bigPlaces = [0, 0, 0, 0];
+    let goes = 0, bigGoes = 0, withOne = 0, withoutOne = 0;
+    for (const key of ALL_COUNT_KEYS) {
+      for (let seed = 1; seed <= 1000; seed++) {
+        const go = showGo({ seed }, 0, { key, l: 3 })!;
+        if (go.kind === 'give') continue;
+        const place = go.choices.indexOf(go.answer);
+        places[place]++; goes++;
+        if (go.answer >= 4) { bigPlaces[place]++; bigGoes++; }
+        expect(go.choices.filter((c) => c % 2 === go.answer % 2).length, `${key} parity`).toBeLessThanOrEqual(2);
+        if (go.kind === 'counton') go.choices.includes(1) && go.answer > 3 ? withOne++ : withoutOne++;
+      }
+    }
+    for (const c of places) expect(c / goes).toBeLessThan(0.4);
+    for (const c of bigPlaces) { expect(c / bigGoes).toBeGreaterThan(0.15); expect(c / bigGoes).toBeLessThan(0.4); }
+    expect(withOne).toBeGreaterThan(0);
+    expect(withoutOne).toBeGreaterThan(0);
   });
 });
 

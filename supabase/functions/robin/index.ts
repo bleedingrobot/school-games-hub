@@ -41,19 +41,13 @@ function replayTaps(goes, taps, rules) {
 }
 //#endregion
 //#region shared/kit/mistakes.ts
-/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
-function tagWrongs(candidates, kindOf) {
-	const seen = new Set();
-	return candidates.flatMap((n) => {
-		const kind = kindOf(n);
-		if (kind === null || seen.has(n)) return [];
-		seen.add(n);
-		return [{
-			n,
-			kind
-		}];
-	});
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
 }
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
 //#endregion
 //#region shared/kit/help.ts
 const HELP_SETTINGS = [
@@ -297,24 +291,32 @@ function layoutPoints(layout, n, random) {
 		y: (Math.floor(c / 6) + .5) * 20 + (random() - .5) * 6
 	}));
 }
-function pickWrongs(answer, slips, random, count) {
-	const wrongs = tagWrongs(slips.map(([, n]) => n), (n) => n === answer || n < 1 || n > MAX_CARD ? null : slips.find(([, m]) => m === n)[0]).slice(0, count);
-	for (const step of shuffle([
-		2,
-		-2,
-		3,
-		-3,
-		4
-	], random)) {
-		if (wrongs.length >= count) break;
-		const n = answer + step;
-		if (n < 1 || n > MAX_CARD || n === answer || wrongs.some((w) => w.n === n)) continue;
-		wrongs.push({
-			n,
-			kind: "near"
-		});
+/**
+* The three wrong cards. `below` and `above` are the near misses on each side of the answer, nearest first. How many of the wrongs sit
+* below the answer is drawn first, so the right card lands in any place (first to fourth) about equally often. With `oneSwap` the lowest
+* card below is sometimes swapped for a "1" (never always), as long as no more than two cards share the answer's parity.
+*/
+function pickWrongs(answer, below, above, random, count, oneSwap) {
+	const ok = ([, n]) => n >= 1 && n <= MAX_CARD && n !== answer;
+	const lo = below.filter(ok);
+	const hi = above.filter(ok);
+	const places = range$6(0, count).filter((p) => p <= lo.length && count - p <= hi.length);
+	const p = places.length ? places[Math.floor(random() * places.length)] : Math.min(lo.length, count);
+	const chosen = () => [...lo.slice(0, p), ...hi.slice(0, count - p)];
+	let picked = chosen();
+	if (oneSwap && p >= 1 && lo[p - 1][1] > 2 && random() < .25) {
+		const withOne = picked.map((w, i) => i === p - 1 ? ["one", 1] : w);
+		if (atMostShareTell(answer, [answer, ...withOne.map(([, n]) => n)], (n) => n % 2)) picked = withOne;
 	}
-	return wrongs;
+	while (picked.length < count) {
+		const n = [...lo, ...hi].map(([, m]) => m).find((m) => !picked.some(([, x]) => x === m));
+		if (n === void 0) break;
+		picked.push([...lo, ...hi].find(([, m]) => m === n));
+	}
+	return picked.map(([kind, n]) => ({
+		n,
+		kind
+	}));
 }
 /** A go made again from its plan, with its pile, layout and wrong cards fixed by the seed. Null if the plan isn't one this game makes. */
 function showGo(round, index, plan) {
@@ -341,9 +343,13 @@ function showGo(round, index, plan) {
 		const answer = n + 1;
 		const wrongs = pickWrongs(answer, [
 			["same", n],
+			["near", n - 1],
+			["near", n - 2]
+		], [
 			["again", n + 2],
-			["one", 1]
-		], random, 3);
+			["near", n + 3],
+			["near", n + 4]
+		], random, 3, true);
 		const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
 		return {
 			...plan,
@@ -359,11 +365,16 @@ function showGo(round, index, plan) {
 	}
 	const layout = plan.key.startsWith("across:") ? "line" : plan.key.split(":")[2];
 	const wrongs = pickWrongs(n, [
-		["double", n + 1],
 		["skip", n - 1],
 		["row", n - 2],
+		["near", n - 3],
+		["near", n - 4]
+	], [
+		["double", n + 1],
+		["near", n + 2],
+		["near", n + 3],
 		["lots", n + 4]
-	], random, 3);
+	], random, 3, false);
 	const choices = [n, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
 	return {
 		...plan,

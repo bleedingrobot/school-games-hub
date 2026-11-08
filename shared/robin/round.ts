@@ -10,7 +10,7 @@
  * six of them) and the **help level** (how much picture and voice, 5 down to 0).
  */
 import type { FactStats } from '../maths/leitner';
-import { tagWrongs, type Wrong } from '../kit/mistakes';
+import { atMostShareTell, type Wrong } from '../kit/mistakes';
 import { helpWithSetting, type HelpSetting } from '../kit/help';
 import { seeded } from '../seededRandom';
 import { ALL_COUNT_KEYS, COUNT_KEYS, countNumbers, kindOfCountKey, type CountKind } from '../maths/skillPacks/countingKeys';
@@ -186,18 +186,30 @@ export function layoutPoints(layout: Layout, n: number, random: () => number): P
   return cells.map((c) => ({ x: ((c % 6) + 0.5) * (100 / 6) + (random() - 0.5) * 6, y: (Math.floor(c / 6) + 0.5) * 20 + (random() - 0.5) * 6 }));
 }
 
-function pickWrongs(answer: number, slips: [Slip, number][], random: () => number, count: number): WrongCard[] {
-  const wrongs = tagWrongs(
-    slips.map(([, n]) => n),
-    (n) => (n === answer || n < 1 || n > MAX_CARD ? null : slips.find(([, m]) => m === n)![0]),
-  ).slice(0, count);
-  for (const step of shuffle([2, -2, 3, -3, 4], random)) {
-    if (wrongs.length >= count) break;
-    const n = answer + step;
-    if (n < 1 || n > MAX_CARD || n === answer || wrongs.some((w) => w.n === n)) continue;
-    wrongs.push({ n, kind: 'near' });
+/**
+ * The three wrong cards. `below` and `above` are the near misses on each side of the answer, nearest first. How many of the wrongs sit
+ * below the answer is drawn first, so the right card lands in any place (first to fourth) about equally often. With `oneSwap` the lowest
+ * card below is sometimes swapped for a "1" (never always), as long as no more than two cards share the answer's parity.
+ */
+function pickWrongs(answer: number, below: [Slip, number][], above: [Slip, number][], random: () => number, count: number, oneSwap: boolean): WrongCard[] {
+  const ok = ([, n]: [Slip, number]) => n >= 1 && n <= MAX_CARD && n !== answer;
+  const lo = below.filter(ok);
+  const hi = above.filter(ok);
+  const places = range(0, count).filter((p) => p <= lo.length && count - p <= hi.length);
+  const p = places.length ? places[Math.floor(random() * places.length)] : Math.min(lo.length, count);
+  const chosen = (): [Slip, number][] => [...lo.slice(0, p), ...hi.slice(0, count - p)];
+  let picked = chosen();
+  if (oneSwap && p >= 1 && lo[p - 1][1] > 2 && random() < 0.25) {
+    const withOne = picked.map((w, i) => (i === p - 1 ? (['one', 1] as [Slip, number]) : w));
+    if (atMostShareTell(answer, [answer, ...withOne.map(([, n]) => n)], (n) => n % 2)) picked = withOne;
   }
-  return wrongs;
+  while (picked.length < count) {
+    // Not enough named near misses (a tiny or huge answer): fill from the other side.
+    const n = [...lo, ...hi].map(([, m]) => m).find((m) => !picked.some(([, x]) => x === m));
+    if (n === undefined) break;
+    picked.push([...lo, ...hi].find(([, m]) => m === n)!);
+  }
+  return picked.map(([kind, n]) => ({ n, kind }));
 }
 
 /** A go made again from its plan, with its pile, layout and wrong cards fixed by the seed. Null if the plan isn't one this game makes. */
@@ -213,12 +225,12 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   }
   if (kind === 'counton') {
     const answer = n + 1;
-    const wrongs = pickWrongs(answer, [['same', n], ['again', n + 2], ['one', 1]], random, CARDS - 1);
+    const wrongs = pickWrongs(answer, [['same', n], ['near', n - 1], ['near', n - 2]], [['again', n + 2], ['near', n + 3], ['near', n + 4]], random, CARDS - 1, true);
     const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
     return { ...plan, kind, n, answer, layout: 'plate', pile: n, points: layoutPoints('plate', n, random), choices, wrongs };
   }
   const layout: Layout = plan.key.startsWith('across:') ? 'line' : (plan.key.split(':')[2] as Layout);
-  const wrongs = pickWrongs(n, [['double', n + 1], ['skip', n - 1], ['row', n - 2], ['lots', n + 4]], random, CARDS - 1);
+  const wrongs = pickWrongs(n, [['skip', n - 1], ['row', n - 2], ['near', n - 3], ['near', n - 4]], [['double', n + 1], ['near', n + 2], ['near', n + 3], ['lots', n + 4]], random, CARDS - 1, false);
   const choices = [n, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
   return { ...plan, kind, n, answer: n, layout, pile: n, points: layoutPoints(layout, n, random), choices, wrongs };
 }
