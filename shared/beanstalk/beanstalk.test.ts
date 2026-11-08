@@ -244,7 +244,7 @@ describe('the sum follows the child, not the calendar (maths review 2, S21)', ()
     expect(afterDay(kept, 10, false, true)).toEqual({ ...kept, moved: 0 });
   });
 
-  it('makes each pair once, gives the spare places to the weakest (three at most, 5 + 5 once), and mixes two older pairs last on every stage but the first (200 seeds)', () => {
+  it('makes each pair once, gives the spare places to the weakest (three at most, 5 + 5 once), mixes two older pairs last on every stage but the first (200 seeds), and keeps the round for finish', async () => {
     const records = (weak: number) => [1, 2, 3, 4, 5].map((n) => ({ key: bondKey(n), attempts: 3, correct: 3, avgMs: 1, box: n === weak ? 0 : 3, lastSeen: 100 + n, quickDays: [] }));
     for (const seed of seeds) {
       for (const stage of [0, 1, 2, 3] as Stage[]) {
@@ -272,9 +272,8 @@ describe('the sum follows the child, not the calendar (maths review 2, S21)', ()
         expect(replay(round, perfectTapsFor(round))).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND, mistakes: 0 });
       }
     }
-  });
 
-  it('keeps the round at the start and replays that one on finish, or the calendar’s sum for a challenge already open before rounds were kept', async () => {
+    // The round is kept at the start and replayed on finish, or the calendar's sum for a challenge open before rounds were kept.
     const services = memoryServices({ now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
     services.data.players.p = { ...unplayed(), child: 'jill', stage: 2, daysDone: 65, stageDays: 5, version: 1 };
     const { body: { seed, round } } = await handleBeanstalk(services, 'p', { action: 'start' });
