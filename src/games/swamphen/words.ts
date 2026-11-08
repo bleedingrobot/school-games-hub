@@ -41,6 +41,12 @@ export const WORDS = {
   pile: (n: number) => `A pile of ${n} shoots.`,
   /** After a right answer: three kinds of cheer, picked by the go's place in the round. */
   right: ['Yes! That is it.', 'Lovely! You counted it.', 'Well done!'],
+  /** One honest line on the finish screen about how the round went (S15): about what the child did, not about them. */
+  how: {
+    most: 'You counted carefully.',
+    some: 'Some were quick and some were tricky. The tricky ones help you grow.',
+    tricky: 'That was tricky today. We will go slowly and look together.',
+  },
   rowTurned: (metal: Exclude<Metal, 'mud'>) => `Well done! A reed row turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another reed row.',
   nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,

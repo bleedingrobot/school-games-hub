@@ -4,6 +4,7 @@
  * new garden. The screens only show what the backend says. Copied from Pigeon's Number Line (a model, not a dependency).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { finishBand } from '../../../shared/kit/finishBand';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { NextPartChip } from '../../components/NextPartChip';
@@ -239,11 +240,14 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
   const name = FRIEND_NAMES[branch.friend];
   const main = result.goldenGarden ? WORDS.goldenGarden(name) : changed ? WORDS.rowTurned(changed as 'bronze') : WORDS.doneToday;
   const up = result.step !== result.stepBefore ? result.step : null;
-  const line = finishLine(main, up);
+  const how = WORDS.how[finishBand(result.firstRight)];
+  const line = finishLine(main, how, up);
   return (
     <div className={`sh-home${result.goldenGarden ? ' sh-home--prize' : ''}`}>
       <Branch scenery={result.goldenGarden ? 'gold' : branch.today} rows={rowList} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="sh" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="sh" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+        <p className="sh-chip">{how}</p>
+        {up && <p className="sh-chip">{WORDS.nextStep(up)}</p>}
         {result.goldenGarden && <span className="sh-prize"><GoldenGarden /></span>}
       </WhatsNext>
     </div>
