@@ -167,6 +167,8 @@
   font: 900 1.7rem system-ui, sans-serif; color: var(--lz-ink); cursor: pointer;
 }
 .lz-step--add { background: #d3ecb0; }
+.lz-step--ten { font-size: 1rem; padding: 0 10px; min-width: 52px; }
+.lz-step:disabled { opacity: 0.45; cursor: default; }
 .lz-step:focus-visible, .lz-btn:focus-visible { outline: 4px solid var(--lz-leaf-dark); outline-offset: 3px; }
 
 .lz-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }

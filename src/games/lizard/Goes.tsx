@@ -72,8 +72,12 @@ interface MatProps {
   frame: boolean;
   label: string;
   /** Plus and minus buttons per place (a build go). */
-  edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; withBundles: boolean; withRafts: boolean };
+  edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; withBundles: boolean; withRafts: boolean; addTen?: () => void; tenOff?: boolean };
 }
+
+/** Steps 1 to 3 make the child tie each bundle: no "+ bundle" until step 4 (and never on the guided first go). */
+export const TIE_STEPS = 3;
+export const showBundleButtons = (step: number, firstGuidedGo: boolean) => step > TIE_STEPS && !firstGuidedGo;
 
 function Ones({ o, frame, colours }: { o: number; frame: boolean; colours: boolean }) {
   if (frame) {
@@ -111,6 +115,9 @@ function MatView({ mat, places, labels, counts, colours, frame, label, edit }: M
               <button type="button" className="lz-step lz-step--add" onClick={() => edit.add(p)} aria-label={p === 'h' ? WORDS.addRaft : p === 't' ? WORDS.addBundle : WORDS.addStick}>
                 +{edit.hand === p && <PointingHand prefix="lz" />}
               </button>
+              {p === 'o' && edit.addTen && (
+                <button type="button" className="lz-step lz-step--add lz-step--ten" disabled={edit.tenOff} onClick={edit.addTen} aria-label={WORDS.addTenSticksLabel}>{WORDS.addTenSticks}</button>
+              )}
             </span>
           )}
         </div>
@@ -266,6 +273,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   };
   const add = (p: Place) => changeMat((m) => (p === 'o' ? { ...m, o: Math.min(MAX_ONES, m.o + 1) } : p === 't' ? { ...m, t: Math.min(MAX_TENS, m.t + 1) } : { ...m, h: Math.min(MAX_HUNDREDS, m.h + 1) }));
   const take = (p: Place) => changeMat((m) => (p === 'o' ? { ...m, o: Math.max(0, m.o - 1) } : p === 't' ? { ...m, t: Math.max(0, m.t - 1) } : { ...m, h: Math.max(0, m.h - 1) }));
+  const addTen = () => changeMat((m) => (m.o > MAX_ONES - 10 ? m : { ...m, o: m.o + 10 }));
   const tieTen = () => changeMat((m) => (m.o >= 10 ? { ...m, o: m.o - 10, t: m.t + 1 } : m));
   const tieRaft = () => changeMat((m) => (m.t >= 10 ? { ...m, t: m.t - 10, h: m.h + 1 } : m));
   const untieOne = () => changeMat((m) => (m.t >= 1 ? { ...m, t: m.t - 1, o: m.o + 10 } : m));
@@ -278,6 +286,20 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const withRafts = places === 3;
   const matLabel = cardGo ? `The bundles and sticks: ${spoken(matOf(go.n), places)}.` : `Your mat: ${spoken(mat, places)}.`;
   const canTieTen = mat.o >= 10;
+  const firstGuided = guided && at === 0;
+  const tying = editing && !showBundleButtons(round.step, firstGuided);
+  const nudged = useRef(false);
+  useEffect(() => {
+    nudged.current = false;
+  }, [at, goes]);
+  // On the tying steps, say once per go that ten sticks can be tied.
+  useEffect(() => {
+    if (tying && !solved && tappedYet.current && mat.o >= 10 && !nudged.current) {
+      nudged.current = true;
+      say(WORDS.tieNudge);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mat.o]);
   const sendable = !solved && gs.phase !== 'look' && !matsAlike(mat, go.from);
   const whyLine = (k: LineKey) => WHY_LINES[k];
 
@@ -323,7 +345,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
               colours={colours}
               frame={labels && !cardGo}
               label={matLabel}
-              edit={editing && !solved ? { add, take, hand: handAt, withBundles: !(guided && at === 0), withRafts } : undefined}
+              edit={editing && !solved ? { add, take, hand: handAt, withBundles: showBundleButtons(round.step, firstGuided), withRafts, addTen: tying && !firstGuided ? addTen : undefined, tenOff: mat.o > MAX_ONES - 10 } : undefined}
             />
           )}
           {!showMat && <p className="lz-nopic">{WORDS.peek}?</p>}
