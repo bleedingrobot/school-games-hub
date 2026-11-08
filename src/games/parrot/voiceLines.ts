@@ -32,7 +32,11 @@ export const sayParts = (parts: readonly string[]): string => parts.map((t) => (
 type Said = Pick<Go, 'kind' | 'parts' | 'answer' | 'lg' | 'rg' | 'l'>;
 
 /** The equation read aloud: levels 3 to 1, and "Hear it again". A true or false go adds the question. */
-export const eqLine = (go: Said): string => (go.kind === 'tf' ? `${cap(sayParts(go.parts))}. ${WORDS.promptTilt}` : `${cap(sayParts(go.parts))}?`);
+export function eqLine(go: Said): string {
+  if (go.kind !== 'tf') return `${cap(sayParts(go.parts))}?`;
+  const at = go.parts.indexOf('=');
+  return `${cap(sayParts(go.parts.slice(0, at)))}. ${cap(sayParts(go.parts.slice(at + 1)))}. ${WORDS.promptTilt}`;
+}
 
 /** Level 0: the child reads the equation. */
 export const shortLine = (go: Pick<Go, 'kind'>): string => (go.kind === 'tf' ? WORDS.promptTilt : WORDS.promptMissing);
@@ -90,7 +94,7 @@ export function allVoiceLines(): string[] {
     lines.add(WORDS.wants(name));
     if (id !== 'parrot') lines.add(WORDS.nextFriend(name));
   }
-  for (const kind of ['all', 'copy', 'total', 'off1', 'dbl', 'near', 'both', 'first', 'side'] as const) lines.add(WORDS.why(kind));
+  for (const kind of ['all', 'copy', 'total', 'off1', 'dbl', 'near', 'both', 'first', 'side', 'more', 'less'] as const) lines.add(WORDS.why(kind));
   for (const go of everyGo()) {
     lines.add(eqLine(go));
     lines.add(modelLine(go));

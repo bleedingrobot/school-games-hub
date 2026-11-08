@@ -614,6 +614,30 @@ function showRound(round) {
 		return go;
 	});
 }
+/**
+* The slip behind a pick on a go: null when right; the go's own wrong card kind; for a stone count, the same totals the
+* wrong cards use (total, copy, all, double); one away is off1; otherwise too many ('more') or not enough ('less').
+*/
+function slipOfPick(go, n) {
+	if (n === go.answer) return null;
+	const card = go.wrongs.find((w) => w.n === n);
+	if (card) return card.kind;
+	if (go.kind === "tf") return null;
+	if (go.kind === "miss") {
+		const total = go.lg.reduce((s, x) => s + x, 0);
+		if (n === total) return "total";
+		if (n === go.rg[0]) return "copy";
+		if (n === total + go.rg[0]) return "all";
+	} else if (go.kind === "swap") {
+		const total = go.lg.reduce((s, x) => s + x, 0);
+		if (n === total) return "total";
+		if (n === go.rg[0]) return "copy";
+		if (n === total + go.rg[0]) return "all";
+		if (n === 2 * go.answer) return "dbl";
+	}
+	if (Math.abs(n - go.answer) === 1) return "off1";
+	return n > go.answer ? "more" : "less";
+}
 //#endregion
 //#region shared/parrot/play.ts
 /**
@@ -647,7 +671,7 @@ function slipsOf(round, taps) {
 			tried = false;
 			continue;
 		}
-		if (!tried) slips[at] = go.wrongs.find((w) => w.n === pick)?.kind ?? "near";
+		if (!tried) slips[at] = slipOfPick(go, pick) ?? "near";
 		tried = true;
 	}
 	return slips;

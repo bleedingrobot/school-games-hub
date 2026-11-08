@@ -4,7 +4,7 @@ import { placeAfter } from '../kit/help';
 import { DAYS_PER_BELL, finishChallenge, ropeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
 import { STEP_RULES, type Step } from './config';
-import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, levelFor, makeRound, redoCards, showRound, startFor, STEP_KEYS, tiltOf, type Round } from './round';
+import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, levelFor, makeRound, MAX_STONES, redoCards, showRound, slipOfPick, startFor, STEP_KEYS, tiltOf, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -50,7 +50,7 @@ describe('the round', () => {
     expect(sgoes.every(isStoneGo)).toBe(true);
     const odd = sgoes.map((g) => ({ pick: g.answer, ms: 1500 }));
     expect(replay(stones, [{ pick: 20, ms: 1 }, ...odd])).toMatchObject({ mistakes: 1, firstRight: GOES_PER_ROUND - 1 });
-    expect(slipsOf(stones, [{ pick: 20, ms: 1 }, ...odd])[0]).toBe('near');
+    expect(slipsOf(stones, [{ pick: 20, ms: 1 }, ...odd])[0]).toBe('more');
   });
 });
 
@@ -101,6 +101,23 @@ describe('mistakes that teach', () => {
         if (g.kind === 'tf') expect(['both', 'first', 'side']).toContain(w.kind);
       }
       void a; void b;
+    }
+    for (const g of goes) {
+      expect(slipOfPick(g, g.answer)).toBeNull();
+      if (g.kind === 'tf') continue;
+      const total = g.lg.reduce((s, n) => s + n, 0);
+      for (let n = 0; n <= MAX_STONES * 2; n++) {
+        if (n === g.answer) continue;
+        const card = g.wrongs.find((w) => w.n === n);
+        const slip = slipOfPick(g, n);
+        if (card) expect(slip).toBe(card.kind);
+        else if ((g.kind === 'miss' || g.kind === 'swap') && n === total) expect(slip).toBe('total');
+        else if ((g.kind === 'miss' || g.kind === 'swap') && n === g.rg[0]) expect(slip).toBe('copy');
+        else if ((g.kind === 'miss' || g.kind === 'swap') && n === total + g.rg[0]) expect(slip).toBe('all');
+        else if (g.kind === 'swap' && n === 2 * g.answer) expect(slip).toBe('dbl');
+        else if (Math.abs(n - g.answer) === 1) expect(slip).toBe('off1');
+        else expect(slip).toBe(n > g.answer ? 'more' : 'less');
+      }
     }
     const g = showRound(makeRound(5, [], { step: 1, level: 5 }))[0];
     expect(redoCards(g, [g.wrongs[0].n])).toHaveLength(2);

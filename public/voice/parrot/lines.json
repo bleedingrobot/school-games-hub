@@ -28,8 +28,8 @@
   "text": "What number is missing?"
  },
  {
-  "slug": "which-way-does-it-tip",
-  "text": "Which way does it tip?"
+  "slug": "is-it-the-same-which-way-does-it-tip",
+  "text": "Is it the same? Which way does it tip?"
  },
  {
   "slug": "today-s-shiny-thing-is-ready",
@@ -122,6 +122,14 @@
  {
   "slug": "the-heavier-side-goes-down-which-side-is-heavier",
   "text": "The heavier side goes down. Which side is heavier?"
+ },
+ {
+  "slug": "that-is-too-many-stones-this-side-is-too-heavy-now",
+  "text": "That is too many stones. This side is too heavy now."
+ },
+ {
+  "slug": "that-is-not-enough-stones-yet-this-side-is-still-lighter",
+  "text": "That is not enough stones yet. This side is still lighter."
  },
  {
   "slug": "three-is-the-same-as-one-plus-how-many",
@@ -1740,240 +1748,240 @@
   "text": "Twenty take away nine is the same as six plus five."
  },
  {
-  "slug": "one-plus-two-is-the-same-as-one-plus-three-which-way-does-it-tip",
-  "text": "One plus two is the same as one plus three. Which way does it tip?"
+  "slug": "one-plus-two-one-plus-three-is-it-the-same-which-way-does-it-tip",
+  "text": "One plus two. One plus three. Is it the same? Which way does it tip?"
  },
  {
   "slug": "one-plus-two-is-three-one-plus-three-is-four-it-tips-right",
   "text": "One plus two is three. One plus three is four. It tips right."
  },
  {
-  "slug": "two-plus-seven-is-the-same-as-four-plus-one-which-way-does-it-tip",
-  "text": "Two plus seven is the same as four plus one. Which way does it tip?"
+  "slug": "two-plus-seven-four-plus-one-is-it-the-same-which-way-does-it-tip",
+  "text": "Two plus seven. Four plus one. Is it the same? Which way does it tip?"
  },
  {
   "slug": "two-plus-seven-is-nine-four-plus-one-is-five-it-tips-left",
   "text": "Two plus seven is nine. Four plus one is five. It tips left."
  },
  {
-  "slug": "two-plus-seven-is-the-same-as-six-plus-three-which-way-does-it-tip",
-  "text": "Two plus seven is the same as six plus three. Which way does it tip?"
+  "slug": "two-plus-seven-six-plus-three-is-it-the-same-which-way-does-it-tip",
+  "text": "Two plus seven. Six plus three. Is it the same? Which way does it tip?"
  },
  {
   "slug": "two-plus-seven-is-nine-six-plus-three-is-nine-it-is-level",
   "text": "Two plus seven is nine. Six plus three is nine. It is level."
  },
  {
-  "slug": "three-plus-two-is-the-same-as-four-plus-one-which-way-does-it-tip",
-  "text": "Three plus two is the same as four plus one. Which way does it tip?"
+  "slug": "three-plus-two-four-plus-one-is-it-the-same-which-way-does-it-tip",
+  "text": "Three plus two. Four plus one. Is it the same? Which way does it tip?"
  },
  {
   "slug": "three-plus-two-is-five-four-plus-one-is-five-it-is-level",
   "text": "Three plus two is five. Four plus one is five. It is level."
  },
  {
-  "slug": "three-plus-eight-is-the-same-as-five-plus-six-which-way-does-it-tip",
-  "text": "Three plus eight is the same as five plus six. Which way does it tip?"
+  "slug": "three-plus-eight-five-plus-six-is-it-the-same-which-way-does-it-tip",
+  "text": "Three plus eight. Five plus six. Is it the same? Which way does it tip?"
  },
  {
   "slug": "three-plus-eight-is-eleven-five-plus-six-is-eleven-it-is-level",
   "text": "Three plus eight is eleven. Five plus six is eleven. It is level."
  },
  {
-  "slug": "three-plus-nine-is-the-same-as-seven-plus-five-which-way-does-it-tip",
-  "text": "Three plus nine is the same as seven plus five. Which way does it tip?"
+  "slug": "three-plus-nine-seven-plus-five-is-it-the-same-which-way-does-it-tip",
+  "text": "Three plus nine. Seven plus five. Is it the same? Which way does it tip?"
  },
  {
   "slug": "three-plus-nine-is-twelve-seven-plus-five-is-twelve-it-is-level",
   "text": "Three plus nine is twelve. Seven plus five is twelve. It is level."
  },
  {
-  "slug": "four-plus-eight-is-the-same-as-six-plus-six-which-way-does-it-tip",
-  "text": "Four plus eight is the same as six plus six. Which way does it tip?"
+  "slug": "four-plus-eight-six-plus-six-is-it-the-same-which-way-does-it-tip",
+  "text": "Four plus eight. Six plus six. Is it the same? Which way does it tip?"
  },
  {
   "slug": "four-plus-eight-is-twelve-six-plus-six-is-twelve-it-is-level",
   "text": "Four plus eight is twelve. Six plus six is twelve. It is level."
  },
  {
-  "slug": "five-plus-two-is-the-same-as-four-plus-six-which-way-does-it-tip",
-  "text": "Five plus two is the same as four plus six. Which way does it tip?"
+  "slug": "five-plus-two-four-plus-six-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus two. Four plus six. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-two-is-seven-four-plus-six-is-ten-it-tips-right",
   "text": "Five plus two is seven. Four plus six is ten. It tips right."
  },
  {
-  "slug": "five-plus-four-is-the-same-as-one-plus-eight-which-way-does-it-tip",
-  "text": "Five plus four is the same as one plus eight. Which way does it tip?"
+  "slug": "five-plus-four-one-plus-eight-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus four. One plus eight. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-four-is-nine-one-plus-eight-is-nine-it-is-level",
   "text": "Five plus four is nine. One plus eight is nine. It is level."
  },
  {
-  "slug": "five-plus-four-is-the-same-as-five-plus-seven-which-way-does-it-tip",
-  "text": "Five plus four is the same as five plus seven. Which way does it tip?"
+  "slug": "five-plus-four-five-plus-seven-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus four. Five plus seven. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-four-is-nine-five-plus-seven-is-twelve-it-tips-right",
   "text": "Five plus four is nine. Five plus seven is twelve. It tips right."
  },
  {
-  "slug": "five-plus-four-is-the-same-as-eight-plus-one-which-way-does-it-tip",
-  "text": "Five plus four is the same as eight plus one. Which way does it tip?"
+  "slug": "five-plus-four-eight-plus-one-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus four. Eight plus one. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-four-is-nine-eight-plus-one-is-nine-it-is-level",
   "text": "Five plus four is nine. Eight plus one is nine. It is level."
  },
  {
-  "slug": "five-plus-five-is-the-same-as-one-plus-nine-which-way-does-it-tip",
-  "text": "Five plus five is the same as one plus nine. Which way does it tip?"
+  "slug": "five-plus-five-one-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus five. One plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-five-is-ten-one-plus-nine-is-ten-it-is-level",
   "text": "Five plus five is ten. One plus nine is ten. It is level."
  },
  {
-  "slug": "five-plus-six-is-the-same-as-nine-plus-two-which-way-does-it-tip",
-  "text": "Five plus six is the same as nine plus two. Which way does it tip?"
+  "slug": "five-plus-six-nine-plus-two-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus six. Nine plus two. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-six-is-eleven-nine-plus-two-is-eleven-it-is-level",
   "text": "Five plus six is eleven. Nine plus two is eleven. It is level."
  },
  {
-  "slug": "five-plus-seven-is-the-same-as-five-plus-six-which-way-does-it-tip",
-  "text": "Five plus seven is the same as five plus six. Which way does it tip?"
+  "slug": "five-plus-seven-five-plus-six-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus seven. Five plus six. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-seven-is-twelve-five-plus-six-is-eleven-it-tips-left",
   "text": "Five plus seven is twelve. Five plus six is eleven. It tips left."
  },
  {
-  "slug": "five-plus-seven-is-the-same-as-seven-plus-four-which-way-does-it-tip",
-  "text": "Five plus seven is the same as seven plus four. Which way does it tip?"
+  "slug": "five-plus-seven-seven-plus-four-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus seven. Seven plus four. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-seven-is-twelve-seven-plus-four-is-eleven-it-tips-left",
   "text": "Five plus seven is twelve. Seven plus four is eleven. It tips left."
  },
  {
-  "slug": "five-plus-eight-is-the-same-as-five-plus-nine-which-way-does-it-tip",
-  "text": "Five plus eight is the same as five plus nine. Which way does it tip?"
+  "slug": "five-plus-eight-five-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus eight. Five plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-eight-is-thirteen-five-plus-nine-is-fourteen-it-tips-right",
   "text": "Five plus eight is thirteen. Five plus nine is fourteen. It tips right."
  },
  {
-  "slug": "five-plus-nine-is-the-same-as-seven-plus-ten-which-way-does-it-tip",
-  "text": "Five plus nine is the same as seven plus ten. Which way does it tip?"
+  "slug": "five-plus-nine-seven-plus-ten-is-it-the-same-which-way-does-it-tip",
+  "text": "Five plus nine. Seven plus ten. Is it the same? Which way does it tip?"
  },
  {
   "slug": "five-plus-nine-is-fourteen-seven-plus-ten-is-seventeen-it-tips-right",
   "text": "Five plus nine is fourteen. Seven plus ten is seventeen. It tips right."
  },
  {
-  "slug": "six-plus-one-is-the-same-as-two-plus-five-which-way-does-it-tip",
-  "text": "Six plus one is the same as two plus five. Which way does it tip?"
+  "slug": "six-plus-one-two-plus-five-is-it-the-same-which-way-does-it-tip",
+  "text": "Six plus one. Two plus five. Is it the same? Which way does it tip?"
  },
  {
   "slug": "six-plus-one-is-seven-two-plus-five-is-seven-it-is-level",
   "text": "Six plus one is seven. Two plus five is seven. It is level."
  },
  {
-  "slug": "six-plus-one-is-the-same-as-seven-plus-one-which-way-does-it-tip",
-  "text": "Six plus one is the same as seven plus one. Which way does it tip?"
+  "slug": "six-plus-one-seven-plus-one-is-it-the-same-which-way-does-it-tip",
+  "text": "Six plus one. Seven plus one. Is it the same? Which way does it tip?"
  },
  {
   "slug": "six-plus-one-is-seven-seven-plus-one-is-eight-it-tips-right",
   "text": "Six plus one is seven. Seven plus one is eight. It tips right."
  },
  {
-  "slug": "six-plus-four-is-the-same-as-five-plus-five-which-way-does-it-tip",
-  "text": "Six plus four is the same as five plus five. Which way does it tip?"
+  "slug": "six-plus-four-five-plus-five-is-it-the-same-which-way-does-it-tip",
+  "text": "Six plus four. Five plus five. Is it the same? Which way does it tip?"
  },
  {
   "slug": "six-plus-four-is-ten-five-plus-five-is-ten-it-is-level",
   "text": "Six plus four is ten. Five plus five is ten. It is level."
  },
  {
-  "slug": "six-plus-four-is-the-same-as-five-plus-nine-which-way-does-it-tip",
-  "text": "Six plus four is the same as five plus nine. Which way does it tip?"
+  "slug": "six-plus-four-five-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Six plus four. Five plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "six-plus-four-is-ten-five-plus-nine-is-fourteen-it-tips-right",
   "text": "Six plus four is ten. Five plus nine is fourteen. It tips right."
  },
  {
-  "slug": "six-plus-seven-is-the-same-as-four-plus-nine-which-way-does-it-tip",
-  "text": "Six plus seven is the same as four plus nine. Which way does it tip?"
+  "slug": "six-plus-seven-four-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Six plus seven. Four plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "six-plus-seven-is-thirteen-four-plus-nine-is-thirteen-it-is-level",
   "text": "Six plus seven is thirteen. Four plus nine is thirteen. It is level."
  },
  {
-  "slug": "seven-plus-one-is-the-same-as-five-plus-seven-which-way-does-it-tip",
-  "text": "Seven plus one is the same as five plus seven. Which way does it tip?"
+  "slug": "seven-plus-one-five-plus-seven-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus one. Five plus seven. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-one-is-eight-five-plus-seven-is-twelve-it-tips-right",
   "text": "Seven plus one is eight. Five plus seven is twelve. It tips right."
  },
  {
-  "slug": "seven-plus-two-is-the-same-as-four-plus-six-which-way-does-it-tip",
-  "text": "Seven plus two is the same as four plus six. Which way does it tip?"
+  "slug": "seven-plus-two-four-plus-six-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus two. Four plus six. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-two-is-nine-four-plus-six-is-ten-it-tips-right",
   "text": "Seven plus two is nine. Four plus six is ten. It tips right."
  },
  {
-  "slug": "seven-plus-three-is-the-same-as-two-plus-eight-which-way-does-it-tip",
-  "text": "Seven plus three is the same as two plus eight. Which way does it tip?"
+  "slug": "seven-plus-three-two-plus-eight-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus three. Two plus eight. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-three-is-ten-two-plus-eight-is-ten-it-is-level",
   "text": "Seven plus three is ten. Two plus eight is ten. It is level."
  },
  {
-  "slug": "seven-plus-seven-is-the-same-as-five-plus-nine-which-way-does-it-tip",
-  "text": "Seven plus seven is the same as five plus nine. Which way does it tip?"
+  "slug": "seven-plus-seven-five-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus seven. Five plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-seven-is-fourteen-five-plus-nine-is-fourteen-it-is-level",
   "text": "Seven plus seven is fourteen. Five plus nine is fourteen. It is level."
  },
  {
-  "slug": "seven-plus-seven-is-the-same-as-eight-plus-seven-which-way-does-it-tip",
-  "text": "Seven plus seven is the same as eight plus seven. Which way does it tip?"
+  "slug": "seven-plus-seven-eight-plus-seven-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus seven. Eight plus seven. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-seven-is-fourteen-eight-plus-seven-is-fifteen-it-tips-right",
   "text": "Seven plus seven is fourteen. Eight plus seven is fifteen. It tips right."
  },
  {
-  "slug": "seven-plus-eight-is-the-same-as-nine-plus-nine-which-way-does-it-tip",
-  "text": "Seven plus eight is the same as nine plus nine. Which way does it tip?"
+  "slug": "seven-plus-eight-nine-plus-nine-is-it-the-same-which-way-does-it-tip",
+  "text": "Seven plus eight. Nine plus nine. Is it the same? Which way does it tip?"
  },
  {
   "slug": "seven-plus-eight-is-fifteen-nine-plus-nine-is-eighteen-it-tips-right",
   "text": "Seven plus eight is fifteen. Nine plus nine is eighteen. It tips right."
  },
  {
-  "slug": "eight-plus-two-is-the-same-as-one-plus-ten-which-way-does-it-tip",
-  "text": "Eight plus two is the same as one plus ten. Which way does it tip?"
+  "slug": "eight-plus-two-one-plus-ten-is-it-the-same-which-way-does-it-tip",
+  "text": "Eight plus two. One plus ten. Is it the same? Which way does it tip?"
  },
  {
   "slug": "eight-plus-two-is-ten-one-plus-ten-is-eleven-it-tips-right",
   "text": "Eight plus two is ten. One plus ten is eleven. It tips right."
  },
  {
-  "slug": "nine-plus-three-is-the-same-as-five-plus-seven-which-way-does-it-tip",
-  "text": "Nine plus three is the same as five plus seven. Which way does it tip?"
+  "slug": "nine-plus-three-five-plus-seven-is-it-the-same-which-way-does-it-tip",
+  "text": "Nine plus three. Five plus seven. Is it the same? Which way does it tip?"
  },
  {
   "slug": "nine-plus-three-is-twelve-five-plus-seven-is-twelve-it-is-level",

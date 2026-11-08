@@ -47,6 +47,8 @@ export const WORDS = {
       case 'dbl': return 'That is the same number twice. Look at each side.';
       case 'both': return 'Both sides have numbers, but they are not the same amount.';
       case 'first': return 'Look at both sides, not just the first number.';
+      case 'more': return 'That is too many stones. This side is too heavy now.';
+      case 'less': return 'That is not enough stones yet. This side is still lighter.';
       case 'side': return 'The heavier side goes down. Which side is heavier?';
       default: return 'Not quite. Does it make both sides the same?';
     }
@@ -63,7 +65,9 @@ export const WORDS = {
   stoneLive: 'Put stones on the empty side until the see-saw is level.',
   stoneCheck: 'Put stones on the empty side. Then press Check.',
   promptMissing: 'What number is missing?',
-  promptTilt: 'Which way does it tip?',
+  promptTilt: 'Is it the same? Which way does it tip?',
+  sameQ: 'Is it the same?',
+  sameAs: 'is it the same as',
   tip: [
     'Hello! I am Parrot. I like my see-saw level. Will you help me?',
     'I will talk to you. Tap Hear it again to hear me again.',
