@@ -3,7 +3,10 @@ import { STAGES, SUBITISING_CONFIG as CONFIG } from '../../shared/subitising/con
 import { growth, progressFrom, type SubAnswer } from '../../shared/subitising/engine';
 import { finishedInARow } from '../../shared/subitising/saved';
 import { PLACEMENT_MAX, placementOver, placementTrial, startStageFrom } from '../../shared/subitising/placement';
-import { buildTrial, type Trial } from '../../shared/subitising/trials';
+import { FRAME_CAPACITY } from '../../shared/subitising/config';
+import { parseKey } from '../../shared/subitising/keys';
+import { makeGapPicture } from '../../shared/subitising/patterns';
+import { buildTrial, choicesFor, rngFor, type Trial } from '../../shared/subitising/trials';
 import { speak, useReadAloud } from '../speech';
 import { FlashRunner, type AnswerResult } from './FlashRunner';
 import { Garden } from './Garden';
@@ -12,11 +15,25 @@ import type { SubState } from './store';
 import { PROMPTS, VOICE_FOLDER } from './voiceLines';
 import './subitising.css';
 
-type Screen = 'home' | 'demo' | 'check' | 'checked' | 'session' | 'summary';
+type Screen = 'home' | 'demo' | 'demoGap' | 'check' | 'checked' | 'session' | 'summary';
 
 /** The demo before a new student's first starting check: an easy stage 1 picture (seed 2 makes a line of 3 dots). */
 const DEMO_SEED = 2;
 const demoTrial = (): Trial => buildTrial(progressFrom([], 1), DEMO_SEED, 0, null, { ...CONFIG, reviewShare: 0 });
+
+/**
+ * The demo the first time Missing Spots comes up (stage 6, or the mix at stage 7): a five-frame with 3 counters, so 2 squares
+ * are empty. It stays on screen and is never saved.
+ */
+const demoGapTrial = (): Trial => {
+  const rng = rngFor(DEMO_SEED);
+  const picture = makeGapPicture('five', 3, rng);
+  const capacity = FRAME_CAPACITY.five ?? 5;
+  return { activity: 'gap', stage: 6, type: 'five', n: 3, key: 'gap:five-3', picture, answer: capacity - 3, flashMs: CONFIG.readyMs, choices: choicesFor(capacity - 3, 1, capacity - 1, CONFIG.choiceCount, rng), review: false };
+};
+
+/** A child has met empty squares once any saved answer (helped or not) is a Missing Spots picture. */
+const hasSeenGaps = (answers: readonly SubAnswer[]): boolean => answers.some((a) => parseKey(a.key)?.activity === 'gap');
 
 /** One answer as the real page will save it (the next step). */
 export interface QuickAnswerEvent {
@@ -78,7 +95,8 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
     roundPictures.current = 0;
     setBefore(progress);
     setLooked(0);
-    setScreen('session');
+    // The first time empty squares come up, a demo shows how they work first (nothing is saved for it).
+    setScreen(progress.current >= 6 && !hasSeenGaps(state.answers) ? 'demoGap' : 'session');
   };
   const startCheck = () => {
     setSeed(seedFor(today, state.sessionsDone + 500));
@@ -134,7 +152,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
     if (guidedSummary && readingOn) speak(PROMPTS.guidedSummary, VOICE_FOLDER);
   }, [guidedSummary, readingOn]);
 
-  const practising = screen === 'demo' || screen === 'check' || screen === 'session';
+  const practising = screen === 'demo' || screen === 'demoGap' || screen === 'check' || screen === 'session';
   const Frame = onBack ? 'div' : 'main';
   return (
     <Frame className={onBack ? 'sb-app sb-app--hub' : 'sb-app'}>
@@ -192,6 +210,19 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           next={demoTrial}
           onAnswer={() => void (demoAnswered.current = true)}
           onFinish={() => setScreen(demoAnswered.current ? 'check' : 'home')}
+          readAloud={readAloud}
+        />
+      )}
+      {screen === 'demoGap' && (
+        <FlashRunner
+          key="demoGap"
+          checking
+          total={1}
+          guidedMode
+          intro={PROMPTS.demoGap}
+          next={demoGapTrial}
+          onAnswer={() => undefined}
+          onFinish={() => setScreen('session')}
           readAloud={readAloud}
         />
       )}

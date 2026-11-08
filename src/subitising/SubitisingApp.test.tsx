@@ -99,6 +99,21 @@ describe('Quick looks', () => {
     expect(dotsShown()).toBeGreaterThan(0);
   });
 
+  it('shows how empty squares work the first time a child reaches them, saves nothing for it, and never shows it once a gap picture is saved', () => {
+    const t = setup({ ...emptySubState(), placed: true, startStage: 6 });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    expect(screen.getByRole('heading', { name: /This is a new kind of picture/ })).toBeTruthy();
+    advance(10_000);
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === '2')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    expect(t.answered).toHaveLength(0);
+    expect(screen.queryByRole('heading', { name: /new kind of picture/ })).toBeNull();
+    t.view.unmount();
+    setup({ ...emptySubState(), placed: true, startStage: 6, answers: [{ key: 'gaph:five-3', correct: true, at: 1, helped: true }] });
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    expect(screen.queryByRole('heading', { name: /new kind of picture/ })).toBeNull();
+  });
+
   it('runs the starting check and then says where practice starts', () => {
     const t = setup(emptySubState());
     fireEvent.click(screen.getByRole('button', { name: 'Start with a quick check' }));
