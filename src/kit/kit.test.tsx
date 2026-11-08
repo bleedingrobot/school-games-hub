@@ -43,6 +43,21 @@ describe('kit pictures', () => {
     expect(html).toContain('-6');
     expect(html).not.toContain('NaN');
     expect(html).not.toContain('Infinity');
+    // An arrow point sits above the line (a stem and a head, no circle), and room keeps the height the same with or without arcs.
+    const height = (h: string) => Number(/viewBox="0 0 600 ([\d.]+)"/.exec(h)?.[1]);
+    const plainLine = height(renderToStaticMarkup(<NumberLine min={0} max={100} label="A line" />));
+    const arrow = renderToStaticMarkup(<NumberLine min={0} max={100} points={[{ value: 47, look: 'arrow', label: 'here' }]} label="A line with an arrow" />);
+    expect(circles(arrow)).toBe(0);
+    expect(arrow).toContain('here');
+    expect(height(arrow)).toBeGreaterThan(plainLine);
+    const bare = renderToStaticMarkup(<NumberLine min={0} max={100} room={110} roomBelow={100} label="A line" />);
+    const jumps = renderToStaticMarkup(<NumberLine min={0} max={100} room={110} roomBelow={100} arcs={[{ from: 40, to: 47, label: '+7' }, { from: 47, to: 40, side: 'below', label: '-7' }]} label="A line" />);
+    expect(height(jumps)).toBe(height(bare));
+    expect(height(bare)).toBeGreaterThan(plainLine);
+    // A lens can carry its own arcs.
+    const lensJump = renderToStaticMarkup(<NumberLine min={0} max={100} lens={{ from: 40, to: 50, arcs: [{ from: 40, to: 47, label: '+7 on the lens' }] }} label="A line" />);
+    expect(lensJump).toContain('+7 on the lens');
+    expect(lensJump).not.toContain('NaN');
   });
 
   it('a number line can zoom into one gap with a lens, be tapped for the value under the tap, and colour a point by part', () => {
