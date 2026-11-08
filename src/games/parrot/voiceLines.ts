@@ -68,8 +68,8 @@ export const whyLine = (kind: ParrotKind): string => [WORDS.why(kind), WORDS.isL
 /** What the home screen says: who wants the see-saw level, and "come back tomorrow" once today's shiny thing has turned. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title);
 
-/** What the finish screen says: what happened, then what changes next time. */
-export const finishLine = (main: string, next: string): string => [main, next].join(PART_BREAK);
+/** What the finish screen says: what happened, how the round went, then what changes next time. */
+export const finishLine = (main: string, how: string, next: string): string => [main, how, next].join(PART_BREAK);
 
 const layoutsOf = (key: string): number => { const k = kindOfKey(key); return k === 'miss' ? 4 : k === 'swap' ? 2 : 1; };
 
@@ -103,6 +103,7 @@ export function allVoiceLines(): string[] {
   const mains = [...METALS.slice(1).map((m) => WORDS.thingTurned(m)), ...names.map(([, name]) => WORDS.goldenBell(name))];
   for (const main of mains) lines.add(main);
   for (const s of STEPS.slice(1)) lines.add(WORDS.nextStep(s.step));
+  for (const how of Object.values(WORDS.how)) lines.add(how);
   lines.add(WORDS.lessHelp);
   lines.add(WORDS.moreHelp);
   lines.add(WORDS.sameAgain);

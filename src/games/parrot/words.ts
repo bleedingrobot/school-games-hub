@@ -81,6 +81,12 @@ export const WORDS = {
   thingTurned: (metal: Metal) => `Well done! A shiny thing turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to turn another shiny thing.',
   goldenBell: (name: string) => `All the shiny things are gold! ${name} won the Golden Bell!`,
+  /** One honest line on the finish screen about how the round went (S15): about what she did, not about her. */
+  how: {
+    most: 'You worked those out.',
+    some: 'Some were quick and some were tricky. The tricky ones help you grow.',
+    tricky: 'That was tricky today. We will go slowly and look together.',
+  },
   nextStep: (step: Step) => `Next time: ${stepName(step).toLowerCase()}.`,
   lessHelp: 'Next time: a little less help.',
   moreHelp: 'Next time: a little more help.',
