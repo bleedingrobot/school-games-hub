@@ -162,3 +162,18 @@ describe('mistakes that teach', () => {
     expect(kindsFromFacts(facts, (k) => (k === 'd' ? null : k === 'a' || k === 'b' ? 'zoom' : 'swap'))).toEqual(['swap', 'zoom']);
   });
 });
+
+describe('the usual slip', () => {
+  const kinds = (n: number) => (n > 10 ? 'over' : n < 3 ? 'under' : 'near') as 'over' | 'under' | 'near';
+  const goes = [5, 6, 7].map((answer) => ({ answer, kindOf: kinds }));
+
+  it('names the first wrong tap of each go, null for a go right first time, and counts the commonest kind only with enough evidence', () => {
+    // Go 1: wrong 12 (over) then wrong 1 (not counted), then right. Go 2: right first time. Go 3: wrong 2 (under), never right.
+    const slips = slipsOf(goes, [{ pick: 12 }, { pick: 1 }, { pick: 5 }, { pick: 6 }, { pick: 2 }]);
+    expect(slips).toEqual(['over', null, 'under']);
+    expect(topSlip(['over', 'over', null, 'over', 'under'], 3)).toBe('over');
+    expect(topSlip(['over', 'over', null, 'under'], 3)).toBeNull();
+    expect(topSlip(['over', 'over', 'under', 'under', 'over', 'under'], 3)).toBeNull();
+    expect(topSlip([null, null])).toBeNull();
+  });
+});
