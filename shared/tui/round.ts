@@ -73,10 +73,15 @@ export const stepName = (step: Step) => STEPS.find((s) => s.step === step)!.name
 /** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
 export const shownLevel = (level: HelpLevel, help: HelpSetting): HelpLevel => (help === 'always' ? 4 : help === 'off' ? 0 : level);
 
-/** A child who already knows most of the facts when they first play starts further on, with less help. */
+/**
+ * A child who already knows most of the facts when they first play starts further on, with less help: at least
+ * `KNOWN_FACTS` of the nine "ten and" facts AND of the nine "ten less" facts at box 2 or more. Knowing only one kind
+ * starts at step 1, the safe side.
+ */
 export function startFor(stats: Iterable<FactStats>): { step: Step; level: HelpLevel } {
   const box = new Map([...stats].map((s) => [s.key, s.box]));
-  return KEYS.filter((k) => (box.get(k) ?? 0) >= 2).length >= KNOWN_FACTS ? KNOWN_START : { step: 1, level: TOP_LEVEL };
+  const known = (keys: string[]) => keys.filter((k) => (box.get(k) ?? 0) >= 2).length >= KNOWN_FACTS;
+  return known(KEYS) && known(LESS_KEYS) ? KNOWN_START : { step: 1, level: TOP_LEVEL };
 }
 
 /** Where a child is: their step, help level and the good challenges counted towards the next change. */
@@ -305,14 +310,12 @@ export function showRound(round: Round): Go[] {
 
 /**
  * The picture for a go after some wrong taps (plan section 4, "Help inside one go"): the first wrong tap brings one
- * level more (at level 0 the kete picture; at level 1 the Peek opens), the second brings every berry counted in, and the
- * third fades the wrong nests to leave two. The answer is never shown.
+ * level more (at level 0 the kete picture; at level 1 the Peek opens) and the second brings every berry counted in.
+ * All four nests stay (maths review R5); the answer is never shown.
  */
-export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: number, tapped: readonly number[] = []): {
+export function pictureFor(go: Pick<Go, 'l'>, wrongTaps: number): {
   level: HelpLevel;
   peekOpen: boolean;
-  /** The nests still to tap: after three wrong taps, the answer and one other. */
-  nests: number[];
 } {
   let level = go.l;
   let peekOpen = false;
@@ -322,10 +325,5 @@ export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer'>, wrongTaps: 
     else if (go.l === 1) peekOpen = true;
     else level = Math.min(TOP_LEVEL, go.l + 1) as HelpLevel;
   }
-  let nests = go.choices;
-  if (wrongTaps >= 3) {
-    const other = go.choices.find((c) => c !== go.answer && !tapped.includes(c)) ?? go.choices.find((c) => c !== go.answer)!;
-    nests = go.choices.filter((c) => c === go.answer || c === other);
-  }
-  return { level, peekOpen, nests };
+  return { level, peekOpen };
 }

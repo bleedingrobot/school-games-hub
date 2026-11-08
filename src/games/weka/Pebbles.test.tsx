@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Go } from '../../../shared/weka/round';
@@ -19,17 +19,23 @@ function setup() {
 }
 
 describe('Weka pebbles: the child decides', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   it('does not stop at ten by itself, counts exactly the right number as right, and has every line it says recorded', async () => {
-    const { say, onFirstWrong, move, check } = setup();
+    vi.useFakeTimers();
+    const { say, onFirstWrong, move } = setup();
     expect((screen.getByRole('button', { name: 'Check' }) as HTMLButtonElement).disabled).toBe(true);
     move(3);
     expect(document.querySelectorAll('.wk-pebble--move')).toHaveLength(2);
     expect(screen.queryByRole('button', { name: /Next/ })).toBeNull();
     // Put one back, leaving exactly two across.
-    await userEvent.click(screen.getAllByRole('button', { name: 'Silver pebble: put it back' })[0]);
-    await check();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Silver pebble: put it back' })[0]);
+    // The right number is across: no Check tap, it finishes by itself once the child has stopped.
+    expect(say).not.toHaveBeenLastCalledWith('10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
+    act(() => void vi.advanceTimersByTime(1300));
     expect(say).toHaveBeenLastCalledWith('10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
     expect(onFirstWrong).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /Next/ })).toBeTruthy();

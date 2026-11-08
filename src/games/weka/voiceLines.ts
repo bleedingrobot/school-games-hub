@@ -4,7 +4,7 @@
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
 import { METALS, type Metal } from '../../../shared/weka/progress';
-import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, splitFirstLine, splitRestLine, stemLine, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
+import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -40,6 +40,15 @@ export function whyLine(go: Pick<Go, 'kind' | 'small' | 'big' | 'from' | 'toTen'
   }
 }
 
+/**
+ * A wrong number in the split (`bond` 0 is the part that gets to ten, 1 is the rest): what the number the child tapped
+ * makes. None says the answer.
+ */
+export function splitWhyLine(go: Pick<Go, 'kind' | 'small' | 'big' | 'total' | 'toTen'>, bond: 0 | 1, n: number): string {
+  if (bond === 1) return WORDS.whySplitRest(go.toTen, n, go.small);
+  return go.kind === 'back' ? WORDS.whySplitFirstBack(go.total, n) : WORDS.whySplitFirstAdd(go.big, n);
+}
+
 /** What the finish screen says, with "next time: starting on 8" when the child moved up a level. */
 export function finishLine(main: string, levelUp: Level | null): string {
   return levelUp ? `${main} ${WORDS.levelUp(levelUp)}` : main;
@@ -66,6 +75,9 @@ export function allVoiceLines(): string[] {
       if (kind === 'back') kinds.push('add');
       else kinds.push('double', ...(big + go.rest !== 10 ? (['part'] as const) : []));
       for (const k of kinds) lines.add(whyLine(mine, k));
+      // A wrong number in the split: every number the choices can offer except the right one.
+      for (const n of toTenChoicesFor(go.toTen)) if (n !== go.toTen) lines.add(splitWhyLine(go, 0, n));
+      for (const n of toTenChoicesFor(go.rest)) if (n !== go.rest) lines.add(splitWhyLine(go, 1, n));
       // The pebbles: adding goes only.
       if (kind !== 'back') {
         for (const line of [pebbleAskLine(go), pebbleRightLine(go), pebbleShowLine(go)]) lines.add(line);

@@ -38,14 +38,14 @@ import { PointingHand, pointedLabel } from '../../kit/PointingHand';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
-import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, wrongKind, type Go, type Help, type Round } from '../../../shared/weka/round';
+import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, skipPracticeFor, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, wrongKind, type Go, type Help, type Round } from '../../../shared/weka/round';
 import type { HelpSetting } from '../../../shared/weka/server';
 import { playSound } from '../sounds';
 import { paint, type Pose } from './art';
 import { backFor, type Scenery } from './Stream';
 import { Frame, Pebbles } from './Pebbles';
 import { Friend, Hop, StepStone, Stone } from './WekaArt';
-import { rightLine, whyLine } from './voiceLines';
+import { rightLine, splitWhyLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 1800;
@@ -119,6 +119,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   /** The split after a right answer: how many parts are filled in (0, 1, 2), and wrong taps on the current part. */
   const [bond, setBond] = useState(0);
   const [bondWrongs, setBondWrongs] = useState(0);
+  /** What Bella last said about a wrong number in the split ("Hear it again" says it), and the wrong numbers greyed out. */
+  const [splitSaid, setSplitSaid] = useState('');
+  const [splitGone, setSplitGone] = useState<number[]>([]);
   const since = useRef(Date.now());
   /** Goes up with each clock start (and when a go ends), so the end of an older line can't restart a newer clock. */
   const asking = useRef(0);
@@ -179,6 +182,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setStep(s);
     setBond(0);
     setBondWrongs(0);
+    clearSplitWhy();
     setPos(go.from);
     setPose('wait');
     setLit([]);
@@ -328,7 +332,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       hopOn();
     } else hopTo(go.from, 10, hopOn);
     later(RIGHT_MS + (Math.abs(go.from - go.answer) * HOP_MS), () => {
-      if (pebblesFor(start) && go.kind !== 'back') setPhase('pebbles');
+      // A child who got it right first time skips the pebbles and the split (the pebbles stay one go in five).
+      if (skipPracticeFor(!firstWrong, guided, at)) nextGo();
+      else if (pebblesFor(start) && go.kind !== 'back') setPhase('pebbles');
       else afterPebbles();
     });
   }
@@ -348,12 +354,25 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setPhase('bond');
     setBond(0);
     setBondWrongs(0);
+    clearSplitWhy();
     say(bondAskLine(go));
   }
 
+  /** A wrong number in the split: grey it out and say what it makes (never the answer). */
+  function saySplitWhy(n: number) {
+    const line = splitWhyLine(go, bond === 0 ? 0 : 1, n);
+    setSplitGone((g) => [...g, n]);
+    setSplitSaid(line);
+    say(line);
+  }
+  const clearSplitWhy = () => {
+    setSplitGone([]);
+    setSplitSaid('');
+  };
+
   /** Split-first goes: the part of the number that gets to ten, then the rest, then Weka hops to the big rock. Help only. */
   function pickSplit(n: number) {
-    if (phase !== 'ask' || step !== 'split' || bond >= 2) return;
+    if (phase !== 'ask' || step !== 'split' || bond >= 2 || splitGone.includes(n)) return;
     tappedYet.current = true;
     if (n !== (bond === 0 ? go.toTen : go.rest)) {
       const w = bondWrongs + 1;
@@ -371,11 +390,12 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       if (w === 2) {
         if (bond === 0) countTogether();
         else say(stemLine(go));
-      } else say(WORDS.tryAgain);
+      } else saySplitWhy(n);
       return;
     }
     if (sound) playSound('tap');
     setBondWrongs(0);
+    clearSplitWhy();
     if (bond === 0) {
       setBond(1);
       setLit(between(go.from, 10));
@@ -394,17 +414,18 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
   /** Filling in the split: first the hops to the big rock, then the hops after it. Help only: never sent. */
   function pickBond(n: number) {
-    if (phase !== 'bond' || bond >= 2) return;
+    if (phase !== 'bond' || bond >= 2 || splitGone.includes(n)) return;
     if (n !== (bond === 0 ? go.toTen : go.rest)) {
       setBondWrongs((w) => w + 1);
       setWobble(n);
       if (sound) playSound('tap');
       later(WOBBLE_MS, () => setWobble(null));
-      say(WORDS.tryAgain);
+      saySplitWhy(n);
       return;
     }
     if (sound) playSound('tap');
     setBondWrongs(0);
+    clearSplitWhy();
     setBond(bond + 1);
     say(bond === 0 ? BOND_MORE : bondLine(go, true));
   }
@@ -451,7 +472,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
             <span key={i} className={i < made ? 'wk-pip wk-pip--done' : 'wk-pip'} />
           ))}
         </div>
-        <HearAgain prefix="wk" label={WORDS.hearAgain} onHear={() => look ? undefined : why && go ? say(whyLine(go, why.kind as never)) : say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))} />
+        <HearAgain prefix="wk" label={WORDS.hearAgain} onHear={() => look ? undefined : splitSaid ? say(splitSaid) : why && go ? say(whyLine(go, why.kind as never)) : say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))} />
       </div>
       {phase !== 'pebbles' && <p className="wk-ask" aria-live="polite">{ask}</p>}
       {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
@@ -497,9 +518,9 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
       {phase === 'pebbles' ? (
         <Pebbles key={at} go={go} guided={guided} sound={sound} last={lastGo} say={say} onFirstWrong={pebblesFirstWrong} onNext={afterPebbles} />
       ) : phase === 'bond' ? (
-        <Bond go={go} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickBond} onNext={nextGo} />
+        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickBond} onNext={nextGo} />
       ) : step === 'split' ? (
-        <Bond go={go} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickSplit} onNext={nextGo} first />
+        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickSplit} onNext={nextGo} first />
       ) : (
       <div className="wk-answer">
         {why && phase === 'ask' && !look && (
@@ -621,8 +642,8 @@ function Jumps({ path, go, shown }: { path: React.RefObject<HTMLDivElement | nul
  * The split as a part-whole bond: the smaller number on top, the hops to the big rock (orange, like those stones) and
  * the hops after it (blue) below. The child taps a number for each empty part; after two wrong taps the hand points.
  */
-function Bond({ go, filled, wrongs, guided, wobble, last, onPick, onNext, first = false }: {
-  go: Go; filled: number; wrongs: number; guided: boolean; wobble: number | null; last: boolean;
+function Bond({ go, gone, filled, wrongs, guided, wobble, last, onPick, onNext, first = false }: {
+  go: Go; gone: number[]; filled: number; wrongs: number; guided: boolean; wobble: number | null; last: boolean;
   onPick: (n: number) => void; onNext: () => void;
   /** Split-first: the child splits before answering, so there is no Next button; the go moves on by itself. */
   first?: boolean;
@@ -638,7 +659,7 @@ function Bond({ go, filled, wrongs, guided, wobble, last, onPick, onNext, first 
             <button
               key={`${filled}-${n}`}
               type="button"
-              className={`wk-choice${wobble === n ? ' wk-choice--wobble' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
+              className={`wk-choice${gone.includes(n) ? ' wk-choice--gone' : ''}${wobble === n ? ' wk-choice--wobble' : ''}${n === pointAt ? ' wk-choice--pointed' : ''}`}
               onClick={() => onPick(n)}
               aria-label={pointedLabel(n, n === pointAt, WORDS.guideHere)}
             >

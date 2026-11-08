@@ -188,6 +188,30 @@
   "text": "2 is 1 and 1. The 1 got Weka to the rock."
  },
  {
+  "slug": "9-and-2-make-11-we-need-to-land-on-10",
+  "text": "9 and 2 make 11. We need to land on 10."
+ },
+ {
+  "slug": "9-and-3-make-12-we-need-to-land-on-10",
+  "text": "9 and 3 make 12. We need to land on 10."
+ },
+ {
+  "slug": "9-and-4-make-13-we-need-to-land-on-10",
+  "text": "9 and 4 make 13. We need to land on 10."
+ },
+ {
+  "slug": "1-and-2-make-3-we-have-2",
+  "text": "1 and 2 make 3. We have 2."
+ },
+ {
+  "slug": "1-and-3-make-4-we-have-2",
+  "text": "1 and 3 make 4. We have 2."
+ },
+ {
+  "slug": "1-and-4-make-5-we-have-2",
+  "text": "1 and 4 make 5. We have 2."
+ },
+ {
   "slug": "the-same-question-with-pebbles-9-plus-2-here-are-9-gold-and-2-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
   "text": "The same question with pebbles: 9 plus 2. Here are 9 gold and 2 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
@@ -268,6 +292,18 @@
   "text": "Count the hops from 11 to the big rock."
  },
  {
+  "slug": "11-take-away-2-is-9-we-need-to-land-on-10",
+  "text": "11 take away 2 is 9. We need to land on 10."
+ },
+ {
+  "slug": "11-take-away-3-is-8-we-need-to-land-on-10",
+  "text": "11 take away 3 is 8. We need to land on 10."
+ },
+ {
+  "slug": "11-take-away-4-is-7-we-need-to-land-on-10",
+  "text": "11 take away 4 is 7. We need to land on 10."
+ },
+ {
   "slug": "9-plus-3-weka-is-on-9-and-hops-3-more-where-will-weka-land",
   "text": "9 plus 3. Weka is on 9 and hops 3 more. Where will Weka land?"
  },
@@ -318,6 +354,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-2",
   "text": "9 and 1 make 10. We still have 2."
+ },
+ {
+  "slug": "1-and-1-make-2-we-have-3",
+  "text": "1 and 1 make 2. We have 3."
+ },
+ {
+  "slug": "1-and-3-make-4-we-have-3",
+  "text": "1 and 3 make 4. We have 3."
+ },
+ {
+  "slug": "1-and-4-make-5-we-have-3",
+  "text": "1 and 4 make 5. We have 3."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-3-here-are-9-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -396,6 +444,30 @@
   "text": "Count the hops from 12 to the big rock."
  },
  {
+  "slug": "12-take-away-1-is-11-we-need-to-land-on-10",
+  "text": "12 take away 1 is 11. We need to land on 10."
+ },
+ {
+  "slug": "12-take-away-3-is-9-we-need-to-land-on-10",
+  "text": "12 take away 3 is 9. We need to land on 10."
+ },
+ {
+  "slug": "12-take-away-4-is-8-we-need-to-land-on-10",
+  "text": "12 take away 4 is 8. We need to land on 10."
+ },
+ {
+  "slug": "2-and-2-make-4-we-have-3",
+  "text": "2 and 2 make 4. We have 3."
+ },
+ {
+  "slug": "2-and-3-make-5-we-have-3",
+  "text": "2 and 3 make 5. We have 3."
+ },
+ {
+  "slug": "2-and-4-make-6-we-have-3",
+  "text": "2 and 4 make 6. We have 3."
+ },
+ {
   "slug": "9-plus-4-weka-is-on-9-and-hops-4-more-where-will-weka-land",
   "text": "9 plus 4. Weka is on 9 and hops 4 more. Where will Weka land?"
  },
@@ -446,6 +518,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-3",
   "text": "9 and 1 make 10. We still have 3."
+ },
+ {
+  "slug": "1-and-2-make-3-we-have-4",
+  "text": "1 and 2 make 3. We have 4."
+ },
+ {
+  "slug": "1-and-4-make-5-we-have-4",
+  "text": "1 and 4 make 5. We have 4."
+ },
+ {
+  "slug": "1-and-5-make-6-we-have-4",
+  "text": "1 and 5 make 6. We have 4."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-4-here-are-9-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -524,6 +608,30 @@
   "text": "Count the hops from 13 to the big rock."
  },
  {
+  "slug": "13-take-away-2-is-11-we-need-to-land-on-10",
+  "text": "13 take away 2 is 11. We need to land on 10."
+ },
+ {
+  "slug": "13-take-away-4-is-9-we-need-to-land-on-10",
+  "text": "13 take away 4 is 9. We need to land on 10."
+ },
+ {
+  "slug": "13-take-away-5-is-8-we-need-to-land-on-10",
+  "text": "13 take away 5 is 8. We need to land on 10."
+ },
+ {
+  "slug": "3-and-2-make-5-we-have-4",
+  "text": "3 and 2 make 5. We have 4."
+ },
+ {
+  "slug": "3-and-3-make-6-we-have-4",
+  "text": "3 and 3 make 6. We have 4."
+ },
+ {
+  "slug": "3-and-4-make-7-we-have-4",
+  "text": "3 and 4 make 7. We have 4."
+ },
+ {
   "slug": "9-plus-5-weka-is-on-9-and-hops-5-more-where-will-weka-land",
   "text": "9 plus 5. Weka is on 9 and hops 5 more. Where will Weka land?"
  },
@@ -574,6 +682,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-4",
   "text": "9 and 1 make 10. We still have 4."
+ },
+ {
+  "slug": "1-and-3-make-4-we-have-5",
+  "text": "1 and 3 make 4. We have 5."
+ },
+ {
+  "slug": "1-and-5-make-6-we-have-5",
+  "text": "1 and 5 make 6. We have 5."
+ },
+ {
+  "slug": "1-and-6-make-7-we-have-5",
+  "text": "1 and 6 make 7. We have 5."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-5-here-are-9-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -652,6 +772,30 @@
   "text": "Count the hops from 14 to the big rock."
  },
  {
+  "slug": "14-take-away-3-is-11-we-need-to-land-on-10",
+  "text": "14 take away 3 is 11. We need to land on 10."
+ },
+ {
+  "slug": "14-take-away-5-is-9-we-need-to-land-on-10",
+  "text": "14 take away 5 is 9. We need to land on 10."
+ },
+ {
+  "slug": "14-take-away-6-is-8-we-need-to-land-on-10",
+  "text": "14 take away 6 is 8. We need to land on 10."
+ },
+ {
+  "slug": "4-and-2-make-6-we-have-5",
+  "text": "4 and 2 make 6. We have 5."
+ },
+ {
+  "slug": "4-and-3-make-7-we-have-5",
+  "text": "4 and 3 make 7. We have 5."
+ },
+ {
+  "slug": "4-and-4-make-8-we-have-5",
+  "text": "4 and 4 make 8. We have 5."
+ },
+ {
   "slug": "9-plus-6-weka-is-on-9-and-hops-6-more-where-will-weka-land",
   "text": "9 plus 6. Weka is on 9 and hops 6 more. Where will Weka land?"
  },
@@ -702,6 +846,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-5",
   "text": "9 and 1 make 10. We still have 5."
+ },
+ {
+  "slug": "1-and-4-make-5-we-have-6",
+  "text": "1 and 4 make 5. We have 6."
+ },
+ {
+  "slug": "1-and-6-make-7-we-have-6",
+  "text": "1 and 6 make 7. We have 6."
+ },
+ {
+  "slug": "1-and-7-make-8-we-have-6",
+  "text": "1 and 7 make 8. We have 6."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-6-here-are-9-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -780,6 +936,30 @@
   "text": "Count the hops from 15 to the big rock."
  },
  {
+  "slug": "15-take-away-4-is-11-we-need-to-land-on-10",
+  "text": "15 take away 4 is 11. We need to land on 10."
+ },
+ {
+  "slug": "15-take-away-6-is-9-we-need-to-land-on-10",
+  "text": "15 take away 6 is 9. We need to land on 10."
+ },
+ {
+  "slug": "15-take-away-7-is-8-we-need-to-land-on-10",
+  "text": "15 take away 7 is 8. We need to land on 10."
+ },
+ {
+  "slug": "5-and-2-make-7-we-have-6",
+  "text": "5 and 2 make 7. We have 6."
+ },
+ {
+  "slug": "5-and-3-make-8-we-have-6",
+  "text": "5 and 3 make 8. We have 6."
+ },
+ {
+  "slug": "5-and-4-make-9-we-have-6",
+  "text": "5 and 4 make 9. We have 6."
+ },
+ {
   "slug": "9-plus-7-weka-is-on-9-and-hops-7-more-where-will-weka-land",
   "text": "9 plus 7. Weka is on 9 and hops 7 more. Where will Weka land?"
  },
@@ -830,6 +1010,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-6",
   "text": "9 and 1 make 10. We still have 6."
+ },
+ {
+  "slug": "1-and-5-make-6-we-have-7",
+  "text": "1 and 5 make 6. We have 7."
+ },
+ {
+  "slug": "1-and-7-make-8-we-have-7",
+  "text": "1 and 7 make 8. We have 7."
+ },
+ {
+  "slug": "1-and-8-make-9-we-have-7",
+  "text": "1 and 8 make 9. We have 7."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-7-here-are-9-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -908,6 +1100,30 @@
   "text": "Count the hops from 16 to the big rock."
  },
  {
+  "slug": "16-take-away-5-is-11-we-need-to-land-on-10",
+  "text": "16 take away 5 is 11. We need to land on 10."
+ },
+ {
+  "slug": "16-take-away-7-is-9-we-need-to-land-on-10",
+  "text": "16 take away 7 is 9. We need to land on 10."
+ },
+ {
+  "slug": "16-take-away-8-is-8-we-need-to-land-on-10",
+  "text": "16 take away 8 is 8. We need to land on 10."
+ },
+ {
+  "slug": "6-and-2-make-8-we-have-7",
+  "text": "6 and 2 make 8. We have 7."
+ },
+ {
+  "slug": "6-and-3-make-9-we-have-7",
+  "text": "6 and 3 make 9. We have 7."
+ },
+ {
+  "slug": "6-and-4-make-10-we-have-7",
+  "text": "6 and 4 make 10. We have 7."
+ },
+ {
   "slug": "9-plus-8-weka-is-on-9-and-hops-8-more-where-will-weka-land",
   "text": "9 plus 8. Weka is on 9 and hops 8 more. Where will Weka land?"
  },
@@ -958,6 +1174,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-7",
   "text": "9 and 1 make 10. We still have 7."
+ },
+ {
+  "slug": "1-and-6-make-7-we-have-8",
+  "text": "1 and 6 make 7. We have 8."
+ },
+ {
+  "slug": "1-and-8-make-9-we-have-8",
+  "text": "1 and 8 make 9. We have 8."
+ },
+ {
+  "slug": "1-and-9-make-10-we-have-8",
+  "text": "1 and 9 make 10. We have 8."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-8-here-are-9-gold-and-8-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1036,6 +1264,30 @@
   "text": "Count the hops from 17 to the big rock."
  },
  {
+  "slug": "17-take-away-6-is-11-we-need-to-land-on-10",
+  "text": "17 take away 6 is 11. We need to land on 10."
+ },
+ {
+  "slug": "17-take-away-8-is-9-we-need-to-land-on-10",
+  "text": "17 take away 8 is 9. We need to land on 10."
+ },
+ {
+  "slug": "17-take-away-9-is-8-we-need-to-land-on-10",
+  "text": "17 take away 9 is 8. We need to land on 10."
+ },
+ {
+  "slug": "7-and-2-make-9-we-have-8",
+  "text": "7 and 2 make 9. We have 8."
+ },
+ {
+  "slug": "7-and-3-make-10-we-have-8",
+  "text": "7 and 3 make 10. We have 8."
+ },
+ {
+  "slug": "7-and-4-make-11-we-have-8",
+  "text": "7 and 4 make 11. We have 8."
+ },
+ {
   "slug": "9-plus-9-weka-is-on-9-and-hops-9-more-where-will-weka-land",
   "text": "9 plus 9. Weka is on 9 and hops 9 more. Where will Weka land?"
  },
@@ -1086,6 +1338,18 @@
  {
   "slug": "9-and-1-make-10-we-still-have-8",
   "text": "9 and 1 make 10. We still have 8."
+ },
+ {
+  "slug": "1-and-6-make-7-we-have-9",
+  "text": "1 and 6 make 7. We have 9."
+ },
+ {
+  "slug": "1-and-7-make-8-we-have-9",
+  "text": "1 and 7 make 8. We have 9."
+ },
+ {
+  "slug": "1-and-9-make-10-we-have-9",
+  "text": "1 and 9 make 10. We have 9."
  },
  {
   "slug": "the-same-question-with-pebbles-9-plus-9-here-are-9-gold-and-9-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1160,6 +1424,30 @@
   "text": "Count the hops from 18 to the big rock."
  },
  {
+  "slug": "18-take-away-6-is-12-we-need-to-land-on-10",
+  "text": "18 take away 6 is 12. We need to land on 10."
+ },
+ {
+  "slug": "18-take-away-7-is-11-we-need-to-land-on-10",
+  "text": "18 take away 7 is 11. We need to land on 10."
+ },
+ {
+  "slug": "18-take-away-9-is-9-we-need-to-land-on-10",
+  "text": "18 take away 9 is 9. We need to land on 10."
+ },
+ {
+  "slug": "8-and-2-make-10-we-have-9",
+  "text": "8 and 2 make 10. We have 9."
+ },
+ {
+  "slug": "8-and-3-make-11-we-have-9",
+  "text": "8 and 3 make 11. We have 9."
+ },
+ {
+  "slug": "8-and-4-make-12-we-have-9",
+  "text": "8 and 4 make 12. We have 9."
+ },
+ {
   "slug": "8-plus-3-weka-is-on-8-and-hops-3-more-where-will-weka-land",
   "text": "8 plus 3. Weka is on 8 and hops 3 more. Where will Weka land?"
  },
@@ -1198,6 +1486,18 @@
  {
   "slug": "8-and-2-make-10-we-still-have-1",
   "text": "8 and 2 make 10. We still have 1."
+ },
+ {
+  "slug": "8-and-1-make-9-we-need-to-land-on-10",
+  "text": "8 and 1 make 9. We need to land on 10."
+ },
+ {
+  "slug": "8-and-3-make-11-we-need-to-land-on-10",
+  "text": "8 and 3 make 11. We need to land on 10."
+ },
+ {
+  "slug": "8-and-4-make-12-we-need-to-land-on-10",
+  "text": "8 and 4 make 12. We need to land on 10."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-3-here-are-8-gold-and-3-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1300,6 +1600,18 @@
   "text": "4 is 2 and 2. The 2 got Weka to the rock."
  },
  {
+  "slug": "2-and-1-make-3-we-have-4",
+  "text": "2 and 1 make 3. We have 4."
+ },
+ {
+  "slug": "2-and-3-make-5-we-have-4",
+  "text": "2 and 3 make 5. We have 4."
+ },
+ {
+  "slug": "2-and-4-make-6-we-have-4",
+  "text": "2 and 4 make 6. We have 4."
+ },
+ {
   "slug": "the-same-question-with-pebbles-8-plus-4-here-are-8-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
   "text": "The same question with pebbles: 8 plus 4. Here are 8 gold and 4 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
@@ -1392,6 +1704,18 @@
   "text": "8 and 2 make 10. We still have 3."
  },
  {
+  "slug": "2-and-2-make-4-we-have-5",
+  "text": "2 and 2 make 4. We have 5."
+ },
+ {
+  "slug": "2-and-4-make-6-we-have-5",
+  "text": "2 and 4 make 6. We have 5."
+ },
+ {
+  "slug": "2-and-5-make-7-we-have-5",
+  "text": "2 and 5 make 7. We have 5."
+ },
+ {
   "slug": "the-same-question-with-pebbles-8-plus-5-here-are-8-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
   "text": "The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
@@ -1452,6 +1776,18 @@
   "text": "3 gets to ten. How many of the 5 are left?"
  },
  {
+  "slug": "3-and-1-make-4-we-have-5",
+  "text": "3 and 1 make 4. We have 5."
+ },
+ {
+  "slug": "3-and-3-make-6-we-have-5",
+  "text": "3 and 3 make 6. We have 5."
+ },
+ {
+  "slug": "3-and-4-make-7-we-have-5",
+  "text": "3 and 4 make 7. We have 5."
+ },
+ {
   "slug": "8-plus-6-weka-is-on-8-and-hops-6-more-where-will-weka-land",
   "text": "8 plus 6. Weka is on 8 and hops 6 more. Where will Weka land?"
  },
@@ -1486,6 +1822,18 @@
  {
   "slug": "8-and-2-make-10-we-still-have-4",
   "text": "8 and 2 make 10. We still have 4."
+ },
+ {
+  "slug": "2-and-3-make-5-we-have-6",
+  "text": "2 and 3 make 5. We have 6."
+ },
+ {
+  "slug": "2-and-5-make-7-we-have-6",
+  "text": "2 and 5 make 7. We have 6."
+ },
+ {
+  "slug": "2-and-6-make-8-we-have-6",
+  "text": "2 and 6 make 8. We have 6."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-6-here-are-8-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1548,6 +1896,18 @@
   "text": "4 gets to ten. How many of the 6 are left?"
  },
  {
+  "slug": "4-and-1-make-5-we-have-6",
+  "text": "4 and 1 make 5. We have 6."
+ },
+ {
+  "slug": "4-and-3-make-7-we-have-6",
+  "text": "4 and 3 make 7. We have 6."
+ },
+ {
+  "slug": "4-and-4-make-8-we-have-6",
+  "text": "4 and 4 make 8. We have 6."
+ },
+ {
   "slug": "8-plus-7-weka-is-on-8-and-hops-7-more-where-will-weka-land",
   "text": "8 plus 7. Weka is on 8 and hops 7 more. Where will Weka land?"
  },
@@ -1582,6 +1942,18 @@
  {
   "slug": "8-and-2-make-10-we-still-have-5",
   "text": "8 and 2 make 10. We still have 5."
+ },
+ {
+  "slug": "2-and-4-make-6-we-have-7",
+  "text": "2 and 4 make 6. We have 7."
+ },
+ {
+  "slug": "2-and-6-make-8-we-have-7",
+  "text": "2 and 6 make 8. We have 7."
+ },
+ {
+  "slug": "2-and-7-make-9-we-have-7",
+  "text": "2 and 7 make 9. We have 7."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-7-here-are-8-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1644,6 +2016,18 @@
   "text": "5 gets to ten. How many of the 7 are left?"
  },
  {
+  "slug": "5-and-1-make-6-we-have-7",
+  "text": "5 and 1 make 6. We have 7."
+ },
+ {
+  "slug": "5-and-3-make-8-we-have-7",
+  "text": "5 and 3 make 8. We have 7."
+ },
+ {
+  "slug": "5-and-4-make-9-we-have-7",
+  "text": "5 and 4 make 9. We have 7."
+ },
+ {
   "slug": "8-plus-8-weka-is-on-8-and-hops-8-more-where-will-weka-land",
   "text": "8 plus 8. Weka is on 8 and hops 8 more. Where will Weka land?"
  },
@@ -1678,6 +2062,18 @@
  {
   "slug": "8-and-2-make-10-we-still-have-6",
   "text": "8 and 2 make 10. We still have 6."
+ },
+ {
+  "slug": "2-and-5-make-7-we-have-8",
+  "text": "2 and 5 make 7. We have 8."
+ },
+ {
+  "slug": "2-and-7-make-9-we-have-8",
+  "text": "2 and 7 make 9. We have 8."
+ },
+ {
+  "slug": "2-and-8-make-10-we-have-8",
+  "text": "2 and 8 make 10. We have 8."
  },
  {
   "slug": "the-same-question-with-pebbles-8-plus-8-here-are-8-gold-and-8-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1736,6 +2132,18 @@
   "text": "6 gets to ten. How many of the 8 are left?"
  },
  {
+  "slug": "6-and-1-make-7-we-have-8",
+  "text": "6 and 1 make 7. We have 8."
+ },
+ {
+  "slug": "6-and-3-make-9-we-have-8",
+  "text": "6 and 3 make 9. We have 8."
+ },
+ {
+  "slug": "6-and-4-make-10-we-have-8",
+  "text": "6 and 4 make 10. We have 8."
+ },
+ {
   "slug": "7-plus-4-weka-is-on-7-and-hops-4-more-where-will-weka-land",
   "text": "7 plus 4. Weka is on 7 and hops 4 more. Where will Weka land?"
  },
@@ -1774,6 +2182,18 @@
  {
   "slug": "7-and-3-make-10-we-still-have-1",
   "text": "7 and 3 make 10. We still have 1."
+ },
+ {
+  "slug": "7-and-2-make-9-we-need-to-land-on-10",
+  "text": "7 and 2 make 9. We need to land on 10."
+ },
+ {
+  "slug": "7-and-4-make-11-we-need-to-land-on-10",
+  "text": "7 and 4 make 11. We need to land on 10."
+ },
+ {
+  "slug": "7-and-5-make-12-we-need-to-land-on-10",
+  "text": "7 and 5 make 12. We need to land on 10."
  },
  {
   "slug": "the-same-question-with-pebbles-7-plus-4-here-are-7-gold-and-4-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
@@ -1964,6 +2384,18 @@
   "text": "6 is 3 and 3. The 3 got Weka to the rock."
  },
  {
+  "slug": "3-and-2-make-5-we-have-6",
+  "text": "3 and 2 make 5. We have 6."
+ },
+ {
+  "slug": "3-and-4-make-7-we-have-6",
+  "text": "3 and 4 make 7. We have 6."
+ },
+ {
+  "slug": "3-and-5-make-8-we-have-6",
+  "text": "3 and 5 make 8. We have 6."
+ },
+ {
   "slug": "the-same-question-with-pebbles-7-plus-6-here-are-7-gold-and-6-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
   "text": "The same question with pebbles: 7 plus 6. Here are 7 gold and 6 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
@@ -2056,6 +2488,18 @@
   "text": "7 and 3 make 10. We still have 4."
  },
  {
+  "slug": "3-and-3-make-6-we-have-7",
+  "text": "3 and 3 make 6. We have 7."
+ },
+ {
+  "slug": "3-and-5-make-8-we-have-7",
+  "text": "3 and 5 make 8. We have 7."
+ },
+ {
+  "slug": "3-and-6-make-9-we-have-7",
+  "text": "3 and 6 make 9. We have 7."
+ },
+ {
   "slug": "the-same-question-with-pebbles-7-plus-7-here-are-7-gold-and-7-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",
   "text": "The same question with pebbles: 7 plus 7. Here are 7 gold and 7 silver. Drag the silver pebbles you need to make ten, then tap Check."
  },
@@ -2112,6 +2556,18 @@
   "text": "4 gets to ten. How many of the 7 are left?"
  },
  {
+  "slug": "4-and-2-make-6-we-have-7",
+  "text": "4 and 2 make 6. We have 7."
+ },
+ {
+  "slug": "4-and-4-make-8-we-have-7",
+  "text": "4 and 4 make 8. We have 7."
+ },
+ {
+  "slug": "4-and-5-make-9-we-have-7",
+  "text": "4 and 5 make 9. We have 7."
+ },
+ {
   "slug": "6-plus-5-weka-is-on-6-and-hops-5-more-where-will-weka-land",
   "text": "6 plus 5. Weka is on 6 and hops 5 more. Where will Weka land?"
  },
@@ -2150,6 +2606,18 @@
  {
   "slug": "6-and-4-make-10-we-still-have-1",
   "text": "6 and 4 make 10. We still have 1."
+ },
+ {
+  "slug": "6-and-3-make-9-we-need-to-land-on-10",
+  "text": "6 and 3 make 9. We need to land on 10."
+ },
+ {
+  "slug": "6-and-5-make-11-we-need-to-land-on-10",
+  "text": "6 and 5 make 11. We need to land on 10."
+ },
+ {
+  "slug": "6-and-6-make-12-we-need-to-land-on-10",
+  "text": "6 and 6 make 12. We need to land on 10."
  },
  {
   "slug": "the-same-question-with-pebbles-6-plus-5-here-are-6-gold-and-5-silver-drag-the-silver-pebbles-you-need-to-make-ten-then-tap-check",

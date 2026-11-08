@@ -2,7 +2,9 @@
  * The same question again with pebbles (James, 6 Nov 2026; a real choice since maths review R9): after a right answer
  * on a full or split-first go, two ten-frames show it. The bigger number sits as gold pebbles in the first ten-frame
  * and the smaller as silver in the second. The child drags as many silver pebbles across as they think make ten (8 + 5:
- * 2 move, 3 stay), then taps Check. Nothing stops by itself. Right: "10 is full. 2 gone, 3 left." Too few or too many:
+ * 2 move, 3 stay). Nothing stops at ten by itself, but when exactly the right number is across and the child has not
+ * touched a pebble for a moment, it finishes by itself ("10 is full. 2 gone, 3 left."): the count was the thinking, so
+ * no Check tap is needed (S36). Check is for the other cases. Too few or too many:
  * Bella says how many spaces or how many to put back (a tap on a pebble in the first frame puts it back). A wrong first
  * check tells the game this go was not right first time (help only; the saved maths record is not changed), and after
  * two wrong checks the right number moves across to show it. A tap on a silver pebble moves it too, so it works
@@ -18,6 +20,8 @@ import { WORDS } from './words';
 
 /** After this long without a move, a hand shows which pebble to drag. */
 const HINT_MS = 7000;
+/** Exactly the right number across and no pebble touched for this long: the step finishes by itself. */
+const AUTO_FINISH_MS = 1200;
 /** A press that moves less than this is a tap. */
 const TAP_PX = 8;
 
@@ -69,6 +73,15 @@ export function Pebbles({ go, guided = false, sound, last, say, onFirstWrong, on
     const t = window.setTimeout(() => setHint(true), HINT_MS);
     return () => window.clearTimeout(t);
   }, [moved, done, wrongs]);
+
+  // The right number is across and the child has stopped (never during a drag): finish without a Check tap.
+  useEffect(() => {
+    if (done || drag || moved !== go.toTen) return;
+    const t = window.setTimeout(() => finish(pebbleRightLine(go)), AUTO_FINISH_MS);
+    return () => window.clearTimeout(t);
+    // finish only reads props and sets state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moved, done, drag]);
 
   function moveAcross(index: number) {
     if (done || !left.includes(index)) return;
