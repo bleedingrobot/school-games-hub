@@ -17,6 +17,7 @@ import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { tapRight, type Tap } from '../../../shared/pigeon/play';
 import type { Friend as FriendName } from '../../../shared/pigeon/progress';
@@ -104,6 +105,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
   const [pose, setPose] = useState<Pose>('sit');
+  // Three goes in a row with a wrong first tap bring the full picture back for the rest of the round (not saved).
+  const [struggle, setStruggle] = useState(false);
+  const run = useRef(0);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -120,7 +124,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const wrongs = gs.wrong;
-  const pic = pictureFor(go, wrongs, tapped);
+  const pic = pictureFor(go, wrongs, tapped, struggle);
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
   const level: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;
   const seen: HelpLevel = gs.phase === 'look' || gs.phase === 'redo' ? 5 : level;
@@ -185,6 +189,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     }
     clearTimers();
     setGs(stepGo(gs, 'right'));
+    run.current = gs.wrong > 0 ? run.current + 1 : 0;
+    if (run.current >= STRUGGLE_GOES) setStruggle(true);
     setPhase('right');
     setPose('eat');
     say(WORDS.right[at % WORDS.right.length]);
