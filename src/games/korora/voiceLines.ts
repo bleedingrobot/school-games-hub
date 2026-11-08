@@ -6,6 +6,7 @@
 import { METALS, type Metal } from '../../../shared/korora/progress';
 import { LEVELS, levelKeys, parseKey, spokenFor, fairKeys, type Go, type Level, type WrongKind } from '../../../shared/korora/round';
 import { FRIEND_NAMES } from './art';
+import { demoLines } from './demo';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
 
@@ -76,6 +77,7 @@ export function allVoiceLines(): string[] {
   for (const line of [WORDS.why.noExtra, WORDS.why.bigger, WORDS.why.plus1, WORDS.why.miscountDouble, WORDS.why.all, WORDS.why.miscountHalf, WORDS.why.minus2, WORDS.why.double]) lines.add(line);
   // Bella counts along with the child: up to 20 fish.
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
+  for (const line of demoLines()) lines.add(line);
   const shoes = (['bronze', 'silver', 'gold'] as const).flatMap((m) => Object.values(FRIEND_NAMES).map((name) => WORDS.shoesWon(m, name)));
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.pebbleTurned(m)), ...shoes];
   for (const main of mains) for (const up of [null, 2, 3, 4] as const) lines.add(finishLine(main, up));

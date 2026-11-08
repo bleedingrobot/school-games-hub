@@ -124,6 +124,11 @@ export function KororaGame({ backend, onExit, onOpenWeka, extra }: Props) {
         scenery={pool.today}
         friend={pool.friend}
         guide={state.daysDone === 0 && state.lastPebbleDay === null}
+        seen={state.seen}
+        onSeen={(kinds) => {
+          setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+          return backend.markSeen(kinds);
+        }}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

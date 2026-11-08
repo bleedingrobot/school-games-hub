@@ -32,9 +32,14 @@ import type { Friend as FriendName, Help } from '../../../shared/korora/progress
 import { followsItsDouble, GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/korora/round';
 import { helpWithSetting, STRUGGLE_GOES, type HelpSetting } from '../../../shared/kit/help';
 import { LOOK_AT, NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { DemoBar } from '../../kit/DemoBar';
+import { PointingHand } from '../../kit/PointingHand';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { playSound } from '../sounds';
 import { FairPile, COUNT_MS } from './FairPile';
+import { DEMOS, DEMO_KINDS, type DemoKind } from './demo';
 import { Chick, Fish, Friend, Pebble } from './KororaArt';
 import { backFor, type Scenery } from './Pool';
 import { goLine, whyLine } from './voiceLines';
@@ -54,6 +59,9 @@ interface Props {
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the way on the first go. */
   guide?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (each kind's demo plays once). */
+  seen: readonly string[];
+  onSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -97,7 +105,7 @@ function FairIcon({ fair }: { fair: boolean }) {
 /** Fish in rows of five, like a ten-frame: [5, 5, 2] for 12. */
 const rowsOf = (n: number) => Array.from({ length: Math.ceil(n / 5) }, (_, r) => Math.min(5, n - r * 5));
 
-export function Goes({ round, help, setting = 'fade', scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, help, setting = 'fade', scenery, friend, guide = false, seen, onSeen, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -140,6 +148,11 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   useEffect(() => clearTimers, []);
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
+  const kinds = useSeenKinds(seen, onSeen);
+  /** A kind not yet seen gets its demo before the first go of it (never in a redo: it is marked seen when it ends). */
+  const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' ? (go.kind as DemoKind) : null;
+  const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMOS[demoKind].steps : [], say });
+  const demoWas = useRef(false);
   const guided = guide && at === 0;
   const line = goLine(go, guided, followsItsDouble(round.goes, at));
   // "Let's look together" shows the full picture; "Now you try" goes back to the child's own help level, not more.
@@ -157,6 +170,15 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const lookLine = go.kind === 'near' ? WORDS.lookNear(go.n) : go.kind === 'double' ? WORDS.lookDouble(go.n) : WORDS.lookHalf(go.n);
   const lookIds = mirror ? fishIdsOf(go) : fishIdsOf(go).filter((_, i) => i % 2 === 0);
 
+  /** Reads the question, and starts the answer clock once it has been heard. */
+  function readGo(alive: () => boolean) {
+    say(line, () => {
+      if (alive() && !tappedYet.current) since.current = Date.now();
+      // Near doubles at a help level that shows the water: the picture said in a line, never the answer.
+      if (alive() && go.kind === 'near' && shown !== 'none') say(WORDS.nearMirror(go.n));
+    });
+  }
+
   // Each new go is read aloud once; the child deals the fish of a half themselves at every help level.
   useEffect(() => {
     if (at === 0) heading.current?.focus();
@@ -164,11 +186,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     let live = true;
     tappedYet.current = false;
     since.current = Date.now();
-    say(line, () => {
-      if (live && !tappedYet.current) since.current = Date.now();
-      // Near doubles at a help level that shows the water: the picture said in a line, never the answer.
-      if (live && go.kind === 'near' && shown !== 'none') say(WORDS.nearMirror(go.n));
-    });
+    // A kind not yet seen is shown first; its question is read when the demo is over.
+    if (!(DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind))) readGo(() => live);
     setGuideStep(0);
     if (guided) {
       later(1800, () => setGuideStep(1));
@@ -180,6 +199,20 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
+
+  // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    tappedYet.current = false;
+    since.current = Date.now();
+    readGo(() => true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
 
   /** Shares the rest of the pile out, one each in turn. */
   function shareAll(n: number, wait = 0) {
@@ -212,7 +245,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || flow.phase === 'look' || greyed.includes(n)) return;
+    if (phase !== 'ask' || look || demo.playing || flow.phase === 'look' || greyed.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -257,6 +290,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       return;
     }
     if (first) setStreak(0);
+    // A go of a kind finished: that kind is known (a safety net; its demo marks it too).
+    if (DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind)) kinds.mark([go.kind]);
     setFlow(stepGo(flow, 'right'));
     setWhy(null);
     clearTimers();
@@ -317,6 +352,23 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const made = at + (phase === 'ask' ? 0 : 1);
   const pose = phase === 'right' || phase === 'done' ? (mirror ? 'gulp' : 'cheer') : 'wait';
   const style = { ...backFor(scenery) } as CSSProperties;
+
+  if (demo.playing && demoKind) {
+    return (
+      <div className={`kr-play kr-pool--${scenery}`} style={style}>
+        <h2 className="kr-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="kr-top">
+          <div className="kr-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'kr-pip kr-pip--done' : 'kr-pip'} />
+            ))}
+          </div>
+        </div>
+        <DemoScene kind={demoKind} step={demo.step} friend={friend} />
+        <DemoBar prefix="kr" skipLabel={WORDS.skip} canSkip={demo.canSkip} onSkip={demo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className={`kr-play kr-pool--${scenery}`} style={style}>
@@ -381,6 +433,61 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         </div>
       </div>
     </div>
+  );
+}
+
+/** The made-up go of a "Show me first" demo: the same pictures and stones as a real go, with nothing to tap. */
+function DemoScene({ kind, step, friend }: { kind: DemoKind; step: number; friend: FriendName }) {
+  const { go, steps } = DEMOS[kind];
+  const target = steps[step]?.target;
+  const mirror = kind === 'near';
+  const ids = fishIdsOf(go);
+  // Near doubles: the double is counted first (the rock's fish and the water's four), then the one more fish.
+  // Halves: the pile is dealt out in turn, then one chick's share is counted.
+  const counted = kind === 'near' ? (step === 1 ? ids.slice(0, 2 * go.n) : step >= 2 ? ids : []) : kind === 'half' && step >= 2 ? ids.filter((_, i) => i % 2 === 0) : [];
+  const [dealt, setDealt] = useState(0);
+  useEffect(() => {
+    if (kind !== 'half' || step < 1) return;
+    const t = window.setInterval(() => setDealt((d) => Math.min(go.n, d + 1)), 140);
+    return () => window.clearInterval(t);
+  }, [kind, step, go.n]);
+  const shared = Array.from({ length: kind === 'half' ? (step >= 2 ? go.n : dealt) : 0 }, (_, i) => i);
+  const noop = () => undefined;
+  return (
+    <>
+      <p className="kr-ask">{kind === 'fair' ? `${go.n} fish. Is it fair?` : go.parts.join(' ')}</p>
+      <div className="kr-scene kr-demoscene" aria-hidden="true">
+        <span className={`kr-scene__friend${mirror ? '' : ' kr-scene__friend--low'}`}>
+          <Friend friend={friend} pose={step >= 2 ? 'cheer' : 'wait'} />
+        </span>
+        {mirror ? (
+          <Mirror go={go} help="full" phase="ask" counted={counted} guide={null} onFish={noop} />
+        ) : kind === 'fair' ? (
+          <FairPile go={go} help="full" phase="ask" hint={step >= 1} sound={false} onSorted={noop} />
+        ) : (
+          <Share go={go} help="full" phase="ask" counted={counted} shared={shared} deal={false} onFish={noop} />
+        )}
+      </div>
+      <div className="kr-answer">
+        <div className={`kr-choices${kind === 'fair' ? ' kr-choices--fair' : ''}`} role="group" aria-label={WORDS.pickNumber}>
+          {go.choices.map((n) => {
+            const pointed = target === 'card' && n === go.answer;
+            return (
+              <button key={n} type="button" disabled className={`kr-choice${pointed ? ' kr-choice--pointed' : ''}`} aria-label={`${kind === 'fair' ? fairLabel(n) : n}`}>
+                {kind === 'fair' ? (
+                  <span className="kr-choice__words">
+                    <FairIcon fair={n === 1} /> {fairLabel(n)}
+                  </span>
+                ) : (
+                  <Pebble metal="grey" value={n} />
+                )}
+                {pointed && <PointingHand prefix="kr" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
 
