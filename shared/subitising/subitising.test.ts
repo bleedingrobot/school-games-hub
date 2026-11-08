@@ -4,7 +4,7 @@ import { checkItem } from '../training/save';
 import { flashMs, growth, isStruggling, progressFrom, stageDone, type SubAnswer } from './engine';
 import { gapKey, helpedKey, parseKey, subKey } from './keys';
 import { BOX, DOT_R, MIN_GAP, closestPair, groupSizes, makeGapPicture, makePicture } from './patterns';
-import { placementLevel, placementTrial, startStageFrom } from './placement';
+import { PLACEMENT_MAX, placementLevel, placementOver, placementTrial, startStageFrom, testOutcome } from './placement';
 import { buildTrial, choicesFor, rngFor } from './trials';
 
 const ALL_TYPES = STAGES.filter((s) => s.activity !== 'gap').flatMap((s) => s.types.map((t) => [s, t] as const));
@@ -226,6 +226,16 @@ describe('stages', () => {
     expect(growth(progressFrom(answersFor(1, Array(5).fill(true))).stages[0])).toBe(1);
     expect(growth(progressFrom(answersFor(1, Array(8).fill(true))).stages[0])).toBe(4);
   });
+
+  it('grows a little with the picture kept on screen, but never to in flower', () => {
+    const helped = (n: number): SubAnswer[] => Array.from({ length: n }, (_, i) => ({ key: helpedKey(answersFor(1, [true])[0].key), correct: true, at: i }));
+    expect(growth(progressFrom(helped(7)).stages[0])).toBe(0);
+    expect(growth(progressFrom(helped(8)).stages[0])).toBe(1);
+    expect(growth(progressFrom(helped(24)).stages[0])).toBe(3);
+    expect(growth(progressFrom(helped(60)).stages[0])).toBe(3);
+    expect(progressFrom(helped(60)).stages[0].finished).toBe(false);
+    expect(growth(progressFrom(helped(60), 2).stages[0])).toBe(4);
+  });
 });
 
 describe('trials', () => {
@@ -378,11 +388,13 @@ describe('trials', () => {
 });
 
 describe('placement', () => {
-  /** Plays the check for a student who passes every stage below `firstFail` (both pictures right) and none from it up. */
+  const T = true;
+  const F = false;
+  /** Plays the check for a student who passes every stage below `firstFail` (all pictures right) and none from it up. */
   function play(firstFail: number) {
     const answers: boolean[] = [];
     const trials = [];
-    while (answers.length < C.placementTrials) {
+    while (!placementOver(answers)) {
       const t = placementTrial(answers, 11);
       trials.push(t);
       answers.push(t.stage < firstFail);
@@ -390,36 +402,56 @@ describe('placement', () => {
     return { answers, trials };
   }
 
-  it('is a binary search of 3 tests: 6 pictures, the first test at stage 4', () => {
-    expect(C.placementTrials).toBe(6);
+  it('is 3 tests, each 3 pictures with a 4th only when exactly 2 of 3 are right (3 of 4 passes)', () => {
     expect(placementLevel([])).toBe(4);
-    for (const firstFail of [1, 2, 3, 4, 5, 6, 7, 8]) expect(play(firstFail).answers).toHaveLength(6);
+    expect(testOutcome([T, T, T])).toEqual({ result: 'pass', used: 3 });
+    expect(testOutcome([T, T, F])).toEqual({ result: 'open', used: 0 });
+    expect(testOutcome([T, F, T, T])).toEqual({ result: 'pass', used: 4 });
+    expect(testOutcome([T, F, T, F])).toEqual({ result: 'fail', used: 4 });
+    expect(testOutcome([T, F, F])).toEqual({ result: 'fail', used: 3 });
+    expect(testOutcome([F, F, F])).toEqual({ result: 'fail', used: 3 });
+    expect(play(8).answers).toHaveLength(9); // all right: 9 pictures, start stage 7
+    expect(play(1).answers).toHaveLength(9); // all wrong: 9 pictures, start stage 1
+    expect(placementOver([T, T, T, T, T, T, T, T, T])).toBe(true);
+    expect(placementOver([T, T, T, T, T, T, T, T])).toBe(false);
+    expect(placementOver([T, T, F])).toBe(false);
+    expect(PLACEMENT_MAX).toBe(12);
     expect(placementTrial([], 5).stage).toBe(4);
-    expect(placementTrial([true], 5).stage).toBe(4);
+    expect(placementTrial([T, T], 5).stage).toBe(4);
+    expect(placementTrial([T, T, T], 5).stage).toBe(6);
   });
-  it('lands exactly', () => {
-    expect(startStageFrom([true, true, true, true, true, true])).toBe(7);
-    expect(startStageFrom([false, false, false, false, false, false])).toBe(1);
-    expect(startStageFrom(play(4).answers)).toBe(4); // passes stages 1-3 only
-    expect(startStageFrom(play(6).answers)).toBe(6); // passes 1-5
+  it('lands exactly, and a slip on a stage the student knows does not fail it', () => {
+    expect(startStageFrom([T, T, T, T, T, T, T, T, T])).toBe(7);
+    expect(startStageFrom([F, F, F, F, F, F, F, F, F])).toBe(1);
     for (let f = 1; f <= 8; f++) expect(startStageFrom(play(f).answers), `first fail ${f}`).toBe(Math.min(f, 7));
+    // Stage 4: one slip then a right 4th passes it; two lucky-less answers do not.
+    expect(startStageFrom([T, F, T, T])).toBeGreaterThan(4);
+    expect(startStageFrom([T, F, T, F])).toBeLessThanOrEqual(4);
   });
   it('uses the best guess so far when ended early', () => {
     expect(startStageFrom([])).toBe(1);
-    expect(startStageFrom([true])).toBe(1);
-    expect(startStageFrom([true, true])).toBe(5);
-    expect(startStageFrom([true, true, true, true])).toBe(7);
-    expect(startStageFrom([false, true])).toBe(1);
+    expect(startStageFrom([T, T])).toBe(1);
+    expect(startStageFrom([T, T, T])).toBe(5);
+    expect(startStageFrom([T, T, T, T, T, T])).toBe(7);
+    expect(startStageFrom([F, T, T])).toBe(1);
   });
-  it('tests the stage the search is at, with no review, and two different kinds of picture per test', () => {
+  it('tests the stage the search is at, with no review, and never repeats a picture within a test', () => {
     for (let seed = 1; seed <= 30; seed++) {
-      const { trials } = play(9);
-      expect(trials.map((t) => t.stage)).toEqual([4, 4, 6, 6, 7, 7]);
-      expect(trials[0].type).not.toBe(trials[1].type);
-      expect(trials[2].type).not.toBe(trials[3].type);
-      expect(trials[2].activity).toBe('gap');
+      const answers: boolean[] = [];
+      const trials = [];
+      while (!placementOver(answers)) {
+        const t = placementTrial(answers, seed);
+        trials.push(t);
+        answers.push(t.stage < 9 || trials.length % 4 !== 0);
+      }
       expect(trials.every((t) => !t.review)).toBe(true);
-      expect(trials[4].key).not.toBe(trials[5].key);
+      expect(trials.map((t) => t.stage).slice(0, 3)).toEqual([4, 4, 4]);
+      expect(trials[3].stage).toBe(6);
+      expect(trials[3].activity).toBe('gap');
+      for (let i = 0; i < 9; i += 3) {
+        expect(new Set(trials.slice(i, i + 3).map((t) => t.key)).size).toBe(3);
+        if (STAGES[trials[i].stage - 1].types.length > 1) expect(trials[i].type).not.toBe(trials[i + 1].type);
+      }
     }
   });
 });

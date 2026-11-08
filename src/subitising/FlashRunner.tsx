@@ -6,7 +6,7 @@ import type { Trial } from '../../shared/subitising/trials';
 import { speak, stopSpeaking } from '../speech';
 import { Friend } from './Friend';
 import { BlankPicture, PictureSvg } from './PictureSvg';
-import { flashFeedback, gapFeedback, helpedPrompt, PROMPTS, VOICE_FOLDER } from './voiceLines';
+import { flashFeedback, gapFeedback, gapWords, helpedPrompt, PROMPTS, VOICE_FOLDER } from './voiceLines';
 
 export interface AnswerResult {
   given: number;
@@ -34,6 +34,8 @@ interface Props {
   readAloud?: { on: boolean; onChange: (on: boolean) => void };
   /** Replaces the question heading while answering (the demo before the starting check). Read aloud like the other prompts. */
   intro?: string;
+  /** The starting check can end early: true once its tests are decided. Then the last button says "Finish". */
+  over?: () => boolean;
 }
 
 type Phase = 'ready' | 'show' | 'answer' | 'peek' | 'feedback';
@@ -53,7 +55,14 @@ function EmptySquareIcon() {
   );
 }
 
-export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud, intro }: Props) {
+/** The question for a picture that is not a help picture or the demo. A review picture says so first. */
+function questionPrompt(trial: Trial, guidedMode: boolean): string {
+  const gap = trial.activity === 'gap';
+  if (trial.review) return gap ? PROMPTS.reviewGap : guidedMode ? PROMPTS.reviewGuided : PROMPTS.reviewFlash;
+  return gap ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash;
+}
+
+export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud, intro, over }: Props) {
   const [index, setIndex] = useState(0);
   const [trial, setTrial] = useState<Trial>(() => next(0, null));
   const [phase, setPhase] = useState<Phase>(() => (guidedMode ? 'answer' : 'ready'));
@@ -181,7 +190,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
     if (!reading) return;
     if (phase === 'ready') speak(trial.activity === 'gap' ? PROMPTS.readyGap : PROMPTS.readyFlash, VOICE_FOLDER);
     else if (phase === 'answer') {
-      const line = tried !== null ? PROMPTS.retry : (intro ?? (helped ? helpedPrompt(trial.activity, trial.answer) : trial.activity === 'gap' ? PROMPTS.gap : guidedMode ? PROMPTS.guided : PROMPTS.flash));
+      const line = tried !== null ? PROMPTS.retry : (intro ?? (helped ? helpedPrompt(trial.activity, trial.answer) : questionPrompt(trial, guidedMode)));
       voiceEnd.current = Infinity;
       speak(line, VOICE_FOLDER, () => {
         voiceEnd.current = performance.now();
@@ -193,7 +202,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   }, [reading, phase, result, trial]);
 
   const advance = () => {
-    if (index + 1 >= total) {
+    if (index + 1 >= total || over?.()) {
       onFinish();
       return;
     }
@@ -214,15 +223,18 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
 
   const gap = trial.activity === 'gap';
   const one = !gap && trial.answer === 1;
+  const lookBack = trial.review ? 'A look back. ' : '';
   const prompt = gap ? (
     <span>
-      How many <strong>empty squares</strong>? <EmptySquareIcon />
+      {lookBack}How many <strong>empty squares</strong>? <EmptySquareIcon />
     </span>
-  ) : guidedMode ? 'How many can you see?' : 'How many did you see?';
+  ) : (
+    `${lookBack}${guidedMode ? 'How many can you see?' : 'How many did you see?'}`
+  );
   const showing = phase === 'show' || phase === 'peek' || (phase === 'answer' && staticPicture) || phase === 'feedback';
   const mode = phase === 'feedback' ? (result?.correct ? 'right' : 'help') : helped && phase === 'answer' ? 'help' : 'plain';
   const label =
-    phase === 'feedback' ? `The picture again. ${gap ? `${trial.n} counters and ${trial.answer} empty` : `${trial.answer}`}.` : phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : phase === 'answer' && !staticPicture ? 'The picture has gone' : 'A picture is showing';
+    phase === 'feedback' ? `The picture again. ${gap ? gapWords(trial.n, trial.answer) : `${trial.answer}`}.` : phase === 'ready' ? (gap ? 'Get ready: how many empty squares?' : 'Get ready: how many dots?') : phase === 'answer' && !staticPicture ? 'The picture has gone' : 'A picture is showing';
 
   const feedback = result ? feedbackText(trial, result) : '';
 
@@ -255,7 +267,7 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
             <p className={result?.correct ? 'sb-good' : 'sb-calm'}>{feedback}</p>
           </div>
           <button ref={nextButton} type="button" className="sb-btn sb-btn-primary sb-big" onClick={advance}>
-            {index + 1 >= total ? 'Finish' : 'Next'}
+            {index + 1 >= total || over?.() ? 'Finish' : 'Next'}
           </button>
         </>
       ) : (
@@ -282,11 +294,16 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
         </>
       )}
 
-      <div className="sb-progress" role="img" aria-label={`Picture ${index + 1} of ${total}`}>
-        {Array.from({ length: total }, (_, i) => (
-          <span key={i} className={i < index || (i === index && phase === 'feedback') ? 'on' : ''} />
-        ))}
-      </div>
+      {over ? (
+        // The starting check is 9 to 12 pictures: the dots could not say how long it is.
+        <p className="sr-only" role="status" aria-live="off">{`Picture ${index + 1}`}</p>
+      ) : (
+        <div className="sb-progress" role="img" aria-label={`Picture ${index + 1} of ${total}`}>
+          {Array.from({ length: total }, (_, i) => (
+            <span key={i} className={i < index || (i === index && phase === 'feedback') ? 'on' : ''} />
+          ))}
+        </div>
+      )}
       <div className="sb-row">
         {readAloud && (
           <button type="button" className="sb-btn sb-btn-quiet" aria-pressed={readAloud.on} onClick={() => readAloud.onChange(!readAloud.on)}>

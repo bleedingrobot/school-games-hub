@@ -23,6 +23,8 @@ export interface StageProgress {
   finished: boolean;
   /** Counted answers in this stage, newest last. */
   answers: boolean[];
+  /** Right answers with the picture kept on screen (practice): they grow the plant a little but never finish a stage. */
+  helpedRight: number;
   /** Answers per slot (`flash:ten`, `gap:ten`: a picture type in one activity) among the last `typeLookback` counted answers. */
   seen: Record<string, number>;
 }
@@ -67,10 +69,14 @@ export function progressFrom(
   const finished = new Set<StageNumber>(STAGES.filter((s) => s.id < startStage || s.id <= finishedBefore).map((s) => s.id));
   const byStage = new Map<StageNumber, { correct: boolean; slot: string }[]>(STAGES.map((s) => [s.id, []]));
 
+  const helpedRight = new Map<StageNumber, number>();
   for (const a of answers) {
-    if (a.helped) continue;
     const key = parseKey(a.key);
-    if (!key || key.helped) continue;
+    if (!key) continue;
+    if (a.helped || key.helped) {
+      if (a.correct) helpedRight.set(key.stage, (helpedRight.get(key.stage) ?? 0) + 1);
+      continue;
+    }
     const list = byStage.get(key.stage)!;
     list.push({ correct: a.correct, slot: slotOf(key.activity, key.type) });
     if (!finished.has(key.stage) && stageDone(key.stage, list, config)) finished.add(key.stage);
@@ -80,7 +86,7 @@ export function progressFrom(
     const list = byStage.get(s.id)!;
     const seen: Record<string, number> = {};
     for (const a of list.slice(-config.typeLookback)) seen[a.slot] = (seen[a.slot] ?? 0) + 1;
-    return { id: s.id, finished: finished.has(s.id), answers: list.map((a) => a.correct), seen };
+    return { id: s.id, finished: finished.has(s.id), answers: list.map((a) => a.correct), helpedRight: helpedRight.get(s.id) ?? 0, seen };
   });
 
   const open = stages.find((s) => !s.finished);
@@ -108,5 +114,6 @@ export function flashMs(stage: StageNumber, stageAnswers: readonly boolean[], co
 export function growth(stage: StageProgress): 0 | 1 | 2 | 3 | 4 {
   if (stage.finished) return 4;
   const right = stage.answers.filter(Boolean).length;
-  return Math.min(3, Math.floor(right / 4)) as 0 | 1 | 2 | 3;
+  // A right answer with the picture kept on is worth half a flashed one, and can never reach "in flower".
+  return Math.min(3, Math.floor((2 * right + stage.helpedRight) / 8)) as 0 | 1 | 2 | 3;
 }

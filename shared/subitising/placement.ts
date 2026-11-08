@@ -1,17 +1,31 @@
 /**
  * The starting check: a binary search for the first stage the student does not pass, over stages
- * 1 to 7. A stage is tested with 2 pictures and passed when both are right. The search always takes
- * 3 tests (6 pictures), the first at stage 4. The answers are not kept as practice (they don't count
- * towards finishing a stage).
+ * 1 to 7. A stage is tested with 3 pictures: 3 right passes it, 0 or 1 right does not, and with exactly
+ * 2 right a 4th picture decides (so a stage passes with 3 right out of 4, and the 4th is skipped when it
+ * cannot change the result). The search always takes 3 tests (9 to 12 pictures), the first at stage 4.
+ * The answers are not kept as practice (they don't count towards finishing a stage).
  */
 import { STAGES, SUBITISING_CONFIG, type StageNumber, type SubitisingConfig } from './config';
 import { progressFrom } from './engine';
 import { buildTrial, type Trial } from './trials';
 
-/** Pictures per tested stage. */
-export const PLACEMENT_PER_TEST = 2;
+/** The first batch of pictures for each tested stage. */
+export const PLACEMENT_PASS_OF_FIRST = 3;
+/** The most pictures a check can take: 3 tests of 4. */
+export const PLACEMENT_MAX = 12;
 
 const LAST = STAGES.length;
+
+/** One stage test from its answers so far: passed, not passed, or still open; and how many pictures it took. */
+export function testOutcome(slice: readonly boolean[]): { result: 'pass' | 'fail' | 'open'; used: number } {
+  const n = PLACEMENT_PASS_OF_FIRST;
+  if (slice.length < n) return { result: 'open', used: 0 };
+  const right = slice.slice(0, n).filter(Boolean).length;
+  if (right === n) return { result: 'pass', used: n };
+  if (right < n - 1) return { result: 'fail', used: n };
+  if (slice.length < n + 1) return { result: 'open', used: 0 };
+  return { result: slice[n] ? 'pass' : 'fail', used: n + 1 };
+}
 
 interface Search {
   /** The first stage not passed lies in lo..hi (hi = 8 means "none failed yet"). */
@@ -26,12 +40,13 @@ function searchFrom(answers: readonly boolean[]): Search {
   let lo = 1;
   let hi = LAST + 1;
   let at = 0;
-  while (lo < hi && at + PLACEMENT_PER_TEST <= answers.length) {
+  while (lo < hi) {
+    const out = testOutcome(answers.slice(at));
+    if (out.result === 'open') break;
     const m = Math.floor((lo + hi) / 2);
-    const pass = answers.slice(at, at + PLACEMENT_PER_TEST).every(Boolean);
-    if (pass) lo = m + 1;
+    if (out.result === 'pass') lo = m + 1;
     else hi = m;
-    at += PLACEMENT_PER_TEST;
+    at += out.used;
   }
   return { lo, hi, stage: Math.min(Math.floor((lo + hi) / 2), LAST), done: lo < hi ? answers.length - at : 0 };
 }
@@ -47,16 +62,24 @@ export function placementTrial(answers: readonly boolean[], seed: number, config
   const progress = progressFrom([], clamp(stage), config);
   const cfg = { ...config, reviewShare: 0 };
   const base = answers.length - done; // index of the test's first picture
-  const first = buildTrial(progress, seed, base, null, cfg);
-  if (done === 0) return first;
-  // The second picture of a test: a different kind of picture where the stage has more than one.
   const several = STAGES[stage - 1].types.length > 1;
-  let second = first;
-  for (let k = 0; k < 12; k++) {
-    second = buildTrial(progress, seed + k * 101, base + done, first, cfg);
-    if (second.key !== first.key && (!several || second.type !== first.type)) break;
+  const pictures: Trial[] = [];
+  for (let k = 0; k <= done; k++) {
+    const before = pictures[k - 1] ?? null;
+    let t = buildTrial(progress, seed, base + k, before, cfg);
+    // No picture repeats one of the same test, and where the stage has more than one kind, not the same kind twice running.
+    for (let r = 1; r < 12 && k > 0 && (pictures.some((p) => p.key === t.key) || (several && t.type === before?.type)); r++) {
+      t = buildTrial(progress, seed + r * 101, base + k, before, cfg);
+    }
+    pictures.push(t);
   }
-  return second;
+  return pictures[done];
+}
+
+/** Are the 3 tests decided? */
+export function placementOver(answers: readonly boolean[]): boolean {
+  const { lo, hi } = searchFrom(answers);
+  return lo >= hi;
 }
 
 /** Where practice starts after the check (also when it is ended early: the best guess so far). */
