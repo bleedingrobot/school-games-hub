@@ -4,6 +4,7 @@
  * silver and gold); thirty days win the Golden Berry Feast, and a friend comes for berries. The screens only show what the
  * backend says. Built on the shape of Parrot's See-saw.
  */
+import { finishBand } from '../../../shared/kit/finishBand';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { NextPartChip } from '../../components/NextPartChip';
 import { FRIEND_NAMES, type Friend as FriendName } from '../../../shared/robin/config';
@@ -258,12 +259,15 @@ function Finish({ result, say, onNext }: { result: RobinFinish; say: (t: string)
     : result.level < result.levelBefore ? WORDS.lessHelp
     : result.level > result.levelBefore ? WORDS.moreHelp
     : WORDS.sameAgain;
+  const how = WORDS.how[finishBand(result.firstRight)];
   // "Show me" lights the button that moves on (the next-step line is always there, and never chooses for the child).
   const [showing, setShowing] = useState(false);
   return (
     <div className={`rb-home${result.feast ? ' rb-home--prize' : ''}${showing ? ' rb-showing' : ''}`}>
       <Log baskets={things} friend={row.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="rb" title={main} spoken={finishLine(main, next)} note={next} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="rb" title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+        <p className="rb-chip">{how}</p>
+        <p className="rb-chip">{next}</p>
         {result.feast && <span className="rb-prize"><GoldenFeast /></span>}
         <button type="button" className="rb-button rb-showme" onClick={() => { setShowing(true); say(WORDS.pressOk); }}>
           <span aria-hidden="true">👉</span> {WORDS.showMe}

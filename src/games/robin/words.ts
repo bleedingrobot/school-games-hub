@@ -57,6 +57,12 @@ export const WORDS = {
   peek: 'Peek',
   cloth: 'Under the cloth',
   oneMore: 'One more berry comes.',
+  /** One honest line on the finish screen about how the round went (S15): about what the child did, not about them. */
+  how: {
+    most: 'You counted those carefully.',
+    some: 'Some were quick and some were tricky. The tricky ones help you grow.',
+    tricky: 'That was tricky today. We will go slowly and look together.',
+  },
   promptHowMany: 'How many berries?',
   /** The "Show me first" demos, the first time How many? and One more come up (made-up examples the round never asks). */
   skipDemo: 'Skip',

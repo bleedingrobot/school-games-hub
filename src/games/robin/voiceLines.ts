@@ -52,8 +52,8 @@ export const ownCountLine = (answer: number): string => [WORDS.youCounted(answer
 /** What the home screen says: who wants berries, and "come back tomorrow" once today's basket has turned. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title);
 
-/** What the finish screen says: what happened, then what changes next time. */
-export const finishLine = (main: string, next: string): string => [main, next].join(PART_BREAK);
+/** What the finish screen says: what happened, how the round went, then what changes next time. */
+export const finishLine = (main: string, how: string, next: string): string => [main, how, next].join(PART_BREAK);
 
 /** Every go the game can make, once each (the words do not depend on the seed, only on the key). */
 function* everyGo(): Generator<Go> {
@@ -84,6 +84,7 @@ export function allVoiceLines(): string[] {
   for (let n = 1; n <= 20; n++) lines.add(WORDS.youCounted(n));
   const mains = [...METALS.slice(1).map((m) => WORDS.basketTurned(m)), ...names.map(([, name]) => WORDS.goldenFeast(name))];
   for (const main of mains) lines.add(main);
+  for (const how of Object.values(WORDS.how)) lines.add(how);
   for (const s of STEPS.slice(1)) lines.add(WORDS.nextStep(s.step));
   lines.add(WORDS.lessHelp);
   lines.add(WORDS.moreHelp);
