@@ -5,7 +5,7 @@ import { factKey } from '../maths/facts';
 import { REED_ROWS } from './config';
 import { DAYS_PER_GARDEN, finishChallenge, gardenAfter } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, kindOfKey, keyPair, makeRound, pictureFor, placeAfter, showRound, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, makeRound, pictureFor, placeAfter, showGo, showRound, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleSwamphen, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { slipSummary } from './teacher';
@@ -42,7 +42,7 @@ describe('the round', () => {
             expect(go.wrongs).toHaveLength(3);
             expect(new Set(go.choices).size).toBe(4);
             for (const w of go.wrongs) expect(go.choices).toContain(w.n);
-            if (go.kind !== 'which') {
+            if (go.kind !== 'which' && go.kind !== 'turn') {
               expect([...go.choices]).toEqual([...go.choices].sort((a, b) => a - b));
               expect(go.choices.filter((c) => c % 10 === go.answer % 10).length).toBeLessThanOrEqual(2);
             }
@@ -142,5 +142,36 @@ describe('the server', () => {
     });
     const summary = slipSummary([{ round: r, taps: adds }]);
     expect(summary.most).toBe('added');
+  });
+});
+
+describe('turning a garden and sharing it out', () => {
+  it('a turn go asks for the turned garden, can be answered wrongly with a named slip, and records no plain times key', () => {
+    const turnKeys = KEYS.filter((k) => k.startsWith('turn:'));
+    expect(turnKeys.length).toBeGreaterThan(0);
+    for (const key of turnKeys) {
+      const [a, b] = keyPair(key);
+      expect(mulKeyOf(key)).toBeNull();
+      for (let seed = 1; seed <= 200; seed++) {
+        const go = showGo({ seed }, 0, { key, kind: 'turn', l: 3 })!;
+        expect(new Set(go.choices).size).toBe(4);
+        expect(go.answer).toBe(pictureCode(b, a));
+        expect(go.wrongs.find((w) => w.n === pictureCode(a, b))?.kind).toBe('unturned');
+      }
+    }
+    const round = { seed: 5, step: 2 as Step, level: 3 as HelpLevel, help: 'fade' as HelpSetting, goes: Array.from({ length: GOES_PER_ROUND }, () => ({ key: turnKeys[0], kind: 'turn' as const, l: 3 as HelpLevel })) };
+    const goes = showRound(round);
+    const taps: Tap[] = goes.flatMap((g) => [{ pick: g.wrongs[0].n, ms: 1 }, { pick: g.answer, ms: 1 }]);
+    const played = replay(round, taps);
+    expect(played.firstRight).toBe(0);
+    expect(played.slips).toContain(goes[0].wrongs[0].kind);
+    expect(played.answers.some((x) => x.key.startsWith('mul:'))).toBe(false);
+  });
+
+  it('shares are fair only when every row has the same, and some', () => {
+    expect(fairShare([3, 3, 3])).toBe(true);
+    expect(fairShare([4, 3, 3])).toBe(false);
+    expect(fairShare([0, 0, 0])).toBe(false);
+    expect(fairShare([])).toBe(false);
   });
 });

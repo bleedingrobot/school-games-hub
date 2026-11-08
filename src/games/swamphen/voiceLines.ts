@@ -18,7 +18,7 @@ export function askLine({ kind, rows, cols, total }: Said): string {
   switch (kind) {
     case 'plant': return `Plant ${rows} rows of ${cols}. How many shoots?`;
     case 'mat': return `${rows} rows of ${cols} are under the mat. How many shoots?`;
-    case 'turn': return `${rows} rows of ${cols}. Turn the garden. How many shoots?`;
+    case 'turn': return `${rows} rows of ${cols}. Turn the garden. Which garden is it now?`;
     case 'which': return `Which garden is ${rows} rows of ${cols}?`;
     case 'share': return `${total} shoots go into ${rows} equal rows. How many in each row?`;
     case 'cut': return `Cut ${rows} rows of ${cols} in two. How many shoots?`;
@@ -36,6 +36,7 @@ export const SLIP_LINES: Record<Slip, string> = {
   minus: 'Sharing is not taking away. Deal the shoots into the rows.',
   rows: 'That is how many rows there are. How many shoots in each one?',
   turned: 'That garden is turned the other way. Look at the rows first.',
+  unturned: 'That is the garden before it was turned.',
   scatter: 'Those shoots are not in rows. Look for equal rows.',
   near: 'Not quite. Count along the rows.',
 };
@@ -45,7 +46,7 @@ export function lookLine(kind: Go['kind']): string {
   switch (kind) {
     case 'plant': return 'Count one row, then jump along the rows.';
     case 'mat': return 'Count one row. Then jump the same all the way down.';
-    case 'turn': return 'Turning it round gives the same shoots.';
+    case 'turn': return 'Turning it round swaps the rows and the shoots in a row.';
     case 'which': return 'Look at the rows first, then the shoots in one row.';
     case 'share': return 'Deal the shoots out, one for each row, again and again.';
     case 'cut': return 'Cut off five rows. Count them, then count the rest.';
@@ -60,7 +61,7 @@ export const homeLine = (title: string, doneToday: boolean): string => (doneToda
 export const finishLine = (main: string, nextStep: number | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep as 1 | 2 | 3 | 4 | 5 | 6)}` : main);
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.lookTitle, WORDS.nowYouTry, ...WORDS.right, ...WORDS.tip, ...Object.values(SLIP_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.lookTitle, WORDS.nowYouTry, WORDS.oneEach, WORDS.fair, WORDS.unfair, WORDS.dealIt, ...WORDS.right, ...WORDS.tip, ...Object.values(SLIP_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
       lines.add(homeLine(title, false));

@@ -74,9 +74,9 @@ export function kindOfKey(key: string): Kind | null {
   }
 }
 
-/** The plain times-table key a go also records, or null for sharing (no plain key for it). */
+/** The plain times-table key a go also records, or null for sharing and turning (neither states a total to find). */
 export function mulKeyOf(key: string): string | null {
-  if (key.startsWith('share:')) return null;
+  if (key.startsWith('share:') || key.startsWith('turn:')) return null;
   const [a, b] = keyPair(key);
   return factKey(a, b);
 }
@@ -209,7 +209,7 @@ export function makeRound(
 // ---------------------------------------------------------------- a go as shown
 
 /** Named slips behind the wrong cards (the teacher and the why-line use the names). */
-export type Slip = 'added' | 'joined' | 'short' | 'spare' | 'forgot' | 'minus' | 'rows' | 'turned' | 'scatter' | 'near';
+export type Slip = 'added' | 'joined' | 'short' | 'spare' | 'forgot' | 'minus' | 'rows' | 'turned' | 'unturned' | 'scatter' | 'near';
 
 /** A go as shown. */
 export interface Go extends GoPlan {
@@ -218,13 +218,16 @@ export interface Go extends GoPlan {
   cols: number;
   /** The shoots altogether when the garden is whole. */
   total: number;
-  /** The card that is right: the total, the shoots in a row (sharing) or a picture's code (which garden). */
+  /** The card that is right: the total, the shoots in a row (sharing) or a picture's code (which garden, turned garden). */
   answer: number;
   /** Cards, smallest first (the pictures of a which-garden go are in a fixed shuffled order). */
   choices: number[];
   /** Why each wrong card is wrong. */
   wrongs: Wrong<Slip>[];
 }
+
+/** True when every lane has the same, non-zero number of shoots: the shares are fair. */
+export const fairShare = (lanes: readonly number[]): boolean => lanes.length > 0 && lanes[0] > 0 && lanes.every((n) => n === lanes[0]);
 
 /** A which-garden card: its rows times 100 plus its shoots in a row, or (no rows) a scatter of that many shoots. */
 export const pictureCode = (rows: number, cols: number) => rows * C.CODE + cols;
@@ -267,6 +270,12 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
     return { ...plan, rows: b, cols: answer, total: a, answer, wrongs, choices: [answer, ...wrongs.map((w) => w.n)].sort((x, y) => x - y) };
   }
   const total = a * b;
+  if (plan.kind === 'turn') {
+    // The garden is R rows of C; turned it is C rows of R. The child picks that picture.
+    const answer = pictureCode(b, a);
+    const wrongs: Wrong<Slip>[] = [{ n: pictureCode(a, b), kind: 'unturned' }, { n: pictureCode(1, a + b), kind: 'added' }, { n: total, kind: 'scatter' }];
+    return { ...plan, rows: a, cols: b, total, answer, wrongs, choices: shuffle([answer, ...wrongs.map((w) => w.n)], random) };
+  }
   if (plan.kind === 'which') {
     const answer = pictureCode(a, b);
     const wrongs: Wrong<Slip>[] = [{ n: pictureCode(b, a), kind: 'turned' }, { n: pictureCode(1, a + b), kind: 'added' }, { n: total, kind: 'scatter' }];

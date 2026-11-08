@@ -233,13 +233,38 @@ export function Pile({ n, label }: { n: number; label: string }) {
   );
 }
 
-/** Empty lanes for sharing: each lane is a row waiting for its shoots. */
-export function Lanes({ rows, label }: { rows: number; label: string }) {
+export interface DealLanesProps {
+  /** The shoots in each lane now. */
+  counts: readonly number[];
+  /** The lane to point at (the next one in turn), or null. */
+  glow?: number | null;
+  /** Lanes with more than the others, once the pile is out. */
+  more?: readonly number[];
+  fair?: boolean;
+  /** Not tappable: the look-together picture and the end of a go. */
+  still?: boolean;
+  onDeal?: (lane: number) => void;
+  laneLabel: (lane: number, has: number) => string;
+}
+
+/** Lanes for sharing: each lane is a button, and one tap deals one shoot into it. */
+export function DealLanes({ counts, glow = null, more = [], fair = false, still = false, onDeal, laneLabel }: DealLanesProps) {
+  const green = paint('reeds/green');
   return (
-    <svg className="sh-lanes" viewBox={`0 0 220 ${rows * 26 + 8}`} role="img" aria-label={label}>
-      {Array.from({ length: rows }, (_, r) => (
-        <rect key={r} x="6" y={6 + r * 26} width="208" height="20" rx="8" fill="#8a6e4a" opacity="0.55" stroke="#6b4f2c" strokeWidth="2" strokeDasharray="5 4" />
+    <div className={`sh-lanes${counts.length >= 6 ? ' sh-lanes--two' : ''}${fair ? ' sh-lanes--fair' : ''}`}>
+      {counts.map((n, r) => (
+        <button
+          key={r}
+          type="button"
+          disabled={still}
+          tabIndex={still ? -1 : 0}
+          className={`sh-lane${glow === r ? ' sh-lane--glow' : ''}${more.includes(r) ? ' sh-lane--more' : ''}`}
+          aria-label={laneLabel(r + 1, n)}
+          onClick={() => onDeal?.(r)}
+        >
+          {Array.from({ length: n }, (_, i) => (green ? <img key={i} src={green} alt="" className="sh-lane__reed" /> : <span key={i} className="sh-lane__reed" aria-hidden="true">🌱</span>))}
+        </button>
       ))}
-    </svg>
+    </div>
   );
 }
