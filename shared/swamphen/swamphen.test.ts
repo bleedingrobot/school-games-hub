@@ -142,6 +142,12 @@ describe('the server', () => {
     });
     const summary = slipSummary([{ round: r, taps: adds }]);
     expect(summary.most).toBe('added');
+    // Show me first: a bad kind is refused, a good one is saved (twice, no change), and load adds the kinds the child already answered.
+    expect((await handleSwamphen(services, 'p1', { action: 'seen', kinds: ['nonsense'] })).status).toBe(400);
+    expect((await handleSwamphen(services, 'p1', { action: 'seen', kinds: 'mat' })).status).toBe(400);
+    for (let i = 0; i < 2; i++) expect((await handleSwamphen(services, 'p1', { action: 'seen', kinds: ['cut'] })).body.seen).toEqual(['cut']);
+    expect((await handleSwamphen(services, 'p1', { action: 'load' })).body.seen).toEqual(['cut', 'plant']);
+    expect((await handleSwamphen(services, 'p9', { action: 'load' })).body.seen).toEqual([]);
   });
 });
 

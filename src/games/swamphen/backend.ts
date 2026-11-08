@@ -20,6 +20,8 @@ export interface SwamphenState {
   level: HelpLevel;
   /** The class's help setting. */
   help: HelpSetting;
+  /** The kinds of go this child has already seen (no demo for them). */
+  seen: string[];
 }
 
 export interface SwamphenFinish extends FinishResult {
@@ -37,6 +39,8 @@ export interface SwamphenBackend {
   /** Today's challenge, made and kept by the server. */
   start(): Promise<Round>;
   finish(seed: number, taps: readonly Tap[]): Promise<SwamphenFinish>;
+  /** Remembers that the child has seen these kinds of go (a demo, or a go finished). */
+  markSeen(kinds: readonly string[]): Promise<void>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -58,9 +62,13 @@ export function fromServer(send: Send): SwamphenBackend {
     );
   }
   return {
-    load: async () => (await ask({ action: 'load' })) as unknown as SwamphenState,
+    load: async () => {
+      const state = (await ask({ action: 'load' })) as unknown as SwamphenState;
+      return { ...state, seen: Array.isArray(state.seen) ? state.seen : [] };
+    },
     start: async () => (await ask({ action: 'start' })).round as Round,
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as SwamphenFinish,
+    markSeen: async (kinds) => void (await ask({ action: 'seen', kinds })),
   };
 }
 

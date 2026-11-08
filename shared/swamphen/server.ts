@@ -18,10 +18,11 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { isSeed, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, KINDS, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
 import { TOP_LEVEL } from './config';
+import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 
-export type SwamphenAction = 'load' | 'start' | 'finish';
+export type SwamphenAction = 'load' | 'start' | 'finish' | 'seen';
 
 /** A pupil's garden as it is saved. */
 export interface Progress extends Place {
@@ -45,7 +46,7 @@ export interface Settings {
   help: HelpSetting;
 }
 
-export interface SwamphenServices {
+export interface SwamphenServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; the times tables and counting by fives and tens set where a new pupil starts). */
@@ -109,10 +110,20 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
   const today = () => nzDate(new Date(services.now()));
 
   if (body.action === 'load') {
-    const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-    if (s === 'busy' || facts === 'busy') return busy();
+    const [s, facts, saw] = await Promise.all([services.load(player), services.facts(player), services.seen(player)]);
+    if (s === 'busy' || facts === 'busy' || saw === 'busy') return busy();
     const place = placeOf(s, facts);
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help });
+    // A child who has played for weeks has already seen what they have answered: no demo for it.
+    const seen = mergeSeen(saw, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const saved = await services.markSeen(player, kinds);
+    if (saved === 'busy') return busy();
+    return ok({ seen: saved });
   }
 
   if (body.action === 'start') {

@@ -28,6 +28,12 @@ export const WORDS = {
   dealRound: 'Deal a round',
   dealAgain: 'Deal again',
   lane: (n: number, has: number) => `Row ${n}, ${has} shoot${has === 1 ? '' : 's'}. Tap to deal one here.`,
+  /** The show-me-first demos: said in turn, the first time a kind of go comes up. The last line is always "Now you try." */
+  demo: {
+    mat: ['Watch. A mat hides most of the garden.', 'Count one row you can see. Then jump the same all the way down.', 'Now you try.'],
+    share: ['Watch. Share the shoots into equal rows.', 'One for each row, again and again.', 'Now you try.'],
+    cut: ['Watch. This garden is cut in two.', 'Count the top part. Then count the rest.', 'Now you try.'],
+  },
   pickTurned: 'Tap the garden it is when turned.',
   mat: 'Mat',
   shoots: 'shoots',

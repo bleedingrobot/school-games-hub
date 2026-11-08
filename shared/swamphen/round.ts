@@ -27,6 +27,8 @@ export { HELP_SETTINGS } from '../kit/help';
 export type Step = 1 | 2 | 3 | 4 | 5 | 6;
 export type HelpLevel = 0 | 1 | 2 | 3 | 4 | 5;
 export type Kind = 'plant' | 'mat' | 'turn' | 'which' | 'share' | 'cut' | 'short';
+/** Every kind of go, for the kinds a child has seen (the server accepts only these). */
+export const KINDS: readonly Kind[] = ['plant', 'mat', 'turn', 'which', 'share', 'cut', 'short'];
 
 export const STEPS: readonly { step: Step; name: string }[] = [
   { step: 1, name: 'Equal rows' },

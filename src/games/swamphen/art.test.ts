@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { KEYS } from '../../../shared/swamphen/round';
 import { cellMode } from './art';
+import { DEMO_KEYS } from './Demo';
 
 describe('cellMode', () => {
   it('always shows the first row and column; only the inside fades or is covered', () => {
@@ -17,5 +19,11 @@ describe('cellMode', () => {
       expect(cellMode(v, 0, 2, true)).toBe('full');
     }
     for (const v of ['plain', 'peek']) expect(cellMode(v, 0, 0, false)).toBe('none');
+  });
+});
+
+describe('the show-me-first examples', () => {
+  it('are sizes the real round can never ask', () => {
+    for (const key of Object.values(DEMO_KEYS)) expect(KEYS).not.toContain(key);
   });
 });
