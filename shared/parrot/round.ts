@@ -9,7 +9,7 @@
  * the **step** (which keys are asked, six of them) and the **help level** (how much picture, 5 stones down to 0).
  */
 import type { FactStats } from '../maths/leitner';
-import { tagWrongs, type Wrong } from '../kit/mistakes';
+import { atMostShareTell, sharingTell, type Wrong } from '../kit/mistakes';
 import { helpWithSetting, type HelpSetting } from '../kit/help';
 import { seeded } from '../seededRandom';
 import { ALL_KEYS, KEYS, type Kind } from '../maths/skillPacks/equalsKeys';
@@ -173,18 +173,36 @@ export const isStoneGo = (go: Pick<Go, 'kind' | 'l'>): boolean => go.l >= 4 && (
 /** The numbers a tap may carry on this go: every stone count for a stone-go (the cards are not shown), else its cards. */
 export const tapsAllowed = (go: Pick<Go, 'kind' | 'l' | 'choices'>): number[] => (isStoneGo(go) ? Array.from({ length: MAX_STONES + 1 }, (_, i) => i) : go.choices);
 
-function pickWrongs(answer: number, slips: [ParrotKind, number][], random: () => number, count: number, max = 99): WrongCard[] {
-  const wrongs = tagWrongs(
-    slips.map(([, n]) => n),
-    (n) => (n === answer || n < 0 || n > max ? null : slips.find(([, m]) => m === n)![0]),
-  ).slice(0, count);
-  for (const step of shuffle([2, -2, 3, -3, 4, -4, 5], random)) {
-    if (wrongs.length >= count) break;
-    const n = answer + step;
-    if (n < 0 || n > max || n === answer || wrongs.some((w) => w.n === n)) continue;
-    wrongs.push({ n, kind: 'near' });
+/**
+ * The three wrong cards of a card go: numbers close to the answer, so the child has to balance the see-saw. The answer's place
+ * in the row (0 to 3) is chosen first, so it is sometimes the biggest or smallest. About half the goes have one printed-number
+ * card (copy or total, never "all"). The row must not give the answer away by parity or last digit, and at most one card is
+ * more than 3 away. Only the go's seeded `random` is used, so a replay makes the same cards.
+ */
+function nearWrongs(answer: number, slips: [ParrotKind, number][], random: () => number, max: number): WrongCard[] {
+  const kindAt = (n: number): ParrotKind => slips.find(([, m]) => m === n)?.[0] ?? (Math.abs(n - answer) === 1 ? 'off1' : 'near');
+  const ranks = [0, 1, 2, 3].filter((k) => answer >= k && max - answer >= 3 - k);
+  const rank = ranks[Math.floor(random() * ranks.length)] ?? 0;
+  const useSlip = random() < 0.5;
+  const printed = slips.find(([kind, n]) => (kind === 'copy' || kind === 'total') && n !== answer && n >= 0 && n <= max && (n < answer ? rank > 0 : rank < 3));
+  const ok = (cards: number[]): boolean =>
+    sharingTell(answer, cards, (n) => n % 2) === 2 && atMostShareTell(answer, cards, (n) => n % 10, 2) && cards.filter((n) => Math.abs(n - answer) > 3).length <= 1;
+  const belowPool = [1, 2, 3].map((d) => answer - d).filter((n) => n >= 0);
+  const abovePool = [1, 2, 3].map((d) => answer + d).filter((n) => n <= max);
+  for (let tries = 0; tries < 40; tries++) {
+    const below: number[] = [];
+    const above: number[] = [];
+    if (useSlip && printed) (printed[1] < answer ? below : above).push(printed[1]);
+    const needBelow = rank - below.length;
+    const needAbove = 3 - rank - above.length;
+    if (needBelow < 0 || needAbove < 0) break;
+    below.push(...shuffle(belowPool.filter((n) => !below.includes(n)), random).slice(0, needBelow));
+    above.push(...shuffle(abovePool.filter((n) => !above.includes(n)), random).slice(0, needAbove));
+    const cards = [...below, ...above];
+    if (cards.length === 3 && below.length === rank && ok(cards)) return cards.map((n) => ({ n, kind: kindAt(n) }));
   }
-  return wrongs;
+  const cards = [...Array.from({ length: rank }, (_, i) => answer - 1 - i), ...Array.from({ length: 3 - rank }, (_, i) => answer + 1 + i)];
+  return cards.map((n) => ({ n, kind: kindAt(n) }));
 }
 
 const layoutParts = (v: Layout, a: number, b: number): string[] =>
@@ -246,7 +264,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
       answer === 1 ? [{ n: 0, kind: 'first' }, { n: 2, kind: 'first' }] : [{ n: 1, kind: 'both' }, { n: answer === 0 ? 2 : 0, kind: 'side' }];
     return { ...plan, kind, parts, answer, choices: [0, 1, 2], wrongs, lg: [a, b], rg: [c, d], gs };
   }
-  const wrongs = pickWrongs(answer, slips, random, CARDS - 1, MAX_STONES * 2);
+  const wrongs = nearWrongs(answer, slips, random, MAX_STONES * 2);
   if (wrongs.length !== CARDS - 1) return null;
   const choices = [answer, ...wrongs.map((w) => w.n)].sort((x, y) => x - y);
   return { ...plan, kind, parts, answer, choices, wrongs, lg, rg, gs };
@@ -298,8 +316,10 @@ export function slipOfPick(go: Go, n: number): ParrotKind | null {
   return n > go.answer ? 'more' : 'less';
 }
 
-/** After two wrong taps the redo has two cards: the answer and one other, the right one marked. */
+/** After two wrong taps the redo has two cards: the answer and the untried wrong card nearest to it (the lower on a tie), the right one marked. */
 export function redoCards(go: Pick<Go, 'choices' | 'answer'>, tapped: readonly number[]): number[] {
-  const other = go.choices.find((c) => c !== go.answer && !tapped.includes(c)) ?? go.choices.find((c) => c !== go.answer)!;
+  const nearest = (list: number[]) => [...list].sort((x, y) => Math.abs(x - go.answer) - Math.abs(y - go.answer) || x - y)[0];
+  const wrong = go.choices.filter((c) => c !== go.answer);
+  const other = nearest(wrong.filter((c) => !tapped.includes(c))) ?? nearest(wrong);
   return go.choices.filter((c) => c === go.answer || c === other);
 }
