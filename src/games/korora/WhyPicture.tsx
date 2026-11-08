@@ -40,7 +40,7 @@ function groupsFor(go: Go, kind: WrongKind): { groups: Group[]; sign: string } {
     case 'noExtra':
       return { groups: [{ count: n, tone: 'lit', label: 'rock' }, { count: n, tone: 'lit', label: 'water' }, { count: 1, tone: 'ghost', label: 'one more' }], sign: '+' };
     case 'bigger':
-      return { groups: [{ count: n, tone: 'lit', label: 'rock' }, { count: n + 1, tone: 'lit', label: 'water' }], sign: '+' };
+      return { groups: [{ count: n, tone: 'lit', label: 'rock' }, { count: n, tone: 'lit', label: 'water' }, { count: 1, tone: 'lit', label: 'one more' }], sign: '+' };
     case 'miscount':
       return go.kind !== 'half'
         ? { groups: [{ count: go.answer, tone: 'lit', counted: true }], sign: '' }

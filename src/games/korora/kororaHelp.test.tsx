@@ -72,4 +72,29 @@ describe("Penguin Pairs' pictures follow the child (R6)", () => {
     expect(water()).not.toContain('kr-water--full');
     expect(off.say).not.toHaveBeenCalledWith(WORDS.picturesBack);
   });
+
+  it('makes the child deal a half at full help, two fish a tap, and starts the answer clock when the choices unlock', () => {
+    const base = makeRound(2, [], { gold: false });
+    const r: Round = { ...base, goes: base.goes.slice(0, 1).map((g) => ({ ...g, key: 'half:6', h: 'full' as const })) };
+    const go = showRound(r)[0];
+    const onDone = vi.fn();
+    render(<Goes round={r} help="full" say={vi.fn()} {...props} onDone={onDone} />);
+    act(() => vi.advanceTimersByTime(5000));
+    // Nothing is shared by itself, and the choices are shut.
+    expect(document.querySelectorAll('.kr-nest__fish .kr-fish')).toHaveLength(0);
+    expect(group().getByRole('button', { name: String(go.answer) }).hasAttribute('disabled')).toBe(true);
+    const pile = () => document.querySelector('.kr-pile .kr-fish') as HTMLElement;
+    fireEvent.click(pile());
+    expect(document.querySelectorAll('.kr-nest__fish .kr-fish')).toHaveLength(2);
+    fireEvent.click(pile());
+    expect(group().getByRole('button', { name: String(go.answer) }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(pile());
+    expect(document.querySelectorAll('.kr-nest__fish .kr-fish')).toHaveLength(6);
+    act(() => vi.advanceTimersByTime(700));
+    tap(go.answer);
+    // Dealing took 5 seconds; only the 0.7 seconds after the choices opened is the answer time.
+    act(() => vi.advanceTimersByTime(10000));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onDone.mock.calls[0][0][0].ms).toBeLessThan(2000);
+  });
 });

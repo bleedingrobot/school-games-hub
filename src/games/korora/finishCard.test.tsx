@@ -55,7 +55,10 @@ describe('a near double on screen', () => {
     const round: Round = { ...base, level: 5, goes: base.goes.map((_g, i) => ({ key: keys[i % 4], v: 0, h: 'full' })) };
     const go = showRound(round)[0];
     render(<Goes round={round} help="full" say={vi.fn()} scenery="bronze" friend="korora" sound={false} onDone={vi.fn()} />);
+    // A true mirror of n, and one more fish on its own, out of the water.
     expect(document.querySelectorAll('.kr-fish--extra')).toHaveLength(1);
+    expect(document.querySelectorAll('.kr-more .kr-fish--extra')).toHaveLength(1);
+    expect(document.querySelectorAll('.kr-water .kr-fish')).toHaveLength(go.n);
     expect(document.querySelectorAll('.kr-rock .kr-fish')).toHaveLength(go.n);
     const choices = within(screen.getByRole('group', { name: WORDS.pickNumber }));
     const noExtra = go.wrongs.find((w) => w.kind === 'noExtra')!;

@@ -60,7 +60,10 @@ export function allVoiceLines(): string[] {
     if (fact.kind === 'half' && fact.n <= 20) lines.add(goLine(fact, false, true));
     if (fact.kind === 'fair') lines.add(fact.n % 2 === 0 ? WORDS.fairYes(fact.n / 2) : WORDS.oddYes((fact.n - 1) / 2));
     else lines.add(WORDS.yes(fact.kind === 'double' ? 2 * fact.n : fact.kind === 'near' ? 2 * fact.n + 1 : fact.n / 2));
-    if (fact.kind === 'near') lines.add(WORDS.lookNear(fact.n));
+    if (fact.kind === 'near') {
+      lines.add(WORDS.lookNear(fact.n));
+      lines.add(WORDS.nearMirror(fact.n));
+    }
   }
   // Mistakes that teach (maths review R5): why a wrong stone is wrong, and the whole go explained after a second wrong tap.
   // The why-lines name the fact (n of 1 to 10 for doubles), never the wrong number; plus2 starts at 3 (a double of 1 or 2 is not n + 2).
