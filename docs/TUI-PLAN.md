@@ -123,9 +123,9 @@ Ways 2 and 3 use the same levels: on "how many more?" the missing berries are em
 - **The colours still mark days, not skill.** Bronze, silver and gold flowers reward turning up (30 days, shared rule).
   Because help now follows the child, a gold day can still show berries for a child who needs them. This differs from
   Hop and Pipi, whose help fades with the colour (James chose this, 4 Nov).
-- **The voice fades with the level:** level 5 says the "ten… and four more" line; levels 4 to 1 read the question
-  ("Ten plus four. How many?"); level 0 says only "How many?" and the child reads the sum. A child can always tap the
-  speaker to hear the full question again. The game's own mute (`tui-voice`) turns the voice off.
+- **The picture fades with the level, the voice does not:** level 5 says the "ten… and four more" line; levels 4 to 0
+  read the question ("Ten plus four. How many?"), so a child who cannot read the sum yet still hears the numbers at
+  level 0 and on the teacher's Off setting (S30, 8 Nov). A child can always tap Hear it again to hear it once more. The game's own mute (`tui-voice`) turns the voice off.
 - **Teacher settings** (drawer): picture help **Fades / Always / Off**, as Penguin Pairs and Weka (`tui_help`, Fades by
   default). Fades is this section; Always keeps level 4; Off means level 0 and no Peek, but a wrong tap still brings the
   picture back for that go, because that is how a wrong answer gets put right. The

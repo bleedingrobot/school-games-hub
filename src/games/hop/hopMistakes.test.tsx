@@ -4,6 +4,7 @@ import { replay } from '../../../shared/hop/play';
 import { makeRound, showRound, stepKeys } from '../../../shared/hop/round';
 import { newStats } from '../../../shared/maths/leitner';
 import { Hops } from './Hops';
+import { hopLine } from './voiceLines';
 import { WORDS } from './words';
 
 describe("Hop's mistakes that teach", () => {
@@ -75,6 +76,17 @@ describe("Hop's mistakes that teach", () => {
     expect(screen.getByRole('status').textContent).toContain(WORDS.why(first.kind, hops[0]));
     expect(worms().getByRole('button', { name: String(first.n) }).hasAttribute('disabled')).toBe(true);
     expect(worms().getAllByRole('button').filter((b) => !b.hasAttribute('disabled'))).toHaveLength(3);
+  });
+
+  it('Hear it again says the question, then the why-line once a wrong glow-worm shows one', () => {
+    const { hops, say, tap } = setup();
+    say.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /Hear it again/ }));
+    expect(say).toHaveBeenLastCalledWith(hopLine(hops[0].spoken, false), expect.any(Function));
+    const [first] = hops[0].wrongs;
+    tap(first.n);
+    fireEvent.click(screen.getByRole('button', { name: /Hear it again/ }));
+    expect(say).toHaveBeenLastCalledWith(WORDS.why(first.kind, hops[0]), expect.any(Function));
   });
 
   it('labels and explains threes and tens past 100 with their own hop size and words', () => {

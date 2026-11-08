@@ -16,6 +16,7 @@ import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/prog
 import { HOPS_PER_ROUND, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { HearAgain } from '../../kit/HearAgain';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { Friend, GlowWorm, LilyPad } from './HopArt';
@@ -117,6 +118,15 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
 
   const worms = useMemo(() => (redoCount > 0 ? shuffled(hops[Math.min(at, hops.length - 1)].choices) : hops[Math.min(at, hops.length - 1)].choices), [hops, at, redoCount]);
 
+  /** "Hear it again": the why-line if one is showing, otherwise the question (not the look-together step, and no first-go intro). */
+  function hearAgain() {
+    if (look) return;
+    const line = why ? WORDS.why(why.kind, hop) : hopLine(hop.spoken, false);
+    say(line, () => {
+      if (!tappedYet.current) since.current = Date.now();
+    });
+  }
+
   /** The second wrong glow-worm of a hop: Hop hops the row from its first pad to the answer, saying each number. */
   function lookTogether() {
     const counted = hop.terms.slice(0, hop.gap + 1);
@@ -201,6 +211,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
             <span key={i} className={i < made ? 'hp-pip hp-pip--done' : 'hp-pip'} />
           ))}
         </div>
+        <HearAgain prefix="hp" label={WORDS.hearAgain} onHear={hearAgain} />
         <HundredsBoard high={hop.of === 200} counting={look && wideBoard() ? hop.terms.slice(0, look.filled) : null} />
       </div>
       <p className="hp-ask" aria-live="polite">{hop.prompt}</p>

@@ -3,9 +3,9 @@
  * with Kokoro by scripts/voice-clips.py), in Bella's voice like every early game. A line without a clip falls back to
  * the browser's own voice. No line says the answer to a go before the child has tapped it.
  *
- * The voice fades with the help level (docs/TUI-PLAN.md section 4): level 5 tells the story ("Ten berries on the
- * branch, and 4 more"); levels 4 to 1 read the sum ("Ten plus 4. How many?"); level 0 asks only "How many?" and the
- * child reads the sum. "Hear it again" always reads the sum.
+ * The numbers are said at every help level (docs/TUI-PLAN.md section 4): level 5 tells the story ("Ten berries on the
+ * branch, and 4 more"); levels 4 to 0 read the sum ("Ten plus 4. How many?"), so a child who cannot read the sum yet
+ * still hears it. "Hear it again" says the same as the go's first read.
  */
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/tui/progress';
 import { KEYS, STEPS, type Go, type HelpLevel, type Step, type Way } from '../../../shared/tui/round';
@@ -25,7 +25,7 @@ export function storyLine({ v, n, teen }: Said): string {
   return `${teen} berries. The kete of ten flies away. How many berries are left?`;
 }
 
-/** The sum read aloud: levels 4 to 1, and "Hear it again". */
+/** The sum read aloud: levels 4 to 0. */
 export function sumLine({ v, n, teen }: Said): string {
   if (v === 0) return `Ten plus ${n}. How many?`;
   if (v === 1) return `${n} plus ten. How many?`;
@@ -33,12 +33,9 @@ export function sumLine({ v, n, teen }: Said): string {
   return `${teen} take away ten. How many are left?`;
 }
 
-/** Level 0: the child reads the sum. */
-export const shortLine = (v: Way): string => (v === 2 ? 'How many more?' : v === 3 ? 'How many are left?' : 'How many?');
-
 /** What Bella says as a go starts, by its help level. */
 export function askLine(go: Said & { l: HelpLevel }): string {
-  return go.l >= 5 ? storyLine(go) : go.l >= 1 ? sumLine(go) : shortLine(go.v);
+  return go.l >= 5 ? storyLine(go) : sumLine(go);
 }
 
 /** What the home screen says: who is filling up, and "come back tomorrow" once today's flower has changed. */
@@ -61,7 +58,6 @@ export function allVoiceLines(): string[] {
       const go = { v, n, teen: 10 + n };
       lines.add(storyLine(go));
       lines.add(sumLine(go));
-      lines.add(shortLine(v));
       lines.add(WORDS.right(v >= 2 ? n : 10 + n, n));
     }
     // Mistakes that teach (maths review R5): why each kind of wrong nest is wrong. The number said is the nest tapped.

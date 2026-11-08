@@ -18,6 +18,7 @@ export const WORDS = {
   play: 'Play',
   playAgain: 'Play again',
   pickWorm: 'Tap the glow-worm with the right number.',
+  hearAgain: 'Hear it again',
   hopsMade: (n: number, of: number) => `${n} of ${of} hops`,
   /** Said once in a round, when three hops in a row began with a wrong glow-worm and the step labels come back (R6). */
   labelsBack: 'Here are the hops again to help.',

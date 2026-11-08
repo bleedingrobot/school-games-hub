@@ -24,6 +24,7 @@ import type { Tap } from '../../../shared/tui/play';
 import type { Friend as FriendName } from '../../../shared/tui/progress';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { GOES_PER_ROUND, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
+import { HearAgain } from '../../kit/HearAgain';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { backFor, Friend, Kete, Nest, TenFrame, type Pose, type Scenery } from './art';
@@ -199,9 +200,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
             <span key={i} className={i < made ? 'tui-pip tui-pip--done' : 'tui-pip'} />
           ))}
         </div>
-        <button type="button" className="tui-button" onClick={() => say(askLine(go))}>
-          <span aria-hidden="true">👂</span> {WORDS.hearAgain}
-        </button>
+        <HearAgain prefix="tui" label={WORDS.hearAgain} onHear={() => say(askLine(go))} />
       </div>
 
       {phase === 'finale' ? (
