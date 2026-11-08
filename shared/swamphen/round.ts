@@ -239,7 +239,12 @@ function candidates(kind: Kind, a: number, b: number, answer: number): [number, 
     case 'share': return [[a - b, 'minus'], [a + b, 'added'], [b, 'rows'], [answer + b, 'spare']];
     case 'cut': return [[(a - 1) * b, 'forgot'], [a + b, 'added'], [a * b + a, 'spare'], [a * b + b, 'spare']];
     case 'short': return [[10 * b, 'forgot'], [(a - 1) * b, 'short'], [a + b, 'added'], [10 * b - a, 'spare']];
-    default: return [[a + b, 'added'], [(a - 1) * b, 'short'], [Number(`${a}${b}`), 'joined'], [a * b + a, 'spare'], [a * b + b, 'spare']];
+    default: {
+      // The two digits stuck together (37 for 3 and 7) only when it looks like the answer (the same number of digits), and after the other slips, so it rarely makes the four.
+      const joined = Number(`${a}${b}`);
+      const same = String(joined).length === String(answer).length;
+      return [[a + b, 'added'], [(a - 1) * b, 'short'], [a * b + a, 'spare'], [a * b + b, 'spare'], ...(same ? [[joined, 'joined'] as [number, Slip]] : [])];
+    }
   }
 }
 
