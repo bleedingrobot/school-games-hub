@@ -233,3 +233,4 @@
   .tui-card--ones { translate: calc(-0.82em - 18px - 3px) 0; }
   .tui-ten--fly { opacity: 0.15; }
 }
+.tui-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; }

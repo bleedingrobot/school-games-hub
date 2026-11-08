@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/tui/memoryServices';
 import type { Tap } from '../../../shared/tui/play';
 import { GUIDED_KEY, showRound, type Round } from '../../../shared/tui/round';
@@ -32,6 +33,16 @@ function setup(over: MemoryOptions = {}) {
   const start = async (who: string) => (await send(who, { action: 'start' })).body.round as Round;
   return { send, start, log, services, hours: (h: number) => (clock += h * 3_600_000) };
 }
+
+it('keeps which kinds of go a pupil has seen: unreadable kinds are refused, a kind saved twice is kept once, and a pupil with ten-and records has no demo for it', async () => {
+  const { send, services } = setup();
+  expect((await send('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
+  await send('pupil-a', { action: 'seen', kinds: ['turn'] });
+  expect((await send('pupil-a', { action: 'seen', kinds: ['turn', 'less'] })).body.seen).toEqual(['less', 'turn']);
+  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['less', 'turn']);
+  services.data.facts['pupil-b'] = [{ ...newStats('tenand:3'), attempts: 2 }];
+  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual(['ten-and']);
+});
 
 it('finishes only a pupil’s own, finished challenge, once, and records each fact once (the first pick of its first go)', async () => {
   const { send, start, log } = setup();

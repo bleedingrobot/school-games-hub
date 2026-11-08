@@ -10,6 +10,7 @@
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/tui/progress';
 import { KEYS, STEPS, type Go, type HelpLevel, type Step, type Way } from '../../../shared/tui/round';
 import { nextPartWords } from '../../components/NextPartChip';
+import { demoLines } from './demo';
 import { WORDS } from './words';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
@@ -68,5 +69,6 @@ export function allVoiceLines(): string[] {
   for (const kind of ['tens', 'ones', 'off1', 'up'] as const) lines.add(WORDS.why(kind, 20, 0));
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.flowerTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenNest)];
   for (const main of mains) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
+  for (const line of demoLines()) lines.add(line);
   return [...lines];
 }

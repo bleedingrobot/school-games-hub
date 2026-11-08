@@ -1878,6 +1878,21 @@ const KEYS = Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`);
 const LESS_KEYS = Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`);
 /** The record a go counts towards: ways 0 and 1 are "ten and", ways 2 and 3 "ten less". */
 const keyFor = (n, way) => `${way >= 2 ? "tenless" : "tenand"}:${n}`;
+/**
+* The kind of go each way is, for "Show me first" (the kit's seen kinds): "10 + 4" is `ten-and`, "4 + 10" `turn`,
+* "10 + ? = 14" `more` and "14 − 10" `less`.
+*/
+const KIND_OF_WAY = [
+	"ten-and",
+	"turn",
+	"more",
+	"less"
+];
+/**
+* The kind a saved record stands for. A record names only its fact, not the way it was asked, so "ten and" records mean the
+* child has met `ten-and` and "ten less" records that they have met `more`; turning round and taking away are found out as they go.
+*/
+const kindOfKey = (key) => /^tenand:[1-9]$/.test(key) ? "ten-and" : /^tenless:[1-9]$/.test(key) ? "more" : null;
 const STEPS = [
 	{
 		step: 1,
@@ -2214,7 +2229,36 @@ function finishChallenge(daysDone, lastFlowerDay, today) {
 	};
 }
 //#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
+//#endregion
 //#region shared/tui/server.ts
+/** Every kind of go this game has: one for each way of asking. */
+const KINDS = KIND_OF_WAY;
 const unplayed = () => ({
 	daysDone: 0,
 	lastFlowerDay: null,
@@ -2281,15 +2325,26 @@ async function handleTui(services, player, body) {
 	if (body.action === "load") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
+		const saved = await services.seen(player);
+		if (saved === "busy") return busy();
 		const place = placeOf(s, facts);
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastFlowerDay: s.lastFlowerDay,
 			today: today(),
 			step: place.step,
 			level: place.level,
-			help: settings.help
+			help: settings.help,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7666,6 +7721,21 @@ Deno.serve(makeHandler({
 	async facts(player) {
 		const context = await call("space_maths_context", { player });
 		return context === "busy" ? "busy" : context?.facts ?? [];
+	},
+	async seen(player) {
+		const kinds = await call("kit_seen_get", {
+			player,
+			game: "tui"
+		});
+		return kinds === "busy" ? "busy" : kinds ?? [];
+	},
+	async markSeen(player, kinds) {
+		const next = await call("kit_seen_mark", {
+			player,
+			game: "tui",
+			kinds
+		});
+		return next === "busy" ? "busy" : next ?? [];
 	},
 	start: (player, round) => call("tui_start", {
 		player,

@@ -21,9 +21,13 @@ import type { HelpSetting } from '../kit/help';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, streamAfter } from './progress';
-import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
+import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
+import { isLevel, isSeed, kindOfKey, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
 
-export type WekaAction = 'load' | 'start' | 'finish';
+export type WekaAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go this game has: adding, smaller first ("turn") and hopping back. */
+export const KINDS = ['add', 'turn', 'back'] as const;
 
 /** A pupil's stream as it is saved. */
 export interface Progress {
@@ -53,7 +57,7 @@ export interface Settings {
   help: HelpSetting;
 }
 
-export interface WekaServices {
+export interface WekaServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; only the adding facts to 20 matter here). */
@@ -120,7 +124,18 @@ export async function handleWeka(services: WekaServices, player: string, body: R
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastStoneDay: s.lastStoneDay, today: today(), level: levelFor(facts, s.reached), help: settings.help });
+    const saved = await services.seen(player);
+    if (saved === 'busy') return busy();
+    const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastStoneDay: s.lastStoneDay, today: today(), level: levelFor(facts, s.reached), help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

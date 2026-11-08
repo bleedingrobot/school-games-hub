@@ -6,6 +6,7 @@
 import { METALS, type Metal } from '../../../shared/weka/progress';
 import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
+import { demoLines } from './demo';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
 
@@ -94,5 +95,6 @@ export function allVoiceLines(): string[] {
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.stoneTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenBasket)];
   for (const main of mains) for (const up of [null, 2, 3, 4] as const) lines.add(finishLine(main, up));
+  for (const line of demoLines()) lines.add(line);
   return [...lines];
 }

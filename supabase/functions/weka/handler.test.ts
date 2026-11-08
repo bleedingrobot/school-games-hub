@@ -96,6 +96,17 @@ it('changes one stone a NZ day by the server’s clock, with hop-backs recorded 
   expect(log.baskets).toEqual(['pupil-a']); // the hub gives Weka's Golden Picnic Basket achievement
 });
 
+it('keeps which kinds of go a pupil has seen: unreadable kinds are refused, a kind saved twice is kept once, and a pupil who has added already has no demo for adding', async () => {
+  const { send, services } = setup();
+  expect((await send('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'seen', kinds: 'back' })).status).toBe(400);
+  await send('pupil-a', { action: 'seen', kinds: ['back'] });
+  expect((await send('pupil-a', { action: 'seen', kinds: ['back', 'turn'] })).body.seen).toEqual(['back', 'turn']);
+  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['back', 'turn']);
+  services.data.facts['pupil-b'] = [{ ...newStats(GUIDED_KEY), attempts: 2 }];
+  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual(['add']);
+});
+
 describe('the deployable file', () => {
   it('is up to date with the code (run `npm run build:functions -- weka` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script

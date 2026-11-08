@@ -23,11 +23,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Tap } from '../../../shared/tui/play';
 import type { Friend as FriendName } from '../../../shared/tui/progress';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
-import { GOES_PER_ROUND, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
+import { GOES_PER_ROUND, KIND_OF_WAY, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
+import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { playSound } from '../sounds';
 import { backFor, Friend, Kete, Nest, TenFrame, type Pose, type Scenery } from './art';
+import { DEMO_WAYS, demoNumber, demoSteps } from './demo';
 import { askLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -48,6 +52,9 @@ interface Props {
   guide?: boolean;
   /** A gold day's first challenge: two full kete, "ten and ten", after the last go. */
   finale?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (each kind's demo plays once). */
+  seen: readonly string[];
+  onSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -56,7 +63,7 @@ interface Props {
 /** The sum as written: "10 + 4 = ?", with a real minus sign. */
 const written = (go: Go) => go.parts.join(' ').replace(/-/g, '−');
 
-export function Goes({ round, scenery, friend, guide = false, finale = false, sound, say, onDone }: Props) {
+export function Goes({ round, scenery, friend, guide = false, finale = false, seen, onSeen, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -85,6 +92,13 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
   const guided = guide && at === 0;
+  const kinds = useSeenKinds(seen, onSeen);
+  /** A way not yet seen (turning round, how many more, taking away) gets its demo before the first go of it, once. */
+  const needsDemo = DEMO_WAYS.includes(go.v) && !kinds.has(KIND_OF_WAY[go.v]);
+  const demoWay = needsDemo && phase === 'ask' ? go.v : null;
+  const demoN = demoNumber(go.n);
+  const demo = useKindDemo({ kind: demoWay === null ? null : KIND_OF_WAY[demoWay], seen: kinds, mark: kinds.mark, steps: demoWay === null ? [] : demoSteps(demoWay, demoN), say });
+  const demoWas = useRef(false);
   const redo = flow.phase === 'redo';
   // "Now you try" is at the child's own level, not the extra help the two wrong taps brought.
   const pic = pictureFor(go, redo ? 0 : flow.wrong);
@@ -103,9 +117,12 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
     since.current = Date.now();
     setPose('sit');
     setPeek(false);
-    say(askLine(go), () => {
-      if (live && !tappedYet.current) since.current = Date.now();
-    });
+    // A way not yet seen is shown first; its question is read when the demo is over.
+    if (!(DEMO_WAYS.includes(go.v) && !kinds.has(KIND_OF_WAY[go.v]))) {
+      say(askLine(go), () => {
+        if (live && !tappedYet.current) since.current = Date.now();
+      });
+    }
     if (guided) {
       later(GUIDE_AT.branch, () => setPointAt('branch'));
       later(GUIDE_AT.loose, () => setPointAt('loose'));
@@ -117,6 +134,21 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
+
+  // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    since.current = Date.now();
+    say(askLine(go), () => {
+      if (!tappedYet.current) since.current = Date.now();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
 
   function nextGo(all: Tap[]) {
     clearTimers();
@@ -141,7 +173,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || tapped.includes(n)) return;
+    if (phase !== 'ask' || look || demo.playing || tapped.includes(n)) return;
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -179,6 +211,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
     clearTimers();
     setPointAt(null);
     setWhy(null);
+    kinds.mark([KIND_OF_WAY[go.v]]);
     setPhase('right');
     setPose('eat');
     say(WORDS.right(go.answer, go.n));
@@ -190,6 +223,30 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, so
   const style = backFor(scenery);
   // Four nests always; in "Now you try" they come back in a new order (the server only cares which nest was tapped).
   const nests = redo ? [...go.choices].reverse() : go.choices;
+
+  if (demo.playing && demoWay !== null) {
+    const shown: Go = { ...go, n: demoN, teen: 10 + demoN, l: 4 };
+    const answered = demo.step >= 1;
+    return (
+      <div className={`tui-play tui-scene--${scenery}`} style={style}>
+        <h2 className="tui-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="tui-top">
+          <div className="tui-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'tui-pip tui-pip--done' : 'tui-pip'} />
+            ))}
+          </div>
+        </div>
+        <div className="tui-stage">
+          <span className="tui-stage__friend" aria-hidden="true"><Friend friend={friend} pose={answered ? 'cheer' : 'sit'} /></span>
+          <Picture go={shown} level={4} pointAt={null} solved={answered} lit={null} />
+          {!answered && <p className="tui-sum" aria-live="polite">{written(shown)}</p>}
+          {answered && <ArrowCards n={demoN} />}
+        </div>
+        <DemoBar prefix="tui" skipLabel={WORDS.skip} canSkip={demo.canSkip} onSkip={demo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className={`tui-play tui-scene--${scenery}`} style={style}>

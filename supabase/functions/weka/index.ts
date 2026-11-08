@@ -953,6 +953,11 @@ const parseKey = (key) => {
 		big
 	} : null;
 };
+/**
+* The kind of go a saved fact stands for. Fact keys carry no mode (the way a go is asked is not part of the key), so a
+* child's records only show that they have added: hopping back and starting on the bigger number are found out as they go.
+*/
+const kindOfKey = (key) => parseKey(key) ? "add" : null;
 /** The facts that start on these numbers: `add:2+9` to `add:9+9` for 9. */
 const startingOn = (starts) => starts.flatMap((big) => Array.from({ length: big }, (_, i) => i + 1).filter((small) => small + big > 10).map((small) => `add:${small}+${big}`));
 /** A level's facts: 8 starting on 9, 6 on 8, 6 on 7 or 6, and all 20 mixed. */
@@ -1304,6 +1309,33 @@ function finishChallenge(daysDone, lastStoneDay, today) {
 	};
 }
 //#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
+//#endregion
 //#region shared/weka/server.ts
 /**
 * What the `weka` server function does with a request from a signed-in pupil (docs/WEKA-PLAN.md, Weka's Stepping
@@ -1323,6 +1355,12 @@ function finishChallenge(daysDone, lastStoneDay, today) {
 *
 * Nothing that counts comes from the browser. A challenge finishes once.
 */
+/** Every kind of go this game has: adding, smaller first ("turn") and hopping back. */
+const KINDS = [
+	"add",
+	"turn",
+	"back"
+];
 const unplayed = () => ({
 	daysDone: 0,
 	lastStoneDay: null,
@@ -1376,13 +1414,24 @@ async function handleWeka(services, player, body) {
 	if (body.action === "load") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
+		const saved = await services.seen(player);
+		if (saved === "busy") return busy();
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastStoneDay: s.lastStoneDay,
 			today: today(),
 			level: levelFor(facts, s.reached),
-			help: settings.help
+			help: settings.help,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7764,6 +7813,21 @@ Deno.serve(makeHandler({
 	async facts(player) {
 		const context = await call("space_maths_context", { player });
 		return context === "busy" ? "busy" : context?.facts ?? [];
+	},
+	async seen(player) {
+		const kinds = await call("kit_seen_get", {
+			player,
+			game: "weka"
+		});
+		return kinds === "busy" ? "busy" : kinds ?? [];
+	},
+	async markSeen(player, kinds) {
+		const next = await call("kit_seen_mark", {
+			player,
+			game: "weka",
+			kinds
+		});
+		return next === "busy" ? "busy" : next ?? [];
 	},
 	start: (player, round) => call("weka_start", {
 		player,

@@ -49,6 +49,8 @@ export const WORDS = {
   whySplitFirstAdd: (big: number, n: number) => `${big} and ${n} make ${big + n}. We need to land on 10.`,
   whySplitFirstBack: (from: number, n: number) => `${from} take away ${n} is ${from - n}. We need to land on 10.`,
   whySplitRest: (toTen: number, n: number, small: number) => `${toTen} and ${n} make ${toTen + n}. We have ${small}.`,
+  skip: 'Skip',
+  demoTitle: 'Watch Weka show one first.',
   hearAgain: 'Hear it again',
   /** The split after each right answer: the bond's label while it is being filled in, and the button after it. */
   splitLabel: (n: number) => `How did you split the ${n}?`,

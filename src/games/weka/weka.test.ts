@@ -6,6 +6,7 @@ import { replay } from '../../../shared/weka/play';
 import { ALL_KEYS, showGo, showRound, skipPracticeFor, toTenChoicesFor, wrongKind, type Round } from '../../../shared/weka/round';
 import { allVoiceLines, splitWhyLine, whyLine } from './voiceLines';
 import { trialBackend } from './backend';
+import { DEMOS, DEMO_KINDS } from './demo';
 
 const css = readFileSync(`${process.cwd()}/src/games/weka/weka.css`, 'utf8');
 
@@ -100,6 +101,16 @@ describe('mistakes that teach', () => {
     expect(r.answers[0]).toMatchObject({ key: 'add:5+8', correct: false, ms: 900 });
     expect(r.answers.filter((a) => a.key === 'add:5+8')).toHaveLength(1);
     expect(r.firstRight).toBe(9);
+  });
+
+  it('shows hopping back and starting on the bigger number first, with made-up sums no real go asks and a line to read for every step', () => {
+    const said = new Set(allVoiceLines());
+    for (const demo of Object.values(DEMOS)) {
+      expect(demo.from).toBeGreaterThan(9);
+      expect(Math.abs(demo.to - demo.from)).toBe(demo.small);
+      for (const step of demo.steps) expect(said.has(step.line)).toBe(true);
+    }
+    expect([...DEMO_KINDS].sort()).toEqual(['back', 'turn']);
   });
 
   it('has a voice line for every mistake any go can show, and none says the answer', () => {

@@ -47,6 +47,18 @@ export const LESS_KEYS = Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`)
 /** The record a go counts towards: ways 0 and 1 are "ten and", ways 2 and 3 "ten less". */
 export const keyFor = (n: number, way: number): string => `${way >= 2 ? 'tenless' : 'tenand'}:${n}`;
 
+/**
+ * The kind of go each way is, for "Show me first" (the kit's seen kinds): "10 + 4" is `ten-and`, "4 + 10" `turn`,
+ * "10 + ? = 14" `more` and "14 − 10" `less`.
+ */
+export const KIND_OF_WAY = ['ten-and', 'turn', 'more', 'less'] as const;
+export type TuiWayKind = (typeof KIND_OF_WAY)[number];
+/**
+ * The kind a saved record stands for. A record names only its fact, not the way it was asked, so "ten and" records mean the
+ * child has met `ten-and` and "ten less" records that they have met `more`; turning round and taking away are found out as they go.
+ */
+export const kindOfKey = (key: string): TuiWayKind | null => (/^tenand:[1-9]$/.test(key) ? 'ten-and' : /^tenless:[1-9]$/.test(key) ? 'more' : null);
+
 export const STEPS = [
   { step: 1, name: 'How many?', ways: [0] },
   { step: 2, name: 'Turn it round', ways: [0, 1] },

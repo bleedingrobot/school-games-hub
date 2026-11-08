@@ -35,7 +35,10 @@ import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand, pointedLabel } from '../../kit/PointingHand';
+import { DemoBar } from '../../kit/DemoBar';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
 import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, skipPracticeFor, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, wrongKind, type Go, type Help, type Round } from '../../../shared/weka/round';
@@ -45,6 +48,8 @@ import { paint, type Pose } from './art';
 import { backFor, type Scenery } from './Stream';
 import { Frame, Pebbles } from './Pebbles';
 import { Friend, Hop, StepStone, Stone } from './WekaArt';
+import { DemoScene } from './DemoScene';
+import { DEMOS, DEMO_KINDS, type DemoKind } from './demo';
 import { rightLine, splitWhyLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -70,6 +75,9 @@ interface Props {
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the way on the first go. */
   guide?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (each kind's demo plays once). */
+  seen: readonly string[];
+  onSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -89,7 +97,7 @@ const between = (from: number, to: number) => {
   return out;
 };
 
-export function Goes({ round, setting, scenery, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, setting, scenery, friend, guide = false, seen, onSeen, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -151,6 +159,12 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   useEffect(() => clearTimers, []);
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
+  const kinds = useSeenKinds(seen, onSeen);
+  /** A kind not yet seen (hopping back, starting on the bigger number) gets its demo before the first go of it, once. */
+  const unseen = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind);
+  const demoKind = unseen && phase === 'ask' ? (go.kind as DemoKind) : null;
+  const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMOS[demoKind].steps : [], say });
+  const demoWas = useRef(false);
   const guided = guide && at === 0;
   /** The hand on the very first go: it starts pointing after GUIDE_MS and stops when the child moves on. */
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
@@ -193,7 +207,10 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     setRedo(false);
     flow.current = NEW_GO;
     guideHand.stop();
-    askAloud(s === 'toTen' ? toTenLine(go, guided) : s === 'split' ? splitFirstLine(go) : askLine(go, guided));
+    // A kind not yet seen is shown first; its question is read when the demo is over.
+    if (!(DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind))) {
+      askAloud(s === 'toTen' ? toTenLine(go, guided) : s === 'split' ? splitFirstLine(go) : askLine(go, guided));
+    }
     guideHand.start();
     return () => {
       asking.current++;
@@ -201,6 +218,18 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
+
+  // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    askAloud(step === 'toTen' ? toTenLine(go, guided) : step === 'split' ? splitFirstLine(go) : askLine(go, guided));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
 
   // "Let's look together": Weka hops the whole make-ten sentence, one hop for each step the pebbles fill.
   useEffect(() => {
@@ -292,7 +321,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || gone.includes(n)) return;
+    if (phase !== 'ask' || look || demo.playing || gone.includes(n)) return;
     tappedYet.current = true;
     if (step === 'toTen') {
       // Help only: never sent, never recorded.
@@ -322,6 +351,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
     if (!firstWrong) setStreak(0);
     clearTimers();
     setWhy(null);
+    kinds.mark([go.kind]);
     setPhase('right');
     say(rightLine(go, shown));
     if (sound) playSound('badge');
@@ -372,7 +402,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
 
   /** Split-first goes: the part of the number that gets to ten, then the rest, then Weka hops to the big rock. Help only. */
   function pickSplit(n: number) {
-    if (phase !== 'ask' || step !== 'split' || bond >= 2 || splitGone.includes(n)) return;
+    if (phase !== 'ask' || demo.playing || step !== 'split' || bond >= 2 || splitGone.includes(n)) return;
     tappedYet.current = true;
     if (n !== (bond === 0 ? go.toTen : go.rest)) {
       const w = bondWrongs + 1;
@@ -462,6 +492,23 @@ export function Goes({ round, setting, scenery, friend, guide = false, sound, sa
   const showAll = phase !== 'ask' || look !== null;
   const toStones = new Set(onBigRock || showAll ? between(go.from, 10) : lit);
   const onStones = new Set(showAll ? between(10, go.answer) : restLit);
+
+  if (demo.playing && demoKind) {
+    return (
+      <div className={`wk-play wk-stream--${scenery}`} style={style}>
+        <h2 className="wk-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="wk-top">
+          <div className="wk-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'wk-pip wk-pip--done' : 'wk-pip'} />
+            ))}
+          </div>
+        </div>
+        <DemoScene kind={demoKind} step={demo.step} friend={friend} />
+        <DemoBar prefix="wk" skipLabel={WORDS.skip} canSkip={demo.canSkip} onSkip={demo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className={`wk-play wk-stream--${scenery}`} style={style}>
