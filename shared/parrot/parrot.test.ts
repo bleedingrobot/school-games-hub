@@ -4,7 +4,8 @@ import { placeAfter } from '../kit/help';
 import { DAYS_PER_BELL, finishChallenge, ropeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
 import { STEP_RULES, type Step } from './config';
-import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, levelFor, makeRound, MAX_STONES, redoCards, showRound, slipOfPick, startFor, STEP_KEYS, tiltOf, type Round } from './round';
+import { atMostShareTell, sharingTell } from '../kit/mistakes';
+import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, showRound, slipOfPick, startFor, STEP_KEYS, tiltOf, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -122,6 +123,45 @@ describe('mistakes that teach', () => {
     const g = showRound(makeRound(5, [], { step: 1, level: 5 }))[0];
     expect(redoCards(g, [g.wrongs[0].n])).toHaveLength(2);
     expect(redoCards(g, [])).toContain(g.answer);
+    for (const x of goes) {
+      const two = redoCards(x, [x.wrongs[0].n]);
+      expect(two).toHaveLength(2);
+      const other = two.find((c) => c !== x.answer)!;
+      const nearer = x.wrongs.filter((w) => w.n !== x.wrongs[0].n && Math.abs(w.n - x.answer) < Math.abs(other - x.answer));
+      expect(nearer).toHaveLength(0);
+    }
+  });
+
+  it('keeps the right card hard to spot: near cards, answer in every place, no printed-number pattern', () => {
+    const ranks = [0, 0, 0, 0];
+    let total = 0, biggest = 0, smallest = 0, guess = 0, survive = 0;
+    for (const key of ALL_KEYS.filter((k) => kindOfKey(k) !== 'tf')) {
+      for (let v = 0; v < (kindOfKey(key) === 'miss' ? 4 : kindOfKey(key) === 'swap' ? 2 : 1); v++) {
+        for (let seed = 1; seed <= 200; seed++) {
+          const g = showGo({ seed }, 0, { key, v: v as 0 | 1 | 2 | 3, l: 3 })!;
+          const cards = [...g.choices];
+          expect(cards).toHaveLength(4);
+          expect(new Set(g.wrongs.map((w) => w.n)).size).toBe(3);
+          expect(g.wrongs.every((w) => w.n !== g.answer && w.n >= 0 && w.n <= MAX_STONES * 2)).toBe(true);
+          expect(sharingTell(g.answer, cards, (n) => n % 2)).toBe(2);
+          expect(atMostShareTell(g.answer, cards, (n) => n % 10, 2)).toBe(true);
+          expect(g.wrongs.filter((w) => Math.abs(w.n - g.answer) > 3).length).toBeLessThanOrEqual(1);
+          total++;
+          ranks[cards.indexOf(g.answer)]++;
+          if (g.answer === cards[3]) biggest++;
+          if (g.answer === cards[0]) smallest++;
+          const printed = g.parts.filter((p) => /^\d+$/.test(p)).map(Number);
+          const left = cards.filter((c) => !printed.includes(c) && c !== cards[3]);
+          survive += left.length;
+          if (left.includes(g.answer)) guess += 1 / left.length;
+        }
+      }
+    }
+    ranks.forEach((n) => { expect(n / total).toBeGreaterThan(0.15); expect(n / total).toBeLessThan(0.4); });
+    expect(biggest / total).toBeGreaterThan(0.15);
+    expect(smallest / total).toBeGreaterThan(0.15);
+    expect(survive / total).toBeGreaterThanOrEqual(2.2);
+    expect(guess / total).toBeLessThanOrEqual(0.45);
   });
 });
 

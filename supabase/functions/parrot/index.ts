@@ -41,19 +41,13 @@ function replayTaps(goes, taps, rules) {
 }
 //#endregion
 //#region shared/kit/mistakes.ts
-/** Tags each candidate with its kind. `kindOf` gives null for a right answer, which is dropped, as is a repeat. */
-function tagWrongs(candidates, kindOf) {
-	const seen = new Set();
-	return candidates.flatMap((n) => {
-		const kind = kindOf(n);
-		if (kind === null || seen.has(n)) return [];
-		seen.add(n);
-		return [{
-			n,
-			kind
-		}];
-	});
+/** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
+function sharingTell(answer, choices, tellOf) {
+	const tell = tellOf(answer);
+	return [...new Set([answer, ...choices])].filter((n) => tellOf(n) === tell).length;
 }
+/** True when elimination by shape leaves a real choice: at most `max` (2) of the choices, the answer included, share its tell. */
+const atMostShareTell = (answer, choices, tellOf, max = 2) => sharingTell(answer, choices, tellOf) <= max;
 //#endregion
 //#region shared/kit/help.ts
 const HELP_SETTINGS = [
@@ -390,26 +384,53 @@ const nums = (key) => (key.match(/\d+/g) ?? []).map(Number);
 const isStoneGo = (go) => go.l >= 4 && (go.kind === "miss" || go.kind === "swap" || go.kind === "both");
 /** The numbers a tap may carry on this go: every stone count for a stone-go (the cards are not shown), else its cards. */
 const tapsAllowed = (go) => isStoneGo(go) ? Array.from({ length: 21 }, (_, i) => i) : go.choices;
-function pickWrongs(answer, slips, random, count, max = 99) {
-	const wrongs = tagWrongs(slips.map(([, n]) => n), (n) => n === answer || n < 0 || n > max ? null : slips.find(([, m]) => m === n)[0]).slice(0, count);
-	for (const step of shuffle([
+/**
+* The three wrong cards of a card go: numbers close to the answer, so the child has to balance the see-saw. The answer's place
+* in the row (0 to 3) is chosen first, so it is sometimes the biggest or smallest. About half the goes have one printed-number
+* card (copy or total, never "all"). The row must not give the answer away by parity or last digit, and at most one card is
+* more than 3 away. Only the go's seeded `random` is used, so a replay makes the same cards.
+*/
+function nearWrongs(answer, slips, random, max) {
+	const kindAt = (n) => slips.find(([, m]) => m === n)?.[0] ?? (Math.abs(n - answer) === 1 ? "off1" : "near");
+	const ranks = [
+		0,
+		1,
 		2,
-		-2,
-		3,
-		-3,
-		4,
-		-4,
-		5
-	], random)) {
-		if (wrongs.length >= count) break;
-		const n = answer + step;
-		if (n < 0 || n > max || n === answer || wrongs.some((w) => w.n === n)) continue;
-		wrongs.push({
+		3
+	].filter((k) => answer >= k && max - answer >= 3 - k);
+	const rank = ranks[Math.floor(random() * ranks.length)] ?? 0;
+	const useSlip = random() < .5;
+	const printed = slips.find(([kind, n]) => (kind === "copy" || kind === "total") && n !== answer && n >= 0 && n <= max && (n < answer ? rank > 0 : rank < 3));
+	const ok = (cards) => sharingTell(answer, cards, (n) => n % 2) === 2 && atMostShareTell(answer, cards, (n) => n % 10, 2) && cards.filter((n) => Math.abs(n - answer) > 3).length <= 1;
+	const belowPool = [
+		1,
+		2,
+		3
+	].map((d) => answer - d).filter((n) => n >= 0);
+	const abovePool = [
+		1,
+		2,
+		3
+	].map((d) => answer + d).filter((n) => n <= max);
+	for (let tries = 0; tries < 40; tries++) {
+		const below = [];
+		const above = [];
+		if (useSlip && printed) (printed[1] < answer ? below : above).push(printed[1]);
+		const needBelow = rank - below.length;
+		const needAbove = 3 - rank - above.length;
+		if (needBelow < 0 || needAbove < 0) break;
+		below.push(...shuffle(belowPool.filter((n) => !below.includes(n)), random).slice(0, needBelow));
+		above.push(...shuffle(abovePool.filter((n) => !above.includes(n)), random).slice(0, needAbove));
+		const cards = [...below, ...above];
+		if (cards.length === 3 && below.length === rank && ok(cards)) return cards.map((n) => ({
 			n,
-			kind: "near"
-		});
+			kind: kindAt(n)
+		}));
 	}
-	return wrongs;
+	return [...Array.from({ length: rank }, (_, i) => answer - 1 - i), ...Array.from({ length: 3 - rank }, (_, i) => answer + 1 + i)].map((n) => ({
+		n,
+		kind: kindAt(n)
+	}));
 }
 const layoutParts = (v, a, b) => v === 0 ? [
 	`${a}`,
@@ -591,7 +612,7 @@ function showGo(round, index, plan) {
 			gs
 		};
 	}
-	const wrongs = pickWrongs(answer, slips, random, 3, 40);
+	const wrongs = nearWrongs(answer, slips, random, 40);
 	if (wrongs.length !== 3) return null;
 	const choices = [answer, ...wrongs.map((w) => w.n)].sort((x, y) => x - y);
 	return {
