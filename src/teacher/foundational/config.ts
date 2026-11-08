@@ -42,8 +42,8 @@ export interface GameWords {
 /** Words for each game. */
 export const GAMES: Record<FoundationalGameId, GameWords> = {
   beanstalk: { name: 'Beanstalk', levelWord: 'beanstalk', levels: {}, top: null },
-  hop: { name: 'Hop', levelWord: 'step', levels: { 10: 'Counting in tens', 5: 'Counting in fives', 2: 'Counting in twos' }, top: 2 },
-  korora: { name: 'Penguin Pairs', levelWord: 'level', levels: { 1: 'Doubles to 5', 2: 'Halves to 10', 3: 'Doubles to 10', 4: 'Halves to 20' }, top: 4 },
+  hop: { name: 'Hop', levelWord: 'step', levels: { 10: 'Counting in tens', 5: 'Counting in fives', 2: 'Counting in twos', 3: 'Counting in threes', 4: 'Counting in fours', 200: 'Counting in tens past 100' }, top: 200 },
+  korora: { name: 'Penguin Pairs', levelWord: 'level', levels: { 1: 'Doubles to 5', 2: 'Halves to 10', 3: 'Doubles to 10', 4: 'Halves to 20', 5: 'Near doubles' }, top: 5 },
   pipi: { name: 'Pipi', levelWord: 'level', levels: { 1: 'Parts of 3 to 5', 2: 'Parts of 6 and 7', 3: 'Parts of 8 to 10' }, top: 3 },
   tui: { name: 'Tūī', levelWord: 'step', levels: { 1: 'How many?', 2: 'Turn it round', 3: 'How many more?', 4: 'Take the ten away', 5: 'All mixed' }, top: 5 },
   weka: { name: 'Weka', levelWord: 'level', levels: { 1: 'Starting on 9', 2: 'Starting on 8', 3: 'Starting on 7 and 6', 4: 'All mixed' }, top: 4 },
