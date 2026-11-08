@@ -108,7 +108,7 @@ describe('Quick looks', () => {
     fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(dotsShown()))!);
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
     expect(t.answered).toHaveLength(0);
-    for (let i = 0; i < C.placementTrials; i++) {
+    for (let i = 0; i < 12; i++) {
       advance(C.gapReadyMs + 10);
       const n = dotsShown();
       const prompt = document.querySelector('.sb-prompt')!.textContent;
@@ -118,7 +118,12 @@ describe('Quick looks', () => {
       advance(C.answerLockMs);
       fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(answer))!);
       t.sync();
-      fireEvent.click(screen.getByRole('button', { name: i === C.placementTrials - 1 ? 'Finish' : 'Next' }));
+      const done = screen.queryByRole('button', { name: 'Finish' });
+      fireEvent.click(done ?? screen.getByRole('button', { name: 'Next' }));
+      if (done) {
+        expect(i + 1).toBe(9); // all right: 3 tests of 3 pictures
+        break;
+      }
     }
     t.sync();
     expect(screen.getByText('All done!')).toBeTruthy();
@@ -169,16 +174,17 @@ describe('Quick looks', () => {
       return { rounds, ended, answered, state: () => state };
     }
 
-    it('says so after all the pictures, before the session ends, though kept-on pictures grow nothing', () => {
+    it('says so after all the pictures, before the session ends, and kept-on pictures grow a plant a little but finish nothing', () => {
       const { rounds, ended, state, answered } = round(C.sessionTrials);
       fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
       expect(rounds).toHaveLength(1);
       expect(ended).toEqual([1]);
-      // Practice only: saved as helped, so no stage finishes and no plant grows.
+      // Practice only: saved as helped, so no stage finishes, but a plant grows a little.
       expect(answered.every((a) => a.helped && a.thinkingMs === 0)).toBe(true);
       expect(state().finished).toBe(0);
-      expect(screen.queryByText(/grew!|You finished/)).toBeNull();
-      expect(screen.getByText(/your plants are waiting/)).toBeTruthy();
+      expect(screen.queryByText(/You finished/)).toBeNull();
+      expect(screen.getByText(/grew!/)).toBeTruthy();
+      expect(screen.getByText(/your plants grew a little/)).toBeTruthy();
     });
 
     it('not when it is stopped early', () => {

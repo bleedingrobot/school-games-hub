@@ -17,12 +17,16 @@ export const PROMPTS = {
   /** After a wrong first answer: the picture comes back once for a second try. */
   retry: 'Try once more.',
   gap: 'How many empty squares?',
+  /** A picture from a finished stage, coming back in the Empty squares stage: a sign the question can change. */
+  reviewFlash: 'A look back. How many did you see?',
+  reviewGuided: 'A look back. How many can you see?',
+  reviewGap: 'A look back. How many empty squares?',
   guided: 'How many can you see?',
   flash: 'How many did you see?',
   /** The demo picture before a new student's starting check. */
   demo: 'This is how it works. A picture shows, then hides. Tap how many dots you saw. This one stays so you can practise.',
   /** The end of a round played with the picture kept on screen: those answers don't grow the garden. */
-  guidedSummary: 'The picture stayed on today, so your plants are waiting. Switch flashing back on and they will grow.',
+  guidedSummary: 'The picture stayed on today, so your plants grew a little. Switch flashing back on to finish them.',
 } as const;
 
 /** The heading and voice line when the picture stays on screen after a struggle. */
@@ -37,9 +41,14 @@ export function flashFeedback(correct: boolean, answer: number, parts: readonly 
   return correct ? `Yes! ${answer}${p}.` : `Let me show you again. It was ${answer}${p}.`;
 }
 
+/** "1 counter and 4 empty squares" (one or many, for both numbers). */
+export function gapWords(counters: number, empty: number): string {
+  return `${counters} ${counters === 1 ? 'counter' : 'counters'} and ${empty} empty ${empty === 1 ? 'square' : 'squares'}`;
+}
+
 /** "Yes! 3 counters and 2 empty squares make 5." / "Not quite. 3 counters ..." */
 export function gapFeedback(counters: number, empty: number, capacity: number, correct: boolean): string {
-  return `${correct ? 'Yes!' : 'Not quite.'} ${counters} ${counters === 1 ? 'counter' : 'counters'} and ${empty} empty ${empty === 1 ? 'square' : 'squares'} make ${capacity}.`;
+  return `${correct ? 'Yes!' : 'Not quite.'} ${gapWords(counters, empty)} make ${capacity}.`;
 }
 
 /** n as one group or two, biggest first (groupSizes sorts the same way). Pictures never have more groups (voiceLines.test.ts checks). */

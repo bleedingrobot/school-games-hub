@@ -77,8 +77,6 @@ export const SUBITISING_CONFIG = {
   choiceCount: 5,
   /** A session is this many pictures. */
   sessionTrials: 12,
-  /** The starting check is this many pictures. */
-  placementTrials: 6,
   /** The answers kept in the browser, newest last. */
   keepAnswers: 400,
 } as const;

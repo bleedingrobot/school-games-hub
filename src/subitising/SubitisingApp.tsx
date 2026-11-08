@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { STAGES, SUBITISING_CONFIG as CONFIG } from '../../shared/subitising/config';
 import { growth, progressFrom, type SubAnswer } from '../../shared/subitising/engine';
 import { finishedInARow } from '../../shared/subitising/saved';
-import { placementTrial, startStageFrom } from '../../shared/subitising/placement';
+import { PLACEMENT_MAX, placementOver, placementTrial, startStageFrom } from '../../shared/subitising/placement';
 import { buildTrial, type Trial } from '../../shared/subitising/trials';
 import { speak, useReadAloud } from '../speech';
 import { FlashRunner, type AnswerResult } from './FlashRunner';
@@ -195,7 +195,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           readAloud={readAloud}
         />
       )}
-      {screen === 'check' && <FlashRunner key={`check-${seed}`} checking total={CONFIG.placementTrials} guidedMode={state.guidedMode} next={nextCheck} onAnswer={(_t, r) => void checkAnswers.current.push(r.correct)} onFinish={() => (checkAnswers.current.length ? finishCheck() : setScreen('home'))} readAloud={readAloud} />}
+      {screen === 'check' && <FlashRunner key={`check-${seed}`} checking total={PLACEMENT_MAX} over={() => placementOver(checkAnswers.current)} guidedMode={state.guidedMode} next={nextCheck} onAnswer={(_t, r) => void checkAnswers.current.push(r.correct)} onFinish={() => (checkAnswers.current.length ? finishCheck() : setScreen('home'))} readAloud={readAloud} />}
       {screen === 'checked' && (
         <section className="sb-screen">
           <h1>All done!</h1>

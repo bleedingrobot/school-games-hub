@@ -28,6 +28,18 @@
   "text": "How many empty squares?"
  },
  {
+  "slug": "a-look-back-how-many-did-you-see",
+  "text": "A look back. How many did you see?"
+ },
+ {
+  "slug": "a-look-back-how-many-can-you-see",
+  "text": "A look back. How many can you see?"
+ },
+ {
+  "slug": "a-look-back-how-many-empty-squares",
+  "text": "A look back. How many empty squares?"
+ },
+ {
   "slug": "how-many-can-you-see",
   "text": "How many can you see?"
  },
@@ -40,8 +52,8 @@
   "text": "This is how it works. A picture shows, then hides. Tap how many dots you saw. This one stays so you can practise."
  },
  {
-  "slug": "the-picture-stayed-on-today-so-your-plants-are-waiting-switch-flashing-back-on-and-they-will-grow",
-  "text": "The picture stayed on today, so your plants are waiting. Switch flashing back on and they will grow."
+  "slug": "the-picture-stayed-on-today-so-your-plants-grew-a-little-switch-flashing-back-on-to-finish-them",
+  "text": "The picture stayed on today, so your plants grew a little. Switch flashing back on to finish them."
  },
  {
   "slug": "yes-1",
