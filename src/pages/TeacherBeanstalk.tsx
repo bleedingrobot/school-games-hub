@@ -3,7 +3,7 @@
  * dots on or off for the header's class, and one line on a student's page that opens to show their beanstalk. Loaded only
  * when opened. The on/off switch is in the Games table row (src/games/beanstalk/teacher.ts).
  */
-import { dotsFor, DAYS_PER_EGG, METALS, stalkAfter } from '../../shared/beanstalk/progress';
+import { dotsFor, DAYS_PER_EGG, METALS, stageTarget, stalkAfter } from '../../shared/beanstalk/progress';
 import { fetchBeanstalkSettings, fetchBeanstalkStudent, saveBeanstalkSetting } from '../data/beanstalk';
 import { FRIEND_NAMES } from '../games/beanstalk/art';
 import { SettingToggle, useSetting } from '../teacher/Settings';
@@ -30,7 +30,7 @@ export async function beanstalkStudentSummary(student: string): Promise<string |
   const s = await fetchBeanstalkStudent(student);
   if (!s) return null;
   const stalk = stalkAfter(s.daysDone);
-  const parts = [`Bonds to ${stalk.target}`, `${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk`];
+  const parts = [`Bonds to ${stageTarget(s)}`, `${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk`];
   if (stalk.eggs) parts.push(`${stalk.eggs} Golden ${stalk.eggs === 1 ? 'Egg' : 'Eggs'}`);
   return parts.join(' · ');
 }
@@ -44,7 +44,7 @@ export function BeanstalkStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Kiwi’s Beanstalk for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastLeafDay, help } = loaded.value.progress;
+  const { daysDone, lastLeafDay, help, stage } = loaded.value.progress;
   const stalk = stalkAfter(daysDone);
   const leaves = METALS.map((metal) => [metal, stalk.leaves.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -53,7 +53,7 @@ export function BeanstalkStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Kiwi’s Beanstalk">
       <p>
-        Helping {FRIEND_NAMES[stalk.friend]} with pairs that make {stalk.target}. Leaves: {leaves}.
+        Helping {FRIEND_NAMES[stalk.friend]} with pairs that make {stageTarget({ stage })}. Leaves: {leaves}.
         {lastLeafDay && <> Last leaf changed {new Date(`${lastLeafDay}T12:00:00`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>Next time the leaves show {DOTS[dotsFor(help)]} (unless dots are off for the class). The dots follow how their days go: two good days in a row (8 or more of 10 pairs right first time) take a step off, a hard day brings one back. Golden Eggs so far: {stalk.eggs}.</p>

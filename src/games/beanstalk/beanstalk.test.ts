@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DAYS_PER_EGG } from '../../../shared/beanstalk/progress';
-import { makeRound, replay, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { replay, targetOf, type Round, type Tap } from '../../../shared/beanstalk/round';
 import { trialBackend } from './backend';
 
 const css = readFileSync(`${process.cwd()}/src/games/beanstalk/beanstalk.css`, 'utf8');
@@ -17,12 +17,11 @@ const contrast = (a: string, b: string) => {
 const colour = (name: string) => css.match(new RegExp(`--bs-${name}:\\s*(#[0-9a-f]{6})`, 'i'))![1];
 
 /** Every pair right, first time. */
-function perfectTaps(seed: number, target: Target = 10): Tap[] {
-  const round = makeRound(seed, target);
+function perfectTaps(round: Round): Tap[] {
   const taps: Tap[] = [];
   for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
     const [a] = r.onScreen;
-    taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === target)!, ms: 900 });
+    taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === targetOf(round, a))!, ms: 900 });
   }
   return taps;
 }
@@ -47,21 +46,26 @@ describe('the trial backend', () => {
     expect((await backend.load()).child).toBeNull();
     await backend.choose('jill');
     const go = async () => {
-      const { seed } = await backend.start();
-      return backend.finish(seed, perfectTaps(seed));
+      const { seed, round } = await backend.start();
+      return backend.finish(seed, perfectTaps(round));
     };
     expect(await go()).toMatchObject({ daysDone: 1, leafChanged: 0, egg: false });
     expect(await go()).toMatchObject({ daysDone: 1, leafChanged: null }); // again the same day: just for fun
-    const { seed } = await backend.start();
-    await expect(backend.finish(seed, perfectTaps(seed).slice(0, 3))).rejects.toThrow(); // not finished
+    const { seed, round } = await backend.start();
+    await expect(backend.finish(seed, perfectTaps(round).slice(0, 3))).rejects.toThrow(); // not finished
     tools.jumpTo(DAYS_PER_EGG - 1);
     expect(await go()).toMatchObject({ daysDone: DAYS_PER_EGG, egg: true });
     expect(await backend.load()).toMatchObject({ child: 'jill', daysDone: DAYS_PER_EGG });
-    // The next beanstalk is bonds to 20 (R8), the one after it bonds to 100.
+    // The egg doesn't move the sum, the child's days do (S21): still bonds to 10 until the stage moves.
+    const same = await backend.start();
+    expect(same.round).toMatchObject({ target: 10, pairTargets: Array(10).fill(10) });
+    tools.setStage(1);
     const next = await backend.start();
-    expect(await backend.finish(next.seed, perfectTaps(next.seed, 20))).toMatchObject({ daysDone: DAYS_PER_EGG, leafChanged: null });
+    expect(next.round).toMatchObject({ target: 20, pairTargets: [20, 20, 20, 20, 20, 20, 20, 20, 10, 10] });
+    expect(await backend.finish(next.seed, perfectTaps(next.round))).toMatchObject({ daysDone: DAYS_PER_EGG, leafChanged: null });
     tools.jumpTo(2 * DAYS_PER_EGG);
     const tui = await backend.start();
-    expect(await backend.finish(tui.seed, perfectTaps(tui.seed, 100))).toMatchObject({ daysDone: 2 * DAYS_PER_EGG + 1, leafChanged: 0 });
+    expect(tui.round.target).toBe(100); // the stage was set to 2 by the egg count (the back-fill), not by the calendar's own sum
+    expect(await backend.finish(tui.seed, perfectTaps(tui.round))).toMatchObject({ daysDone: 2 * DAYS_PER_EGG + 1, leafChanged: 0 });
   });
 });

@@ -83,7 +83,12 @@ export const WORDS = {
   leafTurned: (metal: Metal) => `Well done! A leaf turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day.',
   egg: (name: string) => `All the leaves are gold! ${name} can climb down. You win the Golden Egg!`,
-  nextFriend: (name: string, target: number) => `Oh no! ${name} is stuck up a new beanstalk. This time, make pairs that add to ${target}!`,
+  nextFriend: (name: string) => `Oh no! ${name} is stuck up a new beanstalk. Make pairs to help!`,
+  /** Said once in a round when the second, short tray comes in with older pairs (S21). */
+  nowThese: (target: number) => `Now these make ${target}.`,
+  /** On the finish screen when the sum moves with the child (S21). No score: just where they are now. */
+  movedUp: (target: number) => `You are ready for bigger pairs! Next time, make pairs that add to ${target}.`,
+  movedBack: (target: number) => `Let's practise pairs that add to ${target} again. They will help you.`,
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',
   voiceOn: 'Voice on',

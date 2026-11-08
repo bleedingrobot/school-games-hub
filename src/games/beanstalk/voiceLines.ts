@@ -3,8 +3,8 @@
  * (public/voice/beanstalk/<slug>.mp3, made with Kokoro by scripts/voice-clips.py).
  * A line without a clip falls back to the browser's own voice.
  */
-import { DAYS_PER_EGG, METALS, stalkAfter } from '../../../shared/beanstalk/progress';
-import type { Target } from '../../../shared/beanstalk/round';
+import { FRIENDS, METALS } from '../../../shared/beanstalk/progress';
+import { TARGETS, type Target } from '../../../shared/beanstalk/round';
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
@@ -24,17 +24,21 @@ export const leafNumbers = (target: Target): number[] =>
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.dotsBack, WORDS.lookTogether, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   lines.add(WORDS.nextTitle);
-  // Friends and sums go round together (6 friends, 4 sums), so one lap of 12 beanstalks has every pairing.
-  for (let e = 0; e < 12; e++) {
-    const { friend, target } = stalkAfter(e * DAYS_PER_EGG);
+  // Any friend can be stuck on any sum now (the sum follows the child, S21), and a child can move up or back between sums.
+  for (const friend of FRIENDS) {
     const name = FRIEND_NAMES[friend];
-    for (const title of [WORDS.stuck(name, target), WORDS.nextFriend(name, target)]) {
+    for (const title of [WORDS.nextFriend(name), ...TARGETS.map((t) => WORDS.stuck(name, t))]) {
       lines.add(homeLine(title, false));
       lines.add(homeLine(title, true));
     }
     lines.add(WORDS.egg(name));
+  }
+  for (const target of TARGETS) {
     lines.add(WORDS.tapTwo(target));
     lines.add(WORDS.guideStart(target));
+    lines.add(WORDS.nowThese(target));
+    lines.add(WORDS.movedUp(target));
+    lines.add(WORDS.movedBack(target));
     const numbers = leafNumbers(target);
     for (const a of numbers) lines.add(WORDS.right(a, target - a));
     if (target === 20) for (const a of numbers) lines.add(WORDS.bridge20(a, target - a));

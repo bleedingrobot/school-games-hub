@@ -6,8 +6,9 @@
 import { NextPartChip } from '../../components/NextPartChip';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stalkAfter, type FinishResult } from '../../../shared/beanstalk/progress';
-import type { Tap } from '../../../shared/beanstalk/round';
+import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stageTarget, stalkAfter } from '../../../shared/beanstalk/progress';
+import { TARGETS, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
+import type { FinishReply } from '../../../shared/beanstalk/server';
 import { SIGNPOST_FROM, type Signpost } from './signpost';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
@@ -46,18 +47,17 @@ function useVoice() {
   return { on, setOn, say, available: canReadAloud() };
 }
 
-/** The first challenge on a new 100 or 1000 beanstalk: the hand comes back, with a line bridging from bonds to 10 (maths review R4). */
-function newBigStalk(daysDone: number): boolean {
-  const stalk = stalkAfter(daysDone);
-  return stalk.eggs > 0 && stalk.day === 0 && stalk.target > 10;
+/** The first challenge on a bigger sum (20, 100 or 1000): the hand comes back, with a line bridging from bonds to 10 (maths review R4). The child has just arrived on the stage (S21). */
+function newBigStalk(state: BeanstalkState): boolean {
+  return state.stage > 0 && state.stageDays === 0;
 }
 
 type Screen =
   | { kind: 'loading' }
   | { kind: 'choose' }
   | { kind: 'home' }
-  | { kind: 'play'; seed: number }
-  | { kind: 'finish'; result: FinishResult };
+  | { kind: 'play'; round: StageRound }
+  | { kind: 'finish'; result: FinishReply };
 
 export interface Helpers {
   reload: () => void;
@@ -122,11 +122,17 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
   useEffect(reload, [reload]);
 
   const choose = (child: Child) => backend.choose(child).then(reload, fail);
-  const play = () => backend.start().then(({ seed }) => setScreen({ kind: 'play', seed }), fail);
+  const play = () => backend.start().then(({ round }) => setScreen({ kind: 'play', round }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then(
       (result) => {
-        setState((s) => s && { ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, help: result.help });
+        setState(
+          (s) =>
+            s && {
+              ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, help: result.help, stage: result.stage,
+              stageDays: result.moved !== 0 ? 0 : result.leafChanged !== null ? s.stageDays + 1 : s.stageDays,
+            },
+        );
         setScreen({ kind: 'finish', result });
         if (soundOn) playSound(result.egg ? 'win' : 'badge');
       },
@@ -140,19 +146,18 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
   else if (screen.kind === 'play' && state.child)
     body = (
       <Round
-        seed={screen.seed}
+        round={screen.round}
         dots={shownDots(state.help, state.dots)}
         canBoost={state.dots}
         stalkLeaves={stalkAfter(state.daysDone).leaves}
         trayMetal={METALS[Math.floor(stalkAfter(state.daysDone).day / LEAVES_ON_STALK)]}
         friend={stalkAfter(state.daysDone).friend}
-        target={stalkAfter(state.daysDone).target}
         child={state.child}
-        guide={(state.daysDone === 0 && state.lastLeafDay === null) || newBigStalk(state.daysDone)}
-        bridge={newBigStalk(state.daysDone)}
+        guide={(state.daysDone === 0 && state.lastLeafDay === null) || newBigStalk(state)}
+        bridge={newBigStalk(state)}
         sound={soundOn}
         say={voice.say}
-        onDone={(taps) => done(screen.seed, taps)}
+        onDone={(taps) => done(screen.round.seed, taps)}
       />
     );
   else if (screen.kind === 'finish' && state.child)
@@ -206,7 +211,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
   const name = FRIEND_NAMES[stalk.friend];
   const doneToday = state.lastLeafDay === state.today;
   // A fresh beanstalk after an egg says who is stuck now.
-  const title = stalk.day === 0 && stalk.eggs > 0 ? WORDS.nextFriend(name, stalk.target) : WORDS.stuck(name, stalk.target);
+  const title = stalk.day === 0 && stalk.eggs > 0 ? WORDS.nextFriend(name) : WORDS.stuck(name, stageTarget(state));
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus();
@@ -234,7 +239,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
 }
 
 /** A leaf changes colour, or, on the thirtieth day, the friend climbs down and the Golden Egg is won. */
-function Finish({ result, child, say, signpost, onNext }: { result: FinishResult; child: Child; say: (t: string, onEnd?: () => void) => void; signpost?: Signpost; onNext: () => void }) {
+function Finish({ result, child, say, signpost, onNext }: { result: FinishReply; child: Child; say: (t: string, onEnd?: () => void) => void; signpost?: Signpost; onNext: () => void }) {
   // On an egg day the new beanstalk has already started, so show the one just finished: every leaf gold.
   const stalk = stalkAfter(result.egg ? result.daysDone - 1 : result.daysDone);
   const leaves = result.egg
@@ -243,6 +248,10 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishResult
   const changed = result.leafChanged === null ? null : leaves[result.leafChanged].metal;
   const name = FRIEND_NAMES[stalk.friend];
   const text = result.egg ? WORDS.egg(name) : changed ? WORDS.leafTurned(changed) : WORDS.doneToday;
+  // The sum moved with the child (S21): one short line, said after the leaf line. No score.
+  const moveLine = result.moved === 0 ? null : result.moved === 1 ? WORDS.movedUp(TARGETS[result.stage]) : WORDS.movedBack(TARGETS[result.stage]);
+  // The sum they just played, for the card on to Weka.
+  const playedTarget = TARGETS[result.stage - result.moved];
   const heading = useRef<HTMLHeadingElement>(null);
   // The card comes once today's line has been heard (it reads its own line aloud, so it would cut this one off).
   const [heard, setHeard] = useState(false);
@@ -250,16 +259,16 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishResult
   const wekaOn = signpost?.wekaOn === true;
   useEffect(() => {
     heading.current?.focus();
-    say(text, () => setHeard(true));
-  }, [say, text]);
+    say(text, () => (moveLine ? say(moveLine, () => setHeard(true)) : setHeard(true)));
+  }, [say, text, moveLine]);
   useEffect(() => {
-    if (!signpost || !wekaOn || stalk.target < SIGNPOST_FROM) return;
+    if (!signpost || !wekaOn || playedTarget < SIGNPOST_FROM) return;
     let current = true;
-    signpost.secure(stalk.target).then((v) => current && setSecure(v), () => undefined);
+    signpost.secure(playedTarget).then((v) => current && setSecure(v), () => undefined);
     return () => {
       current = false;
     };
-  }, [signpost, wekaOn, stalk.target]);
+  }, [signpost, wekaOn, playedTarget]);
   return (
     <div className={`bs-home${result.egg ? ' bs-home--egg' : ''}`}>
       {result.egg ? (
@@ -269,6 +278,7 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishResult
       )}
       <div className="bs-panel">
         <h2 tabIndex={-1} ref={heading}>{text}</h2>
+        {moveLine && <p className="bs-moved">{moveLine}</p>}
         {result.egg && <img className="bs-prize" src={paint('things/egg-cushion')} alt="The Golden Egg" />}
         <button type="button" className="button button--play bs-play-button" onClick={onNext}>
           OK

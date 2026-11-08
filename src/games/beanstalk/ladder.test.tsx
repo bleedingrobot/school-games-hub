@@ -71,7 +71,7 @@ describe('the missing leaf and the what’s-next card (maths review R8)', () => 
     ] as const) {
       const target = days === DAYS_PER_EGG ? 20 : 10;
       const u = await start(days, { wekaOn, secure: async () => secure, open });
-      for (let go = 0; go < 10; go++) await makePair(u, target);
+      for (let go = 0; go < 10; go++) await makePair(u, go < 8 ? target : 10); // two older bonds to 10 come last on every stage but the first
       await screen.findByRole('heading', { name: /Well done/ });
       await act(() => vi.advanceTimersByTimeAsync(200));
       expect(card() !== null, name).toBe(shown);

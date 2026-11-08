@@ -9,9 +9,9 @@
  * "Now you try: what goes with 7?" with the 7 still picked and the partner not marked. The pair then made counts for the
  * round, but only a go's first tap is scored (round.ts), so it is a shown pair, not a clean right.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { isMissingGo, makeRound, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, unitOf, wrongFirstRun, type Target, type Tap } from '../../../shared/beanstalk/round';
+import { isMissingGo, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, targetOf, unitOf, wrongFirstRun, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
@@ -39,7 +39,11 @@ function shuffled<T>(items: T[]): T[] {
 const WOBBLE_MS = 500;
 
 interface Props {
-  seed: number;
+  /**
+   * The round the server made for this child (shared/beanstalk/round.ts): ten pairs, most of them the child's own sum,
+   * with a couple of older pairs last, as a short second tray with its own sum (S21). The tray shows one sum at a time.
+   */
+  round: StageRound;
   /** The dots this child sees to start: their own help, or none when the teacher has turned the dots off. */
   dots: Dots;
   /** False when the teacher has turned the dots off: then three wrong first taps in a row don't bring them back. */
@@ -49,8 +53,6 @@ interface Props {
   /** The floating leaves' colour: the colour every magic leaf has reached (green, bronze or silver). */
   trayMetal: Metal;
   friend: Friend;
-  /** What a pair adds up to on this beanstalk. */
-  target: Target;
   child: Child;
   /** The child's very first challenge, or the first on a new 100 or 1000 beanstalk: a hand shows them a right pair, until they have made one. */
   guide: boolean;
@@ -64,12 +66,14 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, friend, target, child, guide, bridge = false, sound, say, onDone }: Props) {
-  const round = useMemo(() => makeRound(seed, target), [seed, target]);
+export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, sound, say, onDone }: Props) {
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
   const [flying, setFlying] = useState<number[]>([]);
+  // What the leaves in the tray add up to now: the sum of the pair they belong to. It changes when the short second tray of older pairs comes in.
+  const trayLeaf = slots.find((s): s is number => s !== null);
+  const target = trayLeaf === undefined ? round.target : targetOf(round, trayLeaf);
   /** Three goes in a row began with a wrong tap: full dots for the rest of this round (not saved; the child's own help is). */
   const [boosted, setBoosted] = useState(false);
   const [wobble, setWobble] = useState<number[]>([]);
@@ -119,7 +123,7 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
       live = false;
       pending.forEach((t) => window.clearTimeout(t));
     };
-  }, [seed]); // only when the round starts
+  }, [round.seed]); // only when the round starts
 
   const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
 
@@ -192,7 +196,7 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
     // The next go may be a missing-leaf go: its leaf is picked as the pair flies up (every leaf floating has a partner: round.ts).
     const after = replay(round, next);
     const nextGo = after.done || !isMissingGo(after.pairsMade) ? null : (() => {
-      const options = after.onScreen.filter((i) => after.onScreen.some((j) => j !== i && round.leaves[i] + round.leaves[j] === target));
+      const options = after.onScreen.filter((i) => after.onScreen.some((j) => j !== i && round.leaves[i] + round.leaves[j] === targetOf(round, i)));
       return options.length ? options[Math.floor(Math.random() * options.length)] : null;
     })();
     // The line: the pair, then (after a missing-leaf go) the take-away, the dots coming back, and what the next go asks.
@@ -202,7 +206,12 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
     // Each go is scored at its first tap: three in a row wrong bring the full dots back, and the line says so once.
     const struggling = canBoost && !boosted && dots !== 'full' && wrongFirstRun(after.answers) >= STRUGGLE_GOES;
     if (struggling) setBoosted(true);
-    sayAll([WORDS.right(x, y), wasMissing, struggling ? WORDS.dotsBack : null, nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], target) : null]);
+    // The short second tray of older pairs came in: say what these make now (the badge changes as they arrive).
+    const trayNext = after.done || !after.onScreen.length ? target : targetOf(round, after.onScreen[0]);
+    sayAll([
+      WORDS.right(x, y), wasMissing, struggling ? WORDS.dotsBack : null, trayNext !== target ? WORDS.nowThese(trayNext) : null,
+      nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], trayNext) : null,
+    ]);
     if (sound) playSound('hop');
     later(FLY_MS, () => {
       const newcomers = after.onScreen.filter((i) => !slots.includes(i));
@@ -237,7 +246,7 @@ export function Round({ seed, dots, canBoost = true, stalkLeaves, trayMetal, fri
             : 'resting';
   const step = unitOf(target);
   const cells = target === 20 ? 20 : 10;
-  const missingLine = missing !== null ? WORDS.missingAsk(round.leaves[missing], target) : null;
+  const missingLine = missing !== null ? WORDS.missingAsk(round.leaves[missing], targetOf(round, missing)) : null;
 
   return (
     <div className="bs-play">

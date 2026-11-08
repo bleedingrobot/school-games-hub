@@ -10,6 +10,34 @@ import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 */
 const JUNIOR_QUICK_MS = 1e4;
 //#endregion
+//#region shared/kit/help.ts
+/** The numbers in LEARNING-DESIGN rule 5, for a round of ten goes. The game adds its `topLevel`. */
+const ROUND_OF_TEN = {
+	good: 8,
+	hard: 4,
+	goodToFade: 2
+};
+/**
+* The help after a counted round with `right` goes right at the first tap: enough good rounds in a row take it down one
+* level, a hard round brings one level back at once. `faded` says it went down on this round.
+*/
+function fadeAfter(p, right, rules) {
+	let { level } = p;
+	let goodInRow = right >= rules.good ? p.goodInRow + 1 : 0;
+	let faded = false;
+	if (goodInRow >= rules.goodToFade) {
+		level = Math.max(0, level - 1);
+		goodInRow = 0;
+		faded = true;
+	}
+	if (right <= rules.hard) level = Math.min(rules.topLevel, level + 1);
+	return {
+		level,
+		goodInRow,
+		faded
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -91,6 +119,605 @@ const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
 //#endregion
+//#region shared/maths/leitner.ts
+/**
+* Mastery boxes (the Leitner system). Every fact sits in box 0–4:
+* correct and quick moves it up one box, correct but slow keeps it where it is, and wrong
+* drops it to box 1. A fact only reaches box 4 ("fluent") once it has been answered
+* quickly and correctly on at least two different days, so one lucky lesson isn't enough.
+*/
+function newStats(key) {
+	return {
+		key,
+		attempts: 0,
+		correct: 0,
+		avgMs: 0,
+		box: 0,
+		lastSeen: 0,
+		quickDays: []
+	};
+}
+const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+/** The New Zealand date of a moment, as YYYY-MM-DD. */
+const nzDay = (at) => nzDayFormat.format(new Date(at));
+/** The stats after one answer. Doesn't change the stats it's given. */
+function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
+	const ms = keptMs(rawMs);
+	const attempts = stats.attempts + 1;
+	const next = {
+		...stats,
+		attempts,
+		correct: stats.correct + (correct ? 1 : 0),
+		avgMs: Math.round(stats.avgMs + (ms - stats.avgMs) / attempts),
+		lastSeen: at,
+		quickDays: [...stats.quickDays]
+	};
+	if (!correct) {
+		next.box = 1;
+		return next;
+	}
+	if (ms > quickMs) return next;
+	const day = nzDay(at);
+	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
+	const canBeFluent = next.quickDays.length >= 2;
+	next.box = Math.min(stats.box + 1, canBeFluent ? 4 : 3);
+	return next;
+}
+/** In words, for the teacher's grid: never asked, learning (boxes 0–1), secure (2–3) or fluent (4). */
+function mastery(stats) {
+	if (!stats || stats.attempts === 0) return "not-tried";
+	if (stats.box >= 4) return "fluent";
+	return stats.box >= 2 ? "secure" : "learning";
+}
+//#endregion
+//#region shared/kit/mistakes.ts
+/** True when two of the numbers on screen are one unit off the target: the tempting near miss every full tray has. */
+const hasNearMiss = (numbers, target, unit = 1) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === unit));
+//#endregion
+//#region shared/seededRandom.ts
+/** A tiny repeatable random number generator, so "random" test games are the same every run. */
+function seeded(seed) {
+	return () => {
+		seed = (seed * 1103515245 + 12345) % 2147483648;
+		return seed / 2147483648;
+	};
+}
+/**
+* What each beanstalk's pairs add up to, in turn: Kiwi 10, then bonds to 20, tūī 100, kererū 1000, then round again
+* (James, 4 Nov 2026; 20 added by maths review R8, 7 Nov 2026).
+*/
+const TARGETS = [
+	10,
+	20,
+	100,
+	1e3
+];
+const isTarget = (n) => TARGETS.includes(n);
+/** What one dot on a leaf is worth: 1 on the 10 and 20 beanstalks (20 has two ten-frames), 10 on the 100 and 100 on the 1000. */
+const unitOf = (target) => target === 20 ? 1 : target / 10;
+const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
+/** What the pair holding this leaf adds up to. */
+const targetOf = (round, leaf) => round.pairTargets?.[leaf >> 1] ?? round.target;
+const isStage = (n) => n === 0 || n === 1 || n === 2 || n === 3;
+const stageTarget = (stage) => TARGETS[stage];
+/** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
+const SMALL_PARTS = [
+	1,
+	2,
+	3,
+	4,
+	5
+];
+function makeRound(seed, target = 10) {
+	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+	if (!isTarget(target)) throw new RangeError(`Bad target ${target}`);
+	const random = seeded(seed);
+	random();
+	random();
+	if (target === 20) return {
+		seed,
+		target,
+		leaves: leavesTo20(random)
+	};
+	const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
+	while (pool.length < 10) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[pool[i], pool[j]] = [pool[j], pool[i]];
+	}
+	const step = target / 10;
+	return {
+		seed,
+		target,
+		leaves: pool.flatMap((a) => random() < .5 ? [a, 10 - a] : [10 - a, a]).map((n) => n * step)
+	};
+}
+/**
+* Bonds to 20 (R8): the pairs 1 + 19 to 9 + 11, each once, and a tenth that is one more of them. 10 + 10 is left out (two
+* equal leaves are too easy, like 5 + 5), and 0 + 20 as 0 + 10 is. The leaves are the numbers themselves, so 11 to 19 turn up.
+*/
+function leavesTo20(random) {
+	const pool = [
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		7,
+		8,
+		9
+	];
+	pool.push(1 + Math.floor(random() * 9));
+	for (let i = pool.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[pool[i], pool[j]] = [pool[j], pool[i]];
+	}
+	return pool.flatMap((a) => random() < .5 ? [a, 20 - a] : [20 - a, a]);
+}
+/** One pair may come up this many times in a round (5 + 5 only once: two equal leaves are easy). */
+const MAX_REPEATS = 3;
+const candidatesOf = (target) => Array.from({ length: target === 20 ? 9 : 5 }, (_, i) => ({
+	target,
+	lo: i + 1
+}));
+const shuffleWith = (items, random) => {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[out[i], out[j]] = [out[j], out[i]];
+	}
+	return out;
+};
+/**
+* Today's challenge for a child on `stage`, from their maths records (S21). Each pair of the stage's sum is used once, and
+* the spare places go to the weakest pairs (lowest box, then least recently seen), at most three times each, 5 + 5 once.
+* Two of the ten pairs are older pairs, from the stages below, the least recently seen then the weakest; they come last as
+* a second tray with their own sum (`pairTargets`). The first stage has none.
+*
+* The 100 and 1000 sums have one fact key each ('bond100:tens'), so they can't say which pair is weak. Their pairs are
+* weighed by the bond10 record of the same pair (30 + 70 by 3 + 7) instead. Splitting the key lives in shared/maths and
+* would be its own branch.
+*/
+function makeStageRound(seed, stage, facts = []) {
+	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+	if (!isStage(stage)) throw new RangeError(`Bad stage ${stage}`);
+	const random = seeded(seed);
+	random();
+	random();
+	const record = new Map(facts.map((f) => [f.key, f]));
+	const boxOf = (c) => record.get(bondKey(c.lo, c.target >= 100 ? 10 : c.target))?.box ?? 0;
+	const seenOf = (c) => record.get(bondKey(c.lo, c.target))?.lastSeen ?? 0;
+	const target = TARGETS[stage];
+	const older = stage === 0 ? 0 : 2;
+	const own = shuffleWith(candidatesOf(target), random).sort((a, b) => boxOf(a) - boxOf(b) || seenOf(a) - seenOf(b));
+	const places = 10 - older;
+	const chosen = own.slice(0, places);
+	const counts = new Map(chosen.map((c) => [c, 1]));
+	const cap = (c) => c.lo === (c.target === 20 ? 10 : 5) ? 1 : MAX_REPEATS;
+	for (let spare = places - chosen.length; spare > 0;) {
+		const before = spare;
+		for (const c of chosen) if (spare > 0 && counts.get(c) < cap(c)) {
+			counts.set(c, counts.get(c) + 1);
+			spare--;
+		}
+		if (spare === before) break;
+	}
+	const mine = shuffleWith(chosen.flatMap((c) => Array.from({ length: counts.get(c) }, () => c)), random);
+	const before = TARGETS.slice(0, stage).flatMap(candidatesOf);
+	const oldPairs = shuffleWith(before, random).sort((a, b) => seenOf(a) - seenOf(b) || boxOf(a) - boxOf(b)).slice(0, older);
+	const pairs = [...mine, ...oldPairs];
+	return {
+		seed,
+		target,
+		leaves: pairs.flatMap(({ target: t, lo }) => {
+			const a = t === 20 ? lo : lo * t / 10;
+			return random() < .5 ? [a, t - a] : [t - a, a];
+		}),
+		pairTargets: pairs.map((c) => c.target)
+	};
+}
+/**
+* The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
+* place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
+*/
+const bondKey = (n, target = 10) => {
+	if (target === 20) {
+		const lo = Math.min(n, 20 - n);
+		return `bond20:${lo}+${20 - lo}`;
+	}
+	if (target === 100) return "bond100:tens";
+	if (target === 1e3) return "bond1000:hundreds";
+	const lo = Math.min(n, 10 - n);
+	return `bond10:${lo}+${10 - lo}`;
+};
+/** The records a sum's pairs use (the ones its right pairs are scored against), for "is this sum secure?". */
+const factKeys$2 = (target) => target === 10 ? [
+	1,
+	2,
+	3,
+	4,
+	5
+].map((n) => bondKey(n)) : target === 20 ? [
+	1,
+	2,
+	3,
+	4,
+	5,
+	6,
+	7,
+	8,
+	9
+].map((n) => bondKey(n, 20)) : [bondKey(1, target)];
+/** The leaves floating: those of the pairs that have come in, less the ones already paired. */
+const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
+/**
+* Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
+* come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
+* fills the tray is the first free one that gives it a near miss (a 3 with a 6, say), so every tray of six has one; if
+* none does, the tray waits at four leaves (maths review R5).
+* Server and browser both get this from the taps, through `replay`.
+*/
+function letIn(round, inPlay, used) {
+	const floatingNow = () => floating(inPlay, used);
+	const free = (numbers, tray) => (k) => !inPlay.includes(k) && targetOf(round, 2 * k) === tray && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
+	while (floatingNow().length < 6) {
+		const now = floatingNow();
+		const numbers = now.map((i) => round.leaves[i]);
+		const notIn = Array.from({ length: 10 }, (_, k) => k).filter((k) => !inPlay.includes(k));
+		if (!notIn.length) return;
+		const tray = now.length ? targetOf(round, now[0]) : targetOf(round, 2 * notIn[0]);
+		const waiting = notIn.filter(free(numbers, tray));
+		if (!waiting.length) return;
+		if (!(numbers.length + 2 >= 6)) {
+			inPlay.push(waiting[0]);
+			continue;
+		}
+		const tempting = waiting.find((k) => hasNearMiss([
+			...numbers,
+			round.leaves[2 * k],
+			round.leaves[2 * k + 1]
+		], tray, unitOf(tray)));
+		if (tempting === void 0) return;
+		inPlay.push(tempting);
+	}
+}
+/** A pair of leaves the same either way round, so a tried pair is found whichever leaf was tapped first. */
+const pairId = (a, b) => a < b ? `${a}-${b}` : `${b}-${a}`;
+/** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
+function replay(round, taps) {
+	const used = new Set();
+	const answers = [];
+	const tried = [];
+	const inPlay = [];
+	letIn(round, inPlay, used);
+	let pairsMade = 0;
+	let wrongInGo = 0;
+	let shown = 0;
+	for (const { a, b, ms } of taps) {
+		if (pairsMade === 10) throw new Error("Taps after the round was done");
+		const now = floating(inPlay, used);
+		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
+		const sum = targetOf(round, a);
+		const right = round.leaves[a] + round.leaves[b] === sum;
+		if (wrongInGo === 0) answers.push({
+			key: bondKey(round.leaves[a], sum),
+			correct: right,
+			ms
+		});
+		if (right) {
+			used.add(a).add(b);
+			pairsMade++;
+			if (wrongInGo >= 2) shown++;
+			wrongInGo = 0;
+			letIn(round, inPlay, used);
+		} else {
+			wrongInGo++;
+			if (!tried.includes(pairId(a, b))) tried.push(pairId(a, b));
+		}
+	}
+	return {
+		pairsMade,
+		mistakes: taps.length - pairsMade,
+		done: pairsMade === 10,
+		onScreen: floating(inPlay, used),
+		answers,
+		tried,
+		wrongInGo,
+		shown
+	};
+}
+/** Ten leaves, three changes each: thirty finished days to a Golden Egg. */
+const DAYS_PER_EGG = 30;
+const wholeCount = (n) => {
+	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
+	return n;
+};
+/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
+const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+/** A finished challenge: one leaf changes on the first finish of each NZ day; playing again the same day is just for fun. */
+function finishChallenge(daysDone, lastLeafDay, today) {
+	if (lastLeafDay === today) return {
+		daysDone: wholeCount(daysDone),
+		lastLeafDay,
+		leafChanged: null,
+		egg: false
+	};
+	const next = wholeCount(daysDone) + 1;
+	return {
+		daysDone: next,
+		lastLeafDay: today,
+		leafChanged: daysDone % 10,
+		egg: next % DAYS_PER_EGG === 0
+	};
+}
+/** First challenge: full dots. */
+const START_PLACE = {
+	help: 0,
+	goodInRow: 0
+};
+/** Right at the first tap on this many pairs of 10 or more makes a good challenge, this many or fewer a hard one (shared/kit/help.ts). */
+const RULES = {
+	...ROUND_OF_TEN,
+	topLevel: 2
+};
+/**
+* The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
+* finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
+* (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
+* moves the child up or back a stage) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+*/
+function placeAfter(place, right, result) {
+	if (result.leafChanged === null) return place;
+	if (result.stageChanged) return START_PLACE;
+	const { level, goodInRow } = fadeAfter({
+		level: 2 - place.help,
+		goodInRow: place.goodInRow
+	}, right, RULES);
+	return {
+		help: 2 - level,
+		goodInRow
+	};
+}
+const START_STEPS = {
+	stage: 0,
+	goodDays: 0,
+	hardDays: 0,
+	stageDays: 0
+};
+/** 70 percent of a sum's facts in box 2 or more makes it secure (the rule the teacher's skill map uses). */
+const SECURE_SHARE = .7;
+/** Is at least 70 percent of this sum's facts secure (box 2 or more) in these records? */
+function sumSecure(facts, target) {
+	const keys = factKeys$2(target);
+	const byKey = new Map(facts.map((f) => [f.key, f]));
+	return keys.filter((k) => ["secure", "fluent"].includes(mastery(byKey.get(k)))).length / keys.length >= SECURE_SHARE;
+}
+/**
+* The stage after a finished challenge with `right` pairs right at the first tap (S21). It moves only on the NZ day's first
+* finish (`leafChanged` null on a replay changes nothing). 8 or more right: a good day (and the hard days start again); 4 or
+* fewer: a hard day; between: both start again. Two good days in a row with the sum secure move the child up one stage (never
+* past 1000); two hard days in a row step them back one (never below bonds to 10). The stage does not go round to 10 again. A
+* change resets the counts. `moved` is 1 up, -1 back, 0 stayed.
+*/
+function afterDay(steps, right, firstFinish, secure) {
+	if (!firstFinish) return {
+		...steps,
+		moved: 0
+	};
+	const good = right >= ROUND_OF_TEN.good;
+	const hard = right <= ROUND_OF_TEN.hard;
+	const goodDays = good ? Math.min(steps.goodDays + 1, 9) : 0;
+	const hardDays = hard ? Math.min(steps.hardDays + 1, 9) : 0;
+	const stageDays = Math.min(steps.stageDays + 1, 100);
+	if (goodDays >= 2 && secure && steps.stage < 3) return {
+		stage: steps.stage + 1,
+		goodDays: 0,
+		hardDays: 0,
+		stageDays: 0,
+		moved: 1
+	};
+	if (hardDays >= 2 && steps.stage > 0) return {
+		stage: steps.stage - 1,
+		goodDays: 0,
+		hardDays: 0,
+		stageDays: 0,
+		moved: -1
+	};
+	return {
+		stage: steps.stage,
+		goodDays,
+		hardDays,
+		stageDays,
+		moved: 0
+	};
+}
+//#endregion
+//#region shared/beanstalk/server.ts
+/**
+* What the `beanstalk` server function does with a request from a signed-in pupil (docs/BEANSTALK-PLAN.md, section 5).
+* The function (supabase/functions/beanstalk/handler.ts) checks the sign-in and the rate first; the preview's trial
+* backend calls this with services that keep everything in the browser, so both run exactly the same rules.
+*
+*   load    the pupil's beanstalk (a new pupil has none), their dots help, the class's dots setting and today's NZ date by the server's clock;
+*   choose  be Jack or Jill;
+*   start   makes today's challenge from a fresh seed, the child's stage and their maths records, and keeps the round itself
+*           (any other open challenge is closed);
+*   finish  replays the taps on the kept round (its sums are the child's stage, with a few older pairs last), records
+*           the first tap of each go for the maths records (a wrong pair counts against the first leaf's pair; taps
+*           after it in the go are not scored, maths review R5), and changes a leaf on
+*           the first finish of the NZ day, and moves the child's dots help on that same finish (placeAfter, R6). A Golden Egg is an
+*           achievement (Stage 4's migration counts eggs from the finished days).
+*
+* The sum follows the child, not the calendar (S21): a saved stage moves up after two good days with the sum secure, and back
+* after two hard days (progress.ts: afterDay). The leaves, the egg and the friend still come from the count of finished days.
+*
+* Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
+* the leaves come from the saved count of finished days. A challenge finishes once.
+*/
+const isChild = (c) => c === "jack" || c === "jill";
+const unplayed = () => ({
+	child: null,
+	daysDone: 0,
+	lastLeafDay: null,
+	help: 0,
+	goodInRow: 0,
+	...START_STEPS,
+	version: 0
+});
+/** The longest a pair is said to have taken (the maths records keep at most two minutes anyway). */
+const MAX_TAP_MS = 6e5;
+/** Tries at a save before giving up (another request saved in between). */
+const TRIES = 4;
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+const busy = () => no(503, "The beanstalk couldn’t be reached just now. Try again in a moment.");
+const unreadable = () => no(400, "That couldn’t be read.");
+/** The records after this challenge's answers, the way record_fact_answers will change them (the juniors' quick time). */
+function withAnswers(facts, answers) {
+	const byKey = new Map(facts.map((f) => [f.key, f]));
+	for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, JUNIOR_QUICK_MS));
+	return [...byKey.values()];
+}
+const isWhole = (v, max) => Number.isInteger(v) && v >= 0 && v <= max;
+function readTaps(v) {
+	if (!Array.isArray(v) || v.length > 200) return null;
+	const taps = [];
+	for (const t of v) {
+		if (!t || typeof t !== "object") return null;
+		const { a, b, ms } = t;
+		if (!isWhole(a, 1e3) || !isWhole(b, 1e3) || !isWhole(ms, MAX_TAP_MS)) return null;
+		taps.push({
+			a,
+			b,
+			ms
+		});
+	}
+	return taps;
+}
+async function handleBeanstalk(services, player, body) {
+	const settings = await services.settings(player);
+	if (!settings) return busy();
+	if (!settings.enabled) return no(403, "Kiwi’s Beanstalk is not switched on for your class.", { code: "game-off" });
+	const today = () => nzDate(new Date(services.now()));
+	if (body.action === "load") {
+		const s = await services.load(player);
+		if (s === "busy") return busy();
+		return ok({
+			child: s.child,
+			daysDone: s.daysDone,
+			lastLeafDay: s.lastLeafDay,
+			today: today(),
+			help: s.help,
+			dots: settings.dots,
+			stage: s.stage,
+			stageDays: s.stageDays
+		});
+	}
+	if (body.action === "choose") {
+		if (!isChild(body.child)) return unreadable();
+		const done = await services.choose(player, body.child);
+		if (done === "busy" || !done) return busy();
+		return ok({ child: body.child });
+	}
+	if (body.action === "start") {
+		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
+		if (s === "busy" || facts === "busy") return busy();
+		if (!s.child) return no(409, "Choose Jack or Jill first.", { code: "no-child" });
+		for (let tries = 0; tries < TRIES; tries++) {
+			const seed = Math.floor(services.random() * 2147483648);
+			const round = makeStageRound(seed, s.stage, facts);
+			const kept = await services.start(player, round);
+			if (kept === "busy") return busy();
+			if (kept) return ok({
+				seed,
+				round
+			});
+		}
+		return busy();
+	}
+	if (body.action === "finish") {
+		const seed = body.seed;
+		const taps = readTaps(body.taps);
+		if (!isSeed(seed) || !taps) return unreadable();
+		const round = await services.round(player, seed);
+		if (round === "busy") return busy();
+		if (!round) return no(409, "That isn’t one of your challenges.", { code: "not-yours" });
+		if (!round.open) return no(409, "That challenge has finished.", { code: "ended" });
+		for (let tries = 0; tries < TRIES; tries++) {
+			const s = await services.load(player);
+			if (s === "busy") return busy();
+			const kept = round.round ?? makeRound(seed, stageTarget(s.stage));
+			let played;
+			try {
+				played = replay(kept, taps);
+			} catch {
+				return unreadable();
+			}
+			if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
+			const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
+			const at = services.now();
+			const answers = played.answers.map((a) => ({
+				...a,
+				at
+			}));
+			const rightFirst = played.answers.filter((a) => a.correct).length;
+			const facts = await services.facts(player);
+			const secure = facts !== "busy" && sumSecure(withAnswers(facts, answers), TARGETS[s.stage]);
+			const steps = afterDay(s, rightFirst, result.leafChanged !== null, secure);
+			const place = placeAfter({
+				help: s.help,
+				goodInRow: s.goodInRow
+			}, rightFirst, {
+				leafChanged: result.leafChanged,
+				stageChanged: steps.moved !== 0
+			});
+			const { moved, ...savedSteps } = steps;
+			const progress = {
+				child: s.child,
+				daysDone: result.daysDone,
+				lastLeafDay: result.lastLeafDay,
+				...place,
+				...savedSteps
+			};
+			const saved = await services.finish(player, seed, s.version, progress, {
+				taps,
+				mistakes: played.mistakes
+			});
+			if (saved === "busy") return busy();
+			if (saved) {
+				await services.recordAnswers(player, `beanstalk:${seed}`, answers);
+				if (result.egg) await services.progressChanged(player);
+				return ok({
+					...result,
+					help: place.help,
+					stage: steps.stage,
+					moved
+				});
+			}
+			const again = await services.round(player, seed);
+			if (again === "busy") return busy();
+			if (!again?.open) return no(409, "That challenge has finished.", { code: "ended" });
+		}
+		return busy();
+	}
+	return unreadable();
+}
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -117,7 +744,6 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
-new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/maths/banded.ts
 /** A whole number from lo to hi (both included). */
@@ -1900,15 +2526,6 @@ const BANDED_PACKS = {
 	decimals: DECIMALS
 };
 PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
-//#endregion
-//#region shared/seededRandom.ts
-/** A tiny repeatable random number generator, so "random" test games are the same every run. */
-function seeded(seed) {
-	return () => {
-		seed = (seed * 1103515245 + 12345) % 2147483648;
-		return seed / 2147483648;
-	};
-}
 //#endregion
 //#region shared/maths/skillPacks/equalsKeys.ts
 /**
@@ -6665,406 +7282,6 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
-//#region shared/kit/help.ts
-/** The numbers in LEARNING-DESIGN rule 5, for a round of ten goes. The game adds its `topLevel`. */
-const ROUND_OF_TEN = {
-	good: 8,
-	hard: 4,
-	goodToFade: 2
-};
-/**
-* The help after a counted round with `right` goes right at the first tap: enough good rounds in a row take it down one
-* level, a hard round brings one level back at once. `faded` says it went down on this round.
-*/
-function fadeAfter(p, right, rules) {
-	let { level } = p;
-	let goodInRow = right >= rules.good ? p.goodInRow + 1 : 0;
-	let faded = false;
-	if (goodInRow >= rules.goodToFade) {
-		level = Math.max(0, level - 1);
-		goodInRow = 0;
-		faded = true;
-	}
-	if (right <= rules.hard) level = Math.min(rules.topLevel, level + 1);
-	return {
-		level,
-		goodInRow,
-		faded
-	};
-}
-//#endregion
-//#region shared/kit/mistakes.ts
-/** True when two of the numbers on screen are one unit off the target: the tempting near miss every full tray has. */
-const hasNearMiss = (numbers, target, unit = 1) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === unit));
-/**
-* What each beanstalk's pairs add up to, in turn: Kiwi 10, then bonds to 20, tūī 100, kererū 1000, then round again
-* (James, 4 Nov 2026; 20 added by maths review R8, 7 Nov 2026).
-*/
-const TARGETS = [
-	10,
-	20,
-	100,
-	1e3
-];
-const isTarget = (n) => TARGETS.includes(n);
-/** What one dot on a leaf is worth: 1 on the 10 and 20 beanstalks (20 has two ten-frames), 10 on the 100 and 100 on the 1000. */
-const unitOf = (target) => target === 20 ? 1 : target / 10;
-const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
-/** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
-const SMALL_PARTS = [
-	1,
-	2,
-	3,
-	4,
-	5
-];
-function makeRound(seed, target = 10) {
-	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
-	if (!isTarget(target)) throw new RangeError(`Bad target ${target}`);
-	const random = seeded(seed);
-	random();
-	random();
-	if (target === 20) return {
-		seed,
-		target,
-		leaves: leavesTo20(random)
-	};
-	const pool = [...SMALL_PARTS, ...SMALL_PARTS.slice(0, 4)];
-	while (pool.length < 10) pool.push(SMALL_PARTS[Math.floor(random() * 4)]);
-	for (let i = pool.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[pool[i], pool[j]] = [pool[j], pool[i]];
-	}
-	const step = target / 10;
-	return {
-		seed,
-		target,
-		leaves: pool.flatMap((a) => random() < .5 ? [a, 10 - a] : [10 - a, a]).map((n) => n * step)
-	};
-}
-/**
-* Bonds to 20 (R8): the pairs 1 + 19 to 9 + 11, each once, and a tenth that is one more of them. 10 + 10 is left out (two
-* equal leaves are too easy, like 5 + 5), and 0 + 20 as 0 + 10 is. The leaves are the numbers themselves, so 11 to 19 turn up.
-*/
-function leavesTo20(random) {
-	const pool = [
-		1,
-		2,
-		3,
-		4,
-		5,
-		6,
-		7,
-		8,
-		9
-	];
-	pool.push(1 + Math.floor(random() * 9));
-	for (let i = pool.length - 1; i > 0; i--) {
-		const j = Math.floor(random() * (i + 1));
-		[pool[i], pool[j]] = [pool[j], pool[i]];
-	}
-	return pool.flatMap((a) => random() < .5 ? [a, 20 - a] : [20 - a, a]);
-}
-/**
-* The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
-* place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
-*/
-const bondKey = (n, target = 10) => {
-	if (target === 20) {
-		const lo = Math.min(n, 20 - n);
-		return `bond20:${lo}+${20 - lo}`;
-	}
-	if (target === 100) return "bond100:tens";
-	if (target === 1e3) return "bond1000:hundreds";
-	const lo = Math.min(n, 10 - n);
-	return `bond10:${lo}+${10 - lo}`;
-};
-/** The leaves floating: those of the pairs that have come in, less the ones already paired. */
-const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
-/**
-* Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
-* come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
-* fills the tray is the first free one that gives it a near miss (a 3 with a 6, say), so every tray of six has one; if
-* none does, the tray waits at four leaves (maths review R5).
-* Server and browser both get this from the taps, through `replay`.
-*/
-function letIn(round, inPlay, used) {
-	const floatingNow = () => floating(inPlay, used);
-	const free = (numbers) => (k) => !inPlay.includes(k) && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
-	while (floatingNow().length < 6) {
-		const numbers = floatingNow().map((i) => round.leaves[i]);
-		const waiting = Array.from({ length: 10 }, (_, k) => k).filter(free(numbers));
-		if (!waiting.length) return;
-		if (!(numbers.length + 2 >= 6)) {
-			inPlay.push(waiting[0]);
-			continue;
-		}
-		const tempting = waiting.find((k) => hasNearMiss([
-			...numbers,
-			round.leaves[2 * k],
-			round.leaves[2 * k + 1]
-		], round.target, unitOf(round.target)));
-		if (tempting === void 0) return;
-		inPlay.push(tempting);
-	}
-}
-/** A pair of leaves the same either way round, so a tried pair is found whichever leaf was tapped first. */
-const pairId = (a, b) => a < b ? `${a}-${b}` : `${b}-${a}`;
-/** Replays a child's taps. Taps on leaves not floating (or the same leaf twice) stop the replay: the browser never sends them. */
-function replay(round, taps) {
-	const used = new Set();
-	const answers = [];
-	const tried = [];
-	const inPlay = [];
-	letIn(round, inPlay, used);
-	let pairsMade = 0;
-	let wrongInGo = 0;
-	let shown = 0;
-	for (const { a, b, ms } of taps) {
-		if (pairsMade === 10) throw new Error("Taps after the round was done");
-		const now = floating(inPlay, used);
-		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
-		const right = round.leaves[a] + round.leaves[b] === round.target;
-		if (wrongInGo === 0) answers.push({
-			key: bondKey(round.leaves[a], round.target),
-			correct: right,
-			ms
-		});
-		if (right) {
-			used.add(a).add(b);
-			pairsMade++;
-			if (wrongInGo >= 2) shown++;
-			wrongInGo = 0;
-			letIn(round, inPlay, used);
-		} else {
-			wrongInGo++;
-			if (!tried.includes(pairId(a, b))) tried.push(pairId(a, b));
-		}
-	}
-	return {
-		pairsMade,
-		mistakes: taps.length - pairsMade,
-		done: pairsMade === 10,
-		onScreen: floating(inPlay, used),
-		answers,
-		tried,
-		wrongInGo,
-		shown
-	};
-}
-const METALS = [
-	"green",
-	"bronze",
-	"silver",
-	"gold"
-];
-/** Ten leaves, three changes each: thirty finished days to a Golden Egg. */
-const DAYS_PER_EGG = 10 * (METALS.length - 1);
-/** Who is stuck on top of each beanstalk, in order: Kiwi first, then a new New Zealand friend after each egg (James, 4 Nov 2026). */
-const FRIENDS = [
-	"kiwi",
-	"tui",
-	"kereru",
-	"weta",
-	"ruru",
-	"takahe"
-];
-/** What this beanstalk's pairs add up to: 10, 100, 1000, then round again with the next friends (James, 4 Nov 2026). */
-const targetFor = (eggs) => TARGETS[eggs % TARGETS.length];
-const wholeCount = (n) => {
-	if (!Number.isInteger(n) || n < 0) throw new RangeError(`Bad day count ${n}`);
-	return n;
-};
-function stalkAfter(daysDone) {
-	const eggs = Math.floor(wholeCount(daysDone) / DAYS_PER_EGG);
-	const day = daysDone % DAYS_PER_EGG;
-	const round = Math.floor(day / 10);
-	const leaves = Array.from({ length: 10 }, (_, i) => METALS[round + (i < day % 10 ? 1 : 0)]);
-	return {
-		eggs,
-		friend: FRIENDS[eggs % FRIENDS.length],
-		target: targetFor(eggs),
-		day,
-		leaves
-	};
-}
-/** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
-const nzDate = (now) => new Intl.DateTimeFormat("en-CA", {
-	timeZone: "Pacific/Auckland",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit"
-}).format(now);
-/** A finished challenge: one leaf changes on the first finish of each NZ day; playing again the same day is just for fun. */
-function finishChallenge(daysDone, lastLeafDay, today) {
-	if (lastLeafDay === today) return {
-		daysDone: wholeCount(daysDone),
-		lastLeafDay,
-		leafChanged: null,
-		egg: false
-	};
-	const next = wholeCount(daysDone) + 1;
-	return {
-		daysDone: next,
-		lastLeafDay: today,
-		leafChanged: daysDone % 10,
-		egg: next % DAYS_PER_EGG === 0
-	};
-}
-/** First challenge: full dots. */
-const START_PLACE = {
-	help: 0,
-	goodInRow: 0
-};
-/** Right at the first tap on this many pairs of 10 or more makes a good challenge, this many or fewer a hard one (shared/kit/help.ts). */
-const RULES = {
-	...ROUND_OF_TEN,
-	topLevel: 2
-};
-/**
-* The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
-* finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
-* (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
-* wins the egg) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
-*/
-function placeAfter(place, right, result) {
-	if (result.leafChanged === null) return place;
-	if (result.egg) return START_PLACE;
-	const { level, goodInRow } = fadeAfter({
-		level: 2 - place.help,
-		goodInRow: place.goodInRow
-	}, right, RULES);
-	return {
-		help: 2 - level,
-		goodInRow
-	};
-}
-//#endregion
-//#region shared/beanstalk/server.ts
-const isChild = (c) => c === "jack" || c === "jill";
-/** The longest a pair is said to have taken (the maths records keep at most two minutes anyway). */
-const MAX_TAP_MS = 6e5;
-/** Tries at a save before giving up (another request saved in between). */
-const TRIES = 4;
-const ok = (body) => ({
-	status: 200,
-	body
-});
-const no = (status, error, extra = {}) => ({
-	status,
-	body: {
-		error,
-		...extra
-	}
-});
-const busy = () => no(503, "The beanstalk couldn’t be reached just now. Try again in a moment.");
-const unreadable = () => no(400, "That couldn’t be read.");
-const isWhole = (v, max) => Number.isInteger(v) && v >= 0 && v <= max;
-function readTaps(v) {
-	if (!Array.isArray(v) || v.length > 200) return null;
-	const taps = [];
-	for (const t of v) {
-		if (!t || typeof t !== "object") return null;
-		const { a, b, ms } = t;
-		if (!isWhole(a, 1e3) || !isWhole(b, 1e3) || !isWhole(ms, MAX_TAP_MS)) return null;
-		taps.push({
-			a,
-			b,
-			ms
-		});
-	}
-	return taps;
-}
-async function handleBeanstalk(services, player, body) {
-	const settings = await services.settings(player);
-	if (!settings) return busy();
-	if (!settings.enabled) return no(403, "Kiwi’s Beanstalk is not switched on for your class.", { code: "game-off" });
-	const today = () => nzDate(new Date(services.now()));
-	if (body.action === "load") {
-		const s = await services.load(player);
-		if (s === "busy") return busy();
-		return ok({
-			child: s.child,
-			daysDone: s.daysDone,
-			lastLeafDay: s.lastLeafDay,
-			today: today(),
-			help: s.help,
-			dots: settings.dots
-		});
-	}
-	if (body.action === "choose") {
-		if (!isChild(body.child)) return unreadable();
-		const done = await services.choose(player, body.child);
-		if (done === "busy" || !done) return busy();
-		return ok({ child: body.child });
-	}
-	if (body.action === "start") {
-		const s = await services.load(player);
-		if (s === "busy") return busy();
-		if (!s.child) return no(409, "Choose Jack or Jill first.", { code: "no-child" });
-		for (let tries = 0; tries < TRIES; tries++) {
-			const seed = Math.floor(services.random() * 2147483648);
-			const kept = await services.start(player, seed);
-			if (kept === "busy") return busy();
-			if (kept) return ok({ seed });
-		}
-		return busy();
-	}
-	if (body.action === "finish") {
-		const seed = body.seed;
-		const taps = readTaps(body.taps);
-		if (!isSeed(seed) || !taps) return unreadable();
-		const round = await services.round(player, seed);
-		if (round === "busy") return busy();
-		if (!round) return no(409, "That isn’t one of your challenges.", { code: "not-yours" });
-		if (!round.open) return no(409, "That challenge has finished.", { code: "ended" });
-		for (let tries = 0; tries < TRIES; tries++) {
-			const s = await services.load(player);
-			if (s === "busy") return busy();
-			let played;
-			try {
-				played = replay(makeRound(seed, stalkAfter(s.daysDone).target), taps);
-			} catch {
-				return unreadable();
-			}
-			if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
-			const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
-			const place = placeAfter({
-				help: s.help,
-				goodInRow: s.goodInRow
-			}, played.answers.filter((a) => a.correct).length, result);
-			const progress = {
-				child: s.child,
-				daysDone: result.daysDone,
-				lastLeafDay: result.lastLeafDay,
-				...place
-			};
-			const kept = await services.finish(player, seed, s.version, progress, {
-				taps,
-				mistakes: played.mistakes
-			});
-			if (kept === "busy") return busy();
-			if (kept) {
-				const at = services.now();
-				await services.recordAnswers(player, `beanstalk:${seed}`, played.answers.map((a) => ({
-					...a,
-					at
-				})));
-				if (result.egg) await services.progressChanged(player);
-				return ok({
-					...result,
-					help: place.help
-				});
-			}
-			const again = await services.round(player, seed);
-			if (again === "busy") return busy();
-			if (!again?.open) return no(409, "That challenge has finished.", { code: "ended" });
-		}
-		return busy();
-	}
-	return unreadable();
-}
-//#endregion
 //#region supabase/functions/_shared/http.ts
 /** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
@@ -7187,22 +7404,20 @@ Deno.serve(makeHandler({
 		};
 	},
 	async load(player) {
-		return await call("beanstalk_load", { player }) ?? {
-			child: null,
-			daysDone: 0,
-			lastLeafDay: null,
-			help: 0,
-			goodInRow: 0,
-			version: 0
-		};
+		return await call("beanstalk_load", { player }) ?? unplayed();
 	},
 	choose: (player, child) => call("beanstalk_choose", {
 		player,
 		child
 	}),
-	start: (player, seed) => call("beanstalk_start", {
+	async facts(player) {
+		const context = await call("space_maths_context", { player });
+		return context === "busy" ? "busy" : context?.facts ?? [];
+	},
+	start: (player, round) => call("beanstalk_start", {
 		player,
-		seed
+		seed: round.seed,
+		round
 	}),
 	round: (player, seed) => call("beanstalk_round", {
 		player,
@@ -7217,7 +7432,11 @@ Deno.serve(makeHandler({
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		help: progress.help,
-		good_in_row: progress.goodInRow
+		good_in_row: progress.goodInRow,
+		stage: progress.stage,
+		good_days: progress.goodDays,
+		hard_days: progress.hardDays,
+		stage_days: progress.stageDays
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "beanstalk", void 0, JUNIOR_QUICK_MS);

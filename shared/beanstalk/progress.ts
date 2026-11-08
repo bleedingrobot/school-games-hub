@@ -4,7 +4,8 @@
  * day loses nothing. Everything here comes from the count of finished days alone.
  */
 import { fadeAfter, helpWithSetting, ROUND_OF_TEN } from '../kit/help';
-import { TARGETS, type Target } from './round';
+import { mastery, type FactStats } from '../maths/leitner';
+import { factKeys, TARGETS, type Stage, type Target } from './round';
 
 export const LEAVES_ON_STALK = 10;
 export const METALS = ['green', 'bronze', 'silver', 'gold'] as const;
@@ -16,8 +17,12 @@ export const DAYS_PER_EGG = LEAVES_ON_STALK * (METALS.length - 1);
 export const FRIENDS = ['kiwi', 'tui', 'kereru', 'weta', 'ruru', 'takahe'] as const;
 export type Friend = (typeof FRIENDS)[number];
 
-/** What this beanstalk's pairs add up to: 10, 100, 1000, then round again with the next friends (James, 4 Nov 2026). */
-export const targetFor = (eggs: number): Target => TARGETS[eggs % TARGETS.length];
+/**
+ * The sum a child is on (S21): their saved stage, not the calendar. The calendar only gives eggs and friends now.
+ * Back-fill for children saved before stages: the stage the egg count had them on.
+ */
+export const stageTarget = (p: { stage: Stage }): Target => TARGETS[p.stage];
+export const stageForEggs = (eggs: number): Stage => (eggs % TARGETS.length) as Stage;
 
 /** How much the leaves' ten-frame dots help: full, small, or none. Since maths review R6 each child has their own (`placeAfter`). */
 export type Dots = 'full' | 'small' | 'none';
@@ -36,8 +41,6 @@ export interface Stalk {
   /** Golden Eggs won so far. */
   eggs: number;
   friend: Friend;
-  /** What the pairs add up to on this beanstalk. */
-  target: Target;
   /** Finished days on this beanstalk, 0 to 29. */
   day: number;
   /** Each leaf's colour, bottom leaf first. */
@@ -55,7 +58,7 @@ export function stalkAfter(daysDone: number): Stalk {
   const round = Math.floor(day / LEAVES_ON_STALK);
   // Leaves change from the bottom up: in each round of ten days the lowest leaves change first.
   const leaves = Array.from({ length: LEAVES_ON_STALK }, (_, i) => METALS[round + (i < day % LEAVES_ON_STALK ? 1 : 0)]);
-  return { eggs, friend: FRIENDS[eggs % FRIENDS.length], target: targetFor(eggs), day, leaves };
+  return { eggs, friend: FRIENDS[eggs % FRIENDS.length], day, leaves };
 }
 
 /** NZ calendar day ('2026-11-04') of a moment, by the server clock. The same as Lord's `nzDate`. */
@@ -95,11 +98,60 @@ const RULES = { ...ROUND_OF_TEN, topLevel: 2 };
  * The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
  * finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
  * (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
- * wins the egg) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+ * moves the child up or back a stage) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
  */
-export function placeAfter(place: Place, right: number, result: Pick<FinishResult, 'leafChanged' | 'egg'>): Place {
+export function placeAfter(place: Place, right: number, result: Pick<FinishResult, 'leafChanged'> & { stageChanged: boolean }): Place {
   if (result.leafChanged === null) return place;
-  if (result.egg) return START_PLACE;
+  if (result.stageChanged) return START_PLACE;
   const { level, goodInRow } = fadeAfter({ level: 2 - place.help, goodInRow: place.goodInRow }, right, RULES);
   return { help: (2 - level) as HelpLevel, goodInRow };
+}
+
+/** Where a child is on the sums, and how their days have gone (S21). Saved with the progress. */
+export interface Steps {
+  stage: Stage;
+  /** Good days in a row (8 or more of 10 pairs right at the first tap), counted on each NZ day's first finish. */
+  goodDays: number;
+  /** Hard days in a row (4 or fewer right). */
+  hardDays: number;
+  /** Finished days since the stage last changed. 0 means the child has just arrived on it (the bridge line shows). */
+  stageDays: number;
+}
+
+export const START_STEPS: Steps = { stage: 0, goodDays: 0, hardDays: 0, stageDays: 0 };
+
+/** The counts stay small: a child who is good but not yet secure can stay on 2 or more good days for a while. */
+export const COUNT_CAP = 9;
+export const STAGE_DAYS_CAP = 100;
+/** Good days in a row, with the sum secure, to move up; hard days in a row to step back. */
+export const DAYS_TO_MOVE = 2;
+
+/** 70 percent of a sum's facts in box 2 or more makes it secure (the rule the teacher's skill map uses). */
+export const SECURE_SHARE = 0.7;
+
+/** Is at least 70 percent of this sum's facts secure (box 2 or more) in these records? */
+export function sumSecure(facts: readonly FactStats[], target: Target): boolean {
+  const keys = factKeys(target);
+  const byKey = new Map(facts.map((f) => [f.key, f]));
+  const secure = keys.filter((k) => ['secure', 'fluent'].includes(mastery(byKey.get(k)))).length;
+  return secure / keys.length >= SECURE_SHARE;
+}
+
+/**
+ * The stage after a finished challenge with `right` pairs right at the first tap (S21). It moves only on the NZ day's first
+ * finish (`leafChanged` null on a replay changes nothing). 8 or more right: a good day (and the hard days start again); 4 or
+ * fewer: a hard day; between: both start again. Two good days in a row with the sum secure move the child up one stage (never
+ * past 1000); two hard days in a row step them back one (never below bonds to 10). The stage does not go round to 10 again. A
+ * change resets the counts. `moved` is 1 up, -1 back, 0 stayed.
+ */
+export function afterDay(steps: Steps, right: number, firstFinish: boolean, secure: boolean): Steps & { moved: -1 | 0 | 1 } {
+  if (!firstFinish) return { ...steps, moved: 0 };
+  const good = right >= ROUND_OF_TEN.good;
+  const hard = right <= ROUND_OF_TEN.hard;
+  const goodDays = good ? Math.min(steps.goodDays + 1, COUNT_CAP) : 0;
+  const hardDays = hard ? Math.min(steps.hardDays + 1, COUNT_CAP) : 0;
+  const stageDays = Math.min(steps.stageDays + 1, STAGE_DAYS_CAP);
+  if (goodDays >= DAYS_TO_MOVE && secure && steps.stage < 3) return { stage: (steps.stage + 1) as Stage, goodDays: 0, hardDays: 0, stageDays: 0, moved: 1 };
+  if (hardDays >= DAYS_TO_MOVE && steps.stage > 0) return { stage: (steps.stage - 1) as Stage, goodDays: 0, hardDays: 0, stageDays: 0, moved: -1 };
+  return { stage: steps.stage, goodDays, hardDays, stageDays, moved: 0 };
 }

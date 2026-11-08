@@ -1,7 +1,9 @@
 // Connects the beanstalk handler to Supabase. Edit handler.ts (or shared/beanstalk/server.ts) for the logic, then run
 // `npm run build:functions -- beanstalk` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import type { Saved } from '../../../shared/beanstalk/server';
+import type { Round } from '../../../shared/beanstalk/round';
+import { unplayed, type Saved } from '../../../shared/beanstalk/server';
+import type { FactStats } from '../../../shared/maths/leitner';
 import { JUNIOR_QUICK_MS } from '../../../shared/juniorQuick';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
@@ -50,15 +52,21 @@ Deno.serve(
     async load(player) {
       const saved = await call<Saved | null>('beanstalk_load', { player });
       // A pupil who has never played has no beanstalk yet.
-      return saved ?? { child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, version: 0 };
+      return saved ?? unplayed();
     },
     choose: (player, child) => call<boolean>('beanstalk_choose', { player, child }),
-    start: (player, seed) => call<boolean>('beanstalk_start', { player, seed }),
-    round: (player, seed) => call<{ open: boolean } | null>('beanstalk_round', { player, seed }),
+    async facts(player) {
+      // The same records every maths game reads; only the bond ones matter here.
+      const context = await call<{ facts?: FactStats[] } | null>('space_maths_context', { player });
+      return context === 'busy' ? 'busy' : (context?.facts ?? []);
+    },
+    start: (player, round: Round) => call<boolean>('beanstalk_start', { player, seed: round.seed, round }),
+    round: (player, seed) => call<{ open: boolean; round: Round | null } | null>('beanstalk_round', { player, seed }),
     finish: (player, seed, version, progress, ending) =>
       call<boolean>('beanstalk_finish', {
         player, seed, version, days_done: progress.daysDone, last_leaf_day: progress.lastLeafDay, taps: ending.taps, mistakes: ending.mistakes,
         help: progress.help, good_in_row: progress.goodInRow,
+        stage: progress.stage, good_days: progress.goodDays, hard_days: progress.hardDays, stage_days: progress.stageDays,
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
