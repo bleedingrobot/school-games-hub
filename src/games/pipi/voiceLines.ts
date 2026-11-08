@@ -44,7 +44,7 @@ export function allVoiceLines(): string[] {
         if (go) {
           // Mistakes that teach (maths review R5): why each kind of wrong shell this go can have is wrong, and the split said
           // out for "Let's look together". The numbers are the go's own, so the same numbers share a clip.
-          const kindsFor: WrongKind[] = kind === 'hiding' ? ['shown', 'whole', 'add', 'off1'] : kind === 'twoTides' ? ['before', 'whole', 'off1'] : ['part', 'off1'];
+          const kindsFor: WrongKind[] = kind === 'hiding' ? ['shown', 'whole', 'off1'] : kind === 'twoTides' ? ['before', 'whole', 'off1'] : ['part', 'off1'];
           for (const wrong of kindsFor) if (wrongPossible(go, wrong)) lines.add(whyLine(wrong, kind, go.whole, go.showing, go.hiding));
           lines.add(lookLine(kind, go.whole, go.showing, go.hiding));
         }

@@ -336,22 +336,26 @@ const parity = (n) => n % 2;
 /**
 * The three wrong shells: the tempting slips first (in an order fixed by the seed), then plain one-off and two-off
 * numbers to fill up. A slip is left out when it would make three shells the same odd or even as the answer, so
-* elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative.
+* elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative, and never
+* above `limit` (the whole, for the goes where the answer is a part of it: a shell bigger than the pipi rules itself out).
 */
-function threeWrongs(answer, slips, random) {
+function threeWrongs(answer, slips, random, limit = Infinity) {
 	const side = random() < .5 ? 1 : -1;
 	const near = tagWrongs([answer + side, answer - side], (n) => n < 0 ? null : "off1");
 	const fillers = tagWrongs([
-		answer + 2,
 		answer - 2,
+		answer + 2,
+		answer - 3,
 		answer + 3
 	], (n) => n < 0 ? null : "off1");
+	const rest = Number.isFinite(limit) ? tagWrongs(Array.from({ length: limit + 1 }, (_, n) => n), () => "off1") : [];
 	const pool = [
 		...near.slice(0, 1),
 		...shuffle(slips, random),
 		...near.slice(1),
-		...fillers
-	].filter((w, i, all) => w.n !== answer && w.n >= 0 && all.findIndex((x) => x.n === w.n) === i);
+		...fillers,
+		...rest
+	].filter((w, i, all) => w.n !== answer && w.n >= 0 && w.n <= limit && all.findIndex((x) => x.n === w.n) === i);
 	const out = [];
 	for (const w of pool) if (out.length < 3 && atMostShareTell(answer, [...out, w].map((x) => x.n), parity)) out.push(w);
 	for (const w of pool) if (out.length < 3 && !out.includes(w)) out.push(w);
@@ -364,28 +368,21 @@ function showGo(round, index, plan) {
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
 	const { whole, shown } = p;
 	const hidden = whole - shown;
-	const make = (answer, slips) => {
-		const wrongs = threeWrongs(answer, slips, random);
+	const make = (answer, slips, limit = whole) => {
+		const wrongs = threeWrongs(answer, slips, random, limit);
 		return {
 			wrongs,
 			choices: shuffle([answer, ...wrongs.map((w) => w.n)], random)
 		};
 	};
 	if (plan.kind === "hiding") {
-		const slips = [
-			{
-				n: shown,
-				kind: "shown"
-			},
-			{
-				n: whole,
-				kind: "whole"
-			},
-			{
-				n: whole + shown,
-				kind: "add"
-			}
-		];
+		const slips = [{
+			n: shown,
+			kind: "shown"
+		}, {
+			n: whole,
+			kind: "whole"
+		}];
 		return {
 			...plan,
 			whole,
@@ -443,7 +440,7 @@ function showGo(round, index, plan) {
 			hiding: hidden,
 			answer: whole,
 			spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`,
-			...make(whole, slips)
+			...make(whole, slips, Infinity)
 		};
 	}
 	return null;

@@ -99,7 +99,7 @@ describe('the round', () => {
 });
 
 describe('the wrong shells (maths review R5)', () => {
-  const allowed: Record<Kind, WrongKind[]> = { hiding: ['shown', 'whole', 'add', 'off1'], altogether: ['part', 'off1'], twoTides: ['before', 'whole', 'off1'] };
+  const allowed: Record<Kind, WrongKind[]> = { hiding: ['shown', 'whole', 'off1'], altogether: ['part', 'off1'], twoTides: ['before', 'whole', 'off1'] };
 
   it('has three tagged wrong shells on every go: no repeat, at most 2 the answer\'s odd or even, always a one-off near miss', () => {
     for (const kind of Object.keys(allowed) as Kind[]) {
@@ -113,6 +113,8 @@ describe('the wrong shells (maths review R5)', () => {
               expect(go.choices, label).toHaveLength(4);
               expect(new Set(go.choices).size, label).toBe(4);
               expect(go.wrongs.map((w) => w.n).sort(), label).toEqual(go.choices.filter((c) => c !== go.answer).sort());
+              // The answer is part of the whole, so no shell is bigger than the pipi.
+              if (kind !== 'altogether') expect(Math.max(...go.choices), label).toBeLessThanOrEqual(whole);
               expect(go.wrongs.every((w) => allowed[kind].includes(w.kind)), label).toBe(true);
               expect(go.choices.filter((c) => c % 2 === go.answer % 2).length, label).toBeLessThanOrEqual(2);
               expect(go.wrongs.some((w) => Math.abs(w.n - go.answer) === 1), label).toBe(true);
@@ -127,7 +129,7 @@ describe('the wrong shells (maths review R5)', () => {
   it('tags the number showing, the whole, the sum and the first tide with what they are', () => {
     for (const seed of seeds.slice(0, 20)) {
       const hiding = showGo({ seed }, 0, { key: 'part9:3', kind: 'hiding' })!; // answer 6; showing 3; whole 9; sum 12
-      for (const w of hiding.wrongs) expect(w.kind).toBe({ 3: 'shown', 9: 'whole', 12: 'add' }[w.n] ?? 'off1');
+      for (const w of hiding.wrongs) expect(w.kind).toBe({ 3: 'shown', 9: 'whole' }[w.n] ?? 'off1');
       const tides = showGo({ seed }, 0, { key: 'part9:3', kind: 'twoTides' })!;
       for (const w of tides.wrongs) expect(w.kind).toBe({ 3: 'before', 9: 'whole' }[w.n] ?? 'off1');
     }
