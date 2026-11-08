@@ -62,14 +62,14 @@ describe("Hop's answer clock", () => {
     vi.useRealTimers();
   });
 
-  it('restarts once the question has been read aloud, and an old line ending never moves a newer clock', () => {
+  it('restarts once the question has been read aloud, and an old line ending never moves a newer clock', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     vi.setSystemTime(0);
     const round = makeRound(1, [], { gold: false });
     const hops = showRound(round);
     const say = vi.fn();
     const onDone = vi.fn();
-    render(<Hops round={round} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={onDone} />);
+    render(<Hops seenKinds={['back', 'offset']} markSeen={async () => []} round={round} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={say} onDone={onDone} />);
     const heard = () => say.mock.calls.filter(([, onEnd]) => onEnd).map(([, onEnd]) => onEnd as () => void);
     const tap = (n: number) => fireEvent.click(within(screen.getByRole('group', { name: WORDS.pickWorm })).getByRole('button', { name: String(n) }));
     for (let i = 0; i < hops.length; i++) {
@@ -84,5 +84,18 @@ describe("Hop's answer clock", () => {
     const ms = onDone.mock.calls[0][0].map((t: { ms: number }) => t.ms);
     expect(ms[0]).toBe(3000);
     expect(ms[1]).toBe(8000);
+    // Show me first: a child who has not seen counting back gets a demo (Skip after 3 seconds, no tap added), then the real hop.
+    cleanup();
+    const markSeen = vi.fn(async () => []);
+    const back = { ...round, hops: [{ ...round.hops[0], key: 'skip10:back:40' }, ...round.hops.slice(1)] };
+    const demoSay = vi.fn();
+    render(<Hops seenKinds={[]} markSeen={markSeen} round={back} help="full" padMetal="green" scenery="bronze" friend="hop" sound={false} say={demoSay} onDone={vi.fn()} />);
+    expect(demoSay).toHaveBeenCalledWith(WORDS.demoBack[0], expect.anything());
+    expect(document.querySelector('.hp-worms')).toHaveProperty('hidden', true);
+    act(() => vi.advanceTimersByTime(3100));
+    fireEvent.click(screen.getByRole('button', { name: WORDS.skipDemo }));
+    await act(async () => {});
+    expect(markSeen).toHaveBeenCalledWith(['back']);
+    expect(document.querySelector('.hp-worms')).toHaveProperty('hidden', false);
   });
 });

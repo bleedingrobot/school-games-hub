@@ -4,7 +4,7 @@ import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
 import { EARLY_FACTS, earlyFactsPack, parseSkip, SKIP_FROM_STEPS } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
+import { BACK_HOPS, DEMO_KEYS, kindOfKey, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -23,6 +23,11 @@ describe('the round', () => {
           const round = makeRound(seed, recordsFor[step], { gold });
           expect(round).toEqual(makeRound(seed, recordsFor[step], { gold }));
           expect(round.step).toBe(step);
+          // The "Show me first" demos use made-up hops that no round asks, and each is the kind it shows.
+          for (const [kind, key] of Object.entries(DEMO_KEYS)) {
+            expect(round.hops.map((h) => h.key)).not.toContain(key);
+            expect(kindOfKey(key)).toBe(kind);
+          }
           expect(new Set(round.hops.map((h) => h.key)).size).toBe(HOPS_PER_ROUND);
           const hops = showRound(round);
           for (const hop of hops) {

@@ -17,11 +17,12 @@
  */
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate, pondAfter } from './progress';
-import { isSeed, isStep, makeRound, MAX_SEED, stepFor, topSecure, type HopStep, type Round } from './round';
+import { HOP_KINDS, isSeed, isStep, kindOfKey, makeRound, MAX_SEED, stepFor, topSecure, type HopStep, type Round } from './round';
 
-export type HopAction = 'load' | 'start' | 'finish';
+export type HopAction = 'load' | 'start' | 'finish' | 'seen';
 
 /** A pupil's pond as it is saved. */
 export interface Progress {
@@ -61,6 +62,10 @@ export interface HopServices {
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Glow Jars went up, so it gives the achievement. A failure is only logged. */
   progressChanged(player: string): Promise<void>;
+  /** The kinds of hop this pupil has seen (a demo played, or a hop of the kind finished). */
+  seen(player: string): Promise<string[] | 'busy'>;
+  /** Adds kinds to that list and returns the new list. */
+  markSeen(player: string, kinds: string[]): Promise<string[] | 'busy'>;
   random(): number;
   now(): number;
 }
@@ -111,9 +116,19 @@ export async function handleHop(services: HopServices, player: string, body: Rec
   const today = () => nzDate(new Date(services.now()));
 
   if (body.action === 'load') {
-    const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-    if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: s.reached, topSecure: topSecure(facts, s.reached), labels: settings.labels });
+    const [s, facts, saved] = await Promise.all([services.load(player), services.facts(player), services.seen(player)]);
+    if (s === 'busy' || facts === 'busy' || saved === 'busy') return busy();
+    // A child who has played for weeks has seen what their records show, so gets no demo for it.
+    const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastPadDay: s.lastPadDay, today: today(), step: s.reached, topSecure: topSecure(facts, s.reached), labels: settings.labels, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, HOP_KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

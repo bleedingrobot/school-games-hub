@@ -37,6 +37,12 @@ function setup(over: MemoryOptions = {}) {
 it('finishes only a pupil’s own, finished challenge, once, and records each hop once against its skip-counting fact', async () => {
   const { send, start, log, services, hours } = setup();
   expect((await send(null, { action: 'load' })).status).toBe(401);
+  // Show me first: the kinds of hop a child has seen are remembered per pupil, a bad kind is refused, and load returns them.
+  expect((await send('pupil-a', { action: 'seen', kinds: ['nonsense'] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'seen', kinds: ['back'] })).body).toMatchObject({ seen: ['back'] });
+  expect((await send('pupil-a', { action: 'seen', kinds: ['offset'] })).body.seen).toEqual(['back', 'offset']);
+  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['back', 'offset']);
+  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual([]);
 
   const round = await start('pupil-a');
   // The browser's word for the round counts for nothing: the server checks the taps against the round it kept.

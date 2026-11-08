@@ -107,6 +107,11 @@ export function HopGame({ backend, onExit, nextGame, extra }: Props) {
   }, [backend, fail]);
   useEffect(reload, [reload]);
 
+  const markSeen = (kinds: string[]) => {
+    // Remember it here at once (the next round starts from this list), then tell the server.
+    setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+    return backend.markSeen(kinds);
+  };
   const play = () => backend.start().then((round) => setScreen({ kind: 'play', round }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then((result) => {
@@ -129,6 +134,8 @@ export function HopGame({ backend, onExit, nextGame, extra }: Props) {
         scenery={pond.today}
         friend={pond.friend}
         guide={state.daysDone === 0 && state.lastPadDay === null}
+        seenKinds={state.seen}
+        markSeen={markSeen}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

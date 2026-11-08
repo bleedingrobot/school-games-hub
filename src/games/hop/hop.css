@@ -354,3 +354,7 @@
 .hp-mini__arc--empty { border-bottom-style: dotted; min-height: 1em; opacity: 0.6; }
 .hp-mini__arc--ghost { border-bottom-style: dashed; color: #777; border-color: #999; text-decoration: line-through; }
 .hp-mini__arc--lit { border-bottom-color: var(--hp-gold); }
+
+/* "Show me first": the Skip bar under a demo, in line, and the hand over a pad. */
+.hp-demo { display: flex; justify-content: center; min-height: 64px; padding: 4px 0; }
+.hp-hand--pad { left: 50%; top: 40%; font-size: 2.4rem; z-index: 3; }

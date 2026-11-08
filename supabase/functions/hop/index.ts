@@ -155,6 +155,33 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
+//#endregion
 //#region shared/kit/help.ts
 /** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
 function helpForFact(stats, rungs) {
@@ -1892,6 +1919,17 @@ const EARLY_FACTS = {
 	]
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
+const HOP_KINDS = [
+	"up",
+	"back",
+	"offset"
+];
+/** The kind of a key (counting back wins over a start offset), or null if it is not a skip-counting key. */
+function kindOfKey(key) {
+	const k = parseSkip(key);
+	if (!k) return null;
+	return k.kind === "back" ? "back" : k.offset ? "offset" : "up";
+}
 /**
 * The steps in order, each named by what it is saved as (`reached`, a round's `step`): the size of the hop for tens, fives,
 * twos, threes and fours, and 200 for tens past 100 (tens to 200, whose hop is still 10). Threes, fours and tens past 100
@@ -2359,16 +2397,29 @@ async function handleHop(services, player, body) {
 	if (!settings.enabled) return no(403, "Hop’s Glow-worm Pond is not switched on for your class.", { code: "game-off" });
 	const today = () => nzDate(new Date(services.now()));
 	if (body.action === "load") {
-		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
-		if (s === "busy" || facts === "busy") return busy();
+		const [s, facts, saved] = await Promise.all([
+			services.load(player),
+			services.facts(player),
+			services.seen(player)
+		]);
+		if (s === "busy" || facts === "busy" || saved === "busy") return busy();
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastPadDay: s.lastPadDay,
 			today: today(),
 			step: s.reached,
 			topSecure: topSecure(facts, s.reached),
-			labels: settings.labels
+			labels: settings.labels,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, HOP_KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7748,6 +7799,20 @@ Deno.serve(makeHandler({
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "hop", void 0, JUNIOR_QUICK_MS);
+	},
+	async seen(player) {
+		return call("kit_seen_get", {
+			player,
+			game: "hop"
+		}).then((r) => r === "busy" ? "busy" : r ?? []);
+	},
+	async markSeen(player, kinds) {
+		const r = await call("kit_seen_mark", {
+			player,
+			game: "hop",
+			kinds
+		});
+		return r === "busy" ? "busy" : r ?? kinds;
 	},
 	async progressChanged(player) {
 		const { error } = await admin.rpc("game_progress_changed", {
