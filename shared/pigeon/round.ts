@@ -306,7 +306,12 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
     const low = Math.floor(n / size) * size;
     const posts: [number, number] = [low, low + size];
     const answer = n - low >= size / 2 ? posts[1] : posts[0];
-    return { ...base, answer, posts, choices: posts, wrongs: [{ n: answer === posts[0] ? posts[1] : posts[0], kind: 'near' }] };
+    // Four posts in a row, the two true ones at a random place among them; neighbours alternate odd and even tens, so only one other card shares the answer's tell.
+    const start = Math.max(0, Math.min(low - size * Math.floor(random() * 3), max - 3 * size));
+    const choices = [0, 1, 2, 3].map((i) => start + i * size);
+    const other = answer === posts[0] ? posts[1] : posts[0];
+    const wrongs = choices.filter((c) => c !== answer).map((c): Wrong<Slip> => ({ n: c, kind: c === other ? 'near' : 'ten' }));
+    return { ...base, answer, posts, choices, wrongs };
   }
   const answer = plan.kind === 'tens' ? n + (plan.key.includes('+') ? 10 : -10) : n;
   const step10 = plan.kind === 'tens' ? (plan.key.includes('+') ? 10 : -10) : 0;
@@ -335,28 +340,29 @@ export const placeRight = (go: Pick<Go, 'n' | 'lo' | 'hi' | 'tol'>, permille: nu
 // ---------------------------------------------------------------- what the branch shows
 
 /**
- * The numbers marked on a line at a help level (plan section 4): 5 every ten named with a small mark for every one (every hundred
- * named on the long branch, a mark for every ten), 4 every ten named, 3 the tens as small marks with the middle and the ends
- * named, 2 the middle and the ends named, 1 and 0 the two ends only.
- * `ticks` are unnamed marks; `named` carry a number.
+ * The numbers marked on a line at a help level (plan section 4): 5 every ten drawn big (not written) with the middle and the ends
+ * named and a small mark for every one (every hundred big on the long branch, a mark for every ten), 4 every ten drawn big with
+ * the middle and the ends named, 3 the tens as small marks with the middle and the ends named, 2 the middle and the ends named,
+ * 1 and 0 the two ends only. The child counts the marks to find a number: only the ends and the middle are written.
+ * `ticks` are unnamed small marks; `big` are unnamed big marks; `named` carry a number.
  */
-export function marksFor(level: HelpLevel, lo: number, hi: number): { named: number[]; ticks: number[] } {
+export function marksFor(level: HelpLevel, lo: number, hi: number): { named: number[]; ticks: number[]; big: number[] } {
   const width = hi - lo;
   // Ten spaces on a long line (100 or 1000), a space a whole number wide on a short lens, ten spaces on a lens in between.
   const unit = width >= 500 ? 100 : width <= 10 ? 1 : width <= 100 ? 10 : width / 10;
   const every = (step: number) => Array.from({ length: Math.round(width / step) + 1 }, (_, i) => lo + i * step);
   const ends = [lo, hi];
   const mid = [lo, lo + width / 2, hi];
-  if (level >= 5) return { named: every(unit), ticks: unit >= 10 ? every(unit / 10) : [] };
-  if (level === 4) return { named: every(unit), ticks: [] };
-  if (level === 3) return { named: mid, ticks: every(unit) };
-  if (level === 2) return { named: mid, ticks: [] };
-  return { named: ends, ticks: [] };
+  if (level >= 5) return { named: mid, big: every(unit), ticks: unit >= 10 ? every(unit / 10) : [] };
+  if (level === 4) return { named: mid, big: every(unit), ticks: [] };
+  if (level === 3) return { named: mid, big: [], ticks: every(unit) };
+  if (level === 2) return { named: mid, big: [], ticks: [] };
+  return { named: ends, big: [], ticks: [] };
 }
 
 /**
  * The picture for a go after some wrong taps (plan section 4, "Help inside one go"): the first wrong tap brings one level more
- * (at level 0, level 3; at level 1 the Peek opens), the second brings every number marked, and the third leaves only the nearest
+ * (at level 0, level 3; at level 1 the Peek opens), the second brings every ten marked (the middle and the ends named), and the third leaves only the nearest
  * cards, or for a place go a band round the number. The answer is never shown.
  */
 export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer' | 'kind' | 'n' | 'lo' | 'hi' | 'max'>, wrongTaps: number, tapped: readonly number[] = []): {
@@ -375,7 +381,7 @@ export function pictureFor(go: Pick<Go, 'l' | 'choices' | 'answer' | 'kind' | 'n
     else level = Math.min(C.TOP_LEVEL, go.l + 1) as HelpLevel;
   }
   let choices = go.choices;
-  if (wrongTaps >= 3 && go.kind !== 'place' && go.kind !== 'near') {
+  if (wrongTaps >= 3 && go.kind !== 'place') {
     const other = go.choices.find((c) => c !== go.answer && !tapped.includes(c)) ?? go.choices.find((c) => c !== go.answer)!;
     choices = go.choices.filter((c) => c === go.answer || c === other);
   }

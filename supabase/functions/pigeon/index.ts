@@ -1874,15 +1874,24 @@ function showGo(round, index, plan) {
 		const low = Math.floor(n / size) * size;
 		const posts = [low, low + size];
 		const answer = n - low >= size / 2 ? posts[1] : posts[0];
+		const start = Math.max(0, Math.min(low - size * Math.floor(random() * 3), max - 3 * size));
+		const choices = [
+			0,
+			1,
+			2,
+			3
+		].map((i) => start + i * size);
+		const other = answer === posts[0] ? posts[1] : posts[0];
+		const wrongs = choices.filter((c) => c !== answer).map((c) => ({
+			n: c,
+			kind: c === other ? "near" : "ten"
+		}));
 		return {
 			...base,
 			answer,
 			posts,
-			choices: posts,
-			wrongs: [{
-				n: answer === posts[0] ? posts[1] : posts[0],
-				kind: "near"
-			}]
+			choices,
+			wrongs
 		};
 	}
 	const answer = plan.kind === "tens" ? n + (plan.key.includes("+") ? 10 : -10) : n;

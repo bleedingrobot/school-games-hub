@@ -4,9 +4,9 @@
  *  - Place: tap where a number goes on the line (a lens on the zoom steps).
  *  - Read: what number is at the arrow? Four number cards.
  *  - Ten more, ten less: four number cards.
- *  - Closer: which of the two posts is nearer? Two cards.
+ *  - Closer: which ten (or hundred) is the number nearest to? Four cards.
  *
- * Each go comes with its help level from the server (marksFor): 5 every number marked, down to 0 the two ends. A wrong tap
+ * Each go comes with its help level from the server (marksFor): 5 every ten marked (only the ends and the middle written), down to 0 the two ends. A wrong tap
  * shows why (ShowWhy), a second one is "Let's look together" (LookTogether, the branch with every number marked and Bella
  * naming the two marks either side), then "Now you try". The answer is never shown or said before the child has found it.
  * Only the taps are sent; the server replays them.
@@ -24,7 +24,7 @@ import { GOES_PER_ROUND, marksFor, pictureFor, showRound, tapValue, type Go, typ
 import { playSound } from '../sounds';
 import { Friend, sceneStyle, type Pose, type Scenery } from './art';
 import { reasonFor } from './reason';
-import { PLACE_LINES, SLIP_LINES, askLine, lookLine } from './voiceLines';
+import { askLine, lookLine, slipLine } from './voiceLines';
 import { WORDS } from './words';
 
 /**
@@ -57,12 +57,14 @@ interface Props {
 const permilleOf = (go: Go, value: number) => Math.min(1000, Math.max(0, Math.round(((value - go.lo) / (go.hi - go.lo)) * 1000)));
 
 /** The kit line for a go at a help level, with the extra marks and points a screen wants. */
-export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Landmark[] = [], arcs: Arc[] = []): Omit<NumberLineProps, 'label'> {
+export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Landmark[] = [], arcs: Arc[] = [], showPosts = false): Omit<NumberLineProps, 'label'> {
   const mainMarks = marksFor(level, 0, go.max);
   const toLandmarks = (named: number[]): Landmark[] => named.map((value) => ({ value }));
+  /** Big marks with no number written: the child counts them. Put first so a named mark wins in `dedupe`. */
+  const toBig = (big: number[]): Landmark[] => big.map((value) => ({ value, label: null }));
   const tickStep = (ticks: number[]) => (ticks.length > 1 ? ticks[1] - ticks[0] : undefined);
-  const posts: Landmark[] = go.posts ? go.posts.map((value) => ({ value })) : [];
-  const landmarks = dedupe([...toLandmarks(mainMarks.named), ...posts, ...(go.lens ? [] : extraMarks)]);
+  const posts: Landmark[] = showPosts && go.posts ? go.posts.map((value) => ({ value })) : [];
+  const landmarks = dedupe([...toBig(mainMarks.big), ...toLandmarks(mainMarks.named), ...posts, ...(go.lens ? [] : extraMarks)]);
   const props: Omit<NumberLineProps, 'label'> = { min: 0, max: go.max, step: tickStep(mainMarks.ticks), landmarks };
   if (go.lens) {
     const lensMarks = marksFor(level, go.lens.lo, go.lens.hi);
@@ -70,7 +72,7 @@ export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMark
       from: go.lens.lo,
       to: go.lens.hi,
       step: tickStep(lensMarks.ticks),
-      landmarks: dedupe([...toLandmarks(lensMarks.named), ...extraMarks]),
+      landmarks: dedupe([...toBig(lensMarks.big), ...toLandmarks(lensMarks.named), ...extraMarks]),
       points,
       arcs,
       room: LENS_ROOM,
@@ -178,7 +180,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       if (state.phase === 'look') {
         setTapsAtLook(tapped.length + 1);
         startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
-      } else say(go.kind === 'place' ? PLACE_LINES[slip as 'early' | 'late'] : SLIP_LINES[slip as keyof typeof SLIP_LINES]);
+      } else say(slipLine(go, slip));
       return;
     }
     clearTimers();
@@ -192,7 +194,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
 
   const made = at + (phase === 'ask' ? 0 : 1);
   const solved = phase !== 'ask';
-  const slipText = lastSlip ? (go.kind === 'place' ? PLACE_LINES[lastSlip as 'early' | 'late'] : SLIP_LINES[lastSlip as keyof typeof SLIP_LINES]) : '';
+  const slipText = lastSlip ? slipLine(go, lastSlip) : '';
   const lastTap = tapped.length ? tapped[tapped.length - 1] : null;
   /** The child's last wrong answer in the line's own units: where they tapped, or the card. */
   const lastValue = lastTap === null ? null : go.kind === 'place' ? tapValue(go, lastTap) : lastTap;
@@ -206,7 +208,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const arcs = reason ? reason.arcs : [];
   const bandMarks: Landmark[] = pic.band ? pic.band.map((value) => ({ value })) : [];
   const lookMarks: Landmark[] = look && go.kind === 'place' ? lookMarksFor(go, look.filled) : [];
-  const lineProps = lineFor(go, seen, points, [...bandMarks, ...lookMarks], arcs);
+  const lineProps = lineFor(go, seen, points, [...bandMarks, ...lookMarks], arcs, gs.phase === 'look' || gs.phase === 'redo' || solved);
   const label = go.kind === 'place' ? `A branch from ${go.lens ? go.lens.lo : 0} to ${go.lens ? go.lens.hi : go.max}. Tap where ${go.n} goes.` : go.kind === 'read' ? `A branch from 0 to ${go.max} with an arrow at a number.` : `A branch from 0 to ${go.max}.`;
   const canTapLine = go.kind === 'place' && phase === 'ask' && gs.phase !== 'look';
   const cards = phase === 'ask' ? pic.choices : go.choices;

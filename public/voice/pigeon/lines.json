@@ -44,6 +44,10 @@
   "text": "Look at which post is nearer."
  },
  {
+  "slug": "that-one-is-too-far-away-look-at-the-nearest-two",
+  "text": "That one is too far away. Look at the nearest two."
+ },
+ {
   "slug": "that-is-too-early-try-further-along",
   "text": "That is too early. Try further along."
  },
@@ -476,152 +480,292 @@
   "text": "What is ten less than 100?"
  },
  {
-  "slug": "is-1-closer-to-0-or-10",
-  "text": "Is 1 closer to 0 or 10?"
+  "slug": "which-ten-is-1-nearest-to",
+  "text": "Which ten is 1 nearest to?"
  },
  {
-  "slug": "count-how-far-it-is-to-each-post-the-nearer-post-wins",
-  "text": "Count how far it is to each post. The nearer post wins."
+  "slug": "count-how-far-1-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 1 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-4-closer-to-0-or-10",
-  "text": "Is 4 closer to 0 or 10?"
+  "slug": "which-ten-is-4-nearest-to",
+  "text": "Which ten is 4 nearest to?"
  },
  {
-  "slug": "is-8-closer-to-0-or-10",
-  "text": "Is 8 closer to 0 or 10?"
+  "slug": "count-how-far-4-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 4 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-12-closer-to-10-or-20",
-  "text": "Is 12 closer to 10 or 20?"
+  "slug": "which-ten-is-8-nearest-to",
+  "text": "Which ten is 8 nearest to?"
  },
  {
-  "slug": "is-16-closer-to-10-or-20",
-  "text": "Is 16 closer to 10 or 20?"
+  "slug": "count-how-far-8-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 8 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-19-closer-to-10-or-20",
-  "text": "Is 19 closer to 10 or 20?"
+  "slug": "which-ten-is-12-nearest-to",
+  "text": "Which ten is 12 nearest to?"
  },
  {
-  "slug": "is-23-closer-to-20-or-30",
-  "text": "Is 23 closer to 20 or 30?"
+  "slug": "count-how-far-12-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 12 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-27-closer-to-20-or-30",
-  "text": "Is 27 closer to 20 or 30?"
+  "slug": "which-ten-is-16-nearest-to",
+  "text": "Which ten is 16 nearest to?"
  },
  {
-  "slug": "is-31-closer-to-30-or-40",
-  "text": "Is 31 closer to 30 or 40?"
+  "slug": "count-how-far-16-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 16 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-34-closer-to-30-or-40",
-  "text": "Is 34 closer to 30 or 40?"
+  "slug": "which-ten-is-19-nearest-to",
+  "text": "Which ten is 19 nearest to?"
  },
  {
-  "slug": "is-38-closer-to-30-or-40",
-  "text": "Is 38 closer to 30 or 40?"
+  "slug": "count-how-far-19-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 19 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-42-closer-to-40-or-50",
-  "text": "Is 42 closer to 40 or 50?"
+  "slug": "which-ten-is-23-nearest-to",
+  "text": "Which ten is 23 nearest to?"
  },
  {
-  "slug": "is-46-closer-to-40-or-50",
-  "text": "Is 46 closer to 40 or 50?"
+  "slug": "count-how-far-23-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 23 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-49-closer-to-40-or-50",
-  "text": "Is 49 closer to 40 or 50?"
+  "slug": "which-ten-is-27-nearest-to",
+  "text": "Which ten is 27 nearest to?"
  },
  {
-  "slug": "is-53-closer-to-50-or-60",
-  "text": "Is 53 closer to 50 or 60?"
+  "slug": "count-how-far-27-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 27 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-57-closer-to-50-or-60",
-  "text": "Is 57 closer to 50 or 60?"
+  "slug": "which-ten-is-31-nearest-to",
+  "text": "Which ten is 31 nearest to?"
  },
  {
-  "slug": "is-61-closer-to-60-or-70",
-  "text": "Is 61 closer to 60 or 70?"
+  "slug": "count-how-far-31-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 31 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-64-closer-to-60-or-70",
-  "text": "Is 64 closer to 60 or 70?"
+  "slug": "which-ten-is-34-nearest-to",
+  "text": "Which ten is 34 nearest to?"
  },
  {
-  "slug": "is-68-closer-to-60-or-70",
-  "text": "Is 68 closer to 60 or 70?"
+  "slug": "count-how-far-34-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 34 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-72-closer-to-70-or-80",
-  "text": "Is 72 closer to 70 or 80?"
+  "slug": "which-ten-is-38-nearest-to",
+  "text": "Which ten is 38 nearest to?"
  },
  {
-  "slug": "is-76-closer-to-70-or-80",
-  "text": "Is 76 closer to 70 or 80?"
+  "slug": "count-how-far-38-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 38 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-79-closer-to-70-or-80",
-  "text": "Is 79 closer to 70 or 80?"
+  "slug": "which-ten-is-42-nearest-to",
+  "text": "Which ten is 42 nearest to?"
  },
  {
-  "slug": "is-83-closer-to-80-or-90",
-  "text": "Is 83 closer to 80 or 90?"
+  "slug": "count-how-far-42-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 42 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-87-closer-to-80-or-90",
-  "text": "Is 87 closer to 80 or 90?"
+  "slug": "which-ten-is-46-nearest-to",
+  "text": "Which ten is 46 nearest to?"
  },
  {
-  "slug": "is-91-closer-to-90-or-100",
-  "text": "Is 91 closer to 90 or 100?"
+  "slug": "count-how-far-46-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 46 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-94-closer-to-90-or-100",
-  "text": "Is 94 closer to 90 or 100?"
+  "slug": "which-ten-is-49-nearest-to",
+  "text": "Which ten is 49 nearest to?"
  },
  {
-  "slug": "is-5-closer-to-0-or-10",
-  "text": "Is 5 closer to 0 or 10?"
+  "slug": "count-how-far-49-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 49 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-15-closer-to-10-or-20",
-  "text": "Is 15 closer to 10 or 20?"
+  "slug": "which-ten-is-53-nearest-to",
+  "text": "Which ten is 53 nearest to?"
  },
  {
-  "slug": "is-25-closer-to-20-or-30",
-  "text": "Is 25 closer to 20 or 30?"
+  "slug": "count-how-far-53-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 53 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-35-closer-to-30-or-40",
-  "text": "Is 35 closer to 30 or 40?"
+  "slug": "which-ten-is-57-nearest-to",
+  "text": "Which ten is 57 nearest to?"
  },
  {
-  "slug": "is-45-closer-to-40-or-50",
-  "text": "Is 45 closer to 40 or 50?"
+  "slug": "count-how-far-57-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 57 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-55-closer-to-50-or-60",
-  "text": "Is 55 closer to 50 or 60?"
+  "slug": "which-ten-is-61-nearest-to",
+  "text": "Which ten is 61 nearest to?"
  },
  {
-  "slug": "is-65-closer-to-60-or-70",
-  "text": "Is 65 closer to 60 or 70?"
+  "slug": "count-how-far-61-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 61 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-75-closer-to-70-or-80",
-  "text": "Is 75 closer to 70 or 80?"
+  "slug": "which-ten-is-64-nearest-to",
+  "text": "Which ten is 64 nearest to?"
  },
  {
-  "slug": "is-85-closer-to-80-or-90",
-  "text": "Is 85 closer to 80 or 90?"
+  "slug": "count-how-far-64-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 64 is from the ten below and the ten above. The nearer one wins."
  },
  {
-  "slug": "is-95-closer-to-90-or-100",
-  "text": "Is 95 closer to 90 or 100?"
+  "slug": "which-ten-is-68-nearest-to",
+  "text": "Which ten is 68 nearest to?"
+ },
+ {
+  "slug": "count-how-far-68-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 68 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-72-nearest-to",
+  "text": "Which ten is 72 nearest to?"
+ },
+ {
+  "slug": "count-how-far-72-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 72 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-76-nearest-to",
+  "text": "Which ten is 76 nearest to?"
+ },
+ {
+  "slug": "count-how-far-76-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 76 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-79-nearest-to",
+  "text": "Which ten is 79 nearest to?"
+ },
+ {
+  "slug": "count-how-far-79-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 79 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-83-nearest-to",
+  "text": "Which ten is 83 nearest to?"
+ },
+ {
+  "slug": "count-how-far-83-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 83 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-87-nearest-to",
+  "text": "Which ten is 87 nearest to?"
+ },
+ {
+  "slug": "count-how-far-87-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 87 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-91-nearest-to",
+  "text": "Which ten is 91 nearest to?"
+ },
+ {
+  "slug": "count-how-far-91-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 91 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-94-nearest-to",
+  "text": "Which ten is 94 nearest to?"
+ },
+ {
+  "slug": "count-how-far-94-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 94 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-5-nearest-to",
+  "text": "Which ten is 5 nearest to?"
+ },
+ {
+  "slug": "count-how-far-5-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 5 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-15-nearest-to",
+  "text": "Which ten is 15 nearest to?"
+ },
+ {
+  "slug": "count-how-far-15-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 15 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-25-nearest-to",
+  "text": "Which ten is 25 nearest to?"
+ },
+ {
+  "slug": "count-how-far-25-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 25 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-35-nearest-to",
+  "text": "Which ten is 35 nearest to?"
+ },
+ {
+  "slug": "count-how-far-35-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 35 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-45-nearest-to",
+  "text": "Which ten is 45 nearest to?"
+ },
+ {
+  "slug": "count-how-far-45-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 45 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-55-nearest-to",
+  "text": "Which ten is 55 nearest to?"
+ },
+ {
+  "slug": "count-how-far-55-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 55 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-65-nearest-to",
+  "text": "Which ten is 65 nearest to?"
+ },
+ {
+  "slug": "count-how-far-65-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 65 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-75-nearest-to",
+  "text": "Which ten is 75 nearest to?"
+ },
+ {
+  "slug": "count-how-far-75-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 75 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-85-nearest-to",
+  "text": "Which ten is 85 nearest to?"
+ },
+ {
+  "slug": "count-how-far-85-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 85 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-95-nearest-to",
+  "text": "Which ten is 95 nearest to?"
+ },
+ {
+  "slug": "count-how-far-95-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 95 is from the ten below and the ten above. The nearer one wins."
  },
  {
   "slug": "where-does-42-go-on-the-branch",
@@ -1064,84 +1208,164 @@
   "text": "980 is 900 and 80 more. Count the jumps."
  },
  {
-  "slug": "is-130-closer-to-100-or-200",
-  "text": "Is 130 closer to 100 or 200?"
+  "slug": "which-hundred-is-130-nearest-to",
+  "text": "Which hundred is 130 nearest to?"
  },
  {
-  "slug": "is-220-closer-to-200-or-300",
-  "text": "Is 220 closer to 200 or 300?"
+  "slug": "count-how-far-130-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 130 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-340-closer-to-300-or-400",
-  "text": "Is 340 closer to 300 or 400?"
+  "slug": "which-hundred-is-220-nearest-to",
+  "text": "Which hundred is 220 nearest to?"
  },
  {
-  "slug": "is-430-closer-to-400-or-500",
-  "text": "Is 430 closer to 400 or 500?"
+  "slug": "count-how-far-220-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 220 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-530-closer-to-500-or-600",
-  "text": "Is 530 closer to 500 or 600?"
+  "slug": "which-hundred-is-340-nearest-to",
+  "text": "Which hundred is 340 nearest to?"
  },
  {
-  "slug": "is-610-closer-to-600-or-700",
-  "text": "Is 610 closer to 600 or 700?"
+  "slug": "count-how-far-340-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 340 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-680-closer-to-600-or-700",
-  "text": "Is 680 closer to 600 or 700?"
+  "slug": "which-hundred-is-430-nearest-to",
+  "text": "Which hundred is 430 nearest to?"
  },
  {
-  "slug": "is-790-closer-to-700-or-800",
-  "text": "Is 790 closer to 700 or 800?"
+  "slug": "count-how-far-430-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 430 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-870-closer-to-800-or-900",
-  "text": "Is 870 closer to 800 or 900?"
+  "slug": "which-hundred-is-530-nearest-to",
+  "text": "Which hundred is 530 nearest to?"
  },
  {
-  "slug": "is-960-closer-to-900-or-1000",
-  "text": "Is 960 closer to 900 or 1000?"
+  "slug": "count-how-far-530-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 530 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-440-closer-to-400-or-500",
-  "text": "Is 440 closer to 400 or 500?"
+  "slug": "which-hundred-is-610-nearest-to",
+  "text": "Which hundred is 610 nearest to?"
  },
  {
-  "slug": "is-150-closer-to-100-or-200",
-  "text": "Is 150 closer to 100 or 200?"
+  "slug": "count-how-far-610-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 610 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-250-closer-to-200-or-300",
-  "text": "Is 250 closer to 200 or 300?"
+  "slug": "which-hundred-is-680-nearest-to",
+  "text": "Which hundred is 680 nearest to?"
  },
  {
-  "slug": "is-350-closer-to-300-or-400",
-  "text": "Is 350 closer to 300 or 400?"
+  "slug": "count-how-far-680-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 680 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-450-closer-to-400-or-500",
-  "text": "Is 450 closer to 400 or 500?"
+  "slug": "which-hundred-is-790-nearest-to",
+  "text": "Which hundred is 790 nearest to?"
  },
  {
-  "slug": "is-550-closer-to-500-or-600",
-  "text": "Is 550 closer to 500 or 600?"
+  "slug": "count-how-far-790-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 790 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-650-closer-to-600-or-700",
-  "text": "Is 650 closer to 600 or 700?"
+  "slug": "which-hundred-is-870-nearest-to",
+  "text": "Which hundred is 870 nearest to?"
  },
  {
-  "slug": "is-750-closer-to-700-or-800",
-  "text": "Is 750 closer to 700 or 800?"
+  "slug": "count-how-far-870-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 870 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
-  "slug": "is-850-closer-to-800-or-900",
-  "text": "Is 850 closer to 800 or 900?"
+  "slug": "which-hundred-is-960-nearest-to",
+  "text": "Which hundred is 960 nearest to?"
  },
  {
-  "slug": "is-950-closer-to-900-or-1000",
-  "text": "Is 950 closer to 900 or 1000?"
+  "slug": "count-how-far-960-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 960 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-440-nearest-to",
+  "text": "Which hundred is 440 nearest to?"
+ },
+ {
+  "slug": "count-how-far-440-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 440 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-150-nearest-to",
+  "text": "Which hundred is 150 nearest to?"
+ },
+ {
+  "slug": "count-how-far-150-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 150 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-250-nearest-to",
+  "text": "Which hundred is 250 nearest to?"
+ },
+ {
+  "slug": "count-how-far-250-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 250 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-350-nearest-to",
+  "text": "Which hundred is 350 nearest to?"
+ },
+ {
+  "slug": "count-how-far-350-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 350 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-450-nearest-to",
+  "text": "Which hundred is 450 nearest to?"
+ },
+ {
+  "slug": "count-how-far-450-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 450 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-550-nearest-to",
+  "text": "Which hundred is 550 nearest to?"
+ },
+ {
+  "slug": "count-how-far-550-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 550 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-650-nearest-to",
+  "text": "Which hundred is 650 nearest to?"
+ },
+ {
+  "slug": "count-how-far-650-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 650 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-750-nearest-to",
+  "text": "Which hundred is 750 nearest to?"
+ },
+ {
+  "slug": "count-how-far-750-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 750 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-850-nearest-to",
+  "text": "Which hundred is 850 nearest to?"
+ },
+ {
+  "slug": "count-how-far-850-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 850 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-950-nearest-to",
+  "text": "Which hundred is 950 nearest to?"
+ },
+ {
+  "slug": "count-how-far-950-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 950 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-cluster",
