@@ -14,7 +14,7 @@
  * Bonds to 100 and 1000 are the same pairs in tens and hundreds (James, 4 Nov 2026): 30 + 70, 300 + 700. 0 + 100 and
  * 0 + 1000 are left out, as 0 + 10 is.
  */
-import type { FactAnswer } from '../maths/leitner';
+import type { FactAnswer, FactStats } from '../maths/leitner';
 import { hasNearMiss, kindByUnits, unitsOff } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
 
@@ -43,11 +43,24 @@ export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as 
 
 export interface Round {
   seed: number;
-  /** What a pair adds up to. */
+  /** What a pair adds up to: the child's stage (S21). The first tray's sum. */
   target: Target;
   /** Every leaf's number in the order they come in. */
   leaves: number[];
+  /**
+   * What each pair (leaf 2k and 2k+1) adds up to (S21): the older pairs mixed in at the end have their own, smaller sum.
+   * Missing on rounds made before this (the whole round is then `target`).
+   */
+  pairTargets?: Target[];
 }
+
+/** What the pair holding this leaf adds up to. */
+export const targetOf = (round: Pick<Round, 'target' | 'pairTargets'>, leaf: number): Target => round.pairTargets?.[leaf >> 1] ?? round.target;
+
+/** Where a child is on the sums (S21): an index into `TARGETS`. Follows the child, not the calendar (progress.ts: `afterDay`). */
+export type Stage = 0 | 1 | 2 | 3;
+export const isStage = (n: unknown): n is Stage => n === 0 || n === 1 || n === 2 || n === 3;
+export const stageTarget = (stage: Stage): Target => TARGETS[stage];
 
 /** 1+9 to 5+5: the pairs a leaf can show (0+10 is left out, as a leaf with no dots is no help at this age). */
 const SMALL_PARTS = [1, 2, 3, 4, 5];
@@ -84,6 +97,78 @@ function leavesTo20(random: () => number): number[] {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.flatMap((a) => (random() < 0.5 ? [a, 20 - a] : [20 - a, a]));
+}
+
+/** Pairs of the older stages mixed in at the end of a round, as a short second tray (S21). None on the first stage. */
+export const OLDER_PAIRS = 2;
+/** One pair may come up this many times in a round (5 + 5 only once: two equal leaves are easy). */
+const MAX_REPEATS = 3;
+
+interface Candidate {
+  target: Target;
+  /** The smaller number, in ones (1 to 5, or 1 to 9 on the 20s). */
+  lo: number;
+}
+const candidatesOf = (target: Target): Candidate[] => Array.from({ length: target === 20 ? 9 : 5 }, (_, i) => ({ target, lo: i + 1 }));
+
+const shuffleWith = <T>(items: T[], random: () => number): T[] => {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
+/**
+ * Today's challenge for a child on `stage`, from their maths records (S21). Each pair of the stage's sum is used once, and
+ * the spare places go to the weakest pairs (lowest box, then least recently seen), at most three times each, 5 + 5 once.
+ * Two of the ten pairs are older pairs, from the stages below, the least recently seen then the weakest; they come last as
+ * a second tray with their own sum (`pairTargets`). The first stage has none.
+ *
+ * The 100 and 1000 sums have one fact key each ('bond100:tens'), so they can't say which pair is weak. Their pairs are
+ * weighed by the bond10 record of the same pair (30 + 70 by 3 + 7) instead. Splitting the key lives in shared/maths and
+ * would be its own branch.
+ */
+export function makeStageRound(seed: number, stage: Stage, facts: readonly FactStats[] = []): Round {
+  if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
+  if (!isStage(stage)) throw new RangeError(`Bad stage ${stage}`);
+  const random = seeded(seed);
+  random(); random(); // the first draws of this generator are close together for close seeds
+  const record = new Map(facts.map((f) => [f.key, f]));
+  const boxOf = (c: Candidate) => record.get(bondKey(c.lo, c.target >= 100 ? 10 : c.target))?.box ?? 0;
+  const seenOf = (c: Candidate) => record.get(bondKey(c.lo, c.target))?.lastSeen ?? 0;
+  const target = TARGETS[stage];
+  const older = stage === 0 ? 0 : OLDER_PAIRS;
+
+  // The stage's own pairs: each once (the weakest, if there are more pairs than places), then the spare places, weakest first.
+  const own = shuffleWith(candidatesOf(target), random).sort((a, b) => boxOf(a) - boxOf(b) || seenOf(a) - seenOf(b));
+  const places = PAIRS_PER_ROUND - older;
+  const chosen = own.slice(0, places);
+  const counts = new Map(chosen.map((c) => [c, 1]));
+  const cap = (c: Candidate) => (c.lo === (c.target === 20 ? 10 : 5) ? 1 : MAX_REPEATS); // the double (5 + 5, 50 + 50, 10 + 10) once
+  for (let spare = places - chosen.length; spare > 0; ) {
+    const before = spare;
+    for (const c of chosen) {
+      if (spare > 0 && counts.get(c)! < cap(c)) {
+        counts.set(c, counts.get(c)! + 1);
+        spare--;
+      }
+    }
+    if (spare === before) break; // every pair is at its cap (not reachable with ten places)
+  }
+  const mine = shuffleWith(chosen.flatMap((c) => Array.from({ length: counts.get(c)! }, () => c)), random);
+
+  // The older pairs: the least recently seen, then the weakest.
+  const before = TARGETS.slice(0, stage).flatMap(candidatesOf);
+  const oldPairs = shuffleWith(before, random).sort((a, b) => seenOf(a) - seenOf(b) || boxOf(a) - boxOf(b)).slice(0, older);
+
+  const pairs = [...mine, ...oldPairs];
+  const leaves = pairs.flatMap(({ target: t, lo }) => {
+    const a = t === 20 ? lo : (lo * t) / 10;
+    return random() < 0.5 ? [a, t - a] : [t - a, a];
+  });
+  return { seed, target, leaves, pairTargets: pairs.map((c) => c.target) };
 }
 
 /**
@@ -155,18 +240,23 @@ export const mistakeKind = (total: number, target: Target): MistakeKind | null =
  */
 function letIn(round: Round, inPlay: number[], used: ReadonlySet<number>): void {
   const floatingNow = () => floating(inPlay, used);
-  const free = (numbers: number[]) => (k: number) =>
-    !inPlay.includes(k) && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
+  const free = (numbers: number[], tray: Target) => (k: number) =>
+    !inPlay.includes(k) && targetOf(round, 2 * k) === tray && !numbers.includes(round.leaves[2 * k]) && !numbers.includes(round.leaves[2 * k + 1]);
   while (floatingNow().length < ON_SCREEN) {
-    const numbers = floatingNow().map((i) => round.leaves[i]);
-    const waiting = Array.from({ length: PAIRS_PER_ROUND }, (_, k) => k).filter(free(numbers));
+    const now = floatingNow();
+    const numbers = now.map((i) => round.leaves[i]);
+    // The tray holds one sum at a time (S21): the sum of what floats, or of the first pair not yet in when it is empty.
+    const notIn = Array.from({ length: PAIRS_PER_ROUND }, (_, k) => k).filter((k) => !inPlay.includes(k));
+    if (!notIn.length) return;
+    const tray = now.length ? targetOf(round, now[0]) : targetOf(round, 2 * notIn[0]);
+    const waiting = notIn.filter(free(numbers, tray));
     if (!waiting.length) return;
     const fills = numbers.length + 2 >= ON_SCREEN;
     if (!fills) {
       inPlay.push(waiting[0]);
       continue;
     }
-    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], round.target, unitOf(round.target)));
+    const tempting = waiting.find((k) => hasNearMiss([...numbers, round.leaves[2 * k], round.leaves[2 * k + 1]], tray, unitOf(tray)));
     // None does (only ever 1 + 9, 3 + 7 and 5 + 5 together): the tray stays at four leaves until a pair is made.
     if (tempting === undefined) return;
     inPlay.push(tempting);
@@ -197,8 +287,9 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     if (pairsMade === PAIRS_PER_ROUND) throw new Error('Taps after the round was done');
     const now = floating(inPlay, used);
     if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
-    const right = round.leaves[a] + round.leaves[b] === round.target;
-    if (wrongInGo === 0) answers.push({ key: bondKey(round.leaves[a], round.target), correct: right, ms });
+    const sum = targetOf(round, a);
+    const right = round.leaves[a] + round.leaves[b] === sum;
+    if (wrongInGo === 0) answers.push({ key: bondKey(round.leaves[a], sum), correct: right, ms });
     if (right) {
       used.add(a).add(b);
       pairsMade++;

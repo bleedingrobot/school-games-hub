@@ -3,14 +3,17 @@
  * version still matches, a seed used once per pupil, a challenge finished once). The preview's trial backend saves this
  * in the browser; the server function's tests use it in place of the database.
  */
-import type { FactAnswer } from '../maths/leitner';
-import type { Tap } from './round';
+import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import type { Round, Tap } from './round';
 import { unplayed, type BeanstalkServices, type Saved, type Settings } from './server';
 
 export interface MemoryRound {
   player: string;
   seed: number;
   open: boolean;
+  /** The round as it was made at the start (missing on a challenge started before rounds were kept). */
+  round?: Round;
   taps?: Tap[];
   mistakes?: number;
 }
@@ -18,11 +21,15 @@ export interface MemoryRound {
 export interface MemoryData {
   players: Record<string, Saved>;
   rounds: MemoryRound[];
+  /** Each pupil's maths records, built from the answers recorded (the preview has no maths records of its own). */
+  facts?: Record<string, FactStats[]>;
 }
 
 export interface MemoryOptions {
   data?: MemoryData;
   settings?: () => Settings | null;
+  /** The pupil's maths records, instead of the ones built from recorded answers (for tests). */
+  facts?: (player: string) => FactStats[];
   now?: () => number;
   random?: () => number;
   /** Called after every change (the trial backend saves here). */
@@ -56,16 +63,19 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
       saved();
       return true;
     },
-    async start(player, seed) {
-      if (find(player, seed)) return false;
+    async facts(player) {
+      return copy(options.facts?.(player) ?? data.facts?.[player] ?? []);
+    },
+    async start(player, round) {
+      if (find(player, round.seed)) return false;
       for (const r of data.rounds) if (r.player === player) r.open = false;
-      data.rounds.push({ player, seed, open: true });
+      data.rounds.push({ player, seed: round.seed, open: true, round: copy(round) });
       saved();
       return true;
     },
     async round(player, seed) {
       const r = find(player, seed);
-      return r ? { open: r.open } : null;
+      return r ? { open: r.open, round: r.round ? copy(r.round) : null } : null;
     },
     async finish(player, seed, version, progress, ending) {
       const r = find(player, seed);
@@ -78,6 +88,10 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
     async recordAnswers(player, once, answers) {
       if (recorded.has(once)) return;
       recorded.add(once);
+      const mine = new Map((data.facts?.[player] ?? []).map((f) => [f.key, f]));
+      for (const a of answers) mine.set(a.key, afterAnswer(mine.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, JUNIOR_QUICK_MS));
+      data.facts = { ...data.facts, [player]: [...mine.values()] };
+      saved();
       options.log?.answers.push({ player, once, answers });
     },
     async progressChanged(player) {

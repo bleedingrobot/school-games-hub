@@ -5,19 +5,24 @@
  *
  *   load    the pupil's beanstalk (a new pupil has none), their dots help, the class's dots setting and today's NZ date by the server's clock;
  *   choose  be Jack or Jill;
- *   start   makes today's challenge from a fresh seed and keeps it (any other open challenge is closed);
- *   finish  replays the taps on the server's own round (its sum, 10, 100 or 1000, from the saved beanstalk), records
+ *   start   makes today's challenge from a fresh seed, the child's stage and their maths records, and keeps the round itself
+ *           (any other open challenge is closed);
+ *   finish  replays the taps on the kept round (its sums are the child's stage, with a few older pairs last), records
  *           the first tap of each go for the maths records (a wrong pair counts against the first leaf's pair; taps
  *           after it in the go are not scored, maths review R5), and changes a leaf on
  *           the first finish of the NZ day, and moves the child's dots help on that same finish (placeAfter, R6). A Golden Egg is an
  *           achievement (Stage 4's migration counts eggs from the finished days).
  *
- * Nothing that counts comes from the browser: the seed is the server's, the round is made again from it, the day is the
- * server's clock, and the leaves come from the saved count of finished days. A challenge finishes once.
+ * The sum follows the child, not the calendar (S21): a saved stage moves up after two good days with the sum secure, and back
+ * after two hard days (progress.ts: afterDay). The leaves, the egg and the friend still come from the count of finished days.
+ *
+ * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
+ * the leaves come from the saved count of finished days. A challenge finishes once.
  */
-import type { FactAnswer } from '../maths/leitner';
-import { finishChallenge, nzDate, placeAfter, stalkAfter, type FinishResult, type HelpLevel } from './progress';
-import { makeRound, MAX_SEED, isSeed, replay, type Tap } from './round';
+import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import { afterDay, finishChallenge, nzDate, placeAfter, START_STEPS, sumSecure, type FinishResult, type HelpLevel, type Steps } from './progress';
+import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
 export type Child = 'jack' | 'jill';
@@ -26,7 +31,7 @@ export const isChild = (c: unknown): c is Child => c === 'jack' || c === 'jill';
 export type BeanstalkAction = 'load' | 'choose' | 'start' | 'finish';
 
 /** A pupil's beanstalk as it is saved. */
-export interface Progress {
+export interface Progress extends Steps {
   child: Child | null;
   daysDone: number;
   /** The NZ day ('2026-11-04') a leaf last changed. */
@@ -40,6 +45,9 @@ export interface Progress {
 /** What `finish` replies: the leaf and egg news, and the dots for the next challenge. */
 export interface FinishReply extends FinishResult {
   help: HelpLevel;
+  /** The stage for the next challenge, and 1 if this finish moved the child up, -1 back, 0 stayed. */
+  stage: Steps['stage'];
+  moved: -1 | 0 | 1;
 }
 
 export interface Saved extends Progress {
@@ -47,7 +55,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, version: 0 });
+export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, ...START_STEPS, version: 0 });
 
 /** The class's settings for the game (null if they can't be read). */
 export interface Settings {
@@ -61,10 +69,15 @@ export interface BeanstalkServices {
   load(player: string): Promise<Saved | 'busy'>;
   /** Saves who they play as (making their beanstalk if it's their first go). */
   choose(player: string, child: Child): Promise<boolean | 'busy'>;
-  /** Keeps a new challenge and closes any other open one. False if the pupil has used this seed before. */
-  start(player: string, seed: number): Promise<boolean | 'busy'>;
-  /** One of this pupil's challenges by its seed: is it still open? Null: not theirs, or never started. */
-  round(player: string, seed: number): Promise<{ open: boolean } | null | 'busy'>;
+  /** The pupil's maths records (the same ones every maths game reads). */
+  facts(player: string): Promise<FactStats[] | 'busy'>;
+  /** Keeps a new challenge, with its round, and closes any other open one. False if the pupil has used this seed before. */
+  start(player: string, round: Round): Promise<boolean | 'busy'>;
+  /**
+   * One of this pupil's challenges by its seed: is it still open, and the round it was started with? Null: not theirs, or
+   * never started. The round is null for a challenge started before rounds were kept.
+   */
+  round(player: string, seed: number): Promise<{ open: boolean; round: Round | null } | null | 'busy'>;
   /**
    * Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on.
    */
@@ -94,6 +107,13 @@ const no = (status: number, error: string, extra: Record<string, unknown> = {}):
 const busy = () => no(503, 'The beanstalk couldn’t be reached just now. Try again in a moment.');
 const unreadable = () => no(400, 'That couldn’t be read.');
 
+/** The records after this challenge's answers, the way record_fact_answers will change them (the juniors' quick time). */
+export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
+  const byKey = new Map(facts.map((f) => [f.key, f]));
+  for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, JUNIOR_QUICK_MS));
+  return [...byKey.values()];
+}
+
 const isWhole = (v: unknown, max: number): v is number => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= max;
 
 function readTaps(v: unknown): Tap[] | null {
@@ -117,7 +137,10 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
   if (body.action === 'load') {
     const s = await services.load(player);
     if (s === 'busy') return busy();
-    return ok({ child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, dots: settings.dots });
+    return ok({
+      child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, dots: settings.dots,
+      stage: s.stage, stageDays: s.stageDays,
+    });
   }
 
   if (body.action === 'choose') {
@@ -128,14 +151,15 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
   }
 
   if (body.action === 'start') {
-    const s = await services.load(player);
-    if (s === 'busy') return busy();
+    const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
+    if (s === 'busy' || facts === 'busy') return busy();
     if (!s.child) return no(409, 'Choose Jack or Jill first.', { code: 'no-child' });
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const kept = await services.start(player, seed);
+      const round = makeStageRound(seed, s.stage, facts);
+      const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
-      if (kept) return ok({ seed });
+      if (kept) return ok({ seed, round });
     }
     return busy();
   }
@@ -151,27 +175,36 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
     for (let tries = 0; tries < TRIES; tries++) {
       const s = await services.load(player);
       if (s === 'busy') return busy();
-      // The sum comes from the saved beanstalk. It is the same as when the challenge started: starting one closes any
-      // other, so no other finish can move the days on in between.
+      // The round is the one kept at the start. A challenge already open when rounds began to be kept has none: it is made
+      // again from its seed on the child's stage (the same as the calendar's sum at that moment: migration back-fill).
+      const kept = round.round ?? makeRound(seed, stageTarget(s.stage));
       let played;
       try {
-        played = replay(makeRound(seed, stalkAfter(s.daysDone).target), taps);
+        played = replay(kept, taps);
       } catch {
         return unreadable();
       }
       if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
       const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
-      // The dots follow the child: counted from the pairs right at the first tap, on the day's first finish only.
-      const place = placeAfter({ help: s.help, goodInRow: s.goodInRow }, played.answers.filter((a) => a.correct).length, result);
-      const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place };
-      const kept = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
-      if (kept === 'busy') return busy();
-      if (kept) {
-        // One answer a go (its first tap), as bonds to 10, 100 or 1000: once per challenge, so a finish sent again never counts twice.
-        const at = services.now();
-        await services.recordAnswers(player, `beanstalk:${seed}`, played.answers.map((a) => ({ ...a, at })));
+      const at = services.now();
+      const answers = played.answers.map((a) => ({ ...a, at }));
+      const rightFirst = played.answers.filter((a) => a.correct).length;
+      // Which stage next: two good days with the sum secure move up, two hard days step back (progress.ts: afterDay). If the
+      // records can't be read, nobody moves up (the child stays; a hard patch still steps back).
+      const facts = await services.facts(player);
+      const secure = facts !== 'busy' && sumSecure(withAnswers(facts, answers), TARGETS[s.stage]);
+      const steps = afterDay(s, rightFirst, result.leafChanged !== null, secure);
+      // The dots follow the child: counted from the pairs right at the first tap, on the day's first finish only, and start full on a new sum.
+      const place = placeAfter({ help: s.help, goodInRow: s.goodInRow }, rightFirst, { leafChanged: result.leafChanged, stageChanged: steps.moved !== 0 });
+      const { moved, ...savedSteps } = steps;
+      const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place, ...savedSteps };
+      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
+      if (saved === 'busy') return busy();
+      if (saved) {
+        // One answer a go (its first tap), as bonds to 10, 20, 100 or 1000: once per challenge, so a finish sent again never counts twice.
+        await services.recordAnswers(player, `beanstalk:${seed}`, answers);
         if (result.egg) await services.progressChanged(player);
-        return ok({ ...result, help: place.help });
+        return ok({ ...result, help: place.help, stage: steps.stage, moved });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

@@ -3,9 +3,9 @@
  * school server is reached through src/data/beanstalk.ts; the trial backend below runs the very same rules in this
  * browser for the preview. `fromServer` turns either one's replies into what the screens use.
  */
-import type { HelpLevel } from '../../../shared/beanstalk/progress';
+import { DAYS_PER_EGG, stageForEggs, stageTarget, type HelpLevel } from '../../../shared/beanstalk/progress';
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/beanstalk/memoryServices';
-import type { Tap } from '../../../shared/beanstalk/round';
+import { makeRound, type Round, type Stage, type Tap } from '../../../shared/beanstalk/round';
 import { handleBeanstalk, type BeanstalkReply, type Child, type FinishReply } from '../../../shared/beanstalk/server';
 
 export { isChild, type Child } from '../../../shared/beanstalk/server';
@@ -17,6 +17,10 @@ export interface BeanstalkState {
   lastLeafDay: string | null;
   /** This child's dots: 0 full, 1 small, 2 none. It follows how their challenges go, not the calendar. */
   help: HelpLevel;
+  /** The sum this child is on (0 bonds to 10, 1 to 20, 2 to 100, 3 to 1000): it follows how their days go, not the calendar (S21). */
+  stage: Stage;
+  /** Finished days since the stage last changed: 0 on a stage above the first shows the bridge line. */
+  stageDays: number;
   /** Today's NZ date by the server's clock. */
   today: string;
   /** False when the teacher has turned the leaves' dots off for the class. */
@@ -26,8 +30,8 @@ export interface BeanstalkState {
 export interface BeanstalkBackend {
   load(): Promise<BeanstalkState>;
   choose(child: Child): Promise<void>;
-  /** Today's challenge: the seed the leaves come from. */
-  start(): Promise<{ seed: number }>;
+  /** Today's challenge: its seed and the round the server made (the child's stage, with a few older pairs last). */
+  start(): Promise<{ seed: number; round: Round }>;
   finish(seed: number, taps: readonly Tap[]): Promise<FinishReply>;
 }
 
@@ -50,9 +54,20 @@ export function fromServer(send: Send): BeanstalkBackend {
     );
   }
   return {
-    load: async () => (await ask({ action: 'load' })) as unknown as BeanstalkState,
+    load: async () => {
+      const s = (await ask({ action: 'load' })) as unknown as BeanstalkState;
+      // A server function from before stages: the sum is the calendar's, as the migration back-fills it.
+      if (s.stage === undefined) return { ...s, stage: stageForEggs(Math.floor(s.daysDone / DAYS_PER_EGG)), stageDays: s.daysDone % DAYS_PER_EGG };
+      return s;
+    },
     choose: async (child) => void (await ask({ action: 'choose', child })),
-    start: async () => (await ask({ action: 'start' })) as unknown as { seed: number },
+    start: async () => {
+      const r = (await ask({ action: 'start' })) as unknown as { seed: number; round?: Round };
+      if (r.round) return { seed: r.seed, round: r.round };
+      // A server function from before rounds were kept: the child is on their load's stage, the one sum.
+      const { stage, daysDone } = (await ask({ action: 'load' })) as unknown as Partial<BeanstalkState> & { daysDone: number };
+      return { seed: r.seed, round: makeRound(r.seed, stageTarget({ stage: stage ?? stageForEggs(Math.floor(daysDone / DAYS_PER_EGG)) })) };
+    },
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as FinishReply,
   };
 }
@@ -106,11 +121,21 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
   };
   const tools = {
     nextDay: () => change((s) => void (s.dayShift += 1)),
-    /** Jumps to just after this many finished days, as if each was on its own day. The dots go where the calendar had them (as the migration does for existing pupils); `setHelp` changes them. */
+    /** Jumps to just after this many finished days, as if each was on its own day. The stage and the dots go where the calendar had them (as the migration does for existing pupils); `setHelp` changes them. */
     jumpTo: (daysDone: number) =>
       change((s) => {
         const p = s.data.players[PUPIL];
-        if (p) s.data.players[PUPIL] = { ...p, daysDone, lastLeafDay: null, help: Math.min(2, Math.floor((daysDone % 30) / 10)) as HelpLevel, goodInRow: 0, version: p.version + 1 };
+        if (p)
+          s.data.players[PUPIL] = {
+            ...p, daysDone, lastLeafDay: null, help: Math.min(2, Math.floor((daysDone % 30) / 10)) as HelpLevel, goodInRow: 0,
+            stage: stageForEggs(Math.floor(daysDone / DAYS_PER_EGG)), goodDays: 0, hardDays: 0, stageDays: daysDone % DAYS_PER_EGG, version: p.version + 1,
+          };
+      }),
+    /** The pretend pupil's own stage (0 bonds to 10, 1 to 20, 2 to 100, 3 to 1000), as if they had just arrived on it. */
+    setStage: (stage: Stage) =>
+      change((s) => {
+        const p = s.data.players[PUPIL];
+        if (p) s.data.players[PUPIL] = { ...p, stage, goodDays: 0, hardDays: 0, stageDays: 0, version: p.version + 1 };
       }),
     /** The pretend pupil's own dots: 0 full, 1 small, 2 none. */
     setHelp: (help: HelpLevel) =>

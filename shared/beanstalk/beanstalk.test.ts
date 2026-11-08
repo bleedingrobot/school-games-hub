@@ -1,24 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { DAYS_PER_EGG, dotsFor, finishChallenge, placeAfter, shownDots, stalkAfter, START_PLACE, type Place } from './progress';
+import { afterDay, DAYS_PER_EGG, dotsFor, finishChallenge, placeAfter, shownDots, stalkAfter, START_PLACE, START_STEPS, sumSecure, type Place, type Steps } from './progress';
 import { seeded } from '../seededRandom';
 import type { FactAnswer } from '../maths/leitner';
-import { handleBeanstalk } from './server';
+import { handleBeanstalk, unplayed } from './server';
 import { memoryServices } from './memoryServices';
-import { bondKey, factKeys, isMissingGo, makeRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, TARGETS, type Round, type Target, type Tap } from './round';
+import { bondKey, factKeys, isMissingGo, makeRound, makeStageRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, targetOf, TARGETS, type Round, type Stage, type Target, type Tap } from './round';
 
 const TARGET = 10;
 
 const seeds = Array.from({ length: 200 }, (_, i) => i * 10007 + 1);
 
 /** A child who always finds a right pair among the floating leaves. */
-function perfectTaps(seed: number, target: Target = 10): Tap[] {
-  const round = makeRound(seed, target);
+const perfectTaps = (seed: number, target: Target = 10): Tap[] => perfectTapsFor(makeRound(seed, target));
+
+function perfectTapsFor(round: Round): Tap[] {
   const taps: Tap[] = [];
   for (let n = 0; n < PAIRS_PER_ROUND; n++) {
     const now = replay(round, taps).onScreen;
     const a = now[0];
-    const b = now.find((j) => j !== a && round.leaves[a] + round.leaves[j] === target);
-    expect(b, `seed ${seed}: leaf ${a} has no partner floating`).toBeDefined();
+    const b = now.find((j) => j !== a && round.leaves[a] + round.leaves[j] === targetOf(round, a));
+    expect(b, `leaf ${a} has no partner floating`).toBeDefined();
     taps.push({ a, b: b!, ms: 1000 });
   }
   return taps;
@@ -156,8 +157,8 @@ describe('the magic leaves', () => {
     expect(stalkAfter(10)).toMatchObject({ leaves: Array(10).fill('bronze') });
     expect(stalkAfter(21)).toMatchObject({ leaves: ['gold', ...Array(9).fill('silver')] });
     expect(stalkAfter(DAYS_PER_EGG)).toMatchObject({ eggs: 1, friend: 'tui', day: 0, leaves: Array(10).fill('green') });
-    // Kiwi's pairs make 10, the tūī's 100, the kererū's 1000, then round again (James, 4 Nov 2026), with bonds to 20 between 10 and 100 (R8).
-    expect([0, 1, 2, 3, 4, 5].map((eggs) => stalkAfter(eggs * DAYS_PER_EGG + 7).target)).toEqual([10, 20, 100, 1000, 10, 20]);
+    // The egg and the friend still come from the calendar; the sum doesn't (S21: the saved stage).
+    expect(stalkAfter(5 * DAYS_PER_EGG + 7)).toMatchObject({ eggs: 5, friend: 'takahe' });
   });
 
   it('change one leaf on the first finish of a NZ day only', () => {
@@ -168,7 +169,7 @@ describe('the magic leaves', () => {
 });
 
 describe('the dots follow the child, not the calendar (maths review R6)', () => {
-  const counted = { leafChanged: 0, egg: false };
+  const counted = { leafChanged: 0, stageChanged: false };
 
   it('fade after two good days in a row, come back after a hard day, and stay put on a middling day', () => {
     // Two days of 8 or more first-time pairs: full to small, then (two more) small to none, and none stays none.
@@ -188,10 +189,10 @@ describe('the dots follow the child, not the calendar (maths review R6)', () => 
     expect(placeAfter({ help: 1, goodInRow: 1 }, 10, counted).help).toBe(2);
   });
 
-  it('start again at full dots on a new sum, never move on a replay, and lose to the teacher’s dots switch', () => {
-    expect(placeAfter({ help: 2, goodInRow: 1 }, 10, { leafChanged: 9, egg: true })).toEqual(START_PLACE);
-    expect(placeAfter({ help: 1, goodInRow: 1 }, 10, { leafChanged: null, egg: false })).toEqual({ help: 1, goodInRow: 1 });
-    expect(placeAfter({ help: 1, goodInRow: 0 }, 0, { leafChanged: null, egg: false })).toEqual({ help: 1, goodInRow: 0 });
+  it('start again at full dots on a new sum (a stage change), never move on a replay, and lose to the teacher’s dots switch', () => {
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 10, { leafChanged: 9, stageChanged: true })).toEqual(START_PLACE);
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 10, { leafChanged: null, stageChanged: false })).toEqual({ help: 1, goodInRow: 1 });
+    expect(placeAfter({ help: 1, goodInRow: 0 }, 0, { leafChanged: null, stageChanged: false })).toEqual({ help: 1, goodInRow: 0 });
     expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, true))).toEqual(['full', 'small', 'none']);
     expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, false))).toEqual(['none', 'none', 'none']);
   });
@@ -201,16 +202,89 @@ describe('bonds to 20 and the missing leaf (maths review R8)', () => {
   it('lets the server finish a bonds to 20 round, scoring each go against a bond20 record the maths records know', async () => {
     const log = { answers: [] as { player: string; once: string; answers: FactAnswer[] }[] };
     const services = memoryServices({ log, now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
-    services.data.players.p = { child: 'jill', daysDone: DAYS_PER_EGG, lastLeafDay: null, help: 0, goodInRow: 0, version: 1 };
-    const { body: { seed } } = await handleBeanstalk(services, 'p', { action: 'start' });
-    const reply = await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTaps(seed as number, 20) });
+    services.data.players.p = { child: 'jill', daysDone: DAYS_PER_EGG, lastLeafDay: null, help: 0, goodInRow: 0, ...START_STEPS, stage: 1, version: 1 };
+    const { body: { seed, round } } = await handleBeanstalk(services, 'p', { action: 'start' });
+    const reply = await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTapsFor(round as Round) });
     expect(reply).toMatchObject({ status: 200, body: { daysDone: DAYS_PER_EGG + 1, leafChanged: 0 } });
     const keys = log.answers[0].answers.map((a) => a.key);
     expect(keys).toHaveLength(PAIRS_PER_ROUND);
-    expect(keys.every((k) => /^bond20:\d\+\d+$/.test(k) && factKeys(20).includes(k))).toBe(true);
+    expect(keys.filter((k) => /^bond20:\d\+\d+$/.test(k) && factKeys(20).includes(k))).toHaveLength(8); // and two older bonds to 10 last
     expect(factKeys(10)).toHaveLength(5);
     expect(factKeys(100)).toEqual(['bond100:tens']);
     // The missing leaf is only on the screen (the taps are the same two leaves): on the 4th, 7th and 10th go.
     expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(isMissingGo)).toEqual([3, 6, 9]);
+  });
+});
+
+describe('the sum follows the child, not the calendar (maths review 2, S21)', () => {
+  const secureRecords = (target: Target) => factKeys(target).map((key) => ({ key, attempts: 4, correct: 4, avgMs: 2000, box: 3, lastSeen: 0, quickDays: [] }));
+  /** One NZ day's first finish. */
+  const day = (steps: Steps, right: number, secure = true) => afterDay(steps, right, true, secure);
+
+  it('moves up after two good first-finish days with the sum secure, steps back after two hard days, never past 1000 or below 10, and a repeat the same day changes nothing', () => {
+    let s: Steps = START_STEPS;
+    s = day(s, 9);
+    expect(s).toMatchObject({ stage: 0, goodDays: 1, moved: 0 });
+    s = day(s, 8, false); // good but the facts aren't secure yet: stays, and keeps its good days
+    expect(s).toMatchObject({ stage: 0, goodDays: 2, moved: 0 });
+    s = day(s, 10);
+    expect(s).toEqual({ stage: 1, goodDays: 0, hardDays: 0, stageDays: 0, moved: 1 }); // a new stage starts the counts again
+    expect(sumSecure([], 10)).toBe(false);
+    expect(sumSecure(secureRecords(10), 10)).toBe(true);
+    expect(sumSecure(secureRecords(10).slice(0, 3), 10)).toBe(false); // 3 of 5 is under 70 percent
+    expect(sumSecure(secureRecords(10).slice(0, 4), 10)).toBe(true);
+    // A middling day (5 to 7) breaks both runs; two hard days (4 or fewer) step back.
+    expect(day({ ...START_STEPS, stage: 2, goodDays: 1 }, 6)).toMatchObject({ stage: 2, goodDays: 0, hardDays: 0 });
+    s = day(day({ ...START_STEPS, stage: 2 }, 3), 4);
+    expect(s).toMatchObject({ stage: 1, moved: -1 });
+    expect(day(day({ ...START_STEPS, stage: 0 }, 0), 0)).toMatchObject({ stage: 0, moved: 0 }); // never below bonds to 10
+    expect(day(day({ ...START_STEPS, stage: 3 }, 10), 10)).toMatchObject({ stage: 3, moved: 0 }); // 1000 is the top; it doesn't go round to 10
+    // A replay the same day changes nothing.
+    const kept: Steps = { stage: 1, goodDays: 1, hardDays: 0, stageDays: 4 };
+    expect(afterDay(kept, 10, false, true)).toEqual({ ...kept, moved: 0 });
+  });
+
+  it('makes each pair once, gives the spare places to the weakest (three at most, 5 + 5 once), and mixes two older pairs last on every stage but the first (200 seeds)', () => {
+    const records = (weak: number) => [1, 2, 3, 4, 5].map((n) => ({ key: bondKey(n), attempts: 3, correct: 3, avgMs: 1, box: n === weak ? 0 : 3, lastSeen: 100 + n, quickDays: [] }));
+    for (const seed of seeds) {
+      for (const stage of [0, 1, 2, 3] as Stage[]) {
+        const round = makeStageRound(seed, stage, records(2));
+        expect(round).toEqual(makeStageRound(seed, stage, records(2)));
+        expect(round.target).toBe(TARGETS[stage]);
+        const targets = round.pairTargets!;
+        expect(targets).toHaveLength(PAIRS_PER_ROUND);
+        // Own pairs first, older ones last (none on the first stage), each older sum lower than the stage's.
+        const older = targets.filter((t) => t !== round.target);
+        expect(older).toHaveLength(stage === 0 ? 0 : 2);
+        expect(targets.slice(PAIRS_PER_ROUND - older.length).every((t) => t < round.target)).toBe(true);
+        const own = round.leaves.slice(0, 2 * (PAIRS_PER_ROUND - older.length));
+        const unit = round.target === 100 ? 10 : round.target === 1000 ? 100 : 1;
+        const lo = (n: number, t: number) => Math.min(n, t - n) / unit;
+        const counts = new Map<number, number>();
+        own.forEach((n, i) => i % 2 === 0 && counts.set(lo(n, round.target), (counts.get(lo(n, round.target)) ?? 0) + 1));
+        const pairs = round.target === 20 ? 9 : 5;
+        if (stage !== 1) expect([...counts.keys()].sort()).toEqual(Array.from({ length: pairs }, (_, i) => (i + 1) * 1)); // every pair at least once
+        expect(Math.max(...counts.values())).toBeLessThanOrEqual(3);
+        if (round.target !== 20) expect(counts.get(5)).toBe(1); // 5 + 5 at most once
+        if (stage !== 1) expect(counts.get(2)).toBeGreaterThanOrEqual(counts.get(4)!); // the weakest (3 + 7's neighbour: 2 + 8) gets the extras
+        // Every pair adds to its own sum, and the round can always be finished.
+        for (let k = 0; k < PAIRS_PER_ROUND; k++) expect(round.leaves[2 * k] + round.leaves[2 * k + 1]).toBe(targets[k]);
+        expect(replay(round, perfectTapsFor(round))).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND, mistakes: 0 });
+      }
+    }
+  });
+
+  it('keeps the round at the start and replays that one on finish, or the calendar’s sum for a challenge already open before rounds were kept', async () => {
+    const services = memoryServices({ now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
+    services.data.players.p = { ...unplayed(), child: 'jill', stage: 2, daysDone: 65, stageDays: 5, version: 1 };
+    const { body: { seed, round } } = await handleBeanstalk(services, 'p', { action: 'start' });
+    expect(services.data.rounds[0].round).toEqual(round);
+    expect((round as Round).target).toBe(100);
+    expect(await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTapsFor(round as Round) })).toMatchObject({ status: 200, body: { stage: 2, moved: 0 } });
+    // An open challenge with no kept round: made again from its seed on the child's stage.
+    delete services.data.rounds[0].round;
+    services.data.rounds[0].open = true;
+    services.data.players.p.lastLeafDay = null;
+    expect(await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTaps(seed as number, 100) })).toMatchObject({ status: 200 });
   });
 });

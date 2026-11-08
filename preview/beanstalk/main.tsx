@@ -36,6 +36,10 @@ function Preview() {
             {[0, 5, 9, 10, 15, 20, 25, 29, 30, 59, 60, 89, 90, 119, 120].map((n) => (
               <button key={n} type="button" onClick={() => { trial.tools.jumpTo(n); h.reload(); }}>{n}</button>
             ))}
+            <p>This pupil's sum (it follows how the days go: two good days with the facts secure move up, two hard days step back):</p>
+            {([['Bonds to 10', 0], ['to 20', 1], ['to 100', 2], ['to 1000', 3]] as const).map(([name, stage]) => (
+              <button key={name} type="button" onClick={() => { trial.tools.setStage(stage); h.reload(); }}>{name}</button>
+            ))}
             <p>This pupil's dots (they follow how the days go; two good days fade them, a hard day brings one back):</p>
             {([['Full', 0], ['Small', 1], ['None', 2]] as const).map(([name, level]) => (
               <button key={name} type="button" onClick={() => { trial.tools.setHelp(level); h.reload(); }}>{name}</button>

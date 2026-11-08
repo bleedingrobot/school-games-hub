@@ -3,11 +3,8 @@
  * one or bigger and its pairs are secure, and Weka is switched on for the class, a card points on to Weka's Stepping
  * Stones ("You know your pairs. Use them to add across ten."). No new database: it reads the child's own maths records.
  */
-import { mastery, type FactStats } from '../../../shared/maths/leitner';
-import { factKeys, type Target } from '../../../shared/beanstalk/round';
-
-/** Secure: at least this share of the sum's facts are at box 2 or more (the rule the teacher's skill map uses). */
-export const SECURE_SHARE = 0.7;
+import { SECURE_SHARE, sumSecure } from '../../../shared/beanstalk/progress';
+import type { Target } from '../../../shared/beanstalk/round';
 
 /** Where the card can go and whether it should: Weka's switch for the class, and how to read whether a sum is secure. */
 export interface Signpost {
@@ -22,10 +19,4 @@ export interface Signpost {
 /** The card shows from the bonds to 20 beanstalk on: the plain bonds to 10 come before the game's own next step. */
 export const SIGNPOST_FROM: Target = 20;
 
-/** Is at least 70 percent of this sum's facts secure (box 2 or more) in these records? */
-export function sumSecure(facts: readonly FactStats[], target: Target): boolean {
-  const keys = factKeys(target);
-  const byKey = new Map(facts.map((f) => [f.key, f]));
-  const secure = keys.filter((k) => ['secure', 'fluent'].includes(mastery(byKey.get(k)))).length;
-  return secure / keys.length >= SECURE_SHARE;
-}
+export { SECURE_SHARE, sumSecure };
