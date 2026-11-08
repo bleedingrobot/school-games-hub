@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { makeRound, showRound } from '../../../shared/tui/round';
 import { voiceSlug } from '../../speech';
+import { DEMO_WAYS, demoNumber, demoSteps } from './demo';
 import { allVoiceLines, askLine, sumLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -27,6 +28,14 @@ describe('Tūī’s Ten Tree voice clips', () => {
       for (const go of showRound(makeRound(3, [], { step, level: 5 }))) {
         for (const w of go.wrongs) expect(said.has(WORDS.why(w.kind, w.n, go.v))).toBe(true);
       }
+    }
+  });
+
+  it('has a line for every step of every demo, made with a number other than the go it comes before', () => {
+    const said = new Set(allVoiceLines());
+    for (const v of DEMO_WAYS) for (const real of [1, 5, 9]) {
+      expect(demoNumber(real)).not.toBe(real);
+      for (const s of demoSteps(v, demoNumber(real))) expect(said.has(s.line)).toBe(true);
     }
   });
 

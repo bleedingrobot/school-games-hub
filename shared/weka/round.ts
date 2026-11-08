@@ -78,6 +78,12 @@ export const parseKey = (key: string): { small: number; big: number } | null => 
   return small >= 1 && small <= big && big <= 9 && small + big > 10 ? { small, big } : null;
 };
 
+/**
+ * The kind of go a saved fact stands for. Fact keys carry no mode (the way a go is asked is not part of the key), so a
+ * child's records only show that they have added: hopping back and starting on the bigger number are found out as they go.
+ */
+export const kindOfKey = (key: string): Kind | null => (parseKey(key) ? 'add' : null);
+
 /** The facts that start on these numbers: `add:2+9` to `add:9+9` for 9. */
 const startingOn = (starts: readonly number[]) =>
   starts.flatMap((big) => Array.from({ length: big }, (_, i) => i + 1).filter((small) => small + big > 10).map((small) => `add:${small}+${big}`));

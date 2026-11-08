@@ -118,6 +118,11 @@ export function TuiGame({ backend, onExit, onOpenWeka, extra }: Props) {
         round={screen.round}
         scenery={tree.today}
         friend={tree.friend}
+        seen={state.seen}
+        onSeen={(kinds) => {
+          setState((s) => s && { ...s, seen: [...new Set([...s.seen, ...kinds])] });
+          return backend.markSeen(kinds);
+        }}
         guide={state.daysDone === 0 && state.lastFlowerDay === null}
         // The gold-day finale, on the day's first challenge only.
         finale={tree.today === 'gold' && state.lastFlowerDay !== state.today}

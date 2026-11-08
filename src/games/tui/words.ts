@@ -43,6 +43,8 @@ export const WORDS = {
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
   hearAgain: 'Hear it again',
+  skip: 'Skip',
+  demoTitle: 'Watch Tūī show one first.',
   peek: 'Peek',
   /** The kete's tag and the loose berries, for screen readers. */
   keteOfTen: 'A kete of ten berries',

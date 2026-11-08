@@ -60,6 +60,14 @@ Deno.serve(
       const context = await call<{ facts?: FactStats[] } | null>('space_maths_context', { player });
       return context === 'busy' ? 'busy' : (context?.facts ?? []);
     },
+    async seen(player) {
+      const kinds = await call<string[] | null>('kit_seen_get', { player, game: 'tui' });
+      return kinds === 'busy' ? 'busy' : (kinds ?? []);
+    },
+    async markSeen(player, kinds) {
+      const next = await call<string[] | null>('kit_seen_mark', { player, game: 'tui', kinds });
+      return next === 'busy' ? 'busy' : (next ?? []);
+    },
     start: (player, round: Round) =>
       call<boolean>('tui_start', { player, seed: round.seed, round }),
     round: (player, seed) => call<{ open: boolean; round: Round } | null>('tui_round', { player, seed }),
