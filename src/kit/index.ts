@@ -9,3 +9,5 @@ export { useGuidedFirstGo } from './useGuidedFirstGo';
 export { WhatsNext } from './WhatsNext';
 export { FirstTimeTip } from './FirstTimeTip';
 export { useSeenKinds } from './useSeenKinds';
+export { useKindDemo, type DemoStep, type KindDemoOptions } from './useKindDemo';
+export { DemoBar, type DemoBarProps } from './DemoBar';
