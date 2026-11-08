@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { voiceLinesSuite } from '../../kit/voiceLinesSuite';
-import { makeRound, showRound, GUIDED_KEY } from '../../../shared/parrot/round';
+import { DEMOS } from './demo';
+import { KEYS, makeRound, showRound, GUIDED_KEY } from '../../../shared/parrot/round';
 import { STEPS } from '../../../shared/parrot/config';
 import { allVoiceLines, askLine, eqLine, homeLine, finishLine, modelLine, PART_BREAK, whyLine } from './voiceLines';
 import { WORDS } from './words';
@@ -30,7 +31,11 @@ describe('Parrot’s See-saw voice lines', () => {
     }
   });
 
-  it('says home and finish lines from the list', () => {
+  it('says home and finish lines from the list, and shows demos only with made-up goes the real keys never ask', () => {
+    for (const kind of ['tf', 'sub'] as const) {
+      expect(KEYS[kind]).not.toContain(DEMOS[kind].key);
+      expect(heard(DEMOS[kind].steps[0].line)).toBe(true);
+    }
     for (const title of [WORDS.wants('Robin'), WORDS.nextFriend('Owl')]) expect(heard(homeLine(title, true))).toBe(true);
     expect(heard(finishLine(WORDS.goldenBell('Kiwi'), WORDS.nextStep(4)))).toBe(true);
     expect(heard(finishLine(WORDS.thingTurned('silver'), WORDS.sameAgain))).toBe(true);

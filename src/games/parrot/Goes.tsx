@@ -21,12 +21,16 @@ import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import type { Friend as FriendName } from '../../../shared/parrot/config';
 import type { Tap } from '../../../shared/parrot/play';
 import { balance, GOES_PER_ROUND, isStoneGo, levelFor, MAX_STONES, redoCards, showRound, slipOfPick, tiltOf, type Go, type ParrotKind, type Round } from '../../../shared/parrot/round';
+import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
+import { useKindDemo } from '../../kit/useKindDemo';
+import { useSeenKinds } from '../../kit/useSeenKinds';
 import { playSound } from '../sounds';
 import { Friend, SeeSaw, StoneHeap, TipGlyph, sceneStyle, type Item, type Pose, type Tilt } from './art';
+import { DEMOS, DEMO_KINDS, type DemoKind } from './demo';
 import { askLine, eqLine, modelLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -43,6 +47,9 @@ interface Props {
   friend: FriendName;
   /** The child's very first challenge: a hand shows them the way on the first go. */
   guide?: boolean;
+  /** The kinds of go this child has seen, and how to remember more (each kind's demo plays once). */
+  seen: readonly string[];
+  onSeen: (kinds: string[]) => Promise<unknown>;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
@@ -173,9 +180,47 @@ function WhyPicture({ go, pick, kind }: { go: Go; pick: number; kind: ParrotKind
   );
 }
 
+/** The made-up go of a "Show me first" demo: the same pictures and cards as a real go, nothing to tap. */
+function DemoScene({ kind, step, friend }: { kind: DemoKind; step: number; friend: FriendName }) {
+  const { go, steps } = DEMOS[kind];
+  const target = steps[step]?.target;
+  const tf = kind === 'tf';
+  const tilt: Tilt = tf ? (step >= 1 ? leanWith(go, 0) : 'rest') : step >= 1 ? 'level' : 'rest';
+  const fill = tf ? (step >= 2 ? go.answer : null) : step >= 1 ? go.answer : null;
+  return (
+    <>
+      <div className="pr-stage">
+        <span className="pr-stage__friend" aria-hidden="true"><Friend friend={friend} pose="sit" /></span>
+        <Weights go={go} fill={!tf && step >= 1 ? go.answer : null} tilt={tilt} />
+        {tf && step >= 1 && <Totals go={go} />}
+        <Equation go={go} fill={fill} big={false} />
+      </div>
+      <div className={`pr-cards${tf ? ' pr-cards--tf' : ''}`} role="group" aria-label={tf ? WORDS.pickTilt : WORDS.pickCard}>
+        {go.choices.map((n) => {
+          const pointed = target === 'card' && n === go.answer;
+          const label = tf ? [WORDS.tipsLeft, WORDS.level, WORDS.tipsRight][n] : String(n);
+          return (
+            <button key={n} type="button" disabled className={`pr-choice${pointed ? ' pr-choice--hint' : ''}`} aria-label={label}>
+              {tf ? (
+                <>
+                  <TipGlyph dir={n === 0 ? 'left' : n === 1 ? 'level' : 'right'} />
+                  <span className="pr-choice__word">{label}</span>
+                </>
+              ) : (
+                <span className="pr-choice__value">{n}</span>
+              )}
+              {pointed && <PointingHand prefix="pr" />}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 // ---------------------------------------------------------------- the goes
 
-export function Goes({ round, friend, guide = false, sound, say, onDone }: Props) {
+export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, onDone }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
@@ -207,6 +252,11 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   useEffect(() => clearTimers, []);
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
+  const kinds = useSeenKinds(seen, onSeen);
+  /** A kind that has not been seen yet gets its demo before the first go of it (never in a redo, never more than two a round). */
+  const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' ? (go.kind as DemoKind) : null;
+  const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMOS[demoKind].steps : [], say });
+  const demoWas = useRef(false);
   const guided = guide && at === 0;
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
   const inRedo = flow.phase === 'redo';
@@ -228,9 +278,12 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     since.current = Date.now();
     setPose('sit');
     setPeek(false);
-    say(askLine(go), () => {
-      if (live_ && !tappedYet.current) since.current = Date.now();
-    });
+    // A kind not yet seen is shown first; its question is read when the demo is over.
+    if (!(DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind))) {
+      say(askLine(go), () => {
+        if (live_ && !tappedYet.current) since.current = Date.now();
+      });
+    }
     guideHand.stop();
     guideHand.start();
     return () => {
@@ -239,6 +292,21 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
+
+  // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
+  useEffect(() => {
+    if (demo.playing) {
+      demoWas.current = true;
+      return;
+    }
+    if (!demoWas.current) return;
+    demoWas.current = false;
+    since.current = Date.now();
+    say(askLine(go), () => {
+      if (!tappedYet.current) since.current = Date.now();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo.playing]);
 
   function nextGo(all: Tap[]) {
     clearTimers();
@@ -258,7 +326,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   }
 
   function pick(n: number) {
-    if (phase !== 'ask' || look || tapped.includes(n)) return;
+    if (phase !== 'ask' || look || demo.playing || tapped.includes(n)) return;
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
@@ -300,6 +368,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       return;
     }
     clearTimers();
+    kinds.mark([go.kind]);
     setWhy(null);
     setPhase('right');
     setPose('cheer');
@@ -330,6 +399,23 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const cards = inRedo && redo ? redo : go.choices;
   const filled = phase === 'right' ? go.answer : null;
   const rightTilt: Tilt = go.kind === 'tf' ? leanWith(go, 0) : 'level';
+
+  if (demo.playing && demoKind) {
+    return (
+      <div className="pr-play pr-scene" style={sceneStyle()}>
+        <h2 className="pr-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="pr-top">
+          <div className="pr-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'pr-pip pr-pip--done' : 'pr-pip'} />
+            ))}
+          </div>
+        </div>
+        <DemoScene kind={demoKind} step={demo.step} friend={friend} />
+        <DemoBar prefix="pr" skipLabel={WORDS.skip} canSkip={demo.canSkip} onSkip={demo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className="pr-play pr-scene" style={sceneStyle()}>

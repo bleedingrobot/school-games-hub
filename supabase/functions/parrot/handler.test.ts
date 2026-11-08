@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/parrot/memoryServices';
 import type { Tap } from '../../../shared/parrot/play';
 import { GUIDED_KEY, showRound, type Round } from '../../../shared/parrot/round';
@@ -57,6 +58,17 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
 
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
+});
+
+it('keeps which kinds of go a pupil has seen: unreadable kinds are refused, a kind saved twice is kept once, and kinds already played need no demo', async () => {
+  const { send, services } = setup();
+  expect((await send('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
+  expect((await send('pupil-a', { action: 'seen', kinds: 'tf' })).status).toBe(400);
+  await send('pupil-a', { action: 'seen', kinds: ['tf'] });
+  expect((await send('pupil-a', { action: 'seen', kinds: ['tf', 'sub'] })).body.seen).toEqual(['sub', 'tf']);
+  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['sub', 'tf']);
+  services.data.facts['pupil-b'] = [{ ...newStats('eqmiss:5=2+?'), attempts: 2 }];
+  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual(['miss']);
 });
 
 it('changes one shiny thing a NZ day by the server’s clock, and tells the hub on the Golden Bell (day 30)', async () => {
