@@ -2,7 +2,7 @@ import { act, cleanup, render, renderHook, screen } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FirstTimeTip, HearAgain, PointingHand, WhatsNext, pointedLabel, useGuidedFirstGo, useSeenKinds } from '.';
+import { FirstTimeTip, HearAgain, PointingHand, WhatsNext, pointedLabel, useGuidedFirstGo, useKindDemo, useSeenKinds } from '.';
 
 afterEach(() => {
   cleanup();
@@ -67,5 +67,34 @@ describe('kit junior bits', () => {
     expect(save).toHaveBeenNthCalledWith(2, ['zoom', 'pairs']);
     await act(async () => void (await result.current.mark(['zoom'])));
     expect(save).toHaveBeenCalledTimes(2);
+  });
+
+  it('a kind demo says its steps, offers Skip after 3 seconds, marks the kind once, and never starts for a seen kind', () => {
+    vi.useFakeTimers();
+    const say = vi.fn((_t: string, end?: () => void) => end?.());
+    const slowSay = vi.fn();
+    const mark = vi.fn();
+    const steps = [{ line: 'Watch.' }, { line: 'Now you try.', holdMs: 100 }];
+    const demo = renderHook(() => useKindDemo({ kind: 'zoom', seen: { has: () => false }, mark, steps, say: slowSay }));
+    expect(demo.result.current.playing).toBe(true);
+    expect(slowSay).toHaveBeenCalledWith('Watch.', expect.any(Function));
+    act(() => void vi.advanceTimersByTime(2999));
+    expect(demo.result.current.canSkip).toBe(false);
+    expect(mark).not.toHaveBeenCalled();
+    act(() => void vi.advanceTimersByTime(1));
+    expect(demo.result.current.canSkip).toBe(true);
+    act(() => demo.result.current.skip());
+    expect(mark).toHaveBeenCalledTimes(1);
+    expect(mark).toHaveBeenCalledWith(['zoom']);
+    expect(demo.result.current.playing).toBe(false);
+    act(() => void vi.advanceTimersByTime(30000));
+    expect(mark).toHaveBeenCalledTimes(1);
+    const ends = renderHook(() => useKindDemo({ kind: 'swap', seen: { has: () => false }, mark, steps, say }));
+    act(() => void vi.advanceTimersByTime(900 + 100));
+    expect(ends.result.current.playing).toBe(false);
+    expect(mark).toHaveBeenLastCalledWith(['swap']);
+    expect(mark).toHaveBeenCalledTimes(2);
+    const old = renderHook(() => useKindDemo({ kind: 'zoom', seen: { has: () => true }, mark, steps, say }));
+    expect(old.result.current.playing).toBe(false);
   });
 });
