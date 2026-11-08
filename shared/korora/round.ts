@@ -133,7 +133,7 @@ export interface Go extends GoPlan {
   parts: string[];
   /** The words read aloud. They never say the answer. */
   spoken: string;
-  /** Four numbers, the right one among them; for fair or not three: 1 (fair: even), 0 (one too many: odd) and 2 (one too few). */
+  /** Four numbers, the right one among them; for fair or not two: 1 (fair: even) and 0 (one left over: odd). */
   choices: number[];
   /** The three wrong numbers among the choices and the mistake behind each (maths review R5). Empty for fair or not (R9). */
   wrongs: Wrong<WrongKind>[];
@@ -243,8 +243,8 @@ const pack = earlyFactsPack();
 /** Weka's add facts, which near doubles read from (`add:6+7`). */
 const addPack = new BandedPack(BANDED_PACKS['add-sub']);
 
-/** Fair or not has three choices (R9): 1 is fair (an even pile), 0 is one too many (an odd pile), 2 is one too few (never right: no fish is missing). */
-export const FAIR_CHOICES = [1, 0, 2] as const;
+/** Fair or not has two choices: 1 is fair (an even pile) and 0 is one left over (an odd pile). */
+export const FAIR_CHOICES = [1, 0] as const;
 
 /** What is read aloud: the story of the go, never the answer. */
 export function spokenFor(kind: Kind, n: number, guided = false): string {
@@ -254,7 +254,7 @@ export function spokenFor(kind: Kind, n: number, guided = false): string {
       ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?`
       : kind === 'near'
         ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?`
-        : `${n} fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?`;
+        : `${n} fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?`;
   return guided ? `${line} Tap the number the hand points to.` : line;
 }
 
@@ -305,7 +305,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   // Our own choices, from a stream of the seed apart from the pack's (the server rebuilds the same ones).
   const own = seeded((round.seed + 104729 * (index + 1)) % MAX_SEED);
   own(); own();
-  if (fact.kind === 'fair') return { ...base, choices: shuffle([...FAIR_CHOICES], own), wrongs: [] }; // R9: three choices, no stone mistakes
+  if (fact.kind === 'fair') return { ...base, choices: shuffle([...FAIR_CHOICES], own), wrongs: [] }; // two choices, no stone mistakes
   return { ...base, ...mistakeChoices(fact.kind, fact.n, own) };
 }
 

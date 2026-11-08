@@ -201,15 +201,18 @@ const parity = (n: number) => n % 2;
 /**
  * The three wrong shells: the tempting slips first (in an order fixed by the seed), then plain one-off and two-off
  * numbers to fill up. A slip is left out when it would make three shells the same odd or even as the answer, so
- * elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative.
+ * elimination by shape leaves two choices, not one (R5 3.1 rule 6). Never the answer, a repeat or a negative, and never
+ * above `limit` (the whole, for the goes where the answer is a part of it: a shell bigger than the pipi rules itself out).
  */
-function threeWrongs(answer: number, slips: Wrong<WrongKind>[], random: () => number): Wrong<WrongKind>[] {
+function threeWrongs(answer: number, slips: Wrong<WrongKind>[], random: () => number, limit = Infinity): Wrong<WrongKind>[] {
   // Every tray holds a one-off number (the tempting near miss); which side is the seed's choice.
   const side = random() < 0.5 ? 1 : -1;
   const near = tagWrongs([answer + side, answer - side], (n) => (n < 0 ? null : 'off1'));
-  const fillers = tagWrongs([answer + 2, answer - 2, answer + 3], (n) => (n < 0 ? null : 'off1'));
-  const pool = [...near.slice(0, 1), ...shuffle(slips, random), ...near.slice(1), ...fillers].filter(
-    (w, i, all) => w.n !== answer && w.n >= 0 && all.findIndex((x) => x.n === w.n) === i,
+  const fillers = tagWrongs([answer - 2, answer + 2, answer - 3, answer + 3], (n) => (n < 0 ? null : 'off1'));
+  // Last resort: any number from 0 up to the limit (the smallest whole is 3, so there are always enough).
+  const rest = Number.isFinite(limit) ? tagWrongs(Array.from({ length: limit + 1 }, (_, n) => n), () => 'off1') : [];
+  const pool = [...near.slice(0, 1), ...shuffle(slips, random), ...near.slice(1), ...fillers, ...rest].filter(
+    (w, i, all) => w.n !== answer && w.n >= 0 && w.n <= limit && all.findIndex((x) => x.n === w.n) === i,
   );
   const out: Wrong<WrongKind>[] = [];
   for (const w of pool) if (out.length < 3 && atMostShareTell(answer, [...out, w].map((x) => x.n), parity)) out.push(w);
@@ -224,12 +227,12 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
   const { whole, shown } = p;
   const hidden = whole - shown;
-  const make = (answer: number, slips: Wrong<WrongKind>[]) => {
-    const wrongs = threeWrongs(answer, slips, random);
+  const make = (answer: number, slips: Wrong<WrongKind>[], limit = whole) => {
+    const wrongs = threeWrongs(answer, slips, random, limit);
     return { wrongs, choices: shuffle([answer, ...wrongs.map((w) => w.n)], random) };
   };
   if (plan.kind === 'hiding') {
-    const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'shown' }, { n: whole, kind: 'whole' }, { n: whole + shown, kind: 'add' }];
+    const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'shown' }, { n: whole, kind: 'whole' }];
     return { ...plan, whole, showing: shown, hiding: hidden, answer: hidden, spoken: `${whole} pipi. How many are hiding?`, ...make(hidden, slips) };
   }
   if (plan.kind === 'twoTides') {
@@ -245,7 +248,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   if (plan.kind === 'altogether') {
     if (shown === 0 || shown === whole) return null;
     const slips: Wrong<WrongKind>[] = [{ n: shown, kind: 'part' }, { n: hidden, kind: 'part' }, { n: whole + 1, kind: 'off1' }, { n: whole - 1, kind: 'off1' }];
-    return { ...plan, whole, showing: shown, hiding: hidden, answer: whole, spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`, ...make(whole, slips) };
+    return { ...plan, whole, showing: shown, hiding: hidden, answer: whole, spoken: `${shown} here, and ${hidden} popped up. How many pipi altogether?`, ...make(whole, slips, Infinity) };
   }
   return null;
 }

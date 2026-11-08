@@ -168,10 +168,6 @@
   "text": "3 is all the pipi. Some are hiding."
  },
  {
-  "slug": "we-started-with-3-the-answer-cannot-be-more",
-  "text": "We started with 3. The answer cannot be more."
- },
- {
   "slug": "look-1-2-hiding",
   "text": "Look: 1, 2 hiding."
  },
@@ -252,10 +248,6 @@
   "text": "4 is all the pipi. Some are hiding."
  },
  {
-  "slug": "we-started-with-4-the-answer-cannot-be-more",
-  "text": "We started with 4. The answer cannot be more."
- },
- {
   "slug": "4-is-1-and-3-so-3-are-hiding",
   "text": "4 is 1 and 3. So 3 are hiding."
  },
@@ -326,10 +318,6 @@
  {
   "slug": "5-is-all-the-pipi-some-are-hiding",
   "text": "5 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-5-the-answer-cannot-be-more",
-  "text": "We started with 5. The answer cannot be more."
  },
  {
   "slug": "5-is-1-and-4-so-4-are-hiding",
@@ -414,10 +402,6 @@
  {
   "slug": "6-is-all-the-pipi-some-are-hiding",
   "text": "6 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-6-the-answer-cannot-be-more",
-  "text": "We started with 6. The answer cannot be more."
  },
  {
   "slug": "6-is-1-and-5-so-5-are-hiding",
@@ -514,10 +498,6 @@
  {
   "slug": "7-is-all-the-pipi-some-are-hiding",
   "text": "7 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-7-the-answer-cannot-be-more",
-  "text": "We started with 7. The answer cannot be more."
  },
  {
   "slug": "7-is-1-and-6-so-6-are-hiding",
@@ -626,10 +606,6 @@
  {
   "slug": "8-is-all-the-pipi-some-are-hiding",
   "text": "8 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-8-the-answer-cannot-be-more",
-  "text": "We started with 8. The answer cannot be more."
  },
  {
   "slug": "8-is-1-and-7-so-7-are-hiding",
@@ -750,10 +726,6 @@
  {
   "slug": "9-is-all-the-pipi-some-are-hiding",
   "text": "9 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-9-the-answer-cannot-be-more",
-  "text": "We started with 9. The answer cannot be more."
  },
  {
   "slug": "9-is-1-and-8-so-8-are-hiding",
@@ -886,10 +858,6 @@
  {
   "slug": "10-is-all-the-pipi-some-are-hiding",
   "text": "10 is all the pipi. Some are hiding."
- },
- {
-  "slug": "we-started-with-10-the-answer-cannot-be-more",
-  "text": "We started with 10. The answer cannot be more."
  },
  {
   "slug": "10-is-1-and-9-so-9-are-hiding",

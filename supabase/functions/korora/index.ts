@@ -3793,15 +3793,11 @@ function makeRound(seed, stats, opts = {}) {
 const pack = earlyFactsPack();
 /** Weka's add facts, which near doubles read from (`add:6+7`). */
 const addPack = new BandedPack(BANDED_PACKS["add-sub"]);
-/** Fair or not has three choices (R9): 1 is fair (an even pile), 0 is one too many (an odd pile), 2 is one too few (never right: no fish is missing). */
-const FAIR_CHOICES = [
-	1,
-	0,
-	2
-];
+/** Fair or not has two choices: 1 is fair (an even pile) and 0 is one left over (an odd pile). */
+const FAIR_CHOICES = [1, 0];
 /** What is read aloud: the story of the go, never the answer. */
 function spokenFor(kind, n, guided = false) {
-	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : kind === "near" ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?` : `${n} fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?`;
+	const line = kind === "double" ? `Double ${n}. ${n} fish on the rock, and ${n} in the water. How many fish?` : kind === "half" ? `Half of ${n}. Share ${n} fish fairly between the two chicks. How many does each chick get?` : kind === "near" ? `${n} and ${n + 1}. ${n} fish on the rock, and ${n + 1} in the water. How many fish?` : `${n} fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?`;
 	return guided ? `${line} Tap the number the hand points to.` : line;
 }
 /**

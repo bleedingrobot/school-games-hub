@@ -18,7 +18,7 @@ describe('Fair or not with a real pile (R9)', () => {
     return { ...base, goes: [...fair, ...base.goes.slice(0, 8)] }; // fair goes first, then the other eight
   };
   const bowls = () => [...document.querySelectorAll('.kr-bowl')].map((b) => b.querySelectorAll('.kr-fish').length);
-  const choice = (n: number) => screen.getByRole('button', { name: new RegExp(n === 1 ? WORDS.fair : n === 0 ? WORDS.tooMany : WORDS.tooFew) });
+  const choice = (n: number) => screen.getByRole('button', { name: new RegExp(n === 1 ? WORDS.fair : WORDS.tooMany) });
 
   it('keeps the choices shut until the pile is shared two at a time, then hints after the second wrong choice and counts one bowl', () => {
     const say = vi.fn();
@@ -32,10 +32,12 @@ describe('Fair or not with a real pile (R9)', () => {
     expect(bowls()).toEqual([pairs, pairs]);
     expect(choice(go.answer)).toHaveProperty('disabled', false);
     // Two wrong choices bring the pairing-off hint; the right one counts one bowl.
-    const wrong = go.choices.filter((c) => c !== go.answer);
-    fireEvent.click(choice(wrong[0]));
-    expect(say).toHaveBeenLastCalledWith(WORDS.tryAgain);
-    fireEvent.click(choice(wrong[1]));
+    expect(go.choices.slice().sort()).toEqual([0, 1]); // two choices
+    const wrong = go.choices.find((c) => c !== go.answer)!;
+    fireEvent.click(choice(wrong));
+    expect(say).toHaveBeenLastCalledWith(WORDS.countOneBowl);
+    // With only two choices the same wrong shell can be tapped again: that is the second wrong choice.
+    fireEvent.click(choice(wrong));
     expect(say).toHaveBeenLastCalledWith(WORDS.pairOff);
     fireEvent.click(choice(go.answer));
     const k = pairs;

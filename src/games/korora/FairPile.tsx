@@ -1,7 +1,7 @@
 /**
  * "Fair or not?" at Penguin Pairs (maths review R9, docs/plans/maths-review/R9-game-specific-depth.md section 3.2): a real
  * pile of 6 to 20 fish. The child taps the pile and two fish go to the bowls, one for each chick, again and again until
- * no pair is left. Only then can the child pick Fair, One too many or One too few, so the answer comes from the pile and
+ * no pair is left. Only then can the child pick Fair or One left over, so the answer comes from the pile and
  * not from a guess at the buttons.
  *
  *  - help 'full' (bronze): the game shares the first two pairs, the child shares the rest;

@@ -52,13 +52,13 @@ describe('the round', () => {
           const goes = showRound(round);
           for (const go of goes) {
             expect(go.choices.filter((c) => c === go.answer)).toHaveLength(1);
-            expect(go.choices).toHaveLength(go.kind === 'fair' ? 3 : 4);
+            expect(go.choices).toHaveLength(go.kind === 'fair' ? 2 : 4);
             // Fair or not (R9): a pile of 6 to 20 (to 10 on the first two levels); even is fair, odd is one too many, one too few is never right.
             if (go.kind === 'fair') {
               expect(go.n).toBeGreaterThanOrEqual(6);
               expect(go.n).toBeLessThanOrEqual(level <= 2 ? 10 : 20);
               expect(go.answer).toBe(go.n % 2 === 0 ? 1 : 0);
-              expect([...go.choices].sort()).toEqual([0, 1, 2]);
+              expect([...go.choices].sort()).toEqual([0, 1]);
             }
           }
           const end = replay(round, wobblyTaps(round));
@@ -118,13 +118,13 @@ describe('the wrong stones (mistakes that teach)', () => {
     expect(seeds.some((seed) => mistakeChoices('half', 12, seeded(seed)).wrongs.some((w) => w.kind === 'all' && w.n === 12))).toBe(true);
   });
 
-  it('are the same on the server (a rebuilt round gives the same stones) and fair or not has its three choices', () => {
+  it('are the same on the server (a rebuilt round gives the same stones) and fair or not has its two choices', () => {
     for (const seed of seeds.slice(0, 20)) {
       const round = makeRound(seed, recordsFor(4), { gold: true });
       showRound(round).forEach((go, i, all) => {
         expect(go).toEqual(showRound(makeRound(seed, recordsFor(4), { gold: true }))[i]);
         expect(go.wrongs).toHaveLength(go.kind === 'fair' ? 0 : 3);
-        expect(go.choices).toHaveLength(go.kind === 'fair' ? 3 : 4);
+        expect(go.choices).toHaveLength(go.kind === 'fair' ? 2 : 4);
         expect(all).toHaveLength(GOES_PER_ROUND);
       });
     }

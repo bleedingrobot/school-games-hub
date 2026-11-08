@@ -20,6 +20,10 @@
   "text": "Let’s pair them off. Does every fish have a partner?"
  },
  {
+  "slug": "count-the-fish-in-one-bowl",
+  "text": "Count the fish in one bowl."
+ },
+ {
   "slug": "doubles-help-with-6-7-too-try-weka",
   "text": "Doubles help with 6 + 7 too. Try Weka."
  },
@@ -376,120 +380,120 @@
   "text": "8 and 8, and one more."
  },
  {
-  "slug": "6-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "6 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "6-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "6 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-3-the-other-bowl-has-3-too",
   "text": "Yes! They share them fairly. Count one bowl: 3. The other bowl has 3 too."
  },
  {
-  "slug": "7-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "7 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "7-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "7 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-3-the-other-bowl-has-3-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 3. The other bowl has 3 too. One fish is left over."
  },
  {
-  "slug": "8-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "8 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "8-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "8 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-4-the-other-bowl-has-4-too",
   "text": "Yes! They share them fairly. Count one bowl: 4. The other bowl has 4 too."
  },
  {
-  "slug": "9-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "9 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "9-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "9 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-4-the-other-bowl-has-4-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 4. The other bowl has 4 too. One fish is left over."
  },
  {
-  "slug": "10-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "10 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "10-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "10 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-5-the-other-bowl-has-5-too",
   "text": "Yes! They share them fairly. Count one bowl: 5. The other bowl has 5 too."
  },
  {
-  "slug": "11-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "11 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "11-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "11 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-5-the-other-bowl-has-5-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 5. The other bowl has 5 too. One fish is left over."
  },
  {
-  "slug": "12-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "12 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "12-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "12 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-6-the-other-bowl-has-6-too",
   "text": "Yes! They share them fairly. Count one bowl: 6. The other bowl has 6 too."
  },
  {
-  "slug": "13-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "13 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "13-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "13 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-6-the-other-bowl-has-6-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 6. The other bowl has 6 too. One fish is left over."
  },
  {
-  "slug": "14-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "14 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "14-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "14 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-7-the-other-bowl-has-7-too",
   "text": "Yes! They share them fairly. Count one bowl: 7. The other bowl has 7 too."
  },
  {
-  "slug": "15-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "15 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "15-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "15 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-7-the-other-bowl-has-7-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 7. The other bowl has 7 too. One fish is left over."
  },
  {
-  "slug": "16-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "16 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "16-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "16 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-8-the-other-bowl-has-8-too",
   "text": "Yes! They share them fairly. Count one bowl: 8. The other bowl has 8 too."
  },
  {
-  "slug": "17-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "17 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "17-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "17 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-8-the-other-bowl-has-8-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 8. The other bowl has 8 too. One fish is left over."
  },
  {
-  "slug": "18-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "18 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "18-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "18 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-9-the-other-bowl-has-9-too",
   "text": "Yes! They share them fairly. Count one bowl: 9. The other bowl has 9 too."
  },
  {
-  "slug": "19-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "19 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "19-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "19 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-count-one-bowl-9-the-other-bowl-has-9-too-one-fish-is-left-over",
   "text": "Yes! Count one bowl: 9. The other bowl has 9 too. One fish is left over."
  },
  {
-  "slug": "20-fish-share-them-into-the-two-bowls-two-at-a-time-then-say-is-it-fair-one-too-many-or-one-too-few",
-  "text": "20 fish. Share them into the two bowls, two at a time. Then say: is it fair, one too many, or one too few?"
+  "slug": "20-fish-share-them-into-the-two-bowls-two-at-a-time-is-it-fair-or-is-one-left-over",
+  "text": "20 fish. Share them into the two bowls, two at a time. Is it fair, or is one left over?"
  },
  {
   "slug": "yes-they-share-them-fairly-count-one-bowl-10-the-other-bowl-has-10-too",
