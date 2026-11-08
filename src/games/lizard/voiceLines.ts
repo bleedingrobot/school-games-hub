@@ -105,8 +105,8 @@ export function lookLine(go: Pick<Go, 'kind' | 'dir' | 'unit'>): string {
 /** What the home screen says: whose den it is, and "come back tomorrow" once today's bundle has changed. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? `${title} ${WORDS.doneToday}` : title);
 
-/** What the finish screen says, with "next time: ..." when the child moved on a step. */
-export const finishLine = (main: string, nextStep: Step | null): string => (nextStep ? `${main} ${WORDS.nextStep(nextStep)}` : main);
+/** What the finish screen says: what happened, how the round went, then "next time: ..." when the child moved on a step. */
+export const finishLine = (main: string, how: string, nextStep: Step | null): string => [main, how, nextStep ? WORDS.nextStep(nextStep) : null].filter(Boolean).join(' ');
 
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.tryAgain, WORDS.lookTitle, WORDS.nowYouTry, WORDS.raftTip, WORDS.tieNudge, WORDS.lookAtYours, ...WORDS.demoSwap, ...WORDS.demoBundle, ...WORDS.right, ...Object.values(WHY_LINES), nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
@@ -123,6 +123,6 @@ export function allVoiceLines(): string[] {
     lines.add(lookLine(said));
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.bundleTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenRaft)];
-  for (const main of mains) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
+  for (const main of mains) for (const how of Object.values(WORDS.how)) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, how, up));
   return [...lines];
 }

@@ -5,6 +5,7 @@
  * backend says. Copied from Pigeon's Number Line (a model, not a dependency).
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { finishBand } from '../../../shared/kit/finishBand';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { NextPartChip } from '../../components/NextPartChip';
 import { DEN_BUNDLES } from '../../../shared/lizard/config';
@@ -197,11 +198,14 @@ function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string
   const name = FRIEND_NAMES[den.friend];
   const main = result.goldenRaft ? WORDS.goldenRaft(name) : changed ? WORDS.bundleTurned(changed) : WORDS.doneToday;
   const up = result.step !== result.stepBefore ? result.step : null;
-  const line = finishLine(main, up);
+  const how = WORDS.how[finishBand(result.firstRight)];
+  const line = finishLine(main, how, up);
   return (
     <div className={`lz-home${result.goldenRaft ? ' lz-home--prize' : ''}`}>
       <Den scenery={result.goldenRaft ? 'gold' : den.today} bundles={bundles} friend={den.friend} pose="cheer" />
-      <WhatsNext prefix="lz" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="lz" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+        <p className="lz-chip">{how}</p>
+        {up && <p className="lz-chip">{WORDS.nextStep(up)}</p>}
         <p className="lz-chip">{WORDS.firstTime(result.firstRight, GOES_PER_ROUND)}</p>
         {result.goldenRaft && <span className="lz-prize"><GoldenRaft /></span>}
       </WhatsNext>

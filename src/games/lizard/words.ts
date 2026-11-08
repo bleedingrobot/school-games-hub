@@ -40,6 +40,12 @@ export const WORDS = {
   tieTen: 'Tie ten',
   tieRaft: 'Tie a raft',
   untieOne: 'Untie one',
+  /** One honest line on the finish screen about how the round went (S15): about what the child did, not about them. */
+  how: {
+    most: 'You worked those bundles out.',
+    some: 'Some were quick and some were tricky. The tricky ones help you grow.',
+    tricky: 'That was tricky today. We will go slowly and look together.',
+  },
   thatsIt: 'That’s it',
   /** After a right answer: three kinds of cheer, picked by the go's place in the round. */
   right: ['Yes! That is it.', 'Lovely! You did it.', 'Well done!'],
