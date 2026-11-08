@@ -42,6 +42,7 @@ export const WORDS = {
   right: ['Yes! That is it.', 'Lovely! You did it.', 'Well done!'],
   bundleTurned: (metal: Metal) => `Well done! A bundle in the den turned ${metal}!`,
   doneToday: 'Well done! Come back tomorrow to change another bundle.',
+  firstTime: (n: number, of: number) => `You got ${n} of ${of} right first time.`,
   nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,
   goldenRaft: (name: string) => `All the bundles are gold! ${name} won the Golden Raft!`,
   raftTip: 'Ten bundles tied together make a raft: a hundred.',

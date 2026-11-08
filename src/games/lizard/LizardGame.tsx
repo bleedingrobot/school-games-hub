@@ -10,7 +10,7 @@ import { NextPartChip } from '../../components/NextPartChip';
 import { DEN_BUNDLES } from '../../../shared/lizard/config';
 import type { Tap } from '../../../shared/lizard/play';
 import { DAYS_PER_RAFT, FRIEND_NAMES, denAfter, type Friend as FriendName, type Metal } from '../../../shared/lizard/progress';
-import type { Round } from '../../../shared/lizard/round';
+import { GOES_PER_ROUND, type Round } from '../../../shared/lizard/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
@@ -202,6 +202,7 @@ function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string
     <div className={`lz-home${result.goldenRaft ? ' lz-home--prize' : ''}`}>
       <Den scenery={result.goldenRaft ? 'gold' : den.today} bundles={bundles} friend={den.friend} pose="cheer" />
       <WhatsNext prefix="lz" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+        <p className="lz-chip">{WORDS.firstTime(result.firstRight, GOES_PER_ROUND)}</p>
         {result.goldenRaft && <span className="lz-prize"><GoldenRaft /></span>}
       </WhatsNext>
     </div>
