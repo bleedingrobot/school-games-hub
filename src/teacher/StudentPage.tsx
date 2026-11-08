@@ -16,7 +16,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { whenPlayed } from '../components/MyGames';
-import { fetchQuickLooksStudent, type QuickLooksStudent } from '../data/foundational';
+import { fetchQuickLooksStudent, QUICK_SLIP_WORDS, type QuickLooksStudent } from '../data/foundational';
 import { fetchStudentCard, type StudentCard } from '../data/classOverview';
 import { moveStudent } from '../data/classes';
 import { FriendlyError } from '../data/profile';
@@ -228,6 +228,8 @@ function QuickLooksPanel({ student }: { student: string }) {
           </dd>
           <dt>Recent pictures</dt>
           <dd>{q.answered > 0 ? `${q.correct} of the last ${q.answered} right (${Math.round((q.correct / q.answered) * 100)}%)` : 'None counted yet'}</dd>
+          <dt>Usual slip</dt>
+          <dd>{q.slip ? `Usually ${QUICK_SLIP_WORDS[q.slip]}` : q.answered > 0 ? 'No single slip stands out yet' : 'None counted yet'}</dd>
           <dt>Keeps the picture on the screen</dt>
           <dd>{q.guided ? 'On' : 'Off'}</dd>
         </dl>

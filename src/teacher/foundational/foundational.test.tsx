@@ -69,6 +69,19 @@ describe('Foundational grid, stage 2', () => {
     expect(q).toMatchObject({ used: true, finished: 3, guided: true, sessions: 4, answered: 2, correct: 1 });
     expect(parseQuickLooksStudent({ answers: [], student: null }, 20).used).toBe(false);
   });
+
+  it("says a pupil's usual Quick looks slip only once it was seen three times, with one away ahead of too many or too few", () => {
+    const wrong = (key: string, given: number, at: number) => ({ key, given, correct: false, at });
+    const over = [wrong('sub:five-3', 5, 1), wrong('sub:five-4', 7, 2), wrong('sub:five-4', 9, 3)];
+    expect(parseQuickLooksStudent({ answers: over, student: null }, 20).slip).toBe('over');
+    const under = [wrong('sub:five-4', 1, 1), wrong('sub:five-4', 2, 2), wrong('sub:five-5', 1, 3)];
+    expect(parseQuickLooksStudent({ answers: under, student: null }, 20).slip).toBe('under');
+    const near = [wrong('sub:five-3', 4, 1), wrong('sub:five-4', 3, 2), wrong('sub:five-4', 5, 3)];
+    expect(parseQuickLooksStudent({ answers: near, student: null }, 20).slip).toBe('near');
+    expect(parseQuickLooksStudent({ answers: over.slice(0, 2), student: null }, 20).slip).toBeNull();
+    // A wrong answer given with help does not count.
+    expect(parseQuickLooksStudent({ answers: over.map((a) => ({ ...a, key: a.key.replace('sub:', 'subh:') })), student: null }, 20).slip).toBeNull();
+  });
 });
 
 describe('the five newer games in the teacher view (S17)', () => {
