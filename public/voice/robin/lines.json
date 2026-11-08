@@ -28,6 +28,18 @@
   "text": "Tap the glowing button to go on."
  },
  {
+  "slug": "touch-every-berry-first",
+  "text": "Touch every berry first."
+ },
+ {
+  "slug": "find-the-card-that-says-the-same",
+  "text": "Find the card that says the same."
+ },
+ {
+  "slug": "count-with-me",
+  "text": "Count with me."
+ },
+ {
   "slug": "today-s-basket-is-ready",
   "text": "Today’s basket is ready"
  },
@@ -434,6 +446,86 @@
  {
   "slug": "twenty-four",
   "text": "Twenty-four"
+ },
+ {
+  "slug": "you-counted-one",
+  "text": "You counted one."
+ },
+ {
+  "slug": "you-counted-two",
+  "text": "You counted two."
+ },
+ {
+  "slug": "you-counted-three",
+  "text": "You counted three."
+ },
+ {
+  "slug": "you-counted-four",
+  "text": "You counted four."
+ },
+ {
+  "slug": "you-counted-five",
+  "text": "You counted five."
+ },
+ {
+  "slug": "you-counted-six",
+  "text": "You counted six."
+ },
+ {
+  "slug": "you-counted-seven",
+  "text": "You counted seven."
+ },
+ {
+  "slug": "you-counted-eight",
+  "text": "You counted eight."
+ },
+ {
+  "slug": "you-counted-nine",
+  "text": "You counted nine."
+ },
+ {
+  "slug": "you-counted-ten",
+  "text": "You counted ten."
+ },
+ {
+  "slug": "you-counted-eleven",
+  "text": "You counted eleven."
+ },
+ {
+  "slug": "you-counted-twelve",
+  "text": "You counted twelve."
+ },
+ {
+  "slug": "you-counted-thirteen",
+  "text": "You counted thirteen."
+ },
+ {
+  "slug": "you-counted-fourteen",
+  "text": "You counted fourteen."
+ },
+ {
+  "slug": "you-counted-fifteen",
+  "text": "You counted fifteen."
+ },
+ {
+  "slug": "you-counted-sixteen",
+  "text": "You counted sixteen."
+ },
+ {
+  "slug": "you-counted-seventeen",
+  "text": "You counted seventeen."
+ },
+ {
+  "slug": "you-counted-eighteen",
+  "text": "You counted eighteen."
+ },
+ {
+  "slug": "you-counted-nineteen",
+  "text": "You counted nineteen."
+ },
+ {
+  "slug": "you-counted-twenty",
+  "text": "You counted twenty."
  },
  {
   "slug": "well-done-a-basket-turned-bronze",

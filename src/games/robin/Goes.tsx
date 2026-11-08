@@ -28,7 +28,7 @@ import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/Sho
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { playSound } from '../sounds';
 import { Basket, Berry, BerrySvg, Friend, Plate, sceneStyle, type Pose } from './art';
-import { askLine, countLine, modelLine, whyLine } from './voiceLines';
+import { askLine, countLine, modelLine, ownCountLine, PART_BREAK, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 3200;
@@ -36,6 +36,10 @@ const WOBBLE_MS = 600;
 const LAUGH_MS = 1400;
 /** The guided first go: after this pause the hand points at the next berry, then at That's all. */
 const GUIDE_MS = 3000;
+/** A How many go: after this pause with no touch, the hand points at the next berry nobody has touched. */
+const COUNT_HAND_MS = 3000;
+/** "Count with me": one berry every so often, in the order the group sits. */
+const COUNT_WITH_ME_MS = 900;
 
 type Phase = 'ask' | 'right' | 'done';
 
@@ -55,6 +59,27 @@ function WhyPicture({ pick, kind }: { pick: number; kind: Slip }) {
   return (
     <div className={`rb-whypic rb-whypic--${kind}`} aria-hidden="true">
       {Array.from({ length: shown }, (_, i) => <BerrySvg key={i} />)}
+    </div>
+  );
+}
+
+/** After a wrong card on a How many go: the child's own numbered berries, the count, and the wrong card crossed out. */
+function OwnCount({ go, marked, pick }: { go: Go; marked: number[]; pick: number }) {
+  return (
+    <div className="rb-owncount" aria-hidden="true">
+      <div className="rb-whypic rb-whypic--own">
+        {go.points.map((_, i) => {
+          const k = marked.indexOf(i);
+          return (
+            <span key={i} className={`rb-own${k === marked.length - 1 && k >= 0 ? ' rb-own--last' : ''}`}>
+              <BerrySvg />
+              {k >= 0 && <span className="rb-berry__mark">{k + 1}</span>}
+            </span>
+          );
+        })}
+      </div>
+      <span className="rb-owncount__badge" aria-label={WORDS.countBadge(go.answer)}>{go.answer} <span className="rb-owncount__tick">✓</span></span>
+      <span className="rb-owncount__card" aria-label={WORDS.tappedCard(pick)}>{pick}</span>
     </div>
   );
 }
@@ -93,6 +118,10 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const [wobble, setWobble] = useState<number | null>(null);
   const [needOne, setNeedOne] = useState(false);
   const [peek, setPeek] = useState(false);
+  /** "Count with me" has started (true) for this go, and whether it is still counting. */
+  const [withMe, setWithMe] = useState(false);
+  const [counting, setCounting] = useState(false);
+  const saidWait = useRef(false);
   /** Three goes in a row wrong at the first tap: the top level for the rest of the round. */
   const [struggle, setStruggle] = useState(false);
   const run = useRef(0);
@@ -112,6 +141,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const guided = guide && at === 0;
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
   const inRedo = flow.phase === 'redo';
+  const countedAll = go.kind !== 'howmany' || inRedo || flow.phase === 'look' || marked.length >= go.n;
+  const countHand = useGuidedFirstGo(go.kind === 'howmany' && phase === 'ask' && !countedAll, COUNT_HAND_MS);
   const { level, peek: canPeekHere } = levelFor(go.l, flow.wrong, struggle, round.help);
   const shows = helpShows(level);
   const peekOpen = peek || (flow.wrong >= 1 && level <= 1);
@@ -131,8 +162,13 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
     say(askLine(go), () => {
       if (live_ && !tappedYet.current) since.current = Date.now();
     });
+    saidWait.current = false;
+    setWithMe(false);
+    setCounting(false);
     guideHand.stop();
     guideHand.start();
+    countHand.stop();
+    countHand.start();
     return () => {
       live_ = false;
     };
@@ -143,6 +179,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   function nextGo(all: Tap[]) {
     clearTimers();
     guideHand.stop();
+    countHand.stop();
     if (at + 1 < goes.length) {
       setAt(at + 1);
       setPhase('ask');
@@ -161,6 +198,14 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
 
   function pick(n: number) {
     if (phase !== 'ask' || look || tapped.includes(n)) return;
+    if (!countedAll) {
+      // A How many card waits until every berry is touched: no pick is sent, and the reason is said once.
+      if (!saidWait.current) {
+        saidWait.current = true;
+        say(WORDS.touchFirstSay);
+      }
+      return;
+    }
     tappedYet.current = true;
     guideHand.stop();
     setNeedOne(false);
@@ -201,7 +246,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       }
       const kind: Slip = go.kind === 'give' ? (n > go.answer ? 'over' : 'under') : go.wrongs.find((w) => w.n === n)?.kind ?? 'near';
       setWhy({ pick: n, kind });
-      say(whyLine(kind));
+      say(go.kind === 'howmany' ? ownCountLine(go.answer) : whyLine(kind));
       return;
     }
     clearTimers();
@@ -232,10 +277,31 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
 
   /** A group berry is counted (when the help lets it be marked). */
   function markBerry(i: number) {
-    if (!asking || look || marked.includes(i) || !(shows.dims || peekOpen || inRedo)) return;
+    if (!asking || look || counting || marked.includes(i)) return;
     tappedYet.current = true;
     setMarked([...marked, i]);
-    if (shows.says || inRedo) say(countLine(marked.length + 1));
+    countHand.stop();
+    // The last touch after "Count with me" is silent: the total is never said before the child answers.
+    if ((shows.says || inRedo) && !withMe) say(countLine(marked.length + 1));
+    countHand.start();
+  }
+
+  /** "Count with me": Bella counts the berries one at a time, stops one short, and the child touches the last one. */
+  function countWithMe() {
+    if (!asking || look || counting || marked.length > 0 || go.kind !== 'howmany') return;
+    tappedYet.current = true;
+    countHand.stop();
+    setWithMe(true);
+    const upTo = Math.max(0, go.n - 1);
+    if (upTo === 0) return;
+    setCounting(true);
+    for (let k = 0; k < upTo; k++) {
+      later(k * COUNT_WITH_ME_MS, () => {
+        setMarked((m) => [...m, k]);
+        say(countLine(k + 1));
+      });
+    }
+    later(upTo * COUNT_WITH_ME_MS, () => setCounting(false));
   }
 
   function thatsAll() {
@@ -257,6 +323,9 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
   const pointing = guideHand.pointing && asking;
   const guidedBlock = guided && go.kind === 'give' && placed !== go.answer;
   const countedNow = marked.length;
+  const waiting = go.kind === 'howmany' && !countedAll;
+  const nextToTouch = go.kind === 'howmany' ? go.points.findIndex((_, i) => !marked.includes(i)) : -1;
+  const handOnBerry = waiting && !counting && (countHand.pointing || (withMe && marked.length === go.n - 1));
 
   return (
     <div className="rb-play rb-scene" style={sceneStyle()}>
@@ -271,6 +340,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
       </div>
 
       {go.kind === 'give' && <p className="rb-ask" aria-hidden="true">Give me <strong>{go.n}</strong></p>}
+      {go.kind === 'howmany' && <p className="rb-ask" aria-hidden="true">{WORDS.promptHowMany}</p>}
+      {go.kind === 'counton' && <p className="rb-ask" aria-hidden="true">{WORDS.promptCountOn}</p>}
 
       <div className="rb-stage" key={at}>
         <span className="rb-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
@@ -322,15 +393,22 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
                   type="button"
                   className={`rb-berrybtn${peekOpen && !shows.dims ? ' rb-berrybtn--peek' : ''}`}
                   style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                  disabled={!asking || look !== null}
+                  disabled={!asking || look !== null || counting || marked.includes(i)}
                   onClick={() => markBerry(i)}
                   aria-label={`${WORDS.groupLabel}, ${i + 1}`}
                 >
                   <Berry dim={marked.includes(i)} mark={marked.includes(i) && (shows.says || shows.dims || inRedo) ? marked.indexOf(i) + 1 : null} />
+                  {handOnBerry && i === nextToTouch && <PointingHand prefix="rb" />}
                 </button>
               ))}
             </div>
             {(shows.numberAbove || peekOpen) && <p className="rb-count" aria-live="polite">{countedNow}</p>}
+            {waiting && !withMe && marked.length === 0 && (
+              <button type="button" className="rb-button rb-countwithme" onClick={countWithMe}>
+                <span aria-hidden="true">🙋</span> {WORDS.countWithMe}
+              </button>
+            )}
+            {counting && <span className="rb-button rb-countwithme rb-countwithme--busy" aria-live="polite">{WORDS.countingNow}</span>}
             {asking && canPeekHere && level <= 1 && !peekOpen && (
               <button type="button" className="rb-button rb-peek" onClick={() => setPeek(true)}>
                 <span aria-hidden="true">👀</span> {WORDS.peek}
@@ -342,7 +420,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
         {go.kind === 'counton' && <Plate n={go.n} more />}
       </div>
 
-      {why && asking && <ShowWhy prefix="rb" tapKey={taps.length} picture={<WhyPicture pick={why.pick} kind={why.kind} />} line={WORDS.why(why.kind)} />}
+      {why && asking && <ShowWhy prefix="rb" tapKey={taps.length} picture={go.kind === 'howmany' ? <OwnCount go={go} marked={marked} pick={why.pick} /> : <WhyPicture pick={why.pick} kind={why.kind} />} line={go.kind === 'howmany' ? ownCountLine(go.answer).split(PART_BREAK).join(' ') : WORDS.why(why.kind)} />}
       {look && (
         <LookTogether prefix="rb" title={WORDS.lookTogether} picture={<CountingPicture go={go} filled={look.filled} />} line={WORDS.lookFill} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
       )}
@@ -358,7 +436,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
                 key={`${at}-${n}`}
                 type="button"
                 disabled={asking && (look !== null || tapped.includes(n))}
-                className={`rb-choice${off ? ' rb-choice--off' : ''}${wobble === n ? ' rb-choice--wobble' : ''}${hint ? ' rb-choice--hint' : ''}${!asking && n === go.answer ? ' rb-choice--right' : ''}`}
+                aria-disabled={waiting && asking ? true : undefined}
+                className={`rb-choice${waiting && asking ? ' rb-choice--wait' : ''}${off ? ' rb-choice--off' : ''}${wobble === n ? ' rb-choice--wobble' : ''}${hint ? ' rb-choice--hint' : ''}${!asking && n === go.answer ? ' rb-choice--right' : ''}`}
                 onClick={() => pick(n)}
                 aria-label={hint ? `${n}, ${WORDS.guideHere}` : String(n)}
               >
@@ -369,6 +448,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone }: Props
           })}
         </div>
       )}
+      {waiting && asking && <p className="rb-wait" aria-live="polite">{WORDS.touchFirstWrite}</p>}
     </div>
   );
 }

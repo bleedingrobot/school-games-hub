@@ -223,3 +223,20 @@
 @media (max-width: 700px) {
   .rb-scene[style*="--rb-back"] { background: var(--rb-back-small) center / cover no-repeat, var(--rb-sky); }
 }
+
+/* How many: the cards wait until every berry is touched. */
+.rb-choice--wait { background: #cfd3cf; color: #5d645d; box-shadow: 0 3px 0 rgb(0 0 0 / 0.15); cursor: default; }
+.rb-wait { margin: 0; text-align: center; font: 800 1.15rem system-ui, sans-serif; color: #2d4d2b; }
+.rb-countwithme { min-height: 64px; padding: 0 22px; font-size: 1.2rem; }
+.rb-countwithme--busy { display: inline-flex; align-items: center; opacity: 0.8; }
+
+/* A wrong card on How many: the child's own numbered berries, the count, and the card crossed out. */
+.rb-owncount { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
+.rb-whypic--own { flex-wrap: wrap; max-width: 320px; gap: 2px; }
+.rb-whypic--own .rb-own { position: relative; display: block; width: 30px; }
+.rb-whypic--own .rb-own .rb-berrysvg { width: 30px; }
+.rb-whypic--own .rb-berry__mark { font-size: 0.85rem; }
+.rb-own--last { outline: 3px solid var(--rb-gold); border-radius: 50%; }
+.rb-owncount__badge { display: inline-flex; align-items: center; gap: 6px; min-width: 64px; justify-content: center; padding: 4px 14px; border-radius: 16px; background: #e5f6e0; border: 3px solid #2e8b3d; font: 900 2.2rem system-ui, sans-serif; }
+.rb-owncount__tick { color: #2e8b3d; }
+.rb-owncount__card { position: relative; padding: 2px 12px; border-radius: 12px; border: 2px solid var(--rb-ink); background: #f4c20d; font: 900 1.4rem system-ui, sans-serif; opacity: 0.7; text-decoration: line-through; text-decoration-thickness: 3px; text-decoration-color: #c0392b; }
