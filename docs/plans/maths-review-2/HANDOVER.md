@@ -17,7 +17,7 @@ The first account stopped here at about 97% of its weekly use. This note tells t
 ## Done and live
 
 - S1 to S13, S17, S18, S21, S22, S23, S24, S28, S29, S30, S31, S36.
-- S15: the kit part (#346), Parrot (#355) and Lizard (#356) and Swamp Hen (#357).
+- S15: the kit part (#346), Parrot (#355) and Lizard (#356), Swamp Hen (#357) and Robin (#359).
 - S16 step 1: the rule 7 wording (#331).
 - S19: the kit part (#347).
 - S34: part 1 (kit slips) and part 3 (Quick looks usual slip).
@@ -26,7 +26,7 @@ There are no WIP branches left.
 
 ## Next, in order
 
-1. **S15:** the finish screens for Robin and Pigeon. Copy #357.
+1. **S15:** the finish screens for Pigeon (the last game). Copy #359.
 2. **S19 parts 2 to 6:** one game at a time, using the kit from #347. Each part may need a migration.
 3. **S16 step 2:** kit `sister.ts` first, then the games. James OK'd the wording in #331.
 4. **S14** (lucky guess, all twelve games), then S25, then S35. S33 comes after S15.
