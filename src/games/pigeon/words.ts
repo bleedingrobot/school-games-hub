@@ -32,5 +32,10 @@ export const WORDS = {
   lookTitle: 'Let’s look together.',
   nowYouTry: 'Now you try.',
   skip: 'Skip',
+  /** The "Show me first" demo, the first time a zoom go comes up (a made-up example the round never asks). */
+  demoTitle: 'Watch first',
+  demoTiny: 'Watch. Some numbers are in a tiny space.',
+  demoLens: 'Tap the lens, to zoom in.',
+  demoFind: 'Now find 27 on the zoomed line.',
   ask: 'Next',
 } as const;

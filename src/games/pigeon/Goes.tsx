@@ -15,15 +15,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { NumberLine, type Landmark, type Arc, type LinePoint, type NumberLineProps } from '../../kit';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
+import { DemoBar } from '../../kit/DemoBar';
+import { useSeenKinds } from '../../kit/useSeenKinds';
+import { useKindDemo } from '../../kit/useKindDemo';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { tapRight, type Tap } from '../../../shared/pigeon/play';
 import type { Friend as FriendName } from '../../../shared/pigeon/progress';
-import { GOES_PER_ROUND, marksFor, pictureFor, showRound, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
+import { GOES_PER_ROUND, kindOfKey, marksFor, pictureFor, showRound, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
 import { playSound } from '../sounds';
 import { Friend, sceneStyle, type Pose, type Scenery } from './art';
+import { DEMO_KIND, DEMO_STEPS, DemoScene, hasDemo } from './demo';
 import { reasonFor } from './reason';
 import { askLine, lookLine, slipLine } from './voiceLines';
 import { WORDS } from './words';
@@ -53,6 +57,9 @@ interface Props {
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
+  /** The kinds of go the child has seen: a demo plays once for a kind they have not. `saveSeen` remembers them. */
+  seenKinds: readonly string[];
+  saveSeen: (kinds: string[]) => Promise<unknown>;
 }
 
 const permilleOf = (go: Go, value: number) => Math.min(1000, Math.max(0, Math.round(((value - go.lo) / (go.hi - go.lo)) * 1000)));
@@ -91,8 +98,9 @@ export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMark
 
 const dedupe = (marks: Landmark[]): Landmark[] => [...new Map(marks.map((m) => [m.value, m])).values()];
 
-export function Goes({ guided = false, round, scenery, friend, sound, say, onDone }: Props) {
+export function Goes({ guided = false, round, scenery, friend, sound, say, onDone, seenKinds, saveSeen }: Props) {
   const goes = useMemo(() => showRound(round), [round]);
+  const seenSet = useSeenKinds(seenKinds, saveSeen);
   const [taps, setTaps] = useState<Tap[]>([]);
   const [at, setAt] = useState(0);
   const [phase, setPhase] = useState<Phase>('ask');
@@ -123,6 +131,9 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const guideHand = useGuidedFirstGo(guided && at === 0, GUIDE_MS);
 
   const go: Go = goes[Math.min(at, goes.length - 1)];
+  /** True from the go's start until its demo has ended or been skipped: the real go waits, and nothing is tappable. */
+  const demoing = hasDemo(go) && !seenSet.has(DEMO_KIND);
+  const kindDemo = useKindDemo({ kind: demoing ? DEMO_KIND : null, seen: seenSet, mark: seenSet.mark, steps: DEMO_STEPS, say });
   const wrongs = gs.wrong;
   const pic = pictureFor(go, wrongs, tapped, struggle);
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
@@ -138,15 +149,18 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     setPose('sit');
     setPeek(false);
     guideHand.start();
-    say(askLine(go), () => {
-      if (live && !tappedYet.current) since.current = Date.now();
-    });
+    // A demo goes first (the question is read once it has ended).
+    if (!demoing) {
+      say(askLine(go), () => {
+        if (live && !tappedYet.current) since.current = Date.now();
+      });
+    }
     return () => {
       live = false;
     };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, goes]);
+  }, [at, goes, demoing]);
 
   function nextGo(all: Tap[]) {
     clearTimers();
@@ -188,6 +202,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       return;
     }
     clearTimers();
+    const kind = kindOfKey(go.key);
+    if (kind) seenSet.mark([kind]);
     setGs(stepGo(gs, 'right'));
     run.current = gs.wrong > 0 ? run.current + 1 : 0;
     if (run.current >= STRUGGLE_GOES) setStruggle(true);
@@ -222,6 +238,27 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const picture = (
     <NumberLine {...lineProps} label={label} onPick={canTapLine ? (v) => pick(permilleOf(go, v)) : undefined} pickOn={go.lens ? 'lens' : 'line'} className="pg-line" />
   );
+
+  if (demoing) {
+    return (
+      <div className={`pg-play pg-scene--${scenery}`} style={sceneStyle(scenery)}>
+        <h2 className="pg-sr" tabIndex={-1} ref={heading}>{WORDS.demoTitle}</h2>
+        <div className="pg-top">
+          <div className="pg-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
+            {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
+              <span key={i} className={i < made ? 'pg-pip pg-pip--done' : 'pg-pip'} />
+            ))}
+          </div>
+        </div>
+        <div className="pg-stage">
+          <span className="pg-stage__friend" aria-hidden="true"><Friend friend={friend} pose="sit" /></span>
+          <p className="pg-ask" aria-live="polite">{DEMO_STEPS[kindDemo.step]?.line}</p>
+          <DemoScene step={kindDemo.step} />
+        </div>
+        <DemoBar prefix="pg" skipLabel={WORDS.skip} canSkip={kindDemo.canSkip} onSkip={kindDemo.skip} />
+      </div>
+    );
+  }
 
   return (
     <div className={`pg-play pg-scene--${scenery}`} style={sceneStyle(scenery)}>

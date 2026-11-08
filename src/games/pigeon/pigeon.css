@@ -134,6 +134,11 @@
 
 .pg-golden { width: 100%; }
 .pg-branch { position: relative; }
+/* "Show me first": where the hand points on each step, and the Skip bar under the demo (in line, never over a card). */
+.pg-hand--line { left: 30%; top: 25%; }
+.pg-hand--lens { left: 45%; top: 62%; }
+.pg-hand--spot { left: 66%; top: 70%; }
+.pg-demo { display: flex; justify-content: center; min-height: 64px; padding: 4px 0; }
 .pg-hand { position: absolute; left: 12%; top: 40%; font-size: 3rem; line-height: 1; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.35)); pointer-events: none; animation: pg-nudge 0.9s ease-in-out infinite; z-index: 3; }
 @keyframes pg-nudge { 50% { translate: 0 -14%; } }
 @media (max-height: 500px) {
