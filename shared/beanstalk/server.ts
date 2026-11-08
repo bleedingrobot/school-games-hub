@@ -22,13 +22,17 @@
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterDay, finishChallenge, nzDate, placeAfter, START_STEPS, sumSecure, type FinishResult, type HelpLevel, type Steps } from './progress';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { readKinds, type SeenServices } from '../kit/seen';
 import { makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
 export type Child = 'jack' | 'jill';
 export const isChild = (c: unknown): c is Child => c === 'jack' || c === 'jill';
 
-export type BeanstalkAction = 'load' | 'choose' | 'start' | 'finish';
+export type BeanstalkAction = 'load' | 'choose' | 'start' | 'finish' | 'seen';
+
+/** Every kind of go this game has a demo for: `missing`, the missing leaf ("7 + ? = 10"). */
+export const KINDS: readonly string[] = ['missing'];
 
 /** A pupil's beanstalk as it is saved. */
 export interface Progress extends Steps {
@@ -64,7 +68,7 @@ export interface Settings {
   dots: boolean;
 }
 
-export interface BeanstalkServices {
+export interface BeanstalkServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** Saves who they play as (making their beanstalk if it's their first go). */
@@ -137,10 +141,21 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
   if (body.action === 'load') {
     const s = await services.load(player);
     if (s === 'busy') return busy();
+    const seen = await services.seen(player);
+    if (seen === 'busy') return busy();
     return ok({
+      seen,
       child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, dots: settings.dots,
       stage: s.stage, stageDays: s.stageDays,
     });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'choose') {

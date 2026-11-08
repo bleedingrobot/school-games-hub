@@ -6,6 +6,7 @@
 import { FRIENDS, METALS } from '../../../shared/beanstalk/progress';
 import { TARGETS, type Target } from '../../../shared/beanstalk/round';
 import { FRIEND_NAMES } from './art';
+import { demoLines } from './demo';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
 
@@ -55,6 +56,7 @@ export function allVoiceLines(): string[] {
       lines.add(WORDS.takeAway(a, target));
     }
   }
+  for (const line of demoLines()) lines.add(line);
   for (const metal of METALS.slice(1)) lines.add(WORDS.leafTurned(metal));
   return [...lines];
 }

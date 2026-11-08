@@ -351,3 +351,9 @@
 .bs-next-panel h2 { margin: 0 0 6px; font-size: 1.1rem; }
 .bs-next-chip { display: none; }
 .bs-next-play-button { width: 100%; margin-top: 6px; }
+
+/* Show me first: the missing-leaf demo, in line under the badge. */
+.bs-demo-panel { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bs-demo-sum { margin: 0; font-size: 1.4rem; font-weight: 800; }
+.bs-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; }
+.bs-button { min-height: 48px; padding: 0 20px; border-radius: 14px; border: 3px solid var(--bs-gold); background: #fff; font: inherit; font-weight: 800; cursor: pointer; }

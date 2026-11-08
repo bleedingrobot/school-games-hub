@@ -25,6 +25,8 @@ export interface BeanstalkState {
   today: string;
   /** False when the teacher has turned the leaves' dots off for the class. */
   dots: boolean;
+  /** The kinds of go this child has seen (so each demo plays once). */
+  seen: string[];
 }
 
 export interface BeanstalkBackend {
@@ -33,6 +35,8 @@ export interface BeanstalkBackend {
   /** Today's challenge: its seed and the round the server made (the child's stage, with a few older pairs last). */
   start(): Promise<{ seed: number; round: Round }>;
   finish(seed: number, taps: readonly Tap[]): Promise<FinishReply>;
+  /** Remembers that the child has seen these kinds of go. */
+  markSeen(kinds: string[]): Promise<unknown>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -56,6 +60,7 @@ export function fromServer(send: Send): BeanstalkBackend {
   return {
     load: async () => {
       const s = (await ask({ action: 'load' })) as unknown as BeanstalkState;
+      s.seen ??= [];
       // A server function from before stages: the sum is the calendar's, as the migration back-fills it.
       if (s.stage === undefined) return { ...s, stage: stageForEggs(Math.floor(s.daysDone / DAYS_PER_EGG)), stageDays: s.daysDone % DAYS_PER_EGG };
       return s;
@@ -69,6 +74,7 @@ export function fromServer(send: Send): BeanstalkBackend {
       return { seed: r.seed, round: makeRound(r.seed, stageTarget({ stage: stage ?? stageForEggs(Math.floor(daysDone / DAYS_PER_EGG)) })) };
     },
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as FinishReply,
+    markSeen: (kinds) => ask({ action: 'seen', kinds }),
   };
 }
 
