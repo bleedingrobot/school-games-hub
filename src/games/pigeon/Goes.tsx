@@ -12,7 +12,7 @@
  * Only the taps are sent; the server replays them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { NumberLine, type Landmark, type LinePoint, type NumberLineProps } from '../../kit';
+import { NumberLine, type Landmark, type Arc, type LinePoint, type NumberLineProps } from '../../kit';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
@@ -23,9 +23,18 @@ import type { Friend as FriendName } from '../../../shared/pigeon/progress';
 import { GOES_PER_ROUND, marksFor, pictureFor, showRound, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
 import { playSound } from '../sounds';
 import { Friend, sceneStyle, type Pose, type Scenery } from './art';
+import { reasonFor } from './reason';
 import { PLACE_LINES, SLIP_LINES, askLine, lookLine } from './voiceLines';
 import { WORDS } from './words';
 
+/**
+ * Height kept above and below the line (kit `room`), so it never moves when the reason is drawn. The most any go needs: the
+ * tallest jump arc and its label is about 60 picture units (a jump is never wider than a tenth of the line, or two tenths for
+ * a wrong ten more card), the arrow and its label 64. The same on the zoom lens, which needs nothing below.
+ */
+const ROOM = 72;
+const ROOM_BELOW = 72;
+const LENS_ROOM = 72;
 const RIGHT_MS = 1900;
 const WOBBLE_MS = 500;
 
@@ -48,7 +57,7 @@ interface Props {
 const permilleOf = (go: Go, value: number) => Math.min(1000, Math.max(0, Math.round(((value - go.lo) / (go.hi - go.lo)) * 1000)));
 
 /** The kit line for a go at a help level, with the extra marks and points a screen wants. */
-function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Landmark[] = []): Omit<NumberLineProps, 'label'> {
+export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Landmark[] = [], arcs: Arc[] = []): Omit<NumberLineProps, 'label'> {
   const mainMarks = marksFor(level, 0, go.max);
   const toLandmarks = (named: number[]): Landmark[] => named.map((value) => ({ value }));
   const tickStep = (ticks: number[]) => (ticks.length > 1 ? ticks[1] - ticks[0] : undefined);
@@ -63,8 +72,17 @@ function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMarks: Land
       step: tickStep(lensMarks.ticks),
       landmarks: dedupe([...toLandmarks(lensMarks.named), ...extraMarks]),
       points,
+      arcs,
+      room: LENS_ROOM,
     };
-  } else props.points = points;
+    props.room = 0;
+    props.roomBelow = 0;
+  } else {
+    props.points = points;
+    props.arcs = arcs;
+    props.room = ROOM;
+    props.roomBelow = ROOM_BELOW;
+  }
   return props;
 }
 
@@ -79,6 +97,8 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [tapped, setTapped] = useState<number[]>([]);
   const [lastSlip, setLastSlip] = useState<string | null>(null);
   const [whyTap, setWhyTap] = useState(0);
+  /** How many wrong taps there were when "Let's look together" began, so a later wrong tap in the redo says its slip line again. */
+  const [tapsAtLook, setTapsAtLook] = useState(0);
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
   const [pose, setPose] = useState<Pose>('sit');
@@ -130,6 +150,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       setGs(NEW_GO);
       setTapped([]);
       setLastSlip(null);
+      setTapsAtLook(0);
       return;
     }
     setPhase('done');
@@ -155,6 +176,7 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       const slip = go.kind === 'place' ? (tapValue(go, value) < go.n ? 'early' : 'late') : go.wrongs.find((w) => w.n === value)?.kind ?? 'one';
       setLastSlip(slip);
       if (state.phase === 'look') {
+        setTapsAtLook(tapped.length + 1);
         startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
       } else say(go.kind === 'place' ? PLACE_LINES[slip as 'early' | 'late'] : SLIP_LINES[slip as keyof typeof SLIP_LINES]);
       return;
@@ -170,15 +192,21 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
 
   const made = at + (phase === 'ask' ? 0 : 1);
   const solved = phase !== 'ask';
-  const lastWrongPlace = go.kind === 'place' && tapped.length ? tapped[tapped.length - 1] : null;
-  const wrongDot = lastWrongPlace !== null && !solved ? [{ value: tapValue(go, lastWrongPlace), look: 'ring' as const }] : [];
+  const slipText = lastSlip ? (go.kind === 'place' ? PLACE_LINES[lastSlip as 'early' | 'late'] : SLIP_LINES[lastSlip as keyof typeof SLIP_LINES]) : '';
+  const lastTap = tapped.length ? tapped[tapped.length - 1] : null;
+  /** The child's last wrong answer in the line's own units: where they tapped, or the card. */
+  const lastValue = lastTap === null ? null : go.kind === 'place' ? tapValue(go, lastTap) : lastTap;
+  const ringAt = lastValue !== null && !solved && lastValue >= go.lo && lastValue <= go.hi ? [{ value: lastValue, look: 'ring' as const }] : [];
   const rightDot = solved ? [{ value: go.kind === 'near' || go.kind === 'tens' ? go.answer : go.n, label: String(go.kind === 'near' || go.kind === 'tens' ? go.answer : go.n), tone: 'landmark' as const }] : [];
-  const arrow = go.kind === 'read' && !solved ? [{ value: go.n, label: '?' }] : [];
+  const arrow = go.kind === 'read' && !solved ? [{ value: go.n, look: 'arrow' as const }] : [];
   const mark = go.kind === 'tens' || go.kind === 'near' ? [{ value: go.n, label: String(go.n) }] : [];
-  const points: LinePoint[] = [...arrow, ...mark, ...wrongDot, ...rightDot];
+  // From "Let's look together" on, the reason is drawn on the line and stays for the rest of the go.
+  const reason = (gs.phase === 'look' || gs.phase === 'redo') && !solved ? reasonFor(go, lastValue) : null;
+  const points: LinePoint[] = reason ? reason.points : [...arrow, ...mark, ...ringAt, ...rightDot];
+  const arcs = reason ? reason.arcs : [];
   const bandMarks: Landmark[] = pic.band ? pic.band.map((value) => ({ value })) : [];
   const lookMarks: Landmark[] = look && go.kind === 'place' ? lookMarksFor(go, look.filled) : [];
-  const lineProps = lineFor(go, seen, points, [...bandMarks, ...lookMarks]);
+  const lineProps = lineFor(go, seen, points, [...bandMarks, ...lookMarks], arcs);
   const label = go.kind === 'place' ? `A branch from ${go.lens ? go.lens.lo : 0} to ${go.lens ? go.lens.hi : go.max}. Tap where ${go.n} goes.` : go.kind === 'read' ? `A branch from 0 to ${go.max} with an arrow at a number.` : `A branch from 0 to ${go.max}.`;
   const canTapLine = go.kind === 'place' && phase === 'ask' && gs.phase !== 'look';
   const cards = phase === 'ask' ? pic.choices : go.choices;
@@ -213,18 +241,13 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
         )}
       </div>
 
-      {gs.phase === 'why' && lastSlip && (
-        <ShowWhy
-          prefix="pg"
-          tapKey={whyTap}
-          picture={<span className="pg-why__icon" aria-hidden="true">🤔</span>}
-          line={go.kind === 'place' ? PLACE_LINES[lastSlip as 'early' | 'late'] : SLIP_LINES[lastSlip as keyof typeof SLIP_LINES]}
-        />
-      )}
-      {gs.phase === 'look' && look && (
-        <LookTogether prefix="pg" title={WORDS.lookTitle} picture={<span className="pg-why__icon" aria-hidden="true">👀</span>} line={lookLine(go)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
-      )}
-      {gs.phase === 'redo' && <NowYouTry prefix="pg" line={WORDS.nowYouTry} />}
+      <div className="pg-reason">
+        {gs.phase === 'why' && lastSlip && <ShowWhy prefix="pg" tapKey={whyTap} picture={null} line={slipText} />}
+        {gs.phase === 'look' && look && (
+          <LookTogether prefix="pg" title={WORDS.lookTitle} picture={null} line={lookLine(go)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
+        )}
+        {gs.phase === 'redo' && (tapped.length <= tapsAtLook || !lastSlip ? <NowYouTry prefix="pg" line={WORDS.nowYouTry} /> : <ShowWhy prefix="pg" tapKey={whyTap} picture={null} line={slipText} />)}
+      </div>
 
       {go.kind !== 'place' && (
         <div className={`pg-cards pg-cards--${go.kind}`} role="group" aria-label={WORDS.pickCard}>
