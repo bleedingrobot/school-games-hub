@@ -17,10 +17,15 @@
 import { JUNIOR_QUICK_MS } from '../juniorQuick';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
+import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import { finishChallenge, nzDate, poolAfter } from './progress';
-import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, topSecure, type Level, type Round } from './round';
+import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, parseKey, topSecure, type Level, type Round } from './round';
 
-export type KororaAction = 'load' | 'start' | 'finish';
+export type KororaAction = 'load' | 'start' | 'finish' | 'seen';
+
+/** The kinds of go that have a "Show me first" demo (S31): the game's own kinds. */
+const KINDS = ['double', 'half', 'near', 'fair'] as const;
+const kindOfKey = (key: string): string | null => parseKey(key)?.kind ?? null;
 
 /** A pupil's pool as it is saved. */
 export interface Progress {
@@ -51,7 +56,7 @@ export interface Settings {
   help: HelpSetting;
 }
 
-export interface KororaServices {
+export interface KororaServices extends SeenServices {
   settings(player: string): Promise<Settings | null>;
   load(player: string): Promise<Saved | 'busy'>;
   /** The pupil's maths records (all packs; only the doubles, halves and odd-and-even ones matter here). */
@@ -118,7 +123,19 @@ export async function handleKorora(services: KororaServices, player: string, bod
   if (body.action === 'load') {
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
-    return ok({ daysDone: s.daysDone, lastPebbleDay: s.lastPebbleDay, today: today(), level: s.reached, help: settings.help });
+    const saved = await services.seen(player);
+    if (saved === 'busy') return busy();
+    // A kind the child has already answered in the maths records needs no demo.
+    const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
+    return ok({ daysDone: s.daysDone, lastPebbleDay: s.lastPebbleDay, today: today(), level: s.reached, help: settings.help, seen });
+  }
+
+  if (body.action === 'seen') {
+    const kinds = readKinds(body.kinds, KINDS);
+    if (!kinds) return unreadable();
+    const seen = await services.markSeen(player, kinds);
+    if (seen === 'busy') return busy();
+    return ok({ seen });
   }
 
   if (body.action === 'start') {

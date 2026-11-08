@@ -32,6 +32,9 @@ export const WORDS = {
   picturesBack: 'Here is the picture again to help.',
   /** On the "Let's look together" panel once it can be skipped. */
   goOn: 'My turn',
+  /** "Show me first": the skip button, and the heading for screen readers. */
+  skip: 'Skip',
+  demoTitle: 'Watch Penguin Pairs show one first.',
   /** The double: the whole go, ending on the answer, while the fish are counted. */
   lookDouble: (n: number) => `Double ${n} is ${n} fish and ${n} fish in the water. Count them all: ${2 * n}.`,
   /** The half: the fish are dealt out one each, and one chick's share is counted. */

@@ -69,6 +69,16 @@ it('finishes only a pupil’s own, finished challenge, once, and records each fa
 
   const off = setup({ settings: () => ({ enabled: false, help: 'fade' }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
+  // Which kinds of go the pupil has seen (half, near, fair and double): unreadable kinds are refused, a kind saved twice is kept once, kinds already played need no demo.
+  const seenTest = setup();
+  const { send: sendSeen, services: seenServices } = seenTest;
+  expect((await sendSeen('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
+  expect((await sendSeen('pupil-a', { action: 'seen', kinds: 'half' })).status).toBe(400);
+  await sendSeen('pupil-a', { action: 'seen', kinds: ['half'] });
+  expect((await sendSeen('pupil-a', { action: 'seen', kinds: ['half', 'fair'] })).body.seen).toEqual(['fair', 'half']);
+  expect((await sendSeen('pupil-a', { action: 'load' })).body.seen).toEqual(['fair', 'half']);
+  seenServices.data.facts['pupil-b'] = [{ ...newStats('add:6+7'), attempts: 2 }, { ...newStats('half:4'), attempts: 0 }];
+  expect((await sendSeen('pupil-b', { action: 'load' })).body.seen).toEqual(['near']);
 });
 
 it('changes one pebble a NZ day by the server’s clock, with fair-or-not recorded on gold days and the gold dancing shoes on day 30', async () => {

@@ -2,8 +2,9 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { voiceSlug } from '../../speech';
-import { LEVELS, levelKeys, mistakeChoices, parseKey } from '../../../shared/korora/round';
+import { LEVELS, fairKeys, levelKeys, mistakeChoices, parseKey } from '../../../shared/korora/round';
 import { seeded } from '../../../shared/seededRandom';
+import { DEMOS } from './demo';
 import { allVoiceLines, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
@@ -43,6 +44,12 @@ describe('Penguin Pairs voice clips', () => {
       expect(said.has(kind === 'double' ? WORDS.lookDouble(n) : kind === 'near' ? WORDS.lookNear(n) : WORDS.lookHalf(n))).toBe(true);
       for (let seed = 1; seed <= 40; seed++)
         for (const w of mistakeChoices(kind, n, seeded(seed)).wrongs) expect(said.has(whyLine({ kind, n }, w.kind))).toBe(true);
+    }
+    // Show me first: each demo is a made-up go the real levels never ask, and every line it says has a clip.
+    const real = new Set([...LEVELS.flatMap((l) => levelKeys(l.level)), ...[1, 3, 5].flatMap((l) => fairKeys(l as 1 | 3 | 5))]);
+    for (const demo of Object.values(DEMOS)) {
+      expect(real.has(demo.key)).toBe(false);
+      for (const step of demo.steps) expect(said.has(step.line)).toBe(true);
     }
   });
 });

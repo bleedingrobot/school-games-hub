@@ -25,6 +25,8 @@
 .kr-message { margin: auto; font-size: 1.6rem; color: var(--kr-ink); padding: 24px; text-align: center; }
 
 .kr-bar { position: absolute; top: 8px; right: 8px; z-index: 5; display: flex; gap: 8px; }
+.kr-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; }
+.kr-demoscene { pointer-events: none; }
 .kr-button {
   min-height: 56px; padding: 0 18px; border-radius: 999px; border: 3px solid var(--kr-teal-dark);
   background: var(--kr-panel); color: var(--kr-ink); font: 700 1.1rem system-ui, sans-serif; cursor: pointer;

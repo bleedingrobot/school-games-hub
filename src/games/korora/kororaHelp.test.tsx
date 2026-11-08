@@ -17,7 +17,7 @@ describe("Penguin Pairs' pictures follow the child (R6)", () => {
     const base = makeRound(3, [], { gold: false });
     return { ...base, goes: base.goes.map((g, i) => ({ ...g, h: h(i) })) };
   };
-  const props = { scenery: 'bronze' as const, friend: 'korora' as const, sound: false, onDone: vi.fn() };
+  const props = { scenery: 'bronze' as const, friend: 'korora' as const, seen: ['half', 'near', 'fair'], onSeen: vi.fn(), sound: false, onDone: vi.fn() };
   const water = () => document.querySelector('.kr-water')!.className;
   const group = () => within(screen.getByRole('group', { name: WORDS.pickNumber }));
   const tap = (n: number) => fireEvent.click(group().getByRole('button', { name: String(n) }));

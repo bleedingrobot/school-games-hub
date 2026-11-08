@@ -4,6 +4,7 @@
  * changed by recorded answers the way record_fact_answers changes them. The preview's trial backend saves this in the
  * browser; the server function's tests use it in place of the database.
  */
+import { mergeSeen } from '../kit/seen';
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import type { Tap } from './play';
 import type { Round } from './round';
@@ -23,6 +24,8 @@ export interface MemoryData {
   facts: Record<string, FactStats[]>;
   /** The `once` of every batch of answers recorded, so one sent twice counts once. */
   recorded: string[];
+  /** The kinds of go each pupil has seen (demos). */
+  seen?: Record<string, string[]>;
 }
 
 export interface MemoryOptions {
@@ -55,6 +58,15 @@ export function memoryServices(options: MemoryOptions = {}): KororaServices & { 
     },
     async facts(player) {
       return copy(data.facts[player] ?? []);
+    },
+    async seen(player) {
+      return [...(data.seen?.[player] ?? [])];
+    },
+    async markSeen(player, kinds) {
+      const next = mergeSeen(data.seen?.[player] ?? [], kinds);
+      (data.seen ??= {})[player] = next;
+      saved();
+      return [...next];
     },
     async start(player, round) {
       if (find(player, round.seed)) return false;

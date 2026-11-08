@@ -3933,6 +3933,33 @@ function replay(round, taps) {
 		answers
 	};
 }
+//#endregion
+//#region shared/kit/seen.ts
+/** Which kinds of go a child has seen (S11). No game words in here; the game names its own kinds. See src/kit/README.md. */
+/** A body field that names known kinds: an array, no repeats, at most `max`. Anything else is `null` (the server says "unreadable"). */
+function readKinds(value, allowed, max = 8) {
+	if (!Array.isArray(value) || value.length > max) return null;
+	const out = [];
+	for (const k of value) {
+		if (typeof k !== "string" || !allowed.includes(k) || out.includes(k)) return null;
+		out.push(k);
+	}
+	return out;
+}
+/** The union of any number of lists, no repeats, sorted. */
+function mergeSeen(...lists) {
+	return [...new Set(lists.flat())].sort();
+}
+/** The kinds a child has already answered, so children who have played for weeks get no demo for what they know. */
+function kindsFromFacts(facts, kindOfKey) {
+	const kinds = [];
+	for (const f of facts) {
+		if (f.attempts <= 0) continue;
+		const kind = kindOfKey(f.key);
+		if (kind) kinds.push(kind);
+	}
+	return mergeSeen(kinds);
+}
 const METALS = [
 	"grey",
 	"bronze",
@@ -4030,6 +4057,14 @@ function finishChallenge(daysDone, lastPebbleDay, today) {
 *
 * Nothing that counts comes from the browser. A challenge finishes once.
 */
+/** The kinds of go that have a "Show me first" demo (S31): the game's own kinds. */
+const KINDS = [
+	"double",
+	"half",
+	"near",
+	"fair"
+];
+const kindOfKey = (key) => parseKey(key)?.kind ?? null;
 const unplayed = () => ({
 	daysDone: 0,
 	lastPebbleDay: null,
@@ -4088,13 +4123,24 @@ async function handleKorora(services, player, body) {
 	if (body.action === "load") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
+		const saved = await services.seen(player);
+		if (saved === "busy") return busy();
+		const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
 		return ok({
 			daysDone: s.daysDone,
 			lastPebbleDay: s.lastPebbleDay,
 			today: today(),
 			level: s.reached,
-			help: settings.help
+			help: settings.help,
+			seen
 		});
+	}
+	if (body.action === "seen") {
+		const kinds = readKinds(body.kinds, KINDS);
+		if (!kinds) return unreadable();
+		const seen = await services.markSeen(player, kinds);
+		if (seen === "busy") return busy();
+		return ok({ seen });
 	}
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
@@ -7743,6 +7789,21 @@ Deno.serve(makeHandler({
 	async facts(player) {
 		const context = await call("space_maths_context", { player });
 		return context === "busy" ? "busy" : context?.facts ?? [];
+	},
+	async seen(player) {
+		const kinds = await call("kit_seen_get", {
+			player,
+			game: "korora"
+		});
+		return kinds === "busy" ? "busy" : kinds ?? [];
+	},
+	async markSeen(player, kinds) {
+		const next = await call("kit_seen_mark", {
+			player,
+			game: "korora",
+			kinds
+		});
+		return next === "busy" ? "busy" : next ?? [];
 	},
 	start: (player, round) => call("korora_start", {
 		player,

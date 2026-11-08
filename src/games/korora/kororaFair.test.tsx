@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeRound, showRound, type Round } from '../../../shared/korora/round';
+import { DEMOS } from './demo';
 import { Goes } from './Goes';
 import { WORDS } from './words';
 
@@ -24,7 +25,7 @@ describe('Fair or not with a real pile (R9)', () => {
     const say = vi.fn();
     const full = fairRound('faint');
     const go = showRound(full)[0];
-    render(<Goes round={full} help="faint" say={say} scenery="bronze" friend="korora" sound={false} onDone={vi.fn()} />);
+    render(<Goes round={full} help="faint" say={say} scenery="bronze" friend="korora" seen={["half", "near", "fair"]} onSeen={vi.fn()} sound={false} onDone={vi.fn()} />);
     expect(go.kind).toBe('fair');
     expect(choice(go.answer)).toHaveProperty('disabled', true);
     const pairs = Math.floor(go.n / 2);
@@ -46,14 +47,33 @@ describe('Fair or not with a real pile (R9)', () => {
     expect(document.querySelectorAll('.kr-fish__count')).toHaveLength(k);
   });
 
-  it('shares the first two pairs itself on a bronze go, and the child shares the rest', () => {
+  it('shares the first two pairs itself on a bronze go, and the child shares the rest; the first fair-or-not go is shown first and skipped to the real one', async () => {
     const full = fairRound('full');
     const go = showRound(full)[0];
-    render(<Goes round={full} help="full" say={vi.fn()} scenery="bronze" friend="korora" sound={false} onDone={vi.fn()} />);
+    render(<Goes round={full} help="full" say={vi.fn()} scenery="bronze" friend="korora" seen={["half", "near", "fair"]} onSeen={vi.fn()} sound={false} onDone={vi.fn()} />);
     expect(bowls()).toEqual([0, 0]);
     act(() => vi.advanceTimersByTime(2000));
     expect(bowls()).toEqual([2, 2]);
     expect((screen.getAllByRole('button').find((b) => b.className.includes('kr-choice')) as HTMLButtonElement).disabled).toBe(true);
     expect(go.n).toBeGreaterThanOrEqual(6);
+
+    // Show me first: a child who has not seen fair or not gets a made-up pile of 5 (never a real one) with nothing to tap.
+    cleanup();
+    const say = vi.fn();
+    const onSeen = vi.fn(() => Promise.resolve());
+    render(<Goes round={full} help="full" say={say} scenery="bronze" friend="korora" seen={['half', 'near']} onSeen={onSeen} sound={false} onDone={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: WORDS.demoTitle })).toBeTruthy();
+    expect(say).toHaveBeenCalledWith(DEMOS.fair.steps[0].line, expect.any(Function));
+    expect(say).not.toHaveBeenCalledWith(go.spoken, expect.anything()); // the real question waits
+    act(() => vi.advanceTimersByTime(1500));
+    expect(document.querySelector('.kr-hand')).toBeNull();
+    expect(screen.queryByRole('button', { name: WORDS.skip })).toBeNull(); // not for the first 3 seconds
+    act(() => vi.advanceTimersByTime(2000));
+    for (const b of screen.getAllByRole('button').filter((b) => b.className.includes('kr-choice'))) expect((b as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: WORDS.skip }));
+    await act(async () => undefined);
+    expect(onSeen).toHaveBeenCalledWith(['fair']);
+    expect(screen.queryByRole('heading', { name: WORDS.demoTitle })).toBeNull();
+    expect(say).toHaveBeenLastCalledWith(go.spoken, expect.any(Function)); // the child's own go is read now
   });
 });
