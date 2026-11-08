@@ -54,5 +54,8 @@ export const parrotsSeesaw: GameDefinition = {
     Settings: ParrotTeacherSettings,
     StudentPanel: ParrotStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherParrot').then((m) => m.parrotStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('parrot', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('parrot', classId)),
   },
 };

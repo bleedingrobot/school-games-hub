@@ -10,7 +10,12 @@ import { fetchBeanstalkEnabled } from '../../data/beanstalk';
 import { classFacts, foundationalClass, type FoundationalGameId } from '../../data/foundational';
 import { fetchHopEnabled } from '../../data/hop';
 import { fetchKororaEnabled } from '../../data/korora';
+import { fetchLizardEnabled } from '../../data/lizard';
+import { fetchParrotEnabled } from '../../data/parrot';
+import { fetchPigeonEnabled } from '../../data/pigeon';
 import { fetchPipiEnabled } from '../../data/pipi';
+import { fetchRobinEnabled } from '../../data/robin';
+import { fetchSwamphenEnabled } from '../../data/swamphen';
 import { fetchTuiEnabled } from '../../data/tui';
 import { fetchWekaEnabled } from '../../data/weka';
 import type { HardestRow, TeacherAlert } from '../../games/types';
@@ -25,6 +30,11 @@ const ENABLED: Record<FoundationalGameId, (classId: string) => Promise<boolean>>
   pipi: fetchPipiEnabled,
   tui: fetchTuiEnabled,
   weka: fetchWekaEnabled,
+  pigeon: fetchPigeonEnabled,
+  parrot: fetchParrotEnabled,
+  lizard: fetchLizardEnabled,
+  swamphen: fetchSwamphenEnabled,
+  robin: fetchRobinEnabled,
 };
 
 /** Where "See" goes, after /teacher/:classId/ (the grid's tab is added in Stage 2). */

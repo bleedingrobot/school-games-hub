@@ -55,6 +55,27 @@ export const IDEAS: readonly Idea[] = [
   { id: 'make-ten', label: 'Make ten, add through ten', game: 'weka', parts: [{ keys: crossTen() }] },
   { id: 'doubles', label: 'Doubles and halves', game: 'korora', parts: [{ keys: skillKeys('dbl-half-10', 'dbl-half-20', 'odd-even') }] },
   { id: 'steps', label: 'Counting in steps', game: 'hop', parts: [{ keys: skillKeys('skip-10', 'skip-5', 'skip-2') }] },
+  { id: 'counting-out', label: 'Counting out and on', game: 'robin', parts: [{ keys: skillKeys('count-out-10', 'count-out-20', 'count-on') }] },
+  {
+    id: 'number-line',
+    label: 'The number line',
+    game: 'pigeon',
+    parts: [
+      { label: '100', keys: skillKeys('number-line-100', 'ten-more-less') },
+      { label: '1000', keys: skillKeys('number-line-1000') },
+    ],
+  },
+  { id: 'equals', label: 'The equals sign', game: 'parrot', parts: [{ keys: skillKeys('balance-10', 'balance-20', 'true-false') }] },
+  {
+    id: 'place-value',
+    label: 'Tens and ones',
+    game: 'lizard',
+    parts: [
+      { label: '100', keys: skillKeys('bundles-50', 'place-value-100', 'regroup-100', 'ten-more-less-100') },
+      { label: '1000', keys: skillKeys('place-value-1000') },
+    ],
+  },
+  { id: 'arrays', label: 'Equal rows and arrays', game: 'swamphen', parts: [{ keys: skillKeys('equal-rows', 'arrays-turn', 'sharing-rows', 'cut-arrays') }] },
 ];
 
 /** All the keys a game's facts come from, for its "Hardest right now". */
@@ -118,5 +139,48 @@ export function keyWords(key: string): string {
   if (m) return `Counting ${m[2] === 'back' ? 'back ' : ''}in ${m[1]}s: ${m[3]}`;
   m = /^oddeven:(\d+)$/.exec(key);
   if (m) return `Is ${m[1]} odd or even?`;
-  return key;
+  return newerKeyWords(key) ?? key;
+}
+
+/** The five newer games' key families (Pigeon, Parrot, Lizard, Swamp Hen, Robin), shapes from shared/maths/skillPacks/earlyFacts.ts. */
+function newerKeyWords(key: string): string | null {
+  let m = /^(place100|place1000):[tnh](\d+)$/.exec(key);
+  if (m) return `Place ${m[2]} on the line to ${m[1] === 'place100' ? 100 : 1000}`;
+  m = /^(read100|read1000):[tnh](\d+)$/.exec(key);
+  if (m) return `Read ${m[2]} on the line`;
+  m = /^near(10|100):[tnh](\d+)$/.exec(key);
+  if (m) return `Is ${m[2]} nearer a ${m[1] === '10' ? 'ten' : 'hundred'} below or above?`;
+  m = /^zoom:(\d+)-(\d+):(\d+)$/.exec(key);
+  if (m) return `Zoom in on ${m[3]}`;
+  m = /^(?:tens100|pvten|pvhun):([+-])(\d+)$/.exec(key);
+  if (m) return `${m[2]} ${m[1] === '+' ? '+' : '\u2212'} ${key.startsWith('pvhun') ? 100 : 10}`;
+  m = /^(pvbuild|pvbuild3):[tn](\d+)$/.exec(key);
+  if (m) return `Build ${m[2]} with bundles`;
+  m = /^(pvread|pvread3):[tn](\d+)$/.exec(key);
+  if (m) return `Read the bundles as ${m[2]}`;
+  m = /^pvzero:[tn](\d+)$/.exec(key);
+  if (m) return `Build ${m[1]} with no ones`;
+  m = /^pvregroup:b(\d+)$/.exec(key);
+  if (m) return `Tie ${m[1]} sticks into bundles`;
+  m = /^pvregroup:s(\d+)$/.exec(key);
+  if (m) return `Untie a bundle to make ${m[1]}`;
+  m = /^eq(?:miss|swap|both|sub|tf):(.+)$/.exec(key);
+  if (m) return m[1].replace(/-/g, ' \u2212 ').replace(/\?/g, '?').replace(/([+=])/g, ' $1 ').replace(/\s+/g, ' ').trim();
+  m = /^give:n(\d+)$/.exec(key);
+  if (m) return `Give ${m[1]}`;
+  m = /^(?:howmany|across):n(\d+)/.exec(key);
+  if (m) return `How many? ${m[1]}`;
+  m = /^counton:(\d+)\+1$/.exec(key);
+  if (m) return `One more than ${m[1]}`;
+  m = /^rows:(\d+)x(\d+)$/.exec(key);
+  if (m) return `${m[1]} rows of ${m[2]}`;
+  m = /^turn:(\d+)x(\d+)$/.exec(key);
+  if (m) return `Turn ${m[1]} rows of ${m[2]}`;
+  m = /^which:(\d+)x(\d+)$/.exec(key);
+  if (m) return `Which picture is ${m[1]} rows of ${m[2]}?`;
+  m = /^share:(\d+)\/(\d+)$/.exec(key);
+  if (m) return `${m[1]} shared into ${m[2]} rows`;
+  m = /^cut:(\d+)x(\d+)$/.exec(key);
+  if (m) return `Cut ${m[1]} rows of ${m[2]}`;
+  return null;
 }

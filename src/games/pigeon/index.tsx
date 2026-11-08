@@ -54,5 +54,8 @@ export const pigeonNumberLine: GameDefinition = {
     Settings: PigeonTeacherSettings,
     StudentPanel: PigeonStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherPigeon').then((m) => m.pigeonStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('pigeon', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('pigeon', classId)),
   },
 };

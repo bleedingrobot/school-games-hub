@@ -50,5 +50,8 @@ export const lizardBundles: GameDefinition = {
     Settings: LizardTeacherSettings,
     StudentPanel: LizardStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherLizard').then((m) => m.lizardStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('lizard', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('lizard', classId)),
   },
 };

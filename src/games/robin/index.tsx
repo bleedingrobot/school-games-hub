@@ -58,5 +58,8 @@ export const robinsBerryBasket: GameDefinition = {
     Settings: RobinTeacherSettings,
     StudentPanel: RobinStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherRobin').then((m) => m.robinStudentSummary(student)),
+    // Today's "Needs you" line and "Hardest right now", from the Foundational view's cached class data (src/teacher/foundational).
+    alerts: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalAlerts('robin', classId)),
+    hardest: (classId) => import('../../teacher/foundational/alerts').then((m) => m.foundationalHardest('robin', classId)),
   },
 };
