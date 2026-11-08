@@ -46,6 +46,7 @@ export const WORDS = {
    * After it, the take-away form: "So 10 take 7 is 3."
    */
   missingSum: (a: number, target: number) => `${a} + ? = ${target}`,
+  missingTip: (target: number) => `One leaf is missing. Which leaf makes ${target}? The hand shows you.`,
   missingAsk: (a: number, target: number) => `${a} and what make ${target}? Tap the missing leaf.`,
   takeAway: (a: number, target: number) => `So ${target} take ${a} is ${target - a}.`,
   right: (a: number, b: number) => `${a} and ${b} make ${a + b}!`,

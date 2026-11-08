@@ -211,8 +211,17 @@ describe('bonds to 20 and the missing leaf (maths review R8)', () => {
     expect(keys.filter((k) => /^bond20:\d\+\d+$/.test(k) && factKeys(20).includes(k))).toHaveLength(8); // and two older bonds to 10 last
     expect(factKeys(10)).toHaveLength(5);
     expect(factKeys(100)).toEqual(['bond100:tens']);
-    // The missing leaf is only on the screen (the taps are the same two leaves): on the 4th, 7th and 10th go.
-    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(isMissingGo)).toEqual([3, 6, 9]);
+    // The missing leaf is only on the screen (the taps are the same two leaves): on the 3rd, 5th and 7th go (S22), never the last.
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(isMissingGo)).toEqual([2, 4, 6]);
+    // At least three leaves of the tray's sum float on each of them, on every stage, so a guess is not enough.
+    for (const stage of [0, 1, 2, 3] as Stage[]) {
+      const round = makeStageRound(7, stage);
+      const taps = perfectTapsFor(round);
+      for (const go of [2, 4, 6]) {
+        const { onScreen } = replay(round, taps.slice(0, go));
+        expect(onScreen.filter((i) => targetOf(round, i) === targetOf(round, onScreen[0])).length, `stage ${stage} go ${go}`).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 });
 

@@ -308,6 +308,10 @@
   "text": "Now these make 10."
  },
  {
+  "slug": "one-leaf-is-missing-which-leaf-makes-10-the-hand-shows-you",
+  "text": "One leaf is missing. Which leaf makes 10? The hand shows you."
+ },
+ {
   "slug": "you-are-ready-for-bigger-pairs-next-time-make-pairs-that-add-to-10",
   "text": "You are ready for bigger pairs! Next time, make pairs that add to 10."
  },
@@ -634,6 +638,10 @@
  {
   "slug": "now-these-make-20",
   "text": "Now these make 20."
+ },
+ {
+  "slug": "one-leaf-is-missing-which-leaf-makes-20-the-hand-shows-you",
+  "text": "One leaf is missing. Which leaf makes 20? The hand shows you."
  },
  {
   "slug": "you-are-ready-for-bigger-pairs-next-time-make-pairs-that-add-to-20",
@@ -1580,6 +1588,10 @@
   "text": "Now these make 100."
  },
  {
+  "slug": "one-leaf-is-missing-which-leaf-makes-100-the-hand-shows-you",
+  "text": "One leaf is missing. Which leaf makes 100? The hand shows you."
+ },
+ {
   "slug": "you-are-ready-for-bigger-pairs-next-time-make-pairs-that-add-to-100",
   "text": "You are ready for bigger pairs! Next time, make pairs that add to 100."
  },
@@ -1942,6 +1954,10 @@
  {
   "slug": "now-these-make-1000",
   "text": "Now these make 1000."
+ },
+ {
+  "slug": "one-leaf-is-missing-which-leaf-makes-1000-the-hand-shows-you",
+  "text": "One leaf is missing. Which leaf makes 1000? The hand shows you."
  },
  {
   "slug": "you-are-ready-for-bigger-pairs-next-time-make-pairs-that-add-to-1000",

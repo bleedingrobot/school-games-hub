@@ -155,6 +155,7 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
         child={state.child}
         guide={(state.daysDone === 0 && state.lastLeafDay === null) || newBigStalk(state)}
         bridge={newBigStalk(state)}
+        firstEver={state.daysDone === 0 && state.lastLeafDay === null}
         sound={soundOn}
         say={voice.say}
         onDone={(taps) => done(screen.round.seed, taps)}

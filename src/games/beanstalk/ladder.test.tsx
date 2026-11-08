@@ -42,22 +42,41 @@ describe('the missing leaf and the what’s-next card (maths review R8)', () => 
     vi.useRealTimers();
   });
 
-  it('picks one leaf of the 4th pair for the child and asks "7 + ? = 10", then says "So 10 take 7 is 3" once the missing leaf is tapped', async () => {
+  it('picks one leaf of the 3rd pair for the child and asks "7 + ? = 10", does not mark a wrong pair as tried, then says "So 10 take 7 is 3" once the missing leaf is tapped', async () => {
     const u = await start(3);
-    for (let go = 0; go < 3; go++) {
+    for (let go = 0; go < 2; go++) {
       expect(screen.getByText('Make 10')).toBeInTheDocument(); // the first three goes are the usual two taps
       expect(leaves().some((b) => b.getAttribute('aria-pressed') === 'true')).toBe(false);
       await makePair(u, 10);
     }
-    expect(screen.getByLabelText('3 of 10 pairs')).toBeInTheDocument();
+    expect(screen.getByLabelText('2 of 10 pairs')).toBeInTheDocument();
     const anchor = leaves().find((b) => b.getAttribute('aria-pressed') === 'true')!;
     const a = value(anchor);
     expect(screen.getByText(`${a} + ? = 10`)).toBeInTheDocument();
     await u.click(anchor); // the picked leaf is not the answer, and a tap on it does nothing
     expect(anchor).toHaveAttribute('aria-pressed', 'true');
+    const wrong = leaves().find((b) => b !== anchor && value(b) !== 10 - a)!;
+    await u.click(wrong);
+    await act(() => vi.advanceTimersByTimeAsync(700));
+    expect(document.querySelector('.bs-leaf--tried')).toBeNull(); // the wrong pair isn't marked as tried or blocked on a missing-leaf go
+    expect(screen.getByLabelText('2 of 10 pairs')).toBeInTheDocument();
     await u.click(leaves().find((b) => value(b) === 10 - a && b !== anchor)!);
-    expect(screen.getByLabelText('4 of 10 pairs')).toBeInTheDocument();
+    expect(screen.getByLabelText('3 of 10 pairs')).toBeInTheDocument();
     expect(screen.getByText(`So 10 take ${a} is ${10 - a}.`)).toBeInTheDocument();
+  });
+
+  it('shows the tip and the pointing hand on the very first missing-leaf go, and never again', async () => {
+    const u = await start(0);
+    for (let go = 0; go < 2; go++) await makePair(u, 10);
+    expect(screen.getByText(/One leaf is missing\. Which leaf makes 10\?/)).toBeInTheDocument();
+    const anchor = leaves().find((b) => b.getAttribute('aria-pressed') === 'true')!;
+    expect(document.querySelectorAll('.bs-leaf--pointed').length).toBe(1);
+    await u.click(leaves().find((b) => value(b) === 10 - value(anchor) && b !== anchor)!);
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    expect(screen.queryByText(/One leaf is missing/)).not.toBeInTheDocument();
+    for (let go = 3; go < 4; go++) await makePair(u, 10);
+    expect(screen.queryByText(/One leaf is missing/)).not.toBeInTheDocument(); // the 5th go: no tip this time
+    expect(screen.getByText(/\+ \? = 10/)).toBeInTheDocument();
   });
 
   it('shows the card to Weka on the finish screen only when Weka is on, the sum is bonds to 20 or more, and its pairs are secure', async () => {

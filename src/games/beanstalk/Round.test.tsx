@@ -111,11 +111,12 @@ describe("Kiwi's Beanstalk play screen", () => {
     for (let go = 1; go <= 3; go++) {
       expect(frames()).toBe(0); // not yet, however many wrong taps there have been in a go
       const shown = leaves().map((b) => Number(b.getAttribute('aria-label')));
-      const a = shown.find((n) => n !== 5 && shown.includes(10 - n))!;
+      const held = leaves().find((b) => b.getAttribute('aria-pressed') === 'true'); // the 3rd go is a missing-leaf go: one leaf is picked already
+      const a = held ? Number(held.getAttribute('aria-label')) : shown.find((n) => n !== 5 && shown.includes(10 - n))!;
       const w = shown.find((n) => n !== a && n !== 10 - a && n !== 5)!;
-      await u.click(leaf(a));
+      if (!held) await u.click(leaf(a));
       await u.click(leaf(w)); // a wrong first tap
-      await u.click(leaf(a));
+      if (!held) await u.click(leaf(a));
       await u.click(leaf(10 - a));
       await act(() => vi.advanceTimersByTimeAsync(1000));
     }

@@ -31,8 +31,10 @@ export const unitOf = (target: Target): number => (target === 20 ? 1 : target / 
 /**
  * The missing leaf (R8): on these goes (counting from 0) one leaf of a pair is already picked and the child taps the one
  * that is missing, "7 + ? = 10". Only the screen changes: the taps are the same two leaves, so the server replays them as usual.
+ * The 3rd, 5th and 7th goes (S22): never the last, where only two leaves float and a guess is right, and never in the short
+ * second tray of older pairs. At least three leaves float on each, so there are wrong choices to think about.
  */
-export const MISSING_GOES = [3, 6, 9] as const;
+export const MISSING_GOES = [2, 4, 6] as const;
 export const isMissingGo = (pairsMade: number): boolean => (MISSING_GOES as readonly number[]).includes(pairsMade);
 /** Leaves floating at once: three pairs. */
 export const ON_SCREEN = 6;

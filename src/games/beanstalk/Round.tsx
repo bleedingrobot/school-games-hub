@@ -4,7 +4,7 @@
  *
  * Mistakes that teach (maths review R5). A go runs until a right pair. The first wrong pair of a go wobbles, and the two
  * leaves' dots join in one frame with the extra dots out or the empty squares glowing, and the line says why ("4 and 8
- * make 12. That is too many."). A tried pair can't be tapped together again. The second wrong pair stops the free taps:
+ * make 12. That is too many."). A tried pair can't be tapped together again (except on a missing-leaf go, where the child is free to try it again: S22). The second wrong pair stops the free taps:
  * "Let's look together". The first leaf of that pair pulses and its frame fills with its partner's dots, counted, then
  * "Now you try: what goes with 7?" with the 7 still picked and the partner not marked. The pair then made counts for the
  * round, but only a go's first tap is scored (round.ts), so it is a shown pair, not a clean right.
@@ -61,12 +61,14 @@ interface Props {
    * tens"), shown and read before the usual line (maths review R4).
    */
   bridge?: boolean;
+  /** The child's very first challenge: the first missing-leaf go (the 3rd) comes with a tip and the hand pointing at the missing leaf (S22). */
+  firstEver?: boolean;
   sound: boolean;
   say: (text: string, onEnd?: () => void) => void;
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, sound, say, onDone }: Props) {
+export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, firstEver = false, sound, say, onDone }: Props) {
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
@@ -86,6 +88,9 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
   const [missing, setMissing] = useState<number | null>(null);
   /** "So 10 take 7 is 3.": shown after a right missing-leaf go, until the next tap. */
   const [take, setTake] = useState<string | null>(null);
+  /** The first missing-leaf go ever: its tip, and the hand at the missing leaf, until the child taps (once only). */
+  const [tip, setTip] = useState<string | null>(null);
+  const tipDone = useRef(false);
   /** After "Let's look together": the leaf the child now finds the partner of. It stays picked. */
   const [redo, setRedo] = useState<number | null>(null);
   const since = useRef(Date.now());
@@ -158,9 +163,11 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     if (flying.length || look) return;
     tappedYet.current = true;
     setTake(null);
+    setTip(null);
     // "Now you try": the leaf from "Let's look together" stays picked, so a tap on it does nothing.
     if (redo !== null && leaf === redo) return;
-    if (picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))) return; // a pair tried already
+    // A pair tried already can't be tapped again, except on a missing-leaf go: the child is free to think it over (S22).
+    if (missing === null && picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))) return;
     if (picked === null || picked === leaf) {
       setPicked(picked === leaf ? null : leaf);
       if (sound) playSound('tap');
@@ -208,9 +215,14 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     if (struggling) setBoosted(true);
     // The short second tray of older pairs came in: say what these make now (the badge changes as they arrive).
     const trayNext = after.done || !after.onScreen.length ? target : targetOf(round, after.onScreen[0]);
+    const firstTip = firstEver && !tipDone.current && nextGo !== null ? WORDS.missingTip(trayNext) : null;
+    if (firstTip) {
+      tipDone.current = true;
+      setTip(firstTip);
+    }
     sayAll([
       WORDS.right(x, y), wasMissing, struggling ? WORDS.dotsBack : null, trayNext !== target ? WORDS.nowThese(trayNext) : null,
-      nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], trayNext) : null,
+      firstTip, nextGo !== null ? WORDS.missingAsk(round.leaves[nextGo], trayNext) : null,
     ]);
     if (sound) playSound('hop');
     later(FLY_MS, () => {
@@ -232,12 +244,12 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
   // leaf floating has a partner (round.ts), so it always has somewhere to point. Gone after the first right pair.
   const onScreen = slots.filter((s): s is number => s !== null && !flying.includes(s));
   const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === target);
-  const pointAt = !guide || pairsMade > 0 || flying.length || look || redo !== null ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
+  const pointAt = tip !== null && missing !== null && !flying.length && !look ? (partner(missing) ?? null) : !guide || pairsMade > 0 || flying.length || look || redo !== null ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
 
   const lookOf = (leaf: number): LeafLook =>
     flying.includes(leaf)
       ? 'flying'
-      : picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))
+      : missing === null && picked !== null && picked !== leaf && tried.includes(pairId(picked, leaf))
         ? 'tried'
         : wobble.includes(leaf)
           ? 'wobble'
@@ -277,6 +289,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
         {bridgeLine && <p className="bs-bridge">{bridgeLine}</p>}
+        {tip && !why && <p className="bs-take">{tip}</p>}
         {take && !why && <p className="bs-take">{take}</p>}
         {why && (
           <ShowWhy
