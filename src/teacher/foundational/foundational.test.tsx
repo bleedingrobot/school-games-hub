@@ -15,7 +15,12 @@ import { TOP_STEP as PIGEON_TOP } from '../../../shared/pigeon/config';
 import { TOP_STEP as LIZARD_TOP } from '../../../shared/lizard/config';
 import { TOP_STEP as SWAMPHEN_TOP } from '../../../shared/swamphen/config';
 import { GAME_IDS } from '../../data/foundational';
-import { classRows } from './flags';
+import { HOP_STEPS } from '../../../shared/hop/round';
+import { LEVELS as KORORA_LEVELS } from '../../../shared/korora/round';
+import { LEVELS as PIPI_LEVELS } from '../../../shared/pipi/round';
+import { LEVELS as WEKA_LEVELS } from '../../../shared/weka/round';
+import { STEPS as TUI_STEPS } from '../../../shared/tui/round';
+import { classRows, tracksOf } from './flags';
 import { FoundationalGrid } from './FoundationalGrid';
 
 const student = (id: string, name: string): MapStudent => ({ id, name, realName: null, ladder: {} as MapStudent['ladder'], enabledTables: undefined, division: false, facts: [] });
@@ -111,5 +116,29 @@ describe('the five newer games in the teacher view (S17)', () => {
       ['counton:5+1', 'One more than 5'], ['rows:4x6', '4 rows of 6'], ['share:24/4', '24 shared into 4 rows'], ['cut:6x7', 'Cut 6 rows of 7'], ['which:3x5', 'Which picture is 3 rows of 5?'],
     ];
     for (const [key, words] of table) expect(keyWords(key)).toBe(words);
+  });
+});
+
+describe('the older games keep up with their longer ladders (S23)', () => {
+  it('names every level a child can reach in Hop, Penguin Pairs, Pipi, Tūī and Weka, and top is the last one', () => {
+    const reachable = {
+      hop: HOP_STEPS.map((s) => s.step as number),
+      korora: KORORA_LEVELS.map((l) => l.level as number),
+      pipi: PIPI_LEVELS.map((l) => l.level as number),
+      tui: TUI_STEPS.map((s) => s.step as number),
+      weka: WEKA_LEVELS.map((l) => l.level as number),
+    };
+    for (const [id, levels] of Object.entries(reachable)) {
+      const words = GAMES[id as keyof typeof GAMES];
+      for (const level of levels) expect(words.levels[level], `${id} level ${level}`).toBeTruthy();
+      expect(Object.keys(words.levels).map(Number).sort((a, b) => a - b), id).toEqual([...levels].sort((a, b) => a - b));
+      expect(words.top, id).toBe(levels[levels.length - 1]);
+    }
+  });
+
+  it('shows a Hop pupil on step 200 as top with its name, and one on step 3 with its name and not top', () => {
+    const at = (level: number) => tracksOf({ games: { hop: { daysDone: 4, lastDay: '2026-11-06', level, recent: [] } }, quickLooks: null }).find((t) => t.id === 'hop')!;
+    expect(at(200)).toMatchObject({ levelLabel: 'Counting in tens past 100', top: true });
+    expect(at(3)).toMatchObject({ levelLabel: 'Counting in threes', top: false });
   });
 });
