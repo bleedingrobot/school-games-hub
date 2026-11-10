@@ -396,6 +396,10 @@
   "text": "1 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-1",
+  "text": "What goes with 1?"
+ },
+ {
   "slug": "so-10-take-1-is-9",
   "text": "So 10 take 1 is 9."
  },
@@ -432,6 +436,10 @@
   "text": "2 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-2",
+  "text": "What goes with 2?"
+ },
+ {
   "slug": "so-10-take-2-is-8",
   "text": "So 10 take 2 is 8."
  },
@@ -464,6 +472,10 @@
   "text": "3 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-3",
+  "text": "What goes with 3?"
+ },
+ {
   "slug": "so-10-take-3-is-7",
   "text": "So 10 take 3 is 7."
  },
@@ -490,6 +502,10 @@
  {
   "slug": "4-and-what-make-10-tap-the-missing-leaf",
   "text": "4 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-4",
+  "text": "What goes with 4?"
  },
  {
   "slug": "so-10-take-4-is-6",
@@ -520,6 +536,10 @@
   "text": "5 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-5",
+  "text": "What goes with 5?"
+ },
+ {
   "slug": "so-10-take-5-is-5",
   "text": "So 10 take 5 is 5."
  },
@@ -544,6 +564,10 @@
   "text": "6 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-6",
+  "text": "What goes with 6?"
+ },
+ {
   "slug": "so-10-take-6-is-4",
   "text": "So 10 take 6 is 4."
  },
@@ -564,6 +588,10 @@
   "text": "7 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-7",
+  "text": "What goes with 7?"
+ },
+ {
   "slug": "so-10-take-7-is-3",
   "text": "So 10 take 7 is 3."
  },
@@ -580,6 +608,10 @@
   "text": "8 and what make 10? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-8",
+  "text": "What goes with 8?"
+ },
+ {
   "slug": "so-10-take-8-is-2",
   "text": "So 10 take 8 is 2."
  },
@@ -590,6 +622,10 @@
  {
   "slug": "9-and-what-make-10-tap-the-missing-leaf",
   "text": "9 and what make 10? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-9",
+  "text": "What goes with 9?"
  },
  {
   "slug": "so-10-take-9-is-1",
@@ -1296,6 +1332,10 @@
   "text": "11 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-11",
+  "text": "What goes with 11?"
+ },
+ {
   "slug": "so-20-take-11-is-9",
   "text": "So 20 take 11 is 9."
  },
@@ -1336,6 +1376,10 @@
   "text": "12 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-12",
+  "text": "What goes with 12?"
+ },
+ {
   "slug": "so-20-take-12-is-8",
   "text": "So 20 take 12 is 8."
  },
@@ -1372,6 +1416,10 @@
   "text": "13 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-13",
+  "text": "What goes with 13?"
+ },
+ {
   "slug": "so-20-take-13-is-7",
   "text": "So 20 take 13 is 7."
  },
@@ -1404,6 +1452,10 @@
   "text": "14 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-14",
+  "text": "What goes with 14?"
+ },
+ {
   "slug": "so-20-take-14-is-6",
   "text": "So 20 take 14 is 6."
  },
@@ -1432,6 +1484,10 @@
   "text": "15 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-15",
+  "text": "What goes with 15?"
+ },
+ {
   "slug": "so-20-take-15-is-5",
   "text": "So 20 take 15 is 5."
  },
@@ -1456,6 +1512,10 @@
   "text": "16 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-16",
+  "text": "What goes with 16?"
+ },
+ {
   "slug": "so-20-take-16-is-4",
   "text": "So 20 take 16 is 4."
  },
@@ -1476,6 +1536,10 @@
   "text": "17 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-17",
+  "text": "What goes with 17?"
+ },
+ {
   "slug": "so-20-take-17-is-3",
   "text": "So 20 take 17 is 3."
  },
@@ -1492,6 +1556,10 @@
   "text": "18 and what make 20? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-18",
+  "text": "What goes with 18?"
+ },
+ {
   "slug": "so-20-take-18-is-2",
   "text": "So 20 take 18 is 2."
  },
@@ -1502,6 +1570,10 @@
  {
   "slug": "19-and-what-make-20-tap-the-missing-leaf",
   "text": "19 and what make 20? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-19",
+  "text": "What goes with 19?"
  },
  {
   "slug": "so-20-take-19-is-1",
@@ -1640,6 +1712,10 @@
   "text": "10 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-10",
+  "text": "What goes with 10?"
+ },
+ {
   "slug": "so-100-take-10-is-90",
   "text": "So 100 take 10 is 90."
  },
@@ -1676,6 +1752,10 @@
   "text": "20 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-20",
+  "text": "What goes with 20?"
+ },
+ {
   "slug": "so-100-take-20-is-80",
   "text": "So 100 take 20 is 80."
  },
@@ -1708,6 +1788,10 @@
   "text": "30 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-30",
+  "text": "What goes with 30?"
+ },
+ {
   "slug": "so-100-take-30-is-70",
   "text": "So 100 take 30 is 70."
  },
@@ -1734,6 +1818,10 @@
  {
   "slug": "40-and-what-make-100-tap-the-missing-leaf",
   "text": "40 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-40",
+  "text": "What goes with 40?"
  },
  {
   "slug": "so-100-take-40-is-60",
@@ -1764,6 +1852,10 @@
   "text": "50 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-50",
+  "text": "What goes with 50?"
+ },
+ {
   "slug": "so-100-take-50-is-50",
   "text": "So 100 take 50 is 50."
  },
@@ -1788,6 +1880,10 @@
   "text": "60 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-60",
+  "text": "What goes with 60?"
+ },
+ {
   "slug": "so-100-take-60-is-40",
   "text": "So 100 take 60 is 40."
  },
@@ -1808,6 +1904,10 @@
   "text": "70 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-70",
+  "text": "What goes with 70?"
+ },
+ {
   "slug": "so-100-take-70-is-30",
   "text": "So 100 take 70 is 30."
  },
@@ -1824,6 +1924,10 @@
   "text": "80 and what make 100? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-80",
+  "text": "What goes with 80?"
+ },
+ {
   "slug": "so-100-take-80-is-20",
   "text": "So 100 take 80 is 20."
  },
@@ -1834,6 +1938,10 @@
  {
   "slug": "90-and-what-make-100-tap-the-missing-leaf",
   "text": "90 and what make 100? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-90",
+  "text": "What goes with 90?"
  },
  {
   "slug": "so-100-take-90-is-10",
@@ -1972,6 +2080,10 @@
   "text": "100 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-100",
+  "text": "What goes with 100?"
+ },
+ {
   "slug": "so-1000-take-100-is-900",
   "text": "So 1000 take 100 is 900."
  },
@@ -2008,6 +2120,10 @@
   "text": "200 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-200",
+  "text": "What goes with 200?"
+ },
+ {
   "slug": "so-1000-take-200-is-800",
   "text": "So 1000 take 200 is 800."
  },
@@ -2040,6 +2156,10 @@
   "text": "300 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-300",
+  "text": "What goes with 300?"
+ },
+ {
   "slug": "so-1000-take-300-is-700",
   "text": "So 1000 take 300 is 700."
  },
@@ -2066,6 +2186,10 @@
  {
   "slug": "400-and-what-make-1000-tap-the-missing-leaf",
   "text": "400 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-400",
+  "text": "What goes with 400?"
  },
  {
   "slug": "so-1000-take-400-is-600",
@@ -2096,6 +2220,10 @@
   "text": "500 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-500",
+  "text": "What goes with 500?"
+ },
+ {
   "slug": "so-1000-take-500-is-500",
   "text": "So 1000 take 500 is 500."
  },
@@ -2120,6 +2248,10 @@
   "text": "600 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-600",
+  "text": "What goes with 600?"
+ },
+ {
   "slug": "so-1000-take-600-is-400",
   "text": "So 1000 take 600 is 400."
  },
@@ -2140,6 +2272,10 @@
   "text": "700 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-700",
+  "text": "What goes with 700?"
+ },
+ {
   "slug": "so-1000-take-700-is-300",
   "text": "So 1000 take 700 is 300."
  },
@@ -2156,6 +2292,10 @@
   "text": "800 and what make 1000? Tap the missing leaf."
  },
  {
+  "slug": "what-goes-with-800",
+  "text": "What goes with 800?"
+ },
+ {
   "slug": "so-1000-take-800-is-200",
   "text": "So 1000 take 800 is 200."
  },
@@ -2166,6 +2306,10 @@
  {
   "slug": "900-and-what-make-1000-tap-the-missing-leaf",
   "text": "900 and what make 1000? Tap the missing leaf."
+ },
+ {
+  "slug": "what-goes-with-900",
+  "text": "What goes with 900?"
  },
  {
   "slug": "so-1000-take-900-is-100",

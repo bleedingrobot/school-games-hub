@@ -90,6 +90,7 @@ describe("Kiwi's Beanstalk play screen", () => {
     await act(() => vi.advanceTimersByTimeAsync(12000));
     // "Now you try one like it": a different leaf with a partner on screen is picked (not the first leaf, nor its partner's number).
     expect(screen.getByText(/^Now you try one like it\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Now you try one like it\. What goes with \d+\?$/)).toBeInTheDocument();
     const held = leaves().find((b) => b.getAttribute('aria-pressed') === 'true')!;
     const v = Number(held.getAttribute('aria-label'));
     expect([a, 10 - a]).not.toContain(v);

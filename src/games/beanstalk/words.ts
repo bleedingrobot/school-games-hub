@@ -83,6 +83,8 @@ export const WORDS = {
   },
   /** After "Let's look together": a different leaf is picked and the game asks for its partner (`missingAsk`, which the voice list already holds). */
   nowTry: 'Now you try one like it.',
+  /** The question after `nowTry` on a plain pair go. */
+  goesWith: (n: number) => `What goes with ${n}?`,
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
   goOn: 'My turn',
   /** The tail of the finish title, after the opening for how the day went (S33). */

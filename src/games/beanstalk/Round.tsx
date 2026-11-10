@@ -180,7 +180,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
         setPicked(sister);
         if (missing !== null) setMissing(sister);
         since.current = Date.now();
-        say(WORDS.nowTry, () => say(WORDS.missingAsk(round.leaves[sister], targetOf(round, sister))));
+        say(WORDS.nowTry, () => say(missing !== null ? WORDS.missingAsk(round.leaves[sister], targetOf(round, sister)) : WORDS.goesWith(round.leaves[sister])));
       },
     });
   }
@@ -320,7 +320,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
           type="button"
           className="bs-hear"
           disabled={look !== null || demo.playing}
-          onClick={() => say(missingLine ?? (redo !== null ? WORDS.missingAsk(round.leaves[redo], targetOf(round, redo)) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
+          onClick={() => say(missingLine ?? (redo !== null ? WORDS.goesWith(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
         >
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
@@ -354,7 +354,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
             onSkip={skipLook}
           />
         )}
-        {redo !== null && missing === null && !why && <NowYouTry prefix="bs" line={`${WORDS.nowTry} ${WORDS.missingAsk(round.leaves[redo], targetOf(round, redo))}`} />}
+        {redo !== null && missing === null && !why && <NowYouTry prefix="bs" line={`${WORDS.nowTry} ${WORDS.goesWith(round.leaves[redo])}`} />}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>

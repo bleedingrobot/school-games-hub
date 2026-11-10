@@ -61,6 +61,7 @@ export function allVoiceLines(): string[] {
       for (const b of numbers) if (a < b && a + b !== target) lines.add(WORDS.why(a, b, target));
       lines.add(WORDS.fillUp(a, target));
       lines.add(WORDS.missingAsk(a, target));
+      lines.add(WORDS.goesWith(a));
       lines.add(WORDS.takeAway(a, target));
     }
   }
