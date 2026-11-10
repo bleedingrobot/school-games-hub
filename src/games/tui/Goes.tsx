@@ -14,8 +14,10 @@
  * Mistakes that teach (maths review R5). Every go has four nests, each wrong one tagged with its mistake (round.ts). The
  * first wrong tap greys that nest out for good and says why, with a picture of that kind (arrow cards of 4 tens and 1 for
  * 41, two full frames for 20, the ten lit, the berries counted in, the whole with the ten greyed, the ten flying off). The
- * second stops the free taps: "Let's look together", the arrow cards play the whole sum, then "Now you try!": the same go
- * again at the child's own level, nests back in a new order. Only a go's first tap is scored (play.ts), so a shown go
+ * second stops the free taps: "Let's look together", the arrow cards play the whole sum, then "Now you try one like it.": a sister
+ * go (the ones moved by one or two, same way and level, nothing marked, never sent). A right tap on it sends the first go's
+ * right pick instead; a wrong one shows why, then the first go comes back with its right nest ringed. Praise after that is
+ * plain (WORDS.rightRedo), not the first-try line. Only a go's first tap is scored (play.ts), so a shown go
  * is never a clean right. After every right answer, the arrow cards: the ones card slides onto the 0 of the
  * "10" and makes the teen number, at every level. Only the picks are sent; the server replays them.
  */
@@ -24,7 +26,7 @@ import type { Tap } from '../../../shared/tui/play';
 import type { Friend as FriendName } from '../../../shared/tui/progress';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
-import { GOES_PER_ROUND, KIND_OF_WAY, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
+import { GOES_PER_ROUND, KIND_OF_WAY, pictureFor, showRound, sisterGo, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
 import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
 import { useKindDemo } from '../../kit/useKindDemo';
@@ -37,6 +39,8 @@ import { askLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 3400;
+/** How long a wrong tap on the sister shows its why-line, before the first go's right nest is marked. */
+const SISTER_WHY_MS = 2600;
 const WOBBLE_MS = 500;
 const FINALE_MS = 4200;
 /** The guided first go: the hand at the full branch, then the loose berries, then over the nests. */
@@ -75,6 +79,10 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   const [why, setWhy] = useState<{ n: number; kind: TuiKind } | null>(null);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const [tapped, setTapped] = useState<number[]>([]);
+  /** "Now you try one like it": the sister go (local only, never in `taps`, nothing on it marked) and the child's one wrong tap on it. */
+  const [sister, setSister] = useState<{ go: Go; wrong: number | null } | null>(null);
+  /** After a wrong tap on the sister: the first go's right nest is marked, so nobody is stuck. */
+  const [stuck, setStuck] = useState(false);
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
   const [pointAt, setPointAt] = useState<Guide>(null);
@@ -98,7 +106,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   const backLine = useRef(false);
   const boosted = boost && round.help !== 'off';
   const planned: Go = goes[Math.min(at, goes.length - 1)];
-  const go: Go = boosted && planned.l < 5 ? { ...planned, l: 5 } : planned;
+  const base: Go = boosted && planned.l < 5 ? { ...planned, l: 5 } : planned;
+  const go: Go = sister ? sister.go : base;
   const guided = guide && at === 0;
   const kinds = useSeenKinds(seen, onSeen);
   /** A way not yet seen (turning round, how many more, taking away) gets its demo before the first go of it, once. */
@@ -166,6 +175,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
       setFlow(NEW_GO);
       setWhy(null);
       setTapped([]);
+      setSister(null);
+      setStuck(false);
       return;
     }
     if (finale) {
@@ -180,8 +191,50 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
     }
   }
 
+  /** A tap on the sister. Never saved or sent: a right one ends the go with the FIRST go's right pick, which is what the server replays. */
+  function pickSister(s: { go: Go; wrong: number | null }, n: number) {
+    if (s.wrong !== null) return;
+    tappedYet.current = true;
+    if (n === s.go.answer) {
+      const now = Date.now();
+      const next = [...taps, { pick: base.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      rightTap(next, WORDS.rightRedo(s.go.n));
+      return;
+    }
+    setSister({ go: s.go, wrong: n });
+    setTapped([n]);
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    const kind = s.go.wrongs.find((w) => w.n === n)!.kind;
+    setWhy({ n, kind });
+    say(WORDS.why(kind, n, s.go.v));
+    later(SISTER_WHY_MS, () => {
+      setSister(null);
+      setWhy(null);
+      setTapped([]);
+      setStuck(true);
+    });
+  }
+
+  /** The go is right: the berries, the arrow cards and the line (plain after "Now you try"), then the next go. */
+  function rightTap(next: Tap[], line: string) {
+    clearTimers();
+    setPointAt(null);
+    setWhy(null);
+    kinds.mark([KIND_OF_WAY[go.v]]);
+    setPhase('right');
+    setPose('eat');
+    say(line);
+    if (sound) playSound('badge');
+    later(RIGHT_MS, () => nextGo(next));
+  }
+
   function pick(n: number) {
     if (phase !== 'ask' || look || demo.playing || tapped.includes(n)) return;
+    if (sister) return pickSister(sister, n);
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -216,7 +269,11 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);
             since.current = Date.now();
-            say(WORDS.nowTry);
+            tappedYet.current = false;
+            // "Now you try one like it": a sister go (the ones moved by one or two); if none fits, the go itself comes back.
+            const sis = sisterGo(round, at, go);
+            setSister(sis ? { go: sis, wrong: null } : null);
+            say(WORDS.nowTry, sis ? () => say(askLine(sis)) : undefined);
           },
         });
         return;
@@ -229,21 +286,14 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
       return;
     }
     if (first) setStreak(0);
-    clearTimers();
-    setPointAt(null);
-    setWhy(null);
-    kinds.mark([KIND_OF_WAY[go.v]]);
-    setPhase('right');
-    setPose('eat');
-    say(WORDS.right(go.answer, go.n));
-    if (sound) playSound('badge');
-    later(RIGHT_MS, () => nextGo(next));
+    // After "Let's look together" the praise is plain; "Well done" is for a right first try.
+    rightTap(next, redo ? WORDS.rightRedo(go.n) : WORDS.right(go.answer, go.n));
   }
 
   const made = at + (phase === 'ask' ? 0 : 1);
   const style = backFor(scenery);
   // Four nests always; in "Now you try" they come back in a new order (the server only cares which nest was tapped).
-  const nests = redo ? [...go.choices].reverse() : go.choices;
+  const nests = redo && !sister ? [...go.choices].reverse() : go.choices;
 
   if (demo.playing && demoWay !== null) {
     const shown: Go = { ...go, n: demoN, teen: 10 + demoN, l: 4 };
@@ -316,8 +366,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
               <button
                 key={`${at}-${n}`}
                 type="button"
-                disabled={phase === 'ask' && (look !== null || tapped.includes(n))}
-                className={`tui-choice${tapped.includes(n) && phase === 'ask' ? ' tui-choice--off' : ''}${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
+                disabled={phase === 'ask' && (look !== null || tapped.includes(n) || (sister !== null && sister.wrong !== null))}
+                className={`tui-choice${tapped.includes(n) && phase === 'ask' ? ' tui-choice--off' : ''}${stuck && !sister && phase === 'ask' && n === go.answer ? ' tui-choice--hint' : ''}${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
                 onClick={() => pick(n)}
                 aria-label={String(n)}
               >

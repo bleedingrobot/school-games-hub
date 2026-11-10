@@ -15,6 +15,7 @@
 import type { FactStats } from '../maths/leitner';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { tagWrongs, type Wrong } from '../kit/mistakes';
+import { sisterNumber } from '../kit/sister';
 import { seeded } from '../seededRandom';
 import type { KindLevels } from '../kit/help';
 import { STEP_SECURE_SHARE } from '../maths/selector';
@@ -347,4 +348,19 @@ export function pictureFor(go: Pick<Go, 'l'>, wrongTaps: number): {
     else level = Math.min(TOP_LEVEL, go.l + 1) as HelpLevel;
   }
   return { level, peekOpen };
+}
+
+/**
+ * A "sister" of a go for "Now you try one like it" (S32 part 2): the same way and help level with the ones moved by 1 or 2
+ * (n from 1 to 9), so a different fact and a different answer, built by showGo so its nests agree. It leaves out numbers
+ * whose answer is one of the original go's nests where it can. Local only: never sent or saved. Null if none fits.
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const seed = (round.seed + 15485863 + 31 * index) % MAX_SEED;
+  const answerOf = (n: number) => (go.v >= 2 ? n : 10 + n);
+  const seen = KEYS.map((_, i) => i + 1).filter((n) => go.choices.includes(answerOf(n)));
+  const n = sisterNumber(go.n, seed, { min: 1, max: 9, avoid: seen }) ?? sisterNumber(go.n, seed, { min: 1, max: 9 });
+  if (n === null) return null;
+  const sister = showGo(round, index + 11, { key: keyFor(n, go.v), v: go.v, l: go.l });
+  return sister && sister.answer !== go.answer ? sister : null;
 }

@@ -8,8 +8,8 @@
   "text": "Let's look together."
  },
  {
-  "slug": "now-you-try",
-  "text": "Now you try!"
+  "slug": "now-you-try-one-like-it",
+  "text": "Now you try one like it."
  },
  {
   "slug": "ten-and-ten-is-twenty",
@@ -108,6 +108,10 @@
   "text": "11 take away ten. How many are left?"
  },
  {
+  "slug": "you-found-it-10-and-1-is-11",
+  "text": "You found it. 10 and 1 is 11."
+ },
+ {
   "slug": "11-is-all-the-berries-together-how-many-go-with-the-ten",
   "text": "11 is all the berries together. How many go with the ten?"
  },
@@ -154,6 +158,10 @@
  {
   "slug": "12-take-away-ten-how-many-are-left",
   "text": "12 take away ten. How many are left?"
+ },
+ {
+  "slug": "you-found-it-10-and-2-is-12",
+  "text": "You found it. 10 and 2 is 12."
  },
  {
   "slug": "21-is-two-tens-and-one-we-only-have-one-ten",
@@ -208,6 +216,10 @@
   "text": "13 take away ten. How many are left?"
  },
  {
+  "slug": "you-found-it-10-and-3-is-13",
+  "text": "You found it. 10 and 3 is 13."
+ },
+ {
   "slug": "31-is-three-tens-and-one-we-only-have-one-ten",
   "text": "31 is three tens and one. We only have one ten."
  },
@@ -258,6 +270,10 @@
  {
   "slug": "14-take-away-ten-how-many-are-left",
   "text": "14 take away ten. How many are left?"
+ },
+ {
+  "slug": "you-found-it-10-and-4-is-14",
+  "text": "You found it. 10 and 4 is 14."
  },
  {
   "slug": "41-is-four-tens-and-one-we-only-have-one-ten",
@@ -312,6 +328,10 @@
   "text": "15 take away ten. How many are left?"
  },
  {
+  "slug": "you-found-it-10-and-5-is-15",
+  "text": "You found it. 10 and 5 is 15."
+ },
+ {
   "slug": "51-is-five-tens-and-one-we-only-have-one-ten",
   "text": "51 is five tens and one. We only have one ten."
  },
@@ -362,6 +382,10 @@
  {
   "slug": "16-take-away-ten-how-many-are-left",
   "text": "16 take away ten. How many are left?"
+ },
+ {
+  "slug": "you-found-it-10-and-6-is-16",
+  "text": "You found it. 10 and 6 is 16."
  },
  {
   "slug": "61-is-six-tens-and-one-we-only-have-one-ten",
@@ -416,6 +440,10 @@
   "text": "17 take away ten. How many are left?"
  },
  {
+  "slug": "you-found-it-10-and-7-is-17",
+  "text": "You found it. 10 and 7 is 17."
+ },
+ {
   "slug": "71-is-seven-tens-and-one-we-only-have-one-ten",
   "text": "71 is seven tens and one. We only have one ten."
  },
@@ -468,6 +496,10 @@
   "text": "18 take away ten. How many are left?"
  },
  {
+  "slug": "you-found-it-10-and-8-is-18",
+  "text": "You found it. 10 and 8 is 18."
+ },
+ {
   "slug": "81-is-eight-tens-and-one-we-only-have-one-ten",
   "text": "81 is eight tens and one. We only have one ten."
  },
@@ -518,6 +550,10 @@
  {
   "slug": "19-take-away-ten-how-many-are-left",
   "text": "19 take away ten. How many are left?"
+ },
+ {
+  "slug": "you-found-it-10-and-9-is-19",
+  "text": "You found it. 10 and 9 is 19."
  },
  {
   "slug": "91-is-nine-tens-and-one-we-only-have-one-ten",

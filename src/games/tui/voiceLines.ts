@@ -70,6 +70,7 @@ export function allVoiceLines(): string[] {
       lines.add(sumLine(go));
       lines.add(WORDS.right(v >= 2 ? n : 10 + n, n));
     }
+    lines.add(WORDS.rightRedo(n));
     // Mistakes that teach (maths review R5): why each kind of wrong nest is wrong. The number said is the nest tapped.
     if (n >= 2) lines.add(WORDS.why('reverse', n * 10 + 1, 0));
     lines.add(WORDS.why('total', 10 + n, 2));
