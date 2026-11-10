@@ -69,8 +69,13 @@ export const DRAGON_MATHS_ON = true;
  */
 export const CLAN_QUEST_ON = true;
 
-/** Every game on the hub. To add a game: make a folder next to chess/, then add it here. */
-export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(kororaOn() ? [penguinPairs] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(tuiOn() ? [tuisTenTree] : []), ...(pigeonOn() ? [pigeonNumberLine] : []), ...(decreeOn() ? [royalDecree] : []), ...(parrotOn() ? [parrotsSeesaw] : []), ...(lizardOn() ? [lizardBundles] : []), ...(swamphenOn() ? [swamphenReedRows] : []), ...(robinOn() ? [robinsBerryBasket] : [])];
+/**
+ * Every game on the hub. To add a game: make a folder next to chess/, then add it here. The Foundational skills games come
+ * last, in the order young children learn the maths (James, 10 Nov 2026): count, see small numbers (Quick looks, placed on the
+ * home page after Robin), parts of a number, bonds to 10, doubles, teen numbers, making ten, equals, skip counting, tens and
+ * ones, the number line, then equal rows. A new early game goes where its maths fits.
+ */
+export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(decreeOn() ? [royalDecree] : []), ...(robinOn() ? [robinsBerryBasket] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(kororaOn() ? [penguinPairs] : []), ...(tuiOn() ? [tuisTenTree] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(parrotOn() ? [parrotsSeesaw] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(lizardOn() ? [lizardBundles] : []), ...(pigeonOn() ? [pigeonNumberLine] : []), ...(swamphenOn() ? [swamphenReedRows] : [])];
 
 /** Every game that can have saved games: the dashboard's, plus Power Clash even while its card is switched off. */
 export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest]), ...(kingdomOn() ? [] : [kingdomKeeper])];
