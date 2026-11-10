@@ -1597,6 +1597,38 @@ function fadeAfter(p, right, rules) {
 	};
 }
 /**
+* Help for each kind of go, after a counted round. For each kind with at least 2 goes, the goes right at the first tap are
+* scaled to ten (`Math.round(10 * right / n)`) and `fadeAfter` is run with the rules (use `ROUND_OF_TEN`), so a kind fades
+* after two good rounds and comes back after a hard one. A kind with fewer than 2 goes is left as it was. A kind not in the
+* map yet starts at `startLevel` (the child's own level, which already has a new step's full help). Returns a new map; the
+* kinds the round did not ask keep what they had. The kind is only a string: the game names its own.
+*/
+function fadeByKind(kindLevels, goes, rules, startLevel) {
+	const tally = new Map();
+	for (const g of goes) {
+		const t = tally.get(g.kind) ?? {
+			n: 0,
+			right: 0
+		};
+		t.n += 1;
+		if (g.right) t.right += 1;
+		tally.set(g.kind, t);
+	}
+	const out = { ...kindLevels };
+	for (const [kind, { n, right }] of tally) {
+		if (n < 2) continue;
+		const { level, goodInRow } = fadeAfter(kindLevels[kind] ?? {
+			level: startLevel,
+			goodInRow: 0
+		}, Math.round(10 * right / n), rules);
+		out[kind] = {
+			level,
+			goodInRow
+		};
+	}
+	return out;
+}
+/**
 * `fadeAfter`, for a game with steps. A new step brings `newStepHelp` back only if the help didn't fade on this same round:
 * a pass and a fade usually land together, and the fade must stand, or a strong child never sees the help go. Test fade and
 * step-up together (LEARNING-DESIGN rule 5).
@@ -1686,6 +1718,11 @@ const STEP_KEYS = {
 };
 /** Every key the game can ask. */
 const KEYS = [...new Set(Object.values(STEP_KEYS).flat())];
+/** The level a kind of go is at: its own, or (not in the map yet) the child's. */
+const kindLevel = (kindLevels, kind, level) => {
+	const own = kindLevels?.[kind]?.level;
+	return isLevel(own) ? own : level;
+};
 /** The kind of go a key is. */
 function kindOfKey(key) {
 	switch (/^([a-z]+):/.exec(key)?.[1]) {
@@ -1711,6 +1748,10 @@ const RULES = {
 	newStepHelp: 2,
 	newStepLevel: 0
 };
+/** The help level of each kind of go after a day's first finish: the kit's rule with the round of ten (a new kind starts at the child's level). */
+function kindLevelsAfter(kindLevels, goes, level) {
+	return fadeByKind(kindLevels, goes, RULES, level);
+}
 /** The place after a day's first finish with `right` goes right at the first tap: the kit's rule. */
 function placeAfter(p, right) {
 	const next = placeAfter$1(p, right, RULES);
@@ -1805,7 +1846,6 @@ function makeRound(seed, stats, opts = {}) {
 	if (opts.guided) keys = [GUIDED_KEY, ...keys.filter((k) => k !== GUIDED_KEY)].slice(0, 10);
 	while (keys.length < 10) keys.push(keys[keys.length % Math.max(1, keys.length)]);
 	keys = spreadOut(keys);
-	const shown = shownLevel(level, help);
 	return {
 		seed,
 		step,
@@ -1814,7 +1854,7 @@ function makeRound(seed, stats, opts = {}) {
 		goes: keys.map((key, i) => ({
 			key,
 			kind: kindOfKey(key),
-			l: opts.guided && i === 0 ? 5 : shown
+			l: opts.guided && i === 0 ? 5 : shownLevel(kindLevel(opts.kindLevels, kindOfKey(key), level), help)
 		}))
 	};
 }
@@ -1998,6 +2038,7 @@ function replay(round, taps) {
 		oncePerFact: true
 	});
 	const slips = [];
+	const kindGoes = [];
 	let at = 0;
 	let first = true;
 	for (const { pick } of taps) {
@@ -2006,13 +2047,18 @@ function replay(round, taps) {
 			const w = go.wrongs.find((x) => x.n === pick);
 			if (w) slips.push(w.kind);
 		}
+		if (first) kindGoes.push({
+			kind: round.goes[at].kind,
+			right: pick === go.answer
+		});
 		first = pick === go.answer;
 		if (pick === go.answer) at++;
 	}
 	return {
 		...played,
 		answers: withTimes(played.answers),
-		slips
+		slips,
+		kindGoes
 	};
 }
 //#endregion
@@ -2116,6 +2162,7 @@ const unplayed = () => ({
 	level: 5,
 	goodInRow: 0,
 	goodAtStep: 0,
+	kindLevels: {},
 	version: 0
 });
 const MAX_TAP_MS = 6e5;
@@ -2182,6 +2229,7 @@ async function handleSwamphen(services, player, body) {
 			today: today(),
 			step: place.step,
 			level: place.level,
+			kindLevels: s.kindLevels ?? {},
 			help: settings.help,
 			seen
 		});
@@ -2197,13 +2245,15 @@ async function handleSwamphen(services, player, body) {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
 		const { step, level } = placeOf(s, facts);
+		const kindLevels = s.kindLevels ?? {};
 		const guided = s.daysDone === 0 && s.lastDay === null;
 		for (let tries = 0; tries < TRIES; tries++) {
 			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
 				step,
 				level,
 				help: settings.help,
-				guided
+				guided,
+				kindLevels
 			});
 			const kept = await services.start(player, round);
 			if (kept === "busy") return busy();
@@ -2242,10 +2292,13 @@ async function handleSwamphen(services, player, body) {
 			};
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.rowChanged === null ? before : placeAfter(before, played.firstRight);
+			const stored = s.kindLevels ?? {};
+			const kindLevels = result.rowChanged === null ? stored : kindLevelsAfter(stored, played.kindGoes, before.level);
 			const progress = {
 				daysDone: result.daysDone,
 				lastDay: result.lastDay,
-				...place
+				...place,
+				kindLevels
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
@@ -7579,7 +7632,8 @@ Deno.serve(makeHandler({
 		good_at_step: progress.goodAtStep,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
-		first_right: ending.firstRight
+		first_right: ending.firstRight,
+		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "swamphen", void 0, JUNIOR_QUICK_MS);

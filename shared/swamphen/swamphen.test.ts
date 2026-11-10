@@ -5,7 +5,7 @@ import { factKey } from '../maths/facts';
 import { REED_ROWS } from './config';
 import { DAYS_PER_GARDEN, finishChallenge, gardenAfter } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, makeRound, pictureFor, placeAfter, showGo, showRound, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleSwamphen, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { slipSummary } from './teacher';
@@ -103,6 +103,46 @@ describe('the help level and the step', () => {
     expect(finishChallenge(0, null, '2026-11-08')).toEqual({ daysDone: 1, lastDay: '2026-11-08', rowChanged: 0, goldenGarden: false });
     expect(finishChallenge(1, '2026-11-08', '2026-11-08')).toMatchObject({ daysDone: 1, rowChanged: null });
     expect(finishChallenge(29, '2026-11-08', '2026-11-20')).toMatchObject({ daysDone: 30, rowChanged: 9, goldenGarden: true });
+  });
+});
+
+describe('the help level for each kind of go', () => {
+  const goes = (...rows: [string, number, number][]) => rows.flatMap(([kind, n, right]) => Array.from({ length: n }, (_, i) => ({ kind, right: i < right })));
+
+  it('keeps a hard kind at its level while another fades over two good days, and the goes of each kind are shown at their kind’s level', () => {
+    // plant is easy (all right), cut is hard (half right): after two days plant has faded one level and cut has not.
+    let kinds = { plant: { level: 3, goodInRow: 0 }, cut: { level: 3, goodInRow: 0 } };
+    for (let day = 0; day < 2; day++) kinds = kindLevelsAfter(kinds, goes(['plant', 5, 5], ['cut', 5, 3]), 3) as typeof kinds;
+    expect(kinds.plant).toEqual({ level: 2, goodInRow: 0 });
+    expect(kinds.cut.level).toBe(3);
+    const round = makeRound(11, [], { step: 6, level: 3, kindLevels: kinds });
+    for (const go of round.goes) expect(go.l).toBe(go.kind === 'plant' ? 2 : 3);
+    // The guided first go stays at the top level.
+    expect(makeRound(11, [], { step: 1, level: 3, guided: true, kindLevels: { plant: { level: 0, goodInRow: 0 } } }).goes[0].l).toBe(5);
+  });
+
+  it('starts a kind that is not in the map at the child’s own level', async () => {
+    expect(kindLevelsAfter({}, goes(['mat', 4, 4]), 3)).toEqual({ mat: { level: 3, goodInRow: 1 } });
+    expect(kindLevelsAfter({}, goes(['mat', 1, 1]), 3)).toEqual({});
+    const round = makeRound(12, [], { step: 6, level: 4, kindLevels: { nonsense: { level: 0, goodInRow: 0 } } });
+    expect(round.goes.every((g) => g.l === 4)).toBe(true);
+    // Through the server: the first finish of the day saves the map, a play-again that day leaves it.
+    let n = 0.2;
+    let clock = Date.parse('2026-11-08T02:00:00Z');
+    const services = memoryServices({ now: () => clock, random: () => (n = (n * 7919 + 0.137) % 1) });
+    const play = async () => {
+      const r = (await handleSwamphen(services, 'p1', { action: 'start' })).body.round as Round;
+      await handleSwamphen(services, 'p1', { action: 'finish', seed: r.seed, taps: showRound(r).map((g) => ({ pick: g.answer, ms: 3000 })) });
+    };
+    await play();
+    const first = (await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels as Record<string, { level: number; goodInRow: number }>;
+    expect(Object.keys(first).length).toBeGreaterThan(0);
+    expect(Object.values(first).every((k) => k.level === 5 && k.goodInRow === 1)).toBe(true);
+    await play();
+    expect((await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels).toEqual(first);
+    clock += 86_400_000;
+    await play();
+    expect(Object.values((await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels as typeof first).every((k) => k.level === 4)).toBe(true);
   });
 });
 
