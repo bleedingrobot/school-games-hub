@@ -778,6 +778,7 @@ async function handleBeanstalk(services, player, body) {
 				if (result.egg) await services.progressChanged(player);
 				return ok({
 					...result,
+					firstRight: rightFirst,
 					help: place.help,
 					helpMissing: placeMissing.help,
 					stage: steps.stage,

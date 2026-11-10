@@ -84,8 +84,17 @@ export const WORDS = {
   nowTry: (n: number) => `Now you try: what goes with ${n}?`,
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
   goOn: 'My turn',
-  leafTurned: (metal: Metal) => `Well done! A leaf turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day.',
+  /** The tail of the finish title, after the opening for how the day went (S33). */
+  leafTurned: (metal: Metal) => `A leaf turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another leaf. You can play as much as you like, but only one leaf will change a day.',
+  /** The opening of the finish title and, on an egg day, the chip: about the pairs, not about the child (S33). */
+  how: {
+    most: 'You found the pairs that fit!',
+    some: 'Some were tricky and you kept going.',
+    tricky: 'Those were tricky ones.',
+  },
+  /** The chip on a tricky day. Help moves for the child on the day's first finish only, so a replay does not bring it back: it says tomorrow. */
+  trickyChip: 'Tricky ones are good practice. We will try again tomorrow.',
   egg: (name: string) => `All the leaves are gold! ${name} can climb down. You win the Golden Egg!`,
   nextFriend: (name: string) => `Oh no! ${name} is stuck up a new beanstalk. Make pairs to help!`,
   /** Said once in a round when the second, short tray comes in with older pairs (S21). */
