@@ -18,7 +18,7 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate, placeAfter } from './progress';
-import { HELP_SETTINGS, type HelpSetting } from '../kit/help';
+import { fadeByKind, HELP_SETTINGS, ROUND_OF_TEN, type HelpSetting, type KindLevels } from '../kit/help';
 import { TOP_LEVEL, type HelpLevel, type Step } from './config';
 import { goKindOf, isSeed, makeRound, MAX_SEED, startFor, type Round, type Slip } from './round';
 import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
@@ -44,6 +44,8 @@ export interface Progress extends Place {
   daysDone: number;
   /** The NZ day ('2026-11-04') a basket last changed. */
   lastDay: string | null;
+  /** The help level and good rounds in a row for each kind of go; a kind not here starts at the whole-child level. */
+  kindLevels: KindLevels;
 }
 
 export interface Saved extends Progress {
@@ -51,7 +53,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, version: 0 });
+export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: 0 });
 
 
 export interface Settings {
@@ -133,7 +135,7 @@ export async function handleRobin(services: RobinServices, player: string, body:
     const place = placeOf(s, facts);
     // A child who has played for weeks has seen what their records show, so gets no demo for it.
     const seen = mergeSeen(saved, kindsFromFacts(facts, goKindOf));
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, kindLevels: s.kindLevels ?? {}, help: settings.help, seen });
   }
 
   if (body.action === 'seen') {
@@ -148,10 +150,12 @@ export async function handleRobin(services: RobinServices, player: string, body:
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
     const { step, level } = placeOf(s, facts);
+    // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
+    const kindLevels = s.kindLevels ?? {};
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { step, level, help: settings.help, guided });
+      const round = makeRound(seed, facts, { step, level, help: settings.help, guided, kindLevels });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -174,6 +178,9 @@ export async function handleRobin(services: RobinServices, player: string, body:
       return unreadable();
     }
     if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
+    const slips = slipsOf(kept.round, taps);
+    // Each go and whether it was right at the first tap (no slip), for the help of each kind.
+    const wentRight = kept.round.goes.map((g, i) => ({ kind: goKindOf(g.key) ?? 'give', right: slips[i] === null }));
     const at = services.now();
     const answers = played.answers.map((a) => ({ ...a, at }));
     for (let tries = 0; tries < TRIES; tries++) {
@@ -183,14 +190,22 @@ export async function handleRobin(services: RobinServices, player: string, body:
       const result = finishChallenge(s.daysDone, s.lastDay, today());
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.changed === null ? before : moved(before, played.firstRight);
-      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips: slipsOf(kept.round, taps) });
+      // The help for each kind of go moves on the same day's first finish only, and a later finish keeps what is stored.
+      const stored = s.kindLevels ?? {};
+      const kindLevels =
+        result.changed === null
+          ? stored
+          : place.step !== before.step
+            ? {}
+            : fadeByKind(stored, wentRight, { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
+      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `robin:${seed}`, answers);
         if (result.feast) await services.progressChanged(player);
-        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level });
+        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, kindLevels, stepBefore: before.step, levelBefore: before.level });
       }
       const again = await services.round(player, seed);
       if (again === 'busy') return busy();

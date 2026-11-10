@@ -10,7 +10,7 @@
  */
 import type { FactStats } from '../maths/leitner';
 import { atMostShareTell, sharingTell, type Wrong } from '../kit/mistakes';
-import { helpWithSetting, type HelpSetting } from '../kit/help';
+import { helpWithSetting, type HelpSetting, type KindLevels } from '../kit/help';
 import { seeded } from '../seededRandom';
 import { ALL_KEYS, KEYS, type Kind } from '../maths/skillPacks/equalsKeys';
 import { GOES_PER_ROUND, KNOWN_BONDS, KNOWN_START, REVIEW_GOES, TOP_LEVEL, type HelpLevel, type Step } from './config';
@@ -106,7 +106,7 @@ const layoutsCount = (kind: Kind): number => (kind === 'miss' ? 4 : kind === 'sw
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -122,7 +122,8 @@ export function makeRound(
   const { fresh, review } = STEP_KEYS[step];
   const freshCount = review.length === 0 ? GOES_PER_ROUND : GOES_PER_ROUND - REVIEW_GOES;
   // Step 2 asks the same keys as step 1 in the other three layouts: its new goes are layouts 1 to 3, its review goes layout 0.
-  const shown = shownLevel(level, help);
+  // Each kind of go is shown at its own help level; a kind not in the map starts at the whole-child level.
+  const shownFor = (kind: Kind): HelpLevel => shownLevel((opts.kindLevels?.[kind]?.level as HelpLevel | undefined) ?? level, help);
   const fresh_ = weak(KEYS[fresh], freshCount).map((key) => ({ key, review: false }));
   const review_ = review.length === 0 ? [] : Array.from({ length: REVIEW_GOES }, (_, i) => ({ key: weak(KEYS[review[i % review.length]], REVIEW_GOES)[i], review: true }));
   let picks = [...fresh_, ...review_];
@@ -133,7 +134,7 @@ export function makeRound(
     let v: Layout = 0;
     if (kind === 'miss') v = step === 1 ? 0 : step === 2 ? (isReview ? 0 : ((1 + Math.floor(random() * 3)) as Layout)) : (Math.floor(random() * 4) as Layout);
     else if (kind === 'swap') v = Math.floor(random() * 2) as Layout;
-    return opts.guided && i === 0 ? { key, v: 0, l: TOP_LEVEL } : { key, v, l: shown };
+    return opts.guided && i === 0 ? { key, v: 0, l: TOP_LEVEL } : { key, v, l: shownFor(kind) };
   });
   return { seed, step, level, help, goes: plans };
 }

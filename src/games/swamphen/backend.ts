@@ -6,7 +6,7 @@
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/swamphen/memoryServices';
 import type { Tap } from '../../../shared/swamphen/play';
 import type { FinishResult } from '../../../shared/swamphen/progress';
-import { type HelpLevel, type HelpSetting, type Round, type Step } from '../../../shared/swamphen/round';
+import { type HelpLevel, type HelpSetting, type KindLevels, type Round, type Step } from '../../../shared/swamphen/round';
 import { TOP_LEVEL } from '../../../shared/swamphen/config';
 import { handleSwamphen, unplayed, type SwamphenReply } from '../../../shared/swamphen/server';
 
@@ -18,6 +18,8 @@ export interface SwamphenState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The help level of each kind of go (a kind not here is at `level`). */
+  kindLevels: KindLevels;
   /** The class's help setting. */
   help: HelpSetting;
   /** The kinds of go this child has already seen (no demo for them). */
@@ -64,7 +66,7 @@ export function fromServer(send: Send): SwamphenBackend {
   return {
     load: async () => {
       const state = (await ask({ action: 'load' })) as unknown as SwamphenState;
-      return { ...state, seen: Array.isArray(state.seen) ? state.seen : [] };
+      return { ...state, kindLevels: state.kindLevels ?? {}, seen: Array.isArray(state.seen) ? state.seen : [] };
     },
     start: async () => (await ask({ action: 'start' })).round as Round,
     finish: async (seed, taps) => (await ask({ action: 'finish', seed, taps })) as unknown as SwamphenFinish,
@@ -137,7 +139,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setPlace: (step: Step, level: HelpLevel = TOP_LEVEL as HelpLevel) =>
       change((s) => {
         const p = pupil(s);
-        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, version: p.version + 1 };
+        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: p.version + 1 };
       }),
     place: () => {
       const p = pupil(read());

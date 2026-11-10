@@ -176,3 +176,19 @@ describe('where a child starts', () => {
   });
 });
 export { GUIDED_KEY };
+
+describe('help for each kind of go', () => {
+  it('starts a kind missing from the map at the whole-child level, and keeps the guided go at the top', () => {
+    const kindLevels = { give: { level: 1, goodInRow: 0 } };
+    const round = makeRound(41, [], { step: 6, level: 3, help: 'fade', kindLevels });
+    const levels = (kind: string) => [...new Set(showRound(round).filter((g) => g.kind === kind).map((g) => g.l))];
+    expect(levels('give')).toEqual([1]);
+    expect(levels('howmany')).toEqual([3]); // not in the map
+    expect(levels('counton')).toEqual([3]);
+    const guided = makeRound(41, [], { step: 1, level: 3, kindLevels, guided: true });
+    expect(guided.goes[0]).toMatchObject({ key: GUIDED_KEY, l: TOP_LEVEL });
+    expect(guided.goes.slice(1).every((g) => g.l === 1)).toBe(true);
+    // The teacher's setting still wins over the map.
+    expect(makeRound(41, [], { step: 6, level: 3, help: 'always', kindLevels }).goes.every((g) => g.l === 4)).toBe(true);
+  });
+});

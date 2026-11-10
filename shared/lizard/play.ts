@@ -21,6 +21,8 @@ export interface Replay {
   goesDone: number;
   mistakes: number;
   firstRight: number;
+  /** Each go in order: its kind and whether the first try was right (for the help of each kind). */
+  goes: { kind: Go['kind']; right: boolean }[];
   done: boolean;
   /** One answer per key tried, in order, for the maths records. */
   answers: Omit<FactAnswer, 'at'>[];
@@ -43,6 +45,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   const goes = showRound(round);
   const answers: Replay['answers'] = [];
   const slips: Replay['slips'] = [];
+  const goneThrough: Replay['goes'] = [];
   const counted = new Set<string>();
   let goesDone = 0;
   let mistakes = 0;
@@ -53,6 +56,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     if (!go) throw new Error('Taps after the round was done');
     const right = tapRight(go, pick);
     if (!triedThisGo) {
+      goneThrough.push({ kind: go.kind, right });
       if (right) firstRight++;
       else slips.push({ key: go.key, kind: go.kind, slip: slipOf(go, pick) });
       if (!counted.has(go.key)) {
@@ -66,5 +70,5 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
       triedThisGo = false;
     } else mistakes++;
   }
-  return { goesDone, mistakes, firstRight, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers, slips };
+  return { goesDone, mistakes, firstRight, goes: goneThrough, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers, slips };
 }

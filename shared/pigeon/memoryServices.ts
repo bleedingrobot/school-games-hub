@@ -57,7 +57,8 @@ export function memoryServices(options: MemoryOptions = {}): PigeonServices & { 
     random: options.random ?? Math.random,
     settings: async () => (options.settings ? options.settings() : { enabled: true, help: 'fade' }),
     async load(player) {
-      return copy(data.players[player] ?? unplayed());
+      // A save from before the help of each kind of go has no map.
+      return { ...unplayed(), ...copy(data.players[player] ?? {}) };
     },
     async facts(player) {
       return copy(data.facts[player] ?? []);

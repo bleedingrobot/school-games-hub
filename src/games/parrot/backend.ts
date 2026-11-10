@@ -6,7 +6,7 @@
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/parrot/memoryServices';
 import type { Tap } from '../../../shared/parrot/play';
 import type { FinishResult } from '../../../shared/parrot/progress';
-import type { HelpSetting } from '../../../shared/kit/help';
+import type { HelpSetting, KindLevels } from '../../../shared/kit/help';
 import { TOP_LEVEL, type HelpLevel, type Step } from '../../../shared/parrot/config';
 import type { Round } from '../../../shared/parrot/round';
 import { handleParrot, unplayed, type ParrotReply } from '../../../shared/parrot/server';
@@ -21,6 +21,8 @@ export interface ParrotState {
   level: HelpLevel;
   /** The class's help setting. */
   help: HelpSetting;
+  /** The help level for each kind of go; a kind not here is at `level`. */
+  kindLevels: KindLevels;
   /** The kinds of go this child has seen (so each demo plays once). */
   seen: string[];
 }

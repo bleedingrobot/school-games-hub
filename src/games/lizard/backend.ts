@@ -6,6 +6,7 @@
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/lizard/memoryServices';
 import type { Tap } from '../../../shared/lizard/play';
 import type { FinishResult } from '../../../shared/lizard/progress';
+import type { KindLevels } from '../../../shared/kit/help';
 import { type HelpLevel, type HelpSetting, type Round, type Step } from '../../../shared/lizard/round';
 import { TOP_LEVEL } from '../../../shared/lizard/config';
 import { handleLizard, unplayed, type LizardReply } from '../../../shared/lizard/server';
@@ -18,6 +19,8 @@ export interface LizardState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The help level of each kind of go (a kind not here yet starts at `level`). */
+  kindLevels: KindLevels;
   /** The class's help setting. */
   help: HelpSetting;
   /** The kinds of go this child has already seen (no demo for these). */

@@ -6,7 +6,7 @@
 import { emptyData, memoryServices, type MemoryData } from '../../../shared/robin/memoryServices';
 import type { Tap } from '../../../shared/robin/play';
 import type { FinishResult } from '../../../shared/robin/progress';
-import type { HelpSetting } from '../../../shared/kit/help';
+import type { HelpSetting, KindLevels } from '../../../shared/kit/help';
 import { TOP_LEVEL, type HelpLevel, type Step } from '../../../shared/robin/config';
 import type { Round } from '../../../shared/robin/round';
 import { handleRobin, unplayed, type RobinReply } from '../../../shared/robin/server';
@@ -19,6 +19,8 @@ export interface RobinState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The help level for each kind of go (a kind missing from it is at `level`). */
+  kindLevels: KindLevels;
   /** The class's help setting. */
   help: HelpSetting;
   /** The kinds of go the child has seen (so a demo plays once only). */
@@ -33,6 +35,8 @@ export interface RobinFinish extends FinishResult {
   level: HelpLevel;
   stepBefore: Step;
   levelBefore: HelpLevel;
+  /** The help level for each kind of go for next time. */
+  kindLevels: KindLevels;
 }
 
 export interface RobinBackend {
@@ -135,7 +139,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setPlace: (step: Step, level: HelpLevel = TOP_LEVEL) =>
       change((s) => {
         const p = pupil(s);
-        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, version: p.version + 1 };
+        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: p.version + 1 };
       }),
     place: () => {
       const p = pupil(read());

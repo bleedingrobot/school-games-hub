@@ -15,7 +15,7 @@ import { factKey } from '../maths/facts';
 import type { FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
-import { placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type Place as KitPlace } from '../kit/help';
+import { fadeByKind, placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type KindLevels, type Place as KitPlace } from '../kit/help';
 import * as C from './config';
 
 export { GOES_PER_ROUND, REVIEW_GOES, GOOD, HARD } from './config';
@@ -64,6 +64,12 @@ export const STEP_KEYS: Record<Step, string[]> = {
 /** Every key the game can ask. */
 export const KEYS: string[] = [...new Set(Object.values(STEP_KEYS).flat())];
 
+/** The level a kind of go is at: its own, or (not in the map yet) the child's. */
+const kindLevel = (kindLevels: KindLevels | undefined, kind: Kind, level: HelpLevel): HelpLevel => {
+  const own = kindLevels?.[kind]?.level;
+  return isLevel(own) ? own : level;
+};
+
 /** The kind of go a key is. */
 export function kindOfKey(key: string): Kind | null {
   switch (/^([a-z]+):/.exec(key)?.[1]) {
@@ -83,6 +89,8 @@ export function mulKeyOf(key: string): string | null {
   return factKey(a, b);
 }
 
+export type { KindLevels };
+
 // ---------------------------------------------------------------- places and starting points
 
 /** Where a child is: step, help level and good challenges counted towards the next change. */
@@ -96,6 +104,11 @@ const RULES = {
   newStepHelp: C.NEW_STEP_HELP,
   newStepLevel: 0,
 } as const;
+
+/** The help level of each kind of go after a day's first finish: the kit's rule with the round of ten (a new kind starts at the child's level). */
+export function kindLevelsAfter(kindLevels: KindLevels, goes: readonly { kind: string; right: boolean }[], level: number): KindLevels {
+  return fadeByKind(kindLevels, goes, RULES, level);
+}
 
 /** The place after a day's first finish with `right` goes right at the first tap: the kit's rule. */
 export function placeAfter(p: Place, right: number): Place {
@@ -183,7 +196,7 @@ function spreadOut(keys: string[]): string[] {
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -203,8 +216,7 @@ export function makeRound(
   if (opts.guided) keys = [GUIDED_KEY, ...keys.filter((k) => k !== GUIDED_KEY)].slice(0, C.GOES_PER_ROUND);
   while (keys.length < C.GOES_PER_ROUND) keys.push(keys[keys.length % Math.max(1, keys.length)]);
   keys = spreadOut(keys);
-  const shown = shownLevel(level, help);
-  const goes = keys.map((key, i): GoPlan => ({ key, kind: kindOfKey(key)!, l: opts.guided && i === 0 ? (C.TOP_LEVEL as HelpLevel) : shown }));
+  const goes = keys.map((key, i): GoPlan => ({ key, kind: kindOfKey(key)!, l: opts.guided && i === 0 ? (C.TOP_LEVEL as HelpLevel) : shownLevel(kindLevel(opts.kindLevels, kindOfKey(key)!, level), help) }));
   return { seed, step, level, help, goes };
 }
 

@@ -38,7 +38,7 @@ select throws_ok($$ select * from public.pigeon_progress $$, '42501', null, 'a p
 select throws_ok($$ select * from public.pigeon_rounds $$, '42501', null, '... or the challenges');
 select throws_ok($$ select public.pigeon_load(auth.uid()) $$, '42501', null, '... or load through the server functions');
 select throws_ok($$ select public.pigeon_start(auth.uid(), 5, pg_temp.round(5, 1, 5)) $$, '42501', null, '... or start their own challenge');
-select throws_ok($$ select public.pigeon_finish(auth.uid(), 5, 1, 29, '2026-11-04', 1::smallint, 5::smallint, 0, 0, '[]', 0, 10) $$, '42501', null, '... or finish one with any day count');
+select throws_ok($$ select public.pigeon_finish(auth.uid(), 5, 1, 29, '2026-11-04', 1::smallint, 5::smallint, 0, 0, '[]', 0, 10, '{}') $$, '42501', null, '... or finish one with any day count');
 select throws_ok($$ select public.teacher_set_pigeon(true) $$, null, null, 'a pupil cannot switch the game on');
 
 -- ---- The teacher's switch and help setting ----
@@ -57,7 +57,7 @@ select is(public.pigeon_load(pg_temp.id('0a')), null, 'a new pupil has no branch
 select throws_ok($$ select public.pigeon_load('00000000-0000-0000-0000-000000000099') $$, '22023', null, 'nobody who is not a pupil');
 select ok(public.pigeon_start(pg_temp.id('0a'), 777, pg_temp.round(777, 3, 2)), 'a challenge starts');
 select is(public.pigeon_load(pg_temp.id('0a')),
-  '{"daysDone": 0, "lastDay": null, "step": 3, "level": 2, "goodInRow": 0, "goodAtStep": 0, "version": 1}'::jsonb,
+  '{"daysDone": 0, "lastDay": null, "step": 3, "level": 2, "goodInRow": 0, "goodAtStep": 0, "kindLevels": {}, "version": 1}'::jsonb,
   '... making the pupil''s branch at the round''s step and help level');
 select ok(not public.pigeon_start(pg_temp.id('0a'), 777, pg_temp.round(777, 1, 5)), 'a seed is used once per pupil');
 select throws_ok($$ select public.pigeon_start(pg_temp.id('0a'), 778, pg_temp.round(999, 3, 2)) $$, '22023', null, 'a challenge must carry its own seed');
@@ -65,13 +65,13 @@ select is(public.pigeon_round(pg_temp.id('0b'), 777), null, 'another pupil''s ch
 select is(public.pigeon_round(pg_temp.id('0a'), 777) -> 'round', pg_temp.round(777, 3, 2), 'the round is kept as the server made it');
 
 -- Finishing: once, together with the progress, never more than one day at a time.
-select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 1, 2, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10), 'two days at once is refused');
-select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 5, 1, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10), '... and so is an old version');
-select ok(public.pigeon_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 3::smallint, 1::smallint, 1, 1, '[{"pick":10,"ms":900}]', 1, 9), 'the challenge finishes, moving the help on');
-select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 3::smallint, 1::smallint, 2, 2, '[{"pick":10,"ms":900}]', 1, 9), '... once');
+select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 1, 2, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '{}'), 'two days at once is refused');
+select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 5, 1, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '{}'), '... and so is an old version');
+select ok(public.pigeon_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 3::smallint, 1::smallint, 1, 1, '[{"pick":10,"ms":900}]', 1, 9, '{"place": {"level": 0, "goodInRow": 1}}'), 'the challenge finishes, moving the help on');
+select ok(not public.pigeon_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 3::smallint, 1::smallint, 2, 2, '[{"pick":10,"ms":900}]', 1, 9, '{}'), '... once');
 select is(public.pigeon_load(pg_temp.id('0a')),
-  '{"daysDone": 1, "lastDay": "2026-11-04", "step": 3, "level": 1, "goodInRow": 1, "goodAtStep": 1, "version": 2}'::jsonb,
-  'the branch is saved');
+  '{"daysDone": 1, "lastDay": "2026-11-04", "step": 3, "level": 1, "goodInRow": 1, "goodAtStep": 1, "kindLevels": {"place": {"level": 0, "goodInRow": 1}}, "version": 2}'::jsonb,
+  'the branch is saved, with the level of each kind');
 select is((select first_right from public.pigeon_rounds where player = pg_temp.id('0a') and seed = 777), 9, '... with how many goes were right first time');
 select ok(public.pigeon_start(pg_temp.id('0a'), 779, pg_temp.round(779, 1, 5)), 'another challenge starts, leaving the saved branch as it is');
 select is((select step from public.pigeon_progress where player = pg_temp.id('0a')), 3::smallint, '... (the step is not reset)');

@@ -7,6 +7,7 @@ import { emptyData, memoryServices, type MemoryData } from '../../../shared/pige
 import type { Tap } from '../../../shared/pigeon/play';
 import type { FinishResult } from '../../../shared/pigeon/progress';
 import { type HelpLevel, type HelpSetting, type Round, type Step } from '../../../shared/pigeon/round';
+import type { KindLevels } from '../../../shared/kit/help';
 import { TOP_LEVEL } from '../../../shared/pigeon/config';
 import { handlePigeon, unplayed, type PigeonReply } from '../../../shared/pigeon/server';
 
@@ -18,6 +19,8 @@ export interface PigeonState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The help level of each kind of go (a kind not here follows `level`). */
+  kindLevels: KindLevels;
   /** The kinds of go the child has seen (so a demo plays once only). */
   seen: string[];
   /** The class's help setting. */
@@ -32,6 +35,8 @@ export interface PigeonFinish extends FinishResult {
   level: HelpLevel;
   stepBefore: Step;
   levelBefore: HelpLevel;
+  /** The help level of each kind of go for next time. */
+  kindLevels: KindLevels;
 }
 
 export interface PigeonBackend {
@@ -134,7 +139,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setPlace: (step: Step, level: HelpLevel = TOP_LEVEL as HelpLevel) =>
       change((s) => {
         const p = pupil(s);
-        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, version: p.version + 1 };
+        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: p.version + 1 };
       }),
     place: () => {
       const p = pupil(read());

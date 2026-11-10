@@ -69,6 +69,7 @@ Deno.serve(
       call<boolean>('lizard_finish', {
         player, seed, version, days_done: progress.daysDone, last_day: progress.lastDay, step: progress.step,
         level: progress.level, good_in_row: progress.goodInRow, good_at_step: progress.goodAtStep,
+        kind_levels: progress.kindLevels,
         taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight,
       }),
     async recordAnswers(player, once, answers) {

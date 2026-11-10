@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
-import { placeAfter } from '../kit/help';
+import { placeAfter, type KindLevels } from '../kit/help';
+import { emptyData, memoryServices } from './memoryServices';
+import { handleParrot } from './server';
 import { DAYS_PER_BELL, finishChallenge, ropeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
-import { STEP_RULES, type Step } from './config';
+import { STEP_RULES, type HelpLevel, type Step } from './config';
+import type { Kind } from '../maths/skillPacks/equalsKeys';
 import { atMostShareTell, sharingTell } from '../kit/mistakes';
-import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, showRound, slipOfPick, startFor, STEP_KEYS, tiltOf, type Round } from './round';
+import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, showRound, slipOfPick, startFor, STEP_KEYS, tapsAllowed, tiltOf, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -185,5 +188,50 @@ describe('the shiny things', () => {
       const end = replay(round as Round, showRound(round).map((x) => ({ pick: x.answer, ms: 900 })));
       expect(end.done).toBe(true);
     }
+  });
+});
+
+describe('help for each kind of go', () => {
+  const at = (kindLevels: KindLevels, level: HelpLevel = 3) =>
+    makeRound(77, [], { step: 6, level, help: 'fade', kindLevels }).goes.map((g) => ({ kind: kindOfKey(g.key)!, l: g.l }));
+
+  it('shows a kind missing from the map at the whole-child level, and a kind in the map at its own level', () => {
+    const goes = at({ sub: { level: 1, goodInRow: 0 } });
+    expect(goes.length).toBe(GOES_PER_ROUND);
+    for (const g of goes) expect(g.l).toBe(g.kind === 'sub' ? 1 : 3);
+    expect(goes.some((g) => g.kind === 'sub')).toBe(true);
+  });
+
+  it('over two good days fades the kind that went well and keeps the hard kind at its level', async () => {
+    const data = emptyData();
+    const clock = { day: 0 };
+    let n = 0;
+    const services = memoryServices({ data, now: () => Date.parse('2026-11-04T01:00:00Z') + clock.day * 86_400_000, random: () => (n = (n + 0.137) % 1) });
+    const hard: Kind = 'sub';
+    const pupil = 'p1';
+    data.players[pupil] = { daysDone: 5, lastDay: '2026-11-01', kindLevels: {}, step: 6, level: 3, goodInRow: 0, goodAtStep: 0, version: 1 };
+    for (let day = 0; day < 2; day++) {
+      clock.day = day;
+      const started = await handleParrot(services, pupil, { action: 'start' });
+      expect(started.status).toBe(200);
+      const round = started.body.round as Round;
+      const goes = showRound(round);
+      // Every go right at the first tap, except the hard kind, which is always wrong first.
+      const taps: Tap[] = [];
+      for (const [i, go] of goes.entries()) {
+        if (kindOfKey(round.goes[i].key) === hard) taps.push({ pick: tapsAllowed(go).find((c) => c !== go.answer)!, ms: 900 });
+        taps.push({ pick: go.answer, ms: 900 });
+      }
+      const done = await handleParrot(services, pupil, { action: 'finish', seed: round.seed, taps });
+      expect(done.status).toBe(200);
+    }
+    const saved = data.players[pupil].kindLevels;
+    const kinds = new Set(showRound(data.rounds[0].round).map((_, i) => kindOfKey(data.rounds[0].round.goes[i].key)!));
+    expect(kinds.has(hard)).toBe(true);
+    // The hard kind never faded; the others, asked at least twice a round, lost a level over the two good days.
+    expect(saved[hard].level).toBeGreaterThanOrEqual(data.rounds[0].round.level);
+    const easy = [...kinds].filter((k) => k !== hard && saved[k]);
+    expect(easy.length).toBeGreaterThan(0);
+    for (const k of easy) expect(saved[k].level).toBeLessThan(saved[hard].level);
   });
 });

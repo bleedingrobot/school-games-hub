@@ -26,6 +26,7 @@ Design (decided, do not re-decide):
 - A kind not yet in the map starts at the child's whole-child `level` (which already has the new-step full help). No backfill is needed.
 - In `makeRound`, each go's `l` comes from its kind's level: `shownLevel(kindLevel ?? level, help)`. The teacher's setting (fade, always, off) still applies through `shownLevel`. The guided first go stays at the top level (`TOP_LEVEL`).
 - Moved once a day, on the first finish of the day, like the whole-child level.
+- When the whole-child step changes, the kind map is cleared, so every kind starts at the new step's help (rule 5: a new step starts with full help). Added when the five games were built (10 Nov 2026).
 - Rejected: per-fact help (above), and replacing the whole-child level (the step gate needs it).
 
 Parts, in order: Part 1 (kit) first and merged, then Parts 2 to 6 (one per game, any order, each its own branch and PR). Wait for S13 before starting (Waits for).

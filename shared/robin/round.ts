@@ -11,7 +11,7 @@
  */
 import type { FactStats } from '../maths/leitner';
 import { atMostShareTell, type Wrong } from '../kit/mistakes';
-import { helpWithSetting, type HelpSetting } from '../kit/help';
+import { helpWithSetting, type HelpSetting, type KindLevels } from '../kit/help';
 import { seeded } from '../seededRandom';
 import { ALL_COUNT_KEYS, COUNT_KEYS, countNumbers, kindOfCountKey, type CountKind } from '../maths/skillPacks/countingKeys';
 import { GOES_PER_ROUND, MAX_PILE, PILE_EXTRA, REVIEW_GOES, TOP_LEVEL, type HelpLevel, type Step } from './config';
@@ -117,12 +117,13 @@ function spreadPicks<T extends { key: string }>(keys: T[]): T[] {
 /**
  * Today's challenge from a fresh seed, the child's records, their place and the teacher's help setting: 7 goes at the step's new
  * thing and 3 earlier ones (steps 1 and 2 are all new), weakest keys first, each key asked twice where the pool is small
- * (so a lucky handful is asked again with the same number). The same inputs always give the same round.
+ * (so a lucky handful is asked again with the same number). Each go's help is its kind's own level from `kindLevels`, or the
+ * child's level where the kind is not there yet; the guided first go is at the top level. The same inputs always give the same round.
  */
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -136,7 +137,11 @@ export function makeRound(
     return Array.from({ length: n }, (_, i) => ranked[i % ranked.length]);
   };
   const plan = STEP_PLAN[step];
-  const shown = shownLevel(level, help);
+  const shownFor = (key: string): HelpLevel => {
+    const kind = goKindOf(key);
+    const own = kind === null ? undefined : opts.kindLevels?.[kind]?.level;
+    return shownLevel(isLevel(own) ? own : level, help);
+  };
   const fresh = plan.fresh.flatMap((p) => weak(p.keys, p.goes));
   const review = plan.review.length === 0 ? [] : Array.from({ length: REVIEW_GOES }, (_, i) => weak(plan.review[i % plan.review.length], REVIEW_GOES)[i]);
   let keys = [...fresh, ...review];
@@ -147,7 +152,7 @@ export function makeRound(
     keys = [GUIDED_KEY, ...shuffle(rest, random).slice(0, GOES_PER_ROUND - 1)];
   }
   const ordered = opts.guided ? keys : spreadPicks(shuffle(keys, random).map((key) => ({ key }))).map((k) => k.key);
-  const goes = ordered.map((key, i): GoPlan => (opts.guided && i === 0 ? { key, l: TOP_LEVEL } : { key, l: shown }));
+  const goes = ordered.map((key, i): GoPlan => (opts.guided && i === 0 ? { key, l: TOP_LEVEL } : { key, l: shownFor(key) }));
   return { seed, step, level, help, goes };
 }
 

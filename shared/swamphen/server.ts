@@ -18,7 +18,7 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { isSeed, KINDS, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, KINDS, kindLevelsAfter, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type KindLevels, type Place, type Round } from './round';
 import { TOP_LEVEL } from './config';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 
@@ -29,6 +29,8 @@ export interface Progress extends Place {
   daysDone: number;
   /** The NZ day ('2026-11-04') a row last changed. */
   lastDay: string | null;
+  /** The help level of each kind of go; a kind not here is at the child's level. */
+  kindLevels: KindLevels;
 }
 
 export interface Saved extends Progress {
@@ -36,7 +38,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL as Place['level'], goodInRow: 0, goodAtStep: 0, version: 0 });
+export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL as Place['level'], goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: 0 });
 
 export { HELP_SETTINGS } from './round';
 
@@ -115,7 +117,7 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
     const place = placeOf(s, facts);
     // A child who has played for weeks has already seen what they have answered: no demo for it.
     const seen = mergeSeen(saw, kindsFromFacts(facts, kindOfKey));
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, kindLevels: s.kindLevels ?? {}, help: settings.help, seen });
   }
 
   if (body.action === 'seen') {
@@ -130,10 +132,12 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
     const { step, level } = placeOf(s, facts);
+    // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
+    const kindLevels = s.kindLevels ?? {};
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { step, level, help: settings.help, guided });
+      const round = makeRound(seed, facts, { step, level, help: settings.help, guided, kindLevels });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -165,7 +169,10 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
       const result = finishChallenge(s.daysDone, s.lastDay, today());
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.rowChanged === null ? before : placeAfter(before, played.firstRight);
-      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place };
+      // The help for each kind of go moves the same way: on the day's first finish only, from the child's own level for a new kind.
+      const stored = s.kindLevels ?? {};
+      const kindLevels = result.rowChanged === null ? stored : place.step !== before.step ? {} : kindLevelsAfter(stored, played.kindGoes, before.level);
+      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();
       if (saved) {

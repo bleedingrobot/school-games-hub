@@ -84,6 +84,40 @@ it('changes one basket a NZ day by the server’s clock, and tells the hub on th
   expect(log.feasts).toEqual(['pupil-a']); // the hub gives the Golden Berry Feast achievement
 });
 
+it('keeps a hard kind of go at its level while another kind fades over two good days, and saves the map only on the first finish of a day', async () => {
+  const { send, start, hours, services } = setup();
+  // A child who has played before, at step 6 (all three kinds), help level 3, with no map of kinds yet.
+  services.data.players['pupil-a'] = { daysDone: 5, lastDay: '2026-11-01', step: 6, level: 3, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: 1 };
+  // Every "give" go is wrong at the first tap; every other go is right first time.
+  const taps = (round: Round): Tap[] =>
+    showRound(round).flatMap((g) => [
+      ...(g.kind === 'give' ? [{ pick: g.kind === 'give' ? g.answer + 1 : g.answer, ms: 4000 }] : []),
+      { pick: g.answer, ms: 2500 },
+    ]);
+  const finish = async () => {
+    const round = await start('pupil-a');
+    return { round, body: (await send('pupil-a', { action: 'finish', seed: round.seed, taps: taps(round) })).body };
+  };
+  const day1 = await finish();
+  expect(day1.body.kindLevels.give.level).toBe(4); // a hard round brings a level back at once
+  expect(day1.body.kindLevels.howmany).toEqual({ level: 3, goodInRow: 1 });
+  expect(day1.body.kindLevels.counton).toBeUndefined(); // only one go of it: left as it was
+  // The same day again: the map is kept as it was.
+  const again = await finish();
+  expect(again.body.kindLevels).toEqual(day1.body.kindLevels);
+  hours(24);
+  const day2 = await finish();
+  expect(day2.body.kindLevels.give.level).toBe(5);
+  expect(day2.body.kindLevels.howmany).toEqual({ level: 2, goodInRow: 0 }); // two good days: one level down
+  expect((await send('pupil-a', { action: 'load' })).body.kindLevels).toEqual(day2.body.kindLevels);
+  // The next round shows each go at its own kind's level.
+  hours(24);
+  const next = await start('pupil-a');
+  const levels = (kind: string) => [...new Set(showRound(next).filter((g) => g.kind === kind).map((g) => g.l))];
+  expect(levels('give')).toEqual([5]);
+  expect(levels('howmany')).toEqual([2]);
+});
+
 describe('the deployable file', () => {
   it('is up to date with the code (run `npm run build:functions -- robin` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script

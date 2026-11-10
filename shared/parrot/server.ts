@@ -18,7 +18,7 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { placeAfter, type Place as KitPlace } from '../kit/help';
+import { fadeByKind, placeAfter, type KindLevels, type Place as KitPlace } from '../kit/help';
 import { HELP_SETTINGS, type HelpSetting } from '../kit/help';
 import { STEP_RULES, TOP_LEVEL, type HelpLevel, type Step } from './config';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
@@ -45,6 +45,8 @@ export interface Progress extends Place {
   daysDone: number;
   /** The NZ day ('2026-11-04') a shiny thing last changed. */
   lastDay: string | null;
+  /** The help for each kind of go ('miss', 'swap', ...); a kind not here starts at the whole-child level. */
+  kindLevels: KindLevels;
 }
 
 export interface Saved extends Progress {
@@ -52,7 +54,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, version: 0 });
+export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, kindLevels: {}, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, version: 0 });
 
 
 export interface Settings {
@@ -131,7 +133,7 @@ export async function handleParrot(services: ParrotServices, player: string, bod
     if (saved === 'busy') return busy();
     const place = placeOf(s, facts);
     const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, kindLevels: s.kindLevels ?? {}, help: settings.help, seen });
   }
 
   if (body.action === 'seen') {
@@ -149,7 +151,7 @@ export async function handleParrot(services: ParrotServices, player: string, bod
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { step, level, help: settings.help, guided });
+      const round = makeRound(seed, facts, { step, level, help: settings.help, guided, kindLevels: s.kindLevels ?? {} });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -181,8 +183,22 @@ export async function handleParrot(services: ParrotServices, player: string, bod
       const result = finishChallenge(s.daysDone, s.lastDay, today());
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.changed === null ? before : moved(before, played.firstRight);
-      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips: slipsOf(kept.round, taps) });
+      // The same guard for the help for each kind of go: it moves on the day's first finish only, from the level the round was played at.
+      const slips = slipsOf(kept.round, taps);
+      // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
+      const kindLevels =
+        result.changed === null
+          ? (s.kindLevels ?? {})
+          : place.step !== before.step
+            ? {}
+            : fadeByKind(
+              s.kindLevels ?? {},
+              kept.round.goes.map((g, i) => ({ kind: kindOfKey(g.key)!, right: slips[i] === null })),
+              STEP_RULES,
+              before.level,
+            );
+      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, kindLevels, ...place };
+      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.

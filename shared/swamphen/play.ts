@@ -10,13 +10,15 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import { replayTaps, type TapReplay } from '../kit/replay';
-import { GOES_PER_ROUND, mulKeyOf, showRound, type Round, type Slip } from './round';
+import { GOES_PER_ROUND, mulKeyOf, showRound, type Kind, type Round, type Slip } from './round';
 
 export type { Tap } from '../kit/replay';
 
 export interface Replay extends TapReplay {
   /** The slip behind each go's first tap when it was wrong, in order. */
   slips: Slip[];
+  /** Each go's kind and whether its first tap was right, in order (for the help level of each kind). */
+  kindGoes: { kind: Kind; right: boolean }[];
 }
 
 /** The answers for the maths records: each go's key, then the plain times-table key of it (once each). */
@@ -39,6 +41,7 @@ export function replay(round: Round, taps: readonly { pick: number; ms: number }
   const goes = showRound(round);
   const played = replayTaps(goes, taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true });
   const slips: Slip[] = [];
+  const kindGoes: Replay['kindGoes'] = [];
   let at = 0;
   let first = true;
   for (const { pick } of taps) {
@@ -47,10 +50,11 @@ export function replay(round: Round, taps: readonly { pick: number; ms: number }
       const w = go.wrongs.find((x) => x.n === pick);
       if (w) slips.push(w.kind);
     }
+    if (first) kindGoes.push({ kind: round.goes[at].kind, right: pick === go.answer });
     first = pick === go.answer;
     if (pick === go.answer) at++;
   }
-  return { ...played, answers: withTimes(played.answers), slips };
+  return { ...played, answers: withTimes(played.answers), slips, kindGoes };
 }
 
 export type { FactAnswer };
