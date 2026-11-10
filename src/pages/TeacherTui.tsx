@@ -9,7 +9,7 @@ import { fetchTuiSettings, fetchTuiStudent, saveTuiSetting } from '../data/tui';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
 const HELP_CHOICES = [
-  { value: 'fade', label: 'Fades', detail: 'The picture help follows each child’s own challenges: it starts at every berry counted in (level 5) and comes down a level after two good challenges, comes back one after a hard one, and two when a new step starts.' },
+  { value: 'fade', label: 'Fades', detail: 'The picture help follows each child’s own challenges, for each way of asking (10 + 4, 4 + 10, 10 + ? = 14, 14 − 10): it starts at every berry counted in (level 5) and comes down a level after two good challenges at that way, comes back one after a hard one, and a way that is new to the child starts with more help while the others keep theirs. Three wrong first taps in a row bring every berry back for the rest of that challenge.' },
   { value: 'always', label: 'Always on', detail: 'Every go keeps help level 4: every berry, with the sum written under the picture.' },
   { value: 'off', label: 'Off', detail: 'Numbers only, and no Peek button. A wrong tap still brings the picture back for that go.' },
 ] as const;
@@ -43,7 +43,7 @@ export async function tuiStudentSummary(student: string): Promise<string | null>
   const s = await fetchTuiStudent(student);
   if (!s) return null;
   const tree = treeAfter(s.daysDone);
-  const parts = [`${tree.day} of ${DAYS_PER_NEST} days done at this tree`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
+  const parts = [`${tree.day} of ${DAYS_PER_NEST} days done at this tree`, `Step ${s.step} ${stepName(s.step)}, help level ${s.helpMax ?? s.level}`];
   if (tree.nests) parts.push(`${tree.nests} Golden Nest${tree.nests === 1 ? '' : 's'}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
   return parts.join(' · ');
@@ -58,7 +58,8 @@ export function TuiStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Tūī’s Ten Tree for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastFlowerDay, step, level, lastPlayed, hardest } = loaded.value.progress;
+  const { daysDone, lastFlowerDay, step, level: wholeLevel, helpMax, lastPlayed, hardest } = loaded.value.progress;
+  const level = helpMax ?? wholeLevel;
   const tree = treeAfter(daysDone);
   const flowers = METALS.map((metal) => [metal, tree.flowers.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -67,7 +68,7 @@ export function TuiStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Tūī’s Ten Tree">
       <p>
-        At {FRIEND_NAMES[tree.friend]}’s tree. Flowers: {flowers}. On Step {step} {stepName(step)}, with help level {level} (5 is every berry counted in, 0 is numbers only).
+        At {FRIEND_NAMES[tree.friend]}’s tree. Flowers: {flowers}. On Step {step} {stepName(step)}, with help level {level}, the highest of the four ways of asking (5 is every berry counted in, 0 is numbers only).
         {lastFlowerDay && <> Last flower changed {when(`${lastFlowerDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

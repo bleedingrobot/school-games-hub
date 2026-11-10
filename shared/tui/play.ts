@@ -23,6 +23,8 @@ export interface Replay {
   mistakes: number;
   /** Goes right at the first tap (0 to 10). */
   firstRight: number;
+  /** For each go in order, whether it was right at the first tap (and not a lucky quick one: the think floor). */
+  rightFirst: boolean[];
   done: boolean;
   /** One answer per fact tried, in order, for the maths records. */
   answers: Omit<FactAnswer, 'at'>[];
@@ -36,6 +38,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   let goesDone = 0;
   let mistakes = 0;
   let firstRight = 0;
+  const rightFirst: boolean[] = [];
   let triedThisGo = false;
   for (const { pick, ms } of taps) {
     const go = goes[goesDone];
@@ -44,6 +47,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     const right = pick === go.answer;
     if (!triedThisGo) {
       if (right && thoughtOf(ms)) firstRight++;
+      rightFirst[goesDone] = right && thoughtOf(ms);
       if (!counted.has(go.key)) {
         answers.push({ key: go.key, correct: right, ms });
         counted.add(go.key);
@@ -55,5 +59,5 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
       triedThisGo = false;
     } else mistakes++;
   }
-  return { goesDone, mistakes, firstRight, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
+  return { goesDone, mistakes, firstRight, rightFirst, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
 }

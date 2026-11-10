@@ -16,6 +16,7 @@ import type { FactStats } from '../maths/leitner';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
+import type { KindLevels } from '../kit/help';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 
 export const GOES_PER_ROUND = 10;
@@ -81,6 +82,9 @@ export const isSeed = (n: unknown): n is number => Number.isInteger(n) && (n as 
 export const isStep = (n: unknown): n is Step => STEPS.some((s) => s.step === n);
 export const isLevel = (n: unknown): n is HelpLevel => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= TOP_LEVEL;
 export const stepName = (step: Step) => STEPS.find((s) => s.step === step)!.name;
+
+/** The name a way goes by in the saved help for each way ("v0" to "v3"). */
+export const wayKind = (v: number): string => `v${v}`;
 
 /** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
 export const shownLevel = (level: HelpLevel, help: HelpSetting): HelpLevel => (help === 'always' ? 4 : help === 'off' ? 0 : level);
@@ -221,7 +225,7 @@ function waysFor(step: Step, random: () => number): Way[] {
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -246,8 +250,12 @@ export function makeRound(
     ns = spreadOut([GUIDED_N, ...rest]);
   }
   const ways = waysFor(step, random);
-  const shown = shownLevel(level, help);
-  const goes = ns.map((n, i): GoPlan => (opts.guided && i === 0 ? { key: keyFor(n, 0), v: 0, l: TOP_LEVEL } : { key: keyFor(n, ways[i]), v: ways[i], l: shown }));
+  // Each way has its own level once it has been played (S35); a way not in the map yet starts at the child's whole-child level.
+  const shownFor = (v: Way) => {
+    const own = opts.kindLevels?.[wayKind(v)]?.level;
+    return shownLevel(isLevel(own) ? own : level, help);
+  };
+  const goes = ns.map((n, i): GoPlan => (opts.guided && i === 0 ? { key: keyFor(n, 0), v: 0, l: TOP_LEVEL } : { key: keyFor(n, ways[i]), v: ways[i], l: shownFor(ways[i]) }));
   return { seed, step, level, help, goes };
 }
 

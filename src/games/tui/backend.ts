@@ -7,6 +7,7 @@ import { emptyData, memoryServices, type MemoryData } from '../../../shared/tui/
 import type { Tap } from '../../../shared/tui/play';
 import type { FinishResult } from '../../../shared/tui/progress';
 import { TOP_LEVEL, type HelpLevel, type HelpSetting, type Round, type Step } from '../../../shared/tui/round';
+import type { KindLevels } from '../../../shared/kit/help';
 import { handleTui, unplayed, type TuiReply } from '../../../shared/tui/server';
 
 export interface TuiState {
@@ -17,6 +18,8 @@ export interface TuiState {
   /** The step and help level the next challenge is at. */
   step: Step;
   level: HelpLevel;
+  /** The help of each way of asking ("v0" to "v3"), once played. */
+  kindLevels: KindLevels;
   /** The class's help setting. */
   help: HelpSetting;
   /** The kinds of go this child has seen (so each demo plays once). */
@@ -31,6 +34,8 @@ export interface TuiFinish extends FinishResult {
   level: HelpLevel;
   stepBefore: Step;
   levelBefore: HelpLevel;
+  /** The help of each way of asking after this finish. */
+  kindLevels: KindLevels;
   /** The top step's facts are secure (70% or more at box 2): the "what's next" card may show. */
   topSecure: boolean;
 }
@@ -135,7 +140,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setPlace: (step: Step, level: HelpLevel = TOP_LEVEL) =>
       change((s) => {
         const p = pupil(s);
-        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, version: p.version + 1 };
+        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: p.version + 1 };
       }),
     place: () => {
       const p = pupil(read());

@@ -76,6 +76,8 @@ export interface TuiStudent {
   step: Step;
   /** The picture help level, 5 (every berry counted in) to 0 (numbers only). */
   level: HelpLevel;
+  /** The highest help level among the ways of asking they have met (most help any way still gets); null before their first finish with a level for each way. */
+  helpMax?: HelpLevel | null;
   lastPlayed: string;
   /** Up to three facts they find hardest: "tenand:4", "tenand:7". */
   hardest: string[];

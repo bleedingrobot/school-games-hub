@@ -15,7 +15,7 @@ beforeEach(() => weka.on.mockReset());
 // The tenth day: the last flower turned bronze, and the top step is not yet passed.
 const result = (over: Partial<TuiFinish> = {}): TuiFinish => ({
   daysDone: 10, lastFlowerDay: '2026-11-07', flowerChanged: 9, goldenNest: false, firstRight: 8,
-  step: 5, level: 4, stepBefore: 4, levelBefore: 4, topSecure: true, ...over,
+  step: 5, level: 4, stepBefore: 4, levelBefore: 4, kindLevels: {}, topSecure: true, ...over,
 });
 const main = WORDS.flowerTurned('bronze');
 
