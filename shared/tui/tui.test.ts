@@ -66,14 +66,17 @@ describe('the help level and the step', () => {
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 6)).toEqual(at({ level: 2 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 4)).toEqual(at({ level: 3 }));
     expect(placeAfter(at({ level: 5 }), 0).level).toBe(5);
-    // A pass on the same go as a fade keeps the fade (the new step adds nothing), never below the ten-frames.
-    expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
-    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
+    // A pass on the same go as a fade keeps the fade (the new step adds nothing), and the ten-frames floor does not undo it (S25).
+    expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 2 }));
+    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 3 }));
     // A pass with no fade (a middling challenge broke the row) brings one level back, capped at the top.
     expect(placeAfter(at({ step: 2, level: 4, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     expect(placeAfter(at({ step: 2, level: 5, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     // A new step always brings the ten-frames back, even from numbers only.
     expect(placeAfter(at({ step: 2, level: 0, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 4 }));
+    // A perfect round counts as two good ones: the help fades at once.
+    expect(placeAfter(at({ level: 5 }), 10)).toEqual(at({ level: 4, goodAtStep: 1 }));
+    expect(placeAfter(at({ level: 5 }), 9)).toEqual(at({ goodInRow: 1, goodAtStep: 1 }));
     // A child who already knows both kinds of fact starts at step 3, help level 4.
     expect(startFor(inBox([...KEYS.slice(0, 7), ...LESS_KEYS.slice(0, 7)], 2))).toEqual({ step: 3, level: 4 });
     expect(startFor(inBox(KEYS.slice(0, 6), 3))).toEqual({ step: 1, level: 5 });

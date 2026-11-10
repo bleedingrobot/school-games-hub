@@ -31,7 +31,7 @@ export const GOOD_TO_PASS = 2;
 export const GOOD_TO_FADE = 2;
 /**
  * Help levels go back up this many when a new step starts, unless the help faded on that same go (then the fade
- * stands). Either way never below `FRAMES_LEVEL`.
+ * stands). A new step with no fade never starts below `FRAMES_LEVEL`; a fade is not floored back up.
  */
 export const NEW_STEP_HELP = 1;
 export const TOP_LEVEL = 5;
@@ -110,14 +110,15 @@ export interface Place {
  * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
  * less help and the next step. Hard: one level more help at once. A new step brings `NEW_STEP_HELP` level back only
  * if the help didn't fade on this same go (a pass and a fade usually land together, and the fade must stand, or a
- * strong child keeps every berry counted in until step 5). Either way a new step always has the ten-frames: the kete
- * comes only once a way of asking is going well.
+ * strong child keeps every berry counted in until step 5). A 10 out of 10 challenge counts as two good ones for the fade.
+ * A new step without a fade has the ten-frames at least; a fade stands, so the kete can come once a way is going well.
  */
 export function placeAfter(p: Place, right: number): Place {
   const good = right >= GOOD;
   const hard = right <= HARD;
   let level = p.level;
-  let goodInRow = good ? p.goodInRow + 1 : 0;
+  // A perfect round counts as two good rounds for the fade.
+  let goodInRow = good ? p.goodInRow + (right >= GOES_PER_ROUND ? 2 : 1) : 0;
   let faded = false;
   if (goodInRow >= GOOD_TO_FADE) {
     level = Math.max(0, level - 1) as HelpLevel;
@@ -131,7 +132,7 @@ export function placeAfter(p: Place, right: number): Place {
     step = (step + 1) as Step;
     goodAtStep = 0;
     goodInRow = 0;
-    level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, faded ? level : level + NEW_STEP_HELP)) as HelpLevel;
+    level = (faded ? level : Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, level + NEW_STEP_HELP))) as HelpLevel;
   }
   return { step, level, goodInRow, goodAtStep };
 }

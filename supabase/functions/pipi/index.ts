@@ -143,10 +143,17 @@ function juniorAfterAnswer(stats, correct, ms, at) {
 }
 //#endregion
 //#region shared/kit/help.ts
-/** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
+/**
+* The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left.
+* The first rung (full help) is also left early, once the fact has a quick day, by two ways: box 2 or more (two right
+* answers, even on one day) or every answer so far right (`attempts === correct`, a clean right-and-quick start). A wrong
+* answer drops the box to 1 and makes `attempts !== correct`, so that rung comes back (rule 5: fade on right-and-quick,
+* return on struggle).
+*/
 function helpForFact(stats, rungs) {
 	if (!stats) return rungs[0].help;
-	const stays = ({ until = {} }) => stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0);
+	const early = stats.quickDays.length >= 1 && (stats.box >= 2 || stats.attempts === stats.correct);
+	const stays = ({ until = {} }, i) => !(i === 0 && early) && (stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0));
 	return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
 }
 //#endregion
@@ -261,7 +268,7 @@ function levelFor(stats, reached = 1) {
 }
 /**
 * The help in the sand (the frame and the outlines) for a fact from the child's own record of it (maths review R6, Weka's
-* way with Pipi's three states): full until the fact is secure (box 2) and has been right quickly on two different days;
+* way with Pipi's three states): full until the fact is secure (box 2) and has been right and quick (box 2 and one quick day, or right every time so far; S25);
 * faint until it is fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full help
 * comes back, and a new level's splits have no record, so they start full.
 */
@@ -270,7 +277,7 @@ const HELP_LADDER = [
 		help: "full",
 		until: {
 			box: 2,
-			quickDays: 2
+			quickDays: 1
 		}
 	},
 	{
