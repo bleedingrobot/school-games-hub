@@ -19,10 +19,10 @@
 import { juniorAfterAnswer } from '../juniorQuick';
 import type { HelpSetting } from '../kit/help';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate, streamAfter } from './progress';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
-import { isLevel, isSeed, kindOfKey, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
+import { isLevel, isSeed, kindOfKey, levelFor, makeRound, MAX_SEED, type Level, type LandKind, type Round } from './round';
 
 export type WekaAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -67,7 +67,7 @@ export interface WekaServices extends SeenServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; slips: (LandKind | null)[]; mistakes: number }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Picnic Baskets went up, so it gives the achievement. A failure is only logged. */
@@ -178,7 +178,7 @@ export async function handleWeka(services: WekaServices, player: string, body: R
       const reached = facts === 'busy' ? levelBefore : levelFor(withAnswers(facts, answers), levelBefore);
       const result = finishChallenge(s.daysDone, s.lastStoneDay, today());
       const progress = { daysDone: result.daysDone, lastStoneDay: result.lastStoneDay, reached };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, slips: slipsOf(kept.round, taps), mistakes: played.mistakes });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.

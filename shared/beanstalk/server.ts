@@ -23,7 +23,7 @@ import { juniorAfterAnswer, thoughtOf } from '../juniorQuick';
 import { afterDay, finishChallenge, nzDate, placeAfter, START_STEPS, sumSecure, type FinishResult, type HelpLevel, type Steps } from './progress';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { readKinds, type SeenServices } from '../kit/seen';
-import { isMissingGo, makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
+import { isMissingGo, makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type MistakeKind, type Round, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
 export type Child = 'jack' | 'jill';
@@ -91,7 +91,7 @@ export interface BeanstalkServices extends SeenServices {
   /**
    * Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on.
    */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; slips: (MistakeKind | null)[]; mistakes: number }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Eggs went up, so it gives the achievement. A failure is only logged. */
@@ -229,7 +229,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
         child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place,
         helpMissing: placeMissing.help, goodInRowMissing: placeMissing.goodInRow, ...savedSteps,
       };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, slips: played.slips, mistakes: played.mistakes });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a go (its first tap), as bonds to 10, 20, 100 or 1000: once per challenge, so a finish sent again never counts twice.

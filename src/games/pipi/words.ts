@@ -88,3 +88,13 @@ export function whyLine(kind: WrongKind, goKind: Go['kind'], whole: number, show
       return hiding === 0 ? 'Look: none are hiding.' : `Look: ${countTo(hiding)} hiding.`;
   }
 }
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<WrongKind, string> = {
+  shown: 'picks the number showing',
+  whole: 'picks the whole when asked what is hiding',
+  add: 'adds the whole and the number showing',
+  off1: 'is one out',
+  part: 'picks just one part when asked how many altogether',
+  before: 'picks the number from the first tide',
+};

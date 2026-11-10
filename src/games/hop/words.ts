@@ -82,3 +82,12 @@ export const WORDS = {
   boardClear: 'Clear',
   jars: (n: number) => `${n} Golden Glow ${n === 1 ? 'Jar' : 'Jars'}`,
 } as const;
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<HopMistake, string> = {
+  off1: 'lands one pad off',
+  stay: 'stays on the pad Hop started on',
+  far: 'hops one hop too far',
+  step: 'mixes up the steps',
+  way: 'hops the wrong way',
+};

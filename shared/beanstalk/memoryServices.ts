@@ -16,6 +16,7 @@ export interface MemoryRound {
   /** The round as it was made at the start (missing on a challenge started before rounds were kept). */
   round?: Round;
   taps?: Tap[];
+  slips?: (string | null)[];
   mistakes?: number;
 }
 
@@ -95,7 +96,7 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
     async finish(player, seed, version, progress, ending) {
       const r = find(player, seed);
       if (!r || !r.open || version < 1 || data.players[player]?.version !== version) return false;
-      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes });
+      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes, slips: [...ending.slips] });
       data.players[player] = { ...copy(progress), version: version + 1 };
       saved();
       return true;

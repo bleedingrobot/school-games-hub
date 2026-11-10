@@ -10,6 +10,7 @@ import { HELP_SETTINGS, type HelpSetting } from '../../shared/weka/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
+import type { LandKind } from '../../shared/weka/round';
 
 /** The real school server. */
 export const liveWeka: WekaBackend = fromServer(async (body) => {
@@ -77,6 +78,8 @@ export interface WekaStudent {
   lastPlayed: string;
   /** Up to three facts they find hardest: "add:5+8", "add:6+7". */
   hardest: string[];
+  /** The commonest kind of first wrong choice in their last ten finished challenges (at least three, no tie); null when none stands out, or for rounds saved before this was kept. */
+  slip?: LandKind | null;
 }
 
 /** One student's stream, or null if they haven't played. */

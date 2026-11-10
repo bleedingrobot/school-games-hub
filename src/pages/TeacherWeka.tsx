@@ -4,11 +4,12 @@
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/weka/teacher.ts).
  */
 import { DAYS_PER_BASKET, METALS, streamAfter } from '../../shared/weka/progress';
-import { parseKey } from '../../shared/weka/round';
+import { parseKey, type LandKind } from '../../shared/weka/round';
 import type { HelpSetting } from '../../shared/weka/server';
 import { fetchWekaSettings, fetchWekaStudent, saveWekaSetting } from '../data/weka';
 import { FRIEND_NAMES } from '../games/weka/art';
 import { SettingChoice, useSetting } from '../teacher/Settings';
+import { SLIP_WORDS } from '../games/weka/words';
 
 const HELP_CHOICES = [
   { value: 'fade', label: 'Fades', detail: 'Each fact gets help to match the child’s record of it: every stone and two steps (to the big rock, then on) while they are learning it, then the child splitting the number first, faint stones once it is fluent, numbers only once they know it well. Pebble ten-frames follow a right answer while help is full or split. Help comes back if they slip.' },
@@ -50,8 +51,12 @@ export async function wekaStudentSummary(student: string): Promise<string | null
   const parts = [`${stream.day} of ${DAYS_PER_BASKET} days done at this stream`, `reached ${LEVEL_WORDS[s.reached]}`];
   if (stream.baskets) parts.push(`${stream.baskets} Golden Picnic Basket${stream.baskets === 1 ? '' : 's'}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
+
+/** The teacher's slip line: the commonest kind of first wrong choice, in plain words, or that none stands out yet. */
+const slipLine = (slip: LandKind | null | undefined): string => (slip ? `Usual slip: ${SLIP_WORDS[slip]}` : 'No single slip stands out yet');
 
 const when = (iso: string, options: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-NZ', options);
 
@@ -62,7 +67,7 @@ export function WekaStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Weka’s Stepping Stones for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastStoneDay, reached, lastPlayed, hardest } = loaded.value.progress;
+  const { daysDone, lastStoneDay, reached, lastPlayed, hardest, slip } = loaded.value.progress;
   const stream = streamAfter(daysDone);
   const stones = METALS.map((metal) => [metal, stream.stones.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -78,6 +83,7 @@ export function WekaStudentPanel({ student }: { student: string }) {
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Picnic Baskets so far: {stream.baskets}.
       </p>
       {hardest?.length ? <p>Finding these hardest: {hardest.map(factWords).join(', ')}.</p> : <p>No fact is giving trouble right now.</p>}
+      <p>{slipLine(slip)}.</p>
     </section>
   );
 }

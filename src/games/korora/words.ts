@@ -1,6 +1,6 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/korora/progress';
-import type { Level } from '../../../shared/korora/round';
+import type { Level, WrongKind } from '../../../shared/korora/round';
 
 const LEVEL_WORDS: Record<Level, string> = {
   1: 'Doubles to 5',
@@ -102,3 +102,16 @@ export const WORDS = {
   voiceOff: 'Voice off',
   goldShoesWon: (n: number) => `${n} ${n === 1 ? 'pair' : 'pairs'} of dazzling gold dancing shoes`,
 } as const;
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<WrongKind, string> = {
+  same: 'gives the number back without doubling',
+  plus1: 'adds one instead of doubling',
+  plus2: 'adds two instead of doubling',
+  miscount: 'miscounts by one or two',
+  all: 'does not share the number out',
+  minus2: 'takes two away instead of halving',
+  double: 'doubles instead of halving',
+  noExtra: 'leaves out the extra fish',
+  bigger: 'doubles the bigger number',
+};

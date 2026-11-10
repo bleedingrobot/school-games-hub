@@ -18,6 +18,7 @@ export interface MemoryRound {
   open: boolean;
   taps?: Tap[];
   mistakes?: number;
+  slips?: (string | null)[];
   firstRight?: number;
 }
 
@@ -90,7 +91,7 @@ export function memoryServices(options: MemoryOptions = {}): TuiServices & { dat
       const s = data.players[player];
       if (!r || !r.open || !s || s.version !== version) return false;
       if (progress.daysDone < s.daysDone || progress.daysDone > s.daysDone + 1) return false;
-      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes, firstRight: ending.firstRight });
+      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes, slips: [...ending.slips], firstRight: ending.firstRight });
       data.players[player] = { ...copy(progress), version: version + 1 };
       saved();
       return true;

@@ -177,8 +177,42 @@ function fadeAfter(p, right, rules) {
 }
 //#endregion
 //#region shared/kit/mistakes.ts
+/** How many units a total is from the target (0 is right; negative is under). A unit is 1, or 10 or 100 on the bigger sums. */
+const unitsOff = (total, target, unit = 1) => (total - target) / unit;
+/**
+* The size of a mistake: 'one' when a single unit off (the game says which kind that is, so it can tell a dot out from a
+* tens slip), 'over' or 'under' when two or more. Null when right.
+*/
+function kindByUnits(units, kinds) {
+	if (units === 0) return null;
+	if (Math.abs(units) === 1) return kinds.one;
+	return units > 0 ? kinds.over : kinds.under;
+}
 /** True when two of the numbers on screen are one unit off the target: the tempting near miss every full tray has. */
 const hasNearMiss = (numbers, target, unit = 1) => numbers.some((x, i) => numbers.some((y, j) => j > i && Math.abs(x + y - target) === unit));
+//#endregion
+//#region shared/kit/slips.ts
+/**
+* For each go, the kind of its first wrong tap, or null when it was right first time (or never reached). A right tap moves on
+* to the next go; later wrong taps on the same go are not counted, only the first.
+*/
+function slipsOf(goes, taps) {
+	const slips = goes.map(() => null);
+	let at = 0;
+	let tried = false;
+	for (const { pick } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		if (pick === go.answer) {
+			at++;
+			tried = false;
+			continue;
+		}
+		if (!tried) slips[at] = go.kindOf(pick);
+		tried = true;
+	}
+	return slips;
+}
 //#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
@@ -369,6 +403,11 @@ const factKeys$2 = (target) => target === 10 ? [
 ].map((n) => bondKey(n, 20)) : [bondKey(1, target)];
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
 const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
+const mistakeKind = (total, target) => kindByUnits(unitsOff(total, target, unitOf(target)), {
+	one: target === 10 || target === 20 ? "close" : "digit",
+	over: "over",
+	under: "under"
+});
 /**
 * Brings in waiting pairs while there is room and neither of a pair's numbers is floating. `inPlay` (pairs that have
 * come in) grows; the leaves floating are theirs, less the `used` ones. Pairs come in order, except that the pair which
@@ -412,17 +451,26 @@ function replay(round, taps) {
 	let pairsMade = 0;
 	let wrongInGo = 0;
 	let shown = 0;
+	const slipGoes = [];
+	const totals = [];
 	for (const { a, b, ms } of taps) {
 		if (pairsMade === 10) throw new Error("Taps after the round was done");
 		const now = floating(inPlay, used);
 		if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
 		const sum = targetOf(round, a);
 		const right = round.leaves[a] + round.leaves[b] === sum;
-		if (wrongInGo === 0) answers.push({
-			key: bondKey(round.leaves[a], sum),
-			correct: right,
-			ms
-		});
+		if (wrongInGo === 0) {
+			answers.push({
+				key: bondKey(round.leaves[a], sum),
+				correct: right,
+				ms
+			});
+			slipGoes.push({
+				answer: sum,
+				kindOf: (total) => mistakeKind(total, sum)
+			});
+		}
+		totals.push({ pick: round.leaves[a] + round.leaves[b] });
 		if (right) {
 			used.add(a).add(b);
 			pairsMade++;
@@ -442,7 +490,8 @@ function replay(round, taps) {
 		answers,
 		tried,
 		wrongInGo,
-		shown
+		shown,
+		slips: slipsOf(slipGoes, totals)
 	};
 }
 /** Ten leaves, three changes each: thirty finished days to a Golden Egg. */
@@ -770,6 +819,7 @@ async function handleBeanstalk(services, player, body) {
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
+				slips: played.slips,
 				mistakes: played.mistakes
 			});
 			if (saved === "busy") return busy();
@@ -7523,6 +7573,7 @@ Deno.serve(makeHandler({
 		last_leaf_day: progress.lastLeafDay,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
+		slips: ending.slips,
 		help: progress.help,
 		good_in_row: progress.goodInRow,
 		help_missing: progress.helpMissing,

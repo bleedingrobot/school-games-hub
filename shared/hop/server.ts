@@ -18,9 +18,9 @@
 import { juniorAfterAnswer } from '../juniorQuick';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate, pondAfter } from './progress';
-import { HOP_KINDS, isSeed, isStep, kindOfKey, makeRound, MAX_SEED, stepFor, topSecure, type HopStep, type Round } from './round';
+import { HOP_KINDS, isSeed, isStep, kindOfKey, makeRound, MAX_SEED, stepFor, topSecure, type HopStep, type HopMistake, type Round } from './round';
 
 export type HopAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -57,7 +57,7 @@ export interface HopServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; slips: (HopMistake | null)[]; mistakes: number }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Glow Jars went up, so it gives the achievement. A failure is only logged. */
@@ -172,7 +172,7 @@ export async function handleHop(services: HopServices, player: string, body: Rec
       // improved on a replay can still count at the next day's first finish.
       const reached = facts === 'busy' || result.padChanged === null ? s.reached : stepFor(withAnswers(facts, answers), stepBefore);
       const progress = { daysDone: result.daysDone, lastPadDay: result.lastPadDay, reached };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, slips: slipsOf(kept.round, taps), mistakes: played.mistakes });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a hop, once per challenge, so a finish sent again never counts twice.

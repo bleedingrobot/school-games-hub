@@ -10,7 +10,8 @@
  */
 import { replayTaps, type Tap as KitTap, type TapReplay } from '../kit/replay';
 import { JUNIOR_MIN_THINK_MS } from '../juniorQuick';
-import { GOES_PER_ROUND, showRound, type Round } from './round';
+import { GOES_PER_ROUND, showRound, type LandKind, type Round } from './round';
+import { slipsOf as kitSlipsOf } from '../kit/slips';
 
 /** One number picked: its value and how long the child took over it. */
 export type Tap = KitTap;
@@ -19,3 +20,10 @@ export type Replay = TapReplay;
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
 export const replay = (round: Round, taps: readonly Tap[]): Replay =>
   replayTaps(showRound(round), taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS });
+
+/** The kind of slip behind each go's first wrong tap (null for a go right first time), saved for the teacher's "usual slip" line (LEARNING-DESIGN rule 9). */
+export const slipsOf = (round: Round, taps: readonly Tap[]): (LandKind | null)[] =>
+  kitSlipsOf(
+    showRound(round).map((go) => ({ answer: go.answer, kindOf: (pick: number): LandKind | null => go.wrongs.find((w) => w.n === pick)?.kind ?? null })),
+    taps,
+  );
