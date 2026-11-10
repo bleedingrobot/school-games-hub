@@ -6,7 +6,9 @@
  * Mistakes that teach (maths review R5). A wrong shell greys out for good (it can't be tapped again in that try) and the
  * picture for its kind of mistake shows with a line that says why. The second wrong shell of a go stops the free taps:
  * "Let's look together" lifts the sand, all the pipi wave and "7 = 4 + 3" fills in, coloured to match the dots. Then the
- * same go comes back ("Now you try!"), all four shells in a new order, with the child's own help. Only a go's first shell
+ * child gets "Now you try one like it": a sister go (another split of the same whole, or a nearby whole), with the child's
+ * own help and nothing pointed at, never sent. A right shell on it sends the first go's right pick instead; a wrong one shows why,
+ * then the first go comes back with its right shell pointed at. Only a go's first shell
  * is scored (shared/pipi/play.ts), so a shown go is never a clean right; the finished round still turns its shell.
  *
  * The help follows the child, fact by fact (maths review R6, each go's `h` from shared/pipi/round.ts): full is the pipi in
@@ -21,7 +23,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { replay, wrongFirstRun, type Tap } from '../../../shared/pipi/play';
 import type { Friend as FriendName, Help } from '../../../shared/pipi/progress';
-import { GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
+import { GOES_PER_ROUND, showRound, sisterGo, type Go, type Round, type WrongKind } from '../../../shared/pipi/round';
 import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
 import { LookTogether, NowYouTry, ShowWhy, useLookTogether } from '../../kit/ShowWhy';
@@ -44,6 +46,8 @@ const RIGHT_MS = 1500;
 const WOBBLE_MS = 500;
 /** How long a wrong shell stays after its why line has been said. */
 const WHY_LEAVE_MS = 1200;
+/** How long a wrong shell on the sister shows its why-line, before the first go's right shell is pointed at. */
+const SISTER_WHY_MS = 2600;
 
 interface Props {
   round: Round;
@@ -178,6 +182,10 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
   const flow = useRef(NEW_GO);
   /** "Now you try!": the same go again after "Let's look together". */
   const [redo, setRedo] = useState(false);
+  /** "Now you try one like it": the sister go (local only, never in `taps`, nothing on it marked) and the child's one wrong shell on it. */
+  const [sister, setSister] = useState<{ go: Go; wrong: number | null } | null>(null);
+  /** After a wrong shell on the sister: the first go's right shell is pointed at, so nobody is stuck. */
+  const [stuck, setStuck] = useState(false);
   /** During "Let's look together" the sand is lifted and all the pipi wave. */
   const [lifted, setLifted] = useState(false);
   /** The shells' order for the redo; null is the go's own order. */
@@ -233,7 +241,8 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes]);
 
-  const go = goes[Math.min(at, goes.length - 1)];
+  const base = goes[Math.min(at, goes.length - 1)];
+  const go = sister ? sister.go : base;
   const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' && !redo ? (go.kind as DemoKind) : null;
   const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMO_STEPS[demoKind] : [], say });
   // When a demo ends (or is skipped) the real go starts: its question is read and the clock begins.
@@ -269,6 +278,8 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
     setRedo(false);
     setLifted(false);
     setOrder(null);
+    setSister(null);
+    setStuck(false);
   }
 
   /** "Hear it again": the why-line if one is showing, otherwise the question (not the look-together step, and no first-go intro). */
@@ -295,16 +306,67 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
         setRedo(true);
         setTried([]);
         setGone([]);
-        setOrder(reordered(go.choices));
+        // "Now you try one like it": a sister go (another split of the same whole, or a nearby whole); if none fits, the go itself with its shells in a new order.
+        const sis = sisterGo(round, at, go);
+        setSister(sis ? { go: sis, wrong: null } : null);
+        setOrder(sis ? null : reordered(go.choices));
         tappedYet.current = false;
         since.current = Date.now();
-        say(WORDS.nowTry);
+        say(WORDS.nowTry, sis ? () => say(sis.spoken) : undefined);
       },
+    });
+  }
+
+  /** A tap on the sister. Never saved or sent: a right one ends the go with the FIRST go's right pick, which is what the server replays. */
+  function pickSister(s: { go: Go; wrong: number | null }, n: number) {
+    if (s.wrong !== null) return;
+    tappedYet.current = true;
+    if (n === s.go.answer) {
+      const now = Date.now();
+      const next = [...taps, { pick: base.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      rightTap(next, n);
+      return;
+    }
+    setSister({ go: s.go, wrong: n });
+    setTried([n]);
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    const kind = s.go.wrongs.find((w) => w.n === n)?.kind ?? 'off1';
+    setWhy({ n, kind });
+    say(whyLine(kind, s.go.kind, s.go.whole, s.go.showing, s.go.hiding));
+    later(SISTER_WHY_MS, () => {
+      setSister(null);
+      setWhy(null);
+      setTried([]);
+      setStuck(true);
+    });
+  }
+
+  /** The go is right: the shell lifts the sand, then the next go (or the end). */
+  function rightTap(next: Tap[], n: number) {
+    flow.current = stepGo(flow.current, 'right');
+    kinds.mark([go.kind]);
+    setWhy(null);
+    setPhase('right');
+    say(WORDS.yes(n));
+    if (sound) playSound('badge');
+    later(RIGHT_MS, () => {
+      if (at + 1 >= goes.length) {
+        setPhase('done');
+        later(RIGHT_MS / 2, () => onDone(next));
+      } else {
+        freshGo();
+        setAt(at + 1);
+      }
     });
   }
 
   function pick(n: number) {
     if (phase !== 'ask' || look || demo.playing || tried.includes(n)) return;
+    if (sister) return pickSister(sister, n);
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -333,24 +395,10 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
       else say(line, slip);
       return;
     }
-    flow.current = stepGo(flow.current, 'right');
-    kinds.mark([go.kind]);
-    setWhy(null);
-    setPhase('right');
-    say(WORDS.yes(n));
-    if (sound) playSound('badge');
-    later(RIGHT_MS, () => {
-      if (at + 1 >= goes.length) {
-        setPhase('done');
-        later(RIGHT_MS / 2, () => onDone(next));
-      } else {
-        freshGo();
-        setAt(at + 1);
-      }
-    });
+    rightTap(next, n);
   }
 
-  const pointAt = guide && at === 0 && phase === 'ask' ? go.answer : null;
+  const pointAt = !sister && phase === 'ask' && ((guide && at === 0) || stuck) ? go.answer : null;
   const done = at + (phase === 'right' || phase === 'done' ? 1 : 0);
   const ask = go.kind === 'altogether' ? WORDS.howManyAltogether : go.kind === 'twoTides' ? WORDS.howManyNow : WORDS.howManyHiding;
 
@@ -437,7 +485,7 @@ export function Goes({ round, help, helpOn = true, scenery, friend, guide = fals
           <button
             key={`${at}-${n}`}
             type="button"
-            disabled={phase === 'tide' || look !== null || tried.includes(n)}
+            disabled={phase === 'tide' || look !== null || tried.includes(n) || (sister !== null && sister.wrong !== null)}
             className={`pp-shellbtn${tried.includes(n) ? ' pp-shellbtn--tried' : ''}${wobble === n ? ' pp-shellbtn--wobble' : ''}${phase !== 'ask' && phase !== 'tide' && n === go.answer ? ' pp-shellbtn--right' : ''}${n === pointAt ? ' pp-shellbtn--pointed' : ''}`}
             style={{ ['--pp-i' as string]: i }}
             onClick={() => pick(n)}
