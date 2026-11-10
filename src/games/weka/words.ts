@@ -33,7 +33,7 @@ export const WORDS = {
   bigRock: 'The big rock is 10.',
   /** Mistakes that teach (maths review R5): the second wrong tap of a question, and the same question again. */
   lookTogether: 'Let’s look together.',
-  nowTry: 'Now you try.',
+  nowTry: 'Now you try one like it.',
   goOn: 'Go on',
   /** The first wrong tap: why that number is not it, one line for each mistake (never the answer). */
   whyRockAdd: (rest: number) => `That is where Weka is. ${rest} more ${rest === 1 ? 'hop' : 'hops'}.`,

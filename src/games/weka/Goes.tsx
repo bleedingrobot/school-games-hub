@@ -24,8 +24,10 @@
  *    (James, 5 Nov 2026).
  *  - mistakes that teach (maths review R5): a wrong tap with a mistake behind it greys that number out and shows why (Weka on
  *    the rock, the split, the pebbles, the hops counted) with Bella's line; the second wrong tap is "Let's look together"
- *    (Weka hops the whole make-ten sentence while the pebbles fill the first ten-frame), then the same question again at
- *    the child's own help ("Now you try"). Each question (hops to ten, where Weka lands) has its own two taps.
+ *    (Weka hops the whole make-ten sentence while the pebbles fill the first ten-frame), then a sister question
+ *    ("Now you try one like it": the neighbour fact on the same start number, asked the same way at the same help, local
+ *    only and never sent; a right tap sends the first go's right pick instead, a wrong one shows why once and brings the
+ *    first go back with its answer pointed at). Each question (hops to ten, where Weka lands) has its own two taps.
  * None of this changes what counts: only the final picks are sent, and the server replays them and records the first
  * pick of each fact. The first step is help only and is never sent.
  */
@@ -41,7 +43,7 @@ import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
 import type { Tap } from '../../../shared/weka/play';
 import type { Friend as FriendName } from '../../../shared/weka/progress';
-import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, skipPracticeFor, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, wrongKind, type Go, type Help, type Round } from '../../../shared/weka/round';
+import { askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, GOES_PER_ROUND, pebblesFor, showRound, sisterGo, skipPracticeFor, splitDoneLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, wrongKind, type Go, type Help, type Round } from '../../../shared/weka/round';
 import type { HelpSetting } from '../../../shared/weka/server';
 import { playSound } from '../sounds';
 import { paint, type Pose } from './art';
@@ -109,8 +111,10 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
   const [firstWrong, setFirstWrong] = useState(false);
   /** Mistakes that teach: the wrong numbers greyed out, the mistake being shown, and the question's place in the two-tap flow. */
   const [gone, setGone] = useState<number[]>([]);
-  const [why, setWhy] = useState<{ kind: string; tap: number } | null>(null);
+  const [why, setWhy] = useState<{ kind: string; tap: number; go?: Go } | null>(null);
   const [redo, setRedo] = useState(false);
+  /** The sister go of "Now you try one like it": local only, never sent or saved, and nothing on it is marked. */
+  const [sister, setSister] = useState<Go | null>(null);
   const flow = useRef(NEW_GO);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   /** Weka has hopped to the big rock (the first step, or a split) on this go. */
@@ -158,14 +162,15 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
   };
   useEffect(() => clearTimers, []);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = sister ?? base;
   const kinds = useSeenKinds(seen, onSeen);
   /** A kind not yet seen (hopping back, starting on the bigger number) gets its demo before the first go of it, once. */
   const unseen = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind);
   const demoKind = unseen && phase === 'ask' ? (go.kind as DemoKind) : null;
   const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMOS[demoKind].steps : [], say });
   const demoWas = useRef(false);
-  const guided = guide && at === 0;
+  const guided = guide && at === 0 && !sister;
   /** The hand on the very first go: it starts pointing after GUIDE_MS and stops when the child moves on. */
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
   const start: Help = boost || guided ? 'full' : helpFor(go.h, setting);
@@ -254,7 +259,65 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
     );
   }
 
-  /** The second wrong tap of a question: Weka hops the whole make-ten sentence while the pebbles fill the first ten-frame, then the question again. */
+  /** Where a go starts: hops to the big rock first, the split first, or straight to the answer. */
+  const firstStep = (): Step => (twoStep ? 'toTen' : splitFirst ? 'split' : 'answer');
+  const lineFor = (g: Go, s: Step) => (s === 'toTen' ? toTenLine(g) : s === 'split' ? splitFirstLine(g) : askLine(g));
+
+  /** "Now you try one like it": a sister go from its first step, in the same help. Nothing on it is marked, nothing is sent. */
+  function startSister(sis: Go) {
+    const s = firstStep();
+    setSister(sis);
+    setRedo(false);
+    setStep(s);
+    setBond(0);
+    setBondWrongs(0);
+    clearSplitWhy();
+    setPos(sis.from);
+    setPose('wait');
+    setLit([]);
+    setRestLit([]);
+    setRockDone(false);
+    setGone([]);
+    setWhy(null);
+    setWrongs(0);
+    guideHand.stop();
+    say(WORDS.nowTry, () => askAloud(lineFor(sis, s)));
+  }
+
+  /** A wrong tap on the sister: its why line once, then the original go comes back with its right answer pointed at, so nobody is stuck. Nothing is saved. */
+  function sisterWrong(n: number) {
+    const sis = sister!;
+    const kind = step === 'toTen' ? wrongKind(sis.toTenWrongs, n) : wrongKind(sis.wrongs, n);
+    clearTimers();
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    const back: Step = step === 'toTen' ? 'toTen' : 'answer';
+    const onRock = back === 'answer' && (twoStep || splitFirst);
+    setSister(null);
+    setRedo(true);
+    setStep(back);
+    setBond(2);
+    setBondWrongs(0);
+    clearSplitWhy();
+    setRockDone(onRock);
+    setPos(onRock ? 10 : base.from);
+    setPose('wait');
+    setLit([]);
+    setRestLit([]);
+    setGone([]);
+    setWrongs(3);
+    flow.current = { phase: 'redo', wrong: 2 };
+    if (kind) {
+      setWhy({ kind, tap: wrongs + 1, go: sis });
+      say(whyLine(sis, kind), () => askAloud(back === 'toTen' ? toTenLine(base) : onRock ? fromTenLine(base) : askLine(base)));
+    } else {
+      setWhy(null);
+      say(WORDS.tryAgain, () => askAloud(back === 'toTen' ? toTenLine(base) : onRock ? fromTenLine(base) : askLine(base)));
+    }
+  }
+
+  /** The second wrong tap of a question: Weka hops the whole make-ten sentence while the pebbles fill the first ten-frame, then a sister question (or, if none, the same question again). */
   function lookTogether() {
     setWhy(null);
     setGone([]);
@@ -264,6 +327,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
     setPose('wait');
     const wasStep = step;
     const onRock = rockDone;
+    const sis = sisterGo(round, at, go, { hops: wasStep === 'toTen' });
     startLook({
       anchor: 0,
       steps: go.small,
@@ -271,6 +335,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
       fillLine: stemLine(go),
       onEnd: () => {
         flow.current = stepGo(flow.current, 'lookDone');
+        if (sis) return startSister(sis);
         setRedo(true);
         setPos(onRock ? 10 : go.from);
         setPose('wait');
@@ -299,6 +364,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
   }
 
   function wrong(n: number) {
+    if (sister) return sisterWrong(n);
     const w = wrongs + 1;
     setWrongs(w);
     if (!firstWrong) {
@@ -343,8 +409,10 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
       });
       return;
     }
+    if (sister && n !== go.answer) return sisterWrong(n);
     const now = Date.now();
-    const next = [...taps, { pick: n, ms: now - since.current }];
+    // A right tap on the sister sends the original go's right pick instead, so the saved taps end the go the usual way.
+    const next = [...taps, { pick: sister ? base.answer : n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
     if (n !== go.answer) return wrong(n);
@@ -362,8 +430,8 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
       hopOn();
     } else hopTo(go.from, 10, hopOn);
     later(RIGHT_MS + (Math.abs(go.from - go.answer) * HOP_MS), () => {
-      // A child who got it right first time skips the pebbles and the split (the pebbles stay one go in five).
-      if (skipPracticeFor(!firstWrong, guided, at)) nextGo();
+      // After the sister the child goes on. A child who got it right first time skips the pebbles and the split (the pebbles stay one go in five).
+      if (sister || skipPracticeFor(!firstWrong, guided, at)) nextGo(next);
       else if (pebblesFor(start) && go.kind !== 'back') setPhase('pebbles');
       else afterPebbles();
     });
@@ -460,11 +528,12 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
     say(bond === 0 ? BOND_MORE : bondLine(go, true));
   }
 
-  function nextGo() {
+  function nextGo(all: Tap[] = taps) {
     clearTimers();
+    setSister(null);
     if (at + 1 >= goes.length) {
       setPhase('done');
-      later(600, () => onDone(taps));
+      later(600, () => onDone(all));
     } else {
       setAt(at + 1);
       setPhase('ask');
@@ -519,7 +588,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
             <span key={i} className={i < made ? 'wk-pip wk-pip--done' : 'wk-pip'} />
           ))}
         </div>
-        <HearAgain prefix="wk" label={WORDS.hearAgain} onHear={() => look ? undefined : splitSaid ? say(splitSaid) : why && go ? say(whyLine(go, why.kind as never)) : say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))} />
+        <HearAgain prefix="wk" label={WORDS.hearAgain} onHear={() => look ? undefined : splitSaid ? say(splitSaid) : why ? say(whyLine(why.go ?? go, why.kind as never)) : say(step === 'toTen' ? toTenLine(go) : step === 'split' ? (bond === 0 ? splitFirstLine(go) : splitRestLine(go)) : onBigRock ? fromTenLine(go) : askLine(go))} />
       </div>
       {phase !== 'pebbles' && <p className="wk-ask" aria-live="polite">{ask}</p>}
       {/* The make-ten sentence, once Weka is on the big rock or a hint has said it. */}
@@ -565,17 +634,17 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
       {phase === 'pebbles' ? (
         <Pebbles key={at} go={go} guided={guided} sound={sound} last={lastGo} say={say} onFirstWrong={pebblesFirstWrong} onNext={afterPebbles} />
       ) : phase === 'bond' ? (
-        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickBond} onNext={nextGo} />
+        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickBond} onNext={() => nextGo()} />
       ) : step === 'split' ? (
-        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickSplit} onNext={nextGo} first />
+        <Bond go={go} gone={splitGone} filled={bond} wrongs={bondWrongs} guided={guided} wobble={wobble} last={lastGo} onPick={pickSplit} onNext={() => nextGo()} first />
       ) : (
       <div className="wk-answer">
         {why && phase === 'ask' && !look && (
           <ShowWhy
             prefix="wk"
             tapKey={`${at}-${step}-${why.tap}`}
-            picture={why.kind === 'double' ? <BondDiagram go={go} filled={2} label={bondLine(go)} /> : why.kind === 'part' ? <PebblePicture go={go} moved={go.toTen} /> : null}
-            line={whyLine(go, why.kind as never)}
+            picture={why.kind === 'double' ? <BondDiagram go={why.go ?? go} filled={2} label={bondLine(why.go ?? go)} /> : why.kind === 'part' ? <PebblePicture go={why.go ?? go} moved={(why.go ?? go).toTen} /> : null}
+            line={whyLine(why.go ?? go, why.kind as never)}
           />
         )}
         {look && (
@@ -589,7 +658,7 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
             onSkip={skipLook}
           />
         )}
-        {redo && !why && !look && phase === 'ask' && <NowYouTry prefix="wk" line={WORDS.nowTry} />}
+        {(redo || sister) && !why && !look && phase === 'ask' && <NowYouTry prefix="wk" line={WORDS.nowTry} />}
       <div className="wk-choices" role="group" aria-label={WORDS.pickNumber}>
         {choices.map((n) => (
           <button

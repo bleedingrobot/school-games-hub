@@ -48,8 +48,8 @@ describe('Weka’s Stepping Stones help', () => {
     cleanup();
 
     // A later day with help off: one tap, no hand at first. The first wrong tap greys that number out and shows why (the
-    // stones come back); the second is "Let's look together" with the make-ten sentence; then the same go again at the
-    // child's own help ("Now you try"), and the hand points after the third wrong tap.
+    // stones come back); the second is "Let's look together" with the make-ten sentence; then a sister go at the
+    // child's own help ("Now you try one like it"), and the hand points at the first go's answer after a wrong tap on it.
     trial.tools.setHelp('off');
     trial.tools.jumpTo(3);
     render(<SoundProvider><WekaGame backend={trial.backend} /></SoundProvider>);
@@ -69,9 +69,12 @@ describe('Weka’s Stepping Stones help', () => {
     expect(document.querySelector('.wk-stem')!.textContent).toMatch(/= 10, then \+ \d/);
     await waitFor(() => expect(document.querySelector('.wk-why--try')).not.toBeNull(), { timeout: 15000 });
     expect(document.querySelector('.wk-path')).toBeNull();
-    expect(wrong.every((x) => !x.hasAttribute('disabled'))).toBe(true);
+    // "Now you try one like it": another fact, nothing pointed at, and a wrong tap on it brings the original back with its answer pointed at.
+    const [c, d] = document.querySelector('.wk-ask')!.textContent!.match(/\d+/g)!.map(Number);
+    expect(c + d).not.toBe(a + b);
     expect(hand()).toBeNull();
-    await userEvent.click(wrong[2]);
-    expect(label()).toBe(`${right}, try this one`);
+    const sisterWrong = [...screen.getByRole('group').querySelectorAll('button')].find((x) => x.getAttribute('aria-label') !== String(c + d))!;
+    await userEvent.click(sisterWrong);
+    await waitFor(() => expect(label()).toBe(`${right}, try this one`));
   }, 40000);
 });

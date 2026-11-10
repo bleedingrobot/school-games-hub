@@ -3,7 +3,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
 import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
-import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
+import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, sisterGo, type Day, type Level, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -50,6 +50,30 @@ describe('the round', () => {
     }
     // The very first challenge starts with 9 + 2, bigger first, full help.
     for (const seed of seeds) expect(makeRound(seed, [], { guided: true, day: 'bronze' }).goes[0]).toEqual({ key: GUIDED_KEY, v: 1, h: 'full' });
+  });
+});
+
+describe('the sister go', () => {
+  it('is another fact asked the same way with the same help, never the original answer, and the original go still ends the replay', () => {
+    for (const day of ['bronze', 'gold'] as Day[]) {
+      for (const seed of seeds.slice(0, 12)) {
+        const round = makeRound(seed, recordsFor(4), { day });
+        const goes = showRound(round);
+        goes.forEach((go, i) => {
+          for (const hops of [false, true]) {
+            const sister = sisterGo(round, i, go, { hops });
+            expect(sister).not.toBeNull();
+            expect(sister!.key).not.toBe(go.key);
+            expect([sister!.kind, sister!.h]).toEqual([go.kind, go.h]);
+            expect(sister!.answer).not.toBe(go.answer);
+            expect(sisterGo(round, i, go, { hops })).toEqual(sister);
+            if (!hops && go.kind !== 'back') expect(sister!.big).toBe(go.big);
+          }
+        });
+        // A right tap on the sister sends the original go's right pick, so the taps are the usual ones and replay is done.
+        expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
+      }
+    }
   });
 });
 
