@@ -11,7 +11,7 @@ import { shortCache } from '../teacher/shortCache';
 import { FriendlyError } from './profile';
 import { fetchClassMap, type ClassMap } from './skillMap';
 
-export const GAME_IDS = ['beanstalk', 'hop', 'korora', 'pipi', 'tui', 'weka', 'pigeon', 'parrot', 'lizard', 'swamphen', 'robin'] as const;
+export const GAME_IDS = ['robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen'] as const;
 export type FoundationalGameId = (typeof GAME_IDS)[number];
 
 /** One finished challenge. */

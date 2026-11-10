@@ -35,6 +35,14 @@ const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
 const SeasonStrip = lazy(() => import('../components/SeasonStrip'));
 const DragonSeasonStrip = lazy(() => import('../components/DragonSeasonStrip'));
 
+/** Where Quick looks goes among the cards: after Robin, or first of the foundational games while Robin is off. */
+function quickLooksAt(tiles: { id: string; group?: DashboardGroup }[]): number {
+  const robin = tiles.findIndex((t) => t.id === 'robin');
+  if (robin >= 0) return robin + 1;
+  const first = tiles.findIndex((t) => t.group === 'foundational');
+  return first >= 0 ? first : tiles.length;
+}
+
 /** How many games Recent games shows here (the profile page shows more). */
 const RECENT_SHOWN = 3;
 
@@ -241,9 +249,10 @@ export function Dashboard() {
         />
       ),
     }));
-  // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026).
+  // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026), straight after Robin's
+  // counting: seeing small numbers at a glance comes next (James, 10 Nov 2026).
   if (trainingOn())
-    tiles.push({
+    tiles.splice(quickLooksAt(tiles), 0, {
       id: 'quick-looks',
       group: 'foundational',
       card: (
