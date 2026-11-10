@@ -16,9 +16,9 @@
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
-import { isSeed, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round, type Slip } from './round';
 import { TOP_LEVEL } from './config';
 import { fadeByKind, ROUND_OF_TEN, type KindLevels } from '../kit/help';
 import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
@@ -65,7 +65,7 @@ export interface PigeonServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number; firstRight: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number; firstRight: number; slips: (Slip | null)[] }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** The kinds of go this pupil has seen (a demo played, or a go of the kind finished). */
@@ -168,6 +168,7 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
     if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
     const at = services.now();
     const answers = played.answers.map((a) => ({ ...a, at }));
+    const slips = slipsOf(kept.round, taps);
     for (let tries = 0; tries < TRIES; tries++) {
       const s = await services.load(player);
       if (s === 'busy') return busy();
@@ -184,7 +185,7 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
             ? {}
             : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: g.kind, right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.

@@ -57,6 +57,8 @@ export async function lizardStudentSummary(student: string): Promise<string | nu
   const den = denAfter(s.daysDone);
   const parts = [`${den.day} of ${DAYS_PER_RAFT} days done in this den`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
   if (den.prizes) parts.push(`${den.prizes} Golden Raft${den.prizes === 1 ? '' : 's'}`);
+  const slips = slipSummary(s.recent ?? []);
+  if (slips.top) parts.push(`usual slip: ${SLIP_WORDS[slips.top]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -86,10 +88,12 @@ export function LizardStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Rafts so far: {den.prizes}.
       </p>
-      {slips.top && (
+      {slips.top ? (
         <p>
-          Slips (last {slips.wrong} wrong first tries): most often {SLIP_WORDS[slips.top]} ({slips.count} times).
+          Usual slip: {SLIP_WORDS[slips.top]} ({slips.count} of their last {slips.wrong} wrong first tries).
         </p>
+      ) : (
+        <p>No single slip stands out yet.</p>
       )}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(keyWords).join(', ')}.</p> : <p>Nothing is giving trouble right now.</p>}
     </section>

@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "robin" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/kit/slips.ts
+/**
+* For each go, the kind of its first wrong tap, or null when it was right first time (or never reached). A right tap moves on
+* to the next go; later wrong taps on the same go are not counted, only the first.
+*/
+function slipsOf$1(goes, taps) {
+	const slips = goes.map(() => null);
+	let at = 0;
+	let tried = false;
+	for (const { pick } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		if (pick === go.answer) {
+			at++;
+			tried = false;
+			continue;
+		}
+		if (!tried) slips[at] = go.kindOf(pick);
+		tried = true;
+	}
+	return slips;
+}
+//#endregion
 //#region shared/kit/replay.ts
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, throws: the browser never sends them. */
 function replayTaps(goes, taps, rules) {
@@ -576,22 +599,10 @@ function replay(round, taps) {
 }
 /** The slip behind each go's first wrong tap (null for a go right first time): over, under, skip, double and so on, for the teacher's line. */
 function slipsOf(round, taps) {
-	const goes = showRound(round);
-	const slips = goes.map(() => null);
-	let at = 0;
-	let tried = false;
-	for (const { pick } of taps) {
-		const go = goes[at];
-		if (!go) break;
-		if (pick === go.answer) {
-			at++;
-			tried = false;
-			continue;
-		}
-		if (!tried) slips[at] = slipOf(go, pick);
-		tried = true;
-	}
-	return slips;
+	return slipsOf$1(showRound(round).map((go) => ({
+		answer: go.answer,
+		kindOf: (pick) => slipOf(go, pick)
+	})), taps);
 }
 /** Whether each go was right at the first tap and not too fast to be a thought (S14), for the help of each kind. Slips are unchanged. */
 function rightFirstOf(round, taps) {

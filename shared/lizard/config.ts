@@ -59,5 +59,3 @@ export { JUNIOR_QUICK_MS as QUICK_MS } from '../juniorQuick';
 
 /** The latest first tries counted for the slip most often made. */
 export const TEACHER_TAPS = 30;
-/** A slip needs at least this many first tries to be worth a line. */
-export const SLIP_MIN = 2;

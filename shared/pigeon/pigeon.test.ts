@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { BERRY_CLUSTERS } from './config';
 import { DAYS_PER_BRANCH, branchAfter, finishChallenge } from './progress';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { DEMO_KEYS, GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, makeRound, marksFor, pictureFor, placeAfter, placeRight, poolFor, showRound, sisterGo, startFor, tapValue, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handlePigeon, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { placingSummary } from './teacher';
+import { topSlip } from '../kit/slips';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -235,5 +236,30 @@ describe('help for each kind of go', () => {
     // The teacher's setting still wins, and the guided first go stays at the top.
     expect(makeRound(9, [], { step: 3, level: 4, help: 'off', kindLevels }).goes.every((g) => g.l === 0)).toBe(true);
     expect(makeRound(9, [], { guided: true, level: 2, kindLevels }).goes[0].l).toBe(5);
+  });
+});
+
+describe('the usual slip', () => {
+  it('names a wrong card’s slip, leaves a wrong place and a right first tap as null, and is saved when the challenge finishes', async () => {
+    const round = makeRound(3, [], { step: 3, level: 3 });
+    const goes = showRound(round);
+    const named = goes.map((g) => (g.kind === 'place' ? null : g.wrongs.find((w) => w.n === wrongTap(g))!.kind));
+    // Wrong first on every go, then right: a card go gives the tapped card's slip, a place go none.
+    expect(slipsOf(round, wobblyTaps(round))).toEqual(named);
+    // Right first time gives nothing, and only the first wrong tap on a go counts.
+    expect(slipsOf(round, goes.map((g) => ({ pick: rightTap(g), ms: 3000 })))).toEqual(goes.map(() => null));
+    const card = goes.findIndex((g) => g.kind !== 'place');
+    const twice: Tap[] = goes.flatMap((g, i) => (i === card ? [{ pick: g.wrongs[0].n, ms: 1 }, { pick: g.wrongs[1].n, ms: 1 }, { pick: g.answer, ms: 1 }] : [{ pick: rightTap(g), ms: 1 }]));
+    expect(slipsOf(round, twice)[card]).toBe(goes[card].wrongs[0].kind);
+    // The server keeps them with the round.
+    const data = emptyData();
+    const services = memoryServices({ data, now: () => Date.parse('2026-11-10T02:00:00Z'), random: () => 0.4 });
+    const started = (await handlePigeon(services, 'p1', { action: 'start' })).body.round as Round;
+    const taps = wobblyTaps(started);
+    await handlePigeon(services, 'p1', { action: 'finish', seed: started.seed, taps });
+    expect(data.rounds.find((r) => r.round.seed === started.seed)?.slips).toEqual(slipsOf(started, taps));
+    // A teacher sees a kind only when it shows three times and stands alone.
+    expect(topSlip(['ten', 'ten', null, 'one'])).toBeNull();
+    expect(topSlip(['ten', 'ten', 'ten', 'one', 'one'])).toBe('ten');
   });
 });

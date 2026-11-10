@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "pigeon" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/kit/slips.ts
+/**
+* For each go, the kind of its first wrong tap, or null when it was right first time (or never reached). A right tap moves on
+* to the next go; later wrong taps on the same go are not counted, only the first.
+*/
+function slipsOf$1(goes, taps) {
+	const slips = goes.map(() => null);
+	let at = 0;
+	let tried = false;
+	for (const { pick } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		if (pick === go.answer) {
+			at++;
+			tried = false;
+			continue;
+		}
+		if (!tried) slips[at] = go.kindOf(pick);
+		tried = true;
+	}
+	return slips;
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -2019,6 +2042,27 @@ function replay(round, taps) {
 		misses
 	};
 }
+/**
+* The slip behind each go's first wrong tap (null for a go right first time, and for a wrong place on the line, which has a
+* distance and no named slip), for the teacher's "usual slip" line. A place tap is right within a tolerance, so it is turned into
+* the go's answer (right) or a place no card can be at (wrong) before the kit's `slipsOf` reads it.
+*/
+function slipsOf(round, taps) {
+	const goes = showRound(round);
+	const seen = [];
+	let at = 0;
+	for (const { pick } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		const right = go.kind === "place" ? placeRight(go, pick) : pick === go.answer;
+		seen.push({ pick: right ? go.answer : go.kind === "place" ? -1 : pick });
+		if (right) at++;
+	}
+	return slipsOf$1(goes.map((go) => ({
+		answer: go.answer,
+		kindOf: (pick) => go.wrongs.find((w) => w.n === pick)?.kind ?? null
+	})), seen);
+}
 //#endregion
 //#region shared/kit/dayArc.ts
 /**
@@ -2246,6 +2290,7 @@ async function handlePigeon(services, player, body) {
 			...a,
 			at
 		}));
+		const slips = slipsOf(kept.round, taps);
 		for (let tries = 0; tries < TRIES; tries++) {
 			const s = await services.load(player);
 			if (s === "busy") return busy();
@@ -2273,7 +2318,8 @@ async function handlePigeon(services, player, body) {
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
 				mistakes: played.mistakes,
-				firstRight: played.firstRight
+				firstRight: played.firstRight,
+				slips
 			});
 			if (saved === "busy") return busy();
 			if (saved) {
@@ -7605,7 +7651,8 @@ Deno.serve(makeHandler({
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		first_right: ending.firstRight,
-		kind_levels: progress.kindLevels
+		kind_levels: progress.kindLevels,
+		slips: ending.slips
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "pigeon", void 0, JUNIOR_QUICK_MS, 600);

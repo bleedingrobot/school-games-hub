@@ -19,6 +19,7 @@ export interface MemoryRound {
   taps?: Tap[];
   mistakes?: number;
   firstRight?: number;
+  slips?: (string | null)[];
 }
 
 export interface MemoryData {
@@ -81,7 +82,7 @@ export function memoryServices(options: MemoryOptions = {}): PigeonServices & { 
       const s = data.players[player];
       if (!r || !r.open || !s || s.version !== version) return false;
       if (progress.daysDone < s.daysDone || progress.daysDone > s.daysDone + 1) return false;
-      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes, firstRight: ending.firstRight });
+      Object.assign(r, { open: false, taps: copy(ending.taps), mistakes: ending.mistakes, firstRight: ending.firstRight, slips: [...ending.slips] });
       data.players[player] = { ...copy(progress), version: version + 1 };
       saved();
       return true;

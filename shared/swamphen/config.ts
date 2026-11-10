@@ -56,5 +56,3 @@ export { JUNIOR_QUICK_MS as QUICK_MS } from '../juniorQuick';
 
 /** The latest challenges counted for the slip a child makes most. */
 export const TEACHER_ROUNDS = 5;
-/** A slip must show this many times to be named. */
-export const SLIP_MIN = 2;
