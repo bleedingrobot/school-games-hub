@@ -11,6 +11,7 @@ import { WORDS as BEANSTALK_WORDS } from '../../src/games/beanstalk/words';
 import { makeRound as beanstalkRound, mistakeKind, replay as beanstalkReplay, TARGETS, type Tap as BeanstalkTap } from '../beanstalk/round';
 import { kindsFromFacts, mergeSeen, readKinds } from './seen';
 import { finishBand } from './finishBand';
+import { sisterNumber } from './sister';
 import { arcAfter, daysPerReward, finishDay } from './dayArc';
 import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
 import { fadeAfter, fadeByKind, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
@@ -213,5 +214,22 @@ describe('the finish band', () => {
     expect([7, 5].map((n) => finishBand(n))).toEqual(['some', 'some']);
     expect([4, 0].map((n) => finishBand(n))).toEqual(['tricky', 'tricky']);
     expect(finishBand(4, 5)).toBe('most');
+  });
+});
+
+describe('the sister number', () => {
+  it('is within 1 or 2 of the number, in range, not avoided, stable for a seed, and null when nothing fits', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const s = sisterNumber(7, seed, { min: 1, max: 10, avoid: [8, 5] });
+      expect(s).not.toBeNull();
+      expect([6, 9]).toContain(s);
+      expect(Math.abs(s! - 7)).toBeLessThanOrEqual(2);
+      expect(s).not.toBe(7);
+      expect(sisterNumber(7, seed, { min: 1, max: 10, avoid: [8, 5] })).toBe(s);
+    }
+    expect(sisterNumber(1, 3, { min: 1, max: 3 })).toBe(sisterNumber(1, 3, { min: 1, max: 3 }));
+    expect([2, 3]).toContain(sisterNumber(1, 3, { min: 1, max: 3 }));
+    expect(sisterNumber(5, 1, { min: 5, max: 5 })).toBeNull();
+    expect(sisterNumber(5, 1, { min: 3, max: 7, avoid: [3, 4, 6, 7] })).toBeNull();
   });
 });
