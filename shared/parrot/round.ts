@@ -217,7 +217,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
 }
 
 /** A go made from any well-formed key (the server only ever replays keys from ALL_KEYS, through `showGo`). */
-function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+export function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   if (![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
   const kind = kindOfKey(plan.key)!;
   if (plan.v >= layoutsCount(kind)) return null;
@@ -371,4 +371,19 @@ export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go 
   }
   const fresh = (g: Go) => g.answer !== go.answer;
   return found.find((g) => fresh(g) && (go.kind === 'tf' || !go.choices.includes(g.answer))) ?? found.find(fresh) ?? (go.kind === 'tf' ? found[0] ?? null : null);
+}
+
+/** Every key a sister of `key` can have (one number moved by 1 or 2, in the kind's range), for the voice clips. */
+export function sisterKeys(key: string): string[] {
+  const kind = kindOfKey(key)!;
+  const n = nums(key);
+  const out = new Set<string>();
+  n.forEach((x, i) => {
+    for (const d of [-2, -1, 1, 2]) {
+      let at = 0;
+      const k = key.replace(/\d+/g, (m) => (at++ === i ? String(x + d) : m));
+      if (x + d >= 1 && sisterKeyOk(kind, k)) out.add(k);
+    }
+  });
+  return [...out];
 }

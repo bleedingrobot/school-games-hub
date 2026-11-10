@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { voiceLinesSuite } from '../../kit/voiceLinesSuite';
 import { DEMOS } from './demo';
-import { KEYS, makeRound, showRound, GUIDED_KEY } from '../../../shared/parrot/round';
+import { KEYS, makeRound, showRound, sisterGo, GUIDED_KEY } from '../../../shared/parrot/round';
 import { STEPS } from '../../../shared/parrot/config';
 import { allVoiceLines, askLine, eqLine, homeLine, finishLine, modelLine, PART_BREAK, whyLine } from './voiceLines';
 import { WORDS } from './words';
@@ -19,10 +19,16 @@ describe('Parrot’s See-saw voice lines', () => {
     for (const step of STEPS.map((s) => s.step)) {
       for (const level of [0, 1, 2, 3, 4, 5] as const) {
         for (const seed of [1, 2, 3, 4]) {
-          for (const go of showRound(makeRound(seed, [], { step, level, guided: seed === 1 && step === 1 }))) {
+          for (const [i, go] of showRound(makeRound(seed, [], { step, level, guided: seed === 1 && step === 1 })).entries()) {
             expect(heard(askLine(go)), askLine(go)).toBe(true);
             expect(heard(eqLine(go)), eqLine(go)).toBe(true);
             expect(heard(modelLine(go)), modelLine(go)).toBe(true);
+            const sister = sisterGo({ seed }, i, go);
+            if (sister) {
+              expect(heard(eqLine(sister)), eqLine(sister)).toBe(true);
+              expect(heard(modelLine(sister)), modelLine(sister)).toBe(true);
+              for (const w of sister.wrongs) expect(heard(whyLine(w.kind))).toBe(true);
+            }
             for (const w of go.wrongs) expect(heard(whyLine(w.kind))).toBe(true);
             expect(heard(whyLine('near'))).toBe(true);
           }
@@ -50,8 +56,8 @@ describe('Parrot’s See-saw voice lines', () => {
     expect(askLine(first)).not.toMatch(/\d|\b(one|two|three|four|five)\b/i);
   });
 
-  it('is English only and about 500 lines or fewer', () => {
+  it('is English only and about 2000 lines or fewer (the sister goes add their own equations)', () => {
     expect(allVoiceLines().join(' ')).not.toMatch(/kete|kōwhai|aotearoa|tūī|kererū/i);
-    expect(allVoiceLines().length).toBeLessThanOrEqual(600);
+    expect(allVoiceLines().length).toBeLessThanOrEqual(2200);
   });
 });
