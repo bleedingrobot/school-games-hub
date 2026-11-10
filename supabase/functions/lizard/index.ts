@@ -1603,6 +1603,38 @@ function fadeAfter(p, right, rules) {
 	};
 }
 /**
+* Help for each kind of go, after a counted round. For each kind with at least 2 goes, the goes right at the first tap are
+* scaled to ten (`Math.round(10 * right / n)`) and `fadeAfter` is run with the rules (use `ROUND_OF_TEN`), so a kind fades
+* after two good rounds and comes back after a hard one. A kind with fewer than 2 goes is left as it was. A kind not in the
+* map yet starts at `startLevel` (the child's own level, which already has a new step's full help). Returns a new map; the
+* kinds the round did not ask keep what they had. The kind is only a string: the game names its own.
+*/
+function fadeByKind(kindLevels, goes, rules, startLevel) {
+	const tally = new Map();
+	for (const g of goes) {
+		const t = tally.get(g.kind) ?? {
+			n: 0,
+			right: 0
+		};
+		t.n += 1;
+		if (g.right) t.right += 1;
+		tally.set(g.kind, t);
+	}
+	const out = { ...kindLevels };
+	for (const [kind, { n, right }] of tally) {
+		if (n < 2) continue;
+		const { level, goodInRow } = fadeAfter(kindLevels[kind] ?? {
+			level: startLevel,
+			goodInRow: 0
+		}, Math.round(10 * right / n), rules);
+		out[kind] = {
+			level,
+			goodInRow
+		};
+	}
+	return out;
+}
+/**
 * `fadeAfter`, for a game with steps. A new step brings `newStepHelp` back only if the help didn't fade on this same round:
 * a pass and a fade usually land together, and the fade must stand, or a strong child never sees the help go. Test fade and
 * step-up together (LEARNING-DESIGN rule 5).
@@ -1772,16 +1804,23 @@ function makeRound(seed, stats, opts = {}) {
 	while (keys.length < 10) keys.push(keys[keys.length % Math.max(1, keys.length)]);
 	keys = spreadOut(keys);
 	const shown = shownLevel(level, help);
+	const levelOf = (kind) => {
+		const own = opts.kindLevels?.[kind]?.level;
+		return own === void 0 || !isLevel(own) ? shown : shownLevel(own, help);
+	};
 	return {
 		seed,
 		step,
 		level,
 		help,
-		goes: keys.map((key, i) => ({
-			key,
-			kind: kindOfKey(key),
-			l: opts.guided && i === 0 ? 5 : shown
-		}))
+		goes: keys.map((key, i) => {
+			const kind = kindOfKey(key);
+			return {
+				key,
+				kind,
+				l: opts.guided && i === 0 ? 5 : levelOf(kind)
+			};
+		})
 	};
 }
 const matOf = (n) => ({
@@ -1938,6 +1977,7 @@ function replay(round, taps) {
 	const goes = showRound(round);
 	const answers = [];
 	const slips = [];
+	const goneThrough = [];
 	const counted = new Set();
 	let goesDone = 0;
 	let mistakes = 0;
@@ -1948,6 +1988,10 @@ function replay(round, taps) {
 		if (!go) throw new Error("Taps after the round was done");
 		const right = tapRight(go, pick);
 		if (!triedThisGo) {
+			goneThrough.push({
+				kind: go.kind,
+				right
+			});
 			if (right) firstRight++;
 			else slips.push({
 				key: go.key,
@@ -1973,6 +2017,7 @@ function replay(round, taps) {
 		goesDone,
 		mistakes,
 		firstRight,
+		goes: goneThrough,
 		done: goesDone === goes.length && goes.length === 10,
 		answers,
 		slips
@@ -2077,6 +2122,7 @@ const unplayed = () => ({
 	level: 5,
 	goodInRow: 0,
 	goodAtStep: 0,
+	kindLevels: {},
 	version: 0
 });
 const MAX_TAP_MS = 6e5;
@@ -2143,6 +2189,7 @@ async function handleLizard(services, player, body) {
 			today: today(),
 			step: place.step,
 			level: place.level,
+			kindLevels: s.kindLevels ?? {},
 			help: settings.help,
 			seen
 		});
@@ -2164,7 +2211,8 @@ async function handleLizard(services, player, body) {
 				step,
 				level,
 				help: settings.help,
-				guided
+				guided,
+				kindLevels: s.kindLevels ?? {}
 			});
 			const kept = await services.start(player, round);
 			if (kept === "busy") return busy();
@@ -2203,10 +2251,16 @@ async function handleLizard(services, player, body) {
 			};
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.bundleChanged === null ? before : placeAfter(before, played.firstRight);
+			const stored = s.kindLevels ?? {};
+			const kindLevels = result.bundleChanged === null ? stored : fadeByKind(stored, played.goes, {
+				...ROUND_OF_TEN,
+				topLevel: 5
+			}, before.level);
 			const progress = {
 				daysDone: result.daysDone,
 				lastDay: result.lastDay,
-				...place
+				...place,
+				kindLevels
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
@@ -7547,6 +7601,7 @@ Deno.serve(makeHandler({
 		level: progress.level,
 		good_in_row: progress.goodInRow,
 		good_at_step: progress.goodAtStep,
+		kind_levels: progress.kindLevels,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		first_right: ending.firstRight

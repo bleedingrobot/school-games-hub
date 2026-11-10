@@ -14,7 +14,7 @@ import { EARLY_FACTS } from '../maths/skillPacks/earlyFacts';
 import type { FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
-import { placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type Place as KitPlace } from '../kit/help';
+import { placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type KindLevels, type Place as KitPlace } from '../kit/help';
 import * as C from './config';
 
 export { GOES_PER_ROUND, REVIEW_GOES, GOOD, HARD } from './config';
@@ -171,7 +171,7 @@ function spreadOut(keys: string[]): string[] {
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -194,7 +194,15 @@ export function makeRound(
   while (keys.length < C.GOES_PER_ROUND) keys.push(keys[keys.length % Math.max(1, keys.length)]);
   keys = spreadOut(keys);
   const shown = shownLevel(level, help);
-  const goes = keys.map((key, i): GoPlan => ({ key, kind: kindOfKey(key)!, l: opts.guided && i === 0 ? (C.TOP_LEVEL as HelpLevel) : shown }));
+  // Each kind of go has its own help level; a kind not in the map yet starts at the child's own level. The guided first go stays at the top.
+  const levelOf = (kind: Kind): HelpLevel => {
+    const own = opts.kindLevels?.[kind]?.level;
+    return own === undefined || !isLevel(own) ? shown : shownLevel(own, help);
+  };
+  const goes = keys.map((key, i): GoPlan => {
+    const kind = kindOfKey(key)!;
+    return { key, kind, l: opts.guided && i === 0 ? (C.TOP_LEVEL as HelpLevel) : levelOf(kind) };
+  });
   return { seed, step, level, help, goes };
 }
 

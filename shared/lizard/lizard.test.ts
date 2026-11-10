@@ -161,4 +161,48 @@ describe('the server', () => {
     if (showRound(r).filter((g) => g.wrongs.some((w) => w.kind === 'reverse')).length >= 2) expect(summary.top).toBe('reverse');
     expect(slipSummary([])).toEqual({ wrong: 0, top: null, count: 0 });
   });
+
+  it('keeps a hard kind at its level while another kind fades over two good days', async () => {
+    let seedCounter = 0.21;
+    let clock = Date.parse('2026-11-08T02:00:00Z');
+    const data = emptyData();
+    data.players.p1 = { ...unplayed(), step: 3, level: 5, version: 1 };
+    const services = memoryServices({ data, now: () => clock, random: () => (seedCounter = (seedCounter * 7919 + 0.137) % 1) });
+    // The two kinds with the most goes on day one: one is always wrong at the first try, the other always right.
+    const first = (await handleLizard(services, 'p1', { action: 'start' })).body.round as Round;
+    const count = (r: Round, kind: string) => r.goes.filter((g) => g.kind === kind).length;
+    const kinds = [...new Set(first.goes.map((g) => g.kind))].sort((a, b) => count(first, b) - count(first, a));
+    const [hard, easy] = kinds;
+    expect(count(first, easy)).toBeGreaterThanOrEqual(2);
+    let round = first;
+    for (let day = 0; day < 2; day++) {
+      const taps: Tap[] = showRound(round).flatMap((g) =>
+        g.kind === hard ? [{ pick: wrongTap(g), ms: 3000 }, { pick: rightTap(g), ms: 3000 }] : [{ pick: rightTap(g), ms: 3000 }],
+      );
+      expect((await handleLizard(services, 'p1', { action: 'finish', seed: round.seed, taps })).status).toBe(200);
+      clock += 86_400_000;
+      round = (await handleLizard(services, 'p1', { action: 'start' })).body.round as Round;
+    }
+    const map = (await handleLizard(services, 'p1', { action: 'load' })).body.kindLevels as Record<string, { level: number }>;
+    expect(map[hard].level).toBe(5);
+    expect(map[easy].level).toBeLessThan(5);
+    // The new round shows each kind at its own level.
+    for (const go of round.goes.slice(1)) expect(go.l).toBe(map[go.kind]?.level ?? round.level);
+  });
+
+  it('starts a kind that is not in the map at the whole-child level, and keeps the first go of the first round at the top', async () => {
+    const r = makeRound(5, [], { step: 3, level: 3, kindLevels: { build: { level: 1, goodInRow: 0 } } });
+    for (const g of r.goes) expect(g.l).toBe(g.kind === 'build' ? 1 : 3);
+    const guided = makeRound(5, [], { step: 1, level: 3, guided: true, kindLevels: { build: { level: 0, goodInRow: 0 } } });
+    expect(guided.goes[0].l).toBe(5);
+    // A child at level 3 with no map: after a good day every kind that was asked starts from 3 (one good day does not fade it).
+    const data = emptyData();
+    data.players.p1 = { ...unplayed(), step: 3, level: 3, version: 1 };
+    const services = memoryServices({ data, now: () => Date.parse('2026-11-08T02:00:00Z'), random: () => 0.42 });
+    const round = (await handleLizard(services, 'p1', { action: 'start' })).body.round as Round;
+    await handleLizard(services, 'p1', { action: 'finish', seed: round.seed, taps: showRound(round).map((g) => ({ pick: rightTap(g), ms: 3000 })) });
+    const map = (await handleLizard(services, 'p1', { action: 'load' })).body.kindLevels as Record<string, { level: number }>;
+    expect(Object.keys(map).length).toBeGreaterThan(0);
+    for (const k of Object.values(map)) expect(k.level).toBe(3);
+  });
 });
