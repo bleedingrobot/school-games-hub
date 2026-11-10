@@ -13,7 +13,7 @@
  */
 import { FRIEND_NAMES, STEPS } from '../../../shared/parrot/config';
 import { METALS } from '../../../shared/parrot/progress';
-import { ALL_KEYS, buildGo, isStoneGo, kindOfKey, showGo, sisterKeys, type Go, type ParrotKind } from '../../../shared/parrot/round';
+import { ALL_KEYS, isStoneGo, kindOfKey, showGo, type Go, type ParrotKind } from '../../../shared/parrot/round';
 import { demoLines } from './demo';
 import { nextPartWords } from '../../components/NextPartChip';
 import { numWord, WORDS } from './words';
@@ -85,22 +85,6 @@ function* everyGo(): Generator<Go> {
   }
 }
 
-/** Every go "Now you try one like it." can ask: each go's sister keys, in the same layouts. */
-function* everySister(): Generator<Go> {
-  const seen = new Set<string>();
-  for (const key of ALL_KEYS) {
-    for (const sk of sisterKeys(key)) {
-      for (let v = 0; v < layoutsOf(key); v++) {
-        if (seen.has(`${sk}/${v}`)) continue;
-        seen.add(`${sk}/${v}`);
-        let go: Go | null = null;
-        for (let seed = 1; seed < 60 && !go; seed++) go = buildGo({ seed }, 0, { key: sk, v: v as 0 | 1 | 2 | 3, l: 3 });
-        if (go) yield go;
-      }
-    }
-  }
-}
-
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([
     WORDS.lookTogether, WORDS.lookFill, WORDS.nowTry, WORDS.isLevel, WORDS.stoneLive, WORDS.stoneCheck, WORDS.promptMissing, WORDS.promptTilt,
@@ -113,11 +97,6 @@ export function allVoiceLines(): string[] {
   }
   for (const kind of ['all', 'copy', 'total', 'off1', 'dbl', 'near', 'both', 'first', 'side', 'more', 'less'] as const) lines.add(WORDS.why(kind));
   for (const go of everyGo()) {
-    lines.add(eqLine(go));
-    lines.add(modelLine(go));
-  }
-  // The sister go is read with "Hear it again", and its right answer is followed by the model line.
-  for (const go of everySister()) {
     lines.add(eqLine(go));
     lines.add(modelLine(go));
   }

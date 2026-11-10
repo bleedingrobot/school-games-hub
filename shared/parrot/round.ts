@@ -217,7 +217,7 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
 }
 
 /** A go made from any well-formed key (the server only ever replays keys from ALL_KEYS, through `showGo`). */
-export function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
   if (![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
   const kind = kindOfKey(plan.key)!;
   if (plan.v >= layoutsCount(kind)) return null;
@@ -334,22 +334,10 @@ export function redoCards(go: Pick<Go, 'choices' | 'answer'>, tapped: readonly n
 
 // ---------------------------------------------------------------- "Now you try": a sister go
 
-/** Is this key one the game can ask in its own kind's range? (The sister is local, so it need not be one of the saved ALL_KEYS.) */
-function sisterKeyOk(kind: Kind, key: string): boolean {
-  if (ALL_KEYS.includes(key)) return true;
-  const n = nums(key);
-  const within = (xs: number[], lo: number, hi: number) => xs.every((x) => x >= lo && x <= hi);
-  if (kind === 'miss') return n.length === 2 && within(n, 1, 10) && n[0] >= 3 && n[1] < n[0];
-  if (kind === 'swap') return n.length === 2 && within(n, 1, 7) && n[0] !== n[1];
-  if (kind === 'both') return n.length === 3 && within(n.slice(0, 2), 3, 10) && n[2] >= 1 && n[2] !== n[0] && n[2] !== n[1] && n[0] + n[1] - n[2] >= 1;
-  if (kind === 'sub') return /^eqsub:\d+=\d+-\?$/.test(key) ? n.length === 2 && n[0] >= 1 && n[0] < n[1] && n[1] <= 20 : n.length === 3 && n[0] <= 20 && n[1] >= 1 && n[2] >= 1 && n[0] - n[1] - n[2] >= 1;
-  return n.length === 4 && within(n, 1, 10) && !(n[0] === n[2] && n[1] === n[3]);
-}
-
 /**
  * The go for "Now you try": the same key kind, layout and help level as `go`, with one of its numbers moved by 1 or 2 (sisterNumber),
  * built the way every go is built so its cards and answer agree. It prefers an answer that is neither the original answer nor one
- * of the original cards. Null when no number fits (the game then asks the old go again). The sister is never saved or sent.
+ * of the original cards. The key is always one of ALL_KEYS (so every line it says already has a voice clip). Null when no number fits (the game then asks the old go again). The sister is never saved or sent.
  */
 export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
   const n = nums(go.key);
@@ -364,26 +352,19 @@ export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go 
       avoid.push(s);
       let at = 0;
       const key = go.key.replace(/\d+/g, (m) => (at++ === i ? String(s) : m));
-      if (!sisterKeyOk(go.kind, key)) continue;
+      if (!ALL_KEYS.includes(key)) continue;
       const made = buildGo(round, GOES_PER_ROUND + index, { key, v: go.v, l: go.l });
       if (made && made.kind === go.kind) found.push(made);
     }
   }
   const fresh = (g: Go) => g.answer !== go.answer;
-  return found.find((g) => fresh(g) && (go.kind === 'tf' || !go.choices.includes(g.answer))) ?? found.find(fresh) ?? (go.kind === 'tf' ? found[0] ?? null : null);
-}
-
-/** Every key a sister of `key` can have (one number moved by 1 or 2, in the kind's range), for the voice clips. */
-export function sisterKeys(key: string): string[] {
-  const kind = kindOfKey(key)!;
-  const n = nums(key);
-  const out = new Set<string>();
-  n.forEach((x, i) => {
-    for (const d of [-2, -1, 1, 2]) {
-      let at = 0;
-      const k = key.replace(/\d+/g, (m) => (at++ === i ? String(x + d) : m));
-      if (x + d >= 1 && sisterKeyOk(kind, k)) out.add(k);
-    }
-  });
-  return [...out];
+  const near = found.find((g) => fresh(g) && (go.kind === 'tf' || !go.choices.includes(g.answer))) ?? found.find(fresh);
+  if (near) return near;
+  // No single number fits: any key of the same kind (so it already has its voice clips) whose numbers are each within 3 of the original, with another answer.
+  const close = shuffle(KEYS[go.kind].filter((k) => k !== go.key && nums(k).length === n.length && nums(k).every((x, i) => Math.abs(x - n[i]) <= 3)), seeded(base + 1));
+  for (const key of close) {
+    const made = buildGo(round, GOES_PER_ROUND + index, { key, v: go.v, l: go.l });
+    if (made && fresh(made)) return made;
+  }
+  return go.kind === 'tf' ? found[0] ?? null : null;
 }

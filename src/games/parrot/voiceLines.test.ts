@@ -56,8 +56,8 @@ describe('Parrot’s See-saw voice lines', () => {
     expect(askLine(first)).not.toMatch(/\d|\b(one|two|three|four|five)\b/i);
   });
 
-  it('is English only and about 2000 lines or fewer (the sister goes add their own equations)', () => {
+  it('is English only and about 500 lines or fewer', () => {
     expect(allVoiceLines().join(' ')).not.toMatch(/kete|kōwhai|aotearoa|tūī|kererū/i);
-    expect(allVoiceLines().length).toBeLessThanOrEqual(2200);
+    expect(allVoiceLines().length).toBeLessThanOrEqual(600);
   });
 });
