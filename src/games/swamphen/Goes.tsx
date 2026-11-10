@@ -24,7 +24,7 @@ import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import type { Tap } from '../../../shared/swamphen/play';
 import type { Friend as FriendName } from '../../../shared/swamphen/progress';
-import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, showRound, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
+import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, showRound, sisterGo, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
 import { playSound } from '../sounds';
 import { DealLanes, Friend, Garden, Pile, sceneStyle, type Pose, type Scenery } from './art';
 import { SLIP_LINES, askLine, lookLine } from './voiceLines';
@@ -68,6 +68,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   const [lanes, setLanes] = useState<number[]>([]);
   const [dealt, setDealt] = useState<number[]>([]);
   const [byHand, setByHand] = useState(false);
+  const [sisterStep, setSisterStep] = useState<'none' | 'missed' | 'right'>('none');
   const [pose, setPose] = useState<Pose>('sit');
   // Three goes in a row with a wrong first tap bring the full picture back for the rest of the round (not saved).
   const [struggle, setStruggle] = useState(false);
@@ -88,7 +89,12 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   // Show me first: the first time a kind with a demo comes up, between goes. At most two demos a round.
   const [demoKinds, setDemoKinds] = useState<string[]>([]);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  // "Now you try" asks a sister go (same kind, nearby numbers, nothing marked). It is local: never tapped into `taps`, never sent.
+  const sister = useMemo(() => sisterGo(round, at, base), [round, at, base]);
+  const onSister = sister !== null && ((gs.phase === 'redo' && sisterStep !== 'missed') || sisterStep === 'right');
+  const go: Go = onSister ? sister : base;
+  const markRight = sisterStep === 'missed' && phase === 'ask';
   const demoFor = isDemoKind(go.kind) && !kinds.has(go.kind) && phase === 'ask' && !(guided && at === 0) && (demoKinds.includes(go.kind) || demoKinds.length < 2) ? go.kind : null;
   useEffect(() => {
     if (demoFor && !demoKinds.includes(demoFor)) setDemoKinds((d) => [...d, demoFor]);
@@ -129,7 +135,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
     setDealt([]);
     setByHand(false);
     guideHand.start();
-    if (!demoActive) say(askLine(go), () => {
+    if (!demoActive && sisterStep !== 'missed') say(askLine(go), () => {
       if (live && !tappedYet.current) since.current = Date.now();
     });
     return () => {
@@ -137,7 +143,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
     };
     // Read again only when the go changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [at, goes, demoActive]);
+  }, [at, goes, demoActive, onSister]);
 
   // Sharing: say whether the shares are fair once the pile is out, and start each round of dealing with a hint at levels 5 and 4.
   useEffect(() => {
@@ -184,6 +190,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
       setGs(NEW_GO);
       setTapped([]);
       setLastSlip(null);
+      setSisterStep('none');
       return;
     }
     setPhase('done');
@@ -202,8 +209,37 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
-    const next = [...taps, { pick: value, ms: now - since.current }];
+    const ms = now - since.current;
     since.current = now;
+    if (onSister) {
+      if (value !== go.answer) {
+        // One wrong tap on the sister: the "why" line once, then the original go's right card is marked so nobody is stuck.
+        const slip = go.wrongs.find((w) => w.n === value)?.kind ?? 'near';
+        setLastSlip(slip);
+        setWhyTap((n) => n + 1);
+        setSisterStep('missed');
+        if (sound) playSound('tap');
+        say(SLIP_LINES[slip]);
+        return;
+      }
+      // Right on the sister: the original go's right pick ends the original go in the taps (server replay only knows the original).
+      const all = [...taps, { pick: base.answer, ms }];
+      setTaps(all);
+      clearTimers();
+      kinds.mark([go.kind]);
+      run.current = gs.wrong > 0 ? run.current + 1 : 0;
+      if (run.current >= STRUGGLE_GOES) setStruggle(true);
+      setSisterStep('right');
+      setGs(stepGo(gs, 'right'));
+      setPhase('right');
+      setPose('eat');
+      if (go.kind === 'turn') setTurned(true);
+      say(WORDS.right[at % WORDS.right.length]);
+      if (sound) playSound('badge');
+      later(RIGHT_MS, () => nextGo(all));
+      return;
+    }
+    const next = [...taps, { pick: value, ms }];
     setTaps(next);
     if (value !== go.answer) {
       const state = stepGo(gs, 'wrong');
@@ -358,11 +394,14 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
       {gs.phase === 'look' && look && (
         <LookTogether prefix="sh" title={WORDS.lookTitle} picture={lookPicture()} line={lookLine(go.kind)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
       )}
+      {sisterStep === 'missed' && gs.phase === 'redo' && lastSlip && (
+        <ShowWhy prefix="sh" tapKey={whyTap} picture={<span className="sh-why__icon" aria-hidden="true">🤔</span>} line={SLIP_LINES[lastSlip]} />
+      )}
       {gs.phase === 'redo' && <NowYouTry prefix="sh" line={WORDS.nowYouTry} />}
 
       <div hidden={demoActive} className={`sh-cards sh-cards--${go.kind}`} role="group" aria-label={go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : WORDS.pickCard}>
         {cards.map((n) => {
-          const cls = `sh-choice${wobble === n ? ' sh-choice--wobble' : ''}${solved && n === go.answer ? ' sh-choice--right' : ''}${solved && n !== go.answer ? ' sh-choice--off' : ''}`;
+          const cls = `sh-choice${wobble === n ? ' sh-choice--wobble' : ''}${(solved || markRight) && n === go.answer ? ' sh-choice--right' : ''}${solved && n !== go.answer ? ' sh-choice--off' : ''}`;
           const p = pictureCards ? pictureOf(n) : null;
           return (
             <button

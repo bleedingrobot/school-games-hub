@@ -5,7 +5,7 @@ import { factKey } from '../maths/facts';
 import { REED_ROWS } from './config';
 import { DAYS_PER_GARDEN, finishChallenge, gardenAfter } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, sisterGo, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleSwamphen, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { slipSummary } from './teacher';
@@ -240,5 +240,32 @@ describe('the wrong cards', () => {
     }
     // 3 rows of 7: the cards stay near 21 (no 37).
     for (const seed of seeds) expect(showGo({ seed }, 0, { key: 'rows:3x7', kind: kindOfKey('rows:3x7')!, l: 3 })!.choices.every((c) => c >= 7 && c <= 31)).toBe(true);
+  });
+});
+
+describe('the sister go', () => {
+  it('is the same kind with other numbers and cards, is not one of the taps that get saved, and the original still ends on its right pick', () => {
+    const none: string[] = [];
+    for (const step of steps) {
+      for (const seed of seeds.slice(0, 10)) {
+        const round = makeRound(seed, inBox(KEYS.slice(0, 6), 2), { step, level: 3 });
+        const goes = showRound(round);
+        goes.forEach((go, i) => {
+          const sister = sisterGo(round, i, go);
+          if (!sister) {
+            none.push(go.key);
+            return;
+          }
+          expect(sister.kind).toBe(go.kind);
+          expect(sister.key).not.toBe(go.key);
+          expect(go.choices).not.toContain(sister.answer);
+          expect(sister.choices).toContain(sister.answer);
+        });
+        // The saved taps only ever hold the original go's cards, and replay still finishes the round.
+        const taps = goes.flatMap((go) => [{ pick: wrongTap(go), ms: 1000 }, { pick: wrongTap(go), ms: 1000 }, { pick: go.answer, ms: 1000 }]);
+        expect(replay(round, taps).done).toBe(true);
+      }
+    }
+    console.log('NOSISTER', [...new Set(none)].join(' ') || 'none');
   });
 });

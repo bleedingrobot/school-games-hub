@@ -14,6 +14,7 @@ import { EARLY_FACTS } from '../maths/skillPacks/earlyFacts';
 import { factKey } from '../maths/facts';
 import type { FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
+import { sisterNumber } from '../kit/sister';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { fadeByKind, placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type KindLevels, type Place as KitPlace } from '../kit/help';
 import * as C from './config';
@@ -303,6 +304,39 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   const wrongs = wrongCards(plan.kind, a, b, total, random);
   if (wrongs.length < C.WRONG_CARDS) return null;
   return { ...plan, rows: a, cols: b, total, answer: total, wrongs, choices: [total, ...wrongs.map((w) => w.n)].sort((x, y) => x - y) };
+}
+
+/**
+ * A sister of a go, for "Now you try": the same kind of go with one of its two key numbers moved by 1 or 2 (kit's sisterNumber),
+ * so its key is another key the game asks, built by showGo like any go. Its answer is none of the original's cards. Null when no
+ * such key exists, and the browser falls back to the same go again. Never saved or sent: replay knows only the original go.
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const m = /^([a-z]+):(\d+)([x/])(\d+)$/.exec(go.key);
+  if (!m) return null;
+  // Sharing is moved by its rows or its shoots in a row (the pile follows), so the pile still shares out evenly.
+  const share = m[1] === 'share';
+  const nums: [number, number] = share ? [Number(m[4]), Number(m[2]) / Number(m[4])] : [Number(m[2]), Number(m[4])];
+  const sisterSeed = (round.seed + 104729 * (index + 1)) % MAX_SEED;
+  const make = (pair: [number, number], salt: number): Go | null => {
+    const key = share ? `share:${pair[0] * pair[1]}/${pair[0]}` : `${m[1]}:${pair[0]}${m[3]}${pair[1]}`;
+    if (!KEYS.includes(key) || kindOfKey(key) !== go.kind) return null;
+    const made = showGo({ seed: sisterSeed + salt }, index + C.GOES_PER_ROUND, { key, kind: go.kind, l: go.l });
+    return made && !go.choices.includes(made.answer) ? made : null;
+  };
+  const order: (0 | 1)[] = seeded(sisterSeed)() < 0.5 ? [0, 1] : [1, 0];
+  for (const at of order) {
+    const bad: number[] = [];
+    for (let v = 1; v <= 144; v++) {
+      const pair: [number, number] = at === 0 ? [v, nums[1]] : [nums[0], v];
+      if (!make(pair, 0)) bad.push(v);
+    }
+    const n = sisterNumber(nums[at], sisterSeed, { min: 1, max: 144, avoid: bad });
+    if (n === null) continue;
+    const found = make(at === 0 ? [n, nums[1]] : [nums[0], n], 0);
+    if (found) return found;
+  }
+  return null;
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the game can't make. */
