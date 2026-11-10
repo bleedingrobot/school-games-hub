@@ -9,7 +9,7 @@ The first account stopped here at about 97% of its weekly use. This note tells t
 - One main session, plus cheap Sonnet helpers, one card or part each. Each helper makes its own worktree: `git worktree add /Users/jriley/games-hub-<card> -b <branch> origin/main`, then `ln -s "/Users/jriley/Games Hub/node_modules" node_modules`.
 - Helpers open a PR and wait for green checks. They don't merge and don't touch the page.
 - The main session reviews each PR, merges it (squash) and updates the page. Merging to main deploys migrations, any function whose `index.ts` changed, and the site.
-- Before a migration merges, check its number is free on main. Two PRs once both picked 0600, and the second would have been silently skipped. The next free number is **20261110000600**.
+- Before a migration merges, check its number is free on main. Two PRs once both picked 0600, and the second would have been silently skipped. The next free number is **20261110000700**.
 - Never have two cards editing the same game's files at once. Do one game's cards in turn.
 - To brief a helper on a game part, point it at an earlier PR for the same card and say "copy this pattern". That was the cheapest way to work.
 - Nothing has been hand-played in a browser, because helpers can't open the preview. Everything was checked by tests and CI only.
@@ -18,7 +18,8 @@ The first account stopped here at about 97% of its weekly use. This note tells t
 
 - S1 to S13, S17, S18, S21, S22, S23, S24, S28, S29, S30, S31, S36.
 - S15: the kit part (#346), Parrot (#355) and Lizard (#356), Swamp Hen (#357), Robin (#359) and Pigeon (#360). S15 is done.
-- S16 step 1: the rule 7 wording (#331).
+- S16: the rule 7 wording (#331), then the kit `sisterNumber` and all five games. Sisters that would need new numbers have their lines recorded (Pigeon +436 clips, Lizard +312); Parrot sisters use only existing keys. Fallback to the old reshuffle: Parrot `eqsub:20-9=6+?`, Swamp Hen `share:4/2` (some seeds), Lizard round numbers (55 keys, e.g. `pvbuild:t10`).
+- S14: the 600 ms think floor (#363), migration 20261110000600.
 - S19: the kit part (#347), then Pigeon, Parrot, Lizard, Swamp Hen and Robin together (migrations 20261110000100 to 0500). A new step clears the kind map, so every kind starts at the new step's help.
 - S34: part 1 (kit slips) and part 3 (Quick looks usual slip).
 
@@ -26,11 +27,9 @@ There are no WIP branches left.
 
 ## Next, in order
 
-1. **S19 is done.** Start with S16 step 2.
-2. **S16 step 2:** kit `sister.ts` first, then the games. James OK'd the wording in #331.
-3. **S14** (lucky guess, all twelve games), then S25, then S35. S33 comes after S15.
-4. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games.
-5. **S32,** after S16's game parts.
+1. **S25**, then S35. S33 comes after S15.
+2. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games.
+3. **S32,** S16's game parts are done, so it can start.
 
 ## Waiting on James
 
@@ -42,5 +41,6 @@ There are no WIP branches left.
   - the Pigeon number-line reasons;
   - the Beanstalk stages and missing-leaf goes;
   - the new finish lines;
+  - Now you try one like it: tap wrong twice in Pigeon, Parrot, Lizard, Swamp Hen or Robin, then right and wrong on the sister;
   - help for each kind of go (two days in a row in the Pigeon, Parrot, Lizard, Swamp Hen or Robin preview);
   - the Penguin Pairs fair buttons at phone width.
