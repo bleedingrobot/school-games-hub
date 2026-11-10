@@ -26,7 +26,7 @@ describe("Kiwi's Beanstalk voice clips", () => {
     for (const target of TARGETS) {
       for (const a of leafNumbers(target)) {
         for (const b of leafNumbers(target)) if (a !== b && a + b !== target) expect(said.has(WORDS.why(a, b, target)), `${a} + ${b}`).toBe(true);
-        expect(said.has(WORDS.fillUp(a, target)) && said.has(WORDS.nowTry(a))).toBe(true);
+        expect(said.has(WORDS.fillUp(a, target)) && said.has(WORDS.nowTry)).toBe(true);
         // The missing leaf (R8): what is asked of each leaf, and the take-away after it.
         expect(said.has(WORDS.missingAsk(a, target)) && said.has(WORDS.takeAway(a, target))).toBe(true);
       }

@@ -50,7 +50,7 @@ export const WORDS = {
   missingAsk: (a: number, target: number) => `${a} and what make ${target}? Tap the missing leaf.`,
   skip: 'Skip',
   demoTitle: 'Watch Kiwi show one first.',
-  nowTryDemo: 'Now you try.',
+  nowTryDemo: 'Now you try one like it.',
   takeAway: (a: number, target: number) => `So ${target} take ${a} is ${target - a}.`,
   right: (a: number, b: number) => `${a} and ${b} make ${a + b}!`,
   /** Under the ten-frame on the 100 and 1000 beanstalks: each dot is a ten (or a hundred). */
@@ -81,7 +81,8 @@ export const WORDS = {
     const more = Array.from({ length: (target - n) / unitOf(target) }, (_, i) => i + 1).join(', ');
     return target <= 20 ? `${n} and ${more} more make ${target}.` : `${inDots(n, target)} and ${more} more make ${inDots(target, target)}. That is ${target}.`;
   },
-  nowTry: (n: number) => `Now you try: what goes with ${n}?`,
+  /** After "Let's look together": a different leaf is picked and the game asks for its partner (`missingAsk`, which the voice list already holds). */
+  nowTry: 'Now you try one like it.',
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
   goOn: 'My turn',
   /** The tail of the finish title, after the opening for how the day went (S33). */
