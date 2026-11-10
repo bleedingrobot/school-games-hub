@@ -122,7 +122,9 @@ describe('the replay and the day arc', () => {
       const tui = tuiRound(seed, []);
       const tuiGoes = showTui(tui);
       const tuiTaps = tapsFor(tuiGoes, seed, slips);
-      expect(replayTaps(tuiGoes, tuiTaps, { goesPerRound: TUI_GOES, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS })).toEqual(tuiReplay(tui, tuiTaps));
+      // Tūī's copy also lists which goes were right first time (for the help of each way); the kit's replay does not.
+      const { rightFirst: _rightFirst, ...tuiSame } = tuiReplay(tui, tuiTaps);
+      expect(replayTaps(tuiGoes, tuiTaps, { goesPerRound: TUI_GOES, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS })).toEqual(tuiSame);
     }
     expect(() => replayTaps([{ key: 'k', answer: 1, choices: [1, 2] }], [{ pick: 3, ms: 1 }], { goesPerRound: 1, oncePerFact: true })).toThrow();
 
