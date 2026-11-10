@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
 import { replay, wrongFirstRun, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, topSecure, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -164,6 +164,19 @@ describe('the level', () => {
     expect(levelFor(recordsFor[3])).toBe(3);
     expect(levelFor(secure([...levelKeys(1), ...levelKeys(2), ...levelKeys(3)]))).toBe(3);
     expect(levelFor([], 2)).toBe(2);
+  });
+});
+
+describe('the finish words (S33)', () => {
+  it('count goes right at the first shell, not a guess faster than the think floor; the top level is secure at 70% of 8 to 10', () => {
+    const round = makeRound(seeds[0], [], {});
+    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
+    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
+    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
+    const wrong = showRound(round).flatMap((go) => [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 3000 }, { pick: go.answer, ms: 1500 }]);
+    expect(replay(round, wrong).firstRight).toBe(0);
+    expect(topSecure(secure(levelKeys(3)))).toBe(true);
+    expect(topSecure(secure(levelKeys(3).slice(0, 5)))).toBe(false);
   });
 });
 

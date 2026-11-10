@@ -25,6 +25,10 @@ export interface PipiState {
 }
 
 export interface PipiFinish extends FinishResult {
+  /** Goes right at the first shell (not a guess), out of ten: the finish words follow it. */
+  firstRight: number;
+  /** The top level (up to 10) is secure after this challenge: the finish screen may point on to Kiwi's Beanstalk. */
+  topSecure: boolean;
   /** The level for next time, and the one this challenge was at: different when the child moved up. */
   level: Level;
   levelBefore: Level;

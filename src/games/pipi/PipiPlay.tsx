@@ -8,5 +8,5 @@ import { PipiGame } from './PipiGame';
 
 export function PipiPlay() {
   const navigate = useNavigate();
-  return <PipiGame backend={livePipi} onExit={() => navigate('/')} />;
+  return <PipiGame backend={livePipi} onExit={() => navigate('/')} onOpenBeanstalk={() => navigate('/beanstalk')} />;
 }

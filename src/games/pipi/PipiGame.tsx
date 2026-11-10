@@ -4,6 +4,9 @@
  * Golden Pearl, and a new friend's beach starts. The screens only show what the backend says.
  */
 import { NextPartChip } from '../../components/NextPartChip';
+import { fetchBeanstalkEnabled } from '../../data/beanstalk';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Tap } from '../../../shared/pipi/play';
 import { beachAfter, DAYS_PER_PEARL, SHELLS } from '../../../shared/pipi/progress';
@@ -16,7 +19,7 @@ import { PipiError, type PipiBackend, type PipiFinish, type PipiState } from './
 import { Beach } from './Beach';
 import { Goes } from './Goes';
 import { Pearl } from './PipiArt';
-import { homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { WORDS } from './words';
 import './pipi.css';
 
@@ -40,9 +43,15 @@ function useVoice() {
     }
   };
   // Bella's recorded clips (public/voice/pipi/), the same voice as Kiwi's Beanstalk.
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -57,6 +66,8 @@ interface Props {
   backend: PipiBackend;
   /** Back to the hub's home page (the preview has none). */
   onExit?: () => void;
+  /** Opens Kiwi's Beanstalk (the finish screen's "what's next" card); the preview has none. */
+  onOpenBeanstalk?: () => void;
   /** Preview tools, shown over the game. */
   extra?: (h: Helpers) => ReactNode;
 }
@@ -80,7 +91,7 @@ function useFitBelow(root: RefObject<HTMLDivElement | null>) {
   }, [root]);
 }
 
-export function PipiGame({ backend, onExit, extra }: Props) {
+export function PipiGame({ backend, onExit, onOpenBeanstalk, extra }: Props) {
   const [state, setState] = useState<PipiState | null>(null);
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [failed, setFailed] = useState<string | null>(null);
@@ -130,7 +141,7 @@ export function PipiGame({ backend, onExit, extra }: Props) {
         onDone={(taps) => done(screen.round.seed, taps)}
       />
     );
-  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
+  } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onOpenBeanstalk={onOpenBeanstalk} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
   return (
@@ -186,8 +197,12 @@ function Home({ state, say, onPlay }: { state: PipiState; say: (t: string) => vo
   );
 }
 
-/** A magic shell changes colour, or, on the thirtieth day, the Golden Pearl is won. */
-function Finish({ result, say, onNext }: { result: PipiFinish; say: (t: string) => void; onNext: () => void }) {
+/**
+ * A magic shell changes colour, or, on the thirtieth day, the Golden Pearl is won. With the top level secure and Kiwi's
+ * Beanstalk on for the class, the "what's next" card follows: its line is read after the finish line, and its button opens
+ * Kiwi's Beanstalk.
+ */
+export function Finish({ result, say, onOpenBeanstalk, onNext }: { result: PipiFinish; say: (t: string, onEnd?: () => void) => void; onOpenBeanstalk?: () => void; onNext: () => void }) {
   // On a pearl day the new beach has already started, so show the one just finished: every shell gold.
   const beach = beachAfter(result.pearl ? result.daysDone - 1 : result.daysDone);
   const shells = result.pearl
@@ -195,28 +210,50 @@ function Finish({ result, say, onNext }: { result: PipiFinish; say: (t: string) 
     : beach.shells.map((metal, i) => ({ metal, glow: i === result.shellChanged }));
   const changed = result.shellChanged === null ? null : shells[result.shellChanged].metal;
   const name = FRIEND_NAMES[beach.friend];
-  const main = result.pearl ? WORDS.pearl(name) : changed ? WORDS.shellTurned(changed) : WORDS.doneToday;
-  const levelUp = result.level !== result.levelBefore ? WORDS.levelUp(result.level) : null;
-  const heading = useRef<HTMLHeadingElement>(null);
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the shell still turns; a pearl day
+  // keeps its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = result.pearl ? null : changed ? WORDS.shellTurned(changed) : WORDS.doneToday;
+  const main = tail === null ? WORDS.pearl(name) : `${opening} ${tail}`;
+  const moved = result.level !== result.levelBefore;
+  const levelUp = moved ? WORDS.levelUp(result.level) : null;
+  const line = finishLine(tail === null ? [main, opening] : [opening, tail], band === 'tricky', moved ? result.level : null);
+  // Kiwi's Beanstalk's switch is read once the card could show (top level secure, not a level-up day); until then the panel waits,
+  // so the line is not said twice.
+  const [beanstalkOn, setBeanstalkOn] = useState<boolean | null>(result.topSecure && !moved && onOpenBeanstalk ? null : false);
   useEffect(() => {
-    heading.current?.focus();
-    say(levelUp ? `${main} ${levelUp}` : main);
-  }, [say, main, levelUp]);
+    if (beanstalkOn !== null) return;
+    let current = true;
+    fetchBeanstalkEnabled().then((v) => current && setBeanstalkOn(v), () => current && setBeanstalkOn(false));
+    return () => {
+      current = false;
+    };
+  }, [beanstalkOn]);
+  const card = beanstalkOn === true;
+  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
   return (
     <div className={`pp-home${result.pearl ? ' pp-home--pearl' : ''}`}>
       <Beach scenery={result.pearl ? 'gold' : beach.today} shells={shells} friend={beach.friend} pose="cheer" />
-      <div className="pp-panel">
-        <h2 tabIndex={-1} ref={heading}>{main}</h2>
-        {levelUp && <p className="pp-chip">{levelUp}</p>}
-        {result.pearl && (
-          <span className="pp-prize" role="img" aria-label="The Golden Pearl">
-            <Pearl cushion />
-          </span>
-        )}
-        <button type="button" className="button button--play pp-play-button" onClick={onNext}>
-          OK
-        </button>
-      </div>
+      {beanstalkOn !== null && (
+        <WhatsNext prefix="pp" title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
+          {result.pearl && <p className="pp-chip">{opening}</p>}
+          {band === 'tricky' && <p className="pp-chip">{WORDS.trickyChip}</p>}
+          {result.pearl && (
+            <span className="pp-prize" role="img" aria-label="The Golden Pearl">
+              <Pearl cushion />
+            </span>
+          )}
+          {card && (
+            <div className="pp-next-game">
+              <p>{WORDS.whatsNext}</p>
+              <button type="button" className="button button--play" onClick={onOpenBeanstalk}>
+                {WORDS.tryBeanstalk}
+              </button>
+            </div>
+          )}
+        </WhatsNext>
+      )}
     </div>
   );
 }

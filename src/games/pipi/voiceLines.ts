@@ -4,7 +4,7 @@
  * A line without a clip falls back to the browser's own voice.
  */
 import { beachAfter, DAYS_PER_PEARL, METALS } from '../../../shared/pipi/progress';
-import { GUIDED_KEY, LEVELS, showGo, type Kind, type WrongKind } from '../../../shared/pipi/round';
+import { GUIDED_KEY, LEVELS, showGo, type Kind, type Level, type WrongKind } from '../../../shared/pipi/round';
 import { FRIEND_NAMES } from './art';
 import { demoLines } from './demo';
 import { lookLine, whyLine, WORDS } from './words';
@@ -13,9 +13,23 @@ import { nextPartWords } from '../../components/NextPartChip';
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/pipi/';
 
+/** The separator between the parts of a longer text: the game says the parts one after another, each from its own clip. */
+export const PART_BREAK = '\n';
+
 /** What the home screen says: the beach's call, and "come back tomorrow" once today's shell has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
-  return doneToday ? `${title} ${WORDS.doneToday}` : title;
+  return doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title;
+}
+
+/**
+ * What the finish screen says, part by part: the title (the opening for how the day went, then what turned; on a pearl day the
+ * prize, then the opening), the tricky-day chip, and "next time the pipi families are 6 and 7" when the child moved up a level.
+ */
+export function finishLine(title: string[], tricky: boolean, levelUp: Level | null): string {
+  const said = [...title];
+  if (tricky) said.push(WORDS.trickyChip);
+  if (levelUp) said.push(WORDS.levelUp(levelUp));
+  return said.join(PART_BREAK);
 }
 
 /** False for a kind of wrong shell that can't turn up in this go because its number is the answer (or can't be a shell). */
@@ -28,10 +42,8 @@ export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.outlinesBack, WORDS.lookTogether, WORDS.nowTry, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (let p = 0; p < 6; p++) {
     const name = FRIEND_NAMES[beachAfter(p * DAYS_PER_PEARL).friend];
-    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
-      lines.add(homeLine(title, false));
-      lines.add(homeLine(title, true));
-    }
+    // The home line is said in parts (the title, then "come back tomorrow"), so each part is a clip of its own.
+    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) lines.add(homeLine(title, false));
     lines.add(WORDS.pearl(name));
   }
   // Every go's question, of every kind, for every split of 3 to 10.
@@ -55,7 +67,10 @@ export function allVoiceLines(): string[] {
   for (const line of demoLines()) lines.add(line);
   for (let n = 0; n <= 10; n++) lines.add(WORDS.yes(n));
   for (const metal of METALS.slice(1)) lines.add(WORDS.shellTurned(metal));
-  // A finish that also moves the child up a level says both.
-  for (const level of [2, 3] as const) for (const metal of METALS.slice(1)) lines.add(`${WORDS.shellTurned(metal)} ${WORDS.levelUp(level)}`);
+  // The finish is said in parts, each from its own clip: the opening for the day, what turned (or the pearl), the chip, the level-up.
+  for (const how of Object.values(WORDS.how)) lines.add(how);
+  lines.add(WORDS.trickyChip);
+  for (const level of [2, 3] as const) lines.add(WORDS.levelUp(level));
+  lines.add(WORDS.whatsNext);
   return [...lines];
 }

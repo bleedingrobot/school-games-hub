@@ -7,6 +7,7 @@
  * first shell picked was right, with the time to that first pick.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, showRound, type Round } from './round';
 
 /** One shell picked: its number and how long the child took over it. */
@@ -18,6 +19,8 @@ export interface Tap {
 export interface Replay {
   goesDone: number;
   mistakes: number;
+  /** Goes whose first shell was right and not a guess (the think floor, S14): what the finish words are about. */
+  firstRight: number;
   done: boolean;
   /** One answer per go tried, in order, for the maths records. */
   answers: Omit<FactAnswer, 'at'>[];
@@ -29,20 +32,24 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   const answers: Replay['answers'] = [];
   let goesDone = 0;
   let mistakes = 0;
+  let firstRight = 0;
   let triedThisGo = false;
   for (const { pick, ms } of taps) {
     const go = goes[goesDone];
     if (!go) throw new Error('Taps after the round was done');
     if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a shell on go ${goesDone}`);
     const right = pick === go.answer;
-    if (!triedThisGo) answers.push({ key: go.key, correct: right, ms });
+    if (!triedThisGo) {
+      answers.push({ key: go.key, correct: right, ms });
+      if (right && thoughtOf(ms)) firstRight++;
+    }
     triedThisGo = true;
     if (right) {
       goesDone++;
       triedThisGo = false;
     } else mistakes++;
   }
-  return { goesDone, mistakes, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
+  return { goesDone, mistakes, firstRight, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
 }
 
 /** Goes in a row, the latest first, whose first shell was wrong: three bring the full help back for the rest of the round (R6). */

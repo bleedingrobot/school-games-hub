@@ -206,6 +206,10 @@ function factsIn(tables) {
 	return keys;
 }
 //#endregion
+//#region shared/maths/selector.ts
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
+//#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
 function seeded(seed) {
@@ -260,6 +264,8 @@ function levelShare(stats, level) {
 	const keys = levelKeys(level);
 	return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
+/** The top level (8 to 10) is secure: at least 70% of its facts at box 2 or more. The "what's next" card (Kiwi's Beanstalk) waits for this. */
+const topSecure = (stats) => levelShare(stats, 3) >= STEP_SECURE_SHARE;
 /** Today's level: the first not yet secure, never below the furthest reached. Once 8 to 10 is secure the child stays there. */
 function levelFor(stats, reached = 1) {
 	const list = [...stats];
@@ -474,17 +480,21 @@ function replay(round, taps) {
 	const answers = [];
 	let goesDone = 0;
 	let mistakes = 0;
+	let firstRight = 0;
 	let triedThisGo = false;
 	for (const { pick, ms } of taps) {
 		const go = goes[goesDone];
 		if (!go) throw new Error("Taps after the round was done");
 		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a shell on go ${goesDone}`);
 		const right = pick === go.answer;
-		if (!triedThisGo) answers.push({
-			key: go.key,
-			correct: right,
-			ms
-		});
+		if (!triedThisGo) {
+			answers.push({
+				key: go.key,
+				correct: right,
+				ms
+			});
+			if (right && thoughtOf(ms)) firstRight++;
+		}
 		triedThisGo = true;
 		if (right) {
 			goesDone++;
@@ -494,6 +504,7 @@ function replay(round, taps) {
 	return {
 		goesDone,
 		mistakes,
+		firstRight,
 		done: goesDone === goes.length && goes.length === 10,
 		answers
 	};
@@ -756,8 +767,10 @@ async function handlePipi(services, player, body) {
 				if (result.pearl) await services.progressChanged(player);
 				return ok({
 					...result,
+					firstRight: played.firstRight,
 					level: reached,
-					levelBefore: kept.round.level
+					levelBefore: kept.round.level,
+					topSecure: facts !== "busy" && topSecure(withAnswers(facts, answers))
 				});
 			}
 			const again = await services.round(player, seed);

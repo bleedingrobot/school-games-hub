@@ -91,7 +91,7 @@ it('changes one shell a NZ day by the server’s clock, whatever the browser sen
     const reply = (await send('pupil-a', { action: 'finish', seed: round.seed, taps: goodTaps(round), daysDone: 29, shellChanged: 9, pearl: true })).body;
     return { round, reply };
   };
-  expect((await finish()).reply).toEqual({ daysDone: 1, lastShellDay: '2026-11-04', shellChanged: 0, pearl: false, level: 1, levelBefore: 1 });
+  expect((await finish()).reply).toEqual({ daysDone: 1, lastShellDay: '2026-11-04', shellChanged: 0, pearl: false, firstRight: 10, level: 1, levelBefore: 1, topSecure: false });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect((await finish()).reply).toMatchObject({ daysDone: 1, shellChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC

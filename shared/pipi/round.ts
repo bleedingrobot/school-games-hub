@@ -67,6 +67,9 @@ export function levelShare(stats: Iterable<FactStats>, level: Level): number {
   return keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length;
 }
 
+/** The top level (8 to 10) is secure: at least 70% of its facts at box 2 or more. The "what's next" card (Kiwi's Beanstalk) waits for this. */
+export const topSecure = (stats: Iterable<FactStats>): boolean => levelShare(stats, 3) >= STEP_SECURE_SHARE;
+
 /** Today's level: the first not yet secure, never below the furthest reached. Once 8 to 10 is secure the child stays there. */
 export function levelFor(stats: Iterable<FactStats>, reached: Level = 1): Level {
   const list = [...stats];
