@@ -30,11 +30,10 @@ There are no WIP branches left.
 
 ## Next, in order
 
-Nothing else is queued. S34 parts 2 and 4 are merged (#369, #368); S34 part 1b is below, waiting on James.
+Nothing else is queued. S34 is done: parts 2 and 4 (#369, #368) and part 1b (#371, Beanstalk one key per pair; old keys still count, the old key counts as secure once 70% of the five pairs are).
 
 ## Waiting on James
 
-- **S34 part 1b:** Beanstalk keeps one key per pair. It touches `shared/maths`, which needs James's OK.
 - **S20:** Kingfisher isn't built yet.
 - **Lizard finish screen:** it still shows the "x first time" score chip. Should it go? The plan's "no scores" note suggests yes.
 - **Worth playing in a browser:**
