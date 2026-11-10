@@ -173,8 +173,9 @@ export async function handleLizard(services: LizardServices, player: string, bod
       const place = result.bundleChanged === null ? before : placeAfter(before, played.firstRight);
       // The help for each kind of go moves on the same day's first finish only; later that day the saved map stays as it is.
       const stored = s.kindLevels ?? {};
+      // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
       const kindLevels =
-        result.bundleChanged === null ? stored : fadeByKind(stored, played.goes, { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+        result.bundleChanged === null ? stored : place.step !== before.step ? {} : fadeByKind(stored, played.goes, { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();

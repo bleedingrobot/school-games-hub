@@ -957,7 +957,7 @@ async function handleParrot(services, player, body) {
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.changed === null ? before : moved(before, played.firstRight);
 			const slips = slipsOf(kept.round, taps);
-			const kindLevels = result.changed === null ? s.kindLevels ?? {} : fadeByKind(s.kindLevels ?? {}, kept.round.goes.map((g, i) => ({
+			const kindLevels = result.changed === null ? s.kindLevels ?? {} : place.step !== before.step ? {} : fadeByKind(s.kindLevels ?? {}, kept.round.goes.map((g, i) => ({
 				kind: kindOfKey(g.key),
 				right: slips[i] === null
 			})), STEP_RULES, before.level);

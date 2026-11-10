@@ -185,10 +185,13 @@ export async function handleParrot(services: ParrotServices, player: string, bod
       const place = result.changed === null ? before : moved(before, played.firstRight);
       // The same guard for the help for each kind of go: it moves on the day's first finish only, from the level the round was played at.
       const slips = slipsOf(kept.round, taps);
+      // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
       const kindLevels =
         result.changed === null
           ? (s.kindLevels ?? {})
-          : fadeByKind(
+          : place.step !== before.step
+            ? {}
+            : fadeByKind(
               s.kindLevels ?? {},
               kept.round.goes.map((g, i) => ({ kind: kindOfKey(g.key)!, right: slips[i] === null })),
               STEP_RULES,

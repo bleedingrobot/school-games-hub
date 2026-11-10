@@ -2250,7 +2250,7 @@ async function handlePigeon(services, player, body) {
 			};
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.clusterChanged === null ? before : placeAfter(before, played.firstRight);
-			const kindLevels = result.clusterChanged === null ? s.kindLevels : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({
+			const kindLevels = result.clusterChanged === null ? s.kindLevels : place.step !== before.step ? {} : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({
 				kind: g.kind,
 				right: played.rightFirst[i]
 			})), {

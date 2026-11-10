@@ -737,7 +737,7 @@ async function handleRobin(services, player, body) {
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.changed === null ? before : moved(before, played.firstRight);
 			const stored = s.kindLevels ?? {};
-			const kindLevels = result.changed === null ? stored : fadeByKind(stored, wentRight, {
+			const kindLevels = result.changed === null ? stored : place.step !== before.step ? {} : fadeByKind(stored, wentRight, {
 				...ROUND_OF_TEN,
 				topLevel: 5
 			}, before.level);

@@ -132,6 +132,7 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
     const { step, level } = placeOf(s, facts);
+    // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
     const kindLevels = s.kindLevels ?? {};
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
@@ -170,7 +171,7 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
       const place = result.rowChanged === null ? before : placeAfter(before, played.firstRight);
       // The help for each kind of go moves the same way: on the day's first finish only, from the child's own level for a new kind.
       const stored = s.kindLevels ?? {};
-      const kindLevels = result.rowChanged === null ? stored : kindLevelsAfter(stored, played.kindGoes, before.level);
+      const kindLevels = result.rowChanged === null ? stored : place.step !== before.step ? {} : kindLevelsAfter(stored, played.kindGoes, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();

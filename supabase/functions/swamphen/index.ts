@@ -2293,7 +2293,7 @@ async function handleSwamphen(services, player, body) {
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.rowChanged === null ? before : placeAfter(before, played.firstRight);
 			const stored = s.kindLevels ?? {};
-			const kindLevels = result.rowChanged === null ? stored : kindLevelsAfter(stored, played.kindGoes, before.level);
+			const kindLevels = result.rowChanged === null ? stored : place.step !== before.step ? {} : kindLevelsAfter(stored, played.kindGoes, before.level);
 			const progress = {
 				daysDone: result.daysDone,
 				lastDay: result.lastDay,

@@ -176,10 +176,13 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.clusterChanged === null ? before : placeAfter(before, played.firstRight);
       // The help for each kind moves on the day's first finish only, from this round's goes (a kind with fewer than two goes stays as it was).
+      // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
       const kindLevels =
         result.clusterChanged === null
           ? s.kindLevels
-          : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: g.kind, right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+          : place.step !== before.step
+            ? {}
+            : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: g.kind, right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();

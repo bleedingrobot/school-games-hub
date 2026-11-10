@@ -2252,7 +2252,7 @@ async function handleLizard(services, player, body) {
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.bundleChanged === null ? before : placeAfter(before, played.firstRight);
 			const stored = s.kindLevels ?? {};
-			const kindLevels = result.bundleChanged === null ? stored : fadeByKind(stored, played.goes, {
+			const kindLevels = result.bundleChanged === null ? stored : place.step !== before.step ? {} : fadeByKind(stored, played.goes, {
 				...ROUND_OF_TEN,
 				topLevel: 5
 			}, before.level);

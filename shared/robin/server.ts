@@ -150,6 +150,7 @@ export async function handleRobin(services: RobinServices, player: string, body:
     const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
     if (s === 'busy' || facts === 'busy') return busy();
     const { step, level } = placeOf(s, facts);
+    // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
     const kindLevels = s.kindLevels ?? {};
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
@@ -194,7 +195,9 @@ export async function handleRobin(services: RobinServices, player: string, body:
       const kindLevels =
         result.changed === null
           ? stored
-          : fadeByKind(stored, wentRight, { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+          : place.step !== before.step
+            ? {}
+            : fadeByKind(stored, wentRight, { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips });
       if (saved === 'busy') return busy();
