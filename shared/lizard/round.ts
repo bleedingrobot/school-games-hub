@@ -296,7 +296,7 @@ function makeGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | n
 }
 
 /** Same shape: the same number of digits, and a zero in the tens and in the ones place only where the other has one. */
-const sameShape = (a: number, b: number): boolean =>
+export const sameShape = (a: number, b: number): boolean =>
   String(a).length === String(b).length && (Math.floor(a / 10) % 10 === 0) === (Math.floor(b / 10) % 10 === 0) && (a % 10 === 0) === (b % 10 === 0);
 
 /**
