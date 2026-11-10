@@ -24,14 +24,13 @@ The first account stopped here at about 97% of its weekly use. This note tells t
 - S19: the kit part (#347), then Pigeon, Parrot, Lizard, Swamp Hen and Robin together (migrations 20261110000100 to 0500). A new step clears the kind map, so every kind starts at the new step's help.
 - S33: honest finish words for Hop, Weka, Penguin Pairs, Pipi, Tūī, Beanstalk, Pipi's what's-next card to Beanstalk. Finish and home lines are spoken in parts (PART_BREAK), so the old whole-sentence clips were removed.
 - S32: "Now you try one like it" for Weka, Tūī, Hop, Penguin Pairs, Pipi and Beanstalk. Beanstalk's sister is a real pair (its taps are only leaf pairs), asked as "What goes with N?"; Tūī praises a redo plainly (`rightRedo`).
-- S34: part 1 (kit slips) and part 3 (Quick looks usual slip).
+- S34: part 1 (kit slips), part 3 (Quick looks usual slip), part 2 (older six, 20261110000900) and part 4 (newer five, 20261110001000).
 
 There are no WIP branches left.
 
 ## Next, in order
 
-0. **Paused 10 Nov 2026:** PR #367 (S32 sister goes) was waiting on CI. Merge it when green, then carry on. The S34 helpers were stopped before writing anything, so S34 starts from scratch.
-1. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games (migrations 20261110000900 and 20261110001000; check they are still free).
+Nothing else is queued. S34 parts 2 and 4 are merged (#369, #368); S34 part 1b is below, waiting on James.
 
 ## Waiting on James
 
