@@ -67,7 +67,10 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
     settings: async () => (options.settings ? options.settings() : { enabled: true, dots: true }),
     async load(player) {
       // `{ ...unplayed() }` first: a trial pupil saved before the dots followed the child has no help yet.
-      return { ...unplayed(), ...copy(data.players[player] ?? unplayed()) };
+      const row = { ...unplayed(), ...copy(data.players[player] ?? unplayed()) };
+      // A row saved before the two kinds (S35) starts both kinds equal, as the migration back-fills it.
+      if (data.players[player] && (data.players[player] as Partial<Saved>).helpMissing === undefined) Object.assign(row, { helpMissing: row.help, goodInRowMissing: row.goodInRow });
+      return row;
     },
     async choose(player, child) {
       const s = data.players[player] ?? unplayed();

@@ -5,7 +5,7 @@ import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
 import { GOES_PER_ROUND, GUIDED_KEY, KEYS, keyFor, LESS_KEYS, makeRound, nestShape, pictureFor, placeAfter, showGo, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
 import { emptyData, memoryServices } from './memoryServices';
-import { handleTui } from './server';
+import { handleTui, unplayed } from './server';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -66,14 +66,17 @@ describe('the help level and the step', () => {
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 6)).toEqual(at({ level: 2 }));
     expect(placeAfter(at({ level: 2, goodInRow: 1 }), 4)).toEqual(at({ level: 3 }));
     expect(placeAfter(at({ level: 5 }), 0).level).toBe(5);
-    // A pass on the same go as a fade keeps the fade (the new step adds nothing), never below the ten-frames.
-    expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
-    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 4 }));
+    // A pass on the same go as a fade keeps the fade (the new step adds nothing), and the ten-frames floor does not undo it (S25).
+    expect(placeAfter(at({ step: 2, level: 3, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 2 }));
+    expect(placeAfter(at({ step: 2, level: 4, goodInRow: 1, goodAtStep: 1 }), 10)).toEqual(at({ step: 3, level: 3 }));
     // A pass with no fade (a middling challenge broke the row) brings one level back, capped at the top.
     expect(placeAfter(at({ step: 2, level: 4, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     expect(placeAfter(at({ step: 2, level: 5, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 5 }));
     // A new step always brings the ten-frames back, even from numbers only.
     expect(placeAfter(at({ step: 2, level: 0, goodInRow: 0, goodAtStep: 1 }), 9)).toEqual(at({ step: 3, level: 4 }));
+    // A perfect round counts as two good ones: the help fades at once.
+    expect(placeAfter(at({ level: 5 }), 10)).toEqual(at({ level: 4, goodAtStep: 1 }));
+    expect(placeAfter(at({ level: 5 }), 9)).toEqual(at({ goodInRow: 1, goodAtStep: 1 }));
     // A child who already knows both kinds of fact starts at step 3, help level 4.
     expect(startFor(inBox([...KEYS.slice(0, 7), ...LESS_KEYS.slice(0, 7)], 2))).toEqual({ step: 3, level: 4 });
     expect(startFor(inBox(KEYS.slice(0, 6), 3))).toEqual({ step: 1, level: 5 });
@@ -187,5 +190,47 @@ describe('the what’s next card (R8)', () => {
       expect(done.status).toBe(200);
       expect(done.body.topSecure).toBe(secure);
     }
+  });
+});
+
+describe('help for each way of asking (S35)', () => {
+  const perfect = (round: Round, hard: number | null): Tap[] =>
+    showRound(round).flatMap((go) => (go.v === hard ? [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 2000 }, { pick: go.answer, ms: 2000 }] : [{ pick: go.answer, ms: 1000 }]));
+
+  it('a hard way keeps its help while the easy ways fade, and each go is shown at its own way’s level', async () => {
+    const data = emptyData();
+    data.players.p = { ...unplayed(), daysDone: 1, lastFlowerDay: '2026-11-05', step: 5, level: 3, version: 1 };
+    let now = Date.UTC(2026, 10, 7, 22);
+    const services = memoryServices({ data, now: () => now });
+    for (let day = 0; day < 2; day++) {
+      const round = (await handleTui(services, 'p', { action: 'start' })).body.round as Round;
+      const done = await handleTui(services, 'p', { action: 'finish', seed: round.seed, taps: perfect(round, 3) });
+      expect(done.status).toBe(200);
+      now += 24 * 60 * 60 * 1000;
+    }
+    const levels = data.players.p.kindLevels;
+    expect([levels.v0.level, levels.v1.level, levels.v2.level]).toEqual([2, 2, 2]);
+    expect(levels.v3.level).toBeGreaterThanOrEqual(4);
+    const next = (await handleTui(services, 'p', { action: 'start' })).body.round as Round;
+    for (const g of next.goes) expect(g.l).toBe(levels[`v${g.v}`].level);
+    // The whole-child level is still the step logic's own (the hard way did not drag the easy ones back, or the reverse).
+    expect(data.players.p.level).toBeLessThan(levels.v3.level);
+  });
+
+  it('a new way starts at the whole-child level while old ways keep theirs, and a new step keeps the map', async () => {
+    const data = emptyData();
+    data.players.p = { ...unplayed(), daysDone: 1, lastFlowerDay: '2026-11-05', step: 3, level: 3, goodAtStep: 1, kindLevels: { v0: { level: 1, goodInRow: 0 }, v1: { level: 2, goodInRow: 0 } }, version: 1 };
+    const services = memoryServices({ data, now: () => Date.UTC(2026, 10, 7, 22) });
+    const round = (await handleTui(services, 'p', { action: 'start' })).body.round as Round;
+    for (const g of round.goes) expect(g.l).toBe(g.v === 0 ? 1 : g.v === 1 ? 2 : 3);
+    const done = await handleTui(services, 'p', { action: 'finish', seed: round.seed, taps: perfect(round, null) });
+    expect(done.body).toMatchObject({ step: 4 });
+    const saved = data.players.p;
+    expect(Object.keys(saved.kindLevels).sort()).toEqual(['v0', 'v1', 'v2']);
+    expect(saved.kindLevels.v0.level).toBeLessThanOrEqual(1);
+    const next = (await handleTui(services, 'p', { action: 'start' })).body.round as Round;
+    const fresh = next.goes.filter((g) => g.v === 3);
+    expect(fresh.length).toBeGreaterThan(0);
+    for (const g of fresh) expect(g.l).toBe(saved.level);
   });
 });

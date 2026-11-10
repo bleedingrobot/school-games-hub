@@ -94,6 +94,10 @@ describe('the step labels (R6)', () => {
     expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
     expect(helpForStats(known)).toBe('none');
     expect(helpForStats({ ...known, box: 1 })).toBe('full');
+    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
+    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['a'] };
+    expect(helpForStats(quick1)).toBe('faint');
+    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
     // A child who knows every 10s fact and has just moved to 5s: the 10s facts are not on the round, so every 5s hop starts full.
     const tens = stepKeys(10).map((key) => ({ ...known, key }));
     const fives = makeRound(7, tens, { reached: 5 });

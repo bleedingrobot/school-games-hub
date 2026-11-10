@@ -3,9 +3,9 @@
  * silver for 11 to 20 and gold for 21 to 30 (docs/BEANSTALK-PLAN.md section 1). Days are counted, not dates, so a missed
  * day loses nothing. Everything here comes from the count of finished days alone.
  */
-import { fadeAfter, helpWithSetting, ROUND_OF_TEN } from '../kit/help';
+import { fadeAfter, helpWithSetting, ROUND_OF_TEN, type FadeRules } from '../kit/help';
 import { mastery, type FactStats } from '../maths/leitner';
-import { factKeys, TARGETS, type Stage, type Target } from './round';
+import { factKeys, MISSING_GOES, PAIRS_PER_ROUND, TARGETS, type Stage, type Target } from './round';
 
 export const LEAVES_ON_STALK = 10;
 export const METALS = ['green', 'bronze', 'silver', 'gold'] as const;
@@ -82,7 +82,7 @@ export function finishChallenge(daysDone: number, lastLeafDay: string | null, to
   return { daysDone: next, lastLeafDay: today, leafChanged: daysDone % LEAVES_ON_STALK, egg: next % DAYS_PER_EGG === 0 };
 }
 
-/** Where a child is with the dots: their help level and the good challenges in a row (two take the help down a step). */
+/** Where a child is with the dots of one kind of go: their help level and the good challenges in a row (two take the help down a step). */
 export interface Place {
   help: HelpLevel;
   goodInRow: number;
@@ -91,19 +91,35 @@ export interface Place {
 /** First challenge: full dots. */
 export const START_PLACE: Place = { help: 0, goodInRow: 0 };
 
-/** Right at the first tap on this many pairs of 10 or more makes a good challenge, this many or fewer a hard one (shared/kit/help.ts). */
-const RULES = { ...ROUND_OF_TEN, topLevel: 2 };
+/** The two kinds of go (S35): a pair of leaves, or the missing leaf ("7 + ? = 10"). Each has its own dots. */
+export type GoKind = 'pair' | 'missing';
+/** Goes of each kind in a round: 7 pairs and 3 missing-leaf goes (round.ts: MISSING_GOES). */
+export const GOES_OF_KIND: Record<GoKind, number> = { pair: PAIRS_PER_ROUND - MISSING_GOES.length, missing: MISSING_GOES.length };
 
 /**
- * The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
- * finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
- * (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
- * moves the child up or back a stage) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+ * Right at the first tap on this many goes of a kind or more makes a good challenge, this many or fewer a hard one: the
+ * kit's 8 and 4 of 10 scaled to the goes of the kind (ceil of 0.8 and floor of 0.4 of them): 6 and 2 of 7 pairs, 3 and 1 of 3 missing-leaf goes.
  */
-export function placeAfter(place: Place, right: number, result: Pick<FinishResult, 'leafChanged'> & { stageChanged: boolean }): Place {
+const RULES: Record<GoKind, FadeRules> = {
+  pair: { good: Math.ceil(0.8 * GOES_OF_KIND.pair), hard: Math.floor(0.4 * GOES_OF_KIND.pair), goodToFade: ROUND_OF_TEN.goodToFade, topLevel: 2 },
+  missing: { good: Math.ceil(0.8 * GOES_OF_KIND.missing), hard: Math.floor(0.4 * GOES_OF_KIND.missing), goodToFade: ROUND_OF_TEN.goodToFade, topLevel: 2 },
+};
+
+/**
+ * The dots of one kind after a finished challenge with `right` of that kind's goes right at the first tap (R6, S35). It moves
+ * only on the day's first finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good
+ * challenges in a row take one step off the dots; a hard one brings a step back. A new sum (the finish that moves the child up
+ * or back a stage) starts again at full dots for both kinds, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+ */
+export function placeAfter(
+  place: Place,
+  right: number,
+  result: Pick<FinishResult, 'leafChanged'> & { stageChanged: boolean },
+  kind: GoKind = 'pair',
+): Place {
   if (result.leafChanged === null) return place;
   if (result.stageChanged) return START_PLACE;
-  const { level, goodInRow } = fadeAfter({ level: 2 - place.help, goodInRow: place.goodInRow }, right, RULES);
+  const { level, goodInRow } = fadeAfter({ level: 2 - place.help, goodInRow: place.goodInRow }, right, RULES[kind]);
   return { help: (2 - level) as HelpLevel, goodInRow };
 }
 

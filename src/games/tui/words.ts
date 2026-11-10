@@ -42,6 +42,8 @@ export const WORDS = {
   nowTry: 'Now you try!',
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
+  /** Said once, after three goes in a row with a wrong first tap: every berry is drawn again for the rest of the round. */
+  berriesBack: 'Here are the berries again to help.',
   hearAgain: 'Hear it again',
   skip: 'Skip',
   demoTitle: 'Watch Tūī show one first.',

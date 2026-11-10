@@ -94,16 +94,16 @@ export const isHelp = (v: unknown): v is Help => HELPS.includes(v as Help);
 
 /**
  * The picture help for a fact from the child's own record of it (maths review R6, Weka's way with Penguin Pairs' three
- * states): full until the fact is secure (box 2) and has been right quickly on two different days; faint until it is
+ * states): full until the fact is secure (box 2) and has been right and quick (box 2 and one quick day, or right every time so far; S25); faint until it is
  * fluent (box 4) and right 6 times; then none. A wrong answer drops a fact to box 1, so its full picture comes back, and a
  * new level's facts have no record, so they start full.
  */
 const HELP_LADDER: readonly FactRung<Help>[] = [
-  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'full', until: { box: 2, quickDays: 1 } },
   { help: 'faint', until: { box: 4, correct: 6 } },
   { help: 'none' },
 ];
-export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'attempts' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
 
 /**
  * One go as saved: the fact, how the shared pack words it (0 or 1: "4 + 4" or "Double 4"; halves always "Half of 12") and

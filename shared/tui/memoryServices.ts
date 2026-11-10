@@ -66,7 +66,8 @@ export function memoryServices(options: MemoryOptions = {}): TuiServices & { dat
     random: options.random ?? Math.random,
     settings: async () => (options.settings ? options.settings() : { enabled: true, help: 'fade' }),
     async load(player) {
-      return copy(data.players[player] ?? unplayed());
+      // A save from before the help for each way (a trial kept in the browser) has no kindLevels.
+      return copy({ ...unplayed(), ...data.players[player] });
     },
     async facts(player) {
       return copy(data.facts[player] ?? []);

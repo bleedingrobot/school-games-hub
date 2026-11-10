@@ -17,6 +17,8 @@ export interface BeanstalkState {
   lastLeafDay: string | null;
   /** This child's dots: 0 full, 1 small, 2 none. It follows how their challenges go, not the calendar. */
   help: HelpLevel;
+  /** The dots for the missing-leaf goes (S35): the pair goes have `help`. */
+  helpMissing: HelpLevel;
   /** The sum this child is on (0 bonds to 10, 1 to 20, 2 to 100, 3 to 1000): it follows how their days go, not the calendar (S21). */
   stage: Stage;
   /** Finished days since the stage last changed: 0 on a stage above the first shows the bridge line. */
@@ -61,6 +63,8 @@ export function fromServer(send: Send): BeanstalkBackend {
     load: async () => {
       const s = (await ask({ action: 'load' })) as unknown as BeanstalkState;
       s.seen ??= [];
+      // A server function from before the two kinds (S35): both kinds have the pair kind's dots.
+      s.helpMissing ??= s.help;
       // A server function from before stages: the sum is the calendar's, as the migration back-fills it.
       if (s.stage === undefined) return { ...s, stage: stageForEggs(Math.floor(s.daysDone / DAYS_PER_EGG)), stageDays: s.daysDone % DAYS_PER_EGG };
       return s;
@@ -134,6 +138,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
         if (p)
           s.data.players[PUPIL] = {
             ...p, daysDone, lastLeafDay: null, help: Math.min(2, Math.floor((daysDone % 30) / 10)) as HelpLevel, goodInRow: 0,
+            helpMissing: Math.min(2, Math.floor((daysDone % 30) / 10)) as HelpLevel, goodInRowMissing: 0,
             stage: stageForEggs(Math.floor(daysDone / DAYS_PER_EGG)), goodDays: 0, hardDays: 0, stageDays: daysDone % DAYS_PER_EGG, version: p.version + 1,
           };
       }),
@@ -147,7 +152,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setHelp: (help: HelpLevel) =>
       change((s) => {
         const p = s.data.players[PUPIL];
-        if (p) s.data.players[PUPIL] = { ...p, help, goodInRow: 0, version: p.version + 1 };
+        if (p) s.data.players[PUPIL] = { ...p, help, goodInRow: 0, helpMissing: help, goodInRowMissing: 0, version: p.version + 1 };
       }),
     dotsOn: () => read().dots,
     setDots: (on: boolean) => change((s) => void (s.dots = on)),

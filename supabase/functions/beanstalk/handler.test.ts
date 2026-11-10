@@ -78,11 +78,11 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
     const { seed, round } = await begin('pupil-a');
     return (await send('pupil-a', { action: 'finish', seed, taps: goodTaps(round), daysDone: 29, leafChanged: 9, egg: true })).body;
   };
-  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false, help: 0, stage: 0, moved: 0 });
+  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false, help: 0, helpMissing: 0, stage: 0, moved: 0 });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect(await finish()).toMatchObject({ daysDone: 1, leafChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
-  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false, help: 1, stage: 0, moved: 0 });
+  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false, help: 1, helpMissing: 1, stage: 0, moved: 0 });
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ child: 'jack', daysDone: 2, today: '2026-11-05', help: 1, dots: true });
   expect(log.eggs).toEqual([]);
   services.data.players['pupil-a'].daysDone = 29;

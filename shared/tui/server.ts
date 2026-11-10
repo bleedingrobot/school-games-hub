@@ -18,8 +18,9 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
+import { fadeByKind, ROUND_OF_TEN, type KindLevels } from '../kit/help';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
-import { isSeed, kindOfKey, KIND_OF_WAY, makeRound, MAX_SEED, placeAfter, startFor, topSecure, TOP_LEVEL, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, kindOfKey, KIND_OF_WAY, makeRound, MAX_SEED, wayKind, placeAfter, startFor, topSecure, TOP_LEVEL, type HelpSetting, type Place, type Round } from './round';
 
 export type TuiAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -31,6 +32,11 @@ export interface Progress extends Place {
   daysDone: number;
   /** The NZ day ('2026-11-04') a flower last changed. */
   lastFlowerDay: string | null;
+  /**
+   * The help of each way of asking, { "v0": { level, goodInRow } } to "v3". A way not in the map yet starts at `level`, the
+   * whole-child level (which keeps the step's logic). Ways already in play keep theirs when the step changes (S35).
+   */
+  kindLevels: KindLevels;
 }
 
 export interface Saved extends Progress {
@@ -38,7 +44,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ daysDone: 0, lastFlowerDay: null, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, version: 0 });
+export const unplayed = (): Saved => ({ daysDone: 0, lastFlowerDay: null, step: 1, level: TOP_LEVEL, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: 0 });
 
 export const HELP_SETTINGS: readonly HelpSetting[] = ['fade', 'always', 'off'];
 
@@ -118,7 +124,7 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
     if (saved === 'busy') return busy();
     const place = placeOf(s, facts);
     const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
-    return ok({ daysDone: s.daysDone, lastFlowerDay: s.lastFlowerDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+    return ok({ daysDone: s.daysDone, lastFlowerDay: s.lastFlowerDay, today: today(), step: place.step, level: place.level, help: settings.help, kindLevels: s.kindLevels, seen });
   }
 
   if (body.action === 'seen') {
@@ -136,7 +142,7 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
     const guided = s.daysDone === 0 && s.lastFlowerDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { step, level, help: settings.help, guided });
+      const round = makeRound(seed, facts, { step, level, help: settings.help, guided, kindLevels: s.kindLevels });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -168,7 +174,13 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
       const result = finishChallenge(s.daysDone, s.lastFlowerDay, today());
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.flowerChanged === null ? before : placeAfter(before, played.firstRight);
-      const progress: Progress = { daysDone: result.daysDone, lastFlowerDay: result.lastFlowerDay, ...place };
+      // The help for each way moves on the day's first finish only, from this round's goes (a way with fewer than two goes stays as it was).
+      // Ways already in play keep their level when the step changes; a way not in the map starts at the whole-child level.
+      const kindLevels =
+        result.flowerChanged === null
+          ? s.kindLevels
+          : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: wayKind(g.v), right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+      const progress: Progress = { daysDone: result.daysDone, lastFlowerDay: result.lastFlowerDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();
       if (saved) {
@@ -178,7 +190,7 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
         // The "what's next" card (R8): the top step's facts are secure once the answers are in.
         const after = await services.facts(player);
         const secure = after !== 'busy' && topSecure(after);
-        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level, topSecure: secure });
+        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level, kindLevels, topSecure: secure });
       }
       const again = await services.round(player, seed);
       if (again === 'busy') return busy();

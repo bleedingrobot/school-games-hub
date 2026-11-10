@@ -46,13 +46,14 @@ describe('the trial backend', () => {
     };
     expect((await go()).result).toMatchObject({ daysDone: 1, stoneChanged: 0, goldenBasket: false, level: 1 });
     // Again the same day (just for fun): each fact counts once a round, so after a few quick perfect rounds starting on 9
-    // is secure, but the help for those facts stays full: it only fades once a fact is right on two different days.
+    // is secure, and (S25) the help for those facts fades after one quick day, while the new level's facts have no record and start full.
     let next = 1;
     for (let i = 0; i < 4 && next === 1; i++) next = (await go()).result.level;
     expect(next).toBe(2);
     const eights = await backend.start();
     expect(eights.level).toBe(2);
-    expect(eights.goes.every((g) => g.h === 'full')).toBe(true);
+    expect(eights.goes.some((g) => g.h === 'full')).toBe(true);
+    expect(eights.goes.some((g) => g.h !== 'full')).toBe(true);
     await expect(backend.finish(eights.seed, perfect(eights).slice(0, 3))).rejects.toThrow();
     tools.jumpTo(DAYS_PER_BASKET - 1);
     const gold = await backend.start();

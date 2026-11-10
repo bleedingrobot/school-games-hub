@@ -33,11 +33,19 @@ export interface FactRung<H> {
   until?: { box?: number; quickDays?: number; correct?: number };
 }
 
-/** The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left. */
-export function helpForFact<H>(stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined, rungs: readonly FactRung<H>[]): H {
+/**
+ * The help for a fact from its record: the first rung it hasn't passed. No record gets the first; the last rung is never left.
+ * The first rung (full help) is also left early, once the fact has a quick day, by two ways: box 2 or more (two right
+ * answers, even on one day) or every answer so far right (`attempts === correct`, a clean right-and-quick start). A wrong
+ * answer drops the box to 1 and makes `attempts !== correct`, so that rung comes back (rule 5: fade on right-and-quick,
+ * return on struggle).
+ */
+export function helpForFact<H>(stats: Pick<FactStats, 'box' | 'correct' | 'attempts' | 'quickDays'> | undefined, rungs: readonly FactRung<H>[]): H {
   if (!stats) return rungs[0].help;
-  const stays = ({ until = {} }: FactRung<H>) =>
-    stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0);
+  const quick = stats.quickDays.length >= 1;
+  const early = quick && (stats.box >= 2 || stats.attempts === stats.correct);
+  const stays = ({ until = {} }: FactRung<H>, i: number) =>
+    !(i === 0 && early) && (stats.box < (until.box ?? 0) || stats.quickDays.length < (until.quickDays ?? 0) || stats.correct < (until.correct ?? 0));
   return (rungs.slice(0, -1).find(stays) ?? rungs[rungs.length - 1]).help;
 }
 

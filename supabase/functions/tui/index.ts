@@ -1948,6 +1948,8 @@ const GUIDED_N = 2;
 const MAX_SEED = 2147483647;
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 const isLevel = (n) => Number.isInteger(n) && n >= 0 && n <= 5;
+/** The name a way goes by in the saved help for each way ("v0" to "v3"). */
+const wayKind = (v) => `v${v}`;
 /** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
 const shownLevel = (level, help) => help === "always" ? 4 : help === "off" ? 0 : level;
 /**
@@ -1967,14 +1969,14 @@ function startFor(stats) {
 * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
 * less help and the next step. Hard: one level more help at once. A new step brings `NEW_STEP_HELP` level back only
 * if the help didn't fade on this same go (a pass and a fade usually land together, and the fade must stand, or a
-* strong child keeps every berry counted in until step 5). Either way a new step always has the ten-frames: the kete
-* comes only once a way of asking is going well.
+* strong child keeps every berry counted in until step 5). A 10 out of 10 challenge counts as two good ones for the fade.
+* A new step without a fade has the ten-frames at least; a fade stands, so the kete can come once a way is going well.
 */
 function placeAfter(p, right) {
 	const good = right >= 8;
 	const hard = right <= 4;
 	let level = p.level;
-	let goodInRow = good ? p.goodInRow + 1 : 0;
+	let goodInRow = good ? p.goodInRow + (right >= 10 ? 2 : 1) : 0;
 	let faded = false;
 	if (goodInRow >= 2) {
 		level = Math.max(0, level - 1);
@@ -1988,7 +1990,7 @@ function placeAfter(p, right) {
 		step = step + 1;
 		goodAtStep = 0;
 		goodInRow = 0;
-		level = Math.max(4, Math.min(5, faded ? level : level + 1));
+		level = faded ? level : Math.max(4, Math.min(5, level + 1));
 	}
 	return {
 		step,
@@ -2063,7 +2065,10 @@ function makeRound(seed, stats, opts = {}) {
 		ns = spreadOut([GUIDED_N, ...rest]);
 	}
 	const ways = waysFor(step, random);
-	const shown = shownLevel(level, help);
+	const shownFor = (v) => {
+		const own = opts.kindLevels?.[wayKind(v)]?.level;
+		return shownLevel(isLevel(own) ? own : level, help);
+	};
 	return {
 		seed,
 		step,
@@ -2076,7 +2081,7 @@ function makeRound(seed, stats, opts = {}) {
 		} : {
 			key: keyFor(n, ways[i]),
 			v: ways[i],
-			l: shown
+			l: shownFor(ways[i])
 		})
 	};
 }
@@ -2178,6 +2183,7 @@ function replay(round, taps) {
 	let goesDone = 0;
 	let mistakes = 0;
 	let firstRight = 0;
+	const rightFirst = [];
 	let triedThisGo = false;
 	for (const { pick, ms } of taps) {
 		const go = goes[goesDone];
@@ -2186,6 +2192,7 @@ function replay(round, taps) {
 		const right = pick === go.answer;
 		if (!triedThisGo) {
 			if (right && thoughtOf(ms)) firstRight++;
+			rightFirst[goesDone] = right && thoughtOf(ms);
 			if (!counted.has(go.key)) {
 				answers.push({
 					key: go.key,
@@ -2205,6 +2212,7 @@ function replay(round, taps) {
 		goesDone,
 		mistakes,
 		firstRight,
+		rightFirst,
 		done: goesDone === goes.length && goes.length === 10,
 		answers
 	};
@@ -2237,6 +2245,66 @@ function finishChallenge(daysDone, lastFlowerDay, today) {
 		flowerChanged: daysDone % 10,
 		goldenNest: next % DAYS_PER_NEST === 0
 	};
+}
+//#endregion
+//#region shared/kit/help.ts
+/** The numbers in LEARNING-DESIGN rule 5, for a round of ten goes. The game adds its `topLevel`. */
+const ROUND_OF_TEN = {
+	good: 8,
+	hard: 4,
+	goodToFade: 2
+};
+/**
+* The help after a counted round with `right` goes right at the first tap: enough good rounds in a row take it down one
+* level, a hard round brings one level back at once. `faded` says it went down on this round.
+*/
+function fadeAfter(p, right, rules) {
+	let { level } = p;
+	let goodInRow = right >= rules.good ? p.goodInRow + 1 : 0;
+	let faded = false;
+	if (goodInRow >= rules.goodToFade) {
+		level = Math.max(0, level - 1);
+		goodInRow = 0;
+		faded = true;
+	}
+	if (right <= rules.hard) level = Math.min(rules.topLevel, level + 1);
+	return {
+		level,
+		goodInRow,
+		faded
+	};
+}
+/**
+* Help for each kind of go, after a counted round. For each kind with at least 2 goes, the goes right at the first tap are
+* scaled to ten (`Math.round(10 * right / n)`) and `fadeAfter` is run with the rules (use `ROUND_OF_TEN`), so a kind fades
+* after two good rounds and comes back after a hard one. A kind with fewer than 2 goes is left as it was. A kind not in the
+* map yet starts at `startLevel` (the child's own level, which already has a new step's full help). Returns a new map; the
+* kinds the round did not ask keep what they had. The kind is only a string: the game names its own.
+*/
+function fadeByKind(kindLevels, goes, rules, startLevel) {
+	const tally = new Map();
+	for (const g of goes) {
+		const t = tally.get(g.kind) ?? {
+			n: 0,
+			right: 0
+		};
+		t.n += 1;
+		if (g.right) t.right += 1;
+		tally.set(g.kind, t);
+	}
+	const out = { ...kindLevels };
+	for (const [kind, { n, right }] of tally) {
+		if (n < 2) continue;
+		const { level, goodInRow } = fadeAfter(kindLevels[kind] ?? {
+			level: startLevel,
+			goodInRow: 0
+		}, Math.round(10 * right / n), rules);
+		out[kind] = {
+			level,
+			goodInRow
+		};
+	}
+	return out;
 }
 //#endregion
 //#region shared/kit/seen.ts
@@ -2276,6 +2344,7 @@ const unplayed = () => ({
 	level: 5,
 	goodInRow: 0,
 	goodAtStep: 0,
+	kindLevels: {},
 	version: 0
 });
 const HELP_SETTINGS = [
@@ -2346,6 +2415,7 @@ async function handleTui(services, player, body) {
 			step: place.step,
 			level: place.level,
 			help: settings.help,
+			kindLevels: s.kindLevels,
 			seen
 		});
 	}
@@ -2366,7 +2436,8 @@ async function handleTui(services, player, body) {
 				step,
 				level,
 				help: settings.help,
-				guided
+				guided,
+				kindLevels: s.kindLevels
 			});
 			const kept = await services.start(player, round);
 			if (kept === "busy") return busy();
@@ -2405,10 +2476,18 @@ async function handleTui(services, player, body) {
 			};
 			const result = finishChallenge(s.daysDone, s.lastFlowerDay, today());
 			const place = result.flowerChanged === null ? before : placeAfter(before, played.firstRight);
+			const kindLevels = result.flowerChanged === null ? s.kindLevels : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({
+				kind: wayKind(g.v),
+				right: played.rightFirst[i]
+			})), {
+				...ROUND_OF_TEN,
+				topLevel: 5
+			}, before.level);
 			const progress = {
 				daysDone: result.daysDone,
 				lastFlowerDay: result.lastFlowerDay,
-				...place
+				...place,
+				kindLevels
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
@@ -2428,6 +2507,7 @@ async function handleTui(services, player, body) {
 					level: place.level,
 					stepBefore: before.step,
 					levelBefore: before.level,
+					kindLevels,
 					topSecure: secure
 				});
 			}
@@ -7719,7 +7799,11 @@ Deno.serve(makeHandler({
 		};
 	},
 	async load(player) {
-		return await call("tui_load", { player }) ?? unplayed();
+		const saved = await call("tui_load", { player });
+		return saved === "busy" ? "busy" : saved ? {
+			...unplayed(),
+			...saved
+		} : unplayed();
 	},
 	async facts(player) {
 		const context = await call("space_maths_context", { player });
@@ -7761,7 +7845,8 @@ Deno.serve(makeHandler({
 		good_at_step: progress.goodAtStep,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
-		first_right: ending.firstRight
+		first_right: ending.firstRight,
+		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "tui", void 0, JUNIOR_QUICK_MS, 600);

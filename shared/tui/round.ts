@@ -16,6 +16,7 @@ import type { FactStats } from '../maths/leitner';
 import { earlyFactsPack } from '../maths/skillPacks/earlyFacts';
 import { tagWrongs, type Wrong } from '../kit/mistakes';
 import { seeded } from '../seededRandom';
+import type { KindLevels } from '../kit/help';
 import { STEP_SECURE_SHARE } from '../maths/selector';
 
 export const GOES_PER_ROUND = 10;
@@ -31,7 +32,7 @@ export const GOOD_TO_PASS = 2;
 export const GOOD_TO_FADE = 2;
 /**
  * Help levels go back up this many when a new step starts, unless the help faded on that same go (then the fade
- * stands). Either way never below `FRAMES_LEVEL`.
+ * stands). A new step with no fade never starts below `FRAMES_LEVEL`; a fade is not floored back up.
  */
 export const NEW_STEP_HELP = 1;
 export const TOP_LEVEL = 5;
@@ -82,6 +83,9 @@ export const isStep = (n: unknown): n is Step => STEPS.some((s) => s.step === n)
 export const isLevel = (n: unknown): n is HelpLevel => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= TOP_LEVEL;
 export const stepName = (step: Step) => STEPS.find((s) => s.step === step)!.name;
 
+/** The name a way goes by in the saved help for each way ("v0" to "v3"). */
+export const wayKind = (v: number): string => `v${v}`;
+
 /** The level a go is shown at, from the child's level and the teacher's setting: Fades follows the child, Always keeps 4, Off is 0. */
 export const shownLevel = (level: HelpLevel, help: HelpSetting): HelpLevel => (help === 'always' ? 4 : help === 'off' ? 0 : level);
 
@@ -110,14 +114,15 @@ export interface Place {
  * The place after a counted challenge (the day's first finish) with `right` goes right at the first tap. Good: towards
  * less help and the next step. Hard: one level more help at once. A new step brings `NEW_STEP_HELP` level back only
  * if the help didn't fade on this same go (a pass and a fade usually land together, and the fade must stand, or a
- * strong child keeps every berry counted in until step 5). Either way a new step always has the ten-frames: the kete
- * comes only once a way of asking is going well.
+ * strong child keeps every berry counted in until step 5). A 10 out of 10 challenge counts as two good ones for the fade.
+ * A new step without a fade has the ten-frames at least; a fade stands, so the kete can come once a way is going well.
  */
 export function placeAfter(p: Place, right: number): Place {
   const good = right >= GOOD;
   const hard = right <= HARD;
   let level = p.level;
-  let goodInRow = good ? p.goodInRow + 1 : 0;
+  // A perfect round counts as two good rounds for the fade.
+  let goodInRow = good ? p.goodInRow + (right >= GOES_PER_ROUND ? 2 : 1) : 0;
   let faded = false;
   if (goodInRow >= GOOD_TO_FADE) {
     level = Math.max(0, level - 1) as HelpLevel;
@@ -131,7 +136,7 @@ export function placeAfter(p: Place, right: number): Place {
     step = (step + 1) as Step;
     goodAtStep = 0;
     goodInRow = 0;
-    level = Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, faded ? level : level + NEW_STEP_HELP)) as HelpLevel;
+    level = (faded ? level : Math.max(FRAMES_LEVEL, Math.min(TOP_LEVEL, level + NEW_STEP_HELP))) as HelpLevel;
   }
   return { step, level, goodInRow, goodAtStep };
 }
@@ -220,7 +225,7 @@ function waysFor(step: Step, random: () => number): Way[] {
 export function makeRound(
   seed: number,
   stats: Iterable<FactStats>,
-  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean } = {},
+  opts: { step?: Step; level?: HelpLevel; help?: HelpSetting; guided?: boolean; kindLevels?: KindLevels } = {},
 ): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
   const step = opts.step ?? 1;
@@ -245,8 +250,12 @@ export function makeRound(
     ns = spreadOut([GUIDED_N, ...rest]);
   }
   const ways = waysFor(step, random);
-  const shown = shownLevel(level, help);
-  const goes = ns.map((n, i): GoPlan => (opts.guided && i === 0 ? { key: keyFor(n, 0), v: 0, l: TOP_LEVEL } : { key: keyFor(n, ways[i]), v: ways[i], l: shown }));
+  // Each way has its own level once it has been played (S35); a way not in the map yet starts at the child's whole-child level.
+  const shownFor = (v: Way) => {
+    const own = opts.kindLevels?.[wayKind(v)]?.level;
+    return shownLevel(isLevel(own) ? own : level, help);
+  };
+  const goes = ns.map((n, i): GoPlan => (opts.guided && i === 0 ? { key: keyFor(n, 0), v: 0, l: TOP_LEVEL } : { key: keyFor(n, ways[i]), v: ways[i], l: shownFor(ways[i]) }));
   return { seed, step, level, help, goes };
 }
 

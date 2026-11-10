@@ -22,6 +22,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Tap } from '../../../shared/tui/play';
 import type { Friend as FriendName } from '../../../shared/tui/progress';
+import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { GOES_PER_ROUND, KIND_OF_WAY, pictureFor, showRound, type Go, type HelpLevel, type Round, type TuiKind } from '../../../shared/tui/round';
 import { DemoBar } from '../../kit/DemoBar';
@@ -90,7 +91,14 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   };
   useEffect(() => clearTimers, []);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  // Three goes in a row with a wrong first tap bring level 5 back for the rest of the round (not saved; Off keeps it away).
+  const [streak, setStreak] = useState(0);
+  const [boost, setBoost] = useState(false);
+  /** Set when the boost has just begun and its line is still to be said, after the line for the wrong tap. */
+  const backLine = useRef(false);
+  const boosted = boost && round.help !== 'off';
+  const planned: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = boosted && planned.l < 5 ? { ...planned, l: 5 } : planned;
   const guided = guide && at === 0;
   const kinds = useSeenKinds(seen, onSeen);
   /** A way not yet seen (turning round, how many more, taking away) gets its demo before the first go of it, once. */
@@ -179,7 +187,17 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
+    const first = flow.wrong === 0;
     if (n !== go.answer) {
+      if (first) {
+        const run = streak + 1;
+        setStreak(run);
+        if (run >= STRUGGLE_GOES && !boost && round.help !== 'off') {
+          setBoost(true);
+          // Said once, and only if some go from here on was not already at level 5.
+          if (goes.some((g, i) => i >= at && g.l < 5)) backLine.current = true;
+        }
+      }
       const after = stepGo(flow, 'wrong');
       setFlow(after);
       setTapped((t) => [...t, n]);
@@ -205,9 +223,12 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
       }
       const kind = go.wrongs.find((w) => w.n === n)!.kind;
       setWhy({ n, kind });
-      say(WORDS.why(kind, n, go.v));
+      if (backLine.current) say(WORDS.why(kind, n, go.v), () => say(WORDS.berriesBack));
+      else say(WORDS.why(kind, n, go.v));
+      backLine.current = false;
       return;
     }
+    if (first) setStreak(0);
     clearTimers();
     setPointAt(null);
     setWhy(null);

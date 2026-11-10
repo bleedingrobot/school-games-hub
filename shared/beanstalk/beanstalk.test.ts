@@ -172,25 +172,57 @@ describe('the dots follow the child, not the calendar (maths review R6)', () => 
   const counted = { leafChanged: 0, stageChanged: false };
 
   it('fade after two good days in a row, come back after a hard day, and stay put on a middling day', () => {
-    // Two days of 8 or more first-time pairs: full to small, then (two more) small to none, and none stays none.
+    // Pair goes are 7 a round (S35): 6 or more is good, 2 or fewer hard. Two days of 6 or more first-time pairs: full to small, then (two more) small to none, and none stays none.
     let place: Place = START_PLACE;
-    place = placeAfter(place, 10, counted);
+    place = placeAfter(place, 7, counted);
     expect(place).toEqual({ help: 0, goodInRow: 1 });
-    place = placeAfter(place, 8, counted);
+    place = placeAfter(place, 6, counted);
     expect(place).toEqual({ help: 1, goodInRow: 0 });
-    place = placeAfter(placeAfter(place, 9, counted), 10, counted);
+    place = placeAfter(placeAfter(place, 6, counted), 7, counted);
     expect(dotsFor(place.help)).toBe('none');
-    expect(placeAfter(placeAfter(place, 10, counted), 10, counted).help).toBe(2);
-    // A hard day (4 or fewer) brings one step back at once; 5 to 7 neither fades nor returns, and breaks the run of good days.
-    expect(placeAfter({ help: 2, goodInRow: 1 }, 4, counted)).toEqual({ help: 1, goodInRow: 0 });
-    expect(placeAfter({ help: 0, goodInRow: 0 }, 1, counted).help).toBe(0);
-    expect(placeAfter({ help: 1, goodInRow: 1 }, 6, counted)).toEqual({ help: 1, goodInRow: 0 });
+    expect(placeAfter(placeAfter(place, 7, counted), 7, counted).help).toBe(2);
+    // A hard day (2 or fewer of 7) brings one step back at once; 3 to 5 neither fades nor returns, and breaks the run of good days.
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 2, counted)).toEqual({ help: 1, goodInRow: 0 });
+    expect(placeAfter({ help: 0, goodInRow: 0 }, 0, counted).help).toBe(0);
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 4, counted)).toEqual({ help: 1, goodInRow: 0 });
     // A child who struggles keeps their help on day 21 of the beanstalk, and one who knows it all loses it on day 3.
-    expect(placeAfter({ help: 1, goodInRow: 1 }, 10, counted).help).toBe(2);
+    expect(placeAfter({ help: 1, goodInRow: 1 }, 7, counted).help).toBe(2);
+  });
+
+  it('keep a dots level for pair goes and one for missing-leaf goes: each fades and returns on its own (S35)', () => {
+    // 7 pair goes (good 6, hard 2) and 3 missing-leaf goes (good 3, hard 1), the same two good rounds to fade.
+    let pair: Place = START_PLACE;
+    let missing: Place = START_PLACE;
+    for (let day = 0; day < 2; day++) {
+      pair = placeAfter(pair, 7, counted, 'pair');
+      missing = placeAfter(missing, 2, counted, 'missing'); // 2 of 3 is neither good nor hard
+    }
+    expect(pair).toEqual({ help: 1, goodInRow: 0 });
+    expect(missing).toEqual({ help: 0, goodInRow: 0 });
+    // A hard missing-leaf day (1 of 3) brings only the missing kind back; pairs keep their level.
+    missing = { help: 2, goodInRow: 1 };
+    expect(placeAfter(missing, 1, counted, 'missing')).toEqual({ help: 1, goodInRow: 0 });
+    expect(placeAfter(missing, 3, counted, 'missing').help).toBe(2);
+    expect(placeAfter(pair, 3, counted, 'pair')).toEqual({ help: 1, goodInRow: 0 });
+    // 3 of 3 is good for the missing kind (two in a row fade); 6 of 7 is good for pairs, 5 is not.
+    expect(placeAfter(placeAfter({ help: 0, goodInRow: 0 }, 3, counted, 'missing'), 3, counted, 'missing').help).toBe(1);
+    expect(placeAfter({ help: 0, goodInRow: 1 }, 5, counted, 'pair')).toEqual({ help: 0, goodInRow: 0 });
+    expect(placeAfter({ help: 0, goodInRow: 1 }, 6, counted, 'pair').help).toBe(1);
+  });
+
+  it('start an old row (saved before the two kinds) with both kinds equal, so nobody’s dots jump', async () => {
+    const services = memoryServices({ now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
+    const { helpMissing: _h, goodInRowMissing: _g, ...old } = { ...unplayed(), child: 'jill' as const, daysDone: 15, help: 1 as const, goodInRow: 1, version: 1 };
+    services.data.players.p = old as never;
+    expect((await handleBeanstalk(services, 'p', { action: 'load' })).body).toMatchObject({ help: 1, helpMissing: 1 });
+    expect((await services.load('p'))).toMatchObject({ helpMissing: 1, goodInRowMissing: 1 });
   });
 
   it('start again at full dots on a new sum (a stage change), never move on a replay, and lose to the teacher’s dots switch', () => {
     expect(placeAfter({ help: 2, goodInRow: 1 }, 10, { leafChanged: 9, stageChanged: true })).toEqual(START_PLACE);
+    // A new egg resets both kinds, and a replay moves neither.
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 3, { leafChanged: 9, stageChanged: true }, 'missing')).toEqual(START_PLACE);
+    expect(placeAfter({ help: 2, goodInRow: 1 }, 0, { leafChanged: null, stageChanged: false }, 'missing')).toEqual({ help: 2, goodInRow: 1 });
     expect(placeAfter({ help: 1, goodInRow: 1 }, 10, { leafChanged: null, stageChanged: false })).toEqual({ help: 1, goodInRow: 1 });
     expect(placeAfter({ help: 1, goodInRow: 0 }, 0, { leafChanged: null, stageChanged: false })).toEqual({ help: 1, goodInRow: 0 });
     expect([0, 1, 2].map((h) => shownDots(h as 0 | 1 | 2, true))).toEqual(['full', 'small', 'none']);
@@ -202,7 +234,7 @@ describe('bonds to 20 and the missing leaf (maths review R8)', () => {
   it('lets the server finish a bonds to 20 round, scoring each go against a bond20 record the maths records know', async () => {
     const log = { answers: [] as { player: string; once: string; answers: FactAnswer[] }[] };
     const services = memoryServices({ log, now: () => Date.parse('2026-11-10T00:00:00Z'), random: () => 0.42 });
-    services.data.players.p = { child: 'jill', daysDone: DAYS_PER_EGG, lastLeafDay: null, help: 0, goodInRow: 0, ...START_STEPS, stage: 1, version: 1 };
+    services.data.players.p = { child: 'jill', daysDone: DAYS_PER_EGG, lastLeafDay: null, help: 0, goodInRow: 0, helpMissing: 0, goodInRowMissing: 0, ...START_STEPS, stage: 1, version: 1 };
     const { body: { seed, round } } = await handleBeanstalk(services, 'p', { action: 'start' });
     const reply = await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTapsFor(round as Round) });
     expect(reply).toMatchObject({ status: 200, body: { daysDone: DAYS_PER_EGG + 1, leafChanged: 0 } });

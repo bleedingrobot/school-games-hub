@@ -51,9 +51,9 @@ Deno.serve(
       return { enabled: row.tui_enabled === true, help };
     },
     async load(player) {
-      const saved = await call<Saved | null>('tui_load', { player });
+      const saved = await call<Saved | 'busy' | null>('tui_load', { player });
       // A pupil who has never played has no tree yet.
-      return saved ?? unplayed();
+      return saved === 'busy' ? 'busy' : saved ? { ...unplayed(), ...saved } : unplayed();
     },
     async facts(player) {
       // The same records every maths game reads; only the "ten and" facts matter here.
@@ -75,7 +75,7 @@ Deno.serve(
       call<boolean>('tui_finish', {
         player, seed, version, days_done: progress.daysDone, last_flower_day: progress.lastFlowerDay, step: progress.step,
         level: progress.level, good_in_row: progress.goodInRow, good_at_step: progress.goodAtStep,
-        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight,
+        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight, kind_levels: progress.kindLevels,
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
