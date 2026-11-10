@@ -30,7 +30,8 @@ There are no WIP branches left.
 
 ## Next, in order
 
-1. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games.
+0. **Paused 10 Nov 2026:** PR #367 (S32 sister goes) was waiting on CI. Merge it when green, then carry on. The S34 helpers were stopped before writing anything, so S34 starts from scratch.
+1. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games (migrations 20261110000900 and 20261110001000; check they are still free).
 
 ## Waiting on James
 
