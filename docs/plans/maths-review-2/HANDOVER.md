@@ -23,15 +23,14 @@ The first account stopped here at about 97% of its weekly use. This note tells t
 - S16 is live (#364). S25 (full help ends sooner: kit, Hop, Penguin Pairs, Pipi, Weka, Tūī) and S35 (Tūī help per way, migration 20261110000700; Beanstalk help for pair and missing-leaf goes, migration 20261110000800).
 - S19: the kit part (#347), then Pigeon, Parrot, Lizard, Swamp Hen and Robin together (migrations 20261110000100 to 0500). A new step clears the kind map, so every kind starts at the new step's help.
 - S33: honest finish words for Hop, Weka, Penguin Pairs, Pipi, Tūī, Beanstalk, Pipi's what's-next card to Beanstalk. Finish and home lines are spoken in parts (PART_BREAK), so the old whole-sentence clips were removed.
+- S32: "Now you try one like it" for Weka, Tūī, Hop, Penguin Pairs, Pipi and Beanstalk. Beanstalk's sister is a real pair (its taps are only leaf pairs), asked as "What goes with N?"; Tūī praises a redo plainly (`rightRedo`).
 - S34: part 1 (kit slips) and part 3 (Quick looks usual slip).
 
 There are no WIP branches left.
 
 ## Next, in order
 
-1. **S32** (sister question, older six games) is built; see below for state. **S34 parts 2 and 4** after that.
-2. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games.
-3. **S32,** S16's game parts are done, so it can start.
+1. **S34 parts 2 and 4:** save and show the usual slip, in the older and newer games.
 
 ## Waiting on James
 
@@ -43,6 +42,6 @@ There are no WIP branches left.
   - the Pigeon number-line reasons;
   - the Beanstalk stages and missing-leaf goes;
   - the new finish lines;
-  - Now you try one like it: tap wrong twice in Pigeon, Parrot, Lizard, Swamp Hen or Robin, then right and wrong on the sister;
+  - Now you try one like it: tap wrong twice, then right and wrong on the sister. Browser-played for the newer five; not yet for Weka, Tūī, Hop, Penguin Pairs, Pipi, Beanstalk;
   - help for each kind of go (two days in a row in the Pigeon, Parrot, Lizard, Swamp Hen or Robin preview);
   - the Penguin Pairs fair buttons at phone width.
