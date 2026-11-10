@@ -35,7 +35,7 @@ Nothing else is queued. S34 is done: parts 2 and 4 (#369, #368) and part 1b (#37
 ## Waiting on James
 
 - **S20:** Kingfisher isn't built yet.
-- **Lizard finish screen:** it still shows the "x first time" score chip. Should it go? The plan's "no scores" note suggests yes.
+- **Lizard finish screen:** James (10 Nov 2026): the "x first time" chip stays. Decided; leave it.
 - **Worth playing in a browser:**
   - the Show me first demos: Robin, Lizard, Swamp Hen, Parrot, Hop, Pipi, Penguin Pairs, Weka, Tūī and Beanstalk;
   - the Pigeon number-line reasons;
