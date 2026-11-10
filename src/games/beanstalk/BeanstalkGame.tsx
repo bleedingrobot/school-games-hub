@@ -129,7 +129,7 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
         setState(
           (s) =>
             s && {
-              ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, help: result.help, stage: result.stage,
+              ...s, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, help: result.help, helpMissing: result.helpMissing ?? result.help, stage: result.stage,
               stageDays: result.moved !== 0 ? 0 : result.leafChanged !== null ? s.stageDays + 1 : s.stageDays,
             },
         );
@@ -148,6 +148,7 @@ export function BeanstalkGame({ backend, onExit, signpost, extra }: Props) {
       <Round
         round={screen.round}
         dots={shownDots(state.help, state.dots)}
+        dotsMissing={shownDots(state.helpMissing, state.dots)}
         canBoost={state.dots}
         stalkLeaves={stalkAfter(state.daysDone).leaves}
         trayMetal={METALS[Math.floor(stalkAfter(state.daysDone).day / LEAVES_ON_STALK)]}

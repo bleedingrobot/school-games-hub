@@ -74,6 +74,7 @@ Deno.serve(
       call<boolean>('beanstalk_finish', {
         player, seed, version, days_done: progress.daysDone, last_leaf_day: progress.lastLeafDay, taps: ending.taps, mistakes: ending.mistakes,
         help: progress.help, good_in_row: progress.goodInRow,
+        help_missing: progress.helpMissing, good_in_row_missing: progress.goodInRowMissing,
         stage: progress.stage, good_days: progress.goodDays, hard_days: progress.hardDays, stage_days: progress.stageDays,
       }),
     async recordAnswers(player, once, answers) {

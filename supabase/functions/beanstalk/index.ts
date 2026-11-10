@@ -201,6 +201,18 @@ const TARGETS = [
 const isTarget = (n) => TARGETS.includes(n);
 /** What one dot on a leaf is worth: 1 on the 10 and 20 beanstalks (20 has two ten-frames), 10 on the 100 and 100 on the 1000. */
 const unitOf = (target) => target === 20 ? 1 : target / 10;
+/**
+* The missing leaf (R8): on these goes (counting from 0) one leaf of a pair is already picked and the child taps the one
+* that is missing, "7 + ? = 10". Only the screen changes: the taps are the same two leaves, so the server replays them as usual.
+* The 3rd, 5th and 7th goes (S22): never the last, where only two leaves float and a guess is right, and never in the short
+* second tray of older pairs. At least three leaves float on each, so there are wrong choices to think about.
+*/
+const MISSING_GOES = [
+	2,
+	4,
+	6
+];
+const isMissingGo = (pairsMade) => MISSING_GOES.includes(pairsMade);
 const isSeed = (n) => Number.isInteger(n) && n >= 0 && n <= 2147483647;
 /** What the pair holding this leaf adds up to. */
 const targetOf = (round, leaf) => round.pairTargets?.[leaf >> 1] ?? round.target;
@@ -467,24 +479,42 @@ const START_PLACE = {
 	help: 0,
 	goodInRow: 0
 };
-/** Right at the first tap on this many pairs of 10 or more makes a good challenge, this many or fewer a hard one (shared/kit/help.ts). */
-const RULES = {
-	...ROUND_OF_TEN,
-	topLevel: 2
+/** Goes of each kind in a round: 7 pairs and 3 missing-leaf goes (round.ts: MISSING_GOES). */
+const GOES_OF_KIND = {
+	pair: 10 - MISSING_GOES.length,
+	missing: MISSING_GOES.length
 };
 /**
-* The dots after a finished challenge with `right` pairs right at the first tap (R6). It moves only on the day's first
-* finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good challenges in a row
-* (8 or more of 10 pairs) take one step off the dots; a hard one (4 or fewer) brings a step back. A new sum (the finish that
-* moves the child up or back a stage) starts again at full dots, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+* Right at the first tap on this many goes of a kind or more makes a good challenge, this many or fewer a hard one: the
+* kit's 8 and 4 of 10 scaled to the goes of the kind (ceil of 0.8 and floor of 0.4 of them): 6 and 2 of 7 pairs, 3 and 1 of 3 missing-leaf goes.
 */
-function placeAfter(place, right, result) {
+const RULES = {
+	pair: {
+		good: Math.ceil(.8 * GOES_OF_KIND.pair),
+		hard: Math.floor(.4 * GOES_OF_KIND.pair),
+		goodToFade: ROUND_OF_TEN.goodToFade,
+		topLevel: 2
+	},
+	missing: {
+		good: Math.ceil(.8 * GOES_OF_KIND.missing),
+		hard: Math.floor(.4 * GOES_OF_KIND.missing),
+		goodToFade: ROUND_OF_TEN.goodToFade,
+		topLevel: 2
+	}
+};
+/**
+* The dots of one kind after a finished challenge with `right` of that kind's goes right at the first tap (R6, S35). It moves
+* only on the day's first finish (`leafChanged` is null on a replay, so playing again for fun changes nothing). Two good
+* challenges in a row take one step off the dots; a hard one brings a step back. A new sum (the finish that moves the child up
+* or back a stage) starts again at full dots for both kinds, because 70 + 30 is new. The kit counts help up from none, so its level is 2 - help.
+*/
+function placeAfter(place, right, result, kind = "pair") {
 	if (result.leafChanged === null) return place;
 	if (result.stageChanged) return START_PLACE;
 	const { level, goodInRow } = fadeAfter({
 		level: 2 - place.help,
 		goodInRow: place.goodInRow
-	}, right, RULES);
+	}, right, RULES[kind]);
 	return {
 		help: 2 - level,
 		goodInRow
@@ -588,6 +618,8 @@ const unplayed = () => ({
 	lastLeafDay: null,
 	help: 0,
 	goodInRow: 0,
+	helpMissing: 0,
+	goodInRowMissing: 0,
 	...START_STEPS,
 	version: 0
 });
@@ -647,6 +679,7 @@ async function handleBeanstalk(services, player, body) {
 			lastLeafDay: s.lastLeafDay,
 			today: today(),
 			help: s.help,
+			helpMissing: s.helpMissing,
 			dots: settings.dots,
 			stage: s.stage,
 			stageDays: s.stageDays
@@ -706,23 +739,33 @@ async function handleBeanstalk(services, player, body) {
 				...a,
 				at
 			}));
-			const rightFirst = played.answers.filter((a) => a.correct && thoughtOf(a.ms)).length;
+			const isRight = (a) => a.correct && thoughtOf(a.ms);
+			const rightFirst = played.answers.filter(isRight).length;
+			const rightMissing = played.answers.filter((a, go) => isMissingGo(go) && isRight(a)).length;
+			const rightPairs = rightFirst - rightMissing;
 			const facts = await services.facts(player);
 			const secure = facts !== "busy" && sumSecure(withAnswers(facts, answers), TARGETS[s.stage]);
 			const steps = afterDay(s, rightFirst, result.leafChanged !== null, secure);
+			const counted = {
+				leafChanged: result.leafChanged,
+				stageChanged: steps.moved !== 0
+			};
 			const place = placeAfter({
 				help: s.help,
 				goodInRow: s.goodInRow
-			}, rightFirst, {
-				leafChanged: result.leafChanged,
-				stageChanged: steps.moved !== 0
-			});
+			}, rightPairs, counted, "pair");
+			const placeMissing = placeAfter({
+				help: s.helpMissing,
+				goodInRow: s.goodInRowMissing
+			}, rightMissing, counted, "missing");
 			const { moved, ...savedSteps } = steps;
 			const progress = {
 				child: s.child,
 				daysDone: result.daysDone,
 				lastLeafDay: result.lastLeafDay,
 				...place,
+				helpMissing: placeMissing.help,
+				goodInRowMissing: placeMissing.goodInRow,
 				...savedSteps
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
@@ -736,6 +779,7 @@ async function handleBeanstalk(services, player, body) {
 				return ok({
 					...result,
 					help: place.help,
+					helpMissing: placeMissing.help,
 					stage: steps.stage,
 					moved
 				});
@@ -7480,6 +7524,8 @@ Deno.serve(makeHandler({
 		mistakes: ending.mistakes,
 		help: progress.help,
 		good_in_row: progress.goodInRow,
+		help_missing: progress.helpMissing,
+		good_in_row_missing: progress.goodInRowMissing,
 		stage: progress.stage,
 		good_days: progress.goodDays,
 		hard_days: progress.hardDays,

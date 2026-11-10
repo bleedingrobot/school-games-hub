@@ -23,7 +23,7 @@ import { juniorAfterAnswer, thoughtOf } from '../juniorQuick';
 import { afterDay, finishChallenge, nzDate, placeAfter, START_STEPS, sumSecure, type FinishResult, type HelpLevel, type Steps } from './progress';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { readKinds, type SeenServices } from '../kit/seen';
-import { makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
+import { isMissingGo, makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
 
 /** Who the child plays as: they choose on their first go (James, 4 Nov 2026). */
 export type Child = 'jack' | 'jill';
@@ -44,11 +44,15 @@ export interface Progress extends Steps {
   help: HelpLevel;
   /** Good challenges in a row so far (two take the dots down a step). */
   goodInRow: number;
+  /** The same two for the missing-leaf goes (S35); `help` and `goodInRow` are the pair goes. Old rows start equal to the pair kind. */
+  helpMissing: HelpLevel;
+  goodInRowMissing: number;
 }
 
 /** What `finish` replies: the leaf and egg news, and the dots for the next challenge. */
 export interface FinishReply extends FinishResult {
   help: HelpLevel;
+  helpMissing: HelpLevel;
   /** The stage for the next challenge, and 1 if this finish moved the child up, -1 back, 0 stayed. */
   stage: Steps['stage'];
   moved: -1 | 0 | 1;
@@ -59,7 +63,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, ...START_STEPS, version: 0 });
+export const unplayed = (): Saved => ({ child: null, daysDone: 0, lastLeafDay: null, help: 0, goodInRow: 0, helpMissing: 0, goodInRowMissing: 0, ...START_STEPS, version: 0 });
 
 /** The class's settings for the game (null if they can't be read). */
 export interface Settings {
@@ -145,7 +149,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
     if (seen === 'busy') return busy();
     return ok({
       seen,
-      child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, dots: settings.dots,
+      child: s.child, daysDone: s.daysDone, lastLeafDay: s.lastLeafDay, today: today(), help: s.help, helpMissing: s.helpMissing, dots: settings.dots,
       stage: s.stage, stageDays: s.stageDays,
     });
   }
@@ -203,23 +207,33 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
       const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
       const at = services.now();
       const answers = played.answers.map((a) => ({ ...a, at }));
-      const rightFirst = played.answers.filter((a) => a.correct && thoughtOf(a.ms)).length;
+      // Right at the first tap (and not a guess: the think floor), counted for the whole day and for each kind of go (S35).
+      const isRight = (a: { correct: boolean; ms: number }) => a.correct && thoughtOf(a.ms);
+      const rightFirst = played.answers.filter(isRight).length;
+      const rightMissing = played.answers.filter((a, go) => isMissingGo(go) && isRight(a)).length;
+      const rightPairs = rightFirst - rightMissing;
       // Which stage next: two good days with the sum secure move up, two hard days step back (progress.ts: afterDay). If the
       // records can't be read, nobody moves up (the child stays; a hard patch still steps back).
       const facts = await services.facts(player);
       const secure = facts !== 'busy' && sumSecure(withAnswers(facts, answers), TARGETS[s.stage]);
       const steps = afterDay(s, rightFirst, result.leafChanged !== null, secure);
       // The dots follow the child: counted from the pairs right at the first tap, on the day's first finish only, and start full on a new sum.
-      const place = placeAfter({ help: s.help, goodInRow: s.goodInRow }, rightFirst, { leafChanged: result.leafChanged, stageChanged: steps.moved !== 0 });
+      // Pair goes and missing-leaf goes each have their own dots (S35); a new sum starts both at full.
+      const counted = { leafChanged: result.leafChanged, stageChanged: steps.moved !== 0 };
+      const place = placeAfter({ help: s.help, goodInRow: s.goodInRow }, rightPairs, counted, 'pair');
+      const placeMissing = placeAfter({ help: s.helpMissing, goodInRow: s.goodInRowMissing }, rightMissing, counted, 'missing');
       const { moved, ...savedSteps } = steps;
-      const progress = { child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place, ...savedSteps };
+      const progress = {
+        child: s.child, daysDone: result.daysDone, lastLeafDay: result.lastLeafDay, ...place,
+        helpMissing: placeMissing.help, goodInRowMissing: placeMissing.goodInRow, ...savedSteps,
+      };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a go (its first tap), as bonds to 10, 20, 100 or 1000: once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `beanstalk:${seed}`, answers);
         if (result.egg) await services.progressChanged(player);
-        return ok({ ...result, help: place.help, stage: steps.stage, moved });
+        return ok({ ...result, help: place.help, helpMissing: placeMissing.help, stage: steps.stage, moved });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

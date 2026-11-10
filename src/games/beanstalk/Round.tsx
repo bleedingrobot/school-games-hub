@@ -50,6 +50,8 @@ interface Props {
   round: StageRound;
   /** The dots this child sees to start: their own help, or none when the teacher has turned the dots off. */
   dots: Dots;
+  /** The dots on a missing-leaf go (S35): the child's own help for that kind. The same as `dots` when not given. */
+  dotsMissing?: Dots;
   /** False when the teacher has turned the dots off: then three wrong first taps in a row don't bring them back. */
   canBoost?: boolean;
   /** The magic leaves' colours now, bottom first: the stalk shows them as it grows. */
@@ -75,7 +77,7 @@ interface Props {
   onDone: (taps: Tap[]) => void;
 }
 
-export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, firstEver = false, seen = [MISSING_KIND], onSeen = () => Promise.resolve(), sound, say, onDone }: Props) {
+export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkLeaves, trayMetal, friend, child, guide, bridge = false, firstEver = false, seen = [MISSING_KIND], onSeen = () => Promise.resolve(), sound, say, onDone }: Props) {
   const [taps, setTaps] = useState<Tap[]>([]);
   const [picked, setPicked] = useState<number | null>(null);
   const [slots, setSlots] = useState<(number | null)[]>(() => shuffled(replay(round, []).onScreen.slice(0, ON_SCREEN)));
@@ -238,7 +240,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
     setMissing(null);
     if (wasMissing) setTake(wasMissing);
     // Each go is scored at its first tap: three in a row wrong bring the full dots back, and the line says so once.
-    const struggling = canBoost && !boosted && dots !== 'full' && wrongFirstRun(after.answers) >= STRUGGLE_GOES;
+    const struggling = canBoost && !boosted && (dots !== 'full' || dotsMissing !== 'full') && wrongFirstRun(after.answers) >= STRUGGLE_GOES;
     if (struggling) setBoosted(true);
     // The short second tray of older pairs came in: say what these make now (the badge changes as they arrive).
     const trayNext = after.done || !after.onScreen.length ? target : targetOf(round, after.onScreen[0]);
@@ -359,7 +361,7 @@ export function Round({ round, dots, canBoost = true, stalkLeaves, trayMetal, fr
               value={round.leaves[leaf]}
               step={step}
               cells={cells}
-              dots={boosted ? 'full' : dots}
+              dots={boosted ? 'full' : missing !== null ? dotsMissing : dots}
               metal={trayMetal}
               look={lookOf(leaf)}
               slot={slot}
