@@ -54,9 +54,21 @@ export const WORDS = {
   missing: (n: number) => `${n} empty space${n === 1 ? '' : 's'}`,
   /** After a right answer: the number, then the stem sentence ("14! 10 and 4 is 14."). English numbers, as Weka (James, 5 Nov 2026). */
   right: (answer: number, n: number) => `${answer}! 10 and ${n} is ${10 + n}.`,
-  flowerTurned: (metal: Metal) => `Well done! A flower turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another flower.',
-  nextStep: (step: Step) => `You are so good at this! Next time: ${stepName(step).toLowerCase()}`,
+  /** The tail of the finish title, after the opening for how the day went (S33). */
+  flowerTurned: (metal: Metal) => `A flower turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another flower.',
+  /** The opening of the finish title and, on a Golden Nest day, the chip: about the tens, not about the child (S33). */
+  how: {
+    most: 'You spotted the ten in each number!',
+    some: 'Some were tricky and you kept going.',
+    tricky: 'Those were tricky ones.',
+  },
+  /** The chip on a tricky day. Help moves for the child on the day's first finish only, so a replay does not bring it back: it says tomorrow. */
+  trickyChip: 'Tricky ones are good practice. We will try again tomorrow.',
+  nextStep: (step: Step) => {
+    const name = stepName(step).toLowerCase();
+    return `Your practice is paying off. Next time: ${/[?!.]$/.test(name) ? name : `${name}.`}`;
+  },
   goldenNest: (name: string) => `All the flowers are gold! ${name} won the Golden Nest!`,
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',

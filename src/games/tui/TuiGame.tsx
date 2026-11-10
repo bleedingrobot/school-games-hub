@@ -16,7 +16,8 @@ import { WhatsNext } from '../../kit/WhatsNext';
 import { backFor, Flower, Friend, GoldenNest, type Pose, type Scenery } from './art';
 import { TuiError, type TuiBackend, type TuiFinish, type TuiState } from './backend';
 import { Goes } from './Goes';
-import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { WORDS } from './words';
 import './tui.css';
 
@@ -39,9 +40,15 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -216,9 +223,14 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: TuiFinish;
     : tree.flowers.map((metal, i) => ({ metal, glow: i === result.flowerChanged }));
   const changed = result.flowerChanged === null ? null : flowers[result.flowerChanged].metal;
   const name = FRIEND_NAMES[tree.friend];
-  const main = result.goldenNest ? WORDS.goldenNest(name) : changed ? WORDS.flowerTurned(changed) : WORDS.doneToday;
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the flower still turns; a Golden Nest
+  // day keeps its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = result.goldenNest ? null : changed ? WORDS.flowerTurned(changed) : WORDS.doneToday;
+  const main = tail === null ? WORDS.goldenNest(name) : `${opening} ${tail}`;
   const up = result.step !== result.stepBefore ? result.step : null;
-  const line = finishLine(main, up);
+  const line = finishLine(tail === null ? [main, opening] : [opening, tail], band === 'tricky', up);
   // Weka's switch is read once the card could show; until then the panel waits, so the line is not said twice.
   const [wekaOn, setWekaOn] = useState<boolean | null>(result.topSecure && onOpenWeka ? null : false);
   useEffect(() => {
@@ -236,6 +248,8 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: TuiFinish;
       <Tree scenery={result.goldenNest ? 'gold' : tree.today} flowers={flowers} friend={tree.friend} pose="cheer" />
       {wekaOn !== null && (
         <WhatsNext prefix="tui" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+          {result.goldenNest && <p className="tui-chip">{opening}</p>}
+          {band === 'tricky' && <p className="tui-chip">{WORDS.trickyChip}</p>}
           {result.goldenNest && <span className="tui-prize"><GoldenNest cushion /></span>}
           {card && (
             <div className="tui-next-game">
