@@ -57,7 +57,7 @@ export const WORDS = {
   voiceOff: 'Voice off',
   prizesWon: (n: number) => `${n} Golden Reed Garden${n === 1 ? '' : 's'}`,
   lookTitle: 'Let’s look together.',
-  nowYouTry: 'Now you try.',
+  nowYouTry: 'Now you try one like it.',
   skip: 'Skip',
   tipName: 'Swamp Hen',
   tip: ['Hello! I am Swamp Hen. I plant my shoots in equal rows.', 'Count one row, then jump along the rows. Tap the answer.'],

@@ -12,7 +12,10 @@
  * is four cards (true or false: tips left, level, tips right).
  *
  * Mistakes that teach: the first wrong tap says why, with a small see-saw tipping with the slip's number placed; the
- * second is "Let's look together" (Parrot counts both sides), then "Now you try!" with two cards, the right one marked.
+ * second is "Let's look together" (Parrot counts both sides), then "Now you try one like it.": a sister go (same key, one number
+ * moved by 1 or 2, no marked card) that is local only. A right tap on it moves on; a wrong one says why once and goes back to
+ * the original go with its two cards, the right one marked. If no sister fits, the original go is asked again with two cards, the
+ * right one marked. The original go's right pick is what is sent, so the server's replay stays valid.
  * Only a go's first tap is scored (play.ts), so a shown go is never a clean right. Only the picks are sent; the server replays them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -20,7 +23,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import type { Friend as FriendName } from '../../../shared/parrot/config';
 import type { Tap } from '../../../shared/parrot/play';
-import { balance, GOES_PER_ROUND, isStoneGo, levelFor, MAX_STONES, redoCards, showRound, slipOfPick, tiltOf, type Go, type ParrotKind, type Round } from '../../../shared/parrot/round';
+import { balance, GOES_PER_ROUND, isStoneGo, levelFor, MAX_STONES, redoCards, showRound, sisterGo, slipOfPick, tiltOf, type Go, type ParrotKind, type Round } from '../../../shared/parrot/round';
 import { DemoBar } from '../../kit/DemoBar';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
@@ -228,11 +231,13 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
   /** The go's place in the two-tap flow (shared/kit/mistakes.ts). */
   const [flow, setFlow] = useState(NEW_GO);
   /** The last wrong pick's mistake, shown with its line until the next tap. */
-  const [why, setWhy] = useState<{ pick: number; kind: ParrotKind } | null>(null);
+  const [why, setWhy] = useState<{ pick: number; kind: ParrotKind; go?: Go } | null>(null);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const [tapped, setTapped] = useState<number[]>([]);
-  /** The two cards of "Now you try", the right one among them. */
+  /** The two cards of "Now you try" when there is no sister (and after a wrong tap on the sister), the right one among them. */
   const [redo, setRedo] = useState<number[] | null>(null);
+  /** The sister go of "Now you try one like it.": local only, never tapped into `taps`. */
+  const [sis, setSis] = useState<Go | null>(null);
   const [placed, setPlaced] = useState(0);
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
@@ -251,7 +256,8 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
   };
   useEffect(() => clearTimers, []);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = sis ?? base;
   const kinds = useSeenKinds(seen, onSeen);
   /** A kind that has not been seen yet gets its demo before the first go of it (never in a redo, never more than two a round). */
   const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' ? (go.kind as DemoKind) : null;
@@ -318,6 +324,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
       setWhy(null);
       setTapped([]);
       setRedo(null);
+      setSis(null);
       setPlaced(0);
       return;
     }
@@ -325,11 +332,44 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
     later(400, () => onDone(all));
   }
 
+  /** A tap on the sister go: never recorded. Right sends the original go's right pick and moves on; wrong says why once and marks the original's right card. */
+  function pickSister(s: Go, n: number, now: number) {
+    if (n === s.answer) {
+      const next = [...taps, { pick: base.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      clearTimers();
+      kinds.mark([base.kind]);
+      setWhy(null);
+      setPhase('right');
+      setPose('cheer');
+      run.current = flow.wrong > 0 ? run.current + 1 : 0;
+      if (run.current >= STRUGGLE_GOES) setStruggle(true);
+      say(modelLine(s));
+      if (sound) playSound('badge');
+      later(RIGHT_MS, () => nextGo(next));
+      return;
+    }
+    const kind = slipOfPick(s, n) ?? 'near';
+    setPose('laugh');
+    if (sound) playSound('tap');
+    later(LAUGH_MS, () => setPose('sit'));
+    setWhy({ pick: n, kind, go: s });
+    setSis(null);
+    setTapped([]);
+    since.current = now;
+    say(whyLine(kind));
+  }
+
   function pick(n: number) {
     if (phase !== 'ask' || look || demo.playing || tapped.includes(n)) return;
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
+    if (sis) {
+      pickSister(sis, n, now);
+      return;
+    }
     const next = [...taps, { pick: n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
@@ -344,9 +384,10 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
       later(WOBBLE_MS, () => setWobble(null));
       later(LAUGH_MS, () => setPose('sit'));
       if (after.phase === 'look') {
-        // The second wrong tap: Parrot counts both sides, then the same go is asked again with two cards.
+        // The second wrong tap: Parrot counts both sides, then a sister go is asked (or, with none, the same go with two cards).
         setWhy(null);
         const two = redoCards(go, nowTapped);
+        const sister = sisterGo(round, at, go);
         startLook({
           anchor: 0,
           steps: go.kind === 'tf' ? 1 : Math.max(1, go.answer),
@@ -356,6 +397,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);
             setRedo(two);
+            setSis(sister);
             since.current = Date.now();
             say(WORDS.nowTry);
           },
@@ -396,7 +438,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
   const pointing = guideHand.pointing && asking && stones;
 
   const made = at + (phase === 'ask' ? 0 : 1);
-  const cards = inRedo && redo ? redo : go.choices;
+  const cards = inRedo && sis ? sis.choices : inRedo && redo ? redo : go.choices;
   const filled = phase === 'right' ? go.answer : null;
   const rightTilt: Tilt = go.kind === 'tf' ? leanWith(go, 0) : 'level';
 
@@ -454,7 +496,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
         )}
       </div>
 
-      {why && asking && <ShowWhy prefix="pr" tapKey={taps.length} picture={<WhyPicture go={go} pick={why.pick} kind={why.kind} />} line={WORDS.why(why.kind)} />}
+      {why && asking && <ShowWhy prefix="pr" tapKey={taps.length} picture={<WhyPicture go={why.go ?? go} pick={why.pick} kind={why.kind} />} line={WORDS.why(why.kind)} />}
       {look && (
         <LookTogether prefix="pr" title={WORDS.lookTogether} picture={<CountingSaw go={go} filled={look.filled} />} line={WORDS.lookFill} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
       )}
@@ -485,7 +527,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
         <div className={`pr-cards${go.kind === 'tf' ? ' pr-cards--tf' : ''}`} role="group" aria-label={go.kind === 'tf' ? WORDS.pickTilt : WORDS.pickCard}>
           {cards.map((n) => {
             const off = (asking && tapped.includes(n)) || (!asking && n !== go.answer);
-            const hint = inRedo && asking && n === go.answer;
+            const hint = inRedo && asking && !sis && n === go.answer;
             const label = go.kind === 'tf' ? [WORDS.tipsLeft, WORDS.level, WORDS.tipsRight][n] : String(n);
             return (
               <button

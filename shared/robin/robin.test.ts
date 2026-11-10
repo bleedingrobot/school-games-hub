@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
-import { ALL_COUNT_KEYS } from '../maths/skillPacks/countingKeys';
+import { ALL_COUNT_KEYS, countNumbers } from '../maths/skillPacks/countingKeys';
 import { BASKETS, FADE_GOOD, GOES_PER_ROUND as GOES, PASS_GOOD, STEPS, TOP_LEVEL, type Step } from './config';
 import { DAYS_PER_FEAST, basketsAfter, finishChallenge, placeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
 import { seeded } from '../seededRandom';
-import { DEMO_KEYS, GUIDED_KEY, layoutPoints, stepKeys, STEP_PLAN, levelFor, makeRound, showGo, showRound, startFor, tapsAllowed, type Round } from './round';
+import { DEMO_KEYS, GUIDED_KEY, layoutPoints, stepKeys, STEP_PLAN, levelFor, makeRound, showGo, showRound, sisterGo, startFor, tapsAllowed, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -190,5 +190,27 @@ describe('help for each kind of go', () => {
     expect(guided.goes.slice(1).every((g) => g.l === 1)).toBe(true);
     // The teacher's setting still wins over the map.
     expect(makeRound(41, [], { step: 6, level: 3, help: 'always', kindLevels }).goes.every((g) => g.l === 4)).toBe(true);
+  });
+});
+
+describe('the sister go of "Now you try"', () => {
+  it('keeps the key shape and help level, moves the number by 1 or 2, is a valid go, and is never one of the saved goes', () => {
+    const round = makeRound(7, [], { step: 6, level: 3 });
+    const goes = showRound(round);
+    for (const [i, go] of goes.entries()) {
+      const sister = sisterGo(round, i, go);
+      if (!sister) continue;
+      expect(sister.key.split(':')[0]).toBe(go.key.split(':')[0]);
+      expect(sister.key.split(':')[2]).toBe(go.key.split(':')[2]);
+      expect(sister.l).toBe(go.l);
+      expect(Math.abs(countNumbers(sister.key)[0] - countNumbers(go.key)[0])).toBeLessThanOrEqual(2);
+      expect(sister.answer).not.toBe(go.answer);
+      expect(ALL_COUNT_KEYS).toContain(sister.key);
+      if (go.kind !== 'give') expect(sister.choices).toContain(sister.answer);
+    }
+    expect(goes.some((go, i) => sisterGo(round, i, go))).toBe(true);
+    // Nothing of the sister is in the replay: the original go's right pick alone ends the go.
+    const taps: Tap[] = goes.map((go) => ({ pick: go.answer, ms: 500 }));
+    expect(replay(round, taps).done).toBe(true);
   });
 });

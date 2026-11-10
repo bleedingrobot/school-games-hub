@@ -24,7 +24,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { tapRight, type Tap } from '../../../shared/pigeon/play';
 import type { Friend as FriendName } from '../../../shared/pigeon/progress';
-import { GOES_PER_ROUND, kindOfKey, marksFor, pictureFor, showRound, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
+import { GOES_PER_ROUND, kindOfKey, marksFor, pictureFor, showRound, sisterGo, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
 import { playSound } from '../sounds';
 import { Friend, sceneStyle, type Pose, type Scenery } from './art';
 import { DEMO_KIND, DEMO_STEPS, DemoScene, hasDemo } from './demo';
@@ -42,6 +42,8 @@ const ROOM_BELOW = 72;
 const LENS_ROOM = 72;
 const RIGHT_MS = 1900;
 const WOBBLE_MS = 500;
+/** How long a wrong tap on the sister shows its why-line, before the original go's right answer is marked. */
+const SISTER_WHY_MS = 2600;
 
 type Phase = 'ask' | 'right' | 'done';
 
@@ -110,6 +112,10 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   const [whyTap, setWhyTap] = useState(0);
   /** How many wrong taps there were when "Let's look together" began, so a later wrong tap in the redo says its slip line again. */
   const [tapsAtLook, setTapsAtLook] = useState(0);
+  /** "Now you try one like it": the sister go (local only, never in `taps`) and the child's one wrong tap on it. Null when there is none. */
+  const [sis, setSis] = useState<{ go: Go; wrong: number | null } | null>(null);
+  /** After a wrong tap on the sister: the original go's right answer is marked, so nobody is stuck. */
+  const [stuck, setStuck] = useState(false);
   const [wobble, setWobble] = useState<number | null>(null);
   const [peek, setPeek] = useState(false);
   const [pose, setPose] = useState<Pose>('sit');
@@ -134,8 +140,11 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
   /** True from the go's start until its demo has ended or been skipped: the real go waits, and nothing is tappable. */
   const demoing = hasDemo(go) && !seenSet.has(DEMO_KIND);
   const kindDemo = useKindDemo({ kind: demoing ? DEMO_KIND : null, seen: seenSet, mark: seenSet.mark, steps: DEMO_STEPS, say });
-  const wrongs = gs.wrong;
-  const pic = pictureFor(go, wrongs, tapped, struggle);
+  /** The go on screen: the sister during "Now you try", else the go itself. */
+  const cur: Go = sis ? sis.go : go;
+  const curTapped = sis ? (sis.wrong === null ? [] : [sis.wrong]) : tapped;
+  const wrongs = sis ? 0 : gs.wrong;
+  const pic = pictureFor(cur, wrongs, curTapped, struggle);
   const canPeek = go.l === 1 && round.help !== 'off' && pic.level <= 1;
   const level: HelpLevel = pic.level <= 1 && (pic.peekOpen || peek) ? 3 : pic.level;
   const seen: HelpLevel = gs.phase === 'look' || gs.phase === 'redo' ? 5 : level;
@@ -162,8 +171,17 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, goes, demoing]);
 
+  // The sister is read aloud when it comes: "Now you try one like it", then its question.
+  useEffect(() => {
+    if (sis && sis.wrong === null) say(WORDS.nowYouTry, () => say(askLine(sis.go)));
+    // Only when a new sister comes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sis?.go]);
+
   function nextGo(all: Tap[]) {
     clearTimers();
+    setSis(null);
+    setStuck(false);
     if (at + 1 < goes.length) {
       setAt(at + 1);
       setPhase('ask');
@@ -177,8 +195,51 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
     later(400, () => onDone(all));
   }
 
+  /** A right tap finishes the go: the card is shown right, the friend eats, and the next go comes. */
+  function rightTap(next: Tap[]) {
+    clearTimers();
+    const kind = kindOfKey(go.key);
+    if (kind) seenSet.mark([kind]);
+    setGs(stepGo(gs, 'right'));
+    run.current = gs.wrong > 0 ? run.current + 1 : 0;
+    if (run.current >= STRUGGLE_GOES) setStruggle(true);
+    setPhase('right');
+    setPose('eat');
+    say(WORDS.right[at % WORDS.right.length]);
+    if (sound) playSound('badge');
+    later(RIGHT_MS, () => nextGo(next));
+  }
+
+  /** A tap on the sister. It is never saved or sent: a right one ends the go with the ORIGINAL go's right pick, which is what the server replays. */
+  function pickSister(sister: Go, value: number) {
+    if (sis?.wrong != null) return;
+    tappedYet.current = true;
+    if (tapRight(sister, value)) {
+      const now = Date.now();
+      const next = [...taps, { pick: go.kind === 'place' ? permilleOf(go, go.n) : go.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      rightTap(next);
+      return;
+    }
+    const slip = sister.kind === 'place' ? (tapValue(sister, value) < sister.n ? 'early' : 'late') : sister.wrongs.find((w) => w.n === value)?.kind ?? 'one';
+    setSis({ go: sister, wrong: value });
+    setLastSlip(slip);
+    setWobble(value);
+    setWhyTap((n) => n + 1);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    say(slipLine(sister, slip));
+    later(SISTER_WHY_MS, () => {
+      setSis(null);
+      setLastSlip(null);
+      setStuck(true);
+    });
+  }
+
   function pick(value: number) {
     if (phase !== 'ask' || gs.phase === 'look') return;
+    if (sis) return pickSister(sis.go, value);
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
@@ -197,46 +258,43 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
       setLastSlip(slip);
       if (state.phase === 'look') {
         setTapsAtLook(tapped.length + 1);
-        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => setGs((s) => stepGo(s, 'lookDone')) });
+        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => {
+            // "Now you try" is a sister go (same key family, numbers moved by one or two); if none fits, the go itself comes back.
+            const sister = sisterGo(round, at, go);
+            setSis(sister ? { go: sister, wrong: null } : null);
+            setGs((s) => stepGo(s, 'lookDone'));
+          } });
       } else say(slipLine(go, slip));
       return;
     }
-    clearTimers();
-    const kind = kindOfKey(go.key);
-    if (kind) seenSet.mark([kind]);
-    setGs(stepGo(gs, 'right'));
-    run.current = gs.wrong > 0 ? run.current + 1 : 0;
-    if (run.current >= STRUGGLE_GOES) setStruggle(true);
-    setPhase('right');
-    setPose('eat');
-    say(WORDS.right[at % WORDS.right.length]);
-    if (sound) playSound('badge');
-    later(RIGHT_MS, () => nextGo(next));
+    rightTap(next);
   }
 
   const made = at + (phase === 'ask' ? 0 : 1);
   const solved = phase !== 'ask';
-  const slipText = lastSlip ? slipLine(go, lastSlip) : '';
-  const lastTap = tapped.length ? tapped[tapped.length - 1] : null;
+  const slipText = lastSlip ? slipLine(cur, lastSlip) : '';
+  const lastTap = curTapped.length ? curTapped[curTapped.length - 1] : null;
   /** The child's last wrong answer in the line's own units: where they tapped, or the card. */
-  const lastValue = lastTap === null ? null : go.kind === 'place' ? tapValue(go, lastTap) : lastTap;
-  const ringAt = lastValue !== null && !solved && lastValue >= go.lo && lastValue <= go.hi ? [{ value: lastValue, look: 'ring' as const }] : [];
-  const rightDot = solved ? [{ value: go.kind === 'near' || go.kind === 'tens' ? go.answer : go.n, label: String(go.kind === 'near' || go.kind === 'tens' ? go.answer : go.n), tone: 'landmark' as const }] : [];
-  const arrow = go.kind === 'read' && !solved ? [{ value: go.n, look: 'arrow' as const }] : [];
-  const mark = go.kind === 'tens' || go.kind === 'near' ? [{ value: go.n, label: String(go.n) }] : [];
+  const lastValue = lastTap === null ? null : cur.kind === 'place' ? tapValue(cur, lastTap) : lastTap;
+  const ringAt = lastValue !== null && !solved && lastValue >= cur.lo && lastValue <= cur.hi ? [{ value: lastValue, look: 'ring' as const }] : [];
+  const marked = solved || stuck;
+  const rightDot = marked ? [{ value: cur.kind === 'near' || cur.kind === 'tens' ? cur.answer : cur.n, label: String(cur.kind === 'near' || cur.kind === 'tens' ? cur.answer : cur.n), tone: 'landmark' as const }] : [];
+  const arrow = cur.kind === 'read' && !solved ? [{ value: cur.n, look: 'arrow' as const }] : [];
+  const mark = cur.kind === 'tens' || cur.kind === 'near' ? [{ value: cur.n, label: String(cur.n) }] : [];
   // From "Let's look together" on, the reason is drawn on the line and stays for the rest of the go.
-  const reason = (gs.phase === 'look' || gs.phase === 'redo') && !solved ? reasonFor(go, lastValue) : null;
-  const points: LinePoint[] = reason ? reason.points : [...arrow, ...mark, ...ringAt, ...rightDot];
+  // The sister has none until the child taps it wrong.
+  const reason = (gs.phase === 'look' || gs.phase === 'redo') && !solved && (!sis || sis.wrong !== null) ? reasonFor(cur, lastValue) : null;
+  const points: LinePoint[] = reason ? [...reason.points, ...(stuck && cur.kind !== 'place' ? rightDot : [])] : [...arrow, ...mark, ...ringAt, ...rightDot];
   const arcs = reason ? reason.arcs : [];
   const bandMarks: Landmark[] = pic.band ? pic.band.map((value) => ({ value })) : [];
   const lookMarks: Landmark[] = look && go.kind === 'place' ? lookMarksFor(go, look.filled) : [];
-  const lineProps = lineFor(go, seen, points, [...bandMarks, ...lookMarks], arcs, gs.phase === 'look' || gs.phase === 'redo' || solved);
-  const label = go.kind === 'place' ? `A branch from ${go.lens ? go.lens.lo : 0} to ${go.lens ? go.lens.hi : go.max}. Tap where ${go.n} goes.` : go.kind === 'read' ? `A branch from 0 to ${go.max} with an arrow at a number.` : `A branch from 0 to ${go.max}.`;
-  const canTapLine = go.kind === 'place' && phase === 'ask' && gs.phase !== 'look';
-  const cards = phase === 'ask' ? pic.choices : go.choices;
+  const lineProps = lineFor(cur, seen, points, [...bandMarks, ...lookMarks], arcs, gs.phase === 'look' || gs.phase === 'redo' || solved);
+  const label = cur.kind === 'place' ? `A branch from ${cur.lens ? cur.lens.lo : 0} to ${cur.lens ? cur.lens.hi : cur.max}. Tap where ${cur.n} goes.` : cur.kind === 'read' ? `A branch from 0 to ${cur.max} with an arrow at a number.` : `A branch from 0 to ${cur.max}.`;
+  const canTapLine = cur.kind === 'place' && phase === 'ask' && gs.phase !== 'look';
+  const cards = phase === 'ask' ? pic.choices : cur.choices;
 
   const picture = (
-    <NumberLine {...lineProps} label={label} onPick={canTapLine ? (v) => pick(permilleOf(go, v)) : undefined} pickOn={go.lens ? 'lens' : 'line'} className="pg-line" />
+    <NumberLine {...lineProps} label={label} onPick={canTapLine ? (v) => pick(permilleOf(cur, v)) : undefined} pickOn={cur.lens ? 'lens' : 'line'} className="pg-line" />
   );
 
   if (demoing) {
@@ -262,19 +320,19 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
 
   return (
     <div className={`pg-play pg-scene--${scenery}`} style={sceneStyle(scenery)}>
-      <h2 className="pg-sr" tabIndex={-1} ref={heading}>{go.kind === 'place' ? WORDS.tapLine : WORDS.pickCard}</h2>
+      <h2 className="pg-sr" tabIndex={-1} ref={heading}>{cur.kind === 'place' ? WORDS.tapLine : WORDS.pickCard}</h2>
       <div className="pg-top">
         <div className="pg-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
           {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
             <span key={i} className={i < made ? 'pg-pip pg-pip--done' : 'pg-pip'} />
           ))}
         </div>
-        <HearAgain prefix="pg" label={WORDS.hearAgain} onHear={() => say(askLine(go))} />
+        <HearAgain prefix="pg" label={WORDS.hearAgain} onHear={() => say(askLine(cur))} />
       </div>
 
-      <div className="pg-stage" key={at}>
+      <div className="pg-stage" key={`${at}${sis ? 's' : ''}`}>
         <span className="pg-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
-        <p className="pg-ask" aria-live="polite">{askLine(go)}</p>
+        <p className="pg-ask" aria-live="polite">{askLine(cur)}</p>
         <div className={`pg-branch${canTapLine ? ' pg-branch--tap' : ''}`}>
           {picture}
           {guideHand.pointing && canTapLine && <PointingHand prefix="pg" />}
@@ -291,17 +349,24 @@ export function Goes({ guided = false, round, scenery, friend, sound, say, onDon
         {gs.phase === 'look' && look && (
           <LookTogether prefix="pg" title={WORDS.lookTitle} picture={null} line={lookLine(go)} skipLabel={WORDS.skip} canSkip={look.canSkip} onSkip={skip} />
         )}
-        {gs.phase === 'redo' && (tapped.length <= tapsAtLook || !lastSlip ? <NowYouTry prefix="pg" line={WORDS.nowYouTry} /> : <ShowWhy prefix="pg" tapKey={whyTap} picture={null} line={slipText} />)}
+        {gs.phase === 'redo' &&
+          (sis ? (
+            sis.wrong === null ? <NowYouTry prefix="pg" line={WORDS.nowYouTry} /> : <ShowWhy prefix="pg" tapKey={whyTap} picture={null} line={slipText} />
+          ) : stuck && (tapped.length <= tapsAtLook || !lastSlip) ? null : tapped.length <= tapsAtLook || !lastSlip ? (
+            <NowYouTry prefix="pg" line={WORDS.nowYouTry} />
+          ) : (
+            <ShowWhy prefix="pg" tapKey={whyTap} picture={null} line={slipText} />
+          ))}
       </div>
 
-      {go.kind !== 'place' && (
-        <div className={`pg-cards pg-cards--${go.kind}`} role="group" aria-label={WORDS.pickCard}>
+      {cur.kind !== 'place' && (
+        <div className={`pg-cards pg-cards--${cur.kind}`} role="group" aria-label={WORDS.pickCard}>
           {cards.map((n) => (
             <button
-              key={`${at}-${n}`}
+              key={`${at}${sis ? 's' : ''}-${n}`}
               type="button"
               disabled={gs.phase === 'look'}
-              className={`pg-choice${wobble === n ? ' pg-choice--wobble' : ''}${solved && n === go.answer ? ' pg-choice--right' : ''}${solved && n !== go.answer ? ' pg-choice--off' : ''}`}
+              className={`pg-choice${wobble === n ? ' pg-choice--wobble' : ''}${marked && n === cur.answer ? ' pg-choice--right' : ''}${solved && n !== cur.answer ? ' pg-choice--off' : ''}`}
               onClick={() => pick(n)}
               aria-label={String(n)}
             >

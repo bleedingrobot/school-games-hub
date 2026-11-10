@@ -1904,7 +1904,11 @@ function wrongCards(key, n, answer, dir, random) {
 }
 /** A go made again from its plan, with its cards fixed by the seed. Null when the plan isn't one the game could make. */
 function showGo(round, index, plan) {
-	if (!KEYS.includes(plan.key) || !isLevel(plan.l) || kindOfKey(plan.key) !== plan.kind) return null;
+	return KEYS.includes(plan.key) ? makeGo(round, index, plan) : null;
+}
+/** A go from any key of a family (the sister of a go may be a number the game does not ask on its own). */
+function makeGo(round, index, plan) {
+	if (!isLevel(plan.l) || kindOfKey(plan.key) !== plan.kind) return null;
 	const n = keyNumber(plan.key);
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
 	random();

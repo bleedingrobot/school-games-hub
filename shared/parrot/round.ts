@@ -12,6 +12,7 @@ import type { FactStats } from '../maths/leitner';
 import { atMostShareTell, sharingTell, type Wrong } from '../kit/mistakes';
 import { helpWithSetting, type HelpSetting, type KindLevels } from '../kit/help';
 import { seeded } from '../seededRandom';
+import { sisterNumber } from '../kit/sister';
 import { ALL_KEYS, KEYS, type Kind } from '../maths/skillPacks/equalsKeys';
 import { GOES_PER_ROUND, KNOWN_BONDS, KNOWN_START, REVIEW_GOES, TOP_LEVEL, type HelpLevel, type Step } from './config';
 
@@ -211,7 +212,13 @@ const layoutParts = (v: Layout, a: number, b: number): string[] =>
 
 /** A go made again from its plan, with its wrong cards fixed by the seed. Null if the plan isn't one this game makes. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
-  if (!ALL_KEYS.includes(plan.key) || ![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
+  if (!ALL_KEYS.includes(plan.key)) return null;
+  return buildGo(round, index, plan);
+}
+
+/** A go made from any well-formed key (the server only ever replays keys from ALL_KEYS, through `showGo`). */
+function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+  if (![0, 1, 2, 3].includes(plan.v) || !isLevel(plan.l)) return null;
   const kind = kindOfKey(plan.key)!;
   if (plan.v >= layoutsCount(kind)) return null;
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
@@ -323,4 +330,41 @@ export function redoCards(go: Pick<Go, 'choices' | 'answer'>, tapped: readonly n
   const wrong = go.choices.filter((c) => c !== go.answer);
   const other = nearest(wrong.filter((c) => !tapped.includes(c))) ?? nearest(wrong);
   return go.choices.filter((c) => c === go.answer || c === other);
+}
+
+// ---------------------------------------------------------------- "Now you try": a sister go
+
+/**
+ * The go for "Now you try": the same key kind, layout and help level as `go`, with one of its numbers moved by 1 or 2 (sisterNumber),
+ * built the way every go is built so its cards and answer agree. It prefers an answer that is neither the original answer nor one
+ * of the original cards. The key is always one of ALL_KEYS (so every line it says already has a voice clip). Null when no number fits (the game then asks the old go again). The sister is never saved or sent.
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const n = nums(go.key);
+  const base = (round.seed + 104729 * (index + 1)) % MAX_SEED;
+  const order = shuffle(n.map((_, i) => i), seeded(base));
+  const found: Go[] = [];
+  for (const i of order) {
+    const avoid: number[] = [];
+    for (let t = 0; t < 4; t++) {
+      const s = sisterNumber(n[i], base + 31 * i + t, { min: 1, max: 20, avoid });
+      if (s === null) break;
+      avoid.push(s);
+      let at = 0;
+      const key = go.key.replace(/\d+/g, (m) => (at++ === i ? String(s) : m));
+      if (!ALL_KEYS.includes(key)) continue;
+      const made = buildGo(round, GOES_PER_ROUND + index, { key, v: go.v, l: go.l });
+      if (made && made.kind === go.kind) found.push(made);
+    }
+  }
+  const fresh = (g: Go) => g.answer !== go.answer;
+  const near = found.find((g) => fresh(g) && (go.kind === 'tf' || !go.choices.includes(g.answer))) ?? found.find(fresh);
+  if (near) return near;
+  // No single number fits: any key of the same kind (so it already has its voice clips) whose numbers are each within 3 of the original, with another answer.
+  const close = shuffle(KEYS[go.kind].filter((k) => k !== go.key && nums(k).length === n.length && nums(k).every((x, i) => Math.abs(x - n[i]) <= 3)), seeded(base + 1));
+  for (const key of close) {
+    const made = buildGo(round, GOES_PER_ROUND + index, { key, v: go.v, l: go.l });
+    if (made && fresh(made)) return made;
+  }
+  return go.kind === 'tf' ? found[0] ?? null : null;
 }

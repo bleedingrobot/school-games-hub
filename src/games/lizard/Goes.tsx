@@ -8,7 +8,8 @@
  *
  * Each go comes with its help level from the server: 5 is a labelled mat with a count under each place, down to 0 numbers only
  * (a Peek brings the bundles back). A wrong try shows why (ShowWhy), a second one is "Let's look together" (LookTogether, the
- * mat labelled with every count), then "Now you try". The answer is never shown or said before the child has found it. Only the
+ * mat labelled with every count), then "Now you try one like it" (a sister go: the same key with its number moved by 1 or 2, never sent or saved; a wrong
+ * tap on it shows why once and marks the original's right answer). The answer is never shown or said before the child has found it. Only the
  * tries are sent; the server replays them.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -26,7 +27,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { MAX_ONES } from '../../../shared/lizard/config';
 import { tapRight, type Tap } from '../../../shared/lizard/play';
 import type { Friend as FriendName } from '../../../shared/lizard/progress';
-import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, type Go, type Mat, type Round } from '../../../shared/lizard/round';
+import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, sisterGo, type Go, type Mat, type Round } from '../../../shared/lizard/round';
 import { playSound } from '../sounds';
 import { Bundle, Friend, Raft, Stick, sceneStyle, type Pose, type Scenery } from './art';
 import { DEMO_STEPS, demoMat, type DemoKind, WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
@@ -176,6 +177,11 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   const [lastTried, setLastTried] = useState<Mat | null>(null);
   const [shown, setShown] = useState<{ mat: Mat; line: string; picked?: number } | null>(null);
   const [held, setHeld] = useState(false);
+  /** "Now you try one like it": a local sister of the go (never sent). Null on the go itself. */
+  const [sister, setSister] = useState<Go | null>(null);
+  /** The sister was tapped wrong: the why shows once, then the go itself comes back with its right answer marked. */
+  const [sisterMissed, setSisterMissed] = useState(false);
+  const [marked, setMarked] = useState(false);
   // Three goes in a row with a wrong first try bring the full picture back for the rest of the round (not saved).
   const [struggle, setStruggle] = useState(false);
   const run = useRef(0);
@@ -195,7 +201,8 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   const { look, start: startLook, skip } = useLookTogether(say);
   const guideHand = useGuidedFirstGo(guided && at === 0, GUIDE_MS);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = sister ?? base;
   const cardGo = go.choices.length > 0;
   const wrongs = gs.wrong;
   const pic = pictureFor(go, wrongs, tapped, struggle);
@@ -276,6 +283,9 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
       setLastTried(null);
       setShown(null);
       setHeld(false);
+      setSister(null);
+      setSisterMissed(false);
+      setMarked(false);
       return;
     }
     setPhase('done');
@@ -283,14 +293,42 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   }
 
   function pick(value: number, line: (value: number) => LineKey) {
-    if (phase !== 'ask' || gs.phase === 'look') return;
+    if (phase !== 'ask' || gs.phase === 'look' || sisterMissed) return;
     tappedYet.current = true;
     guideHand.stop();
     const now = Date.now();
-    const next = [...taps, { pick: value, ms: now - since.current }];
+    if (sister && !tapRight(sister, value)) {
+      // A wrong tap on the sister stays here: nothing is saved. It shows why once, then the go itself comes back with its right answer marked.
+      const key = line(value);
+      setSisterMissed(true);
+      setWobble(value);
+      setShake(true);
+      if (sound) playSound('tap');
+      later(WOBBLE_MS, () => {
+        setWobble(null);
+        setShake(false);
+      });
+      setShown({ mat: cardGo ? matOf(value) : mat, line: tryLine(sister, mat, key, value), picked: cardGo ? value : undefined });
+      setWhyTap((n) => n + 1);
+      say(cardGo || key === 'tie' ? WHY_LINES[key] : WORDS.lookAtYours);
+      later(THINK_MS + 600, () => {
+        setSister(null);
+        setSisterMissed(false);
+        setMarked(true);
+        setShown(null);
+        setLastTried(null);
+        setWobble(null);
+        setMat(cardGo ? base.from : targetMat(base));
+        since.current = Date.now();
+      });
+      return;
+    }
+    // Right on the sister counts as the go's own right pick: the saved taps never hold the sister's numbers.
+    const sent = sister ? base.answer : value;
+    const next = [...taps, { pick: sent, ms: now - since.current }];
     since.current = now;
     setTaps(next);
-    if (!tapRight(go, value)) {
+    if (!sister && !tapRight(go, value)) {
       const state = stepGo(gs, 'wrong');
       setGs(state);
       setTapped((t) => [...t, value]);
@@ -312,9 +350,13 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
       if (state.phase === 'look') {
         startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => {
             setGs((s) => stepGo(s, 'lookDone'));
-            if (!cardGo) setMat(go.from);
+            const sis = sisterGo(round, at, base);
+            setSister(sis);
+            setMat((sis ?? base).from);
             setLastTried(null);
             setShown(null);
+            since.current = Date.now();
+            if (sis) say(WORDS.nowYouTry, () => say(askLine(sis)));
           },
         });
       } else say(cardGo || key === 'tie' ? WHY_LINES[key] : WORDS.lookAtYours);
@@ -338,7 +380,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
 
   // ----- the mat's buttons
   const changeMat = (f: (m: Mat) => Mat) => {
-    if (solved || gs.phase === 'look') return;
+    if (solved || gs.phase === 'look' || sisterMissed) return;
     tappedYet.current = true;
     guideHand.stop();
     setHeld(false);
@@ -375,7 +417,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mat.o]);
-  const sendable = !solved && gs.phase !== 'look' && !held && !matsAlike(mat, go.from) && !(lastTried && matsAlike(mat, lastTried));
+  const sendable = !solved && gs.phase !== 'look' && !sisterMissed && !held && !matsAlike(mat, go.from) && !(lastTried && matsAlike(mat, lastTried));
 
   if (demoing) {
     const mat = demoMat(introKind, demo.step);
@@ -468,7 +510,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
         )}
       </div>
 
-      {(gs.phase === 'why' || inRedoTry) && shown && (
+      {(gs.phase === 'why' || inRedoTry || sisterMissed) && shown && (
         <ShowWhy
           prefix="lz"
           tapKey={whyTap}
@@ -487,7 +529,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
           onSkip={skip}
         />
       )}
-      {gs.phase === 'redo' && !inRedoTry && <NowYouTry prefix="lz" line={WORDS.nowYouTry} />}
+      {gs.phase === 'redo' && !inRedoTry && !sisterMissed && !marked && <NowYouTry prefix="lz" line={WORDS.nowYouTry} />}
 
       {cardGo && (
         <div className="lz-cards" role="group" aria-label={WORDS.pickCard}>
@@ -495,8 +537,8 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
             <button
               key={`${at}-${n}`}
               type="button"
-              disabled={gs.phase === 'look'}
-              className={`lz-choice${wobble === n ? ' lz-choice--wobble' : ''}${solved && n === go.answer ? ' lz-choice--right' : ''}${solved && n !== go.answer ? ' lz-choice--off' : ''}`}
+              disabled={gs.phase === 'look' || sisterMissed}
+              className={`lz-choice${wobble === n ? ' lz-choice--wobble' : ''}${(solved || marked) && n === go.answer ? ' lz-choice--right' : ''}${solved && n !== go.answer ? ' lz-choice--off' : ''}`}
               onClick={() => pickCard(n)}
               aria-label={String(n)}
             >

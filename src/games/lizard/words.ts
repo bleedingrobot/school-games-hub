@@ -64,6 +64,6 @@ export const WORDS = {
   voiceOff: 'Voice off',
   prizesWon: (n: number) => `${n} Golden Raft${n === 1 ? '' : 's'}`,
   lookTitle: 'Let’s look together.',
-  nowYouTry: 'Now you try.',
+  nowYouTry: 'Now you try one like it.',
   skip: 'Skip',
 } as const;

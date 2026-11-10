@@ -13,6 +13,7 @@
 import { EARLY_FACTS } from '../maths/skillPacks/earlyFacts';
 import type { FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
+import { sisterNumber } from '../kit/sister';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type KindLevels, type Place as KitPlace } from '../kit/help';
 import * as C from './config';
@@ -271,7 +272,12 @@ function wrongCards(key: string, n: number, answer: number, dir: 1 | -1, random:
 
 /** A go made again from its plan, with its cards fixed by the seed. Null when the plan isn't one the game could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
-  if (!KEYS.includes(plan.key) || !isLevel(plan.l) || kindOfKey(plan.key) !== plan.kind) return null;
+  return KEYS.includes(plan.key) ? makeGo(round, index, plan) : null;
+}
+
+/** A go from any key of a family (the sister of a go may be a number the game does not ask on its own). */
+function makeGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+  if (!isLevel(plan.l) || kindOfKey(plan.key) !== plan.kind) return null;
   const n = keyNumber(plan.key);
   const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
   random(); random();
@@ -287,6 +293,38 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   if (wrongs.length < C.WRONG_CARDS) return null;
   const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
   return { ...base, answer, dir, unit, choices, wrongs };
+}
+
+/** Same shape: the same number of digits, and a zero in the tens and in the ones place only where the other has one. */
+export const sameShape = (a: number, b: number): boolean =>
+  String(a).length === String(b).length && (Math.floor(a / 10) % 10 === 0) === (Math.floor(b / 10) % 10 === 0) && (a % 10 === 0) === (b % 10 === 0);
+
+/**
+ * The sister of a go, for "Now you try one like it": the same key family (so the same kind of go and picture) with its number moved
+ * by 1 or 2, inside the family's own range and with the same shape (a round number stays out: no sister), built by `makeGo` so its
+ * cards are its own. For card goes the sister avoids the original answer and cards where it can. Null when no number fits (every
+ * tens-only, zero and round-number key): the screen then goes back to the same go. The sister is never sent or saved.
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const prefix = go.key.replace(/\d+$/, '');
+  const nums = KEYS.filter((k) => k.startsWith(prefix)).map(keyNumber);
+  if (nums.length < 2) return null;
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  const avoid: number[] = [];
+  for (let x = min; x <= max; x++) if (!sameShape(x, go.n)) avoid.push(x);
+  const seen = new Set([go.answer, ...go.choices]);
+  let loose: Go | null = null;
+  for (let tries = 0; tries < 4; tries++) {
+    const n = sisterNumber(go.n, (round.seed + 31 * (index + 1) + tries) % MAX_SEED, { min, max, avoid });
+    if (n === null) break;
+    const made = makeGo(round, index + C.GOES_PER_ROUND, { key: prefix + n, kind: go.kind, l: go.l });
+    avoid.push(n);
+    if (!made || made.answer === go.answer) continue;
+    if (!made.choices.length || (!seen.has(made.answer) && made.choices.every((c) => c !== go.answer))) return made;
+    loose ??= made;
+  }
+  return loose;
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the game can't make. */

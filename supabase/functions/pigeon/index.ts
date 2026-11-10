@@ -1868,7 +1868,12 @@ function toleranceOf(key, lo, hi, lens) {
 }
 /** A go made again from its plan, with its cards fixed by the seed. Null when the plan isn't one the game could make. */
 function showGo(round, index, plan) {
-	if (!KEYS.includes(plan.key) || !isLevel(plan.l)) return null;
+	if (!KEYS.includes(plan.key)) return null;
+	return buildGo(round, index, plan);
+}
+/** The go-building code behind `showGo`, without the check that the key is one the game asks (a sister go's key is made, see `sisterGo`). */
+function buildGo(round, index, plan) {
+	if (!isLevel(plan.l) || !kindOfKey(plan.key)) return null;
 	const fam = kindOfKey(plan.key);
 	if (kindFor(plan.key) !== plan.kind && !(fam === "zoom" && ["place", "read"].includes(plan.kind))) return null;
 	const n = keyNumber(plan.key);

@@ -4,8 +4,8 @@
   "text": "Let’s look together."
  },
  {
-  "slug": "now-you-try",
-  "text": "Now you try."
+  "slug": "now-you-try-one-like-it",
+  "text": "Now you try one like it."
  },
  {
   "slug": "one-for-each-row",
@@ -18,6 +18,10 @@
  {
   "slug": "count-one-row-you-can-see-then-jump-the-same-all-the-way-down",
   "text": "Count one row you can see. Then jump the same all the way down."
+ },
+ {
+  "slug": "now-you-try",
+  "text": "Now you try."
  },
  {
   "slug": "watch-share-the-shoots-into-equal-rows",

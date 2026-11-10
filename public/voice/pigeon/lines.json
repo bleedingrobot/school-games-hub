@@ -8,8 +8,8 @@
   "text": "Let’s look together."
  },
  {
-  "slug": "now-you-try",
-  "text": "Now you try."
+  "slug": "now-you-try-one-like-it",
+  "text": "Now you try one like it."
  },
  {
   "slug": "watch-some-numbers-are-in-a-tiny-space",
@@ -1378,6 +1378,1750 @@
  {
   "slug": "count-how-far-950-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
   "text": "Count how far 950 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "where-does-12-go-on-the-branch",
+  "text": "Where does 12 go on the branch?"
+ },
+ {
+  "slug": "12-is-10-and-2-more-count-the-jumps",
+  "text": "12 is 10 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-13-go-on-the-branch",
+  "text": "Where does 13 go on the branch?"
+ },
+ {
+  "slug": "13-is-10-and-3-more-count-the-jumps",
+  "text": "13 is 10 and 3 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-15-go-on-the-branch",
+  "text": "Where does 15 go on the branch?"
+ },
+ {
+  "slug": "15-is-10-and-5-more-count-the-jumps",
+  "text": "15 is 10 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-16-go-on-the-branch",
+  "text": "Where does 16 go on the branch?"
+ },
+ {
+  "slug": "16-is-10-and-6-more-count-the-jumps",
+  "text": "16 is 10 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-17-go-on-the-branch",
+  "text": "Where does 17 go on the branch?"
+ },
+ {
+  "slug": "17-is-10-and-7-more-count-the-jumps",
+  "text": "17 is 10 and 7 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-19-go-on-the-branch",
+  "text": "Where does 19 go on the branch?"
+ },
+ {
+  "slug": "19-is-10-and-9-more-count-the-jumps",
+  "text": "19 is 10 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-21-go-on-the-branch",
+  "text": "Where does 21 go on the branch?"
+ },
+ {
+  "slug": "21-is-20-and-1-more-count-the-jumps",
+  "text": "21 is 20 and 1 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-22-go-on-the-branch",
+  "text": "Where does 22 go on the branch?"
+ },
+ {
+  "slug": "22-is-20-and-2-more-count-the-jumps",
+  "text": "22 is 20 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-24-go-on-the-branch",
+  "text": "Where does 24 go on the branch?"
+ },
+ {
+  "slug": "24-is-20-and-4-more-count-the-jumps",
+  "text": "24 is 20 and 4 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-25-go-on-the-branch",
+  "text": "Where does 25 go on the branch?"
+ },
+ {
+  "slug": "25-is-20-and-5-more-count-the-jumps",
+  "text": "25 is 20 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-26-go-on-the-branch",
+  "text": "Where does 26 go on the branch?"
+ },
+ {
+  "slug": "26-is-20-and-6-more-count-the-jumps",
+  "text": "26 is 20 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-28-go-on-the-branch",
+  "text": "Where does 28 go on the branch?"
+ },
+ {
+  "slug": "28-is-20-and-8-more-count-the-jumps",
+  "text": "28 is 20 and 8 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-29-go-on-the-branch",
+  "text": "Where does 29 go on the branch?"
+ },
+ {
+  "slug": "29-is-20-and-9-more-count-the-jumps",
+  "text": "29 is 20 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-31-go-on-the-branch",
+  "text": "Where does 31 go on the branch?"
+ },
+ {
+  "slug": "31-is-30-and-1-more-count-the-jumps",
+  "text": "31 is 30 and 1 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-33-go-on-the-branch",
+  "text": "Where does 33 go on the branch?"
+ },
+ {
+  "slug": "33-is-30-and-3-more-count-the-jumps",
+  "text": "33 is 30 and 3 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-34-go-on-the-branch",
+  "text": "Where does 34 go on the branch?"
+ },
+ {
+  "slug": "34-is-30-and-4-more-count-the-jumps",
+  "text": "34 is 30 and 4 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-35-go-on-the-branch",
+  "text": "Where does 35 go on the branch?"
+ },
+ {
+  "slug": "35-is-30-and-5-more-count-the-jumps",
+  "text": "35 is 30 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-37-go-on-the-branch",
+  "text": "Where does 37 go on the branch?"
+ },
+ {
+  "slug": "37-is-30-and-7-more-count-the-jumps",
+  "text": "37 is 30 and 7 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-38-go-on-the-branch",
+  "text": "Where does 38 go on the branch?"
+ },
+ {
+  "slug": "38-is-30-and-8-more-count-the-jumps",
+  "text": "38 is 30 and 8 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-39-go-on-the-branch",
+  "text": "Where does 39 go on the branch?"
+ },
+ {
+  "slug": "39-is-30-and-9-more-count-the-jumps",
+  "text": "39 is 30 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-51-go-on-the-branch",
+  "text": "Where does 51 go on the branch?"
+ },
+ {
+  "slug": "51-is-50-and-1-more-count-the-jumps",
+  "text": "51 is 50 and 1 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-52-go-on-the-branch",
+  "text": "Where does 52 go on the branch?"
+ },
+ {
+  "slug": "52-is-50-and-2-more-count-the-jumps",
+  "text": "52 is 50 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-53-go-on-the-branch",
+  "text": "Where does 53 go on the branch?"
+ },
+ {
+  "slug": "53-is-50-and-3-more-count-the-jumps",
+  "text": "53 is 50 and 3 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-55-go-on-the-branch",
+  "text": "Where does 55 go on the branch?"
+ },
+ {
+  "slug": "55-is-50-and-5-more-count-the-jumps",
+  "text": "55 is 50 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-56-go-on-the-branch",
+  "text": "Where does 56 go on the branch?"
+ },
+ {
+  "slug": "56-is-50-and-6-more-count-the-jumps",
+  "text": "56 is 50 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-57-go-on-the-branch",
+  "text": "Where does 57 go on the branch?"
+ },
+ {
+  "slug": "57-is-50-and-7-more-count-the-jumps",
+  "text": "57 is 50 and 7 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-59-go-on-the-branch",
+  "text": "Where does 59 go on the branch?"
+ },
+ {
+  "slug": "59-is-50-and-9-more-count-the-jumps",
+  "text": "59 is 50 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-61-go-on-the-branch",
+  "text": "Where does 61 go on the branch?"
+ },
+ {
+  "slug": "61-is-60-and-1-more-count-the-jumps",
+  "text": "61 is 60 and 1 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-62-go-on-the-branch",
+  "text": "Where does 62 go on the branch?"
+ },
+ {
+  "slug": "62-is-60-and-2-more-count-the-jumps",
+  "text": "62 is 60 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-64-go-on-the-branch",
+  "text": "Where does 64 go on the branch?"
+ },
+ {
+  "slug": "64-is-60-and-4-more-count-the-jumps",
+  "text": "64 is 60 and 4 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-65-go-on-the-branch",
+  "text": "Where does 65 go on the branch?"
+ },
+ {
+  "slug": "65-is-60-and-5-more-count-the-jumps",
+  "text": "65 is 60 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-66-go-on-the-branch",
+  "text": "Where does 66 go on the branch?"
+ },
+ {
+  "slug": "66-is-60-and-6-more-count-the-jumps",
+  "text": "66 is 60 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-68-go-on-the-branch",
+  "text": "Where does 68 go on the branch?"
+ },
+ {
+  "slug": "68-is-60-and-8-more-count-the-jumps",
+  "text": "68 is 60 and 8 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-69-go-on-the-branch",
+  "text": "Where does 69 go on the branch?"
+ },
+ {
+  "slug": "69-is-60-and-9-more-count-the-jumps",
+  "text": "69 is 60 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-82-go-on-the-branch",
+  "text": "Where does 82 go on the branch?"
+ },
+ {
+  "slug": "82-is-80-and-2-more-count-the-jumps",
+  "text": "82 is 80 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-83-go-on-the-branch",
+  "text": "Where does 83 go on the branch?"
+ },
+ {
+  "slug": "83-is-80-and-3-more-count-the-jumps",
+  "text": "83 is 80 and 3 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-84-go-on-the-branch",
+  "text": "Where does 84 go on the branch?"
+ },
+ {
+  "slug": "84-is-80-and-4-more-count-the-jumps",
+  "text": "84 is 80 and 4 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-86-go-on-the-branch",
+  "text": "Where does 86 go on the branch?"
+ },
+ {
+  "slug": "86-is-80-and-6-more-count-the-jumps",
+  "text": "86 is 80 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-87-go-on-the-branch",
+  "text": "Where does 87 go on the branch?"
+ },
+ {
+  "slug": "87-is-80-and-7-more-count-the-jumps",
+  "text": "87 is 80 and 7 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-88-go-on-the-branch",
+  "text": "Where does 88 go on the branch?"
+ },
+ {
+  "slug": "88-is-80-and-8-more-count-the-jumps",
+  "text": "88 is 80 and 8 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-91-go-on-the-branch",
+  "text": "Where does 91 go on the branch?"
+ },
+ {
+  "slug": "91-is-90-and-1-more-count-the-jumps",
+  "text": "91 is 90 and 1 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-92-go-on-the-branch",
+  "text": "Where does 92 go on the branch?"
+ },
+ {
+  "slug": "92-is-90-and-2-more-count-the-jumps",
+  "text": "92 is 90 and 2 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-93-go-on-the-branch",
+  "text": "Where does 93 go on the branch?"
+ },
+ {
+  "slug": "93-is-90-and-3-more-count-the-jumps",
+  "text": "93 is 90 and 3 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-95-go-on-the-branch",
+  "text": "Where does 95 go on the branch?"
+ },
+ {
+  "slug": "95-is-90-and-5-more-count-the-jumps",
+  "text": "95 is 90 and 5 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-96-go-on-the-branch",
+  "text": "Where does 96 go on the branch?"
+ },
+ {
+  "slug": "96-is-90-and-6-more-count-the-jumps",
+  "text": "96 is 90 and 6 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-98-go-on-the-branch",
+  "text": "Where does 98 go on the branch?"
+ },
+ {
+  "slug": "98-is-90-and-8-more-count-the-jumps",
+  "text": "98 is 90 and 8 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-99-go-on-the-branch",
+  "text": "Where does 99 go on the branch?"
+ },
+ {
+  "slug": "99-is-90-and-9-more-count-the-jumps",
+  "text": "99 is 90 and 9 more. Count the jumps."
+ },
+ {
+  "slug": "what-is-ten-more-than-12",
+  "text": "What is ten more than 12?"
+ },
+ {
+  "slug": "what-is-ten-more-than-13",
+  "text": "What is ten more than 13?"
+ },
+ {
+  "slug": "what-is-ten-more-than-15",
+  "text": "What is ten more than 15?"
+ },
+ {
+  "slug": "what-is-ten-more-than-16",
+  "text": "What is ten more than 16?"
+ },
+ {
+  "slug": "what-is-ten-more-than-18",
+  "text": "What is ten more than 18?"
+ },
+ {
+  "slug": "what-is-ten-more-than-19",
+  "text": "What is ten more than 19?"
+ },
+ {
+  "slug": "what-is-ten-more-than-21",
+  "text": "What is ten more than 21?"
+ },
+ {
+  "slug": "what-is-ten-more-than-22",
+  "text": "What is ten more than 22?"
+ },
+ {
+  "slug": "what-is-ten-more-than-25",
+  "text": "What is ten more than 25?"
+ },
+ {
+  "slug": "what-is-ten-more-than-26",
+  "text": "What is ten more than 26?"
+ },
+ {
+  "slug": "what-is-ten-more-than-28",
+  "text": "What is ten more than 28?"
+ },
+ {
+  "slug": "what-is-ten-more-than-29",
+  "text": "What is ten more than 29?"
+ },
+ {
+  "slug": "what-is-ten-more-than-33",
+  "text": "What is ten more than 33?"
+ },
+ {
+  "slug": "what-is-ten-more-than-34",
+  "text": "What is ten more than 34?"
+ },
+ {
+  "slug": "what-is-ten-more-than-36",
+  "text": "What is ten more than 36?"
+ },
+ {
+  "slug": "what-is-ten-more-than-37",
+  "text": "What is ten more than 37?"
+ },
+ {
+  "slug": "what-is-ten-more-than-40",
+  "text": "What is ten more than 40?"
+ },
+ {
+  "slug": "what-is-ten-more-than-41",
+  "text": "What is ten more than 41?"
+ },
+ {
+  "slug": "what-is-ten-more-than-43",
+  "text": "What is ten more than 43?"
+ },
+ {
+  "slug": "what-is-ten-more-than-44",
+  "text": "What is ten more than 44?"
+ },
+ {
+  "slug": "what-is-ten-more-than-54",
+  "text": "What is ten more than 54?"
+ },
+ {
+  "slug": "what-is-ten-more-than-55",
+  "text": "What is ten more than 55?"
+ },
+ {
+  "slug": "what-is-ten-more-than-57",
+  "text": "What is ten more than 57?"
+ },
+ {
+  "slug": "what-is-ten-more-than-58",
+  "text": "What is ten more than 58?"
+ },
+ {
+  "slug": "what-is-ten-more-than-61",
+  "text": "What is ten more than 61?"
+ },
+ {
+  "slug": "what-is-ten-more-than-62",
+  "text": "What is ten more than 62?"
+ },
+ {
+  "slug": "what-is-ten-more-than-64",
+  "text": "What is ten more than 64?"
+ },
+ {
+  "slug": "what-is-ten-more-than-65",
+  "text": "What is ten more than 65?"
+ },
+ {
+  "slug": "what-is-ten-more-than-76",
+  "text": "What is ten more than 76?"
+ },
+ {
+  "slug": "what-is-ten-more-than-77",
+  "text": "What is ten more than 77?"
+ },
+ {
+  "slug": "what-is-ten-more-than-79",
+  "text": "What is ten more than 79?"
+ },
+ {
+  "slug": "what-is-ten-more-than-80",
+  "text": "What is ten more than 80?"
+ },
+ {
+  "slug": "what-is-ten-more-than-83",
+  "text": "What is ten more than 83?"
+ },
+ {
+  "slug": "what-is-ten-more-than-84",
+  "text": "What is ten more than 84?"
+ },
+ {
+  "slug": "what-is-ten-more-than-86",
+  "text": "What is ten more than 86?"
+ },
+ {
+  "slug": "what-is-ten-more-than-87",
+  "text": "What is ten more than 87?"
+ },
+ {
+  "slug": "what-is-ten-more-than-88",
+  "text": "What is ten more than 88?"
+ },
+ {
+  "slug": "what-is-ten-more-than-89",
+  "text": "What is ten more than 89?"
+ },
+ {
+  "slug": "what-is-ten-less-than-11",
+  "text": "What is ten less than 11?"
+ },
+ {
+  "slug": "what-is-ten-less-than-12",
+  "text": "What is ten less than 12?"
+ },
+ {
+  "slug": "what-is-ten-less-than-17",
+  "text": "What is ten less than 17?"
+ },
+ {
+  "slug": "what-is-ten-less-than-18",
+  "text": "What is ten less than 18?"
+ },
+ {
+  "slug": "what-is-ten-less-than-20",
+  "text": "What is ten less than 20?"
+ },
+ {
+  "slug": "what-is-ten-less-than-21",
+  "text": "What is ten less than 21?"
+ },
+ {
+  "slug": "what-is-ten-less-than-22",
+  "text": "What is ten less than 22?"
+ },
+ {
+  "slug": "what-is-ten-less-than-23",
+  "text": "What is ten less than 23?"
+ },
+ {
+  "slug": "what-is-ten-less-than-25",
+  "text": "What is ten less than 25?"
+ },
+ {
+  "slug": "what-is-ten-less-than-26",
+  "text": "What is ten less than 26?"
+ },
+ {
+  "slug": "what-is-ten-less-than-36",
+  "text": "What is ten less than 36?"
+ },
+ {
+  "slug": "what-is-ten-less-than-37",
+  "text": "What is ten less than 37?"
+ },
+ {
+  "slug": "what-is-ten-less-than-39",
+  "text": "What is ten less than 39?"
+ },
+ {
+  "slug": "what-is-ten-less-than-40",
+  "text": "What is ten less than 40?"
+ },
+ {
+  "slug": "what-is-ten-less-than-45",
+  "text": "What is ten less than 45?"
+ },
+ {
+  "slug": "what-is-ten-less-than-46",
+  "text": "What is ten less than 46?"
+ },
+ {
+  "slug": "what-is-ten-less-than-48",
+  "text": "What is ten less than 48?"
+ },
+ {
+  "slug": "what-is-ten-less-than-49",
+  "text": "What is ten less than 49?"
+ },
+ {
+  "slug": "what-is-ten-less-than-61",
+  "text": "What is ten less than 61?"
+ },
+ {
+  "slug": "what-is-ten-less-than-62",
+  "text": "What is ten less than 62?"
+ },
+ {
+  "slug": "what-is-ten-less-than-64",
+  "text": "What is ten less than 64?"
+ },
+ {
+  "slug": "what-is-ten-less-than-65",
+  "text": "What is ten less than 65?"
+ },
+ {
+  "slug": "what-is-ten-less-than-69",
+  "text": "What is ten less than 69?"
+ },
+ {
+  "slug": "what-is-ten-less-than-70",
+  "text": "What is ten less than 70?"
+ },
+ {
+  "slug": "what-is-ten-less-than-72",
+  "text": "What is ten less than 72?"
+ },
+ {
+  "slug": "what-is-ten-less-than-73",
+  "text": "What is ten less than 73?"
+ },
+ {
+  "slug": "what-is-ten-less-than-84",
+  "text": "What is ten less than 84?"
+ },
+ {
+  "slug": "what-is-ten-less-than-85",
+  "text": "What is ten less than 85?"
+ },
+ {
+  "slug": "what-is-ten-less-than-87",
+  "text": "What is ten less than 87?"
+ },
+ {
+  "slug": "what-is-ten-less-than-88",
+  "text": "What is ten less than 88?"
+ },
+ {
+  "slug": "what-is-ten-less-than-90",
+  "text": "What is ten less than 90?"
+ },
+ {
+  "slug": "what-is-ten-less-than-91",
+  "text": "What is ten less than 91?"
+ },
+ {
+  "slug": "what-is-ten-less-than-93",
+  "text": "What is ten less than 93?"
+ },
+ {
+  "slug": "what-is-ten-less-than-94",
+  "text": "What is ten less than 94?"
+ },
+ {
+  "slug": "what-is-ten-less-than-98",
+  "text": "What is ten less than 98?"
+ },
+ {
+  "slug": "what-is-ten-less-than-99",
+  "text": "What is ten less than 99?"
+ },
+ {
+  "slug": "which-ten-is-2-nearest-to",
+  "text": "Which ten is 2 nearest to?"
+ },
+ {
+  "slug": "count-how-far-2-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 2 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-3-nearest-to",
+  "text": "Which ten is 3 nearest to?"
+ },
+ {
+  "slug": "count-how-far-3-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 3 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-6-nearest-to",
+  "text": "Which ten is 6 nearest to?"
+ },
+ {
+  "slug": "count-how-far-6-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 6 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-7-nearest-to",
+  "text": "Which ten is 7 nearest to?"
+ },
+ {
+  "slug": "count-how-far-7-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 7 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-9-nearest-to",
+  "text": "Which ten is 9 nearest to?"
+ },
+ {
+  "slug": "count-how-far-9-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 9 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-11-nearest-to",
+  "text": "Which ten is 11 nearest to?"
+ },
+ {
+  "slug": "count-how-far-11-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 11 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-13-nearest-to",
+  "text": "Which ten is 13 nearest to?"
+ },
+ {
+  "slug": "count-how-far-13-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 13 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-14-nearest-to",
+  "text": "Which ten is 14 nearest to?"
+ },
+ {
+  "slug": "count-how-far-14-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 14 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-17-nearest-to",
+  "text": "Which ten is 17 nearest to?"
+ },
+ {
+  "slug": "count-how-far-17-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 17 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-18-nearest-to",
+  "text": "Which ten is 18 nearest to?"
+ },
+ {
+  "slug": "count-how-far-18-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 18 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-21-nearest-to",
+  "text": "Which ten is 21 nearest to?"
+ },
+ {
+  "slug": "count-how-far-21-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 21 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-22-nearest-to",
+  "text": "Which ten is 22 nearest to?"
+ },
+ {
+  "slug": "count-how-far-22-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 22 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-24-nearest-to",
+  "text": "Which ten is 24 nearest to?"
+ },
+ {
+  "slug": "count-how-far-24-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 24 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-26-nearest-to",
+  "text": "Which ten is 26 nearest to?"
+ },
+ {
+  "slug": "count-how-far-26-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 26 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-28-nearest-to",
+  "text": "Which ten is 28 nearest to?"
+ },
+ {
+  "slug": "count-how-far-28-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 28 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-29-nearest-to",
+  "text": "Which ten is 29 nearest to?"
+ },
+ {
+  "slug": "count-how-far-29-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 29 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-32-nearest-to",
+  "text": "Which ten is 32 nearest to?"
+ },
+ {
+  "slug": "count-how-far-32-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 32 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-33-nearest-to",
+  "text": "Which ten is 33 nearest to?"
+ },
+ {
+  "slug": "count-how-far-33-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 33 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-36-nearest-to",
+  "text": "Which ten is 36 nearest to?"
+ },
+ {
+  "slug": "count-how-far-36-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 36 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-37-nearest-to",
+  "text": "Which ten is 37 nearest to?"
+ },
+ {
+  "slug": "count-how-far-37-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 37 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-39-nearest-to",
+  "text": "Which ten is 39 nearest to?"
+ },
+ {
+  "slug": "count-how-far-39-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 39 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-41-nearest-to",
+  "text": "Which ten is 41 nearest to?"
+ },
+ {
+  "slug": "count-how-far-41-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 41 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-43-nearest-to",
+  "text": "Which ten is 43 nearest to?"
+ },
+ {
+  "slug": "count-how-far-43-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 43 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-44-nearest-to",
+  "text": "Which ten is 44 nearest to?"
+ },
+ {
+  "slug": "count-how-far-44-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 44 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-47-nearest-to",
+  "text": "Which ten is 47 nearest to?"
+ },
+ {
+  "slug": "count-how-far-47-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 47 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-48-nearest-to",
+  "text": "Which ten is 48 nearest to?"
+ },
+ {
+  "slug": "count-how-far-48-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 48 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-51-nearest-to",
+  "text": "Which ten is 51 nearest to?"
+ },
+ {
+  "slug": "count-how-far-51-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 51 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-52-nearest-to",
+  "text": "Which ten is 52 nearest to?"
+ },
+ {
+  "slug": "count-how-far-52-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 52 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-54-nearest-to",
+  "text": "Which ten is 54 nearest to?"
+ },
+ {
+  "slug": "count-how-far-54-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 54 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-56-nearest-to",
+  "text": "Which ten is 56 nearest to?"
+ },
+ {
+  "slug": "count-how-far-56-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 56 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-58-nearest-to",
+  "text": "Which ten is 58 nearest to?"
+ },
+ {
+  "slug": "count-how-far-58-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 58 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-59-nearest-to",
+  "text": "Which ten is 59 nearest to?"
+ },
+ {
+  "slug": "count-how-far-59-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 59 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-62-nearest-to",
+  "text": "Which ten is 62 nearest to?"
+ },
+ {
+  "slug": "count-how-far-62-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 62 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-63-nearest-to",
+  "text": "Which ten is 63 nearest to?"
+ },
+ {
+  "slug": "count-how-far-63-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 63 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-66-nearest-to",
+  "text": "Which ten is 66 nearest to?"
+ },
+ {
+  "slug": "count-how-far-66-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 66 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-67-nearest-to",
+  "text": "Which ten is 67 nearest to?"
+ },
+ {
+  "slug": "count-how-far-67-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 67 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-69-nearest-to",
+  "text": "Which ten is 69 nearest to?"
+ },
+ {
+  "slug": "count-how-far-69-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 69 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-71-nearest-to",
+  "text": "Which ten is 71 nearest to?"
+ },
+ {
+  "slug": "count-how-far-71-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 71 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-73-nearest-to",
+  "text": "Which ten is 73 nearest to?"
+ },
+ {
+  "slug": "count-how-far-73-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 73 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-74-nearest-to",
+  "text": "Which ten is 74 nearest to?"
+ },
+ {
+  "slug": "count-how-far-74-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 74 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-77-nearest-to",
+  "text": "Which ten is 77 nearest to?"
+ },
+ {
+  "slug": "count-how-far-77-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 77 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-78-nearest-to",
+  "text": "Which ten is 78 nearest to?"
+ },
+ {
+  "slug": "count-how-far-78-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 78 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-81-nearest-to",
+  "text": "Which ten is 81 nearest to?"
+ },
+ {
+  "slug": "count-how-far-81-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 81 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-82-nearest-to",
+  "text": "Which ten is 82 nearest to?"
+ },
+ {
+  "slug": "count-how-far-82-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 82 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-84-nearest-to",
+  "text": "Which ten is 84 nearest to?"
+ },
+ {
+  "slug": "count-how-far-84-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 84 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-86-nearest-to",
+  "text": "Which ten is 86 nearest to?"
+ },
+ {
+  "slug": "count-how-far-86-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 86 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-88-nearest-to",
+  "text": "Which ten is 88 nearest to?"
+ },
+ {
+  "slug": "count-how-far-88-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 88 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-89-nearest-to",
+  "text": "Which ten is 89 nearest to?"
+ },
+ {
+  "slug": "count-how-far-89-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 89 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-92-nearest-to",
+  "text": "Which ten is 92 nearest to?"
+ },
+ {
+  "slug": "count-how-far-92-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 92 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-93-nearest-to",
+  "text": "Which ten is 93 nearest to?"
+ },
+ {
+  "slug": "count-how-far-93-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 93 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "which-ten-is-96-nearest-to",
+  "text": "Which ten is 96 nearest to?"
+ },
+ {
+  "slug": "count-how-far-96-is-from-the-ten-below-and-the-ten-above-the-nearer-one-wins",
+  "text": "Count how far 96 is from the ten below and the ten above. The nearer one wins."
+ },
+ {
+  "slug": "where-does-110-go-on-the-branch",
+  "text": "Where does 110 go on the branch?"
+ },
+ {
+  "slug": "110-is-11-tens-count-the-jumps",
+  "text": "110 is 11 tens. Count the jumps."
+ },
+ {
+  "slug": "120-is-12-tens-count-the-jumps",
+  "text": "120 is 12 tens. Count the jumps."
+ },
+ {
+  "slug": "140-is-14-tens-count-the-jumps",
+  "text": "140 is 14 tens. Count the jumps."
+ },
+ {
+  "slug": "where-does-150-go-on-the-branch",
+  "text": "Where does 150 go on the branch?"
+ },
+ {
+  "slug": "150-is-15-tens-count-the-jumps",
+  "text": "150 is 15 tens. Count the jumps."
+ },
+ {
+  "slug": "where-does-330-go-on-the-branch",
+  "text": "Where does 330 go on the branch?"
+ },
+ {
+  "slug": "330-is-33-tens-count-the-jumps",
+  "text": "330 is 33 tens. Count the jumps."
+ },
+ {
+  "slug": "340-is-34-tens-count-the-jumps",
+  "text": "340 is 34 tens. Count the jumps."
+ },
+ {
+  "slug": "360-is-36-tens-count-the-jumps",
+  "text": "360 is 36 tens. Count the jumps."
+ },
+ {
+  "slug": "where-does-370-go-on-the-branch",
+  "text": "Where does 370 go on the branch?"
+ },
+ {
+  "slug": "370-is-37-tens-count-the-jumps",
+  "text": "370 is 37 tens. Count the jumps."
+ },
+ {
+  "slug": "110-is-100-and-10-more-count-the-jumps",
+  "text": "110 is 100 and 10 more. Count the jumps."
+ },
+ {
+  "slug": "130-is-100-and-30-more-count-the-jumps",
+  "text": "130 is 100 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "150-is-100-and-50-more-count-the-jumps",
+  "text": "150 is 100 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-160-go-on-the-branch",
+  "text": "Where does 160 go on the branch?"
+ },
+ {
+  "slug": "160-is-100-and-60-more-count-the-jumps",
+  "text": "160 is 100 and 60 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-180-go-on-the-branch",
+  "text": "Where does 180 go on the branch?"
+ },
+ {
+  "slug": "180-is-100-and-80-more-count-the-jumps",
+  "text": "180 is 100 and 80 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-190-go-on-the-branch",
+  "text": "Where does 190 go on the branch?"
+ },
+ {
+  "slug": "190-is-100-and-90-more-count-the-jumps",
+  "text": "190 is 100 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-210-go-on-the-branch",
+  "text": "Where does 210 go on the branch?"
+ },
+ {
+  "slug": "210-is-200-and-10-more-count-the-jumps",
+  "text": "210 is 200 and 10 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-220-go-on-the-branch",
+  "text": "Where does 220 go on the branch?"
+ },
+ {
+  "slug": "220-is-200-and-20-more-count-the-jumps",
+  "text": "220 is 200 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-240-go-on-the-branch",
+  "text": "Where does 240 go on the branch?"
+ },
+ {
+  "slug": "240-is-200-and-40-more-count-the-jumps",
+  "text": "240 is 200 and 40 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-260-go-on-the-branch",
+  "text": "Where does 260 go on the branch?"
+ },
+ {
+  "slug": "260-is-200-and-60-more-count-the-jumps",
+  "text": "260 is 200 and 60 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-280-go-on-the-branch",
+  "text": "Where does 280 go on the branch?"
+ },
+ {
+  "slug": "280-is-200-and-80-more-count-the-jumps",
+  "text": "280 is 200 and 80 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-290-go-on-the-branch",
+  "text": "Where does 290 go on the branch?"
+ },
+ {
+  "slug": "290-is-200-and-90-more-count-the-jumps",
+  "text": "290 is 200 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-320-go-on-the-branch",
+  "text": "Where does 320 go on the branch?"
+ },
+ {
+  "slug": "320-is-300-and-20-more-count-the-jumps",
+  "text": "320 is 300 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "330-is-300-and-30-more-count-the-jumps",
+  "text": "330 is 300 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "350-is-300-and-50-more-count-the-jumps",
+  "text": "350 is 300 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "370-is-300-and-70-more-count-the-jumps",
+  "text": "370 is 300 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-380-go-on-the-branch",
+  "text": "Where does 380 go on the branch?"
+ },
+ {
+  "slug": "380-is-300-and-80-more-count-the-jumps",
+  "text": "380 is 300 and 80 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-420-go-on-the-branch",
+  "text": "Where does 420 go on the branch?"
+ },
+ {
+  "slug": "420-is-400-and-20-more-count-the-jumps",
+  "text": "420 is 400 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-430-go-on-the-branch",
+  "text": "Where does 430 go on the branch?"
+ },
+ {
+  "slug": "430-is-400-and-30-more-count-the-jumps",
+  "text": "430 is 400 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-440-go-on-the-branch",
+  "text": "Where does 440 go on the branch?"
+ },
+ {
+  "slug": "440-is-400-and-40-more-count-the-jumps",
+  "text": "440 is 400 and 40 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-460-go-on-the-branch",
+  "text": "Where does 460 go on the branch?"
+ },
+ {
+  "slug": "460-is-400-and-60-more-count-the-jumps",
+  "text": "460 is 400 and 60 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-470-go-on-the-branch",
+  "text": "Where does 470 go on the branch?"
+ },
+ {
+  "slug": "470-is-400-and-70-more-count-the-jumps",
+  "text": "470 is 400 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-490-go-on-the-branch",
+  "text": "Where does 490 go on the branch?"
+ },
+ {
+  "slug": "490-is-400-and-90-more-count-the-jumps",
+  "text": "490 is 400 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-510-go-on-the-branch",
+  "text": "Where does 510 go on the branch?"
+ },
+ {
+  "slug": "510-is-500-and-10-more-count-the-jumps",
+  "text": "510 is 500 and 10 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-530-go-on-the-branch",
+  "text": "Where does 530 go on the branch?"
+ },
+ {
+  "slug": "530-is-500-and-30-more-count-the-jumps",
+  "text": "530 is 500 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-550-go-on-the-branch",
+  "text": "Where does 550 go on the branch?"
+ },
+ {
+  "slug": "550-is-500-and-50-more-count-the-jumps",
+  "text": "550 is 500 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-560-go-on-the-branch",
+  "text": "Where does 560 go on the branch?"
+ },
+ {
+  "slug": "560-is-500-and-60-more-count-the-jumps",
+  "text": "560 is 500 and 60 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-580-go-on-the-branch",
+  "text": "Where does 580 go on the branch?"
+ },
+ {
+  "slug": "580-is-500-and-80-more-count-the-jumps",
+  "text": "580 is 500 and 80 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-590-go-on-the-branch",
+  "text": "Where does 590 go on the branch?"
+ },
+ {
+  "slug": "590-is-500-and-90-more-count-the-jumps",
+  "text": "590 is 500 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-620-go-on-the-branch",
+  "text": "Where does 620 go on the branch?"
+ },
+ {
+  "slug": "620-is-600-and-20-more-count-the-jumps",
+  "text": "620 is 600 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-630-go-on-the-branch",
+  "text": "Where does 630 go on the branch?"
+ },
+ {
+  "slug": "630-is-600-and-30-more-count-the-jumps",
+  "text": "630 is 600 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-650-go-on-the-branch",
+  "text": "Where does 650 go on the branch?"
+ },
+ {
+  "slug": "650-is-600-and-50-more-count-the-jumps",
+  "text": "650 is 600 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-670-go-on-the-branch",
+  "text": "Where does 670 go on the branch?"
+ },
+ {
+  "slug": "670-is-600-and-70-more-count-the-jumps",
+  "text": "670 is 600 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-680-go-on-the-branch",
+  "text": "Where does 680 go on the branch?"
+ },
+ {
+  "slug": "680-is-600-and-80-more-count-the-jumps",
+  "text": "680 is 600 and 80 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-710-go-on-the-branch",
+  "text": "Where does 710 go on the branch?"
+ },
+ {
+  "slug": "710-is-700-and-10-more-count-the-jumps",
+  "text": "710 is 700 and 10 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-730-go-on-the-branch",
+  "text": "Where does 730 go on the branch?"
+ },
+ {
+  "slug": "730-is-700-and-30-more-count-the-jumps",
+  "text": "730 is 700 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-740-go-on-the-branch",
+  "text": "Where does 740 go on the branch?"
+ },
+ {
+  "slug": "740-is-700-and-40-more-count-the-jumps",
+  "text": "740 is 700 and 40 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-760-go-on-the-branch",
+  "text": "Where does 760 go on the branch?"
+ },
+ {
+  "slug": "760-is-700-and-60-more-count-the-jumps",
+  "text": "760 is 700 and 60 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-770-go-on-the-branch",
+  "text": "Where does 770 go on the branch?"
+ },
+ {
+  "slug": "770-is-700-and-70-more-count-the-jumps",
+  "text": "770 is 700 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-790-go-on-the-branch",
+  "text": "Where does 790 go on the branch?"
+ },
+ {
+  "slug": "790-is-700-and-90-more-count-the-jumps",
+  "text": "790 is 700 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-820-go-on-the-branch",
+  "text": "Where does 820 go on the branch?"
+ },
+ {
+  "slug": "820-is-800-and-20-more-count-the-jumps",
+  "text": "820 is 800 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-840-go-on-the-branch",
+  "text": "Where does 840 go on the branch?"
+ },
+ {
+  "slug": "840-is-800-and-40-more-count-the-jumps",
+  "text": "840 is 800 and 40 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-850-go-on-the-branch",
+  "text": "Where does 850 go on the branch?"
+ },
+ {
+  "slug": "850-is-800-and-50-more-count-the-jumps",
+  "text": "850 is 800 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-870-go-on-the-branch",
+  "text": "Where does 870 go on the branch?"
+ },
+ {
+  "slug": "870-is-800-and-70-more-count-the-jumps",
+  "text": "870 is 800 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-890-go-on-the-branch",
+  "text": "Where does 890 go on the branch?"
+ },
+ {
+  "slug": "890-is-800-and-90-more-count-the-jumps",
+  "text": "890 is 800 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-920-go-on-the-branch",
+  "text": "Where does 920 go on the branch?"
+ },
+ {
+  "slug": "920-is-900-and-20-more-count-the-jumps",
+  "text": "920 is 900 and 20 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-930-go-on-the-branch",
+  "text": "Where does 930 go on the branch?"
+ },
+ {
+  "slug": "930-is-900-and-30-more-count-the-jumps",
+  "text": "930 is 900 and 30 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-950-go-on-the-branch",
+  "text": "Where does 950 go on the branch?"
+ },
+ {
+  "slug": "950-is-900-and-50-more-count-the-jumps",
+  "text": "950 is 900 and 50 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-970-go-on-the-branch",
+  "text": "Where does 970 go on the branch?"
+ },
+ {
+  "slug": "970-is-900-and-70-more-count-the-jumps",
+  "text": "970 is 900 and 70 more. Count the jumps."
+ },
+ {
+  "slug": "where-does-990-go-on-the-branch",
+  "text": "Where does 990 go on the branch?"
+ },
+ {
+  "slug": "990-is-900-and-90-more-count-the-jumps",
+  "text": "990 is 900 and 90 more. Count the jumps."
+ },
+ {
+  "slug": "which-hundred-is-110-nearest-to",
+  "text": "Which hundred is 110 nearest to?"
+ },
+ {
+  "slug": "count-how-far-110-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 110 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-120-nearest-to",
+  "text": "Which hundred is 120 nearest to?"
+ },
+ {
+  "slug": "count-how-far-120-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 120 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-140-nearest-to",
+  "text": "Which hundred is 140 nearest to?"
+ },
+ {
+  "slug": "count-how-far-140-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 140 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-210-nearest-to",
+  "text": "Which hundred is 210 nearest to?"
+ },
+ {
+  "slug": "count-how-far-210-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 210 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-230-nearest-to",
+  "text": "Which hundred is 230 nearest to?"
+ },
+ {
+  "slug": "count-how-far-230-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 230 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-240-nearest-to",
+  "text": "Which hundred is 240 nearest to?"
+ },
+ {
+  "slug": "count-how-far-240-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 240 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-320-nearest-to",
+  "text": "Which hundred is 320 nearest to?"
+ },
+ {
+  "slug": "count-how-far-320-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 320 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-330-nearest-to",
+  "text": "Which hundred is 330 nearest to?"
+ },
+ {
+  "slug": "count-how-far-330-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 330 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-360-nearest-to",
+  "text": "Which hundred is 360 nearest to?"
+ },
+ {
+  "slug": "count-how-far-360-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 360 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-410-nearest-to",
+  "text": "Which hundred is 410 nearest to?"
+ },
+ {
+  "slug": "count-how-far-410-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 410 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-420-nearest-to",
+  "text": "Which hundred is 420 nearest to?"
+ },
+ {
+  "slug": "count-how-far-420-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 420 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-510-nearest-to",
+  "text": "Which hundred is 510 nearest to?"
+ },
+ {
+  "slug": "count-how-far-510-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 510 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-520-nearest-to",
+  "text": "Which hundred is 520 nearest to?"
+ },
+ {
+  "slug": "count-how-far-520-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 520 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-540-nearest-to",
+  "text": "Which hundred is 540 nearest to?"
+ },
+ {
+  "slug": "count-how-far-540-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 540 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-590-nearest-to",
+  "text": "Which hundred is 590 nearest to?"
+ },
+ {
+  "slug": "count-how-far-590-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 590 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-620-nearest-to",
+  "text": "Which hundred is 620 nearest to?"
+ },
+ {
+  "slug": "count-how-far-620-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 620 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-630-nearest-to",
+  "text": "Which hundred is 630 nearest to?"
+ },
+ {
+  "slug": "count-how-far-630-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 630 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-660-nearest-to",
+  "text": "Which hundred is 660 nearest to?"
+ },
+ {
+  "slug": "count-how-far-660-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 660 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-670-nearest-to",
+  "text": "Which hundred is 670 nearest to?"
+ },
+ {
+  "slug": "count-how-far-670-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 670 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-690-nearest-to",
+  "text": "Which hundred is 690 nearest to?"
+ },
+ {
+  "slug": "count-how-far-690-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 690 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-770-nearest-to",
+  "text": "Which hundred is 770 nearest to?"
+ },
+ {
+  "slug": "count-how-far-770-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 770 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-780-nearest-to",
+  "text": "Which hundred is 780 nearest to?"
+ },
+ {
+  "slug": "count-how-far-780-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 780 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-810-nearest-to",
+  "text": "Which hundred is 810 nearest to?"
+ },
+ {
+  "slug": "count-how-far-810-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 810 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-860-nearest-to",
+  "text": "Which hundred is 860 nearest to?"
+ },
+ {
+  "slug": "count-how-far-860-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 860 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-880-nearest-to",
+  "text": "Which hundred is 880 nearest to?"
+ },
+ {
+  "slug": "count-how-far-880-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 880 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-890-nearest-to",
+  "text": "Which hundred is 890 nearest to?"
+ },
+ {
+  "slug": "count-how-far-890-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 890 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-940-nearest-to",
+  "text": "Which hundred is 940 nearest to?"
+ },
+ {
+  "slug": "count-how-far-940-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 940 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-970-nearest-to",
+  "text": "Which hundred is 970 nearest to?"
+ },
+ {
+  "slug": "count-how-far-970-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 970 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-980-nearest-to",
+  "text": "Which hundred is 980 nearest to?"
+ },
+ {
+  "slug": "count-how-far-980-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 980 is from the hundred below and the hundred above. The nearer one wins."
+ },
+ {
+  "slug": "which-hundred-is-460-nearest-to",
+  "text": "Which hundred is 460 nearest to?"
+ },
+ {
+  "slug": "count-how-far-460-is-from-the-hundred-below-and-the-hundred-above-the-nearer-one-wins",
+  "text": "Count how far 460 is from the hundred below and the hundred above. The nearer one wins."
  },
  {
   "slug": "well-done-come-back-tomorrow-to-change-another-cluster-you-looked-carefully-and-it-paid-off",

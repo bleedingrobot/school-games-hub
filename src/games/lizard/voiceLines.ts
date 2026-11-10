@@ -4,7 +4,7 @@
  * browser's own voice. No line says the answer to a go before the child has found it.
  */
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/lizard/progress';
-import { KEYS, STEPS, kindOfKey, keyNumber, matOf, matValue, type Go, type Mat, type Slip, type Step } from '../../../shared/lizard/round';
+import { KEYS, STEPS, kindOfKey, keyNumber, matOf, matValue, sameShape, type Go, type Mat, type Slip, type Step } from '../../../shared/lizard/round';
 import type { DemoStep } from '../../kit/useKindDemo';
 import { nextPartWords } from '../../components/NextPartChip';
 import { WORDS } from './words';
@@ -121,6 +121,15 @@ export function allVoiceLines(): string[] {
     const said = { kind, n: keyNumber(key), dir: key.includes('-') ? -1 : 1, unit: key.startsWith('pvhun:') ? 100 : 10 } as const;
     lines.add(askLine(said));
     lines.add(lookLine(said));
+    // "Now you try one like it": the sister's number is 1 or 2 away in the same family and shape (see sisterGo), so say each of those.
+    const prefix = key.replace(/\d+$/, '');
+    const family = KEYS.filter((k) => k.startsWith(prefix)).map(keyNumber);
+    const [lo, hi] = [Math.min(...family), Math.max(...family)];
+    for (const d of [-2, -1, 1, 2]) {
+      const n = said.n + d;
+      if (n < lo || n > hi || !sameShape(n, said.n)) continue;
+      lines.add(askLine({ ...said, n }));
+    }
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.bundleTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenRaft)];
   for (const main of mains) for (const how of Object.values(WORDS.how)) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, how, up));
