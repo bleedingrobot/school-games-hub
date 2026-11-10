@@ -67,7 +67,7 @@ Deno.serve(
       call<boolean>('pigeon_finish', {
         player, seed, version, days_done: progress.daysDone, last_day: progress.lastDay, step: progress.step,
         level: progress.level, good_in_row: progress.goodInRow, good_at_step: progress.goodAtStep,
-        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight,
+        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight, kind_levels: progress.kindLevels,
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.

@@ -169,3 +169,47 @@ describe('the server', () => {
     if (summary.bigOff !== null) expect(summary.bigOff).toBeLessThan(0);
   });
 });
+
+describe('help for each kind of go', () => {
+  it('keeps a hard kind’s help while another kind fades over two good days', async () => {
+    let seedCounter = 0.21;
+    let clock = Date.parse('2026-11-09T02:00:00Z');
+    const data = emptyData();
+    data.players.p1 = { ...unplayed(), step: 3, level: 3, version: 1 };
+    const services = memoryServices({ data, now: () => clock, random: () => (seedCounter = (seedCounter * 7919 + 0.137) % 1) });
+    let hard: string | null = null;
+    const askedBothDays = new Map<string, number>();
+    for (let day = 0; day < 2; day++) {
+      const round = (await handlePigeon(services, 'p1', { action: 'start' })).body.round as Round;
+      const goes = showRound(round);
+      const counts = new Map<string, number>();
+      for (const g of goes) counts.set(g.kind, (counts.get(g.kind) ?? 0) + 1);
+      hard ??= [...counts].find(([, n]) => n >= 2)![0];
+      for (const [k, n] of counts) if (n >= 2) askedBothDays.set(k, (askedBothDays.get(k) ?? 0) + 1);
+      // Every go of the hard kind is wrong at the first tap; every other go is right.
+      const taps = goes.flatMap((g) => (g.kind === hard ? [{ pick: wrongTap(g), ms: 3000 }, { pick: rightTap(g), ms: 2000 }] : [{ pick: rightTap(g), ms: 3000 }]));
+      const done = await handlePigeon(services, 'p1', { action: 'finish', seed: round.seed, taps });
+      expect(done.status).toBe(200);
+      clock += 86_400_000;
+    }
+    const levels = data.players.p1.kindLevels;
+    expect(levels[hard!].level).toBeGreaterThanOrEqual(3);
+    const faded = [...askedBothDays].filter(([k, days]) => k !== hard && days === 2);
+    expect(faded.length).toBeGreaterThan(0);
+    for (const [k] of faded) expect(levels[k]).toEqual({ level: 2, goodInRow: 0 });
+    expect(Object.keys(levels).length).toBeGreaterThan(1);
+    // The saved map comes back with the load.
+    expect((await handlePigeon(services, 'p1', { action: 'load' })).body.kindLevels).toEqual(levels);
+  });
+
+  it('starts a kind that is not in the map at the whole-child level', () => {
+    const kindLevels = { place: { level: 1, goodInRow: 0 } };
+    const round = makeRound(9, [], { step: 3, level: 4, kindLevels });
+    const kinds = new Set(round.goes.map((g) => g.kind));
+    expect(kinds.size).toBeGreaterThan(1);
+    for (const g of round.goes) expect(g.l).toBe(g.kind === 'place' ? 1 : 4);
+    // The teacher's setting still wins, and the guided first go stays at the top.
+    expect(makeRound(9, [], { step: 3, level: 4, help: 'off', kindLevels }).goes.every((g) => g.l === 0)).toBe(true);
+    expect(makeRound(9, [], { guided: true, level: 2, kindLevels }).goes[0].l).toBe(5);
+  });
+});

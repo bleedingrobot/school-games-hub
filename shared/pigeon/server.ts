@@ -20,6 +20,7 @@ import { replay, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
 import { isSeed, kindOfKey, makeRound, MAX_SEED, placeAfter, startFor, type HelpSetting, type Place, type Round } from './round';
 import { TOP_LEVEL } from './config';
+import { fadeByKind, ROUND_OF_TEN, type KindLevels } from '../kit/help';
 import { kindsFromFacts, mergeSeen, readKinds } from '../kit/seen';
 
 export type PigeonAction = 'load' | 'start' | 'finish' | 'seen';
@@ -29,6 +30,8 @@ export const ALLOWED_KINDS = ['place', 'read', 'tens', 'near', 'zoom'] as const;
 
 /** A pupil's tree as it is saved. */
 export interface Progress extends Place {
+  /** The help level and good days in a row for each kind of go (place, read, tens, near); a kind not here follows `level`. */
+  kindLevels: KindLevels;
   daysDone: number;
   /** The NZ day ('2026-11-04') a flower last changed. */
   lastDay: string | null;
@@ -39,7 +42,7 @@ export interface Saved extends Progress {
   version: number;
 }
 
-export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL as Place['level'], goodInRow: 0, goodAtStep: 0, version: 0 });
+export const unplayed = (): Saved => ({ daysDone: 0, lastDay: null, step: 1, level: TOP_LEVEL as Place['level'], goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: 0 });
 
 export { HELP_SETTINGS } from './round';
 
@@ -122,7 +125,7 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
     const place = placeOf(s, facts);
     // A child who has played for weeks has seen what their records show, so gets no demo for it.
     const seen = mergeSeen(saved, kindsFromFacts(facts, kindOfKey));
-    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, seen });
+    return ok({ daysDone: s.daysDone, lastDay: s.lastDay, today: today(), step: place.step, level: place.level, help: settings.help, kindLevels: s.kindLevels, seen });
   }
 
   if (body.action === 'seen') {
@@ -140,7 +143,7 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
     const guided = s.daysDone === 0 && s.lastDay === null;
     for (let tries = 0; tries < TRIES; tries++) {
       const seed = Math.floor(services.random() * (MAX_SEED + 1));
-      const round = makeRound(seed, facts, { step, level, help: settings.help, guided });
+      const round = makeRound(seed, facts, { step, level, help: settings.help, guided, kindLevels: s.kindLevels });
       const kept = await services.start(player, round);
       if (kept === 'busy') return busy();
       if (kept) return ok({ round });
@@ -172,14 +175,19 @@ export async function handlePigeon(services: PigeonServices, player: string, bod
       const result = finishChallenge(s.daysDone, s.lastDay, today());
       // Only the day's first finish moves the help and the step; play-again goes later that day never do.
       const place = result.clusterChanged === null ? before : placeAfter(before, played.firstRight);
-      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place };
+      // The help for each kind moves on the day's first finish only, from this round's goes (a kind with fewer than two goes stays as it was).
+      const kindLevels =
+        result.clusterChanged === null
+          ? s.kindLevels
+          : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: g.kind, right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
+      const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
       const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `pigeon:${seed}`, answers);
         if (result.goldenBranch) await services.progressChanged(player);
-        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level });
+        return ok({ ...result, firstRight: played.firstRight, step: place.step, level: place.level, stepBefore: before.step, levelBefore: before.level, kindLevels });
       }
       const again = await services.round(player, seed);
       if (again === 'busy') return busy();
