@@ -39,7 +39,7 @@ export const WORDS = {
   },
   /** After the second wrong tap of a go: the game plays the whole sum, then asks again. */
   lookTogether: "Let's look together.",
-  nowTry: 'Now you try!',
+  nowTry: 'Now you try one like it.',
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
   /** Said once, after three goes in a row with a wrong first tap: every berry is drawn again for the rest of the round. */
@@ -54,6 +54,8 @@ export const WORDS = {
   missing: (n: number) => `${n} empty space${n === 1 ? '' : 's'}`,
   /** After a right answer: the number, then the stem sentence ("14! 10 and 4 is 14."). English numbers, as Weka (James, 5 Nov 2026). */
   right: (answer: number, n: number) => `${answer}! 10 and ${n} is ${10 + n}.`,
+  /** After a right answer to a sister question or a second go ("Now you try"): plain, not the praise for a first try (R5). */
+  rightRedo: (n: number) => `You found it. 10 and ${n} is ${10 + n}.`,
   /** The tail of the finish title, after the opening for how the day went (S33). */
   flowerTurned: (metal: Metal) => `A flower turned ${metal}.`,
   doneToday: 'Come back tomorrow to change another flower.',

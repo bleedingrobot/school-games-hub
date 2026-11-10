@@ -6,7 +6,7 @@ import { replay, type Tap } from './play';
 import { sharingTell } from '../kit/mistakes';
 import { emptyData, memoryServices } from './memoryServices';
 import { handleKorora } from './server';
-import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, topSecure, type Level, type Round, type WrongKind } from './round';
+import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, sisterGo, topSecure, type Level, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -155,6 +155,32 @@ describe('the wrong stones (mistakes that teach)', () => {
       expect(end).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, mistakes: 3 * GOES_PER_ROUND });
       expect(end.answers.every((x) => !x.correct && x.ms === 3000)).toBe(true);
       expect(end.answers.map((x) => x.key)).toEqual([...new Set(round.goes.map((g) => g.key))]);
+    }
+  });
+});
+
+describe('the sister go', () => {
+  it('is a neighbouring number of the same kind and help, never the original answer, and the first go’s right pick still ends the replay', () => {
+    for (const { level } of LEVELS) {
+      for (const gold of [false, true]) {
+        for (const seed of seeds.slice(0, 8)) {
+          const round = makeRound(seed, recordsFor(level), { gold });
+          const goes = showRound(round);
+          goes.forEach((go, i) => {
+            const sister = sisterGo(round, i, go);
+            expect(sister).not.toBeNull();
+            expect(sister!.kind).toBe(go.kind);
+            expect(sister!.h).toBe(go.h);
+            expect(sister!.v).toBe(go.v);
+            expect(sister!.n).not.toBe(go.n);
+            if (go.kind !== 'fair') expect(sister!.answer).not.toBe(go.answer);
+            if (go.kind !== 'fair') expect(Math.abs(sister!.n - go.n)).toBe(go.kind === 'half' ? 2 : 1);
+            expect(sisterGo(round, i, go)).toEqual(sister);
+          });
+          // A right tap on the sister sends the first go's right pick, so the taps replay as usual.
+          expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
+        }
+      }
     }
   });
 });

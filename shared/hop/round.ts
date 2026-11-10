@@ -333,3 +333,31 @@ export function showRound(round: Round): Hop[] {
     return hop;
   });
 }
+
+/**
+ * A "sister" of a hop for "Now you try one like it" (S32 part 3): another fact of the same step, direction and start (the
+ * same family of keys and kind: up, next or back, and from the same start), so a different answer on a differently
+ * rolled gap, at the same help. It leaves out answers the child has just seen, as pads or as glow-worms, where it can. Built
+ * by showHop, so its glow-worms and wrong numbers agree, and every line it can say is already in the voice list (the list holds every
+ * key of every family at every place of the gap). Local only: never sent or saved. Null if no other fact fits.
+ */
+export function sisterHop(round: Pick<Round, 'seed'>, index: number, hop: Hop): Hop | null {
+  const me = parseSkip(hop.key);
+  const family = familyOfKey(hop.key);
+  if (!me || !family) return null;
+  const seen = new Set<number>([...hop.terms, ...hop.choices]);
+  const same = family.keys.filter((key) => {
+    const k = parseSkip(key);
+    return !!k && key !== hop.key && k.kind === me.kind && k.offset === me.offset && k.high === me.high && k.answer !== hop.answer;
+  });
+  const random = seeded((round.seed + 15485863 + 31 * index) % MAX_SEED);
+  random(); random();
+  const order = shuffle(same, random);
+  const tried = [...order.filter((k) => !seen.has(parseSkip(k)!.answer)), ...order.filter((k) => seen.has(parseSkip(k)!.answer))];
+  for (const key of tried) {
+    const [answer, at] = family.roll(key, random);
+    const sister = showHop(round, index + 101, { key, answer, at, h: hop.h });
+    if (sister) return sister;
+  }
+  return null;
+}

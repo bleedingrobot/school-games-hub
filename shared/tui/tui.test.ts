@@ -3,7 +3,7 @@ import { newStats, type FactStats } from '../maths/leitner';
 import { DAYS_PER_NEST, finishChallenge, treeAfter } from './progress';
 import { atMostShareTell } from '../kit/mistakes';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, keyFor, LESS_KEYS, makeRound, nestShape, pictureFor, placeAfter, showGo, showRound, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, keyFor, LESS_KEYS, makeRound, nestShape, pictureFor, placeAfter, showGo, showRound, sisterGo, startFor, STEPS, topSecure, type HelpLevel, type HelpSetting, type Place, type Round } from './round';
 import { emptyData, memoryServices } from './memoryServices';
 import { handleTui, unplayed } from './server';
 
@@ -141,6 +141,30 @@ describe('mistakes that teach: the nests', () => {
     expect(replay(round, taps)).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, mistakes: GOES_PER_ROUND * 3, firstRight: 0 });
     const clean = showRound(round).map((go) => ({ pick: go.answer, ms: 1000 }));
     expect(replay(round, clean)).toMatchObject({ done: true, mistakes: 0, firstRight: GOES_PER_ROUND });
+  });
+});
+
+describe('the sister go', () => {
+  it('is the same way and help on other ones, never the original answer, and the first go’s right pick still ends the replay', () => {
+    for (const { step } of STEPS) {
+      for (const seed of seeds.slice(0, 8)) {
+        const round = makeRound(seed, [], { step, level: 3 });
+        const goes = showRound(round);
+        goes.forEach((go, i) => {
+          const sister = sisterGo(round, i, go)!;
+          expect(sister.v).toBe(go.v);
+          expect(sister.l).toBe(go.l);
+          expect(sister.key.split(':')[0]).toBe(go.key.split(':')[0]);
+          expect(sister.n).not.toBe(go.n);
+          expect(Math.abs(sister.n - go.n)).toBeLessThanOrEqual(2);
+          expect(sister.answer).not.toBe(go.answer);
+          expect(sisterGo(round, i, go)).toEqual(sister);
+        });
+        // A right tap on the sister sends the first go's right pick, so the taps replay as usual.
+        const sent = goes.flatMap((go) => [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 4000 }, { pick: go.answer, ms: 2000 }]);
+        expect(replay(round, sent).done).toBe(true);
+      }
+    }
   });
 });
 

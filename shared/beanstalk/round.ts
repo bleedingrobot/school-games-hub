@@ -314,3 +314,22 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     shown,
   };
 }
+
+/**
+ * A "sister" of a go for "Now you try one like it" (S32 part 6): a different leaf on screen that has a partner on screen, so the
+ * child finds the partner of that leaf instead of the one just shown. It leaves out the leaf the look was about and its
+ * partner's number (those are what "Let's look together" just showed), and any leaf with no partner floating. Every
+ * floating leaf of a tray is a number the voice list already holds ("7 and what make 10?"). The pair the child then taps is
+ * a real pair, so the server replays it as usual (taps are only leaf pairs). `floatingLeaves` are the leaves on screen, by index.
+ * Null if no other pair floats: the go then asks for the same leaf's partner again.
+ */
+export function sisterLeaf(round: Round, floatingLeaves: readonly number[], anchor: number): number | null {
+  const sum = targetOf(round, anchor);
+  const n = round.leaves[anchor];
+  const hasPartner = (i: number) => floatingLeaves.some((j) => j !== i && round.leaves[i] + round.leaves[j] === targetOf(round, i));
+  const options = floatingLeaves.filter((i) => i !== anchor && targetOf(round, i) === sum && round.leaves[i] !== n && round.leaves[i] !== sum - n && hasPartner(i));
+  if (options.length === 0) return null;
+  const random = seeded((round.seed + 15485863 + 31 * anchor + 7 * floatingLeaves.length) % MAX_SEED);
+  random(); random();
+  return options[Math.floor(random() * options.length)];
+}

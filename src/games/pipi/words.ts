@@ -29,7 +29,7 @@ export const WORDS = {
   guideHere: 'try this one',
   /** Wrong shell 2 of a go (maths review R5): the sand lifts and the split is read out. */
   lookTogether: "Let's look together.",
-  nowTry: 'Now you try!',
+  nowTry: 'Now you try one like it.',
   skip: 'Skip',
   demoTitle: 'Watch Pipi show one first.',
   goOn: 'Go on',

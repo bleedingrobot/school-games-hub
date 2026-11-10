@@ -439,3 +439,45 @@ export function bondLine(go: Said, words = false): string {
     : `You added the ${go.toTen} first to make ten, then the other ${go.rest}.`;
   return `You solved ${sum} by ${how} the ${go.small} into ${go.toTen} and ${go.rest}. ${then}`;
 }
+
+// ---------------------------------------------------------------- "Now you try one like it" (S32 part 1)
+
+const validFact = (small: number, big: number) => small >= 1 && small <= big && big <= 9 && small + big > 10;
+
+/**
+ * A "sister" of a go for "Now you try one like it": the neighbour fact on the same start number (the smaller number up or
+ * down by one, total 11 to 18, smaller not above bigger), asked the same way (add, turn or back) with the same help. When the
+ * child failed the first step (hops to the big rock), the bigger number moves instead, so that step's answer is not the one
+ * just shown. Hopping back starts on the total, so it is the total that stays. If no neighbour fits it is another fact of the round's
+ * level. It prefers a sister whose answer is not among the original's cards. Built by showGo so its cards and answer agree,
+ * and every line it can say is already in the voice list. Local only: never sent or saved. Null if there is no sister.
+ */
+export function sisterGo(round: Pick<Round, 'seed' | 'level'>, index: number, go: Go, opts: { hops?: boolean } = {}): Go | null {
+  const { small, big } = go;
+  const hops = opts.hops === true;
+  const near: [number, number][] = hops
+    ? [big - 1, big + 1, big - 2, big + 2].flatMap((b) => [small, small - 1, small + 1].map((s): [number, number] => [s, b]))
+    : go.kind === 'back'
+      ? [[small - 1, big + 1], [small + 1, big - 1]] // hopping back starts on the total: keep it, so the landing stone moves
+      : [[small - 1, big], [small + 1, big]];
+  // The first step's answer must change too when the child failed it: 10 - big when adding, total - 10 when hopping back.
+  const hopsMoves = ([s, b]: [number, number]) => !hops || (go.kind === 'back' ? s + b !== go.total : b !== big);
+  const neighbours = near.filter((p) => validFact(p[0], p[1]) && hopsMoves(p)).map(([s, b]) => `add:${s}+${b}`);
+  const sameSmall = near.filter(([s, b]) => s === small && Math.abs(b - big) === 1 && validFact(s, b) && hopsMoves([s, b])).map(([s, b]) => `add:${s}+${b}`);
+  const ofLevel = levelKeys(round.level).filter((k) => { const f = parseKey(k)!; return hopsMoves([f.small, f.big]); });
+  const pools = [hops ? sameSmall : neighbours, neighbours, ofLevel];
+  const random = seeded((round.seed + 15485863 + 31 * index) % MAX_SEED);
+  random(); random();
+  for (const pool of pools) {
+    const made = [...new Set(pool)].filter((k) => k !== go.key).flatMap((key) => {
+      const sister = showGo(round, index + 101, { key, v: go.v, h: go.h });
+      return sister && sister.answer !== go.answer ? [sister] : [];
+    });
+    if (made.length === 0) continue;
+    const fresh = made.filter((s) => !go.choices.includes(s.answer));
+    const from = fresh.length > 0 ? fresh : made;
+    return from[Math.floor(random() * from.length)];
+  }
+  // Nothing moves the first step's answer: the neighbour on the same start number is still a different question.
+  return hops ? sisterGo(round, index, go) : null;
+}

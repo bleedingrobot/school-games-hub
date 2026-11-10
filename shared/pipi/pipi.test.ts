@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
 import { replay, wrongFirstRun, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, topSecure, type Colour, type Kind, type Round, type WrongKind } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, sisterGo, topSecure, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -152,6 +152,32 @@ describe('the wrong shells (maths review R5)', () => {
     const end = replay(round, taps);
     expect(end).toMatchObject({ done: true, mistakes: GOES_PER_ROUND * 3 });
     expect(end.answers).toEqual(goes.map((g) => ({ key: g.key, correct: false, ms: 3000 })));
+  });
+});
+
+describe('the sister go', () => {
+  it('is the same kind and help on a different split, never the original answer, and the first go’s right pick still ends the replay', () => {
+    for (const colour of colours) {
+      for (const level of [1, 2, 3] as const) {
+        for (const seed of seeds.slice(0, 8)) {
+          const round = makeRound(seed, recordsFor[level], { colour });
+          const goes = showRound(round);
+          goes.forEach((go, i) => {
+            const sister = sisterGo(round, i, go);
+            expect(sister).not.toBeNull();
+            expect(sister!.kind).toBe(go.kind);
+            expect(sister!.h).toBe(go.h);
+            expect(sister!.key).not.toBe(go.key);
+            expect(sister!.answer).not.toBe(go.answer);
+            expect(Math.abs(sister!.whole - go.whole)).toBeLessThanOrEqual(1);
+            if (go.kind === 'altogether') expect(sister!.whole).not.toBe(go.whole);
+            expect(sisterGo(round, i, go)).toEqual(sister);
+          });
+          // A right tap on the sister sends the first go's right pick, so the taps replay as usual.
+          expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
+        }
+      }
+    }
   });
 });
 

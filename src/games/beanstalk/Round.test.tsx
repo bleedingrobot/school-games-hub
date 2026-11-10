@@ -56,7 +56,7 @@ describe("Kiwi's Beanstalk play screen", () => {
     expect(bridge()).toHaveTextContent(/^Each dot is a hundred\. \d hundreds? and \d hundreds? make 10 hundreds\. That is 1000\.$/);
   });
 
-  it('shows why after a wrong pair, greys the tried pair, then looks together and asks for the partner (maths review R5)', async () => {
+  it('shows why after a wrong pair, greys the tried pair, then looks together and asks for another leaf’s partner (maths review R5)', async () => {
     localStorage.setItem('beanstalk-voice', 'off');
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -82,15 +82,20 @@ describe("Kiwi's Beanstalk play screen", () => {
     expect(leaf(w1)).toBeDisabled();
     expect(leaf(w2)).toBeEnabled();
 
-    // Wrong pair 2: "Let's look together" fills the first leaf's frame, then "Now you try" with it still picked.
+    // Wrong pair 2: "Let's look together" fills the first leaf's frame, then "Now you try one like it" with another leaf picked.
     await u.click(leaf(w2));
     expect(screen.getByRole('status')).toHaveTextContent("Let's look together.");
     await u.click(leaf(10 - a)); // no taps while it shows
     expect(screen.getByLabelText('0 of 10 pairs')).toBeInTheDocument();
     await act(() => vi.advanceTimersByTimeAsync(12000));
-    expect(screen.getByText(`Now you try: what goes with ${a}?`)).toBeInTheDocument();
-    expect(leaf(a)).toHaveAttribute('aria-pressed', 'true');
-    await u.click(leaf(10 - a));
+    // "Now you try one like it": a different leaf with a partner on screen is picked (not the first leaf, nor its partner's number).
+    expect(screen.getByText(/^Now you try one like it\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Now you try one like it\. What goes with \d+\?$/)).toBeInTheDocument();
+    const held = leaves().find((b) => b.getAttribute('aria-pressed') === 'true')!;
+    const v = Number(held.getAttribute('aria-label'));
+    expect([a, 10 - a]).not.toContain(v);
+    expect(screen.getByLabelText('0 of 10 pairs')).toBeInTheDocument();
+    await u.click(leaves().find((b) => b !== held && Number(b.getAttribute('aria-label')) === 10 - v)!);
     expect(screen.getByLabelText('1 of 10 pairs')).toBeInTheDocument();
   });
   it('shows this child’s own dots, and brings the full dots back for the rest of the round after three goes in a row that began with a wrong tap (maths review R6)', async () => {

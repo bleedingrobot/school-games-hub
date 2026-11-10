@@ -27,7 +27,7 @@ export const WORDS = {
   /** The second wrong tap of a go: Bella explains the whole go (maths review R5). */
   lookTogether: 'Let’s look together.',
   /** Said once she has explained, then the question is read again. */
-  nowTry: 'Now you try.',
+  nowTry: 'Now you try one like it.',
   /** Said once in a round, when three goes in a row began with a wrong tap and the pictures come back (R6). */
   picturesBack: 'Here is the picture again to help.',
   /** On the "Let's look together" panel once it can be skipped. */

@@ -4,7 +4,7 @@ import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
 import { EARLY_FACTS, earlyFactsPack, parseSkip, SKIP_FROM_STEPS } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, DEMO_KEYS, kindOfKey, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
+import { BACK_HOPS, DEMO_KEYS, kindOfKey, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, sisterHop, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -170,6 +170,31 @@ describe('the finish words (S33)', () => {
     expect(replay(round, right).firstRight).toBe(HOPS_PER_ROUND);
     expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
     expect(replay(round, right.map((t, i) => (i < 3 ? { ...t, ms: 100 } : t))).firstRight).toBe(HOPS_PER_ROUND - 3);
+  });
+});
+
+describe('the sister hop', () => {
+  it('is another fact of the same step and direction with a different answer, at the same help, and the first hop’s right pick still ends the replay', () => {
+    for (const step of STEPS) {
+      for (const gold of [false, true]) {
+        for (const seed of seeds.slice(0, 6)) {
+          const round = makeRound(seed, recordsFor[step], { gold });
+          const hops = showRound(round);
+          hops.forEach((hop, i) => {
+            const sister = sisterHop(round, i, hop)!;
+            expect(sister).not.toBeNull();
+            const [a, b] = [parseSkip(hop.key)!, parseSkip(sister.key)!];
+            expect([b.step, b.offset, b.high, b.kind]).toEqual([a.step, a.offset, a.high, a.kind]);
+            expect(sister.key).not.toBe(hop.key);
+            expect(sister.answer).not.toBe(hop.answer);
+            expect(sister.h).toBe(hop.h);
+            expect(sisterHop(round, i, hop)).toEqual(sister);
+          });
+          // A right tap on the sister sends the first hop's right pick, so the taps replay as usual.
+          expect(replay(round, hops.map((hop) => ({ pick: hop.answer, ms: 3000 }))).done).toBe(true);
+        }
+      }
+    }
   });
 });
 

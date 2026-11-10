@@ -6,14 +6,15 @@
  * leaves' dots join in one frame with the extra dots out or the empty squares glowing, and the line says why ("4 and 8
  * make 12. That is too many."). A tried pair can't be tapped together again (except on a missing-leaf go, where the child is free to try it again: S22). The second wrong pair stops the free taps:
  * "Let's look together". The first leaf of that pair pulses and its frame fills with its partner's dots, counted, then
- * "Now you try: what goes with 7?" with the 7 still picked and the partner not marked. The pair then made counts for the
- * round, but only a go's first tap is scored (round.ts), so it is a shown pair, not a clean right.
+ * "Now you try one like it": a different leaf on screen that has a partner is picked (sisterLeaf in round.ts), "5 and what make
+ * 10?", and its partner is not marked. The pair then made is a real pair that counts for the round (the taps are only leaf
+ * pairs, so the server replays it as usual), but only a go's first tap is scored (round.ts), so it is a shown pair, not a clean right.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Dots, Friend, Metal } from '../../../shared/beanstalk/progress';
-import { isMissingGo, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, targetOf, unitOf, wrongFirstRun, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
+import { isMissingGo, ON_SCREEN, PAIRS_PER_ROUND, pairId, replay, sisterLeaf, targetOf, unitOf, wrongFirstRun, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
-import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
+import { LOOK_AT, NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { DemoBar } from '../../kit/DemoBar';
 import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
@@ -172,10 +173,14 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
       fillLine: WORDS.fillUp(n, target),
       onEnd: () => {
         go.current = stepGo(go.current, 'lookDone');
-        setRedo(anchor);
-        setPicked(anchor);
+        // "Now you try one like it": a different leaf on screen that has a partner on screen; if there is none, the same leaf again.
+        const floatingNow = slots.filter((s): s is number => s !== null && !flying.includes(s));
+        const sister = sisterLeaf(round, floatingNow, anchor) ?? anchor;
+        setRedo(sister);
+        setPicked(sister);
+        if (missing !== null) setMissing(sister);
         since.current = Date.now();
-        say(WORDS.nowTry(n));
+        say(WORDS.nowTry, () => say(missing !== null ? WORDS.missingAsk(round.leaves[sister], targetOf(round, sister)) : WORDS.goesWith(round.leaves[sister])));
       },
     });
   }
@@ -275,7 +280,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
   // leaf floating has a partner (round.ts), so it always has somewhere to point. Gone after the first right pair.
   const onScreen = slots.filter((s): s is number => s !== null && !flying.includes(s));
   const partner = (leaf: number) => onScreen.find((j) => j !== leaf && round.leaves[j] + round.leaves[leaf] === target);
-  const pointAt = tip !== null && missing !== null && !flying.length && !look ? (partner(missing) ?? null) : !guide || pairsMade > 0 || flying.length || look || redo !== null ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
+  const pointAt = tip !== null && missing !== null && !flying.length && !look ? (partner(missing) ?? null) : redo !== null && go.current.wrong >= LOOK_AT + 2 && !flying.length && !look ? (partner(redo) ?? null) : !guide || pairsMade > 0 || flying.length || look || redo !== null ? null : picked !== null ? (partner(picked) ?? null) : (onScreen.find((i) => partner(i) !== undefined) ?? null);
 
   const lookOf = (leaf: number): LeafLook =>
     flying.includes(leaf)
@@ -315,7 +320,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
           type="button"
           className="bs-hear"
           disabled={look !== null || demo.playing}
-          onClick={() => say(missingLine ?? (redo !== null ? WORDS.nowTry(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
+          onClick={() => say(missingLine ?? (redo !== null ? WORDS.goesWith(round.leaves[redo]) : why ? WORDS.why(round.leaves[why.a], round.leaves[why.b], target) : WORDS.tapTwo(target)))}
         >
           <span aria-hidden="true">🔊</span> {WORDS.hearAgain}
         </button>
@@ -349,7 +354,7 @@ export function Round({ round, dots, dotsMissing = dots, canBoost = true, stalkL
             onSkip={skipLook}
           />
         )}
-        {redo !== null && missing === null && !why && <NowYouTry prefix="bs" line={WORDS.nowTry(round.leaves[redo])} />}
+        {redo !== null && missing === null && !why && <NowYouTry prefix="bs" line={`${WORDS.nowTry} ${WORDS.goesWith(round.leaves[redo])}`} />}
       </div>
       <div className="bs-tray">
         {slots.map((leaf, slot) =>

@@ -183,6 +183,8 @@
 .tui-choice--right { animation: tui-right 0.6s ease-out forwards; }
 @keyframes tui-right { 50% { scale: 1.25; } 100% { scale: 1.1; } }
 .tui-choice--off { opacity: 0.35; }
+/* After a wrong tap on the sister question: the first go's right nest is marked so nobody is stuck. */
+.tui-choice--hint { box-shadow: 0 0 0 5px #fff, 0 0 0 9px var(--tui-teal-dark); }
 
 /* Mistakes that teach (maths review R5): the why-panel, "Let's look together", "Now you try", and the lit or greyed berries. */
 .tui-why {

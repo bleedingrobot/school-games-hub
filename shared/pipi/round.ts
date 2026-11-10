@@ -264,3 +264,40 @@ export function showRound(round: Round): Go[] {
     return go;
   });
 }
+
+/**
+ * A "sister" of a go for "Now you try one like it" (S32 part 5): the same kind and help on a different split of the same
+ * whole, or (when every split of that whole gives the same answer, as altogether does) the next whole up or down. It stays
+ * inside the wholes 3 to 10 the game asks, in the same level as the go where it can, away from the ends of the whole
+ * (nothing hiding, all hiding) unless the go itself was one, and with an answer that is not one of the original's shells where it
+ * can. Built by showGo so its shells and answer agree. Local only: never sent or saved. Null if there is no sister.
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const p = parseKey(go.key)!;
+  const level = LEVELS.find((l) => p.whole >= l.from && p.whole <= l.to);
+  const first = LEVELS[0].from;
+  const last = LEVELS[LEVELS.length - 1].to;
+  const edgeOk = isEdge(go.key);
+  const options: { go: Go; score: number }[] = [];
+  for (let whole = Math.max(first, p.whole - 1); whole <= Math.min(last, p.whole + 1); whole++) {
+    for (let shown = 0; shown <= whole; shown++) {
+      const key = `part${whole}:${shown}`;
+      if (key === go.key || Math.abs(shown - p.shown) > 2) continue;
+      const sister = showGo(round, index + 101, { key, kind: go.kind, h: go.h });
+      if (!sister || sister.answer === go.answer) continue;
+      const score =
+        (level && whole >= level.from && whole <= level.to ? 0 : 10) +
+        (isEdge(key) && !edgeOk ? 5 : 0) +
+        (go.choices.includes(sister.answer) ? 3 : 0) +
+        Math.abs(whole - p.whole) * 2 +
+        Math.abs(shown - p.shown);
+      options.push({ go: sister, score });
+    }
+  }
+  if (options.length === 0) return null;
+  const best = Math.min(...options.map((o) => o.score));
+  const top = options.filter((o) => o.score === best);
+  const random = seeded((round.seed + 15485863 + 31 * index) % MAX_SEED);
+  random(); random();
+  return top[Math.floor(random() * top.length)].go;
+}

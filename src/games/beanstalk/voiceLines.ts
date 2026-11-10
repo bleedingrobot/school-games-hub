@@ -34,7 +34,7 @@ export const leafNumbers = (target: Target): number[] =>
   target === 20 ? Array.from({ length: 19 }, (_, i) => i + 1).filter((n) => n !== 10) : Array.from({ length: 9 }, (_, i) => (i + 1) * (target / 10));
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.dotsBack, WORDS.lookTogether, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.whoAreYou, WORDS.guideNext, WORDS.dotsBack, WORDS.lookTogether, WORDS.nowTry, WORDS.doneToday, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   lines.add(WORDS.nextTitle);
   // Any friend can be stuck on any sum now (the sum follows the child, S21), and a child can move up or back between sums.
   for (const friend of FRIENDS) {
@@ -60,8 +60,8 @@ export function allVoiceLines(): string[] {
     for (const a of numbers) {
       for (const b of numbers) if (a < b && a + b !== target) lines.add(WORDS.why(a, b, target));
       lines.add(WORDS.fillUp(a, target));
-      lines.add(WORDS.nowTry(a));
       lines.add(WORDS.missingAsk(a, target));
+      lines.add(WORDS.goesWith(a));
       lines.add(WORDS.takeAway(a, target));
     }
   }

@@ -7,13 +7,14 @@
  * Mistakes that teach (maths review R5, shared/kit/mistakes.ts). The first wrong glow-worm of a hop greys out (and can't be
  * tapped again) and a small row of pads shows the mistake behind it, with its line read aloud. The second stops the free
  * taps: "Let's look together", Hop hops the row from its first pad saying each number while the 100 board lights them,
- * then the same hop comes back as "Now you try" with all four glow-worms in a new order and the labels at the child's own
- * level. Only the first glow-worm of a hop is scored (shared/hop/play.ts), so a hop found after looking is not a clean right.
+ * then "Now you try one like it": a sister hop (another fact of the same step and direction, the labels at the child's own
+ * level, nothing pointed at, never sent). A right glow-worm on it sends the first hop's right pick instead; a wrong one shows why,
+ * then the first hop comes back with its right glow-worm pointed at. Only the first glow-worm of a hop is scored (shared/hop/play.ts), so a hop found after looking is not a clean right.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { replay, wrongFirstRun, type Tap } from '../../../shared/hop/play';
 import type { Friend as FriendName, Help, Metal } from '../../../shared/hop/progress';
-import { HOPS_PER_ROUND, kindOfKey, showRound, type HopMistake, type Round } from '../../../shared/hop/round';
+import { HOPS_PER_ROUND, kindOfKey, showRound, sisterHop, type Hop, type HopMistake, type Round } from '../../../shared/hop/round';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { DemoBar } from '../../kit/DemoBar';
@@ -33,6 +34,8 @@ import { hopLine } from './voiceLines';
 const JUMP_MS = 650;
 const LAND_MS = 750;
 const WOBBLE_MS = 500;
+/** How long a wrong glow-worm on the sister shows its why-line, before the first hop's right glow-worm is pointed at. */
+const SISTER_WHY_MS = 2600;
 
 /** The 100 board only opens by itself where it sits beside the pond (CSS: 900px and wider); on a phone it would cover the pads. */
 const wideBoard = () => typeof window !== 'undefined' && !!window.matchMedia?.('(min-width: 900px)').matches;
@@ -84,6 +87,10 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
   /** The hop's place in the two-tap flow: the second wrong glow-worm is "Let's look together". */
   const go = useRef(NEW_GO);
   const [redo, setRedo] = useState(false);
+  /** "Now you try one like it": the sister hop (local only, never in `taps`, nothing on it marked) and the child's one wrong glow-worm on it. */
+  const [sister, setSister] = useState<{ hop: Hop; wrong: number | null } | null>(null);
+  /** After a wrong glow-worm on the sister: the first hop's right glow-worm is pointed at, so nobody is stuck. */
+  const [stuck, setStuck] = useState(false);
   /** How many times "Now you try" has come round on this hop: each reshuffles the glow-worms. */
   const [redoCount, setRedoCount] = useState(0);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
@@ -128,7 +135,8 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [at, hops, say, demoActive]);
 
-  const hop = hops[Math.min(at, hops.length - 1)];
+  const base = hops[Math.min(at, hops.length - 1)];
+  const hop = sister ? sister.hop : base;
   const pads = hop.parts.map((p) => p.replace(/,$/, '')).map((p) => (p === '?' ? null : Number(p)));
   const gap = pads.indexOf(null);
   const back = round.hops[at]?.key.includes(':back:');
@@ -136,7 +144,8 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
   const helpAt = (i: number): Help => (labels ? round.hops[i]?.h ?? help : 'none');
   const shown: Help = boosted ? 'full' : helpAt(at);
 
-  const worms = useMemo(() => (redoCount > 0 ? shuffled(hops[Math.min(at, hops.length - 1)].choices) : hops[Math.min(at, hops.length - 1)].choices), [hops, at, redoCount]);
+  // Without a sister (none fits) "Now you try" is the same hop with the glow-worms in a new order.
+  const worms = useMemo(() => (sister ? sister.hop.choices : redoCount > 0 ? shuffled(hops[Math.min(at, hops.length - 1)].choices) : hops[Math.min(at, hops.length - 1)].choices), [hops, at, redoCount, sister]);
 
   /** "Hear it again": the why-line if one is showing, otherwise the question (not the look-together step, and no first-go intro). */
   function hearAgain() {
@@ -160,15 +169,71 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
         go.current = stepGo(go.current, 'lookDone');
         setTried([]);
         setRedo(true);
-        setRedoCount((c) => c + 1);
         since.current = Date.now();
-        say(WORDS.nowTry);
+        // "Now you try one like it": a sister hop (another fact of the same step and direction); if none fits, the same hop with the glow-worms reshuffled.
+        const sis = sisterHop(round, at, base);
+        if (!sis) setRedoCount((c) => c + 1);
+        setSister(sis ? { hop: sis, wrong: null } : null);
+        say(WORDS.nowTry, sis ? () => say(hopLine(sis.spoken, false)) : undefined);
       },
+    });
+  }
+
+  /** A tap on the sister. Never saved or sent: a right one ends the hop with the FIRST hop's right pick, which is what the server replays. */
+  function pickSister(s: { hop: Hop; wrong: number | null }, n: number) {
+    if (s.wrong !== null) return;
+    tappedYet.current = true;
+    if (n === s.hop.answer) {
+      const now = Date.now();
+      const next = [...taps, { pick: base.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      rightTap(next, n);
+      return;
+    }
+    setSister({ hop: s.hop, wrong: n });
+    setTried([n]);
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    const kind = s.hop.wrongs.find((w) => w.n === n)!.kind;
+    setWhy({ n, kind });
+    say(WORDS.why(kind, s.hop));
+    later(SISTER_WHY_MS, () => {
+      setSister(null);
+      setWhy(null);
+      setTried([]);
+      setStuck(true);
+    });
+  }
+
+  /** The hop is found: Hop jumps onto the pad, then the next hop (or the end). */
+  function rightTap(next: Tap[], n: number) {
+    go.current = stepGo(go.current, 'right');
+    if (thisKind) kinds.mark([thisKind]);
+    setWhy(null);
+    setRedo(false);
+    setPhase('jump');
+    say(WORDS.yes(n));
+    if (sound) playSound('hop');
+    later(JUMP_MS + LAND_MS, () => {
+      if (at + 1 >= hops.length) {
+        setPhase('done');
+        later(LAND_MS, () => onDone(next));
+      } else {
+        setAt(at + 1);
+        setTried([]);
+        setRedoCount(0);
+        setSister(null);
+        setStuck(false);
+        setPhase('ask');
+      }
     });
   }
 
   function pick(n: number) {
     if (phase !== 'ask' || look || demoActive || tried.includes(n)) return;
+    if (sister) return pickSister(sister, n);
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -195,28 +260,11 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
       else say(line);
       return;
     }
-    go.current = stepGo(go.current, 'right');
-    if (thisKind) kinds.mark([thisKind]);
-    setWhy(null);
-    setRedo(false);
-    setPhase('jump');
-    say(WORDS.yes(n));
-    if (sound) playSound('hop');
-    later(JUMP_MS + LAND_MS, () => {
-      if (at + 1 >= hops.length) {
-        setPhase('done');
-        later(LAND_MS, () => onDone(next));
-      } else {
-        setAt(at + 1);
-        setTried([]);
-        setRedoCount(0);
-        setPhase('ask');
-      }
-    });
+    rightTap(next, n);
   }
 
   // The guided first go: the hand points at the right glow-worm on the first hop, until it is picked.
-  const pointAt = guide && at === 0 && phase === 'ask' && !look ? hop.answer : null;
+  const pointAt = phase === 'ask' && !look && !sister && ((guide && at === 0) || stuck) ? hop.answer : null;
   // In "Let's look together" Hop sits on the pad being counted, from the first pad to the answer.
   const counted = look ? Math.max(look.filled, 0) : null;
   const sitting = counted !== null ? Math.max(counted - 1, 0) : phase === 'ask' ? gap - 1 : gap;
@@ -289,7 +337,7 @@ export function Hops({ round, help, labels = true, padMetal, scenery, friend, gu
           <button
             key={`${at}-${n}`}
             type="button"
-            disabled={tried.includes(n) || look !== null || demoActive}
+            disabled={tried.includes(n) || look !== null || demoActive || (sister !== null && sister.wrong !== null)}
             className={`hp-worm${wobble === n ? ' hp-worm--wobble' : ''}${tried.includes(n) ? ' hp-worm--tried' : ''}${phase !== 'ask' && n === hop.answer ? ' hp-worm--gone' : ''}${n === pointAt ? ' hp-worm--pointed' : ''}`}
             style={{ ['--hp-i' as string]: i }}
             onClick={() => pick(n)}

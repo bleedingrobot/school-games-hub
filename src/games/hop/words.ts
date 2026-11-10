@@ -46,7 +46,7 @@ export const WORDS = {
   /** After the second wrong glow-worm of a hop: Hop hops the whole row, saying each number. */
   lookTogether: "Let's look together.",
   lookCount: (hop: Pick<Hop, 'of' | 'from' | 'back'>, numbers: readonly number[]) => `Counting ${hop.back ? 'back ' : ''}in ${counted(hop)}: ${numbers.join(', ')}.`,
-  nowTry: 'Now you try.',
+  nowTry: 'Now you try one like it.',
   /** The "Show me first" demos, the first time a hop counts back or starts off a multiple (made-up examples no round asks). */
   skipDemo: 'Skip',
   demoTitle: 'Watch first',

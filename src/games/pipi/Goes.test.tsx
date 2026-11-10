@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { makeRound, showRound } from '../../../shared/pipi/round';
+import { makeRound, showRound, sisterGo } from '../../../shared/pipi/round';
 import type { Tap } from '../../../shared/pipi/play';
 import { Goes } from './Goes';
 import { whyLine } from './words';
@@ -27,7 +27,7 @@ describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5
     expect(say).toHaveBeenLastCalledWith(whyLine(wrong.kind, go.kind, go.whole, go.showing, go.hiding), expect.any(Function));
   });
 
-  it('greys a wrong shell and says why, looks together on the second, then asks the same go again with every shell back', async () => {
+  it('greys a wrong shell and says why, looks together on the second, then asks a sister go, whose right shell ends the go', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const round = makeRound(21, [], { colour: 'bronze' });
@@ -55,9 +55,14 @@ describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5
     expect(screen.getByLabelText('0 of 10')).toBeInTheDocument();
 
     await act(() => vi.advanceTimersByTimeAsync(12000));
-    expect(screen.getByText('Now you try!')).toBeInTheDocument();
-    for (const n of go.choices) expect(shell(n)).toBeEnabled();
-    await u.click(shell(go.answer));
+    expect(screen.getByText('Now you try one like it.')).toBeInTheDocument();
+    // A sister go: another split, its own four shells, all enabled and nothing pointed at.
+    const sister = sisterGo(round, 0, go)!;
+    expect(sister.answer).not.toBe(go.answer);
+    for (const n of sister.choices) expect(shell(n)).toBeEnabled();
+    expect(document.querySelector('.pp-shellbtn--pointed')).toBeNull();
+    await u.click(shell(sister.answer));
+    await act(() => vi.advanceTimersByTimeAsync(1600));
     expect(screen.getByLabelText('1 of 10')).toBeInTheDocument();
   });
 });

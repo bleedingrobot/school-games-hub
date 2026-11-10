@@ -4,7 +4,7 @@ import { seeded } from '../seededRandom';
 import type { FactAnswer } from '../maths/leitner';
 import { handleBeanstalk, unplayed } from './server';
 import { memoryServices } from './memoryServices';
-import { bondKey, factKeys, isMissingGo, makeRound, makeStageRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, targetOf, TARGETS, type Round, type Stage, type Target, type Tap } from './round';
+import { bondKey, factKeys, isMissingGo, makeRound, makeStageRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, sisterLeaf, targetOf, TARGETS, type Round, type Stage, type Target, type Tap } from './round';
 
 const TARGET = 10;
 
@@ -147,6 +147,34 @@ describe('mistakes that teach (maths review R5)', () => {
     expect(end.answers[0]).toEqual({ key: ka, correct: false, ms: 5 });
     expect(end.answers.filter((x) => !x.correct)).toHaveLength(2);
     expect(end.answers.slice(1)).toEqual([perfect.answers[1], { ...perfect.answers[2], correct: false, ms: 7 }, ...perfect.answers.slice(3)]);
+  });
+});
+
+describe('the sister leaf (S32)', () => {
+  it('is another floating leaf with a partner on screen, not the first leaf or its partner’s number, and its real pair replays after two wrong pairs on every sum', () => {
+    for (const stage of [0, 1, 2, 3] as Stage[]) {
+      for (let seed = 1; seed <= 40; seed++) {
+        const round = makeStageRound(seed, stage);
+        const start = replay(round, []).onScreen;
+        const anchor = start[0];
+        const sum = targetOf(round, anchor);
+        const sister = sisterLeaf(round, start, anchor);
+        expect(sister).not.toBeNull();
+        expect(sister).not.toBe(anchor);
+        expect([round.leaves[anchor], sum - round.leaves[anchor]]).not.toContain(round.leaves[sister!]);
+        expect(start.some((j) => j !== sister && round.leaves[j] + round.leaves[sister!] === sum)).toBe(true);
+        expect(sisterLeaf(round, start, anchor)).toBe(sister);
+        // Two wrong pairs on the first leaf ("Let's look together"), then the sister's real pair, then right pairs to the end.
+        const wrong = start.filter((j) => j !== anchor && round.leaves[anchor] + round.leaves[j] !== sum).slice(0, 2);
+        const taps: Tap[] = wrong.map((b) => ({ a: anchor, b, ms: 5 }));
+        taps.push({ a: sister!, b: start.find((j) => j !== sister && round.leaves[j] + round.leaves[sister!] === sum)!, ms: 5 });
+        for (let r = replay(round, taps); !r.done; r = replay(round, taps)) {
+          const a = r.onScreen[0];
+          taps.push({ a, b: r.onScreen.find((j) => j !== a && round.leaves[a] + round.leaves[j] === targetOf(round, a))!, ms: 5 });
+        }
+        expect(replay(round, taps)).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND });
+      }
+    }
   });
 });
 
