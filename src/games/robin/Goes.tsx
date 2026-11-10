@@ -43,7 +43,7 @@ const GUIDE_MS = 3000;
 /** A How many go: after this pause with no touch, the hand points at the next berry nobody has touched. */
 const COUNT_HAND_MS = 3000;
 /** "Count with me": one berry every so often, in the order the group sits. */
-const COUNT_WITH_ME_MS = 900;
+const COUNT_WITH_ME_MS = 1500;
 
 type Phase = 'ask' | 'right' | 'done';
 
@@ -290,6 +290,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
           steps: Math.max(1, go.answer),
           openingLine: WORDS.lookTogether,
           fillLine: WORDS.lookFill,
+          stepLine: countLine,
           onEnd: () => {
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);

@@ -18,9 +18,9 @@ export const isDemoKind = (kind: GoKind): kind is DemoKind => kind === 'howmany'
 export const DEMO_STEPS: Record<DemoKind, DemoStep[]> = {
   howmany: [
     { line: WORDS.demoHowMany, target: 'b0' },
-    { line: countLine(1), target: 'b0', holdMs: 500 },
-    { line: countLine(2), target: 'b1', holdMs: 500 },
-    { line: countLine(3), target: 'b2', holdMs: 500 },
+    { line: countLine(1), target: 'b0', holdMs: 900 },
+    { line: countLine(2), target: 'b1', holdMs: 900 },
+    { line: countLine(3), target: 'b2', holdMs: 900 },
     { line: WORDS.demoPickCard, target: 'card' },
     { line: WORDS.nowTry },
   ],
