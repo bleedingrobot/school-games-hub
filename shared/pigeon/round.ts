@@ -13,6 +13,7 @@
 import { EARLY_FACTS } from '../maths/skillPacks/earlyFacts';
 import type { FactStats } from '../maths/leitner';
 import { seeded } from '../seededRandom';
+import { sisterNumber } from '../kit/sister';
 import { atMostShareTell, tagWrongs, type Wrong } from '../kit/mistakes';
 import { placeAfter as kitPlaceAfter, helpWithSetting, ROUND_OF_TEN, type HelpSetting, type KindLevels, type Place as KitPlace } from '../kit/help';
 import * as C from './config';
@@ -291,7 +292,13 @@ export function toleranceOf(key: string, lo: number, hi: number, lens: boolean):
 
 /** A go made again from its plan, with its cards fixed by the seed. Null when the plan isn't one the game could make. */
 export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
-  if (!KEYS.includes(plan.key) || !isLevel(plan.l)) return null;
+  if (!KEYS.includes(plan.key)) return null;
+  return buildGo(round, index, plan);
+}
+
+/** The go-building code behind `showGo`, without the check that the key is one the game asks (a sister go's key is made, see `sisterGo`). */
+function buildGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan): Go | null {
+  if (!isLevel(plan.l) || !kindOfKey(plan.key)) return null;
   const fam = kindOfKey(plan.key)!;
   if (kindFor(plan.key) !== plan.kind && !(fam === 'zoom' && ['place', 'read'].includes(plan.kind))) return null;
   const n = keyNumber(plan.key);
@@ -326,6 +333,89 @@ export function showGo(round: Pick<Round, 'seed'>, index: number, plan: GoPlan):
   if (wrongs.length < C.WRONG_CARDS) return null;
   const choices = [answer, ...wrongs.map((w) => w.n)].sort((a, b) => a - b);
   return { ...base, answer, step10, choices, wrongs };
+}
+
+/**
+ * How a key's number can move for a sister go: the numbers it is made from (`base` + a whole `unit` each, from `min` to `max`),
+ * the key written for a number, and the numbers the key family never uses (they would make a tie or sit on a post).
+ */
+interface SisterSpec {
+  base: number;
+  unit: number;
+  min: number;
+  max: number;
+  make: (n: number) => string;
+  skip: (n: number) => boolean;
+}
+
+function sisterSpec(key: string): SisterSpec | null {
+  const m = /^([a-z0-9]+):(.+)$/.exec(key);
+  if (!m) return null;
+  const [, fam, rest] = m;
+  const no = () => false;
+  switch (fam) {
+    case 'place100': case 'read100':
+      return rest[0] === 't'
+        ? { base: 0, unit: 10, min: 10, max: 90, make: (n) => `${fam}:t${n}`, skip: no }
+        : { base: 0, unit: 1, min: 11, max: 99, make: (n) => `${fam}:n${n}`, skip: (n) => n % 10 === 0 };
+    case 'place1000': case 'read1000':
+      return rest[0] === 'h'
+        ? { base: 0, unit: 100, min: 100, max: 900, make: (n) => `${fam}:h${n}`, skip: no }
+        : { base: 0, unit: 10, min: 110, max: 990, make: (n) => `${fam}:n${n}`, skip: (n) => n % 100 === 0 };
+    case 'tens100': {
+      const sign = rest[0] === '-' ? '-' : '+';
+      return { base: 0, unit: 1, min: 11, max: sign === '+' ? 90 : 100, make: (n) => `${fam}:${sign}${n}`, skip: no };
+    }
+    case 'near10':
+      return rest[0] === 'h'
+        ? { base: 5, unit: 10, min: 5, max: 95, make: (n) => `${fam}:h${n}`, skip: no }
+        : { base: 0, unit: 1, min: 1, max: 99, make: (n) => `${fam}:n${n}`, skip: (n) => n % 5 === 0 };
+    case 'near100':
+      return rest[0] === 'h'
+        ? { base: 50, unit: 100, min: 150, max: 950, make: (n) => `${fam}:h${n}`, skip: no }
+        : { base: 0, unit: 10, min: 110, max: 990, make: (n) => `${fam}:n${n}`, skip: (n) => n % 50 === 0 };
+    case 'zoom': {
+      const z = /^(\d+)-(\d+):\d+$/.exec(rest);
+      if (!z) return null;
+      const [lo, hi] = [Number(z[1]), Number(z[2])];
+      const unit = hi - lo <= 10 ? 1 : 10;
+      return { base: 0, unit, min: lo + unit, max: hi - unit, make: (n) => `zoom:${lo}-${hi}:${n}`, skip: no };
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * The sister of a go, for "Now you try": the same kind of go on the same sort of key, with its number moved by one or two steps
+ * of the key's own size (1 for most, 10 for a ten key, 100 for a hundred key), inside the key's range, never the same answer or
+ * one of the go's wrong cards where the range allows. Built by the game's own go code, so its cards are self-consistent. It is
+ * local only: its key may not be one the game asks, so the server can never replay it. Null when no sister fits (the old redo is used).
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const spec = sisterSpec(go.key);
+  if (!spec) return null;
+  const { base, unit, min, max, make, skip } = spec;
+  const toStep = (x: number) => (x - base) / unit;
+  const blocked: number[] = [];
+  for (let n = min; n <= max; n += unit) if (skip(n)) blocked.push(n);
+  const hard = [go.n, ...blocked];
+  const soft = [...hard, ...go.choices, ...go.choices.map((c) => c - go.step10)];
+  const seed = (round.seed + 104729 * (index + 1)) % MAX_SEED;
+  // Last choice: a nearest go whose neighbours all share its post (near10:n12 → 13 is still the ten below) keeps the answer but changes the number.
+  for (const [avoid, strict] of [[soft, true], [hard, true], [hard, false]] as const) {
+    const rejected: number[] = [];
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const step = sisterNumber(toStep(go.n), seed + attempt, { min: toStep(min), max: toStep(max), avoid: [...avoid, ...rejected].map(toStep) });
+      if (step === null) break;
+      const n = base + step * unit;
+      const sister = buildGo(round, index + C.GOES_PER_ROUND, { key: make(n), kind: go.kind, l: go.l });
+      const same = strict && sister && go.kind !== 'place' && sister.answer === go.answer;
+      if (sister && sister.n !== go.n && !same && kindFor(sister.key) === go.kind) return sister;
+      rejected.push(n);
+    }
+  }
+  return null;
 }
 
 /** Every go of a round as shown. Throws if a saved round has a go the game can't make. */

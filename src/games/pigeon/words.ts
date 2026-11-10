@@ -36,7 +36,7 @@ export const WORDS = {
   voiceOff: 'Voice off',
   prizesWon: (n: number) => `${n} Golden Berry Branch${n === 1 ? '' : 'es'}`,
   lookTitle: 'Let’s look together.',
-  nowYouTry: 'Now you try.',
+  nowYouTry: 'Now you try one like it.',
   skip: 'Skip',
   /** The "Show me first" demo, the first time a zoom go comes up (a made-up example the round never asks). */
   demoTitle: 'Watch first',

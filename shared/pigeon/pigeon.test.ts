@@ -3,7 +3,7 @@ import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { BERRY_CLUSTERS } from './config';
 import { DAYS_PER_BRANCH, branchAfter, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
-import { DEMO_KEYS, GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, makeRound, marksFor, pictureFor, placeAfter, placeRight, poolFor, showRound, startFor, tapValue, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { DEMO_KEYS, GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, makeRound, marksFor, pictureFor, placeAfter, placeRight, poolFor, showRound, sisterGo, startFor, tapValue, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handlePigeon, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { placingSummary } from './teacher';
@@ -101,6 +101,30 @@ describe('the round', () => {
       expect(pictureFor({ ...go, l }, 1, [13], true)).toMatchObject({ level: 5, peekOpen: false });
     }
     expect(pictureFor({ ...go, kind: 'place', choices: [] }, 3).band).toEqual([10, 20]);
+  });
+});
+
+describe('the sister go', () => {
+  it('is the same kind of go on other numbers, never the original answer, and is not part of the taps that replay', () => {
+    for (const step of steps) {
+      for (const seed of seeds.slice(0, 8)) {
+        const round = makeRound(seed, inBox(KEYS.slice(0, 6), 2), { step, level: 2 });
+        const goes = showRound(round);
+        goes.forEach((go, i) => {
+          const sister = sisterGo(round, i, go);
+          if (!sister) return;
+          expect(sister.kind).toBe(go.kind);
+          expect(sister.key.split(':')[0]).toBe(go.key.split(':')[0]);
+          expect(sister.n).not.toBe(go.n);
+          if (go.kind === 'read' || go.kind === 'tens') expect(sister.answer).not.toBe(go.answer);
+          expect(sister.l).toBe(go.l);
+          expect(sisterGo(round, i, go)).toEqual(sister);
+        });
+        // The taps that are sent hold only the original goes' picks, so the replay is done and valid.
+        const sent = goes.map((go) => ({ pick: rightTap(go), ms: 1000 }));
+        expect(replay(round, sent).done).toBe(true);
+      }
+    }
   });
 });
 
