@@ -51,7 +51,7 @@ export const WORDS = {
   /** After the second wrong tap of a go: Robin counts, then asks again. */
   lookTogether: 'Let’s count again together.',
   lookFill: 'Let us count them one at a time.',
-  nowTry: 'Now you try!',
+  nowTry: 'Now you try one like it.',
   goOn: 'My turn',
   hearAgain: 'Hear it again',
   peek: 'Peek',

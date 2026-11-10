@@ -13,6 +13,7 @@ import type { FactStats } from '../maths/leitner';
 import { atMostShareTell, type Wrong } from '../kit/mistakes';
 import { helpWithSetting, type HelpSetting, type KindLevels } from '../kit/help';
 import { seeded } from '../seededRandom';
+import { sisterNumber } from '../kit/sister';
 import { ALL_COUNT_KEYS, COUNT_KEYS, countNumbers, kindOfCountKey, type CountKind } from '../maths/skillPacks/countingKeys';
 import { GOES_PER_ROUND, MAX_PILE, PILE_EXTRA, REVIEW_GOES, TOP_LEVEL, type HelpLevel, type Step } from './config';
 
@@ -276,4 +277,28 @@ export function levelFor(planned: HelpLevel, wrongTaps: number, struggling: bool
 export function redoCards(go: Pick<Go, 'choices' | 'answer'>, tapped: readonly number[]): number[] {
   const other = go.choices.find((c) => c !== go.answer && !tapped.includes(c)) ?? go.choices.find((c) => c !== go.answer)!;
   return go.choices.filter((c) => c === go.answer || c === other);
+}
+
+/**
+ * A "sister" of a go for "Now you try one like it": the same key shape (same kind, layout and help level) with its defining number
+ * moved by 1 or 2 inside the keys the game makes, built by showGo so its cards and answer agree. It avoids the original answer and
+ * the original cards where the range allows. Null if no valid sister exists (the game then asks the same go again).
+ */
+export function sisterGo(round: Pick<Round, 'seed'>, index: number, go: Go): Go | null {
+  const [n] = countNumbers(go.key);
+  if (n === undefined) return null;
+  const shape = (c: number) => go.key.replace(/\d+/, String(c));
+  const same = ALL_COUNT_KEYS.filter((k) => k.split(':')[0] === go.key.split(':')[0] && k === shape(countNumbers(k)[0]));
+  const nums = same.map((k) => countNumbers(k)[0]);
+  const [min, max] = [Math.min(...nums), Math.max(...nums)];
+  const gaps = range(min, max).filter((c) => !nums.includes(c));
+  // Cards on the original go: a counton go's answer is its number plus one.
+  const seen = go.kind === 'counton' ? go.choices.map((c) => c - 1) : go.choices;
+  const seed = (round.seed + 104729 + index) % MAX_SEED;
+  const c = sisterNumber(n, seed, { min, max, avoid: [...gaps, ...seen] }) ?? sisterNumber(n, seed, { min, max, avoid: gaps });
+  if (c === null) return null;
+  const sister = showGo(round, index, { key: shape(c), l: go.l });
+  if (!sister || sister.answer === go.answer) return null;
+  if (sister.kind !== 'give' && (sister.choices.length !== CARDS || !sister.choices.includes(sister.answer))) return null;
+  return sister;
 }

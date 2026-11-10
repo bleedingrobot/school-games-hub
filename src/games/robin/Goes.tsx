@@ -21,7 +21,7 @@ import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import { NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { helpShows, type Friend as FriendName } from '../../../shared/robin/config';
 import type { Tap } from '../../../shared/robin/play';
-import { GOES_PER_ROUND, levelFor, redoCards, showRound, type Go, type Round, type Slip } from '../../../shared/robin/round';
+import { GOES_PER_ROUND, levelFor, redoCards, showRound, sisterGo, type Go, type Round, type Slip } from '../../../shared/robin/round';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
 import { DemoBar } from '../../kit/DemoBar';
@@ -127,11 +127,13 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
   /** The go's place in the two-tap flow (shared/kit/mistakes.ts). */
   const [flow, setFlow] = useState(NEW_GO);
   /** The last wrong pick's mistake, shown with its line until the next tap. */
-  const [why, setWhy] = useState<{ pick: number; kind: Slip } | null>(null);
+  const [why, setWhy] = useState<{ pick: number; kind: Slip; go?: Go; marked?: number[] } | null>(null);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   const [tapped, setTapped] = useState<number[]>([]);
-  /** The two cards of "Now you try", the right one among them. */
+  /** The two cards of "Now you try" when no sister go could be made, the right one among them. */
   const [redo, setRedo] = useState<number[] | null>(null);
+  /** The sister go of "Now you try one like it": local only, never sent or saved, and nothing on it is marked. */
+  const [sister, setSister] = useState<Go | null>(null);
   /** Which pile berries are in the basket (give goes), in order; which group berries are counted (the others). */
   const [taken, setTaken] = useState<number[]>([]);
   const [marked, setMarked] = useState<number[]>([]);
@@ -157,7 +159,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
   };
   useEffect(() => clearTimers, []);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = sister ?? base;
   const guided = guide && at === 0;
   const guideHand = useGuidedFirstGo(guided, GUIDE_MS);
   const kindDemo = useKindDemo({ kind: demo.kind, seen, mark, steps: demo.kind ? DEMO_STEPS[demo.kind] : [], say });
@@ -219,6 +222,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
       setWhy(null);
       setTapped([]);
       setRedo(null);
+      setSister(null);
       setTaken([]);
       setMarked([]);
       setNeedOne(false);
@@ -246,7 +250,24 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
     guideHand.stop();
     setNeedOne(false);
     const now = Date.now();
-    const next = [...taps, { pick: n, ms: now - since.current }];
+    if (sister && n !== sister.answer) {
+      // A wrong tap on the sister: the why line once, then the original go's right answer is marked. Nothing is saved.
+      const kind: Slip = sister.kind === 'give' ? (n > sister.answer ? 'over' : 'under') : sister.wrongs.find((w) => w.n === n)?.kind ?? 'near';
+      setWhy({ pick: n, kind, go: sister, marked });
+      setSister(null);
+      setRedo(base.kind === 'give' ? null : redoCards(base, []));
+      setTapped([]);
+      setTaken([]);
+      setMarked([]);
+      setPose('laugh');
+      if (sound) playSound('tap');
+      later(LAUGH_MS, () => setPose('sit'));
+      since.current = now;
+      say(sister.kind === 'howmany' ? ownCountLine(sister.answer) : whyLine(kind));
+      return;
+    }
+    // A right tap on the sister sends the original go's right pick instead, so the saved taps end the go the usual way.
+    const next = [...taps, { pick: sister ? base.answer : n, ms: now - since.current }];
     since.current = now;
     setTaps(next);
     if (n !== go.answer) {
@@ -262,7 +283,8 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
       if (after.phase === 'look') {
         // The second wrong tap: Robin counts along, then the same go is asked again.
         setWhy(null);
-        const two = go.kind === 'give' ? null : redoCards(go, nowTapped);
+        const sis = sisterGo(round, at, go);
+        const two = sis || go.kind === 'give' ? null : redoCards(go, nowTapped);
         startLook({
           anchor: 0,
           steps: Math.max(1, go.answer),
@@ -272,10 +294,11 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);
             setRedo(two);
+            setSister(sis);
             setTaken([]);
             setMarked([]);
             since.current = Date.now();
-            say(WORDS.nowTry);
+            say(WORDS.nowTry, sis ? () => say(askLine(sis)) : undefined);
           },
         });
         return;
@@ -423,7 +446,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
                 </button>
               ))}
             </div>
-            <Basket placed={placed} slots={slots} above={shows.numberAbove} lit={inRedo && asking ? go.answer : null} label={WORDS.basketLabel(placed)} />
+            <Basket placed={placed} slots={slots} above={shows.numberAbove} lit={inRedo && !sister && asking ? go.answer : null} label={WORDS.basketLabel(placed)} />
             <div className="rb-give__row">
               <button type="button" className="rb-button rb-takeback" onClick={putBack} disabled={!asking || look !== null || placed === 0}>
                 <span aria-hidden="true">↩</span> {WORDS.takeBack}
@@ -479,7 +502,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
         {go.kind === 'counton' && <Plate n={go.n} more />}
       </div>
 
-      {why && asking && <ShowWhy prefix="rb" tapKey={taps.length} picture={go.kind === 'howmany' ? <OwnCount go={go} marked={marked} pick={why.pick} /> : <WhyPicture pick={why.pick} kind={why.kind} />} line={go.kind === 'howmany' ? ownCountLine(go.answer).split(PART_BREAK).join(' ') : WORDS.why(why.kind)} />}
+      {why && asking && <ShowWhy prefix="rb" tapKey={taps.length} picture={(why.go ?? go).kind === 'howmany' ? <OwnCount go={why.go ?? go} marked={why.marked ?? marked} pick={why.pick} /> : <WhyPicture pick={why.pick} kind={why.kind} />} line={(why.go ?? go).kind === 'howmany' ? ownCountLine((why.go ?? go).answer).split(PART_BREAK).join(' ') : WORDS.why(why.kind)} />}
       {look && (
         <LookTogether prefix="rb" title={WORDS.lookTogether} picture={<CountingPicture go={go} filled={look.filled} />} line={WORDS.lookFill} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
       )}
@@ -489,7 +512,7 @@ export function Goes({ round, friend, guide = false, sound, say, onDone, seenKin
         <div className="rb-cards" role="group" aria-label={WORDS.pickCard}>
           {cards.map((n) => {
             const off = (asking && tapped.includes(n)) || (!asking && n !== go.answer);
-            const hint = inRedo && asking && n === go.answer;
+            const hint = inRedo && !sister && asking && n === go.answer;
             return (
               <button
                 key={`${at}-${n}`}
