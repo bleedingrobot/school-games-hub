@@ -7,8 +7,8 @@
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import type { Tap } from './play';
 import type { Round } from './round';
-import { afterAnswer, newStats } from '../maths/leitner';
-import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import { newStats } from '../maths/leitner';
+import { juniorAfterAnswer } from '../juniorQuick';
 import { mergeSeen } from '../kit/seen';
 import { unplayed, type TuiServices, type Saved, type Settings } from './server';
 
@@ -110,7 +110,6 @@ export function memoryServices(options: MemoryOptions = {}): TuiServices & { dat
 /** The records after these answers, the way record_fact_answers will change them (the early facts' quick time). */
 export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
   const byKey = new Map(facts.map((s) => [s.key, s]));
-  const quick = JUNIOR_QUICK_MS;
-  for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
+  for (const a of answers) byKey.set(a.key, juniorAfterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
   return [...byKey.values()];
 }

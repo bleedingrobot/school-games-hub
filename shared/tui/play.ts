@@ -9,6 +9,7 @@
  * challenge.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, showRound, type Round } from './round';
 
 /** One nest picked: its number and how long the child took over it. */
@@ -42,7 +43,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a nest on go ${goesDone}`);
     const right = pick === go.answer;
     if (!triedThisGo) {
-      if (right) firstRight++;
+      if (right && thoughtOf(ms)) firstRight++;
       if (!counted.has(go.key)) {
         answers.push({ key: go.key, correct: right, ms });
         counted.add(go.key);

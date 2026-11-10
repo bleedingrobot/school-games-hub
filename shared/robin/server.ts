@@ -16,7 +16,7 @@
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
-import { replay, slipsOf, type Tap } from './play';
+import { replay, rightFirstOf, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate, placeAfter } from './progress';
 import { fadeByKind, HELP_SETTINGS, ROUND_OF_TEN, type HelpSetting, type KindLevels } from '../kit/help';
 import { TOP_LEVEL, type HelpLevel, type Step } from './config';
@@ -179,8 +179,9 @@ export async function handleRobin(services: RobinServices, player: string, body:
     }
     if (!played.done) return no(400, 'That challenge isn’t finished yet.', { code: 'not-done' });
     const slips = slipsOf(kept.round, taps);
+    const rightFirst = rightFirstOf(kept.round, taps);
     // Each go and whether it was right at the first tap (no slip), for the help of each kind.
-    const wentRight = kept.round.goes.map((g, i) => ({ kind: goKindOf(g.key) ?? 'give', right: slips[i] === null }));
+    const wentRight = kept.round.goes.map((g, i) => ({ kind: goKindOf(g.key) ?? 'give', right: rightFirst[i] }));
     const at = services.now();
     const answers = played.answers.map((a) => ({ ...a, at }));
     for (let tries = 0; tries < TRIES; tries++) {

@@ -2,14 +2,6 @@
 // then run `npm run build:functions`. Deploy this file as the "weka" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
-//#region shared/juniorQuick.ts
-/**
-* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
-* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
-* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
-*/
-const JUNIOR_QUICK_MS = 1e4;
-//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -155,6 +147,20 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	return next;
 }
 //#endregion
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+/** True when the answer had time to be a thought. */
+const thoughtOf = (ms) => ms >= 600;
+/** `afterAnswer` with the junior quick time and the think floor. A quick time of -1 can never be met, so a too-fast right answer is counted but not quick. */
+function juniorAfterAnswer(stats, correct, ms, at) {
+	return afterAnswer(stats, correct, ms, at, thoughtOf(ms) ? JUNIOR_QUICK_MS : -1);
+}
+//#endregion
 //#region shared/kit/replay.ts
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, throws: the browser never sends them. */
 function replayTaps(goes, taps, rules) {
@@ -170,7 +176,7 @@ function replayTaps(goes, taps, rules) {
 		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
 		const right = pick === go.answer;
 		if (!triedThisGo) {
-			if (right) firstRight++;
+			if (right && (rules.minThinkMs === void 0 || ms >= rules.minThinkMs)) firstRight++;
 			if (!rules.oncePerFact || !counted.has(go.key)) answers.push({
 				key: go.key,
 				correct: right,
@@ -1208,7 +1214,8 @@ function showRound(round) {
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
 const replay = (round, taps) => replayTaps(showRound(round), taps, {
 	goesPerRound: 10,
-	oncePerFact: true
+	oncePerFact: true,
+	minThinkMs: 600
 });
 //#endregion
 //#region shared/kit/dayArc.ts
@@ -1402,8 +1409,7 @@ function readTaps(v) {
 /** The records after this challenge's answers, the way record_fact_answers will change them (add-sub's quick time). */
 function withAnswers(facts, answers) {
 	const byKey = new Map(facts.map((s) => [s.key, s]));
-	const quick = JUNIOR_QUICK_MS;
-	for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
+	for (const a of answers) byKey.set(a.key, juniorAfterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
 	return [...byKey.values()];
 }
 async function handleWeka(services, player, body) {
@@ -7629,7 +7635,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs, minMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -7645,7 +7651,8 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
-			top_box: 4
+			top_box: 4,
+			min_ms: minMs ?? 0
 		});
 		if (error) {
 			result.failed++;
@@ -7851,7 +7858,7 @@ Deno.serve(makeHandler({
 		mistakes: ending.mistakes
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "weka", void 0, JUNIOR_QUICK_MS);
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "weka", void 0, JUNIOR_QUICK_MS, 600);
 	},
 	async progressChanged(player) {
 		const { error } = await admin.rpc("game_progress_changed", {

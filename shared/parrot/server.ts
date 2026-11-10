@@ -16,7 +16,7 @@
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
-import { replay, slipsOf, type Tap } from './play';
+import { replay, rightFirstOf, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
 import { fadeByKind, placeAfter, type KindLevels, type Place as KitPlace } from '../kit/help';
 import { HELP_SETTINGS, type HelpSetting } from '../kit/help';
@@ -185,6 +185,7 @@ export async function handleParrot(services: ParrotServices, player: string, bod
       const place = result.changed === null ? before : moved(before, played.firstRight);
       // The same guard for the help for each kind of go: it moves on the day's first finish only, from the level the round was played at.
       const slips = slipsOf(kept.round, taps);
+      const rightFirst = rightFirstOf(kept.round, taps);
       // A new step starts every kind afresh at the new whole-child level (rule 5: a new step starts with full help).
       const kindLevels =
         result.changed === null
@@ -193,7 +194,7 @@ export async function handleParrot(services: ParrotServices, player: string, bod
             ? {}
             : fadeByKind(
               s.kindLevels ?? {},
-              kept.round.goes.map((g, i) => ({ kind: kindOfKey(g.key)!, right: slips[i] === null })),
+              kept.round.goes.map((g, i) => ({ kind: kindOfKey(g.key)!, right: rightFirst[i] })),
               STEP_RULES,
               before.level,
             );

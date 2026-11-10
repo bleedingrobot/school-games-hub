@@ -19,9 +19,9 @@
  * Nothing that counts comes from the browser: the seed and the round are the server's, the day is the server's clock, and
  * the leaves come from the saved count of finished days. A challenge finishes once.
  */
-import { JUNIOR_QUICK_MS } from '../juniorQuick';
+import { juniorAfterAnswer, thoughtOf } from '../juniorQuick';
 import { afterDay, finishChallenge, nzDate, placeAfter, START_STEPS, sumSecure, type FinishResult, type HelpLevel, type Steps } from './progress';
-import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { readKinds, type SeenServices } from '../kit/seen';
 import { makeRound, makeStageRound, MAX_SEED, isSeed, replay, stageTarget, TARGETS, type Round, type Tap } from './round';
 
@@ -114,7 +114,7 @@ const unreadable = () => no(400, 'That couldn’t be read.');
 /** The records after this challenge's answers, the way record_fact_answers will change them (the juniors' quick time). */
 export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
   const byKey = new Map(facts.map((f) => [f.key, f]));
-  for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, JUNIOR_QUICK_MS));
+  for (const a of answers) byKey.set(a.key, juniorAfterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
   return [...byKey.values()];
 }
 
@@ -203,7 +203,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
       const result = finishChallenge(s.daysDone, s.lastLeafDay, today());
       const at = services.now();
       const answers = played.answers.map((a) => ({ ...a, at }));
-      const rightFirst = played.answers.filter((a) => a.correct).length;
+      const rightFirst = played.answers.filter((a) => a.correct && thoughtOf(a.ms)).length;
       // Which stage next: two good days with the sum secure move up, two hard days step back (progress.ts: afterDay). If the
       // records can't be read, nobody moves up (the child stays; a hard patch still steps back).
       const facts = await services.facts(player);

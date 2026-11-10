@@ -34,6 +34,8 @@ export interface ReplayRules {
   goesPerRound: number;
   /** True: a fact asked a second time in a round is practice only. False: every go counts. */
   oncePerFact: boolean;
+  /** A right first tap faster than this is still an answer but not a "first right" (S14). Left out: no floor. */
+  minThinkMs?: number;
 }
 
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, throws: the browser never sends them. */
@@ -50,7 +52,7 @@ export function replayTaps(goes: readonly ReplayGo[], taps: readonly Tap[], rule
     if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
     const right = pick === go.answer;
     if (!triedThisGo) {
-      if (right) firstRight++;
+      if (right && (rules.minThinkMs === undefined || ms >= rules.minThinkMs)) firstRight++;
       if (!rules.oncePerFact || !counted.has(go.key)) answers.push({ key: go.key, correct: right, ms });
       counted.add(go.key);
     }
@@ -61,4 +63,24 @@ export function replayTaps(goes: readonly ReplayGo[], taps: readonly Tap[], rule
     } else mistakes++;
   }
   return { goesDone, mistakes, firstRight, done: goesDone === goes.length && goes.length === rules.goesPerRound, answers };
+}
+
+/**
+ * The time of the first tap of each go (undefined for a go not reached), so a game that works out "right first time"
+ * for each go itself can apply the same think floor as `firstRight` (S14).
+ */
+export function firstTapTimes(goes: readonly { answer: number }[], taps: readonly Tap[]): (number | undefined)[] {
+  const times: (number | undefined)[] = goes.map(() => undefined);
+  let at = 0;
+  let tried = false;
+  for (const { pick, ms } of taps) {
+    const go = goes[at];
+    if (!go) break;
+    if (!tried) times[at] = ms;
+    if (pick === go.answer) {
+      at++;
+      tried = false;
+    } else tried = true;
+  }
+  return times;
 }

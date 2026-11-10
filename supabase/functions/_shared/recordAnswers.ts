@@ -39,6 +39,8 @@ export async function recordMathsAnswers(
   batchId: (once: string, pack: string) => Promise<string> = (o, pack) => batchIdFor(`${from}:${o}:${pack}`),
   // A game for young children can give its own quick time (shared/juniorQuick.ts) instead of each pack's own.
   quickMs?: number,
+  // A right answer faster than this is saved but is not quick (S14, shared/juniorQuick.ts). Left out: no floor.
+  minMs?: number,
 ): Promise<Recorded> {
   const result: Recorded = { saved: 0, failed: 0 };
   for (const [pack, group] of groupByPack(answers)) {
@@ -52,6 +54,7 @@ export async function recordMathsAnswers(
         quick_ms: quickMs ?? quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,
+        min_ms: minMs ?? 0,
       });
       if (error) {
         result.failed++;

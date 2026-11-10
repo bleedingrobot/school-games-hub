@@ -10,6 +10,7 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import { replayTaps, type TapReplay } from '../kit/replay';
+import { JUNIOR_MIN_THINK_MS, thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, mulKeyOf, showRound, type Kind, type Round, type Slip } from './round';
 
 export type { Tap } from '../kit/replay';
@@ -39,18 +40,18 @@ function withTimes(answers: TapReplay['answers']): TapReplay['answers'] {
 /** Replays a child's taps. A tap that couldn't be made, or one after the end, throws: the browser never sends them. */
 export function replay(round: Round, taps: readonly { pick: number; ms: number }[]): Replay {
   const goes = showRound(round);
-  const played = replayTaps(goes, taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true });
+  const played = replayTaps(goes, taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS });
   const slips: Slip[] = [];
   const kindGoes: Replay['kindGoes'] = [];
   let at = 0;
   let first = true;
-  for (const { pick } of taps) {
+  for (const { pick, ms } of taps) {
     const go = goes[at];
     if (first && pick !== go.answer) {
       const w = go.wrongs.find((x) => x.n === pick);
       if (w) slips.push(w.kind);
     }
-    if (first) kindGoes.push({ kind: round.goes[at].kind, right: pick === go.answer });
+    if (first) kindGoes.push({ kind: round.goes[at].kind, right: pick === go.answer && thoughtOf(ms) });
     first = pick === go.answer;
     if (pick === go.answer) at++;
   }

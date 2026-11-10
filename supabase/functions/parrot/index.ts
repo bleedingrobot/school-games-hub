@@ -17,7 +17,7 @@ function replayTaps(goes, taps, rules) {
 		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
 		const right = pick === go.answer;
 		if (!triedThisGo) {
-			if (right) firstRight++;
+			if (right && (rules.minThinkMs === void 0 || ms >= rules.minThinkMs)) firstRight++;
 			if (!rules.oncePerFact || !counted.has(go.key)) answers.push({
 				key: go.key,
 				correct: right,
@@ -39,6 +39,117 @@ function replayTaps(goes, taps, rules) {
 		answers
 	};
 }
+/**
+* The time of the first tap of each go (undefined for a go not reached), so a game that works out "right first time"
+* for each go itself can apply the same think floor as `firstRight` (S14).
+*/
+function firstTapTimes(goes, taps) {
+	const times = goes.map(() => void 0);
+	let at = 0;
+	let tried = false;
+	for (const { pick, ms } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		if (!tried) times[at] = ms;
+		if (pick === go.answer) {
+			at++;
+			tried = false;
+		} else tried = true;
+	}
+	return times;
+}
+//#endregion
+//#region shared/maths/config.ts
+/**
+* Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
+*/
+/** Times tables 1–12. */
+const TABLES = [
+	1,
+	2,
+	3,
+	4,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12
+];
+/**
+* The campaign's focus tables: each step adds tables, and the tables from earlier steps
+* become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
+* number any fact uses in that step (default 12): the first levels stop at × 10 so they're
+* super easy (James, 16 Oct 2026).
+*
+* The order follows the NZ Curriculum families (James, 18 Oct 2026): 2/5/10, then 3/4/8,
+* then 6/9, then 7, then 11/12. It used to put ×8 with ×6 and ×7 with ×9. Level numbers are
+* unchanged, so a student part-way through the old order keeps their level; the facts they
+* already know are in their records, so they show up as review and the new tables as focus.
+* Fact records are keyed by the fact ("mul:6x7"), not by the step, so none are lost.
+*/
+const CAMPAIGN_STEPS = [
+	{
+		levels: [1, 2],
+		add: [
+			2,
+			5,
+			10
+		],
+		upTo: 10
+	},
+	{
+		levels: [3, 4],
+		add: [
+			3,
+			4,
+			8
+		]
+	},
+	{
+		levels: [5, 6],
+		add: [6, 9]
+	},
+	{
+		levels: [7, 8],
+		add: [7]
+	},
+	{
+		levels: [9, 10],
+		add: [11, 12]
+	}
+];
+/**
+* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+* as this long (right or wrong is untouched, and anything this slow is far from quick).
+*/
+const LONGEST_ANSWER_MS = 12e4;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
+/**
+* Packs whose questions take longer to think through have a longer quick time (James can change these): the generated
+* skills (rounding a 7-digit number, 2 + 3 × 4 − 1 with four choices) can't be answered in 5 seconds by a student who knows
+* them well, and a box only moves up on a quick answer, so with 5 seconds those skills would never be secure.
+*/
+const QUICK_MS_BY_PACK = { generated: 8e3 };
+/** The quick time for the records of a pack ("times-tables", "generated"...). */
+const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
+new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+//#endregion
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+/** True when the answer had time to be a thought. */
+const thoughtOf = (ms) => ms >= 600;
 //#endregion
 //#region shared/kit/mistakes.ts
 /** How many of these choices (the right answer included, counted once) share the right answer's tell: same ending, same parity, same teen shape. */
@@ -707,7 +818,8 @@ function replay(round, taps) {
 		choices: tapsAllowed(go)
 	})), taps, {
 		goesPerRound: 10,
-		oncePerFact: true
+		oncePerFact: true,
+		minThinkMs: 600
 	});
 }
 /** The kind of slip behind each go's first wrong tap (null for a go right first time), for the teacher's line. */
@@ -728,6 +840,12 @@ function slipsOf(round, taps) {
 		tried = true;
 	}
 	return slips;
+}
+/** Whether each go was right at the first tap and not too fast to be a thought (S14), for the help of each kind. Slips are unchanged. */
+function rightFirstOf(round, taps) {
+	const slips = slipsOf(round, taps);
+	const times = firstTapTimes(showRound(round), taps);
+	return slips.map((s, i) => s === null && times[i] !== void 0 && thoughtOf(times[i]));
 }
 //#endregion
 //#region shared/kit/dayArc.ts
@@ -957,9 +1075,10 @@ async function handleParrot(services, player, body) {
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.changed === null ? before : moved(before, played.firstRight);
 			const slips = slipsOf(kept.round, taps);
+			const rightFirst = rightFirstOf(kept.round, taps);
 			const kindLevels = result.changed === null ? s.kindLevels ?? {} : place.step !== before.step ? {} : fadeByKind(s.kindLevels ?? {}, kept.round.goes.map((g, i) => ({
 				kind: kindOfKey(g.key),
-				right: slips[i] === null
+				right: rightFirst[i]
 			})), STEP_RULES, before.level);
 			const progress = {
 				daysDone: result.daysDone,
@@ -995,95 +1114,6 @@ async function handleParrot(services, player, body) {
 	return unreadable();
 }
 //#endregion
-//#region shared/juniorQuick.ts
-/**
-* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
-* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
-* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
-*/
-const JUNIOR_QUICK_MS = 1e4;
-//#endregion
-//#region shared/maths/config.ts
-/**
-* Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
-*/
-/** Times tables 1–12. */
-const TABLES = [
-	1,
-	2,
-	3,
-	4,
-	5,
-	6,
-	7,
-	8,
-	9,
-	10,
-	11,
-	12
-];
-/**
-* The campaign's focus tables: each step adds tables, and the tables from earlier steps
-* become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
-* number any fact uses in that step (default 12): the first levels stop at × 10 so they're
-* super easy (James, 16 Oct 2026).
-*
-* The order follows the NZ Curriculum families (James, 18 Oct 2026): 2/5/10, then 3/4/8,
-* then 6/9, then 7, then 11/12. It used to put ×8 with ×6 and ×7 with ×9. Level numbers are
-* unchanged, so a student part-way through the old order keeps their level; the facts they
-* already know are in their records, so they show up as review and the new tables as focus.
-* Fact records are keyed by the fact ("mul:6x7"), not by the step, so none are lost.
-*/
-const CAMPAIGN_STEPS = [
-	{
-		levels: [1, 2],
-		add: [
-			2,
-			5,
-			10
-		],
-		upTo: 10
-	},
-	{
-		levels: [3, 4],
-		add: [
-			3,
-			4,
-			8
-		]
-	},
-	{
-		levels: [5, 6],
-		add: [6, 9]
-	},
-	{
-		levels: [7, 8],
-		add: [7]
-	},
-	{
-		levels: [9, 10],
-		add: [11, 12]
-	}
-];
-/**
-* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
-* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
-* as this long (right or wrong is untouched, and anything this slow is far from quick).
-*/
-const LONGEST_ANSWER_MS = 12e4;
-/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
-const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
-/** Answering correctly within this many milliseconds counts as quick. */
-const QUICK_MS = 5e3;
-/**
-* Packs whose questions take longer to think through have a longer quick time (James can change these): the generated
-* skills (rounding a 7-digit number, 2 + 3 × 4 − 1 with four choices) can't be answered in 5 seconds by a student who knows
-* them well, and a box only moves up on a quick answer, so with 5 seconds those skills would never be secure.
-*/
-const QUICK_MS_BY_PACK = { generated: 8e3 };
-/** The quick time for the records of a pack ("times-tables", "generated"...). */
-const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
-//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -1110,7 +1140,6 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
-new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/maths/banded.ts
 /** A whole number from lo to hi (both included). */
@@ -7470,7 +7499,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs, minMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -7486,7 +7515,8 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
-			top_box: 4
+			top_box: 4,
+			min_ms: minMs ?? 0
 		});
 		if (error) {
 			result.failed++;
@@ -7696,7 +7726,7 @@ Deno.serve(makeHandler({
 		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "parrot", void 0, JUNIOR_QUICK_MS);
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "parrot", void 0, JUNIOR_QUICK_MS, 600);
 	},
 	async progressChanged(player) {
 		const { error } = await admin.rpc("game_progress_changed", {

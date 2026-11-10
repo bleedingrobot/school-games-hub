@@ -8,6 +8,7 @@
  * asked a second time in the same round is practice only. `firstRight` counts every go right at the first try.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, MAX_PICK } from './config';
 import { showRound, type Go, type Round, type Slip } from './round';
 
@@ -56,9 +57,9 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     if (!go) throw new Error('Taps after the round was done');
     const right = tapRight(go, pick);
     if (!triedThisGo) {
-      goneThrough.push({ kind: go.kind, right });
-      if (right) firstRight++;
-      else slips.push({ key: go.key, kind: go.kind, slip: slipOf(go, pick) });
+      goneThrough.push({ kind: go.kind, right: right && thoughtOf(ms) });
+      if (right && thoughtOf(ms)) firstRight++;
+      if (!right) slips.push({ key: go.key, kind: go.kind, slip: slipOf(go, pick) });
       if (!counted.has(go.key)) {
         answers.push({ key: go.key, correct: right, ms });
         counted.add(go.key);
