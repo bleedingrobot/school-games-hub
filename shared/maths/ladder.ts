@@ -16,6 +16,7 @@ import type { FactAnswer } from './leitner';
 import type { AnswerResult, Question, SkillPack } from './skillPack';
 import { BANDED_PACKS } from './skillPacks';
 import { EARLY_FACTS, earlyFactsPack, SKIP_FROM_STEPS, SKIP_MORE_STEPS, SKIP_STEPS } from './skillPacks/earlyFacts';
+import { foldBondPairs } from './skillPacks/bondPairs';
 import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
@@ -246,7 +247,7 @@ export function tablesJumpFloor(byKey: ReadonlyMap<string, FactStats>, enabled: 
  * drops the student's place below the floor.
  */
 export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions = {}): LadderProgress {
-  const byKey = new Map([...stats].map((s) => [s.key, s]));
+  const byKey = new Map(foldBondPairs(stats).map((s) => [s.key, s]));
   const enabled = opts.enabledTables ?? TABLES;
   let current: LadderSkill | null = null;
   let secureCount = 0;

@@ -5,7 +5,7 @@
  */
 import { fadeAfter, helpWithSetting, ROUND_OF_TEN, type FadeRules } from '../kit/help';
 import { mastery, type FactStats } from '../maths/leitner';
-import { factKeys, MISSING_GOES, PAIRS_PER_ROUND, TARGETS, type Stage, type Target } from './round';
+import { factKeys, oldKeyOf, MISSING_GOES, PAIRS_PER_ROUND, TARGETS, type Stage, type Target } from './round';
 
 export const LEAVES_ON_STALK = 10;
 export const METALS = ['green', 'bronze', 'silver', 'gold'] as const;
@@ -149,7 +149,11 @@ export const SECURE_SHARE = 0.7;
 export function sumSecure(facts: readonly FactStats[], target: Target): boolean {
   const keys = factKeys(target);
   const byKey = new Map(facts.map((f) => [f.key, f]));
-  const secure = keys.filter((k) => ['secure', 'fluent'].includes(mastery(byKey.get(k)))).length;
+  // A 100 or 1000 pair with no record of its own yet counts as secure when the older one-key record says so (no one is sent back a step).
+  const old = oldKeyOf(target);
+  const oldSecure = old !== null && ['secure', 'fluent'].includes(mastery(byKey.get(old)));
+  const isSecure = (k: string) => ['secure', 'fluent'].includes(mastery(byKey.get(k))) || (oldSecure && mastery(byKey.get(k)) === 'not-tried');
+  const secure = keys.filter(isSecure).length;
   return secure / keys.length >= SECURE_SHARE;
 }
 

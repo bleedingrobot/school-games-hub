@@ -10,6 +10,7 @@
 import { TABLES, TOP_BOX } from './config';
 import type { FactStats } from './leitner';
 import { activeKeys, LADDER, type LadderProgress, type LadderSkill, type LadderStage, type SkillStatus } from './ladder';
+import { foldBondPairs } from './skillPacks/bondPairs';
 import { placeProgress, type LadderInfo } from './place';
 import { STEP_SECURE_SHARE } from './selector';
 
@@ -130,7 +131,8 @@ function stageLevel(cells: readonly SkillCell[]): CellLevel {
  */
 export function studentMap(stats: Iterable<FactStats>, info: LadderInfo, settings: MapSettings = {}): StudentMap {
   const list = [...stats];
-  const byKey = new Map(list.map((s) => [s.key, s]));
+  // Bonds to 100 and 1000 have one record per pair as well as the old one: a stand-in old record says what the pairs add up to.
+  const byKey = new Map(foldBondPairs(list).map((s) => [s.key, s]));
   const enabledTables = settings.enabledTables ?? undefined;
   const options = { enabledTables, division: settings.division };
   const progress = placeProgress(

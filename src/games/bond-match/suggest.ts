@@ -11,6 +11,7 @@ import { LADDER } from '../../../shared/maths/ladder';
 import { currentFocus, hasFocus, isTeacherFocus } from '../../../shared/maths/focus';
 import { placeProgress } from '../../../shared/maths/place';
 import type { FactStats } from '../../../shared/maths/leitner';
+import { foldBondPairs } from '../../../shared/maths/skillPacks/bondPairs';
 import type { MyLadder } from '../../data/ladder';
 
 /** A bond set, and (for all but the last in a skill's list) the question type that says it's known well enough to move on. */
@@ -45,7 +46,9 @@ const SECURE_BOX = 2;
 function bondFor(skillId: string, facts: readonly FactStats[]): string | null {
   const steps = SKILL_BONDS[skillId];
   if (!steps) return null;
-  const box = (key: string) => facts.find((f) => f.key === key)?.box ?? 0;
+  // Beanstalk saves bonds to 100 and 1000 a pair at a time: the old key counts when the pairs say it is secure (bondPairs.ts).
+  const folded = foldBondPairs(facts);
+  const box = (key: string) => folded.find((f) => f.key === key)?.box ?? 0;
   return (steps.find((s) => !s.movesOnAt || box(s.movesOnAt) < SECURE_BOX) ?? steps[steps.length - 1]).bond;
 }
 

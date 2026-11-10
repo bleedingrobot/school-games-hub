@@ -315,3 +315,18 @@ describe('the default tables', () => {
     expect(a).toEqual(b);
   });
 });
+
+describe('bonds to 100 and 1000 kept one pair at a time (S34)', () => {
+  const stat = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 4, correct: 4, avgMs: 2000, box });
+  const bonds100 = (stats: FactStats[]) => ladderProgress(stats).skills.find((p) => p.skill.id === 'bonds-100')!;
+
+  it('counts the pair records and the old record towards the same skill, whichever says secure', () => {
+    const pairs = [10, 20, 30, 40, 50].map((n) => `bond100:${n}+${100 - n}`);
+    expect(bonds100([]).share).toBe(0);
+    expect(bonds100([stat('bond100:tens', 2)]).share).toBe(0.25); // as before: 1 of its 4 keys
+    expect(bonds100(pairs.map((k) => stat(k, 2))).share).toBe(0.25); // the pairs stand in for the old key
+    expect(bonds100(pairs.slice(0, 3).map((k) => stat(k, 3))).share).toBe(0); // 3 of 5 is not secure
+    expect(bonds100([stat('bond100:tens', 3), ...pairs.slice(0, 1).map((k) => stat(k, 0))]).share).toBe(0.25); // the old record is never made smaller
+    expect(studentMap(pairs.map((k) => stat(k, 2)), NO_LADDER).stages.flatMap((s) => s.cells).find((c) => c.skill.id === 'bonds-100')!.asked).toBeGreaterThan(0);
+  });
+});

@@ -8,6 +8,7 @@
  */
 import { parseFactKey } from './facts';
 import type { FactStats } from './leitner';
+import { isBondPairKey } from './skillPacks/bondPairs';
 import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
 import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
@@ -226,7 +227,7 @@ const ladderKeys = ladderKeyPacks();
 for (let a = 1; a <= 12; a++) for (let b = a; b <= 12; b++) ladderKeys.set(`mul:${a}x${b}`, 'times-tables');
 
 /** True for a mastery key the games record under a focus. */
-export const isFocusKey = (key: string) => ladderKeys.has(key);
+export const isFocusKey = (key: string) => ladderKeys.has(key) || isBondPairKey(key);
 
 export interface Solved {
   answer: number;

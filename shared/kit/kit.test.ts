@@ -205,7 +205,8 @@ describe('mistakes that teach', () => {
         }
       }
     }
-    expect(h.digest('hex')).toBe('0ed75da9c90d68506c236e53eba1f3160c8f971a');
+    // The saved answers' keys changed on purpose (S34: one key per pair on the 100s and 1000s), so the fingerprint was renewed.
+    expect(h.digest('hex')).toBe('52c868272cfa9130a8d0d7be1b4258fb2166f8d2');
   });
 
   it('the seen kinds: a body must name known kinds once each, lists merge sorted, and only answered keys count', () => {

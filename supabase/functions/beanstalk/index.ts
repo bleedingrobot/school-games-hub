@@ -327,9 +327,8 @@ const shuffleWith = (items, random) => {
 * Two of the ten pairs are older pairs, from the stages below, the least recently seen then the weakest; they come last as
 * a second tray with their own sum (`pairTargets`). The first stage has none.
 *
-* The 100 and 1000 sums have one fact key each ('bond100:tens'), so they can't say which pair is weak. Their pairs are
-* weighed by the bond10 record of the same pair (30 + 70 by 3 + 7) instead. Splitting the key lives in shared/maths and
-* would be its own branch.
+* The 100 and 1000 pairs have a fact key each ('bond100:30+70'). Until a pair has a record of its own it is weighed by the
+* bond10 record of the same pair (30 + 70 by 3 + 7), as the old single key could not say which pair was weak.
 */
 function makeStageRound(seed, stage, facts = []) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
@@ -338,8 +337,9 @@ function makeStageRound(seed, stage, facts = []) {
 	random();
 	random();
 	const record = new Map(facts.map((f) => [f.key, f]));
-	const boxOf = (c) => record.get(bondKey(c.lo, c.target >= 100 ? 10 : c.target))?.box ?? 0;
-	const seenOf = (c) => record.get(bondKey(c.lo, c.target))?.lastSeen ?? 0;
+	const ones = (c) => c.target === 20 ? c.lo : c.lo * c.target / 10;
+	const boxOf = (c) => (record.get(bondKey(ones(c), c.target)) ?? (c.target >= 100 ? record.get(bondKey(c.lo, 10)) : void 0))?.box ?? 0;
+	const seenOf = (c) => record.get(bondKey(ones(c), c.target))?.lastSeen ?? 0;
 	const target = TARGETS[stage];
 	const older = stage === 0 ? 0 : 2;
 	const own = shuffleWith(candidatesOf(target), random).sort((a, b) => boxOf(a) - boxOf(b) || seenOf(a) - seenOf(b));
@@ -370,16 +370,19 @@ function makeStageRound(seed, stage, facts = []) {
 	};
 }
 /**
-* The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
-* place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
+* The fact a pair practises, for the maths records, smaller number first: `bond10:3+7`, `bond20:7+13`, `bond100:30+70` and
+* `bond1000:300+700`. `n` is a number of the pair itself (30, not 3). The 100 and 1000 pairs count towards the same skills as the
+* older `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/bondPairs.ts), which are still kept.
 */
 const bondKey = (n, target = 10) => {
 	if (target === 20) {
 		const lo = Math.min(n, 20 - n);
 		return `bond20:${lo}+${20 - lo}`;
 	}
-	if (target === 100) return "bond100:tens";
-	if (target === 1e3) return "bond1000:hundreds";
+	if (target === 100 || target === 1e3) {
+		const lo = Math.min(n, target - n);
+		return `bond${target}:${lo}+${target - lo}`;
+	}
 	const lo = Math.min(n, 10 - n);
 	return `bond10:${lo}+${10 - lo}`;
 };
@@ -400,7 +403,15 @@ const factKeys$2 = (target) => target === 10 ? [
 	7,
 	8,
 	9
-].map((n) => bondKey(n, 20)) : [bondKey(1, target)];
+].map((n) => bondKey(n, 20)) : [
+	1,
+	2,
+	3,
+	4,
+	5
+].map((n) => bondKey(n * target / 10, target));
+/** The older record that stands in for a pair with none of its own yet: one key for the whole 100 or 1000 sum (null for 10 and 20). */
+const oldKeyOf = (target) => target === 100 ? "bond100:tens" : target === 1e3 ? "bond1000:hundreds" : null;
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
 const floating = (inPlay, used) => inPlay.flatMap((k) => [2 * k, 2 * k + 1]).filter((i) => !used.has(i));
 const mistakeKind = (total, target) => kindByUnits(unitsOff(total, target, unitOf(target)), {
@@ -581,7 +592,10 @@ const SECURE_SHARE = .7;
 function sumSecure(facts, target) {
 	const keys = factKeys$2(target);
 	const byKey = new Map(facts.map((f) => [f.key, f]));
-	return keys.filter((k) => ["secure", "fluent"].includes(mastery(byKey.get(k)))).length / keys.length >= SECURE_SHARE;
+	const old = oldKeyOf(target);
+	const oldSecure = old !== null && ["secure", "fluent"].includes(mastery(byKey.get(old)));
+	const isSecure = (k) => ["secure", "fluent"].includes(mastery(byKey.get(k))) || oldSecure && mastery(byKey.get(k)) === "not-tried";
+	return keys.filter(isSecure).length / keys.length >= SECURE_SHARE;
 }
 /**
 * The stage after a finished challenge with `right` pairs right at the first tap (S21). It moves only on the NZ day's first
@@ -869,6 +883,20 @@ function factsIn(tables) {
 	const keys = new Set();
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
+}
+//#endregion
+//#region shared/maths/skillPacks/bondPairs.ts
+/** `bond100:30+70` or `bond1000:300+700`: whole tens (or hundreds) that make the total, the smaller first. */
+const PAIR = /^bond(100|1000):(\d{1,3})\+(\d{1,3})$/;
+/** True for a pair key that could have been made: the numbers add to the total, the smaller first, in whole tens (hundreds). */
+function isBondPairKey(key) {
+	const m = PAIR.exec(key);
+	if (!m) return false;
+	const total = Number(m[1]);
+	const lo = Number(m[2]);
+	const hi = Number(m[3]);
+	const step = total / 10;
+	return lo >= step && lo <= hi && lo + hi === total && lo % step === 0 && m[2] === String(lo) && m[3] === String(hi);
 }
 //#endregion
 //#region shared/maths/banded.ts
@@ -6846,7 +6874,8 @@ const GENERATED_SKILL_KEYS = {
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
-const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
+/** A question type, or one bonds-to-100/1000 pair (`bond100:30+70`, kept beside the old `bond100:tens`: bondPairs.ts). */
+const isGeneratedKey = (key) => GENERATED_KEYS.has(key) || isBondPairKey(key);
 //#endregion
 //#region shared/maths/ladder.ts
 /**

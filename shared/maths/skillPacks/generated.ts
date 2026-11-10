@@ -14,6 +14,7 @@ import { quickMsForPack } from '../config';
 import type { FactStats } from '../leitner';
 import { BEDMAS_FAMILIES, BEDMAS_KEYS, parseBedmas } from './bedmas';
 import { BOND_FAMILIES, BOND_SKILL_KEYS } from './bondSkills';
+import { isBondPairKey } from './bondPairs';
 import { RECORD_KEY, sameParts, type Parser } from './generatedKit';
 import { DECIMAL_FAMILIES, DECIMAL_SKILL_KEYS } from './decimalSkills';
 import { FDP_FAMILIES, FDP_SKILL_KEYS } from './fdpSkills';
@@ -52,7 +53,8 @@ export const GENERATED_SKILL_KEYS = {
 /** Every question type this pack owns. */
 export const GENERATED_KEYS: ReadonlySet<string> = new Set(Object.keys(families));
 
-export const isGeneratedKey = (key: string) => GENERATED_KEYS.has(key);
+/** A question type, or one bonds-to-100/1000 pair (`bond100:30+70`, kept beside the old `bond100:tens`: bondPairs.ts). */
+export const isGeneratedKey = (key: string) => GENERATED_KEYS.has(key) || isBondPairKey(key);
 
 const PARSERS: Parser[] = [parseRounding, parsePlace, parseBedmas];
 
