@@ -32,80 +32,40 @@
   "text": "Tūī is filling up for winter on the Ten Tree! Help Tūī count the berries."
  },
  {
-  "slug": "tui-is-filling-up-for-winter-on-the-ten-tree-help-tui-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Tūī is filling up for winter on the Ten Tree! Help Tūī count the berries. Well done! Come back tomorrow to change another flower."
- },
- {
   "slug": "now-tui-has-a-ten-tree-to-fill-up",
   "text": "Now Tūī has a Ten Tree to fill up!"
- },
- {
-  "slug": "now-tui-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Now Tūī has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
  },
  {
   "slug": "kereru-is-filling-up-for-winter-on-the-ten-tree-help-kereru-count-the-berries",
   "text": "Kererū is filling up for winter on the Ten Tree! Help Kererū count the berries."
  },
  {
-  "slug": "kereru-is-filling-up-for-winter-on-the-ten-tree-help-kereru-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Kererū is filling up for winter on the Ten Tree! Help Kererū count the berries. Well done! Come back tomorrow to change another flower."
- },
- {
   "slug": "now-kereru-has-a-ten-tree-to-fill-up",
   "text": "Now Kererū has a Ten Tree to fill up!"
- },
- {
-  "slug": "now-kereru-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Now Kererū has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
  },
  {
   "slug": "piwakawaka-is-filling-up-for-winter-on-the-ten-tree-help-piwakawaka-count-the-berries",
   "text": "Pīwakawaka is filling up for winter on the Ten Tree! Help Pīwakawaka count the berries."
  },
  {
-  "slug": "piwakawaka-is-filling-up-for-winter-on-the-ten-tree-help-piwakawaka-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Pīwakawaka is filling up for winter on the Ten Tree! Help Pīwakawaka count the berries. Well done! Come back tomorrow to change another flower."
- },
- {
   "slug": "now-piwakawaka-has-a-ten-tree-to-fill-up",
   "text": "Now Pīwakawaka has a Ten Tree to fill up!"
- },
- {
-  "slug": "now-piwakawaka-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Now Pīwakawaka has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
  },
  {
   "slug": "korimako-is-filling-up-for-winter-on-the-ten-tree-help-korimako-count-the-berries",
   "text": "Korimako is filling up for winter on the Ten Tree! Help Korimako count the berries."
  },
  {
-  "slug": "korimako-is-filling-up-for-winter-on-the-ten-tree-help-korimako-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Korimako is filling up for winter on the Ten Tree! Help Korimako count the berries. Well done! Come back tomorrow to change another flower."
- },
- {
   "slug": "now-korimako-has-a-ten-tree-to-fill-up",
   "text": "Now Korimako has a Ten Tree to fill up!"
- },
- {
-  "slug": "now-korimako-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Now Korimako has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
  },
  {
   "slug": "kaka-is-filling-up-for-winter-on-the-ten-tree-help-kaka-count-the-berries",
   "text": "Kākā is filling up for winter on the Ten Tree! Help Kākā count the berries."
  },
  {
-  "slug": "kaka-is-filling-up-for-winter-on-the-ten-tree-help-kaka-count-the-berries-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Kākā is filling up for winter on the Ten Tree! Help Kākā count the berries. Well done! Come back tomorrow to change another flower."
- },
- {
   "slug": "now-kaka-has-a-ten-tree-to-fill-up",
   "text": "Now Kākā has a Ten Tree to fill up!"
- },
- {
-  "slug": "now-kaka-has-a-ten-tree-to-fill-up-well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Now Kākā has a Ten Tree to fill up! Well done! Come back tomorrow to change another flower."
  },
  {
   "slug": "ten-berries-on-the-branch-and-1-more-how-many-berries",
@@ -588,184 +548,72 @@
   "text": "Take away makes it smaller."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-flower",
-  "text": "Well done! Come back tomorrow to change another flower."
+  "slug": "you-spotted-the-ten-in-each-number",
+  "text": "You spotted the ten in each number!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: turn it round"
+  "slug": "some-were-tricky-and-you-kept-going",
+  "text": "Some were tricky and you kept going."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: how many more?"
+  "slug": "those-were-tricky-ones",
+  "text": "Those were tricky ones."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: take the ten away"
+  "slug": "come-back-tomorrow-to-change-another-flower",
+  "text": "Come back tomorrow to change another flower."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-flower-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "Well done! Come back tomorrow to change another flower. You are so good at this! Next time: all mixed"
+  "slug": "tricky-ones-are-good-practice-we-will-try-again-tomorrow",
+  "text": "Tricky ones are good practice. We will try again tomorrow."
  },
  {
-  "slug": "well-done-a-flower-turned-bronze",
-  "text": "Well done! A flower turned bronze!"
+  "slug": "a-flower-turned-bronze",
+  "text": "A flower turned bronze."
  },
  {
-  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "Well done! A flower turned bronze! You are so good at this! Next time: turn it round"
+  "slug": "a-flower-turned-silver",
+  "text": "A flower turned silver."
  },
  {
-  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "Well done! A flower turned bronze! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "Well done! A flower turned bronze! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "well-done-a-flower-turned-bronze-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "Well done! A flower turned bronze! You are so good at this! Next time: all mixed"
- },
- {
-  "slug": "well-done-a-flower-turned-silver",
-  "text": "Well done! A flower turned silver!"
- },
- {
-  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "Well done! A flower turned silver! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "Well done! A flower turned silver! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "Well done! A flower turned silver! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "well-done-a-flower-turned-silver-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "Well done! A flower turned silver! You are so good at this! Next time: all mixed"
- },
- {
-  "slug": "well-done-a-flower-turned-gold",
-  "text": "Well done! A flower turned gold!"
- },
- {
-  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "Well done! A flower turned gold! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "Well done! A flower turned gold! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "Well done! A flower turned gold! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "well-done-a-flower-turned-gold-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "Well done! A flower turned gold! You are so good at this! Next time: all mixed"
+  "slug": "a-flower-turned-gold",
+  "text": "A flower turned gold."
  },
  {
   "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest",
   "text": "All the flowers are gold! Tūī won the Golden Nest!"
  },
  {
-  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "all-the-flowers-are-gold-tui-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "All the flowers are gold! Tūī won the Golden Nest! You are so good at this! Next time: all mixed"
- },
- {
   "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest",
   "text": "All the flowers are gold! Kererū won the Golden Nest!"
- },
- {
-  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "all-the-flowers-are-gold-kereru-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "All the flowers are gold! Kererū won the Golden Nest! You are so good at this! Next time: all mixed"
  },
  {
   "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest",
   "text": "All the flowers are gold! Pīwakawaka won the Golden Nest!"
  },
  {
-  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "all-the-flowers-are-gold-piwakawaka-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "All the flowers are gold! Pīwakawaka won the Golden Nest! You are so good at this! Next time: all mixed"
- },
- {
   "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest",
   "text": "All the flowers are gold! Korimako won the Golden Nest!"
- },
- {
-  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: turn it round"
- },
- {
-  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: how many more?"
- },
- {
-  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: take the ten away"
- },
- {
-  "slug": "all-the-flowers-are-gold-korimako-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "All the flowers are gold! Korimako won the Golden Nest! You are so good at this! Next time: all mixed"
  },
  {
   "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest",
   "text": "All the flowers are gold! Kākā won the Golden Nest!"
  },
  {
-  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-turn-it-round",
-  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: turn it round"
+  "slug": "your-practice-is-paying-off-next-time-turn-it-round",
+  "text": "Your practice is paying off. Next time: turn it round."
  },
  {
-  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-how-many-more",
-  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: how many more?"
+  "slug": "your-practice-is-paying-off-next-time-how-many-more",
+  "text": "Your practice is paying off. Next time: how many more?"
  },
  {
-  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-take-the-ten-away",
-  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: take the ten away"
+  "slug": "your-practice-is-paying-off-next-time-take-the-ten-away",
+  "text": "Your practice is paying off. Next time: take the ten away."
  },
  {
-  "slug": "all-the-flowers-are-gold-kaka-won-the-golden-nest-you-are-so-good-at-this-next-time-all-mixed",
-  "text": "All the flowers are gold! Kākā won the Golden Nest! You are so good at this! Next time: all mixed"
+  "slug": "your-practice-is-paying-off-next-time-all-mixed",
+  "text": "Your practice is paying off. Next time: all mixed."
  },
  {
   "slug": "watch-5-plus-ten-the-5-berries-come-first",

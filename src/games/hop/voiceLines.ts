@@ -3,7 +3,7 @@
  * (public/voice/hop/<slug>.mp3, made with Kokoro by scripts/voice-clips.py), in the same voice as Kiwi's Beanstalk.
  * A line without a clip falls back to the browser's own voice.
  */
-import { METALS, type Metal } from '../../../shared/hop/progress';
+import { METALS } from '../../../shared/hop/progress';
 import { HOP_STEPS, showHop, type HopStep } from '../../../shared/hop/round';
 import { EARLY_FACTS, parseSkip, SKIP_FROM_STEPS } from '../../../shared/maths/skillPacks/earlyFacts';
 import { FRIEND_NAMES } from './art';
@@ -13,9 +13,12 @@ import { nextPartWords } from '../../components/NextPartChip';
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/hop/';
 
+/** The separator between the parts of a longer text: the game says the parts one after another, each from its own clip. */
+export const PART_BREAK = '\n';
+
 /** What the home screen says: who wants to cross, and "come back tomorrow" once today's pad has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
-  return doneToday ? `${title} ${WORDS.doneToday}` : title;
+  return doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title;
 }
 
 /** A hop read aloud; the very first hop of the first challenge also says how to play. */
@@ -23,19 +26,23 @@ export function hopLine(spoken: string, guideStart: boolean): string {
   return guideStart ? `${spoken} ${WORDS.guideStart}` : spoken;
 }
 
-/** What the finish screen says, with "next time we count in fives" when the child moved up a step. */
-export function finishLine(main: string, stepUp: HopStep | null, signpost = false): string {
-  const said = stepUp ? `${main} ${WORDS.stepUp(stepUp)}` : main;
-  return signpost ? `${said} ${WORDS.signpost}` : said;
+/**
+ * What the finish screen says, part by part: the title (the opening for how the day went, then what turned; on a golden day the
+ * prize, then the opening), the tricky-day chip, "next time we count in fives" when the child moved up a step, the signpost.
+ */
+export function finishLine(title: string[], tricky: boolean, stepUp: HopStep | null, signpost = false): string {
+  const said = [...title];
+  if (tricky) said.push(WORDS.trickyChip);
+  if (stepUp) said.push(WORDS.stepUp(stepUp));
+  if (signpost) said.push(WORDS.signpost);
+  return said.join(PART_BREAK);
 }
 
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.labelsBack, WORDS.lookTogether, WORDS.nowTry, ...WORDS.demoBack, ...WORDS.demoFrom, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
-    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
-      lines.add(homeLine(title, false));
-      lines.add(homeLine(title, true));
-    }
+    // The home line is said in parts (the title, then "come back tomorrow"), so each part is a clip of its own.
+    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) lines.add(homeLine(title, false));
   }
   // Every hop the shared pack can make for a step's families (counting up, next and back, and on a gold day from a start off a
   // multiple), at every place the gap can be. Only up and next hops can come first. The why-lines that are the same for every
@@ -58,10 +65,13 @@ export function allVoiceLines(): string[] {
       }
     }
   }
-  const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.padTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.jar)];
-  for (const main of mains) {
-    for (const up of [null, ...HOP_STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, up));
-    lines.add(finishLine(main, null, true)); // with the signpost to Penguin Pairs (the card is not shown when the child just moved up a step)
-  }
+  // The finish is said in parts, each from its own clip: the opening for the day, what turned (or the golden prize), the chip.
+  for (const how of Object.values(WORDS.how)) lines.add(how);
+  lines.add(WORDS.doneToday);
+  lines.add(WORDS.trickyChip);
+  lines.add(WORDS.signpost);
+  for (const m of METALS.slice(1)) lines.add(WORDS.padTurned(m));
+  for (const name of Object.values(FRIEND_NAMES)) lines.add(WORDS.jar(name));
+  for (const s of HOP_STEPS.slice(1)) lines.add(WORDS.stepUp(s.step));
   return [...lines];
 }

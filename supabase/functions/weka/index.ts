@@ -1505,6 +1505,7 @@ async function handleWeka(services, player, body) {
 				if (result.goldenBasket) await services.progressChanged(player);
 				return ok({
 					...result,
+					firstRight: played.firstRight,
 					level: reached,
 					levelBefore
 				});

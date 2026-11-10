@@ -13,7 +13,8 @@ import { DAYS_PER_FISH, PEBBLES, poolAfter } from '../../../shared/korora/progre
 import type { Round } from '../../../shared/korora/round';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
-import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { playSound } from '../sounds';
 import { FRIEND_NAMES } from './art';
 import { KororaError, type KororaBackend, type KororaFinish, type KororaState } from './backend';
@@ -42,9 +43,15 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -218,9 +225,14 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFini
   const changed = result.pebbleChanged === null ? null : pebbles[result.pebbleChanged].metal;
   const name = FRIEND_NAMES[pool.friend];
   const won = result.shoesWon;
-  const main = won ? WORDS.shoesWon(won, name) : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the stone still turns; a shoes day
+  // keeps its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = won ? null : changed ? WORDS.pebbleTurned(changed) : WORDS.doneToday;
+  const main = tail === null ? WORDS.shoesWon(won!, name) : `${opening} ${tail}`;
   const up = result.level !== result.levelBefore ? result.level : null;
-  const line = finishLine(main, up);
+  const line = finishLine(tail === null ? [main, opening] : [opening, tail], band === 'tricky', up);
   // Weka's switch is read once the card could show; until then the panel waits, so the line is not said twice.
   const [wekaOn, setWekaOn] = useState<boolean | null>(result.topSecure && onOpenWeka ? null : false);
   useEffect(() => {
@@ -241,6 +253,8 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFini
       <Pool scenery={scenery} pebbles={pebbles} friend={pool.friend} pose="cheer" at={at} shoes={won ? null : pool.today} />
       {wekaOn !== null && (
         <WhatsNext prefix="kr" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+          {won && <p className="kr-chip">{opening}</p>}
+          {band === 'tricky' && <p className="kr-chip">{WORDS.trickyChip}</p>}
           {won && (
             <span className={`kr-prize kr-prize--${won}`} role="img" aria-label={WORDS.shoesName(won)}>
               <DancingShoes metal={won} />

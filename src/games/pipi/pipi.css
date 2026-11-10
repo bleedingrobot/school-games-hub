@@ -100,6 +100,8 @@
 .pp-day { font-size: 1.3rem; font-weight: 800; color: var(--pp-sea-dark); margin: 6px 0; }
 .pp-chip { display: inline-block; margin: 4px 0; padding: 4px 14px; border-radius: 999px; background: #e1f2f4; color: var(--pp-sea-dark); font-weight: 800; }
 .pp-play-button { width: 100%; margin-top: 10px; min-height: 64px; }
+.pp-next-game { margin: 12px 0 4px; }
+.pp-next-game p { margin: 0 0 8px; font-weight: 700; }
 .pp-shelf { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 0; }
 .pp-shelf .pp-pearl { width: 40px; }
 .pp-prize { display: block; width: 160px; margin: 8px auto; }

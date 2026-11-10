@@ -40,96 +40,48 @@
   "text": "Two-Shoes wants a pair of dancing shoes! Help Two-Shoes across the stepping stones."
  },
  {
-  "slug": "two-shoes-wants-a-pair-of-dancing-shoes-help-two-shoes-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Two-Shoes wants a pair of dancing shoes! Help Two-Shoes across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-two-shoes-wants-dancing-shoes-too",
   "text": "Now Two-Shoes wants dancing shoes too!"
- },
- {
-  "slug": "now-two-shoes-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Two-Shoes wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "hoiho-wants-a-pair-of-dancing-shoes-help-hoiho-across-the-stepping-stones",
   "text": "Hoiho wants a pair of dancing shoes! Help Hoiho across the stepping stones."
  },
  {
-  "slug": "hoiho-wants-a-pair-of-dancing-shoes-help-hoiho-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Hoiho wants a pair of dancing shoes! Help Hoiho across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-hoiho-wants-dancing-shoes-too",
   "text": "Now Hoiho wants dancing shoes too!"
- },
- {
-  "slug": "now-hoiho-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Hoiho wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "kiwi-wants-a-pair-of-dancing-shoes-help-kiwi-across-the-stepping-stones",
   "text": "Kiwi wants a pair of dancing shoes! Help Kiwi across the stepping stones."
  },
  {
-  "slug": "kiwi-wants-a-pair-of-dancing-shoes-help-kiwi-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Kiwi wants a pair of dancing shoes! Help Kiwi across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-kiwi-wants-dancing-shoes-too",
   "text": "Now Kiwi wants dancing shoes too!"
- },
- {
-  "slug": "now-kiwi-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Kiwi wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "pukeko-wants-a-pair-of-dancing-shoes-help-pukeko-across-the-stepping-stones",
   "text": "Pūkeko wants a pair of dancing shoes! Help Pūkeko across the stepping stones."
  },
  {
-  "slug": "pukeko-wants-a-pair-of-dancing-shoes-help-pukeko-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Pūkeko wants a pair of dancing shoes! Help Pūkeko across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-pukeko-wants-dancing-shoes-too",
   "text": "Now Pūkeko wants dancing shoes too!"
- },
- {
-  "slug": "now-pukeko-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Pūkeko wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "kereru-wants-a-pair-of-dancing-shoes-help-kereru-across-the-stepping-stones",
   "text": "Kererū wants a pair of dancing shoes! Help Kererū across the stepping stones."
  },
  {
-  "slug": "kereru-wants-a-pair-of-dancing-shoes-help-kereru-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Kererū wants a pair of dancing shoes! Help Kererū across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-kereru-wants-dancing-shoes-too",
   "text": "Now Kererū wants dancing shoes too!"
- },
- {
-  "slug": "now-kereru-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Kererū wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "takahe-wants-a-pair-of-dancing-shoes-help-takahe-across-the-stepping-stones",
   "text": "Takahē wants a pair of dancing shoes! Help Takahē across the stepping stones."
  },
  {
-  "slug": "takahe-wants-a-pair-of-dancing-shoes-help-takahe-across-the-stepping-stones-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Takahē wants a pair of dancing shoes! Help Takahē across the stepping stones. Well done! Come back tomorrow to change another stepping stone."
- },
- {
   "slug": "now-takahe-wants-dancing-shoes-too",
   "text": "Now Takahē wants dancing shoes too!"
- },
- {
-  "slug": "now-takahe-wants-dancing-shoes-too-well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Now Takahē wants dancing shoes too! Well done! Come back tomorrow to change another stepping stone."
  },
  {
   "slug": "double-1-1-fish-on-the-rock-and-1-in-the-water-how-many-fish",
@@ -724,355 +676,119 @@
   "text": "One fish has no partner. So it is not fair. One is left over."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stepping-stone",
-  "text": "Well done! Come back tomorrow to change another stepping stone."
+  "slug": "you-worked-out-your-doubles-and-halves",
+  "text": "You worked out your doubles and halves!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stepping-stone-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Well done! Come back tomorrow to change another stepping stone. You are so good at this! Next time: halves to 10."
+  "slug": "some-were-tricky-and-you-kept-going",
+  "text": "Some were tricky and you kept going."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stepping-stone-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Well done! Come back tomorrow to change another stepping stone. You are so good at this! Next time: doubles to 10."
+  "slug": "those-were-tricky-ones",
+  "text": "Those were tricky ones."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stepping-stone-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Well done! Come back tomorrow to change another stepping stone. You are so good at this! Next time: halves to 20."
+  "slug": "come-back-tomorrow-to-change-another-stepping-stone",
+  "text": "Come back tomorrow to change another stepping stone."
  },
  {
-  "slug": "well-done-a-stepping-stone-turned-bronze",
-  "text": "Well done! A stepping stone turned bronze!"
+  "slug": "the-tricky-ones-will-come-back-with-more-help",
+  "text": "The tricky ones will come back with more help."
  },
  {
-  "slug": "well-done-a-stepping-stone-turned-bronze-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Well done! A stepping stone turned bronze! You are so good at this! Next time: halves to 10."
+  "slug": "a-stepping-stone-turned-bronze",
+  "text": "A stepping stone turned bronze."
  },
  {
-  "slug": "well-done-a-stepping-stone-turned-bronze-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Well done! A stepping stone turned bronze! You are so good at this! Next time: doubles to 10."
+  "slug": "a-stepping-stone-turned-silver",
+  "text": "A stepping stone turned silver."
  },
  {
-  "slug": "well-done-a-stepping-stone-turned-bronze-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Well done! A stepping stone turned bronze! You are so good at this! Next time: halves to 20."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-silver",
-  "text": "Well done! A stepping stone turned silver!"
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-silver-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Well done! A stepping stone turned silver! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-silver-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Well done! A stepping stone turned silver! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-silver-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Well done! A stepping stone turned silver! You are so good at this! Next time: halves to 20."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-gold",
-  "text": "Well done! A stepping stone turned gold!"
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-gold-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Well done! A stepping stone turned gold! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-gold-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Well done! A stepping stone turned gold! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "well-done-a-stepping-stone-turned-gold-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Well done! A stepping stone turned gold! You are so good at this! Next time: halves to 20."
+  "slug": "a-stepping-stone-turned-gold",
+  "text": "A stepping stone turned gold."
  },
  {
   "slug": "two-shoes-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Two-Shoes crossed the water and won bronze dancing shoes!"
  },
  {
-  "slug": "two-shoes-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Two-Shoes crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "two-shoes-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Two-Shoes crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "two-shoes-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Two-Shoes crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "hoiho-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Hoiho crossed the water and won bronze dancing shoes!"
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Hoiho crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Hoiho crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Hoiho crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "kiwi-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Kiwi crossed the water and won bronze dancing shoes!"
  },
  {
-  "slug": "kiwi-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Kiwi crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "kiwi-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Kiwi crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "kiwi-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Kiwi crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "pukeko-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Pūkeko crossed the water and won bronze dancing shoes!"
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Pūkeko crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Pūkeko crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Pūkeko crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "kereru-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Kererū crossed the water and won bronze dancing shoes!"
  },
  {
-  "slug": "kereru-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Kererū crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "kereru-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Kererū crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "kereru-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Kererū crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "takahe-crossed-the-water-and-won-bronze-dancing-shoes",
   "text": "Takahē crossed the water and won bronze dancing shoes!"
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Takahē crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Takahē crossed the water and won bronze dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-bronze-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Takahē crossed the water and won bronze dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "two-shoes-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Two-Shoes crossed the water and won silver dancing shoes!"
  },
  {
-  "slug": "two-shoes-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Two-Shoes crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "two-shoes-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Two-Shoes crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "two-shoes-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Two-Shoes crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "hoiho-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Hoiho crossed the water and won silver dancing shoes!"
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Hoiho crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Hoiho crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "hoiho-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Hoiho crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "kiwi-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Kiwi crossed the water and won silver dancing shoes!"
  },
  {
-  "slug": "kiwi-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Kiwi crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "kiwi-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Kiwi crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "kiwi-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Kiwi crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "pukeko-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Pūkeko crossed the water and won silver dancing shoes!"
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Pūkeko crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Pūkeko crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "pukeko-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Pūkeko crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "kereru-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Kererū crossed the water and won silver dancing shoes!"
  },
  {
-  "slug": "kereru-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Kererū crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "kereru-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Kererū crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "kereru-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Kererū crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "takahe-crossed-the-water-and-won-silver-dancing-shoes",
   "text": "Takahē crossed the water and won silver dancing shoes!"
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "Takahē crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "Takahē crossed the water and won silver dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "takahe-crossed-the-water-and-won-silver-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "Takahē crossed the water and won silver dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "all-the-stones-are-gold-two-shoes-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Two-Shoes won the dazzling gold dancing shoes!"
  },
  {
-  "slug": "all-the-stones-are-gold-two-shoes-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Two-Shoes won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-two-shoes-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Two-Shoes won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-two-shoes-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Two-Shoes won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "all-the-stones-are-gold-hoiho-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Hoiho won the dazzling gold dancing shoes!"
- },
- {
-  "slug": "all-the-stones-are-gold-hoiho-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Hoiho won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-hoiho-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Hoiho won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-hoiho-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Hoiho won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "all-the-stones-are-gold-kiwi-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Kiwi won the dazzling gold dancing shoes!"
  },
  {
-  "slug": "all-the-stones-are-gold-kiwi-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Kiwi won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-kiwi-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Kiwi won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-kiwi-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Kiwi won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "all-the-stones-are-gold-pukeko-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Pūkeko won the dazzling gold dancing shoes!"
- },
- {
-  "slug": "all-the-stones-are-gold-pukeko-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Pūkeko won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-pukeko-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Pūkeko won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-pukeko-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Pūkeko won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
  },
  {
   "slug": "all-the-stones-are-gold-kereru-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Kererū won the dazzling gold dancing shoes!"
  },
  {
-  "slug": "all-the-stones-are-gold-kereru-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Kererū won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-kereru-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Kererū won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
- },
- {
-  "slug": "all-the-stones-are-gold-kereru-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Kererū won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
- },
- {
   "slug": "all-the-stones-are-gold-takahe-won-the-dazzling-gold-dancing-shoes",
   "text": "All the stones are gold! Takahē won the dazzling gold dancing shoes!"
  },
  {
-  "slug": "all-the-stones-are-gold-takahe-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-10",
-  "text": "All the stones are gold! Takahē won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 10."
+  "slug": "your-practice-is-paying-off-next-time-halves-to-10",
+  "text": "Your practice is paying off. Next time: halves to 10."
  },
  {
-  "slug": "all-the-stones-are-gold-takahe-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-doubles-to-10",
-  "text": "All the stones are gold! Takahē won the dazzling gold dancing shoes! You are so good at this! Next time: doubles to 10."
+  "slug": "your-practice-is-paying-off-next-time-doubles-to-10",
+  "text": "Your practice is paying off. Next time: doubles to 10."
  },
  {
-  "slug": "all-the-stones-are-gold-takahe-won-the-dazzling-gold-dancing-shoes-you-are-so-good-at-this-next-time-halves-to-20",
-  "text": "All the stones are gold! Takahē won the dazzling gold dancing shoes! You are so good at this! Next time: halves to 20."
+  "slug": "your-practice-is-paying-off-next-time-halves-to-20",
+  "text": "Your practice is paying off. Next time: halves to 20."
  }
 ]

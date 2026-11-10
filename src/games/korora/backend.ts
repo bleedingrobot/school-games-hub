@@ -23,6 +23,8 @@ export interface KororaState {
 }
 
 export interface KororaFinish extends FinishResult {
+  /** Goes right at the first tap (not a guess), out of ten: the finish words follow it. */
+  firstRight: number;
   /** The level for next time, and the one this challenge was at: different when the child moved up. */
   level: Level;
   levelBefore: Level;

@@ -78,11 +78,11 @@ it('changes one leaf a NZ day by the server’s clock, whatever the browser send
     const { seed, round } = await begin('pupil-a');
     return (await send('pupil-a', { action: 'finish', seed, taps: goodTaps(round), daysDone: 29, leafChanged: 9, egg: true })).body;
   };
-  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false, help: 0, helpMissing: 0, stage: 0, moved: 0 });
+  expect(await finish()).toEqual({ daysDone: 1, lastLeafDay: '2026-11-04', leafChanged: 0, egg: false, firstRight: 10, help: 0, helpMissing: 0, stage: 0, moved: 0 });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect(await finish()).toMatchObject({ daysDone: 1, leafChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC
-  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false, help: 1, helpMissing: 1, stage: 0, moved: 0 });
+  expect(await finish()).toEqual({ daysDone: 2, lastLeafDay: '2026-11-05', leafChanged: 1, egg: false, firstRight: 10, help: 1, helpMissing: 1, stage: 0, moved: 0 });
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ child: 'jack', daysDone: 2, today: '2026-11-05', help: 1, dots: true });
   expect(log.eggs).toEqual([]);
   services.data.players['pupil-a'].daysDone = 29;
@@ -126,7 +126,7 @@ it('moves a child’s dots on the day’s first finish only, saves them, and sta
   expect((await send('pupil-a', { action: 'load' })).body).toMatchObject({ help: 0 });
   // Day 1 good, then a hard replay the same day: nothing moves. Day 2 good: full to small.
   expect(await finish(goodTaps)).toMatchObject({ help: 0 });
-  expect(await finish(hardTaps)).toMatchObject({ leafChanged: null, help: 0 });
+  expect(await finish(hardTaps)).toMatchObject({ leafChanged: null, firstRight: 2, help: 0 });
   hours(24);
   expect(await finish(goodTaps)).toMatchObject({ leafChanged: 1, help: 1 });
   expect(saved()).toMatchObject({ help: 1, goodInRow: 0, daysDone: 2 });

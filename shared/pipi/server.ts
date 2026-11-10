@@ -21,7 +21,7 @@ import { replay, type Tap } from './play';
 import { kindsFromDays } from './seen';
 import { mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import { beachAfter, finishChallenge, nzDate } from './progress';
-import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, type Level, type Round } from './round';
+import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, topSecure, type Level, type Round } from './round';
 
 export type PipiAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -182,7 +182,8 @@ export async function handlePipi(services: PipiServices, player: string, body: R
         // One answer a go, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `pipi:${seed}`, answers);
         if (result.pearl) await services.progressChanged(player);
-        return ok({ ...result, level: reached, levelBefore: kept.round.level });
+        // The "what's next" card: the top level's records are secure once these answers are in.
+        return ok({ ...result, firstRight: played.firstRight, level: reached, levelBefore: kept.round.level, topSecure: facts !== 'busy' && topSecure(withAnswers(facts, answers)) });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

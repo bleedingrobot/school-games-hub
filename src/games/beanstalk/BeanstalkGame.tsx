@@ -17,7 +17,8 @@ import { childArt, FRIEND_NAMES, paint } from './art';
 import { BeanstalkError, type BeanstalkBackend, type BeanstalkState, type Child } from './backend';
 import { Round } from './Round';
 import { Scene } from './Scene';
-import { homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { WORDS } from './words';
 import './beanstalk.css';
 
@@ -40,9 +41,15 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -246,7 +253,7 @@ function Home({ state, say, onPlay }: { state: BeanstalkState; say: (t: string) 
 }
 
 /** A leaf changes colour, or, on the thirtieth day, the friend climbs down and the Golden Egg is won. */
-function Finish({ result, child, say, signpost, onNext }: { result: FinishReply; child: Child; say: (t: string, onEnd?: () => void) => void; signpost?: Signpost; onNext: () => void }) {
+export function Finish({ result, child, say, signpost, onNext }: { result: FinishReply; child: Child; say: (t: string, onEnd?: () => void) => void; signpost?: Signpost; onNext: () => void }) {
   // On an egg day the new beanstalk has already started, so show the one just finished: every leaf gold.
   const stalk = stalkAfter(result.egg ? result.daysDone - 1 : result.daysDone);
   const leaves = result.egg
@@ -254,7 +261,13 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishReply;
     : stalk.leaves.map((metal, i) => ({ metal, glow: i === result.leafChanged }));
   const changed = result.leafChanged === null ? null : leaves[result.leafChanged].metal;
   const name = FRIEND_NAMES[stalk.friend];
-  const text = result.egg ? WORDS.egg(name) : changed ? WORDS.leafTurned(changed) : WORDS.doneToday;
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the leaf still turns; an egg day keeps
+  // its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = result.egg ? null : changed ? WORDS.leafTurned(changed) : WORDS.doneToday;
+  const text = tail === null ? WORDS.egg(name) : `${opening} ${tail}`;
+  const spoken = finishLine(tail === null ? [text, opening] : [opening, tail], band === 'tricky');
   // The sum moved with the child (S21): one short line, said after the leaf line. No score.
   const moveLine = result.moved === 0 ? null : result.moved === 1 ? WORDS.movedUp(TARGETS[result.stage]) : WORDS.movedBack(TARGETS[result.stage]);
   // The sum they just played, for the card on to Weka.
@@ -266,8 +279,8 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishReply;
   const wekaOn = signpost?.wekaOn === true;
   useEffect(() => {
     heading.current?.focus();
-    say(text, () => (moveLine ? say(moveLine, () => setHeard(true)) : setHeard(true)));
-  }, [say, text, moveLine]);
+    say(spoken, () => (moveLine ? say(moveLine, () => setHeard(true)) : setHeard(true)));
+  }, [say, spoken, moveLine]);
   useEffect(() => {
     if (!signpost || !wekaOn || playedTarget < SIGNPOST_FROM) return;
     let current = true;
@@ -285,6 +298,8 @@ function Finish({ result, child, say, signpost, onNext }: { result: FinishReply;
       )}
       <div className="bs-panel">
         <h2 tabIndex={-1} ref={heading}>{text}</h2>
+        {result.egg && <p className="bs-moved">{opening}</p>}
+        {band === 'tricky' && <p className="bs-moved">{WORDS.trickyChip}</p>}
         {moveLine && <p className="bs-moved">{moveLine}</p>}
         {result.egg && <img className="bs-prize" src={paint('things/egg-cushion')} alt="The Golden Egg" />}
         <button type="button" className="button button--play bs-play-button" onClick={onNext}>

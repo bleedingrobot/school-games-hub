@@ -27,6 +27,8 @@ export interface HopState {
 }
 
 export interface HopFinish extends FinishResult {
+  /** Hops right at the first glow-worm (not a guess), out of ten: the finish words follow it. */
+  firstRight: number;
   /** The step for next time, and the one this challenge was in: different when the child moved up. */
   step: HopStep;
   stepBefore: HopStep;

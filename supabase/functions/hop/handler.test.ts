@@ -85,7 +85,7 @@ it('changes one pad a NZ day by the server’s clock, whatever the browser sends
     const reply = (await send('pupil-a', { action: 'finish', seed: round.seed, taps: goodTaps(round), daysDone: 29, padChanged: 9, jar: true })).body;
     return { round, reply };
   };
-  expect((await finish()).reply).toEqual({ daysDone: 1, lastPadDay: '2026-11-04', padChanged: 0, jar: false, step: 10, stepBefore: 10, topSecure: false });
+  expect((await finish()).reply).toEqual({ daysDone: 1, lastPadDay: '2026-11-04', padChanged: 0, jar: false, firstRight: 10, step: 10, stepBefore: 10, topSecure: false });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect((await finish()).reply).toMatchObject({ daysDone: 1, padChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC

@@ -115,7 +115,7 @@ describe('the replay and the day arc', () => {
       const goes = showHops(hops);
       const taps = tapsFor(goes, seed, slips);
       const { hopsMade, ...hopSame } = hopReplay(hops, taps);
-      const { goesDone, firstRight, ...kitSame } = replayTaps(goes, taps, { goesPerRound: HOPS_PER_ROUND, oncePerFact: false });
+      const { goesDone, ...kitSame } = replayTaps(goes, taps, { goesPerRound: HOPS_PER_ROUND, oncePerFact: false, minThinkMs: JUNIOR_MIN_THINK_MS });
       expect(goesDone).toBe(hopsMade);
       expect(kitSame).toEqual(hopSame);
 

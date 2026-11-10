@@ -84,6 +84,16 @@ describe('the round', () => {
   });
 });
 
+describe('the finish words (S33)', () => {
+  it('count every go right at the first tap, not once per fact, and not a guess faster than the think floor', () => {
+    const round = makeRound(seeds[0], recordsFor(1), { gold: false });
+    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
+    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
+    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
+    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
+  });
+});
+
 describe('the wrong stones (mistakes that teach)', () => {
   const doubles = [...Array(10)].map((_, i) => i + 1);
   const halves = [...Array(10)].map((_, i) => (i + 1) * 2);

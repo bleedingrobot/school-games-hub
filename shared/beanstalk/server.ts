@@ -51,6 +51,8 @@ export interface Progress extends Steps {
 
 /** What `finish` replies: the leaf and egg news, and the dots for the next challenge. */
 export interface FinishReply extends FinishResult {
+  /** Goes right at the first tap (not a guess, the think floor), out of ten: the finish words follow it. */
+  firstRight: number;
   help: HelpLevel;
   helpMissing: HelpLevel;
   /** The stage for the next challenge, and 1 if this finish moved the child up, -1 back, 0 stayed. */
@@ -233,7 +235,7 @@ export async function handleBeanstalk(services: BeanstalkServices, player: strin
         // One answer a go (its first tap), as bonds to 10, 20, 100 or 1000: once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `beanstalk:${seed}`, answers);
         if (result.egg) await services.progressChanged(player);
-        return ok({ ...result, help: place.help, helpMissing: placeMissing.help, stage: steps.stage, moved });
+        return ok({ ...result, firstRight: rightFirst, help: place.help, helpMissing: placeMissing.help, stage: steps.stage, moved });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

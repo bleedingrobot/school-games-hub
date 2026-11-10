@@ -12,8 +12,8 @@
   "text": "Now you try!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "Well done! Come back tomorrow to change another magic shell."
+  "slug": "come-back-tomorrow-to-change-another-magic-shell",
+  "text": "Come back tomorrow to change another magic shell."
  },
  {
   "slug": "today-s-shell-is-ready",
@@ -28,16 +28,8 @@
   "text": "The tide is coming in! Help Pipi find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-pipi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Pipi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-pipi-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Pipi find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-pipi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Pipi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-pipi-found-the-golden-pearl",
@@ -48,16 +40,8 @@
   "text": "The tide is coming in! Help Kororā find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-korora-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Kororā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-korora-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Kororā find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-korora-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Kororā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-korora-found-the-golden-pearl",
@@ -68,16 +52,8 @@
   "text": "The tide is coming in! Help Tuatara find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-tuatara-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Tuatara find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-tuatara-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Tuatara find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-tuatara-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Tuatara find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-tuatara-found-the-golden-pearl",
@@ -88,16 +64,8 @@
   "text": "The tide is coming in! Help Wētā find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-weta-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Wētā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-weta-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Wētā find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-weta-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Wētā find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-weta-found-the-golden-pearl",
@@ -108,16 +76,8 @@
   "text": "The tide is coming in! Help Kiwi find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-kiwi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Kiwi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-kiwi-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Kiwi find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-kiwi-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Kiwi find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-kiwi-found-the-golden-pearl",
@@ -128,16 +88,8 @@
   "text": "The tide is coming in! Help Tūī find the pipi hiding in the sand."
  },
  {
-  "slug": "the-tide-is-coming-in-help-tui-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "The tide is coming in! Help Tūī find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
- },
- {
   "slug": "a-new-beach-help-tui-find-the-pipi-hiding-in-the-sand",
   "text": "A new beach! Help Tūī find the pipi hiding in the sand."
- },
- {
-  "slug": "a-new-beach-help-tui-find-the-pipi-hiding-in-the-sand-well-done-come-back-tomorrow-to-change-another-magic-shell",
-  "text": "A new beach! Help Tūī find the pipi hiding in the sand. Well done! Come back tomorrow to change another magic shell."
  },
  {
   "slug": "all-the-magic-shells-are-gold-tui-found-the-golden-pearl",
@@ -1056,39 +1008,43 @@
   "text": "Yes! 10!"
  },
  {
-  "slug": "well-done-a-magic-shell-turned-bronze",
-  "text": "Well done! A magic shell turned bronze!"
+  "slug": "a-magic-shell-turned-bronze",
+  "text": "A magic shell turned bronze."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-silver",
-  "text": "Well done! A magic shell turned silver!"
+  "slug": "a-magic-shell-turned-silver",
+  "text": "A magic shell turned silver."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-gold",
-  "text": "Well done! A magic shell turned gold!"
+  "slug": "a-magic-shell-turned-gold",
+  "text": "A magic shell turned gold."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-bronze-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
-  "text": "Well done! A magic shell turned bronze! You are so good at this! Next time the pipi families are 6 and 7."
+  "slug": "you-found-the-hiding-pipi",
+  "text": "You found the hiding pipi!"
  },
  {
-  "slug": "well-done-a-magic-shell-turned-silver-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
-  "text": "Well done! A magic shell turned silver! You are so good at this! Next time the pipi families are 6 and 7."
+  "slug": "some-were-tricky-and-you-kept-going",
+  "text": "Some were tricky and you kept going."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-gold-you-are-so-good-at-this-next-time-the-pipi-families-are-6-and-7",
-  "text": "Well done! A magic shell turned gold! You are so good at this! Next time the pipi families are 6 and 7."
+  "slug": "those-were-tricky-ones",
+  "text": "Those were tricky ones."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-bronze-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
-  "text": "Well done! A magic shell turned bronze! You are so good at this! Next time the pipi families are up to 10."
+  "slug": "the-tricky-ones-will-come-back-with-more-help",
+  "text": "The tricky ones will come back with more help."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-silver-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
-  "text": "Well done! A magic shell turned silver! You are so good at this! Next time the pipi families are up to 10."
+  "slug": "your-practice-is-paying-off-next-time-the-pipi-families-are-6-and-7",
+  "text": "Your practice is paying off. Next time the pipi families are 6 and 7."
  },
  {
-  "slug": "well-done-a-magic-shell-turned-gold-you-are-so-good-at-this-next-time-the-pipi-families-are-up-to-10",
-  "text": "Well done! A magic shell turned gold! You are so good at this! Next time the pipi families are up to 10."
+  "slug": "your-practice-is-paying-off-next-time-the-pipi-families-are-up-to-10",
+  "text": "Your practice is paying off. Next time the pipi families are up to 10."
+ },
+ {
+  "slug": "you-know-your-pairs-to-ten-try-kiwi-s-beanstalk",
+  "text": "You know your pairs to ten. Try Kiwi's Beanstalk."
  }
 ]

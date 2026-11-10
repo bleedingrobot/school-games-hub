@@ -10,7 +10,7 @@ import { WORDS } from './words';
 // The hops themselves are tested elsewhere: here the round ends the moment it is shown.
 vi.mock('./Hops', () => ({ Hops: ({ onDone }: { onDone: (taps: never[]) => void }) => <button type="button" onClick={() => onDone([])}>End round</button> }));
 
-const finish = (over: Partial<HopFinish>): HopFinish => ({ daysDone: 1, lastPadDay: '2026-11-07', padChanged: 0, jar: false, step: 2, stepBefore: 2, topSecure: true, ...over });
+const finish = (over: Partial<HopFinish>): HopFinish => ({ daysDone: 1, lastPadDay: '2026-11-07', padChanged: 0, jar: false, firstRight: 9, step: 2, stepBefore: 2, topSecure: true, ...over });
 
 async function reachFinish(result: HopFinish, nextGame: NextGame | null) {
   const trial = trialBackend({ storageKey: 'signpost' });
@@ -42,5 +42,23 @@ describe("Hop's signpost on to Penguin Pairs (R8)", () => {
     await reachFinish(finish({}), nextGame);
     await userEvent.click(screen.getByRole('button', { name: WORDS.signpost }));
     expect(open).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Hop's finish words (S33)", () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  it('say how the day went, still turn the pad, and never say well done', async () => {
+    await reachFinish(finish({ firstRight: 10, topSecure: false }), null);
+    expect(screen.getByRole('heading', { name: `${WORDS.how.most} ${WORDS.padTurned('bronze')}` })).toBeTruthy();
+    expect(screen.queryByText(WORDS.trickyChip)).toBeNull();
+    cleanup();
+    await reachFinish(finish({ firstRight: 3, padChanged: null, topSecure: false }), null);
+    expect(screen.getByRole('heading', { name: `${WORDS.how.tricky} ${WORDS.doneToday}` })).toBeTruthy();
+    expect(screen.getByText(WORDS.trickyChip)).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/well done|so good/i);
   });
 });

@@ -11,7 +11,8 @@ import type { Round } from '../../../shared/hop/round';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
-import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { playSound } from '../sounds';
 import { FRIEND_NAMES, paint } from './art';
 import { HopError, type HopBackend, type HopFinish, type HopState } from './backend';
@@ -39,9 +40,15 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -206,11 +213,16 @@ function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t:
     : pond.pads.map((metal, i) => ({ metal, glow: i === result.padChanged }));
   const changed = result.padChanged === null ? null : pads[result.padChanged].metal;
   const name = FRIEND_NAMES[pond.friend];
-  const main = result.jar ? WORDS.jar(name) : changed ? WORDS.padTurned(changed) : WORDS.doneToday;
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the pad still turns; a golden day
+  // keeps its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = result.jar ? null : changed ? WORDS.padTurned(changed) : WORDS.doneToday;
+  const main = tail === null ? WORDS.jar(name) : `${opening} ${tail}`;
   const stepUp = result.step !== result.stepBefore ? WORDS.stepUp(result.step) : null;
   // The signpost on to Penguin Pairs: only when the twos are secure, Penguin Pairs is on, and the child did not just move up a step.
   const signpost = result.topSecure && result.step === result.stepBefore && nextGame ? nextGame : null;
-  const line = finishLine(main, result.step !== result.stepBefore ? result.step : null, !!signpost);
+  const line = finishLine(tail === null ? [main, opening] : [opening, tail], band === 'tricky', result.step !== result.stepBefore ? result.step : null, !!signpost);
   const cushion = paint('things/jar-cushion');
   return (
     <div className={`hp-home${result.jar ? ' hp-home--jar' : ''}`}>
@@ -222,6 +234,8 @@ function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t:
         at={result.jar ? PADS : result.padChanged ?? -1}
       />
       <WhatsNext prefix="hp" title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
+        {result.jar && <p className="hp-chip">{opening}</p>}
+        {band === 'tricky' && <p className="hp-chip">{WORDS.trickyChip}</p>}
         {result.jar && (cushion ? <img className="hp-prize" src={cushion} alt="The Golden Glow Jar" /> : <span className="hp-jar hp-jar--big" role="img" aria-label="The Golden Glow Jar" />)}
         {signpost && (
           <button type="button" className="hp-signpost" onClick={signpost.open}>

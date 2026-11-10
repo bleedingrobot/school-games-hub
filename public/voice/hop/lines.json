@@ -40,96 +40,48 @@
   "text": "Hop wants to get to the Glow-worm Party! Help Hop hop across the pond."
  },
  {
-  "slug": "hop-wants-to-get-to-the-glow-worm-party-help-hop-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Hop wants to get to the Glow-worm Party! Help Hop hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-hop-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Hop needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-hop-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Hop needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "gecko-wants-to-get-to-the-glow-worm-party-help-gecko-hop-across-the-pond",
   "text": "Gecko wants to get to the Glow-worm Party! Help Gecko hop across the pond."
  },
  {
-  "slug": "gecko-wants-to-get-to-the-glow-worm-party-help-gecko-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Gecko wants to get to the Glow-worm Party! Help Gecko hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-gecko-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Gecko needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-gecko-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Gecko needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "weta-wants-to-get-to-the-glow-worm-party-help-weta-hop-across-the-pond",
   "text": "Wētā wants to get to the Glow-worm Party! Help Wētā hop across the pond."
  },
  {
-  "slug": "weta-wants-to-get-to-the-glow-worm-party-help-weta-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Wētā wants to get to the Glow-worm Party! Help Wētā hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-weta-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Wētā needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-weta-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Wētā needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "tuatara-wants-to-get-to-the-glow-worm-party-help-tuatara-hop-across-the-pond",
   "text": "Tuatara wants to get to the Glow-worm Party! Help Tuatara hop across the pond."
  },
  {
-  "slug": "tuatara-wants-to-get-to-the-glow-worm-party-help-tuatara-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Tuatara wants to get to the Glow-worm Party! Help Tuatara hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-tuatara-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Tuatara needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-tuatara-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Tuatara needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "kiwi-wants-to-get-to-the-glow-worm-party-help-kiwi-hop-across-the-pond",
   "text": "Kiwi wants to get to the Glow-worm Party! Help Kiwi hop across the pond."
  },
  {
-  "slug": "kiwi-wants-to-get-to-the-glow-worm-party-help-kiwi-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Kiwi wants to get to the Glow-worm Party! Help Kiwi hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-kiwi-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Kiwi needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-kiwi-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Kiwi needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "ruru-wants-to-get-to-the-glow-worm-party-help-ruru-hop-across-the-pond",
   "text": "Ruru wants to get to the Glow-worm Party! Help Ruru hop across the pond."
  },
  {
-  "slug": "ruru-wants-to-get-to-the-glow-worm-party-help-ruru-hop-across-the-pond-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Ruru wants to get to the Glow-worm Party! Help Ruru hop across the pond. Well done! Come back tomorrow to change another lily pad."
- },
- {
   "slug": "now-ruru-needs-to-cross-a-new-pond-to-the-party",
   "text": "Now Ruru needs to cross a new pond to the party!"
- },
- {
-  "slug": "now-ruru-needs-to-cross-a-new-pond-to-the-party-well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Now Ruru needs to cross a new pond to the party! Well done! Come back tomorrow to change another lily pad."
  },
  {
   "slug": "counting-in-tens-0-something-20-30-what-is-missing",
@@ -5252,283 +5204,83 @@
   "text": "Counting in twos from 1: 1, 3, 5, 7, 9."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad",
-  "text": "Well done! Come back tomorrow to change another lily pad."
+  "slug": "you-counted-your-hops-carefully",
+  "text": "You counted your hops carefully!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in fives."
+  "slug": "some-hops-were-tricky-and-you-kept-going",
+  "text": "Some hops were tricky and you kept going."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in twos."
+  "slug": "those-were-tricky-hops",
+  "text": "Those were tricky hops."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in threes."
+  "slug": "come-back-tomorrow-to-change-another-lily-pad",
+  "text": "Come back tomorrow to change another lily pad."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in fours."
+  "slug": "the-tricky-ones-will-come-back-with-more-help",
+  "text": "The tricky ones will come back with more help."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "Well done! Come back tomorrow to change another lily pad. You are so good at this! Next time we count in tens past 100."
+  "slug": "jumping-in-twos-is-doubling-try-penguin-pairs",
+  "text": "Jumping in twos is doubling. Try Penguin Pairs."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-lily-pad-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "Well done! Come back tomorrow to change another lily pad. Jumping in twos is doubling. Try Penguin Pairs."
+  "slug": "a-lily-pad-turned-bronze",
+  "text": "A lily pad turned bronze."
  },
  {
-  "slug": "well-done-a-lily-pad-turned-bronze",
-  "text": "Well done! A lily pad turned bronze!"
+  "slug": "a-lily-pad-turned-silver",
+  "text": "A lily pad turned silver."
  },
  {
-  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-bronze-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "Well done! A lily pad turned bronze! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-bronze-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "Well done! A lily pad turned bronze! Jumping in twos is doubling. Try Penguin Pairs."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver",
-  "text": "Well done! A lily pad turned silver!"
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "Well done! A lily pad turned silver! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-silver-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "Well done! A lily pad turned silver! Jumping in twos is doubling. Try Penguin Pairs."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold",
-  "text": "Well done! A lily pad turned gold!"
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "Well done! A lily pad turned gold! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "well-done-a-lily-pad-turned-gold-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "Well done! A lily pad turned gold! Jumping in twos is doubling. Try Penguin Pairs."
+  "slug": "a-lily-pad-turned-gold",
+  "text": "A lily pad turned gold."
  },
  {
   "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar!"
  },
  {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-hop-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Hop made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
- },
- {
   "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar!"
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-gecko-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Gecko made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
  },
  {
   "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar!"
  },
  {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-weta-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Wētā made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
- },
- {
   "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar!"
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-tuatara-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Tuatara made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
  },
  {
   "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar!"
  },
  {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-kiwi-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Kiwi made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
- },
- {
   "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar",
   "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar!"
  },
  {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fives",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fives."
+  "slug": "your-counting-practice-is-paying-off-next-time-we-count-in-fives",
+  "text": "Your counting practice is paying off. Next time we count in fives."
  },
  {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-twos",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in twos."
+  "slug": "your-counting-practice-is-paying-off-next-time-we-count-in-twos",
+  "text": "Your counting practice is paying off. Next time we count in twos."
  },
  {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-threes",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in threes."
+  "slug": "your-counting-practice-is-paying-off-next-time-we-count-in-threes",
+  "text": "Your counting practice is paying off. Next time we count in threes."
  },
  {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-fours",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in fours."
+  "slug": "your-counting-practice-is-paying-off-next-time-we-count-in-fours",
+  "text": "Your counting practice is paying off. Next time we count in fours."
  },
  {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-you-are-so-good-at-this-next-time-we-count-in-tens-past-100",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! You are so good at this! Next time we count in tens past 100."
- },
- {
-  "slug": "all-the-lily-pads-are-gold-ruru-made-it-to-the-glow-worm-party-you-win-the-golden-glow-jar-jumping-in-twos-is-doubling-try-penguin-pairs",
-  "text": "All the lily pads are gold! Ruru made it to the Glow-worm Party. You win the Golden Glow Jar! Jumping in twos is doubling. Try Penguin Pairs."
+  "slug": "your-counting-practice-is-paying-off-next-time-we-count-in-tens-past-100",
+  "text": "Your counting practice is paying off. Next time we count in tens past 100."
  }
 ]

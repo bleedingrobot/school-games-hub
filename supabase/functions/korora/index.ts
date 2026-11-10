@@ -3919,12 +3919,14 @@ function replay(round, taps) {
 	const counted = new Set();
 	let goesDone = 0;
 	let mistakes = 0;
+	let firstRight = 0;
 	let triedThisGo = false;
 	for (const { pick, ms } of taps) {
 		const go = goes[goesDone];
 		if (!go) throw new Error("Taps after the round was done");
 		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
 		const right = pick === go.answer;
+		if (!triedThisGo && right && thoughtOf(ms)) firstRight++;
 		if (!triedThisGo && !counted.has(go.key)) {
 			answers.push({
 				key: go.key,
@@ -3942,6 +3944,7 @@ function replay(round, taps) {
 	return {
 		goesDone,
 		mistakes,
+		firstRight,
 		done: goesDone === goes.length && goes.length === 10,
 		answers
 	};
@@ -4213,6 +4216,7 @@ async function handleKorora(services, player, body) {
 				if (result.goldenFish) await services.progressChanged(player);
 				return ok({
 					...result,
+					firstRight: played.firstRight,
 					level: reached,
 					levelBefore,
 					topSecure: facts !== "busy" && topSecure(withAnswers(facts, answers))

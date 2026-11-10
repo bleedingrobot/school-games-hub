@@ -37,9 +37,21 @@ export const WORDS = {
   firstTide: 'before',
   nowTide: 'now',
   yes: (n: number) => `Yes! ${n}!`,
-  shellTurned: (metal: Metal) => `Well done! A magic shell turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another magic shell.',
-  levelUp: (level: Level) => `You are so good at this! Next time the pipi families are ${LEVEL_WORDS[level]}.`,
+  /** The tail of the finish title, after the opening for how the day went (S33). */
+  shellTurned: (metal: Metal) => `A magic shell turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another magic shell.',
+  /** The opening of the finish title and, on a pearl day, the chip: about the pipi, not about the child (S33). */
+  how: {
+    most: 'You found the hiding pipi!',
+    some: 'Some were tricky and you kept going.',
+    tricky: 'Those were tricky ones.',
+  },
+  /** The chip on a tricky day: a wrong first shell brings the fact's full help back. */
+  trickyChip: 'The tricky ones will come back with more help.',
+  levelUp: (level: Level) => `Your practice is paying off. Next time the pipi families are ${LEVEL_WORDS[level]}.`,
+  /** The "what's next" card on the finish screen, once the top level is secure and Kiwi's Beanstalk is on for the class. */
+  whatsNext: "You know your pairs to ten. Try Kiwi's Beanstalk.",
+  tryBeanstalk: "Try Kiwi's Beanstalk",
   pearl: (name: string) => `All the magic shells are gold! ${name} found the Golden Pearl!`,
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',

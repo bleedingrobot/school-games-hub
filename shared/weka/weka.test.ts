@@ -96,6 +96,16 @@ describe('the magic stones', () => {
   });
 });
 
+describe('the finish words (S33)', () => {
+  it('count goes right at the first tap, and not a guess faster than the think floor', () => {
+    const round = makeRound(seeds[0], recordsFor(1), { day: 'bronze' });
+    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
+    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
+    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
+    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
+  });
+});
+
 describe('the split after each go', () => {
   it('says how the smaller number was split: to the big rock first, then the rest', () => {
     const add = { kind: 'add' as const, small: 5, big: 9, total: 14, toTen: 1, rest: 4 };

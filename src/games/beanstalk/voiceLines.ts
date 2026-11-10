@@ -13,9 +13,20 @@ import { nextPartWords } from '../../components/NextPartChip';
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/beanstalk/';
 
+/** The separator between the parts of a longer text: the game says the parts one after another, each from its own clip. */
+export const PART_BREAK = '\n';
+
 /** What the home screen says: who is stuck, and "come back tomorrow" once today's leaf has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
-  return doneToday ? `${title} ${WORDS.doneToday}` : title;
+  return doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title;
+}
+
+/**
+ * What the finish screen says first, part by part: the title (the opening for how the day went, then what turned; on an egg day the
+ * prize, then the opening) and the tricky-day chip. The sum's move and the card on to Weka follow, each said on its own.
+ */
+export function finishLine(title: string[], tricky: boolean): string {
+  return (tricky ? [...title, WORDS.trickyChip] : title).join(PART_BREAK);
 }
 
 /** The numbers a leaf can show on a beanstalk: 1 to 9 in ones, tens or hundreds, or 1 to 19 (not 10) on the bonds to 20. */
@@ -28,10 +39,8 @@ export function allVoiceLines(): string[] {
   // Any friend can be stuck on any sum now (the sum follows the child, S21), and a child can move up or back between sums.
   for (const friend of FRIENDS) {
     const name = FRIEND_NAMES[friend];
-    for (const title of [WORDS.nextFriend(name), ...TARGETS.map((t) => WORDS.stuck(name, t))]) {
-      lines.add(homeLine(title, false));
-      lines.add(homeLine(title, true));
-    }
+    // The home line is said in parts (the title, then "come back tomorrow"), so each part is a clip of its own.
+    for (const title of [WORDS.nextFriend(name), ...TARGETS.map((t) => WORDS.stuck(name, t))]) lines.add(homeLine(title, false));
     lines.add(WORDS.egg(name));
   }
   for (const target of TARGETS) {
@@ -57,6 +66,9 @@ export function allVoiceLines(): string[] {
     }
   }
   for (const line of demoLines()) lines.add(line);
+  // The finish is said in parts, each from its own clip: the opening for the day, what turned (or the prize), the chip.
+  for (const how of Object.values(WORDS.how)) lines.add(how);
+  lines.add(WORDS.trickyChip);
   for (const metal of METALS.slice(1)) lines.add(WORDS.leafTurned(metal));
   return [...lines];
 }

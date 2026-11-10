@@ -179,7 +179,7 @@ export async function handleHop(services: HopServices, player: string, body: Rec
         await services.recordAnswers(player, `hop:${seed}`, answers);
         if (result.jar) await services.progressChanged(player);
         const secureNow = facts === 'busy' ? false : topSecure(withAnswers(facts, answers), reached);
-        return ok({ ...result, step: reached, stepBefore, topSecure: secureNow });
+        return ok({ ...result, firstRight: played.firstRight, step: reached, stepBefore, topSecure: secureNow });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

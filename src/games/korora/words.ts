@@ -80,9 +80,18 @@ export const WORDS = {
   /** Near doubles: what the picture shows (read after the question, and the screen reader label). */
   nearMirror: (n: number) => `${n} and ${n}, and one more.`,
   shareAgain: 'Start again',
-  pebbleTurned: (metal: Metal) => `Well done! A stepping stone turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another stepping stone.',
-  levelUp: (level: Level) => `You are so good at this! Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,
+  /** The tail of the finish title, after the opening for how the day went (S33). */
+  pebbleTurned: (metal: Metal) => `A stepping stone turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another stepping stone.',
+  /** The opening of the finish title and, on a shoes day, the chip: about the doubles and halves, not about the child (S33). */
+  how: {
+    most: 'You worked out your doubles and halves!',
+    some: 'Some were tricky and you kept going.',
+    tricky: 'Those were tricky ones.',
+  },
+  /** The chip on a tricky day: a wrong first tap brings the fact's full help back. */
+  trickyChip: 'The tricky ones will come back with more help.',
+  levelUp: (level: Level) => `Your practice is paying off. Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,
   /** A crossing done: bronze shoes, then silver, then (all the stones gold) the dazzling gold ones. */
   shoesWon: (metal: Exclude<Metal, 'grey'>, name: string) =>
     metal === 'gold' ? `All the stones are gold! ${name} won the dazzling gold dancing shoes!` : `${name} crossed the water and won ${metal} dancing shoes!`,

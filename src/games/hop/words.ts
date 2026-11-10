@@ -55,9 +55,18 @@ export const WORDS = {
   /** On the "Let's look together" panel once it has played long enough (3 seconds) to be skipped. */
   goOn: 'My turn',
   yes: (n: number) => `${n}!`,
-  padTurned: (metal: Metal) => `Well done! A lily pad turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another lily pad.',
-  stepUp: (step: HopStep) => `You are so good at this! Next time we count in ${wordOf(step)}.`,
+  /** The tail of the finish title, after the opening for how the day went (S33): what turned, or "come back tomorrow". */
+  padTurned: (metal: Metal) => `A lily pad turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another lily pad.',
+  /** The opening of the finish title and, on a golden day, the chip: about the hops, not about the child (S33). */
+  how: {
+    most: 'You counted your hops carefully!',
+    some: 'Some hops were tricky and you kept going.',
+    tricky: 'Those were tricky hops.',
+  },
+  /** The chip on a tricky day: a wrong first glow-worm brings the fact's full help back. */
+  trickyChip: 'The tricky ones will come back with more help.',
+  stepUp: (step: HopStep) => `Your counting practice is paying off. Next time we count in ${wordOf(step)}.`,
   jar: (name: string) => `All the lily pads are gold! ${name} made it to the Glow-worm Party. You win the Golden Glow Jar!`,
   /** The finish screen's signpost once the top step is secure and Penguin Pairs is on (maths review R8, section 3.1). */
   signpost: 'Jumping in twos is doubling. Try Penguin Pairs.',

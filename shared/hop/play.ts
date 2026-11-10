@@ -7,6 +7,7 @@
  * first glow-worm picked was right, with the time to that first pick.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { thoughtOf } from '../juniorQuick';
 import { HOPS_PER_ROUND, showRound, type Round } from './round';
 
 /** One glow-worm picked: its number and how long the child took over it. */
@@ -18,6 +19,8 @@ export interface Tap {
 export interface Replay {
   hopsMade: number;
   mistakes: number;
+  /** Hops whose first glow-worm was right and not a guess (the think floor, S14): what the finish words are about. */
+  firstRight: number;
   done: boolean;
   /** One answer per hop tried, in order, for the maths records. */
   answers: Omit<FactAnswer, 'at'>[];
@@ -29,20 +32,24 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   const answers: Replay['answers'] = [];
   let hopsMade = 0;
   let mistakes = 0;
+  let firstRight = 0;
   let triedThisHop = false;
   for (const { pick, ms } of taps) {
     const hop = hops[hopsMade];
     if (!hop) throw new Error('Taps after the round was done');
     if (!hop.choices.includes(pick)) throw new Error(`${pick} isn't a glow-worm on hop ${hopsMade}`);
     const right = pick === hop.answer;
-    if (!triedThisHop) answers.push({ key: hop.key, correct: right, ms });
+    if (!triedThisHop) {
+      answers.push({ key: hop.key, correct: right, ms });
+      if (right && thoughtOf(ms)) firstRight++;
+    }
     triedThisHop = true;
     if (right) {
       hopsMade++;
       triedThisHop = false;
     } else mistakes++;
   }
-  return { hopsMade, mistakes, done: hopsMade === hops.length && hops.length === HOPS_PER_ROUND, answers };
+  return { hopsMade, mistakes, firstRight, done: hopsMade === hops.length && hops.length === HOPS_PER_ROUND, answers };
 }
 
 /** Hops in a row, the latest first, whose first glow-worm was wrong: three bring the step labels back for the rest of the round (R6). */

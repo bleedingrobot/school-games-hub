@@ -77,7 +77,7 @@ it('changes one stone a NZ day by the server’s clock, with hop-backs recorded 
     const reply = (await send('pupil-a', { action: 'finish', seed: round.seed, taps: goodTaps(round), daysDone: 29, goldenBasket: true })).body;
     return { round, reply };
   };
-  expect((await finish()).reply).toEqual({ daysDone: 1, lastStoneDay: '2026-11-04', stoneChanged: 0, goldenBasket: false, level: 1, levelBefore: 1 });
+  expect((await finish()).reply).toEqual({ daysDone: 1, lastStoneDay: '2026-11-04', stoneChanged: 0, goldenBasket: false, firstRight: 10, level: 1, levelBefore: 1 });
   hours(2); // 11 pm: still the same NZ day, so just for fun
   expect((await finish()).reply).toMatchObject({ daysDone: 1, stoneChanged: null });
   hours(2); // 1 am on the 5th in New Zealand, though still the 4th in UTC

@@ -8,6 +8,7 @@
  * same round is practice only.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, showRound, type Round } from './round';
 
 /** One number picked: its value and how long the child took over it. */
@@ -19,6 +20,8 @@ export interface Tap {
 export interface Replay {
   goesDone: number;
   mistakes: number;
+  /** Goes whose first tap was right and not a guess (the think floor, S14): what the finish words are about. Every go counts, not once per fact. */
+  firstRight: number;
   done: boolean;
   /** One answer per fact tried, in order, for the maths records. */
   answers: Omit<FactAnswer, 'at'>[];
@@ -31,12 +34,14 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   const counted = new Set<string>();
   let goesDone = 0;
   let mistakes = 0;
+  let firstRight = 0;
   let triedThisGo = false;
   for (const { pick, ms } of taps) {
     const go = goes[goesDone];
     if (!go) throw new Error('Taps after the round was done');
     if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
     const right = pick === go.answer;
+    if (!triedThisGo && right && thoughtOf(ms)) firstRight++;
     if (!triedThisGo && !counted.has(go.key)) {
       answers.push({ key: go.key, correct: right, ms });
       counted.add(go.key);
@@ -47,5 +52,5 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
       triedThisGo = false;
     } else mistakes++;
   }
-  return { goesDone, mistakes, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
+  return { goesDone, mistakes, firstRight, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers };
 }
