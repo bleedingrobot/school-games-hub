@@ -4,7 +4,7 @@
  * browser's own voice. No line says the answer to a go before the child has tapped it.
  */
 import { FRIEND_NAMES, METALS, type Metal } from '../../../shared/pigeon/progress';
-import { KEYS, STEPS, kindFor, kindOfKey, keyNumber, keyLine, type Go, type Slip, type Step } from '../../../shared/pigeon/round';
+import { KEYS, STEPS, kindFor, kindOfKey, keyNumber, keyLine, sisterKeys, type Go, type Slip, type Step } from '../../../shared/pigeon/round';
 import { nextPartWords } from '../../components/NextPartChip';
 import { WORDS } from './words';
 
@@ -70,7 +70,8 @@ export function allVoiceLines(): string[] {
       lines.add(homeLine(title, true));
     }
   }
-  for (const key of KEYS) {
+  // "Now you try one like it" asks a sister go: the same kinds of key with nearby numbers, so its question and look lines are said too.
+  for (const key of new Set([...KEYS, ...KEYS.flatMap(sisterKeys)])) {
     const n = keyNumber(key);
     const kinds = kindOfKey(key) === 'zoom' ? (['place', 'read'] as const) : ([kindFor(key)] as const);
     for (const kind of kinds) {

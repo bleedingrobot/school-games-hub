@@ -386,6 +386,17 @@ function sisterSpec(key: string): SisterSpec | null {
   }
 }
 
+/** Every key `sisterGo` could make for a go on `key`: one or two steps either way, in range, not a number the family never uses. */
+export function sisterKeys(key: string): string[] {
+  const spec = sisterSpec(key);
+  if (!spec) return [];
+  const here = (keyNumber(key) - spec.base) / spec.unit;
+  return [-2, -1, 1, 2]
+    .map((d) => spec.base + (here + d) * spec.unit)
+    .filter((n) => n >= spec.min && n <= spec.max && !spec.skip(n))
+    .map(spec.make);
+}
+
 /**
  * The sister of a go, for "Now you try": the same kind of go on the same sort of key, with its number moved by one or two steps
  * of the key's own size (1 for most, 10 for a ten key, 100 for a hundred key), inside the key's range, never the same answer or
