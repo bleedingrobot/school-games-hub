@@ -2246,17 +2246,21 @@ function replay(round, taps) {
 	const answers = [];
 	let hopsMade = 0;
 	let mistakes = 0;
+	let firstRight = 0;
 	let triedThisHop = false;
 	for (const { pick, ms } of taps) {
 		const hop = hops[hopsMade];
 		if (!hop) throw new Error("Taps after the round was done");
 		if (!hop.choices.includes(pick)) throw new Error(`${pick} isn't a glow-worm on hop ${hopsMade}`);
 		const right = pick === hop.answer;
-		if (!triedThisHop) answers.push({
-			key: hop.key,
-			correct: right,
-			ms
-		});
+		if (!triedThisHop) {
+			answers.push({
+				key: hop.key,
+				correct: right,
+				ms
+			});
+			if (right && thoughtOf(ms)) firstRight++;
+		}
 		triedThisHop = true;
 		if (right) {
 			hopsMade++;
@@ -2266,6 +2270,7 @@ function replay(round, taps) {
 	return {
 		hopsMade,
 		mistakes,
+		firstRight,
 		done: hopsMade === hops.length && hops.length === 10,
 		answers
 	};
@@ -2491,6 +2496,7 @@ async function handleHop(services, player, body) {
 				const secureNow = facts === "busy" ? false : topSecure(withAnswers(facts, answers), reached);
 				return ok({
 					...result,
+					firstRight: played.firstRight,
 					step: reached,
 					stepBefore,
 					topSecure: secureNow

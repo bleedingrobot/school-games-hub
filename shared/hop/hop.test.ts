@@ -163,6 +163,16 @@ describe('the glow-worms (mistakes that teach)', () => {
   });
 });
 
+describe('the finish words (S33)', () => {
+  it('count hops right at the first glow-worm, and not a guess faster than the think floor', () => {
+    const round = makeRound(seeds[0], recordsFor[10], {});
+    const right = showRound(round).map((hop) => ({ pick: hop.answer, ms: 2000 }));
+    expect(replay(round, right).firstRight).toBe(HOPS_PER_ROUND);
+    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
+    expect(replay(round, right.map((t, i) => (i < 3 ? { ...t, ms: 100 } : t))).firstRight).toBe(HOPS_PER_ROUND - 3);
+  });
+});
+
 describe('the step', () => {
   it('moves 10s to 5s to 2s to 3s to 4s to tens past 100 only once 70% of counting up and what comes next is secure, and never drops back', () => {
     const tens = stepKeys(10);
