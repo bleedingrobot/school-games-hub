@@ -3,7 +3,7 @@ import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { DEN_BUNDLES } from './config';
 import { DAYS_PER_RAFT, denAfter, finishChallenge } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, kindOfKey, makeRound, matOf, matValue, pictureFor, placeAfter, poolFor, showRound, startFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, STEP_KEYS, kindOfKey, makeRound, matOf, matValue, pictureFor, placeAfter, poolFor, showRound, sisterGo, startFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleLizard, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { slipSummary } from './teacher';
@@ -204,5 +204,30 @@ describe('the server', () => {
     const map = (await handleLizard(services, 'p1', { action: 'load' })).body.kindLevels as Record<string, { level: number }>;
     expect(Object.keys(map).length).toBeGreaterThan(0);
     for (const k of Object.values(map)) expect(k.level).toBe(3);
+  });
+});
+
+describe('Now you try one like it', () => {
+  it('asks a sister go: the same kind of key, other numbers, and the saved taps still replay on the go itself', () => {
+    let made = 0;
+    for (const step of steps) {
+      const round = makeRound(seeds[3], [], { step, level: 3 });
+      const goes = showRound(round);
+      goes.forEach((go, i) => {
+        const sister = sisterGo(round, i, go);
+        if (!sister) return void expect(go.n % 10 === 0 || go.key.startsWith('pvbuild:t')).toBe(true);
+        made++;
+        expect(sister.kind).toBe(go.kind);
+        expect(sister.key.replace(/\d+$/, '')).toBe(go.key.replace(/\d+$/, ''));
+        expect(sister.n).not.toBe(go.n);
+        expect(Math.abs(sister.n - go.n)).toBeLessThanOrEqual(2);
+        expect(sister.answer).not.toBe(go.answer);
+        expect(sister.l).toBe(go.l);
+      });
+      // The child tapped wrong, then right on a sister: only the go's own right pick is kept, and the replay accepts it.
+      const taps = goes.flatMap((go) => [{ pick: wrongTap(go), ms: 1 }, { pick: wrongTap(go), ms: 1 }, { pick: rightTap(go), ms: 1 }]);
+      expect(replay(round, taps).done).toBe(true);
+    }
+    expect(made).toBeGreaterThan(20);
   });
 });

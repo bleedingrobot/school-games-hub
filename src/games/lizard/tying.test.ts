@@ -17,7 +17,7 @@ describe('Lizard: tying the bundles', () => {
     expect(KEYS).not.toContain('pvregroup:s36');
     expect(KEYS).not.toContain('pvregroup:b15');
     expect(demoMat('swap', 0)).toEqual({ h: 0, t: 3, o: 6 });
-    expect(DEMO_STEPS.swap.at(-1)?.line).toBe('Now you try.');
+    expect(DEMO_STEPS.swap.at(-1)?.line).toBe('Now you try one like it.');
     // The written line after a wrong try: the child's count, never a card answer.
     const build = tryLine({ kind: 'build', n: 43 }, { h: 0, t: 3, o: 4 }, 'build');
     expect(build).toContain('34');
