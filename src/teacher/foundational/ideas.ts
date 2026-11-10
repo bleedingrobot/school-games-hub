@@ -7,6 +7,7 @@
 import { ideaLevel, type IdeaScore } from '../../../shared/kit/teacherGrid';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { LADDER } from '../../../shared/maths/ladder';
+import { foldBondPairs } from '../../../shared/maths/skillPacks/bondPairs';
 import { type CellLevel } from '../../../shared/maths/skillMap';
 import type { FoundationalGameId, QuickLooksProgress } from '../../data/foundational';
 import { QUICK_FLUENT_STAGES, QUICK_LOOKS_ID, QUICK_SECURE_STAGES } from './config';
@@ -106,7 +107,8 @@ export function ideaCell(idea: Idea, facts: readonly FactStats[], quick: QuickLo
     const level = quickLooksLevel(quick);
     return { idea, level, parts: [{ level }], score: { level, attempts: quick?.answered ?? 0, correct: quick?.correct ?? 0 } };
   }
-  const scores = idea.parts.map((p) => ideaLevel(p.keys, facts));
+  const folded = foldBondPairs(facts);
+  const scores = idea.parts.map((p) => ideaLevel(p.keys, folded));
   // A column with two parts is as far on as its furthest part, and Not started only when neither has begun.
   const best = scores.reduce<CellLevel>((a, s) => (RANK.indexOf(s.level) > RANK.indexOf(a) ? s.level : a), 'off');
   return {
@@ -121,6 +123,8 @@ export function ideaCell(idea: Idea, facts: readonly FactStats[], quick: QuickLo
 export function keyWords(key: string): string {
   let m = /^bond10:(\d+)\+(\d+)$/.exec(key);
   if (m) return `${m[1]} + ? = 10`;
+  m = /^bond(100|1000):(\d+)\+(\d+)$/.exec(key);
+  if (m) return `${m[2]} + ? = ${m[1]}`;
   m = /^bond(100|1000):(\w+)$/.exec(key);
   if (m) return `Pairs that make ${m[1]} (${({ tens: 'tens', fives: 'fives', any: 'any numbers', take: 'taking away', hundreds: 'hundreds', fifties: 'fifties' } as Record<string, string>)[m[2]] ?? m[2]})`;
   m = /^dbl:(\d+)$/.exec(key);

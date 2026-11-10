@@ -129,9 +129,8 @@ const shuffleWith = <T>(items: T[], random: () => number): T[] => {
  * Two of the ten pairs are older pairs, from the stages below, the least recently seen then the weakest; they come last as
  * a second tray with their own sum (`pairTargets`). The first stage has none.
  *
- * The 100 and 1000 sums have one fact key each ('bond100:tens'), so they can't say which pair is weak. Their pairs are
- * weighed by the bond10 record of the same pair (30 + 70 by 3 + 7) instead. Splitting the key lives in shared/maths and
- * would be its own branch.
+ * The 100 and 1000 pairs have a fact key each ('bond100:30+70'). Until a pair has a record of its own it is weighed by the
+ * bond10 record of the same pair (30 + 70 by 3 + 7), as the old single key could not say which pair was weak.
  */
 export function makeStageRound(seed: number, stage: Stage, facts: readonly FactStats[] = []): Round {
   if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
@@ -139,8 +138,11 @@ export function makeStageRound(seed: number, stage: Stage, facts: readonly FactS
   const random = seeded(seed);
   random(); random(); // the first draws of this generator are close together for close seeds
   const record = new Map(facts.map((f) => [f.key, f]));
-  const boxOf = (c: Candidate) => record.get(bondKey(c.lo, c.target >= 100 ? 10 : c.target))?.box ?? 0;
-  const seenOf = (c: Candidate) => record.get(bondKey(c.lo, c.target))?.lastSeen ?? 0;
+  // A pair's number in ones (3 + 7 is 30 + 70 on the 100s), which is what `bondKey` takes.
+  const ones = (c: Candidate) => (c.target === 20 ? c.lo : (c.lo * c.target) / 10);
+  // A big sum's pair is weighed by its own record; with none yet, by the bond10 record of the same pair (30 + 70 by 3 + 7).
+  const boxOf = (c: Candidate) => (record.get(bondKey(ones(c), c.target)) ?? (c.target >= 100 ? record.get(bondKey(c.lo, 10)) : undefined))?.box ?? 0;
+  const seenOf = (c: Candidate) => record.get(bondKey(ones(c), c.target))?.lastSeen ?? 0;
   const target = TARGETS[stage];
   const older = stage === 0 ? 0 : OLDER_PAIRS;
 
@@ -175,23 +177,29 @@ export function makeStageRound(seed: number, stage: Stage, facts: readonly FactS
 }
 
 /**
- * The fact a pair practises, for the maths records: `bond10:3+7` (smaller number first) for bonds to 10, and the hub's
- * place-value keys for the others, `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/placeSkills.ts).
+ * The fact a pair practises, for the maths records, smaller number first: `bond10:3+7`, `bond20:7+13`, `bond100:30+70` and
+ * `bond1000:300+700`. `n` is a number of the pair itself (30, not 3). The 100 and 1000 pairs count towards the same skills as the
+ * older `bond100:tens` and `bond1000:hundreds` (shared/maths/skillPacks/bondPairs.ts), which are still kept.
  */
 export const bondKey = (n: number, target: Target = 10): string => {
   if (target === 20) {
     const lo = Math.min(n, 20 - n);
     return `bond20:${lo}+${20 - lo}`;
   }
-  if (target === 100) return 'bond100:tens';
-  if (target === 1000) return 'bond1000:hundreds';
+  if (target === 100 || target === 1000) {
+    const lo = Math.min(n, target - n);
+    return `bond${target}:${lo}+${target - lo}`;
+  }
   const lo = Math.min(n, 10 - n);
   return `bond10:${lo}+${10 - lo}`;
 };
 
 /** The records a sum's pairs use (the ones its right pairs are scored against), for "is this sum secure?". */
 export const factKeys = (target: Target): string[] =>
-  target === 10 ? [1, 2, 3, 4, 5].map((n) => bondKey(n)) : target === 20 ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => bondKey(n, 20)) : [bondKey(1, target)];
+  target === 10 ? [1, 2, 3, 4, 5].map((n) => bondKey(n)) : target === 20 ? [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => bondKey(n, 20)) : [1, 2, 3, 4, 5].map((n) => bondKey((n * target) / 10, target));
+
+/** The older record that stands in for a pair with none of its own yet: one key for the whole 100 or 1000 sum (null for 10 and 20). */
+export const oldKeyOf = (target: Target): string | null => (target === 100 ? 'bond100:tens' : target === 1000 ? 'bond1000:hundreds' : null);
 
 /** Two leaves tapped, by index into `Round.leaves`, and how long the child took over it. */
 export interface Tap {

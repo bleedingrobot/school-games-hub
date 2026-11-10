@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { afterDay, DAYS_PER_EGG, dotsFor, finishChallenge, placeAfter, shownDots, stalkAfter, START_PLACE, START_STEPS, sumSecure, type Place, type Steps } from './progress';
+import { RECORD_KEY } from '../maths/skillPacks/generatedKit';
 import { seeded } from '../seededRandom';
-import type { FactAnswer } from '../maths/leitner';
+import type { FactAnswer, FactStats } from '../maths/leitner';
 import { handleBeanstalk, unplayed } from './server';
 import { memoryServices } from './memoryServices';
 import { bondKey, factKeys, isMissingGo, makeRound, makeStageRound, mistakeKind, ON_SCREEN, pairId, PAIRS_PER_ROUND, replay, sisterLeaf, targetOf, TARGETS, type Round, type Stage, type Target, type Tap } from './round';
@@ -58,11 +59,14 @@ describe('the round', () => {
         expect(replay(round, []).onScreen).toHaveLength(ON_SCREEN);
         const end = replay(round, perfectTaps(seed, target));
         expect(end).toMatchObject({ done: true, pairsMade: PAIRS_PER_ROUND, mistakes: 0, onScreen: [] });
-        expect(end.answers.every((a) => a.key === bondKey(round.leaves[0], target))).toBe(target > 20);
+        expect(end.answers.every((a) => RECORD_KEY.test(a.key))).toBe(true);
       }
     }
-    expect(bondKey(30, 100)).toBe('bond100:tens');
-    expect(bondKey(700, 1000)).toBe('bond1000:hundreds');
+    // One key per pair, smaller number first (S34); the old one-key-for-all records are still read, never written.
+    expect(bondKey(30, 100)).toBe('bond100:30+70');
+    expect(bondKey(70, 100)).toBe('bond100:30+70');
+    expect(bondKey(700, 1000)).toBe('bond1000:300+700');
+    expect(bondKey(500, 1000)).toBe('bond1000:500+500');
     expect(() => makeRound(1, 50 as Target)).toThrow();
   });
 
@@ -270,7 +274,7 @@ describe('bonds to 20 and the missing leaf (maths review R8)', () => {
     expect(keys).toHaveLength(PAIRS_PER_ROUND);
     expect(keys.filter((k) => /^bond20:\d\+\d+$/.test(k) && factKeys(20).includes(k))).toHaveLength(8); // and two older bonds to 10 last
     expect(factKeys(10)).toHaveLength(5);
-    expect(factKeys(100)).toEqual(['bond100:tens']);
+    expect(factKeys(100)).toEqual(['bond100:10+90', 'bond100:20+80', 'bond100:30+70', 'bond100:40+60', 'bond100:50+50']);
     // The missing leaf is only on the screen (the taps are the same two leaves): on the 3rd, 5th and 7th go (S22), never the last.
     expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(isMissingGo)).toEqual([2, 4, 6]);
     // At least three leaves of the tray's sum float on each of them, on every stage, so a guess is not enough.
@@ -354,5 +358,29 @@ describe('the sum follows the child, not the calendar (maths review 2, S21)', ()
     services.data.rounds[0].open = true;
     services.data.players.p.lastLeafDay = null;
     expect(await handleBeanstalk(services, 'p', { action: 'finish', seed, taps: perfectTaps(seed as number, 100) })).toMatchObject({ status: 200 });
+  });
+});
+
+describe('one record per pair on the 100s and 1000s (S34)', () => {
+  const fact = (key: string, box: number, attempts = 4): FactStats => ({ key, attempts, correct: attempts, avgMs: 2000, box, lastSeen: 0, quickDays: [] });
+
+  it('counts the old key as evidence for a pair with no record yet, so no child is sent back a step', () => {
+    for (const [target, old] of [[100, 'bond100:tens'], [1000, 'bond1000:hundreds']] as const) {
+      expect(sumSecure([fact(old, 3)], target)).toBe(true);
+      expect(sumSecure([fact(old, 1)], target)).toBe(false);
+      // The pairs' own records win once they exist: four of five secure is enough, a pair that was asked and missed is not helped.
+      const pairs = factKeys(target);
+      expect(sumSecure(pairs.map((k) => fact(k, 3)), target)).toBe(true);
+      expect(sumSecure([fact(old, 3), ...pairs.slice(0, 2).map((k) => fact(k, 1))], target)).toBe(false); // 3 of 5 secure
+      expect(sumSecure([fact(old, 3), ...pairs.slice(0, 1).map((k) => fact(k, 1))], target)).toBe(true); // 4 of 5
+    }
+  });
+
+  it('weighs a pair by its own record: the weak pair comes up more than once', () => {
+    const own = [fact('bond100:30+70', 0, 1), ...[10, 20, 40, 50].map((n) => fact(`bond100:${n}+${100 - n}`, 3))];
+    const round = makeStageRound(7, 2, own);
+    expect(round.target).toBe(100);
+    const times = (n: number) => round.leaves.filter((l, i) => l === n && round.pairTargets![i >> 1] === 100).length;
+    expect(times(30)).toBeGreaterThanOrEqual(2); // the weakest pair gets the first spare place
   });
 });

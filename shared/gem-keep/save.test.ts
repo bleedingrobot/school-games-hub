@@ -111,3 +111,14 @@ describe('answer times', () => {
     expect(kept('times-tables', [slow])).toEqual([{ key: 'mul:6x8', correct: true, ms: 120_000, at: BEFORE - 5000 }]);
   });
 });
+
+describe('Beanstalk\'s one key per pair (S34) is a key Gem Keep accepts', () => {
+  it('keeps a pair record for a question that names one of its numbers, and not for another pair', () => {
+    const q = ['30', '+', '?', '=', '100'];
+    expect(kept('generated', [shown('bond100:30+70', q, 70)])).toEqual([{ key: 'bond100:30+70', correct: true, ms: 2000, at: BEFORE - 5000 }]);
+    expect(kept('generated', [shown('bond100:30+70', q, 60)])?.[0].correct).toBe(false);
+    expect(kept('generated', [shown('bond100:20+80', q, 70)])).toEqual([]);
+    expect(kept('generated', [shown('bond100:30+80', q, 70)])).toEqual([]);
+    expect(kept('early-facts', [shown('bond100:30+70', q, 70)])).toEqual([]);
+  });
+});

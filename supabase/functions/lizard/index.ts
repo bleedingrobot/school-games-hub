@@ -2295,6 +2295,20 @@ async function handleLizard(services, player, body) {
 	return unreadable();
 }
 //#endregion
+//#region shared/maths/skillPacks/bondPairs.ts
+/** `bond100:30+70` or `bond1000:300+700`: whole tens (or hundreds) that make the total, the smaller first. */
+const PAIR = /^bond(100|1000):(\d{1,3})\+(\d{1,3})$/;
+/** True for a pair key that could have been made: the numbers add to the total, the smaller first, in whole tens (hundreds). */
+function isBondPairKey(key) {
+	const m = PAIR.exec(key);
+	if (!m) return false;
+	const total = Number(m[1]);
+	const lo = Number(m[2]);
+	const hi = Number(m[3]);
+	const step = total / 10;
+	return lo >= step && lo <= hi && lo + hi === total && lo % step === 0 && m[2] === String(lo) && m[3] === String(hi);
+}
+//#endregion
 //#region shared/maths/skillPacks/addSub.ts
 /**
 * Adding and taking away (the Water topic in Maths Monsters).
@@ -6888,7 +6902,8 @@ const GENERATED_SKILL_KEYS = {
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
-const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
+/** A question type, or one bonds-to-100/1000 pair (`bond100:30+70`, kept beside the old `bond100:tens`: bondPairs.ts). */
+const isGeneratedKey = (key) => GENERATED_KEYS.has(key) || isBondPairKey(key);
 //#endregion
 //#region shared/maths/ladder.ts
 /**

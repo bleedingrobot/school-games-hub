@@ -54,6 +54,10 @@ describe('the generated skills in the ladder', () => {
   it('the plain ones from before keep their packs', () => {
     expect(packIdOfKey('bond10:3+7')).toBe('early-facts');
     expect(packIdOfKey('bond100:tens')).toBe('generated');
+    // Beanstalk's one key per pair (S34) is the same pack, and only a pair that could really be made.
+    for (const key of ['bond100:30+70', 'bond100:50+50', 'bond1000:300+700']) expect(packIdOfKey(key), key).toBe('generated');
+    for (const key of ['bond100:30+80', 'bond100:70+30', 'bond100:35+65', 'bond100:0+100', 'bond1000:30+970', 'bond10000:1+2']) expect(packIdOfKey(key), key).toBeNull();
+    expect(['bond100:30+70', 'bond1000:300+700'].every((k) => RECORD_KEY.test(k))).toBe(true);
     expect(packIdOfKey('mul:6x7')).toBe('times-tables');
     expect(packIdOfKey('pv:round10')).toBeNull(); // Maths Monsters keeps its own
     expect(packIdOfKey('round:10:2digit')).toBe('generated');

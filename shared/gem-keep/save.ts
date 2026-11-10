@@ -15,6 +15,7 @@ import { sameAnswer } from '../maths/banded';
 import { cleanParams, solveClaim, type ShownAnswer } from '../maths/claim';
 import { FLUENT_DAYS, keptMs, TOP_BOX } from '../maths/config';
 import { parseFactKey } from '../maths/facts';
+import { OLD_BOND_KEY, totalOfPairKey } from '../maths/skillPacks/bondPairs';
 import { FOCUS_PACKS, isFocusKey, packIdOfKey, type FocusPackId } from '../maths/focus';
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { MATHS } from './config';
@@ -221,6 +222,14 @@ function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<Answer
   return { ok: true, item: { type: 'answers', pack, batchId: x.batchId, answers } };
 }
 
+/** A question on the old bond record (30 + ? = 100) can count towards the pair it names (`bond100:30+70`, Beanstalk's one-per-pair key). */
+function fitsBondPair(solvedKeys: readonly string[], key: string, parts: readonly string[]): boolean {
+  const total = totalOfPairKey(key);
+  if (!total || !solvedKeys.includes(OLD_BOND_KEY[total])) return false;
+  const [, , lo, hi] = /^bond(\d+):(\d+)\+(\d+)$/.exec(key) ?? [];
+  return parts.includes(lo) || parts.includes(hi);
+}
+
 /** Marks an answer from the question as it was shown: right, wrong, or null when that question can't be this record's. */
 function markShown(a: Record<string, unknown>, key: string): boolean | null {
   const { parts, given, params } = a;
@@ -229,7 +238,7 @@ function markShown(a: Record<string, unknown>, key: string): boolean | null {
   if (typeof given !== 'number' || !Number.isFinite(given)) return null;
   if (params !== undefined && !cleanParams(params)) return null;
   const solved = solveClaim({ parts, key, params });
-  if (!solved || !solved.keys.includes(key)) return null;
+  if (!solved || !(solved.keys.includes(key) || fitsBondPair(solved.keys, key, parts as string[]))) return null;
   return sameAnswer(given, solved.answer);
 }
 
