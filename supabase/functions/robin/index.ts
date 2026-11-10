@@ -57,6 +57,12 @@ const HELP_SETTINGS = [
 ];
 /** The teacher's setting on top of the child's own help. The game says what 'always' and 'off' show. */
 const helpWithSetting = (help, setting, shown) => setting === "always" ? shown.always : setting === "off" ? shown.off : help;
+/** The numbers in LEARNING-DESIGN rule 5, for a round of ten goes. The game adds its `topLevel`. */
+const ROUND_OF_TEN = {
+	good: 8,
+	hard: 4,
+	goodToFade: 2
+};
 /**
 * The help after a counted round with `right` goes right at the first tap: enough good rounds in a row take it down one
 * level, a hard round brings one level back at once. `faded` says it went down on this round.
@@ -76,6 +82,38 @@ function fadeAfter(p, right, rules) {
 		goodInRow,
 		faded
 	};
+}
+/**
+* Help for each kind of go, after a counted round. For each kind with at least 2 goes, the goes right at the first tap are
+* scaled to ten (`Math.round(10 * right / n)`) and `fadeAfter` is run with the rules (use `ROUND_OF_TEN`), so a kind fades
+* after two good rounds and comes back after a hard one. A kind with fewer than 2 goes is left as it was. A kind not in the
+* map yet starts at `startLevel` (the child's own level, which already has a new step's full help). Returns a new map; the
+* kinds the round did not ask keep what they had. The kind is only a string: the game names its own.
+*/
+function fadeByKind(kindLevels, goes, rules, startLevel) {
+	const tally = new Map();
+	for (const g of goes) {
+		const t = tally.get(g.kind) ?? {
+			n: 0,
+			right: 0
+		};
+		t.n += 1;
+		if (g.right) t.right += 1;
+		tally.set(g.kind, t);
+	}
+	const out = { ...kindLevels };
+	for (const [kind, { n, right }] of tally) {
+		if (n < 2) continue;
+		const { level, goodInRow } = fadeAfter(kindLevels[kind] ?? {
+			level: startLevel,
+			goodInRow: 0
+		}, Math.round(10 * right / n), rules);
+		out[kind] = {
+			level,
+			goodInRow
+		};
+	}
+	return out;
 }
 //#endregion
 //#region shared/seededRandom.ts
@@ -220,7 +258,8 @@ function spreadPicks(keys) {
 /**
 * Today's challenge from a fresh seed, the child's records, their place and the teacher's help setting: 7 goes at the step's new
 * thing and 3 earlier ones (steps 1 and 2 are all new), weakest keys first, each key asked twice where the pool is small
-* (so a lucky handful is asked again with the same number). The same inputs always give the same round.
+* (so a lucky handful is asked again with the same number). Each go's help is its kind's own level from `kindLevels`, or the
+* child's level where the kind is not there yet; the guided first go is at the top level. The same inputs always give the same round.
 */
 function makeRound(seed, stats, opts = {}) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
@@ -239,7 +278,11 @@ function makeRound(seed, stats, opts = {}) {
 		return Array.from({ length: n }, (_, i) => ranked[i % ranked.length]);
 	};
 	const plan = STEP_PLAN[step];
-	const shown = shownLevel(level, help);
+	const shownFor = (key) => {
+		const kind = goKindOf(key);
+		const own = kind === null ? void 0 : opts.kindLevels?.[kind]?.level;
+		return shownLevel(isLevel(own) ? own : level, help);
+	};
 	const fresh = plan.fresh.flatMap((p) => weak(p.keys, p.goes));
 	const review = plan.review.length === 0 ? [] : Array.from({ length: 3 }, (_, i) => weak(plan.review[i % plan.review.length], 3)[i]);
 	let keys = [...fresh, ...review];
@@ -259,7 +302,7 @@ function makeRound(seed, stats, opts = {}) {
 			l: 5
 		} : {
 			key,
-			l: shown
+			l: shownFor(key)
 		})
 	};
 }
@@ -558,6 +601,7 @@ const unplayed = () => ({
 	level: 5,
 	goodInRow: 0,
 	goodAtStep: 0,
+	kindLevels: {},
 	version: 0
 });
 const MAX_TAP_MS = 6e5;
@@ -624,6 +668,7 @@ async function handleRobin(services, player, body) {
 			today: today(),
 			step: place.step,
 			level: place.level,
+			kindLevels: s.kindLevels ?? {},
 			help: settings.help,
 			seen
 		});
@@ -639,13 +684,15 @@ async function handleRobin(services, player, body) {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
 		const { step, level } = placeOf(s, facts);
+		const kindLevels = s.kindLevels ?? {};
 		const guided = s.daysDone === 0 && s.lastDay === null;
 		for (let tries = 0; tries < TRIES; tries++) {
 			const round = makeRound(Math.floor(services.random() * 2147483648), facts, {
 				step,
 				level,
 				help: settings.help,
-				guided
+				guided,
+				kindLevels
 			});
 			const kept = await services.start(player, round);
 			if (kept === "busy") return busy();
@@ -668,6 +715,11 @@ async function handleRobin(services, player, body) {
 			return unreadable();
 		}
 		if (!played.done) return no(400, "That challenge isn’t finished yet.", { code: "not-done" });
+		const slips = slipsOf(kept.round, taps);
+		const wentRight = kept.round.goes.map((g, i) => ({
+			kind: goKindOf(g.key) ?? "give",
+			right: slips[i] === null
+		}));
 		const at = services.now();
 		const answers = played.answers.map((a) => ({
 			...a,
@@ -684,16 +736,22 @@ async function handleRobin(services, player, body) {
 			};
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.changed === null ? before : moved(before, played.firstRight);
+			const stored = s.kindLevels ?? {};
+			const kindLevels = result.changed === null ? stored : fadeByKind(stored, wentRight, {
+				...ROUND_OF_TEN,
+				topLevel: 5
+			}, before.level);
 			const progress = {
 				daysDone: result.daysDone,
 				lastDay: result.lastDay,
-				...place
+				...place,
+				kindLevels
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
 				mistakes: played.mistakes,
 				firstRight: played.firstRight,
-				slips: slipsOf(kept.round, taps)
+				slips
 			});
 			if (saved === "busy") return busy();
 			if (saved) {
@@ -704,6 +762,7 @@ async function handleRobin(services, player, body) {
 					firstRight: played.firstRight,
 					step: place.step,
 					level: place.level,
+					kindLevels,
 					stepBefore: before.step,
 					levelBefore: before.level
 				});
@@ -7505,7 +7564,8 @@ Deno.serve(makeHandler({
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		first_right: ending.firstRight,
-		slips: ending.slips
+		slips: ending.slips,
+		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "robin", void 0, JUNIOR_QUICK_MS);

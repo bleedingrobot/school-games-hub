@@ -112,7 +112,7 @@ export function RobinGame({ backend, onExit, extra }: Props) {
   const play = () => backend.start().then((round) => setScreen({ kind: 'play', round }), fail);
   const done = (seed: number, taps: Tap[]) =>
     backend.finish(seed, taps).then((result) => {
-      setState((s) => s && { ...s, daysDone: result.daysDone, lastDay: result.lastDay, step: result.step, level: result.level });
+      setState((s) => s && { ...s, daysDone: result.daysDone, lastDay: result.lastDay, step: result.step, level: result.level, kindLevels: result.kindLevels });
       setScreen({ kind: 'finish', result });
       if (soundOn) playSound(result.feast ? 'win' : 'badge');
     }, fail);
