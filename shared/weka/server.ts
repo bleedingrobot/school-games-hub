@@ -184,7 +184,7 @@ export async function handleWeka(services: WekaServices, player: string, body: R
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
         await services.recordAnswers(player, `weka:${seed}`, answers);
         if (result.goldenBasket) await services.progressChanged(player);
-        return ok({ ...result, level: reached, levelBefore });
+        return ok({ ...result, firstRight: played.firstRight, level: reached, levelBefore });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

@@ -3,7 +3,7 @@
  * made with Kokoro by scripts/voice-clips.py), in Bella's voice like every early game. A line without a clip falls back
  * to the browser's own voice. No line ever says the answer to the go it is read for.
  */
-import { METALS, type Metal } from '../../../shared/weka/progress';
+import { METALS } from '../../../shared/weka/progress';
 import { ALL_KEYS, askLine, BOND_MORE, bondAskLine, bondLine, fromTenLine, parseKey, pebbleAskLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, splitFirstLine, splitRestLine, stemLine, toTenChoicesFor, toTenLine, type Go, type Help, type Kind, type Level, type LandKind, type ToTenKind } from '../../../shared/weka/round';
 import { FRIEND_NAMES } from './art';
 import { demoLines } from './demo';
@@ -13,9 +13,12 @@ import { nextPartWords } from '../../components/NextPartChip';
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/weka/';
 
+/** The separator between the parts of a longer text: the game says the parts one after another, each from its own clip. */
+export const PART_BREAK = '\n';
+
 /** What the home screen says: who wants to cross, and "come back tomorrow" once today's stone has changed. */
 export function homeLine(title: string, doneToday: boolean): string {
-  return doneToday ? `${title} ${WORDS.doneToday}` : title;
+  return doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title;
 }
 
 /** What Bella says for a right answer: with help, the number and the make-ten sentence; with none, the number. */
@@ -50,18 +53,22 @@ export function splitWhyLine(go: Pick<Go, 'kind' | 'small' | 'big' | 'total' | '
   return go.kind === 'back' ? WORDS.whySplitFirstBack(go.total, n) : WORDS.whySplitFirstAdd(go.big, n);
 }
 
-/** What the finish screen says, with "next time: starting on 8" when the child moved up a level. */
-export function finishLine(main: string, levelUp: Level | null): string {
-  return levelUp ? `${main} ${WORDS.levelUp(levelUp)}` : main;
+/**
+ * What the finish screen says, part by part: the title (the opening for how the day went, then what turned; on a golden day the
+ * prize, then the opening), the tricky-day chip, and "next time: starting on 8" when the child moved up a level.
+ */
+export function finishLine(title: string[], tricky: boolean, levelUp: Level | null): string {
+  const said = [...title];
+  if (tricky) said.push(WORDS.trickyChip);
+  if (levelUp) said.push(WORDS.levelUp(levelUp));
+  return said.join(PART_BREAK);
 }
 
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([WORDS.tryAgain, WORDS.countWithMe, WORDS.lookTogether, WORDS.nowTry, WORDS.whyAdd, WORDS.whyTen, BOND_MORE, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
-    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) {
-      lines.add(homeLine(title, false));
-      lines.add(homeLine(title, true));
-    }
+    // The home line is said in parts (the title, then "come back tomorrow"), so each part is a clip of its own.
+    for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) lines.add(homeLine(title, false));
   }
   for (const key of ALL_KEYS) {
     const { small, big } = parseKey(key)!;
@@ -93,8 +100,13 @@ export function allVoiceLines(): string[] {
   lines.add(askLine(first, true));
   // Bella counts hops and says each answer: 1 to 20.
   for (let n = 1; n <= 20; n++) lines.add(WORDS.yes(n));
-  const mains = [WORDS.doneToday, ...METALS.slice(1).map((m: Metal) => WORDS.stoneTurned(m)), ...Object.values(FRIEND_NAMES).map(WORDS.goldenBasket)];
-  for (const main of mains) for (const up of [null, 2, 3, 4] as const) lines.add(finishLine(main, up));
+  // The finish is said in parts, each from its own clip: the opening for the day, what turned (or the golden prize), the chip.
+  for (const how of Object.values(WORDS.how)) lines.add(how);
+  lines.add(WORDS.doneToday);
+  lines.add(WORDS.trickyChip);
+  for (const m of METALS.slice(1)) lines.add(WORDS.stoneTurned(m));
+  for (const name of Object.values(FRIEND_NAMES)) lines.add(WORDS.goldenBasket(name));
+  for (const up of [2, 3, 4] as const) lines.add(WORDS.levelUp(up));
   for (const line of demoLines()) lines.add(line);
   return [...lines];
 }

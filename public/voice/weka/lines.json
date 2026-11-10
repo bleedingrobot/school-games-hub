@@ -40,96 +40,48 @@
   "text": "Weka wants to cross the stream! Help Weka hop to the picnic."
  },
  {
-  "slug": "weka-wants-to-cross-the-stream-help-weka-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Weka wants to cross the stream! Help Weka hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-weka-has-a-new-stream-to-cross",
   "text": "Now Weka has a new stream to cross!"
- },
- {
-  "slug": "now-weka-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Weka has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "kiwi-wants-to-cross-the-stream-help-kiwi-hop-to-the-picnic",
   "text": "Kiwi wants to cross the stream! Help Kiwi hop to the picnic."
  },
  {
-  "slug": "kiwi-wants-to-cross-the-stream-help-kiwi-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Kiwi wants to cross the stream! Help Kiwi hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-kiwi-has-a-new-stream-to-cross",
   "text": "Now Kiwi has a new stream to cross!"
- },
- {
-  "slug": "now-kiwi-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Kiwi has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "takahe-wants-to-cross-the-stream-help-takahe-hop-to-the-picnic",
   "text": "Takahē wants to cross the stream! Help Takahē hop to the picnic."
  },
  {
-  "slug": "takahe-wants-to-cross-the-stream-help-takahe-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Takahē wants to cross the stream! Help Takahē hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-takahe-has-a-new-stream-to-cross",
   "text": "Now Takahē has a new stream to cross!"
- },
- {
-  "slug": "now-takahe-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Takahē has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "kakapo-wants-to-cross-the-stream-help-kakapo-hop-to-the-picnic",
   "text": "Kākāpō wants to cross the stream! Help Kākāpō hop to the picnic."
  },
  {
-  "slug": "kakapo-wants-to-cross-the-stream-help-kakapo-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Kākāpō wants to cross the stream! Help Kākāpō hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-kakapo-has-a-new-stream-to-cross",
   "text": "Now Kākāpō has a new stream to cross!"
- },
- {
-  "slug": "now-kakapo-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Kākāpō has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "pukeko-wants-to-cross-the-stream-help-pukeko-hop-to-the-picnic",
   "text": "Pūkeko wants to cross the stream! Help Pūkeko hop to the picnic."
  },
  {
-  "slug": "pukeko-wants-to-cross-the-stream-help-pukeko-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Pūkeko wants to cross the stream! Help Pūkeko hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-pukeko-has-a-new-stream-to-cross",
   "text": "Now Pūkeko has a new stream to cross!"
- },
- {
-  "slug": "now-pukeko-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Pūkeko has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "kea-wants-to-cross-the-stream-help-kea-hop-to-the-picnic",
   "text": "Kea wants to cross the stream! Help Kea hop to the picnic."
  },
  {
-  "slug": "kea-wants-to-cross-the-stream-help-kea-hop-to-the-picnic-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Kea wants to cross the stream! Help Kea hop to the picnic. Well done! Come back tomorrow to change another stone."
- },
- {
   "slug": "now-kea-has-a-new-stream-to-cross",
   "text": "Now Kea has a new stream to cross!"
- },
- {
-  "slug": "now-kea-has-a-new-stream-to-cross-well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Now Kea has a new stream to cross! Well done! Come back tomorrow to change another stone."
  },
  {
   "slug": "9-plus-2-weka-is-on-9-and-hops-2-more-where-will-weka-land",
@@ -2860,164 +2812,72 @@
   "text": "20!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stone",
-  "text": "Well done! Come back tomorrow to change another stone."
+  "slug": "you-hopped-to-ten-and-then-on",
+  "text": "You hopped to ten and then on!"
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: starting on 8."
+  "slug": "some-were-tricky-and-you-kept-going",
+  "text": "Some were tricky and you kept going."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: starting on 7 and 6."
+  "slug": "those-were-tricky-ones",
+  "text": "Those were tricky ones."
  },
  {
-  "slug": "well-done-come-back-tomorrow-to-change-another-stone-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "Well done! Come back tomorrow to change another stone. You are so good at this! Next time: all mixed up."
+  "slug": "come-back-tomorrow-to-change-another-stone",
+  "text": "Come back tomorrow to change another stone."
  },
  {
-  "slug": "well-done-a-stone-turned-bronze",
-  "text": "Well done! A stone turned bronze!"
+  "slug": "the-tricky-ones-will-come-back-with-more-help",
+  "text": "The tricky ones will come back with more help."
  },
  {
-  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "Well done! A stone turned bronze! You are so good at this! Next time: starting on 8."
+  "slug": "a-stone-turned-bronze",
+  "text": "A stone turned bronze."
  },
  {
-  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "Well done! A stone turned bronze! You are so good at this! Next time: starting on 7 and 6."
+  "slug": "a-stone-turned-silver",
+  "text": "A stone turned silver."
  },
  {
-  "slug": "well-done-a-stone-turned-bronze-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "Well done! A stone turned bronze! You are so good at this! Next time: all mixed up."
- },
- {
-  "slug": "well-done-a-stone-turned-silver",
-  "text": "Well done! A stone turned silver!"
- },
- {
-  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "Well done! A stone turned silver! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "Well done! A stone turned silver! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "well-done-a-stone-turned-silver-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "Well done! A stone turned silver! You are so good at this! Next time: all mixed up."
- },
- {
-  "slug": "well-done-a-stone-turned-gold",
-  "text": "Well done! A stone turned gold!"
- },
- {
-  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "Well done! A stone turned gold! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "Well done! A stone turned gold! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "well-done-a-stone-turned-gold-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "Well done! A stone turned gold! You are so good at this! Next time: all mixed up."
+  "slug": "a-stone-turned-gold",
+  "text": "A stone turned gold."
  },
  {
   "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Weka found the Golden Picnic Basket!"
  },
  {
-  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "all-the-stones-are-gold-weka-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Weka found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
- },
- {
   "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Kiwi found the Golden Picnic Basket!"
- },
- {
-  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "all-the-stones-are-gold-kiwi-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Kiwi found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
  },
  {
   "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Takahē found the Golden Picnic Basket!"
  },
  {
-  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "all-the-stones-are-gold-takahe-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Takahē found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
- },
- {
   "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket!"
- },
- {
-  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "all-the-stones-are-gold-kakapo-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Kākāpō found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
  },
  {
   "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket!"
  },
  {
-  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
- },
- {
-  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
- },
- {
-  "slug": "all-the-stones-are-gold-pukeko-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Pūkeko found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
- },
- {
   "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket",
   "text": "All the stones are gold! Kea found the Golden Picnic Basket!"
  },
  {
-  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-8",
-  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: starting on 8."
+  "slug": "making-ten-first-is-paying-off-next-time-starting-on-8",
+  "text": "Making ten first is paying off. Next time: starting on 8."
  },
  {
-  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-starting-on-7-and-6",
-  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: starting on 7 and 6."
+  "slug": "making-ten-first-is-paying-off-next-time-starting-on-7-and-6",
+  "text": "Making ten first is paying off. Next time: starting on 7 and 6."
  },
  {
-  "slug": "all-the-stones-are-gold-kea-found-the-golden-picnic-basket-you-are-so-good-at-this-next-time-all-mixed-up",
-  "text": "All the stones are gold! Kea found the Golden Picnic Basket! You are so good at this! Next time: all mixed up."
+  "slug": "making-ten-first-is-paying-off-next-time-all-mixed-up",
+  "text": "Making ten first is paying off. Next time: all mixed up."
  },
  {
   "slug": "watch-14-take-away-3-weka-starts-on-14-and-hops-back-3",

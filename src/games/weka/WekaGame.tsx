@@ -12,7 +12,8 @@ import type { Round } from '../../../shared/weka/round';
 import { WhatsNext } from '../../kit/WhatsNext';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
-import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
+import { finishBand } from '../../../shared/kit/finishBand';
+import { finishLine, homeLine, PART_BREAK, VOICE_FOLDER } from './voiceLines';
 import { playSound } from '../sounds';
 import { FRIEND_NAMES, paint } from './art';
 import { WekaError, type WekaBackend, type WekaFinish, type WekaState } from './backend';
@@ -41,9 +42,15 @@ function useVoice() {
       // Storage blocked: it just won't be remembered.
     }
   };
+  /** Says a text; a text of several parts (joined by PART_BREAK) is said one part after another, each from its own clip. */
   const say = useCallback((text: string, onEnd?: () => void) => {
-    if (on) speak(text, VOICE_FOLDER, onEnd);
-    else onEnd?.();
+    if (!on) {
+      onEnd?.();
+      return;
+    }
+    const parts = text.split(PART_BREAK);
+    const from = (i: number): void => speak(parts[i], VOICE_FOLDER, i === parts.length - 1 ? onEnd : () => from(i + 1));
+    from(0);
   }, [on]);
   return { on, setOn, say, available: canReadAloud() };
 }
@@ -194,14 +201,21 @@ function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) 
     : stream.stones.map((metal, i) => ({ metal, glow: i === result.stoneChanged }));
   const changed = result.stoneChanged === null ? null : stones[result.stoneChanged].metal;
   const name = FRIEND_NAMES[stream.friend];
-  const main = result.goldenBasket ? WORDS.goldenBasket(name) : changed ? WORDS.stoneTurned(changed) : WORDS.doneToday;
+  // How the day went (S33): the opening, then what turned. The day counts whatever the band, so the stone still turns; a golden day
+  // keeps its prize title and the opening goes in the chip. A reply without the number reads as a middle day.
+  const band = finishBand(result.firstRight ?? 5);
+  const opening = WORDS.how[band];
+  const tail = result.goldenBasket ? null : changed ? WORDS.stoneTurned(changed) : WORDS.doneToday;
+  const main = tail === null ? WORDS.goldenBasket(name) : `${opening} ${tail}`;
   const up = result.level !== result.levelBefore ? result.level : null;
-  const line = finishLine(main, up);
+  const line = finishLine(tail === null ? [main, opening] : [opening, tail], band === 'tricky', up);
   const cushion = paint('things/golden-basket-cushion');
   return (
     <div className={`wk-home${result.goldenBasket ? ' wk-home--prize' : ''}`}>
       <Stream scenery={result.goldenBasket ? 'gold' : stream.today} stones={stones} friend={stream.friend} pose="cheer" />
       <WhatsNext prefix="wk" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+        {result.goldenBasket && <p className="wk-chip">{opening}</p>}
+        {band === 'tricky' && <p className="wk-chip">{WORDS.trickyChip}</p>}
         {result.goldenBasket && (cushion ? <img className="wk-prize" src={cushion} alt="The Golden Picnic Basket" /> : <span className="wk-prize" role="img" aria-label="The Golden Picnic Basket"><Basket /></span>)}
       </WhatsNext>
     </div>

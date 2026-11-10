@@ -65,9 +65,18 @@ export const WORDS = {
   movePebble: 'Silver pebble: move it to the first ten-frame',
   next: 'Next',
   finish: 'Finish',
-  stoneTurned: (metal: Metal) => `Well done! A stone turned ${metal}!`,
-  doneToday: 'Well done! Come back tomorrow to change another stone.',
-  levelUp: (level: Level) => `You are so good at this! Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,
+  /** The tail of the finish title, after the opening for how the day went (S33). */
+  stoneTurned: (metal: Metal) => `A stone turned ${metal}.`,
+  doneToday: 'Come back tomorrow to change another stone.',
+  /** The opening of the finish title and, on a golden day, the chip: about the hops, not about the child (S33). */
+  how: {
+    most: 'You hopped to ten and then on!',
+    some: 'Some were tricky and you kept going.',
+    tricky: 'Those were tricky ones.',
+  },
+  /** The chip on a tricky day: a wrong first tap brings the fact's full help back. */
+  trickyChip: 'The tricky ones will come back with more help.',
+  levelUp: (level: Level) => `Making ten first is paying off. Next time: ${LEVEL_WORDS[level].toLowerCase()}.`,
   goldenBasket: (name: string) => `All the stones are gold! ${name} found the Golden Picnic Basket!`,
   wentWrong: 'Something went wrong. Please try again soon.',
   home: 'Home',
