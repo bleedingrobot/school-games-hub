@@ -15,8 +15,9 @@
  *  - mistakes that teach (maths review R5, shared/kit/mistakes.ts): every wrong stone of a double or a half is a real
  *    mistake (shared/korora/round.ts). The first wrong tap of a go greys that stone out and shows the mistake's picture
  *    with a line (WhyPicture.tsx). The second stops the free taps: "Let's look together", the full picture and Bella
- *    explaining the whole go, counting the fish. Then the same go comes back ("Now you try") with every stone back in a
- *    new order, at the child's own help level; wrong taps there show why again and the hand points after two. Fair or
+ *    explaining the whole go, counting the fish. Then "Now you try one like it": a sister go (a neighbouring number of the same kind, the child's own
+ *    help level, nothing pointed at, never sent). A right stone on it sends the first go's right pick instead; a wrong one shows why, then
+ *    the first go comes back with its right stone pointed at. Without a sister, the same go comes back with every stone in a new order and the hand points after two wrong taps. Fair or
  *    not keeps its old wobble and "Try again!" (R9);
  *  - fish sit in rows of five, like a ten-frame, a short row lined up on the left (James, 4 Nov 2026);
  *  - tap a fish to count it (doubles), or to give it to a chick (halves and fair or not);
@@ -29,7 +30,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Tap } from '../../../shared/korora/play';
 import type { Friend as FriendName, Help } from '../../../shared/korora/progress';
-import { followsItsDouble, GOES_PER_ROUND, showRound, type Go, type Round, type WrongKind } from '../../../shared/korora/round';
+import { followsItsDouble, GOES_PER_ROUND, showRound, sisterGo, type Go, type Round, type WrongKind } from '../../../shared/korora/round';
 import { helpWithSetting, STRUGGLE_GOES, type HelpSetting } from '../../../shared/kit/help';
 import { LOOK_AT, NEW_GO, stepGo } from '../../../shared/kit/mistakes';
 import { DemoBar } from '../../kit/DemoBar';
@@ -49,6 +50,8 @@ import { WORDS } from './words';
 const RIGHT_MS = 1600;
 const WOBBLE_MS = 500;
 const SHARE_MS = 320;
+/** How long a wrong stone on the sister shows its why-line, before the first go's right stone is pointed at. */
+const SISTER_WHY_MS = 2600;
 interface Props {
   round: Round;
   /** The help for a go saved with none of its own (a round open before R6): the calendar's, from the pebbles. */
@@ -120,6 +123,10 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   const [why, setWhy] = useState<{ n: number; kind: WrongKind; tap: number } | null>(null);
   /** The stones in a new order for "Now you try". */
   const [redoOrder, setRedoOrder] = useState<number[] | null>(null);
+  /** "Now you try one like it": the sister go (local only, never in `taps`, nothing on it marked) and the child's one wrong stone on it. */
+  const [sister, setSister] = useState<{ go: Go; wrong: number | null } | null>(null);
+  /** After a wrong stone on the sister: the first go's right stone is pointed at, so nobody is stuck. */
+  const [stuck, setStuck] = useState(false);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
   /** Goes in a row with a wrong first tap, and whether the full pictures have come back for the round. */
   const [streak, setStreak] = useState(0);
@@ -147,14 +154,15 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   };
   useEffect(() => clearTimers, []);
 
-  const go: Go = goes[Math.min(at, goes.length - 1)];
+  const base: Go = goes[Math.min(at, goes.length - 1)];
+  const go: Go = sister ? sister.go : base;
   const kinds = useSeenKinds(seen, onSeen);
   /** A kind not yet seen gets its demo before the first go of it (never in a redo: it is marked seen when it ends). */
   const demoKind = DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind) && phase === 'ask' ? (go.kind as DemoKind) : null;
   const demo = useKindDemo({ kind: demoKind, seen: kinds, mark: kinds.mark, steps: demoKind ? DEMOS[demoKind].steps : [], say });
   const demoWas = useRef(false);
-  const guided = guide && at === 0;
-  const line = goLine(go, guided, followsItsDouble(round.goes, at));
+  const guided = guide && at === 0 && !sister;
+  const line = goLine(go, guided, !sister && followsItsDouble(round.goes, at));
   // "Let's look together" shows the full picture; "Now you try" goes back to the child's own help level, not more.
   const helpAt = (i: number): Help => helpWithSetting(round.goes[i]?.h ?? help, setting, { always: 'full', off: 'none' });
   const ownHelp = helpAt(at);
@@ -234,18 +242,54 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       onEnd: () => {
         setFlow((f) => stepGo(f, 'lookDone'));
         setGreyed([]);
-        setRedoOrder(reordered(go.choices));
+        // "Now you try one like it": a sister go (a neighbouring number); if none fits, the go itself with its stones in a new order.
+        const sis = sisterGo(round, at, go);
+        setSister(sis ? { go: sis, wrong: null } : null);
+        setRedoOrder(sis ? null : reordered(go.choices));
         setCounted([]);
         // The pile goes back to the pile: the child deals it again.
         setShared([]);
         since.current = Date.now();
-        say(WORDS.nowTry, () => say(line));
+        say(WORDS.nowTry, () => say(sis ? goLine(sis, false, false) : line));
       },
+    });
+  }
+
+  /** A tap on the sister. Never saved or sent: a right one ends the go with the FIRST go's right pick, which is what the server replays. */
+  function pickSister(s: { go: Go; wrong: number | null }, n: number) {
+    if (s.wrong !== null) return;
+    tappedYet.current = true;
+    if (n === s.go.answer) {
+      const now = Date.now();
+      const next = [...taps, { pick: base.answer, ms: now - since.current }];
+      since.current = now;
+      setTaps(next);
+      rightTap(next, n);
+      return;
+    }
+    setSister({ go: s.go, wrong: n });
+    setGreyed([n]);
+    setWobble(n);
+    if (sound) playSound('tap');
+    later(WOBBLE_MS, () => setWobble(null));
+    const kind = s.go.wrongs.find((x) => x.n === n)?.kind;
+    if (kind) {
+      setWhy({ n, kind, tap: taps.length });
+      say(whyLine(s.go, kind));
+    } else say(WORDS.countOneBowl);
+    later(SISTER_WHY_MS, () => {
+      setSister(null);
+      setWhy(null);
+      setGreyed([]);
+      setCounted([]);
+      setShared([]);
+      setStuck(true);
     });
   }
 
   function pick(n: number) {
     if (phase !== 'ask' || look || demo.playing || flow.phase === 'look' || greyed.includes(n)) return;
+    if (sister) return pickSister(sister, n);
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -290,6 +334,11 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
       return;
     }
     if (first) setStreak(0);
+    rightTap(next, n);
+  }
+
+  /** The go is right: the line, the rest of the pile shared out, then the next go (or the end). */
+  function rightTap(next: Tap[], n: number) {
     // A go of a kind finished: that kind is known (a safety net; its demo marks it too).
     if (DEMO_KINDS.includes(go.kind) && !kinds.has(go.kind)) kinds.mark([go.kind]);
     setFlow(stepGo(flow, 'right'));
@@ -317,6 +366,8 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         setShared([]);
         setSorted(false);
         setPairHint(false);
+        setSister(null);
+        setStuck(false);
       }
     });
   }
@@ -337,7 +388,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
   }
 
   const dealing = mustDeal && shared.length < go.n;
-  const locked = (go.kind === 'fair' && phase === 'ask' && !sorted) || (dealing && phase === 'ask');
+  const locked = !stuck && ((go.kind === 'fair' && phase === 'ask' && !sorted) || (dealing && phase === 'ask'));
   // The answer clock starts again when the last fish is dealt, so dealing time is not thinking time.
   useEffect(() => {
     if (mustDeal && !look && phase === 'ask' && shared.length >= go.n) {
@@ -346,9 +397,9 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shared.length]);
-  const hand = go.kind === 'fair' ? wrongs >= 3 && sorted : flow.phase === 'redo' && flow.wrong >= LOOK_AT + 2;
+  const hand = !sister && (go.kind === 'fair' ? wrongs >= 3 && sorted : flow.phase === 'redo' && flow.wrong >= LOOK_AT + 2);
   const lookCounted = look ? lookIds.slice(0, look.filled) : counted;
-  const pointAt = phase === 'ask' && !look && ((guided && guideStep === 2) || hand) ? go.answer : null;
+  const pointAt = phase === 'ask' && !look && !sister && ((guided && guideStep === 2) || hand || stuck) ? go.answer : null;
   const made = at + (phase === 'ask' ? 0 : 1);
   const pose = phase === 'right' || phase === 'done' ? (mirror ? 'gulp' : 'cheer') : 'wait';
   const style = { ...backFor(scenery) } as CSSProperties;
@@ -384,14 +435,14 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
         </button>
       </div>
       <p className="kr-ask" aria-live="polite">{go.kind === 'fair' ? `${go.n} fish. Is it fair?` : go.parts.join(' ')}</p>
-      <div className="kr-scene" key={at}>
+      <div className="kr-scene" key={`${at}${sister ? 's' : stuck ? 'b' : ''}`}>
         <span className={`kr-scene__friend${mirror ? '' : ' kr-scene__friend--low'}`}>
           <Friend friend={friend} pose={pose} />
         </span>
         {mirror ? (
           <Mirror go={go} help={shown} phase={phase} counted={lookCounted} guide={guided && phase === 'ask' ? guideStep : null} onFish={tapFish} />
         ) : go.kind === 'fair' ? (
-          <FairPile go={go} help={shown} phase={phase} hint={pairHint} sound={sound} onSorted={setSorted} />
+          <FairPile go={go} help={shown} phase={phase} hint={pairHint && !sister} sound={sound} onSorted={setSorted} />
         ) : (
           <Share go={go} help={shown} phase={phase} counted={lookCounted} shared={shared} deal={mustDeal && !look && flow.phase !== 'look'} onFish={tapFish} />
         )}
@@ -416,7 +467,7 @@ export function Goes({ round, help, setting = 'fade', scenery, friend, guide = f
               key={`${at}-${n}`}
               type="button"
               className={`kr-choice${wobble === n ? ' kr-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' kr-choice--right' : ''}${n === pointAt ? ' kr-choice--pointed' : ''}${greyed.includes(n) ? ' kr-choice--grey' : ''}`}
-              disabled={greyed.includes(n) || locked}
+              disabled={greyed.includes(n) || locked || (sister !== null && sister.wrong !== null)}
               onClick={() => pick(n)}
               aria-label={`${go.kind === 'fair' ? fairLabel(n) : n}${n === pointAt ? `, ${WORDS.guideHere}` : ''}`}
             >

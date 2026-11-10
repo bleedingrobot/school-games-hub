@@ -317,3 +317,34 @@ export function showRound(round: Round): Go[] {
     return go;
   });
 }
+
+/**
+ * A "sister" of a go for "Now you try one like it" (S32 part 4): a neighbouring number of the same kind and help: a double
+ * or near double of n up or down by one, the half of the next even number (two up or down), or (fair or not) another pile of the
+ * opposite kind. It stays inside the numbers the game's keys ask (doubles 1 to 10, halves 2 to 20 in twos, near doubles 5 + 6
+ * to 8 + 9, piles 6 to 10 or 20) and, where it can, inside the same level as the go and with an answer that is not one of
+ * the original's cards. Built by showGo so its cards and answer agree, with the words the voice list already holds. Local only: never
+ * sent or saved. Null if there is no sister.
+ */
+export function sisterGo(round: Pick<Round, 'seed' | 'level'>, index: number, go: Go): Go | null {
+  const own = LEVELS.find((l) => levelKeys(l.level).includes(go.key));
+  const prefix = go.kind === 'double' ? 'dbl' : go.kind === 'half' ? 'half' : go.kind === 'fair' ? 'oddeven' : 'add';
+  const keyOf = (n: number) => (go.kind === 'near' ? `add:${n}+${n + 1}` : `${prefix}:${n}`);
+  const step = go.kind === 'half' ? 2 : 1;
+  const all = go.kind === 'fair' ? fairKeys(round.level) : LEVELS.filter((l) => l.kind === (go.kind === 'near' ? 'near' : go.kind)).flatMap((l) => levelKeys(l.level));
+  const valid = (n: number) => all.includes(keyOf(n));
+  const inLevel = (n: number) => (own ? levelKeys(own.level).includes(keyOf(n)) : true);
+  const near = [go.n - step, go.n + step].filter((n) => n !== go.n && valid(n));
+  // Fair or not: another pile, the opposite kind first (an odd pile for an even one), then any other.
+  const piles = go.kind === 'fair' ? all.map((k) => Number(k.split(':')[1])).filter((n) => n !== go.n) : [];
+  const pool = go.kind === 'fair' ? [...piles.filter((n) => n % 2 !== go.n % 2 && Math.abs(n - go.n) <= 3), ...piles.filter((n) => n % 2 !== go.n % 2), ...piles] : near;
+  const random = seeded((round.seed + 15485863 + 31 * index) % MAX_SEED);
+  random(); random();
+  const rank = (n: number) => (inLevel(n) ? 0 : 2) + (go.choices.includes(showGo(round, index + 101, { key: keyOf(n), v: go.v, h: go.h })?.answer ?? -1) ? 1 : 0);
+  const order = go.kind === 'fair' ? [...new Set(pool)] : shuffle([...new Set(pool)], random).sort((a, b) => rank(a) - rank(b));
+  for (const n of order) {
+    const sister = showGo(round, index + 101, { key: keyOf(n), v: go.v, h: go.h });
+    if (sister && (go.kind === 'fair' ? sister.n !== go.n : sister.answer !== go.answer)) return sister;
+  }
+  return null;
+}
