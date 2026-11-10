@@ -13,8 +13,8 @@
  * is passed when 70% of its facts are in box 2 or higher, and the server keeps the furthest level reached.
  *
  * How much each go helps comes from the child's own record of that fact (plan section 4, made to last longer on
- * 6 Nov 2026): 'full' (the picture, the two steps, then the pebbles) until it has been right quickly on two different
- * days; then 'split' (the child splits the number to get to ten before answering, then the pebbles) until it is fluent
+ * 6 Nov 2026): 'full' (the picture, the two steps, then the pebbles) until it has been right and quick (S25: box 2 and one
+ * quick day, or right every time so far); then 'split' (the child splits the number to get to ten before answering, then the pebbles) until it is fluent
  * and right 8 times; then 'faint' (one tap) until right 12 times; then 'none'. So the help fades fact by fact as the
  * records show it is known, and comes back if they slip (a wrong answer drops a fact to box 1, back to full help).
  */
@@ -113,16 +113,16 @@ export const FAINT_UNTIL_RIGHT = 12;
 
 /**
  * The help for a fact from its record (made to last longer, James 6 Nov 2026): full until it is secure (box 2) and has
- * been right quickly on two different days; split-first until it is fluent (box 4) and right 8 times; faint until right
+ * been right and quick (box 2 and one quick day, or right every time so far; S25); split-first until it is fluent (box 4) and right 8 times; faint until right
  * 12 times; then none. A wrong answer drops the fact to box 1, so full help comes back.
  */
 const HELP_LADDER: readonly FactRung<Help>[] = [
-  { help: 'full', until: { box: 2, quickDays: 2 } },
+  { help: 'full', until: { box: 2, quickDays: 1 } },
   { help: 'split', until: { box: 4, correct: SPLIT_UNTIL_RIGHT } },
   { help: 'faint', until: { correct: FAINT_UNTIL_RIGHT } },
   { help: 'none' },
 ];
-export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
+export const helpForStats = (stats: Pick<FactStats, 'box' | 'correct' | 'attempts' | 'quickDays'> | undefined): Help => helpForFact(stats, HELP_LADDER);
 
 /** One go as saved: the fact, how the shared pack asks it (0 smaller first, 1 bigger first, 2 hop back) and its help. */
 export interface GoPlan {

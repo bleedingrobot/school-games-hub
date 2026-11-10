@@ -24,6 +24,10 @@ describe('the picture help (R6)', () => {
     expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
     expect(helpForStats(known)).toBe('none');
     expect(helpForStats({ ...known, box: 1 })).toBe('full');
+    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
+    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['a'] };
+    expect(helpForStats(quick1)).toBe('faint');
+    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
     // A child who knows every double to 5 and has just moved to halves to 10: those facts have no record, so every go starts full.
     const learned = levelKeys(1).map((key) => ({ ...known, key }));
     const halves = makeRound(7, learned, { reached: 1 });

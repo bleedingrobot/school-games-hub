@@ -61,21 +61,25 @@ describe('the level and the help', () => {
     expect(levelFor(recordsFor(4))).toBe(4);
     expect(levelFor(inBox(ALL_KEYS, 4))).toBe(4);
     expect(levelFor([], 3)).toBe(3);
-    // Full until secure and quick on two days; split-first until fluent and right 8 times; faint until right 12; then none.
+    // Full until secure and quick on one day (or right and quick from the start); split-first until fluent and right 8 times; faint until right 12; then none.
     const two = ['2026-11-04', '2026-11-05'];
     const rec = (key: string, box: number, correct: number, quickDays: string[]): FactStats => ({ ...newStats(key), box, correct, quickDays });
     const records = [
       rec(one[0], 1, 1, two.slice(0, 1)), // learning
-      rec(one[1], 3, 3, two.slice(0, 1)), // secure but only one day: still full
+      rec(one[1], 3, 3, two.slice(0, 1)), // secure and quick on one day: split first (S25)
       rec(one[2], 2, 4, two), // secure on two days: split first
       rec(one[3], 4, 6, two), // fluent, not yet right 8 times: split first
       rec(one[4], 4, 9, two), // faint
       rec(one[5], 4, 12, two), // numbers only
     ];
     const help = new Map(makeRound(7, records).goes.map((g) => [g.key, g.h]));
-    const want = ['full', 'full', 'split', 'split', 'faint', 'none', 'full', 'full'];
+    const want = ['full', 'split', 'split', 'split', 'faint', 'none', 'full', 'full'];
     one.forEach((k, i) => expect(help.get(k)).toBe(want[i]));
     expect(helpForStats(undefined)).toBe('full');
+    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
+    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['2026-11-04'] };
+    expect(helpForStats(quick1)).toBe('split');
+    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
     expect(pebblesFor('full') && pebblesFor('split') && !pebblesFor('faint') && !pebblesFor('none')).toBe(true);
   });
 });
@@ -124,7 +128,7 @@ describe('moving onto the game kit (stage K1)', () => {
   /**
    * Weka moved onto shared/kit on 7 Nov 2026 with no change a child or teacher can see: old and new code were compared on
    * 4,000 rounds and 16,000 tap runs before the old code went. This digest is of the old code's results. It doesn't depend
-   * on the wrong choices the shared pack makes. If Weka's help, goes or stones change on purpose, update the number.
+   * on the wrong choices the shared pack makes. If Weka's help, goes or stones change on purpose, update the number (S25: full help now ends after one quick day, so the number changed).
    */
   it('keeps the same help, goes, answers and stones as before the move', () => {
     const days = ['2026-11-01', '2026-11-02', '2026-11-03'];
@@ -144,6 +148,6 @@ describe('moving onto the game kit (stage K1)', () => {
     for (let d = 0; d < 100; d++) out.push(streamAfter(d), finishChallenge(d, null, days[0]), finishChallenge(d, days[0], days[0]));
     let hash = 5381;
     for (const ch of JSON.stringify(out)) hash = (hash * 33 + ch.charCodeAt(0)) % 2147483647;
-    expect(hash).toBe(1136503410);
+    expect(hash).toBe(964958306);
   });
 });
