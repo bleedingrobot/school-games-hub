@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FirstTimeTip, HearAgain, PointingHand, WhatsNext, pointedLabel, useGuidedFirstGo, useKindDemo, useSeenKinds } from '.';
+import { useLookTogether } from './ShowWhy';
 
 afterEach(() => {
   cleanup();
@@ -96,5 +97,30 @@ describe('kit junior bits', () => {
     expect(mark).toHaveBeenCalledTimes(2);
     const old = renderHook(() => useKindDemo({ kind: 'zoom', seen: { has: () => true }, mark, steps, say }));
     expect(old.result.current.playing).toBe(false);
+  });
+
+  it('"Let\u2019s look together" can count aloud: the explanation first, then one step every 1.5 seconds, each said as it fills', () => {
+    vi.useFakeTimers();
+    const said: string[] = [];
+    const say = (text: string, onEnd?: () => void) => {
+      said.push(text);
+      onEnd?.();
+    };
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useLookTogether(say));
+    act(() => result.current.start({ anchor: 0, steps: 3, openingLine: 'Open', fillLine: 'Explain', stepLine: (k) => `n${k}`, onEnd }));
+    expect(said).toEqual(['Open', 'Explain']);
+    act(() => void vi.advanceTimersByTime(450));
+    expect(said).toEqual(['Open', 'Explain', 'n1']);
+    expect(result.current.look?.filled).toBe(1);
+    act(() => void vi.advanceTimersByTime(1400));
+    expect(result.current.look?.filled).toBe(1);
+    act(() => void vi.advanceTimersByTime(100));
+    expect(said.slice(-1)).toEqual(['n2']);
+    act(() => void vi.advanceTimersByTime(1500));
+    expect(said.slice(-1)).toEqual(['n3']);
+    expect(onEnd).not.toHaveBeenCalled();
+    act(() => void vi.advanceTimersByTime(2300));
+    expect(onEnd).toHaveBeenCalledTimes(1);
   });
 });
