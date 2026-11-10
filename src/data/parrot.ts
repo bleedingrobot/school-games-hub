@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { fromServer, type ParrotBackend } from '../games/parrot/backend';
 import type { HelpSetting } from '../../shared/kit/help';
 import type { HelpLevel, Step } from '../../shared/parrot/config';
+import type { ParrotKind } from '../../shared/parrot/round';
 import { HELP_SETTINGS } from '../../shared/parrot/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -79,8 +80,8 @@ export interface ParrotStudent {
   level: HelpLevel;
   lastPlayed: string;
   /** Up to three facts they find hardest: "eqmiss:8=5+?" (empty until the shared maths keys are live). */
-  /** The commonest first slip in their last ten challenges: copy, total or all (a number from the question); null if none. */
-  slip: 'copy' | 'total' | 'all' | null;
+  /** The commonest first slip in their last ten challenges: any kind of wrong pick; null if none stands out (fewer than three, or a tie). */
+  slip: ParrotKind | null;
   hardest: string[];
 }
 

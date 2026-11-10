@@ -5,6 +5,7 @@
  */
 import type { HelpSetting } from '../../shared/kit/help';
 import { stepName, type Step } from '../../shared/parrot/config';
+import type { ParrotKind } from '../../shared/parrot/round';
 import { DAYS_PER_BELL, METALS, ropeAfter } from '../../shared/parrot/progress';
 import { FRIEND_NAMES } from '../../shared/parrot/config';
 import { fetchParrotSettings, fetchParrotStudent, saveParrotSetting } from '../data/parrot';
@@ -38,7 +39,11 @@ export function ParrotTeacherSettings({ classId }: { classId: string }) {
 export const factWords = (key: string): string =>
   key.replace(/^eq[a-z]+:/, '').replace(/[=+−-]/g, (c) => ` ${c === '-' ? '−' : c} `).replace(/\s+/g, ' ').trim();
 
-const SLIP_WORDS = { copy: 'copying a number from the sum', total: 'giving the total', all: 'adding everything' } as const;
+export const SLIP_WORDS: Record<ParrotKind, string> = {
+  copy: 'copying a number from the sum', total: 'giving the total', all: 'adding everything', off1: 'being one away', dbl: 'doubling a number',
+  near: 'picking a number close to the answer', both: 'saying a see-saw is level when it is not', first: 'saying one side is heavier when it is level',
+  side: 'picking the lighter side as the heavier one', more: 'giving too many', less: 'giving too few',
+};
 
 /** "12 of 30 days done on this rope · Step 3 Swap places, help level 2 · 1 Golden Bell · usual slip: copying a number from the sum", or null if they haven't played. */
 export async function parrotStudentSummary(student: string): Promise<string | null> {
@@ -76,7 +81,7 @@ export function ParrotStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Bells so far: {rope.bells}.
       </p>
-      {slip ? <p>Their usual slip is {SLIP_WORDS[slip]}.</p> : <p>No single slip stands out right now.</p>}
+      {slip ? <p>Usual slip: {SLIP_WORDS[slip]}.</p> : <p>No single slip stands out yet.</p>}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(factWords).join(', ')}.</p> : <p>No fact is giving trouble right now.</p>}
     </section>
   );

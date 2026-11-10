@@ -5,7 +5,7 @@
  */
 import { DAYS_PER_BRANCH, FRIEND_NAMES, METALS, branchAfter } from '../../shared/pigeon/progress';
 import { placingSummary } from '../../shared/pigeon/teacher';
-import { stepName, type HelpSetting } from '../../shared/pigeon/round';
+import { stepName, type HelpSetting, type Slip } from '../../shared/pigeon/round';
 import { fetchPigeonSettings, fetchPigeonStudent, savePigeonSetting } from '../data/pigeon';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
@@ -50,6 +50,15 @@ export const keyWords = (key: string): string => {
   }
 };
 
+/** The usual slip behind a wrong card, in a few words (a wrong place on the line has a distance, not a slip). */
+export const SLIP_WORDS: Record<Slip, string> = {
+  reverse: 'turning the digits round (36 for 63)',
+  ten: 'picking the wrong ten',
+  one: 'picking a number a little off',
+  mirror: 'counting from the wrong end, or going the wrong way',
+  near: 'picking the further ten',
+};
+
 /** "12 of 30 days done on this branch · Step 3 Place any number, help level 2 · 1 Golden Berry Branch · hardest: ...", or null if they haven't played. */
 export async function pigeonStudentSummary(student: string): Promise<string | null> {
   const s = await fetchPigeonStudent(student);
@@ -57,6 +66,7 @@ export async function pigeonStudentSummary(student: string): Promise<string | nu
   const branch = branchAfter(s.daysDone);
   const parts = [`${branch.day} of ${DAYS_PER_BRANCH} days done on this branch`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
   if (branch.prizes) parts.push(`${branch.prizes} Golden Berry Branch${branch.prizes === 1 ? '' : 'es'}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -70,7 +80,7 @@ export function PigeonStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Pigeon’s Number Line for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent } = loaded.value.progress;
+  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent, slip } = loaded.value.progress;
   const branch = branchAfter(daysDone);
   const clusters = METALS.map((metal) => [metal, branch.clusters.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -92,6 +102,7 @@ export function PigeonStudentPanel({ student }: { student: string }) {
           {placing.squashed && <> Big numbers are put too far back (about {Math.abs(placing.bigOff!).toFixed(0)}% short): the line may look squashed to them.</>}
         </p>
       )}
+      {slip ? <p>Usual slip: {SLIP_WORDS[slip]}.</p> : <p>No single slip stands out yet.</p>}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(keyWords).join(', ')}.</p> : <p>Nothing is giving trouble right now.</p>}
     </section>
   );

@@ -87,11 +87,7 @@ export function SwamphenStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Reed Gardens so far: {garden.prizes}.
       </p>
-      {slips.most ? (
-        <p>Their usual slip (last {slips.wrong} wrong first taps counted) is that they {SLIP_WORDS[slips.most]}.</p>
-      ) : (
-        <p>{slips.wrong ? 'No single slip stands out right now.' : 'No wrong first taps in their last few challenges.'}</p>
-      )}
+      {slips.most ? <p>Usual slip: they {SLIP_WORDS[slips.most]}.</p> : <p>No single slip stands out yet.</p>}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(keyWords).join(', ')}.</p> : <p>Nothing is giving trouble right now.</p>}
     </section>
   );

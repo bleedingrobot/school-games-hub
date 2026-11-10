@@ -7,7 +7,7 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { fromServer, type PigeonBackend } from '../games/pigeon/backend';
 import type { Tap } from '../../shared/pigeon/play';
-import type { HelpLevel, HelpSetting, Round, Step } from '../../shared/pigeon/round';
+import type { HelpLevel, HelpSetting, Round, Slip, Step } from '../../shared/pigeon/round';
 import { HELP_SETTINGS } from '../../shared/pigeon/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -80,6 +80,8 @@ export interface PigeonStudent {
   lastPlayed: string;
   /** Up to five keys they find hardest: "place100:n63", "tens100:+63". */
   hardest: string[];
+  /** The commonest slip behind a wrong card in their last ten finished challenges, seen at least three times; null if none stands out. */
+  slip: Slip | null;
   /** Their last three challenges, for the placing summary. */
   recent: { round: Round; taps: Tap[] }[];
 }

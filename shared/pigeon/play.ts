@@ -8,8 +8,9 @@
  * asked a second time in the same round is practice only. `firstRight` counts every go right at the first tap.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { slipsOf as kitSlipsOf } from '../kit/slips';
 import { thoughtOf } from '../juniorQuick';
-import { GOES_PER_ROUND, placeRight, showRound, type Go, type Round } from './round';
+import { GOES_PER_ROUND, placeRight, showRound, type Go, type Round, type Slip } from './round';
 
 /** One tap: a card's number, or a place along the line (0 to 1000), and how long the child took over it. */
 export interface Tap {
@@ -71,4 +72,23 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     } else mistakes++;
   }
   return { goesDone, mistakes, firstRight, rightFirst, done: goesDone === goes.length && goes.length === GOES_PER_ROUND, answers, misses };
+}
+
+/**
+ * The slip behind each go's first wrong tap (null for a go right first time, and for a wrong place on the line, which has a
+ * distance and no named slip), for the teacher's "usual slip" line. A place tap is right within a tolerance, so it is turned into
+ * the go's answer (right) or a place no card can be at (wrong) before the kit's `slipsOf` reads it.
+ */
+export function slipsOf(round: Round, taps: readonly Tap[]): (Slip | null)[] {
+  const goes = showRound(round);
+  const seen: { pick: number }[] = [];
+  let at = 0;
+  for (const { pick } of taps) {
+    const go = goes[at];
+    if (!go) break;
+    const right = go.kind === 'place' ? placeRight(go, pick) : pick === go.answer;
+    seen.push({ pick: right ? go.answer : go.kind === 'place' ? -1 : pick });
+    if (right) at++;
+  }
+  return kitSlipsOf(goes.map((go) => ({ answer: go.answer, kindOf: (pick: number): Slip | null => go.wrongs.find((w) => w.n === pick)?.kind ?? null })), seen);
 }

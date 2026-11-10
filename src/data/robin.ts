@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { fromServer, type RobinBackend } from '../games/robin/backend';
 import type { HelpSetting } from '../../shared/kit/help';
 import type { HelpLevel, Step } from '../../shared/robin/config';
+import type { Slip } from '../../shared/robin/round';
 import { HELP_SETTINGS } from '../../shared/robin/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -78,8 +79,8 @@ export interface RobinStudent {
   /** The picture help level, 5 (most help) to 0 (none). */
   level: HelpLevel;
   lastPlayed: string;
-  /** The commonest slip in their last ten challenges (over, under, skip, double and so on); null if none. */
-  slip: 'over' | 'under' | 'double' | 'skip' | 'row' | 'lots' | 'same' | 'again' | 'one' | null;
+  /** The commonest slip in their last ten challenges (over, under, skip, double and so on); null if none stands out (fewer than three, or a tie). */
+  slip: Slip | null;
   /** Up to three keys they find hardest: "give:n7", "howmany:n8:ring", "counton:5+1". */
   hardest: string[];
 }

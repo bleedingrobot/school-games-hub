@@ -3,7 +3,8 @@
  * most often made (digits turned round, face value, a zero in the wrong place, ten more changing the ones). Worked out in the
  * browser from the rounds and taps the teacher function returns.
  */
-import { SLIP_MIN, TEACHER_TAPS } from './config';
+import { SLIP_SHOW_MIN, topSlip } from '../kit/slips';
+import { TEACHER_TAPS } from './config';
 import { replay, type Tap } from './play';
 import type { Round, Slip } from './round';
 
@@ -21,7 +22,7 @@ export const SLIP_WORDS: Record<Slip, string> = {
 export interface SlipSummary {
   /** First wrong tries counted (the latest `TEACHER_TAPS`). */
   wrong: number;
-  /** The slip made most often (at least `SLIP_MIN` times), or null. */
+  /** The slip made most often (at least `SLIP_SHOW_MIN` times and alone at the top), or null. */
   top: Slip | null;
   /** How many times. */
   count: number;
@@ -35,8 +36,7 @@ export function slipSummary(recent: readonly { round: Round; taps: readonly Tap[
       return [];
     }
   }).slice(0, TEACHER_TAPS);
-  const counts = new Map<Slip, number>();
-  for (const s of slips) if (s.slip !== 'other') counts.set(s.slip, (counts.get(s.slip) ?? 0) + 1);
-  const [top, count] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? [null, 0];
-  return { wrong: slips.length, top: count >= SLIP_MIN ? top : null, count };
+  const named = slips.flatMap((s) => (s.slip === 'other' ? [] : [s.slip]));
+  const top = topSlip(named, SLIP_SHOW_MIN);
+  return { wrong: slips.length, top, count: top ? named.filter((s) => s === top).length : 0 };
 }

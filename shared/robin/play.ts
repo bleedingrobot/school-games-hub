@@ -5,6 +5,7 @@
  * A tap is the number the child settled on for the current go: how many berries were in the basket when they pressed
  * "That's all", or the card they picked. A "give" go takes any count up to its pile; a card go only one of its cards.
  */
+import { slipsOf as kitSlipsOf } from '../kit/slips';
 import { firstTapTimes, replayTaps, type TapReplay, type Tap } from '../kit/replay';
 import { JUNIOR_MIN_THINK_MS, thoughtOf } from '../juniorQuick';
 import { GOES_PER_ROUND, showRound, slipOf, tapsAllowed, type Round, type Slip } from './round';
@@ -19,22 +20,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
 
 /** The slip behind each go's first wrong tap (null for a go right first time): over, under, skip, double and so on, for the teacher's line. */
 export function slipsOf(round: Round, taps: readonly Tap[]): (Slip | null)[] {
-  const goes = showRound(round);
-  const slips: (Slip | null)[] = goes.map(() => null);
-  let at = 0;
-  let tried = false;
-  for (const { pick } of taps) {
-    const go = goes[at];
-    if (!go) break;
-    if (pick === go.answer) {
-      at++;
-      tried = false;
-      continue;
-    }
-    if (!tried) slips[at] = slipOf(go, pick);
-    tried = true;
-  }
-  return slips;
+  return kitSlipsOf(showRound(round).map((go) => ({ answer: go.answer, kindOf: (pick: number) => slipOf(go, pick) })), taps);
 }
 
 /** Whether each go was right at the first tap and not too fast to be a thought (S14), for the help of each kind. Slips are unchanged. */

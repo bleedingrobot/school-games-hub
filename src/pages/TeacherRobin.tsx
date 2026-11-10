@@ -5,6 +5,7 @@
  */
 import type { HelpSetting } from '../../shared/kit/help';
 import { stepName, type Step } from '../../shared/robin/config';
+import type { Slip } from '../../shared/robin/round';
 import { DAYS_PER_FEAST, METALS, basketsAfter } from '../../shared/robin/progress';
 import { FRIEND_NAMES } from '../../shared/robin/config';
 import { fetchRobinSettings, fetchRobinStudent, saveRobinSetting } from '../data/robin';
@@ -43,10 +44,11 @@ export const factWords = (key: string): string => {
   return key;
 };
 
-const SLIP_WORDS = {
+export const SLIP_WORDS: Record<Slip, string> = {
   over: 'giving too many', under: 'giving too few', double: 'counting one twice', skip: 'missing one out', row: 'counting a row short',
   lots: 'guessing a lot too many', same: 'saying the number they started with', again: 'counting on two', one: 'saying one',
-} as const;
+  near: 'picking a number close to the answer',
+};
 
 /** "12 of 30 days done · Step 3 Give up to ten, help level 2 · 1 Golden Berry Feast · usual slip: giving too many", or null if they haven't played. */
 export async function robinStudentSummary(student: string): Promise<string | null> {
@@ -84,7 +86,7 @@ export function RobinStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Berry Feasts so far: {row.feasts}.
       </p>
-      {slip ? <p>Their usual slip is {SLIP_WORDS[slip]}.</p> : <p>No single slip stands out right now.</p>}
+      {slip ? <p>Usual slip: {SLIP_WORDS[slip]}.</p> : <p>No single slip stands out yet.</p>}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(factWords).join(', ')}.</p> : <p>Nothing is giving trouble right now.</p>}
     </section>
   );

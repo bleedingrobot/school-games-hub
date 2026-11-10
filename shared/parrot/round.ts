@@ -19,6 +19,8 @@ import { GOES_PER_ROUND, KNOWN_BONDS, KNOWN_START, REVIEW_GOES, TOP_LEVEL, type 
 export { GOES_PER_ROUND };
 export type { Kind };
 export type ParrotKind = 'all' | 'copy' | 'total' | 'off1' | 'dbl' | 'near' | 'both' | 'first' | 'side' | 'more' | 'less';
+/** Every kind of slip a first wrong pick can be (the teacher's word list has a phrase for each). */
+export const PARROT_KINDS: readonly ParrotKind[] = ['all', 'copy', 'total', 'off1', 'dbl', 'near', 'both', 'first', 'side', 'more', 'less'];
 export type WrongCard = Wrong<ParrotKind>;
 /** The four ways to write the missing-number go (layouts), and which one a plan asks for. */
 export type Layout = 0 | 1 | 2 | 3;

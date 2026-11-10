@@ -3,7 +3,8 @@
  * first taps, the slip the child makes most (added the numbers, mixed up rows and columns, one row short...). Worked out in the
  * browser from the rounds and taps the teacher function returns.
  */
-import { SLIP_MIN, TEACHER_ROUNDS } from './config';
+import { SLIP_SHOW_MIN, topSlip } from '../kit/slips';
+import { TEACHER_ROUNDS } from './config';
 import { replay, type Tap } from './play';
 import type { Round, Slip } from './round';
 
@@ -24,7 +25,7 @@ export const SLIP_WORDS: Record<Slip, string> = {
 export interface SlipSummary {
   /** Wrong first taps counted (the latest `TEACHER_ROUNDS` challenges). */
   wrong: number;
-  /** The slip made most often, when it shows at least `SLIP_MIN` times, else null. */
+  /** The slip made most often, when it shows at least `SLIP_SHOW_MIN` times and alone at the top, else null. */
   most: Slip | null;
   counts: Partial<Record<Slip, number>>;
 }
@@ -42,6 +43,6 @@ export function slipSummary(recent: readonly { round: Round; taps: readonly Tap[
       // A round that can't be read is left out.
     }
   }
-  const top = (Object.entries(counts) as [Slip, number][]).filter(([s]) => s !== 'near').sort((a, b) => b[1] - a[1])[0];
-  return { wrong, most: top && top[1] >= SLIP_MIN ? top[0] : null, counts };
+  const named = (Object.entries(counts) as [Slip, number][]).flatMap(([s, n]) => (s === 'near' ? [] : Array<Slip>(n).fill(s)));
+  return { wrong, most: topSlip(named, SLIP_SHOW_MIN), counts };
 }
