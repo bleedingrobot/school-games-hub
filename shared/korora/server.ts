@@ -187,7 +187,7 @@ export async function handleKorora(services: KororaServices, player: string, bod
         await services.recordAnswers(player, `korora:${seed}`, answers);
         if (result.goldenFish) await services.progressChanged(player);
         // The "what's next" card (R8): the near doubles' records are secure once these answers are in.
-        return ok({ ...result, level: reached, levelBefore, topSecure: facts !== 'busy' && topSecure(withAnswers(facts, answers)) });
+        return ok({ ...result, firstRight: played.firstRight, level: reached, levelBefore, topSecure: facts !== 'busy' && topSecure(withAnswers(facts, answers)) });
       }
       // Closed by another request in between (sent twice), or another save moved the version on: look again.
       const again = await services.round(player, seed);

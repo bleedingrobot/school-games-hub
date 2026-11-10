@@ -15,9 +15,9 @@ afterEach(cleanup);
 beforeEach(() => weka.on.mockReset());
 
 const result = (over: Partial<KororaFinish> = {}): KororaFinish => ({
-  daysDone: 4, lastPebbleDay: '2026-11-07', pebbleChanged: 3, goldenFish: false, shoesWon: null, level: 5, levelBefore: 5, topSecure: true, ...over,
+  daysDone: 4, lastPebbleDay: '2026-11-07', pebbleChanged: 3, goldenFish: false, shoesWon: null, firstRight: 9, level: 5, levelBefore: 5, topSecure: true, ...over,
 });
-const main = WORDS.pebbleTurned('bronze');
+const main = `${WORDS.how.most} ${WORDS.pebbleTurned('bronze')}`;
 
 describe('the finish screen’s what’s next card (R8)', () => {
   it('shows the card once near doubles are secure and Weka is on, reads it after the finish line, and opens Weka', async () => {
@@ -27,7 +27,7 @@ describe('the finish screen’s what’s next card (R8)', () => {
     render(<Finish result={result()} say={say} onOpenWeka={onOpenWeka} onNext={() => {}} />);
     await userEvent.click(await screen.findByRole('button', { name: WORDS.tryWeka }));
     expect(screen.getByText(WORDS.whatsNext)).toBeTruthy();
-    expect(say.mock.calls.map((c) => c[0])).toEqual([finishLine(main, null), WORDS.whatsNext]);
+    expect(say.mock.calls.map((c) => c[0])).toEqual([finishLine([WORDS.how.most, WORDS.pebbleTurned('bronze')], false, null), WORDS.whatsNext]);
     expect(onOpenWeka).toHaveBeenCalledTimes(1);
   });
 
@@ -42,6 +42,19 @@ describe('the finish screen’s what’s next card (R8)', () => {
     render(<Finish result={result()} say={say} onOpenWeka={() => {}} onNext={() => {}} />);
     expect(await screen.findByRole('heading', { name: main })).toBeTruthy();
     expect(screen.queryByRole('button', { name: WORDS.tryWeka })).toBeNull();
+  });
+});
+
+describe('the finish words (S33)', () => {
+  it('say how the day went, still turn the stone, and never say well done', async () => {
+    render(<Finish result={result({ topSecure: false, firstRight: 3, pebbleChanged: null })} say={vi.fn()} onNext={() => {}} />);
+    expect(await screen.findByRole('heading', { name: `${WORDS.how.tricky} ${WORDS.doneToday}` })).toBeTruthy();
+    expect(screen.getByText(WORDS.trickyChip)).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/well done|so good/i);
+    cleanup();
+    render(<Finish result={result({ topSecure: false, firstRight: 10 })} say={vi.fn()} onNext={() => {}} />);
+    expect(await screen.findByRole('heading', { name: `${WORDS.how.most} ${WORDS.pebbleTurned('bronze')}` })).toBeTruthy();
+    expect(screen.queryByText(WORDS.trickyChip)).toBeNull();
   });
 });
 
