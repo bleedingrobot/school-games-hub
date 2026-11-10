@@ -17,7 +17,7 @@ function replayTaps(goes, taps, rules) {
 		if (!go.choices.includes(pick)) throw new Error(`${pick} isn't a choice on go ${goesDone}`);
 		const right = pick === go.answer;
 		if (!triedThisGo) {
-			if (right) firstRight++;
+			if (right && (rules.minThinkMs === void 0 || ms >= rules.minThinkMs)) firstRight++;
 			if (!rules.oncePerFact || !counted.has(go.key)) answers.push({
 				key: go.key,
 				correct: right,
@@ -121,6 +121,16 @@ const QUICK_MS_BY_PACK = { generated: 8e3 };
 /** The quick time for the records of a pack ("times-tables", "generated"...). */
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+//#endregion
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+/** True when the answer had time to be a thought. */
+const thoughtOf = (ms) => ms >= 600;
 //#endregion
 //#region shared/maths/facts.ts
 /**
@@ -1650,14 +1660,6 @@ function placeAfter$1(p, right, rules) {
 		goodAtStep: 0
 	};
 }
-//#endregion
-//#region shared/juniorQuick.ts
-/**
-* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
-* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
-* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
-*/
-const JUNIOR_QUICK_MS = 1e4;
 const TABLES_START = {
 	step: 5,
 	level: 2
@@ -2035,13 +2037,14 @@ function replay(round, taps) {
 	const goes = showRound(round);
 	const played = replayTaps(goes, taps, {
 		goesPerRound: 10,
-		oncePerFact: true
+		oncePerFact: true,
+		minThinkMs: 600
 	});
 	const slips = [];
 	const kindGoes = [];
 	let at = 0;
 	let first = true;
-	for (const { pick } of taps) {
+	for (const { pick, ms } of taps) {
 		const go = goes[at];
 		if (first && pick !== go.answer) {
 			const w = go.wrongs.find((x) => x.n === pick);
@@ -2049,7 +2052,7 @@ function replay(round, taps) {
 		}
 		if (first) kindGoes.push({
 			kind: round.goes[at].kind,
-			right: pick === go.answer
+			right: pick === go.answer && thoughtOf(ms)
 		});
 		first = pick === go.answer;
 		if (pick === go.answer) at++;
@@ -7426,7 +7429,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs, minMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -7442,7 +7445,8 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
-			top_box: 4
+			top_box: 4,
+			min_ms: minMs ?? 0
 		});
 		if (error) {
 			result.failed++;
@@ -7636,7 +7640,7 @@ Deno.serve(makeHandler({
 		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "swamphen", void 0, JUNIOR_QUICK_MS);
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "swamphen", void 0, JUNIOR_QUICK_MS, 600);
 	},
 	async seen(player) {
 		return call("kit_seen_get", {

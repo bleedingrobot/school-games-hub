@@ -9,6 +9,7 @@
  * same round is practice only.
  */
 import { replayTaps, type Tap as KitTap, type TapReplay } from '../kit/replay';
+import { JUNIOR_MIN_THINK_MS } from '../juniorQuick';
 import { GOES_PER_ROUND, showRound, type Round } from './round';
 
 /** One number picked: its value and how long the child took over it. */
@@ -17,4 +18,4 @@ export type Replay = TapReplay;
 
 /** Replays a child's taps. A tap on a number that isn't one of the go's choices, or after the end, stops the replay: the browser never sends them. */
 export const replay = (round: Round, taps: readonly Tap[]): Replay =>
-  replayTaps(showRound(round), taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true });
+  replayTaps(showRound(round), taps, { goesPerRound: GOES_PER_ROUND, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS });

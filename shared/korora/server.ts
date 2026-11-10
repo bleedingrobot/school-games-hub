@@ -14,8 +14,8 @@
  *
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
-import { JUNIOR_QUICK_MS } from '../juniorQuick';
-import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { juniorAfterAnswer } from '../juniorQuick';
+import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import { replay, type Tap } from './play';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import { finishChallenge, nzDate, poolAfter } from './progress';
@@ -109,8 +109,7 @@ function readTaps(v: unknown): Tap[] | null {
 /** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
 export function withAnswers(facts: readonly FactStats[], answers: readonly FactAnswer[]): FactStats[] {
   const byKey = new Map(facts.map((s) => [s.key, s]));
-  const quick = JUNIOR_QUICK_MS;
-  for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
+  for (const a of answers) byKey.set(a.key, juniorAfterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
   return [...byKey.values()];
 }
 

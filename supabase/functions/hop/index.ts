@@ -2,14 +2,6 @@
 // then run `npm run build:functions`. Deploy this file as the "hop" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
-//#region shared/juniorQuick.ts
-/**
-* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
-* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
-* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
-*/
-const JUNIOR_QUICK_MS = 1e4;
-//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -153,6 +145,20 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	const canBeFluent = next.quickDays.length >= 2;
 	next.box = Math.min(stats.box + 1, canBeFluent ? 4 : 3);
 	return next;
+}
+//#endregion
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+/** True when the answer had time to be a thought. */
+const thoughtOf = (ms) => ms >= 600;
+/** `afterAnswer` with the junior quick time and the think floor. A quick time of -1 can never be met, so a too-fast right answer is counted but not quick. */
+function juniorAfterAnswer(stats, correct, ms, at) {
+	return afterAnswer(stats, correct, ms, at, thoughtOf(ms) ? JUNIOR_QUICK_MS : -1);
 }
 //#endregion
 //#region shared/kit/seen.ts
@@ -2387,8 +2393,7 @@ function readTaps(v) {
 /** The records after this challenge's answers, the way record_fact_answers will change them (early-facts' quick time). */
 function withAnswers(facts, answers) {
 	const byKey = new Map(facts.map((s) => [s.key, s]));
-	const quick = JUNIOR_QUICK_MS;
-	for (const a of answers) byKey.set(a.key, afterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, quick));
+	for (const a of answers) byKey.set(a.key, juniorAfterAnswer(byKey.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
 	return [...byKey.values()];
 }
 async function handleHop(services, player, body) {
@@ -7592,7 +7597,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs, minMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -7608,7 +7613,8 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
-			top_box: 4
+			top_box: 4,
+			min_ms: minMs ?? 0
 		});
 		if (error) {
 			result.failed++;
@@ -7798,7 +7804,7 @@ Deno.serve(makeHandler({
 		mistakes: ending.mistakes
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "hop", void 0, JUNIOR_QUICK_MS);
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "hop", void 0, JUNIOR_QUICK_MS, 600);
 	},
 	async seen(player) {
 		return call("kit_seen_get", {

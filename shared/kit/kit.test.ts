@@ -15,6 +15,7 @@ import { arcAfter, daysPerReward, finishDay } from './dayArc';
 import { atMostShareTell, hasNearMiss, kindByUnits, NEW_GO, stepGo, tagWrongs, unitsOff } from './mistakes';
 import { fadeAfter, fadeByKind, helpForFact, helpWithSetting, placeAfter, ROUND_OF_TEN, type StepRules } from './help';
 import { replayTaps, type ReplayGo, type Tap } from './replay';
+import { JUNIOR_MIN_THINK_MS } from '../juniorQuick';
 
 const TUI_RULES: StepRules = { ...ROUND_OF_TEN, topLevel: 5, goodToPass: 2, topStep: 5, newStepHelp: 1, newStepLevel: 4 };
 
@@ -93,9 +94,16 @@ describe('the replay and the day arc', () => {
       const tui = tuiRound(seed, []);
       const tuiGoes = showTui(tui);
       const tuiTaps = tapsFor(tuiGoes, seed, slips);
-      expect(replayTaps(tuiGoes, tuiTaps, { goesPerRound: TUI_GOES, oncePerFact: true })).toEqual(tuiReplay(tui, tuiTaps));
+      expect(replayTaps(tuiGoes, tuiTaps, { goesPerRound: TUI_GOES, oncePerFact: true, minThinkMs: JUNIOR_MIN_THINK_MS })).toEqual(tuiReplay(tui, tuiTaps));
     }
     expect(() => replayTaps([{ key: 'k', answer: 1, choices: [1, 2] }], [{ pick: 3, ms: 1 }], { goesPerRound: 1, oncePerFact: true })).toThrow();
+
+    // S14: a right first tap under the think floor is still an answer, but is not a first right.
+    const one: ReplayGo[] = [{ key: 'k', answer: 1, choices: [1, 2] }, { key: 'j', answer: 2, choices: [1, 2] }];
+    const floored = replayTaps(one, [{ pick: 1, ms: 80 }, { pick: 2, ms: 700 }], { goesPerRound: 2, oncePerFact: true, minThinkMs: 600 });
+    expect(floored.firstRight).toBe(1);
+    expect(floored.answers).toEqual([{ key: 'k', correct: true, ms: 80 }, { key: 'j', correct: true, ms: 700 }]);
+    expect(replayTaps(one, [{ pick: 1, ms: 80 }, { pick: 2, ms: 700 }], { goesPerRound: 2, oncePerFact: true }).firstRight).toBe(2);
 
     expect(daysPerReward(PADS)).toBe(DAYS_PER_JAR);
     for (let d = 0; d < 200; d++) {

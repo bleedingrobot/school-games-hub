@@ -84,6 +84,16 @@ const QUICK_MS_BY_PACK = { generated: 8e3 };
 const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
+//#region shared/juniorQuick.ts
+/**
+* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
+* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
+* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
+*/
+const JUNIOR_QUICK_MS = 1e4;
+/** True when the answer had time to be a thought. */
+const thoughtOf = (ms) => ms >= 600;
+//#endregion
 //#region shared/maths/facts.ts
 /**
 * Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
@@ -1612,14 +1622,6 @@ function placeAfter$1(p, right, rules) {
 		goodAtStep: 0
 	};
 }
-//#endregion
-//#region shared/juniorQuick.ts
-/**
-* How quickly a young child (the Foundational games: Hop, Penguin Pairs, Pipi, Beanstalk, Tūī, Weka) must answer a
-* fact correctly for it to move up a box. Longer than the 5 seconds everyone else gets (shared/maths/config.ts), and
-* the clock only starts once the question has been read aloud. docs/plans/maths-review/R2-fair-step-up.md.
-*/
-const JUNIOR_QUICK_MS = 1e4;
 const NEW_LINE_STEPS = [6, 7];
 const TEN_AND_START = {
 	step: 1,
@@ -1979,8 +1981,8 @@ function replay(round, taps) {
 		if (!go) throw new Error("Taps after the round was done");
 		const right = tapRight(go, pick);
 		if (!triedThisGo) {
-			if (right) firstRight++;
-			rightFirst[goesDone] = right;
+			if (right && thoughtOf(ms)) firstRight++;
+			rightFirst[goesDone] = right && thoughtOf(ms);
 			if (!counted.has(go.key)) {
 				answers.push({
 					key: go.key,
@@ -7390,7 +7392,7 @@ async function batchIdFor(text) {
 * results counted for a batch the records took for the first time, so a retry never counts twice.
 * It never throws: a problem is logged with its code (never who) and the game goes on.
 */
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs) {
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`), quickMs, minMs) {
 	const result = {
 		saved: 0,
 		failed: 0
@@ -7406,7 +7408,8 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),
 			fluent_days: 2,
-			top_box: 4
+			top_box: 4,
+			min_ms: minMs ?? 0
 		});
 		if (error) {
 			result.failed++;
@@ -7600,7 +7603,7 @@ Deno.serve(makeHandler({
 		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {
-		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "pigeon", void 0, JUNIOR_QUICK_MS);
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "pigeon", void 0, JUNIOR_QUICK_MS, 600);
 	},
 	async seen(player) {
 		return call("kit_seen_get", {

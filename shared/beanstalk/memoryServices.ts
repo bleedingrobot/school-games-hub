@@ -3,8 +3,8 @@
  * version still matches, a seed used once per pupil, a challenge finished once). The preview's trial backend saves this
  * in the browser; the server function's tests use it in place of the database.
  */
-import { JUNIOR_QUICK_MS } from '../juniorQuick';
-import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../maths/leitner';
+import { juniorAfterAnswer } from '../juniorQuick';
+import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
 import type { Round, Tap } from './round';
 import { mergeSeen } from '../kit/seen';
 import { unplayed, type BeanstalkServices, type Saved, type Settings } from './server';
@@ -101,7 +101,7 @@ export function memoryServices(options: MemoryOptions = {}): BeanstalkServices &
       if (recorded.has(once)) return;
       recorded.add(once);
       const mine = new Map((data.facts?.[player] ?? []).map((f) => [f.key, f]));
-      for (const a of answers) mine.set(a.key, afterAnswer(mine.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at, JUNIOR_QUICK_MS));
+      for (const a of answers) mine.set(a.key, juniorAfterAnswer(mine.get(a.key) ?? newStats(a.key), a.correct, a.ms, a.at));
       data.facts = { ...data.facts, [player]: [...mine.values()] };
       saved();
       options.log?.answers.push({ player, once, answers });
