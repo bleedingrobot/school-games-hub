@@ -602,7 +602,12 @@ const layoutParts = (v, a, b) => v === 0 ? [
 ];
 /** A go made again from its plan, with its wrong cards fixed by the seed. Null if the plan isn't one this game makes. */
 function showGo(round, index, plan) {
-	if (!ALL_KEYS.includes(plan.key) || ![
+	if (!ALL_KEYS.includes(plan.key)) return null;
+	return buildGo(round, index, plan);
+}
+/** A go made from any well-formed key (the server only ever replays keys from ALL_KEYS, through `showGo`). */
+function buildGo(round, index, plan) {
+	if (![
 		0,
 		1,
 		2,

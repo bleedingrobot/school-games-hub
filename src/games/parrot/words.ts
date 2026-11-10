@@ -57,7 +57,7 @@ export const WORDS = {
   /** After the second wrong tap of a go: Parrot counts both sides, then asks again. */
   lookTogether: 'Let’s look together.',
   lookFill: 'Let us count each side together.',
-  nowTry: 'Now you try!',
+  nowTry: 'Now you try one like it.',
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
   skip: 'Skip',

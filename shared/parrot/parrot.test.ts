@@ -8,7 +8,7 @@ import { replay, slipsOf, type Tap } from './play';
 import { STEP_RULES, type HelpLevel, type Step } from './config';
 import type { Kind } from '../maths/skillPacks/equalsKeys';
 import { atMostShareTell, sharingTell } from '../kit/mistakes';
-import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, showRound, slipOfPick, startFor, STEP_KEYS, tapsAllowed, tiltOf, type Round } from './round';
+import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, sisterGo, showRound, slipOfPick, startFor, STEP_KEYS, tapsAllowed, tiltOf, type Round } from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -233,5 +233,32 @@ describe('help for each kind of go', () => {
     const easy = [...kinds].filter((k) => k !== hard && saved[k]);
     expect(easy.length).toBeGreaterThan(0);
     for (const k of easy) expect(saved[k].level).toBeLessThan(saved[hard].level);
+  });
+});
+
+describe('Now you try one like it', () => {
+  it('asks a sister go: the same key kind, layout and level, other numbers, an answer of its own, and it is not in the saved taps', () => {
+    let made = 0;
+    const none: string[] = [];
+    for (const seed of seeds.slice(0, 10)) {
+      const round = makeRound(seed, [], { step: 6, level: 3 });
+      const goes = showRound(round);
+      // The saved taps are the original goes' own picks (a wrong one, then the right one, on every go): a sister is never among them, and replay is whole.
+      const taps: Tap[] = goes.flatMap((go) => [{ pick: tapsAllowed(go).find((c) => c !== go.answer)!, ms: 900 }, { pick: go.answer, ms: 900 }]);
+      expect(replay(round, taps).done).toBe(true);
+      for (const [i, go] of goes.entries()) {
+        const sister = sisterGo(round, i, go);
+        if (!sister) { none.push(go.key); continue; }
+        made++;
+        expect(sister.key).not.toBe(go.key);
+        expect([sister.kind, sister.v, sister.l]).toEqual([go.kind, go.v, go.l]);
+        expect(sister.choices).toContain(sister.answer);
+        expect(sister.wrongs.length).toBe(sister.choices.length - 1);
+        if (go.kind !== 'tf') expect(sister.answer).not.toBe(go.answer);
+        expect(sisterGo(round, i, go)).toEqual(sister);
+      }
+    }
+    expect(made).toBeGreaterThan(80);
+    expect(none.length).toBeLessThan(made / 10);
   });
 });
