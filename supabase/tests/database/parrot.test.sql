@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh parrot, then scripts/scratch-test.sh parrot supabase/tests/database/parrot.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(39);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -38,7 +38,7 @@ select throws_ok($$ select * from public.parrot_progress $$, '42501', null, 'a p
 select throws_ok($$ select * from public.parrot_rounds $$, '42501', null, '... or the challenges');
 select throws_ok($$ select public.parrot_load(auth.uid()) $$, '42501', null, '... or load through the server functions');
 select throws_ok($$ select public.parrot_start(auth.uid(), 5, pg_temp.round(5, 1, 5)) $$, '42501', null, '... or start their own challenge');
-select throws_ok($$ select public.parrot_finish(auth.uid(), 5, 1, 29, '2026-11-04', 1::smallint, 5::smallint, 0, 0, '[]', 0, 10, '[]') $$, '42501', null, '... or finish one with any day count');
+select throws_ok($$ select public.parrot_finish(auth.uid(), 5, 1, 29, '2026-11-04', 1::smallint, 5::smallint, 0, 0, '[]', 0, 10, '[]', '{}') $$, '42501', null, '... or finish one with any day count');
 select throws_ok($$ select public.teacher_set_parrot(true) $$, null, null, 'a pupil cannot switch the game on');
 
 -- ---- The teacher's switch and help setting ----
@@ -57,7 +57,7 @@ select is(public.parrot_load(pg_temp.id('0a')), null, 'a new pupil has no rope y
 select throws_ok($$ select public.parrot_load('00000000-0000-0000-0000-000000000099') $$, '22023', null, 'nobody who is not a pupil');
 select ok(public.parrot_start(pg_temp.id('0a'), 777, pg_temp.round(777, 3, 2)), 'a challenge starts');
 select is(public.parrot_load(pg_temp.id('0a')),
-  '{"daysDone": 0, "lastDay": null, "step": 3, "level": 2, "goodInRow": 0, "goodAtStep": 0, "version": 1}'::jsonb,
+  '{"daysDone": 0, "lastDay": null, "step": 3, "level": 2, "goodInRow": 0, "goodAtStep": 0, "kindLevels": {}, "version": 1}'::jsonb,
   '... making the pupil''s rope at the round''s step and help level');
 select ok(not public.parrot_start(pg_temp.id('0a'), 777, pg_temp.round(777, 1, 5)), 'a seed is used once per pupil');
 select throws_ok($$ select public.parrot_start(pg_temp.id('0a'), 778, pg_temp.round(999, 3, 2)) $$, '22023', null, 'a challenge must carry its own seed');
@@ -65,14 +65,15 @@ select is(public.parrot_round(pg_temp.id('0b'), 777), null, 'another pupil''s ch
 select is(public.parrot_round(pg_temp.id('0a'), 777) -> 'round', pg_temp.round(777, 3, 2), 'the round is kept as the server made it');
 
 -- Finishing: once, together with the progress, never more than one day at a time.
-select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 1, 2, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '[null]'), 'two days at once is refused');
-select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 5, 1, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '[null]'), '... and so is an old version');
-select ok(public.parrot_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 3::smallint, 1::smallint, 1, 1, '[{"pick":10,"ms":900}]', 1, 9, '["copy"]'), 'the challenge finishes, moving the help on');
-select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 3::smallint, 1::smallint, 2, 2, '[{"pick":10,"ms":900}]', 1, 9, '[]'), '... once');
+select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 1, 2, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '[null]', '{}'), 'two days at once is refused');
+select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 5, 1, '2026-11-04', 3::smallint, 2::smallint, 0, 0, '[{"pick":10,"ms":900}]', 0, 10, '[null]', '{}'), '... and so is an old version');
+select ok(public.parrot_finish(pg_temp.id('0a'), 777, 1, 1, '2026-11-04', 3::smallint, 1::smallint, 1, 1, '[{"pick":10,"ms":900}]', 1, 9, '["copy"]', '{"miss": {"level": 1, "goodInRow": 1}}'), 'the challenge finishes, moving the help on');
+select ok(not public.parrot_finish(pg_temp.id('0a'), 777, 2, 2, '2026-11-05', 3::smallint, 1::smallint, 2, 2, '[{"pick":10,"ms":900}]', 1, 9, '[]', '{}'), '... once');
 select is(public.parrot_load(pg_temp.id('0a')),
-  '{"daysDone": 1, "lastDay": "2026-11-04", "step": 3, "level": 1, "goodInRow": 1, "goodAtStep": 1, "version": 2}'::jsonb,
-  'the rope is saved');
+  '{"daysDone": 1, "lastDay": "2026-11-04", "step": 3, "level": 1, "goodInRow": 1, "goodAtStep": 1, "kindLevels": {"miss": {"level": 1, "goodInRow": 1}}, "version": 2}'::jsonb,
+  'the rope is saved, with the help for each kind of go');
 select is((select first_right from public.parrot_rounds where player = pg_temp.id('0a') and seed = 777), 9, '... with how many goes were right first time');
+select is((select kind_levels from public.parrot_progress where player = pg_temp.id('0a')), '{"miss": {"level": 1, "goodInRow": 1}}'::jsonb, '... and kind_levels is saved on the row');
 select ok(public.parrot_start(pg_temp.id('0a'), 779, pg_temp.round(779, 1, 5)), 'another challenge starts, leaving the saved rope as it is');
 select is((select step from public.parrot_progress where player = pg_temp.id('0a')), 3::smallint, '... (the step is not reset)');
 select pg_temp.reset();
