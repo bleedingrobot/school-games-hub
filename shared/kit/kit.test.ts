@@ -33,12 +33,12 @@ function tapsFor(goes: readonly ReplayGo[], seed: number, slips: number): Tap[] 
 describe('help follows the child', () => {
   it('fades fact by fact and child by child, comes back after struggle, and a fade stands when a step is passed', () => {
     const rungs = [{ help: 'full', until: { box: 2, quickDays: 2 } }, { help: 'faint', until: { box: 4, correct: 6 } }, { help: 'none' }];
-    const rec = (box: number, correct: number, quick: number) => ({ box, correct, quickDays: Array(quick).fill('2026-11-04') });
+    const rec = (box: number, correct: number, quick: number, attempts = correct) => ({ box, correct, attempts, quickDays: Array(quick).fill('2026-11-04') });
     expect(helpForFact(undefined, rungs)).toBe('full');
-    expect(helpForFact(rec(5, 20, 1), rungs)).toBe('full'); // right lots, but only quick on one day
+    expect(helpForFact(rec(5, 20, 0), rungs)).toBe('full'); // right lots, but never quick
     expect(helpForFact(rec(2, 2, 2), rungs)).toBe('faint');
     expect(helpForFact(rec(4, 6, 2), rungs)).toBe('none');
-    expect(helpForFact(rec(1, 20, 3), rungs)).toBe('full'); // a wrong answer dropped it to box 1
+    expect(helpForFact(rec(1, 20, 3, 21), rungs)).toBe('full'); // a wrong answer dropped it to box 1
     expect(helpWithSetting('faint', 'fade', { always: 'full', off: 'none' })).toBe('faint');
     expect(helpWithSetting('faint', 'always', { always: 'full', off: 'none' })).toBe('full');
     expect(helpWithSetting('faint', 'off', { always: 'full', off: 'none' })).toBe('none');
@@ -53,11 +53,38 @@ describe('help follows the child', () => {
     let p = { step: 1, level: 5, goodInRow: 0, goodAtStep: 0 };
     p = placeAfter(placeAfter(p, 10, TUI_RULES), 10, TUI_RULES);
     expect(p).toEqual({ step: 2, level: 4, goodInRow: 0, goodAtStep: 0 });
-    // The same as Tūī's own copy, in every place a child can be.
+    // Tūī's own copy is the same in every place a child can be, except for two S25 changes: a 10 out of 10 round counts as two
+    // good rounds, and a fade that lands with a step pass is not floored back up to the ten-frames.
     for (const step of [1, 2, 3, 4, 5] as Step[]) for (const level of [0, 1, 2, 3, 4, 5] as HelpLevel[]) for (const goodInRow of [0, 1]) for (const goodAtStep of [0, 1]) for (let right = 0; right <= 10; right++) {
       const place = { step, level, goodInRow, goodAtStep };
-      expect(placeAfter(place, right, TUI_RULES)).toEqual(tuiPlaceAfter(place, right));
+      const kit = placeAfter(place, right, TUI_RULES);
+      const tui = tuiPlaceAfter(place, right);
+      if (right === 10) continue;
+      if (JSON.stringify(kit) === JSON.stringify(tui)) continue;
+      expect(tui).toEqual({ ...kit, level: tui.level });
+      expect(tui.step).toBe(place.step + 1);
+      expect(tui.level).toBeLessThan(4);
+      expect(kit.level).toBe(4);
     }
+  });
+});
+
+describe('full help ends sooner (S25)', () => {
+  const rungs = [{ help: 'full', until: { box: 2, quickDays: 1 } }, { help: 'faint', until: { box: 4, correct: 6 } }, { help: 'none' }];
+  const rec = (box: number, correct: number, attempts: number, quick: number) => ({ box, correct, attempts, quickDays: Array(quick).fill('2026-11-04') });
+  it('leaves full help after two quick rights on one day, or a clean right-and-quick first answer', () => {
+    expect(helpForFact(rec(2, 2, 2, 1), rungs)).toBe('faint'); // two rights, one quick day
+    expect(helpForFact(rec(1, 1, 1, 1), rungs)).toBe('faint'); // one clean quick right
+    expect(helpForFact(rec(2, 2, 2, 0), rungs)).toBe('full'); // right twice but slow: no quick day
+    expect(helpForFact(rec(0, 0, 0, 0), rungs)).toBe('full');
+  });
+  it('brings full help back after a wrong answer', () => {
+    expect(helpForFact(rec(1, 2, 3, 1), rungs)).toBe('full'); // box 1 and a wrong answer on record
+    expect(helpForFact(rec(1, 5, 6, 2), rungs)).toBe('full');
+  });
+  it('only the first rung has the early door', () => {
+    const later = [{ help: 'a', until: { quickDays: 1 } }, { help: 'b', until: { quickDays: 3 } }, { help: 'c' }];
+    expect(helpForFact(rec(2, 2, 2, 1), later)).toBe('b');
   });
 });
 
