@@ -8,7 +8,8 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import { thoughtOf } from '../juniorQuick';
-import { GOES_PER_ROUND, showRound, type Round } from './round';
+import { GOES_PER_ROUND, showRound, type WrongKind, type Round } from './round';
+import { slipsOf as kitSlipsOf } from '../kit/slips';
 
 /** One shell picked: its number and how long the child took over it. */
 export interface Tap {
@@ -58,3 +59,10 @@ export const wrongFirstRun = (answers: readonly { correct: boolean }[]): number 
   for (let i = answers.length - 1; i >= 0 && !answers[i].correct; i--) run++;
   return run;
 };
+
+/** The kind of slip behind each go's first wrong tap (null for a go right first time), saved for the teacher's "usual slip" line (LEARNING-DESIGN rule 9). */
+export const slipsOf = (round: Round, taps: readonly Tap[]): (WrongKind | null)[] =>
+  kitSlipsOf(
+    showRound(round).map((go) => ({ answer: go.answer, kindOf: (pick: number): WrongKind | null => go.wrongs.find((w) => w.n === pick)?.kind ?? null })),
+    taps,
+  );

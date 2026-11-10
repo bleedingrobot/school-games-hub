@@ -1,6 +1,6 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/weka/progress';
-import type { Level } from '../../../shared/weka/round';
+import type { Level, LandKind } from '../../../shared/weka/round';
 
 const LEVEL_WORDS: Record<Level, string> = {
   1: 'Starting on 9',
@@ -84,3 +84,12 @@ export const WORDS = {
   voiceOff: 'Voice off',
   basketsWon: (n: number) => `${n} Golden Picnic Basket${n === 1 ? '' : 's'}`,
 } as const;
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<LandKind, string> = {
+  rock: 'stops at the big rock',
+  double: 'adds the whole small number on top of ten',
+  part: 'adds only the leftover part',
+  off1: 'lands one stone off',
+  add: 'hops up the line instead of back',
+};

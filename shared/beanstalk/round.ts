@@ -16,6 +16,7 @@
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { hasNearMiss, kindByUnits, unitsOff } from '../kit/mistakes';
+import { slipsOf, type SlipGo, type SlipTap } from '../kit/slips';
 import { seeded } from '../seededRandom';
 
 export const PAIRS_PER_ROUND = 10;
@@ -218,6 +219,8 @@ export interface Replay {
   wrongInGo: number;
   /** Right pairs made after two or more wrong ones in their go: shown pairs. */
   shown: number;
+  /** For each go, the kind of its first wrong pair (null when the first pair was right), for the teacher's "usual slip" line. */
+  slips: (MistakeKind | null)[];
 }
 
 /** The leaves floating: those of the pairs that have come in, less the ones already paired. */
@@ -285,13 +288,20 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
   let pairsMade = 0;
   let wrongInGo = 0;
   let shown = 0;
+  // Each go and the total of every pair tapped, for the kit's slipsOf: a go starts at its first tap and runs until a right pair.
+  const slipGoes: SlipGo<MistakeKind>[] = [];
+  const totals: SlipTap[] = [];
   for (const { a, b, ms } of taps) {
     if (pairsMade === PAIRS_PER_ROUND) throw new Error('Taps after the round was done');
     const now = floating(inPlay, used);
     if (a === b || !now.includes(a) || !now.includes(b)) throw new Error(`Leaves ${a} and ${b} aren't both floating`);
     const sum = targetOf(round, a);
     const right = round.leaves[a] + round.leaves[b] === sum;
-    if (wrongInGo === 0) answers.push({ key: bondKey(round.leaves[a], sum), correct: right, ms });
+    if (wrongInGo === 0) {
+      answers.push({ key: bondKey(round.leaves[a], sum), correct: right, ms });
+      slipGoes.push({ answer: sum, kindOf: (total) => mistakeKind(total, sum) });
+    }
+    totals.push({ pick: round.leaves[a] + round.leaves[b] });
     if (right) {
       used.add(a).add(b);
       pairsMade++;
@@ -312,6 +322,7 @@ export function replay(round: Round, taps: readonly Tap[]): Replay {
     tried,
     wrongInGo,
     shown,
+    slips: slipsOf(slipGoes, totals),
   };
 }
 

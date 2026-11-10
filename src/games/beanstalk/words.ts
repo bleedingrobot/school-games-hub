@@ -1,6 +1,6 @@
 /** Everything the game says. Short, because it is read aloud to children of 5 to 7. */
 import type { Metal } from '../../../shared/beanstalk/progress';
-import { mistakeKind, unitOf, type Target } from '../../../shared/beanstalk/round';
+import { mistakeKind, unitOf, type Target, type MistakeKind } from '../../../shared/beanstalk/round';
 
 /** "7 tens", "1 hundred": a number counted in the beanstalk's dots. */
 const inDots = (n: number, target: number) => {
@@ -114,3 +114,11 @@ export const WORDS = {
   nextButton: 'Try Weka',
   eggs: (n: number) => `${n} Golden ${n === 1 ? 'Egg' : 'Eggs'}`,
 } as const;
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<MistakeKind, string> = {
+  over: 'adds past the target',
+  under: 'stops short of the target',
+  close: 'is one away',
+  digit: 'mixes up tens and ones',
+};

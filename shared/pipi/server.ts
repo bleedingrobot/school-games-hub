@@ -17,11 +17,11 @@
  */
 import { juniorAfterAnswer } from '../juniorQuick';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { kindsFromDays } from './seen';
 import { mergeSeen, readKinds, type SeenServices } from '../kit/seen';
 import { beachAfter, finishChallenge, nzDate } from './progress';
-import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, topSecure, type Level, type Round } from './round';
+import { isLevel, isSeed, levelFor, makeRound, MAX_SEED, topSecure, type Level, type WrongKind, type Round } from './round';
 
 export type PipiAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -63,7 +63,7 @@ export interface PipiServices extends SeenServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; slips: (WrongKind | null)[]; mistakes: number }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Pearls went up, so it gives the achievement. A failure is only logged. */
@@ -176,7 +176,7 @@ export async function handlePipi(services: PipiServices, player: string, body: R
       // facts improved on a replay can still count at the next day's first finish.
       const reached = facts === 'busy' || result.shellChanged === null ? s.reached : levelFor(withAnswers(facts, answers), levelBefore);
       const progress = { daysDone: result.daysDone, lastShellDay: result.lastShellDay, reached, played: s.played + 1 };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, slips: slipsOf(kept.round, taps), mistakes: played.mistakes });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a go, once per challenge, so a finish sent again never counts twice.

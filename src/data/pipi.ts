@@ -9,6 +9,7 @@ import { fromServer, type PipiBackend } from '../games/pipi/backend';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
+import type { WrongKind } from '../../shared/pipi/round';
 
 /** The real school server. */
 export const livePipi: PipiBackend = fromServer(async (body) => {
@@ -73,6 +74,8 @@ export interface PipiStudent {
   /** The furthest level reached: 1 (wholes 3 to 5), 2 (6 and 7) or 3 (8 to 10). */
   reached: 1 | 2 | 3;
   lastPlayed: string;
+  /** The commonest kind of first wrong choice in their last ten finished challenges (at least three, no tie); null when none stands out, or for rounds saved before this was kept. */
+  slip?: WrongKind | null;
 }
 
 /** One student's beach, or null if they haven't played. */

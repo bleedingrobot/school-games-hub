@@ -1207,6 +1207,29 @@ function showRound(round) {
 	});
 }
 //#endregion
+//#region shared/kit/slips.ts
+/**
+* For each go, the kind of its first wrong tap, or null when it was right first time (or never reached). A right tap moves on
+* to the next go; later wrong taps on the same go are not counted, only the first.
+*/
+function slipsOf$1(goes, taps) {
+	const slips = goes.map(() => null);
+	let at = 0;
+	let tried = false;
+	for (const { pick } of taps) {
+		const go = goes[at];
+		if (!go) break;
+		if (pick === go.answer) {
+			at++;
+			tried = false;
+			continue;
+		}
+		if (!tried) slips[at] = go.kindOf(pick);
+		tried = true;
+	}
+	return slips;
+}
+//#endregion
 //#region shared/weka/play.ts
 /**
 * The replay of a child's taps on a round (docs/WEKA-PLAN.md section 3). The browser plays it as the child taps; the
@@ -1224,6 +1247,11 @@ const replay = (round, taps) => replayTaps(showRound(round), taps, {
 	oncePerFact: true,
 	minThinkMs: 600
 });
+/** The kind of slip behind each go's first wrong tap (null for a go right first time), saved for the teacher's "usual slip" line (LEARNING-DESIGN rule 9). */
+const slipsOf = (round, taps) => slipsOf$1(showRound(round).map((go) => ({
+	answer: go.answer,
+	kindOf: (pick) => go.wrongs.find((w) => w.n === pick)?.kind ?? null
+})), taps);
 //#endregion
 //#region shared/kit/dayArc.ts
 /**
@@ -1497,6 +1525,7 @@ async function handleWeka(services, player, body) {
 			};
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
+				slips: slipsOf(kept.round, taps),
 				mistakes: played.mistakes
 			});
 			if (saved === "busy") return busy();
@@ -7863,7 +7892,8 @@ Deno.serve(makeHandler({
 		last_stone_day: progress.lastStoneDay,
 		reached: progress.reached,
 		taps: ending.taps,
-		mistakes: ending.mistakes
+		mistakes: ending.mistakes,
+		slips: ending.slips
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "weka", void 0, JUNIOR_QUICK_MS, 600);

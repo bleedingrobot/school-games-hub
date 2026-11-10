@@ -72,7 +72,7 @@ Deno.serve(
     round: (player, seed) => call<{ open: boolean; round: Round | null } | null>('beanstalk_round', { player, seed }),
     finish: (player, seed, version, progress, ending) =>
       call<boolean>('beanstalk_finish', {
-        player, seed, version, days_done: progress.daysDone, last_leaf_day: progress.lastLeafDay, taps: ending.taps, mistakes: ending.mistakes,
+        player, seed, version, days_done: progress.daysDone, last_leaf_day: progress.lastLeafDay, taps: ending.taps, mistakes: ending.mistakes, slips: ending.slips,
         help: progress.help, good_in_row: progress.goodInRow,
         help_missing: progress.helpMissing, good_in_row_missing: progress.goodInRowMissing,
         stage: progress.stage, good_days: progress.goodDays, hard_days: progress.hardDays, stage_days: progress.stageDays,

@@ -10,6 +10,7 @@ import { HELP_SETTINGS, type HelpSetting } from '../../shared/korora/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
+import type { WrongKind } from '../../shared/korora/round';
 
 /** The real school server. */
 export const liveKorora: KororaBackend = fromServer(async (body) => {
@@ -77,6 +78,8 @@ export interface KororaStudent {
   lastPlayed: string;
   /** Up to three facts they find hardest: "dbl:7", "half:14", "oddeven:9". */
   hardest: string[];
+  /** The commonest kind of first wrong choice in their last ten finished challenges (at least three, no tie); null when none stands out, or for rounds saved before this was kept. */
+  slip?: WrongKind | null;
 }
 
 /** One student's pool, or null if they haven't played. */

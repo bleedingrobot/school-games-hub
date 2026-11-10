@@ -4,11 +4,12 @@
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/korora/teacher.ts).
  */
 import { DAYS_PER_FISH, METALS, poolAfter } from '../../shared/korora/progress';
-import { LEVELS } from '../../shared/korora/round';
+import { LEVELS, type WrongKind } from '../../shared/korora/round';
 import type { HelpSetting } from '../../shared/korora/server';
 import { fetchKororaSettings, fetchKororaStudent, saveKororaSetting } from '../data/korora';
 import { FRIEND_NAMES } from '../games/korora/art';
 import { SettingChoice, useSetting } from '../teacher/Settings';
+import { SLIP_WORDS } from '../games/korora/words';
 
 const HELP_CHOICES = [
   { value: 'fade', label: 'Fades', detail: 'Each go’s picture is full while that fact is new for the student, then faint, then words and numbers only, fact by fact as each student shows they know it. It comes back after a slip, and for the rest of a round after three goes in a row wrong at the first try. Hints still come after wrong taps.' },
@@ -52,8 +53,12 @@ export async function kororaStudentSummary(student: string): Promise<string | nu
   const parts = [`${pool.day} of ${DAYS_PER_FISH} days done at this pool`, `reached ${LEVEL_WORDS[s.reached]}`];
   if (pool.fish) parts.push(`${pool.fish} ${pool.fish === 1 ? 'pair' : 'pairs'} of gold shoes`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
+
+/** The teacher's slip line: the commonest kind of first wrong choice, in plain words, or that none stands out yet. */
+const slipLine = (slip: WrongKind | null | undefined): string => (slip ? `Usual slip: ${SLIP_WORDS[slip]}` : 'No single slip stands out yet');
 
 const when = (iso: string, options: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-NZ', options);
 
@@ -64,7 +69,7 @@ export function KororaStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Penguin Pairs for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastPebbleDay, reached, lastPlayed, hardest } = loaded.value.progress;
+  const { daysDone, lastPebbleDay, reached, lastPlayed, hardest, slip } = loaded.value.progress;
   const pool = poolAfter(daysDone);
   const pebbles = METALS.map((metal) => [metal, pool.pebbles.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -80,6 +85,7 @@ export function KororaStudentPanel({ student }: { student: string }) {
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Gold dancing shoes so far: {pool.fish}.
       </p>
       {hardest?.length ? <p>Finding these hardest: {hardest.map(factWords).join(', ')}.</p> : <p>No fact is giving trouble right now.</p>}
+      <p>{slipLine(slip)}.</p>
     </section>
   );
 }

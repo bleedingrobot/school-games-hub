@@ -9,6 +9,7 @@ import { fromServer, type HopBackend } from '../games/hop/backend';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
+import type { HopMistake } from '../../shared/hop/round';
 
 /** The real school server. */
 export const liveHop: HopBackend = fromServer(async (body) => {
@@ -73,6 +74,8 @@ export interface HopStudent {
   /** The furthest step reached: counting in 10s, 5s, 2s, 3s, 4s, or 200 for tens past 100. */
   reached: 10 | 5 | 2 | 3 | 4 | 200;
   lastPlayed: string;
+  /** The commonest kind of first wrong choice in their last ten finished challenges (at least three, no tie); null when none stands out, or for rounds saved before this was kept. */
+  slip?: HopMistake | null;
 }
 
 /** One student's pond, or null if they haven't played. */

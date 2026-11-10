@@ -74,7 +74,7 @@ Deno.serve(
       call<boolean>('pipi_finish', {
         player, seed, version, days_done: progress.daysDone, last_shell_day: progress.lastShellDay, reached: progress.reached,
         played: progress.played,
-        taps: ending.taps, mistakes: ending.mistakes,
+        taps: ending.taps, mistakes: ending.mistakes, slips: ending.slips,
       }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.

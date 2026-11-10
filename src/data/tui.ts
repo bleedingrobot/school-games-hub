@@ -6,7 +6,7 @@
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { fromServer, type TuiBackend } from '../games/tui/backend';
-import type { HelpLevel, HelpSetting, Step } from '../../shared/tui/round';
+import type { HelpLevel, HelpSetting, Step, TuiKind } from '../../shared/tui/round';
 import { HELP_SETTINGS } from '../../shared/tui/server';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
@@ -81,6 +81,8 @@ export interface TuiStudent {
   lastPlayed: string;
   /** Up to three facts they find hardest: "tenand:4", "tenand:7". */
   hardest: string[];
+  /** The commonest kind of first wrong choice in their last ten finished challenges (at least three, no tie); null when none stands out, or for rounds saved before this was kept. */
+  slip?: TuiKind | null;
 }
 
 /** One student's tree, or null if they haven't played. */

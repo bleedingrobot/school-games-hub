@@ -4,9 +4,10 @@
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/tui/teacher.ts).
  */
 import { DAYS_PER_NEST, FRIEND_NAMES, METALS, treeAfter } from '../../shared/tui/progress';
-import { stepName, type HelpSetting } from '../../shared/tui/round';
+import { stepName, type HelpSetting, type TuiKind } from '../../shared/tui/round';
 import { fetchTuiSettings, fetchTuiStudent, saveTuiSetting } from '../data/tui';
 import { SettingChoice, useSetting } from '../teacher/Settings';
+import { SLIP_WORDS } from '../games/tui/words';
 
 const HELP_CHOICES = [
   { value: 'fade', label: 'Fades', detail: 'The picture help follows each child’s own challenges, for each way of asking (10 + 4, 4 + 10, 10 + ? = 14, 14 − 10): it starts at every berry counted in (level 5) and comes down a level after two good challenges at that way, comes back one after a hard one, and a way that is new to the child starts with more help while the others keep theirs. Three wrong first taps in a row bring every berry back for the rest of that challenge.' },
@@ -46,8 +47,12 @@ export async function tuiStudentSummary(student: string): Promise<string | null>
   const parts = [`${tree.day} of ${DAYS_PER_NEST} days done at this tree`, `Step ${s.step} ${stepName(s.step)}, help level ${s.helpMax ?? s.level}`];
   if (tree.nests) parts.push(`${tree.nests} Golden Nest${tree.nests === 1 ? '' : 's'}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
+
+/** The teacher's slip line: the commonest kind of first wrong choice, in plain words, or that none stands out yet. */
+const slipLine = (slip: TuiKind | null | undefined): string => (slip ? `Usual slip: ${SLIP_WORDS[slip]}` : 'No single slip stands out yet');
 
 const when = (iso: string, options: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-NZ', options);
 
@@ -58,7 +63,7 @@ export function TuiStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Tūī’s Ten Tree for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastFlowerDay, step, level: wholeLevel, helpMax, lastPlayed, hardest } = loaded.value.progress;
+  const { daysDone, lastFlowerDay, step, level: wholeLevel, helpMax, lastPlayed, hardest, slip } = loaded.value.progress;
   const level = helpMax ?? wholeLevel;
   const tree = treeAfter(daysDone);
   const flowers = METALS.map((metal) => [metal, tree.flowers.filter((m) => m === metal).length] as const)
@@ -75,6 +80,7 @@ export function TuiStudentPanel({ student }: { student: string }) {
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Nests so far: {tree.nests}.
       </p>
       {hardest?.length ? <p>Finding these hardest: {hardest.map(factWords).join(', ')}.</p> : <p>No fact is giving trouble right now.</p>}
+      <p>{slipLine(slip)}.</p>
     </section>
   );
 }

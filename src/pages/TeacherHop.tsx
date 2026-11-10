@@ -7,6 +7,8 @@ import { DAYS_PER_JAR, METALS, pondAfter } from '../../shared/hop/progress';
 import { fetchHopSettings, fetchHopStudent, saveHopSetting } from '../data/hop';
 import { FRIEND_NAMES } from '../games/hop/art';
 import { SettingToggle, useSetting } from '../teacher/Settings';
+import type { HopMistake } from '../../shared/hop/round';
+import { SLIP_WORDS } from '../games/hop/words';
 
 /** The drawer on the Games table, for the header's class. */
 export function HopTeacherSettings({ classId }: { classId: string }) {
@@ -34,8 +36,12 @@ export async function hopStudentSummary(student: string): Promise<string | null>
   const pond = pondAfter(s.daysDone);
   const parts = [`${pond.day} of ${DAYS_PER_JAR} days done on this pond`, `reached counting in ${STEP_WORD[s.reached]}`];
   if (pond.jars) parts.push(`${pond.jars} Golden Glow ${pond.jars === 1 ? 'Jar' : 'Jars'}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
+
+/** The teacher's slip line: the commonest kind of first wrong choice, in plain words, or that none stands out yet. */
+const slipLine = (slip: HopMistake | null | undefined): string => (slip ? `Usual slip: ${SLIP_WORDS[slip]}` : 'No single slip stands out yet');
 
 const when = (iso: string, options: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-NZ', options);
 
@@ -46,7 +52,7 @@ export function HopStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Hop’s Glow-worm Pond for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastPadDay, reached, lastPlayed } = loaded.value.progress;
+  const { daysDone, lastPadDay, reached, lastPlayed, slip } = loaded.value.progress;
   const pond = pondAfter(daysDone);
   const pads = METALS.map((metal) => [metal, pond.pads.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -61,6 +67,7 @@ export function HopStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Glow Jars so far: {pond.jars}.
       </p>
+      <p>{slipLine(slip)}.</p>
     </section>
   );
 }

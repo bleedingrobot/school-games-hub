@@ -7,6 +7,8 @@ import { beachAfter, DAYS_PER_PEARL, METALS } from '../../shared/pipi/progress';
 import { fetchPipiSettings, fetchPipiStudent, savePipiSetting } from '../data/pipi';
 import { FRIEND_NAMES } from '../games/pipi/art';
 import { SettingToggle, useSetting } from '../teacher/Settings';
+import type { WrongKind } from '../../shared/pipi/round';
+import { SLIP_WORDS } from '../games/pipi/words';
 
 /** The drawer on the Games table, for the header's class. */
 export function PipiTeacherSettings({ classId }: { classId: string }) {
@@ -34,8 +36,12 @@ export async function pipiStudentSummary(student: string): Promise<string | null
   const beach = beachAfter(s.daysDone);
   const parts = [`${beach.day} of ${DAYS_PER_PEARL} days done on this beach`, `reached ${LEVEL_WORDS[s.reached]}`];
   if (beach.pearls) parts.push(`${beach.pearls} Golden ${beach.pearls === 1 ? 'Pearl' : 'Pearls'}`);
+  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
+
+/** The teacher's slip line: the commonest kind of first wrong choice, in plain words, or that none stands out yet. */
+const slipLine = (slip: WrongKind | null | undefined): string => (slip ? `Usual slip: ${SLIP_WORDS[slip]}` : 'No single slip stands out yet');
 
 const when = (iso: string, options: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-NZ', options);
 
@@ -46,7 +52,7 @@ export function PipiStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Pipi’s Hidden Shells for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastShellDay, reached, lastPlayed } = loaded.value.progress;
+  const { daysDone, lastShellDay, reached, lastPlayed, slip } = loaded.value.progress;
   const beach = beachAfter(daysDone);
   const shells = METALS.map((metal) => [metal, beach.shells.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
@@ -61,6 +67,7 @@ export function PipiStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Pearls so far: {beach.pearls}.
       </p>
+      <p>{slipLine(slip)}.</p>
     </section>
   );
 }

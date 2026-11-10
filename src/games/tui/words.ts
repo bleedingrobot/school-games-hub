@@ -82,3 +82,13 @@ export const WORDS = {
   whatsNext: 'You know ten and some. Now make ten to add bigger sums.',
   tryWeka: 'Try Weka',
 } as const;
+
+/** The teacher's "Usual slip" phrase for each kind of wrong choice a child can make here: short, plain, after "Usual slip:" (LEARNING-DESIGN rule 9). */
+export const SLIP_WORDS: Record<TuiKind, string> = {
+  reverse: 'swaps the digits',
+  tens: 'picks the ten on its own',
+  ones: 'picks the loose berries on their own',
+  off1: 'is one berry out',
+  total: 'picks the whole when asked for a part',
+  up: 'puts the ten on instead of taking it off',
+};

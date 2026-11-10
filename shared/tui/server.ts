@@ -16,11 +16,11 @@
  * Nothing that counts comes from the browser. A challenge finishes once.
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
-import { replay, type Tap } from './play';
+import { replay, slipsOf, type Tap } from './play';
 import { finishChallenge, nzDate } from './progress';
 import { fadeByKind, ROUND_OF_TEN, type KindLevels } from '../kit/help';
 import { kindsFromFacts, mergeSeen, readKinds, type SeenServices } from '../kit/seen';
-import { isSeed, kindOfKey, KIND_OF_WAY, makeRound, MAX_SEED, wayKind, placeAfter, startFor, topSecure, TOP_LEVEL, type HelpSetting, type Place, type Round } from './round';
+import { isSeed, kindOfKey, KIND_OF_WAY, makeRound, MAX_SEED, wayKind, placeAfter, startFor, topSecure, TOP_LEVEL, type HelpSetting, type Place, type TuiKind, type Round } from './round';
 
 export type TuiAction = 'load' | 'start' | 'finish' | 'seen';
 
@@ -67,7 +67,7 @@ export interface TuiServices extends SeenServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number; firstRight: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; slips: (TuiKind | null)[]; mistakes: number; firstRight: number }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Nests went up, so it gives the achievement. A failure is only logged. */
@@ -181,7 +181,7 @@ export async function handleTui(services: TuiServices, player: string, body: Rec
           ? s.kindLevels
           : fadeByKind(s.kindLevels, kept.round.goes.map((g, i) => ({ kind: wayKind(g.v), right: played.rightFirst[i] })), { ...ROUND_OF_TEN, topLevel: TOP_LEVEL }, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastFlowerDay: result.lastFlowerDay, ...place, kindLevels };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, slips: slipsOf(kept.round, taps), mistakes: played.mistakes, firstRight: played.firstRight });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
