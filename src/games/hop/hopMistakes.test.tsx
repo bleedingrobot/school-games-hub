@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { replay } from '../../../shared/hop/play';
-import { makeRound, showRound, stepKeys } from '../../../shared/hop/round';
+import { makeRound, showRound, sisterHop, stepKeys } from '../../../shared/hop/round';
 import { newStats } from '../../../shared/maths/leitner';
 import { Hops } from './Hops';
 import { hopLine } from './voiceLines';
@@ -105,7 +105,7 @@ describe("Hop's mistakes that teach", () => {
     expect(screen.getByRole('status').textContent).toContain(WORDS.why(hop.wrongs[0].kind, hop));
   });
 
-  it('looks together after the second wrong one, then asks the same hop again, and only the first tap is scored', () => {
+  it('looks together after the second wrong one, then asks a sister hop, and only the first tap is scored (a right tap on the sister sends the first hop’s right pick)', () => {
     const { round, hops, say, worms, tap, onDone } = setup();
     const [a, b, c] = hops[0].wrongs;
     tap(a.n);
@@ -115,12 +115,15 @@ describe("Hop's mistakes that teach", () => {
     expect(worms().getAllByRole('button').every((x) => x.hasAttribute('disabled'))).toBe(true);
     tap(c.n);
     act(() => vi.advanceTimersByTime(13000));
-    expect(say).toHaveBeenCalledWith(WORDS.nowTry);
+    expect(say).toHaveBeenCalledWith(WORDS.nowTry, expect.any(Function));
     expect(screen.getByText(WORDS.nowTry)).toBeTruthy();
-    // The same hop again, with all four glow-worms back.
+    // A sister hop (another fact of the same step), with its own four glow-worms and nothing pointed at.
+    const sister = sisterHop(round, 0, hops[0])!;
+    expect(sister.answer).not.toBe(hops[0].answer);
     expect(worms().getAllByRole('button').filter((x) => !x.hasAttribute('disabled'))).toHaveLength(4);
-    expect(worms().getAllByRole('button').map((x) => Number(x.textContent)).sort()).toEqual([...hops[0].choices].sort());
-    tap(hops[0].answer);
+    expect(worms().getAllByRole('button').map((x) => Number(x.textContent)).sort()).toEqual([...sister.choices].sort());
+    expect(document.querySelector('.hp-worm--pointed')).toBeNull();
+    tap(sister.answer);
     act(() => vi.advanceTimersByTime(2500));
     for (let i = 1; i < hops.length; i++) {
       tap(hops[i].answer);
