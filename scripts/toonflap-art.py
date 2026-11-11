@@ -34,8 +34,10 @@ SCENE = {
        'shadows, flat flower-shaped clouds floating in the water in pale blue-green and pink. ',
     4: 'Classic 1940s cel-animation cartoon background, richly painted mid-century interior with soft light and real shadows and no '
        'outlines, warm wood brown, cream walls, mint green, deep red and cheese gold, everything enormous, seen from floor level. ',
-    5: 'Flat bright prime-time TV cartoon art, clean even medium-thin black outlines on everything, flat colours with almost no '
-       'shadows, a bright blue sky with puffy white clouds, green lawns, warm pinks and lilacs, a simple rounded cheerful suburb. ',
+    5: '1990s American prime-time sitcom cel animation background art, hand-drawn with thin slightly wobbly dark brown outlines, flat '
+       'cel colours with one hard-edged darker shadow tone, warm saturated palette of salmon pink, mint green, mustard, tan, '
+       'orange and lilac, a clean cyan-blue sky with big soft fluffy white clouds that have no outlines, a 1960s American suburb at '
+       'normal human scale seen from street level, wide lawns, telephone poles with sagging wires, rounded old cars, lumpy trees. ',
     6: '1970s Saturday-morning mystery cartoon background, moody painted night scene with soft watercolour-like gradients and no '
        'outlines, deep indigo, teal fog, sickly green, orange lamp glow and purple shadows, silly-spooky and not scary. ',
     7: 'Construction-paper cut-out animation, every shape a flat piece of coloured paper with slightly uneven cut edges, no outlines, '
@@ -55,8 +57,9 @@ THING = {
        'big expressive eyes with black pie-cut pupils, zany slapstick energy. ',
     3: SCENE[3].replace(', flat flower-shaped clouds floating in the water in pale blue-green and pink', '') + 'Big round eyes. ',
     4: 'Classic 1940s cel-animation cartoon style, soft dark-brown outlines, soft painted shading, large oval eyes, elastic and fluid. ',
-    5: 'Flat bright prime-time TV cartoon style, clean even medium-thin black outlines, flat colours, big round white eyes with dot pupils, '
-       'simple four-finger hands. ',
+    5: '1990s American prime-time sitcom cel animation style, thin even dark brown outlines, flat cel colours with one hard-edged '
+       'shadow tone, characters with huge round bulging white eyes that touch each other with tiny dot pupils and a big overbite and a round bulb '
+       'nose and no chin and thin arms and legs and four-fingered hands and pale peach skin and a gormless happy grin. ',
     6: '1970s Saturday-morning mystery cartoon style, thick black outlines, flat colour, simple limited-animation poses, oval eyes. ',
     7: 'Construction-paper cut-out animation style, every shape a flat piece of coloured paper with slightly uneven cut edges, no '
        'outlines, faint paper texture and tiny drop shadows between layers, very simple and deliberately crude. Two touching round white '
@@ -90,8 +93,9 @@ WORLDS = {
     4: ('a huge cosy empty kitchen seen from floor level, giant table and chair legs, cupboards, a black and white checked floor, '
         'a little arched mouse hole in the skirting board', 'a row of giant cheese wedges, a fallen spoon, tins and cups along the floor',
         'a very tall polished wooden table leg with a big wedge of holey yellow cheese on top'),
-    5: ('a wide cheerful cartoon suburb, flat-front houses, round-topped trees, a far-off power station with two cooling towers, puffy '
-        'white clouds in a bright blue sky', 'a row of round green hedges, letterboxes and picket fences along the footpath',
+    5: ('a sunny suburban street seen flat side-on from across the road, a long row of 1960s split-level houses in salmon, mint and tan facing the viewer side by side, big front lawns, telephone poles and wires, lumpy '
+        'green trees, rolling hills behind and a far-off power station with two grey cooling towers', 'a row of lumpy green hedges, '
+        'mailboxes on posts, a fire hydrant and a short white picket fence along the footpath',
         'a very tall thick round advertising pillar with pink and lilac stripes and a little round dome on top'),
     6: ('a creaky crooked haunted mansion on a hill under a big full moon, a purple night sky, bare twisty trees and drifting fog',
         'a row of crooked gravestones, pumpkins, bare twisty bushes and a broken iron fence along the ground',
@@ -122,8 +126,8 @@ FLYERS = {
     'bathtub-boat': (3, 'a white claw-foot bathtub flying with bubbles foaming over the top, a little orange fish wearing swimming goggles '
                      'sitting in it'),
     'mousetrap-glider': (4, 'a small grey mouse with big round ears and a green cap riding a wooden mousetrap fitted with paper glider wings'),
-    'donut-cruiser': (5, 'a giant pink-iced donut with rainbow sprinkles flying, a cheerful man with curly red hair, a green cap and an '
-                      'orange jumper riding on top'),
+    'donut-cruiser': (5, 'a giant pink-iced donut with rainbow sprinkles flying, ridden by a lanky man with spiky black hair, '
+                      'a blue cap and a mint green shirt, waving, his big bulging eyes touching, a big overbite'),
     'mini-van': (6, 'a small rounded plain teal and orange minivan with little white feathered wings and round headlights'),
     'toilet-rocket': (7, 'a shiny white porcelain toilet bowl with its lid up, flying with a rocket flame puffing from underneath, a little round boy in a pink knitted '
                       'bobble hat and a yellow raincoat sitting on it, grinning'),
@@ -148,6 +152,10 @@ EXTRAS = {
     'ghost': (6, 'a silly friendly white sheet ghost with a wobbly tail and a goofy grin, puffing its cheeks to blow'),
     'steam': (None, 'a big fluffy round cloud of white steam rising in swirly curls, soft and puffy'),
     'comet': (10, 'a small round comet with a smiling face and a long glowing orange and teal tail'),
+    # Zones and bumps the game drew in code until 11 Nov 2026 (James: paint everything possible).
+    'gust': (None, 'a swirling gust of icy wind, three curly pale blue wind streaks blowing to the left with snowflakes tumbling in them'),
+    'bubble': (None, 'one big round soap bubble, very pale blue and see-through with a rainbow sheen and a white shine spot'),
+    'bump-stars': (None, 'a little ring of five spinning yellow cartoon stars and tiny swirls, the kind seen after a bonk'),
 }
 
 SQUARE = (832, 832)
@@ -171,6 +179,9 @@ for f, (lvl, words) in FLYERS.items():
             PICTURES[f'{f}-{pose}'] = (style + f'{words.capitalize()}, {how}.' + FLYING + KIDS, SQUARE, None)
     else:
         PICTURES[f'{f}-glide'] = (style + words.capitalize() + '.' + FLYING + KIDS, SQUARE, None)
+for f, (lvl, words) in FLYERS.items():
+    PICTURES[f'{f}-dizzy'] = ((THING[lvl] if lvl else PLAIN) + words.capitalize() + ', dizzy after a bump, tumbling and tilted, swirly '
+                              'spiral eyes and a wobbly grin, little stars circling its head.' + FLYING + KIDS, SQUARE, None)
 PICTURES['fantail-perched'] = (PLAIN + FLYERS['fantail'][1].capitalize() + ', perched happily on a small wooden post, wings folded, tail '
                                'fanned, side view facing right.' + SPRITE + KIDS, SQUARE, None)
 PICTURES['fantail-cheer'] = (PLAIN + FLYERS['fantail'][1].capitalize() + ', cheering with both wings thrown up in the air and a big happy '
@@ -183,6 +194,7 @@ for e, (lvl, words) in EXTRAS.items():
     PICTURES[f'extra-{e}'] = ((THING[lvl] if lvl else PLAIN) + words.capitalize() + '.' + SPRITE + KIDS, SQUARE, None)
 PICTURES['ui-perch'] = (PLAIN + 'A short wooden post with a little red and yellow triangle flag on top, a checkpoint marker.' + SPRITE, SQUARE, None)
 PICTURES['ui-nest'] = (PLAIN + 'A round cosy bird nest of woven twigs and soft feathers, seen from the side, a finish line goal.' + SPRITE, SQUARE, None)
+PICTURES['ui-badge'] = (PLAIN + 'A blank round bright yellow badge coin with a thick orange rim and nothing written on it.' + SPRITE, SQUARE, None)
 PICTURES['ui-sign'] = (PLAIN + 'A blank round white wooden sign with a thick friendly border and nothing written on it.' + SPRITE, SQUARE, None)
 PICTURES['map'] = (PLAIN + 'A wide cartoon adventure map seen from above, a winding dotted trail passing through ten little worlds in a '
                    'row, each in its own colours: a sunny backyard, a red desert canyon, a bright undersea reef, a giant kitchen, a '
@@ -199,7 +211,7 @@ PICTURES['card'] = (PLAIN + 'Wide game card scene, 16:9: a cute round grey-brown
 
 def seed_for(name: str, n: int) -> int:
     # Poses of one flyer share a seed (the part before the pose), so they look alike.
-    base = name.rsplit('-', 1)[0] if name.endswith(('-glide', '-up', '-perched', '-cheer')) else name
+    base = name.rsplit('-', 1)[0] if name.endswith(('-glide', '-up', '-perched', '-cheer', '-dizzy')) else name
     return (sum(map(ord, base)) * 7919 + n * 104729) % 2**32
 
 

@@ -31,6 +31,6 @@ describe('the painted pictures', () => {
   it('gives undefined for anything not painted, so the stand-in shows, and falls back to glide for a missing pose', () => {
     expect(worldArt(99)).toBeUndefined();
     expect(flyerArt('nobody')).toBeUndefined();
-    if (there.includes('flyers/jet-bot-glide')) expect(flyerArt('jet-bot', 'dizzy')).toBe(flyerArt('jet-bot'));
+    if (there.includes('flyers/jet-bot-glide')) expect(flyerArt('jet-bot', 'up')).toBe(flyerArt('jet-bot'));
   });
 });
