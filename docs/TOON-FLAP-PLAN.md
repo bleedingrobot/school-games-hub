@@ -154,7 +154,7 @@ Earned for real achievements, all sparkly and colourful (small pictures plus a c
 
 - **The server decides every unlock** from saved runs (`my_toonflap()`), so it follows the pupil to any Chromebook. Picks are saved with the next run.
 - **Unlock moment:** a short celebration on the results screen with Bella ("You unlocked a new flyer!", "New trail!", "You earned a revive potion!": fixed lines, so they can be clips).
-- **Numbers** (`UNLOCK_RUNS = 3`, potion rules) live in `config.ts` for the sim to check.
+- **Numbers** (`UNLOCK_RUNS`: 15 finishes on levels 1-5, 10 on 6-10 since 11 Nov 2026, was 3; potion rules) live in `config.ts` for the sim to check.
 
 ## 6. Card art (item 6)
 
@@ -217,7 +217,7 @@ Changes from the plan, found while building:
 - **A bump puts the bird back just in front of the wall it hit** (in the opening, a little low), not at the last perch, so a bump really costs about 3 seconds (Marble Rush works the same way since James's 20 Oct change). Hovering (start, after a bump, on a perch) costs no time; the next tap flies on.
 - **Perches sit at the height of the next opening**, so the tap that flies on doesn't send the bird into the next wall.
 - **Revive potions: 10 checks right in a row** (the run carries on between levels; no level has 5 checks, so "5 in one run" couldn't happen) or a first gold. The sim's steady pupil gets about 1.3 a week.
-- **All 10 levels open quickly:** bumps never end a run, so a pupil playing 8 runs a sitting opens all 10 in about a week, not 3. Flyers (3 finishes each) and golds are the longer goals.
+- **All 10 levels open quickly:** bumps never end a run, so a pupil playing 8 runs a sitting opens all 10 in about a week, not 3. Flyers (15 finishes each on levels 1-5, 10 on 6-10; was 3 until 11 Nov 2026) and golds are the longer goals.
 - Medal times (seconds, with maths / maths off): Toon Garden 28/31, Mesa Mayhem 35/41, Bubble Reef 38/46, Cheese Kitchen 41/51, Donut Town 42/55, Spooky Manor 48/61, Paper Peaks 45/60, Volcano Island 50/65, Robot City 53/71, Cosmic Storm 61/81. Silver allows 2 bumps and 1 miss.
 
 **F.3** the server. Migration `20261111000100_toonflap.sql`: `toonflap_progress` (one row a pupil: progress, picks, a version so two tabs can't both save) and `toonflap_runs` (each run's seed, the questions as the server made them, the marks, and the finished flight); `app_settings` columns `toonflap_enabled` (off), `toonflap_maths` ('on') and `toonflap_read_time` (on); `teacher_set_toonflap()`; the hub hooks (counts, points rules, players, last played; New Season clears nothing) and 10 achievements. Pupils can't read or change any of it; the `toonflap` function (`shared/toonflap/server.ts`) does everything: it makes each run's checks from the pupil's focus pack and the answer-gap questions from the confidence builders, sends the browser no answers, marks each check once, replays the flaps, refuses a finish quicker than the flight could take in real time, and gives points (finish 2, first finish 5, new gold 3) for the first 10 finished runs a day. After 30 starts in a day it suggests a break. The code switch (`src/games/toonflap/switch.ts`) is off.

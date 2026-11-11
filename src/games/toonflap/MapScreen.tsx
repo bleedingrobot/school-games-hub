@@ -1,6 +1,5 @@
 /** The map: a cartoon trail through the 10 worlds (docs/TOON-FLAP-PLAN.md, section 1). Tap a lit stop to fly it. */
-import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, type Progress } from '../../../shared/toonflap/collection';
-import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
+import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
 import { HELP_SETTINGS, type HelpSetting } from './guide';
@@ -128,7 +127,7 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
                       </span>
                       {flyer && (
                         <span className="tf-stop__flyer">
-                          {left === 0 ? `${flyer.name} unlocked` : `${UNLOCK_RUNS - left} of ${UNLOCK_RUNS} to unlock the ${flyer.name}`}
+                          {left === 0 ? `${flyer.name} unlocked` : `${unlockRuns(l.id) - left} of ${unlockRuns(l.id)} to unlock the ${flyer.name}`}
                         </span>
                       )}
                     </>

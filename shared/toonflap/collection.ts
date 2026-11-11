@@ -5,7 +5,7 @@
  * The server works these out from saved runs (stage F.3, `my_toonflap()`); the preview's trial backend uses the same
  * functions, so both agree.
  */
-import { POTION_STREAK, POTIONS_MAX, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
+import { EASY_LEVELS, POTION_STREAK, POTIONS_MAX, SKY_DASH_AFTER, UNLOCK_RUNS } from './config';
 import { LEVELS } from './levels';
 import type { Medal } from './engine';
 
@@ -14,7 +14,7 @@ export interface Flyer {
   name: string;
   /** What it looks like, for the stand-in drawing and the art plan. */
   look: string;
-  /** The level whose 3 finishes unlock it. Null: everyone has it (the fantail) or the secret one. */
+  /** The level whose finishes unlock it (`unlockRuns`). Null: everyone has it (the fantail) or the secret one. */
   level: string | null;
   /** A pupil's own idea. */
   pupils?: boolean;
@@ -117,8 +117,12 @@ export const opensTomorrow = (p: Progress, today: string): boolean => {
 };
 export const skyDashOpen = (p: Progress): boolean => record(p, LEVELS[SKY_DASH_AFTER - 1].id).finishes > 0;
 
+/** Finishes of a level that unlock its flyer: 15 on the easy levels (1 to 5), 10 on the harder ones. */
+export const unlockRuns = (level: string): number =>
+  (LEVELS.find((l) => l.id === level)?.n ?? 1) <= EASY_LEVELS ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
+
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
-export const finishesToUnlock = (p: Progress, level: string): number => Math.max(0, UNLOCK_RUNS - record(p, level).finishes);
+export const finishesToUnlock = (p: Progress, level: string): number => Math.max(0, unlockRuns(level) - record(p, level).finishes);
 
 export function flyersUnlocked(p: Progress): string[] {
   return FLYERS.filter((f) => (f.id === 'fantail' ? true : f.id === 'rainbow' ? golds(p) === LEVELS.length : f.level !== null && finishesToUnlock(p, f.level) === 0)).map((f) => f.id);
