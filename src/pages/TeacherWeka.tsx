@@ -3,6 +3,7 @@
  * header's class, and one line on a student's page that opens to show their stream and the facts they find hardest.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/weka/teacher.ts).
  */
+import { stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_BASKET, METALS, streamAfter } from '../../shared/weka/progress';
 import { parseKey, type LandKind } from '../../shared/weka/round';
 import type { HelpSetting } from '../../shared/weka/server';
@@ -35,7 +36,6 @@ export function WekaTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const LEVEL_WORDS: Record<number, string> = { 1: 'starting on 9', 2: 'starting on 8', 3: 'starting on 7 and 6', 4: 'all mixed' };
 
 /** "add:5+8" → "8 + 5" (bigger first, as the game shows it). */
 export const factWords = (key: string): string => {
@@ -43,15 +43,15 @@ export const factWords = (key: string): string => {
   return fact ? `${fact.big} + ${fact.small}` : key;
 };
 
-/** "12 of 30 days done at this stream · reached starting on 8 · 1 Golden Picnic Basket", or null if they haven't played. */
+/** "Step 2 of 5: Halves to 10 · 12 of 30 days done · 1 Golden Picnic Basket", or null if they haven't played. */
 export async function wekaStudentSummary(student: string): Promise<string | null> {
   const s = await fetchWekaStudent(student);
   if (!s) return null;
   const stream = streamAfter(s.daysDone);
-  const parts = [`${stream.day} of ${DAYS_PER_BASKET} days done at this stream`, `reached ${LEVEL_WORDS[s.reached]}`];
+  const parts = [stepWords('weka', s.reached), `${stream.day} of ${DAYS_PER_BASKET} days done`];
   if (stream.baskets) parts.push(`${stream.baskets} Golden Picnic Basket${stream.baskets === 1 ? '' : 's'}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 
@@ -76,7 +76,7 @@ export function WekaStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Weka’s Stepping Stones">
       <p>
-        Crossing with {FRIEND_NAMES[stream.friend]}. Stones: {stones}. Has reached {LEVEL_WORDS[reached]}.
+        Crossing with {FRIEND_NAMES[stream.friend]}. Stones: {stones}. On {stepWords('weka', reached)}.
         {lastStoneDay && <> Last stone changed {when(`${lastStoneDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

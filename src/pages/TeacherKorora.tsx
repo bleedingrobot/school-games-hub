@@ -3,8 +3,9 @@
  * header's class, and one line on a student's page that opens to show their pool and the facts they find hardest.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/korora/teacher.ts).
  */
+import { stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_FISH, METALS, poolAfter } from '../../shared/korora/progress';
-import { LEVELS, type WrongKind } from '../../shared/korora/round';
+import { type WrongKind } from '../../shared/korora/round';
 import type { HelpSetting } from '../../shared/korora/server';
 import { fetchKororaSettings, fetchKororaStudent, saveKororaSetting } from '../data/korora';
 import { FRIEND_NAMES } from '../games/korora/art';
@@ -35,9 +36,6 @@ export function KororaTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const LEVEL_WORDS: Record<number, string> = Object.fromEntries(
-  LEVELS.map((l) => [l.level, `${l.kind === 'double' ? 'doubles' : 'halves'} to ${l.to}`]),
-);
 
 /** "dbl:7" → "double 7", "half:14" → "half of 14", "oddeven:9" → "is 9 odd or even?" */
 export const factWords = (key: string): string => {
@@ -45,15 +43,15 @@ export const factWords = (key: string): string => {
   return kind === 'dbl' ? `double ${n}` : kind === 'half' ? `half of ${n}` : `is ${n} odd or even?`;
 };
 
-/** "12 of 30 days done at this pool · reached halves to 10 · 1 pair of gold shoes", or null if they haven't played. */
+/** "Step 2 of 5: Halves to 10 · 12 of 30 days done · 1 pair of gold shoes", or null if they haven't played. */
 export async function kororaStudentSummary(student: string): Promise<string | null> {
   const s = await fetchKororaStudent(student);
   if (!s) return null;
   const pool = poolAfter(s.daysDone);
-  const parts = [`${pool.day} of ${DAYS_PER_FISH} days done at this pool`, `reached ${LEVEL_WORDS[s.reached]}`];
+  const parts = [stepWords('korora', s.reached), `${pool.day} of ${DAYS_PER_FISH} days done`];
   if (pool.fish) parts.push(`${pool.fish} ${pool.fish === 1 ? 'pair' : 'pairs'} of gold shoes`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 
@@ -78,7 +76,7 @@ export function KororaStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Penguin Pairs">
       <p>
-        Crossing with {FRIEND_NAMES[pool.friend]}. Stepping stones: {pebbles}. Has reached {LEVEL_WORDS[reached]}.
+        Crossing with {FRIEND_NAMES[pool.friend]}. Stepping stones: {pebbles}. On {stepWords('korora', reached)}.
         {lastPebbleDay && <> Last pebble changed {when(`${lastPebbleDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

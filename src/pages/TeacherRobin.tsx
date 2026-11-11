@@ -3,8 +3,8 @@
  * header's class, and one line on a student's page that opens to show their baskets, step and commonest slip.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/robin/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import type { HelpSetting } from '../../shared/kit/help';
-import { stepName, type Step } from '../../shared/robin/config';
 import type { Slip } from '../../shared/robin/round';
 import { DAYS_PER_FEAST, METALS, basketsAfter } from '../../shared/robin/progress';
 import { FRIEND_NAMES } from '../../shared/robin/config';
@@ -50,14 +50,14 @@ export const SLIP_WORDS: Record<Slip, string> = {
   near: 'picking a number close to the answer',
 };
 
-/** "12 of 30 days done · Step 3 Give up to ten, help level 2 · 1 Golden Berry Feast · usual slip: giving too many", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Berry Feast · usual slip: giving too many", or null if they haven't played. */
 export async function robinStudentSummary(student: string): Promise<string | null> {
   const s = await fetchRobinStudent(student);
   if (!s) return null;
   const row = basketsAfter(s.daysDone);
-  const parts = [`${row.day} of ${DAYS_PER_FEAST} days done`, `Step ${s.step} ${stepName(s.step as Step)}, help level ${s.level}`];
+  const parts = [stepWords('robin', s.step), `${row.day} of ${DAYS_PER_FEAST} days done`, pictureHelp(s.level)];
   if (row.feasts) parts.push(`${row.feasts} Golden Berry Feast${row.feasts === 1 ? '' : 's'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -80,7 +80,7 @@ export function RobinStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Robin’s Berry Basket">
       <p>
-        With {FRIEND_NAMES[row.friend]}’s baskets: {things}. On Step {step} {stepName(step as Step)}, with help level {level} (5 is the most help, 0 is none).
+        With {FRIEND_NAMES[row.friend]}’s baskets: {things}. On {stepWords('robin', step)}, with {pictureHelp(level)} (5 is the most help, 0 is none).
         {lastDay && <> Last basket changed {when(`${lastDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

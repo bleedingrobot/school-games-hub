@@ -3,6 +3,7 @@
  * dots on or off for the header's class, and one line on a student's page that opens to show their beanstalk. Loaded only
  * when opened. The on/off switch is in the Games table row (src/games/beanstalk/teacher.ts).
  */
+import { stepWords } from '../teacher/foundational/config';
 import { dotsFor, DAYS_PER_EGG, METALS, stageTarget, stalkAfter } from '../../shared/beanstalk/progress';
 import { fetchBeanstalkSettings, fetchBeanstalkStudent, saveBeanstalkSetting } from '../data/beanstalk';
 import { FRIEND_NAMES } from '../games/beanstalk/art';
@@ -32,9 +33,9 @@ export async function beanstalkStudentSummary(student: string): Promise<string |
   const s = await fetchBeanstalkStudent(student);
   if (!s) return null;
   const stalk = stalkAfter(s.daysDone);
-  const parts = [`Bonds to ${stageTarget(s)}`, `${stalk.day} of ${DAYS_PER_EGG} days done on this beanstalk`];
+  const parts = [stepWords('beanstalk', s.stage), `${stalk.day} of ${DAYS_PER_EGG} days done`];
   if (stalk.eggs) parts.push(`${stalk.eggs} Golden ${stalk.eggs === 1 ? 'Egg' : 'Eggs'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 

@@ -348,7 +348,7 @@ describe('teacher view', () => {
     const user = userEvent.setup();
     renderAt('/teacher/c12/students', auth);
     await user.click(within(await roster()).getByRole('link', { name }));
-    await screen.findByText('Level 2 · 50 points');
+    await screen.findByText('Points level 2 · 50 points');
     return { user, manage: screen.getByRole('region', { name: 'Manage' }) };
   }
   const openKiwi = () => openStudent(/Brave Kiwi 7/);
@@ -420,7 +420,7 @@ describe('teacher view', () => {
     expect(within(tabs).getByRole('link', { name: 'Maths' })).toHaveAttribute('href', '/teacher/c12/maths');
     expect(within(tabs).queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
     await user.click(within(await roster()).getByRole('link', { name: /Brave Kiwi 7/ }));
-    await screen.findByText('Level 2 · 50 points');
+    await screen.findByText('Points level 2 · 50 points');
     const manage = screen.getByRole('region', { name: 'Manage' });
     expect(within(manage).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
     expect(within(manage).getByRole('button', { name: /New name/ })).toBeInTheDocument();
@@ -432,7 +432,7 @@ describe('teacher view', () => {
     await roster();
     await user.click(screen.getByRole('button', { name: 'Whole school' }));
     await user.click(await screen.findByRole('link', { name: /Wise Owl 1/ }));
-    await screen.findByText('Level 2 · 50 points');
+    await screen.findByText('Points level 2 · 50 points');
     const head = screen.getByRole('heading', { level: 2, name: /Wise Owl 1/ });
     expect(head).toHaveTextContent('You');
     expect(head).toHaveTextContent('Teacher');

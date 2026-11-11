@@ -252,7 +252,7 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                 {head('active', 'Last active')}
                 {head('shown', 'Questions (7 days)')}
                 {head('skipped', 'Skipped')}
-                {head('ladder', 'Ladder')}
+                {head('ladder', 'Maths ladder')}
                 {head('focus', 'Focus')}
               </tr>
             </thead>

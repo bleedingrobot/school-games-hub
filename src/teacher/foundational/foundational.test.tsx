@@ -4,7 +4,7 @@ import type { FoundationalClass } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
 import { parseQuickLooksStudent } from '../../data/foundational';
 import { foundationalAlerts, quickLooksAlerts } from './alerts';
-import { GAMES } from './config';
+import { GAMES, stepOf, stepWords } from './config';
 import { keyWords } from './ideas';
 import { stepName as pigeonStep } from '../../../shared/pigeon/round';
 import { stepName as lizardStep } from '../../../shared/lizard/round';
@@ -35,6 +35,20 @@ const data: FoundationalClass = {
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
 vi.mock('../../data/hop', () => ({ fetchHopEnabled: async () => true }));
 vi.mock('../../data/robin', () => ({ fetchRobinEnabled: async () => true }));
+
+describe('Step words', () => {
+  it('every game names every step in its order, and Hop counts in twos as step 3 of 6', () => {
+    for (const [id, g] of Object.entries(GAMES)) {
+      expect(g.levelWord).toBe('step');
+      expect(g.order.length).toBe(Object.keys(g.levels).length);
+      for (const v of g.order) expect(g.levels[v], `${id} ${v}`).toBeTruthy();
+    }
+    expect(stepWords('hop', 2)).toBe('Step 3 of 6: Counting in twos');
+    expect(stepOf('hop', 2)).toEqual({ n: 3, of: 6, name: 'Counting in twos' });
+    expect(stepWords('beanstalk', 0)).toBe('Step 1 of 4: Bonds to 10');
+    expect(stepOf('robin', null)).toBeNull();
+  });
+});
 
 describe('Foundational grid', () => {
   it('shows each pupil with a mark for every idea, and the Hop alert names made-up pupils and "and N more"', async () => {
@@ -143,7 +157,7 @@ describe('the older games keep up with their longer ladders (S23)', () => {
 
   it('shows a Hop pupil on step 200 as top with its name, and one on step 3 with its name and not top', () => {
     const at = (level: number) => tracksOf({ games: { hop: { daysDone: 4, lastDay: '2026-11-06', level, recent: [] } }, quickLooks: null }).find((t) => t.id === 'hop')!;
-    expect(at(200)).toMatchObject({ levelLabel: 'Counting in tens past 100', top: true });
-    expect(at(3)).toMatchObject({ levelLabel: 'Counting in threes', top: false });
+    expect(at(200)).toMatchObject({ levelLabel: 'Step 6 of 6: Counting in tens past 100', top: true });
+    expect(at(3)).toMatchObject({ levelLabel: 'Step 4 of 6: Counting in threes', top: false });
   });
 });

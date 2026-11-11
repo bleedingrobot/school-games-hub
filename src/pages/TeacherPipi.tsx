@@ -3,6 +3,7 @@
  * off for the header's class, and one line on a student's page that opens to show their beach. Loaded only when opened.
  * The on/off switch is in the Games table row (src/games/pipi/teacher.ts).
  */
+import { stepWords } from '../teacher/foundational/config';
 import { beachAfter, DAYS_PER_PEARL, METALS } from '../../shared/pipi/progress';
 import { fetchPipiSettings, fetchPipiStudent, savePipiSetting } from '../data/pipi';
 import { FRIEND_NAMES } from '../games/pipi/art';
@@ -27,16 +28,14 @@ export function PipiTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const LEVEL_WORDS = { 1: 'wholes 3 to 5', 2: 'wholes 6 and 7', 3: 'wholes 8 to 10' } as const;
-
-/** "12 of 30 days done on this beach · reached wholes 6 and 7 · 1 Golden Pearl", or null if they haven't played. */
+/** "Step 2 of 5: Halves to 10 · 12 of 30 days done · 1 Golden Pearl", or null if they haven't played. */
 export async function pipiStudentSummary(student: string): Promise<string | null> {
   const s = await fetchPipiStudent(student);
   if (!s) return null;
   const beach = beachAfter(s.daysDone);
-  const parts = [`${beach.day} of ${DAYS_PER_PEARL} days done on this beach`, `reached ${LEVEL_WORDS[s.reached]}`];
+  const parts = [stepWords('pipi', s.reached), `${beach.day} of ${DAYS_PER_PEARL} days done`];
   if (beach.pearls) parts.push(`${beach.pearls} Golden ${beach.pearls === 1 ? 'Pearl' : 'Pearls'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 
@@ -61,7 +60,7 @@ export function PipiStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Pipi’s Hidden Shells">
       <p>
-        On the beach with {FRIEND_NAMES[beach.friend]}. Magic shells: {shells}. Has reached {LEVEL_WORDS[reached]}.
+        On the beach with {FRIEND_NAMES[beach.friend]}. Magic shells: {shells}. On {stepWords('pipi', reached)}.
         {lastShellDay && <> Last shell changed {when(`${lastShellDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

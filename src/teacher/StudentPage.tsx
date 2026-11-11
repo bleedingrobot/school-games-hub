@@ -144,14 +144,14 @@ function StudentDetail({ card }: { card: StudentCard }) {
         </h2>
         {detail ? (
           <p className="person-panel__summary">
-            Level {detail.level} · {detail.points} points
+            Points level {detail.level} · {detail.points} points
           </p>
         ) : (
           <p className="panel__empty">{failed ?? 'Loading…'}</p>
         )}
         {card.focus && (
           <dl className="student-page__facts-list">
-            <dt>Ladder</dt>
+            <dt>Maths ladder</dt>
             <dd>{ladderText(card.focus)}</dd>
             <dt>Focus</dt>
             <dd>{focusText(card.focus)}</dd>

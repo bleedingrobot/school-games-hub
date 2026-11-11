@@ -7,7 +7,7 @@ import { stuckFlags, type Flag, type Recent, type Track } from '../../../shared/
 import { nzDay } from '../../../shared/maths/leitner';
 import { GAME_IDS, type FoundationalClass, type FoundationalPupil } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
-import { FLAG_RULES, GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from './config';
+import { FLAG_RULES, GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME, stepWords } from './config';
 import { IDEAS, ideaCell, type IdeaCell } from './ideas';
 
 export interface PupilRow {
@@ -30,7 +30,7 @@ export function tracksOf(pupil: FoundationalPupil | undefined): Track[] {
       id,
       label: words.name,
       level: g.level,
-      levelLabel: g.level === null ? null : (words.levels[g.level] ?? null),
+      levelLabel: stepWords(id, g.level) || null,
       top: g.level !== null && g.level === words.top,
       daysDone: g.daysDone,
       lastDay: g.lastDay,

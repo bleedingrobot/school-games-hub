@@ -3,8 +3,9 @@
  * header's class, and one line on a student's page that opens to show their tree and the facts they find hardest.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/tui/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_NEST, FRIEND_NAMES, METALS, treeAfter } from '../../shared/tui/progress';
-import { stepName, type HelpSetting, type TuiKind } from '../../shared/tui/round';
+import { type HelpSetting, type TuiKind } from '../../shared/tui/round';
 import { fetchTuiSettings, fetchTuiStudent, saveTuiSetting } from '../data/tui';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 import { SLIP_WORDS } from '../games/tui/words';
@@ -39,15 +40,15 @@ export const factWords = (key: string): string => {
   return m ? (m[1] === 'less' ? `1${m[2]} − 10` : `10 + ${m[2]}`) : key;
 };
 
-/** "12 of 30 days done at this tree · Step 3 How many more?, help level 2 · 1 Golden Nest · hardest: 10 + 4, 10 + 7", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Nest · hardest: 10 + 4, 10 + 7", or null if they haven't played. */
 export async function tuiStudentSummary(student: string): Promise<string | null> {
   const s = await fetchTuiStudent(student);
   if (!s) return null;
   const tree = treeAfter(s.daysDone);
-  const parts = [`${tree.day} of ${DAYS_PER_NEST} days done at this tree`, `Step ${s.step} ${stepName(s.step)}, help level ${s.helpMax ?? s.level}`];
+  const parts = [stepWords('tui', s.step), `${tree.day} of ${DAYS_PER_NEST} days done`, pictureHelp(s.helpMax ?? s.level)];
   if (tree.nests) parts.push(`${tree.nests} Golden Nest${tree.nests === 1 ? '' : 's'}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 
@@ -73,7 +74,7 @@ export function TuiStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Tūī’s Ten Tree">
       <p>
-        At {FRIEND_NAMES[tree.friend]}’s tree. Flowers: {flowers}. On Step {step} {stepName(step)}, with help level {level}, the highest of the four ways of asking (5 is every berry counted in, 0 is numbers only).
+        At {FRIEND_NAMES[tree.friend]}’s tree. Flowers: {flowers}. On {stepWords('tui', step)}, with {pictureHelp(level)}, the highest of the four ways of asking (5 is every berry counted in, 0 is numbers only).
         {lastFlowerDay && <> Last flower changed {when(`${lastFlowerDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>
