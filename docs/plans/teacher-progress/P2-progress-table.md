@@ -1,6 +1,6 @@
 # P2: Progress tab: every game's steps for the class
 
-**Size:** M · **Needs a migration:** no · **Waits for:** P1 (uses stepOf) and James's answer on where the view lives (default: a new tab)
+**Size:** M · **Needs a migration:** no · **Waits for:** P1 (uses stepOf). James chose a new tab beside Today (11 Nov 2026)
 
 **What's wrong:** No page shows the step for the whole class. A teacher opens each pupil, then each folded game line: about 430 clicks for 24 pupils in 6 games.
 
