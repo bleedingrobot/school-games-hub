@@ -1,6 +1,6 @@
 # Review of the game development guide (11 Nov 2026)
 
-Status: review and plan only. `docs/GAME_DEVELOPMENT_GUIDE.md` is unchanged. Checked against `main` at `4d24fb4` (after #399).
+Status: done. G1 and G2 merged in #403; G3 to G7 merged together in the PR that made `docs/game-guide/` (see git log). The old `docs/GAME_DEVELOPMENT_GUIDE.md` is now a pointer. Checked against `main` at `4d24fb4` (after #399).
 
 **Reader.** Only Claude reads the guide (James, 11 Nov 2026). So the test is: can a Claude session, often a cheaper model, build a new game from an empty branch to live by following it, without reading the whole repo and without being misled? Human-friendly prose, history and stories are cost, not value.
 
@@ -63,12 +63,12 @@ The same cards, each with a copy-ready prompt and a shared status, are on the **
 
 | Card | Change | Covers | Why | Size | Waits for | Done |
 |---|---|---|---|---|---|---|
-| G1 | Fix the rules that are wrong today, the starter prompt, and the Toon Flap and kit status lines | T1, T3-T8, T10, T12 | They actively mislead a model now | S | nothing | |
-| G2 | One test rule, said once in TESTING.md | T2 | Biggest gap between rule and practice | S | James's choice | |
-| G3 | Split into `docs/game-guide/` (README + one file per topic), each rule once, history cut | T9, T11, section 3 | A model reads only the part it needs; less drift | L | G1, G2, James's choice | |
-| G4 | One start-to-live checklist at the top, junior and older routes tagged | M11, section 3 | One route to follow and tick | M | G3 | |
-| G5 | Add the missing lessons | M1-M10 | Stops lessons being learnt again | M | G3 | |
-| G6 | Copy-ready templates (plan, migration, Foundational entry, art config, go-live PR) | section 3 | Fewer small mistakes | M | G3 | |
-| G7 | Keep it true: fix-the-guide-in-the-same-PR rule, a link check | T10 | Stops this review being needed again | S | G4, G5 | |
+| G1 | Fix the rules that are wrong today, the starter prompt, and the Toon Flap and kit status lines | T1, T3-T8, T10, T12 | They actively mislead a model now | S | nothing || #403 |
+| G2 | One test rule, said once in TESTING.md | T2 | Biggest gap between rule and practice | S | James's choice || #403 |
+| G3 | Split into `docs/game-guide/` (README + one file per topic), each rule once, history cut | T9, T11, section 3 | A model reads only the part it needs; less drift | L | G1, G2, James's choice || with G3 |
+| G4 | One start-to-live checklist at the top, junior and older routes tagged | M11, section 3 | One route to follow and tick | M | G3 || with G3 |
+| G5 | Add the missing lessons | M1-M10 | Stops lessons being learnt again | M | G3 || with G3 |
+| G6 | Copy-ready templates (plan, migration, Foundational entry, art config, go-live PR) | section 3 | Fewer small mistakes | M | G3 || with G3 |
+| G7 | Keep it true: fix-the-guide-in-the-same-PR rule, a link check | T10 | Stops this review being needed again | S | G4, G5 || with G3 |
 
-Two choices for James (asked on question cards): how strict the test rule is (recommended: 8 for an older game; a junior game may add the voice test and up to 4 screen tests), and the shape (recommended: a folder of short parts, with the old file as a pointer).
+James chose (11 Nov 2026): how strict the test rule is 8 for an older game, and a junior game may add the voice test and up to 4 screen tests; the shape: a folder of short parts, with the old file as a pointer.
