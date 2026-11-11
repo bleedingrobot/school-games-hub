@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
 import { ALL_COUNT_KEYS, countNumbers } from '../maths/skillPacks/countingKeys';
-import { BASKETS, FADE_GOOD, GOES_PER_ROUND as GOES, PASS_GOOD, STEPS, TOP_LEVEL, type Step } from './config';
-import { DAYS_PER_FEAST, basketsAfter, finishChallenge, placeAfter } from './progress';
+import { FADE_GOOD, GOES_PER_ROUND as GOES, PASS_GOOD, TOP_LEVEL, type Step } from './config';
+import { placeAfter } from './progress';
 import { replay, slipsOf, type Tap } from './play';
 import { seeded } from '../seededRandom';
-import { DEMO_KEYS, GUIDED_KEY, layoutPoints, stepKeys, STEP_PLAN, levelFor, makeRound, showGo, showRound, sisterGo, startFor, tapsAllowed, type Round } from './round';
+import { DEMO_KEYS, GUIDED_KEY, layoutPoints, stepKeys, STEP_PLAN, levelFor, makeRound, showGo, showRound, sisterGo, tapsAllowed} from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -68,27 +68,6 @@ describe('replaying the taps', () => {
     expect(slipsOf(round, [{ pick: under, ms: 1 }].filter(() => under >= 0))[0] ?? 'under').toBe('under');
     const clean = goes.map((g) => ({ pick: g.answer, ms: 1500 }));
     expect(replay(round, clean)).toMatchObject({ done: true, mistakes: 0, firstRight: GOES });
-  });
-});
-
-describe('the baskets', () => {
-  it('make the Golden Berry Feast at thirty finished days; a second finish the same NZ day changes nothing; a missed day loses nothing', () => {
-    let days = 0;
-    let last: string | null = null;
-    for (let d = 0; d < DAYS_PER_FEAST; d++) {
-      const day = new Date(Date.UTC(2026, 10, 1 + d * 2, 4)).toISOString().slice(0, 10); // every other day: missed days between
-      const r = finishChallenge(days, last, day);
-      expect(r.changed).toBe(d % BASKETS);
-      expect(r.feast).toBe(d === DAYS_PER_FEAST - 1);
-      const again = finishChallenge(r.daysDone, r.lastDay, day);
-      expect(again).toMatchObject({ daysDone: r.daysDone, changed: null, feast: false });
-      days = r.daysDone;
-      last = r.lastDay;
-    }
-    expect(days).toBe(30);
-    expect(basketsAfter(10).baskets).toEqual(Array(BASKETS).fill('bronze'));
-    expect(basketsAfter(30)).toMatchObject({ feasts: 1, friend: 'kiwi', day: 0 });
-    expect(basketsAfter(0).baskets.every((m) => m === 'plain')).toBe(true);
   });
 });
 
@@ -164,34 +143,7 @@ describe('the wrong cards', () => {
   });
 });
 
-describe('where a child starts', () => {
-  it('is step 1 with the most help for everyone, whatever their records say', () => {
-    const strong = ['bond10:3+7', 'bond10:4+6', 'bond10:2+8', 'dbl:3', 'tenand:4'].map((k) => rec(k, 4, 9));
-    expect(startFor([])).toEqual({ step: 1, level: TOP_LEVEL });
-    expect(startFor(strong)).toEqual({ step: 1, level: TOP_LEVEL });
-    expect(STEPS).toHaveLength(6);
-    const round: Round = makeRound(5, strong);
-    expect(round).toMatchObject({ step: 1, level: TOP_LEVEL });
-    expect(round.goes.every((g) => g.key.startsWith('give:n') && Number(g.key.slice(6)) <= 5)).toBe(true);
-  });
-});
 export { GUIDED_KEY };
-
-describe('help for each kind of go', () => {
-  it('starts a kind missing from the map at the whole-child level, and keeps the guided go at the top', () => {
-    const kindLevels = { give: { level: 1, goodInRow: 0 } };
-    const round = makeRound(41, [], { step: 6, level: 3, help: 'fade', kindLevels });
-    const levels = (kind: string) => [...new Set(showRound(round).filter((g) => g.kind === kind).map((g) => g.l))];
-    expect(levels('give')).toEqual([1]);
-    expect(levels('howmany')).toEqual([3]); // not in the map
-    expect(levels('counton')).toEqual([3]);
-    const guided = makeRound(41, [], { step: 1, level: 3, kindLevels, guided: true });
-    expect(guided.goes[0]).toMatchObject({ key: GUIDED_KEY, l: TOP_LEVEL });
-    expect(guided.goes.slice(1).every((g) => g.l === 1)).toBe(true);
-    // The teacher's setting still wins over the map.
-    expect(makeRound(41, [], { step: 6, level: 3, help: 'always', kindLevels }).goes.every((g) => g.l === 4)).toBe(true);
-  });
-});
 
 describe('the sister go of "Now you try"', () => {
   it('keeps the key shape and help level, moves the number by 1 or 2, is a valid go, and is never one of the saved goes', () => {

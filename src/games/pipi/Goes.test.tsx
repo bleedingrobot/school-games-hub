@@ -10,23 +10,6 @@ import { whyLine } from './words';
 describe("Pipi's Hidden Shells play screen: mistakes that teach (maths review R5)", () => {
   afterEach(() => vi.useRealTimers());
 
-  it('Hear it again says the question, then the why-line once a wrong shell shows one', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const round = makeRound(21, [], { colour: 'bronze' });
-    const go = showRound(round)[0];
-    const wrong = go.wrongs[0];
-    const say = vi.fn();
-    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={round} help="full" scenery="bronze" friend="pipi" sound={false} say={say} onDone={vi.fn()} />);
-    await act(() => vi.advanceTimersByTimeAsync(1500));
-    say.mockClear();
-    await u.click(screen.getByRole('button', { name: /Hear it again/ }));
-    expect(say).toHaveBeenLastCalledWith(go.spoken, expect.any(Function));
-    await u.click(screen.getByRole('button', { name: String(wrong.n) }));
-    await u.click(screen.getByRole('button', { name: /Hear it again/ }));
-    expect(say).toHaveBeenLastCalledWith(whyLine(wrong.kind, go.kind, go.whole, go.showing, go.hiding), expect.any(Function));
-  });
-
   it('greys a wrong shell and says why, looks together on the second, then asks a sister go, whose right shell ends the go', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const u = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });

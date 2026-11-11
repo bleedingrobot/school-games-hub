@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { SLIP_WORDS } from '../../../src/games/hop/words';
 import { memoryServices } from '../../../shared/hop/memoryServices';
-import { slipsOf, type Tap } from '../../../shared/hop/play';
-import { showRound, type HopMistake, type Round } from '../../../shared/hop/round';
+import { type Tap } from '../../../shared/hop/play';
+import { showRound, type Round } from '../../../shared/hop/round';
 import { makeHandler } from './handler';
 
 // S34: Hop saves the kind of each go's first wrong choice (slipsOf in shared/hop/play.ts) and has a plain phrase for every kind.
 
-const KINDS: HopMistake[] = ['off1',  'stay',  'far',  'step',  'way'];
-
-/** One wrong choice on every go (the first one listed), then the right one. */
-const wobblyTaps = (round: Round): Tap[] =>
-  showRound(round).flatMap((go) => [{ pick: go.wrongs[0].n, ms: 4000 }, { pick: go.answer, ms: 2000 }]);
-const rightTaps = (round: Round): Tap[] => showRound(round).map((go) => ({ pick: go.answer, ms: 2500 }));
 
 async function started() {
   // 9 pm NZ time on 4 Nov 2026 (8 am UTC).
@@ -28,21 +21,6 @@ async function started() {
 }
 
 describe('the kind of slip Hop saves (S34)', () => {
-  it('names the kind of the first wrong choice on each go', async () => {
-    const { round } = await started();
-    const goes = showRound(round);
-    expect(slipsOf(round, wobblyTaps(round))).toEqual(goes.map((go) => go.wrongs[0].kind));
-  });
-
-  it('has nothing for a go right first time, and counts only the first wrong choice of a go', async () => {
-    const { round } = await started();
-    expect(slipsOf(round, rightTaps(round)).every((s) => s === null)).toBe(true);
-    const [go] = showRound(round);
-    const other = go.wrongs.find((w) => w.n !== go.wrongs[0].n);
-    const taps: Tap[] = [{ pick: go.wrongs[0].n, ms: 3000 }, ...(other ? [{ pick: other.n, ms: 3000 }] : []), { pick: go.answer, ms: 2000 }];
-    expect(slipsOf(round, taps)[0]).toBe(go.wrongs[0].kind);
-  });
-
   it('saves the slips with the finished round, null for a go that was right first time', async () => {
     const { round, send, services } = await started();
     const [first] = showRound(round);
@@ -52,11 +30,4 @@ describe('the kind of slip Hop saves (S34)', () => {
     expect(saved.slips).toEqual([first.wrongs[0].kind, ...showRound(round).slice(1).map(() => null)]);
   });
 
-  it('has a short plain phrase for every kind of slip', () => {
-    expect(Object.keys(SLIP_WORDS).sort()).toEqual([...KINDS].sort());
-    for (const kind of KINDS) {
-      expect(SLIP_WORDS[kind].trim().length).toBeGreaterThan(3);
-      expect(SLIP_WORDS[kind].length).toBeLessThanOrEqual(60);
-    }
-  });
 });

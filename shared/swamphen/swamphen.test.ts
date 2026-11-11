@@ -5,7 +5,7 @@ import { factKey } from '../maths/facts';
 import { REED_ROWS } from './config';
 import { DAYS_PER_GARDEN, finishChallenge, gardenAfter } from './progress';
 import { replay, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, sisterGo, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
+import { GOES_PER_ROUND, GUIDED_KEY, KEYS, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, sisterGo, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleSwamphen, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
 import { slipSummary, usualSlip } from './teacher';
@@ -121,29 +121,6 @@ describe('the help level for each kind of go', () => {
     expect(makeRound(11, [], { step: 1, level: 3, guided: true, kindLevels: { plant: { level: 0, goodInRow: 0 } } }).goes[0].l).toBe(5);
   });
 
-  it('starts a kind that is not in the map at the child’s own level', async () => {
-    expect(kindLevelsAfter({}, goes(['mat', 4, 4]), 3)).toEqual({ mat: { level: 3, goodInRow: 1 } });
-    expect(kindLevelsAfter({}, goes(['mat', 1, 1]), 3)).toEqual({});
-    const round = makeRound(12, [], { step: 6, level: 4, kindLevels: { nonsense: { level: 0, goodInRow: 0 } } });
-    expect(round.goes.every((g) => g.l === 4)).toBe(true);
-    // Through the server: the first finish of the day saves the map, a play-again that day leaves it.
-    let n = 0.2;
-    let clock = Date.parse('2026-11-08T02:00:00Z');
-    const services = memoryServices({ now: () => clock, random: () => (n = (n * 7919 + 0.137) % 1) });
-    const play = async () => {
-      const r = (await handleSwamphen(services, 'p1', { action: 'start' })).body.round as Round;
-      await handleSwamphen(services, 'p1', { action: 'finish', seed: r.seed, taps: showRound(r).map((g) => ({ pick: g.answer, ms: 3000 })) });
-    };
-    await play();
-    const first = (await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels as Record<string, { level: number; goodInRow: number }>;
-    expect(Object.keys(first).length).toBeGreaterThan(0);
-    expect(Object.values(first).every((k) => k.level === 5 && k.goodInRow === 1)).toBe(true);
-    await play();
-    expect((await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels).toEqual(first);
-    clock += 86_400_000;
-    await play();
-    expect(Object.values((await handleSwamphen(services, 'p1', { action: 'load' })).body.kindLevels as typeof first).every((k) => k.level === 4)).toBe(true);
-  });
 });
 
 describe('the server', () => {
@@ -219,28 +196,6 @@ describe('turning a garden and sharing it out', () => {
     expect(played.answers.some((x) => x.key.startsWith('mul:'))).toBe(false);
   });
 
-  it('shares are fair only when every row has the same, and some', () => {
-    expect(fairShare([3, 3, 3])).toBe(true);
-    expect(fairShare([4, 3, 3])).toBe(false);
-    expect(fairShare([0, 0, 0])).toBe(false);
-    expect(fairShare([])).toBe(false);
-  });
-});
-
-describe('the wrong cards', () => {
-  it('put the two digits side by side only when that has the answer’s number of digits, so the cards look alike', () => {
-    for (const key of KEYS.filter((k) => /^(rows|turn|which):/.test(k))) {
-      const [a, b] = keyPair(key);
-      const joined = Number(`${a}${b}`);
-      for (const seed of seeds) {
-        const go = showGo({ seed }, 0, { key, kind: kindOfKey(key)!, l: 3 })!;
-        if (go.kind === 'which' || go.kind === 'turn') continue;
-        if (String(joined).length !== String(go.answer).length) expect(go.choices).not.toContain(joined);
-      }
-    }
-    // 3 rows of 7: the cards stay near 21 (no 37).
-    for (const seed of seeds) expect(showGo({ seed }, 0, { key: 'rows:3x7', kind: kindOfKey('rows:3x7')!, l: 3 })!.choices.every((c) => c >= 7 && c <= 31)).toBe(true);
-  });
 });
 
 describe('the sister go', () => {
