@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cal@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 insert into public.classes (school_id, name, school_year, warp_code, archived) values
   (1, 'Isle Room', 2026, 'CDFGH', false), (1, 'Other Room', 2026, 'JKMNP', false);
 insert into public.class_members (student_id, class_id)
@@ -63,8 +65,8 @@ select throws_ok($$ select public.teacher_set_isles(true, true) $$, null, null, 
 
 -- ---- The teacher's switches ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_isles(true, false) $$, 'a teacher can switch it on and races off');
-select is((select (isles_enabled, isles_races)::text from public.app_settings limit 1), '(t,f)', '... and it is saved');
+select lives_ok($$ select public.teacher_set_isles(true, false, target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch it on and races off');
+select is((select (isles_enabled, isles_races)::text from public.app_settings where class_id = current_setting('test.cls')::uuid), '(t,f)', '... and it is saved');
 select pg_temp.reset();
 
 -- ---- Islands ----

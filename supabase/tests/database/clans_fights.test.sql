@@ -10,6 +10,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -71,12 +73,12 @@ select pg_temp.reset();
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(1)) ->> 'enabled', 'false', 'a student is told Clan Quest is off');
 select is(public.load_clan(pg_temp.id('e'), pg_temp.req(1)) ->> 'enabled', 'true', '... but a teacher can always try it');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_clans(true), true, 'a teacher can switch it on');
-select throws_ok($$ select public.teacher_set_clans(null) $$, '22023', null, '... but not to nothing');
+select is(public.teacher_set_clans(true, target_class => current_setting('test.cls')::uuid), true, 'a teacher can switch it on');
+select throws_ok($$ select public.teacher_set_clans(null, target_class => current_setting('test.cls')::uuid) $$, '22023', null, '... but not to nothing');
 select pg_temp.reset();
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(1)) ->> 'enabled', 'true', 'a student is told it is on');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select public.teacher_set_clans(false);
+select public.teacher_set_clans(false, target_class => current_setting('test.cls')::uuid);
 select pg_temp.reset();
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(1)) ->> 'enabled', 'false', '... and off again');
 

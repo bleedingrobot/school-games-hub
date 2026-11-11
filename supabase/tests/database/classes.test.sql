@@ -163,9 +163,9 @@ select ok(public.is_school_email('s102@otherschool.school.nz'), '(and still a sc
 select isnt(public.record_bot_game(pg_temp.uid(102), 'chess', 'easy', 'black', array['f2f3', 'e7e5', 'g2g4', 'd8h4'], 'won', 'checkmate', 2, false), null,
   'a student with no class can still play and save a game');
 select pg_temp.as(203);
-select lives_ok($$ select public.teacher_set_space_maths('off') $$, 'the admin sets every class and the school default to Off');
+select throws_ok($$ select public.teacher_set_space_maths('off') $$, '22023', 'Pick a class first.', 'a save with no class is refused, even for the admin (it used to change every class and the school default)');
 select pg_temp.reset();
-select is((select space_maths from public.settings_of(pg_temp.uid(102))), 'off', 'the student with no class follows the school default');
+select is((select space_maths from public.settings_of(pg_temp.uid(102))), 'choose', 'the student with no class follows the school default (which the refused save left alone)');
 update public.app_settings set space_maths = 'choose' where school_id = 2;
 select pg_temp.as(201);
 select lives_ok(format('select public.teacher_set_space_maths(%L, %L)', 'on', pg_temp.klass('A')), 'a teacher sets one of their classes to On');
@@ -177,7 +177,7 @@ select pg_temp.as(103);
 select is((select space_maths from public.app_settings), 'on', 'the website reads the settings of the student''s own class');
 select pg_temp.as(201);
 select throws_ok(format('select public.teacher_set_space_maths(%L, %L)', 'off', pg_temp.klass('B')), '42501', null, 'a teacher cannot change settings for a class they do not teach');
-select lives_ok($$ select public.teacher_set_multiplayer(false) $$, 'with no class given, a teacher changes all their own classes');
+select lives_ok(format('select public.teacher_set_multiplayer(false, %L)', pg_temp.klass('A')), 'a teacher names a class and only that class changes');
 select pg_temp.reset();
 select is((select multiplayer_enabled from public.app_settings where class_id = pg_temp.klass('A')), false, 'the class they teach changed');
 select is((select multiplayer_enabled from public.app_settings where class_id = pg_temp.klass('B')), true, 'a class they do not teach did not');

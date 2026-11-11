@@ -71,7 +71,7 @@ select pg_temp.reset();
 
 -- ---- The switch, per class ----
 select pg_temp.fin();
-select throws_ok($$ select public.teacher_set_training_first(null) $$, '22023', null, 'a missing setting is refused');
+select throws_ok(format('select public.teacher_set_training_first(null, %L)', current_setting('test.room_two')), '22023', null, 'a missing setting is refused');
 select throws_ok(format('select public.teacher_set_training_first(true, %L)', current_setting('test.ana_class')),
   '42501', null, 'a teacher cannot switch it on for a class they don''t teach');
 select lives_ok(format('select public.teacher_set_training_first(true, %L)', current_setting('test.room_two')), 'a teacher switches it on for their class');

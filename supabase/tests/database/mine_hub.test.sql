@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -46,10 +48,10 @@ select throws_ok($$ select public.teacher_set_mine(true) $$, null, null, 'a pupi
 select throws_ok($$ select public.mine_counts(auth.uid()) $$, '42501', null, 'pupils cannot call the hooks directly');
 select throws_ok($$ select public.mine_season(array[auth.uid()]) $$, '42501', null, '... or clear a season');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_mine(true) $$, 'a teacher can switch it on');
-select is((select mine_enabled from public.app_settings limit 1), true, '... and it is saved');
-select throws_ok($$ select public.teacher_set_mine(null) $$, '22023', null, 'a missing setting is refused');
-select lives_ok($$ select public.teacher_set_mine(false) $$, 'and off again');
+select lives_ok($$ select public.teacher_set_mine(true, target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch it on');
+select is((select mine_enabled from public.app_settings where class_id = current_setting('test.cls')::uuid), true, '... and it is saved');
+select throws_ok($$ select public.teacher_set_mine(null, target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'a missing setting is refused');
+select lives_ok($$ select public.teacher_set_mine(false, target_class => current_setting('test.cls')::uuid) $$, 'and off again');
 select pg_temp.reset();
 
 -- ---- Saving gives the first-finish and best signals, and the counts follow ----

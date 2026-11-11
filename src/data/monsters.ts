@@ -321,8 +321,8 @@ export async function fetchMonstersSettings(classId?: string | null): Promise<Mo
   return { enabled: data.monsters_enabled === true, topics: data.monsters_topics as TopicId[] };
 }
 
-export async function saveMonstersSettings(settings: MonstersSettings, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_monsters', { settings, target_class: classId ?? null });
+export async function saveMonstersSettings(settings: MonstersSettings, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_monsters', { settings, target_class: classId });
   forgetSettings();
   if (error) fail(error, 'We couldn’t save the Maths Monsters settings.');
 }

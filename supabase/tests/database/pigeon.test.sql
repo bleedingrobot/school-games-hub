@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -43,10 +45,10 @@ select throws_ok($$ select public.teacher_set_pigeon(true) $$, null, null, 'a pu
 
 -- ---- The teacher's switch and help setting ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_pigeon(enabled => true) $$, 'a teacher can switch it on');
-select lives_ok($$ select public.teacher_set_pigeon(help => 'always') $$, '... and keep the help on');
-select throws_ok($$ select public.teacher_set_pigeon() $$, '22023', null, 'a setting must be given');
-select throws_ok($$ select public.teacher_set_pigeon(help => 'lots') $$, '22023', null, '... and a help setting must be one of three');
+select lives_ok($$ select public.teacher_set_pigeon(enabled => true, target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch it on');
+select lives_ok($$ select public.teacher_set_pigeon(help => 'always', target_class => current_setting('test.cls')::uuid) $$, '... and keep the help on');
+select throws_ok($$ select public.teacher_set_pigeon(target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'a setting must be given');
+select throws_ok($$ select public.teacher_set_pigeon(help => 'lots', target_class => current_setting('test.cls')::uuid) $$, '22023', null, '... and a help setting must be one of three');
 select pg_temp.reset();
 select is((select pigeon_enabled from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), true, '... and the switch stays on');
 select is((select pigeon_help from public.app_settings where id = public.settings_id_of(pg_temp.id('0e'))), 'always', '... with the help always on');

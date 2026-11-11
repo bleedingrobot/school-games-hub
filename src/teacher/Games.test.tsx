@@ -223,7 +223,7 @@ describe('the Games table', () => {
     await user.click(bond);
     expect(data.saveBondMatchEnabled).toHaveBeenCalledWith(true, 'c14');
     expect(bond).toHaveAttribute('aria-checked', 'true');
-    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓')).toBeInTheDocument();
+    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓ Pupils see it when their home page next opens.')).toBeInTheDocument();
 
     const maths = await within(row(t, 'Wormholes & Black Holes')).findByRole('radiogroup', { name: 'Wormholes & Black Holes maths' });
     expect(data.fetchMathsSwitch).toHaveBeenCalledWith('c14');

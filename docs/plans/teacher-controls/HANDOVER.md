@@ -37,8 +37,10 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 
 ## Done and live
 
-- C1: Fix the rows that say the wrong thing (PR pending)
-- C5: Same words everywhere (PR pending)
+- C1: Fix the rows that say the wrong thing (PR #420)
+- C5: Same words everywhere (PR #422)
+- C3: Pupils see changes straight away (PR #423)
+- C2: Safer saves: every save names its class (PR #421)
 - C4: Games tab: what's on at a glance, and whole sections at once (PR #424)
 
 ## C1
