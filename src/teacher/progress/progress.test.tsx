@@ -156,10 +156,11 @@ describe('Progress', () => {
       </MemoryRouter>,
     );
     await screen.findByText('Pupil stuck');
-    expect(screen.getByRole('columnheader', { name: /Level Game/ })).toBeTruthy();
+    // The Other games column comes in once its cells have loaded, which can be after the pupils show on a busy machine.
+    expect(await screen.findByRole('columnheader', { name: /Level Game/ })).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: 'Other games' })).toBeTruthy();
     expect(screen.queryByRole('columnheader', { name: /Plain Game/ })).toBeNull();
-    expect(screen.getByRole('link', { name: /Pupil top, Level Game: 7 level passed/ })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: /Pupil top, Level Game: 7 level passed/ })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Pupil moving, Level Game: 4 level passed, not played for 10 school days/ })).toBeTruthy();
   });
 });
