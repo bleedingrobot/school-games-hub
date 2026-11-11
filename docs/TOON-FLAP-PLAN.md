@@ -36,17 +36,19 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 
 **Cartoon worlds, a different series' style each (11 Nov 2026).** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked for a different popular animated series' style for each level. Each world borrows a series' *style* (Level 3 Bubble Reef: the goofy undersea look), never its characters, names, logos or famous props. Which style goes with which level is in [TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md) section 1. Our cartoon fantail is the hero in every world.
 
+*Updated 11 Nov 2026 with the pupils' own picks: Looney Tunes, The Simpsons, SpongeBob, Tom and Jerry, Scooby-Doo and South Park's paper cut-out look are all in. Styles per level: [TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md) section 1.*
+
 | # | Name | Cartoon world | Length | Speed | Gap | Spacing | Checks | Answer gaps | New thing |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | Toon Garden | sunny cartoon backyard, smiling flowers, a picket fence | 30 s | slow | 5.0 | 2.6 s | 1 | none | Tap to flap (the guided first go) |
-| 2 | Wobbly Woods | trees with googly eyes that sway | 40 s | slow | 4.6 | 2.4 s | 2 | none | Walls a little higher and lower |
+| 2 | Mesa Mayhem | zany desert canyon, cactus, tall red rock towers | 40 s | slow | 4.6 | 2.4 s | 2 | none | Walls a little higher and lower |
 | 3 | Bubble Reef | goofy undersea cartoon town: coral houses, jellyfish, bubbles | 45 s | slow | 4.4 | 2.3 s | 2 | 1 (2 gaps) | First answer gap; floatier "underwater" flaps |
-| 4 | Candy Canyon | lollipop and jelly-bean walls | 50 s | medium | 4.2 | 2.2 s | 2 | 2 (2 gaps) | Walls that slide up and down slowly |
-| 5 | Dino Valley | friendly cartoon dinosaurs whose necks are the walls | 55 s | medium | 4.0 | 2.1 s | 3 | 2 (2 or 3 gaps) | Narrow and wide gaps mixed |
+| 4 | Cheese Kitchen | a giant kitchen seen by a mouse: table legs, cheese, mouse holes | 50 s | medium | 4.2 | 2.2 s | 2 | 2 (2 gaps) | Walls that slide up and down slowly (cupboard doors) |
+| 5 | Donut Town | a yellow-sky cartoon town with lamp posts and big chimneys | 55 s | medium | 4.0 | 2.1 s | 3 | 2 (2 or 3 gaps) | Narrow and wide gaps mixed |
 | 6 | Spooky Manor | silly-not-scary haunted house, wobbly ghosts | 60 s | medium | 3.9 | 2.0 s | 3 | 2 (3 gaps) | Drifting ghosts push you (like wind; arrows show which way) |
-| 7 | Robot City | neon cartoon city at night | 60 s | medium-fast | 3.8 | 1.9 s | 3 | 3 (3 gaps) | Darker sky, lit-up gaps |
+| 7 | Paper Peaks | a snowy mountain town made of paper cut-outs | 60 s | medium-fast | 3.8 | 1.9 s | 3 | 3 (3 gaps) | Wind gusts with snow |
 | 8 | Volcano Island | cartoon volcano, lava-lamp pools | 65 s | medium-fast | 3.7 | 1.9 s | 3 | 3 (3 gaps) | Steam puffs that push up |
-| 9 | Frosty Peaks | snowy peaks, cartoon penguins and snowmen | 70 s | fast | 3.6 | 1.8 s | 4 | 3 (3 gaps) | Sliding walls + wind together |
+| 9 | Robot City | neon cartoon city at night | 70 s | fast | 3.6 | 1.8 s | 4 | 3 (3 gaps) | Darker sky, lit-up gaps, sliding walls + wind |
 | 10 | Cosmic Storm | cartoon outer space, wobbly planets, comets | 80 s | fast | 3.5 | 1.7 s | 4 | 4 (3 gaps) | Everything, plus low gravity bursts |
 
 - **Each level is the same course every time** (fixed layout, so practice pays off and best times are fair). Which gap holds the right answer comes from the run's seed, as Marble's doors do.
@@ -76,8 +78,8 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 
 ## 4. Big goal, seasons, moves a day (guide 1a items 1 to 3)
 
-- **Big goal:** reach the Cosmic Storm nest (level 10) and collect all 10 birds (section 5a), then a gold on all 10 for the Rainbow Toon. A pupil playing 2 sittings a week should finish all 10 in about 3 weeks (sim to check); golds take longer.
-- **Season game? No**, it's fresh runs, like Marble. New Season clears only boards and the week's bests (`season_fn`); medals, levels opened and birds are kept.
+- **Big goal:** reach the Cosmic Storm nest (level 10) and collect all 10 flyers (section 5a), then a gold on all 10 for the Rainbow Toon. A pupil playing 2 sittings a week should finish all 10 in about 3 weeks (sim to check); golds take longer.
+- **Season game? No**, it's fresh runs, like Marble. New Season clears only boards and the week's bests (`season_fn`); medals, levels opened, flyers, trails and potions are kept.
 - **Moves a day: no limit** (it's practice; more maths is good). Points cap: only the first 10 finished runs a day earn points (Bond Match's rule), and a "Time for a break?" after 30 runs (`daily_limit`, like Marble). Join the "Unlimited turns today" list only if a cap ever blocks play (it doesn't), so not needed.
 
 ## 5. Progress bars and achievements (items 4 and 5)
@@ -95,23 +97,64 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 | Tailwind | Pick 20 right answer gaps | right gaps ≥ 20 | steady players | yes |
 | Gold Feathers | Gold on 5 levels | golds ≥ 5 | keen players | yes |
 | All Gold | Gold on all 10 (and the Rainbow Toon) | golds = 10 | a few | yes |
-| Bird Collector | Unlock 5 birds | birds unlocked ≥ 5 | most, in 3 weeks | yes |
-| Full Flock | Unlock every world's bird | birds unlocked = 10 | keen players | yes |
+| Flyer Collector | Unlock 5 flyers | flyers unlocked ≥ 5 | most, in 3 weeks | yes |
+| Full Hangar | Unlock every level's flyer | flyers unlocked = 10 | keen players | yes |
 
 **Points** (`add_game_points`, inside the hub's 40 a day): finish a level 2, first finish of a new level 5, a new gold 3. "Right answers earn no points" is said on How points work.
 
-## 5a. The bird collection (James, 11 Nov 2026)
+## 5a. Flyers, trails and revive potions (James and his pupils, 11 Nov 2026)
 
-*"Unlocking birds should be part of the challenge - like beat three times to unlock etc."*
+*James: "unlocking birds should be part of the challenge - like beat three times to unlock etc." Pupils then sent their own flyers, trails and potion idea.* Everything here is **looks or a second chance, never speed**: every flyer and trail flies exactly the same, so no one can buy or grind their way past the maths, and the server's replay check doesn't change.
 
-- **Start with one bird:** the Toon Fantail, in a plain cartoon look.
-- **Each world has its own bird**, drawn in that level's cartoon style (the Reef bird, the Clay bird, the Space-age bird …). **Finish a level 3 times to unlock its bird** (any medal). The map shows how close you are: "2 of 3 to unlock the Reef bird".
-- **Shiny version:** a gold on that level makes its bird shiny (a sparkle trail and gold edge, done in code, so no extra painting).
-- **Secret bird:** gold on all 10 unlocks the Rainbow Toon, the rarest bird.
-- **Pick any bird you've unlocked** on the Nest screen (before a level or from the map). Fly the clay bird through Bubble Reef if you like. **Birds are looks only:** every bird has exactly the same flying, so no bird is better and the replay check stays the same.
-- **The server decides unlocks** from saved runs (counted in `toonflap_runs`, sent in `my_toonflap()`), so they follow the pupil to any Chromebook and can't be faked. Picking a bird is saved with the next run.
-- **Unlock moment:** a short celebration on the results screen, with Bella: "You unlocked a new bird!" (one fixed line, so it can be a clip).
-- **Why 3:** at 2 sittings a week a pupil unlocks about 2 to 3 birds a week early on, and the third run of a level is where gold starts to feel possible. The number is in `config.ts` (`UNLOCK_RUNS`) for the sim to check.
+### Flyers (unlock one per level)
+
+Everyone starts with the **Toon Fantail**. **Finish a level 3 times** (any medal) to unlock that level's flyer, drawn in the level's cartoon style. The map shows "2 of 3 to unlock the Rocket Carrot". Five of the ten are the pupils' own ideas (★). Every rider is our own made-up character, never a real show's one.
+
+| Level | Flyer | Notes |
+|---|---|---|
+| start | Toon Fantail | plain cartoon look |
+| 1 Toon Garden | Puppy Plane: a puppy on a paper plane | |
+| 2 Mesa Mayhem | ★ Rocket Carrot: a flying carrot with a rabbit riding it | |
+| 3 Bubble Reef | Bathtub Boat: a bubbling bathtub with a fish in goggles | |
+| 4 Cheese Kitchen | ★ Mouse Trap Glider: a mouse riding a mousetrap | |
+| 5 Donut Town | ★ Donut Cruiser: a giant pink sprinkled donut with a man riding it | |
+| 6 Spooky Manor | ★ Mini Van: a flying mini van with little wings | our own colours, no flower pattern or writing |
+| 7 Paper Peaks | ★ Toilet Rocket: a flying toilet with a little round boy on it | a funny favourite; nothing rude |
+| 8 Volcano Island | Lava Rock Lizard: a fire lizard on a glowing rock | |
+| 9 Robot City | Jet Bot: a small robot with a jet pack | |
+| 10 Cosmic Storm | Saucer Kid: an alien kid in a flying saucer | |
+| secret | Rainbow Toon | gold on all 10 |
+
+- **Shiny version:** a gold on a level makes its flyer shiny (sparkles and a gold edge, done in code).
+- **Every flyer has the same size hit box** (the fantail's), and its picture is drawn to fit, so a van or a toilet is no harder to fly.
+- **The Hangar** (before a level or from the map): pick any flyer and any trail you've unlocked.
+
+### Trails (the sparkly effect behind your flyer)
+
+Earned for real achievements, all sparkly and colourful (small pictures plus a code sparkle). Most are the pupils' ideas.
+
+| Trail | How to earn it |
+|---|---|
+| ★ Sparkly flowers | Finish 5 levels |
+| ★ Cookies | 10 checks right |
+| ★ Donut crumbs | Gold on Donut Town |
+| ★ Pineapples | Gold on Bubble Reef |
+| ★ Cheese | Gold on Cheese Kitchen |
+| ★ Mouse tail | 3 clean flights (no bumps) |
+| Rainbow stars | All Gold |
+
+### Revive potions (rare)
+
+- **What it does:** in a level, drink one to cancel a bump (the +3 seconds), at most one a run, so it can't buy a gold that wasn't earned. In **Sky Dash** (the one-touch mode), it brings you back once after a crash.
+- **How you earn one (rare):** 5 checks right in a row in one run, or your first gold on a level. Hold up to 3. About one a week for a steady player (the sim checks).
+- **The server counts them** (earned and used, in `toonflap_runs`), so they can't be faked, and a run that uses one says so on the results screen.
+- **Sky Dash opens after level 5** instead of 10, so potions have somewhere fun to go early.
+
+### All of it
+
+- **The server decides every unlock** from saved runs (`my_toonflap()`), so it follows the pupil to any Chromebook. Picks are saved with the next run.
+- **Unlock moment:** a short celebration on the results screen with Bella ("You unlocked a new flyer!", "New trail!", "You earned a revive potion!": fixed lines, so they can be clips).
+- **Numbers** (`UNLOCK_RUNS = 3`, potion rules) live in `config.ts` for the sim to check.
 
 ## 6. Card art (item 6)
 
@@ -132,7 +175,7 @@ The guide is the fantail itself ("Pī"), voiced by Bella.
 | Results | Time and medal | Doesn't know what's next | Big "Next level" button; next-step line names it. |
 
 - **Guided first go** = level 1 with the ghost path and bubbles; ends at the nest (a first success that can't fail, because bumps don't end the run). Who gets it comes from the server (no runs yet). Skippable; "Replay the guide" on the map.
-- **Next-step line** on the map, a pure function: "Fly Bubble Reef next (level 3)" / "Try for gold on Wobbly Woods: 4 seconds to go" / "Every level done! Try Sky Dash."
+- **Next-step line** on the map, a pure function: "Fly Bubble Reef next (level 3)" / "Try for gold on Mesa Mayhem: 4 seconds to go" / "Every level done! Try Sky Dash."
 - **First-time tips** for each new thing in the table in section 2 (sliding walls, wind, steam). Help fades: Lots / Some / Off.
 
 ## 8. Voice (Bella)
@@ -141,7 +184,7 @@ Bella (Kokoro `af_bella`, `scripts/voice-clips.py toonflap`) reads the **fixed l
 
 ## 9. After the 10 levels
 
-- **Sky Dash** (opens after level 10): the classic version. One touch and the run ends; endless; a check every 30 seconds gives a **spare feather** (one free bump) instead of time. Score = distance. Class board of best distances, own school only, reset each New Season.
+- **Sky Dash** (opens after level 5): the classic version. One touch and the run ends; endless; a check every 30 seconds gives a **spare feather** (one free bump) instead of time, and a revive potion brings you back once. Score = distance. Class board of best distances, own school only, reset each New Season.
 - **More level packs** later (11 to 20) if it's popular; the level format is data, so a new level is a new entry in `shared/toonflap/levels.ts`.
 
 ## 10. Build stages
