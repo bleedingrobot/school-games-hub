@@ -8,11 +8,13 @@
  */
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { ALL_GAMES } from '../games/registry';
+import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
+import { GAMES } from '../games/registry';
 import type { DashboardGroup, GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { SettingChoice, SettingToggle, type Choice } from './Settings';
 import { useTeacherClass } from './TeacherClass';
+import { useSetting } from './useSetting';
 import './games.css';
 
 /** The same groups, in the same order, as the dashboard. */
@@ -70,7 +72,7 @@ export function TeacherGames() {
   const location = useLocation();
   const links = useRef(new Map<string, HTMLAnchorElement>());
 
-  const game = gameId ? ALL_GAMES.find((g) => g.id === gameId) : undefined;
+  const game = gameId ? GAMES.find((g) => g.id === gameId) : undefined;
 
   // Coming back from a game's settings (drawer closed, or back from its page): focus goes back to its "Settings ›".
   useEffect(() => {
@@ -114,7 +116,18 @@ export function TeacherGames() {
   );
 }
 
+/** What the four No maths rows share: the class's Non-maths games switch (the same value as on Today), loaded once for the table. */
+interface NonMaths {
+  value: boolean | null;
+  failed: boolean;
+  onSaved: (on: boolean) => void;
+}
+
 function GamesTable({ classId, links }: { classId: string; links: Map<string, HTMLAnchorElement> }) {
+  const loaded = useSetting(() => fetchNonMathsGames(classId), [classId]);
+  const [saved, setSaved] = useState<boolean | null>(null);
+  useEffect(() => setSaved(null), [classId]);
+  const nonMaths: NonMaths = { value: saved ?? loaded.value, failed: loaded.failed, onSaved: setSaved };
   return (
     <section className="panel games-table" aria-labelledby="games-table-title">
       <h2 id="games-table-title" className="panel__title">
@@ -133,7 +146,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
           </tr>
         </thead>
         {GAME_GROUPS.map(({ title, group }) => {
-          const games = ALL_GAMES.filter((g) => g.group === group);
+          const games = GAMES.filter((g) => g.group === group);
           if (games.length === 0) return null;
           return (
             <tbody key={group} role="rowgroup">
@@ -147,6 +160,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
                   key={`${game.id}-${classId}`}
                   game={game}
                   classId={classId}
+                  nonMaths={nonMaths}
                   linkRef={(el) => (el ? links.set(game.id, el) : links.delete(game.id))}
                 />
               ))}
@@ -158,7 +172,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
   );
 }
 
-function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: string; linkRef: (el: HTMLAnchorElement | null) => void }) {
+function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; classId: string; nonMaths: NonMaths; linkRef: (el: HTMLAnchorElement | null) => void }) {
   const t = game.teacher;
   return (
     <tr role="row">
@@ -171,6 +185,19 @@ function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: st
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
           <GameSwitchSetting game={game} classId={classId} />
+        ) : game.group === 'no-maths' ? (
+          <>
+            <SettingToggle
+              compact
+              label={`${game.name} (with Non-maths games)`}
+              about="Chess, checkers, 101 and Power Clash share one switch. It is the same as Non-maths games on Today."
+              value={nonMaths.value}
+              loadFailed={nonMaths.failed}
+              save={(on) => saveNonMathsGames(on, classId)}
+              onSaved={nonMaths.onSaved}
+            />
+            <span className="games-table__quiet">On with Non-maths games</span>
+          </>
         ) : (
           <span className="games-table__quiet">always</span>
         )}

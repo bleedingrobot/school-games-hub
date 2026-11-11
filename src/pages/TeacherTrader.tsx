@@ -7,7 +7,7 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import { FriendlyError } from '../data/profile';
 import { clearTraderForgeNames, resetTraderShip } from '../data/trader';
-import { FORGE_TYPING_ABOUT, saveForgeTyping, saveTraderJumps, saveTraderLoans, useTraderClassSettings, useTraderForgeTyping } from '../games/trader/teacher';
+import { FORGE_TYPING_ABOUT, saveForge, saveForgeTyping, saveTraderJumps, saveTraderLoans, useTraderClassSettings, useTraderForge, useTraderForgeTyping } from '../games/trader/teacher';
 import { SettingNumber, SettingToggle } from '../teacher/Settings';
 
 // The tour brings three.js and Star Trader's look, so it loads only when opened.
@@ -17,6 +17,7 @@ const errorText = (error: unknown) => (error instanceof FriendlyError ? error.me
 
 export function TraderSettings({ classId }: { classId: string }) {
   const settings = useTraderClassSettings(classId);
+  const forge = useTraderForge(classId);
   const typing = useTraderForgeTyping(classId);
   const [touring, setTouring] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
@@ -37,6 +38,13 @@ export function TraderSettings({ classId }: { classId: string }) {
         value={settings.value?.loans ?? null}
         loadFailed={settings.failed}
         save={(on) => saveTraderLoans(on, classId)}
+      />
+      <SettingToggle
+        label="Star Forge"
+        about="Off hides the Forge for this class. Ships already made are kept."
+        value={forge.value ?? null}
+        loadFailed={forge.failed}
+        save={(on) => saveForge(on, classId)}
       />
       <SettingToggle
         label="Pupils can type names in the Forge"

@@ -12627,6 +12627,10 @@ async function handleSaveBotGame(request, services) {
 	if (!player) return reply(401, { error: "Please sign in again." });
 	const body = await readJsonBody(request);
 	const asked = body;
+	if (asked?.game !== "space" && !await nonMathsOpen(services, player)) {
+		console.warn("save-bot-game: refused a game (non-maths games are off)");
+		return reply(403, { error: NON_MATHS_OFF });
+	}
 	if ((asked?.game === "space" || asked?.game === "101" || asked?.game === "power-clash") && asked.start === true) {
 		if (asked.game === "space" && asked.maths === true && !await mathsAllowed(services, player)) return reply(403, { error: MATHS_OFF });
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
@@ -12673,6 +12677,12 @@ const MATHS_OFF = "Your teacher has switched Mission Control maths off, so this 
 async function mathsAllowed(services, player) {
 	if (!services.mathsSwitch) return true;
 	return await services.mathsSwitch(player).catch(() => "off") !== "off";
+}
+const NON_MATHS_OFF = "Your teacher has switched these games off for now.";
+/** False only when the teacher has Non-maths games switched off. */
+async function nonMathsOpen(services, player) {
+	if (!services.nonMathsGames) return true;
+	return services.nonMathsGames(player).catch(() => true);
 }
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 async function saveSpaceGame(player, body, services, reply) {
@@ -12920,6 +12930,11 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error) throw new Error(error.code ?? "unknown");
 		return parseMathsSwitch(data?.space_maths);
+	},
+	async nonMathsGames(player) {
+		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
+		if (error) throw new Error(error.code ?? "unknown");
+		return data?.non_maths_games !== false;
 	},
 	async recordAnswers(player, batchId, answers, pack = "times-tables") {
 		const { data, error } = await admin.rpc("record_fact_answers", {

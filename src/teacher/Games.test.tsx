@@ -27,6 +27,7 @@ const data = vi.hoisted(() => ({
   fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
   fetchClansEnabled: vi.fn(),
+  saveNonMathsGames: vi.fn(),
   fetchClassClanMaths: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
@@ -70,6 +71,10 @@ vi.mock('../data/clans', async (original) => ({
   ...(await original<typeof import('../data/clans')>()),
   fetchClansEnabled: data.fetchClansEnabled,
   fetchClassClanMaths: data.fetchClassClanMaths,
+}));
+vi.mock('../data/nonMathsGames', async (original) => ({
+  ...(await original<typeof import('../data/nonMathsGames')>()),
+  saveNonMathsGames: data.saveNonMathsGames,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -166,6 +171,7 @@ beforeEach(() => {
       : { gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false },
   );
   data.fetchClansEnabled.mockResolvedValue(true);
+  data.saveNonMathsGames.mockResolvedValue(undefined);
   data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
 });
 afterEach(() => {
@@ -195,6 +201,14 @@ describe('the Games table', () => {
     expect(within(maths).getByRole('radio', { name: 'Students choose' })).toBeChecked();
     await user.click(within(maths).getByRole('radio', { name: 'On for everyone' }));
     expect(data.setSpaceMaths).toHaveBeenCalledWith('on', 'c14');
+
+    // The No maths rows share one switch (Non-maths games, as on Today); a game whose code switch is off has no row.
+    const chess = await within(row(t, 'Chess')).findByRole('switch', { name: 'Chess (with Non-maths games)' });
+    await waitFor(() => expect(chess).toBeEnabled());
+    await user.click(chess);
+    expect(data.saveNonMathsGames).toHaveBeenCalledWith(false, 'c14');
+    await waitFor(() => expect(within(row(t, 'Checkers')).getByRole('switch', { name: 'Checkers (with Non-maths games)' })).toHaveAttribute('aria-checked', 'false'));
+    expect(within(t).queryByRole('rowheader', { name: 'Kingdom Keeper' })).toBeNull();
   });
 
 });
