@@ -23,7 +23,7 @@ the extra data that makes that sharper.
 | # | Card | Size | SQL | Waits for |
 |---|---|---|---|---|
 | P1 | [Same words for steps everywhere](P1-same-words.md) | S | no | — |
-| P2 | [Progress tab: every game's steps](P2-progress-table.md) | M | no | P1, where the tab lives |
+| P2 | [Progress tab: every game's steps](P2-progress-table.md) | M | no | P1 |
 | P3 | [Progress tab: the ladder board](P3-ladder-board.md) | M | no | P2 |
 | P4 | ["Nearly ready" and "on this step since"](P4-nearly-and-since.md) | M | yes | P2 |
 | P5 | ["Who needs a look", Today links, flags](P5-needs-a-look.md) | S | no | P2 (P4 for one pill) |
@@ -38,6 +38,10 @@ the extra data that makes that sharper.
 
 Nothing yet.
 
+## Decided
+
+- James, 11 Nov 2026: the Progress view is a new top-level tab beside Today (route /teacher/:classId/progress). The Foundational grid stays under Maths.
+
 ## Waiting on James
 
-- Where the Progress view lives: a new tab beside Today (recommended), a Maths sub-tab, or replacing the Foundational grid.
+Nothing.
