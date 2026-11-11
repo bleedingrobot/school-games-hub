@@ -20,5 +20,6 @@
   "back/bronze": 1,
   "back/silver": 2,
   "back/gold": 1,
-  "card": 2
+  "card": 2,
+  "line/branch": 2
 }

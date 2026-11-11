@@ -325,6 +325,18 @@
       ],
       "kind": "card",
       "file": "pigeon"
+    },
+    {
+      "name": "line/branch",
+      "prompt": "One long thin straight tree branch lying perfectly horizontal, running from the far left edge to the far right edge of the picture, side view, a smooth warm brown bark branch of even thickness with soft fingerprint texture, gently knobbly, only three or four tiny green leaves sitting on top of it, nothing hanging below it, no birds, no berries, no flowers. Single object, the whole branch visible, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1536,
+        384
+      ],
+      "kind": "cut",
+      "folder": "line",
+      "file": "branch",
+      "max": 1400
     }
   ]
 }
