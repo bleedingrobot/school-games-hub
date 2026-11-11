@@ -178,3 +178,8 @@ Steps: (1) Tell James that the small shared branch maths-lizard-keys (new ladder
 Tests: at most 8 for the game, as listed in section 6 of the plan, plus the preview checks there. Run npm test, the type check and the lint.
 Stop and tell James before any live step (applying the migration, deploying the function, merging, switching on). Open a PR when done.
 ```
+
+## Fixes, 11 Nov 2026 (James)
+
+- **Sticks, not counters.** The Ones ten-frame on the labelled levels now holds one stick in each square (the second frame, past ten, is orange), so the play area matches the game's words and the bundle art. The help pictures already drew loose sticks.
+- **Taking bundles away.** On the tying steps (1 to 3) the Tens column had no buttons, so a child who tied too many bundles was stuck. The Tens "−" now shows whenever there is a bundle on the mat (the "+" still only from step 4), and after "Let's look together" the hand points at "−" when a place has too many.
