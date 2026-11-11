@@ -124,7 +124,7 @@ select is(public.my_progress() #>> '{games,0,game}', 'checkers', 'my progress fo
 select is(public.my_progress() #>> '{games,0,rank,rank}', 'silver', 'my checkers badge');
 select is(public.my_progress() #>> '{games,0,rank,next}', 'gold', 'and the next one to aim for');
 select ok(public.my_progress()::text !~ '"rating"', 'no raw rating numbers are sent to the page');
-select is(jsonb_array_length(public.my_progress() -> 'achievements'), 113, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');  -- 53 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6 + Tūī's Ten Tree's 5 + Royal Decree's 6, on by default + Pigeon's 5 + Parrot's See-saw's 5 + Lizard's Bundles' 5 + Swamp Hen's Reed Rows' 5 + Robin's Berry Basket's 5
+select is(jsonb_array_length(public.my_progress() -> 'achievements'), 123, 'every achievement, with my progress on each (Maths Monsters'' are hidden while it is switched off)');  -- 53 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6 + Tūī's Ten Tree's 5 + Royal Decree's 6, on by default + Pigeon's 5 + Parrot's See-saw's 5 + Lizard's Bundles' 5 + Swamp Hen's Reed Rows' 5 + Robin's Berry Basket's 5 + Toon Flap's 10
 select is((public.progress_rules() ->> 'botDailyCap')::int, 40, 'the rules page reads the real daily cap');
 
 -- ---- Teacher functions refuse students ----

@@ -1092,6 +1092,21 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
   } else if (z.kind === 'gust') {
     const dir = z.push > 0 ? -1 : 1;
     if (!on) return;
+    const gustImg = picture(extraArt('gust'));
+    if (gustImg) {
+      // the painted icy wind, tiled down the zone and blowing past
+      const tw = Math.max(v.s * 2.2, (x1 - x0) * 0.6);
+      const th = (tw * gustImg.naturalHeight) / gustImg.naturalWidth;
+      const top = sy(v, SKY);
+      const drift = wob ? (p.time * v.s * 2.5) % tw : 0;
+      c.save();
+      c.beginPath();
+      c.rect(x0, top, x1 - x0, v.s * SKY);
+      c.clip();
+      c.globalAlpha = 0.85;
+      for (let yy = top; yy < top + v.s * SKY; yy += th) for (let xx = x0 - drift; xx < x1; xx += tw) c.drawImage(gustImg, xx, yy, tw, th);
+      c.restore();
+    } else {
     c.strokeStyle = 'rgba(255,255,255,0.95)';
     c.lineCap = 'round';
     c.lineWidth = Math.max(2, v.s * 0.07);
@@ -1104,6 +1119,7 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
       c.moveTo(px, py);
       c.lineTo(px + v.s * 0.7, py + dir * v.s * 0.35);
       c.stroke();
+    }
     }
     // big arrow
     const cx = (x0 + x1) / 2;
@@ -1141,6 +1157,15 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
     const cx = (x0 + x1) / 2;
     const rx = (x1 - x0) / 2;
     const cy = sy(v, SKY / 2);
+    const bubbleImg = picture(extraArt('bubble'));
+    if (bubbleImg) {
+      // the painted bubble, see-through so the walls behind still show
+      const a = c.globalAlpha;
+      c.globalAlpha = 0.5;
+      c.drawImage(bubbleImg, cx - rx, cy - v.s * SKY * 0.46, rx * 2, v.s * SKY * 0.92);
+      c.globalAlpha = a;
+      return;
+    }
     ell(c, cx, cy, rx, v.s * SKY * 0.46);
     paint(c, 'rgba(180,220,255,0.18)', 'rgba(220,240,255,0.8)', Math.max(2, v.s * 0.06));
     c.strokeStyle = 'rgba(255,255,255,0.7)';
@@ -1361,7 +1386,7 @@ function drawGapMarks(p: P, wall: Wall, labels: number[] | null, t: number) {
       const fs = Math.max(15, Math.min(v.s * 0.62, 44));
       c.font = `900 ${fs}px system-ui, "Segoe UI", sans-serif`;
       const bw = Math.max(w * 0.98, c.measureText(text).width + fs * 0.7);
-      const disc = picture(uiArt('sign'));
+      const disc = picture(uiArt('badge')) ?? picture(uiArt('sign'));
       if (disc) blit(c, disc, x + w / 2, cy, Math.max(bw, fs * 1.9));
       else {
         rr(c, x + w / 2 - bw / 2, cy - fs * 0.7, bw, fs * 1.4, fs * 0.5);
@@ -1816,7 +1841,15 @@ export function drawFlyer(c: Ctx, flyerId: string, x: number, y: number, size: n
     }
     c.scale(1 / u, 1 / u);
   }
-  if (pose === 'dizzy') {
+  const ring = pose === 'dizzy' ? picture(extraArt('bump-stars')) : null;
+  if (ring) {
+    // the painted ring of stars, turning slowly above the head
+    c.save();
+    c.translate(0, -u * 0.95);
+    c.rotate(time * 1.5);
+    c.drawImage(ring, -u * 0.8, -u * 0.8, u * 1.6, u * 1.6);
+    c.restore();
+  } else if (pose === 'dizzy') {
     c.fillStyle = '#ffd23f';
     for (let i = 0; i < 3; i++) {
       const a = time * 6 + (i * TAU) / 3;

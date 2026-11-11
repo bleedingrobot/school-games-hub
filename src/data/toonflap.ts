@@ -6,6 +6,7 @@
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { fromServer, type ToonFlapBackend } from '../games/toonflap/backend';
+import type { Progress } from '../../shared/toonflap/collection';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
@@ -54,6 +55,35 @@ export async function fetchToonFlapSettings(classId?: string | null): Promise<To
 }
 
 export const fetchToonFlapEnabled = async (classId?: string | null) => (await fetchToonFlapSettings(classId)).enabled;
+
+export interface ToonFlapClass {
+  players: number;
+  /** Levels finished, added up over the class. */
+  levels: number;
+  golds: number;
+}
+
+/** The teacher's Games table line for a class. */
+export async function fetchToonFlapClass(classId: string): Promise<ToonFlapClass> {
+  const { data, error } = await supabase.rpc('teacher_toonflap_class', { target_class: classId });
+  if (error || !data) throw new FriendlyError('We couldn’t load Toon Flap for this class.');
+  return data as ToonFlapClass;
+}
+
+export interface ToonFlapStudent {
+  progress: Progress;
+  flyer: string | null;
+  lastPlayed: string;
+  /** Finished runs in all. */
+  runs: number;
+}
+
+/** One student's flights, or null if they haven't played. */
+export async function fetchToonFlapStudent(student: string): Promise<ToonFlapStudent | null> {
+  const { data, error } = await supabase.rpc('teacher_toonflap_student', { student });
+  if (error) throw new FriendlyError('We couldn’t load Toon Flap for this student.');
+  return (data ?? null) as ToonFlapStudent | null;
+}
 
 /** Saves any of the settings (teacher_set_toonflap leaves out the rest). */
 export async function saveToonFlapSetting(change: Partial<ToonFlapSettings>, classId?: string | null): Promise<void> {
