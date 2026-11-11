@@ -81,5 +81,5 @@ The site look lives in `src/styles.css` (school-red page, soft pink cards, navy 
 - Colour tokens for text, panels and edges: `var(--ink)`, `--ink-soft`, `--surface`, `--card`, `--line`, `--brand`, `--focus`, `--won`, `--lost`, `--radius`, `--shadow`, `--display`. Your own colours are fine inside the play area.
 - Shared buttons: `button` with `button--primary`, `--play`, `--light`, `--light-outline` or `--danger`.
 - Prefix every class of your own (`.tf-`, `.wk-`). Never style a bare element or shared class (`.button`, `h2`, `.panel`).
-- Targets at least 44 px, contrast at least 4.5:1, visible `:focus-visible`, focus moved to each new screen's heading, `prefers-reduced-motion` respected. Copy Clan Quest's `Accessibility.test.tsx` if you test this.
+- Targets at least 44 px, contrast at least 4.5:1, visible `:focus-visible`, focus moved to each new screen's heading, `prefers-reduced-motion` respected.
 - Words: short, kind, plain. Never show a pupil's year level ("Year 3 skill") or anyone else's maths results.
