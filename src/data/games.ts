@@ -7,6 +7,7 @@
  * any column that is not a game switch.
  */
 import { supabase } from '../lib/supabase';
+import { fetchSchoolDefaults, saveSchoolDefaults } from './admin';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
@@ -59,8 +60,19 @@ export const ALL_SWITCH_COLUMNS: readonly string[] = [...new Set([...Object.valu
 export async function fetchGameSwitches(classId: string): Promise<Record<string, boolean>> {
   const row = await readSettings([...ALL_SWITCH_COLUMNS], classId);
   if (!row) throw new Error('We couldn’t load this setting.');
-  return Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, c === NON_MATHS_COLUMN ? row[c] !== false : row[c] === true]));
+  return readSwitches(row);
 }
+
+const readSwitches = (row: Record<string, unknown>): Record<string, boolean> =>
+  Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, c === NON_MATHS_COLUMN ? row[c] !== false : row[c] === true]));
+
+/** The same switches on the school's defaults row (what a new class starts with; Admin, New class settings). */
+export async function fetchSchoolSwitches(): Promise<Record<string, boolean>> {
+  return readSwitches(await fetchSchoolDefaults());
+}
+
+/** Sets many switches on the school's defaults row; existing classes don't change. */
+export const saveSchoolSwitches = (changes: Record<string, boolean>): Promise<void> => saveSchoolDefaults(changes);
 
 /** Sets many switches for the class in one request: { column: on }. */
 export async function saveGameSwitches(changes: Record<string, boolean>, classId: string): Promise<void> {
