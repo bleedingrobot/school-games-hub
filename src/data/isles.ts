@@ -59,10 +59,10 @@ export async function fetchIslesSettings(classId?: string | null): Promise<Isles
 }
 
 /** Saves one switch: teacher_set_isles takes both, so the other is read first (from the remembered settings). */
-export async function saveIslesSetting(change: Partial<IslesSettings>, classId?: string | null): Promise<void> {
+export async function saveIslesSetting(change: Partial<IslesSettings>, classId: string): Promise<void> {
   const now = await fetchIslesSettings(classId);
   const s = { ...now, ...change };
-  const { error } = await supabase.rpc('teacher_set_isles', { enabled: s.enabled, races: s.races, target_class: classId ?? null });
+  const { error } = await supabase.rpc('teacher_set_isles', { enabled: s.enabled, races: s.races, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

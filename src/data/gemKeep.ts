@@ -257,10 +257,10 @@ export async function fetchGemKeepSettings(classId?: string | null): Promise<Gem
   };
 }
 
-export async function saveGemKeepSettings(settings: GemKeepSettings, classId?: string | null): Promise<void> {
+export async function saveGemKeepSettings(settings: GemKeepSettings, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_gem_keep', {
     settings: { ...settings, missingFactor: settings.missingFactor ?? null },
-    target_class: classId ?? null,
+    target_class: classId,
   });
   forgetSettings();
   if (error) fail(error, 'We couldn’t save the Gem Keep settings.');

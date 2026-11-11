@@ -55,9 +55,9 @@ export async function fetchWekaSettings(classId?: string | null): Promise<WekaSe
 export const fetchWekaEnabled = async (classId?: string | null) => (await fetchWekaSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_weka leaves out the other). */
-export async function saveWekaSetting(change: Partial<WekaSettings>, classId?: string | null): Promise<void> {
+export async function saveWekaSetting(change: Partial<WekaSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_weka', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

@@ -56,9 +56,9 @@ export async function fetchPigeonSettings(classId?: string | null): Promise<Pige
 export const fetchPigeonEnabled = async (classId?: string | null) => (await fetchPigeonSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_pigeon leaves out the other). */
-export async function savePigeonSetting(change: Partial<PigeonSettings>, classId?: string | null): Promise<void> {
+export async function savePigeonSetting(change: Partial<PigeonSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_pigeon', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

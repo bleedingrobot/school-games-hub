@@ -27,8 +27,8 @@ export async function fetchClansEnabled(classId?: string | null): Promise<boolea
   return data.clans_enabled === true;
 }
 
-export async function saveClansEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clans', { enabled, target_class: classId ?? null });
+export async function saveClansEnabled(enabled: boolean, classId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clans', { enabled, target_class: classId });
   forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the Clan Quest setting.');
   return data;
@@ -72,8 +72,8 @@ export async function fetchClanRaidsEnabled(classId?: string | null): Promise<bo
   return data.clan_raids_enabled === true;
 }
 
-export async function saveClanRaidsEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled, target_class: classId ?? null });
+export async function saveClanRaidsEnabled(enabled: boolean, classId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled, target_class: classId });
   forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the raids setting.');
   return data;
@@ -90,8 +90,8 @@ export async function fetchClanTypedNames(classId?: string | null): Promise<bool
   return data.clan_typed_names === true;
 }
 
-export async function saveClanTypedNames(enabled: boolean, classId?: string | null): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clan_typed_names', { enabled, target_class: classId ?? null });
+export async function saveClanTypedNames(enabled: boolean, classId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_typed_names', { enabled, target_class: classId });
   forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the hero names setting.');
   return data;
@@ -172,9 +172,9 @@ export async function fetchClanMathsSettings(classId?: string | null): Promise<C
  */
 export async function saveClanMathsSettings(
   settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>,
-  classId?: string | null,
+  classId: string,
 ): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_clan_maths', { settings, target_class: classId ?? null });
+  const { error } = await supabase.rpc('teacher_set_clan_maths', { settings, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t save the Clan Quest settings.');
 }

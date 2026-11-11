@@ -219,12 +219,12 @@ export async function fetchMarbleSwitches(classId?: string | null): Promise<{ ma
   return { maths: parseMathsSwitch(row?.marble_maths), rescue: row ? row.marble_rescue !== false : true };
 }
 
-export async function saveMarbleMaths(mode: MathsSwitch, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_marble_maths', { mode, target_class: classId ?? null });
+export async function saveMarbleMaths(mode: MathsSwitch, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_marble_maths', { mode, target_class: classId });
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
 
-export async function saveMarbleRescue(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_marble_rescue', { enabled, target_class: classId ?? null });
+export async function saveMarbleRescue(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_marble_rescue', { enabled, target_class: classId });
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

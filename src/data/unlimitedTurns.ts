@@ -16,8 +16,8 @@ export async function fetchUnlimitedToday(classId?: string | null): Promise<Reco
   return Object.fromEntries(UNLIMITED_GAMES.map((g) => [g.id, isUnlimitedFor(row.unlimited_days, g.id)])) as Record<UnlimitedGame, boolean>;
 }
 
-export async function saveUnlimitedToday(game: UnlimitedGame, enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_unlimited_today', { game, enabled, target_class: classId ?? null });
+export async function saveUnlimitedToday(game: UnlimitedGame, enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_unlimited_today', { game, enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

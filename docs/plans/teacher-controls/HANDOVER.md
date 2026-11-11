@@ -37,7 +37,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 
 ## Done and live
 
-_None yet._
+- C2: Safer saves: every save names its class (PR pending)
 
 ## C1
 

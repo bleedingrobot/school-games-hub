@@ -28,8 +28,8 @@ export async function fetchSkipMode(classId?: string | null): Promise<SkipMode> 
   return parseSkipMode(row.question_skips);
 }
 
-export async function saveSkipMode(mode: SkipMode, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_question_skips', { mode, target_class: classId ?? null });
+export async function saveSkipMode(mode: SkipMode, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_question_skips', { mode, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t save that. Please try again.');
 }
