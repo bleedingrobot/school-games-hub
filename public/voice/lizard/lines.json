@@ -204,24 +204,84 @@
   "text": "Count the bundles for the tens, then the sticks for the ones."
  },
  {
+  "slug": "10",
+  "text": "10"
+ },
+ {
+  "slug": "count-the-bundles-in-tens-then-count-on-the-sticks",
+  "text": "Count the bundles in tens, then count on the sticks."
+ },
+ {
+  "slug": "that-makes-10",
+  "text": "That makes 10."
+ },
+ {
   "slug": "make-20-with-bundles-and-sticks",
   "text": "Make 20 with bundles and sticks."
+ },
+ {
+  "slug": "20",
+  "text": "20"
+ },
+ {
+  "slug": "that-makes-20",
+  "text": "That makes 20."
  },
  {
   "slug": "make-30-with-bundles-and-sticks",
   "text": "Make 30 with bundles and sticks."
  },
  {
+  "slug": "30",
+  "text": "30"
+ },
+ {
+  "slug": "that-makes-30",
+  "text": "That makes 30."
+ },
+ {
   "slug": "make-40-with-bundles-and-sticks",
   "text": "Make 40 with bundles and sticks."
+ },
+ {
+  "slug": "40",
+  "text": "40"
+ },
+ {
+  "slug": "that-makes-40",
+  "text": "That makes 40."
  },
  {
   "slug": "make-50-with-bundles-and-sticks",
   "text": "Make 50 with bundles and sticks."
  },
  {
+  "slug": "50",
+  "text": "50"
+ },
+ {
+  "slug": "that-makes-50",
+  "text": "That makes 50."
+ },
+ {
   "slug": "make-13-with-bundles-and-sticks",
   "text": "Make 13 with bundles and sticks."
+ },
+ {
+  "slug": "11",
+  "text": "11"
+ },
+ {
+  "slug": "12",
+  "text": "12"
+ },
+ {
+  "slug": "13",
+  "text": "13"
+ },
+ {
+  "slug": "10-and-3-make-13",
+  "text": "10 and 3 make 13."
  },
  {
   "slug": "make-14-with-bundles-and-sticks",
@@ -232,12 +292,36 @@
   "text": "Make 15 with bundles and sticks."
  },
  {
+  "slug": "14",
+  "text": "14"
+ },
+ {
+  "slug": "15",
+  "text": "15"
+ },
+ {
+  "slug": "10-and-5-make-15",
+  "text": "10 and 5 make 15."
+ },
+ {
   "slug": "make-16-with-bundles-and-sticks",
   "text": "Make 16 with bundles and sticks."
  },
  {
   "slug": "make-17-with-bundles-and-sticks",
   "text": "Make 17 with bundles and sticks."
+ },
+ {
+  "slug": "16",
+  "text": "16"
+ },
+ {
+  "slug": "17",
+  "text": "17"
+ },
+ {
+  "slug": "10-and-7-make-17",
+  "text": "10 and 7 make 17."
  },
  {
   "slug": "make-18-with-bundles-and-sticks",
@@ -248,12 +332,44 @@
   "text": "Make 19 with bundles and sticks."
  },
  {
+  "slug": "18",
+  "text": "18"
+ },
+ {
+  "slug": "19",
+  "text": "19"
+ },
+ {
+  "slug": "10-and-9-make-19",
+  "text": "10 and 9 make 19."
+ },
+ {
   "slug": "make-21-with-bundles-and-sticks",
   "text": "Make 21 with bundles and sticks."
  },
  {
   "slug": "make-24-with-bundles-and-sticks",
   "text": "Make 24 with bundles and sticks."
+ },
+ {
+  "slug": "21",
+  "text": "21"
+ },
+ {
+  "slug": "22",
+  "text": "22"
+ },
+ {
+  "slug": "23",
+  "text": "23"
+ },
+ {
+  "slug": "24",
+  "text": "24"
+ },
+ {
+  "slug": "20-and-4-make-24",
+  "text": "20 and 4 make 24."
  },
  {
   "slug": "make-22-with-bundles-and-sticks",
@@ -272,6 +388,18 @@
   "text": "Make 26 with bundles and sticks."
  },
  {
+  "slug": "25",
+  "text": "25"
+ },
+ {
+  "slug": "26",
+  "text": "26"
+ },
+ {
+  "slug": "20-and-6-make-26",
+  "text": "20 and 6 make 26."
+ },
+ {
   "slug": "make-27-with-bundles-and-sticks",
   "text": "Make 27 with bundles and sticks."
  },
@@ -280,12 +408,52 @@
   "text": "Make 28 with bundles and sticks."
  },
  {
+  "slug": "27",
+  "text": "27"
+ },
+ {
+  "slug": "28",
+  "text": "28"
+ },
+ {
+  "slug": "20-and-8-make-28",
+  "text": "20 and 8 make 28."
+ },
+ {
   "slug": "make-29-with-bundles-and-sticks",
   "text": "Make 29 with bundles and sticks."
  },
  {
+  "slug": "20-and-1-make-21",
+  "text": "20 and 1 make 21."
+ },
+ {
   "slug": "make-35-with-bundles-and-sticks",
   "text": "Make 35 with bundles and sticks."
+ },
+ {
+  "slug": "31",
+  "text": "31"
+ },
+ {
+  "slug": "32",
+  "text": "32"
+ },
+ {
+  "slug": "33",
+  "text": "33"
+ },
+ {
+  "slug": "34",
+  "text": "34"
+ },
+ {
+  "slug": "35",
+  "text": "35"
+ },
+ {
+  "slug": "30-and-5-make-35",
+  "text": "30 and 5 make 35."
  },
  {
   "slug": "make-33-with-bundles-and-sticks",
@@ -304,12 +472,36 @@
   "text": "Make 37 with bundles and sticks."
  },
  {
+  "slug": "36",
+  "text": "36"
+ },
+ {
+  "slug": "37",
+  "text": "37"
+ },
+ {
+  "slug": "30-and-7-make-37",
+  "text": "30 and 7 make 37."
+ },
+ {
   "slug": "make-38-with-bundles-and-sticks",
   "text": "Make 38 with bundles and sticks."
  },
  {
   "slug": "make-39-with-bundles-and-sticks",
   "text": "Make 39 with bundles and sticks."
+ },
+ {
+  "slug": "38",
+  "text": "38"
+ },
+ {
+  "slug": "39",
+  "text": "39"
+ },
+ {
+  "slug": "30-and-9-make-39",
+  "text": "30 and 9 make 39."
  },
  {
   "slug": "make-41-with-bundles-and-sticks",
@@ -320,12 +512,44 @@
   "text": "Make 32 with bundles and sticks."
  },
  {
+  "slug": "30-and-2-make-32",
+  "text": "30 and 2 make 32."
+ },
+ {
   "slug": "make-31-with-bundles-and-sticks",
   "text": "Make 31 with bundles and sticks."
  },
  {
   "slug": "make-46-with-bundles-and-sticks",
   "text": "Make 46 with bundles and sticks."
+ },
+ {
+  "slug": "41",
+  "text": "41"
+ },
+ {
+  "slug": "42",
+  "text": "42"
+ },
+ {
+  "slug": "43",
+  "text": "43"
+ },
+ {
+  "slug": "44",
+  "text": "44"
+ },
+ {
+  "slug": "45",
+  "text": "45"
+ },
+ {
+  "slug": "46",
+  "text": "46"
+ },
+ {
+  "slug": "40-and-6-make-46",
+  "text": "40 and 6 make 46."
  },
  {
   "slug": "make-44-with-bundles-and-sticks",
@@ -344,8 +568,24 @@
   "text": "Make 48 with bundles and sticks."
  },
  {
+  "slug": "47",
+  "text": "47"
+ },
+ {
+  "slug": "48",
+  "text": "48"
+ },
+ {
+  "slug": "40-and-8-make-48",
+  "text": "40 and 8 make 48."
+ },
+ {
   "slug": "make-49-with-bundles-and-sticks",
   "text": "Make 49 with bundles and sticks."
+ },
+ {
+  "slug": "40-and-1-make-41",
+  "text": "40 and 1 make 41."
  },
  {
   "slug": "make-42-with-bundles-and-sticks",
@@ -354,6 +594,10 @@
  {
   "slug": "make-43-with-bundles-and-sticks",
   "text": "Make 43 with bundles and sticks."
+ },
+ {
+  "slug": "40-and-3-make-43",
+  "text": "40 and 3 make 43."
  },
  {
   "slug": "1-ten-and-3-ones-what-number-is-that",
@@ -496,20 +740,84 @@
   "text": "Make 60 with bundles and sticks."
  },
  {
+  "slug": "60",
+  "text": "60"
+ },
+ {
+  "slug": "that-makes-60",
+  "text": "That makes 60."
+ },
+ {
   "slug": "make-70-with-bundles-and-sticks",
   "text": "Make 70 with bundles and sticks."
+ },
+ {
+  "slug": "70",
+  "text": "70"
+ },
+ {
+  "slug": "that-makes-70",
+  "text": "That makes 70."
  },
  {
   "slug": "make-80-with-bundles-and-sticks",
   "text": "Make 80 with bundles and sticks."
  },
  {
+  "slug": "80",
+  "text": "80"
+ },
+ {
+  "slug": "that-makes-80",
+  "text": "That makes 80."
+ },
+ {
   "slug": "make-90-with-bundles-and-sticks",
   "text": "Make 90 with bundles and sticks."
  },
  {
+  "slug": "90",
+  "text": "90"
+ },
+ {
+  "slug": "that-makes-90",
+  "text": "That makes 90."
+ },
+ {
   "slug": "make-57-with-bundles-and-sticks",
   "text": "Make 57 with bundles and sticks."
+ },
+ {
+  "slug": "51",
+  "text": "51"
+ },
+ {
+  "slug": "52",
+  "text": "52"
+ },
+ {
+  "slug": "53",
+  "text": "53"
+ },
+ {
+  "slug": "54",
+  "text": "54"
+ },
+ {
+  "slug": "55",
+  "text": "55"
+ },
+ {
+  "slug": "56",
+  "text": "56"
+ },
+ {
+  "slug": "57",
+  "text": "57"
+ },
+ {
+  "slug": "50-and-7-make-57",
+  "text": "50 and 7 make 57."
  },
  {
   "slug": "make-55-with-bundles-and-sticks",
@@ -528,12 +836,28 @@
   "text": "Make 59 with bundles and sticks."
  },
  {
+  "slug": "58",
+  "text": "58"
+ },
+ {
+  "slug": "59",
+  "text": "59"
+ },
+ {
+  "slug": "50-and-9-make-59",
+  "text": "50 and 9 make 59."
+ },
+ {
   "slug": "make-61-with-bundles-and-sticks",
   "text": "Make 61 with bundles and sticks."
  },
  {
   "slug": "make-52-with-bundles-and-sticks",
   "text": "Make 52 with bundles and sticks."
+ },
+ {
+  "slug": "50-and-2-make-52",
+  "text": "50 and 2 make 52."
  },
  {
   "slug": "make-51-with-bundles-and-sticks",
@@ -548,8 +872,48 @@
   "text": "Make 54 with bundles and sticks."
  },
  {
+  "slug": "50-and-4-make-54",
+  "text": "50 and 4 make 54."
+ },
+ {
   "slug": "make-68-with-bundles-and-sticks",
   "text": "Make 68 with bundles and sticks."
+ },
+ {
+  "slug": "61",
+  "text": "61"
+ },
+ {
+  "slug": "62",
+  "text": "62"
+ },
+ {
+  "slug": "63",
+  "text": "63"
+ },
+ {
+  "slug": "64",
+  "text": "64"
+ },
+ {
+  "slug": "65",
+  "text": "65"
+ },
+ {
+  "slug": "66",
+  "text": "66"
+ },
+ {
+  "slug": "67",
+  "text": "67"
+ },
+ {
+  "slug": "68",
+  "text": "68"
+ },
+ {
+  "slug": "60-and-8-make-68",
+  "text": "60 and 8 make 68."
  },
  {
   "slug": "make-66-with-bundles-and-sticks",
@@ -564,12 +928,20 @@
   "text": "Make 69 with bundles and sticks."
  },
  {
+  "slug": "60-and-1-make-61",
+  "text": "60 and 1 make 61."
+ },
+ {
   "slug": "make-62-with-bundles-and-sticks",
   "text": "Make 62 with bundles and sticks."
  },
  {
   "slug": "make-63-with-bundles-and-sticks",
   "text": "Make 63 with bundles and sticks."
+ },
+ {
+  "slug": "60-and-3-make-63",
+  "text": "60 and 3 make 63."
  },
  {
   "slug": "make-64-with-bundles-and-sticks",
@@ -580,8 +952,52 @@
   "text": "Make 65 with bundles and sticks."
  },
  {
+  "slug": "60-and-5-make-65",
+  "text": "60 and 5 make 65."
+ },
+ {
   "slug": "make-79-with-bundles-and-sticks",
   "text": "Make 79 with bundles and sticks."
+ },
+ {
+  "slug": "71",
+  "text": "71"
+ },
+ {
+  "slug": "72",
+  "text": "72"
+ },
+ {
+  "slug": "73",
+  "text": "73"
+ },
+ {
+  "slug": "74",
+  "text": "74"
+ },
+ {
+  "slug": "75",
+  "text": "75"
+ },
+ {
+  "slug": "76",
+  "text": "76"
+ },
+ {
+  "slug": "77",
+  "text": "77"
+ },
+ {
+  "slug": "78",
+  "text": "78"
+ },
+ {
+  "slug": "79",
+  "text": "79"
+ },
+ {
+  "slug": "70-and-9-make-79",
+  "text": "70 and 9 make 79."
  },
  {
   "slug": "make-77-with-bundles-and-sticks",
@@ -600,6 +1016,10 @@
   "text": "Make 72 with bundles and sticks."
  },
  {
+  "slug": "70-and-2-make-72",
+  "text": "70 and 2 make 72."
+ },
+ {
   "slug": "make-71-with-bundles-and-sticks",
   "text": "Make 71 with bundles and sticks."
  },
@@ -612,12 +1032,28 @@
   "text": "Make 74 with bundles and sticks."
  },
  {
+  "slug": "70-and-4-make-74",
+  "text": "70 and 4 make 74."
+ },
+ {
   "slug": "make-75-with-bundles-and-sticks",
   "text": "Make 75 with bundles and sticks."
  },
  {
   "slug": "make-76-with-bundles-and-sticks",
   "text": "Make 76 with bundles and sticks."
+ },
+ {
+  "slug": "70-and-6-make-76",
+  "text": "70 and 6 make 76."
+ },
+ {
+  "slug": "81",
+  "text": "81"
+ },
+ {
+  "slug": "80-and-1-make-81",
+  "text": "80 and 1 make 81."
  },
  {
   "slug": "make-82-with-bundles-and-sticks",
@@ -628,6 +1064,18 @@
   "text": "Make 83 with bundles and sticks."
  },
  {
+  "slug": "82",
+  "text": "82"
+ },
+ {
+  "slug": "83",
+  "text": "83"
+ },
+ {
+  "slug": "80-and-3-make-83",
+  "text": "80 and 3 make 83."
+ },
+ {
   "slug": "make-84-with-bundles-and-sticks",
   "text": "Make 84 with bundles and sticks."
  },
@@ -636,12 +1084,36 @@
   "text": "Make 85 with bundles and sticks."
  },
  {
+  "slug": "84",
+  "text": "84"
+ },
+ {
+  "slug": "85",
+  "text": "85"
+ },
+ {
+  "slug": "80-and-5-make-85",
+  "text": "80 and 5 make 85."
+ },
+ {
   "slug": "make-86-with-bundles-and-sticks",
   "text": "Make 86 with bundles and sticks."
  },
  {
   "slug": "make-87-with-bundles-and-sticks",
   "text": "Make 87 with bundles and sticks."
+ },
+ {
+  "slug": "86",
+  "text": "86"
+ },
+ {
+  "slug": "87",
+  "text": "87"
+ },
+ {
+  "slug": "80-and-7-make-87",
+  "text": "80 and 7 make 87."
  },
  {
   "slug": "make-88-with-bundles-and-sticks",
@@ -656,6 +1128,18 @@
   "text": "Make 92 with bundles and sticks."
  },
  {
+  "slug": "91",
+  "text": "91"
+ },
+ {
+  "slug": "92",
+  "text": "92"
+ },
+ {
+  "slug": "90-and-2-make-92",
+  "text": "90 and 2 make 92."
+ },
+ {
   "slug": "make-91-with-bundles-and-sticks",
   "text": "Make 91 with bundles and sticks."
  },
@@ -668,6 +1152,18 @@
   "text": "Make 94 with bundles and sticks."
  },
  {
+  "slug": "93",
+  "text": "93"
+ },
+ {
+  "slug": "94",
+  "text": "94"
+ },
+ {
+  "slug": "90-and-4-make-94",
+  "text": "90 and 4 make 94."
+ },
+ {
   "slug": "make-95-with-bundles-and-sticks",
   "text": "Make 95 with bundles and sticks."
  },
@@ -676,12 +1172,36 @@
   "text": "Make 96 with bundles and sticks."
  },
  {
+  "slug": "95",
+  "text": "95"
+ },
+ {
+  "slug": "96",
+  "text": "96"
+ },
+ {
+  "slug": "90-and-6-make-96",
+  "text": "90 and 6 make 96."
+ },
+ {
   "slug": "make-97-with-bundles-and-sticks",
   "text": "Make 97 with bundles and sticks."
  },
  {
   "slug": "make-98-with-bundles-and-sticks",
   "text": "Make 98 with bundles and sticks."
+ },
+ {
+  "slug": "97",
+  "text": "97"
+ },
+ {
+  "slug": "98",
+  "text": "98"
+ },
+ {
+  "slug": "90-and-8-make-98",
+  "text": "90 and 8 make 98."
  },
  {
   "slug": "5-tens-and-7-ones-what-number-is-that",
@@ -1324,40 +1844,148 @@
   "text": "Make 100 with bundles and sticks."
  },
  {
+  "slug": "100",
+  "text": "100"
+ },
+ {
+  "slug": "count-the-rafts-in-hundreds-then-the-bundles-in-tens-then-count-on-the-sticks",
+  "text": "Count the rafts in hundreds, then the bundles in tens, then count on the sticks."
+ },
+ {
+  "slug": "that-makes-100",
+  "text": "That makes 100."
+ },
+ {
   "slug": "make-200-with-bundles-and-sticks",
   "text": "Make 200 with bundles and sticks."
+ },
+ {
+  "slug": "200",
+  "text": "200"
+ },
+ {
+  "slug": "that-makes-200",
+  "text": "That makes 200."
  },
  {
   "slug": "make-300-with-bundles-and-sticks",
   "text": "Make 300 with bundles and sticks."
  },
  {
+  "slug": "300",
+  "text": "300"
+ },
+ {
+  "slug": "that-makes-300",
+  "text": "That makes 300."
+ },
+ {
   "slug": "make-400-with-bundles-and-sticks",
   "text": "Make 400 with bundles and sticks."
+ },
+ {
+  "slug": "400",
+  "text": "400"
+ },
+ {
+  "slug": "that-makes-400",
+  "text": "That makes 400."
  },
  {
   "slug": "make-500-with-bundles-and-sticks",
   "text": "Make 500 with bundles and sticks."
  },
  {
+  "slug": "500",
+  "text": "500"
+ },
+ {
+  "slug": "that-makes-500",
+  "text": "That makes 500."
+ },
+ {
   "slug": "make-600-with-bundles-and-sticks",
   "text": "Make 600 with bundles and sticks."
+ },
+ {
+  "slug": "600",
+  "text": "600"
+ },
+ {
+  "slug": "that-makes-600",
+  "text": "That makes 600."
  },
  {
   "slug": "make-700-with-bundles-and-sticks",
   "text": "Make 700 with bundles and sticks."
  },
  {
+  "slug": "700",
+  "text": "700"
+ },
+ {
+  "slug": "that-makes-700",
+  "text": "That makes 700."
+ },
+ {
   "slug": "make-800-with-bundles-and-sticks",
   "text": "Make 800 with bundles and sticks."
+ },
+ {
+  "slug": "800",
+  "text": "800"
+ },
+ {
+  "slug": "that-makes-800",
+  "text": "That makes 800."
  },
  {
   "slug": "make-900-with-bundles-and-sticks",
   "text": "Make 900 with bundles and sticks."
  },
  {
+  "slug": "900",
+  "text": "900"
+ },
+ {
+  "slug": "that-makes-900",
+  "text": "That makes 900."
+ },
+ {
   "slug": "make-143-with-bundles-and-sticks",
   "text": "Make 143 with bundles and sticks."
+ },
+ {
+  "slug": "110",
+  "text": "110"
+ },
+ {
+  "slug": "120",
+  "text": "120"
+ },
+ {
+  "slug": "130",
+  "text": "130"
+ },
+ {
+  "slug": "140",
+  "text": "140"
+ },
+ {
+  "slug": "141",
+  "text": "141"
+ },
+ {
+  "slug": "142",
+  "text": "142"
+ },
+ {
+  "slug": "143",
+  "text": "143"
+ },
+ {
+  "slug": "100-40-and-3-make-143",
+  "text": "100, 40 and 3 make 143."
  },
  {
   "slug": "make-141-with-bundles-and-sticks",
@@ -1380,6 +2008,22 @@
   "text": "Make 103 with bundles and sticks."
  },
  {
+  "slug": "101",
+  "text": "101"
+ },
+ {
+  "slug": "102",
+  "text": "102"
+ },
+ {
+  "slug": "103",
+  "text": "103"
+ },
+ {
+  "slug": "100-and-3-make-103",
+  "text": "100 and 3 make 103."
+ },
+ {
   "slug": "make-104-with-bundles-and-sticks",
   "text": "Make 104 with bundles and sticks."
  },
@@ -1392,8 +2036,72 @@
   "text": "Make 160 with bundles and sticks."
  },
  {
+  "slug": "150",
+  "text": "150"
+ },
+ {
+  "slug": "160",
+  "text": "160"
+ },
+ {
+  "slug": "100-and-60-make-160",
+  "text": "100 and 60 make 160."
+ },
+ {
   "slug": "make-275-with-bundles-and-sticks",
   "text": "Make 275 with bundles and sticks."
+ },
+ {
+  "slug": "210",
+  "text": "210"
+ },
+ {
+  "slug": "220",
+  "text": "220"
+ },
+ {
+  "slug": "230",
+  "text": "230"
+ },
+ {
+  "slug": "240",
+  "text": "240"
+ },
+ {
+  "slug": "250",
+  "text": "250"
+ },
+ {
+  "slug": "260",
+  "text": "260"
+ },
+ {
+  "slug": "270",
+  "text": "270"
+ },
+ {
+  "slug": "271",
+  "text": "271"
+ },
+ {
+  "slug": "272",
+  "text": "272"
+ },
+ {
+  "slug": "273",
+  "text": "273"
+ },
+ {
+  "slug": "274",
+  "text": "274"
+ },
+ {
+  "slug": "275",
+  "text": "275"
+ },
+ {
+  "slug": "200-70-and-5-make-275",
+  "text": "200, 70 and 5 make 275."
  },
  {
   "slug": "make-273-with-bundles-and-sticks",
@@ -1416,6 +2124,30 @@
   "text": "Make 205 with bundles and sticks."
  },
  {
+  "slug": "201",
+  "text": "201"
+ },
+ {
+  "slug": "202",
+  "text": "202"
+ },
+ {
+  "slug": "203",
+  "text": "203"
+ },
+ {
+  "slug": "204",
+  "text": "204"
+ },
+ {
+  "slug": "205",
+  "text": "205"
+ },
+ {
+  "slug": "200-and-5-make-205",
+  "text": "200 and 5 make 205."
+ },
+ {
   "slug": "make-203-with-bundles-and-sticks",
   "text": "Make 203 with bundles and sticks."
  },
@@ -1436,8 +2168,48 @@
   "text": "Make 270 with bundles and sticks."
  },
  {
+  "slug": "200-and-70-make-270",
+  "text": "200 and 70 make 270."
+ },
+ {
   "slug": "make-317-with-bundles-and-sticks",
   "text": "Make 317 with bundles and sticks."
+ },
+ {
+  "slug": "310",
+  "text": "310"
+ },
+ {
+  "slug": "311",
+  "text": "311"
+ },
+ {
+  "slug": "312",
+  "text": "312"
+ },
+ {
+  "slug": "313",
+  "text": "313"
+ },
+ {
+  "slug": "314",
+  "text": "314"
+ },
+ {
+  "slug": "315",
+  "text": "315"
+ },
+ {
+  "slug": "316",
+  "text": "316"
+ },
+ {
+  "slug": "317",
+  "text": "317"
+ },
+ {
+  "slug": "300-10-and-7-make-317",
+  "text": "300, 10 and 7 make 317."
  },
  {
   "slug": "make-315-with-bundles-and-sticks",
@@ -1460,6 +2232,38 @@
   "text": "Make 307 with bundles and sticks."
  },
  {
+  "slug": "301",
+  "text": "301"
+ },
+ {
+  "slug": "302",
+  "text": "302"
+ },
+ {
+  "slug": "303",
+  "text": "303"
+ },
+ {
+  "slug": "304",
+  "text": "304"
+ },
+ {
+  "slug": "305",
+  "text": "305"
+ },
+ {
+  "slug": "306",
+  "text": "306"
+ },
+ {
+  "slug": "307",
+  "text": "307"
+ },
+ {
+  "slug": "300-and-7-make-307",
+  "text": "300 and 7 make 307."
+ },
+ {
   "slug": "make-305-with-bundles-and-sticks",
   "text": "Make 305 with bundles and sticks."
  },
@@ -1480,8 +2284,96 @@
   "text": "Make 380 with bundles and sticks."
  },
  {
+  "slug": "320",
+  "text": "320"
+ },
+ {
+  "slug": "330",
+  "text": "330"
+ },
+ {
+  "slug": "340",
+  "text": "340"
+ },
+ {
+  "slug": "350",
+  "text": "350"
+ },
+ {
+  "slug": "360",
+  "text": "360"
+ },
+ {
+  "slug": "370",
+  "text": "370"
+ },
+ {
+  "slug": "380",
+  "text": "380"
+ },
+ {
+  "slug": "300-and-80-make-380",
+  "text": "300 and 80 make 380."
+ },
+ {
   "slug": "make-449-with-bundles-and-sticks",
   "text": "Make 449 with bundles and sticks."
+ },
+ {
+  "slug": "410",
+  "text": "410"
+ },
+ {
+  "slug": "420",
+  "text": "420"
+ },
+ {
+  "slug": "430",
+  "text": "430"
+ },
+ {
+  "slug": "440",
+  "text": "440"
+ },
+ {
+  "slug": "441",
+  "text": "441"
+ },
+ {
+  "slug": "442",
+  "text": "442"
+ },
+ {
+  "slug": "443",
+  "text": "443"
+ },
+ {
+  "slug": "444",
+  "text": "444"
+ },
+ {
+  "slug": "445",
+  "text": "445"
+ },
+ {
+  "slug": "446",
+  "text": "446"
+ },
+ {
+  "slug": "447",
+  "text": "447"
+ },
+ {
+  "slug": "448",
+  "text": "448"
+ },
+ {
+  "slug": "449",
+  "text": "449"
+ },
+ {
+  "slug": "400-40-and-9-make-449",
+  "text": "400, 40 and 9 make 449."
  },
  {
   "slug": "make-447-with-bundles-and-sticks",
@@ -1500,6 +2392,46 @@
   "text": "Make 409 with bundles and sticks."
  },
  {
+  "slug": "401",
+  "text": "401"
+ },
+ {
+  "slug": "402",
+  "text": "402"
+ },
+ {
+  "slug": "403",
+  "text": "403"
+ },
+ {
+  "slug": "404",
+  "text": "404"
+ },
+ {
+  "slug": "405",
+  "text": "405"
+ },
+ {
+  "slug": "406",
+  "text": "406"
+ },
+ {
+  "slug": "407",
+  "text": "407"
+ },
+ {
+  "slug": "408",
+  "text": "408"
+ },
+ {
+  "slug": "409",
+  "text": "409"
+ },
+ {
+  "slug": "400-and-9-make-409",
+  "text": "400 and 9 make 409."
+ },
+ {
   "slug": "make-407-with-bundles-and-sticks",
   "text": "Make 407 with bundles and sticks."
  },
@@ -1512,8 +2444,72 @@
   "text": "Make 490 with bundles and sticks."
  },
  {
+  "slug": "450",
+  "text": "450"
+ },
+ {
+  "slug": "460",
+  "text": "460"
+ },
+ {
+  "slug": "470",
+  "text": "470"
+ },
+ {
+  "slug": "480",
+  "text": "480"
+ },
+ {
+  "slug": "490",
+  "text": "490"
+ },
+ {
+  "slug": "400-and-90-make-490",
+  "text": "400 and 90 make 490."
+ },
+ {
   "slug": "make-572-with-bundles-and-sticks",
   "text": "Make 572 with bundles and sticks."
+ },
+ {
+  "slug": "510",
+  "text": "510"
+ },
+ {
+  "slug": "520",
+  "text": "520"
+ },
+ {
+  "slug": "530",
+  "text": "530"
+ },
+ {
+  "slug": "540",
+  "text": "540"
+ },
+ {
+  "slug": "550",
+  "text": "550"
+ },
+ {
+  "slug": "560",
+  "text": "560"
+ },
+ {
+  "slug": "570",
+  "text": "570"
+ },
+ {
+  "slug": "571",
+  "text": "571"
+ },
+ {
+  "slug": "572",
+  "text": "572"
+ },
+ {
+  "slug": "500-70-and-2-make-572",
+  "text": "500, 70 and 2 make 572."
  },
  {
   "slug": "make-571-with-bundles-and-sticks",
@@ -1532,6 +2528,18 @@
   "text": "Make 502 with bundles and sticks."
  },
  {
+  "slug": "501",
+  "text": "501"
+ },
+ {
+  "slug": "502",
+  "text": "502"
+ },
+ {
+  "slug": "500-and-2-make-502",
+  "text": "500 and 2 make 502."
+ },
+ {
   "slug": "make-501-with-bundles-and-sticks",
   "text": "Make 501 with bundles and sticks."
  },
@@ -1548,8 +2556,36 @@
   "text": "Make 510 with bundles and sticks."
  },
  {
+  "slug": "500-and-10-make-510",
+  "text": "500 and 10 make 510."
+ },
+ {
   "slug": "make-614-with-bundles-and-sticks",
   "text": "Make 614 with bundles and sticks."
+ },
+ {
+  "slug": "610",
+  "text": "610"
+ },
+ {
+  "slug": "611",
+  "text": "611"
+ },
+ {
+  "slug": "612",
+  "text": "612"
+ },
+ {
+  "slug": "613",
+  "text": "613"
+ },
+ {
+  "slug": "614",
+  "text": "614"
+ },
+ {
+  "slug": "600-10-and-4-make-614",
+  "text": "600, 10 and 4 make 614."
  },
  {
   "slug": "make-612-with-bundles-and-sticks",
@@ -1572,6 +2608,26 @@
   "text": "Make 604 with bundles and sticks."
  },
  {
+  "slug": "601",
+  "text": "601"
+ },
+ {
+  "slug": "602",
+  "text": "602"
+ },
+ {
+  "slug": "603",
+  "text": "603"
+ },
+ {
+  "slug": "604",
+  "text": "604"
+ },
+ {
+  "slug": "600-and-4-make-604",
+  "text": "600 and 4 make 604."
+ },
+ {
   "slug": "make-602-with-bundles-and-sticks",
   "text": "Make 602 with bundles and sticks."
  },
@@ -1592,8 +2648,60 @@
   "text": "Make 620 with bundles and sticks."
  },
  {
+  "slug": "620",
+  "text": "620"
+ },
+ {
+  "slug": "600-and-20-make-620",
+  "text": "600 and 20 make 620."
+ },
+ {
   "slug": "make-746-with-bundles-and-sticks",
   "text": "Make 746 with bundles and sticks."
+ },
+ {
+  "slug": "710",
+  "text": "710"
+ },
+ {
+  "slug": "720",
+  "text": "720"
+ },
+ {
+  "slug": "730",
+  "text": "730"
+ },
+ {
+  "slug": "740",
+  "text": "740"
+ },
+ {
+  "slug": "741",
+  "text": "741"
+ },
+ {
+  "slug": "742",
+  "text": "742"
+ },
+ {
+  "slug": "743",
+  "text": "743"
+ },
+ {
+  "slug": "744",
+  "text": "744"
+ },
+ {
+  "slug": "745",
+  "text": "745"
+ },
+ {
+  "slug": "746",
+  "text": "746"
+ },
+ {
+  "slug": "700-40-and-6-make-746",
+  "text": "700, 40 and 6 make 746."
  },
  {
   "slug": "make-744-with-bundles-and-sticks",
@@ -1616,6 +2724,34 @@
   "text": "Make 706 with bundles and sticks."
  },
  {
+  "slug": "701",
+  "text": "701"
+ },
+ {
+  "slug": "702",
+  "text": "702"
+ },
+ {
+  "slug": "703",
+  "text": "703"
+ },
+ {
+  "slug": "704",
+  "text": "704"
+ },
+ {
+  "slug": "705",
+  "text": "705"
+ },
+ {
+  "slug": "706",
+  "text": "706"
+ },
+ {
+  "slug": "700-and-6-make-706",
+  "text": "700 and 6 make 706."
+ },
+ {
   "slug": "make-704-with-bundles-and-sticks",
   "text": "Make 704 with bundles and sticks."
  },
@@ -1636,8 +2772,76 @@
   "text": "Make 730 with bundles and sticks."
  },
  {
+  "slug": "700-and-30-make-730",
+  "text": "700 and 30 make 730."
+ },
+ {
   "slug": "make-878-with-bundles-and-sticks",
   "text": "Make 878 with bundles and sticks."
+ },
+ {
+  "slug": "810",
+  "text": "810"
+ },
+ {
+  "slug": "820",
+  "text": "820"
+ },
+ {
+  "slug": "830",
+  "text": "830"
+ },
+ {
+  "slug": "840",
+  "text": "840"
+ },
+ {
+  "slug": "850",
+  "text": "850"
+ },
+ {
+  "slug": "860",
+  "text": "860"
+ },
+ {
+  "slug": "870",
+  "text": "870"
+ },
+ {
+  "slug": "871",
+  "text": "871"
+ },
+ {
+  "slug": "872",
+  "text": "872"
+ },
+ {
+  "slug": "873",
+  "text": "873"
+ },
+ {
+  "slug": "874",
+  "text": "874"
+ },
+ {
+  "slug": "875",
+  "text": "875"
+ },
+ {
+  "slug": "876",
+  "text": "876"
+ },
+ {
+  "slug": "877",
+  "text": "877"
+ },
+ {
+  "slug": "878",
+  "text": "878"
+ },
+ {
+  "slug": "800-70-and-8-make-878",
+  "text": "800, 70 and 8 make 878."
  },
  {
   "slug": "make-876-with-bundles-and-sticks",
@@ -1656,6 +2860,42 @@
   "text": "Make 808 with bundles and sticks."
  },
  {
+  "slug": "801",
+  "text": "801"
+ },
+ {
+  "slug": "802",
+  "text": "802"
+ },
+ {
+  "slug": "803",
+  "text": "803"
+ },
+ {
+  "slug": "804",
+  "text": "804"
+ },
+ {
+  "slug": "805",
+  "text": "805"
+ },
+ {
+  "slug": "806",
+  "text": "806"
+ },
+ {
+  "slug": "807",
+  "text": "807"
+ },
+ {
+  "slug": "808",
+  "text": "808"
+ },
+ {
+  "slug": "800-and-8-make-808",
+  "text": "800 and 8 make 808."
+ },
+ {
   "slug": "make-806-with-bundles-and-sticks",
   "text": "Make 806 with bundles and sticks."
  },
@@ -1672,8 +2912,24 @@
   "text": "Make 840 with bundles and sticks."
  },
  {
+  "slug": "800-and-40-make-840",
+  "text": "800 and 40 make 840."
+ },
+ {
   "slug": "make-911-with-bundles-and-sticks",
   "text": "Make 911 with bundles and sticks."
+ },
+ {
+  "slug": "910",
+  "text": "910"
+ },
+ {
+  "slug": "911",
+  "text": "911"
+ },
+ {
+  "slug": "900-10-and-1-make-911",
+  "text": "900, 10 and 1 make 911."
  },
  {
   "slug": "make-912-with-bundles-and-sticks",
@@ -1688,6 +2944,14 @@
   "text": "Make 901 with bundles and sticks."
  },
  {
+  "slug": "901",
+  "text": "901"
+ },
+ {
+  "slug": "900-and-1-make-901",
+  "text": "900 and 1 make 901."
+ },
+ {
   "slug": "make-902-with-bundles-and-sticks",
   "text": "Make 902 with bundles and sticks."
  },
@@ -1698,6 +2962,26 @@
  {
   "slug": "make-950-with-bundles-and-sticks",
   "text": "Make 950 with bundles and sticks."
+ },
+ {
+  "slug": "920",
+  "text": "920"
+ },
+ {
+  "slug": "930",
+  "text": "930"
+ },
+ {
+  "slug": "940",
+  "text": "940"
+ },
+ {
+  "slug": "950",
+  "text": "950"
+ },
+ {
+  "slug": "900-and-50-make-950",
+  "text": "900 and 50 make 950."
  },
  {
   "slug": "1-hundred-0-tens-and-0-ones-what-number-is-that",

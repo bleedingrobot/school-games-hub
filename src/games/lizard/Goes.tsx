@@ -12,7 +12,7 @@
  * tap on it shows why once and marks the original's right answer). The answer is never shown or said before the child has found it. Only the
  * tries are sent; the server replays them.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { DemoBar } from '../../kit/DemoBar';
 import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
@@ -29,7 +29,7 @@ import type { Friend as FriendName } from '../../../shared/lizard/progress';
 import { GOES_PER_ROUND, matOf, matValue, pictureFor, showRound, sisterGo, type Go, type Mat, type Round } from '../../../shared/lizard/round';
 import { playSound } from '../sounds';
 import { Bundle, Friend, Raft, Stick, sceneStyle, type Pose, type Scenery } from './art';
-import { DEMO_STEPS, demoMat, type DemoKind, WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
+import { DEMO_STEPS, countIntro, countParts, countSteps, countsLook, demoMat, togetherLine, type DemoKind, WHY_LINES, askLine, lookLine, placesWords, tryLine, type LineKey } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 1900;
@@ -37,6 +37,8 @@ const WOBBLE_MS = 500;
 /** After a wrong try "That's it" waits this long unless the child changes the mat. */
 const THINK_MS = 2000;
 const GUIDE_MS = 2600;
+/** How long "60 + 3 = 63" stays after it is said, before "Now you try one like it". */
+const TOGETHER_HOLD_MS = 2500;
 const MAX_TENS = 19;
 const MAX_HUNDREDS = 9;
 const RAFT_TIP_KEY = 'lizard-raft-tip';
@@ -84,6 +86,8 @@ interface MatProps {
   /** Plus and minus buttons per place (a build go). */
   /** The small picture in a wrong-try panel. */
   small?: boolean;
+  /** Counting aloud: how many pieces are counted so far (the rafts, then the bundles, then the sticks); the rest are greyed. */
+  lit?: number;
   edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; /** The hand points at minus (too many there). */ handTake?: boolean; withBundles: boolean; withRafts: boolean; addTen?: () => void; tenOff?: boolean };
 }
 
@@ -116,20 +120,25 @@ function Ones({ o, frame, colours }: { o: number; frame: boolean; colours: boole
   return <>{Array.from({ length: o }, (_, i) => <Stick key={i} tone={colours ? 'plain' : 'gone'} />)}</>;
 }
 
-function MatView({ mat, places, labels, counts, colours, frame, label, edit, small }: MatProps) {
+function MatView({ mat, places, labels, counts, colours, frame, label, edit, small, lit }: MatProps) {
   const cols: { p: Place; name: string; n: number }[] = [
     ...(places === 3 ? [{ p: 'h' as const, name: WORDS.hundreds, n: mat.h }] : []),
     { p: 't', name: WORDS.tens, n: mat.t },
     { p: 'o', name: WORDS.ones, n: mat.o },
   ];
-  const piece = (p: Place, i: number) => (p === 'h' ? <Raft key={i} tone={colours ? 'plain' : 'gone'} /> : <Bundle key={i} tone={colours ? 'plain' : 'gone'} />);
+  // Where each place starts in the count: the rafts first, then the bundles, then the sticks.
+  const first: Record<Place, number> = { h: 0, t: mat.h, o: mat.h + mat.t };
+  const toneAt = (p: Place, i: number): 'plain' | 'gone' => (lit === undefined ? (colours ? 'plain' : 'gone') : first[p] + i < lit ? 'plain' : 'gone');
+  const now = (p: Place, i: number) => lit !== undefined && first[p] + i === lit - 1;
+  const wrap = (p: Place, i: number, el: ReactElement) => (lit === undefined ? el : <span key={i} className={`lz-count${now(p, i) ? ' lz-count--now' : ''}`}>{el}</span>);
+  const piece = (p: Place, i: number) => wrap(p, i, p === 'h' ? <Raft key={i} tone={toneAt(p, i)} /> : <Bundle key={i} tone={toneAt(p, i)} />);
   return (
     <div className={`lz-mat lz-mat--${places}${small ? ' lz-mat--small' : ''}${colours ? '' : ' lz-mat--plain'}`} role="img" aria-label={label}>
       {cols.map(({ p, name, n }) => (
         <div key={p} className={`lz-place lz-place--${p}`}>
           {labels && <span className="lz-place__name">{name}</span>}
           <div className="lz-place__pieces">
-            {p === 'o' ? <Ones o={n} frame={frame && labels} colours={colours} /> : Array.from({ length: n }, (_, i) => piece(p, i))}
+            {p === 'o' && lit === undefined ? <Ones o={n} frame={frame && labels} colours={colours} /> : p === 'o' ? Array.from({ length: n }, (_, i) => wrap(p, i, <Stick key={i} tone={toneAt(p, i)} />)) : Array.from({ length: n }, (_, i) => piece(p, i))}
           </div>
           {counts && <span className="lz-place__count">{n}</span>}
           {edit && (p === 'o' || (p === 'h' ? edit.withRafts : edit.withBundles || n > 0)) && (
@@ -149,6 +158,22 @@ function MatView({ mat, places, labels, counts, colours, frame, label, edit, sma
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+/** "Let's look together" counting aloud: the pieces light up one at a time with the running total, then the parts come together. */
+function CountPicture({ mat, places, filled }: { mat: Mat; places: 2 | 3; filled: number }) {
+  const n = matValue(mat);
+  const steps = countSteps(n);
+  const parts = countParts(n);
+  const done = filled >= steps.length;
+  return (
+    <div className="lz-counting">
+      <MatView mat={mat} places={places} labels counts={done} colours frame={false} label={`The model: ${spoken(mat, places)}.`} lit={filled} />
+      <p className="lz-counting__total" aria-live="polite">
+        {done && parts.length > 1 ? `${parts.join(' + ')} = ${n}` : filled > 0 ? steps[filled - 1] : '\u00a0'}
+      </p>
     </div>
   );
 }
@@ -362,7 +387,10 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
         later(THINK_MS, () => setHeld(false));
       }
       if (state.phase === 'look') {
-        startLook({ anchor: at, steps: 3, openingLine: WORDS.lookTitle, fillLine: lookLine(go), onEnd: () => {
+        const counting = countsLook(go) ? countSteps(matValue(targetMat(go))) : null;
+        startLook({ anchor: at, steps: counting ? counting.length : 3, openingLine: WORDS.lookTitle, fillLine: counting ? countIntro(matValue(targetMat(go))) : lookLine(go),
+          ...(counting ? { stepLine: (k: number) => String(counting[k - 1]), waitForVoice: true, endLine: togetherLine(matValue(targetMat(go))), endHoldMs: TOGETHER_HOLD_MS } : {}),
+          onEnd: () => {
             setGs((s) => stepGo(s, 'lookDone'));
             const sis = sisterGo(round, at, base);
             setSister(sis);
@@ -537,8 +565,14 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
         <LookTogether
           prefix="lz"
           title={WORDS.lookTitle}
-          picture={<MatView mat={target} places={places} labels counts colours frame={false} label={`The model: ${spoken(target, places)}.`} />}
-          line={lookLine(go)}
+          picture={
+            countsLook(go) ? (
+              <CountPicture mat={target} places={places} filled={look.filled} />
+            ) : (
+              <MatView mat={target} places={places} labels counts colours frame={false} label={`The model: ${spoken(target, places)}.`} />
+            )
+          }
+          line={countsLook(go) ? countIntro(matValue(target)) : lookLine(go)}
           skipLabel={WORDS.skip}
           canSkip={look.canSkip}
           onSkip={skip}
