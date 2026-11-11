@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config';
-import type { CellState } from './state';
+import { firstTryWords, type CellState } from './state';
 
 export interface ProgressColumn {
   id: string;
@@ -22,6 +22,7 @@ export interface ProgressRow {
 const SORTS = [
   { id: 'all', label: 'All pupils' },
   { id: 'stuck', label: 'Stuck first' },
+  { id: 'slowest', label: 'Slowest first' },
 ] as const;
 type SortId = (typeof SORTS)[number]['id'];
 
@@ -35,6 +36,20 @@ const STATE_WORDS: Record<CellState['state'], string> = {
 };
 
 const stuckCount = (r: ProgressRow) => Object.values(r.cells).filter((c) => c.state === 'stuck').length;
+
+/** The longest usual time to a first tap in any of the pupil's games, or null when no game says. */
+export const slowestMs = (r: ProgressRow): number | null => {
+  const times = Object.values(r.cells).flatMap((c) => (c.firstTry?.ms != null ? [c.firstTry.ms] : []));
+  return times.length > 0 ? Math.max(...times) : null;
+};
+
+/** Slowest usual first tap first; pupils with no time saved go last. Exported for tests. */
+export const bySlowest = (a: ProgressRow, b: ProgressRow): number => {
+  const x = slowestMs(a);
+  const y = slowestMs(b);
+  if (x === null || y === null) return x === y ? a.name.localeCompare(b.name) : x === null ? 1 : -1;
+  return y - x || a.name.localeCompare(b.name);
+};
 
 /** "Robin: Step 3 of 6: Give 6 to 10, 7 days on this step, stuck" */
 export function cellWords(col: ProgressColumn, cell: CellState): string {
@@ -59,7 +74,7 @@ function Cell({ col, cell, pupil, classId }: { col: ProgressColumn; cell: CellSt
   // Played, but the saved step isn't one this page knows: say so rather than "not yet".
   if (!cell.step) return <span className="progress__not-yet">played</span>;
   const n = cell.step.n;
-  const words = `${pupil.name}, ${cellWords(col, cell)}`;
+  const words = [`${pupil.name}, ${cellWords(col, cell)}`, firstTryWords(cell.firstTry)].filter(Boolean).join(', ');
   return (
     <Link className="progress__cell" data-state={cell.state} to={`/teacher/${classId}/students/${pupil.id}?game=${col.id}`} title={words} aria-label={words}>
       <span className="progress__bar" aria-hidden="true">
@@ -80,7 +95,12 @@ function Cell({ col, cell, pupil, classId }: { col: ProgressColumn; cell: CellSt
 export function ProgressTable({ classId, columns, rows }: { classId: string; columns: ProgressColumn[]; rows: ProgressRow[] }) {
   const [sort, setSort] = useState<SortId>('all');
   const shown = useMemo(
-    () => (sort === 'stuck' ? [...rows].sort((a, b) => stuckCount(b) - stuckCount(a) || a.name.localeCompare(b.name)) : rows),
+    () =>
+      sort === 'stuck'
+        ? [...rows].sort((a, b) => stuckCount(b) - stuckCount(a) || a.name.localeCompare(b.name))
+        : sort === 'slowest'
+          ? [...rows].sort(bySlowest)
+          : rows,
     [rows, sort],
   );
   return (

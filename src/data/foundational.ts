@@ -21,6 +21,10 @@ export interface RecentChallenge {
   wrong: number;
   taps: number;
   level: number | null;
+  /** Goes right at the first tap (P8); left out when the game can't say. */
+  firstRight?: number;
+  /** The median time to the first tap of a go, in milliseconds (P8); left out when it can't be told. */
+  ms?: number;
 }
 
 /** One pupil in one game. */
@@ -72,7 +76,11 @@ export function parseGame(raw: unknown): GameProgress | null {
   const recent = (Array.isArray(r.recent) ? r.recent : []).map((c): RecentChallenge | null => {
     const o = object(c);
     const d = day(o.d);
-    return d ? { day: d, wrong: whole(o.m), taps: whole(o.t), level: typeof o.l === 'number' ? o.l : null } : null;
+    if (!d) return null;
+    const challenge: RecentChallenge = { day: d, wrong: whole(o.m), taps: whole(o.t), level: typeof o.l === 'number' ? o.l : null };
+    if (typeof o.f === 'number' && Number.isFinite(o.f) && o.f >= 0) challenge.firstRight = Math.floor(o.f);
+    if (typeof o.ms === 'number' && Number.isFinite(o.ms) && o.ms > 0) challenge.ms = o.ms;
+    return challenge;
   });
   return {
     daysDone: whole(r.daysDone),
