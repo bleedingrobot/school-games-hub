@@ -3,6 +3,8 @@
  * backend it is given: the trial one in the preview, the school's server in stage F.3.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { speak, stopSpeaking, useReadAloud } from '../../speech';
+import { guideSkipped, readHelp, saveHelp, setGuideSkipped, showTip, voiceLine, VOICE_FOLDER, type HelpSetting } from './guide';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { ToonFlapError, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
 import { Hangar } from './Hangar';
@@ -33,6 +35,15 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
   const [reply, setReply] = useState<FinishReply | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [help, setHelp] = useState<HelpSetting>(readHelp);
+  const [guide, setGuide] = useState(false);
+  const [tip, setTip] = useState(false);
+  const voice = useReadAloud({ defaultOn: true });
+  const talk = useCallback((text: string) => {
+    const line = voiceLine(text);
+    if (voice.on && line) speak(line, VOICE_FOLDER);
+  }, [voice.on]);
+  useEffect(() => stopSpeaking, []);
 
   const reload = useCallback(() => {
     setFailed(false);
@@ -49,11 +60,22 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
     }
   };
 
-  const begin = async (n: number) => {
+  const chooseHelp = (h: HelpSetting) => {
+    setHelp(h);
+    saveHelp(h);
+  };
+
+  const begin = async (n: number, replayGuide = false) => {
     setBusy(true);
     setError(null);
     try {
       const r = await backend.start(LEVELS[n - 1].id, gentle);
+      const p = loaded?.progress;
+      const finishes = p?.levels[LEVELS[n - 1].id]?.finishes ?? 0;
+      const never = !p || Object.values(p.levels).every((l) => !l || l.finishes === 0);
+      if (replayGuide) setGuideSkipped(false);
+      setGuide(n === 1 && (replayGuide || (never && !guideSkipped())));
+      setTip(showTip(help, finishes));
       setRun(r);
       setLevel(n);
       setScreen('play');
@@ -91,7 +113,11 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
     <div className="tf-root" data-screen={screen}>
       {screen === 'map' && (
         <>
-          <MapScreen progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={begin} onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error} />
+          <MapScreen
+            progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)}
+            onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
+            help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
+          />
           {onExit && <button type="button" className="tf-btn tf-exit" onClick={onExit}>Back to games</button>}
           {extra?.({ reload })}
         </>
@@ -105,6 +131,10 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
           start={run}
           progress={loaded.progress}
           picks={loaded.picks}
+          guide={guide}
+          tip={tip}
+          talk={talk}
+          onSkipGuide={() => setGuideSkipped(true)}
           onLeave={() => {
             setRun(null);
             setScreen('map');
@@ -117,7 +147,7 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
         />
       )}
       {screen === 'results' && reply && run && (
-        <ResultsScreen reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
+        <ResultsScreen talk={talk} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
     </div>
   );

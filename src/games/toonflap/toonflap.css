@@ -272,3 +272,9 @@
   display: block;
   margin: 12px auto;
 }
+.tf-hud__right { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.tf-help { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.tf-help__label { font-weight: 800; }
+.tf-help .tf-btn[aria-pressed='true'] { outline: 3px solid #0f172a; }
+.tf-btn--small.tf-btn--ghost { background: #fff; color: #0f172a; }
+.tf-help .tf-btn[aria-pressed='true'] { background: #0f172a; color: #fff; }
