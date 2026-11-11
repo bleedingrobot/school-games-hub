@@ -123,7 +123,8 @@ describe("Kiwi's Beanstalk play screen", () => {
       if (!held) await u.click(leaf(a));
       await u.click(leaf(w)); // a wrong first tap
       if (!held) await u.click(leaf(a));
-      await u.click(leaf(10 - a));
+      // A 5 + 5 go has two leaves labelled 5: tap the one that is not held.
+      await u.click(leaves().find((b) => b.getAttribute('aria-label') === String(10 - a) && b !== held) ?? leaf(10 - a));
       await act(() => vi.advanceTimersByTimeAsync(1000));
     }
     expect(screen.getByLabelText('3 of 10 pairs')).toBeInTheDocument();
