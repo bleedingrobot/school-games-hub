@@ -84,6 +84,13 @@
   font-weight: 700;
   line-height: 1.25;
 }
+.progress__group {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  border-left: 1px solid var(--tint-hover);
+}
 .progress__steps {
   display: block;
   font-weight: 400;

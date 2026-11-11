@@ -92,6 +92,26 @@ export interface TeacherContract {
   hardest?(classId: string): Promise<HardestRow[]>;
   /** Things the teacher should look at, for Today's "Needs you" (saves or requests the game turned down this week). */
   alerts?(classId: string): Promise<TeacherAlert[]>;
+  /**
+   * A column on the Progress tab's "Other games" group, for a game with levels that is not a stepped lesson (no stuck or
+   * nearly rule): the number, and "zz" when not played for the quiet window. Shown only while the game is on for the class
+   * (its `switch`, or always when it has none). The hook is called for the Progress tab only; keep it to one cached request.
+   */
+  progressColumns?: {
+    /** What the number is, under the game's name in the header ("level passed"). */
+    note: string;
+    /** Each pupil's number by student id, null while loading. A pupil who has never played has no entry. */
+    useCells(classId: string): Map<string, ProgressCell> | null;
+  };
+}
+
+/** One pupil's number in an "Other games" column. */
+export interface ProgressCell {
+  value: number;
+  /** The most it can be (Diamond Drop's 10 levels), which draws a bar; leave it out when the number has no top. */
+  of?: number;
+  /** When they last played, as an ISO time, for "zz". */
+  lastPlayed?: string;
 }
 
 /** One question on the merged hardest-questions table. The hub adds the game's name. */

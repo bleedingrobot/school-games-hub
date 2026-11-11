@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
-import { useGemKeepSummary } from './teacher';
+import { useGemKeepCells, useGemKeepSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const GemKeepPlay = lazy(() => import('./GemKeepPlay').then((m) => ({ default: m.GemKeepPlay })));
@@ -37,6 +37,7 @@ export const gemKeep: GameDefinition = {
   // class report in its Settings.
   teacher: {
     useSummary: useGemKeepSummary,
+    progressColumns: { note: 'level passed', useCells: useGemKeepCells },
     Settings: GemKeepTeacherSettings,
     StudentPanel: GemKeepStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherGemKeep').then((m) => m.gemKeepStudentSummary(student)),

@@ -3,7 +3,8 @@
  * (shared/kit/teacherGrid.ts with the numbers in ../foundational/config.ts), so the table and the flags agree.
  */
 import { daysAtLevel, schoolDaysSince } from '../../../shared/kit/teacherGrid';
-import { mastery, type FactStats } from '../../../shared/maths/leitner';
+import type { ProgressCell } from '../../games/types';
+import { mastery, nzDay, type FactStats } from '../../../shared/maths/leitner';
 import { QUICK_LOOKS_ID, FLAG_RULES, GAMES, NEARLY_SHARE, stepOf } from '../foundational/config';
 import { stepKeys as hopKeys, type HopStep } from '../../../shared/hop/round';
 import { levelKeys as keroraKeys, type Level as KeroraLevel } from '../../../shared/korora/round';
@@ -140,6 +141,18 @@ export function quickCellState(q: QuickLooksProgress | null | undefined, today: 
   const step = { n: q.finished, of, name: '' };
   if (q.lastDay && schoolDaysSince(q.lastDay, today) >= FLAG_RULES.quietSchoolDays) return { state: 'quiet', step, daysOnStep: 0 };
   return { state: q.finished >= of ? 'top' : 'moving', step, daysOnStep: 0 };
+}
+
+/**
+ * An "Other games" cell (a game with levels that is not a stepped lesson): the number, and quiet after the same school days as
+ * the other games. No stuck, nearly or top rule. `of` is the game's top, which draws a bar; without it there is just the number.
+ */
+export function otherCellState(cell: ProgressCell | undefined, today: string): CellState {
+  if (!cell) return none;
+  const step = { n: cell.value, of: cell.of ?? 0, name: '' };
+  const last = cell.lastPlayed ? nzDay(Date.parse(cell.lastPlayed)) : null;
+  if (last && schoolDaysSince(last, today) >= FLAG_RULES.quietSchoolDays) return { state: 'quiet', step, daysOnStep: 0 };
+  return { state: 'moving', step, daysOnStep: 0 };
 }
 
 export { QUICK_LOOKS_ID };

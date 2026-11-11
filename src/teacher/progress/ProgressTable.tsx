@@ -9,6 +9,8 @@ export interface ProgressColumn {
   name: string;
   /** How many steps the game has. */
   steps: number;
+  /** Set for an "Other games" column: what the number is ("level passed"). These columns come after the others. */
+  note?: string;
 }
 
 export interface ProgressRow {
@@ -56,6 +58,7 @@ export function cellWords(col: ProgressColumn, cell: CellState): string {
   if (cell.state === 'none') return `${col.name}: not played yet`;
   if (!cell.step) return `${col.name}: played`;
   const s = cell.step;
+  if (col.note) return `${col.name}: ${s.n}${s.of > 0 ? ` of ${s.of}` : ''} ${col.note}${cell.state === 'quiet' ? `, ${STATE_WORDS.quiet}` : ''}`;
   const where = col.id === QUICK_LOOKS_ID ? `${s.n} of ${s.of} stages finished` : `Step ${s.n} of ${s.of}${s.name ? `: ${s.name}` : ''}`;
   const days = cell.daysOnStep > 0 ? `, ${cell.daysOnStep} day${cell.daysOnStep === 1 ? '' : 's'} on this step` : '';
   return `${col.name}: ${where}${days}, ${STATE_WORDS[cell.state]}`;
@@ -77,11 +80,13 @@ function Cell({ col, cell, pupil, classId }: { col: ProgressColumn; cell: CellSt
   const words = [`${pupil.name}, ${cellWords(col, cell)}`, firstTryWords(cell.firstTry)].filter(Boolean).join(', ');
   return (
     <Link className="progress__cell" data-state={cell.state} to={`/teacher/${classId}/students/${pupil.id}?game=${col.id}`} title={words} aria-label={words}>
-      <span className="progress__bar" aria-hidden="true">
-        {Array.from({ length: col.steps }, (_, i) => (
-          <span key={i} className={i < n ? 'progress__box progress__box--on' : 'progress__box'} />
-        ))}
-      </span>
+      {col.steps > 0 && (
+        <span className="progress__bar" aria-hidden="true">
+          {Array.from({ length: col.steps }, (_, i) => (
+            <span key={i} className={i < n ? 'progress__box progress__box--on' : 'progress__box'} />
+          ))}
+        </span>
+      )}
       <span className="progress__n" aria-hidden="true">
         {n}
       </span>
@@ -94,6 +99,7 @@ function Cell({ col, cell, pupil, classId }: { col: ProgressColumn; cell: CellSt
 
 export function ProgressTable({ classId, columns, rows }: { classId: string; columns: ProgressColumn[]; rows: ProgressRow[] }) {
   const [sort, setSort] = useState<SortId>('all');
+  const others = columns.filter((c) => c.note);
   const shown = useMemo(
     () =>
       sort === 'stuck'
@@ -125,12 +131,18 @@ export function ProgressTable({ classId, columns, rows }: { classId: string; col
       <div className="progress__scroll">
         <table className="progress__table">
           <thead>
+            {others.length > 0 && (
+              <tr className="progress__groups">
+                <td colSpan={1 + columns.length - others.length} />
+                <th scope="colgroup" colSpan={others.length} className="progress__group">Other games</th>
+              </tr>
+            )}
             <tr>
               <th scope="col" className="progress__who">Student</th>
               {columns.map((c) => (
                 <th key={c.id} scope="col">
                   {c.name}
-                  <span className="progress__steps">{c.id === QUICK_LOOKS_ID ? `${c.steps} stages` : `${c.steps} steps`}</span>
+                  <span className="progress__steps">{c.note ?? (c.id === QUICK_LOOKS_ID ? `${c.steps} stages` : `${c.steps} steps`)}</span>
                 </th>
               ))}
             </tr>
