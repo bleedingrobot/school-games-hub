@@ -110,6 +110,8 @@ export interface LookRun {
   countStartMs?: number;
   /** With `stepLine`: said once the count is over, before the look ends ("Now it is level."). */
   endLine?: string;
+  /** With `endLine`: how long the finished picture stays after the end line is said (default 700). */
+  endHoldMs?: number;
   /** Runs once when the look ends (by itself or skipped): the game moves to "Now you try". */
   onEnd: () => void;
 }
@@ -134,7 +136,7 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
   }, []);
 
   const start = useCallback(
-    ({ anchor, steps, openingLine, fillLine, stepLine, stepMs = COUNT_STEP_MS, waitForVoice = false, countStartMs = COUNT_START_MS, endLine, onEnd }: LookRun) => {
+    ({ anchor, steps, openingLine, fillLine, stepLine, stepMs = COUNT_STEP_MS, waitForVoice = false, countStartMs = COUNT_START_MS, endLine, endHoldMs = SETTLE_MS, onEnd }: LookRun) => {
       const me = ++run.current;
       const live = () => run.current === me;
       const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
@@ -148,7 +150,7 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
         onEnd();
       };
       const endIfDone = () => {
-        if (said && filled) later(SETTLE_MS, end);
+        if (said && filled) later(endLine ? endHoldMs : SETTLE_MS, end);
       };
       const countAloud = (line: (k: number) => string) => {
         let counting = false;
@@ -217,7 +219,7 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
       say(openingLine, fill);
       later(START_FALLBACK_MS, fill); // the voice is off or slow: count anyway
       later(SKIP_AFTER_MS, () => live() && setLook((l) => l && { ...l, canSkip: true }));
-      const counted = stepLine ? countStartMs + steps * stepMs * (waitForVoice ? 4 : 1) + (endLine ? END_LINE_MS : 0) : 0;
+      const counted = stepLine ? countStartMs + steps * stepMs * (waitForVoice ? 4 : 1) + (endLine ? END_LINE_MS + endHoldMs : 0) : 0;
       later(LONGEST_MS + counted, end);
       skip.current = end;
     },

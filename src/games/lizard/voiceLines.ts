@@ -102,6 +102,39 @@ export function lookLine(go: Pick<Go, 'kind' | 'dir' | 'unit'>): string {
   return go.unit === 100 ? 'A hundred more is one more raft. A hundred less is one raft fewer.' : 'Ten more is one more bundle. Ten less is one bundle fewer.';
 }
 
+/**
+ * "Let's look together" on a Make or Read go counts the picture aloud, one piece about every 1.5 seconds: the rafts in hundreds,
+ * then the bundles in tens, then the sticks counted on in ones, then how the parts come together ("60 and 3 make 63").
+ */
+export const countsLook = (go: Pick<Go, 'kind'>): boolean => go.kind === 'build' || go.kind === 'read';
+
+/** The running total as each piece is counted: 63 is 10, 20, ... 60, then 61, 62, 63. */
+export function countSteps(n: number): number[] {
+  const { h, t, o } = matOf(n);
+  const out: number[] = [];
+  for (let i = 1; i <= h; i++) out.push(i * 100);
+  for (let i = 1; i <= t; i++) out.push(h * 100 + i * 10);
+  for (let i = 1; i <= o; i++) out.push(h * 100 + t * 10 + i);
+  return out;
+}
+
+/** Said before the count starts. */
+export const countIntro = (n: number): string =>
+  n >= 100 ? 'Count the rafts in hundreds, then the bundles in tens, then count on the sticks.' : 'Count the bundles in tens, then count on the sticks.';
+
+/** The parts that are not zero: 63 is [60, 3], 306 is [300, 6]. */
+export const countParts = (n: number): number[] => {
+  const { h, t, o } = matOf(n);
+  return [h * 100, t * 10, o].filter((p) => p > 0);
+};
+
+/** Said once the count is over: how the parts come together. */
+export function togetherLine(n: number): string {
+  const parts = countParts(n);
+  if (parts.length < 2) return `That makes ${n}.`;
+  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]} make ${n}.`;
+}
+
 /** What the home screen says: whose den it is, and "come back tomorrow" once today's bundle has changed. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? `${title} ${WORDS.doneToday}` : title);
 
@@ -121,6 +154,11 @@ export function allVoiceLines(): string[] {
     const said = { kind, n: keyNumber(key), dir: key.includes('-') ? -1 : 1, unit: key.startsWith('pvhun:') ? 100 : 10 } as const;
     lines.add(askLine(said));
     lines.add(lookLine(said));
+    if (countsLook(said)) {
+      for (const total of countSteps(said.n)) lines.add(String(total));
+      lines.add(countIntro(said.n));
+      lines.add(togetherLine(said.n));
+    }
     // "Now you try one like it": the sister's number is 1 or 2 away in the same family and shape (see sisterGo), so say each of those.
     const prefix = key.replace(/\d+$/, '');
     const family = KEYS.filter((k) => k.startsWith(prefix)).map(keyNumber);

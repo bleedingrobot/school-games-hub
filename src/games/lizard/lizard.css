@@ -210,3 +210,10 @@
 
 .lz-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; margin-top: 8px; }
 .lz-board--demo .lz-btn { position: relative; }
+
+/* "Let's look together" counting aloud: each piece lights as it is counted, with the running total underneath. */
+.lz-counting { display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(100%, 620px); }
+.lz-count { display: block; transition: transform 0.3s ease; }
+.lz-count--now { transform: scale(1.18); filter: drop-shadow(0 0 8px var(--lz-gold)); }
+.lz-counting__total { margin: 0; min-height: 1.2em; font: 900 clamp(2rem, 6vw, 3rem) system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--lz-ink); }
+@media (prefers-reduced-motion: reduce) { .lz-count { transition: none; } }
