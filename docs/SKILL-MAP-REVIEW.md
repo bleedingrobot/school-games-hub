@@ -89,10 +89,8 @@ Each card's full detail and ready prompt is in [plans/skill-map/HANDOVER.md](pla
 
 ## Decisions for James
 
-Asked on question cards on 11 Nov 2026; answers are recorded here when they come in.
+James chose on 11 Nov 2026:
 
-1. **What a laptop shows first.** Recommended: the grid of skills in use (K1 + K2). Other choices: the By skill cards first, or
-   keep closed stages as now.
-2. **Early number facts skills that only Foundational games practise** (20 of 26, already on the Foundational skills tab).
-   Recommended: show them only when a pupil in the class has started them. Other choices: always leave them to Foundational
-   skills, or always show them.
+1. **What a laptop shows first:** the grid of skills in use (K1 + K2). By skill stays one tap away.
+2. **Early number facts skills that only Foundational games practise** (20 of 26): show them only when a pupil in the class
+   has started them. K2's "skills in use" rule already does this, so K7 adds nothing for it.
