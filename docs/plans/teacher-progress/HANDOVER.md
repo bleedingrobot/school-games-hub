@@ -3,7 +3,7 @@
 The review behind this plan is [docs/TEACHER-PROGRESS-REVIEW.md](../../TEACHER-PROGRESS-REVIEW.md) (11 Nov 2026). Pictures of
 the teacher pages today (`now-*.png`) and the mock-ups (`mock-*.png`) are in the project files folder `teacher-progress/`.
 
-**Plan page with copy-ready prompts:** the "Teacher Progress Plan" artifact (link in project memory, `teacher-progress-plan`).
+**Plan page with copy-ready prompts and shared status:** https://claude.ai/artifact/XVpd7cVC83aZGST9kfjQKA (collection `status`, one doc per card P1 to P11: `state` todo, started or done; `pr`; `updated`).
 This file is the record of where things stand. Keep it current in each card's PR.
 
 ## The goal
