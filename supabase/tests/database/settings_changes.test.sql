@@ -56,14 +56,14 @@ select is((select count(*) from public.settings_changes where setting = 'non_mat
 -- The other class was not touched.
 select is((select count(*) from public.settings_changes where class_id = current_setting('test.b')::uuid), 0::bigint, 'the other class has no changes');
 
--- Tane reads his class through the function, with his name; Bree cannot read it either way.
+-- Tane reads his class through the function, with his name; nobody signed in reads the table itself.
 select pg_temp.tane();
 select ok(jsonb_array_length(public.teacher_settings_changes(current_setting('test.a')::uuid)) >= 2, 'the teacher sees the changes for their class');
 select is((public.teacher_settings_changes(current_setting('test.a')::uuid, 20, true) -> 0 ->> 'realName'), 'tane', '... with the real name');
-select is((select count(*) from public.settings_changes where class_id = current_setting('test.a')::uuid) > 0, true, '... and can read the table directly');
+select throws_ok($$ select count(*) from public.settings_changes $$, '42501', null, '... but cannot read the table directly');
 select pg_temp.bree();
 select throws_ok(format($$ select public.teacher_settings_changes(%L::uuid) $$, current_setting('test.a')), '42501', null, 'a teacher of another class is refused the function');
-select is((select count(*) from public.settings_changes where class_id = current_setting('test.a')::uuid), 0::bigint, '... and sees no rows in the table');
+select throws_ok($$ select count(*) from public.settings_changes $$, '42501', null, '... nor the table');
 
 select * from finish();
 rollback;

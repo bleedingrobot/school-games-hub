@@ -18,14 +18,8 @@ create index settings_changes_by_class on public.settings_changes (class_id, cha
 
 alter table public.settings_changes enable row level security;
 revoke all on public.settings_changes from anon, authenticated;
-grant select on public.settings_changes to authenticated;
--- The rule below calls teaches_class() as the signed-in teacher, so they need to be able to call it (it only answers about
--- their own classes).
-grant execute on function public.teaches_class(uuid, boolean) to authenticated;
-create policy "Teachers read the changes for their classes" on public.settings_changes
-  for select to authenticated
-  using (public.teaches_class(class_id));
--- No insert, update or delete policy: only the trigger below writes, and nothing removes.
+-- No policies and no grants: teachers read it only through teacher_settings_changes() below, which checks the class.
+-- Only the trigger below writes, and nothing removes.
 
 -- One statement per saved row: one log row for each column whose value changed (id, class_id and school_id are skipped).
 create function public.log_settings_change()
