@@ -61,6 +61,9 @@ import robin from '../assets/home/robin.webp';
 import robinSmall from '../assets/home/robin-small.webp';
 import tui from '../assets/home/tui.webp';
 import tuiSmall from '../assets/home/tui-small.webp';
+// Toon Flap: painted by scripts/toonflap-art.py (11 Nov 2026); the game id is 'toonflap'.
+import toonflap from '../assets/home/toonflap.webp';
+import toonflapSmall from '../assets/home/toonflap-small.webp';
 // Quick looks is a Training activity, not a game, but it has a card with the foundational games. Clay painting from
 // scripts/quick-looks-card-art.py (5 Nov 2026).
 import quickLooks from '../assets/home/quick-looks.webp';
@@ -107,6 +110,7 @@ const ART: Record<string, GameCardArt> = {
   'lizard': { card: lizard, small: lizardSmall, focus: 'center 50%' },
   'swamphen': { card: swamphen, small: swamphenSmall, focus: 'center 45%' },
   'tui': { card: tui, small: tuiSmall, focus: 'center 45%' },
+  'toonflap': { card: toonflap, small: toonflapSmall, focus: 'center 45%' },
   'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 50%' },
 };
 
