@@ -193,8 +193,8 @@ Print one badge for a test pupil (or your own class), then:
 
 Asked on question cards in the review thread:
 
-1. **Shared iPads, how long should a badge sign-in last?** (B5) Options: keep as now and add a "Not you?" button
-   (recommended); sign out at the end of each school day; sign out after 1 hour of no play.
+1. **Shared iPads, how long should a badge sign-in last?** (B5) **DECIDED by James 11 Nov 2026: keep sign-ins as now
+   and add a big "Not you? Scan your badge" button.**
 2. **New pupils who haven't signed in with Google** (B6): keep the one adult-helped Google sign-in for now (recommended,
    L to change); or build "teacher adds a pupil by email".
 
@@ -206,5 +206,5 @@ Asked on question cards in the review thread:
 | B2 | | to do |
 | B3 | | to do |
 | B4 | | to do |
-| B5 | | waits for decision 1 |
+| B5 | | to do (decided: Not you? button) |
 | B6 | | waits for decision 2 |
