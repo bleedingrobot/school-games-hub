@@ -16,7 +16,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DemoBar } from '../../kit/DemoBar';
 import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
-import { TenFrame } from '../../kit';
 import { FirstTimeTip } from '../../kit/FirstTimeTip';
 import { HearAgain } from '../../kit/HearAgain';
 import { PointingHand } from '../../kit/PointingHand';
@@ -85,12 +84,23 @@ interface MatProps {
   /** Plus and minus buttons per place (a build go). */
   /** The small picture in a wrong-try panel. */
   small?: boolean;
-  edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; withBundles: boolean; withRafts: boolean; addTen?: () => void; tenOff?: boolean };
+  edit?: { add: (p: Place) => void; take: (p: Place) => void; hand?: Place | null; /** The hand points at minus (too many there). */ handTake?: boolean; withBundles: boolean; withRafts: boolean; addTen?: () => void; tenOff?: boolean };
 }
 
 /** Steps 1 to 3 make the child tie each bundle: no "+ bundle" until step 4 (and never on the guided first go). */
 export const TIE_STEPS = 3;
 export const showBundleButtons = (step: number, firstGuidedGo: boolean) => step > TIE_STEPS && !firstGuidedGo;
+
+/** Up to ten loose sticks in a ten-frame (two rows of five), one stick in each square. */
+function StickFrame({ n, extra = false }: { n: number; extra?: boolean }) {
+  return (
+    <span className={`lz-frame${extra ? ' lz-frame--extra' : ''}`} role="img" aria-label={extra ? `${n} more sticks` : `${n} sticks in a ten-frame`}>
+      {Array.from({ length: 10 }, (_, i) => (
+        <span key={i} className="lz-frame__cell">{i < n && <Stick />}</span>
+      ))}
+    </span>
+  );
+}
 
 function Ones({ o, frame, colours }: { o: number; frame: boolean; colours: boolean }) {
   if (frame) {
@@ -98,8 +108,8 @@ function Ones({ o, frame, colours }: { o: number; frame: boolean; colours: boole
     const rest = Math.max(0, o - 10);
     return (
       <span className="lz-frames">
-        <TenFrame squares={Array.from({ length: first }, () => 'filled' as const)} label={`${first} sticks in a ten-frame`} className="lz-frame" colors={{ counter: '#c8903a', frame: '#6b4a1a' }} />
-        {rest > 0 && <TenFrame squares={Array.from({ length: rest }, () => 'extra' as const)} label={`${rest} more sticks`} className="lz-frame" colors={{ counter: '#c8903a', extra: '#d4572f', frame: '#6b4a1a' }} />}
+        <StickFrame n={first} />
+        {rest > 0 && <StickFrame n={rest} extra />}
       </span>
     );
   }
@@ -122,12 +132,16 @@ function MatView({ mat, places, labels, counts, colours, frame, label, edit, sma
             {p === 'o' ? <Ones o={n} frame={frame && labels} colours={colours} /> : Array.from({ length: n }, (_, i) => piece(p, i))}
           </div>
           {counts && <span className="lz-place__count">{n}</span>}
-          {edit && (p === 'h' || p === 't' ? (p === 'h' ? edit.withRafts : edit.withBundles) : true) && (
+          {edit && (p === 'o' || (p === 'h' ? edit.withRafts : edit.withBundles || n > 0)) && (
             <span className="lz-place__btns">
-              <button type="button" className="lz-step" onClick={() => edit.take(p)} aria-label={p === 'h' ? WORDS.takeRaft : p === 't' ? WORDS.takeBundle : WORDS.takeStick}>−</button>
-              <button type="button" className="lz-step lz-step--add" onClick={() => edit.add(p)} aria-label={p === 'h' ? WORDS.addRaft : p === 't' ? WORDS.addBundle : WORDS.addStick}>
-                +{edit.hand === p && <PointingHand prefix="lz" />}
+              <button type="button" className="lz-step" disabled={n === 0} onClick={() => edit.take(p)} aria-label={p === 'h' ? WORDS.takeRaft : p === 't' ? WORDS.takeBundle : WORDS.takeStick}>
+                −{edit.hand === p && edit.handTake && <PointingHand prefix="lz" />}
               </button>
+              {(p !== 't' || edit.withBundles) && (
+                <button type="button" className="lz-step lz-step--add" onClick={() => edit.add(p)} aria-label={p === 'h' ? WORDS.addRaft : p === 't' ? WORDS.addBundle : WORDS.addStick}>
+                  +{edit.hand === p && !edit.handTake && <PointingHand prefix="lz" />}
+                </button>
+              )}
               {p === 'o' && edit.addTen && (
                 <button type="button" className="lz-step lz-step--add lz-step--ten" disabled={edit.tenOff} onClick={edit.addTen} aria-label={WORDS.addTenSticksLabel}>{WORDS.addTenSticks}</button>
               )}
@@ -400,6 +414,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
   const inRedoTry = gs.phase === 'redo' && gs.wrong > LOOK_AT;
   const wrongPlace: Place | null = !editing || !inRedoTry || !shown ? null : places === 3 && mat.h !== targetMat(go).h ? 'h' : mat.t !== targetMat(go).t ? 't' : 'o';
   const handAt: Place | null = guideHand.pointing && editing ? 'o' : wrongPlace;
+  const handTake = handAt !== null && handAt === wrongPlace && mat[wrongPlace] > target[wrongPlace];
   const withRafts = places === 3;
   const matLabel = cardGo ? `The bundles and sticks: ${spoken(matOf(go.n), places)}.` : `Your mat: ${spoken(mat, places)}.`;
   const canTieTen = mat.o >= 10;
@@ -485,7 +500,7 @@ export function Goes({ guided = false, seen, onMarkSeen, onSeen, round, scenery,
               colours={colours}
               frame={labels && !cardGo}
               label={matLabel}
-              edit={editing && !solved ? { add, take, hand: handAt, withBundles: showBundleButtons(round.step, firstGuided), withRafts, addTen: tying && !firstGuided ? addTen : undefined, tenOff: mat.o > MAX_ONES - 10 } : undefined}
+              edit={editing && !solved ? { add, take, hand: handAt, handTake, withBundles: showBundleButtons(round.step, firstGuided), withRafts, addTen: tying && !firstGuided ? addTen : undefined, tenOff: mat.o > MAX_ONES - 10 } : undefined}
             />
           )}
           {!showMat && <p className="lz-nopic">{WORDS.peek}?</p>}
