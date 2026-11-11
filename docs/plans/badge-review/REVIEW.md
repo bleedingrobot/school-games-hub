@@ -174,7 +174,7 @@ In order. Sizes: S = under a day for one thread, M = a day or so, L = several da
 | **B3** | A scanner a 5 year old can use: camera opens full screen at once, Bella says every line, a big tick and chime when read, problems show a picture and go back to the camera by themselves, simple sign-in page for young pupils. | Badge up, playing in a few seconds, no reading. | M | No |
 | **B4** | Cards a child can find, and teacher tools: avatar picture on each card, bigger first name; "Print this card" after Lost card; "Last used / not used yet" on the badge page; end-of-year line about new badges. | Non-readers pick their own card; teachers reprint one card and spot problems. | S | Small (return `used_at`) |
 | **B5** | Shared iPads: depends on James's choice (section 8). Recommended: a "Not you? Scan your badge" button on the home page for badge pupils; keep sign-ins as they are. | The next child on a shared iPad doesn't play as the last one. | S | No |
-| **B6** | New pupils without Google first: teacher adds a pupil by school email so the badge exists from day one. Only if James picks it (section 8). | A new Year 1 pupil can play on day one. | L | Yes |
+| **B6** | New pupils without Google first: teacher adds a pupil by school email so the badge exists from day one; Google first sign-in still works (James chose both). | A new Year 1 pupil can play on day one. | L | Yes |
 
 ## 7. Live check for James (10 minutes, school iPad)
 
@@ -193,10 +193,10 @@ Print one badge for a test pupil (or your own class), then:
 
 Asked on question cards in the review thread:
 
-1. **Shared iPads, how long should a badge sign-in last?** (B5) Options: keep as now and add a "Not you?" button
-   (recommended); sign out at the end of each school day; sign out after 1 hour of no play.
-2. **New pupils who haven't signed in with Google** (B6): keep the one adult-helped Google sign-in for now (recommended,
-   L to change); or build "teacher adds a pupil by email".
+1. **Shared iPads, how long should a badge sign-in last?** (B5) **DECIDED by James 11 Nov 2026: keep sign-ins as now
+   and add a big "Not you? Scan your badge" button.**
+2. **New pupils who haven't signed in with Google** (B6): **DECIDED by James 11 Nov 2026: both.** Keep the Google first
+   sign-in working, and build "teacher adds a pupil by school email" so a badge exists from day one.
 
 ## Cards done
 
@@ -206,5 +206,5 @@ Asked on question cards in the review thread:
 | B2 | | to do |
 | B3 | | to do |
 | B4 | | to do |
-| B5 | | waits for decision 1 |
-| B6 | | waits for decision 2 |
+| B5 | | to do (decided: Not you? button) |
+| B6 | | to do (decided: both ways) |
