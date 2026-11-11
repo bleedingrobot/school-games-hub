@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FoundationalClass, GameProgress } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
 import { buildTable } from './Progress';
+import { buildBoard } from './LadderBoard';
 import { ProgressTable } from './ProgressTable';
 import { cellState } from './state';
 
@@ -60,5 +61,18 @@ describe('Progress', () => {
     const link = screen.getByRole('link', { name: /Pupil stuck, Robin: Step 3 of 6: Give 6 to 10, 6 days on this step, stuck/ });
     expect(link).toHaveAttribute('href', '/teacher/c/students/s0?game=robin');
     expect(within(link).getByText('3')).toBeTruthy();
+  });
+
+  it('the board puts pupils in the right step column, and pupils with no progress in Not started', () => {
+    const mk = (vals: number[], g: 'hop' | 'robin'): FoundationalClass => ({
+      map: { ...data.map, students: [...vals.map((_, i) => student(`p${i}`, `P${i}`)), student('none', 'Nobody')] },
+      pupils: new Map(vals.map((v, i) => [`p${i}`, { games: { [g]: game(v, ['2026-11-10']) }, quickLooks: null }])),
+    });
+    const hop = buildBoard(mk([10, 5, 2, 3, 4, 200], 'hop'), 'hop', TODAY);
+    expect(hop.map((c) => c.label)).toEqual(['Not started', 'Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6']);
+    expect(hop.map((c) => c.pupils.map((p) => p.name))).toEqual([['Nobody'], ['P0'], ['P1'], ['P2'], ['P3'], ['P4'], ['P5']]);
+    const robinBoard = buildBoard(mk([1, 2, 3, 4, 5, 6], 'robin'), 'robin', TODAY);
+    expect(robinBoard.map((c) => c.pupils.map((p) => p.name))).toEqual([['Nobody'], ['P0'], ['P1'], ['P2'], ['P3'], ['P4'], ['P5']]);
+    expect(robinBoard[3].sub).toBe('Give 6 to 10');
   });
 });

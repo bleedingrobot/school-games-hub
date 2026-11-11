@@ -3,7 +3,7 @@
  * class data as the Foundational grid; the cell rules are in ./state.ts.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { nzDay } from '../../../shared/maths/leitner';
 import { STAGES } from '../../../shared/subitising/config';
 import { foundationalClass, GAME_IDS, type FoundationalClass, type FoundationalGameId } from '../../data/foundational';
@@ -12,6 +12,7 @@ import { useTeacherClass } from '../TeacherClass';
 import { GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config';
 import { enabledGames } from '../foundational/alerts';
 import { ProgressTable, type ProgressColumn, type ProgressRow } from './ProgressTable';
+import { boardGames, LadderBoard } from './LadderBoard';
 import { cellState, quickCellState } from './state';
 import './progress.css';
 
@@ -49,7 +50,29 @@ function Panel({ classId, name }: { classId: string; name: string }) {
     };
   }, [classId]);
 
-  const table = useMemo(() => (data ? buildTable(data.data, data.on, nzDay(Date.now())) : null), [data]);
+  const [params, setParams] = useSearchParams();
+  const today = useMemo(() => nzDay(Date.now()), []);
+  const table = useMemo(() => (data ? buildTable(data.data, data.on, today) : null), [data, today]);
+  const games = useMemo(() => (data ? boardGames(data.data, data.on) : []), [data]);
+  const view = params.get('view') === 'board' ? 'board' : 'table';
+  const game = games.find((g) => g.id === params.get('game'))?.id ?? games[0]?.id ?? '';
+  const setView = (v: 'table' | 'board') =>
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (v === 'board') n.set('view', 'board');
+      else {
+        n.delete('view');
+        n.delete('game');
+      }
+      return n;
+    }, { replace: true });
+  const pick = (id: string) =>
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      n.set('view', 'board');
+      n.set('game', id);
+      return n;
+    }, { replace: true });
 
   if (failed) {
     return (
@@ -68,9 +91,13 @@ function Panel({ classId, name }: { classId: string; name: string }) {
   return (
     <section className="panel" aria-labelledby="progress-title">
       <h2 id="progress-title" className="panel__title">
-        Every game’s steps
+        {view === 'board' ? 'One game’s steps' : 'Every game’s steps'}
         <span className="panel__count">{table.rows.length} student{table.rows.length === 1 ? '' : 's'}</span>
       </h2>
+      <div className="progress__views" role="group" aria-label="View">
+        <button type="button" className="progress__sort" aria-pressed={view === 'table'} onClick={() => setView('table')}>Every game</button>
+        <button type="button" className="progress__sort" aria-pressed={view === 'board'} onClick={() => setView('board')}>One game</button>
+      </div>
       {table.rows.length === 0 ? (
         <p className="panel__empty">
           No students in this class yet. <Link to={`/teacher/${classId}/setup`}>Add some on Class set-up.</Link>
@@ -79,6 +106,8 @@ function Panel({ classId, name }: { classId: string; name: string }) {
         <p className="panel__empty">
           No Foundational games are switched on for {name}. <Link to={`/teacher/${classId}/games`}>Turn some on in Games.</Link>
         </p>
+      ) : view === 'board' && data ? (
+        <LadderBoard classId={classId} data={data.data} games={games} game={game} today={today} onPick={pick} />
       ) : (
         <ProgressTable classId={classId} columns={table.columns} rows={table.rows} />
       )}
