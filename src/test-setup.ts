@@ -1,10 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { forgetSettings } from './data/settingsMemory';
 import { forgetTrainingLock } from './data/trainingLockMemory';
 import { resetSkips, setSkipMode } from './maths/questionLog';
 import { clearShortCache } from './teacher/shortCache';
+
+// findBy and waitFor give up after 1 second by default. On a busy machine a screen that loads its code on first use
+// (a lazy page) can take longer than that, which was the most common false failure in the PR checks. 5 seconds.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();
