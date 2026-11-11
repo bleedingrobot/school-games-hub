@@ -45,6 +45,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 - C6: Who changed it, and when (PR #425)
 - C7: School defaults for new classes, and one rule for a new game (PR #426)
 - C8: Game sets: switch to a saved set in one tap (PR #427)
+- C9: Guide matches, check live, close the review (this PR)
 
 ## C1
 
