@@ -12,7 +12,7 @@ import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
 import { GAMES } from '../games/registry';
 import type { DashboardGroup, GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
-import { SettingChoice, SettingToggle, type Choice } from './Settings';
+import { PUPILS_SEE_IT, SettingChoice, SettingToggle, type Choice } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { useSetting } from './useSetting';
 import './games.css';
@@ -192,6 +192,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
               label={`${game.name} (with Non-maths games)`}
               about="Chess, checkers, 101 and Power Clash share one switch. It is the same as Non-maths games on Today."
               value={nonMaths.value}
+              savedText={PUPILS_SEE_IT}
               loadFailed={nonMaths.failed}
               save={(on) => saveNonMathsGames(on, classId)}
               onSaved={nonMaths.onSaved}
@@ -242,6 +243,7 @@ export function GameSwitchSetting({ game, classId }: { game: GameDefinition; cla
       label={game.name}
       about={switchOf.about}
       value={value.value}
+      savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
       save={(on) => switchOf.save(on, classId)}
     />
@@ -271,6 +273,7 @@ export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; cl
       about={maths.about}
       options={MATHS_CHOICES}
       value={value.value}
+      savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
       save={(mode) => maths.save(mode, classId)}
     />

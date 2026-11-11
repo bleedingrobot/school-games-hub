@@ -21,6 +21,7 @@ import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
 import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
+import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan } from '../data/settingsMemory';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { useHomeLayout } from '../data/homeLayout';
 import { useNextParts } from '../data/nextParts';
@@ -189,7 +190,32 @@ function GameGroup({
   );
 }
 
+/**
+ * The pupil's home page. It reads the class settings fresh when it opens if the remembered row is more than 30 seconds old
+ * (before any switch hook asks, so one request still serves every card), and again when the tab comes back into view after
+ * that long, so a game the teacher just turned on shows up without a reload. Other pages keep the 5-minute memory.
+ */
 export function Dashboard() {
+  useState(() => forgetSettingsOlderThan(FRESH_HOME_MS));
+  const [round, setRound] = useState(0);
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+    const onChange = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (hiddenAt !== null && Date.now() - hiddenAt > FRESH_HOME_MS) {
+        hiddenAt = null;
+        forgetSettings();
+        setRound((r) => r + 1); // starts the page again, so every card reads the settings afresh
+      }
+    };
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  }, []);
+  return <DashboardPage key={round} />;
+}
+
+function DashboardPage() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';

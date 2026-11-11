@@ -21,7 +21,7 @@ import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
 import { trainingOn } from '../training/switch';
 import { TRAINING_CONFIG } from '../../shared/training/config';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
-import { SettingChoice, SettingToggle, useSetting } from './Settings';
+import { PUPILS_SEE_IT, SettingChoice, SettingToggle, useSetting } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { NeedsYou } from './WaitingToJoin';
 import { percentRight, useHardest } from './Hardest';
@@ -64,6 +64,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           label="Games against friends"
           about="Off stops new games between students. Bot games carry on."
           value={friends.value}
+          savedText={PUPILS_SEE_IT}
           loadFailed={friends.failed}
           save={(on) => setMultiplayer(on, classId)}
         />
@@ -71,6 +72,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           label="Emoji reactions"
           about="In Wormholes & Black Holes games with classmates."
           value={reactions.value}
+          savedText={PUPILS_SEE_IT}
           loadFailed={reactions.failed}
           save={(on) => setSpaceReactions(on, classId)}
         />
@@ -78,6 +80,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           label="Non-maths games"
           about="Chess, checkers, 101 and Power Clash. Off hides them for this class, and games already going wait until it is back on. Teachers can still open them."
           value={nonMaths.value}
+          savedText={PUPILS_SEE_IT}
           loadFailed={nonMaths.failed}
           save={(on) => saveNonMathsGames(on, classId)}
         />
@@ -86,6 +89,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
             label="Training before games"
             about={`One Basic facts training session (a whole “Today’s session” or a whole round of Quick looks) before any game opens. The games then stay open for ${TRAINING_CONFIG.gate.gamesOpenHours} hours; a game already open carries on. Teachers are never asked.`}
             value={training.value}
+            savedText={PUPILS_SEE_IT}
             loadFailed={training.failed}
             save={(on) => saveTrainingFirst(on, classId)}
           />
@@ -95,6 +99,7 @@ function LessonControls({ classId, name }: { classId: string; name: string }) {
           about={SKIP_NOTE}
           options={SKIP_CHOICES}
           value={skip.value}
+          savedText={PUPILS_SEE_IT}
           loadFailed={skip.failed}
           save={(mode) => saveSkipMode(mode, classId)}
         />
@@ -122,6 +127,7 @@ function UnlimitedTurns({ classId }: { classId: string }) {
             label={g.name}
             about={`Unlimited ${g.lifts} today.`}
             value={on.value ? on.value[g.id] : null}
+            savedText={PUPILS_SEE_IT}
             loadFailed={on.failed}
             save={(value) => saveUnlimitedToday(g.id, value, classId)}
           />

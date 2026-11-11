@@ -29,6 +29,7 @@ vi.mock('./profile', async (importOriginal) => ({
 
 import { AuthProvider } from '../auth/AuthContext';
 import { fetchMonstersEnabled} from './monsters';
+import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan } from './settingsMemory';
 
 const ROW = { monsters_enabled: true, lord_enabled: false, clans_enabled: true, multiplayer_enabled: true, space_maths: 'on', lord_forest_per_day: 3 };
 const tableReads = () => from.mock.calls.filter(([table]) => table === 'app_settings').length;
@@ -47,7 +48,7 @@ afterEach(() => {
 
 describe('the remembered row is forgotten', () => {
 
-  it('on sign-out, and when a different pupil signs in on the same device', async () => {
+  it('on sign-out, when a different pupil signs in, and (on the home page) when older than 30 seconds', async () => {
     render(<AuthProvider><p>hub</p></AuthProvider>);
     const signIn = async (id: string) => {
       await act(async () => {
@@ -72,5 +73,23 @@ describe('the remembered row is forgotten', () => {
     await waitFor(() => expect(tableReads()).toBe(2));
     await fetchMonstersEnabled();
     expect(tableReads()).toBe(3);
+
+    // The home page reads again when the row is older than 30 seconds; other pages keep the 5-minute memory.
+    forgetSettings();
+    read.mockClear();
+    from.mockClear();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(1);
+    vi.advanceTimersByTime(FRESH_HOME_MS - 1000);
+    expect(forgetSettingsOlderThan(FRESH_HOME_MS)).toBe(false); // younger: reused
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(1);
+    vi.advanceTimersByTime(2000);
+    await fetchMonstersEnabled(); // other pages ask with the 5-minute rule: still reused at 31 s
+    expect(tableReads()).toBe(1);
+    expect(forgetSettingsOlderThan(FRESH_HOME_MS)).toBe(true); // older: the home page reads it again
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(2);
   });
 });

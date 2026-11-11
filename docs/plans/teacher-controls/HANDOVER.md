@@ -38,6 +38,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 ## Done and live
 
 - C1: Fix the rows that say the wrong thing (PR pending)
+- C3: Pupils see changes straight away (PR pending)
 
 ## C1
 

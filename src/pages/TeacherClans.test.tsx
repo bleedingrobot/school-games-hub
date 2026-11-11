@@ -68,7 +68,7 @@ describe('the Clan Quest switch on the Games table', () => {
     await user.click(on);
     expect(data.saveClansEnabled).toHaveBeenLastCalledWith(true, 'c12');
     expect(on).toHaveAttribute('aria-checked', 'true');
-    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
+    expect(await screen.findByText(/^Saved ✓/)).toBeInTheDocument();
     await user.click(on);
     expect(data.saveClansEnabled).toHaveBeenLastCalledWith(false, 'c12');
     expect(on).toHaveAttribute('aria-checked', 'false');
