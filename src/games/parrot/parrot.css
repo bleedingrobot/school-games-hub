@@ -175,6 +175,16 @@
 @keyframes pr-why-in { from { opacity: 0; translate: 0 12px; } }
 .pr-whypic .pr-saw { max-height: 22dvh; }
 .pr-why .pr-saw { max-height: 22dvh; }
+/* "Let's look together": big enough to count each stone, with each side's number written under it. */
+.pr-why--look { width: min(96%, 720px); font-size: clamp(1.1rem, 3vw, 1.45rem); }
+.pr-lookpic { width: 100%; }
+.pr-why .pr-saw--look { width: 100%; max-width: 680px; max-height: 46dvh; margin-inline: auto; }
+.pr-looktotals { display: flex; justify-content: space-between; width: min(100%, 680px); margin: -4px auto 0; padding: 0 9%; box-sizing: border-box; font: 900 clamp(1.6rem, 5vw, 2.4rem) system-ui, sans-serif; font-variant-numeric: tabular-nums; min-height: 1.3em; }
+.pr-looktotals span { min-width: 2ch; padding: 0 8px; border-radius: 12px; }
+.pr-looktotals--on { background: #ffe27a; }
+.pr-looktotals__added { color: #c8641c; }
+.pr-saw__focus { animation: pr-focus 1s ease-in-out infinite alternate; }
+@keyframes pr-focus { from { fill-opacity: 0.25; } to { fill-opacity: 0.6; } }
 
 /* The guiding hand, drawn inside the button it points at. */
 .pr-hand {

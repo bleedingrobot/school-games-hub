@@ -73,6 +73,10 @@ const SETTLE_MS = 700;
 const COUNT_STEP_MS = 1500;
 /** Counting aloud: how long the explanation may take before the count starts anyway (voice off or slow). */
 const COUNT_START_MS = 3000;
+/** Counting with `waitForVoice`: the pause after a step's line before the next step. */
+const STEP_PAUSE_MS = 500;
+/** How long `endLine` may take before the look ends anyway. */
+const END_LINE_MS = 9000;
 
 /** What "Let's look together" is showing: `filled` of the steps so far (a dot of the partner every so often). */
 export interface Look {
@@ -97,6 +101,15 @@ export interface LookRun {
   stepLine?: (k: number) => string;
   /** The wait between two counted steps when `stepLine` is given (default 1500). */
   stepMs?: number;
+  /**
+   * With `stepLine`: each step waits for its line to be said (and at least `stepMs`, with a short pause after the voice), so a
+   * step can be a whole sentence ("This side has eight stones."), not only a number.
+   */
+  waitForVoice?: boolean;
+  /** With `stepLine`: how long the explanation may take before the count starts anyway (default 3000). */
+  countStartMs?: number;
+  /** With `stepLine`: said once the count is over, before the look ends ("Now it is level."). */
+  endLine?: string;
   /** Runs once when the look ends (by itself or skipped): the game moves to "Now you try". */
   onEnd: () => void;
 }
@@ -121,7 +134,7 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
   }, []);
 
   const start = useCallback(
-    ({ anchor, steps, openingLine, fillLine, stepLine, stepMs = COUNT_STEP_MS, onEnd }: LookRun) => {
+    ({ anchor, steps, openingLine, fillLine, stepLine, stepMs = COUNT_STEP_MS, waitForVoice = false, countStartMs = COUNT_START_MS, endLine, onEnd }: LookRun) => {
       const me = ++run.current;
       const live = () => run.current === me;
       const later = (ms: number, f: () => void) => timers.current.push(window.setTimeout(f, ms));
@@ -139,9 +152,41 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
       };
       const countAloud = (line: (k: number) => string) => {
         let counting = false;
+        const finish = () => {
+          said = true;
+          filled = true;
+          if (live()) endIfDone();
+        };
+        const closing = () => {
+          if (!live()) return;
+          if (!endLine) return finish();
+          let done = false;
+          const once = () => {
+            if (done) return;
+            done = true;
+            finish();
+          };
+          say(endLine, () => live() && once());
+          later(END_LINE_MS, once); // the voice is slow: end anyway
+        };
+        const stepAt = (d: number) => {
+          if (!live()) return;
+          setLook((l) => l && { ...l, filled: d });
+          let moved = false;
+          const began = Date.now();
+          const next = () => {
+            if (moved || !live()) return;
+            moved = true;
+            if (d < steps) stepAt(d + 1);
+            else closing();
+          };
+          say(line(d), () => live() && later(Math.max(STEP_PAUSE_MS, stepMs - (Date.now() - began)), next));
+          later(stepMs * 4, next); // the voice never finished: move on anyway
+        };
         const count = () => {
           if (!live() || counting) return;
           counting = true;
+          if (waitForVoice) return stepAt(1);
           for (let d = 1; d <= steps; d++) {
             later((d - 1) * stepMs, () => {
               if (!live()) return;
@@ -149,14 +194,10 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
               say(line(d));
             });
           }
-          later((steps - 1) * stepMs + stepMs, () => {
-            said = true;
-            filled = true;
-            if (live()) endIfDone();
-          });
+          later((steps - 1) * stepMs + stepMs, () => live() && closing());
         };
         say(fillLine, () => live() && later(400, count));
-        later(COUNT_START_MS, count); // the voice is off or slow: count anyway
+        later(countStartMs, count); // the voice is off or slow: count anyway
       };
       const fill = () => {
         if (!live() || started) return;
@@ -176,7 +217,8 @@ export function useLookTogether(say: (text: string, onEnd?: () => void) => void)
       say(openingLine, fill);
       later(START_FALLBACK_MS, fill); // the voice is off or slow: count anyway
       later(SKIP_AFTER_MS, () => live() && setLook((l) => l && { ...l, canSkip: true }));
-      later(stepLine ? LONGEST_MS + COUNT_START_MS + steps * stepMs : LONGEST_MS, end);
+      const counted = stepLine ? countStartMs + steps * stepMs * (waitForVoice ? 4 : 1) + (endLine ? END_LINE_MS : 0) : 0;
+      later(LONGEST_MS + counted, end);
       skip.current = end;
     },
     [say],

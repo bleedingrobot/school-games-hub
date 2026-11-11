@@ -13,7 +13,7 @@
  */
 import { FRIEND_NAMES, STEPS } from '../../../shared/parrot/config';
 import { METALS } from '../../../shared/parrot/progress';
-import { ALL_KEYS, isStoneGo, kindOfKey, showGo, type Go, type ParrotKind } from '../../../shared/parrot/round';
+import { ALL_KEYS, isStoneGo, MAX_STONES, kindOfKey, showGo, type Go, type ParrotKind } from '../../../shared/parrot/round';
 import { demoLines } from './demo';
 import { nextPartWords } from '../../components/NextPartChip';
 import { numWord, WORDS } from './words';
@@ -65,6 +65,32 @@ export function modelLine(go: Said): string {
 /** Why a wrong card or count is wrong, then Bella's "Is it level yet?". */
 export const whyLine = (kind: ParrotKind): string => [WORDS.why(kind), WORDS.isLevel].join(PART_BREAK);
 
+/**
+ * "Let's look together" after a second wrong tap, step by step and slowly (each step waits for Bella to finish): this side has
+ * so many stones, this side has so many, the heavier side goes down, then the stones go on (or come off) one at a time with
+ * Bella counting "One. Two. Three.", and last "Now it is level." with the go's sentence ("Eight is five plus three.").
+ * A true or false go counts each side, then says which way it goes.
+ */
+export interface LookScript {
+  /** Said after "Let's look together.", before the steps. */
+  fill: string;
+  /** One line per step. */
+  lines: string[];
+  /** How many steps come before the counting (the sides and the tip); the count is the steps after them. */
+  before: number;
+  /** Said once the count is over (none for true or false). */
+  end?: string;
+}
+
+export function lookScript(go: Said & Pick<Go, 'gs'>): LookScript {
+  const [l, r] = [sum(go.lg), sum(go.rg)];
+  const sides = [WORDS.sideHas(l), WORDS.sideHas(r), l === r ? WORDS.bothSame : WORDS.heavierDown];
+  if (go.kind === 'tf') return { fill: WORDS.lookFill, lines: sides, before: 3 };
+  const count = Array.from({ length: go.answer }, (_, i) => WORDS.countWord(i + 1));
+  const action = go.answer > 0 ? [go.gs === -1 ? WORDS.takeOnes : WORDS.addOnes] : [];
+  return { fill: WORDS.lookFill, lines: [...sides, ...action, ...count], before: 3 + action.length, end: [WORDS.nowLevel, modelLine(go)].join(PART_BREAK) };
+}
+
 /** What the home screen says: who wants the see-saw level, and "come back tomorrow" once today's shiny thing has turned. */
 export const homeLine = (title: string, doneToday: boolean): string => (doneToday ? [title, WORDS.doneToday].join(PART_BREAK) : title);
 
@@ -100,6 +126,13 @@ export function allVoiceLines(): string[] {
     lines.add(eqLine(go));
     lines.add(modelLine(go));
   }
+  for (let n = 0; n <= MAX_STONES; n++) lines.add(WORDS.sideHas(n));
+  for (let n = 1; n <= MAX_STONES; n++) lines.add(WORDS.countWord(n));
+  lines.add(WORDS.heavierDown);
+  lines.add(WORDS.bothSame);
+  lines.add(WORDS.addOnes);
+  lines.add(WORDS.takeOnes);
+  lines.add(WORDS.nowLevel);
   const mains = [...METALS.slice(1).map((m) => WORDS.thingTurned(m)), ...names.map(([, name]) => WORDS.goldenBell(name))];
   for (const main of mains) lines.add(main);
   for (const s of STEPS.slice(1)) lines.add(WORDS.nextStep(s.step));

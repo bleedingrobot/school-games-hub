@@ -52,36 +52,36 @@
   "text": "I will talk to you. Tap Hear it again to hear me again."
  },
  {
-  "slug": "parrot-wants-the-see-saw-level-can-you-help-parrot",
-  "text": "Parrot wants the see-saw level! Can you help Parrot?"
+  "slug": "parrot-wants-the-see-saw-to-balance-so-it-s-the-same-on-both-sides-can-you-help-parrot",
+  "text": "Parrot wants the see-saw to balance so it’s the same on both sides. Can you help Parrot?"
  },
  {
-  "slug": "robin-wants-the-see-saw-level-can-you-help-robin",
-  "text": "Robin wants the see-saw level! Can you help Robin?"
+  "slug": "robin-wants-the-see-saw-to-balance-so-it-s-the-same-on-both-sides-can-you-help-robin",
+  "text": "Robin wants the see-saw to balance so it’s the same on both sides. Can you help Robin?"
  },
  {
   "slug": "now-robin-has-a-see-saw-to-keep-level",
   "text": "Now Robin has a see-saw to keep level!"
  },
  {
-  "slug": "kiwi-wants-the-see-saw-level-can-you-help-kiwi",
-  "text": "Kiwi wants the see-saw level! Can you help Kiwi?"
+  "slug": "kiwi-wants-the-see-saw-to-balance-so-it-s-the-same-on-both-sides-can-you-help-kiwi",
+  "text": "Kiwi wants the see-saw to balance so it’s the same on both sides. Can you help Kiwi?"
  },
  {
   "slug": "now-kiwi-has-a-see-saw-to-keep-level",
   "text": "Now Kiwi has a see-saw to keep level!"
  },
  {
-  "slug": "duck-wants-the-see-saw-level-can-you-help-duck",
-  "text": "Duck wants the see-saw level! Can you help Duck?"
+  "slug": "duck-wants-the-see-saw-to-balance-so-it-s-the-same-on-both-sides-can-you-help-duck",
+  "text": "Duck wants the see-saw to balance so it’s the same on both sides. Can you help Duck?"
  },
  {
   "slug": "now-duck-has-a-see-saw-to-keep-level",
   "text": "Now Duck has a see-saw to keep level!"
  },
  {
-  "slug": "owl-wants-the-see-saw-level-can-you-help-owl",
-  "text": "Owl wants the see-saw level! Can you help Owl?"
+  "slug": "owl-wants-the-see-saw-to-balance-so-it-s-the-same-on-both-sides-can-you-help-owl",
+  "text": "Owl wants the see-saw to balance so it’s the same on both sides. Can you help Owl?"
  },
  {
   "slug": "now-owl-has-a-see-saw-to-keep-level",
@@ -1986,6 +1986,190 @@
  {
   "slug": "nine-plus-three-is-twelve-five-plus-seven-is-twelve-it-is-level",
   "text": "Nine plus three is twelve. Five plus seven is twelve. It is level."
+ },
+ {
+  "slug": "this-side-has-zero-stones",
+  "text": "This side has zero stones."
+ },
+ {
+  "slug": "this-side-has-one-stone",
+  "text": "This side has one stone."
+ },
+ {
+  "slug": "this-side-has-two-stones",
+  "text": "This side has two stones."
+ },
+ {
+  "slug": "this-side-has-three-stones",
+  "text": "This side has three stones."
+ },
+ {
+  "slug": "this-side-has-four-stones",
+  "text": "This side has four stones."
+ },
+ {
+  "slug": "this-side-has-five-stones",
+  "text": "This side has five stones."
+ },
+ {
+  "slug": "this-side-has-six-stones",
+  "text": "This side has six stones."
+ },
+ {
+  "slug": "this-side-has-seven-stones",
+  "text": "This side has seven stones."
+ },
+ {
+  "slug": "this-side-has-eight-stones",
+  "text": "This side has eight stones."
+ },
+ {
+  "slug": "this-side-has-nine-stones",
+  "text": "This side has nine stones."
+ },
+ {
+  "slug": "this-side-has-ten-stones",
+  "text": "This side has ten stones."
+ },
+ {
+  "slug": "this-side-has-eleven-stones",
+  "text": "This side has eleven stones."
+ },
+ {
+  "slug": "this-side-has-twelve-stones",
+  "text": "This side has twelve stones."
+ },
+ {
+  "slug": "this-side-has-thirteen-stones",
+  "text": "This side has thirteen stones."
+ },
+ {
+  "slug": "this-side-has-fourteen-stones",
+  "text": "This side has fourteen stones."
+ },
+ {
+  "slug": "this-side-has-fifteen-stones",
+  "text": "This side has fifteen stones."
+ },
+ {
+  "slug": "this-side-has-sixteen-stones",
+  "text": "This side has sixteen stones."
+ },
+ {
+  "slug": "this-side-has-seventeen-stones",
+  "text": "This side has seventeen stones."
+ },
+ {
+  "slug": "this-side-has-eighteen-stones",
+  "text": "This side has eighteen stones."
+ },
+ {
+  "slug": "this-side-has-nineteen-stones",
+  "text": "This side has nineteen stones."
+ },
+ {
+  "slug": "this-side-has-twenty-stones",
+  "text": "This side has twenty stones."
+ },
+ {
+  "slug": "one",
+  "text": "One."
+ },
+ {
+  "slug": "two",
+  "text": "Two."
+ },
+ {
+  "slug": "three",
+  "text": "Three."
+ },
+ {
+  "slug": "four",
+  "text": "Four."
+ },
+ {
+  "slug": "five",
+  "text": "Five."
+ },
+ {
+  "slug": "six",
+  "text": "Six."
+ },
+ {
+  "slug": "seven",
+  "text": "Seven."
+ },
+ {
+  "slug": "eight",
+  "text": "Eight."
+ },
+ {
+  "slug": "nine",
+  "text": "Nine."
+ },
+ {
+  "slug": "ten",
+  "text": "Ten."
+ },
+ {
+  "slug": "eleven",
+  "text": "Eleven."
+ },
+ {
+  "slug": "twelve",
+  "text": "Twelve."
+ },
+ {
+  "slug": "thirteen",
+  "text": "Thirteen."
+ },
+ {
+  "slug": "fourteen",
+  "text": "Fourteen."
+ },
+ {
+  "slug": "fifteen",
+  "text": "Fifteen."
+ },
+ {
+  "slug": "sixteen",
+  "text": "Sixteen."
+ },
+ {
+  "slug": "seventeen",
+  "text": "Seventeen."
+ },
+ {
+  "slug": "eighteen",
+  "text": "Eighteen."
+ },
+ {
+  "slug": "nineteen",
+  "text": "Nineteen."
+ },
+ {
+  "slug": "twenty",
+  "text": "Twenty."
+ },
+ {
+  "slug": "the-heavier-side-goes-down",
+  "text": "The heavier side goes down."
+ },
+ {
+  "slug": "both-sides-are-the-same-so-it-is-level",
+  "text": "Both sides are the same, so it is level."
+ },
+ {
+  "slug": "let-s-add-stones-to-the-lighter-side-one-at-a-time-until-it-is-level-count-with-me",
+  "text": "Let’s add stones to the lighter side, one at a time, until it is level. Count with me!"
+ },
+ {
+  "slug": "let-s-take-stones-off-the-heavier-side-one-at-a-time-until-it-is-level-count-with-me",
+  "text": "Let’s take stones off the heavier side, one at a time, until it is level. Count with me!"
+ },
+ {
+  "slug": "now-it-is-level-both-sides-are-the-same",
+  "text": "Now it is level. Both sides are the same."
  },
  {
   "slug": "well-done-a-shiny-thing-turned-bronze",

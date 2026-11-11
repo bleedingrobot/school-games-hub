@@ -158,6 +158,15 @@ function Block({ label, kind }: { label: string; kind: 'weight' | 'minus' | 'gap
   );
 }
 
+/** How wide a pan's things are, from the first one's left edge to the last one's right edge. */
+export const rowWidth = (items: Item[]): number => items.reduce((w, item) => w + widthOf(item), 0) + GROUP_GAP * Math.max(0, items.length - 1);
+
+/** Where the pans' things sit: the left side starts this far in from the left end, the right side ends as far in from the right end. */
+const PAN_IN = 34;
+const SAW_WIDTH = 440;
+/** The room on each side, from the end of the plank to just short of the post. */
+export const PAN_ROOM = SAW_WIDTH / 2 - PAN_IN - 12;
+
 function PanItems({ items, from }: { items: Item[]; from: number }) {
   let x = from;
   return (
@@ -182,13 +191,13 @@ function PanItems({ items, from }: { items: Item[]; from: number }) {
  * The see-saw: a plank on a post, the pans at its ends. It tips (left end down, right end down) or lies flat. The post says
  * what is true: "=" only when the plank is level, "?" when nothing is judged yet (it rests on two props), nothing when it tips.
  */
-export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '', wobble = false }: { left: Item[]; right: Item[]; tilt: Tilt; label?: string; className?: string; wobble?: boolean }) {
+export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '', wobble = false, focus = null, close = false, zoom = 1 }: { left: Item[]; right: Item[]; tilt: Tilt; label?: string; className?: string; wobble?: boolean; focus?: 'left' | 'right' | null; close?: boolean; zoom?: number }) {
   const style: CSSProperties = { transform: `rotate(${ANGLE[tilt]}deg)`, transformOrigin: '220px 172px' };
   const plank = paint('seesaw/plank');
   const pivot = paint('seesaw/pivot');
   const painted = Boolean(plank && pivot);
   return (
-    <svg className={`pr-saw ${className}${wobble ? ' pr-saw--wobble' : ''}`} viewBox="0 0 440 250" role="img" aria-label={label}>
+    <svg className={`pr-saw ${className}${wobble ? ' pr-saw--wobble' : ''}`} viewBox={close ? '0 76 440 174' : '0 0 440 250'} role="img" aria-label={label}>
       <ellipse cx="220" cy="236" rx="120" ry="9" fill="rgb(0 0 0 / 0.15)" />
       {painted ? (
         <image href={pivot} x="190" y="184" width="60" height="52" preserveAspectRatio="none" />
@@ -212,8 +221,16 @@ export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '',
             <rect x="224" y="160" width="190" height="8" rx="4" fill="#e6c98e" stroke={INK} strokeWidth="1.5" />
           </>
         )}
-        <PanItems items={left} from={34} />
-        <PanItems items={right} from={232} />
+        {focus && (
+          <rect className="pr-saw__focus" x={focus === 'left' ? 16 : SAW_WIDTH / 2 + 8} y="80" width={SAW_WIDTH / 2 - 24} height="84" rx="14" fill="#ffe27a" fillOpacity="0.55" stroke="#f4c20d" strokeWidth="3" />
+        )}
+        {/* zoom (the big "Let's look together" picture) grows both sides' things alike, from the ends of the plank. */}
+        <g transform={`translate(${PAN_IN} ${PLANK_Y}) scale(${zoom}) translate(${-PAN_IN} ${-PLANK_Y})`}>
+          <PanItems items={left} from={PAN_IN} />
+        </g>
+        <g transform={`translate(${SAW_WIDTH - PAN_IN} ${PLANK_Y}) scale(${zoom}) translate(${PAN_IN - SAW_WIDTH} ${-PLANK_Y})`}>
+          <PanItems items={right} from={SAW_WIDTH - PAN_IN - rowWidth(right)} />
+        </g>
       </g>
       {!painted && <circle cx="220" cy="173" r="6" fill="#f4c20d" stroke={INK} strokeWidth="2" />}
     </svg>

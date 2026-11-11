@@ -3,7 +3,7 @@ import { voiceLinesSuite } from '../../kit/voiceLinesSuite';
 import { DEMOS } from './demo';
 import { KEYS, makeRound, showRound, sisterGo, GUIDED_KEY } from '../../../shared/parrot/round';
 import { STEPS } from '../../../shared/parrot/config';
-import { allVoiceLines, askLine, eqLine, homeLine, finishLine, modelLine, PART_BREAK, whyLine } from './voiceLines';
+import { allVoiceLines, askLine, eqLine, homeLine, finishLine, lookScript, modelLine, PART_BREAK, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
 // The list scripts/voice-clips.py records. After changing a line, rewrite it with
@@ -23,6 +23,8 @@ describe('Parrot’s See-saw voice lines', () => {
             expect(heard(askLine(go)), askLine(go)).toBe(true);
             expect(heard(eqLine(go)), eqLine(go)).toBe(true);
             expect(heard(modelLine(go)), modelLine(go)).toBe(true);
+            const look = lookScript(go);
+            for (const line of [look.fill, ...look.lines, look.end ?? '']) if (line) expect(heard(line), line).toBe(true);
             const sister = sisterGo({ seed }, i, go);
             if (sister) {
               expect(heard(eqLine(sister)), eqLine(sister)).toBe(true);
@@ -54,6 +56,14 @@ describe('Parrot’s See-saw voice lines', () => {
     expect(modelLine(first)).toBe('Five is two plus three.');
     expect(askLine(first)).toBe(WORDS.stoneLive);
     expect(askLine(first)).not.toMatch(/\d|\b(one|two|three|four|five)\b/i);
+  });
+
+  it('looks together step by step: each side, the tip, then one stone at a time and the go’s sentence', () => {
+    const [first] = showRound(makeRound(1, [], { step: 1, level: 5, guided: true }));
+    const look = lookScript(first);
+    expect(look.lines).toEqual(['This side has five stones.', 'This side has two stones.', WORDS.heavierDown, WORDS.addOnes, 'One.', 'Two.', 'Three.']);
+    expect(look.before).toBe(4);
+    expect(look.end).toBe([WORDS.nowLevel, 'Five is two plus three.'].join(PART_BREAK));
   });
 
   it('is English only and about 500 lines or fewer', () => {

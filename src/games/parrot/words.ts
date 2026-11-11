@@ -14,7 +14,7 @@ export const WORDS = {
   title: 'Parrot’s See-saw',
   /** The home page chip's words: "Today’s shiny thing is ready". */
   part: 'shiny thing',
-  wants: (name: string) => `${name} wants the see-saw level! Can you help ${name}?`,
+  wants: (name: string) => `${name} wants the see-saw to balance so it’s the same on both sides. Can you help ${name}?`,
   nextFriend: (name: string) => `Now ${name} has a see-saw to keep level!`,
   step: (step: Step) => `Step ${step}: ${stepName(step)}`,
   dayCount: (day: number) => `Day ${day} of 30`,
@@ -57,6 +57,14 @@ export const WORDS = {
   /** After the second wrong tap of a go: Parrot counts both sides, then asks again. */
   lookTogether: 'Let’s look together.',
   lookFill: 'Let us count each side together.',
+  /** "Let's look together", step by step: each side's stones, which way it tips, then the stones added (or taken off) one at a time. */
+  sideHas: (n: number) => `This side has ${numWord(n)} stone${n === 1 ? '' : 's'}.`,
+  heavierDown: 'The heavier side goes down.',
+  bothSame: 'Both sides are the same, so it is level.',
+  addOnes: 'Let’s add stones to the lighter side, one at a time, until it is level. Count with me!',
+  takeOnes: 'Let’s take stones off the heavier side, one at a time, until it is level. Count with me!',
+  countWord: (n: number) => `${numWord(n).charAt(0).toUpperCase()}${numWord(n).slice(1)}.`,
+  nowLevel: 'Now it is level. Both sides are the same.',
   nowTry: 'Now you try one like it.',
   /** On the "Let's look together" panel once it has played long enough to be skipped. */
   goOn: 'My turn',
