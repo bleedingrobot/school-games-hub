@@ -137,7 +137,7 @@ Goal: hold up the badge and be playing within a few seconds, with no reading and
 | Can a code be guessed? | No. 32 hex characters from `gen_random_uuid()` (122 random bits); the server rejects anything else before looking. | migration `20261104001300`, handler |
 | Is anything private in the QR? | No. It holds the site link and the code only. The printed card shows the name from the school email and the class, in words beside the code. | `BadgeSheet.tsx` |
 | Does a badge sign in only that pupil? | Yes: the code maps to one pupil; teachers can never be signed in by a card; only students at an active school. | `badge_sign_in` |
-| Lost, copied or photographed card | Teacher taps Lost card: new code, the old card stops working at once (tested). **But sign-ins already made with the old card stay signed in, with no time limit.** | `teacher_renew_badge` doesn't touch `auth.sessions`; live: no session has `not_after` |
+| Lost, copied or photographed card | Teacher taps Lost card: new code, the old card stops working at once (tested). **Fixed by B1:** Lost card now deletes the pupil's sessions, so every device is signed out once its current key runs out (within the hour). | migration `20261112000100` |
 | Who can read codes? | Only teachers of that class (or `require_teacher_of` for renew). Pupils and signed-out visitors can't read the table or call the server function. | RLS on, no grants; DB test |
 | Can a teacher see misuse? | No. `used_at` is stored (last use only) but not shown. | `BadgeSheet.tsx` |
 | Does a card work at home? | Yes, anywhere, any time. Fine for homework; a choice for James if he'd rather not (section 8). | |
@@ -202,7 +202,7 @@ Asked on question cards in the review thread:
 
 | Card | PR | Status |
 |---|---|---|
-| B1 | | to do |
+| B1 | (this PR) | done: Lost card ends sign-ins (within the hour), tests, rate limit 300/20 |
 | B2 | | to do |
 | B3 | | to do |
 | B4 | | to do |

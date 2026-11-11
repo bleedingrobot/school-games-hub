@@ -32,7 +32,10 @@ signs them in with no typing, to the same account they already have.
   teach; renewing goes through `require_teacher_of`. Codes are kept readable (not hashed) so a card can be reprinted;
   the server key could sign anyone in anyway, so hashing would add little.
 - Badges only sign in `role = 'student'` profiles at an active school. A teacher's account can never be reached by a card.
-- The function is rate-limited per internet address (60 a minute, generous for a class on one school address).
+- The function is rate-limited per internet address: 300 scans a minute (a whole school shares one address) and 20 wrong
+  codes a minute (B1, 11 Nov).
+- **Lost card** also deletes the pupil's sessions, so every device signed in as them is signed out when its current
+  sign-in key runs out (within the hour) (B1, 11 Nov). Sign-ins otherwise have no time limit.
 - A card is a password on paper: teachers keep them in the classroom.
 
 ## Files
