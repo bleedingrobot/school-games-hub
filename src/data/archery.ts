@@ -287,8 +287,8 @@ export async function fetchArcheryEnabled(classId?: string | null): Promise<bool
   return row.archery_enabled === true;
 }
 
-export async function saveArcheryEnabled(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_archery', { enabled, target_class: classId ?? null });
+export async function saveArcheryEnabled(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_archery', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
@@ -300,8 +300,8 @@ export async function fetchArcheryDuels(classId?: string | null): Promise<boolea
   return row.archery_duels !== false;
 }
 
-export async function saveArcheryDuels(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_archery_duels', { enabled, target_class: classId ?? null });
+export async function saveArcheryDuels(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_archery_duels', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

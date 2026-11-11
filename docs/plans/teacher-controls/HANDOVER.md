@@ -40,6 +40,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 - C1: Fix the rows that say the wrong thing (PR #420)
 - C5: Same words everywhere (PR #422)
 - C3: Pupils see changes straight away (PR #423)
+- C2: Safer saves: every save names its class (PR #421)
 
 ## C1
 

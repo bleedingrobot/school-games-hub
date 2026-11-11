@@ -17,6 +17,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000001a', 'zed@otherschool.school.nz');
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000f1', 'teach@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-0000000000f1';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-0000000000f1') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -95,8 +97,8 @@ select is((select count(*)::integer from public.trader_moons where player = pg_t
 
 -- ---- Teachers ----
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000f1', 'teach@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_trader(true, 6, false, 'off') $$, 'a teacher can set the switches');
+select lives_ok($$ select public.teacher_set_trader(true, 6, false, 'off', target_class => current_setting('test.cls')::uuid) $$, 'a teacher can set the switches');
 select pg_temp.reset();
-select is((select trader_jumps from public.app_settings where class_id is null and school_id = 1), 6, '... and the jumps changed');
+select is((select trader_jumps from public.app_settings where class_id = current_setting('test.cls')::uuid), 6, '... and the jumps changed');
 select * from finish();
 rollback;

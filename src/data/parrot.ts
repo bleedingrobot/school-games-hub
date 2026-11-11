@@ -57,9 +57,9 @@ export async function fetchParrotSettings(classId?: string | null): Promise<Parr
 export const fetchParrotEnabled = async (classId?: string | null) => (await fetchParrotSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_parrot leaves out the other). */
-export async function saveParrotSetting(change: Partial<ParrotSettings>, classId?: string | null): Promise<void> {
+export async function saveParrotSetting(change: Partial<ParrotSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_parrot', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

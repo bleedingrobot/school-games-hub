@@ -14,6 +14,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -167,17 +169,17 @@ select pg_temp.reset();
 -- ---- The teacher's switch ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.my_lord() ->> 'teacher', 'true', 'a teacher is told they are a teacher');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":"yes"}') $$, '22023', 'Those settings couldn''t be read.', 'the switch must be true or false');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":0}') $$, '22023', null, 'zero forest fights is refused');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":31}') $$, '22023', null, 'so is more than 30');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":2.5}') $$, '22023', null, 'so is half a fight');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"seasonStart":"next monday"}') $$, '22023', null, 'and a start date that is not a date');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":"yes"}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those settings couldn''t be read.', 'the switch must be true or false');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":0}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'zero forest fights is refused');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":31}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'so is more than 30');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"forestPerDay":2.5}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'so is half a fight');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"seasonStart":"next monday"}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'and a start date that is not a date');
 select is((public.my_lord() -> 'settings') ->> 'enabled', 'false', 'refused settings change nothing');
-select is(public.teacher_set_lord('{"enabled":true}') ->> 'enabled', 'true', 'a teacher can switch the game on');
+select is(public.teacher_set_lord('{"enabled":true}', target_class => current_setting('test.cls')::uuid) ->> 'enabled', 'true', 'a teacher can switch the game on');
 select isnt((public.my_lord() -> 'settings') ->> 'seasonStart', null, 'switching it on with no date starts season 1 today');
-select is(public.teacher_set_lord('{"enabled":true,"forestPerDay":6,"seasonStart":"2026-10-19"}') ->> 'forestPerDay', '6', 'and set the fights a day');
+select is(public.teacher_set_lord('{"enabled":true,"forestPerDay":6,"seasonStart":"2026-10-19"}', target_class => current_setting('test.cls')::uuid) ->> 'forestPerDay', '6', 'and set the fights a day');
 select is((public.my_lord() -> 'settings') ->> 'seasonStart', '2026-10-19', 'and the first day of the season');
-select is(public.teacher_set_lord('{"enabled":false}') ->> 'forestPerDay', '6', 'switching off keeps the other settings');
+select is(public.teacher_set_lord('{"enabled":false}', target_class => current_setting('test.cls')::uuid) ->> 'forestPerDay', '6', 'switching off keeps the other settings');
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is(public.my_lord() -> 'settings' ->> 'enabled', 'false', 'students see that it is off');

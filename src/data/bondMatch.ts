@@ -174,8 +174,8 @@ export async function fetchBondMatchEnabled(classId?: string | null): Promise<bo
   return data.bond_match_enabled === true;
 }
 
-export async function saveBondMatchEnabled(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_bond_match', { enabled, target_class: classId ?? null });
+export async function saveBondMatchEnabled(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_bond_match', { enabled, target_class: classId });
   forgetSettings();
   if (!error) return;
   // Messages we wrote in the database ("You don't teach a class yet…") are safe to show; anything else gets the fallback.

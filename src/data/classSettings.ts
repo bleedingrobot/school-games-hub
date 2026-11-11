@@ -39,8 +39,8 @@ export async function fetchStudentsChooseFocus(classId?: string | null): Promise
   return row?.students_choose_focus !== false;
 }
 
-export async function saveStudentsChooseFocus(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_students_choose_focus', { enabled, target_class: classId ?? null });
+export async function saveStudentsChooseFocus(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_students_choose_focus', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new Error(error.message);
 }
@@ -51,8 +51,8 @@ export async function fetchMathsAuto(classId?: string | null): Promise<boolean> 
   return row?.maths_auto === true;
 }
 
-export async function saveMathsAuto(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_maths_auto', { enabled, target_class: classId ?? null });
+export async function saveMathsAuto(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_maths_auto', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new Error(error.message);
 }

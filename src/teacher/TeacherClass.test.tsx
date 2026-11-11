@@ -30,7 +30,7 @@ function MathsSwitchPanel() {
       options={MATHS_CHOICES}
       value={mode.value}
       loadFailed={mode.failed}
-      save={(next) => teacher.setSpaceMaths(next, classId)}
+      save={(next) => teacher.setSpaceMaths(next, classId as string)}
     />
   );
 }

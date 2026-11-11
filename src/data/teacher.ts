@@ -91,20 +91,20 @@ export async function deletePerson(id: string): Promise<void> {
   if (error) fail(error, 'We couldn’t delete that player.');
 }
 
-export async function setMultiplayer(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_multiplayer', { enabled, target_class: classId ?? null });
+export async function setMultiplayer(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_multiplayer', { enabled, target_class: classId });
   forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }
 
-export async function setSpaceReactions(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled, target_class: classId ?? null });
+export async function setSpaceReactions(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled, target_class: classId });
   forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }
 
-export async function setSpaceMaths(mode: MathsSwitch, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_space_maths', { mode, target_class: classId ?? null });
+export async function setSpaceMaths(mode: MathsSwitch, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_space_maths', { mode, target_class: classId });
   forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }

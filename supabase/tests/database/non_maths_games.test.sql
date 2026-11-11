@@ -42,7 +42,7 @@ select is((select non_maths_games from public.app_settings), true, 'a student re
 select pg_temp.reset();
 
 select pg_temp.fin();
-select throws_ok($$ select public.teacher_set_non_maths_games(null) $$, '22023', null, 'a missing setting is refused');
+select throws_ok(format('select public.teacher_set_non_maths_games(null, %L)', current_setting('test.room_two')), '22023', null, 'a missing setting is refused');
 select throws_ok(format('select public.teacher_set_non_maths_games(false, %L)', current_setting('test.ana_class')),
   '42501', null, 'a teacher cannot switch it off for a class they don''t teach');
 select lives_ok(format('select public.teacher_set_non_maths_games(false, %L)', current_setting('test.room_two')), 'a teacher switches it off for their class');

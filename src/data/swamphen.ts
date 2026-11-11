@@ -56,9 +56,9 @@ export async function fetchSwamphenSettings(classId?: string | null): Promise<Sw
 export const fetchSwamphenEnabled = async (classId?: string | null) => (await fetchSwamphenSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_swamphen leaves out the other). */
-export async function saveSwamphenSetting(change: Partial<SwamphenSettings>, classId?: string | null): Promise<void> {
+export async function saveSwamphenSetting(change: Partial<SwamphenSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_swamphen', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
