@@ -23,6 +23,9 @@ export const FLAG_RULES: FlagRules = {
 export const HARDEST_MIN_ATTEMPTS = 6;
 export const HARDEST_COUNT = 3;
 
+/** Progress table, games that move up on fact mastery: "nearly ready" when this share of the current step's facts are Secure or Fluent. */
+export const NEARLY_SHARE = 0.6;
+
 /** Alerts on Today: at most this many pupils' names in a line (made-up names only). */
 export const ALERT_NAMES = 3;
 

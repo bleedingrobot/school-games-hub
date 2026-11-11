@@ -7,12 +7,13 @@ import { buildTable } from './Progress';
 import { buildBoard } from './LadderBoard';
 import { ProgressTable } from './ProgressTable';
 import { cellState } from './state';
+import { stepKeys as hopKeys } from '../../../shared/hop/round';
 
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
 
 const TODAY = '2026-11-11';
 const rounds = (level: number, days: string[]) => days.map((day) => ({ day, wrong: 0, taps: 8, level }));
-const game = (level: number, days: string[], lastDay = days[0]): GameProgress => ({ daysDone: days.length, lastDay, level, recent: rounds(level, days) });
+const game = (level: number, days: string[], lastDay = days[0], extra: Partial<GameProgress> = {}): GameProgress => ({ daysDone: days.length, lastDay, level, good: null, since: null, ...extra, recent: rounds(level, days) });
 const student = (id: string, name: string): MapStudent => ({ id, name, realName: `${id}.x`, ladder: {} as MapStudent['ladder'], enabledTables: undefined, division: false, facts: [] });
 
 const robin = {
@@ -34,6 +35,31 @@ describe('Progress', () => {
     expect(cellState('robin', robin.quiet, TODAY).state).toBe('quiet');
     expect(cellState('robin', robin.moving, TODAY)).toMatchObject({ state: 'moving', daysOnStep: 2 });
     expect(cellState('robin', undefined, TODAY).state).toBe('none');
+  });
+
+  it('is nearly ready for a step game one good go from passing, not before', () => {
+    const days = ['2026-11-10', '2026-11-09'];
+    expect(cellState('robin', game(2, days, days[0], { good: 1 }), TODAY)).toMatchObject({ state: 'nearly', step: { n: 2 } });
+    expect(cellState('robin', game(2, days, days[0], { good: 0 }), TODAY).state).toBe('moving');
+    expect(cellState('robin', game(2, days), TODAY).state).toBe('moving');
+    // Stuck and top still win.
+    expect(cellState('robin', game(6, days, days[0], { good: 1 }), TODAY).state).toBe('top');
+  });
+
+  it('is nearly ready for Hop when 60% of the step\'s facts are secure', () => {
+    const days = ['2026-11-10'];
+    const keys = hopKeys(10);
+    const fact = (key: string, box: number) => ({ key, attempts: 3, correct: 3, avgMs: 900, box, lastSeen: 0, quickDays: [] });
+    const enough = keys.map((k, i) => fact(k, i < Math.ceil(keys.length * 0.6) ? 2 : 1));
+    const few = keys.map((k, i) => fact(k, i < Math.ceil(keys.length * 0.6) - 1 ? 2 : 1));
+    expect(cellState('hop', game(10, days), TODAY, enough).state).toBe('nearly');
+    expect(cellState('hop', game(10, days), TODAY, few).state).toBe('moving');
+    expect(cellState('hop', game(10, days), TODAY).state).toBe('moving');
+  });
+
+  it('counts the days on a step from since, today included', () => {
+    expect(cellState('robin', game(2, ['2026-11-10', '2026-11-09'], '2026-11-10', { since: '2026-11-06' }), TODAY).daysOnStep).toBe(6);
+    expect(cellState('robin', game(2, ['2026-11-10'], '2026-11-10', { since: '2026-11-06' }), TODAY).state).toBe('stuck');
   });
 
   it('shows a row for each pupil and a column only for games that are on', () => {

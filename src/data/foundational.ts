@@ -29,6 +29,10 @@ export interface GameProgress {
   lastDay: string | null;
   /** Reached level or step; null for Beanstalk. */
   level: number | null;
+  /** Good goes so far at this step (step games only; the next step comes at the game's goodToPass), else null. */
+  good: number | null;
+  /** The NZ day (YYYY-MM-DD) the current step began, from all the rounds kept; null when not known. */
+  since: string | null;
   /** Latest first, at most 10. */
   recent: RecentChallenge[];
 }
@@ -74,6 +78,8 @@ export function parseGame(raw: unknown): GameProgress | null {
     daysDone: whole(r.daysDone),
     lastDay: day(r.lastDay),
     level: typeof r.level === 'number' ? r.level : null,
+    good: typeof r.good === 'number' && Number.isFinite(r.good) && r.good >= 0 ? Math.floor(r.good) : null,
+    since: day(r.since),
     recent: recent.filter((c): c is RecentChallenge => c !== null),
   };
 }

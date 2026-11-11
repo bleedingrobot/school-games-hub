@@ -53,7 +53,7 @@ export function buildBoard(data: FoundationalClass, game: string, today: string)
   const other: BoardColumn = { key: 'other', label: 'Other', sub: '', pupils: [] };
   for (const s of data.map.students) {
     const p = data.pupils.get(s.id);
-    const cell = quick ? quickCellState(p?.quickLooks, today) : cellState(game as FoundationalGameId, p?.games[game as FoundationalGameId], today);
+    const cell = quick ? quickCellState(p?.quickLooks, today) : cellState(game as FoundationalGameId, p?.games[game as FoundationalGameId], today, s.facts);
     const pupil = { id: s.id, name: s.name, cell };
     if (cell.state === 'none') cols[0].pupils.push(pupil);
     else if (!cell.step) other.pupils.push(pupil);
@@ -67,13 +67,14 @@ export function buildBoard(data: FoundationalClass, game: string, today: string)
 
 function note(cell: CellState): string {
   if (cell.state === 'stuck') return `· ${cell.daysOnStep} days`;
+  if (cell.state === 'nearly') return '· nearly ↑';
   if (cell.state === 'top') return '· ★ done';
   if (cell.state === 'quiet') return '· zz';
   if (cell.state === 'moving' && cell.daysOnStep > 0) return `· ${cell.daysOnStep}d`;
   return '';
 }
 
-const STATE_WORDS: Record<CellState['state'], string> = { moving: '', stuck: 'stuck', top: 'top step done', quiet: 'not played for 10 school days', none: '' };
+const STATE_WORDS: Record<CellState['state'], string> = { moving: '', nearly: 'nearly ready to move up', stuck: 'stuck', top: 'top step done', quiet: 'not played for 10 school days', none: '' };
 
 export function LadderBoard({
   classId,

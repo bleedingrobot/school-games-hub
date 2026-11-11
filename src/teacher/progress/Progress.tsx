@@ -29,7 +29,7 @@ export function buildTable(data: FoundationalClass, on: readonly FoundationalGam
   const rows = data.map.students.map((s) => {
     const p = data.pupils.get(s.id);
     const cells: ProgressRow['cells'] = {};
-    for (const c of columns) cells[c.id] = c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today);
+    for (const c of columns) cells[c.id] = c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today, s.facts);
     return { id: s.id, name: s.name, realName: s.realName, cells };
   });
   return { columns, rows };
