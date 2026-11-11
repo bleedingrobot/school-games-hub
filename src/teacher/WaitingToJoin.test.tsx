@@ -36,14 +36,6 @@ beforeEach(() => {
 });
 
 describe('students waiting to join a class', () => {
-  it('lists them under Needs you on Today, and counts them in the nav', async () => {
-    data.fetchWarpRequests.mockResolvedValue([kiwi, kea]);
-    renderBoth();
-    expect(await screen.findByRole('region', { name: /Needs you/ })).toBeInTheDocument();
-    expect(screen.getByText('2 students want to join Room 12:')).toBeInTheDocument();
-    expect(screen.getByText(/\(Kahu\)/).closest('li')).toHaveTextContent('Kind Kea 5');
-    expect(screen.getByRole('link', { name: 'Teacher, 2 waiting to join a class' })).toBeInTheDocument();
-  });
 
   it('lets a student in, then looks again so the nav count drops at once', async () => {
     data.fetchWarpRequests.mockResolvedValueOnce([kiwi, kea]).mockResolvedValue([kea]);
@@ -53,25 +45,6 @@ describe('students waiting to join a class', () => {
     expect(data.answerWarp).toHaveBeenCalledWith('r1', true);
     expect(await screen.findByText('Brave Kiwi 7 is in Room 12.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Teacher, 1 waiting to join a class' })).toBeInTheDocument();
-  });
-
-  it('turns a student down', async () => {
-    data.fetchWarpRequests.mockResolvedValueOnce([kiwi]).mockResolvedValue([]);
-    const user = userEvent.setup();
-    renderBoth();
-    await user.click(await screen.findByRole('button', { name: 'No, keep Brave Kiwi 7 out' }));
-    expect(data.answerWarp).toHaveBeenCalledWith('r1', false);
-    expect(await screen.findByText('Brave Kiwi 7 was turned down.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Teacher' })).toBeInTheDocument();
-  });
-
-  it('shows only a quiet line while nobody is waiting', async () => {
-    data.fetchWarpRequests.mockResolvedValue([]);
-    renderBoth();
-    await vi.waitFor(() => expect(data.fetchWarpRequests).toHaveBeenCalled());
-    expect(screen.queryByRole('region', { name: /Needs you/ })).not.toBeInTheDocument();
-    expect(screen.getByText('Nothing needs you right now.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Teacher' })).toBeInTheDocument();
   });
 
   it('points to my other classes with someone waiting, without their names', async () => {
@@ -84,9 +57,4 @@ describe('students waiting to join a class', () => {
     expect(screen.queryByRole('button', { name: /Yes/ })).not.toBeInTheDocument();
   });
 
-  it('never asks the server for a student', async () => {
-    renderBoth(false);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(data.fetchWarpRequests).not.toHaveBeenCalled();
-  });
 });

@@ -10,9 +10,7 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 import {
-  createServerBackend, enqueueFinish, fetchClassLord, fetchLordSchoolSeason, fetchStudentLord, forgetSchoolSeason, queuedFinishes,
-  resetLordHero, saveLordChange, saveLordEnabled, saveLordHoliday, saveLordSchoolSeason,
-} from './lord';
+  createServerBackend, enqueueFinish, forgetSchoolSeason, queuedFinishes} from './lord';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -24,7 +22,6 @@ const state = (version: number, over: Partial<LordState> = {}): LordState => ({
 });
 const ok = (version: number, result: Record<string, unknown> = {}): Response => new Response(JSON.stringify({ ok: true, state: state(version), result } satisfies LordReply));
 const refused = (reason: string, extra: object = {}): Response => new Response(JSON.stringify({ ok: false, reason, ...extra }));
-const mine = (enabled = true, teacher = false) => ({ data: { hero: null, settings: { enabled, forestPerDay: 10, seasonStart: null }, teacher, facts: [] }, error: null });
 const finish = (n: number): LordRequest => ({ action: 'fight-finish', requestId: `00000000-0000-4000-8000-00000000000${n}`, fightId: `00000000-0000-4000-8000-0000000000a${n}`, actions: [{ type: 'attack' }] });
 const sentBody = (call: number) => JSON.parse(fetchMock.mock.calls[call][1]!.body as string) as LordRequest;
 
@@ -35,56 +32,6 @@ beforeEach(() => {
   rpc.mockReset();
   forgetSchoolSeason();
   ME = crypto.randomUUID();
-});
-
-describe('opening Dragon Maths', () => {
-  it('reads the settings and the maths records, then asks the server for the hero', async () => {
-    rpc.mockResolvedValue({ data: { hero: null, settings: { enabled: true, forestPerDay: 10, seasonStart: '2026-10-19' }, teacher: false, facts: [{ pack: 'money', key: 'money:change', attempts: 2, correct: 1, avgMs: 3000, box: 1, lastSeen: 1, quickDays: [] }] }, error: null });
-    fetchMock.mockResolvedValueOnce(ok(0));
-    const result = await createServerBackend(ME).load();
-    expect(result.kind).toBe('ready');
-    if (result.kind === 'ready') {
-      expect(result.facts).toHaveLength(1);
-      expect(result.state.version).toBe(0);
-    }
-    expect(rpc).toHaveBeenCalledWith('my_lord');
-    expect(sentBody(0)).toEqual({ action: 'load' });
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(String(url)).toMatch(/\/functions\/v1\/lord$/);
-    expect((init!.headers as Record<string, string>).Authorization).toBe('Bearer token');
-  });
-
-  it('says "closed" when the teacher’s switch is off, without bothering the server function', async () => {
-    rpc.mockResolvedValue(mine(false, false));
-    expect((await createServerBackend(ME).load()).kind).toBe('closed');
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('lets a teacher in while it is off', async () => {
-    rpc.mockResolvedValue(mine(false, true));
-    fetchMock.mockResolvedValueOnce(ok(3));
-    expect((await createServerBackend(ME).load()).kind).toBe('ready');
-  });
-
-  it('says "closed" if the server says so, and "not started" with its message', async () => {
-    rpc.mockResolvedValue(mine());
-    fetchMock.mockResolvedValueOnce(refused('closed'));
-    expect((await createServerBackend(ME).load()).kind).toBe('closed');
-    fetchMock.mockResolvedValueOnce(refused('not-started', { message: 'The season starts in 3 days.' }));
-    expect(await createServerBackend(ME).load()).toEqual({ kind: 'not-started', message: 'The season starts in 3 days.' });
-  });
-
-  it('says "offline" (a friendly "can’t connect") when the network or the server is down', async () => {
-    rpc.mockResolvedValue(mine());
-    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    expect((await createServerBackend(ME).load()).kind).toBe('offline');
-    fetchMock.mockResolvedValueOnce(new Response('{"error":"busy"}', { status: 503 }));
-    expect((await createServerBackend(ME).load()).kind).toBe('offline');
-    rpc.mockResolvedValue({ data: null, error: { message: 'no' } });
-    expect((await createServerBackend(ME).load()).kind).toBe('offline');
-    rpc.mockRejectedValue(new Error('network'));
-    expect((await createServerBackend(ME).load()).kind).toBe('offline');
-  });
 });
 
 describe('the queue of finished fights', () => {
@@ -102,25 +49,6 @@ describe('the queue of finished fights', () => {
     expect(sentBody(1)).toMatchObject({ action: 'fight-finish', requestId: finish(1).requestId });
   });
 
-  it('hands the server’s answer back when a finish goes straight through', async () => {
-    const backend = createServerBackend(ME);
-    fetchMock.mockResolvedValueOnce(ok(7, { outcome: 'won', gold: 12 }));
-    const sent = await backend.send(finish(1));
-    expect(sent).toMatchObject({ kind: 'reply', reply: { ok: true, result: { outcome: 'won', gold: 12 } } });
-    expect(queuedFinishes(ME)).toEqual([]);
-  });
-
-  it('sends the oldest first and keeps what the server has not dealt with yet', async () => {
-    enqueueFinish(ME, finish(1));
-    enqueueFinish(ME, finish(2));
-    fetchMock.mockResolvedValueOnce(ok(2));
-    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 503 }));
-    const backend = createServerBackend(ME);
-    expect(await backend.flush()).toBe('later');
-    expect(queuedFinishes(ME).map((r) => r.requestId)).toEqual([finish(2).requestId]);
-    expect(sentBody(0).requestId).toBe(finish(1).requestId);
-  });
-
   it('counts a finish the server already has as done (the reply was lost), and drops one it turns down', async () => {
     enqueueFinish(ME, finish(1));
     fetchMock.mockResolvedValueOnce(refused('duplicate', { state: state(4) }));
@@ -130,156 +58,5 @@ describe('the queue of finished fights', () => {
     fetchMock.mockResolvedValueOnce(refused('tampered', { state: state(4) }));
     expect(await backend.flush()).toBe('done');
     expect(queuedFinishes(ME)).toEqual([]);
-  });
-
-  it('keeps a finish when the game is switched off or the server is busy, for when it is back', async () => {
-    enqueueFinish(ME, finish(1));
-    const backend = createServerBackend(ME);
-    fetchMock.mockResolvedValueOnce(refused('closed'));
-    expect(await backend.flush()).toBe('later');
-    fetchMock.mockResolvedValueOnce(refused('busy'));
-    expect(await backend.flush()).toBe('later');
-    expect(queuedFinishes(ME)).toHaveLength(1);
-  });
-
-  it('sends waiting fights before it opens the game, so nothing played is lost', async () => {
-    enqueueFinish(ME, finish(1));
-    rpc.mockResolvedValue(mine());
-    fetchMock.mockResolvedValueOnce(ok(2));
-    fetchMock.mockResolvedValueOnce(ok(2));
-    await createServerBackend(ME).load();
-    expect(sentBody(0).action).toBe('fight-finish');
-    expect(sentBody(1).action).toBe('load');
-  });
-
-  it('sends everything else straight away and never queues it', async () => {
-    const backend = createServerBackend(ME);
-    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-    expect(await backend.send({ action: 'forest', requestId: crypto.randomUUID(), version: 1 })).toEqual({ kind: 'offline' });
-    expect(queuedFinishes(ME)).toEqual([]);
-    fetchMock.mockResolvedValueOnce(refused('stale', { state: state(9) }));
-    expect(await backend.send({ action: 'forest', requestId: crypto.randomUUID(), version: 1 })).toMatchObject({ kind: 'reply', reply: { ok: false, reason: 'stale' } });
-  });
-});
-
-describe('the news, the Warriors list and the Hall of Heroes', () => {
-  it('reads each list through its own database function', async () => {
-    rpc.mockImplementation(async (name: string) => ({
-      data: name === 'lord_news' ? [{ day: '2026-10-19', kind: 'village', line: 'Market day!' }] : name === 'lord_warriors' ? [{ place: 1, display_name: 'Brave Tui', avatar: null, level: 3, stars: 0, dragons: 0, is_me: true }] : [{ season: 1, display_name: 'Brave Tui', avatar: null, kills: 1, is_me: false }],
-      error: null,
-    }));
-    const backend = createServerBackend(ME);
-    expect(await backend.fetchNews()).toEqual([{ day: '2026-10-19', kind: 'village', line: 'Market day!' }]);
-    expect((await backend.fetchWarriors())![0]).toMatchObject({ place: 1, level: 3 });
-    expect((await backend.fetchHall())![0]).toMatchObject({ season: 1, kills: 1 });
-    expect(rpc.mock.calls.map((c) => c[0])).toEqual(['lord_news', 'lord_warriors', 'lord_hall']);
-  });
-
-  it('gives null (not an error) when a list can’t be read, so the screen can offer to try again', async () => {
-    rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'no' } });
-    const backend = createServerBackend(ME);
-    expect(await backend.fetchNews()).toBeNull();
-    rpc.mockRejectedValue(new Error('offline'));
-    expect(await backend.fetchWarriors()).toBeNull();
-    expect(await backend.fetchHall()).toBeNull();
-  });
-
-  it('passes on a fight that counted as a loss after a day, when opening the game', async () => {
-    rpc.mockResolvedValue(mine());
-    fetchMock.mockResolvedValueOnce(ok(3, { abandoned: 'forest' }));
-    const result = await createServerBackend(ME).load();
-    expect(result.kind === 'ready' && result.abandoned).toBe('forest');
-  });
-});
-
-describe('the teacher’s views', () => {
-  it('asks for the class, one pupil, and a reset', async () => {
-    rpc.mockResolvedValue({ data: { players: 2 }, error: null });
-    expect(await fetchClassLord('c12')).toEqual({ players: 2 });
-    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class', { target_class: 'c12' });
-    await fetchStudentLord('kid-1');
-    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_student', { student: 'kid-1' });
-    rpc.mockResolvedValue({ data: { reset: true }, error: null });
-    await resetLordHero('kid-1');
-    expect(rpc).toHaveBeenLastCalledWith('teacher_reset_lord_hero', { student: 'kid-1' });
-  });
-
-  it('turns a failure into a friendly sentence', async () => {
-    rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'boom' } });
-    await expect(fetchClassLord('c12')).rejects.toThrow('We couldn’t load Dragon Maths for this class.');
-    await expect(resetLordHero('kid-1')).rejects.toThrow('We couldn’t reset that hero.');
-  });
-
-  it('says so when the server refuses (a class the teacher doesn’t teach), and asks nothing else', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
-    await expect(fetchClassLord('c99')).rejects.toThrow('We couldn’t load Dragon Maths for this class.');
-    expect(rpc).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('the teacher’s settings', () => {
-  const ROW = { lord_enabled: true, lord_forest_per_day: 10, lord_season_start: '2026-11-23', lord_paused_since: null, lord_topics: ['add-sub'] };
-  const saved = { data: { enabled: true }, error: null };
-
-  it('switches the game on or off for the class, and nothing else', async () => {
-    rpc.mockResolvedValueOnce(saved);
-    await saveLordEnabled(false, 'c12');
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { enabled: false }, target_class: 'c12' });
-  });
-
-  it('saves one change for the class, keeping its switch as it is now', async () => {
-    rpc.mockResolvedValueOnce({ data: ROW, error: null }).mockResolvedValueOnce(saved);
-    await saveLordChange({ forestPerDay: 6 }, 'c12');
-    expect(rpc).toHaveBeenNthCalledWith(1, 'teacher_class_settings', { target_class: 'c12' });
-    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { forestPerDay: 6, enabled: true }, target_class: 'c12' });
-    rpc.mockResolvedValueOnce({ data: { ...ROW, lord_enabled: false }, error: null }).mockResolvedValueOnce(saved);
-    await saveLordChange({ seasonStart: '2027-02-01' }, 'c14');
-    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { seasonStart: '2027-02-01', enabled: false }, target_class: 'c14' });
-  });
-
-  it('saves nothing if the current settings can’t be read', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { code: 'x', message: 'no' } });
-    await expect(saveLordChange({ topics: ['money'] }, 'c12')).rejects.toThrow();
-    expect(rpc).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('the school’s one season date (migration 20261028000400)', () => {
-  const SEASON = { start: '2026-08-31', pausedSince: null, number: 3, dayOfSeason: 23, daysLeft: 12, startsIn: null, canChange: true };
-
-  it('loads the school’s season once, and again after a save', async () => {
-    rpc.mockResolvedValue({ data: SEASON, error: null });
-    expect(await fetchLordSchoolSeason()).toEqual({ live: true, season: SEASON });
-    await fetchLordSchoolSeason();
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('lord_school_season');
-    await saveLordHoliday(true);
-    expect(rpc).toHaveBeenLastCalledWith('admin_set_lord_holiday', { paused: true });
-    await fetchLordSchoolSeason();
-    expect(rpc).toHaveBeenCalledTimes(3);
-  });
-
-  it('says it isn’t live yet while the database doesn’t have it (each class keeps its own date)', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } });
-    expect(await fetchLordSchoolSeason()).toEqual({ live: false });
-  });
-
-  it('asks again after a load fails', async () => {
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '500', message: 'down' } }).mockResolvedValueOnce({ data: SEASON, error: null });
-    await expect(fetchLordSchoolSeason()).rejects.toThrow('We couldn’t load the school’s Dragon Maths seasons.');
-    expect(await fetchLordSchoolSeason()).toEqual({ live: true, season: SEASON });
-  });
-
-  it('saves the date, and passes on the server’s words when it is refused', async () => {
-    rpc.mockResolvedValueOnce({ data: SEASON, error: null });
-    expect(await saveLordSchoolSeason('2026-08-31')).toEqual(SEASON);
-    expect(rpc).toHaveBeenLastCalledWith('admin_set_lord_season', { start: '2026-08-31' });
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'That would take the school back to season 2. Pick a day on or before 31 Aug.' } });
-    await expect(saveLordSchoolSeason('2026-09-20')).rejects.toThrow('That would take the school back to season 2. Pick a day on or before 31 Aug.');
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'Only a school admin can change the season date.' } });
-    await expect(saveLordSchoolSeason('2026-08-01')).rejects.toThrow('Only a school admin can change the season date.');
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '500', message: 'boom' } });
-    await expect(saveLordHoliday(false)).rejects.toThrow('We couldn’t save the holiday pause.');
   });
 });

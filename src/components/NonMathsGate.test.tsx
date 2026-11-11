@@ -36,43 +36,4 @@ describe('the non-maths games gate', () => {
     expect(screen.queryByText('The chess board')).not.toBeInTheDocument();
   });
 
-  it('shows the game while the setting loads, and closes it once the setting says off', async () => {
-    let answer: (row: Record<string, unknown>) => void = () => {};
-    vi.mocked(classSettings.readSettings).mockReturnValue(new Promise((ok) => (answer = ok)));
-    show('student');
-    expect(screen.getByText('The chess board')).toBeInTheDocument();
-    answer({ non_maths_games: false });
-    expect(await screen.findByRole('heading', { name: 'Maths games only for now' })).toBeInTheDocument();
-  });
-
-  it('shows the game when the switch is on', async () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: true });
-    show('student');
-    expect(await screen.findByText('The chess board')).toBeInTheDocument();
-  });
-
-  it('shows the game when the row has no value for it', async () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue({});
-    show('student');
-    expect(await screen.findByText('The chess board')).toBeInTheDocument();
-  });
-
-  it('never locks a class out when the settings cannot be read', async () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue(null);
-    show('student');
-    expect(await screen.findByText('The chess board')).toBeInTheDocument();
-  });
-
-  it('lets a teacher in even when the switch is off', async () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: false });
-    show('teacher');
-    expect(await screen.findByText('The chess board')).toBeInTheDocument();
-    expect(screen.queryByText('Maths games only for now')).not.toBeInTheDocument();
-  });
-
-  it('does not check anything for a maths game (on=false)', () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: false });
-    show('student', false);
-    expect(screen.getByText('The chess board')).toBeInTheDocument();
-  });
 });

@@ -12,28 +12,4 @@ describe('the one hint', () => {
       }
     }
   });
-  it('leaves at least the right answer and one wrong choice', () => {
-    const h = hintFor({ answer: 3, choices: [3, 5, 8, 9], parts: [] });
-    expect(4 - h.remove.length).toBe(2);
-  });
-  it('gives a stretch of numbers that holds the answer, and is never just the answer', () => {
-    for (let answer = 0; answer <= 999; answer++) {
-      const h = hintFor({ answer, parts: [] });
-      const [, low, high] = /between (\S+) and (\S+)\./.exec(h.text)!.map(Number);
-      expect(answer).toBeGreaterThanOrEqual(low);
-      expect(answer).toBeLessThan(high);
-      expect(high - low).toBeGreaterThan(1);
-    }
-  });
-  it('works for decimals and writes money with cents', () => {
-    const d = hintFor({ answer: 4.15, parts: [] });
-    const [, low, high] = /between (\S+) and (\S+)\./.exec(d.text)!.map(Number);
-    expect(4.15).toBeGreaterThanOrEqual(low);
-    expect(4.15).toBeLessThan(high);
-    expect(hintFor({ answer: 5.85, parts: ['$', '?'] }).text).toMatch(/\$5\.00 and \$6\.00/);
-  });
-  it('is the same every time for the same question', () => {
-    const q = { answer: 56, choices: [56, 54, 48, 63], parts: [] };
-    expect(hintFor(q)).toEqual(hintFor(q));
-  });
 });

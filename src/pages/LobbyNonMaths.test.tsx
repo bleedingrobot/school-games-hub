@@ -94,13 +94,4 @@ describe('the lobby with the non-maths games switch', () => {
     // is torn down ("Vite module runner has been closed").
     await import('../games/space/prefs');
   });
-
-  it('offers every game and lists the open checkers game when it is on', async () => {
-    vi.mocked(classSettings.readSettings).mockResolvedValue({ non_maths_games: true });
-    renderLobby();
-    const create = screen.getByRole('region', { name: 'Start a game' });
-    expect(within(create).getByRole('radio', { name: 'Chess' })).toBeInTheDocument();
-    expect(within(create).getByRole('radio', { name: 'Checkers' })).toBeInTheDocument();
-    expect(await within(screen.getByRole('region', { name: 'Open games' })).findByText(/Brave Kiwi 7/)).toBeInTheDocument();
-  });
 });

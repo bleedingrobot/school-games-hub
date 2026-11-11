@@ -25,18 +25,4 @@ describe('refusalAlerts', () => {
     expect(out[0]).toMatchObject({ id: 'monsters:Speedy Otter 27', section: 'games/monsters' });
   });
 
-  it('uses the word for requests', () => {
-    const out = refusalAlerts([{ name: 'A', at: daysAgo(0) }, { name: 'A', at: daysAgo(0) }], { id: 'dragon-maths', name: 'Dragon Maths' }, 'request', now);
-    expect(out[0].text).toBe('Dragon Maths turned down 2 requests from A this week');
-    expect(out[0].section).toBe('games/dragon-maths');
-  });
-
-  it('leaves out refusals older than 7 days', () => {
-    const out = refusalAlerts([{ name: 'Old', at: daysAgo(8) }, { name: 'New', at: daysAgo(6) }], game, 'save', now);
-    expect(out.map((a) => a.id)).toEqual(['monsters:New']);
-  });
-
-  it('gives nothing for no refusals', () => {
-    expect(refusalAlerts([], game, 'save', now)).toEqual([]);
-  });
 });

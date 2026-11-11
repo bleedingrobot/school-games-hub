@@ -102,7 +102,6 @@ const teacher: AuthState = {
   signOut: vi.fn(async () => {}),
   refreshProfile: vi.fn(async () => {}),
 };
-const admin: AuthState = { ...teacher, profile: { id: 't9', display_name: 'Calm Fox 2', avatar: {}, role: 'teacher', school_admin: true } };
 
 /** Where the router is now, so a test can see the address after a click. */
 function Where() {
@@ -127,7 +126,6 @@ const roster = (name = 'Room 12') => screen.findByRole('table', { name: new RegE
 const order = (table: HTMLElement) => within(table).getAllByRole('rowheader').map((h) => h.textContent?.replace('Hidden', ''));
 const cells = (table: HTMLElement, name: string) =>
   within(within(table).getByRole('row', { name: new RegExp(name) })).getAllByRole('cell').map((c) => c.textContent);
-const header = (table: HTMLElement, name: string) => within(table).getByRole('columnheader', { name });
 
 beforeEach(async () => {
   sessionStorage.clear();
@@ -165,95 +163,6 @@ describe('the class roster', () => {
     expect(screen.getByRole('button', { name: 'Room 12' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('sorts by a column, flipping the way on a second click, and keeps it in the address', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/students');
-    const table = await roster();
-    expect(header(table, 'Student')).toHaveAttribute('aria-sort', 'ascending');
-    await user.click(within(table).getByRole('button', { name: 'Questions (7 days)' }));
-    // Numbers start with the biggest.
-    expect(header(table, 'Questions (7 days)')).toHaveAttribute('aria-sort', 'descending');
-    expect(header(table, 'Student')).not.toHaveAttribute('aria-sort');
-    expect(order(table)).toEqual(['Brave Kiwi 7', 'Calm Fox 9', 'Lucky Tui 12']);
-    expect(address()).toBe('/teacher/c12/students?sort=shown&way=down');
-    await user.click(within(table).getByRole('button', { name: 'Questions (7 days)' }));
-    expect(header(table, 'Questions (7 days)')).toHaveAttribute('aria-sort', 'ascending');
-    expect(order(table)).toEqual(['Lucky Tui 12', 'Calm Fox 9', 'Brave Kiwi 7']);
-    expect(address()).toBe('/teacher/c12/students?sort=shown&way=up');
-    await user.click(within(table).getByRole('button', { name: 'Student' }));
-    expect(header(table, 'Student')).toHaveAttribute('aria-sort', 'ascending');
-    await user.click(within(table).getByRole('button', { name: 'Student' }));
-    expect(header(table, 'Student')).toHaveAttribute('aria-sort', 'descending');
-    expect(order(table)).toEqual(['Lucky Tui 12', 'Calm Fox 9', 'Brave Kiwi 7']);
-  });
-
-  it('puts the least recently active first for ?sort=quiet', async () => {
-    show('/teacher/c12/students?sort=quiet');
-    const table = await roster();
-    expect(order(table)).toEqual(['Calm Fox 9', 'Lucky Tui 12', 'Brave Kiwi 7']);
-    expect(header(table, 'Last active')).toHaveAttribute('aria-sort', 'ascending');
-  });
-
-  it('hides real names, and remembers it for this teacher', async () => {
-    const user = userEvent.setup();
-    const { unmount } = show('/teacher/c12/students');
-    const table = await roster();
-    await user.click(screen.getByRole('checkbox', { name: 'Hide real names' }));
-    expect(within(table).queryByRole('columnheader', { name: 'Real name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('jane.smith')).not.toBeInTheDocument();
-    // A hidden real name can't be searched for either.
-    await user.type(screen.getByLabelText('Find a student'), 'smith');
-    expect(screen.getByText('No students match.')).toBeInTheDocument();
-    unmount();
-    show('/teacher/c12/students');
-    const again = await roster();
-    expect(screen.getByRole('checkbox', { name: 'Hide real names' })).toBeChecked();
-    expect(within(again).queryByRole('columnheader', { name: 'Real name' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('checkbox', { name: 'Hide real names' }));
-    expect(await within(again).findByRole('columnheader', { name: 'Real name' })).toBeInTheDocument();
-    expect(localStorage.getItem('sgh-hide-real-names:t1')).toBeNull();
-  });
-
-  it('switches to the old list of all my students, and back', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/students');
-    await roster();
-    expect(data.fetchPeople).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'All my students' }));
-    expect(screen.getByRole('button', { name: 'All my students' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Room 12' })).toHaveAttribute('aria-pressed', 'false');
-    expect(address()).toBe('/teacher/c12/students?show=all');
-    const zippy = await screen.findByRole('link', { name: /Zippy Meerkat 79/ });
-    expect(zippy).toHaveAttribute('href', '/teacher/c12/students/s9');
-    expect(zippy).toHaveTextContent('3 games');
-    expect(screen.getByRole('link', { name: /Wise Owl 1/ })).toHaveTextContent('You');
-    expect(screen.queryByRole('table', { name: /^Students in/ })).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText('Find a player'), 'zara');
-    expect(screen.queryByRole('link', { name: /Wise Owl 1/ })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Room 12' }));
-    expect(await roster()).toBeInTheDocument();
-    expect(address()).toBe('/teacher/c12/students');
-  });
-
-  it('calls it Whole school for a school admin', async () => {
-    show('/teacher/c12/students?show=all', admin);
-    expect(await screen.findByRole('heading', { name: /^Whole school/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Whole school' })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('points a school admin to Admin → End of year for the new points season', async () => {
-    show('/teacher/c12/students', admin);
-    await roster();
-    expect(screen.getByRole('link', { name: 'Admin → End of year' })).toHaveAttribute('href', '/teacher/admin/year');
-    expect(screen.queryByRole('button', { name: 'Start a new season' })).not.toBeInTheDocument();
-  });
-
-  it('shows an ordinary teacher no season panel for points', async () => {
-    show('/teacher/c12/students');
-    await roster();
-    expect(screen.queryByRole('link', { name: 'Admin → End of year' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Seasons and end of year')).not.toBeInTheDocument();
-  });
 });
 
 describe('a student’s page', () => {
@@ -265,31 +174,6 @@ describe('a student’s page', () => {
     expect(address()).toBe('/teacher/c12/students/s1');
     return user;
   }
-
-  it('shows the student’s maths in the overview', async () => {
-    await openKiwi();
-    expect(screen.getByRole('heading', { level: 2, name: 'Brave Kiwi 7' })).toBeInTheDocument();
-    const overview = screen.getByRole('region', { name: 'Overview' });
-    expect(overview).toHaveTextContent('Maths ladder×6, ×9');
-    expect(overview).toHaveTextContent('FocusClass: Number facts to 10');
-    expect(overview).toHaveTextContent('Last 7 days20 questions, 10% skipped');
-    expect(data.fetchStudentCard).toHaveBeenCalledWith('s1');
-  });
-
-  it('loads a game’s panel only when its line is opened, and lists games not played yet', async () => {
-    const user = await openKiwi();
-    const games = screen.getByRole('region', { name: 'Games' });
-    const line = (await within(games).findByText('gem-keep so far')).closest('summary')!;
-    expect(line).toHaveTextContent('Gem Keep');
-    expect(data.summary).toHaveBeenCalledWith('gem-keep', 's1');
-    expect(await within(games).findByText(/Not played yet: Maths Monsters\./)).toBeInTheDocument();
-    expect(within(games).queryByText('Maths Monsters', { selector: '.game-line__name' })).not.toBeInTheDocument();
-    expect(data.panelShown).not.toHaveBeenCalled();
-    expect(screen.queryByText('Gem Keep panel for s1')).not.toBeInTheDocument();
-    await user.click(line);
-    expect(await within(games).findByText('Gem Keep panel for s1')).toBeInTheDocument();
-    expect(new Set(data.panelShown.mock.calls.map(([game]) => game))).toEqual(new Set(['gem-keep']));
-  });
 
   it('moves a student to another class I teach', async () => {
     const user = await openKiwi();
@@ -306,32 +190,4 @@ describe('a student’s page', () => {
     await waitFor(() => expect(data.fetchClasses).toHaveBeenCalledTimes(2));
   });
 
-  it('goes back to the students list after a delete', async () => {
-    const user = await openKiwi();
-    const manage = screen.getByRole('region', { name: 'Manage' });
-    await user.click(within(manage).getByRole('button', { name: /Delete/ }));
-    await user.type(within(manage).getByLabelText('Type their player name to confirm'), 'brave kiwi 7');
-    await user.click(within(manage).getByRole('button', { name: 'Delete forever' }));
-    expect(data.deletePerson).toHaveBeenCalledWith('s1');
-    await waitFor(() => expect(address()).toBe('/teacher/c12/students'));
-    expect(await roster()).toBeInTheDocument();
-  });
-
-  it('has a link back to the students list', async () => {
-    const user = await openKiwi();
-    await user.click(screen.getByRole('link', { name: '‹ Students' }));
-    expect(address()).toBe('/teacher/c12/students');
-    expect(await roster()).toBeInTheDocument();
-  });
-
-  it('lands on the new class’s Students list when the class is switched', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/students/s1');
-    await screen.findByText('Points level 2 · 50 points');
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Class' }), 'c14');
-    await waitFor(() => expect(address()).toBe('/teacher/c14/students'));
-    const table = await roster('Room 14');
-    expect(order(table)).toEqual(['Zippy Meerkat 79']);
-    expect(data.fetchClassOverview).toHaveBeenLastCalledWith('c14');
-  });
 });

@@ -21,7 +21,7 @@ Maths is the most important shared system. A student has **one maths focus** at 
    - `choices` (numbers) with optional `choiceLabels` (`'2/3'`, `'0.25'`, `'25%'`). **When `choiceLabels` is set, the question can only be answered by picking**, whatever the multiple-choice switch says. There can be 2 or 4 choices.
    - `input: 'decimal'` means show a point key; `maxLength` is the longest answer (default 3).
    - `spoken`: what a screen reader says. Use it as the question's accessible name.
-   A test should run every skill in `LADDER` through your display (copy Marble's `maths.test.ts`).
+   One test should run every skill in `LADDER` through your game and check the server can mark it (copy `shared/archery/server.test.ts`).
 5. **The server marks, never the browser.** Two safe ways (4.2 below). Either way the right answer comes from a question the server made or rebuilt, never from what the browser says.
 6. **Record every marked answer** so it counts towards the student's records, their place on the ladder, the teacher's skill map and the focus results:
    - **Use `recordMathsAnswers(rpc, player, answers, once, '<name>')`** from `_shared/recordAnswers.ts`. `once` is something unique to this save (the run's seed and the question's slot), so a save sent twice counts once. It does everything below, and never throws.
@@ -92,4 +92,4 @@ const { seed, questions } = await startRound();          // src/data/<game>.ts â
 />
 ```
 
-Tests to copy: Marble's `handler.test.ts` (right, wrong, sent twice, a slot that doesn't exist, another student's seed) and `maths.test.ts` (every ladder skill comes through and shows).
+Tests to copy: Marble's `handler.test.ts` (right, wrong, sent twice, a slot that doesn't exist, another student's seed) and `shared/archery/server.test.ts` (every ladder skill makes questions the server can mark).
