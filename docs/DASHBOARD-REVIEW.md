@@ -13,7 +13,7 @@
 - **Mostly honest cards.** Moves left, unlimited days, next-part chips and switches all match the games. Three things don't: six games that are live for every class still say "In development" to pupils, Royal Decree shows Kingdom Keeper's picture, and Training is a plain box unlike every other card.
 - **Heavy first load and a lot of copying to add a game.** The home page pulls in 107 script files (about 436 KB zipped), and a new game's card touches 5 to 7 files, including a copied 20-line switch hook (22 copies today).
 
-**The plan (section 6), in order:** D1 honest labels, D2 "My games" row and a Play button for your last game, D3 older classes see their own games first, D4 games still going in one line, D5 no more jumping, D6 smaller cards on phones, D7 lighter first load, D8 adding a game in one place, D9 check it as a child would. Two decisions are on question cards: where the early-years games go for older classes, and what the Play button does.
+**The plan (section 6), in order:** D1 honest labels, D2 a "My games" row in place of the big Play button, (D3 dropped), D4 games still going in one line, D5 no more jumping, D6 smaller cards on phones, D7 lighter first load, D8 adding a game in one place, D9 check it as a child would. James decided (11 Nov): the early-years games stay at the top for every class, and the big Play button is removed.
 
 ## 1. What's there now
 
@@ -99,17 +99,17 @@ The biggest home-page scripts: the main bundle (511 KB), the maths ladder (116 K
 
 ## Mock-ups
 
-Made by changing the preview page in the browser, so they show real cards and art. `mock-laptop-my-games.jpg`, `mock-ipad-my-games.jpg`: Play button names the last game, games still going in one line, My games row with chips, then the sections. `mock-phone-two-per-row.jpg`: two smaller cards per row on a phone. `compare-phone.jpg`: the first three phone screens, now and suggested. With all changes the phone page drops from 13,506 px to about 5,500 px and Dragon Maths' Play button moves from 11,741 px to about 990 px (the second screen).
+Made by changing the preview page in the browser, so they show real cards and art. `mock-laptop-my-games.jpg`, `mock-ipad-my-games.jpg`: games still going in one line (the Play button shown is now to be removed), My games row with chips, then the sections. `mock-phone-two-per-row.jpg`: two smaller cards per row on a phone. `compare-phone.jpg`: the first three phone screens, now and suggested. With all changes the phone page drops from 13,506 px to about 5,500 px and Dragon Maths' Play button moves from 11,741 px to about 990 px (the second screen).
 
 ## 6. The plan, in priority order
 
-Each card is one PR. D2 and D3 are database changes. The prompts are on the Dashboard Plan artifact and in `docs/plans/dashboard/HANDOVER.md`'s list.
+Each card is one PR. D2 is a database change. The prompts are on the Dashboard Plan artifact and the Games Hub Prompts board (dashboard-d1 to dashboard-d9).
 
 | Card | What the pupil gets | Size | Database | Waits for |
 |---|---|---|---|---|
 | D1 | Labels that tell the truth; every card looks the same | S | no | nothing |
-| D2 | Their own games at the top; Play starts their game | M | yes | James's answer on the Play button (default: play my last game) |
-| D3 | Year 4+ see their games first | M | yes | James's answer on where the early-years games go (default: bottom, folded) |
+| D2 | Their own games at the top | M | yes | nothing (James chose to remove the Play button, 11 Nov 2026) |
+| D3 | (dropped) | M | yes | Dropped: James chose to leave the early-years games at the top for every class |
 | D4 | Games still going take one line, not five | S | no | nothing |
 | D5 | No jumping cards while it loads | S | no | nothing |
 | D6 | Half-length page on a phone | M | no | D2 |
@@ -135,28 +135,27 @@ Each card is one PR. D2 and D3 are database changes. The prompts are on the Dash
 
 **Waits for:** nothing
 
-### D2. 'My games' at the top, and a Play button that means something (size M, database change)
+### D2. 'My games' at the top instead of the big Play button (size M, database change)
 
 **What's wrong:** The big yellow Play button always starts Chess against the Easy bot, for every pupil. Room Riley's favourite, Dragon Maths, is the 28th card: about 14 phone screens down (y 11,700 px) and 6 laptop screens down. 38 of 45 pupils with a saved layout have pinned games to get round this.
 
-**Done looks like:** Straight under the hero, a 'My games' row: the pupil's pinned games first, then the games they played most in the last 14 days, up to 4 cards (cards in this row hide the tagline and bot level picker to stay short). It replaces the Pinned section; the 📌 box still adds and removes. With nothing pinned or played it shows the class's 4 most played games, titled 'Popular in your class'. The hero Play button says 'Play Dragon Maths' and opens the pupil's last game (with the bot level they used, for bot games). The season strips sit under My games when Clan Quest or Dragon Maths is in it. Looks like mock-laptop-my-games and mock-phone-two-per-row.
+**Done looks like:** Straight under the hero, a 'My games' row: the pupil's pinned games first, then the games they played most in the last 14 days, up to 4 cards (cards in this row hide the tagline and bot level picker to stay short). It replaces the Pinned section; the 📌 box still adds and removes. With nothing pinned or played it shows the class's 4 most played games, titled 'Popular in your class'. The big yellow Play button and its 'Chess vs Easy bot' hint are gone from the hero (James, 11 Nov 2026); Class Warp stays. The season strips sit under My games when Clan Quest or Dragon Maths is in it. Looks like mock-laptop-my-games and mock-phone-two-per-row, without the Play button.
 
 **Steps:**
 
-1. Migration `<next>_home_my_games.sql`: edit `public.my_home_page()` in place (its latest body is in supabase/migrations/20261102000300_home_chips.sql; check nothing newer defines it). Add `'myGames'`: the caller's game ids from `public.scored_games` with `finished_at > now() - interval '14 days'`, grouped by game, ordered by count desc, limit 4, plus `'lastGame'` (game and bot_level of their newest scored game), and `'classGames'`: the same top 4 for the caller's class (`current_class_of(auth.uid())`, through class_members), for a pupil with no games yet.
-2. src/data/homePage.ts: parse the three new parts (null-safe; an old database without them leaves the row as it is now).
-3. src/pages/Dashboard.tsx: build `myTiles` = pinned (in pin order) then myGames, without repeats, only games in `tiles`, max 4. Render it as the first GameGroup with id 'pinned' (keep the id so saved folds still work) and title 'My games'; add `className="game-grid game-grid--mine"`. A game shown in My games is NOT removed from its own section (only pinned ones are, as now).
-4. Hero: `featuredGame` = lastGame if it is in shownGames, else the first My games tile, else today's rule. The hint line says 'Your last game' instead of '<game> vs <level> bot'.
-5. Move the `season-strips` block so it renders under My games when clan-quest or dragon-maths is among myTiles; otherwise leave it in Complex maths.
-6. CSS in src/styles.css (this is a shared-file card, so it's allowed here): `.game-grid--mine` columns `minmax(min(100%, 230px), 1fr)`, and inside it hide `.game-card__text > p:not(.game-card__note)` and the bot level picker.
+1. Migration `<next>_home_my_games.sql`: edit `public.my_home_page()` in place (its latest body is in supabase/migrations/20261102000300_home_chips.sql; check nothing newer defines it). Add `'myGames'`: the caller's game ids from `public.scored_games` with `finished_at > now() - interval '14 days'`, grouped by game, ordered by count desc, limit 4, and `'classGames'`: the same top 4 for the caller's class (`current_class_of(auth.uid())`, through class_members), for a pupil with no games yet.
+2. src/data/homePage.ts: parse the two new parts (null-safe; an old database without them leaves the row as it is now).
+3. src/pages/Dashboard.tsx: remove the hero's Play link, its hint line, and the `featured`/`featuredGame` state (cards still keep their own bot level). Build `myTiles` = pinned (in pin order) then myGames, without repeats, only games in `tiles`, max 4. Render it as the first GameGroup with id 'pinned' (keep the id so saved folds still work) and title 'My games'; add `className="game-grid game-grid--mine"`. A game shown in My games is NOT removed from its own section (only pinned ones are, as now).
+4. Move the `season-strips` block so it renders under My games when clan-quest or dragon-maths is among myTiles; otherwise leave it in Complex maths.
+5. CSS in src/styles.css (this is a shared-file card, so it's allowed here): `.game-grid--mine` columns `minmax(min(100%, 230px), 1fr)`, and inside it hide `.game-card__text > p:not(.game-card__note)` and the bot level picker.
 
 **Files:** new migration; src/data/homePage.ts; src/pages/Dashboard.tsx; src/styles.css; src/pages/homePageFake.ts (add the parts to the fake answer); DashboardLayout.test.tsx
 
-**Tests:** Two tests at most: My games orders pins then most played and stops at 4; the hero Play links to the last game. Scratch-DB check (scripts/scratch-db.sh) that myGames counts only the caller's games. RequestCount test: still one my_home_page request.
+**Tests:** Two tests at most: My games orders pins then most played and stops at 4; the hero has no Play button. Scratch-DB check (scripts/scratch-db.sh) that myGames counts only the caller's games. RequestCount test: still one my_home_page request.
 
-**Waits for:** James's answer on the Play button (default: play my last game)
+**Waits for:** nothing (James chose to remove the Play button, 11 Nov 2026)
 
-### D3. Older classes see their own games first (size M, database change)
+### D3. Dropped: older classes see their own games first (James kept the early-years games at the top, 11 Nov) (size M, database change)
 
 **What's wrong:** Every class sees the 12 Foundational (ages 5 to 8) games first. Room Riley is Year 6, so its pupils scroll past 12 junior games to reach theirs. The pupil home page never reads the class's year level, although every class has one.
 
@@ -173,7 +172,7 @@ Each card is one PR. D2 and D3 are database changes. The prompts are on the Dash
 
 **Tests:** One test: year 6 puts Foundational last and folded, year 2 first and open, null as today. Scratch-DB: my_class() returns yearLevel for a pupil in a Year 6 class.
 
-**Waits for:** James's answer on where the early-years games go (default: bottom, folded)
+**Waits for:** Dropped: James chose to leave the early-years games at the top for every class
 
 ### D4. Games still going in one line (size S)
 
@@ -285,7 +284,7 @@ Each card is one PR. D2 and D3 are database changes. The prompts are on the Dash
 
 **Waits for:** D1 to D8
 
-## Decisions for James
+## Decisions (James, 11 Nov 2026)
 
-1. Where the early-years games go for Year 4+ classes. Default: at the bottom, folded (D3).
-2. What the big Play button does. Default: plays the pupil's last game (D2).
+1. Early-years games for Year 4+ classes: **leave them at the top**. D3 is dropped; My games (D2) is how older pupils reach their games quickly.
+2. The big Play button: **remove it**. D2 puts My games in its place.
