@@ -42,6 +42,7 @@ the extra data that makes that sharper.
 - P2 Progress tab, every game's steps: PR #394, 11 Nov 2026.
 - P3 Ladder board: PR #395, 11 Nov 2026.
 - P4, P5, P6 and P7 together: PR #396, 11 Nov 2026. P4 counts days on a step including today (on it since 6 Nov, today 11 Nov, is 6 days).
+- P8 Right first try and time per go: PR #398, 11 Nov 2026. `f` comes from `first_right`, so only Tūī, Robin, Parrot, Lizard, Pigeon and Swamp Hen have it. Taps don't save the answer, so `ms` uses only rounds with no wrong taps.
 - P12 Game development guide section 1b: PR #397, 11 Nov 2026.
 
 ## Decided
