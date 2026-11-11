@@ -50,7 +50,7 @@ select pg_temp.reset();
 select is((select count(*)::int from public.app_settings where class_id is not null and pipi_enabled = false), 0, 'no class changed');
 
 -- A class made afterwards copies it.
-insert into public.classes (school_id, name, school_year, warp_code) values (1, 'Room Four', 2026, 'QRSTV');
+insert into public.classes (school_id, name, school_year, warp_code) values (1, 'Room Four', 2026, 'QRTVW');
 select public.give_class_settings(id) from public.classes where name = 'Room Four';
 select is((select s.pipi_enabled::text || s.question_skips from public.app_settings s join public.classes c on c.id = s.class_id where c.name = 'Room Four'),
   'falseoff', 'a new class starts like the defaults');
