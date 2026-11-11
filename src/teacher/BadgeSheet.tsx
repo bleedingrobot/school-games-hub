@@ -1,6 +1,7 @@
 /**
  * /teacher/:classId/badges: the class's QR sign-in badges, to print and cut out (docs/BADGE-SIGN-IN-PLAN.md). Each card
- * signs in one pupil when scanned. "Lost card" makes that pupil a new one, so the old card stops working.
+ * signs in one pupil when scanned. "Lost card" makes that pupil a new one, so the old card stops working, and signs
+ * them out on every device.
  */
 import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useState } from 'react';
@@ -61,7 +62,7 @@ export function BadgeSheet() {
 
   const renew = async (b: PupilBadge) => {
     const name = cardName(b.realName) || b.displayName;
-    if (!window.confirm(`Make a new badge for ${name}? Their old card will stop working.`)) return;
+    if (!window.confirm(`Make a new badge for ${name}? Their old card will stop working, and they’ll be signed out on every device until they scan the new one.`)) return;
     try {
       const code = await renewBadge(b.player);
       setBadges((all) => all?.map((x) => (x.player === b.player ? { ...x, code } : x)) ?? null);
@@ -85,7 +86,8 @@ export function BadgeSheet() {
       <p className="badges__note">
         Each card signs in one pupil, with no typing. They tap <strong>Scan my badge</strong> on the sign-in page and hold the
         card up to the camera, or point the iPad’s Camera app at it. A card is like a password: keep them in the classroom. If
-        one is lost, tap <strong>Lost card</strong> to make a new one, and the old card stops working.
+        one is lost, tap <strong>Lost card</strong> to make a new one: the old card stops working and the pupil is signed out
+        everywhere (within the hour), so nobody can keep playing as them.
       </p>
       <p className="badges__note">
         Only pupils in this class who have signed in once appear here. Back to <Link to={`/teacher/${classId}/students`}>Students</Link>.

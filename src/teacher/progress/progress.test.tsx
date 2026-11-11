@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { FoundationalClass, GameProgress } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
 import { buildTable, columnGames, filterRows, showCounts } from './Progress';
@@ -46,6 +46,10 @@ const data: FoundationalClass = {
 };
 
 describe('Progress', () => {
+  // The page works out "today" from the clock: pin it to TODAY (NZ time) so the stand-in data never goes stale.
+  beforeAll(() => vi.useFakeTimers({ toFake: ['Date'], now: new Date(`${TODAY}T01:00:00Z`) }));
+  afterAll(() => vi.useRealTimers());
+
   it('cellState gives stuck, top, quiet and moving, and none when not played', () => {
     expect(cellState('robin', robin.stuck, TODAY)).toMatchObject({ state: 'stuck', daysOnStep: 6, step: { n: 3, of: 6 } });
     expect(cellState('robin', robin.top, TODAY).state).toBe('top');
