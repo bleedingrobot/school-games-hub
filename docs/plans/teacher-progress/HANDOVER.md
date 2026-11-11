@@ -17,6 +17,7 @@ the extra data that makes that sharper.
 - Do the cards in order. P7 and P10 wait for nothing, so they can run beside the others. They touch different files.
 - Before a migration merges, check its number is free on main (`node scripts/migration-numbers.mjs`).
 - Merging to main deploys migrations, edge functions and the site. Merging is pre-approved. Ask James before deleting anything.
+- A card that changes what a new game must save or add also updates section 1b of `docs/GAME_DEVELOPMENT_GUIDE.md` in its own PR (James, 11 Nov 2026).
 
 ## Cards, in order
 
@@ -33,6 +34,7 @@ the extra data that makes that sharper.
 | P9 | [Step history](P9-step-history.md) | M | yes | P2 |
 | P10 | [Common wrong answers in maths facts](P10-common-wrong-answers.md) | M | yes | — |
 | P11 | [Other games on the Progress tab](P11-other-games.md) | M | some | P2; Toon Flap after its F.5 |
+| P12 | [Game development guide matches the Progress tab](P12-game-guide.md) | S | no | — (keep current after each card) |
 
 ## Done and live
 
@@ -40,6 +42,7 @@ the extra data that makes that sharper.
 - P2 Progress tab, every game's steps: PR #394, 11 Nov 2026.
 - P3 Ladder board: PR #395, 11 Nov 2026.
 - P4, P5, P6 and P7 together: PR #396, 11 Nov 2026. P4 counts days on a step including today (on it since 6 Nov, today 11 Nov, is 6 days).
+- P12 Game development guide section 1b: PR #397, 11 Nov 2026.
 
 ## Decided
 
