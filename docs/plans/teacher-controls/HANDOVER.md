@@ -37,7 +37,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 
 ## Done and live
 
-_None yet._
+- C1: Fix the rows that say the wrong thing (PR pending)
 
 ## C1
 
