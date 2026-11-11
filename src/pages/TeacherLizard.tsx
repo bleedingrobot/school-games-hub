@@ -3,9 +3,10 @@
  * header's class, and one line on a student's page that opens to show their den, the keys they find hardest and the slip they
  * make most. Loaded only when opened. The on/off switch is in the Games table row (src/games/lizard/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_RAFT, FRIEND_NAMES, METALS, denAfter } from '../../shared/lizard/progress';
 import { slipSummary, SLIP_WORDS } from '../../shared/lizard/teacher';
-import { stepName, type HelpSetting } from '../../shared/lizard/round';
+import { type HelpSetting } from '../../shared/lizard/round';
 import { fetchLizardSettings, fetchLizardStudent, saveLizardSetting } from '../data/lizard';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
@@ -50,15 +51,15 @@ export const keyWords = (key: string): string => {
   }
 };
 
-/** "12 of 30 days done in this den · Step 3 To 100, and zero, help level 2 · 1 Golden Raft · hardest: ...", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Raft · hardest: ...", or null if they haven't played. */
 export async function lizardStudentSummary(student: string): Promise<string | null> {
   const s = await fetchLizardStudent(student);
   if (!s) return null;
   const den = denAfter(s.daysDone);
-  const parts = [`${den.day} of ${DAYS_PER_RAFT} days done in this den`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
+  const parts = [stepWords('lizard', s.step), `${den.day} of ${DAYS_PER_RAFT} days done`, pictureHelp(s.level)];
   if (den.prizes) parts.push(`${den.prizes} Golden Raft${den.prizes === 1 ? '' : 's'}`);
   const slips = slipSummary(s.recent ?? []);
-  if (slips.top) parts.push(`usual slip: ${SLIP_WORDS[slips.top]}`);
+  if (slips.top && SLIP_WORDS[slips.top]) parts.push(`usual slip: ${SLIP_WORDS[slips.top]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -82,7 +83,7 @@ export function LizardStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Lizard’s Bundles">
       <p>
-        In {FRIEND_NAMES[den.friend]}’s den. Bundles: {bundles}. On Step {step} {stepName(step)}, with help level {level} (5 is a labelled mat with counts, 0 is numbers only).
+        In {FRIEND_NAMES[den.friend]}’s den. Bundles: {bundles}. On {stepWords('lizard', step)}, with {pictureHelp(level)} (5 is a labelled mat with counts, 0 is numbers only).
         {lastDay && <> Last bundle changed {when(`${lastDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

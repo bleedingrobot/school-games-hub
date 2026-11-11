@@ -3,8 +3,8 @@
  * header's class, and one line on a student's page that opens to show their rope, step and commonest slip.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/parrot/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import type { HelpSetting } from '../../shared/kit/help';
-import { stepName, type Step } from '../../shared/parrot/config';
 import type { ParrotKind } from '../../shared/parrot/round';
 import { DAYS_PER_BELL, METALS, ropeAfter } from '../../shared/parrot/progress';
 import { FRIEND_NAMES } from '../../shared/parrot/config';
@@ -45,14 +45,14 @@ export const SLIP_WORDS: Record<ParrotKind, string> = {
   side: 'picking the lighter side as the heavier one', more: 'giving too many', less: 'giving too few',
 };
 
-/** "12 of 30 days done on this rope · Step 3 Swap places, help level 2 · 1 Golden Bell · usual slip: copying a number from the sum", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Bell · usual slip: copying a number from the sum", or null if they haven't played. */
 export async function parrotStudentSummary(student: string): Promise<string | null> {
   const s = await fetchParrotStudent(student);
   if (!s) return null;
   const rope = ropeAfter(s.daysDone);
-  const parts = [`${rope.day} of ${DAYS_PER_BELL} days done on this rope`, `Step ${s.step} ${stepName(s.step as Step)}, help level ${s.level}`];
+  const parts = [stepWords('parrot', s.step), `${rope.day} of ${DAYS_PER_BELL} days done`, pictureHelp(s.level)];
   if (rope.bells) parts.push(`${rope.bells} Golden Bell${rope.bells === 1 ? '' : 's'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.map(factWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -75,7 +75,7 @@ export function ParrotStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Parrot’s See-saw">
       <p>
-        At {FRIEND_NAMES[rope.friend]}’s see-saw. Shiny things: {things}. On Step {step} {stepName(step as Step)}, with help level {level} (5 is stones with a live see-saw, 0 is the equation alone).
+        At {FRIEND_NAMES[rope.friend]}’s see-saw. Shiny things: {things}. On {stepWords('parrot', step)}, with {pictureHelp(level)} (5 is stones with a live see-saw, 0 is the equation alone).
         {lastDay && <> Last shiny thing changed {when(`${lastDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

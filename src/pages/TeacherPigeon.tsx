@@ -3,9 +3,10 @@
  * header's class, and one line on a student's page that opens to show their branch, the keys they find hardest and how they
  * place numbers on the line. Loaded only when opened. The on/off switch is in the Games table row (src/games/pigeon/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_BRANCH, FRIEND_NAMES, METALS, branchAfter } from '../../shared/pigeon/progress';
 import { placingSummary } from '../../shared/pigeon/teacher';
-import { stepName, type HelpSetting, type Slip } from '../../shared/pigeon/round';
+import { type HelpSetting, type Slip } from '../../shared/pigeon/round';
 import { fetchPigeonSettings, fetchPigeonStudent, savePigeonSetting } from '../data/pigeon';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
@@ -59,14 +60,14 @@ export const SLIP_WORDS: Record<Slip, string> = {
   near: 'picking the further ten',
 };
 
-/** "12 of 30 days done on this branch · Step 3 Place any number, help level 2 · 1 Golden Berry Branch · hardest: ...", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Berry Branch · hardest: ...", or null if they haven't played. */
 export async function pigeonStudentSummary(student: string): Promise<string | null> {
   const s = await fetchPigeonStudent(student);
   if (!s) return null;
   const branch = branchAfter(s.daysDone);
-  const parts = [`${branch.day} of ${DAYS_PER_BRANCH} days done on this branch`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
+  const parts = [stepWords('pigeon', s.step), `${branch.day} of ${DAYS_PER_BRANCH} days done`, pictureHelp(s.level)];
   if (branch.prizes) parts.push(`${branch.prizes} Golden Berry Branch${branch.prizes === 1 ? '' : 'es'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -90,7 +91,7 @@ export function PigeonStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Pigeon’s Number Line">
       <p>
-        On {FRIEND_NAMES[branch.friend]}’s branch. Clusters: {clusters}. On Step {step} {stepName(step)}, with help level {level} (5 is every number marked, 0 is the two ends only).
+        On {FRIEND_NAMES[branch.friend]}’s branch. Clusters: {clusters}. On {stepWords('pigeon', step)}, with {pictureHelp(level)} (5 is every number marked, 0 is the two ends only).
         {lastDay && <> Last cluster changed {when(`${lastDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

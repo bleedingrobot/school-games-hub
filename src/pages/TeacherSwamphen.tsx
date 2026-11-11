@@ -3,9 +3,10 @@
  * header's class, and one line on a student's page that opens to show their garden, the keys they find hardest and the slip
  * they make most. Loaded only when opened. The on/off switch is in the Games table row (src/games/swamphen/teacher.ts).
  */
+import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_GARDEN, FRIEND_NAMES, METALS, gardenAfter } from '../../shared/swamphen/progress';
 import { SLIP_WORDS, slipSummary } from '../../shared/swamphen/teacher';
-import { stepName, type HelpSetting } from '../../shared/swamphen/round';
+import { type HelpSetting } from '../../shared/swamphen/round';
 import { fetchSwamphenSettings, fetchSwamphenStudent, saveSwamphenSetting } from '../data/swamphen';
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
@@ -49,15 +50,15 @@ export const keyWords = (key: string): string => {
   }
 };
 
-/** "12 of 30 days done in this garden · Step 3 Under the mat, help level 2 · 1 Golden Reed Garden · hardest: ...", or null if they haven't played. */
+/** "Step 3 of 6: Give 6 to 10 · 12 of 30 days done · picture help 2 of 5 · 1 Golden Reed Garden · hardest: ...", or null if they haven't played. */
 export async function swamphenStudentSummary(student: string): Promise<string | null> {
   const s = await fetchSwamphenStudent(student);
   if (!s) return null;
   const garden = gardenAfter(s.daysDone);
-  const parts = [`${garden.day} of ${DAYS_PER_GARDEN} days done in this garden`, `Step ${s.step} ${stepName(s.step)}, help level ${s.level}`];
+  const parts = [stepWords('swamphen', s.step), `${garden.day} of ${DAYS_PER_GARDEN} days done`, pictureHelp(s.level)];
   if (garden.prizes) parts.push(`${garden.prizes} Golden Reed Garden${garden.prizes === 1 ? '' : 's'}`);
   const slips = slipSummary(s.recent ?? []);
-  if (slips.most) parts.push(`usual slip: ${SLIP_WORDS[slips.most]}`);
+  if (slips.most && SLIP_WORDS[slips.most]) parts.push(`usual slip: ${SLIP_WORDS[slips.most]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -81,7 +82,7 @@ export function SwamphenStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Swamp Hen’s Reed Rows">
       <p>
-        In {FRIEND_NAMES[garden.friend]}’s garden. Rows: {rows}. On Step {step} {stepName(step)}, with help level {level} (5 is the rows shaded and counted, 0 is the sum alone).
+        In {FRIEND_NAMES[garden.friend]}’s garden. Rows: {rows}. On {stepWords('swamphen', step)}, with {pictureHelp(level)} (5 is the rows shaded and counted, 0 is the sum alone).
         {lastDay && <> Last row changed {when(`${lastDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

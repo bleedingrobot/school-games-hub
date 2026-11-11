@@ -3,6 +3,7 @@
  * labels on or off for the header's class, and one line on a student's page that opens to show their pond. Loaded only
  * when opened. The on/off switch is in the Games table row (src/games/hop/teacher.ts).
  */
+import { stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_JAR, METALS, pondAfter } from '../../shared/hop/progress';
 import { fetchHopSettings, fetchHopStudent, saveHopSetting } from '../data/hop';
 import { FRIEND_NAMES } from '../games/hop/art';
@@ -27,16 +28,14 @@ export function HopTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const STEP_WORD = { 10: 'tens', 5: 'fives', 2: 'twos', 3: 'threes', 4: 'fours', 200: 'tens past 100' } as const;
-
 /** "Day 12 of 30 · counting in fives · 1 Golden Glow Jar", or null if they haven't played. */
 export async function hopStudentSummary(student: string): Promise<string | null> {
   const s = await fetchHopStudent(student);
   if (!s) return null;
   const pond = pondAfter(s.daysDone);
-  const parts = [`${pond.day} of ${DAYS_PER_JAR} days done on this pond`, `reached counting in ${STEP_WORD[s.reached]}`];
+  const parts = [stepWords('hop', s.reached), `${pond.day} of ${DAYS_PER_JAR} days done`];
   if (pond.jars) parts.push(`${pond.jars} Golden Glow ${pond.jars === 1 ? 'Jar' : 'Jars'}`);
-  if (s.slip) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
+  if (s.slip && SLIP_WORDS[s.slip]) parts.push(`usual slip: ${SLIP_WORDS[s.slip]}`);
   return parts.join(' · ');
 }
 
@@ -61,7 +60,7 @@ export function HopStudentPanel({ student }: { student: string }) {
   return (
     <section aria-label="Hop’s Glow-worm Pond">
       <p>
-        Helping {FRIEND_NAMES[pond.friend]} across the pond. Lily pads: {pads}. Has reached counting in {STEP_WORD[reached]}.
+        Helping {FRIEND_NAMES[pond.friend]} across the pond. Lily pads: {pads}. On {stepWords('hop', reached)}.
         {lastPadDay && <> Last pad changed {when(`${lastPadDay}T12:00:00`, { weekday: 'long', day: 'numeric', month: 'long' })}.</>}
       </p>
       <p>

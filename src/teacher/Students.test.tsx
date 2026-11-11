@@ -154,7 +154,7 @@ describe('the class roster', () => {
     expect(order(table)).toEqual(['Brave Kiwi 7', 'Calm Fox 9', 'Lucky Tui 12']);
     expect(screen.queryByText('Zippy Meerkat 79')).not.toBeInTheDocument();
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[▲▼]/g, '').trim())).toEqual([
-      'Student', 'Real name', 'Last active', 'Questions (7 days)', 'Skipped', 'Ladder', 'Focus',
+      'Student', 'Real name', 'Last active', 'Questions (7 days)', 'Skipped', 'Maths ladder', 'Focus',
     ]);
     expect(cells(table, 'Brave Kiwi 7')).toEqual(['jane.smith', 'Today', '20', '10%', '×6, ×9', 'Class: Number facts to 10']);
     expect(cells(table, 'Calm Fox 9')).toEqual(['–', 'Not yet', '5', '100%', 'No warm-up yet', 'None']);
@@ -261,7 +261,7 @@ describe('a student’s page', () => {
     const user = userEvent.setup();
     show('/teacher/c12/students');
     await user.click(within(await roster()).getByRole('link', { name: /Brave Kiwi 7/ }));
-    await screen.findByText('Level 2 · 50 points');
+    await screen.findByText('Points level 2 · 50 points');
     expect(address()).toBe('/teacher/c12/students/s1');
     return user;
   }
@@ -270,7 +270,7 @@ describe('a student’s page', () => {
     await openKiwi();
     expect(screen.getByRole('heading', { level: 2, name: 'Brave Kiwi 7' })).toBeInTheDocument();
     const overview = screen.getByRole('region', { name: 'Overview' });
-    expect(overview).toHaveTextContent('Ladder×6, ×9');
+    expect(overview).toHaveTextContent('Maths ladder×6, ×9');
     expect(overview).toHaveTextContent('FocusClass: Number facts to 10');
     expect(overview).toHaveTextContent('Last 7 days20 questions, 10% skipped');
     expect(data.fetchStudentCard).toHaveBeenCalledWith('s1');
@@ -327,7 +327,7 @@ describe('a student’s page', () => {
   it('lands on the new class’s Students list when the class is switched', async () => {
     const user = userEvent.setup();
     show('/teacher/c12/students/s1');
-    await screen.findByText('Level 2 · 50 points');
+    await screen.findByText('Points level 2 · 50 points');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Class' }), 'c14');
     await waitFor(() => expect(address()).toBe('/teacher/c14/students'));
     const table = await roster('Room 14');
