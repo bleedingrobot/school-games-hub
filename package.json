@@ -76,7 +76,9 @@
     "pigeon:preview": "PIGEON_INLINE=1 vite build --config vite.pigeon-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-pigeon pigeon-number-line-test-page.html",
     "lizard:preview": "LIZARD_INLINE=1 vite build --config vite.lizard-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-lizard lizards-bundles-test-page.html",
     "swamphen:preview": "SWAMPHEN_INLINE=1 vite build --config vite.swamphen-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-swamphen swamphen-reed-rows-test-page.html",
-    "robin:preview": "ROBIN_INLINE=1 vite build --config vite.robin-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-robin robins-berry-basket-test-page.html"
+    "robin:preview": "ROBIN_INLINE=1 vite build --config vite.robin-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-robin robins-berry-basket-test-page.html",
+    "toonflap:sim": "node scripts/toonflap-sim.mjs",
+    "toonflap:preview": "TOONFLAP_INLINE=1 vite build --config vite.toonflap-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-toonflap toon-flap-test-page.html"
   },
   "engines": {
     "node": ">=22"
