@@ -32,14 +32,17 @@ import { useGuidedFirstGo } from '../../kit/useGuidedFirstGo';
 import { useKindDemo } from '../../kit/useKindDemo';
 import { useSeenKinds } from '../../kit/useSeenKinds';
 import { playSound } from '../sounds';
-import { Friend, SeeSaw, StoneHeap, TipGlyph, sceneStyle, type Item, type Pose, type Tilt } from './art';
+import { Friend, PAN_ROOM, rowWidth, SeeSaw, StoneHeap, TipGlyph, sceneStyle, type Item, type Pose, type Tilt } from './art';
 import { DEMOS, DEMO_KINDS, type DemoKind } from './demo';
-import { askLine, eqLine, modelLine, whyLine } from './voiceLines';
+import { askLine, eqLine, lookScript, modelLine, whyLine } from './voiceLines';
 import { WORDS } from './words';
 
 const RIGHT_MS = 3800;
 const WOBBLE_MS = 600;
 const LAUGH_MS = 1400;
+/** "Let's look together": at least this long per step (a child's pace, like Robin's berries), and how long the opening may take. */
+const COUNT_MS = 1500;
+const LOOK_START_MS = 6000;
 /** The guided first go: after this pause the hand points at the stone heap, then at Check. */
 const GUIDE_MS = 3000;
 
@@ -147,29 +150,44 @@ function StoneSaw({ go, placed, tilt, wobble }: { go: Go; placed: number; tilt: 
   return <SeeSaw left={left} right={right} tilt={tilt} wobble={wobble} label={WORDS.sawLabel} />;
 }
 
-/** "Let's look together": the right pan fills one stone at a time until it is level. */
-function CountingSaw({ go, filled }: { go: Go; filled: number }) {
+/**
+ * "Let's look together", big and slow (lookScript): step 1 points at the left side and writes its stones, step 2 the right side,
+ * step 3 lets the see-saw tip, then (after the "add stones" line) one stone goes on, or comes off, the right side per step,
+ * the right side's sum written as it grows ("5 + 3"), until it is level. A true or false go tips at step 3 and stops there.
+ */
+function CountingSaw({ go, filled, before }: { go: Go; filled: number; before: number }) {
   const left: Item[] = go.lg.map((n) => ({ t: 'stones', n }));
-  const shown = Math.min(filled, go.answer);
   const right: Item[] = go.rg.map((n) => ({ t: 'stones', n }));
-  let tilt: Tilt;
-  if (go.kind === 'tf') {
-    tilt = filled >= 1 ? leanWith(go, 0) : 'rest';
-  } else if (go.gs === -1) {
-    right[0] = { t: 'stones', n: go.rg[0] - shown };
-    tilt = tiltOf(go, shown);
-  } else {
-    if (shown > 0) right.push({ t: 'stones', n: shown, tint: 'b' });
-    tilt = tiltOf(go, shown);
-  }
-  const saw = <SeeSaw left={left} right={right} tilt={tilt} className="pr-saw--small" />;
-  if (go.kind !== 'tf' || filled < 1) return saw;
+  const tf = go.kind === 'tf';
+  const added = tf ? 0 : Math.min(Math.max(0, filled - before), go.answer);
+  if (go.gs === -1) right[0] = { t: 'stones', n: go.rg[0] - added };
+  else if (added > 0) right.push({ t: 'stones', n: added, tint: 'b' });
+  const tilt: Tilt = filled < 3 ? 'rest' : tf ? leanWith(go, 0) : tiltOf(go, added);
+  const focus = filled === 1 ? 'left' : filled === 2 ? 'right' : null;
+  const [l, r] = [go.lg.reduce((s, n) => s + n, 0), go.rg.reduce((s, n) => s + n, 0)];
+  // The stones as big as the widest side allows once the count is done, the same size on both sides and through the count.
+  const widest = Math.max(rowWidth(left), rowWidth(tf || go.gs === -1 ? go.rg.map((n) => ({ t: 'stones', n })) : [...go.rg.map((n): Item => ({ t: 'stones', n })), { t: 'stones', n: go.answer }]));
+  const zoom = Math.min(1.6, PAN_ROOM / widest);
   return (
-    <>
-      {saw}
-      <Totals go={go} />
-    </>
+    <div className="pr-lookpic">
+      <SeeSaw left={left} right={right} tilt={tilt} focus={focus} close zoom={zoom} className="pr-saw--look" />
+      <p className="pr-looktotals" aria-hidden="true">
+        <span className={focus === 'left' ? 'pr-looktotals--on' : ''}>{filled >= 1 ? l : ''}</span>
+        <span className={focus === 'right' ? 'pr-looktotals--on' : ''}>
+          {filled >= 2 ? r : ''}
+          {added > 0 && <b className="pr-looktotals__added">{go.gs === -1 ? ' − ' : ' + '}{added}</b>}
+        </span>
+      </p>
+    </div>
   );
+}
+
+/** The words under the big see-saw: the step's own line (the count shows as the sum, so it keeps the "add stones" line). */
+function lookCaption(go: Go, filled: number, before: number): string {
+  const { lines, fill } = lookScript(go);
+  if (filled < 1) return fill;
+  if (go.kind !== 'tf' && filled > before && filled >= lines.length) return WORDS.nowLevel;
+  return lines[Math.min(filled, before) - 1];
 }
 
 /** After a wrong tap: a small see-saw with the slip's number placed, tipping. A true or false go tips its own way, with the pan totals. */
@@ -233,6 +251,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
   /** The last wrong pick's mistake, shown with its line until the next tap. */
   const [why, setWhy] = useState<{ pick: number; kind: ParrotKind; go?: Go } | null>(null);
   const { look, start: startLook, skip: skipLook } = useLookTogether(say);
+  const [lookBefore, setLookBefore] = useState(4);
   const [tapped, setTapped] = useState<number[]>([]);
   /** The two cards of "Now you try" when there is no sister (and after a wrong tap on the sister), the right one among them. */
   const [redo, setRedo] = useState<number[] | null>(null);
@@ -388,11 +407,18 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
         setWhy(null);
         const two = redoCards(go, nowTapped);
         const sister = sisterGo(round, at, go);
+        const script = lookScript(go);
+        setLookBefore(script.before);
         startLook({
           anchor: 0,
-          steps: go.kind === 'tf' ? 1 : Math.max(1, go.answer),
+          steps: script.lines.length,
           openingLine: WORDS.lookTogether,
-          fillLine: WORDS.lookFill,
+          fillLine: script.fill,
+          stepLine: (k) => script.lines[k - 1],
+          stepMs: COUNT_MS,
+          waitForVoice: true,
+          countStartMs: LOOK_START_MS,
+          endLine: script.end,
           onEnd: () => {
             setFlow((f) => stepGo(f, 'lookDone'));
             setTapped([]);
@@ -473,7 +499,7 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
 
       <div className="pr-stage" key={at}>
         <span className="pr-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
-        {phase === 'right' ? (
+        {look ? null : phase === 'right' ? (
           stones ? (
             <StoneSaw go={go} placed={go.answer} tilt="level" wobble={false} />
           ) : (
@@ -498,11 +524,11 @@ export function Goes({ round, friend, guide = false, seen, onSeen, sound, say, o
 
       {why && asking && <ShowWhy prefix="pr" tapKey={taps.length} picture={<WhyPicture go={why.go ?? go} pick={why.pick} kind={why.kind} />} line={WORDS.why(why.kind)} />}
       {look && (
-        <LookTogether prefix="pr" title={WORDS.lookTogether} picture={<CountingSaw go={go} filled={look.filled} />} line={WORDS.lookFill} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
+        <LookTogether prefix="pr" title={WORDS.lookTogether} picture={<CountingSaw go={go} filled={look.filled} before={lookBefore} />} line={lookCaption(go, look.filled, lookBefore)} skipLabel={WORDS.goOn} canSkip={look.canSkip} onSkip={skipLook} />
       )}
       {inRedo && !why && asking && <NowYouTry prefix="pr" line={WORDS.nowTry} />}
 
-      {stones ? (
+      {look ? null : stones ? (
         <div className="pr-stones" role="group" aria-label={WORDS.stonePan}>
           <button type="button" className="pr-heapbtn" onClick={addStone} disabled={!asking || look !== null || placed >= MAX_STONES} aria-label={WORDS.addStone}>
             <StoneHeap />
