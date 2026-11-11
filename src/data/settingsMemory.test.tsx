@@ -29,7 +29,7 @@ vi.mock('./profile', async (importOriginal) => ({
 
 import { AuthProvider } from '../auth/AuthContext';
 import { fetchMonstersEnabled} from './monsters';
-import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan } from './settingsMemory';
+import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan, replaceSettingsIfChanged } from './settingsMemory';
 
 const ROW = { monsters_enabled: true, lord_enabled: false, clans_enabled: true, multiplayer_enabled: true, space_maths: 'on', lord_forest_per_day: 3 };
 const tableReads = () => from.mock.calls.filter(([table]) => table === 'app_settings').length;
@@ -89,6 +89,12 @@ describe('the remembered row is forgotten', () => {
     await fetchMonstersEnabled(); // other pages ask with the 5-minute rule: still reused at 31 s
     expect(tableReads()).toBe(1);
     expect(forgetSettingsOlderThan(FRESH_HOME_MS)).toBe(true); // older: the home page reads it again
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(2);
+
+    // Tab return: an unchanged row means no remount; a changed one is put in place and does.
+    expect(replaceSettingsIfChanged({ ...ROW })).toBe(false);
+    expect(replaceSettingsIfChanged({ ...ROW, lord_enabled: true })).toBe(true);
     await fetchMonstersEnabled();
     expect(tableReads()).toBe(2);
   });

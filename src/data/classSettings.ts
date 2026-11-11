@@ -8,7 +8,7 @@
  * row, or null if it could not be read.
  */
 import { supabase } from '../lib/supabase';
-import { forgetSettings, rememberedSettings, type SettingsRow } from './settingsMemory';
+import { forgetSettings, rememberedSettings, replaceSettingsIfChanged, type SettingsRow } from './settingsMemory';
 
 export type { SettingsRow };
 
@@ -25,6 +25,12 @@ export async function readSettings(_columns: string[], classId?: string | null, 
     if (error || !data) return null;
     return data as unknown as SettingsRow;
   }, maxAgeMs);
+}
+
+/** Reads the person's own row afresh (one request) and says whether it differs from the remembered one; if so it is replaced. */
+export async function refreshSettings(): Promise<boolean> {
+  const { data, error } = await supabase.from('app_settings').select('*').maybeSingle();
+  return !error && !!data && replaceSettingsIfChanged(data as unknown as SettingsRow);
 }
 
 /** Whether students in this class may pick their own maths focus (the switch is on unless it was turned off). */

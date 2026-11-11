@@ -72,3 +72,15 @@ export function forgetSettingsOlderThan(maxAgeMs: number): boolean {
   forgetSettings();
   return true;
 }
+
+/**
+ * Puts a freshly read row in place of the remembered one. Returns true only if a value differs, so the caller can leave the
+ * screen alone when nothing changed (the remembered row is still marked as just read).
+ */
+export function replaceSettingsIfChanged(row: SettingsRow): boolean {
+  const changed = !kept || JSON.stringify(kept.row) !== JSON.stringify(row);
+  if (changed) generation += 1;
+  pending = null;
+  kept = { row, at: Date.now() };
+  return changed;
+}

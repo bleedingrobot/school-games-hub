@@ -21,7 +21,8 @@ import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
 import { TrainingGateBanner } from '../training/TrainFirst';
 import { useTrainingGate } from '../data/trainingGate';
-import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan } from '../data/settingsMemory';
+import { refreshSettings } from '../data/classSettings';
+import { FRESH_HOME_MS, forgetSettingsOlderThan } from '../data/settingsMemory';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { useHomeLayout } from '../data/homeLayout';
 import { useNextParts } from '../data/nextParts';
@@ -193,7 +194,7 @@ function GameGroup({
 /**
  * The pupil's home page. It reads the class settings fresh when it opens if the remembered row is more than 30 seconds old
  * (before any switch hook asks, so one request still serves every card), and again when the tab comes back into view after
- * that long, so a game the teacher just turned on shows up without a reload. Other pages keep the 5-minute memory.
+ * that long (one request; the page restarts only if a value changed), so a game the teacher just turned on shows up without a reload. Other pages keep the 5-minute memory.
  */
 export function Dashboard() {
   useState(() => forgetSettingsOlderThan(FRESH_HOME_MS));
@@ -205,8 +206,8 @@ export function Dashboard() {
         hiddenAt = Date.now();
       } else if (hiddenAt !== null && Date.now() - hiddenAt > FRESH_HOME_MS) {
         hiddenAt = null;
-        forgetSettings();
-        setRound((r) => r + 1); // starts the page again, so every card reads the settings afresh
+        // One fresh read; the page starts again (so every card shows it) only if a value really changed.
+        void refreshSettings().then((changed) => changed && setRound((r) => r + 1), () => {});
       }
     };
     document.addEventListener('visibilitychange', onChange);
