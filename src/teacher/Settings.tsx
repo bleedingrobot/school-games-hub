@@ -84,6 +84,29 @@ interface Common {
   savedText?: string;
 }
 
+/** Longer than this, a string `about` shows its first sentence and a More button for the rest. */
+const ABOUT_SHORT = 140;
+
+/** The text behind a "?": short ones and elements as they are; a long string shows its first sentence, then More. */
+function AboutText({ about }: { about: ReactNode }) {
+  const [more, setMore] = useState(false);
+  if (typeof about !== 'string' || about.length <= ABOUT_SHORT) return <>{about}</>;
+  const end = about.search(/[.!?](\s|$)/);
+  if (end < 0 || end + 1 >= about.length) return <>{about}</>;
+  return (
+    <>
+      {about.slice(0, end + 1)}{' '}
+      {more ? (
+        about.slice(end + 1).trim()
+      ) : (
+        <button type="button" className="setting__more" onClick={() => setMore(true)}>
+          More
+        </button>
+      )}
+    </>
+  );
+}
+
 /** The label row: the name and, if there is one, the "?" that opens the about line. */
 function Label({
   id,
@@ -152,7 +175,7 @@ function Shell({
       {detail && !compact && <span className="setting__detail">{detail}</span>}
       {about && (
         <span id={aboutId} className="setting__about" hidden={!open}>
-          {about}
+          <AboutText about={about} />
         </span>
       )}
       <span className={`setting__status${status?.kind === 'error' ? ' setting__status--error' : ''}`} role="status">
@@ -336,7 +359,7 @@ export function SettingChips<T extends string | number>({
       </div>
       {about && (
         <span id={`${id}-about`} className="setting__about" hidden={!open}>
-          {about}
+          <AboutText about={about} />
         </span>
       )}
       <span className={`setting__status${s.status?.kind === 'error' ? ' setting__status--error' : ''}`} role="status">

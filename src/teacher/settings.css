@@ -214,3 +214,14 @@
 .setting--compact .setting-choice__option {
   padding: 4px 10px;
 }
+
+.setting__more {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

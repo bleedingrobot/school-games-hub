@@ -22,7 +22,7 @@ export function TuiTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Picture help"
+        label="Help"
         about="How much the berries help with each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

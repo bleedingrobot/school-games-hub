@@ -180,6 +180,7 @@ describe('Today', () => {
     await waitFor(() => expect(training).toHaveAttribute('aria-checked', 'false'));
     expect(data.fetchTrainingFirst).toHaveBeenCalledWith('c12');
     await user.click(screen.getByRole('button', { name: 'About Training before games' }));
+    await user.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByText(/stay open for 2 hours/)).toBeVisible();
     await user.click(training);
     expect(data.saveTrainingFirst).toHaveBeenCalledWith(true, 'c12');
