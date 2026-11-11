@@ -82,6 +82,15 @@ describe('the save-bot-game server function', () => {
     const notJson = new Request('http://x', { method: 'POST', headers: { Authorization: 'Bearer good-token' }, body: '{oops' });
     expect((await handleSaveBotGame(notJson, s)).status).toBe(400);
     expect(saved).toHaveLength(1);
+
+    // Refused, with no points, while the teacher has Non-maths games off (and carried on if the switch can't be read).
+    const off = services({ nonMathsGames: vi.fn(async () => false) });
+    const refused = await handleSaveBotGame(post(body), off.s);
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toEqual({ error: 'Your teacher has switched these games off for now.' });
+    expect(off.saved).toHaveLength(0);
+    const broken = services({ nonMathsGames: vi.fn(async () => Promise.reject(new Error('down'))) });
+    expect((await handleSaveBotGame(post(body), broken.s)).status).toBe(200);
   });
 });
 
