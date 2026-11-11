@@ -2,7 +2,7 @@
 
 *Written 11 Nov 2026 with [TOON-FLAP-PLAN.md](TOON-FLAP-PLAN.md). James paints final art on his gaming PC (ComfyUI) after school; the game is built and played with drawn stand-ins first, and they stay as the fallback (guide section 2, "Painted art").*
 
-**Status: look picked.** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked on 11 Nov 2026 for **a different popular animated series' style for each level**. Section 1 matches each level to one. Still open: whether the bird changes style in each world (section 3).
+**Status: look picked.** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked on 11 Nov 2026 for **a different popular animated series' style for each level**. Section 1 matches each level to one. The bird changes style in each world, and each world's bird is unlocked by beating that level 3 times (James, 11 Nov 2026; plan section 5a).
 
 **The one rule: the style, never the show.** An art style can be borrowed; a show's characters, names, logos, catchphrases and signature props can't. So Bubble Reef has the bright, goofy undersea look kids know, but our own coral houses and fish: no pineapple house, no sponge, no starfish in shorts. The "inspired by" column is for James's eye only. **ComfyUI prompts describe the style in words and never name a show or studio**, and nothing in the game ever names one. This keeps the school site clear of copyright trouble and keeps the game our own.
 
@@ -35,7 +35,9 @@ The order runs soft and gentle (levels 1 to 2) to bold and busy (9 to 10), match
 
 | Picture | Size | How many | Notes |
 |---|---|---|---|
-| Fantail in each world's style: glide, wing up, dizzy tumble | 256 × 256 each, cut out | 3 × 10 | Same bird every time (grey-brown back, cream chest, white-edged fan tail, big eyes), redrawn in the world's style. **Option:** one bird for all worlds, 6 poses, far less painting |
+| Fantail in each world's style: glide, wing up, dizzy tumble | 256 × 256 each, cut out | 3 × 10 | Each world's unlockable bird. Same bird every time (grey-brown back, cream chest, white-edged fan tail, big eyes), redrawn in the world's style. Shiny versions are a code effect, not extra pictures |
+| Starter Toon Fantail and the secret Rainbow Toon: glide, wing up, dizzy tumble, perched, cheering | 256 × 256 each, cut out | 5 + 3 | Plain cartoon look; the Rainbow Toon only needs the 3 flying poses |
+| Nest screen (pick your bird) | 1600 × 1000 | 1 | A cosy cartoon nest-tree with 11 perches; birds drawn on top |
 | Back layer per world | 2048 × 768, tiles left-right | 10 | Calm, low detail |
 | Middle layer per world | 2048 × 512, tiles, cut out | 10 | |
 | Wall pieces per world (top end, bottom end, stretchy middle) | 256 × 512, cut out | 10 × 3 | |

@@ -76,8 +76,8 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 
 ## 4. Big goal, seasons, moves a day (guide 1a items 1 to 3)
 
-- **Big goal:** reach the Cosmic Storm nest (level 10), then a gold on all 10. A pupil playing 2 sittings a week should finish all 10 in about 3 weeks (sim to check); golds take longer.
-- **Season game? No**, it's fresh runs, like Marble. New Season clears only boards and the week's bests (`season_fn`); medals and levels opened are kept.
+- **Big goal:** reach the Cosmic Storm nest (level 10) and collect all 10 birds (section 5a), then a gold on all 10 for the Rainbow Toon. A pupil playing 2 sittings a week should finish all 10 in about 3 weeks (sim to check); golds take longer.
+- **Season game? No**, it's fresh runs, like Marble. New Season clears only boards and the week's bests (`season_fn`); medals, levels opened and birds are kept.
 - **Moves a day: no limit** (it's practice; more maths is good). Points cap: only the first 10 finished runs a day earn points (Bond Match's rule), and a "Time for a break?" after 30 runs (`daily_limit`, like Marble). Join the "Unlimited turns today" list only if a cap ever blocks play (it doesn't), so not needed.
 
 ## 5. Progress bars and achievements (items 4 and 5)
@@ -94,9 +94,24 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 | Clean Flight | Finish any level with no bumps | clean finishes ≥ 1 | many | yes |
 | Tailwind | Pick 20 right answer gaps | right gaps ≥ 20 | steady players | yes |
 | Gold Feathers | Gold on 5 levels | golds ≥ 5 | keen players | yes |
-| All Gold | Gold on all 10 | golds = 10 | a few | yes |
+| All Gold | Gold on all 10 (and the Rainbow Toon) | golds = 10 | a few | yes |
+| Bird Collector | Unlock 5 birds | birds unlocked ≥ 5 | most, in 3 weeks | yes |
+| Full Flock | Unlock every world's bird | birds unlocked = 10 | keen players | yes |
 
 **Points** (`add_game_points`, inside the hub's 40 a day): finish a level 2, first finish of a new level 5, a new gold 3. "Right answers earn no points" is said on How points work.
+
+## 5a. The bird collection (James, 11 Nov 2026)
+
+*"Unlocking birds should be part of the challenge - like beat three times to unlock etc."*
+
+- **Start with one bird:** the Toon Fantail, in a plain cartoon look.
+- **Each world has its own bird**, drawn in that level's cartoon style (the Reef bird, the Clay bird, the Space-age bird …). **Finish a level 3 times to unlock its bird** (any medal). The map shows how close you are: "2 of 3 to unlock the Reef bird".
+- **Shiny version:** a gold on that level makes its bird shiny (a sparkle trail and gold edge, done in code, so no extra painting).
+- **Secret bird:** gold on all 10 unlocks the Rainbow Toon, the rarest bird.
+- **Pick any bird you've unlocked** on the Nest screen (before a level or from the map). Fly the clay bird through Bubble Reef if you like. **Birds are looks only:** every bird has exactly the same flying, so no bird is better and the replay check stays the same.
+- **The server decides unlocks** from saved runs (counted in `toonflap_runs`, sent in `my_toonflap()`), so they follow the pupil to any Chromebook and can't be faked. Picking a bird is saved with the next run.
+- **Unlock moment:** a short celebration on the results screen, with Bella: "You unlocked a new bird!" (one fixed line, so it can be a clip).
+- **Why 3:** at 2 sittings a week a pupil unlocks about 2 to 3 birds a week early on, and the third run of a level is where gold starts to feel possible. The number is in `config.ts` (`UNLOCK_RUNS`) for the sim to check.
 
 ## 6. Card art (item 6)
 
