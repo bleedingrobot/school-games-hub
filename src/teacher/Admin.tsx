@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { whenPlayed } from '../components/MyGames';
 import {
+  copyDefaultsToClasses,
   createClassFor,
   fetchAdminClasses,
   fetchAdminOverview,
@@ -23,7 +24,11 @@ import { addCoTeacher, archiveClass, removeCoTeacher } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { setRole } from '../data/teacher';
 import { share } from '../pages/TeacherQuestionSkips';
+import { ALL_SWITCH_COLUMNS } from '../data/games';
+import { trainingOn } from '../training/switch';
+import { GamesTable } from './Games';
 import { useHideRealNames } from './Students';
+import { LessonControls } from './Today';
 import { useTeacherClass } from './TeacherClass';
 import '../pages/teacher-page.css';
 import '../pages/classes.css';
@@ -663,5 +668,67 @@ function TeacherRow({
         )}
       </td>
     </tr>
+  );
+}
+
+// ---------------------------------------------------------------- New class settings
+
+/** Every column the defaults tab shows, so "Copy to every class" copies exactly what is on the page. */
+const defaultColumns = () => [...ALL_SWITCH_COLUMNS, 'multiplayer_enabled', 'space_reactions_enabled', 'question_skips', ...(trainingOn() ? ['training_first'] : [])];
+const NO_LINKS = new Map<string, HTMLAnchorElement>();
+
+/** The school's defaults row: the same Games table and Lesson controls, for the row a new class copies. */
+export function AdminDefaults() {
+  const classes = useLoaded(fetchAdminClasses);
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const open = classes.data ? classes.data.filter((c) => !c.archived).length : null;
+
+  async function copy() {
+    setBusy(true);
+    setAsking(false);
+    try {
+      const n = await copyDefaultsToClasses(defaultColumns());
+      setMessage(`Copied to ${plural(n, 'class', 'classes')}.`);
+    } catch (error) {
+      setMessage(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <section className="panel" aria-labelledby="defaults-title">
+        <h2 id="defaults-title" className="panel__title">
+          New class settings
+        </h2>
+        <p className="this-week__line">New classes start like this. Existing classes don’t change.</p>
+        <div className="admin-defaults__copy">
+          {asking ? (
+            <span role="alertdialog" aria-label="Copy to every class">
+              Copy these settings to {open === null ? 'every class' : plural(open, 'class', 'classes')}? Each class’s own games and lesson
+              controls are replaced.{' '}
+              <button type="button" className="button button--primary" autoFocus onClick={() => void copy()}>
+                Copy to {open === null ? 'every class' : plural(open, 'class', 'classes')}
+              </button>{' '}
+              <button type="button" className="button button--light-outline" onClick={() => setAsking(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button type="button" className="button button--light-outline" disabled={busy || open === null} onClick={() => setAsking(true)}>
+              Copy to every class
+            </button>
+          )}
+          <span role="status" className="teacher__status">
+            {busy ? 'Copying…' : message}
+          </span>
+        </div>
+      </section>
+      <LessonControls target={{ kind: 'school' }} />
+      <GamesTable target={{ kind: 'school' }} links={NO_LINKS} />
+    </>
   );
 }

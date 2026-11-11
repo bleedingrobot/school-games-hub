@@ -8,7 +8,7 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { fetchGameSwitches, NON_MATHS_COLUMN, saveGameSwitches, switchColumnOf } from '../data/games';
+import { fetchGameSwitches, fetchSchoolSwitches, NON_MATHS_COLUMN, saveGameSwitches, saveSchoolSwitches, switchColumnOf } from '../data/games';
 import { saveNonMathsGames } from '../data/nonMathsGames';
 import { gameMathsColumn, gameSwitchColumn, useChangedLine } from '../data/settingsChanges';
 import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
@@ -47,6 +47,12 @@ function useWide(): boolean {
 
 /** Does the game have anything to open from its row? */
 const hasSettings = (game: GameDefinition) => Boolean(game.teacher?.Settings);
+
+/**
+ * What the Games table and Lesson controls edit: a class's settings, or the school's defaults row (what a new class starts with;
+ * Admin, New class settings). The school's table has the On switches only: a game's maths mode and settings stay per class.
+ */
+export type SettingsTarget = { kind: 'school' } | { kind: 'class'; classId: string };
 
 const gamesPath = (classId: string) => `/teacher/${classId}/games`;
 
@@ -110,7 +116,7 @@ export function TeacherGames() {
 
   return (
     <>
-      <GamesTable classId={classId} links={links.current} />
+      <GamesTable target={{ kind: 'class', classId }} links={links.current} />
       {game && (
         <Drawer title={game.name} onClose={close}>
           <GameSettings game={game} classId={classId} />
@@ -159,11 +165,13 @@ function useRememberedShow(): [Show, (next: Show) => void] {
   ];
 }
 
-function GamesTable({ classId, links }: { classId: string; links: Map<string, HTMLAnchorElement> }) {
+export function GamesTable({ target, links }: { target: SettingsTarget; links: Map<string, HTMLAnchorElement> }) {
   const { current } = useTeacherClass();
-  const className = current?.name ?? 'this class';
-  const loaded = useSetting(() => fetchGameSwitches(classId), [classId]);
-  const unlimited = useSetting(() => fetchUnlimitedToday(classId), [classId]);
+  const school = target.kind === 'school';
+  const classId = target.kind === 'class' ? target.classId : '';
+  const className = school ? 'new classes' : (current?.name ?? 'this class');
+  const loaded = useSetting(() => (school ? fetchSchoolSwitches() : fetchGameSwitches(classId)), [classId, school]);
+  const unlimited = useSetting(() => fetchUnlimitedToday(classId), [classId], !school);
   // Switches changed from this page, over what was loaded; the rows are built again (`version`) after a whole section changes.
   const [changed, setChanged] = useState<Record<string, boolean>>({});
   const [version, setVersion] = useState(0);
@@ -202,7 +210,8 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
     setProblem(null);
     setBusy(group);
     try {
-      await saveGameSwitches(Object.fromEntries(columns.map((c) => [c, on])), classId);
+      const changes = Object.fromEntries(columns.map((c) => [c, on]));
+      await (school ? saveSchoolSwitches(changes) : saveGameSwitches(changes, classId));
       setChanged((c) => ({ ...c, ...Object.fromEntries(columns.map((column) => [column, on])) }));
       setVersion((v) => v + 1);
     } catch (error) {
@@ -225,7 +234,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
   return (
     <section className="panel games-table" aria-labelledby="games-table-title">
       <h2 id="games-table-title" className="panel__title">
-        Games for this class
+        {school ? 'Games for new classes' : 'Games for this class'}
       </h2>
       <div className="games-summary">
         <p className="games-summary__count" aria-live="polite">
@@ -255,11 +264,15 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
           <tr role="row">
             <th role="columnheader" scope="col">Game</th>
             <th role="columnheader" scope="col">On</th>
-            <th role="columnheader" scope="col">Unlimited today</th>
-            <th role="columnheader" scope="col">Maths</th>
-            <th role="columnheader" scope="col">
-              <span className="sr-only">Settings</span>
-            </th>
+            {!school && (
+              <>
+                <th role="columnheader" scope="col">Unlimited today</th>
+                <th role="columnheader" scope="col">Maths</th>
+                <th role="columnheader" scope="col">
+                  <span className="sr-only">Settings</span>
+                </th>
+              </>
+            )}
           </tr>
         </thead>
         {sections.map(({ title, group, switchable, onCount, games, shown }) => {
@@ -269,7 +282,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
           return (
             <tbody key={group} role="rowgroup">
               <tr role="row" className="games-table__group">
-                <th role="columnheader" scope="colgroup" colSpan={5}>
+                <th role="columnheader" scope="colgroup" colSpan={school ? 2 : 5}>
                   <div className="games-table__group-head">
                     <span>{title}</span>
                     <span className="games-table__group-count">{loadedAll ? `${onCount} of ${games.length} on` : '…'}</span>
@@ -318,7 +331,15 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
                   </div>
                 </th>
               </tr>
-              {shown.map((game) => (
+              {shown.map((game) => school ? (
+                <SchoolRow
+                  key={`${game.id}-${version}`}
+                  game={game}
+                  value={valueOf(switchColumnOf(game) ?? '')}
+                  failed={loaded.failed}
+                  onSwitched={(column, on) => setChanged((c) => ({ ...c, [column]: on }))}
+                />
+              ) : (
                 <GameRow
                   key={`${game.id}-${classId}-${version}`}
                   game={game}
@@ -334,6 +355,37 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
         })}
       </table>
     </section>
+  );
+}
+
+/** A game's row in the school's table: its On switch and nothing else. A game with no switch is always on. */
+function SchoolRow({ game, value, failed, onSwitched }: { game: GameDefinition; value: boolean | null; failed: boolean; onSwitched: (column: string, on: boolean) => void }) {
+  const column = switchColumnOf(game);
+  const shared = game.group === 'no-maths';
+  return (
+    <tr role="row">
+      <th role="rowheader" scope="row" className="games-table__game">
+        <span className="games-table__icon" aria-hidden="true">
+          <game.Icon size={28} />
+        </span>
+        {game.name}
+      </th>
+      <td role="cell" className="games-table__on" data-label="On">
+        {column ? (
+          <SettingToggle
+            compact
+            label={shared ? `${game.name} (with Non-maths games)` : game.name}
+            about={shared ? 'Chess, checkers, 101 and Power Clash share one switch.' : undefined}
+            value={value}
+            loadFailed={failed}
+            save={(on) => saveSchoolSwitches({ [column]: on })}
+            onSaved={(on) => onSwitched(column, on)}
+          />
+        ) : (
+          <span className="games-table__quiet">always</span>
+        )}
+      </td>
+    </tr>
   );
 }
 

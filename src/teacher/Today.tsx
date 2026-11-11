@@ -5,10 +5,11 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { fetchSchoolDefaults, saveSchoolDefaults } from '../data/admin';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
 import { FriendlyError } from '../data/profile';
 import { fetchQuestionSkips } from '../data/questionLog';
-import { fetchSkipMode, saveSkipMode } from '../data/questionSkips';
+import { fetchSkipMode, parseSkipMode, saveSkipMode } from '../data/questionSkips';
 import { fetchReactionsEnabled } from '../data/spaceGames';
 import { setMultiplayer, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
@@ -19,10 +20,12 @@ import { UNLIMITED_GAMES } from '../../shared/unlimited';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
 import { LengthPicker } from '../maths/LengthPicker';
 import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
+import type { SkipMode } from '../maths/questionLog';
 import { trainingOn } from '../training/switch';
 import { TRAINING_CONFIG } from '../../shared/training/config';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
 import { PUPILS_SEE_IT, SettingChoice, SettingToggle, useSetting } from './Settings';
+import type { SettingsTarget } from './Games';
 import { useTeacherClass } from './TeacherClass';
 import { NeedsYou } from './WaitingToJoin';
 import { percentRight, useHardest } from './Hardest';
@@ -37,7 +40,7 @@ export function Today() {
   return (
     <div className="today">
       <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
-      <LessonControls key={`controls-${classId}`} classId={classId} name={current.name} />
+      <LessonControls key={`controls-${classId}`} target={{ kind: 'class', classId }} name={current.name} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
     </div>
@@ -49,66 +52,85 @@ function ClassNeedsYou({ classId }: { classId: string }) {
   return <NeedsYou classId={classId} alerts={alerts} />;
 }
 
-function LessonControls({ classId, name }: { classId: string; name: string }) {
-  const friends = useSetting(() => fetchMultiplayerEnabled(classId), [classId]);
-  const reactions = useSetting(() => fetchReactionsEnabled(classId), [classId]);
-  const training = useSetting(() => fetchTrainingFirst(classId), [classId], trainingOn());
-  const skip = useSetting(() => fetchSkipMode(classId), [classId]);
-  const nonMaths = useSetting(() => fetchNonMathsGames(classId), [classId]);
-  const changed = useChangedLine(classId);
+/** Lesson controls for a class, or (target school) for the school's defaults row, where each save is one column of that row. */
+export function LessonControls({ target, name }: { target: SettingsTarget; name?: string }) {
+  const school = target.kind === 'school';
+  const classId = target.kind === 'class' ? target.classId : '';
+  const own = !school;
+  const row = useSetting(fetchSchoolDefaults, [], school);
+  const friends = useSetting(() => fetchMultiplayerEnabled(classId), [classId], own);
+  const reactions = useSetting(() => fetchReactionsEnabled(classId), [classId], own);
+  const training = useSetting(() => fetchTrainingFirst(classId), [classId], own && trainingOn());
+  const skip = useSetting(() => fetchSkipMode(classId), [classId], own);
+  const nonMaths = useSetting(() => fetchNonMathsGames(classId), [classId], own);
+  // On the school's row each switch reads its column the way the class's own switch does (non-maths: on unless off; the rest: off unless on).
+  const fromRow = <T,>(column: string, read: (v: unknown) => T): { value: T | null; failed: boolean } => ({
+    value: row.value ? read(row.value[column]) : null,
+    failed: row.failed,
+  });
+  const pick = <T,>(mine: { value: T | null; failed: boolean }, column: string, read: (v: unknown) => T) => (school ? fromRow(column, read) : mine);
+  const on = (v: unknown) => v === true;
+  const f = pick(friends, 'multiplayer_enabled', (v) => v !== false);
+  const r = pick(reactions, 'space_reactions_enabled', on);
+  const n = pick(nonMaths, 'non_maths_games', (v) => v !== false);
+  const t = pick(training, 'training_first', on);
+  const s = pick(skip, 'question_skips', parseSkipMode);
+  const saveColumn = <V extends boolean | string>(column: string, mine: (v: V) => Promise<void>) => (v: V) =>
+    school ? saveSchoolDefaults({ [column]: v }) : mine(v);
+  const changed = useChangedLine(own ? classId : null);
   return (
     <section className="panel lesson-controls" aria-labelledby="lesson-title">
       <h2 id="lesson-title" className="panel__title">
-        Lesson controls <span className="today__for">({name})</span>
+        Lesson controls <span className="today__for">({school ? 'new classes' : name})</span>
       </h2>
       <div className="lesson-controls__grid">
         <SettingToggle
           label="Games against friends"
           about="Off stops new games between students. Bot games carry on."
-          value={friends.value}
+          value={f.value}
           savedText={PUPILS_SEE_IT}
-          loadFailed={friends.failed}
+          loadFailed={f.failed}
           changed={changed('multiplayer_enabled')}
-          save={(on) => setMultiplayer(on, classId)}
+          save={saveColumn('multiplayer_enabled', (on: boolean) => setMultiplayer(on, classId))}
         />
         <SettingToggle
           label="Emoji reactions"
           about="In Wormholes & Black Holes games with classmates."
-          value={reactions.value}
+          value={r.value}
           savedText={PUPILS_SEE_IT}
-          loadFailed={reactions.failed}
+          loadFailed={r.failed}
           changed={changed('space_reactions_enabled')}
-          save={(on) => setSpaceReactions(on, classId)}
+          save={saveColumn('space_reactions_enabled', (on: boolean) => setSpaceReactions(on, classId))}
         />
         <SettingToggle
           label="Non-maths games"
           about="Chess, checkers, 101 and Power Clash. Off hides them for this class, and games already going wait until it is back on. Teachers can still open them."
-          value={nonMaths.value}
+          value={n.value}
           savedText={PUPILS_SEE_IT}
-          loadFailed={nonMaths.failed}
+          loadFailed={n.failed}
           changed={changed('non_maths_games')}
-          save={(on) => saveNonMathsGames(on, classId)}
+          save={saveColumn('non_maths_games', (on: boolean) => saveNonMathsGames(on, classId))}
         />
         {trainingOn() && (
           <SettingToggle
             label="Training before games"
             about={`One Basic facts training session (a whole “Today’s session” or a whole round of Quick looks) before any game opens. The games then stay open for ${TRAINING_CONFIG.gate.gamesOpenHours} hours; a game already open carries on. Teachers are never asked.`}
-            value={training.value}
+            value={t.value}
             savedText={PUPILS_SEE_IT}
-            loadFailed={training.failed}
-          changed={changed('training_first')}
-            save={(on) => saveTrainingFirst(on, classId)}
+            loadFailed={t.failed}
+            changed={changed('training_first')}
+            save={saveColumn('training_first', (on: boolean) => saveTrainingFirst(on, classId))}
           />
         )}
         <SettingChoice
           label="Skip button"
           about={SKIP_NOTE}
           options={SKIP_CHOICES}
-          value={skip.value}
+          value={s.value}
           savedText={PUPILS_SEE_IT}
-          loadFailed={skip.failed}
+          loadFailed={s.failed}
           changed={changed('question_skips')}
-          save={(mode) => saveSkipMode(mode, classId)}
+          save={saveColumn('question_skips', (mode: SkipMode) => saveSkipMode(mode, classId))}
         />
       </div>
     </section>

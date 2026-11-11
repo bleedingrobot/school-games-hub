@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,9 @@ const data = vi.hoisted(() => ({
   fetchAdminTeachers: vi.fn(),
   setSchoolAdmin: vi.fn(),
   setRole: vi.fn(),
+  fetchSchoolDefaults: vi.fn(),
+  saveSchoolDefaults: vi.fn(),
+  copyDefaultsToClasses: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -36,6 +39,9 @@ vi.mock('../data/admin', async (original) => ({
   createClassFor: data.createClassFor,
   fetchAdminTeachers: data.fetchAdminTeachers,
   setSchoolAdmin: data.setSchoolAdmin,
+  fetchSchoolDefaults: data.fetchSchoolDefaults,
+  saveSchoolDefaults: data.saveSchoolDefaults,
+  copyDefaultsToClasses: data.copyDefaultsToClasses,
 }));
 vi.mock('../data/teacher', async (original) => ({ ...(await original<typeof import('../data/teacher')>()), setRole: data.setRole }));
 
@@ -117,17 +123,36 @@ beforeEach(() => {
   data.fetchAdminTeachers.mockResolvedValue(teachers);
   data.setSchoolAdmin.mockResolvedValue(undefined);
   data.setRole.mockResolvedValue(undefined);
+  data.fetchSchoolDefaults.mockResolvedValue({ multiplayer_enabled: true, pipi_enabled: true, question_skips: 'on' });
+  data.saveSchoolDefaults.mockResolvedValue(undefined);
+  data.copyDefaultsToClasses.mockResolvedValue(3);
 });
 
 describe('the admin pages', () => {
-  it('turn away a teacher who is not a school admin', async () => {
+  it('turn away a teacher who is not a school admin, and show an admin the New class settings tab', async () => {
     show('/teacher/admin/students', ordinary);
     expect(await screen.findByText('This page is for school admins.')).toBeInTheDocument();
     expect(data.fetchAdminStudents).not.toHaveBeenCalled();
+
+    // The New class settings tab: shows the school defaults, saves a switch to that row, and copies to every class after a confirm.
+    cleanup();
+    const user = userEvent.setup();
+    show('/teacher/admin/defaults');
+    expect(await screen.findByText('New classes start like this. Existing classes don’t change.')).toBeInTheDocument();
+    const pipi = await screen.findByRole('switch', { name: /Pipi/ });
+    await vi.waitFor(() => expect(pipi).toBeEnabled());
+    await user.click(pipi);
+    await vi.waitFor(() => expect(data.saveSchoolDefaults).toHaveBeenCalledWith({ pipi_enabled: false }));
+    await user.click(screen.getByRole('switch', { name: /Games against friends/ }));
+    await vi.waitFor(() => expect(data.saveSchoolDefaults).toHaveBeenCalledWith({ multiplayer_enabled: false }));
+
+    await user.click(await screen.findByRole('button', { name: 'Copy to every class' }));
+    expect(data.copyDefaultsToClasses).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Copy to 3 classes' }));
+    expect(data.copyDefaultsToClasses).toHaveBeenCalledWith(expect.arrayContaining(['pipi_enabled', 'multiplayer_enabled', 'question_skips']));
+    expect(await screen.findByText('Copied to 3 classes.')).toBeInTheDocument();
   });
-
 });
-
 
 describe('Classes', () => {
   const classRow = (name: string) => screen.getAllByRole('row').find((r) => within(r).queryByText(new RegExp(`^${name}`), { selector: 'th *, th' }))!;

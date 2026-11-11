@@ -3,7 +3,7 @@
 ## What goes live
 - Migration(s): `<number>_<id>.sql` (applied on merge; on hold: no)
 - Function: `<id>` (`index.ts` rebuilt with `npm run build:functions -- <id>`)
-- Switches: code switch <on/off>, teacher switch default <on/off>
+- Switches: code switch <on/off>, teacher switch default on (new games start on for every class)
 
 ## Must be true
 - [ ] Nothing that counts is decided by the browser; the server marks or replays it; a save sent twice counts once.

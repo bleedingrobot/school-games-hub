@@ -41,7 +41,7 @@ revoke all on public.<id>_progress, public.<id>_rounds from anon, authenticated;
 --    <id>_round(player, seed), <id>_finish(...). Copy lizard_load / lizard_start / lizard_round / lizard_finish.
 
 -- 3. The switch and settings: add columns only, and one teacher_set_<id>() with the shared guard.
-alter table public.app_settings add column <id>_enabled boolean not null default false;   -- off until the switch-on PR
+alter table public.app_settings add column <id>_enabled boolean not null default true;   -- a new game's switch starts on for every class (James, 11 Nov 2026); the code switch holds it back. supabase/tests/database/school_defaults.test.sql checks it.
 -- create function public.teacher_set_<id>(enabled boolean default null, target_class uuid default null) ...
 --   copy teacher_set_lizard: it uses require_settings_target().
 
