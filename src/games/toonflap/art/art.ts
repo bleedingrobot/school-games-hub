@@ -20,18 +20,20 @@ export type WorldLayer = WorldPart;
 
 export const FLYER_IDS = ['fantail', 'puppy-plane', 'rocket-carrot', 'bathtub-boat', 'mousetrap-glider', 'donut-cruiser', 'mini-van',
   'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow'] as const;
-/** glide is every flyer's picture; the birds also have up (wings raised); the fantail also perches and cheers. */
-export const FLYER_POSES = ['glide', 'up', 'perched', 'cheer'] as const;
-/** dizzy is never painted: it shows glide, spun by the game. */
-export type FlyerPose = (typeof FLYER_POSES)[number] | 'dizzy';
-export const POSES_PAINTED: Record<string, readonly (typeof FLYER_POSES)[number][]> = {
-  fantail: ['glide', 'up', 'perched', 'cheer'],
-  rainbow: ['glide', 'up'],
+/** Every flyer has glide and dizzy (after a bump); the birds also have up (wings raised); the fantail also perches and cheers. */
+export const FLYER_POSES = ['glide', 'up', 'perched', 'cheer', 'dizzy'] as const;
+export type FlyerPose = (typeof FLYER_POSES)[number];
+export const POSES_PAINTED: Record<string, readonly FlyerPose[]> = {
+  ...Object.fromEntries(FLYER_IDS.map((f) => [f, ['glide', 'dizzy']])),
+  fantail: ['glide', 'up', 'perched', 'cheer', 'dizzy'],
+  rainbow: ['glide', 'up', 'dizzy'],
 };
 
 export const TRAIL_IDS = ['flowers', 'cookies', 'donut-crumbs', 'pineapples', 'cheese', 'mouse-tail', 'rainbow-stars'] as const;
-export const EXTRA_IDS = ['jellyfish', 'ghost', 'steam', 'comet'] as const;
-export const UI_IDS = ['perch', 'nest', 'sign'] as const;
+/** gust: the icy wind zone; bubble: the low-gravity zone (draw it see-through); bump-stars: the ring after a bump. */
+export const EXTRA_IDS = ['jellyfish', 'ghost', 'steam', 'comet', 'gust', 'bubble', 'bump-stars'] as const;
+/** badge: the blank round coin behind each answer gap's number (the game writes the number). */
+export const UI_IDS = ['perch', 'nest', 'sign', 'badge'] as const;
 export const SCREENS = ['map', 'hangar', 'card', 'card-small', 'potion'] as const;
 
 const file = (path: string): string | undefined => FILES[`./${path}.webp`];
@@ -40,7 +42,7 @@ const file = (path: string): string | undefined => FILES[`./${path}.webp`];
 export const worldArt = (world: number, part: WorldPart = 'back'): string | undefined => file(`worlds/${world}/${part}`);
 
 /**
- * A flyer's picture. A pose with no painting falls back to glide (the game tilts it for up and spins it for dizzy), and
+ * A flyer's picture. A pose with no painting falls back to glide (the game tilts it for up), and
  * a flyer with no painting gives undefined.
  */
 export const flyerArt = (id: string, pose: FlyerPose = 'glide'): string | undefined =>
