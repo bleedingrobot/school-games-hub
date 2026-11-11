@@ -2,6 +2,8 @@
 
 **Status:** LIVE 4 Nov 2026 (PR #199: migration applied, `badge` function deployed, site published). James picked "QR badges" from three options. Tried on the school Macs 4-5 Nov: sign-in fix (PR #215) confirmed working by James.
 
+**Review 11 Nov 2026:** `docs/plans/badge-review/REVIEW.md` (findings and fix cards B1-B6). Start any follow-up there.
+
 ## Why
 
 Young pupils can't type `name@douglaspark.school.nz` and a password with capitals and symbols. A printed card with a QR code
