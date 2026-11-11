@@ -10,8 +10,11 @@ every line works.
 
 ## How many
 
-- **A new game gets at most 8 tests** in total, across its rules, screens and server function (Kingdom Keeper: 3 rule tests,
-  3 server tests, 2 screen tests).
+- **An older-pupil game gets at most 8 tests** in total, across its rules, screens and server function (copy Kingdom
+  Keeper: 3 rule tests, 3 server tests, 2 screen tests).
+- **A junior (Foundational) game gets at most 8 rule and server tests, plus the voice-lines test (`voiceLinesSuite` from
+  `src/kit`) and up to 4 screen tests**: the help ladder, the guided first go, the finish card and the show-why mistake
+  screen, because those screens are where junior games break (copy Weka). James chose this on 11 Nov 2026.
 - A change to an existing game normally adds **none** (change the tests that are there if behaviour changed), and at most 2.
 - A bug fix may add **one** test, only if the bug could quietly come back and would hurt pupils (wrong marking, lost saves,
   someone seeing another school's data). Otherwise fix it and move on.
