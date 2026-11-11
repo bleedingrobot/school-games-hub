@@ -135,12 +135,12 @@ Earned for real achievements, all sparkly and colourful (small pictures plus a c
 
 | Trail | How to earn it |
 |---|---|
-| ★ Sparkly flowers | Finish 5 levels |
-| ★ Cookies | 10 checks right |
+| ★ Sparkly flowers | Finish 8 levels (was 5 until 11 Nov 2026) |
+| ★ Cookies | 50 checks right (was 10) |
 | ★ Donut crumbs | Gold on Donut Town |
 | ★ Pineapples | Gold on Bubble Reef |
 | ★ Cheese | Gold on Cheese Kitchen |
-| ★ Mouse tail | 3 clean flights (no bumps) |
+| ★ Mouse tail | 15 clean flights, no bumps (was 3) |
 | Rainbow stars | All Gold |
 
 ### Revive potions (rare)

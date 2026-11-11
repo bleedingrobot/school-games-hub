@@ -8670,9 +8670,9 @@ const TRAILS = [
 		name: "Sparkly flowers",
 		rule: {
 			kind: "levels",
-			count: 5
+			count: 8
 		},
-		how: "Finish 5 levels",
+		how: "Finish 8 levels",
 		pupils: true
 	},
 	{
@@ -8680,9 +8680,9 @@ const TRAILS = [
 		name: "Cookies",
 		rule: {
 			kind: "checks",
-			count: 10
+			count: 50
 		},
-		how: "Get 10 checks right",
+		how: "Get 50 checks right",
 		pupils: true
 	},
 	{
@@ -8720,9 +8720,9 @@ const TRAILS = [
 		name: "Mouse tail",
 		rule: {
 			kind: "clean",
-			count: 3
+			count: 15
 		},
-		how: "3 clean flights (no bumps)",
+		how: "15 clean flights (no bumps)",
 		pupils: true
 	},
 	{

@@ -52,12 +52,12 @@ export interface Trail {
 }
 
 export const TRAILS: readonly Trail[] = [
-  { id: 'flowers', name: 'Sparkly flowers', rule: { kind: 'levels', count: 5 }, how: 'Finish 5 levels', pupils: true },
-  { id: 'cookies', name: 'Cookies', rule: { kind: 'checks', count: 10 }, how: 'Get 10 checks right', pupils: true },
+  { id: 'flowers', name: 'Sparkly flowers', rule: { kind: 'levels', count: 8 }, how: 'Finish 8 levels', pupils: true },
+  { id: 'cookies', name: 'Cookies', rule: { kind: 'checks', count: 50 }, how: 'Get 50 checks right', pupils: true },
   { id: 'donut-crumbs', name: 'Donut crumbs', rule: { kind: 'gold', level: 'donut' }, how: 'Gold on Donut Town', pupils: true },
   { id: 'pineapples', name: 'Pineapples', rule: { kind: 'gold', level: 'reef' }, how: 'Gold on Bubble Reef', pupils: true },
   { id: 'cheese', name: 'Cheese', rule: { kind: 'gold', level: 'kitchen' }, how: 'Gold on Cheese Kitchen', pupils: true },
-  { id: 'mouse-tail', name: 'Mouse tail', rule: { kind: 'clean', count: 3 }, how: '3 clean flights (no bumps)', pupils: true },
+  { id: 'mouse-tail', name: 'Mouse tail', rule: { kind: 'clean', count: 15 }, how: '15 clean flights (no bumps)', pupils: true },
   { id: 'rainbow-stars', name: 'Rainbow stars', rule: { kind: 'all-gold' }, how: 'Gold on every level' },
 ];
 
