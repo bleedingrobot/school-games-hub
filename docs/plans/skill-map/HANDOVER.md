@@ -30,6 +30,11 @@ A teacher opens Maths > Skill map on a laptop or iPad and, without scrolling, se
 | K7 | [Fit with Progress, Foundational skills and Students](#k7) | S | no | K2 |
 | K8 | [Guide matches, check live, close the review](#k8) | S | no | K1 to K7 |
 
+## James's decisions (11 Nov 2026)
+
+- A laptop shows the grid of skills in use first; By skill is one tap away.
+- Foundational-only early skills show only when a pupil in the class has started them (K2's rule covers it).
+
 ## Done and live
 
 _None yet._
