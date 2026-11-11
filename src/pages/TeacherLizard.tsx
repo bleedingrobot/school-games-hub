@@ -5,7 +5,7 @@
  */
 import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_RAFT, FRIEND_NAMES, METALS, denAfter } from '../../shared/lizard/progress';
-import { slipSummary, SLIP_WORDS } from '../../shared/lizard/teacher';
+import { usualSlip, SLIP_WORDS } from '../../shared/lizard/teacher';
 import { type HelpSetting } from '../../shared/lizard/round';
 import { fetchLizardSettings, fetchLizardStudent, saveLizardSetting } from '../data/lizard';
 import { SettingChoice, useSetting } from '../teacher/Settings';
@@ -58,7 +58,7 @@ export async function lizardStudentSummary(student: string): Promise<string | nu
   const den = denAfter(s.daysDone);
   const parts = [stepWords('lizard', s.step), `${den.day} of ${DAYS_PER_RAFT} days done`, pictureHelp(s.level)];
   if (den.prizes) parts.push(`${den.prizes} Golden Raft${den.prizes === 1 ? '' : 's'}`);
-  const slips = slipSummary(s.recent ?? []);
+  const slips = usualSlip(s.slip, s.recent ?? []);
   if (slips.top && SLIP_WORDS[slips.top]) parts.push(`usual slip: ${SLIP_WORDS[slips.top]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
@@ -73,13 +73,13 @@ export function LizardStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Lizard’s Bundles for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent } = loaded.value.progress;
+  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent, slip } = loaded.value.progress;
   const den = denAfter(daysDone);
   const bundles = METALS.map((metal) => [metal, den.bundles.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
     .map(([metal, n]) => `${n} ${metal === 'twine' ? 'unchanged' : metal}`)
     .join(', ');
-  const slips = slipSummary(recent ?? []);
+  const slips = usualSlip(slip, recent ?? []);
   return (
     <section aria-label="Lizard’s Bundles">
       <p>
@@ -91,7 +91,8 @@ export function LizardStudentPanel({ student }: { student: string }) {
       </p>
       {slips.top ? (
         <p>
-          Usual slip: {SLIP_WORDS[slips.top]} ({slips.count} of their last {slips.wrong} wrong first tries).
+          Usual slip: {SLIP_WORDS[slips.top]}
+          {slips.fromServer ? '.' : <> ({slips.count} of their last {slips.wrong} wrong first tries).</>}
         </p>
       ) : (
         <p>No single slip stands out yet.</p>

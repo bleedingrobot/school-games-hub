@@ -8,7 +8,7 @@ import { replay, type Tap } from './play';
 import { GOES_PER_ROUND, GUIDED_KEY, KEYS, fairShare, mulKeyOf, pictureCode, STEP_KEYS, kindOfKey, keyPair, kindLevelsAfter, makeRound, pictureFor, placeAfter, showGo, showRound, sisterGo, startFor, viewFor, type HelpLevel, type HelpSetting, type Place, type Round, type Step } from './round';
 import { handleSwamphen, unplayed } from './server';
 import { emptyData, memoryServices } from './memoryServices';
-import { slipSummary } from './teacher';
+import { slipSummary, usualSlip } from './teacher';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -267,5 +267,21 @@ describe('the sister go', () => {
       }
     }
     console.log('NOSISTER', [...new Set(none)].join(' ') || 'none');
+  });
+});
+
+describe('the usual slip is saved', () => {
+  it('keeps the named slips of the first wrong taps when the challenge finishes, and the page prefers the saved slip', async () => {
+    const data = emptyData();
+    const services = memoryServices({ data, now: () => Date.parse('2026-11-10T02:00:00Z'), random: () => 0.4 });
+    const started = (await handleSwamphen(services, 'p1', { action: 'start' })).body.round as Round;
+    const taps = wobblyTaps(started);
+    expect((await handleSwamphen(services, 'p1', { action: 'finish', seed: started.seed, taps })).status).toBe(200);
+    const kept = data.rounds.find((r) => r.round.seed === started.seed)?.slips;
+    expect(kept).toEqual(replay(started, taps).slips);
+    // A saved slip wins; with none saved the page works it out from the rounds; an unknown word is ignored.
+    expect(usualSlip('turned', [])).toBe('turned');
+    expect(usualSlip(null, [{ round: started, taps }])).toBe(slipSummary([{ round: started, taps }]).most);
+    expect(usualSlip('nope', [])).toBeNull();
   });
 });
