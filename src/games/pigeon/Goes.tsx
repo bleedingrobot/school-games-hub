@@ -26,7 +26,7 @@ import { tapRight, type Tap } from '../../../shared/pigeon/play';
 import type { Friend as FriendName } from '../../../shared/pigeon/progress';
 import { GOES_PER_ROUND, kindOfKey, marksFor, pictureFor, showRound, sisterGo, tapValue, type Go, type HelpLevel, type Round } from '../../../shared/pigeon/round';
 import { playSound } from '../sounds';
-import { Friend, sceneStyle, type Pose, type Scenery } from './art';
+import { Friend, paint, sceneStyle, type Pose, type Scenery } from './art';
 import { DEMO_KIND, DEMO_STEPS, DemoScene, hasDemo } from './demo';
 import { reasonFor } from './reason';
 import { askLine, lookLine, slipLine } from './voiceLines';
@@ -76,6 +76,9 @@ export function lineFor(go: Go, level: HelpLevel, points: LinePoint[], extraMark
   const posts: Landmark[] = showPosts && go.posts ? go.posts.map((value) => ({ value })) : [];
   const landmarks = dedupe([...toBig(mainMarks.big), ...toLandmarks(mainMarks.named), ...posts, ...(go.lens ? [] : extraMarks)]);
   const props: Omit<NumberLineProps, 'label'> = { min: 0, max: go.max, step: tickStep(mainMarks.ticks), landmarks };
+  // The painted branch behind the line, faint so the marks and numbers stay easy to read.
+  const branch = paint('line/branch');
+  if (branch) props.backdrop = { href: branch, height: 36, middle: 0.68, opacity: 0.7 };
   if (go.lens) {
     const lensMarks = marksFor(level, go.lens.lo, go.lens.hi);
     props.lens = {

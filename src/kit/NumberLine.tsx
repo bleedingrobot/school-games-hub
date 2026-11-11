@@ -74,6 +74,11 @@ export interface NumberLineProps {
   label: string;
   colors?: KitColors<LineColor>;
   className?: string;
+  /**
+   * A picture drawn behind the main line, stretched from end to end (a painted branch). `height` is in picture units and
+   * `middle` is where the line crosses the picture, as a fraction of its height from the top. Kept faint so every mark reads.
+   */
+  backdrop?: { href: string; height?: number; middle?: number; opacity?: number };
 }
 
 const W = 600;
@@ -245,7 +250,7 @@ function Marks({ min, max, step, labelEvery, landmarks, points, y, colors }: {
   );
 }
 
-export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], room, roomBelow, lens, onPick, pickOn, label, colors, className }: NumberLineProps) {
+export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = [], points = [], room, roomBelow, lens, onPick, pickOn, label, colors, className, backdrop }: NumberLineProps) {
   const lineC = kitColor(colors, 'line');
   const x = (v: number) => SIDE + lineX(v, min, max);
   const top = Math.max(24, room ?? 0, roomAbove(arcs, points, min, max));
@@ -269,6 +274,13 @@ export function NumberLine({ min, max, step, labelEvery, landmarks = [], arcs = 
   const tapY = tapOn === 'lens' ? lensY : y;
   return (
     <svg className={className} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{ maxWidth: '100%', touchAction: onPick ? 'none' : undefined }}>
+      {backdrop && (() => {
+        const bh = backdrop.height ?? 34;
+        return (
+          <image href={backdrop.href} x={SIDE - 14} y={y - bh * (backdrop.middle ?? 0.5)} width={W - 2 * SIDE + 28} height={bh}
+            preserveAspectRatio="none" opacity={backdrop.opacity ?? 0.5} aria-hidden="true" pointerEvents="none" />
+        );
+      })()}
       <Marks min={min} max={max} step={step} labelEvery={labelEvery} landmarks={landmarks} points={points} y={y} colors={colors} />
       {lens && (
         <g>
