@@ -4,7 +4,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh lizard, then scripts/scratch-test.sh lizard supabase/tests/database/lizard.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(46);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -96,6 +96,22 @@ select is(public.lizard_last_day(pg_temp.id('0a')), '2026-11-04'::date, 'and the
 select pg_temp.reset();
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select throws_ok($$ select public.teacher_lizard_student(pg_temp.id('0b')) $$, null, null, 'a pupil cannot read a classmate''s den');
+select pg_temp.reset();
+
+-- ---- The usual slip: saved with a finished challenge, shown to the teacher only when one kind shows 3+ times and has no tie ----
+select pg_temp.act_as_server();
+select ok(public.lizard_start(pg_temp.id('0a'), 790, pg_temp.round(790, 1, 5)), 'a challenge starts for the slips');
+select ok(public.lizard_finish(pg_temp.id('0a'), 790, 2, 30, '2026-11-04', 6::smallint, 1::smallint, 1, 1, '{}', '[{"pick":10,"ms":900}]', 1, 9, '["reverse","reverse","reverse"]'), 'it finishes with its slips');
+select pg_temp.reset();
+select is((select slips from public.lizard_rounds where player = pg_temp.id('0a') and seed = 790), '["reverse","reverse","reverse"]'::jsonb, 'the slips are kept with the challenge');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select is(public.teacher_lizard_student(pg_temp.id('0a')) ->> 'slip', 'reverse', 'a slip made three times and alone at the top is the usual slip');
+select pg_temp.reset();
+insert into public.lizard_rounds (player, seed, round, open, taps, mistakes, first_right, finished_at)
+  values (pg_temp.id('0a'), 791, pg_temp.round(791, 1, 5), false, '[]', 0, 10, now() + interval '1 minute');
+update public.lizard_rounds set slips = '["face","face","face"]' where seed = 791 and player = pg_temp.id('0a');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
+select is(public.teacher_lizard_student(pg_temp.id('0a')) -> 'slip', 'null'::jsonb, 'two kinds tied on three each means no single slip stands out');
 select pg_temp.reset();
 
 select * from finish();

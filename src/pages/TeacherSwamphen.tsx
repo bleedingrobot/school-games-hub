@@ -5,7 +5,7 @@
  */
 import { pictureHelp, stepWords } from '../teacher/foundational/config';
 import { DAYS_PER_GARDEN, FRIEND_NAMES, METALS, gardenAfter } from '../../shared/swamphen/progress';
-import { SLIP_WORDS, slipSummary } from '../../shared/swamphen/teacher';
+import { SLIP_WORDS, usualSlip } from '../../shared/swamphen/teacher';
 import { type HelpSetting } from '../../shared/swamphen/round';
 import { fetchSwamphenSettings, fetchSwamphenStudent, saveSwamphenSetting } from '../data/swamphen';
 import { SettingChoice, useSetting } from '../teacher/Settings';
@@ -57,8 +57,8 @@ export async function swamphenStudentSummary(student: string): Promise<string | 
   const garden = gardenAfter(s.daysDone);
   const parts = [stepWords('swamphen', s.step), `${garden.day} of ${DAYS_PER_GARDEN} days done`, pictureHelp(s.level)];
   if (garden.prizes) parts.push(`${garden.prizes} Golden Reed Garden${garden.prizes === 1 ? '' : 's'}`);
-  const slips = slipSummary(s.recent ?? []);
-  if (slips.most && SLIP_WORDS[slips.most]) parts.push(`usual slip: ${SLIP_WORDS[slips.most]}`);
+  const slip = usualSlip(s.slip, s.recent ?? []);
+  if (slip) parts.push(`usual slip: ${SLIP_WORDS[slip]}`);
   if (s.hardest?.length) parts.push(`hardest: ${s.hardest.slice(0, 3).map(keyWords).join(', ')}`);
   return parts.join(' · ');
 }
@@ -72,13 +72,13 @@ export function SwamphenStudentPanel({ student }: { student: string }) {
   if (loaded.failed) return <p className="panel__empty">We couldn’t load Swamp Hen’s Reed Rows for this student.</p>;
   if (!loaded.value) return <p className="panel__empty">Loading…</p>;
   if (!loaded.value.progress) return <p className="panel__empty">Not played yet.</p>;
-  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent } = loaded.value.progress;
+  const { daysDone, lastDay, step, level, lastPlayed, hardest, recent, slip } = loaded.value.progress;
   const garden = gardenAfter(daysDone);
   const rows = METALS.map((metal) => [metal, garden.rows.filter((m) => m === metal).length] as const)
     .filter(([, n]) => n > 0)
     .map(([metal, n]) => `${n} ${metal === 'mud' ? 'unchanged' : metal}`)
     .join(', ');
-  const slips = slipSummary(recent ?? []);
+  const usual = usualSlip(slip, recent ?? []);
   return (
     <section aria-label="Swamp Hen’s Reed Rows">
       <p>
@@ -88,7 +88,7 @@ export function SwamphenStudentPanel({ student }: { student: string }) {
       <p>
         Last played {when(lastPlayed, { weekday: 'long', day: 'numeric', month: 'long' })}. Golden Reed Gardens so far: {garden.prizes}.
       </p>
-      {slips.most ? <p>Usual slip: they {SLIP_WORDS[slips.most]}.</p> : <p>No single slip stands out yet.</p>}
+      {usual ? <p>Usual slip: they {SLIP_WORDS[usual]}.</p> : <p>No single slip stands out yet.</p>}
       {hardest?.length ? <p>Finding these hardest: {hardest.map(keyWords).join(', ')}.</p> : <p>Nothing is giving trouble right now.</p>}
     </section>
   );

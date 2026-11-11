@@ -67,7 +67,7 @@ Deno.serve(
       call<boolean>('swamphen_finish', {
         player, seed, version, days_done: progress.daysDone, last_day: progress.lastDay, step: progress.step,
         level: progress.level, good_in_row: progress.goodInRow, good_at_step: progress.goodAtStep,
-        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight,
+        taps: ending.taps, mistakes: ending.mistakes, first_right: ending.firstRight, slips: ending.slips,
         kind_levels: progress.kindLevels,
       }),
     async recordAnswers(player, once, answers) {

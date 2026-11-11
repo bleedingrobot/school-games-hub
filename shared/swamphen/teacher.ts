@@ -30,6 +30,12 @@ export interface SlipSummary {
   counts: Partial<Record<Slip, number>>;
 }
 
+/** The usual slip for the page: the one the server saved (last 10 rounds) when there is one, else worked out from the last 3 rounds. */
+export function usualSlip(saved: string | null | undefined, recent: readonly { round: Round; taps: readonly Tap[] }[]): Slip | null {
+  if (saved && Object.hasOwn(SLIP_WORDS, saved)) return saved as Slip;
+  return slipSummary(recent).most;
+}
+
 export function slipSummary(recent: readonly { round: Round; taps: readonly Tap[] }[]): SlipSummary {
   const counts: Partial<Record<Slip, number>> = {};
   let wrong = 0;

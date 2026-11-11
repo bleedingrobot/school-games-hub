@@ -2271,7 +2271,8 @@ async function handleLizard(services, player, body) {
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
 				mistakes: played.mistakes,
-				firstRight: played.firstRight
+				firstRight: played.firstRight,
+				slips: played.slips.flatMap((s) => s.slip === "other" ? [] : [s.slip])
 			});
 			if (saved === "busy") return busy();
 			if (saved) {
@@ -7626,7 +7627,8 @@ Deno.serve(makeHandler({
 		kind_levels: progress.kindLevels,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
-		first_right: ending.firstRight
+		first_right: ending.firstRight,
+		slips: ending.slips
 	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "lizard", void 0, JUNIOR_QUICK_MS, 600);

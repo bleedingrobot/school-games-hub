@@ -28,6 +28,12 @@ export interface SlipSummary {
   count: number;
 }
 
+/** The usual slip for the page: the one the server saved (last 10 rounds) when there is one, else worked out from the last 3 rounds. */
+export function usualSlip(saved: string | null | undefined, recent: readonly { round: Round; taps: readonly Tap[] }[]): SlipSummary & { fromServer: boolean } {
+  if (saved && Object.hasOwn(SLIP_WORDS, saved)) return { wrong: 0, top: saved as Slip, count: 0, fromServer: true };
+  return { ...slipSummary(recent), fromServer: false };
+}
+
 export function slipSummary(recent: readonly { round: Round; taps: readonly Tap[] }[]): SlipSummary {
   const slips = recent.flatMap((r) => {
     try {

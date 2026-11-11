@@ -2306,7 +2306,8 @@ async function handleSwamphen(services, player, body) {
 			const saved = await services.finish(player, seed, s.version, progress, {
 				taps,
 				mistakes: played.mistakes,
-				firstRight: played.firstRight
+				firstRight: played.firstRight,
+				slips: [...played.slips]
 			});
 			if (saved === "busy") return busy();
 			if (saved) {
@@ -7652,6 +7653,7 @@ Deno.serve(makeHandler({
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		first_right: ending.firstRight,
+		slips: ending.slips,
 		kind_levels: progress.kindLevels
 	}),
 	async recordAnswers(player, once, answers) {

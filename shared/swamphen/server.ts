@@ -61,7 +61,7 @@ export interface SwamphenServices extends SeenServices {
   /** One of this pupil's challenges by its seed, as kept. Null: not theirs, or never started. */
   round(player: string, seed: number): Promise<{ open: boolean; round: Round } | null | 'busy'>;
   /** Closes an open challenge and saves the progress, together. False if it was already closed or the version moved on. */
-  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number; firstRight: number }): Promise<boolean | 'busy'>;
+  finish(player: string, seed: number, version: number, progress: Progress, ending: { taps: Tap[]; mistakes: number; firstRight: number; slips: string[] }): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Tells the hub the pupil's Golden Reed Gardens went up, so it gives the achievement. A failure is only logged. */
@@ -173,7 +173,7 @@ export async function handleSwamphen(services: SwamphenServices, player: string,
       const stored = s.kindLevels ?? {};
       const kindLevels = result.rowChanged === null ? stored : place.step !== before.step ? {} : kindLevelsAfter(stored, played.kindGoes, before.level);
       const progress: Progress = { daysDone: result.daysDone, lastDay: result.lastDay, ...place, kindLevels };
-      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight });
+      const saved = await services.finish(player, seed, s.version, progress, { taps, mistakes: played.mistakes, firstRight: played.firstRight, slips: [...played.slips] });
       if (saved === 'busy') return busy();
       if (saved) {
         // One answer a fact, once per challenge, so a finish sent again never counts twice.
