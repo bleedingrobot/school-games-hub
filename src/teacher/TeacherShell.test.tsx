@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import type { ClassSummary} from '../data/classes';
+import { ALL_SWITCH_COLUMNS } from '../data/games';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
@@ -20,7 +21,16 @@ const data = vi.hoisted(() => ({
   fetchQuestionSkips: vi.fn(),
   fetchClassMap: vi.fn(),
   fetchAdminOverview: vi.fn(),
+  fetchGameSwitches: vi.fn(),
+  saveGameSwitches: vi.fn(),
+  fetchSavedSets: vi.fn(),
 }));
+vi.mock('../data/games', async (original) => ({
+  ...(await original<typeof import('../data/games')>()),
+  fetchGameSwitches: data.fetchGameSwitches,
+  saveGameSwitches: data.saveGameSwitches,
+}));
+vi.mock('../data/gameSets', async (original) => ({ ...(await original<typeof import('../data/gameSets')>()), fetchSavedSets: data.fetchSavedSets }));
 vi.mock('../data/admin', async (original) => ({
   ...(await original<typeof import('../data/admin')>()),
   fetchAdminOverview: data.fetchAdminOverview,
@@ -104,6 +114,8 @@ beforeEach(() => {
   data.fetchTrainingFirst.mockResolvedValue(false);
   data.saveTrainingFirst.mockResolvedValue(undefined);
   data.fetchFocuses.mockResolvedValue([]);
+  data.fetchGameSwitches.mockResolvedValue(Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, true])));
+  data.fetchSavedSets.mockResolvedValue([]);
   data.fetchQuestionSkips.mockResolvedValue({ students: [], spots: [] });
   data.fetchAdminOverview.mockResolvedValue({
     counts: { classes: 2, students: 53, teachers: 3, admins: 1, activeWeek: 40, shownWeek: 100, skippedWeek: 10 },
@@ -173,7 +185,10 @@ describe('Today', () => {
     expect(friends).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('switches Training before games for this class, and says what it does behind the "?"', async () => {
+  it('switches Training before games for this class, says what it does behind the "?", and switches to a game set in one request', async () => {
+    data.fetchGameSwitches.mockResolvedValue(Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, false])));
+    data.saveGameSwitches.mockResolvedValue(undefined);
+    data.fetchSavedSets.mockResolvedValue([{ id: 'mine-1', name: 'Reading group', ready: false, games: { weka_enabled: true } }]);
     const user = userEvent.setup();
     show('/teacher/c12');
     const training = await screen.findByRole('switch', { name: 'Training before games' });
@@ -187,6 +202,19 @@ describe('Today', () => {
     expect(training).toHaveAttribute('aria-checked', 'true');
     await user.click(training);
     expect(data.saveTrainingFirst).toHaveBeenLastCalledWith(false, 'c12');
+
+    // Game sets, on the same screen: one request, what is on, and the set marked in use.
+    expect(await screen.findByText('Reading group')).toBeInTheDocument();
+    expect(screen.queryByText('In use')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Use now: Maths only' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    const [changes, classId] = data.saveGameSwitches.mock.calls[0];
+    expect(classId).toBe('c12');
+    expect(changes.non_maths_games).toBe(false);
+    expect(Object.values(changes)).toContain(true);
+    expect(await screen.findByText(/^Room 12 now has Maths only: \d+ games on\.$/)).toBeInTheDocument();
+    expect(screen.getAllByText('In use')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Use now: Maths only' })).toBeDisabled();
   });
 
 });

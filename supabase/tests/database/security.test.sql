@@ -90,6 +90,7 @@ $$, array[
   'teacher_set_robin', 'teacher_robin_class', 'teacher_robin_student',
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_progress_other_games',
+  'teacher_game_sets', 'teacher_save_game_set', 'teacher_use_game_set', 'teacher_delete_game_set',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',
   'teacher_class_badges', 'teacher_renew_badge',

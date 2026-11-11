@@ -24,6 +24,7 @@ import { TRAINING_CONFIG } from '../../shared/training/config';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
 import { PUPILS_SEE_IT, SettingChoice, SettingToggle, useSetting } from './Settings';
 import { useTeacherClass } from './TeacherClass';
+import { GameSets } from './GameSets';
 import { NeedsYou } from './WaitingToJoin';
 import { percentRight, useHardest } from './Hardest';
 import { classOverview, useClassAlerts } from './useClassAlerts';
@@ -37,6 +38,7 @@ export function Today() {
   return (
     <div className="today">
       <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
+      <GameSets key={`sets-${classId}`} classId={classId} name={current.name} />
       <LessonControls key={`controls-${classId}`} classId={classId} name={current.name} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
