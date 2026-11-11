@@ -249,3 +249,27 @@ export async function adminClansNewSeason(confirm: string): Promise<{ season: nu
   if (error || !data) fail(error, 'We couldn’t start a new season.');
   return data as { season: number; clans: number };
 }
+
+// ---------------------------------------------------------------- School defaults (what a new class starts with)
+
+/** The school's defaults row (app_settings with no class), whole, as new classes copy it. */
+export async function fetchSchoolDefaults(): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.rpc('admin_school_defaults');
+  if (error || !data || typeof data !== 'object') fail(error, 'We couldn’t load the new class settings.');
+  return data as Record<string, unknown>;
+}
+
+/** Sets some columns of the defaults row: { column: value }. Existing classes don't change. */
+export async function saveSchoolDefaults(changes: Record<string, boolean | string>): Promise<void> {
+  const { error } = await supabase.rpc('admin_set_school_default', { changes });
+  forgetSettings();
+  if (error) fail(error, 'We couldn’t save that. Please try again.');
+}
+
+/** Copies those columns from the defaults row to every class that isn't archived. Returns how many classes changed. */
+export async function copyDefaultsToClasses(columns: string[]): Promise<number> {
+  const { data, error } = await supabase.rpc('admin_copy_defaults_to_classes', { columns });
+  forgetSettings();
+  if (error) fail(error, 'We couldn’t copy the settings.');
+  return count(data);
+}

@@ -98,6 +98,8 @@ select is((select count(*)::int from public.clan_scoreboard()), 1, 'zed sees onl
 select pg_temp.reset();
 
 -- ---- Settings: the switches belong to the school and the class ----
+-- A new school's settings now start with every game on (card C7), so this test starts the other school with Clan Quest off.
+update public.app_settings set clans_enabled = false where school_id = 2;
 select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'false', 'Clan Quest starts off for a pupil');
 -- Every save names a class (card C2), so the school admin changes Room A, a class at their school with cai in it.
 insert into public.classes (school_id, name, school_year, warp_code) values (1, 'Room A', 2026, 'WXY34');
