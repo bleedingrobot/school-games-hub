@@ -24,7 +24,7 @@ export function KororaTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Picture help"
+        label="Help"
         about="How much the pictures help with each double and half."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

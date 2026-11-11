@@ -23,7 +23,7 @@ export function ParrotTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Picture help"
+        label="Help"
         about="How much the stones and the see-saw help with each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

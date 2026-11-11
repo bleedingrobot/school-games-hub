@@ -12,8 +12,8 @@ import { fetchRobinSettings, fetchRobinStudent, saveRobinSetting } from '../data
 import { SettingChoice, useSetting } from '../teacher/Settings';
 
 const HELP_CHOICES = [
-  { value: 'fade', label: 'Lots, then fewer', detail: 'The help follows each child’s own challenges: it starts with numbered spaces in the basket, a spoken count and the number shown (level 5), comes down a level after two good challenges, comes back one after a hard one, and two when a new step starts.' },
-  { value: 'always', label: 'Some', detail: 'Every go keeps help level 4: numbered spaces in the basket and the spoken count, but no number shown above.' },
+  { value: 'fade', label: 'Fades', detail: 'The help follows each child’s own challenges: it starts with numbered spaces in the basket, a spoken count and the number shown (level 5), comes down a level after two good challenges, comes back one after a hard one, and two when a new step starts.' },
+  { value: 'always', label: 'Always on', detail: 'Every go keeps help level 4: numbered spaces in the basket and the spoken count, but no number shown above.' },
   { value: 'off', label: 'Off', detail: 'A pile of berries and an empty basket, and no Peek button. A wrong answer still brings the help back for that go.' },
 ] as const;
 
@@ -23,7 +23,7 @@ export function RobinTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Counting help"
+        label="Help"
         about="How much the numbered spaces and spoken count help with each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

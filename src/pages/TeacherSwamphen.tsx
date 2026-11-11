@@ -22,7 +22,7 @@ export function SwamphenTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Garden help"
+        label="Help"
         about="How much of the picture is drawn for each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}
