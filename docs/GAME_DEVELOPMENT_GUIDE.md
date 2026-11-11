@@ -1,6 +1,6 @@
 # Building a new game for School Games Hub
 
-*A practical guide for a Claude session building one game on its own, alongside other sessions building other games, and getting it live without clashing or breaking the live site. Written 20 October 2026 from the code on `main` (c33f69b) and the branches `marble`, `bond-match`, `dragon-maths`, `clans` and `maths-focus`. Everything here was checked in the code. Anything marked **PROPOSED** does not exist yet. Tidied 21 October 2026: Marble Rush and the section 10 fixes are now on `main`. Brought up to date 1 November 2026 (main `c040682`): new folder paths, `docs/TESTING.md`, home page card art, painted game art, the teacher contract's newer parts, and what Kingdom Keeper's and Star Trader's go-lives taught. Updated 7 November 2026 after the Foundational maths review: learning-design rules now live in [LEARNING-DESIGN.md](LEARNING-DESIGN.md) (section 1a item 8), the junior games' shared helpers are listed, and shared game parts are planned in [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md).*
+*A practical guide for a Claude session building one game on its own, alongside other sessions building other games, and getting it live without clashing or breaking the live site. Written 20 October 2026 from the code on `main` (c33f69b) and the branches `marble`, `bond-match`, `dragon-maths`, `clans` and `maths-focus`. Everything here was checked in the code. Anything marked **PROPOSED** does not exist yet. Tidied 21 October 2026: Marble Rush and the section 10 fixes are now on `main`. Brought up to date 1 November 2026 (main `c040682`): new folder paths, `docs/TESTING.md`, home page card art, painted game art, the teacher contract's newer parts, and what Kingdom Keeper's and Star Trader's go-lives taught. Updated 7 November 2026 after the Foundational maths review: learning-design rules now live in [LEARNING-DESIGN.md](LEARNING-DESIGN.md) (section 1a item 8), the junior games' shared helpers are listed, and shared game parts are planned in [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md). Updated 11 November 2026 for the teacher progress plan: section 1b (steps, the Progress tab, what to save).*
 
 ---
 
@@ -20,6 +20,7 @@
 12. **Keep tests few.** Read [docs/TESTING.md](TESTING.md) before writing any: a new game gets **at most 8 tests** in all ([section 7](#7-running-and-testing-the-game-on-its-own)).
 13. **Design for learning.** If your game has maths in it, read [docs/LEARNING-DESIGN.md](LEARNING-DESIGN.md) before you plan: the maths is the move, help that fades with the child and comes back, mistakes that show why, fair timing, and evidence a teacher can use. Your plan answers its design check ([section 1a](#1a-design-decisions-to-settle-in-the-plan-before-building), item 8).
 14. **Reuse before you copy.** Check [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md) for shared parts that already exist (help levels, wrong-answer kinds, ten-frames, Hear it again). Until they do, copy the best example named in LEARNING-DESIGN.md and keep game words out of the logic so it can move into the kit later.
+15. **Steps the teacher can see.** A game's ladder is made of **steps**, and every pupil's step shows on the teacher's Progress tab. Read [section 1b](#1b-steps-and-the-teachers-progress-tab-from-11-nov-2026) for the words and what to save.
 
 The best example to copy is **Marble Rush** (on `main`). **Star Trader** (`docs/TRADER-PLAN.md`, with its "Went live" section) and **Royal Decree** (`docs/DECREE-PLAN.md`, the rewrite of Kingdom Keeper after it flopped) are good, up-to-date examples of the whole route from plan to live. For a **junior game (ages 5 to 8)** copy **Weka's Stepping Stones** (`docs/WEKA-PLAN.md`, the review's top scorer) and Beanstalk's mistakes that teach (R5); LEARNING-DESIGN.md section 5 lists the shape. It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Dragon Maths' maths and Clan Quest's quest and shop maths are the older year-band kind, so don't copy that part (Clan Quest's Battle Cry is way A, like Marble).
 
@@ -101,8 +102,51 @@ After building, score it against the 25-point checklist in `docs/reviews/maths-r
 - **Lesson fit.** One sitting should fit 10 to 15 minutes and save as it goes, so the bell never loses work. Say what a pupil does in their first 5 minutes.
 - **Who plays with whom.** Solo, with classmates, or in clans; what happens with an odd number or someone away. Classmates only, never other schools.
 - **Maths that nudges, not decides** (games where maths is a side part, not the move). Where maths sits in the game and how much it helps, so a pupil weaker at maths can still enjoy it (Dragon Maths' riddles give "a small edge"). Never rank pupils by maths. Even here, a wrong answer shows the right one with a reason, not only "wrong" (LEARNING-DESIGN rule 7).
-- **What the teacher needs.** Settings (keep them few), the class report, `hardest` and `alerts` for the teacher's Today page, and what a teacher can reset (section 3, Teacher page).
+- **What the teacher needs.** Settings (keep them few), the class report, `hardest` and `alerts` for the teacher's Today page, and what a teacher can reset (section 3, Teacher page), and where each pupil's step shows on the Progress tab (section 1b).
 - **Rewards and coins.** Where coins come from and go, with the simulator checking nothing piles up unused (Clan Quest's gold after a full village).
+
+
+## 1b. Steps and the teacher's Progress tab (from 11 Nov 2026)
+
+Teachers now see every pupil's step in every game on one page: the **Progress** tab beside Today (`src/teacher/progress/`), with
+a table, a ladder board for one game, "who needs a look" pills, and a "Steps in each game" card on the pupil page. The plan is
+[docs/plans/teacher-progress/HANDOVER.md](plans/teacher-progress/HANDOVER.md). A new game must fit it from day one, so decide
+these in your plan.
+
+**Words (everywhere: in the game's teacher panel, alerts, How to play for teachers, and plans):**
+- A game's ladder is made of **steps**: "Step 3 of 6: Give 6 to 10". Not level, stage, reached or sum.
+- **Stage** means only the maths ladder's stages (Skill map) and Quick looks' stages.
+- **Picture help** (with `pictureHelp()`), not "help level". **Points level**, not "Level", for the hub's points.
+- Use `stepWords(game, saved)` and `stepOf(game, saved)` from `src/teacher/foundational/config.ts`; never write "Step N" by hand.
+
+**A Foundational (early-years) game, so it shows on the Progress tab:**
+1. Add your id to `GAME_IDS` (`src/data/foundational.ts`) and an entry to `GAMES` in `src/teacher/foundational/config.ts`:
+   `levelWord: 'step'`, a name for every step in `levels`, `top`, and `order` (the saved values from lowest to highest step, in
+   case they are not 1, 2, 3, as Hop's 10, 5, 2, 3, 4, 200 are).
+2. Save on the progress row: the current step (`step`, or `reached`), `good_at_step` and `good_in_row` if the game moves up on
+   good goes, `days_done` and the last day.
+3. Save on each round: the step it was played at (`round.step`), every tap with what was picked and how long it took
+   (`taps: [{pick, ms}]`), `mistakes`, `first_right`, and `slips` (one kind per wrong first try, from `slipsOf` in `shared/kit/slips.ts`, named in your `SLIP_WORDS`).
+   Beanstalk's rounds don't save the step, so it has no "on this step since"; don't copy that.
+4. Add your block to `teacher_foundational_class` in a new migration: copy the **newest** body (find it with
+   `grep -l "function public.teacher_foundational_class" supabase/migrations/*.sql | tail -1`), add only your game, and
+   send `daysDone`, `lastDay`, `level` (the saved step), `good`, `since` and `recent` exactly as the other step games do
+   (20261111000400 is the pattern). Check no open branch is changing the same function; if one is, go after it.
+5. "Nearly ready" (green ↑): add your game to `GOOD_TO_PASS` in `src/teacher/progress/state.ts` (games that move up on good
+   goes, taking the number from your shared config), or to `STEP_KEYS` (games that move up when a step's facts are Secure).
+6. The pupil's usual slip comes from the server: `teacher_<game>_student` returns `slip` with the kit's `topSlip` rule (commonest of the
+   last 10 rounds, 3 or more, no tie), as Pigeon, Lizard and Swamp Hen do (20261111000300).
+7. Test it in `src/teacher/progress/progress.test.tsx`: your game gets a column, the right step shows, and a pupil with good
+   goes one short shows "nearly".
+
+**Any other game with levels or a ladder:** plan how a teacher sees each pupil's place in it. Name the levels as steps where
+they are steps, and save the level per round so it can join the Progress tab later (card P11 adds a `progressColumns` entry on
+the game's `teacher` part for this; follow it once it is live).
+
+**Coming from the same plan (follow each card once it is live, and keep this section current):** right first try and time per
+go from the taps (P8), step history in a `step_changes` table (P9), the value given on a wrong answer (`given` on each
+`FactAnswer`, P10), and other games' columns (P11). A card that changes what a new game must do updates this section in its
+own PR.
 
 ---
 
@@ -381,6 +425,7 @@ Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). James has pre-ap
 - [ ] The plan answers section 1a (big goal, seasons, moves a day, progress bars, achievements table, card art, new-player guide), and what was built matches it.
 - [ ] A new pupil can get through their first go with no adult help: the guided first go works, can be skipped and replayed, and the next-step line always has something useful to say.
 - [ ] Learning design (maths games): tapping every choice or guessing doesn't win; a wrong answer shows why on the same picture and the child tries again; help fades with the child's success and comes back after struggle (not by the calendar); the answer clock starts after the voice; the teacher can see who is stuck. Scored against the research checklist with a 3 or better on every line (LEARNING-DESIGN.md section 6).
+- [ ] Steps are called steps, and the game shows on the teacher's Progress tab with each pupil's step, stuck and nearly ready (section 1b).
 - [ ] No more than 8 tests of your own (`docs/TESTING.md`), plus the database test file.
 - [ ] Your id is in `src/games/registry.test.ts` in the PR that turns the code switch on; a card picture in `gameCardArt.ts` if James has painted one.
 - [ ] `docs/PRIVACY-SUMMARY.md`, `shared/README.md` and your plan are updated.
