@@ -9,6 +9,7 @@
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
+import { gameMathsColumn, gameSwitchColumn, useChangedLine } from '../data/settingsChanges';
 import { GAMES } from '../games/registry';
 import type { DashboardGroup, GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
@@ -174,6 +175,7 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
 
 function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; classId: string; nonMaths: NonMaths; linkRef: (el: HTMLAnchorElement | null) => void }) {
   const t = game.teacher;
+  const changedLine = useChangedLine(classId);
   return (
     <tr role="row">
       <th role="rowheader" scope="row" className="games-table__game">
@@ -184,7 +186,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
       </th>
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
-          <GameSwitchSetting game={game} classId={classId} />
+          <GameSwitchSetting game={game} classId={classId} changed={changedLine(gameSwitchColumn(game.id))} />
         ) : game.group === 'no-maths' ? (
           <>
             <SettingToggle
@@ -194,6 +196,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
               value={nonMaths.value}
               savedText={PUPILS_SEE_IT}
               loadFailed={nonMaths.failed}
+              changed={changedLine('non_maths_games')}
               save={(on) => saveNonMathsGames(on, classId)}
               onSaved={nonMaths.onSaved}
             />
@@ -205,7 +208,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
       </td>
       <td role="cell" className="games-table__maths" data-label="Maths">
         {t?.maths ? (
-          <MathsSwitchSetting game={game} classId={classId} />
+          <MathsSwitchSetting game={game} classId={classId} changed={changedLine(gameMathsColumn(game.id))} />
         ) : t?.useSummary ? (
           <SummaryCell use={t.useSummary} classId={classId} />
         ) : (
@@ -234,7 +237,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
 }
 
 /** A game's on/off switch for the class, as it sits in its row of the Games table. */
-export function GameSwitchSetting({ game, classId }: { game: GameDefinition; classId: string }) {
+export function GameSwitchSetting({ game, classId, changed }: { game: GameDefinition; classId: string; changed?: string }) {
   const switchOf = game.teacher!.switch!;
   const value = switchOf.useValue(classId);
   return (
@@ -245,6 +248,7 @@ export function GameSwitchSetting({ game, classId }: { game: GameDefinition; cla
       value={value.value}
       savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
+      changed={changed}
       save={(on) => switchOf.save(on, classId)}
     />
   );
@@ -263,7 +267,7 @@ export const MATHS_CHOICES: Choice<MathsSwitch>[] = [
 ];
 
 /** A game's maths switch for the class, as it sits in its row of the Games table. */
-export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; classId: string }) {
+export function MathsSwitchSetting({ game, classId, changed }: { game: GameDefinition; classId: string; changed?: string }) {
   const maths = game.teacher!.maths!;
   const value = maths.useValue(classId);
   return (
@@ -275,6 +279,7 @@ export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; cl
       value={value.value}
       savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
+      changed={changed}
       save={(mode) => maths.save(mode, classId)}
     />
   );
