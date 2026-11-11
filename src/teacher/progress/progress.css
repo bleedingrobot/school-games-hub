@@ -284,3 +284,68 @@
   .ladder__head { margin: 0; }
   .ladder__chips { flex-direction: row; flex-wrap: wrap; }
 }
+
+/* Pupil page: "Steps in each game" */
+.pupil-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.pupil-steps__row--none {
+  display: flex;
+  gap: 12px;
+  padding: 8px 10px;
+  color: var(--ink-soft);
+}
+.pupil-steps__link {
+  display: grid;
+  grid-template-columns: 9rem auto minmax(0, 1fr) auto;
+  grid-template-areas: 'name track where first' '. . days first';
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+.pupil-steps__link:hover { background: var(--tint); }
+.pupil-steps__link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pupil-steps__name { grid-area: name; font-weight: 800; }
+.pupil-steps__row--none .pupil-steps__name { min-width: 9rem; }
+.pupil-steps__track { grid-area: track; display: inline-flex; gap: 3px; }
+.pupil-steps__where { grid-area: where; font-weight: 600; }
+.pupil-steps__days { grid-area: days; color: var(--ink-soft); font-size: 0.85rem; }
+.pupil-steps__days:empty { display: none; }
+.pupil-steps__first-try { grid-area: first; min-width: 4.5rem; text-align: right; color: var(--ink-soft); }
+.pupil-steps__first-try:empty { display: block; }
+.pupil-steps__box {
+  box-sizing: border-box;
+  width: 18px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--pg-rest);
+}
+.pupil-steps__box--current { outline: 2px solid var(--ink); outline-offset: 1px; }
+.pupil-steps__row[data-state='moving'] .pupil-steps__box--on { background: var(--pg-moving); }
+.pupil-steps__row[data-state='nearly'] .pupil-steps__box--on { background: var(--pg-nearly); }
+.pupil-steps__row[data-state='stuck'] .pupil-steps__box--on { background: var(--pg-stuck); }
+.pupil-steps__row[data-state='top'] .pupil-steps__box--on { background: var(--pg-top); }
+.pupil-steps__row[data-state='quiet'] .pupil-steps__box--on { background: var(--pg-quiet); }
+.pupil-steps__row[data-state='stuck'] .pupil-steps__days { color: #be123c; font-weight: 700; }
+@media (max-width: 760px) {
+  .pupil-steps__link {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'name name' 'track where' '. days' '. first';
+  }
+  .pupil-steps__first-try:empty { display: none; }
+}

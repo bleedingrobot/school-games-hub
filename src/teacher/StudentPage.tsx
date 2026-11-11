@@ -3,6 +3,7 @@
  * it can be linked to and the back button works. In order:
  *
  *   Overview      level and points, their maths (ladder place, warm-up, focus) and the last 7 days' questions and skips
+ *   Steps         the step they are on in each Foundational game (progress/PupilSteps.tsx)
  *   Games         wins and losses against bots and friends, then one folded line per game they've played; a game's own panel
  *                 loads only when its line is opened
  *   Recent games
@@ -29,6 +30,7 @@ import { STAGES } from '../../shared/subitising/config';
 import { FLAG_RULES } from './foundational/config';
 import { DangerAction } from './Settings';
 import { useTeacherClass } from './TeacherClass';
+import { PupilSteps } from './progress/PupilSteps';
 import { focusText, ladderText } from './Students';
 import './students.css';
 
@@ -108,7 +110,7 @@ export function StudentPage() {
           </p>
         </div>
       </header>
-      <StudentDetail key={card.id} card={card} />
+      <StudentDetail key={card.id} card={card} classId={classId} />
       <Manage
         key={`manage-${card.id}`}
         card={card}
@@ -121,7 +123,7 @@ export function StudentPage() {
 }
 
 /** Overview, Games and Recent games: everything that reads teacher_student_detail. */
-function StudentDetail({ card }: { card: StudentCard }) {
+function StudentDetail({ card, classId }: { card: StudentCard; classId: string }) {
   const [detail, setDetail] = useState<PersonDetail | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
@@ -167,6 +169,8 @@ function StudentDetail({ card }: { card: StudentCard }) {
           </Suspense>
         )}
       </section>
+
+      {card.role === 'student' && <PupilSteps classId={classId} studentId={card.id} />}
 
       <section className="panel" aria-labelledby="games-title">
         <h2 id="games-title" className="panel__title">
