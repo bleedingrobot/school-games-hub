@@ -17,8 +17,8 @@ export function HopTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingToggle
-        label="Step labels on the hops"
-        about="On: each hop shows its step (+2) over the arc, bold at first, then faint, then gone, fact by fact as each student shows they know it. A student who gets three hops in a row wrong at the first try sees the labels again for the rest of that round. Off: no labels, from the first day."
+        label="Help"
+        about="Step labels (like +2) over each hop. On: each hop shows its step (+2) over the arc, bold at first, then faint, then gone, fact by fact as each student shows they know it. A student who gets three hops in a row wrong at the first try sees the labels again for the rest of that round. Off: no labels, from the first day."
         value={settings.value?.labels ?? null}
         loadFailed={settings.failed}
         save={(on) => saveHopSetting({ labels: on }, classId)}

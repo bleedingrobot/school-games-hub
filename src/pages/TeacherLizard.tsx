@@ -22,7 +22,7 @@ export function LizardTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Mat help"
+        label="Help"
         about="How much of the bundles and counts is shown for each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}
