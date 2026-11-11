@@ -64,8 +64,13 @@ export const UNDERWATER = { gravity: 0.7, lift: 0.8, maxFall: 0.7 };
 /** Answer walls: 2 or 3 gaps spread up the sky, each this tall at least. */
 export const ANSWER_GAP_MIN = { 2: 2.6, 3: 2.2 } as const;
 
-/** Flyers: finish a level this many times (any medal) to unlock its flyer. */
-export const UNLOCK_RUNS = 3;
+/**
+ * Flyers: finish a level this many times (any medal) to unlock its flyer. More on the easy levels, so flyers take a
+ * while (James, 11 Nov 2026: 15 on easy levels, 10 on harder ones).
+ */
+export const UNLOCK_RUNS = { easy: 15, hard: 10 } as const;
+/** Levels up to this one count as easy for unlocking. */
+export const EASY_LEVELS = 5;
 /** Revive potions (rare, about one a week; the sim checks): earned for this many checks right in a row (the run of right answers carries on between levels, since no level has 5 checks) or a first gold on a level. */
 export const POTION_STREAK = 10;
 export const POTIONS_MAX = 3;

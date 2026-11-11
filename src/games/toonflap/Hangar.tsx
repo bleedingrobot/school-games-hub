@@ -1,9 +1,8 @@
 /** The Hangar: pick any flyer and trail you have unlocked. They only change how the bird looks, never how it flies. */
 import { useEffect, useRef } from 'react';
-import { FLYERS, TRAILS, flyersUnlocked, finishesToUnlock, shiny, trailsUnlocked, type Flyer, type Progress } from '../../../shared/toonflap/collection';
+import { FLYERS, TRAILS, flyersUnlocked, finishesToUnlock, shiny, trailsUnlocked, unlockRuns, type Flyer, type Progress } from '../../../shared/toonflap/collection';
 import { screenArt } from './art/art';
 import { paintedBackground } from './MapScreen';
-import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
 import { levelById } from '../../../shared/toonflap/levels';
 import type { Picks } from './backend';
 import { drawFlyer, drawTrailSwatch } from './renderer';
@@ -66,7 +65,8 @@ export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress
     if (f.level === null) return 'Gold on every level';
     const left = finishesToUnlock(progress, f.level);
     const name = levelById(f.level)?.name ?? '';
-    return `Finish ${name} ${UNLOCK_RUNS} times${left < UNLOCK_RUNS ? ` (${left} to go)` : ''}`;
+    const runs = unlockRuns(f.level);
+    return `Finish ${name} ${runs} times${left < runs ? ` (${left} to go)` : ''}`;
   };
   const current = FLYERS.find((f) => f.id === picks.flyer) ?? FLYERS[0];
   return (

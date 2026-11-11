@@ -1,6 +1,6 @@
 /** How to play, on its own page. Every number is read from the game's settings (shared/toonflap/config.ts). */
 import { useEffect, useRef } from 'react';
-import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS } from '../../../shared/toonflap/config';
+import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS, EASY_LEVELS } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 
 const sec = (steps: number) => steps / STEPS_PER_SECOND;
@@ -41,7 +41,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         </section>
         <section>
           <h3 className="tf-h3">Flyers, trails and potions</h3>
-          <p>Finish a level <strong>{UNLOCK_RUNS} times</strong> to unlock its flyer. Win gold to make it shiny. Trails are earned too. They only change how your bird looks, never how it flies.</p>
+          <p>Finish a level <strong>{UNLOCK_RUNS.easy} times</strong> to unlock its flyer ({UNLOCK_RUNS.hard} times from level {EASY_LEVELS + 1}). Win gold to make it shiny. Trails are earned too. They only change how your bird looks, never how it flies.</p>
           <p>Sometimes you earn a 🧪 revive potion. Hold up to {POTIONS_MAX}. Use one in a run to cancel a bump.</p>
         </section>
         <section>
