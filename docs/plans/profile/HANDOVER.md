@@ -28,8 +28,9 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - Adding new achievements to games is fine (James, 12 Nov 2026).
 - Some of the best rewards should need two games, to vary play (James, 12 Nov 2026). In P10; the Name Scroll needs gold in two different games.
 
+- Levels: retire the number and bar, keep points (James, 12 Nov 2026). Done in P6.
+
 ## Still James's call (the plan uses the first answer unless he says otherwise)
 
-- Levels: retire the number and bar, keep points (recommended), or keep levels.
 - Name Scroll: gold in two games or three pictures (recommended), or teacher-given only.
 - Typed names: on for every class with teacher approval (recommended), or a per-class switch that starts off.
