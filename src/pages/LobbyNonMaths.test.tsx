@@ -90,6 +90,9 @@ describe('the lobby with the non-maths games switch', () => {
     const list = screen.getByRole('region', { name: 'Open games' });
     expect(await within(list).findByText(/No open games right now/)).toBeInTheDocument();
     expect(within(list).queryByText(/Brave Kiwi 7/)).not.toBeInTheDocument();
+    // The lobby loads the space game's saved choices in the background: let that finish, or it can land after the file
+    // is torn down ("Vite module runner has been closed").
+    await import('../games/space/prefs');
   });
 
   it('offers every game and lists the open checkers game when it is on', async () => {
