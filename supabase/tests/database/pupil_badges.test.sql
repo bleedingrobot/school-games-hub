@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(22);
 
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
 insert into public.schools (name) values ('Other School');
@@ -15,8 +15,12 @@ $$;
 -- 1, 2 students and 11 a teacher at Douglas Park (all in its "Everyone" class); 201 a teacher at another school.
 insert into auth.users (id, email) values
   (pg_temp.uid(1), 'ava.k@douglaspark.school.nz'), (pg_temp.uid(2), 's2@douglaspark.school.nz'),
-  (pg_temp.uid(11), 't11@douglaspark.school.nz'), (pg_temp.uid(201), 't201@otherschool.school.nz');
-update public.profiles set role = 'teacher' where id in (pg_temp.uid(11), pg_temp.uid(201));
+  (pg_temp.uid(11), 't11@douglaspark.school.nz'), (pg_temp.uid(12), 't12@douglaspark.school.nz'),
+  (pg_temp.uid(201), 't201@otherschool.school.nz');
+update public.profiles set role = 'teacher' where id in (pg_temp.uid(11), pg_temp.uid(12), pg_temp.uid(201));
+-- 12 teaches at Douglas Park but not the pupils' class, and isn't a school admin.
+update public.profiles set school_admin = false where id = pg_temp.uid(12);
+delete from public.class_teachers where teacher_id = pg_temp.uid(12);
 
 create temp table emails as select id, email from auth.users;
 grant select on emails to public;
@@ -68,6 +72,40 @@ select isnt(public.teacher_renew_badge(pg_temp.uid(1)), (select code from pg_tem
 select pg_temp.reset();
 set local role service_role;
 select is(public.badge_sign_in((select code from pg_temp.seen where n = 1 and player = pg_temp.uid(1))), null, 'and the old card stops working');
+select pg_temp.reset();
+
+-- Lost card signs that pupil out everywhere, and nobody else (review card B1).
+insert into auth.sessions (id, user_id, created_at) values
+  (gen_random_uuid(), pg_temp.uid(1), now()), (gen_random_uuid(), pg_temp.uid(1), now()),
+  (gen_random_uuid(), pg_temp.uid(2), now()), (gen_random_uuid(), pg_temp.uid(11), now());
+insert into pg_temp.seen select 3, player, code from public.pupil_badges;
+set local role service_role;
+select isnt(public.badge_sign_in((select code from pg_temp.seen where n = 3 and player = pg_temp.uid(1))), null, 'the new card works');
+select pg_temp.reset();
+select isnt((select used_at from public.pupil_badges where player = pg_temp.uid(1)), null, 'and its use is noted');
+select pg_temp.as(11);
+select lives_ok(format('select public.teacher_renew_badge(%L)', pg_temp.uid(1)), 'the teacher renews it again');
+select pg_temp.reset();
+select is((select count(*)::int from auth.sessions where user_id = pg_temp.uid(1)), 0, 'which signs that pupil out on every device');
+select is((select count(*)::int from auth.sessions where user_id in (pg_temp.uid(2), pg_temp.uid(11))), 2, 'and nobody else');
+select is((select used_at from public.pupil_badges where player = pg_temp.uid(1)), null, 'and clears when it was last used');
+
+select pg_temp.as(12);
+select throws_ok(format('select public.teacher_renew_badge(%L)', pg_temp.uid(1)), '42501', null,
+  'a teacher at the same school who doesn''t teach the pupil can''t renew their badge');
+select pg_temp.reset();
+
+delete from pg_temp.seen where n = 3;
+insert into pg_temp.seen select 3, player, code from public.pupil_badges;
+update public.profiles set role = 'teacher' where id = pg_temp.uid(2);
+set local role service_role;
+select is(public.badge_sign_in((select code from pg_temp.seen where n = 3 and player = pg_temp.uid(2))), null,
+  'a badge stops working when its owner becomes a teacher');
+select pg_temp.reset();
+update public.schools set active = false where id = (select school_id from public.profiles where id = pg_temp.uid(1));
+set local role service_role;
+select is(public.badge_sign_in((select code from pg_temp.seen where n = 3 and player = pg_temp.uid(1))), null,
+  'and every badge stops working while the school is switched off');
 select pg_temp.reset();
 
 select * from finish();
