@@ -4,6 +4,17 @@ import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
 import { HELP_SETTINGS, type HelpSetting } from './guide';
+import { screenArt } from './art/art';
+
+/** A painted picture as a soft page background (the list stays easy to read over it). */
+export const paintedBackground = (url: string | undefined) =>
+  url ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.7)), url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center top', backgroundAttachment: 'local' } : undefined;
+
+/** The revive potion: James's painting, or the emoji until it loads. */
+export function PotionIcon({ size = 22 }: { size?: number }) {
+  const url = screenArt('potion');
+  return url ? <img src={url} alt="" width={size} height={size} style={{ verticalAlign: 'middle' }} /> : <span aria-hidden="true">🧪</span>;
+}
 
 /** Each world's colours (top, bottom, accent) and a picture word, for its stop on the trail. */
 export const LEVEL_LOOK: Array<{ a: string; b: string; icon: string }> = [
@@ -48,14 +59,14 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
   useEffect(() => talk?.(step), [step, talk]);
   const next = LEVELS.find((l) => (progress.levels[l.id]?.finishes ?? 0) === 0 && levelOpen(progress, l.n, today));
   return (
-    <section className="tf-map" aria-labelledby="tf-map-h">
+    <section className="tf-map" aria-labelledby="tf-map-h" style={paintedBackground(screenArt('map'))}>
       <header className="tf-map__top">
         <div>
           <h2 id="tf-map-h" className="tf-h">Toon Flap</h2>
           <p className="tf-next" role="status">{step}</p>
         </div>
         <div className="tf-map__buttons">
-          {progress.potions > 0 && <span className="tf-chip tf-chip--potion" title="Revive potions: each cancels one bump in a run">🧪 × {progress.potions}</span>}
+          {progress.potions > 0 && <span className="tf-chip tf-chip--potion" title="Revive potions: each cancels one bump in a run"><PotionIcon /> × {progress.potions}</span>}
           <button type="button" className="tf-btn" onClick={onHangar}>Hangar</button>
           <button type="button" className="tf-btn tf-btn--ghost" onClick={onHowTo}>How to play</button>
           {voice?.available && (

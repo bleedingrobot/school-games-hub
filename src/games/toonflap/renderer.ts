@@ -9,7 +9,7 @@
 import { BIRD_HALF, BIRD_SIZE, SKY, START_X, START_Y, WALL_WIDTH } from '../../../shared/toonflap/config';
 import { gapsAt, zoneOn, type RunState } from '../../../shared/toonflap/engine';
 import type { Course, Wall, Zone } from '../../../shared/toonflap/levels';
-import { flyerArt, trailArt, worldArt, type FlyerPose } from './art/art';
+import { extraArt, flyerArt, trailArt, uiArt, worldArt, type FlyerPose } from './art/art';
 
 const TAU = Math.PI * 2;
 export const TOP_PAD = 0.25;
@@ -137,6 +137,31 @@ function picture(url: string | undefined): HTMLImageElement | null {
     images.set(url, img);
   }
   return img && img.complete && img.naturalWidth > 0 ? img : null;
+}
+
+/** Draws a painted picture centred on (cx, cy), `w` wide, keeping its shape. */
+function blit(c: Ctx, img: HTMLImageElement, cx: number, cy: number, w: number, alpha = 1) {
+  const h = (w * img.naturalHeight) / img.naturalWidth;
+  const a = c.globalAlpha;
+  c.globalAlpha = a * alpha;
+  c.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  c.globalAlpha = a;
+}
+
+/** A few painted extras drifting in the back of a world: jellyfish in the reef, comets in space. */
+function extras(p: P) {
+  const id = p.n === 3 ? 'jellyfish' : p.n === 10 ? 'comet' : null;
+  const img = id ? picture(extraArt(id)) : null;
+  if (!img) return;
+  const { c, v } = p;
+  const wob = p.reduced ? 0 : 1;
+  layer(p, 0.25, 9, (i, x0, tile) => {
+    const r = rnd(i, 11);
+    const size = v.s * (1.1 + r * 0.7);
+    const x = x0 + tile * (0.2 + rnd(i, 12) * 0.6);
+    const y = sy(v, 5 + rnd(i, 13) * 4 + (wob ? Math.sin(p.time * 0.8 + i) * 0.3 : 0));
+    blit(c, img, x, y, size, 0.85);
+  });
 }
 
 /* ---------- the worlds ---------- */
@@ -1031,7 +1056,10 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
     const s = v.s;
     c.fillStyle = 'rgba(255,255,255,0.07)';
     c.fillRect(x0, sy(v, SKY), x1 - x0, v.s * SKY);
-    // wobbly sheet-ghost
+    const ghostImg = picture(extraArt('ghost'));
+    if (ghostImg) blit(c, ghostImg, cx, cy, s * 2.0, 0.92);
+    else {
+    // wobbly sheet-ghost (drawn until the painting loads)
     c.beginPath();
     c.moveTo(cx - s * 0.8, cy + s * 1.0);
     c.lineTo(cx - s * 0.8, cy - s * 0.3);
@@ -1047,6 +1075,7 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
     c.fill();
     ell(c, cx, cy + s * 0.15, s * 0.14, s * 0.2);
     c.fill();
+    }
     // arrow: which way it pushes
     const up = z.push > 0;
     c.strokeStyle = '#ffd84a';
@@ -1092,11 +1121,18 @@ function drawZone(p: P, z: Zone, t: number, k: number) {
     paint(c, '#3B3434', '#1e1818', 2);
     if (on || warn) {
       const n = on ? 7 : 2;
+      const puff = picture(extraArt('steam'));
       for (let i = 0; i < n; i++) {
         const f = on ? ((i / n + (wob ? p.time * 1.6 : 0)) % 1) : (i * 0.15 + 0.1);
         c.globalAlpha = (on ? 0.9 : 0.5) * (1 - f * 0.6);
-        circ(c, cx + Math.sin(i * 2 + f * 5) * v.s * 0.35, sy(v, 0.3 + f * (on ? 8 : 1.2)), v.s * (0.35 + f * 0.5));
-        paint(c, '#F1E9DF');
+        const px = cx + Math.sin(i * 2 + f * 5) * v.s * 0.35;
+        const py = sy(v, 0.3 + f * (on ? 8 : 1.2));
+        const r = v.s * (0.35 + f * 0.5);
+        if (puff) blit(c, puff, px, py, r * 2.4);
+        else {
+          circ(c, px, py, r);
+          paint(c, '#F1E9DF');
+        }
       }
       c.globalAlpha = 1;
     }
@@ -1132,6 +1168,26 @@ function drawPerch(p: P, x: number, y: number, passed: boolean) {
   c.strokeRect(px - post / 2, top, post, sy(v, 0) - top);
   rr(c, px - v.s * 0.65, top - v.s * 0.04, v.s * 1.3, v.s * 0.2, v.s * 0.08);
   paint(c, '#c88a55', '#3d2412', 2);
+  const img = picture(uiArt('perch'));
+  if (img) {
+    // the painted check post stands beside the bird, a green tick on it once you have been
+    const cx = px + v.s * 0.95;
+    const w = v.s * 1.3;
+    const h = (w * img.naturalHeight) / img.naturalWidth;
+    c.drawImage(img, cx - w / 2, top - h * 0.62, w, h);
+    if (passed) {
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = Math.max(3, v.s * 0.1);
+      c.lineCap = 'round';
+      const ty = top - h * 0.62 + h * 0.43;
+      c.beginPath();
+      c.moveTo(cx - w * 0.14, ty);
+      c.lineTo(cx - w * 0.03, ty + w * 0.11);
+      c.lineTo(cx + w * 0.16, ty - w * 0.12);
+      c.stroke();
+    }
+    return;
+  }
   // a small flag: a tick when you have been
   c.strokeStyle = '#3d2412';
   c.beginPath();
@@ -1154,6 +1210,11 @@ function drawNest(p: P, x: number) {
   for (let a = 0; a < 4; a++) for (let b = 0; b < 3; b++) {
     c.fillStyle = (a + b) % 2 ? '#222' : '#fff';
     c.fillRect(fx + a * v.s * 0.32, fy + b * v.s * 0.32, v.s * 0.32, v.s * 0.32);
+  }
+  const img = picture(uiArt('nest'));
+  if (img) {
+    blit(c, img, px, g - v.s * 0.55, v.s * 3.0);
+    return;
   }
   c.beginPath();
   c.ellipse(px, g - v.s * 0.2, v.s * 1.3, v.s * 0.55, 0, 0, Math.PI);
@@ -1186,6 +1247,7 @@ export function drawScene(c: Ctx, o: SceneOpts): View {
   const midImg = picture(worldArt(n, 'mid'));
   if (backImg) tile(c, backImg, v, o.reduced ? 0 : view.camX * v.s * 0.15);
   else back(p);
+  extras(p);
   if (midImg) tileOnGround(c, midImg, v, o.reduced ? 0 : view.camX * v.s * 0.4, sy(v, 0));
   else mid(p);
   // calm the back layers so the walls stand out
@@ -1299,8 +1361,12 @@ function drawGapMarks(p: P, wall: Wall, labels: number[] | null, t: number) {
       const fs = Math.max(15, Math.min(v.s * 0.62, 44));
       c.font = `900 ${fs}px system-ui, "Segoe UI", sans-serif`;
       const bw = Math.max(w * 0.98, c.measureText(text).width + fs * 0.7);
-      rr(c, x + w / 2 - bw / 2, cy - fs * 0.7, bw, fs * 1.4, fs * 0.5);
-      paint(c, '#fffbe6', '#1a1a2a', Math.max(2, fs * 0.09));
+      const disc = picture(uiArt('sign'));
+      if (disc) blit(c, disc, x + w / 2, cy, Math.max(bw, fs * 1.9));
+      else {
+        rr(c, x + w / 2 - bw / 2, cy - fs * 0.7, bw, fs * 1.4, fs * 0.5);
+        paint(c, '#fffbe6', '#1a1a2a', Math.max(2, fs * 0.09));
+      }
       c.fillStyle = '#1a1a2a';
       c.textAlign = 'center';
       c.textBaseline = 'middle';

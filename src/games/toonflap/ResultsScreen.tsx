@@ -5,7 +5,7 @@ import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, STEPS_PER_SECOND, TAILWIND_STEPS
 import { LEVELS } from '../../../shared/toonflap/levels';
 import type { FinishReply } from './backend';
 import { FlyerCanvas, TrailCanvas } from './Hangar';
-import { MEDAL_ICON, MEDAL_WORD, fmtSeconds } from './MapScreen';
+import { MEDAL_ICON, MEDAL_WORD, PotionIcon, fmtSeconds } from './MapScreen';
 import { factText } from './PlayScreen';
 import { MEDAL_LINE, RESULT_LINES } from './guide';
 
@@ -73,7 +73,7 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
           <tbody>
             <tr><th scope="row">Flying time</th><td>{secs(score.flying)} s</td></tr>
             <tr><th scope="row">Bumps ({bumps} × 3 s)</th><td>+{secs(score.bumpSteps)} s</td></tr>
-            {score.potion && <tr><th scope="row">🧪 Potion</th><td>−{secs(BUMP_PENALTY_STEPS)} s</td></tr>}
+            {score.potion && <tr><th scope="row"><PotionIcon size={18} /> Potion</th><td>−{secs(BUMP_PENALTY_STEPS)} s</td></tr>}
             {maths && <tr><th scope="row">Checks right ({checks} × 3 s)</th><td>−{secs(score.checkBonus)} s</td></tr>}
             {maths && def.answerWalls > 0 && <tr><th scope="row">Tailwinds ({tails} × 2 s)</th><td>−{secs(score.tailwind)} s</td></tr>}
             <tr className="tf-table__total"><th scope="row">Your time</th><td>{score.seconds.toFixed(1)} s</td></tr>
@@ -102,7 +102,7 @@ export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAg
         <div className="tf-party" role="status">
           {unlocks.newGold && <p className="tf-party__line">🥇 A new gold! That flyer is shiny now.</p>}
           {unlocks.newBest && !unlocks.firstFinish && <p className="tf-party__line">⭐ New best time!</p>}
-          {unlocks.potion && <p className="tf-party__line">🧪 You earned a revive potion!</p>}
+          {unlocks.potion && <p className="tf-party__line"><PotionIcon size={28} /> You earned a revive potion!</p>}
           {unlocks.newLevel && <p className="tf-party__line">🗺️ {RESULT_LINES.newLevel}</p>}
           {newFlyers.map((f) => f && (
             <div key={f.id} className="tf-party__item">
