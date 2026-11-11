@@ -1,0 +1,47 @@
+/* The Game sets panel on Today (src/teacher/GameSets.tsx). Every target is at least 44 px. */
+
+.game-sets__list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.game-sets__set {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.game-sets__set--in-use {
+  border-color: var(--green, #2e7d32);
+  background: color-mix(in srgb, var(--green, #2e7d32) 8%, transparent);
+}
+.game-sets__name {
+  flex: 1 1 10rem;
+  font-weight: 600;
+}
+.game-sets__badge {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--green, #2e7d32);
+}
+.game-sets__set .button,
+.game-sets__save .button,
+.game-sets__save input {
+  min-height: 44px;
+}
+.game-sets__save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+.game-sets__save label {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 14rem;
+}
