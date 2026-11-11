@@ -10,7 +10,18 @@ vi.mock('../foundational/alerts', () => ({ enabledGames: async () => ['robin', '
 
 const recent = (day: string) => [{ day, wrong: 0, taps: 8, level: 3 }];
 const day = new Date().toISOString().slice(0, 10);
-const robin: GameProgress = { daysDone: 2, lastDay: day, level: 3, good: null, since: day, recent: recent(day) };
+const robin: GameProgress = {
+  daysDone: 2,
+  lastDay: day,
+  level: 3,
+  good: null,
+  since: day,
+  recent: recent(day),
+  moves: [
+    { from: 3, to: 4, day: '2026-11-06', estimated: false },
+    { from: 2, to: 3, day: '2026-11-03', estimated: true },
+  ],
+};
 const student = (id: string): MapStudent => ({ id, name: id, realName: null, ladder: {} as MapStudent['ladder'], enabledTables: undefined, division: false, facts: [] });
 const data: FoundationalClass = {
   map: { classId: 'c', className: '3B', yearLevel: 3, auto: false, students: [student('a'), student('b')] },
@@ -33,6 +44,12 @@ describe('PupilSteps', () => {
     expect(row.querySelectorAll('.pupil-steps__box--on').length).toBe(3);
     expect(row.querySelectorAll('.pupil-steps__box--current').length).toBe(1);
     expect(screen.getByText('Not played yet')).toBeTruthy(); // Pipi
+  });
+
+  it('says when the pupil last moved up, and gives a small timeline', async () => {
+    const { container } = show('a');
+    expect(await screen.findByText(/up to step 4 on 6 Nov/)).toBeTruthy();
+    expect(container.querySelector('.pupil-steps__timeline')?.textContent).toBe('step 3 about 3 Nov → step 4 on 6 Nov');
   });
 
   it('says Not played yet for a pupil with no Robin row', async () => {

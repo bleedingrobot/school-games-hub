@@ -16,7 +16,7 @@ import { GOOD_TO_PASS as LIZARD_GOOD } from '../../../shared/lizard/config';
 import { GOOD_TO_PASS as PIGEON_GOOD } from '../../../shared/pigeon/config';
 import { GOOD_TO_PASS as SWAMPHEN_GOOD } from '../../../shared/swamphen/config';
 import { STAGES } from '../../../shared/subitising/config';
-import type { FoundationalGameId, GameProgress, QuickLooksProgress, RecentChallenge } from '../../data/foundational';
+import type { FoundationalGameId, GameProgress, QuickLooksProgress, RecentChallenge, StepMove } from '../../data/foundational';
 
 export type CellStateName = 'moving' | 'nearly' | 'stuck' | 'top' | 'quiet' | 'none';
 
@@ -143,3 +143,34 @@ export function quickCellState(q: QuickLooksProgress | null | undefined, today: 
 }
 
 export { QUICK_LOOKS_ID };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "6 Nov" from an NZ day (YYYY-MM-DD). */
+export function shortDay(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1] ?? ''}`.trim();
+}
+
+/** "up to step 4 on 6 Nov" for the newest move ("about 6 Nov" when it was worked out from old rounds); null when the game has none. */
+export function lastMoveWords(game: FoundationalGameId, moves: readonly StepMove[] | undefined): string | null {
+  const m = moves?.[0];
+  const to = m ? stepOf(game, m.to) : null;
+  if (!m || !to) return null;
+  const from = m.from === null ? null : stepOf(game, m.from);
+  const when = `${m.estimated ? 'about ' : 'on '}${shortDay(m.day)}`;
+  if (!from) return `started on step ${to.n} ${when}`;
+  return `${to.n > from.n ? 'up' : 'back'} to step ${to.n} ${when}`;
+}
+
+/** The small timeline, oldest first: "step 2 about 3 Nov → step 3 on 5 Nov"; null when the game has no moves. */
+export function timelineWords(game: FoundationalGameId, moves: readonly StepMove[] | undefined): string | null {
+  const parts = [...(moves ?? [])]
+    .reverse()
+    .map((m) => {
+      const s = stepOf(game, m.to);
+      return s ? `step ${s.n} ${m.estimated ? 'about' : 'on'} ${shortDay(m.day)}` : null;
+    })
+    .filter((x): x is string => x !== null);
+  return parts.length > 0 ? parts.join(' → ') : null;
+}

@@ -328,6 +328,7 @@
 .pupil-steps__days:empty { display: none; }
 .pupil-steps__first-try { grid-area: first; min-width: 4.5rem; max-width: 13rem; font-size: 0.85rem; text-align: right; color: var(--ink-soft); }
 .pupil-steps__first-try:empty { display: block; }
+.pupil-steps__timeline { margin: 0; padding: 0 10px 6px 10px; font-size: 0.85rem; color: var(--ink-soft); }
 .pupil-steps__box {
   box-sizing: border-box;
   width: 18px;

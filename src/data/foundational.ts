@@ -27,6 +27,17 @@ export interface RecentChallenge {
   ms?: number;
 }
 
+/** One move to a new step, from the step history (P9). The steps are the game's saved values (Hop's 10/5/2/3/4/200); turn them with stepOf. */
+export interface StepMove {
+  /** The saved value before; null when there was none (a first step). */
+  from: number | null;
+  to: number;
+  /** The NZ day, YYYY-MM-DD. */
+  day: string;
+  /** Worked out from old rounds, not seen as it happened, so the day is about right. */
+  estimated: boolean;
+}
+
 /** One pupil in one game. */
 export interface GameProgress {
   daysDone: number;
@@ -39,6 +50,8 @@ export interface GameProgress {
   since: string | null;
   /** Latest first, at most 10. */
   recent: RecentChallenge[];
+  /** The last 5 moves to a new step, newest first (P9); empty or missing before step history started. */
+  moves?: StepMove[];
 }
 
 /** Quick looks for one pupil, from the Training student row and the counted answers. */
@@ -82,6 +95,12 @@ export function parseGame(raw: unknown): GameProgress | null {
     if (typeof o.ms === 'number' && Number.isFinite(o.ms) && o.ms > 0) challenge.ms = o.ms;
     return challenge;
   });
+  const moves = (Array.isArray(r.moves) ? r.moves : []).map((m): StepMove | null => {
+    const o = object(m);
+    const d = day(o.at);
+    if (!d || typeof o.to !== 'number') return null;
+    return { from: typeof o.from === 'number' ? o.from : null, to: o.to, day: d, estimated: o.est === true };
+  });
   return {
     daysDone: whole(r.daysDone),
     lastDay: day(r.lastDay),
@@ -89,6 +108,7 @@ export function parseGame(raw: unknown): GameProgress | null {
     good: typeof r.good === 'number' && Number.isFinite(r.good) && r.good >= 0 ? Math.floor(r.good) : null,
     since: day(r.since),
     recent: recent.filter((c): c is RecentChallenge => c !== null),
+    moves: moves.filter((m): m is StepMove => m !== null),
   };
 }
 
