@@ -1,0 +1,203 @@
+/* The Progress tab. Colours are always paired with a mark or words, never colour alone. */
+.progress {
+  --pg-moving: #3b82f6;
+  --pg-stuck: #e11d48;
+  --pg-top: #1e40af;
+  --pg-quiet: #9ca3af;
+  --pg-rest: #e5e7eb;
+}
+.progress__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  margin-bottom: 10px;
+}
+.progress__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.progress__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.progress__key {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+.progress__key--moving { background: var(--pg-moving); }
+.progress__key--stuck { background: var(--pg-stuck); }
+.progress__key--top { background: var(--pg-top); }
+.progress__key--quiet { background: var(--pg-quiet); }
+.progress__key--rest { background: var(--pg-rest); }
+.progress__sorts {
+  display: inline-flex;
+  gap: 6px;
+}
+.progress__sort {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.progress__sort[aria-pressed='true'] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.progress__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.progress__table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 0.9rem;
+}
+.progress__table th,
+.progress__table td {
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--tint-hover);
+  white-space: nowrap;
+}
+.progress__table thead th {
+  color: var(--ink);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.progress__steps {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+/* The name column stays put while the rest scrolls sideways. */
+.progress__who {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  min-width: 150px;
+}
+.progress__name {
+  display: block;
+  font-weight: 800;
+}
+.progress__real {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+.progress__not-yet {
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.progress__cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 8px;
+}
+.progress__cell:hover {
+  background: var(--tint);
+}
+.progress__cell:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.progress__bar {
+  display: inline-flex;
+  gap: 2px;
+}
+.progress__box {
+  width: 12px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--pg-rest);
+}
+.progress__cell[data-state='moving'] .progress__box--on { background: var(--pg-moving); }
+.progress__cell[data-state='stuck'] .progress__box--on { background: var(--pg-stuck); }
+.progress__cell[data-state='top'] .progress__box--on { background: var(--pg-top); }
+.progress__cell[data-state='quiet'] .progress__box--on { background: var(--pg-quiet); }
+.progress__n {
+  font-weight: 800;
+  min-width: 1ch;
+}
+.progress__tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.progress__tag--stuck { background: #ffe4e6; color: #be123c; }
+.progress__tag--top { background: #dbeafe; color: var(--pg-top); }
+.progress__tag--quiet { background: var(--pg-rest); color: #4b5563; }
+
+/* A narrow screen: one card for each pupil, a line for each game. */
+@media (max-width: 699px) {
+  .progress__scroll { overflow-x: visible; }
+  .progress__table,
+  .progress__table tbody,
+  .progress__table tr,
+  .progress__table th.progress__who,
+  .progress__table td {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+  .progress__table thead { display: none; }
+  /* Games not played yet are left off a pupil's card. */
+  .progress__table td[data-none] { display: none; }
+  .progress__table tr {
+    margin-bottom: 12px;
+    padding: 6px 12px 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .progress__who { position: static; border-bottom: none; padding: 6px 0; }
+  .progress__table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--tint);
+  }
+  .progress__table td::before {
+    content: attr(data-label);
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+  }
+}
+
+/* On a wide screen the table may use more width than the other teacher pages, so more games fit without scrolling. */
+@media (min-width: 1320px) {
+  .progress {
+    position: relative;
+    left: 50%;
+    width: min(1480px, calc(100vw - 96px));
+    transform: translateX(-50%);
+  }
+}

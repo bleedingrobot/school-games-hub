@@ -122,7 +122,7 @@ describe('the teacher header', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Room 12' })).toBeInTheDocument();
     expect(screen.getByText('28 students')).toBeInTheDocument();
     expect(screen.getByText(/Code KM4.*\(asks you first\)/)).toBeInTheDocument();
-    expect(within(tabs()).getAllByRole('link').map((l) => l.textContent)).toEqual(['Today', 'Students', 'Maths', 'Games', 'Class set-up']);
+    expect(within(tabs()).getAllByRole('link').map((l) => l.textContent)).toEqual(['Today', 'Progress', 'Students', 'Maths', 'Games', 'Class set-up']);
     expect(within(tabs()).getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page');
   });
 

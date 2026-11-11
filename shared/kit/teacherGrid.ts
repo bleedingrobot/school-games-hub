@@ -139,6 +139,11 @@ export function schoolDaysSince(from: string, to: string): number {
   return n;
 }
 
+/** Distinct days among the challenges finished at `level`: the days on this step (the same count the same-level flag uses). */
+export function daysAtLevel(challenges: readonly Challenge[], level: number): number {
+  return new Set(challenges.filter((c) => c.level === level).map((c) => c.day)).size;
+}
+
 const percent = (share: number) => Math.round(share * 100);
 
 /** Every flag for one pupil. No flag means show nothing. */
@@ -146,7 +151,7 @@ export function stuckFlags(pupil: FlagInput, rules: FlagRules): Flag[] {
   const flags: Flag[] = [];
   for (const t of pupil.tracks) {
     if (t.level !== null && !t.top) {
-      const days = new Set(t.challenges.filter((c) => c.level === t.level).map((c) => c.day)).size;
+      const days = daysAtLevel(t.challenges, t.level);
       if (days >= rules.sameLevelDays) flags.push({ kind: 'same-level', track: t.id, reason: `${t.label}: ${days} days on ${t.levelLabel ?? `level ${t.level}`}`, quiet: false });
     }
     const latest = t.challenges.slice(0, rules.guessWindow);

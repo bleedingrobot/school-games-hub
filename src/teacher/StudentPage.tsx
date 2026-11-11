@@ -10,8 +10,8 @@
  *
  * Every action is checked by the database, which refuses a student who isn't in one of the teacher's classes.
  */
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
@@ -287,6 +287,8 @@ function GamesTable({ detail }: { detail: PersonDetail }) {
 /** The games with their own student panel: a one-line summary each, and the panel itself only when the line is opened. */
 function GameLines({ student }: { student: string }) {
   const games = ALL_GAMES.filter((g) => g.teacher?.StudentPanel);
+  const [params] = useSearchParams();
+  const openGame = params.get('game');
   const [summaries, setSummaries] = useState<Record<string, string | null | undefined>>({});
 
   useEffect(() => {
@@ -315,7 +317,7 @@ function GameLines({ student }: { student: string }) {
     <>
       <ul className="game-lines">
         {played.map((game) => (
-          <GameLine key={game.id} game={game} student={student} summary={summaries[game.id]} />
+          <GameLine key={game.id} game={game} student={student} summary={summaries[game.id]} startOpen={game.id === openGame} />
         ))}
       </ul>
       {notPlayed.length > 0 && (
@@ -325,12 +327,17 @@ function GameLines({ student }: { student: string }) {
   );
 }
 
-function GameLine({ game, student, summary }: { game: GameDefinition; student: string; summary: string | null | undefined }) {
-  const [open, setOpen] = useState(false);
+function GameLine({ game, student, summary, startOpen }: { game: GameDefinition; student: string; summary: string | null | undefined; startOpen?: boolean }) {
+  const [open, setOpen] = useState(!!startOpen);
+  const line = useRef<HTMLLIElement>(null);
+  // Coming from the Progress tab: this game's line is open and in view.
+  useEffect(() => {
+    if (startOpen) line.current?.scrollIntoView?.({ block: 'start' });
+  }, [startOpen]);
   const Panel = game.teacher!.StudentPanel!;
   return (
-    <li>
-      <details className="game-line" onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
+    <li ref={line}>
+      <details className="game-line" open={startOpen || undefined} onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}>
         <summary className="game-line__summary">
           <span className="game-line__name">{game.name}</span>
           {summary && <span className="game-line__what">{summary}</span>}
