@@ -654,7 +654,8 @@ var BandedPack = class {
 			key: q.factKey,
 			correct,
 			ms: Math.round(ms),
-			at
+			at,
+			...correct ? {} : { given: answer }
 		});
 		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
 		return {
@@ -2552,7 +2553,8 @@ var TimesTables = class {
 			key: q.factKey,
 			correct,
 			ms: Math.round(ms),
-			at
+			at,
+			...correct ? {} : { given: answer }
 		});
 		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
 		return {
@@ -8067,6 +8069,14 @@ async function batchIdFor$1(text) {
 	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
 	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
+/** `given` passes through only as a finite number or a string of at most 20 characters; anything else is left off. */
+function cleanGiven(a) {
+	const { given, ...rest } = a;
+	return typeof given === "number" && Number.isFinite(given) || typeof given === "string" && given.length > 0 && given.length <= 20 ? {
+		...rest,
+		given
+	} : rest;
+}
 /**
 * Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
 * split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
@@ -8086,7 +8096,7 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 			pack,
 			batch_id: await batchId(once, pack),
 			answers: group.map((a) => ({
-				...a,
+				...cleanGiven(a),
 				ms: keptMs(a.ms)
 			})),
 			quick_ms: quickMs ?? quickMsForPack(pack),

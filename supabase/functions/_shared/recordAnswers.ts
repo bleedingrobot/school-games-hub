@@ -13,6 +13,13 @@ export async function batchIdFor(text: string): Promise<string> {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
+/** `given` passes through only as a finite number or a string of at most 20 characters; anything else is left off. */
+export function cleanGiven(a: FactAnswer): FactAnswer {
+  const { given, ...rest } = a;
+  const ok = (typeof given === 'number' && Number.isFinite(given)) || (typeof given === 'string' && given.length > 0 && given.length <= 20);
+  return ok ? { ...rest, given } : rest;
+}
+
 export interface Recorded {
   /** Answers the records took for the first time. */
   saved: number;
@@ -50,7 +57,7 @@ export async function recordMathsAnswers(
         pack,
         batch_id: await batchId(once, pack),
         // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
-        answers: group.map((a) => ({ ...a, ms: keptMs(a.ms) })),
+        answers: group.map((a) => ({ ...cleanGiven(a), ms: keptMs(a.ms) })),
         quick_ms: quickMs ?? quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,

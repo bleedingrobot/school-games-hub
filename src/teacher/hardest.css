@@ -30,3 +30,4 @@
 .hardest__table td:nth-child(3) {
   font-weight: 600;
 }
+.hardest__wrong { display: block; font-weight: 400; font-size: 0.85em; }

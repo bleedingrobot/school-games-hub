@@ -51,6 +51,7 @@ function parseFact(raw: unknown): FactStats | null {
     box: n(r.box),
     lastSeen: n(r.lastSeen),
     quickDays: Array.isArray(r.quickDays) ? r.quickDays.filter((d): d is string => typeof d === 'string') : [],
+    wrong: Array.isArray(r.wrong) ? r.wrong.filter((w): w is string | number => typeof w === 'string' || typeof w === 'number').map(String).slice(-3) : [],
   };
 }
 

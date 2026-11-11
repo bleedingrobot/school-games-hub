@@ -3,7 +3,8 @@
  * (shared/kit/teacherGrid.ts with the numbers in ../foundational/config.ts), so the table and the flags agree.
  */
 import { daysAtLevel, schoolDaysSince } from '../../../shared/kit/teacherGrid';
-import { mastery, type FactStats } from '../../../shared/maths/leitner';
+import type { ProgressCell } from '../../games/types';
+import { mastery, nzDay, type FactStats } from '../../../shared/maths/leitner';
 import { QUICK_LOOKS_ID, FLAG_RULES, GAMES, NEARLY_SHARE, stepOf } from '../foundational/config';
 import { stepKeys as hopKeys, type HopStep } from '../../../shared/hop/round';
 import { levelKeys as keroraKeys, type Level as KeroraLevel } from '../../../shared/korora/round';
@@ -16,7 +17,7 @@ import { GOOD_TO_PASS as LIZARD_GOOD } from '../../../shared/lizard/config';
 import { GOOD_TO_PASS as PIGEON_GOOD } from '../../../shared/pigeon/config';
 import { GOOD_TO_PASS as SWAMPHEN_GOOD } from '../../../shared/swamphen/config';
 import { STAGES } from '../../../shared/subitising/config';
-import type { FoundationalGameId, GameProgress, QuickLooksProgress, RecentChallenge } from '../../data/foundational';
+import type { FoundationalGameId, GameProgress, QuickLooksProgress, RecentChallenge, StepMove } from '../../data/foundational';
 
 export type CellStateName = 'moving' | 'nearly' | 'stuck' | 'top' | 'quiet' | 'none';
 
@@ -142,4 +143,47 @@ export function quickCellState(q: QuickLooksProgress | null | undefined, today: 
   return { state: q.finished >= of ? 'top' : 'moving', step, daysOnStep: 0 };
 }
 
+/**
+ * An "Other games" cell (a game with levels that is not a stepped lesson): the number, and quiet after the same school days as
+ * the other games. No stuck, nearly or top rule. `of` is the game's top, which draws a bar; without it there is just the number.
+ */
+export function otherCellState(cell: ProgressCell | undefined, today: string): CellState {
+  if (!cell) return none;
+  const step = { n: cell.value, of: cell.of ?? 0, name: '' };
+  const last = cell.lastPlayed ? nzDay(Date.parse(cell.lastPlayed)) : null;
+  if (last && schoolDaysSince(last, today) >= FLAG_RULES.quietSchoolDays) return { state: 'quiet', step, daysOnStep: 0 };
+  return { state: 'moving', step, daysOnStep: 0 };
+}
+
 export { QUICK_LOOKS_ID };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "6 Nov" from an NZ day (YYYY-MM-DD). */
+export function shortDay(iso: string): string {
+  const [, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1] ?? ''}`.trim();
+}
+
+/** "up to step 4 on 6 Nov" for the newest move ("about 6 Nov" when it was worked out from old rounds); null when the game has none. */
+export function lastMoveWords(game: FoundationalGameId, moves: readonly StepMove[] | undefined): string | null {
+  const m = moves?.[0];
+  const to = m ? stepOf(game, m.to) : null;
+  if (!m || !to) return null;
+  const from = m.from === null ? null : stepOf(game, m.from);
+  const when = `${m.estimated ? 'about ' : 'on '}${shortDay(m.day)}`;
+  if (!from) return `started on step ${to.n} ${when}`;
+  return `${to.n > from.n ? 'up' : 'back'} to step ${to.n} ${when}`;
+}
+
+/** The small timeline, oldest first: "step 2 about 3 Nov → step 3 on 5 Nov"; null when the game has no moves. */
+export function timelineWords(game: FoundationalGameId, moves: readonly StepMove[] | undefined): string | null {
+  const parts = [...(moves ?? [])]
+    .reverse()
+    .map((m) => {
+      const s = stepOf(game, m.to);
+      return s ? `step ${s.n} ${m.estimated ? 'about' : 'on'} ${shortDay(m.day)}` : null;
+    })
+    .filter((x): x is string => x !== null);
+  return parts.length > 0 ? parts.join(' → ') : null;
+}

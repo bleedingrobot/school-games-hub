@@ -685,7 +685,7 @@ async function mark(services: IslesServices, player: string, set: QuestionSet, a
   if (claimed === 'busy') return busy();
   if (!claimed) return no(400, "You've already answered that one.", { code: 'answered' });
   try {
-    await services.recordAnswers(player, once, [{ key: marked.key, correct: right, ms: a.ms, at: services.now() }]);
+    await services.recordAnswers(player, once, [{ key: marked.key, correct: right, ms: a.ms, at: services.now(), ...(right ? {} : { given: a.value }) }]);
   } catch {
     // The maths records are a bonus: the game goes on without them.
   }

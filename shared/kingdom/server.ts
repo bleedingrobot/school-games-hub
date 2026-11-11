@@ -121,7 +121,7 @@ export async function handleKingdom(services: KingdomServices, player: string, b
     if (!claimed) return no(400, "You've already answered that one.");
     const ms = typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? Math.min(body.ms, MAX_ANSWER_MS) : MAX_ANSWER_MS;
     try {
-      await services.recordAnswers(player, `kingdom:${reign.seed}:${year}:${slot}`, [{ key: marked.key, correct: right, ms: Math.round(ms), at: services.now() }]);
+      await services.recordAnswers(player, `kingdom:${reign.seed}:${year}:${slot}`, [{ key: marked.key, correct: right, ms: Math.round(ms), at: services.now(), ...(right ? {} : { given: value }) }]);
     } catch {
       // The maths records are a bonus: the game goes on without them.
     }

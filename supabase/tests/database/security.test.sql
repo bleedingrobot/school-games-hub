@@ -89,6 +89,7 @@ $$, array[
   'teacher_set_swamphen', 'teacher_swamphen_class', 'teacher_swamphen_student',
   'teacher_set_robin', 'teacher_robin_class', 'teacher_robin_student',
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
+  'teacher_progress_other_games',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',
   'teacher_class_badges', 'teacher_renew_badge',

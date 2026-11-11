@@ -133,6 +133,11 @@ these in your plan.
    send `daysDone`, `lastDay`, `level` (the saved step), `good`, `since` and `recent` exactly as the other step games do,
    with `f` (`first_right`) and `ms` (median tap time on rounds with no wrong taps) on each recent round
    (20261111000500 is the pattern). These give the teacher "% right first try · usually 3 s". Check no open branch is changing the same function; if one is, go after it.
+   Also add your progress table to the step history (migration 20261111000700): an `after update` trigger on it,
+   `create trigger <game>_step_changes after update on public.<game>_progress for each row when (old.<col> is distinct from new.<col>) execute function public.step_changes_log('<col>', '<game>')`,
+   where `<col>` is the column that holds the saved step (`step` or `reached`). It records each move up or down in `step_changes`, and the same
+   migration's `teacher_foundational_class` sends them as `moves` (add `'moves'` to your game's block as the other games have it; the
+   teacher's pupil page shows "up to step 4 on 6 Nov" and a small timeline). Steps are kept with the progress through New Season, so there is no season hook.
 5. "Nearly ready" (green ↑): add your game to `GOOD_TO_PASS` in `src/teacher/progress/state.ts` (games that move up on good
    goes, taking the number from your shared config), or to `STEP_KEYS` (games that move up when a step's facts are Secure).
 6. The pupil's usual slip comes from the server: `teacher_<game>_student` returns `slip` with the kit's `topSlip` rule (commonest of the
@@ -140,13 +145,17 @@ these in your plan.
 7. Test it in `src/teacher/progress/progress.test.tsx`: your game gets a column, the right step shows, and a pupil with good
    goes one short shows "nearly".
 
-**Any other game with levels or a ladder:** plan how a teacher sees each pupil's place in it. Name the levels as steps where
-they are steps, and save the level per round so it can join the Progress tab later (card P11 adds a `progressColumns` entry on
-the game's `teacher` part for this; follow it once it is live).
+**Any other game with levels or a ladder (not a stepped lesson):** it gets a column in the Progress table's "Other games" group
+with one number a pupil (the level passed, the hero level, the stars), "zz" when not played for the quiet window, and no stuck or
+nearly rule. Add `progressColumns: { note: 'level passed', useCells }` to the game's `teacher` part (`TeacherContract` in
+`src/games/types.ts`). Copy `src/games/diamond/teacher.ts` (`useDiamondCells`, with a top so a bar is drawn) or
+`src/games/bond-match/teacher.ts` (no top, just the number) and the one line in the game's `index.tsx`. The column shows only while
+the game's own teacher `switch` is on for the class. The number comes from `src/data/otherGames.ts`, which reads
+`teacher_progress_other_games(class)` (migration 20261111000800): add your game as one more `union all` block in a new migration
+(copy the newest body of that function) giving `{ student, game, value, at }`, and save when the pupil last played. Name levels as
+steps where they are steps.
 
-**Coming from the same plan (follow each card once it is live, and keep this section current):** step history in a `step_changes` table (P9), the value given on a wrong answer (`given` on each
-`FactAnswer`, P10), and other games' columns (P11). A card that changes what a new game must do updates this section in its
-own PR.
+**Keep this section current.** A change to what a new game must save or add to show on the Progress tab updates this section in its own PR.
 
 ---
 
@@ -254,7 +263,7 @@ Maths is the most important shared system. A student has **one maths focus** at 
 6. **Record every marked answer** so it counts towards the student's records, their place on the ladder, the teacher's skill map and the focus results:
    - **Use `recordMathsAnswers(rpc, player, answers, once, '<name>')`** from `_shared/recordAnswers.ts`. `once` is something unique to this save (the run's seed and the question's slot), so a save sent twice counts once. It does everything below, and never throws.
    - What it does, so you don't write it again: splits the answers by pack (`groupByPack`); calls `record_fact_answers` once per pack with that pack's quick time (`quickMsForPack`, **not** `QUICK_MS`: the `generated` pack's is 8 s), `FLUENT_DAYS` and `TOP_BOX`; and, for a batch the records took for the first time, adds them to the teacher's focus results (`countForFocuses`).
-   - `answers` are `FactAnswer`s: `{ key, correct, ms, at }`, where `key` is the question's `factKey`. `recordMathsAnswers` keeps each time to at most two minutes (`keptMs`).
+   - `answers` are `FactAnswer`s: `{ key, correct, ms, at }`, where `key` is the question's `factKey`. `recordMathsAnswers` keeps each time to at most two minutes (`keptMs`). Fill the optional `given` on each `FactAnswer` with the pupil's answer (at least when it was wrong), so the teacher's views can show "Often answers 54".
 7. **No warm-up yet? Do nothing special.** A student who hasn't done the placement warm-up starts at the first skill and climbs from their own answers (changed 20 Oct 2026). The home page's path card already offers the warm-up. Your game doesn't need to ask or block.
 8. **A maths switch for your game, if it has optional maths:** a column `<game>_maths text default 'choose' check (… in ('off','choose','on'))` and `parseMathsSwitch()` from `shared/space/mathsSwitch.ts` (Marble copies Mission Control here). If maths is the whole game, you don't need one.
 9. **Teacher settings page:** only if your game needs settings of its own. Make `src/pages/Teacher<Game>.tsx` (copy `TeacherMarble.tsx`), name it as `teacher.Settings` in your definition (it is given the class as `classId`), build it from the shared controls in `src/teacher/Settings.tsx`, and save through `teacher_set_<game>()`. The focus itself is set on the shared **Set focus** page. Never add focus controls of your own.

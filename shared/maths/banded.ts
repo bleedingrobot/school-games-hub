@@ -344,7 +344,7 @@ export class BandedPack implements SkillPack {
     const at = this.now();
     const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
     this.records.set(q.factKey, after);
-    for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at });
+    for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at, ...(correct ? {} : { given: answer }) });
     if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
     return { correct, fact: this.factText(q), boxBefore: before.box, boxAfter: after.box };
   }

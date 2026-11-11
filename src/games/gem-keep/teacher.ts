@@ -1,5 +1,6 @@
 import { readSettings } from '../../data/classSettings';
 import { useSetting } from '../../teacher/useSetting';
+import { useOtherGameCells } from '../../data/otherGames';
 
 /**
  * Gem Keep on the teacher's Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class. It is always on, so it has no
@@ -44,3 +45,6 @@ export function useGemKeepSummary(classId: string): string | null {
   if (brief.failed) return 'Couldn’t load';
   return brief.value && gemKeepSummary(brief.value);
 }
+
+/** The Progress tab's Gem Keep column: the highest level won. */
+export const useGemKeepCells = (classId: string) => useOtherGameCells(classId, 'gem-keep');

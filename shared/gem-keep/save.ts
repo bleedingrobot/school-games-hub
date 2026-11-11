@@ -217,7 +217,7 @@ function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<Answer
     if (!isInt(a.ms, MIN_AVG_MS, 3_600_000) || !isInt(a.at, nowMs - 60 * 86_400_000, nowMs + 86_400_000)) continue;
     const correct = a.parts === undefined ? oldStyleCorrect(a, nowMs) : markShown(a, a.key);
     if (correct === null) continue;
-    answers.push({ key: a.key, correct, ms: keptMs(a.ms), at: a.at });
+    answers.push({ key: a.key, correct, ms: keptMs(a.ms), at: a.at, ...(!correct && typeof a.given === 'number' && Number.isFinite(a.given) ? { given: a.given } : {}) });
   }
   return { ok: true, item: { type: 'answers', pack, batchId: x.batchId, answers } };
 }

@@ -43,6 +43,10 @@ the extra data that makes that sharper.
 - P3 Ladder board: PR #395, 11 Nov 2026.
 - P4, P5, P6 and P7 together: PR #396, 11 Nov 2026. P4 counts days on a step including today (on it since 6 Nov, today 11 Nov, is 6 days).
 - P8 Right first try and time per go: PR #398, 11 Nov 2026. `f` comes from `first_right`, so only Tūī, Robin, Parrot, Lizard, Pigeon and Swamp Hen have it. Taps don't save the answer, so `ms` uses only rounds with no wrong taps.
+- P9 Step history, P10 Common wrong answers and P11 Other games together: PR #399, 11 Nov 2026.
+  - P9: `step_changes` starts from the rounds still kept (marked estimated). New Season does not clear it, because steps aren't cleared either. Clearing it at year end would need James's OK (a `season_fn` hook on the 11 games).
+  - P10: games that send `given` are the shared question packs (QuestionModal), Gem Keep, Space, Monsters, Dragon Maths' banker, Diamond, Isles, Toon Flap, Royal Decree and Kingdom Keeper. The Foundational tap games, Archery and Trader don't yet. Gem Keep, Dragon Maths and Monsters' hardest rows don't show the class's wrong answer yet.
+  - P11: one read, `teacher_progress_other_games`, for Gem Keep, Diamond Drop, Dragon Maths, Bond Match and Toon Flap.
 - P12 Game development guide section 1b: PR #397, 11 Nov 2026.
 
 ## Decided

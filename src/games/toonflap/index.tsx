@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { useToonFlapEnabled } from './switch';
-import { saveToonFlapEnabled, TOONFLAP_ABOUT, useToonFlapClassSwitch, useToonFlapSummary } from './teacher';
+import { saveToonFlapEnabled, TOONFLAP_ABOUT, useToonFlapCells, useToonFlapClassSwitch, useToonFlapSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const ToonFlapPlay = lazy(() => import('./ToonFlapPlay').then((m) => ({ default: m.ToonFlapPlay })));
@@ -49,6 +49,7 @@ export const toonFlap: GameDefinition = {
   teacher: {
     switch: { useValue: useToonFlapClassSwitch, save: saveToonFlapEnabled, about: TOONFLAP_ABOUT },
     useSummary: useToonFlapSummary,
+    progressColumns: { note: 'levels finished', useCells: useToonFlapCells },
     Settings: ToonFlapTeacherSettings,
     StudentPanel: ToonFlapStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherToonFlap').then((m) => m.toonFlapStudentSummary(student)),

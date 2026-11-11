@@ -643,7 +643,8 @@ var BandedPack = class {
 			key: q.factKey,
 			correct,
 			ms: Math.round(ms),
-			at
+			at,
+			...correct ? {} : { given: answer }
 		});
 		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
 		return {
@@ -36928,7 +36929,8 @@ function checkSave(prev, raw, nowMs, player = "") {
 			key: q.key,
 			correct,
 			ms: q.ms,
-			at: q.at
+			at: q.at,
+			...correct ? {} : { given: q.given }
 		});
 	}
 	summary.owned = w.owned.length;

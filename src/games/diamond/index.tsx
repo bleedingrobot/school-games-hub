@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { saveDiamondEnabled } from '../../data/diamond';
 import type { GameDefinition } from '../types';
 import { useDiamondEnabled } from './switch';
-import { DIAMOND_ABOUT, useDiamondClassSwitch, useDiamondSummary } from './teacher';
+import { DIAMOND_ABOUT, useDiamondCells, useDiamondClassSwitch, useDiamondSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const DiamondPlay = lazy(() => import('./DiamondPlay').then((m) => ({ default: m.DiamondPlay })));
@@ -41,6 +41,7 @@ export const diamondDrop: GameDefinition = {
   teacher: {
     switch: { useValue: useDiamondClassSwitch, save: (on, classId) => saveDiamondEnabled(on, classId), about: DIAMOND_ABOUT },
     useSummary: useDiamondSummary,
+    progressColumns: { note: 'level passed', useCells: useDiamondCells },
     StudentPanel: DiamondStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherDiamond').then((m) => m.diamondStudentSummary(student)),
   },

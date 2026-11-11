@@ -677,7 +677,8 @@ var BandedPack = class {
 			key: q.factKey,
 			correct,
 			ms: Math.round(ms),
-			at
+			at,
+			...correct ? {} : { given: answer }
 		});
 		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
 		return {
@@ -3204,7 +3205,8 @@ var TimesTables = class {
 			key: q.factKey,
 			correct,
 			ms: Math.round(ms),
-			at
+			at,
+			...correct ? {} : { given: answer }
 		});
 		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
 		return {
@@ -11167,7 +11169,8 @@ async function bank(c) {
 			correct: right,
 			ms,
 			at: c.now,
-			pack
+			pack,
+			...right ? {} : { given: answer }
 		}] : [],
 		summary: {
 			interest: extraGold,

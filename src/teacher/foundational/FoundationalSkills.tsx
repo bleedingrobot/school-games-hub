@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { mastery } from '../../../shared/maths/leitner';
+import { mastery, wrongNote } from '../../../shared/maths/leitner';
 import { LEVELS, type CellLevel } from '../../../shared/maths/skillMap';
 import { STAGES } from '../../../shared/subitising/config';
 import { foundationalClass, type FoundationalClass } from '../../data/foundational';
@@ -135,6 +135,7 @@ function Detail({
                 <th scope="col">How well</th>
                 <th scope="col">Right</th>
                 <th scope="col">Asked</th>
+                <th scope="col">Wrong answers</th>
               </tr>
             </thead>
             <tbody>
@@ -153,6 +154,7 @@ function Detail({
                     </td>
                     <td>{stats?.correct ?? 0}</td>
                     <td>{stats?.attempts ?? 0}</td>
+                    <td>{wrongNote(stats?.wrong) || '–'}</td>
                   </tr>
                 );
               })}
