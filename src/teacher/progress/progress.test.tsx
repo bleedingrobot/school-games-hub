@@ -1,14 +1,17 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { FoundationalClass, GameProgress } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
-import { buildTable } from './Progress';
+import { buildTable, filterRows, showCounts } from './Progress';
+import Progress from './Progress';
 import { buildBoard } from './LadderBoard';
 import { ProgressTable } from './ProgressTable';
 import { cellState } from './state';
 import { stepKeys as hopKeys } from '../../../shared/hop/round';
 
+vi.mock('../TeacherClass', () => ({ useTeacherClass: () => ({ current: { id: 'c', name: '3B' } }) }));
+vi.mock('../foundational/alerts', () => ({ enabledGames: async () => ['robin'] }));
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
 
 const TODAY = '2026-11-11';
@@ -100,5 +103,27 @@ describe('Progress', () => {
     const robinBoard = buildBoard(mk([1, 2, 3, 4, 5, 6], 'robin'), 'robin', TODAY);
     expect(robinBoard.map((c) => c.pupils.map((p) => p.name))).toEqual([['Nobody'], ['P0'], ['P1'], ['P2'], ['P3'], ['P4'], ['P5']]);
     expect(robinBoard[3].sub).toBe('Give 6 to 10');
+  });
+
+  it('counts pupils for each pill and ?show= keeps only those pupils', () => {
+    const { rows } = buildTable(data, ['robin'], TODAY);
+    expect(showCounts(rows, null)).toEqual({ stuck: 1, nearly: 0, top: 1, quiet: 1 });
+    expect(showCounts(rows, 'hop')).toEqual({ stuck: 0, nearly: 0, top: 0, quiet: 0 });
+    expect(filterRows(rows, 'stuck', null).map((r) => r.name)).toEqual(['Pupil stuck']);
+    expect(filterRows(rows, 'stuck', 'robin')).toHaveLength(1);
+    expect(filterRows(rows, null, null)).toHaveLength(4);
+  });
+
+  it('the page at ?show=stuck&game=robin shows only the stuck pupil, and a pill toggles it off', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher/c/progress?show=stuck&game=robin']}>
+        <Progress />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Pupil stuck');
+    expect(screen.queryByText('Pupil top')).toBeNull();
+    expect(screen.getByRole('button', { name: '1 stuck' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '1 stuck' }));
+    expect(await screen.findByText('Pupil top')).toBeTruthy();
   });
 });

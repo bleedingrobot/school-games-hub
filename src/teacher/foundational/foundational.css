@@ -43,8 +43,7 @@
   line-height: 1.2;
   max-width: 110px;
 }
-.fg__table thead .fg__who,
-.fg__table thead .fg__flags {
+.fg__table thead .fg__who {
   text-align: left;
 }
 /* The first column stays put while the rest scrolls sideways. */
@@ -118,10 +117,41 @@
   background: #86efac;
   color: #14532d;
 }
-.fg__flags {
-  text-align: left;
-  min-width: 190px;
-  max-width: 280px;
+.fg__flagbtn {
+  min-height: 32px;
+  min-width: 44px;
+  margin-top: 2px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: #fde68a;
+  color: #713f12;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fg__flagbtn[data-quiet] {
+  background: var(--line, #ddd);
+  color: var(--ink-soft);
+}
+.fg__flagbtn:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 1px;
+}
+.fg__flagpanel {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--line, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.fg__flagtitle {
+  margin: 0;
+  font-size: 1rem;
 }
 .fg__flaglist {
   margin: 0;

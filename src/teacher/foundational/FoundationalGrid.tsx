@@ -1,8 +1,9 @@
 /**
  * The Foundational skills grid (R7 plan, 3.1): one row for each pupil, one column for each idea, a mark and a colour in every
- * cell (the skill map's own four words, so the colour is never the only clue), and a Flags column that says in words what a
- * pupil is stuck on. It only draws the rows it is given; the page that loads them and mounts it is Stage 2 of R7.
+ * cell (the skill map's own four words, so the colour is never the only clue), and a small "! 3" button by the pupil's name that
+ * opens, in words, what they are stuck on. It only draws the rows it is given; the page that loads them and mounts it is Stage 2 of R7.
  */
+import { useState } from 'react';
 import { LEVELS } from '../../../shared/maths/skillMap';
 import { IDEAS } from './ideas';
 import type { PupilRow } from './flags';
@@ -27,6 +28,8 @@ export function FoundationalGrid({
   picked?: PickedCell | null;
   onPick?: (cell: PickedCell | null) => void;
 }) {
+  const [flagsFor, setFlagsFor] = useState<string | null>(null);
+  const flagged = rows.find((r) => r.id === flagsFor);
   return (
     <div className="fg">
       <ul className="fg__legend" aria-label="Key">
@@ -52,9 +55,6 @@ export function FoundationalGrid({
                   {idea.label}
                 </th>
               ))}
-              <th scope="col" className="fg__flags">
-                Flags
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -63,6 +63,18 @@ export function FoundationalGrid({
                 <th scope="row" className="fg__who">
                   <span className="fg__name">{row.name}</span>
                   {row.realName && <span className="fg__real">{row.realName}</span>}
+                  {row.flags.length > 0 && (
+                    <button
+                      type="button"
+                      className="fg__flagbtn"
+                      aria-expanded={flagsFor === row.id}
+                      aria-label={`${row.flags.length} flag${row.flags.length === 1 ? '' : 's'} for ${row.name}`}
+                      data-quiet={row.flags.every((f) => f.quiet) || undefined}
+                      onClick={() => setFlagsFor(flagsFor === row.id ? null : row.id)}
+                    >
+                      <span aria-hidden="true">! {row.flags.length}</span>
+                    </button>
+                  )}
                 </th>
                 {row.cells.map((cell) => (
                   <td key={cell.idea.id} className="fg__cell">
@@ -99,27 +111,29 @@ export function FoundationalGrid({
                     })()}
                   </td>
                 ))}
-                <td className="fg__flags">
-                  {row.flags.length === 0 ? (
-                    <span className="sr-only">{row.name}: no flags</span>
-                  ) : (
-                    <ul className="fg__flaglist">
-                      {row.flags.map((flag) => (
-                        <li key={`${flag.kind}:${flag.track ?? ''}:${flag.reason}`} data-quiet={flag.quiet || undefined}>
-                          <span className="fg__bang" aria-hidden="true">
-                            !
-                          </span>
-                          <span>{flag.reason}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {flagged && (
+        <section className="fg__flagpanel" aria-label={`Flags for ${flagged.name}`}>
+          <h3 className="fg__flagtitle">{flagged.name}</h3>
+          <ul className="fg__flaglist">
+            {flagged.flags.map((flag) => (
+              <li key={`${flag.kind}:${flag.track ?? ''}:${flag.reason}`} data-quiet={flag.quiet || undefined}>
+                <span className="fg__bang" aria-hidden="true">
+                  !
+                </span>
+                <span>{flag.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="button button--light-outline" onClick={() => setFlagsFor(null)}>
+            Close
+          </button>
+        </section>
+      )}
     </div>
   );
 }

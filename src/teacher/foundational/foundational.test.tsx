@@ -58,6 +58,19 @@ describe('Foundational grid', () => {
     const [alert] = await foundationalAlerts('hop', 'c');
     expect(alert.text).toContain('Hop: 5 pupils on the same step');
     expect(alert.text).toContain('(Kiwi Fern, Tui Moss, Weka Reed and 2 more)');
+    expect(alert.section).toBe('progress?show=stuck&game=hop');
+  });
+
+  it('keeps flags out of a column: a "! N" button by the name opens the list and closes again', () => {
+    render(<FoundationalGrid rows={classRows(data, '2026-11-09')} className="3B" />);
+    expect(screen.queryByRole('columnheader', { name: 'Flags' })).toBeNull();
+    const button = screen.getAllByRole('button', { name: /flags? for Kiwi Fern/ })[0];
+    expect(button).toHaveTextContent(/^! \d+$/);
+    expect(screen.queryByRole('region', { name: 'Flags for Kiwi Fern' })).toBeNull();
+    fireEvent.click(button);
+    expect(screen.getByRole('region', { name: 'Flags for Kiwi Fern' })).toHaveTextContent(/6 days on Step 2/);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('region', { name: 'Flags for Kiwi Fern' })).toBeNull();
   });
 });
 
