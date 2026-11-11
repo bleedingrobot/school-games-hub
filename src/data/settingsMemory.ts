@@ -11,6 +11,8 @@
 export type SettingsRow = Record<string, unknown>;
 
 export const SETTINGS_KEEP_MS = 5 * 60 * 1000;
+/** The pupil's home page wants a fresher row than other pages: it re-reads when the remembered one is older than this. */
+export const FRESH_HOME_MS = 30_000;
 
 let kept: { row: SettingsRow; at: number } | null = null;
 let pending: Promise<SettingsRow | null> | null = null;
@@ -32,10 +34,13 @@ function watchTab() {
   });
 }
 
-/** The remembered row if it is less than 5 minutes old; otherwise `read` is called (once, however many callers ask). */
-export function rememberedSettings(read: () => Promise<SettingsRow | null>): Promise<SettingsRow | null> {
+/** The remembered row if it is younger than `maxAgeMs` (5 minutes unless said); otherwise `read` is called (once, however many callers ask). */
+export function rememberedSettings(
+  read: () => Promise<SettingsRow | null>,
+  maxAgeMs: number = SETTINGS_KEEP_MS,
+): Promise<SettingsRow | null> {
   watchTab();
-  if (kept && Date.now() - kept.at < SETTINGS_KEEP_MS) return Promise.resolve(kept.row);
+  if (kept && Date.now() - kept.at < maxAgeMs) return Promise.resolve(kept.row);
   if (pending) return pending;
   const mine = generation;
   const request = read().then(
@@ -59,4 +64,23 @@ export function forgetSettings(): void {
   generation += 1;
   kept = null;
   pending = null;
+}
+
+/** Forgets the remembered row only if it is older than `maxAgeMs` (the home page uses FRESH_HOME_MS). Returns whether it did. */
+export function forgetSettingsOlderThan(maxAgeMs: number): boolean {
+  if (!kept || Date.now() - kept.at < maxAgeMs) return false;
+  forgetSettings();
+  return true;
+}
+
+/**
+ * Puts a freshly read row in place of the remembered one. Returns true only if a value differs, so the caller can leave the
+ * screen alone when nothing changed (the remembered row is still marked as just read).
+ */
+export function replaceSettingsIfChanged(row: SettingsRow): boolean {
+  const changed = !kept || JSON.stringify(kept.row) !== JSON.stringify(row);
+  if (changed) generation += 1;
+  pending = null;
+  kept = { row, at: Date.now() };
+  return changed;
 }

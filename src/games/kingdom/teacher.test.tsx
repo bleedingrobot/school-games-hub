@@ -32,7 +32,7 @@ describe('the Kingdom Keeper row on the Games table', () => {
     expect(on).toHaveAttribute('aria-checked', 'false');
     await user.click(on);
     expect(kingdom.saveKingdomEnabled).toHaveBeenCalledWith(true, 'c12');
-    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
+    expect(await screen.findByText(/^Saved ✓/)).toBeInTheDocument();
     await user.click(on);
     expect(kingdom.saveKingdomEnabled).toHaveBeenLastCalledWith(false, 'c12');
   });

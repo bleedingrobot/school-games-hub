@@ -39,7 +39,7 @@ describe('the Archery Challenge row on the Games table', () => {
     expect(on).toHaveAttribute('aria-checked', 'false');
     await user.click(on);
     expect(archery.saveArcheryEnabled).toHaveBeenCalledWith(true, 'c12');
-    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
+    expect(await screen.findByText(/^Saved ✓/)).toBeInTheDocument();
     await user.click(on);
     expect(archery.saveArcheryEnabled).toHaveBeenLastCalledWith(false, 'c12');
   });

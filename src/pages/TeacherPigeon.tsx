@@ -22,7 +22,7 @@ export function PigeonTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Branch help"
+        label="Help"
         about="How many numbers are marked on the branch for each go."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

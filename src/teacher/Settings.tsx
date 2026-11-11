@@ -13,6 +13,10 @@ import './settings.css';
 export { useSetting } from './useSetting';
 
 const SAVED_MS = 2000;
+const SAVED_LONG_MS = 3000;
+
+/** For class switches pupils see on their home page: says when, and stays up a second longer. */
+export const PUPILS_SEE_IT = 'Saved ✓ Pupils see it when their home page next opens.';
 
 export const settingErrorText = (error: unknown) =>
   error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
@@ -20,29 +24,29 @@ export const settingErrorText = (error: unknown) =>
 type Status = { kind: 'saving' | 'saved' | 'error'; text: string } | null;
 
 /** The one-line status every control shows: Saving…, Saved ✓ (gone after 2 s), or what went wrong. */
-function useStatus(loadFailed: boolean) {
+function useStatus(loadFailed: boolean, savedText?: string) {
   const [status, setStatus] = useState<Status>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   const set = (next: Status) => {
     clearTimeout(timer.current);
     setStatus(next);
-    if (next?.kind === 'saved') timer.current = setTimeout(() => setStatus(null), SAVED_MS);
+    if (next?.kind === 'saved') timer.current = setTimeout(() => setStatus(null), savedText ? SAVED_LONG_MS : SAVED_MS);
   };
   return {
     status: status ?? (loadFailed ? ({ kind: 'error', text: 'We couldn’t load this setting.' } as const) : null),
     saving: () => set({ kind: 'saving', text: 'Saving…' }),
-    saved: () => set({ kind: 'saved', text: 'Saved ✓' }),
+    saved: () => set({ kind: 'saved', text: savedText ?? 'Saved ✓' }),
     failed: (error: unknown) => set({ kind: 'error', text: settingErrorText(error) }),
     say: (text: string) => set({ kind: 'error', text }),
   };
 }
 
 /** A value shown at once (optimistic), put back if the save fails. Follows `value` when it is reloaded. */
-function useSaving<T>(value: T | null, loadFailed: boolean) {
+function useSaving<T>(value: T | null, loadFailed: boolean, savedText?: string) {
   const [shown, setShown] = useState<T | null>(value);
   const busy = useRef(false);
-  const status = useStatus(loadFailed);
+  const status = useStatus(loadFailed, savedText);
   useEffect(() => setShown(value), [value]);
 
   async function change(next: T, save: (next: T) => Promise<void>, onSaved?: (next: T) => void) {
@@ -76,6 +80,31 @@ interface Common {
    * say what it is, and the "?" and status sit beside or under the control.
    */
   compact?: boolean;
+  /** What the status says after a save instead of "Saved ✓" (stays 3 seconds). */
+  savedText?: string;
+}
+
+/** Longer than this, a string `about` shows its first sentence and a More button for the rest. */
+const ABOUT_SHORT = 140;
+
+/** The text behind a "?": short ones and elements as they are; a long string shows its first sentence, then More. */
+function AboutText({ about }: { about: ReactNode }) {
+  const [more, setMore] = useState(false);
+  if (typeof about !== 'string' || about.length <= ABOUT_SHORT) return <>{about}</>;
+  const end = about.search(/[.!?](\s|$)/);
+  if (end < 0 || end + 1 >= about.length) return <>{about}</>;
+  return (
+    <>
+      {about.slice(0, end + 1)}{' '}
+      {more ? (
+        about.slice(end + 1).trim()
+      ) : (
+        <button type="button" className="setting__more" onClick={() => setMore(true)}>
+          More
+        </button>
+      )}
+    </>
+  );
 }
 
 /** The label row: the name and, if there is one, the "?" that opens the about line. */
@@ -146,7 +175,7 @@ function Shell({
       {detail && !compact && <span className="setting__detail">{detail}</span>}
       {about && (
         <span id={aboutId} className="setting__about" hidden={!open}>
-          {about}
+          <AboutText about={about} />
         </span>
       )}
       <span className={`setting__status${status?.kind === 'error' ? ' setting__status--error' : ''}`} role="status">
@@ -163,6 +192,7 @@ export function SettingToggle({
   value,
   loadFailed = false,
   compact,
+  savedText,
   save,
   onSaved,
 }: Common & {
@@ -170,7 +200,7 @@ export function SettingToggle({
   save: (on: boolean) => Promise<void>;
   onSaved?: (on: boolean) => void;
 }) {
-  const s = useSaving(value, loadFailed);
+  const s = useSaving(value, loadFailed, savedText);
   return (
     <Shell className="setting--toggle" label={label} about={about} status={s.status} compact={compact}>
       {(ids) => (
@@ -214,6 +244,7 @@ export function SettingChoice<T extends string>({
   value,
   loadFailed = false,
   compact,
+  savedText,
   save,
   onSaved,
 }: Common & {
@@ -222,7 +253,7 @@ export function SettingChoice<T extends string>({
   save: (next: T) => Promise<void>;
   onSaved?: (next: T) => void;
 }) {
-  const s = useSaving(value, loadFailed);
+  const s = useSaving(value, loadFailed, savedText);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const [focusAt, setFocusAt] = useState<number | null>(null);
   const picked = options.findIndex((o) => o.value === s.shown);
@@ -328,7 +359,7 @@ export function SettingChips<T extends string | number>({
       </div>
       {about && (
         <span id={`${id}-about`} className="setting__about" hidden={!open}>
-          {about}
+          <AboutText about={about} />
         </span>
       )}
       <span className={`setting__status${s.status?.kind === 'error' ? ' setting__status--error' : ''}`} role="status">
