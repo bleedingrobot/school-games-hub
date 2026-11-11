@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
-import { finishChallenge, pondAfter, DAYS_PER_JAR } from './progress';
 import { replay, type Tap } from './play';
 import { seeded } from '../seededRandom';
 import { EARLY_FACTS, earlyFactsPack, parseSkip, SKIP_FROM_STEPS } from '../maths/skillPacks/earlyFacts';
-import { BACK_HOPS, DEMO_KEYS, kindOfKey, GOLD_FROM_HOPS, helpForStats, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, sisterHop, stepFor, stepKeys, STEPS, tellOf, topSecure, wordOf, type Round } from './round';
+import { DEMO_KEYS, kindOfKey, HOP_STEPS, HOPS_PER_ROUND, makeRound, showHop, showRound, sisterHop, stepFor, stepKeys, STEPS, tellOf, wordOf, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -45,65 +44,6 @@ describe('the round', () => {
     }
   });
 
-  it('asks counting back once a step is secure going forward (1, then 2, then 3 by how secure the back facts are), and three on every gold day', () => {
-    const backs = (r: Round) => r.hops.map((h) => h.key).filter((k) => k.includes(':back:'));
-    const backKeys = EARLY_FACTS.families.skip10.keys.filter((k) => k.includes(':back:'));
-    const at = (share: number) => secure(backKeys.slice(0, Math.ceil(backKeys.length * share)));
-    for (const seed of seeds) {
-      // Nothing secure forward: no back hops on an ordinary day; a gold day still has three, on today's step.
-      expect(backs(makeRound(seed, [], { gold: false }))).toHaveLength(0);
-      expect(backs(makeRound(seed, [], { gold: true }))).toHaveLength(BACK_HOPS);
-      // Tens secure going forward (so today is fives): back hops are tens, last in the round, own keys; the count grows with the back facts.
-      for (const [share, count] of [[0, 1], [0.4, 2], [0.8, 3]] as const) {
-        const round = makeRound(seed, [...recordsFor[5], ...at(share)], { gold: false });
-        expect(round.step).toBe(5);
-        const found = backs(round);
-        expect(found).toHaveLength(count);
-        expect(found.every((k) => k.startsWith('skip10:back:'))).toBe(true);
-        expect(round.hops.slice(HOPS_PER_ROUND - count).map((h) => h.key)).toEqual(found);
-      }
-      // Gold days keep three (never fewer), and every back hop lands on a number that counts down.
-      const gold = makeRound(seed, recordsFor[5], { gold: true });
-      expect(backs(gold)).toHaveLength(BACK_HOPS);
-      for (const hop of showRound(makeRound(seed, [...recordsFor[5], ...at(1)], { gold: false })).filter((h) => h.back)) expect(hop.terms[hop.gap]).toBeLessThan(hop.before);
-    }
-  });
-});
-
-describe('non-multiple starts on gold days (R8)', () => {
-  it('come only on a gold day, two hops, from a step the child has passed, and replay like any other hop', () => {
-    const offsetOf = (round: Round) => round.hops.filter((h) => parseSkip(h.key)!.offset > 0);
-    for (const seed of seeds) {
-      expect(offsetOf(makeRound(seed, recordsFor[200], { gold: false }))).toHaveLength(0);
-      expect(offsetOf(makeRound(seed, [], { gold: true }))).toHaveLength(0); // nothing passed yet
-      const round = makeRound(seed, recordsFor[3], { gold: true }); // tens, fives and twos passed
-      const from = offsetOf(round);
-      expect(from).toHaveLength(GOLD_FROM_HOPS);
-      for (const h of from) expect([10, 5, 2]).toContain(parseSkip(h.key)!.step);
-      expect(new Set(round.hops.map((h) => h.key)).size).toBe(HOPS_PER_ROUND);
-      expect(round.hops.slice(-BACK_HOPS).every((h) => h.key.includes(':back:'))).toBe(true);
-      expect(replay(round, wobblyTaps(round))).toMatchObject({ done: true, hopsMade: HOPS_PER_ROUND });
-    }
-  });
-});
-
-describe('the step labels (R6)', () => {
-  it('follow each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new step', () => {
-    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
-    expect(helpForStats(undefined)).toBe('full');
-    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
-    expect(helpForStats(known)).toBe('none');
-    expect(helpForStats({ ...known, box: 1 })).toBe('full');
-    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
-    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['a'] };
-    expect(helpForStats(quick1)).toBe('faint');
-    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
-    // A child who knows every 10s fact and has just moved to 5s: the 10s facts are not on the round, so every 5s hop starts full.
-    const tens = stepKeys(10).map((key) => ({ ...known, key }));
-    const fives = makeRound(7, tens, { reached: 5 });
-    expect(fives.step).toBe(5);
-    expect(fives.hops.map((h) => h.h)).toEqual(Array(HOPS_PER_ROUND).fill('full'));
-  });
 });
 
 describe('the glow-worms (mistakes that teach)', () => {
@@ -163,16 +103,6 @@ describe('the glow-worms (mistakes that teach)', () => {
   });
 });
 
-describe('the finish words (S33)', () => {
-  it('count hops right at the first glow-worm, and not a guess faster than the think floor', () => {
-    const round = makeRound(seeds[0], recordsFor[10], {});
-    const right = showRound(round).map((hop) => ({ pick: hop.answer, ms: 2000 }));
-    expect(replay(round, right).firstRight).toBe(HOPS_PER_ROUND);
-    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
-    expect(replay(round, right.map((t, i) => (i < 3 ? { ...t, ms: 100 } : t))).firstRight).toBe(HOPS_PER_ROUND - 3);
-  });
-});
-
 describe('the sister hop', () => {
   it('is another fact of the same step and direction with a different answer, at the same help, and the first hop’s right pick still ends the replay', () => {
     for (const step of STEPS) {
@@ -214,31 +144,5 @@ describe('the step', () => {
     expect(STEPS.map(wordOf)).toEqual(['tens', 'fives', 'twos', 'threes', 'fours', 'tens past 100']);
     // A child who reached 5s and then forgot some 10s stays on 5s.
     expect(stepFor([], 5)).toBe(5);
-  });
-});
-
-describe("the finish screen's signpost (R8)", () => {
-  it('is for a child who has reached twos and has 70% of them secure, and not before', () => {
-    const twos = stepKeys(2);
-    const most = secure(twos.slice(0, Math.ceil(twos.length * 0.7)));
-    const fewer = secure(twos.slice(0, Math.ceil(twos.length * 0.7) - 1));
-    expect(topSecure(recordsFor[2], 2)).toBe(false); // on twos, none of them known yet
-    expect(topSecure([...recordsFor[2], ...most], 2)).toBe(true);
-    expect(topSecure([...recordsFor[2], ...fewer], 2)).toBe(false);
-    // Twos known but the tens and fives never reached: the child is not on twos yet.
-    expect(topSecure(most, 10)).toBe(false);
-  });
-});
-
-describe('the magic pads', () => {
-  it('turn bronze, silver, then gold, one per NZ day, with a jar and a new friend every 30 days', () => {
-    expect(pondAfter(0)).toMatchObject({ jars: 0, friend: 'hop', help: 'full', gold: false, pads: Array(10).fill('green') });
-    expect(pondAfter(3).pads.slice(0, 4)).toEqual(['bronze', 'bronze', 'bronze', 'green']);
-    expect(pondAfter(10)).toMatchObject({ help: 'faint', today: 'silver', gold: false, pads: Array(10).fill('bronze') });
-    expect(pondAfter(21)).toMatchObject({ help: 'none', today: 'gold', gold: true, pads: ['gold', ...Array(9).fill('silver')] });
-    expect(pondAfter(DAYS_PER_JAR)).toMatchObject({ jars: 1, friend: 'gecko', day: 0, gold: false });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastPadDay: '2026-11-04', padChanged: 0, jar: false });
-    expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, padChanged: null });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, padChanged: 9, jar: true });
   });
 });

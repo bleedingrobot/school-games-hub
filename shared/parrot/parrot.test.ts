@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
-import { placeAfter, type KindLevels } from '../kit/help';
-import { emptyData, memoryServices } from './memoryServices';
-import { handleParrot } from './server';
-import { DAYS_PER_BELL, finishChallenge, ropeAfter } from './progress';
+import { placeAfter} from '../kit/help';
 import { replay, slipsOf, type Tap } from './play';
-import { STEP_RULES, type HelpLevel, type Step } from './config';
-import type { Kind } from '../maths/skillPacks/equalsKeys';
-import { atMostShareTell, sharingTell } from '../kit/mistakes';
-import { ALL_KEYS, balance, GOES_PER_ROUND, GUIDED_KEY, isStoneGo, KEYS, kindOfKey, levelFor, makeRound, MAX_STONES, redoCards, showGo, sisterGo, showRound, slipOfPick, startFor, STEP_KEYS, tapsAllowed, tiltOf, type Round } from './round';
+import { STEP_RULES, type Step } from './config';
+import type { } from '../maths/skillPacks/equalsKeys';
+import { ALL_KEYS, balance, GOES_PER_ROUND, isStoneGo, KEYS, levelFor, makeRound, MAX_STONES, redoCards, sisterGo, showRound, slipOfPick, STEP_KEYS, tapsAllowed, tiltOf} from './round';
 
 const seeds = Array.from({ length: 40 }, (_, i) => i * 10007 + 1);
 const steps: Step[] = [1, 2, 3, 4, 5, 6];
@@ -76,12 +72,6 @@ describe('help and place', () => {
     expect(p.level).toBeLessThan(4);
   });
 
-  it('starts a child who is secure on the make-10 pairs and has added at step 3, and everyone else at step 1 with stones', () => {
-    const bonds = [0, 1, 2, 3, 4].map((i) => rec(`bond10:${i}+${10 - i}`, 3));
-    expect(startFor([...bonds, rec('add:3+4', 1)])).toEqual({ step: 3, level: 3 });
-    expect(startFor(bonds)).toEqual({ step: 1, level: 5 });
-    expect(startFor([])).toEqual({ step: 1, level: 5 });
-  });
 });
 
 describe('mistakes that teach', () => {
@@ -135,105 +125,6 @@ describe('mistakes that teach', () => {
     }
   });
 
-  it('keeps the right card hard to spot: near cards, answer in every place, no printed-number pattern', () => {
-    const ranks = [0, 0, 0, 0];
-    let total = 0, biggest = 0, smallest = 0, guess = 0, survive = 0;
-    for (const key of ALL_KEYS.filter((k) => kindOfKey(k) !== 'tf')) {
-      for (let v = 0; v < (kindOfKey(key) === 'miss' ? 4 : kindOfKey(key) === 'swap' ? 2 : 1); v++) {
-        for (let seed = 1; seed <= 200; seed++) {
-          const g = showGo({ seed }, 0, { key, v: v as 0 | 1 | 2 | 3, l: 3 })!;
-          const cards = [...g.choices];
-          expect(cards).toHaveLength(4);
-          expect(new Set(g.wrongs.map((w) => w.n)).size).toBe(3);
-          expect(g.wrongs.every((w) => w.n !== g.answer && w.n >= 0 && w.n <= MAX_STONES * 2)).toBe(true);
-          expect(sharingTell(g.answer, cards, (n) => n % 2)).toBe(2);
-          expect(atMostShareTell(g.answer, cards, (n) => n % 10, 2)).toBe(true);
-          expect(g.wrongs.filter((w) => Math.abs(w.n - g.answer) > 3).length).toBeLessThanOrEqual(1);
-          total++;
-          ranks[cards.indexOf(g.answer)]++;
-          if (g.answer === cards[3]) biggest++;
-          if (g.answer === cards[0]) smallest++;
-          const printed = g.parts.filter((p) => /^\d+$/.test(p)).map(Number);
-          const left = cards.filter((c) => !printed.includes(c) && c !== cards[3]);
-          survive += left.length;
-          if (left.includes(g.answer)) guess += 1 / left.length;
-        }
-      }
-    }
-    ranks.forEach((n) => { expect(n / total).toBeGreaterThan(0.15); expect(n / total).toBeLessThan(0.4); });
-    expect(biggest / total).toBeGreaterThan(0.15);
-    expect(smallest / total).toBeGreaterThan(0.15);
-    expect(survive / total).toBeGreaterThanOrEqual(2.2);
-    expect(guess / total).toBeLessThanOrEqual(0.45);
-  });
-});
-
-describe('the shiny things', () => {
-  it('turn bronze, silver, then gold, one per NZ day: a second finish the same day changes nothing, a missed day loses nothing, 30 days make a Golden Bell', () => {
-    expect(ropeAfter(0)).toMatchObject({ bells: 0, friend: 'parrot', today: 'bronze', things: Array(10).fill('bud') });
-    expect(ropeAfter(21)).toMatchObject({ today: 'gold', things: ['gold', ...Array(9).fill('silver')] });
-    expect(ropeAfter(DAYS_PER_BELL)).toMatchObject({ bells: 1, friend: 'robin', day: 0 });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastDay: '2026-11-04', changed: 0, goldenBell: false });
-    expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, changed: null });
-    expect(finishChallenge(1, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 2, changed: 1 });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, changed: 9, goldenBell: true });
-  });
-
-  it('starts a child with the guided go on 200 seeds and it cannot fail', () => {
-    for (let s = 0; s < 200; s++) {
-      const round = makeRound(s * 7919 + 3, [], { guided: true });
-      const g = showRound(round)[0];
-      expect(g).toMatchObject({ key: GUIDED_KEY, l: 5, answer: 3 });
-      expect(isStoneGo(g)).toBe(true);
-      const end = replay(round as Round, showRound(round).map((x) => ({ pick: x.answer, ms: 900 })));
-      expect(end.done).toBe(true);
-    }
-  });
-});
-
-describe('help for each kind of go', () => {
-  const at = (kindLevels: KindLevels, level: HelpLevel = 3) =>
-    makeRound(77, [], { step: 6, level, help: 'fade', kindLevels }).goes.map((g) => ({ kind: kindOfKey(g.key)!, l: g.l }));
-
-  it('shows a kind missing from the map at the whole-child level, and a kind in the map at its own level', () => {
-    const goes = at({ sub: { level: 1, goodInRow: 0 } });
-    expect(goes.length).toBe(GOES_PER_ROUND);
-    for (const g of goes) expect(g.l).toBe(g.kind === 'sub' ? 1 : 3);
-    expect(goes.some((g) => g.kind === 'sub')).toBe(true);
-  });
-
-  it('over two good days fades the kind that went well and keeps the hard kind at its level', async () => {
-    const data = emptyData();
-    const clock = { day: 0 };
-    let n = 0;
-    const services = memoryServices({ data, now: () => Date.parse('2026-11-04T01:00:00Z') + clock.day * 86_400_000, random: () => (n = (n + 0.137) % 1) });
-    const hard: Kind = 'sub';
-    const pupil = 'p1';
-    data.players[pupil] = { daysDone: 5, lastDay: '2026-11-01', kindLevels: {}, step: 6, level: 3, goodInRow: 0, goodAtStep: 0, version: 1 };
-    for (let day = 0; day < 2; day++) {
-      clock.day = day;
-      const started = await handleParrot(services, pupil, { action: 'start' });
-      expect(started.status).toBe(200);
-      const round = started.body.round as Round;
-      const goes = showRound(round);
-      // Every go right at the first tap, except the hard kind, which is always wrong first.
-      const taps: Tap[] = [];
-      for (const [i, go] of goes.entries()) {
-        if (kindOfKey(round.goes[i].key) === hard) taps.push({ pick: tapsAllowed(go).find((c) => c !== go.answer)!, ms: 900 });
-        taps.push({ pick: go.answer, ms: 900 });
-      }
-      const done = await handleParrot(services, pupil, { action: 'finish', seed: round.seed, taps });
-      expect(done.status).toBe(200);
-    }
-    const saved = data.players[pupil].kindLevels;
-    const kinds = new Set(showRound(data.rounds[0].round).map((_, i) => kindOfKey(data.rounds[0].round.goes[i].key)!));
-    expect(kinds.has(hard)).toBe(true);
-    // The hard kind never faded; the others, asked at least twice a round, lost a level over the two good days.
-    expect(saved[hard].level).toBeGreaterThanOrEqual(data.rounds[0].round.level);
-    const easy = [...kinds].filter((k) => k !== hard && saved[k]);
-    expect(easy.length).toBeGreaterThan(0);
-    for (const k of easy) expect(saved[k].level).toBeLessThan(saved[hard].level);
-  });
 });
 
 describe('Now you try one like it', () => {

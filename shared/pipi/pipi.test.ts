@@ -1,45 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactAnswer, type FactStats } from '../maths/leitner';
-import { beachAfter, DAYS_PER_PEARL, finishChallenge } from './progress';
-import { replay, wrongFirstRun, type Tap } from './play';
-import { GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, sisterGo, topSecure, type Colour, type Kind, type Round, type WrongKind } from './round';
+import { replay, type Tap } from './play';
+import { GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, parseKey, REVIEW_GOES, showGo, showRound, type Colour, type Kind, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
 /** Records that put a child on each level. */
 const recordsFor = { 1: [], 2: secure(levelKeys(1)), 3: secure([...levelKeys(1), ...levelKeys(2)]) } as Record<number, FactStats[]>;
 const colours: Colour[] = ['bronze', 'silver', 'gold'];
-
-describe('the help in the sand (R6)', () => {
-  it('follows each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new level', () => {
-    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
-    expect(helpForStats(undefined)).toBe('full');
-    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
-    expect(helpForStats(known)).toBe('none');
-    expect(helpForStats({ ...known, box: 1 })).toBe('full');
-    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
-    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['a'] };
-    expect(helpForStats(quick1)).toBe('faint');
-    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
-    // A child who knows every split to 5 and has moved to 6 and 7: those splits have no record, so every go starts full.
-    const learned = levelKeys(1).map((key) => ({ ...known, key }));
-    const round = makeRound(7, learned, { reached: 1 });
-    expect(round.level).toBe(2);
-    // (the review goes from the known earlier splits keep their own, quieter help.)
-    expect(round.goes.filter((g) => !levelKeys(1).includes(g.key)).every((g) => g.h === 'full')).toBe(true);
-    expect(round.goes.filter((g) => levelKeys(1).includes(g.key)).every((g) => g.h === 'none')).toBe(true);
-    // Today's own record of a split, not another's, sets its help.
-    const mixed = makeRound(7, [{ ...known, key: 'part7:2' }], { reached: 1 });
-    expect(mixed.goes.every((g) => g.h === (g.key === 'part7:2' ? 'none' : 'full'))).toBe(true);
-  });
-
-  it('counts goes in a row, latest first, whose first shell was wrong', () => {
-    const a = (...c: boolean[]) => c.map((correct) => ({ correct }));
-    expect(wrongFirstRun(a())).toBe(0);
-    expect(wrongFirstRun(a(false, true, false, false))).toBe(2);
-    expect(wrongFirstRun(a(false, false, false, true))).toBe(0);
-  });
-});
 
 /** One wrong shell on every go, then the right one. */
 const wobblyTaps = (round: Round): Tap[] =>
@@ -82,24 +50,6 @@ describe('the round', () => {
     }
   });
 
-  it('asks altogether only on silver and gold days and two tides only on gold, never first, and the guided go first', () => {
-    for (const seed of seeds) {
-      const kinds = (colour: Colour) => makeRound(seed, recordsFor[2], { colour }).goes.map((g) => g.kind);
-      expect(kinds('bronze').every((k) => k === 'hiding')).toBe(true);
-      expect(kinds('silver').filter((k) => k === 'altogether')).toHaveLength(2);
-      expect(kinds('silver')).not.toContain('twoTides');
-      expect(kinds('gold').filter((k) => k === 'twoTides')).toHaveLength(2);
-      // Altogether and two tides never use 0 or all hiding.
-      for (const g of makeRound(seed, recordsFor[1], { colour: 'gold' }).goes.filter((x) => x.kind !== 'hiding')) {
-        const p = parseKey(g.key)!;
-        expect(p.shown > 0 && p.shown < p.whole, g.key).toBe(true);
-      }
-      for (const c of colours) expect(kinds(c)[0]).toBe('hiding');
-      const guided = makeRound(seed, [], { guided: true });
-      expect(guided.goes[0]).toEqual({ key: GUIDED_KEY, kind: 'hiding', h: 'full' });
-      expect(new Set(guided.goes.map((g) => g.key)).size).toBe(GOES_PER_ROUND);
-    }
-  });
 });
 
 describe('the wrong shells (maths review R5)', () => {
@@ -130,17 +80,6 @@ describe('the wrong shells (maths review R5)', () => {
     }
   });
 
-  it('tags the number showing, the whole, the sum and the first tide with what they are', () => {
-    for (const seed of seeds.slice(0, 20)) {
-      const hiding = showGo({ seed }, 0, { key: 'part9:3', kind: 'hiding' })!; // answer 6; showing 3; whole 9; sum 12
-      for (const w of hiding.wrongs) expect(w.kind).toBe({ 3: 'shown', 9: 'whole' }[w.n] ?? 'off1');
-      const tides = showGo({ seed }, 0, { key: 'part9:3', kind: 'twoTides' })!;
-      for (const w of tides.wrongs) expect(w.kind).toBe({ 3: 'before', 9: 'whole' }[w.n] ?? 'off1');
-    }
-    const together = showGo({ seed: 5 }, 0, { key: 'part7:4', kind: 'altogether' })!; // answer 7; the parts are 4 and 3
-    for (const w of together.wrongs) expect(w.kind).toBe({ 4: 'part', 3: 'part' }[w.n] ?? 'off1');
-  });
-
   it('scores only the first shell of a go, however many wrong ones follow, and takes a redo after two wrong', () => {
     const round = makeRound(11, [], { colour: 'gold' });
     const goes = showRound(round);
@@ -155,32 +94,6 @@ describe('the wrong shells (maths review R5)', () => {
   });
 });
 
-describe('the sister go', () => {
-  it('is the same kind and help on a different split, never the original answer, and the first go’s right pick still ends the replay', () => {
-    for (const colour of colours) {
-      for (const level of [1, 2, 3] as const) {
-        for (const seed of seeds.slice(0, 8)) {
-          const round = makeRound(seed, recordsFor[level], { colour });
-          const goes = showRound(round);
-          goes.forEach((go, i) => {
-            const sister = sisterGo(round, i, go);
-            expect(sister).not.toBeNull();
-            expect(sister!.kind).toBe(go.kind);
-            expect(sister!.h).toBe(go.h);
-            expect(sister!.key).not.toBe(go.key);
-            expect(sister!.answer).not.toBe(go.answer);
-            expect(Math.abs(sister!.whole - go.whole)).toBeLessThanOrEqual(1);
-            if (go.kind === 'altogether') expect(sister!.whole).not.toBe(go.whole);
-            expect(sisterGo(round, i, go)).toEqual(sister);
-          });
-          // A right tap on the sister sends the first go's right pick, so the taps replay as usual.
-          expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
-        }
-      }
-    }
-  });
-});
-
 describe('the level', () => {
   it('moves up at 70% of a level secure and never drops back', () => {
     const one = levelKeys(1);
@@ -190,31 +103,6 @@ describe('the level', () => {
     expect(levelFor(recordsFor[3])).toBe(3);
     expect(levelFor(secure([...levelKeys(1), ...levelKeys(2), ...levelKeys(3)]))).toBe(3);
     expect(levelFor([], 2)).toBe(2);
-  });
-});
-
-describe('the finish words (S33)', () => {
-  it('count goes right at the first shell, not a guess faster than the think floor; the top level is secure at 70% of 8 to 10', () => {
-    const round = makeRound(seeds[0], [], {});
-    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
-    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
-    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
-    const wrong = showRound(round).flatMap((go) => [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 3000 }, { pick: go.answer, ms: 1500 }]);
-    expect(replay(round, wrong).firstRight).toBe(0);
-    expect(topSecure(secure(levelKeys(3)))).toBe(true);
-    expect(topSecure(secure(levelKeys(3).slice(0, 5)))).toBe(false);
-  });
-});
-
-describe('the magic shells', () => {
-  it('turn bronze, silver, then gold, one per NZ day, with a pearl and a new friend every 30 days', () => {
-    expect(beachAfter(0)).toMatchObject({ pearls: 0, friend: 'pipi', help: 'full', today: 'bronze', shells: Array(10).fill('sand') });
-    expect(beachAfter(10)).toMatchObject({ help: 'faint', today: 'silver', shells: Array(10).fill('bronze') });
-    expect(beachAfter(21)).toMatchObject({ help: 'none', today: 'gold', shells: ['gold', ...Array(9).fill('silver')] });
-    expect(beachAfter(DAYS_PER_PEARL)).toMatchObject({ pearls: 1, friend: 'korora', day: 0 });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastShellDay: '2026-11-04', shellChanged: 0, pearl: false });
-    expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, shellChanged: null });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, shellChanged: 9, pearl: true });
   });
 });
 

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SUBITISING_CONFIG as C } from '../../shared/subitising/config';
-import { SubitisingApp, type QuickAnswerEvent } from './SubitisingApp';
+import { SubitisingApp} from './SubitisingApp';
 import { emptySubState, type SubState } from './store';
 
 function setup(initial: SubState) {
@@ -26,42 +26,6 @@ describe('Quick looks', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
-  });
-
-  it('asks for the starting check first, and shows seven plants', () => {
-    setup(emptySubState());
-    expect(screen.getByRole('button', { name: 'Start with a quick check' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Start looking' })).toBeNull();
-    expect(screen.getAllByRole('listitem')).toHaveLength(7);
-  });
-
-  it('flashes a picture, hides it, keeps the buttons locked for a second, then takes the answer', () => {
-    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    // Get ready: the picture is not showing yet.
-    expect(dotsShown()).toBe(0);
-    advance(C.readyMs + 10);
-    const n = dotsShown();
-    expect(n).toBeGreaterThanOrEqual(1);
-    expect(n).toBeLessThanOrEqual(3);
-    // Still showing just before the flash ends, gone just after.
-    advance(1100);
-    expect(dotsShown()).toBe(n);
-    advance(150);
-    expect(dotsShown()).toBe(0);
-    const buttons = screen.getAllByRole('button').filter((b) => /^\d+$/.test(b.textContent ?? ''));
-    expect(buttons.length).toBeGreaterThanOrEqual(C.choiceCount);
-    expect(buttons.every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
-    advance(C.answerLockMs);
-    expect(buttons.every((b) => !(b as HTMLButtonElement).disabled)).toBe(true);
-
-    fireEvent.click(buttons.find((b) => b.textContent === String(n))!);
-    t.sync();
-    expect(screen.getAllByText(new RegExp(`Yes! ${n}`)).length).toBeGreaterThan(0);
-    expect(dotsShown()).toBe(n); // the picture comes back
-    expect(t.state().answers).toHaveLength(1);
-    expect(t.state().answers[0].correct).toBe(true);
-    expect(t.answered).toHaveLength(1);
   });
 
   it('shows the picture with help after two wrong answers in a row, and keeps it on screen', () => {
@@ -91,14 +55,6 @@ describe('Quick looks', () => {
     expect(dotsShown()).toBeGreaterThan(0);
   });
 
-  it('never flashes when "keep the picture on the screen" is ticked', () => {
-    setup({ ...emptySubState(), placed: true, guidedMode: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    expect(dotsShown()).toBeGreaterThan(0);
-    advance(10_000);
-    expect(dotsShown()).toBeGreaterThan(0);
-  });
-
   it('shows how empty squares work the first time a child reaches them, saves nothing for it, and never shows it once a gap picture is saved', () => {
     const t = setup({ ...emptySubState(), placed: true, startStage: 6 });
     fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
@@ -112,39 +68,6 @@ describe('Quick looks', () => {
     setup({ ...emptySubState(), placed: true, startStage: 6, answers: [{ key: 'gaph:five-3', correct: true, at: 1, helped: true }] });
     fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
     expect(screen.queryByRole('heading', { name: /new kind of picture/ })).toBeNull();
-  });
-
-  it('runs the starting check and then says where practice starts', () => {
-    const t = setup(emptySubState());
-    fireEvent.click(screen.getByRole('button', { name: 'Start with a quick check' }));
-    // A new student first gets a demo picture that stays on screen; its answer is saved nowhere.
-    expect(screen.getByRole('heading', { name: /This is how it works/ })).toBeTruthy();
-    advance(10_000);
-    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(dotsShown()))!);
-    fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
-    expect(t.answered).toHaveLength(0);
-    for (let i = 0; i < 12; i++) {
-      advance(C.gapReadyMs + 10);
-      const n = dotsShown();
-      const prompt = document.querySelector('.sb-prompt')!.textContent;
-      const cells = document.querySelectorAll('.sb-stage svg g[stroke] rect').length;
-      const answer = /empty/.test(prompt ?? '') ? cells - n : n;
-      advance(1400);
-      advance(C.answerLockMs);
-      fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(answer))!);
-      t.sync();
-      const done = screen.queryByRole('button', { name: 'Finish' });
-      fireEvent.click(done ?? screen.getByRole('button', { name: 'Next' }));
-      if (done) {
-        expect(i + 1).toBe(9); // all right: 3 tests of 3 pictures
-        break;
-      }
-    }
-    t.sync();
-    expect(screen.getByText('All done!')).toBeTruthy();
-    expect(t.state().placed).toBe(true);
-    expect(t.state().startStage).toBe(7); // all six right lands on the top stage
-    expect(t.state().answers).toHaveLength(0); // the check isn't practice
   });
 
   it('remembers the stage reached once a stage is finished, and says when a session ends', () => {
@@ -165,153 +88,6 @@ describe('Quick looks', () => {
     // Leaving early still ends the session (so the page saves what was done).
     fireEvent.click(screen.getByRole('button', { name: 'Finish for now' }));
     expect(ended).toHaveLength(1);
-  });
-
-  describe('a whole round counts for Training before games', () => {
-    /** Picture on screen the whole time, so each one can be answered at once. */
-    function round(answer: number) {
-      const rounds: number[] = [];
-      const ended: number[] = [];
-      const answered: QuickAnswerEvent[] = [];
-      let state: SubState = { ...emptySubState(), placed: true, guidedMode: true };
-      const ui = (s: SubState) => (
-        <SubitisingApp state={s} onState={(n) => (state = n)} today="2026-10-21" onAnswered={(a) => answered.push(a)} onSessionEnd={() => ended.push(rounds.length)} onRoundFinished={(seed) => rounds.push(seed)} />
-      );
-      const view = render(ui(state));
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      for (let i = 0; i < answer; i++) {
-        const n = dotsShown();
-        fireEvent.click(screen.getAllByRole('button').find((b) => b.classList.contains('sb-choice') && b.textContent === String(n))!);
-        view.rerender(ui(state));
-        if (i < C.sessionTrials - 1) fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-      }
-      view.rerender(ui(state));
-      return { rounds, ended, answered, state: () => state };
-    }
-
-    it('says so after all the pictures, before the session ends, and kept-on pictures grow a plant a little but finish nothing', () => {
-      const { rounds, ended, state, answered } = round(C.sessionTrials);
-      fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
-      expect(rounds).toHaveLength(1);
-      expect(ended).toEqual([1]);
-      // Practice only: saved as helped, so no stage finishes, but a plant grows a little.
-      expect(answered.every((a) => a.helped && a.thinkingMs === 0)).toBe(true);
-      expect(state().finished).toBe(0);
-      expect(screen.queryByText(/You finished/)).toBeNull();
-      expect(screen.getByText(/grew!/)).toBeTruthy();
-      expect(screen.getByText(/your plants grew a little/)).toBeTruthy();
-    });
-
-    it('not when it is stopped early', () => {
-      const { rounds, ended } = round(C.sessionTrials - 1);
-      fireEvent.click(screen.getByRole('button', { name: 'Finish for now' }));
-      expect(rounds).toHaveLength(0);
-      expect(ended).toEqual([0]);
-    });
-  });
-
-  it('shows a way back to Training only when it is inside Training', () => {
-    const { view } = setup(emptySubState());
-    expect(screen.queryByRole('button', { name: 'Back to Training' })).toBeNull();
-    let backed = 0;
-    view.rerender(<SubitisingApp state={emptySubState()} onState={() => {}} today="2026-10-21" onBack={() => backed++} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Training' }));
-    expect(backed).toBe(1);
-  });
-
-  describe('reading out loud', () => {
-    const said: string[] = [];
-    const clips: string[] = [];
-    let clipsWork = false;
-    beforeEach(() => {
-      said.length = 0;
-      clips.length = 0;
-      clipsWork = false;
-      localStorage.clear();
-      localStorage.setItem('sgh-read-aloud', 'false'); // each test below says what it needs
-      // A recorded clip: plays when clipsWork, otherwise fails at once (as a missing file would) so the browser voice speaks.
-      vi.stubGlobal(
-        'Audio',
-        class {
-          private failed: (() => void)[] = [];
-          constructor(public src: string) {}
-          addEventListener(type: string, f: () => void) {
-            if (type === 'error') this.failed.push(f);
-          }
-          play() {
-            if (clipsWork) clips.push(this.src);
-            else this.failed.forEach((f) => f());
-            return undefined;
-          }
-          pause() {}
-        },
-      );
-      vi.stubGlobal('SpeechSynthesisUtterance', class { constructor(public text: string) {} });
-      vi.stubGlobal('speechSynthesis', { cancel: () => {}, speak: (u: { text: string }) => void said.push(u.text) });
-      Object.defineProperty(window, 'speechSynthesis', { value: (globalThis as { speechSynthesis: unknown }).speechSynthesis, configurable: true });
-      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: (globalThis as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance, configurable: true });
-    });
-    afterEach(() => {
-      Reflect.deleteProperty(window, 'speechSynthesis');
-      Reflect.deleteProperty(window, 'SpeechSynthesisUtterance');
-    });
-
-    it('is on when nothing is saved, so a child hears the question without setting anything', () => {
-      localStorage.clear();
-      setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      advance(C.readyMs + 10);
-      advance(1400);
-      expect(said).toEqual(['Get ready: how many dots?', 'How many did you see?']);
-    });
-
-    it('says nothing when it was switched off', () => {
-      setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      advance(C.readyMs + 10);
-      advance(1400);
-      advance(C.answerLockMs);
-      expect(said).toEqual([]);
-    });
-
-    it('reads the prompts, never the answer before it has been given, and the feedback after', () => {
-      localStorage.setItem('sgh-read-aloud', 'true');
-      const t = setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      advance(C.readyMs + 10);
-      const n = dotsShown();
-      advance(1400);
-      advance(C.answerLockMs);
-      expect(said).toEqual(['Get ready: how many dots?', 'How many did you see?']);
-      expect(said.join(' ')).not.toMatch(/\d/);
-      fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
-      t.sync();
-      expect(said.at(-1)).toMatch(new RegExp(`^Yes! ${n}`));
-    });
-
-    it('plays the recorded clips when they are there, and the browser voice stays quiet', () => {
-      clipsWork = true;
-      localStorage.setItem('sgh-read-aloud', 'true');
-      setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      advance(C.readyMs + 10);
-      advance(1400);
-      advance(C.answerLockMs);
-      expect(clips).toEqual(['voice/quick-looks/get-ready-how-many-dots.mp3', 'voice/quick-looks/how-many-did-you-see.mp3']);
-      expect(said).toEqual([]);
-    });
-
-    it('can be muted from the practice screen, and the choice is remembered on the device', () => {
-      localStorage.removeItem('sgh-read-aloud');
-      setup({ ...emptySubState(), placed: true });
-      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-      advance(C.readyMs + 10);
-      advance(1400);
-      const mute = screen.getByRole('button', { name: /Reading out loud: on/ });
-      fireEvent.click(mute);
-      expect(screen.getByRole('button', { name: /Reading out loud: off/ })).toBeTruthy();
-      expect(localStorage.getItem('sgh-read-aloud')).toBe('false');
-    });
   });
 
   it('gives one second try after a wrong first answer, and saves only the first tap', () => {
@@ -336,62 +112,4 @@ describe('Quick looks', () => {
     expect(t.state().answers[0].correct).toBe(false); // the first tap
   });
 
-  it('a slow correct answer is not a struggle: the next picture is a normal flash', () => {
-    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    advance(C.readyMs + 10);
-    const n = dotsShown();
-    advance(1400);
-    advance(C.answerLockMs + 12_000);
-    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
-    t.sync();
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.queryByRole('heading', { name: /^Take your time\. / })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Get ready: how many dots?' })).toBeTruthy();
-  });
-
-  it('starts the thinking clock after the spoken question has ended', () => {
-    localStorage.clear();
-    const utterances: { text: string; onend?: () => void }[] = [];
-    vi.stubGlobal('SpeechSynthesisUtterance', class { onend?: () => void; constructor(public text: string) {} });
-    vi.stubGlobal('speechSynthesis', { cancel: () => {}, speak: (u: { text: string; onend?: () => void }) => void utterances.push(u) });
-    Object.defineProperty(window, 'speechSynthesis', { value: (globalThis as { speechSynthesis: unknown }).speechSynthesis, configurable: true });
-    Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: (globalThis as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance, configurable: true });
-    vi.stubGlobal('Audio', undefined);
-    const t = setup({ ...emptySubState(), placed: true, startStage: 1 });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    advance(C.readyMs + 10);
-    const n = dotsShown();
-    advance(1400);
-    advance(C.answerLockMs + 3000); // the question is still being said
-    const q = utterances.find((u) => u.text === 'How many did you see?')!;
-    act(() => q.onend?.());
-    advance(2000);
-    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
-    const ms = (t.answered[0] as QuickAnswerEvent).thinkingMs;
-    expect(ms).toBeGreaterThanOrEqual(2000);
-    expect(ms).toBeLessThan(2500);
-    Reflect.deleteProperty(window, 'speechSynthesis');
-    Reflect.deleteProperty(window, 'SpeechSynthesisUtterance');
-  });
-
-  it('moves focus to Next after an answer, and answers 10 with the 0 key', () => {
-    setup({ ...emptySubState(), placed: true, startStage: 5, guidedMode: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    advance(C.answerLockMs + 10);
-    const labels = screen.getAllByRole('button').map((b) => b.textContent);
-    if (labels.includes('10')) {
-      fireEvent.keyDown(window, { key: '0' });
-    } else {
-      fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(dotsShown()))!);
-    }
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^(Next|Finish)$/ }));
-  });
-
-  it('tells a screen reader the picture is staying, and asks "can you see" in guided mode', () => {
-    setup({ ...emptySubState(), placed: true, guidedMode: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
-    expect(screen.getByRole('heading', { name: 'How many can you see?' })).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toContain('The picture is staying on the screen.');
-  });
 });

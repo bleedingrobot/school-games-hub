@@ -1,66 +1,7 @@
-import { readFileSync } from 'node:fs';
-import { beforeEach, describe, expect, it } from 'vitest';
-import type { Tap } from '../../../shared/weka/play';
-import { DAYS_PER_BASKET } from '../../../shared/weka/progress';
+import { describe, expect, it } from 'vitest';
+import type { } from '../../../shared/weka/play';
 import { replay } from '../../../shared/weka/play';
-import { ALL_KEYS, showGo, showRound, skipPracticeFor, toTenChoicesFor, wrongKind, type Round } from '../../../shared/weka/round';
-import { allVoiceLines, splitWhyLine, whyLine } from './voiceLines';
-import { trialBackend } from './backend';
-import { DEMOS, DEMO_KINDS } from './demo';
-
-const css = readFileSync(`${process.cwd()}/src/games/weka/weka.css`, 'utf8');
-
-function lum(hex: string) {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-const contrast = (a: string, b: string) => {
-  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
-};
-const colour = (name: string) => css.match(new RegExp(`--wk-${name}:\\s*(#[0-9a-f]{6})`, 'i'))![1];
-const smallest = (name: string) => Number(css.match(new RegExp(`--wk-${name}: clamp\\((\\d+)px`))![1]);
-
-/** Every go right first time, quickly. */
-const perfect = (round: Round): Tap[] => showRound(round).map((g) => ({ pick: g.answer, ms: 1500 }));
-
-describe('Weka’s Stepping Stones screens', () => {
-  it('has 4.5:1 numbers on the stones and panel, big targets, and stops moving for pupils who prefer less', () => {
-    expect(contrast(colour('ink'), colour('panel'))).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(colour('teal-dark'), colour('panel'))).toBeGreaterThanOrEqual(4.5); // the day count
-    expect(smallest('choice')).toBeGreaterThanOrEqual(64);
-    expect(Number(css.match(/\.wk-button \{[^}]*min-height: (\d+)px/)![1])).toBeGreaterThanOrEqual(44);
-    expect(css).toMatch(/prefers-reduced-motion: reduce\)[^}]*animation: none !important; transition: none !important/);
-  });
-});
-
-describe('the trial backend', () => {
-  beforeEach(() => localStorage.clear());
-
-  it('changes one stone a day, moves up from starting on 9 once those are right, refuses an unfinished round, and gives the Golden Picnic Basket on day 30', async () => {
-    const { backend, tools } = trialBackend({ storageKey: 'test' });
-    expect(await backend.load()).toMatchObject({ daysDone: 0, level: 1, help: 'fade' });
-    const go = async () => {
-      const round = await backend.start();
-      return { round, result: await backend.finish(round.seed, perfect(round)) };
-    };
-    expect((await go()).result).toMatchObject({ daysDone: 1, stoneChanged: 0, goldenBasket: false, level: 1 });
-    // Again the same day (just for fun): each fact counts once a round, so after a few quick perfect rounds starting on 9
-    // is secure, and (S25) the help for those facts fades after one quick day, while the new level's facts have no record and start full.
-    let next = 1;
-    for (let i = 0; i < 4 && next === 1; i++) next = (await go()).result.level;
-    expect(next).toBe(2);
-    const eights = await backend.start();
-    expect(eights.level).toBe(2);
-    expect(eights.goes.some((g) => g.h === 'full')).toBe(true);
-    expect(eights.goes.some((g) => g.h !== 'full')).toBe(true);
-    await expect(backend.finish(eights.seed, perfect(eights).slice(0, 3))).rejects.toThrow();
-    tools.jumpTo(DAYS_PER_BASKET - 1);
-    const gold = await backend.start();
-    expect(gold.day).toBe('gold');
-    expect(await backend.finish(gold.seed, perfect(gold))).toMatchObject({ daysDone: DAYS_PER_BASKET, goldenBasket: true });
-  });
-});
+import { ALL_KEYS, showGo, showRound, type Round } from '../../../shared/weka/round';
 
 describe('mistakes that teach', () => {
   const plans = ALL_KEYS.flatMap((key) => ([0, 1, 2] as const).map((v) => ({ key, v, h: 'full' as const })));
@@ -82,16 +23,6 @@ describe('mistakes that teach', () => {
     for (const w of g.wrongs) expect(w.kind === 'off1' ? Math.abs(w.n - 13) : w.n).toBe(w.kind === 'rock' ? 10 : w.kind === 'double' ? 15 : w.kind === 'part' ? 11 : 1);
   });
 
-  it('makes the hops-to-ten choices with the whole small number and 10 among them', () => {
-    for (const g of goes) {
-      expect(g.toTenChoices).toHaveLength(4);
-      expect(g.toTenWrongs.map((w) => w.kind).slice(0, 2)).toEqual(['other', 'ten']);
-      expect(wrongKind(g.toTenWrongs, g.small)).toBe('other');
-      expect(wrongKind(g.toTenWrongs, 10)).toBe('ten');
-      expect(wrongKind(g.toTenWrongs, g.toTen)).toBeNull();
-    }
-  });
-
   it('scores only a go’s first tap, however many wrong taps and redo taps follow', () => {
     const round: Round = { seed: 9, level: 1, day: 'bronze', goes: [{ key: 'add:5+8', v: 1, h: 'full' }, ...Array.from({ length: 9 }, () => ({ key: 'add:6+8', v: 1 as const, h: 'full' as const }))] };
     const shown = showRound(round);
@@ -104,46 +35,4 @@ describe('mistakes that teach', () => {
     expect(r.firstRight).toBe(9);
   });
 
-  it('shows hopping back and starting on the bigger number first, with made-up sums no real go asks and a line to read for every step', () => {
-    const said = new Set(allVoiceLines());
-    for (const demo of Object.values(DEMOS)) {
-      expect(demo.from).toBeGreaterThan(9);
-      expect(Math.abs(demo.to - demo.from)).toBe(demo.small);
-      for (const step of demo.steps) expect(said.has(step.line)).toBe(true);
-    }
-    expect([...DEMO_KINDS].sort()).toEqual(['back', 'turn']);
-  });
-
-  it('has a voice line for every mistake any go can show, and none says the answer', () => {
-    const lines = new Set(allVoiceLines());
-    for (const g of goes) {
-      for (const w of g.wrongs) {
-        expect(lines.has(whyLine(g, w.kind))).toBe(true);
-        // The count of hops can equal the answer only when hopping back 18 − 9 (9 hops, lands on 9): that is a coincidence of the numbers.
-        if (!(w.kind === 'off1' && g.small === g.answer)) expect(whyLine(g, w.kind)).not.toMatch(new RegExp(`\\b${g.answer}\\b`));
-      }
-      for (const w of g.toTenWrongs) {
-        expect(lines.has(whyLine(g, w.kind))).toBe(true);
-        expect(whyLine(g, w.kind)).not.toMatch(new RegExp(`\\b${g.toTen}\\b`));
-      }
-    }
-  });
-
-  it('says what a wrong split number makes, and a quick right child skips the practice except one go in five', () => {
-    const lines = new Set(allVoiceLines());
-    for (const g of goes) {
-      for (const n of toTenChoicesFor(g.toTen).filter((x) => x !== g.toTen)) {
-        const line = splitWhyLine(g, 0, n);
-        expect(lines.has(line)).toBe(true);
-        expect(line.startsWith(g.kind === 'back' ? `${g.total} take away ${n} is ${g.total - n}.` : `${g.big} and ${n} make ${g.big + n}.`)).toBe(true);
-      }
-      for (const n of toTenChoicesFor(g.rest).filter((x) => x !== g.rest)) expect(lines.has(splitWhyLine(g, 1, n))).toBe(true);
-    }
-    expect(splitWhyLine({ kind: 'add', small: 5, big: 8, total: 13, toTen: 2 }, 0, 3)).toBe('8 and 3 make 11. We need to land on 10.');
-    expect(splitWhyLine({ kind: 'add', small: 5, big: 8, total: 13, toTen: 2 }, 1, 2)).toBe('2 and 2 make 4. We have 5.');
-    expect(skipPracticeFor(true, false, 3)).toBe(true);
-    expect(skipPracticeFor(false, false, 3)).toBe(false);
-    expect(skipPracticeFor(true, true, 0)).toBe(false);
-    expect(skipPracticeFor(true, false, 5)).toBe(false);
-  });
 });

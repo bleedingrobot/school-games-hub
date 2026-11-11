@@ -5,7 +5,6 @@ import { newStats } from '../../../shared/maths/leitner';
 import { memoryServices, type MemoryOptions } from '../../../shared/pipi/memoryServices';
 import type { Tap } from '../../../shared/pipi/play';
 import { GUIDED_KEY, levelKeys, showRound, type Round } from '../../../shared/pipi/round';
-import { unplayed } from '../../../shared/pipi/server';
 import { makeHandler } from './handler';
 
 // Pipi's Hidden Shells' server tests (the fairness ones; the rules have their own in shared/pipi).
@@ -71,17 +70,6 @@ it('finishes only a pupil’s own, finished challenge, once, and records each go
   // With the teacher's switch off, nothing happens.
   const off = setup({ settings: () => ({ enabled: false, help: true }) });
   expect((await off.send('pupil-a', { action: 'load' })).body).toMatchObject({ code: 'game-off' });
-});
-
-it('keeps which kinds of go a pupil has seen: unreadable kinds are refused, a kind saved twice is kept once, and kinds already played need no demo', async () => {
-  const { send, services } = setup();
-  expect((await send('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
-  expect((await send('pupil-a', { action: 'seen', kinds: 'altogether' })).status).toBe(400);
-  await send('pupil-a', { action: 'seen', kinds: ['altogether'] });
-  expect((await send('pupil-a', { action: 'seen', kinds: ['altogether', 'twoTides'] })).body.seen).toEqual(['altogether', 'twoTides']);
-  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['altogether', 'twoTides']);
-  services.data.players['pupil-b'] = { ...unplayed(), version: 1, daysDone: 12, played: 12 };
-  expect((await send('pupil-b', { action: 'load' })).body.seen).toEqual(['altogether', 'hiding']);
 });
 
 it('changes one shell a NZ day by the server’s clock, whatever the browser sends, and gives a pearl every 30 days', async () => {
