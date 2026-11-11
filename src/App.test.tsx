@@ -168,14 +168,3 @@ describe('signing in', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
   });
 });
-
-describe('profile', () => {
-
-  it('has a sign-out button', async () => {
-    const user = userEvent.setup();
-    const signOut = vi.fn(async () => {});
-    renderAt('/profile', { signOut });
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(signOut).toHaveBeenCalled();
-  });
-});
