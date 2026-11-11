@@ -160,3 +160,22 @@ Answered on question cards in the review thread:
 1. **A new game's switch:** James chose **on for every class** (11 Nov 2026), as now. C7 makes every switch column default on
    and changes the guide to say so.
 2. **Who can play (groups or pupils):** James chose **later** (11 Nov 2026). It stays off the plan; the mock-up and notes stay here.
+
+## After (12 Nov 2026 NZ): all nine cards live
+
+| Card | PR | What teachers have now |
+|---|---|---|
+| C1 | #420 | Chess, checkers, 101 and Power Clash rows use the Non-maths games switch; Kingdom Keeper's leftover switch gone; Star Forge has a switch; bot games refuse while Non-maths games is off |
+| C2 | #421 | Every save names a class; a save with no class is refused ("Pick a class first.") |
+| C3 | #423 | Pupils' home page re-reads settings after 30 seconds away; "Saved ✓" says when pupils see it |
+| C4 | #424 | Games tab: "On for <class>: N of M games", Show All/On/Off, section All on / All off in one save, Unlimited today column |
+| C5 | #422 | Same words for the same thing; long About text folds behind "More" |
+| C6 | #425 | "Changed by you, 9:12am" under switches; Recent changes on Class set-up (table read only through its function) |
+| C7 | #426 | Admin → New class settings edits the school's defaults; Copy to every class; every game switch column defaults on |
+| C8 | #427 | Game sets on Today: Maths only, Foundational, Everything and the teacher's own sets, one tap |
+| C9 | this PR | One "teacher switch" rule list in [docs/game-guide/3-files-and-clashes.md](game-guide/3-files-and-clashes.md) |
+
+Live check (database, 12 Nov 2026): migrations 20261112000200 to 600 applied; the new functions exist; every `hub_games.switch_column`
+defaults to true; one school defaults row. Not checked live in a teacher's browser: nobody signed in as a teacher here, so James's
+first look at the Games and Today tabs is the browser check.
+
