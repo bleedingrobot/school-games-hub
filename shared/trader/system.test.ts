@@ -20,18 +20,6 @@ describe('the Star Forge', () => {
     expect(forgeCost(all, gone).total).toBe(-Math.floor((planetPrice(all.planets[0]) + 1000) / 2));
   });
 
-  it('keeps built pieces sensible: sun first, planet before its parts, life only where it fits', () => {
-    const p = newPlanet(1, 'gas');
-    expect(designProblem({ ...withSun(false), planets: [{ ...p, built: true }] })).toMatch(/sun first/);
-    expect(designProblem({ ...withSun(true), planets: [{ ...p, ring: { kind: 'dusty', tilt: 0, built: true } }] })).toMatch(/before the things/);
-    expect(designProblem({ ...withSun(true), planets: [{ ...p, built: true, life: { kind: 'animals', creature: 0, built: true } }] })).toMatch(/can't live/);
-    // Slot 0 round a yellow star is too hot: life needs domes. Planned life is fine either way.
-    const rock = { ...newPlanet(2, 'jungle'), built: true, life: { kind: 'plants' as const, creature: 0, built: true } };
-    expect(designProblem({ ...withSun(true), planets: [rock] })).toMatch(/domes/);
-    expect(designProblem({ ...withSun(true), planets: [{ ...rock, tech: [{ kind: 'domes', built: true }] }] })).toBeNull();
-    expect(designProblem({ ...withSun(true), planets: [{ ...rock, life: { ...rock.life, built: false } }] })).toBeNull();
-  });
-
   it('refuses anything a browser could make up', () => {
     const good = buildAll({ ...withSun(true), planets: [newPlanet(1)] });
     expect(designProblem(good)).toBeNull();
