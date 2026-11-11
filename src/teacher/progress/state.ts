@@ -16,7 +16,7 @@ import { GOOD_TO_PASS as LIZARD_GOOD } from '../../../shared/lizard/config';
 import { GOOD_TO_PASS as PIGEON_GOOD } from '../../../shared/pigeon/config';
 import { GOOD_TO_PASS as SWAMPHEN_GOOD } from '../../../shared/swamphen/config';
 import { STAGES } from '../../../shared/subitising/config';
-import type { FoundationalGameId, GameProgress, QuickLooksProgress } from '../../data/foundational';
+import type { FoundationalGameId, GameProgress, QuickLooksProgress, RecentChallenge } from '../../data/foundational';
 
 export type CellStateName = 'moving' | 'nearly' | 'stuck' | 'top' | 'quiet' | 'none';
 
@@ -30,6 +30,51 @@ export interface CellState {
   state: CellStateName;
   step: Step | null;
   daysOnStep: number;
+  /** % right first try and usual time over the last rounds (P8); null or missing when the game saved neither. */
+  firstTry?: FirstTry | null;
+}
+
+/** How a pupil goes at first tap over their last rounds. Either part can be missing; both missing is null instead. */
+export interface FirstTry {
+  /** Whole % of goes right at the first tap, from the rounds that say; null when none do. */
+  percent: number | null;
+  /** The median of the rounds' first-tap times, in ms; null when none say. */
+  ms: number | null;
+}
+
+/** How many of the newest rounds count. */
+export const FIRST_TRY_ROUNDS = 10;
+
+const medianOf = (values: number[]): number => {
+  const v = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(v.length / 2);
+  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+};
+
+/**
+ * % right first try (goes right first time over goes, in the rounds that say) and the median first-tap time, over the newest
+ * {@link FIRST_TRY_ROUNDS} rounds. A round's goes are its taps less its wrong taps. Nothing to say: null, never a made-up number.
+ */
+export function firstTryOf(recent: readonly RecentChallenge[]): FirstTry | null {
+  const newest = recent.slice(0, FIRST_TRY_ROUNDS);
+  let right = 0;
+  let goes = 0;
+  for (const r of newest) {
+    const n = r.taps - r.wrong;
+    if (r.firstRight === undefined || n <= 0) continue;
+    right += Math.min(r.firstRight, n);
+    goes += n;
+  }
+  const times = newest.flatMap((r) => (r.ms !== undefined ? [r.ms] : []));
+  const percent = goes > 0 ? Math.round((100 * right) / goes) : null;
+  const ms = times.length > 0 ? Math.round(medianOf(times)) : null;
+  return percent === null && ms === null ? null : { percent, ms };
+}
+
+/** "72% right first try · usually 3.1 s", or "" when there is nothing to say. */
+export function firstTryWords(f: FirstTry | null | undefined): string {
+  if (!f) return '';
+  return [f.percent === null ? '' : `${f.percent}% right first try`, f.ms === null ? '' : `usually ${(f.ms / 1000).toFixed(1)} s`].filter(Boolean).join(' · ');
 }
 
 const none: CellState = { state: 'none', step: null, daysOnStep: 0 };
@@ -79,12 +124,13 @@ export function cellState(game: FoundationalGameId, progress: GameProgress | und
   // A game that saved no step the table knows has nothing to draw.
   if (!step) return none;
   const daysOnStep = progress.level === null ? 0 : progress.since ? daysSince(progress.since, today) : daysAtLevel(progress.recent, progress.level);
+  const firstTry = firstTryOf(progress.recent);
   const quiet = progress.lastDay !== null && schoolDaysSince(progress.lastDay, today) >= FLAG_RULES.quietSchoolDays;
-  if (quiet) return { state: 'quiet', step, daysOnStep };
-  if (progress.level !== null && progress.level === GAMES[game].top) return { state: 'top', step, daysOnStep };
-  if (progress.level !== null && daysOnStep >= FLAG_RULES.sameLevelDays) return { state: 'stuck', step, daysOnStep };
-  if (isNearly(game, progress, facts)) return { state: 'nearly', step, daysOnStep };
-  return { state: 'moving', step, daysOnStep };
+  if (quiet) return { state: 'quiet', step, daysOnStep, firstTry };
+  if (progress.level !== null && progress.level === GAMES[game].top) return { state: 'top', step, daysOnStep, firstTry };
+  if (progress.level !== null && daysOnStep >= FLAG_RULES.sameLevelDays) return { state: 'stuck', step, daysOnStep, firstTry };
+  if (isNearly(game, progress, facts)) return { state: 'nearly', step, daysOnStep, firstTry };
+  return { state: 'moving', step, daysOnStep, firstTry };
 }
 
 /** Quick looks: stages finished (0 to 7) as steps. No stuck rule. */

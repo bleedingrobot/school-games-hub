@@ -9,7 +9,7 @@ import { STAGES } from '../../../shared/subitising/config';
 import { foundationalClass, GAME_IDS, type FoundationalClass, type FoundationalGameId } from '../../data/foundational';
 import { enabledGames } from '../foundational/alerts';
 import { GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config';
-import { cellState, quickCellState, type CellState } from './state';
+import { cellState, firstTryWords, quickCellState, type CellState } from './state';
 import './progress.css';
 
 export interface PupilStepRow {
@@ -80,8 +80,8 @@ function RowBody({ row }: { row: PupilStepRow }) {
         {cell.state === 'top' && <span aria-hidden="true"> ★</span>}
       </span>
       <span className="pupil-steps__days">{[days, note].filter(Boolean).join(' · ')}</span>
-      {/* P8 fills this in with "% right first try"; until then it stays an honest dash. */}
-      <span className="pupil-steps__first-try" data-slot="first-try" title="% right first try: coming soon" />
+      {/* Empty (nothing made up) when the game saved neither % right first try nor a first-tap time. */}
+      <span className="pupil-steps__first-try" data-slot="first-try">{firstTryWords(cell.firstTry)}</span>
     </>
   );
 }

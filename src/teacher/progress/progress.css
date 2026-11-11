@@ -326,7 +326,7 @@
 .pupil-steps__where { grid-area: where; font-weight: 600; }
 .pupil-steps__days { grid-area: days; color: var(--ink-soft); font-size: 0.85rem; }
 .pupil-steps__days:empty { display: none; }
-.pupil-steps__first-try { grid-area: first; min-width: 4.5rem; text-align: right; color: var(--ink-soft); }
+.pupil-steps__first-try { grid-area: first; min-width: 4.5rem; max-width: 13rem; font-size: 0.85rem; text-align: right; color: var(--ink-soft); }
 .pupil-steps__first-try:empty { display: block; }
 .pupil-steps__box {
   box-sizing: border-box;
