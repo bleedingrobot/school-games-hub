@@ -3,7 +3,7 @@
 --   scripts/scratch-test.sh games supabase/tests/database/game_sets.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(11);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
