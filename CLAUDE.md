@@ -1,1 +1,1 @@
-Building or changing a game? Read [docs/GAME_DEVELOPMENT_GUIDE.md](docs/GAME_DEVELOPMENT_GUIDE.md) first (branches, migration numbers, shared files, maths questions, testing and going live).
+Building or changing a game? Read [docs/game-guide/README.md](docs/game-guide/README.md) first: the rules, the start-to-live checklist, and which part to read next (branches, migration numbers, shared files, maths questions, art and voice, testing and going live).
