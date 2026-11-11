@@ -329,6 +329,34 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
           </div>
           <button type="button" className="tf-btn tf-btn--small" data-noflap onClick={askLeave}>Leave</button>
         </div>
+        {confirm && (
+          <div className="tf-confirm" role="alertdialog" aria-label="Leave this flight?" data-noflap>
+            <div className="tf-confirm__box">
+              <p><strong>Leave this flight?</strong></p>
+              <p>This run won't be saved.</p>
+              <div className="tf-row">
+                <button type="button" className="tf-btn" onClick={stay} autoFocus>Keep flying</button>
+                <button type="button" className="tf-btn tf-btn--ghost" onClick={onLeave}>Leave</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {saving && <div className="tf-saving" role="status">Checking your flight…</div>}
+      </div>
+      {/* In portrait this sits below the flying area so nothing covers the gaps; in landscape it lies over it. */}
+      <div className="tf-dock">
+        {activeSign && (
+          <div className="tf-sign" role="status">
+            <span className="tf-sign__label">Fly through the answer</span>
+            <span className="tf-sign__sum">{activeSign.parts.join(' ')}</span>
+          </div>
+        )}
+        {reading && !confirm && (
+          <div className="tf-go-wrap" data-noflap>
+            <button type="button" className="tf-btn tf-btn--go" onClick={go} autoFocus>Go</button>
+            <span className="tf-go-note">Read it, then tap Go. The clock is stopped.</span>
+          </div>
+        )}
         {(canPotion || hud.potionUsed) && (
           <div className="tf-potion" data-noflap>
             {hud.potionUsed ? <span className="tf-chip tf-chip--good">Potion used: −3 s</span> : (
@@ -336,12 +364,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
                 🧪 Use a potion (cancels one bump)
               </button>
             )}
-          </div>
-        )}
-        {activeSign && (
-          <div className="tf-sign" role="status">
-            <span className="tf-sign__label">Fly through the answer</span>
-            <span className="tf-sign__sum">{activeSign.parts.join(' ')}</span>
           </div>
         )}
         {bubble && <div className="tf-bubble" role="status">{bubble}</div>}
@@ -362,25 +384,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
             <span className="tf-tap__text">Tap to fly again</span>
           </div>
         )}
-        {reading && !confirm && (
-          <div className="tf-go-wrap" data-noflap>
-            <button type="button" className="tf-btn tf-btn--go" onClick={go} autoFocus>Go</button>
-            <span className="tf-go-note">Read it, then tap Go. The clock is stopped.</span>
-          </div>
-        )}
-        {confirm && (
-          <div className="tf-confirm" role="alertdialog" aria-label="Leave this flight?" data-noflap>
-            <div className="tf-confirm__box">
-              <p><strong>Leave this flight?</strong></p>
-              <p>This run won't be saved.</p>
-              <div className="tf-row">
-                <button type="button" className="tf-btn" onClick={stay} autoFocus>Keep flying</button>
-                <button type="button" className="tf-btn tf-btn--ghost" onClick={onLeave}>Leave</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {saving && <div className="tf-saving" role="status">Checking your flight…</div>}
       </div>
       <button type="button" className="tf-pad" data-noflap onPointerDown={(e) => { e.stopPropagation(); flap(); }} onClick={(e) => { if (e.detail === 0) flap(); }}>
         Tap to flap
