@@ -25,6 +25,7 @@ create function pg_temp.fin() returns void language sql as $$ select pg_temp.act
 insert into public.classes (school_id, name, school_year, warp_code) values
   (1, 'Room Two', 2026, 'CDFGH'),
   (1, 'Room Three', 2026, 'JKMNP');
+select public.give_class_settings(id) from public.classes where name in ('Room Two', 'Room Three');  -- a class made by insert has no settings row until this
 insert into public.class_teachers (class_id, teacher_id)
 select id, '00000000-0000-0000-0000-00000000000f' from public.classes where name = 'Room Two';
 select set_config('test.two', (select id::text from public.classes where name = 'Room Two'), true);
