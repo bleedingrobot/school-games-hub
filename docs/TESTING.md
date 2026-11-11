@@ -21,6 +21,8 @@ budget deletes a weaker test to make room.
 - **Waiting in screen tests:** `findBy`/`waitFor` wait up to 5 seconds (`src/test-setup.ts`), so a lazy page loading on a
   busy machine doesn't fail. Don't lower it per test. A test that starts a background import must let it finish before it
   ends, or the file fails with "Vite module runner has been closed" (see `src/pages/LobbyNonMaths.test.tsx`).
+- A screen test that waits on the game's own pauses (voice lines, a hand that appears later) uses `fastClock()` from
+  `src/fastClock.ts` (copy `src/games/weka/wekaGuide.test.tsx`): the clock runs 20 times faster.
 - No slow tests: every test should run in well under 2 seconds. Bot-against-bot or play-to-the-end runs belong in
   `scripts/<game>-sim.mjs`, run by hand when tuning. `vitest.slow.ts` lists slow files for `npm test` to skip; it is empty now, keep it so.
 

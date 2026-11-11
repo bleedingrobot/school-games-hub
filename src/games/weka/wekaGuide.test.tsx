@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fastClock } from '../../fastClock';
 import { SoundProvider } from '../../sound';
 import { trialBackend } from './backend';
 import { WekaGame } from './WekaGame';
@@ -9,8 +10,15 @@ const hand = () => document.querySelector('.wk-hand');
 const label = () => hand()!.closest('button')!.getAttribute('aria-label');
 
 describe('Weka’s Stepping Stones help', () => {
-  beforeEach(() => localStorage.clear());
-  afterEach(cleanup);
+  let stop = () => {};
+  beforeEach(() => {
+    localStorage.clear();
+    stop = fastClock();
+  });
+  afterEach(() => {
+    cleanup();
+    stop();
+  });
 
   it('guides the very first go in two steps (to the big rock, then on), the pebbles and the split after it, then gives hints after wrong taps: the make-ten sentence, then the hand', async () => {
     const trial = trialBackend({ storageKey: 'guide' });
