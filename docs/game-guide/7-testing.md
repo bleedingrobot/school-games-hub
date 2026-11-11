@@ -2,7 +2,7 @@
 
 ## Tests
 
-- **How many:** [docs/TESTING.md](../TESTING.md) "How many" is the rule (older and junior games differ). The database test file and the "index.ts is up to date" check don't count.
+- **How many:** [docs/TESTING.md](../TESTING.md) "How many" is the rule (older and junior games differ). `scripts/test-budget.test.ts` enforces it: a new game id gets 8 unless it's added there (junior games: add the id to `JUNIOR`). The database test file and the "index.ts is up to date" check don't count.
 - **While you work:** `npx vitest run shared/<id> src/games/<id> supabase/functions/<id>`.
 - **Before the PR:** `npm run typecheck`, `npm run test:changed` and `npm run build`. Don't run `test:all` locally: the PR's Site checks run every test, split across 4 machines. A busy-machine timeout that passes alone with `--testTimeout=30000`: say so in the PR.
 - **Date or time tests** ("Today", weekends, midnight) pin the clock.
