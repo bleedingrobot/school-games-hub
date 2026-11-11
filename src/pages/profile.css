@@ -1,0 +1,144 @@
+/* My profile: the top card and the folds. The avatar maker, name picker and theme tiles keep their styles in styles.css. */
+
+.profile-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px 22px;
+  align-items: center;
+}
+.profile-top__who {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.profile-top__name {
+  margin: 0;
+  font-size: 1.7rem;
+  overflow-wrap: anywhere;
+}
+.profile-top__nudge {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.profile-top__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.profile-top__out {
+  align-self: start;
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  max-width: 210px;
+  text-align: right;
+}
+.profile-top__out p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.profile-fold {
+  padding: 0;
+}
+.profile-fold__heading {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.profile-fold__button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.profile-fold__button:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+.profile-fold__title {
+  flex: 1;
+}
+.profile-fold__arrow {
+  font-size: 1.3rem;
+  transition: transform 0.15s;
+}
+.profile-fold__button[aria-expanded='true'] .profile-fold__arrow {
+  transform: rotate(180deg);
+}
+.profile-fold__body {
+  padding: 4px 22px 20px;
+}
+
+.profile-achievements,
+.profile-stats {
+  display: grid;
+  gap: 20px;
+}
+.profile-achievements h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.profile-achievements__games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 10px 24px;
+  align-items: start;
+}
+.profile-achievements__games li {
+  display: grid;
+  gap: 10px;
+}
+.profile-achievements__game {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.profile-achievements__game strong {
+  flex: 1;
+}
+.profile-achievements__all {
+  min-height: 44px;
+  padding: 6px 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-fold__arrow {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  /* Sign out stays at the top, beside the avatar; the name and buttons go underneath. */
+  .profile-top__out {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+  }
+  .profile-top__who {
+    grid-column: 1 / -1;
+  }
+  .profile-fold__button {
+    padding: 12px 16px;
+  }
+  .profile-fold__body {
+    padding: 4px 16px 16px;
+  }
+}
