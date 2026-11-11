@@ -3,6 +3,7 @@ import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
 import { saveBondMatchEnabled } from '../../data/bondMatch';
 import { useBondMatchClassSwitch, useBondMatchEnabled } from './switch';
+import { useBondMatchCells } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const BondMatchHub = lazy(() => import('./BondMatchHub').then((m) => ({ default: m.BondMatchHub })));
@@ -41,6 +42,7 @@ export const bondMatch: GameDefinition = {
       about:
         'A memory card game where two cards match when they make a number together (to 10, 100, 1, and more). Off hides it from students and nothing is saved.',
     },
+    progressColumns: { note: 'stars', useCells: useBondMatchCells },
     StudentPanel: BondMatchStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherBondMatch').then((m) => m.bondMatchSummary(student)),
   },

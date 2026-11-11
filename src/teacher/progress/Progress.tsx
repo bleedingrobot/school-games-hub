@@ -2,7 +2,7 @@
  * The Progress tab: every pupil's step in every Foundational game that is on for the class, and Quick looks. Loads the same cached
  * class data as the Foundational grid; the cell rules are in ./state.ts.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { nzDay } from '../../../shared/maths/leitner';
 import { STAGES } from '../../../shared/subitising/config';
@@ -13,7 +13,9 @@ import { GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config'
 import { enabledGames } from '../foundational/alerts';
 import { ProgressTable, type ProgressColumn, type ProgressRow } from './ProgressTable';
 import { boardGames, LadderBoard } from './LadderBoard';
-import { cellState, quickCellState } from './state';
+import { GAMES as HUB_GAMES } from '../../games/registry';
+import type { GameDefinition, Loaded, ProgressCell } from '../../games/types';
+import { cellState, otherCellState, quickCellState } from './state';
 import './progress.css';
 
 export default function Progress() {
@@ -22,17 +24,53 @@ export default function Progress() {
 }
 
 /** Rows and columns from the class data and the games that are on. Exported for tests. */
-export function buildTable(data: FoundationalClass, on: readonly FoundationalGameId[], today: string): { columns: ProgressColumn[]; rows: ProgressRow[] } {
+export function buildTable(
+  data: FoundationalClass,
+  on: readonly FoundationalGameId[],
+  today: string,
+  others: readonly OtherGameColumn[] = [],
+): { columns: ProgressColumn[]; rows: ProgressRow[] } {
   const columns: ProgressColumn[] = GAME_IDS.filter((g) => on.includes(g)).map((g) => ({ id: g, name: GAMES[g].name, steps: GAMES[g].order.length }));
   const hasQuick = [...data.pupils.values()].some((p) => p.quickLooks);
   if (hasQuick) columns.push({ id: QUICK_LOOKS_ID, name: QUICK_LOOKS_NAME, steps: STAGES.length });
+  // The other games come last, in a group of their own.
+  for (const o of others) columns.push({ id: o.id, name: o.name, steps: o.cells.values().next().value?.of ?? 0, note: o.note });
+  const otherById = new Map(others.map((o) => [o.id, o]));
   const rows = data.map.students.map((s) => {
     const p = data.pupils.get(s.id);
     const cells: ProgressRow['cells'] = {};
-    for (const c of columns) cells[c.id] = c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today, s.facts);
+    for (const c of columns) cells[c.id] = otherById.has(c.id) ? otherCellState(otherById.get(c.id)?.cells.get(s.id), today) : c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today, s.facts);
     return { id: s.id, name: s.name, realName: s.realName, cells };
   });
   return { columns, rows };
+}
+
+/** One "Other games" column: a game that has `teacher.progressColumns` and is on for the class, with its pupils' numbers. */
+export interface OtherGameColumn {
+  id: string;
+  name: string;
+  note: string;
+  cells: Map<string, ProgressCell>;
+}
+
+const alwaysOn = (): Loaded<boolean> => ({ value: true, failed: false });
+
+/** The games that can add a column. Read from the registry once; a new game joins by naming `progressColumns`. */
+export const columnGames = (games: readonly GameDefinition[]): GameDefinition[] => games.filter((g) => g.teacher?.progressColumns);
+
+/**
+ * Draws nothing. Asks one game for its numbers and whether it is on for the class (its own switch hook, or always on), and
+ * passes them up, or null while loading or when it is off. A game's hooks are only called here, so only when the tab is open.
+ */
+function OtherColumnLoader({ game, classId, onCells }: { game: GameDefinition; classId: string; onCells: (id: string, cells: Map<string, ProgressCell> | null) => void }) {
+  const useSwitch = game.teacher?.switch?.useValue ?? alwaysOn;
+  const on = useSwitch(classId);
+  const cells = game.teacher?.progressColumns?.useCells(classId) ?? null;
+  const shown = on.value === true ? cells : null;
+  useEffect(() => {
+    onCells(game.id, shown);
+  }, [game.id, shown, onCells]);
+  return null;
 }
 
 export const SHOWS = ['stuck', 'nearly', 'top', 'quiet'] as const;
@@ -59,6 +97,13 @@ export function filterRows(rows: ProgressRow[], show: Show | null, game: string 
 }
 
 function Panel({ classId, name }: { classId: string; name: string }) {
+  const otherGames = useMemo(() => columnGames(HUB_GAMES), []);
+  const [otherCells, setOtherCells] = useState<Record<string, Map<string, ProgressCell> | null>>({});
+  const onCells = useCallback((id: string, cells: Map<string, ProgressCell> | null) => setOtherCells((c) => (c[id] === cells ? c : { ...c, [id]: cells })), []);
+  const others = useMemo(
+    () => otherGames.flatMap((g) => (otherCells[g.id] ? [{ id: g.id, name: g.name, note: g.teacher?.progressColumns?.note ?? '', cells: otherCells[g.id] as Map<string, ProgressCell> }] : [])),
+    [otherGames, otherCells],
+  );
   const [data, setData] = useState<{ data: FoundationalClass; on: FoundationalGameId[] } | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
@@ -75,7 +120,7 @@ function Panel({ classId, name }: { classId: string; name: string }) {
 
   const [params, setParams] = useSearchParams();
   const today = useMemo(() => nzDay(Date.now()), []);
-  const table = useMemo(() => (data ? buildTable(data.data, data.on, today) : null), [data, today]);
+  const table = useMemo(() => (data ? buildTable(data.data, data.on, today, others) : null), [data, today, others]);
   const games = useMemo(() => (data ? boardGames(data.data, data.on) : []), [data]);
   const view = params.get('view') === 'board' ? 'board' : 'table';
   const game = games.find((g) => g.id === params.get('game'))?.id ?? games[0]?.id ?? '';
@@ -133,6 +178,9 @@ function Panel({ classId, name }: { classId: string; name: string }) {
   }
   return (
     <section className="panel" aria-labelledby="progress-title">
+      {otherGames.map((g) => (
+        <OtherColumnLoader key={g.id} game={g} classId={classId} onCells={onCells} />
+      ))}
       <h2 id="progress-title" className="panel__title">
         {view === 'board' ? 'One game’s steps' : 'Every game’s steps'}
         <span className="panel__count">{show ? `${rows.length} of ${table.rows.length}` : table.rows.length} student{table.rows.length === 1 ? '' : 's'}</span>

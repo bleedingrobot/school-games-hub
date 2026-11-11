@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { saveLordEnabled } from '../../data/lord';
 import { useLordEnabled } from './switch';
-import { LORD_ABOUT, useLordClassSwitch, useLordSummary } from './teacher';
+import { LORD_ABOUT, useLordCells, useLordClassSwitch, useLordSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const LordPlay = lazy(() => import('./LordPlay').then((m) => ({ default: m.LordPlay })));
@@ -63,6 +63,7 @@ export const dragonMaths: GameDefinition = {
   teacher: {
     switch: { useValue: useLordClassSwitch, save: (on, classId) => saveLordEnabled(on, classId), about: LORD_ABOUT },
     useSummary: useLordSummary,
+    progressColumns: { note: 'hero level', useCells: useLordCells },
     Settings: LordTeacherSettings,
     StudentPanel: LordStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherLord').then((m) => m.lordStudentSummary(student)),

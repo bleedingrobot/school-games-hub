@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { nzDate, seasonOf } from '../../../shared/lord/engine';
 import { fetchLordEnabled, fetchLordSchoolSeason, fetchLordSettings, type LordSchoolSeason, type LordSettings } from '../../data/lord';
 import { useSetting } from '../../teacher/useSetting';
+import { useOtherGameCells } from '../../data/otherGames';
 
 /**
  * Dragon Maths on the teacher's Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: the on/off switch in
@@ -67,3 +68,6 @@ function LordSwitchAbout() {
 }
 
 export const LORD_ABOUT = createElement(LordSwitchAbout);
+
+/** The Progress tab's Dragon Maths column: the hero's level. */
+export const useLordCells = (classId: string) => useOtherGameCells(classId, 'dragon-maths');

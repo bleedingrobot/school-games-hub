@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { FoundationalClass, GameProgress } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
-import { buildTable, filterRows, showCounts } from './Progress';
+import { buildTable, columnGames, filterRows, showCounts } from './Progress';
 import Progress from './Progress';
 import { buildBoard } from './LadderBoard';
 import { ProgressTable } from './ProgressTable';
@@ -13,6 +13,20 @@ import { stepKeys as hopKeys } from '../../../shared/hop/round';
 vi.mock('../TeacherClass', () => ({ useTeacherClass: () => ({ current: { id: 'c', name: '3B' } }) }));
 vi.mock('../foundational/alerts', () => ({ enabledGames: async () => ['robin'] }));
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
+
+// Two stand-in games: one names `progressColumns` (Pupil top has played, Pupil moving was last here a month ago), one doesn't.
+const { withColumns, withoutColumns } = vi.hoisted(() => {
+  const cells = new Map([
+    ['s1', { value: 7, lastPlayed: '2026-11-10T01:00:00Z' }],
+    ['s3', { value: 4, lastPlayed: '2026-10-01T01:00:00Z' }],
+  ]);
+  const base = { name: 'Level Game', tagline: '', colours: ['#000', '#000'] as [string, string], Icon: () => null, Play: () => null };
+  return {
+    withColumns: { ...base, id: 'level-game', teacher: { progressColumns: { note: 'level passed', useCells: () => cells } } },
+    withoutColumns: { ...base, id: 'plain-game', name: 'Plain Game', teacher: {} },
+  };
+});
+vi.mock('../../games/registry', () => ({ GAMES: [withColumns, withoutColumns] }));
 
 const TODAY = '2026-11-11';
 const rounds = (level: number, days: string[]) => days.map((day) => ({ day, wrong: 0, taps: 8, level }));
@@ -125,5 +139,23 @@ describe('Progress', () => {
     expect(screen.getByRole('button', { name: '1 stuck' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: '1 stuck' }));
     expect(await screen.findByText('Pupil top')).toBeTruthy();
+  });
+
+  it('a game with progressColumns gets an Other games column with its number and zz, and a game without gets none', async () => {
+    expect(columnGames([withColumns, withoutColumns] as never).map((g) => g.id)).toEqual(['level-game']);
+    const { columns, rows } = buildTable(data, ['robin'], TODAY, [{ id: 'level-game', name: 'Level Game', note: 'level passed', cells: withColumns.teacher.progressColumns.useCells() }]);
+    expect(columns.map((c) => c.id)).toEqual(['robin', 'level-game']);
+    expect(rows.map((r) => r.cells['level-game'].state)).toEqual(['none', 'moving', 'none', 'quiet']);
+    render(
+      <MemoryRouter initialEntries={['/teacher/c/progress']}>
+        <Progress />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Pupil stuck');
+    expect(screen.getByRole('columnheader', { name: /Level Game/ })).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Other games' })).toBeTruthy();
+    expect(screen.queryByRole('columnheader', { name: /Plain Game/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Pupil top, Level Game: 7 level passed/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Pupil moving, Level Game: 4 level passed, not played for 10 school days/ })).toBeTruthy();
   });
 });

@@ -2,6 +2,7 @@ import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, POINT_RUNS_A_DAY, POINTS, STEPS_
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { fetchToonFlapClass, fetchToonFlapEnabled, saveToonFlapSetting } from '../../data/toonflap';
 import { useSetting } from '../../teacher/useSetting';
+import { useOtherGameCells } from '../../data/otherGames';
 
 /**
  * Toon Flap on the teacher's Games table, for the header's class: the on/off switch in the On column, how the class is going
@@ -26,3 +27,6 @@ export function useToonFlapSummary(classId: string): string | null {
 const s = (steps: number) => steps / STEPS_PER_SECOND;
 
 export const TOONFLAP_ABOUT = `A flappy-style flight through ${LEVELS.length} cartoon worlds (Years 3 to 6): tap to flap through the gaps to the nest, racing a medal time. Bumping a wall never ends the run; it adds ${s(BUMP_PENALTY_STEPS)} seconds. Perches are checks: the clock stops for a maths question from the student's own focus (or their times tables), and a right answer takes ${s(CHECK_BONUS_STEPS)} seconds off. From level 3, a sign shows a quick sum and the student flies through the gap with the right answer for a ${s(TAILWIND_STEPS)}-second tailwind. Questions are never read aloud; the guide and tips are (Bella's voice, with a Voice off button). The server makes and marks every question and replays every flight, so times can't be faked. One new level opens each day. Finishing a level ${UNLOCK_RUNS} times unlocks a new flyer; flyers and trails only change the look. Points: ${POINTS.finish} for a finish, ${POINTS.firstFinish} for a first finish and ${POINTS.newGold} for a new gold, for the first ${POINT_RUNS_A_DAY} finished flights a day, inside the daily points cap. A break is suggested after 30 flights in a day. Nobody is ranked. Off hides it from students.`;
+
+/** The Progress tab's Toon Flap column: levels finished, of all of them. */
+export const useToonFlapCells = (classId: string) => useOtherGameCells(classId, 'toonflap', LEVELS.length);

@@ -140,12 +140,18 @@ these in your plan.
 7. Test it in `src/teacher/progress/progress.test.tsx`: your game gets a column, the right step shows, and a pupil with good
    goes one short shows "nearly".
 
-**Any other game with levels or a ladder:** plan how a teacher sees each pupil's place in it. Name the levels as steps where
-they are steps, and save the level per round so it can join the Progress tab later (card P11 adds a `progressColumns` entry on
-the game's `teacher` part for this; follow it once it is live).
+**Any other game with levels or a ladder (not a stepped lesson):** it gets a column in the Progress table's "Other games" group
+with one number a pupil (the level passed, the hero level, the stars), "zz" when not played for the quiet window, and no stuck or
+nearly rule. Add `progressColumns: { note: 'level passed', useCells }` to the game's `teacher` part (`TeacherContract` in
+`src/games/types.ts`). Copy `src/games/diamond/teacher.ts` (`useDiamondCells`, with a top so a bar is drawn) or
+`src/games/bond-match/teacher.ts` (no top, just the number) and the one line in the game's `index.tsx`. The column shows only while
+the game's own teacher `switch` is on for the class. The number comes from `src/data/otherGames.ts`, which reads
+`teacher_progress_other_games(class)` (migration 20261111000800): add your game as one more `union all` block in a new migration
+(copy the newest body of that function) giving `{ student, game, value, at }`, and save when the pupil last played. Name levels as
+steps where they are steps.
 
-**Coming from the same plan (follow each card once it is live, and keep this section current):** step history in a `step_changes` table (P9), the value given on a wrong answer (`given` on each
-`FactAnswer`, P10), and other games' columns (P11). A card that changes what a new game must do updates this section in its
+**Coming from the same plan (follow each card once it is live, and keep this section current):** step history in a `step_changes` table (P9) and the value given on a wrong answer (`given` on each
+`FactAnswer`, P10). A card that changes what a new game must do updates this section in its
 own PR.
 
 ---
