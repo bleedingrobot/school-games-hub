@@ -3,6 +3,7 @@
  * class in the address so links and the back button keep it.
  *
  *   /teacher/:classId            Today
+ *   /teacher/:classId/progress   Progress (every pupil's step in every Foundational game)
  *   /teacher/:classId/students   Students (the class roster; /students/:studentId is one student's page)
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
@@ -93,6 +94,7 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
   if (!current || !classId) return null;
   const tabs = [
     { to: pathFor(classId), label: 'Today', end: true },
+    { to: pathFor(classId, 'progress'), label: 'Progress' },
     { to: pathFor(classId, 'students'), label: 'Students' },
     { to: pathFor(classId, 'maths'), label: 'Maths' },
     { to: pathFor(classId, 'games'), label: 'Games' },

@@ -7,7 +7,7 @@
 import type { Flag, FlagKind } from '../../../shared/kit/teacherGrid';
 import { weakestFacts } from '../../../shared/kit/teacherGrid';
 import { fetchBeanstalkEnabled } from '../../data/beanstalk';
-import { classFacts, foundationalClass, type FoundationalGameId } from '../../data/foundational';
+import { classFacts, foundationalClass, GAME_IDS, type FoundationalGameId } from '../../data/foundational';
 import { fetchHopEnabled } from '../../data/hop';
 import { fetchKororaEnabled } from '../../data/korora';
 import { fetchLizardEnabled } from '../../data/lizard';
@@ -36,6 +36,12 @@ const ENABLED: Record<FoundationalGameId, (classId: string) => Promise<boolean>>
   swamphen: fetchSwamphenEnabled,
   robin: fetchRobinEnabled,
 };
+
+/** The games switched on for a class, in GAME_IDS order. A game whose check fails counts as off. */
+export async function enabledGames(classId: string): Promise<FoundationalGameId[]> {
+  const on = await Promise.all(GAME_IDS.map((id) => ENABLED[id](classId).catch(() => false)));
+  return GAME_IDS.filter((_, i) => on[i]);
+}
 
 /** Where "See" goes, after /teacher/:classId/ (the grid's tab is added in Stage 2). */
 export const GRID_SECTION = 'maths/foundational';
