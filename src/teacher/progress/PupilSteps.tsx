@@ -6,10 +6,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { nzDay } from '../../../shared/maths/leitner';
 import { STAGES } from '../../../shared/subitising/config';
-import { foundationalClass, GAME_IDS, type FoundationalClass, type FoundationalGameId } from '../../data/foundational';
+import { foundationalClass, GAME_IDS, type FoundationalClass, type FoundationalGameId, type StepMove } from '../../data/foundational';
 import { enabledGames } from '../foundational/alerts';
 import { GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config';
-import { cellState, firstTryWords, quickCellState, type CellState } from './state';
+import { cellState, firstTryWords, lastMoveWords, quickCellState, timelineWords, type CellState } from './state';
 import './progress.css';
 
 export interface PupilStepRow {
@@ -17,6 +17,8 @@ export interface PupilStepRow {
   name: string;
   steps: number;
   cell: CellState;
+  /** The last 5 moves to a new step, newest first (step history). */
+  moves?: StepMove[];
 }
 
 /** The rows for one pupil: played ones in game order, then the ones not played yet. Exported for tests. */
@@ -28,6 +30,7 @@ export function buildPupilRows(data: FoundationalClass, pupilId: string, on: rea
     name: GAMES[g].name,
     steps: GAMES[g].order.length,
     cell: cellState(g, p?.games[g], today, facts),
+    moves: p?.games[g]?.moves,
   }));
   if ([...data.pupils.values()].some((x) => x.quickLooks)) {
     rows.push({ id: QUICK_LOOKS_ID, name: QUICK_LOOKS_NAME, steps: STAGES.length, cell: quickCellState(p?.quickLooks, today) });
@@ -71,6 +74,8 @@ function RowBody({ row }: { row: PupilStepRow }) {
   const { cell } = row;
   const days = cell.daysOnStep > 0 ? `${cell.daysOnStep} day${cell.daysOnStep === 1 ? '' : 's'} on this step` : '';
   const note = STATE_WORDS[cell.state];
+  // From the step history: "up to step 4 on 6 Nov" ("about" when worked out from old rounds); empty before any move is kept.
+  const last = row.id === QUICK_LOOKS_ID ? null : lastMoveWords(row.id as FoundationalGameId, row.moves);
   return (
     <>
       <span className="pupil-steps__name">{row.name}</span>
@@ -79,7 +84,7 @@ function RowBody({ row }: { row: PupilStepRow }) {
         {where(row)}
         {cell.state === 'top' && <span aria-hidden="true"> ★</span>}
       </span>
-      <span className="pupil-steps__days">{[days, note].filter(Boolean).join(' · ')}</span>
+      <span className="pupil-steps__days">{[days, note, last].filter(Boolean).join(' · ')}</span>
       {/* Empty (nothing made up) when the game saved neither % right first try nor a first-tap time. */}
       <span className="pupil-steps__first-try" data-slot="first-try">{firstTryWords(cell.firstTry)}</span>
     </>
@@ -96,6 +101,8 @@ function PupilRow({ row, classId, pupilId }: { row: PupilStepRow; classId: strin
     );
   }
   const label = `${row.name}: ${where(row)}`;
+  // A timeline needs two or more moves to say more than the line above it.
+  const timeline = row.id !== QUICK_LOOKS_ID && (row.moves?.length ?? 0) > 1 ? timelineWords(row.id as FoundationalGameId, row.moves) : null;
   if (row.id === QUICK_LOOKS_ID) {
     // Quick looks has its own panel further down the page, not a folded line.
     return (
@@ -116,6 +123,7 @@ function PupilRow({ row, classId, pupilId }: { row: PupilStepRow; classId: strin
       <Link className="pupil-steps__link" to={`/teacher/${classId}/students/${pupilId}?game=${row.id}`} aria-label={`${label}. Open the ${row.name} line below`}>
         <RowBody row={row} />
       </Link>
+      {timeline && <p className="pupil-steps__timeline" aria-label={`${row.name} steps with dates`}>{timeline}</p>}
     </li>
   );
 }

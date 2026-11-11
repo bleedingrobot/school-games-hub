@@ -133,6 +133,11 @@ these in your plan.
    send `daysDone`, `lastDay`, `level` (the saved step), `good`, `since` and `recent` exactly as the other step games do,
    with `f` (`first_right`) and `ms` (median tap time on rounds with no wrong taps) on each recent round
    (20261111000500 is the pattern). These give the teacher "% right first try · usually 3 s". Check no open branch is changing the same function; if one is, go after it.
+   Also add your progress table to the step history (migration 20261111000700): an `after update` trigger on it,
+   `create trigger <game>_step_changes after update on public.<game>_progress for each row when (old.<col> is distinct from new.<col>) execute function public.step_changes_log('<col>', '<game>')`,
+   where `<col>` is the column that holds the saved step (`step` or `reached`). It records each move up or down in `step_changes`, and the same
+   migration's `teacher_foundational_class` sends them as `moves` (add `'moves'` to your game's block as the other games have it; the
+   teacher's pupil page shows "up to step 4 on 6 Nov" and a small timeline). Steps are kept with the progress through New Season, so there is no season hook.
 5. "Nearly ready" (green ↑): add your game to `GOOD_TO_PASS` in `src/teacher/progress/state.ts` (games that move up on good
    goes, taking the number from your shared config), or to `STEP_KEYS` (games that move up when a step's facts are Secure).
 6. The pupil's usual slip comes from the server: `teacher_<game>_student` returns `slip` with the kit's `topSlip` rule (commonest of the
@@ -144,7 +149,7 @@ these in your plan.
 they are steps, and save the level per round so it can join the Progress tab later (card P11 adds a `progressColumns` entry on
 the game's `teacher` part for this; follow it once it is live).
 
-**Coming from the same plan (follow each card once it is live, and keep this section current):** step history in a `step_changes` table (P9), the value given on a wrong answer (`given` on each
+**Coming from the same plan (follow each card once it is live, and keep this section current):** the value given on a wrong answer (`given` on each
 `FactAnswer`, P10), and other games' columns (P11). A card that changes what a new game must do updates this section in its
 own PR.
 
