@@ -35,7 +35,9 @@ async function chooseBot(user: ReturnType<typeof userEvent.setup>, side: 'X' | '
 
 /** Plays like a hurried student: first free square, next round when asked, until the match ends. */
 async function playToTheEnd(user: ReturnType<typeof userEvent.setup>) {
-  for (let i = 0; i < 400; i++) {
+  // A time limit, not a count of steps: a busy machine needs more steps while the bot thinks.
+  const until = Date.now() + 45_000;
+  while (Date.now() < until) {
     if (/match/.test(prompt()) && screen.queryByRole('button', { name: 'Rematch' })) return;
     const next = screen.queryByRole('button', { name: 'Next round' });
     if (next) await user.click(next);
