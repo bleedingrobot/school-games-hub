@@ -59,15 +59,16 @@ Also seen: `docs/plans/GAME-KIT-PLAN.md` has three different Status lines at the
 
 ## 4. The plan (in priority order)
 
-| # | Change | Why | Size |
-|---|---|---|---|
-| P1 | **Fix the wrong rules in place:** T1 (live is pre-approved, no stopping each stage), T3, T4, T5, T6, T8 (put the merge where it happens), T10's rule moved up, plus the Toon Flap and GAME-KIT-PLAN status lines. | These actively mislead a model today. | Small: one PR, about 40 lines |
-| P2 | **Settle the test rule** (T2) with James, then make §0, §7, §9 and TESTING.md say the same thing once. | The biggest gap between rule and practice. | Small once decided |
-| P3 | **Rewrite the starter prompt** `docs/prompts/new-game-template.md` for cloud threads: the right branch, the guide's checklist, the Prompts board, carry through to live. | Every new game starts here. | Small |
-| P4 | **Add a start-to-live checklist** at the top: about 20 numbered steps (plan, migration number, build, voice, placeholder art, Progress tab, tests, PR, merge, checks, switch on, status line, board), each with its command or file, split where junior and older games differ (M11). | Gives a cheaper model one route to follow and tick. | Medium |
-| P5 | **Add the missing lessons** M1 to M10, each as a short rule plus the file to copy, in the section it belongs to; one "what to save per go" table (M7). | Stops the same lessons being learnt again. | Medium |
-| P6 | **Restructure for Claude:** split into `docs/game-guide/` — `README.md` (rules + checklist, under ~1,500 words), then one file each for design questions, junior games, maths, server and data, teacher and Progress tab, art and voice, testing, going live. Each rule said once, others link to it. Cut §10 and the date log (git has the history); keep one short "why" per rule. Leave `GAME_DEVELOPMENT_GUIDE.md` as a pointer so CLAUDE.md and old links work. | A model reads only the part it needs; less drift. | Large: one PR, mostly moving text |
-| P7 | **Copy-ready templates:** `docs/game-guide/templates/` with a plan skeleton, a `hub_games` migration stub, a Foundational config entry, an art `config.json`, a go-live PR body. | Faster, fewer mistakes than prose. | Medium |
-| P8 | **Keep it true:** replace drifting lists with find-it commands, and add one line to the "mark it finished" step: if the build found the guide wrong, fix the guide in the same PR. | Stops this review being needed again. | Small |
+The same cards, each with a copy-ready prompt and a shared status, are on the **Game Guide Plan** page: https://claude.ai/artifact/USV4sBk6rFm1FpcCcGK8uy
 
-Suggested order: P1 + P2 + P3 in one small PR now; P4 + P5 next; P6 + P7 as a separate restructure PR; P8 folded into each.
+| Card | Change | Covers | Why | Size | Waits for | Done |
+|---|---|---|---|---|---|---|
+| G1 | Fix the rules that are wrong today, the starter prompt, and the Toon Flap and kit status lines | T1, T3-T8, T10, T12 | They actively mislead a model now | S | nothing | |
+| G2 | One test rule, said once in TESTING.md | T2 | Biggest gap between rule and practice | S | James's choice | |
+| G3 | Split into `docs/game-guide/` (README + one file per topic), each rule once, history cut | T9, T11, section 3 | A model reads only the part it needs; less drift | L | G1, G2, James's choice | |
+| G4 | One start-to-live checklist at the top, junior and older routes tagged | M11, section 3 | One route to follow and tick | M | G3 | |
+| G5 | Add the missing lessons | M1-M10 | Stops lessons being learnt again | M | G3 | |
+| G6 | Copy-ready templates (plan, migration, Foundational entry, art config, go-live PR) | section 3 | Fewer small mistakes | M | G3 | |
+| G7 | Keep it true: fix-the-guide-in-the-same-PR rule, a link check | T10 | Stops this review being needed again | S | G4, G5 | |
+
+Two choices for James (asked on question cards): how strict the test rule is (recommended: 8 for an older game; a junior game may add the voice test and up to 4 screen tests), and the shape (recommended: a folder of short parts, with the old file as a pointer).
