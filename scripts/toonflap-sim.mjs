@@ -15,7 +15,7 @@ writeFileSync(entryFile, [
   "export { LEVELS, buildCourse } from './shared/toonflap/levels.ts';",
   "export { replayRun, scoreRun, encodeFlaps, decodeFlaps } from './shared/toonflap/engine.ts';",
   "export * as config from './shared/toonflap/config.ts';",
-  "export { addRun, emptyProgress } from './shared/toonflap/collection.ts';",
+  "export { addRun, emptyProgress, levelOpen } from './shared/toonflap/collection.ts';",
 ].join('\n') + '\n');
 const dir = mkdtempSync(join(tmpdir(), 'toonflap-sim-'));
 let mod;
@@ -94,14 +94,16 @@ for (const def of mod.LEVELS) {
   let weekAll = null;
   for (let week = 1; week <= 8; week++) {
     for (let r = 0; r < 16; r++) {
-      const open = mod.LEVELS.filter((l) => l.n === 1 || (p.levels[mod.LEVELS[l.n - 2].id]?.finishes ?? 0) > 0);
+      // Two sittings a week, on two different days (one new level opens a day).
+      const day = `w${String(week).padStart(2, '0')}-${r < 8 ? 'a' : 'b'}`;
+      const open = mod.LEVELS.filter((l) => mod.levelOpen(p, l.n, day));
       // Mostly the newest open level, sometimes an older one.
       const def = random() < 0.7 ? open[open.length - 1] : open[Math.floor(random() * open.length)];
       const course = mod.buildCourse(def);
       const checks = course.perches.map(() => random() < 0.7);
       const medal = random() < 0.15 ? 'gold' : random() < 0.5 ? 'silver' : 'bronze';
       const bumps = random() < 0.25 ? 0 : 3;
-      p = mod.addRun(p, { level: def.id, maths: true, seconds: 50, medal, bumps, checks, rightGaps: 0, potionUsed: bumps > 0 && p.potions > 0 }).progress;
+      p = mod.addRun(p, { level: def.id, maths: true, seconds: 50, medal, bumps, checks, rightGaps: 0, potionUsed: bumps > 0 && p.potions > 0 }, day).progress;
       runs++;
     }
     if (weekAll === null && Object.keys(p.levels).length === 10) weekAll = week;

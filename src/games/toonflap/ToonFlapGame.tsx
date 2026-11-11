@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { speak, stopSpeaking, useReadAloud } from '../../speech';
 import { guideSkipped, readHelp, saveHelp, setGuideSkipped, showTip, voiceLine, VOICE_FOLDER, type HelpSetting } from './guide';
 import { LEVELS } from '../../../shared/toonflap/levels';
+import { nzDate } from '../../../shared/kit/dayArc';
 import { ToonFlapError, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
 import { Hangar } from './Hangar';
 import { HowToPlay } from './HowToPlay';
@@ -114,7 +115,7 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
       {screen === 'map' && (
         <>
           <MapScreen
-            progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)}
+            progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)}
             onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
             help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
           />
@@ -147,7 +148,7 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
         />
       )}
       {screen === 'results' && reply && run && (
-        <ResultsScreen talk={talk} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
+        <ResultsScreen talk={talk} today={loaded.today ?? nzDate(new Date())} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
     </div>
   );

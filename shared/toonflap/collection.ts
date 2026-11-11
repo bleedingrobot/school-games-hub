@@ -80,6 +80,10 @@ export interface Progress {
   rightGaps: number;
   potions: number;
   potionsEarned: number;
+  /** The highest level opened so far (missing on early saves: worked out from the finishes). */
+  opened?: number;
+  /** The NZ day (YYYY-MM-DD) a new level last opened: only one opens a day (James, 11 Nov 2026). */
+  openedDay?: string | null;
 }
 
 export const emptyProgress = (): Progress => ({ levels: {}, checksRight: 0, streak: 0, cleanFlights: 0, rightGaps: 0, potions: 0, potionsEarned: 0 });
@@ -88,8 +92,29 @@ const record = (p: Progress, id: string): LevelRecord => p.levels[id] ?? { finis
 export const levelsFinished = (p: Progress): number => LEVELS.filter((l) => record(p, l.id).finishes > 0).length;
 export const golds = (p: Progress): number => LEVELS.filter((l) => record(p, l.id).medal === 'gold').length;
 
-/** Level 1 is always open; each finish opens the next. */
-export const levelOpen = (p: Progress, n: number): boolean => n <= 1 || record(p, LEVELS[n - 2].id).finishes > 0;
+/** The highest level opened (early saves had no `opened`: each finish opened the next). */
+export function openedLevel(p: Progress): number {
+  if (typeof p.opened === 'number') return p.opened;
+  let n = 1;
+  while (n < LEVELS.length && record(p, LEVELS[n - 1].id).finishes > 0) n++;
+  return n;
+}
+
+/**
+ * Level 1 is always open. Finishing the highest open level opens the next one, but only one new level a day: if one
+ * already opened today (NZ day `today`), the next waits until tomorrow.
+ */
+export function levelOpen(p: Progress, n: number, today: string): boolean {
+  const opened = openedLevel(p);
+  if (n <= opened) return true;
+  return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
+}
+
+/** Is a finished level's next one waiting for tomorrow? */
+export const opensTomorrow = (p: Progress, today: string): boolean => {
+  const opened = openedLevel(p);
+  return opened < LEVELS.length && record(p, LEVELS[opened - 1].id).finishes > 0 && !levelOpen(p, opened + 1, today);
+};
 export const skyDashOpen = (p: Progress): boolean => record(p, LEVELS[SKY_DASH_AFTER - 1].id).finishes > 0;
 
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
@@ -132,13 +157,39 @@ export interface Unlocks {
   newGold: boolean;
   firstFinish: boolean;
   newBest: boolean;
+  /** This run opened the next level. */
+  newLevel: boolean;
+  /** This run would have opened the next level, but one already opened today. */
+  levelTomorrow: boolean;
 }
 
 const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
 
-/** Adds a finished run to a pupil's progress and says what it opened. Returns a new object; the old one is unchanged. */
-export function addRun(before: Progress, run: RunSummary): { progress: Progress; unlocks: Unlocks } {
+/**
+ * Adds a finished run to a pupil's progress and says what it opened, on NZ day `today` (one new level a day). Returns a
+ * new object; the old one is unchanged.
+ */
+export function addRun(before: Progress, run: RunSummary, today: string): { progress: Progress; unlocks: Unlocks } {
   const p: Progress = { ...before, levels: { ...before.levels } };
+  const n = LEVELS.find((l) => l.id === run.level)?.n ?? 1;
+  let opened = openedLevel(before);
+  let openedDay = before.openedDay ?? null;
+  // A level that was waiting for a new day opens as it is first flown.
+  if (n === opened + 1) {
+    opened = n;
+    openedDay = today;
+  }
+  let newLevel = false;
+  let levelTomorrow = false;
+  if (n === opened && opened < LEVELS.length) {
+    if (openedDay !== today) {
+      opened++;
+      openedDay = today;
+      newLevel = true;
+    } else levelTomorrow = record(before, run.level).finishes === 0;
+  }
+  p.opened = opened;
+  p.openedDay = openedDay;
   const was = record(before, run.level);
   const best = run.maths ? was.best : was.bestPlain;
   const newBest = best === null || run.seconds < best;
@@ -183,12 +234,15 @@ export function addRun(before: Progress, run: RunSummary): { progress: Progress;
       newGold,
       firstFinish: was.finishes === 0,
       newBest,
+      newLevel,
+      levelTomorrow,
     },
   };
 }
 
 /** The map's next-step line (plan section 7): what to do next, in a pupil's words. */
-export function nextStep(p: Progress): string {
+export function nextStep(p: Progress, today: string): string {
+  if (opensTomorrow(p, today)) return 'A new level opens tomorrow. Try for a better medal today!';
   const open = LEVELS.find((l) => record(p, l.id).finishes === 0);
   if (open) return open.n === 1 ? `Tap ${open.name} to start.` : `Fly ${open.name} next (level ${open.n}).`;
   const notGold = LEVELS.find((l) => record(p, l.id).medal !== 'gold');

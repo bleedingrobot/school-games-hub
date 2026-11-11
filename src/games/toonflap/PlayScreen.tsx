@@ -19,6 +19,7 @@ import { drawScene, stepTrail, type TrailParticle } from './renderer';
 import type { FlyerPose } from './art/art';
 import { shiny as isShiny, FLYERS } from '../../../shared/toonflap/collection';
 import { GUIDE, SHORT } from './guide';
+import { PotionIcon } from './MapScreen';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
 const MAX_STEPS_A_FRAME = 5;
@@ -399,7 +400,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
           <div className="tf-potion" data-noflap>
             {hud.potionUsed ? <span className="tf-chip tf-chip--good">Potion used: −3 s</span> : (
               <button type="button" className="tf-btn tf-btn--potion" onClick={() => { g.potionUsed = true; setAnnounce('Potion used. Minus 3 seconds.'); }}>
-                🧪 Use a potion (cancels one bump)
+                <PotionIcon /> Use a potion (cancels one bump)
               </button>
             )}
           </div>

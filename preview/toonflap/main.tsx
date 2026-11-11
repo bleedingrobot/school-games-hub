@@ -25,6 +25,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             <p>Only in this preview. Nothing is saved to the school.</p>
             <button type="button" onClick={() => { trial.tools.openAll(); h.reload(); }}>Open every level</button>
             <button type="button" onClick={() => { trial.tools.unlockAll(); h.reload(); }}>Unlock every flyer and trail</button>
+            <button type="button" onClick={() => { trial.tools.nextDay(); h.reload(); }}>Skip to tomorrow (one new level opens a day)</button>
             <p>Maths is {trial.tools.maths() ? 'on' : 'off'}:</p>
             <button type="button" onClick={() => { trial.tools.setMaths(true); h.reload(); }}>Maths on</button>
             <button type="button" onClick={() => { trial.tools.setMaths(false); h.reload(); }}>Maths off</button>

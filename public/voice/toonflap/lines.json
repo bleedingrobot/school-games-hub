@@ -160,6 +160,14 @@
   "text": "That run couldn’t be checked, so it wasn’t saved."
  },
  {
+  "slug": "a-new-level-is-open",
+  "text": "A new level is open!"
+ },
+ {
+  "slug": "well-done-the-next-level-opens-tomorrow-one-new-level-opens-each-day",
+  "text": "Well done! The next level opens tomorrow. One new level opens each day."
+ },
+ {
   "slug": "tap-toon-garden-to-start",
   "text": "Tap Toon Garden to start."
  },
@@ -242,5 +250,9 @@
  {
   "slug": "every-level-done-with-gold-try-sky-dash",
   "text": "Every level done with gold! Try Sky Dash."
+ },
+ {
+  "slug": "a-new-level-opens-tomorrow-try-for-a-better-medal-today",
+  "text": "A new level opens tomorrow. Try for a better medal today!"
  }
 ]

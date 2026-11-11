@@ -1,6 +1,8 @@
 /** The Hangar: pick any flyer and trail you have unlocked. They only change how the bird looks, never how it flies. */
 import { useEffect, useRef } from 'react';
 import { FLYERS, TRAILS, flyersUnlocked, finishesToUnlock, shiny, trailsUnlocked, type Flyer, type Progress } from '../../../shared/toonflap/collection';
+import { screenArt } from './art/art';
+import { paintedBackground } from './MapScreen';
 import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
 import { levelById } from '../../../shared/toonflap/levels';
 import type { Picks } from './backend';
@@ -68,7 +70,7 @@ export function Hangar({ progress, picks, onPick, onBack }: { progress: Progress
   };
   const current = FLYERS.find((f) => f.id === picks.flyer) ?? FLYERS[0];
   return (
-    <section className="tf-hangar" aria-labelledby="tf-hangar-h">
+    <section className="tf-hangar" aria-labelledby="tf-hangar-h" style={paintedBackground(screenArt('hangar'))}>
       <header className="tf-map__top">
         <h2 id="tf-hangar-h" className="tf-h" tabIndex={-1} ref={heading}>Hangar</h2>
         <button type="button" className="tf-btn" onClick={onBack}>Back to the map</button>
