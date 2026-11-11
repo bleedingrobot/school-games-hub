@@ -1,6 +1,6 @@
-# Fantail Flight: art plan
+# Toon Flap: art plan
 
-*Written 11 Nov 2026 with [FANTAIL-PLAN.md](FANTAIL-PLAN.md). James paints final art on his gaming PC (ComfyUI) after school; the game is built and played with drawn stand-ins first, and they stay as the fallback (guide section 2, "Painted art").*
+*Written 11 Nov 2026 with [TOON-FLAP-PLAN.md](TOON-FLAP-PLAN.md). James paints final art on his gaming PC (ComfyUI) after school; the game is built and played with drawn stand-ins first, and they stay as the fallback (guide section 2, "Painted art").*
 
 **Status: look picked.** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked on 11 Nov 2026 for **a different popular animated series' style for each level**. Section 1 matches each level to one. Still open: whether the bird changes style in each world (section 3).
 
@@ -29,7 +29,7 @@ The order runs soft and gentle (levels 1 to 2) to bold and busy (9 to 10), match
 - **Walls:** rounded shapes in each world's two colours with a clear edge; answer-gap numbers on white signs.
 - **Sky and ground:** a two-stop gradient plus one flat shape per world, scrolling slower than the walls.
 - **Perch** (a post with a flag) and the **nest** at the finish.
-- Every colour in `src/games/fantail/palette.ts` by world, so painted art replaces pieces one world at a time.
+- Every colour in `src/games/toonflap/palette.ts` by world, so painted art replaces pieces one world at a time.
 
 ## 3. Pictures needed
 
@@ -53,7 +53,7 @@ Every prompt = the style in words (section 1) + the subject + *children's cartoo
 - **Walls, Dino Valley:** *1960s TV cartoon, chunky stone shapes; a tall friendly cartoon dinosaur neck and head, vertical, isolated on white*
 - **Back layer, Cosmic Storm:** *1960s space-age retro future, atomic shapes, boomerang curves, teal and orange; starry sky with ringed planets and flying-saucer houses on stilts, seamless left-right, low detail*
 
-Check each pick before it goes in: if it looks like a real character or copies a show's famous prop or logo, paint it again. Picks go in `docs/fantail-art/picks.json`; `scripts/fantail-art.py` (a copy of `trader-art.py`) makes the `.webp` files and cut-outs; `src/games/fantail/art/CREDITS.md` and one `art.test.ts`. Pictures go to an art inbox folder, never straight to `main`.
+Check each pick before it goes in: if it looks like a real character or copies a show's famous prop or logo, paint it again. Picks go in `docs/toonflap-art/picks.json`; `scripts/toonflap-art.py` (a copy of `trader-art.py`) makes the `.webp` files and cut-outs; `src/games/toonflap/art/CREDITS.md` and one `art.test.ts`. Pictures go to an art inbox folder, never straight to `main`.
 
 ## 5. Order (each world can go live on its own)
 

@@ -1,8 +1,8 @@
-# Fantail Flight: plan
+# Toon Flap: plan
 
-*Working name "Fantail Flight" (id `fantail`, prefix `.ff-`). James, 11 Nov 2026: "I have had a lot of requests for a flappy bird style game, it would go in the easy maths game section ... checks would ask maths questions to reduce time (like marble maths) there should be 10 initial levels of increasing difficulty."*
+*Name **Toon Flap** (James picked it, 11 Nov 2026; id `toonflap`, prefix `.tf-`). James, 11 Nov 2026: "I have had a lot of requests for a flappy bird style game, it would go in the easy maths game section ... checks would ask maths questions to reduce time (like marble maths) there should be 10 initial levels of increasing difficulty."*
 
-**Status: plan only, nothing built.** Written 11 Nov 2026 from `main` after reading the game guide, LEARNING-DESIGN.md and Marble Rush's plan. Cartoon worlds picked from pupils' ideas (11 Nov); one series style per level (James); the name is James's choice (section 11). Art waits for James's ComfyUI evenings: the game is built with drawn stand-ins first ([FANTAIL-ART-PLAN.md](FANTAIL-ART-PLAN.md)).
+**Status: plan only, nothing built.** Written 11 Nov 2026 from `main` after reading the game guide, LEARNING-DESIGN.md and Marble Rush's plan. Cartoon worlds picked from pupils' ideas (11 Nov); one series style per level (James); name Toon Flap (James) (section 11). Art waits for James's ComfyUI evenings: the game is built with drawn stand-ins first ([TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md)).
 
 ## The short version
 
@@ -11,7 +11,7 @@
 - **Checks** (James's word): perches along the course. The bird lands, **the clock stops**, and a maths question from the pupil's own focus shows. Right: **3 seconds off**. Wrong: nothing lost, and the right answer shows with a reason. This is Marble's pit stop.
 - **Answer gaps** from level 3: a sign shows a quick question and the next wall has 2 or 3 gaps labelled with answers. Flying through the right one gives a **tailwind, 2 seconds off**. The wrong one is just a normal gap. This is Marble's answer gate.
 - **10 levels, each a cartoon world** (pupils asked for cartoon-inspired art, like an undersea cartoon level), from a wide, slow Toon Garden to a Cosmic Storm. The flying gets harder; **the maths doesn't**, because it always comes from the pupil's own focus.
-- **Server in charge**: deterministic physics in `shared/fantail/`, the server makes and marks every question (way A) and replays the flaps to check the time before saving. About 6 calls per level.
+- **Server in charge**: deterministic physics in `shared/toonflap/`, the server makes and marks every question (way A) and replays the flaps to check the time before saving. About 6 calls per level.
 - **Easy maths group** (`group: 'easy-maths'`), for Years 4 to 6.
 
 ## 1. How a level plays
@@ -26,7 +26,7 @@
 
 **Why no game over:** classic flappy games end at the first touch, which for a 9-year-old on a Chromebook trackpad means a lot of 3-second runs and no maths. Bump-and-carry-on keeps every pupil reaching the checks and the finish. The classic one-touch version comes back as a reward (section 9, Sky Dash).
 
-**Physics (all in `shared/fantail/config.ts`):** fixed step of 1/60 s, like Marble. Inputs are just the step numbers of each flap, so a 60-second run is a few hundred numbers. Lift, gravity and top falling speed are gentler than the arcade game ("floaty") on early levels. Canvas 2D drawing (no three.js), so it loads fast on Chromebooks; the screen draws the latest position and the physics never depends on the frame rate.
+**Physics (all in `shared/toonflap/config.ts`):** fixed step of 1/60 s, like Marble. Inputs are just the step numbers of each flap, so a 60-second run is a few hundred numbers. Lift, gravity and top falling speed are gentler than the arcade game ("floaty") on early levels. Canvas 2D drawing (no three.js), so it loads fast on Chromebooks; the screen draws the latest position and the physics never depends on the frame rate.
 
 **Gentle wings** (per pupil, any level): 80% speed and a slightly bigger bird gap. Finishing counts and opens the next level; gold needs normal wings. Shown as a feather on the time.
 
@@ -34,7 +34,7 @@
 
 Flying difficulty rises; question difficulty is always the pupil's focus. Numbers are starting values for the simulator (section 10) to tune. "Gap" is the opening height in bird heights; "spacing" is seconds between walls.
 
-**Cartoon worlds, a different series' style each (11 Nov 2026).** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked for a different popular animated series' style for each level. Each world borrows a series' *style* (Level 3 Bubble Reef: the goofy undersea look), never its characters, names, logos or famous props. Which style goes with which level is in [FANTAIL-ART-PLAN.md](FANTAIL-ART-PLAN.md) section 1. Our cartoon fantail is the hero in every world.
+**Cartoon worlds, a different series' style each (11 Nov 2026).** Pupils asked for cartoon-inspired art ("like a sponge bob inspired level"), and James asked for a different popular animated series' style for each level. Each world borrows a series' *style* (Level 3 Bubble Reef: the goofy undersea look), never its characters, names, logos or famous props. Which style goes with which level is in [TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md) section 1. Our cartoon fantail is the hero in every world.
 
 | # | Name | Cartoon world | Length | Speed | Gap | Spacing | Checks | Answer gaps | New thing |
 |---|---|---|---|---|---|---|---|---|---|
@@ -51,16 +51,16 @@ Flying difficulty rises; question difficulty is always the pupil's focus. Number
 
 - **Each level is the same course every time** (fixed layout, so practice pays off and best times are fair). Which gap holds the right answer comes from the run's seed, as Marble's doors do.
 - **Checks sit before the hardest section**, so a pupil gets a breather and a fresh start right where they need it.
-- **Medals** come from the bot (`npm run fantail:sim -- --write-medals`), as Marble: gold = no bumps and every bonus, silver = a couple of bumps, bronze = finishing. A class with maths off gets its own gold time, so maths-off pupils can still earn gold.
+- **Medals** come from the bot (`npm run toonflap:sim -- --write-medals`), as Marble: gold = no bumps and every bonus, silver = a couple of bumps, bronze = finishing. A class with maths off gets its own gold time, so maths-off pupils can still earn gold.
 - **What a pupil sees between levels**: the map (a cartoon trail through the 10 worlds), medals on each stop, and the next level glowing.
 
 ## 3. Maths (way A, copying Marble Rush)
 
-- **`start`** reads the teacher switch, `space_maths_context(player)` and makes about 10 questions with `makeFocusPack` from a fresh seed (teacher focus, own pick or auto all work). Stored in `fantail_questions` (pupils can't read it). The browser gets `publicQuestion()`s only.
+- **`start`** reads the teacher switch, `space_maths_context(player)` and makes about 10 questions with `makeFocusPack` from a fresh seed (teacher focus, own pick or auto all work). Stored in `toonflap_questions` (pupils can't read it). The browser gets `publicQuestion()`s only.
 - **Checks** use the focus questions as they come (60% focus, 30% review, 10% stretch: the pack's job). Shown with `QuestionModal`, so typed answers, choices, the decimal key and fractions all work. **The clock is stopped**, so careful thinkers aren't punished (rule 8). The browser sends `{ seed, slot, value, ms }`; the server marks it once and records it with `recordMathsAnswers`.
 - **Answer gaps** must be read while flying, so they use **confidence-builder facts** (`boxes: [3, 4]`, facts this pupil already knows well) and only kinds that fit a short sign (no fractions with long prompts; choices come from the pack's multiple choice). The first gap entered is the answer; it's marked when the finished run is replayed. **Read time** setting (on by default for levels 3 to 5): the game pauses when the sign appears until the pupil taps Go (up to 10 s), clock stopped, like Marble.
 - **Rescue questions: not at first.** Marble's rescues work because falls are rarer; in a flappy game bumps are common and a question after each would turn into a quiz. Recommend leaving them out; a teacher can't miss them.
-- **Maths switch** (`fantail_maths` off / choose / on, `parseMathsSwitch`), copying Marble: off means checks are plain rests and gaps show arrows; times have their own medals.
+- **Maths switch** (`toonflap_maths` off / choose / on, `parseMathsSwitch`), copying Marble: off means checks are plain rests and gaps show arrows; times have their own medals.
 - **No points for right answers** (nothing to farm), same as Marble.
 
 ### Design check (LEARNING-DESIGN.md section 6)
@@ -122,22 +122,22 @@ The guide is the fantail itself ("Pī"), voiced by Bella.
 
 ## 8. Voice (Bella)
 
-Bella (Kokoro `af_bella`, `scripts/voice-clips.py fantail`) reads the **fixed lines only**: the guide bubbles, first-time tips, level names on the map, "Check!", "Tailwind!", "Bump! Just 3 seconds", medal lines and the next-step lines that have no changing numbers. About 60 lines. Maths questions are **not** read aloud (Years 4 to 6, like Sky Isles), and lines with changing numbers stay silent. A 🔊 Voice on/off button in the top bar, on by default.
+Bella (Kokoro `af_bella`, `scripts/voice-clips.py toonflap`) reads the **fixed lines only**: the guide bubbles, first-time tips, level names on the map, "Check!", "Tailwind!", "Bump! Just 3 seconds", medal lines and the next-step lines that have no changing numbers. About 60 lines. Maths questions are **not** read aloud (Years 4 to 6, like Sky Isles), and lines with changing numbers stay silent. A 🔊 Voice on/off button in the top bar, on by default.
 
 ## 9. After the 10 levels
 
 - **Sky Dash** (opens after level 10): the classic version. One touch and the run ends; endless; a check every 30 seconds gives a **spare feather** (one free bump) instead of time. Score = distance. Class board of best distances, own school only, reset each New Season.
-- **More level packs** later (11 to 20) if it's popular; the level format is data, so a new level is a new entry in `shared/fantail/levels.ts`.
+- **More level packs** later (11 to 20) if it's popular; the level format is data, so a new level is a new entry in `shared/toonflap/levels.ts`.
 
 ## 10. Build stages
 
-Branch `fantail`, own folders only (guide section 2). Next free migration number on 11 Nov 2026: **`20261111000100`** (check again with `node scripts/migration-numbers.mjs` when building). At most 8 tests.
+Branch `toonflap`, own folders only (guide section 2). Next free migration number on 11 Nov 2026: **`20261111000100`** (check again with `node scripts/migration-numbers.mjs` when building). At most 8 tests.
 
 | Stage | What | Live? |
 |---|---|---|
-| F.1 | `shared/fantail/`: config, physics, the 10 levels as data, replay, medals; `scripts/fantail-sim.mjs` (bot that plays every level, tunes medals and checks each level is beatable) | no |
+| F.1 | `shared/toonflap/`: config, physics, the 10 levels as data, replay, medals; `scripts/toonflap-sim.mjs` (bot that plays every level, tunes medals and checks each level is beatable) | no |
 | F.2 | Screens with drawn stand-in art: map, play screen (canvas), check card, results, How to play (numbers from config), reduced motion (no shake, no parallax); phone preview with a trial backend, published as a private Artifact for James | preview only |
-| F.3 | Server: migration (`fantail_runs`, `fantail_questions`, `app_settings` columns `fantail_enabled`, `fantail_maths`, `fantail_read_time`; `teacher_set_fantail()`; `hub_games` row, achievements), function `fantail` (start / answer / finish with replay), database tests | yes, switch off |
+| F.3 | Server: migration (`toonflap_runs`, `toonflap_questions`, `app_settings` columns `toonflap_enabled`, `toonflap_maths`, `toonflap_read_time`; `teacher_set_fantail()`; `hub_games` row, achievements), function `toonflap` (start / answer / finish with replay), database tests | yes, switch off |
 | F.4 | Guide: guided first go, next-step line, tips; Bella clips | with F.3 or after |
 | F.5 | Teacher: Games row and Settings, `studentSummary`, `hardest`, `alerts`; code switch on, then the teacher switch | yes, on |
 | F.6 | Painted art from James's picks (art plan) | yes |
@@ -148,5 +148,5 @@ Branch `fantail`, own folders only (guide section 2). Next free migration number
 ## 11. Questions for James
 
 1. **Art style:** settled 11 Nov: a different animated series' style for each level (art plan section 1). Asked on a card: does the bird change style in each world (recommended) or stay one look?
-2. **Name** (asked on a card): Flap Happy (recommended, fits the cartoon worlds), Fantail Flight, Toon Flap, or your own. The id `fantail` stays whatever the name.
+2. **Name:** Toon Flap (James, 11 Nov 2026).
 3. Decided in this plan unless James says otherwise: bump-and-carry-on (no game over) with +3 s; checks take 3 s off; answer gaps from level 3 take 2 s off; no rescue questions; no daily limit; Sky Dash after level 10.
