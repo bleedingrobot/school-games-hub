@@ -201,3 +201,80 @@
     transform: translateX(-50%);
   }
 }
+
+/* View switch */
+.progress__views { display: inline-flex; gap: 6px; margin-bottom: 12px; }
+
+/* One game: the ladder board. Columns on a wide screen, rungs under 900px. */
+.progress {
+  --pg-rung: #c08a5a;
+}
+.ladder__pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ladder__pill {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ladder__pill[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.ladder__title { margin: 0; font-size: 1.3rem; }
+.ladder__hint { margin: 2px 0 12px; color: var(--ink-soft); }
+.ladder__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--ladder-cols), minmax(150px, 1fr));
+  gap: 0 12px;
+  overflow-x: auto;
+  border-top: 3px solid var(--pg-rung);
+}
+.ladder__col { padding: 10px 0 14px; min-width: 0; }
+.ladder__head { margin: 0 0 10px; font-size: 1rem; line-height: 1.25; }
+.ladder__step { display: block; font-weight: 800; }
+.ladder__sub { display: block; font-weight: 400; color: var(--ink-soft); font-size: 0.85rem; }
+.ladder__chips { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ladder__chips li { max-width: 100%; }
+.ladder__nobody { color: var(--ink-soft); opacity: 0.7; font-size: 0.9rem; }
+.ladder__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 6px 12px;
+  align-items: center;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.ladder__chip:hover { background: var(--tint); }
+.ladder__chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ladder__note { color: var(--ink-soft); font-weight: 400; font-size: 0.8rem; white-space: nowrap; }
+.ladder__chip[data-state='stuck'] { border-color: var(--pg-stuck); }
+.ladder__chip[data-state='stuck'] .ladder__note { color: #be123c; font-weight: 700; }
+.ladder__chip[data-state='top'] { border-color: var(--pg-moving); background: #eff6ff; }
+.ladder__chip[data-state='top'] .ladder__note { color: var(--pg-top); font-weight: 700; }
+.ladder__chip[data-state='quiet'] { opacity: 0.6; }
+
+@media (max-width: 899px) {
+  .ladder__grid { display: flex; flex-direction: column-reverse; overflow-x: visible; border-top: 0; }
+  .ladder__col[data-col='other'] { order: -1; }
+  .ladder__col {
+    display: grid;
+    grid-template-columns: minmax(110px, 30%) 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 12px 0;
+    border-top: 3px solid var(--pg-rung);
+  }
+  .ladder__grid > .ladder__col:first-child { border-bottom: 0; }
+  .ladder__head { margin: 0; }
+  .ladder__chips { flex-direction: row; flex-wrap: wrap; }
+}
