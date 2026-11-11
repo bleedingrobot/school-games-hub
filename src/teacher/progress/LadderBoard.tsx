@@ -7,7 +7,7 @@ import { Link } from 'react-router';
 import { GAME_IDS, type FoundationalClass, type FoundationalGameId } from '../../data/foundational';
 import { STAGES } from '../../../shared/subitising/config';
 import { GAMES, QUICK_LOOKS_ID, QUICK_LOOKS_NAME } from '../foundational/config';
-import { cellState, quickCellState, type CellState } from './state';
+import { cellState, firstTryWords, quickCellState, type CellState } from './state';
 
 export interface BoardPupil {
   id: string;
@@ -119,7 +119,7 @@ export function LadderBoard({
                     className="ladder__chip"
                     data-state={p.cell.state}
                     to={`/teacher/${classId}/students/${p.id}?game=${current.id}`}
-                    title={[p.name, STATE_WORDS[p.cell.state]].filter(Boolean).join(', ')}
+                    title={[p.name, STATE_WORDS[p.cell.state], firstTryWords(p.cell.firstTry)].filter(Boolean).join(', ')}
                   >
                     <span className="ladder__name">{p.name}</span>
                     <span className="ladder__note">{note(p.cell)}</span>

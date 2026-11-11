@@ -4,7 +4,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(21);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -71,6 +71,11 @@ insert into public.robin_rounds (player, seed, round, open, taps, mistakes, star
   (pg_temp.uid(1), 3, '{"step":3}', false, '[1]', 0, '2026-11-06 01:00+00', '2026-11-06 01:05+00'),
   (pg_temp.uid(1), 4, '{"step":3}', false, '[1]', 0, '2026-11-08 01:00+00', '2026-11-08 01:05+00');
 
+-- P8: the newest Robin round (no wrong taps) has three taps of 900, 1500 and 2100 ms and 3 goes right first time; the hop round with
+-- 11 wrong taps cannot say which tap began a go.
+update public.robin_rounds set taps = '[{"pick":1,"ms":900},{"pick":2,"ms":1500},{"pick":3,"ms":2100}]', first_right = 3
+where player = pg_temp.uid(1) and seed = 4;
+
 -- ---- A teacher gets their own class ----
 select pg_temp.as(11);
 select is((select array_agg(k order by k) from jsonb_object_keys(public.teacher_foundational_class(pg_temp.klass('A'))) k),
@@ -82,6 +87,9 @@ select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_tem
 select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'robin', 'good'], '1', 'a step game sends the good goes so far at this step');
 select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'robin', 'since'], '2026-11-05', 'and the NZ day the current step began: the run of rounds at it, not the earlier step');
 select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'beanstalk', 'daysDone'], '31', 'Beanstalk has its days');
+select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'robin', 'recent', '0', 'f'], '3', 'a round sends the goes right at the first tap, from first_right');
+select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'robin', 'recent', '0', 'ms'], '1500', 'and the median time of its first taps');
+select is(public.teacher_foundational_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'hop', 'recent', '1', 'ms'], null, 'a round with wrong taps (or a game with no first_right) sends neither a time nor a first-try count');
 select is(public.teacher_foundational_class(pg_temp.klass('A')) -> pg_temp.uid(3)::text, '{}'::jsonb, 'a pupil who has played nothing is an empty object');
 select is(public.teacher_quick_looks_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'q', 'f'], '4', 'Quick looks gives the saved stages finished');
 select is(public.teacher_quick_looks_class(pg_temp.klass('A')) #>> array[pg_temp.uid(1)::text, 'recent', 'answered'], '3', 'and the counted answers, leaving out those given with help');
