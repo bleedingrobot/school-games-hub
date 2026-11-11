@@ -64,6 +64,14 @@ export function forgetSettings(): void {
   generation += 1;
   kept = null;
   pending = null;
+  for (const listener of forgotten) listener();
+}
+
+/** Called whenever the remembered row is forgotten (a teacher saved something): lets "Changed by…" lines read again. */
+const forgotten = new Set<() => void>();
+export function onSettingsForgotten(listener: () => void): () => void {
+  forgotten.add(listener);
+  return () => void forgotten.delete(listener);
 }
 
 /** Forgets the remembered row only if it is older than `maxAgeMs` (the home page uses FRESH_HOME_MS). Returns whether it did. */

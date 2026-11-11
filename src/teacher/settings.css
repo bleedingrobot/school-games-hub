@@ -39,7 +39,8 @@
 }
 .setting__detail,
 .setting__about,
-.setting__status {
+.setting__status,
+.setting__changed {
   grid-column: 1 / -1;
   color: var(--ink-soft);
   font-size: 0.9rem;
@@ -55,6 +56,14 @@
 }
 .setting__status:empty {
   display: none;
+}
+/* Who changed it last: quiet, under the control. */
+.setting__changed {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+p.setting__changed {
+  margin: 0 0 8px;
 }
 
 /* Chips sit under their name. A fieldset can't be a grid in every browser, so it is a column. */
@@ -208,7 +217,8 @@
   order: 2;
 }
 .setting--compact .setting__about,
-.setting--compact .setting__status {
+.setting--compact .setting__status,
+.setting--compact .setting__changed {
   order: 3;
 }
 .setting--compact .setting-choice__option {

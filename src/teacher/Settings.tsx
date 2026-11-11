@@ -82,6 +82,8 @@ interface Common {
   compact?: boolean;
   /** What the status says after a save instead of "Saved ✓" (stays 3 seconds). */
   savedText?: string;
+  /** A small grey line under the control saying who last changed it and when ("Changed by you, 9:12am"). */
+  changed?: string;
 }
 
 /** Longer than this, a string `about` shows its first sentence and a More button for the rest. */
@@ -154,6 +156,7 @@ function Shell({
   detail,
   status,
   compact = false,
+  changed,
   children,
 }: {
   className: string;
@@ -162,6 +165,7 @@ function Shell({
   detail?: ReactNode;
   status: Status;
   compact?: boolean;
+  changed?: string;
   children: (ids: { label: string; about: string | undefined }) => ReactNode;
 }) {
   const id = useId();
@@ -181,6 +185,7 @@ function Shell({
       <span className={`setting__status${status?.kind === 'error' ? ' setting__status--error' : ''}`} role="status">
         {status?.text}
       </span>
+      {changed && <span className="setting__changed">{changed}</span>}
     </div>
   );
 }
@@ -193,6 +198,7 @@ export function SettingToggle({
   loadFailed = false,
   compact,
   savedText,
+  changed,
   save,
   onSaved,
 }: Common & {
@@ -202,7 +208,7 @@ export function SettingToggle({
 }) {
   const s = useSaving(value, loadFailed, savedText);
   return (
-    <Shell className="setting--toggle" label={label} about={about} status={s.status} compact={compact}>
+    <Shell className="setting--toggle" label={label} about={about} status={s.status} compact={compact} changed={changed}>
       {(ids) => (
         <button
           type="button"
@@ -245,6 +251,7 @@ export function SettingChoice<T extends string>({
   loadFailed = false,
   compact,
   savedText,
+  changed,
   save,
   onSaved,
 }: Common & {
@@ -275,6 +282,7 @@ export function SettingChoice<T extends string>({
       about={about}
       status={s.status}
       compact={compact}
+      changed={changed}
       detail={picked >= 0 ? options[picked].detail : undefined}
     >
       {(ids) =>
