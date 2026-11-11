@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000d', 'dee@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 -- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
 select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
@@ -91,20 +93,20 @@ select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "typedN
   'the settings start as the Year 5 defaults, 8 fights a day, season 1');
 select is(pg_temp.fpd(), 8, 'the night''s rest gives back 8 fights by default');
 select pg_temp.teacher();
-select is(public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}') ->> 'yearBand', '6', 'a teacher sets the year band');
+select is(public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}', target_class => current_setting('test.cls')::uuid) ->> 'yearBand', '6', 'a teacher sets the year band');
 select is(pg_temp.cs() ->> 'fightsPerDay', '5', '... and the fights a day');
 select is(pg_temp.cs() -> 'enabledTopics', '["percentages","money","area","division","ratios","rates"]'::jsonb, '... and leaving a key out keeps it');
-select is(public.teacher_set_clan_maths('{"enabledTopics": ["times","integers"], "enabledTables": [12, 3, 3]}') -> 'enabledTopics', '["integers","times"]'::jsonb, 'topics can be switched');
+select is(public.teacher_set_clan_maths('{"enabledTopics": ["times","integers"], "enabledTables": [12, 3, 3]}', target_class => current_setting('test.cls')::uuid) -> 'enabledTopics', '["integers","times"]'::jsonb, 'topics can be switched');
 select is(pg_temp.cs() -> 'enabledTables', '[3,12]'::jsonb, '... and times tables (sorted, no repeats)');
-select throws_ok($$ select public.teacher_set_clan_maths('{"yearBand": 7}') $$, '22023', null, 'there is no year 7 band');
-select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTopics": []}') $$, '22023', null, 'at least one topic stays on');
-select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTopics": ["magic"]}') $$, '22023', null, 'a topic must be one of the eight');
-select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTables": []}') $$, '22023', null, 'at least one times table stays on');
-select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTables": [13]}') $$, '22023', null, 'times tables are 1 to 12');
-select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 0}') $$, '22023', null, 'at least one fight a day');
-select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 31}') $$, '22023', null, '... and at most 30');
-select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 2.5}') $$, '22023', null, '... in whole fights');
-select throws_ok($$ select public.teacher_set_clan_maths('[]') $$, '22023', null, 'settings must be an object');
+select throws_ok($$ select public.teacher_set_clan_maths('{"yearBand": 7}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'there is no year 7 band');
+select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTopics": []}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'at least one topic stays on');
+select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTopics": ["magic"]}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'a topic must be one of the eight');
+select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTables": []}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'at least one times table stays on');
+select throws_ok($$ select public.teacher_set_clan_maths('{"enabledTables": [13]}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'times tables are 1 to 12');
+select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 0}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'at least one fight a day');
+select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 31}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, '... and at most 30');
+select throws_ok($$ select public.teacher_set_clan_maths('{"fightsPerDay": 2.5}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, '... in whole fights');
+select throws_ok($$ select public.teacher_set_clan_maths('[]', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'settings must be an object');
 select pg_temp.reset();
 select is(pg_temp.fpd(), 5, 'the night''s rest follows the teacher''s fights a day');
 select is(public.clan_extras(pg_temp.id('a')) -> 'settings' ->> 'yearBand', '6', 'the server is handed the settings with the clan');

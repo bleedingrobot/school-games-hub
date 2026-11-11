@@ -42,6 +42,7 @@ insert into public.class_teachers (class_id, teacher_id) values ((select id from
 select public.give_class_settings((select id from public.classes where name = 'Room Two'));
 update public.app_settings set archery_enabled = true;
 -- Ana's class, for checks run as a teacher (who can't read class_members).
+select set_config('test.room_two', (select id::text from public.classes where name = 'Room Two'), true);
 select set_config('test.ana_class', (select class_id::text from public.class_members where student_id = pg_temp.id('0a')), true);
 
 -- ---- Registered, and the switch starts on ----
@@ -65,13 +66,13 @@ select is(public.archery_here() -> 'duels', 'true'::jsonb, '"I''m here" says cla
 select pg_temp.fin();
 select throws_ok(format('select public.teacher_set_archery_duels(false, %L)', current_setting('test.ana_class')),
   '42501', null, 'a teacher cannot switch another teacher''s class');
-select lives_ok($$ select public.teacher_set_archery_duels(false) $$, 'a teacher switches classmate fights off for their class');
+select lives_ok(format('select public.teacher_set_archery_duels(false, %L)', current_setting('test.room_two')), 'a teacher switches classmate fights off for their class');
 select pg_temp.reset();
 select is((select archery_duels from public.settings_of(pg_temp.id('0c'))), false, '... and it is saved for that class');
 select is((select archery_duels from public.settings_of(pg_temp.id('0a'))), true, '... and no other');
 select pg_temp.eve();
-select throws_ok($$ select public.teacher_set_archery_duels(null) $$, '22023', null, 'a missing setting is refused');
-select lives_ok($$ select public.teacher_set_archery_duels(false) $$, 'the school admin switches them off everywhere');
+select throws_ok(format('select public.teacher_set_archery_duels(null, %L)', current_setting('test.ana_class')), '22023', null, 'a missing setting is refused');
+select lives_ok(format('select public.teacher_set_archery_duels(false, %L), public.teacher_set_archery_duels(false, %L)', current_setting('test.ana_class'), current_setting('test.room_two')), 'the school admin switches them off everywhere, class by class');
 select pg_temp.reset();
 
 -- ---- While it's off: nobody listed, and open fights end fairly ----

@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 -- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
 select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
@@ -185,13 +187,13 @@ select is(jsonb_array_length(public.teacher_gem_keep_student(pg_temp.id('a')) ->
   'a teacher sees a student''s fact records');
 select is(public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'key', 'mul:7x8', '7 x 8 is the class''s hardest fact');
 select is(jsonb_array_length(public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) -> 'hardest'), 1, 'facts nobody gets wrong are not listed');
-select is(public.teacher_set_gem_keep('{"mode":"challenge","enabledTables":[2,5,10],"division":true,"missingFactor":null,"multipleChoice":false,"keyPassMark":7}')
+select is(public.teacher_set_gem_keep('{"mode":"challenge","enabledTables":[2,5,10],"division":true,"missingFactor":null,"multipleChoice":false,"keyPassMark":7}', target_class => current_setting('test.cls')::uuid)
   -> 'enabledTables', '[2, 5, 10]', 'a teacher changes the settings');
-select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":8}') $$,
+select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":8}', target_class => current_setting('test.cls')::uuid) $$,
   '22023', 'Leave at least one times table on.', 'at least one table stays on');
-select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[13],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":8}') $$,
+select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[13],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":8}', target_class => current_setting('test.cls')::uuid) $$,
   '22023', null, 'only tables 1 to 12');
-select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[2],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":3}') $$,
+select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[2],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":3}', target_class => current_setting('test.cls')::uuid) $$,
   '22023', null, 'the pass mark stays between 5 and 10');
 select is((select bot_games from public.teacher_students() where id = pg_temp.id('a')), 5,
   'the teacher list counts Gem Keep levels as games');

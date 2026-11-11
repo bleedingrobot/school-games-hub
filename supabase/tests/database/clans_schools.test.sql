@@ -99,31 +99,38 @@ select pg_temp.reset();
 
 -- ---- Settings: the switches belong to the school and the class ----
 select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'false', 'Clan Quest starts off for a pupil');
+-- Every save names a class (card C2), so the school admin changes Room A, a class at their school with cai in it.
+insert into public.classes (school_id, name, school_year, warp_code) values (1, 'Room A', 2026, 'WXY34');
+select public.give_class_settings(id) from public.classes where name = 'Room A';
+insert into public.class_members (student_id, class_id) select pg_temp.id('c'), id from public.classes where name = 'Room A';
+create temp table room_a as select id from public.classes where name = 'Room A';
+grant select on room_a to authenticated;
 select pg_temp.as_adm1();
-select is(public.teacher_set_clans(true), true, 'the school admin switches Clan Quest on');
+select is(public.teacher_set_clans(true, (select id from room_a)), true, 'the school admin switches Clan Quest on for a class');
 select pg_temp.reset();
-select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'true', 'ana''s school now has it on');
+select is((select clans_enabled from public.settings_of(pg_temp.id('c'))), true, 'cai''s class now has it on');
+select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'false', 'ana (no class) is not changed by a class save');
 select is(pg_temp.loaded(pg_temp.id2('a')) ->> 'enabled', 'false', 'the other school still has it off');
 select pg_temp.as_adm1();
-select is(public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}') ->> 'yearBand', '6', 'the admin changes the maths settings');
+select is(public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}', (select id from room_a)) ->> 'yearBand', '6', 'the admin changes the maths settings');
 select pg_temp.reset();
-select is(public.clans_settings(pg_temp.id('a')) ->> 'yearBand', '6', 'ana gets the new year band');
+select is(public.clans_settings(pg_temp.id('c')) ->> 'yearBand', '6', 'cai gets the new year band');
 select is(public.clans_settings(pg_temp.id2('a')) ->> 'yearBand', '5', 'the other school''s pupil keeps year 5');
-select is(public.clan_fights_per_day(pg_temp.id('a')), 5, 'ana''s night''s rest gives 5 fights');
+select is(public.clan_fights_per_day(pg_temp.id('c')), 5, 'cai''s night''s rest gives 5 fights');
 select is(public.clan_fights_per_day(pg_temp.id2('a')), 8, 'the other school''s gives 8');
-select is((public.clan_extras(pg_temp.id('a')) -> 'settings' ->> 'fightsPerDay')::int, 5, 'the server is told ana''s settings');
+select is((public.clan_extras(pg_temp.id('c')) -> 'settings' ->> 'fightsPerDay')::int, 5, 'the server is told cai''s settings');
 
 -- A class has its own row: a teacher's class, with ben in it.
 select pg_temp.as_t1();
 create temp table made as select public.teacher_create_class('Room 12', 2026, 5) as id;
 grant all on made to authenticated;
 select lives_ok($$ select public.teacher_add_to_class((select id from made), array['00000000-0000-0000-0000-00000000000b'::uuid]) $$, 'a teacher puts ben in their class');
-select is(public.teacher_set_clans(false), false, 'the teacher switches Clan Quest off for their class');
+select is(public.teacher_set_clans(false, (select id from made)), false, 'the teacher switches Clan Quest off for their class');
 select pg_temp.reset();
 select is(pg_temp.loaded(pg_temp.id('b')) ->> 'enabled', 'false', 'ben (in the class) has it off');
-select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'true', 'ana (no class) still has the school''s setting');
+select is((select clans_enabled from public.settings_of(pg_temp.id('c'))), true, 'cai (in another class) is not changed by it');
 select pg_temp.as_t1();
-select is(public.teacher_set_clan_raids(true), true, 'the teacher switches raids on for their class');
+select is(public.teacher_set_clan_raids(true, (select id from made)), true, 'the teacher switches raids on for their class');
 select pg_temp.reset();
 select is(pg_temp.loaded(pg_temp.id('b')) ->> 'raidsOn', 'true', 'ben''s class has raids on');
 select is(pg_temp.loaded(pg_temp.id('a')) ->> 'raidsOn', 'false', 'ana''s settings are untouched');
