@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(52);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -112,7 +112,8 @@ select is((select clans_enabled from public.settings_of(pg_temp.id('c'))), true,
 select is(pg_temp.loaded(pg_temp.id('a')) ->> 'enabled', 'false', 'ana (no class) is not changed by a class save');
 select is(pg_temp.loaded(pg_temp.id2('a')) ->> 'enabled', 'false', 'the other school still has it off');
 select pg_temp.as_adm1();
-select is(public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}', (select id from room_a)) ->> 'yearBand', '6', 'the admin changes the maths settings');
+-- The save returns the admin's own settings (the school row), so the class's new values are checked through cai below.
+select lives_ok($$ select public.teacher_set_clan_maths('{"yearBand": 6, "fightsPerDay": 5}', (select id from room_a)) $$, 'the admin changes the maths settings');
 select pg_temp.reset();
 select is(public.clans_settings(pg_temp.id('c')) ->> 'yearBand', '6', 'cai gets the new year band');
 select is(public.clans_settings(pg_temp.id2('a')) ->> 'yearBand', '5', 'the other school''s pupil keeps year 5');
