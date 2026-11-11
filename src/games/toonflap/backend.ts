@@ -1,63 +1,27 @@
 /**
- * What Toon Flap's screens need from a server, and the trial backend that plays the server's part in the browser for the
- * preview (docs/TOON-FLAP-PLAN.md, stage F.2). The real one (stage F.3) calls the `toonflap` function with the same shapes.
- * The trial backend uses the shared rules exactly as the server will: it makes the questions (way A), keeps the answers to
- * itself, replays the flaps and works out the time, medal and unlocks.
+ * What Toon Flap's screens ask of the server: the calls of the `toonflap` function (shared/toonflap/server.ts). The real
+ * school server is reached through src/data/toonflap.ts; the trial backend below runs the very same rules in this browser
+ * for the preview, with a pretend pupil kept in localStorage. Built like Robin's Berry Basket.
  */
-import { addRun, emptyProgress, type Progress, type Unlocks } from '../../../shared/toonflap/collection';
-import { READ_TIME_LEVELS } from '../../../shared/toonflap/config';
-import { decodeFlaps, medalFor, replayRun, scoreRun, type Medal, type Score } from '../../../shared/toonflap/engine';
-import { buildCourse, levelById, LEVELS } from '../../../shared/toonflap/levels';
-import { gapLabels, gapsRight, rightGaps, slotPlan } from '../../../shared/toonflap/maths';
-import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, type PublicQuestion } from '../../../shared/maths/serverQuestions';
-import type { Question } from '../../../shared/maths/skillPack';
+import { emptyData, memoryServices, type MemoryData } from '../../../shared/toonflap/memoryServices';
+import { handleToonFlap, type FinishReply, type GapSign, type Picks, type Reply, type StartReply } from '../../../shared/toonflap/server';
+import type { Progress } from '../../../shared/toonflap/collection';
+import { LEVELS } from '../../../shared/toonflap/levels';
 
-/** An answer sign: a short sum, and the number on each gap (bottom to top). Which one is right stays on the server. */
-export interface GapSign {
-  slot: number;
-  parts: string[];
-  spoken: string;
-  labels: number[];
-}
-
-export interface Picks {
-  flyer: string;
-  trail: string | null;
-}
+export type { FinishReply, GapSign, Picks, StartReply };
 
 export interface Loaded {
+  enabled: boolean;
   progress: Progress;
   /** The teacher's maths switch: off means checks are plain rests and gaps show arrows. */
   maths: boolean;
-  picks: Picks;
-}
-
-export interface StartReply {
-  seed: string;
-  level: string;
-  gentle: boolean;
-  maths: boolean;
-  /** One question per check (perch), in order. Empty with maths off. */
-  checks: PublicQuestion[];
-  /** One per answer sign, in order. Empty with maths off. */
-  signs: GapSign[];
-  /** Pause at each sign until Go (levels 3 to 5 by default). */
   readTime: boolean;
+  picks: Picks;
 }
 
 export interface CheckMark {
   correct: boolean;
   answer: number;
-}
-
-export interface FinishReply {
-  valid: boolean;
-  score: Score;
-  medal: Medal;
-  unlocks: Unlocks;
-  progress: Progress;
-  /** Each answer sign with its answer and the gap that was right, for the results screen. */
-  signs: Array<{ parts: string[]; answer: number; right: number; picked: number | null }>;
 }
 
 export interface ToonFlapBackend {
@@ -70,142 +34,116 @@ export interface ToonFlapBackend {
   finish(seed: string, flaps: string, potionUsed: boolean): Promise<FinishReply>;
 }
 
-interface Kept {
-  progress: Progress;
-  picks: Picks;
-  maths: boolean;
+/** A refusal or failure, with words a child (or their teacher) can be shown. */
+export class ToonFlapError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+  }
 }
 
-interface Pending {
-  level: string;
-  gentle: boolean;
-  maths: boolean;
-  questions: Question[];
-  marks: Map<number, boolean>;
-  labels: number[][];
-}
+export type Send = (body: Record<string, unknown>) => Promise<Reply>;
 
-/** The pretend server for the preview. Everything is kept in this browser (`storageKey`), so a reload carries on. */
-export function trialBackend(opts: { storageKey: string; random?: () => number }) {
-  const random = opts.random ?? Math.random;
-  const read = (): Kept => {
-    try {
-      const raw = localStorage.getItem(opts.storageKey);
-      if (raw) return JSON.parse(raw) as Kept;
-    } catch {
-      // A private window: start fresh.
-    }
-    return { progress: emptyProgress(), picks: { flyer: 'fantail', trail: null }, maths: true };
-  };
-  let kept = read();
-  const save = () => {
-    try {
-      localStorage.setItem(opts.storageKey, JSON.stringify(kept));
-    } catch {
-      // Nothing to do: it lasts until the page closes.
-    }
-  };
-  const runs = new Map<string, Pending>();
-
-  const backend: ToonFlapBackend = {
-    load: async () => ({ progress: kept.progress, maths: kept.maths, picks: kept.picks }),
+export function fromServer(send: Send): ToonFlapBackend {
+  async function ask(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const r = await send(body);
+    if (r.status === 200) return r.body;
+    throw new ToonFlapError(
+      typeof r.body.error === 'string' ? r.body.error : 'Something went wrong. Please try again soon.',
+      typeof r.body.code === 'string' ? r.body.code : undefined,
+    );
+  }
+  return {
+    load: async () => (await ask({ action: 'load' })) as unknown as Loaded,
     savePicks: async (picks) => {
-      kept = { ...kept, picks };
-      save();
+      await ask({ action: 'picks', flyer: picks.flyer, trail: picks.trail });
     },
-    start: async (level, gentle) => {
-      const def = levelById(level) ?? LEVELS[0];
-      const course = buildCourse(def, gentle);
-      const seed = `trial-${Math.floor(random() * 1e9)}`;
-      const plan = slotPlan(course);
-      const questions = kept.maths ? makeRunQuestions({ facts: [], settings: {} }, plan.total, random) : [];
-      const right = rightGaps(course, seed);
-      const labels = course.signs.map((sign, i) => {
-        const q = questions[plan.checks + i];
-        const n = course.walls[sign.wall].gaps.length;
-        return q ? gapLabels(q.answer, n, right[i], seed, q.choices) : [];
-      });
-      runs.set(seed, { level: def.id, gentle, maths: kept.maths, questions, marks: new Map(), labels });
-      return {
-        seed,
-        level: def.id,
-        gentle,
-        maths: kept.maths,
-        checks: questions.slice(0, plan.checks).map((q, slot) => publicQuestion(q, slot)),
-        signs: kept.maths ? course.signs.map((_, i) => {
-          const q = questions[plan.checks + i];
-          return { slot: plan.checks + i, parts: q?.parts ?? [], spoken: q?.spoken ?? '', labels: labels[i] };
-        }) : [],
-        readTime: READ_TIME_LEVELS.includes(def.n),
-      };
+    start: async (level, gentle) => (await ask({ action: 'start', level, gentle })) as unknown as StartReply,
+    answer: async (seed, slot, value, ms) => {
+      const r = await ask({ action: 'answer', seed, slot, value, ms });
+      return { correct: r.correct === true, answer: Number(r.answer) };
     },
-    answer: async (seed, slot, value) => {
-      const run = runs.get(seed);
-      const marked = markQuestion(run?.questions[slot]);
-      if (!run || !marked) return { correct: false, answer: NaN };
-      if (!run.marks.has(slot)) run.marks.set(slot, sameAnswer(value, marked.answer));
-      return { correct: run.marks.get(slot) as boolean, answer: marked.answer };
-    },
-    finish: async (seed, flapText, potionUsed) => {
-      const run = runs.get(seed);
-      const def = levelById(run?.level ?? '') ?? LEVELS[0];
-      const course = buildCourse(def, run?.gentle ?? false);
-      const flaps = decodeFlaps(flapText);
-      const replay = replayRun(course, flaps ?? []);
-      const right = rightGaps(course, seed);
-      const plan = slotPlan(course);
-      const checks = course.perches.slice(0, replay.state.perches).map((_, slot) => run?.marks.get(slot) === true);
-      const potion = potionUsed && kept.progress.potions > 0;
-      const gapsOk = run?.maths ? gapsRight(replay.state.picks, right) : 0;
-      const score = scoreRun(replay.state, { checksRight: checks.filter(Boolean).length, gapsRight: gapsOk, potion });
-      const valid = !!run && !!flaps && replay.valid && replay.state.outcome === 'finished';
-      const medal = medalFor(course, score.seconds, run?.maths ?? false, run?.gentle ?? false);
-      let unlocks: Unlocks = { flyers: [], trails: [], potion: false, newGold: false, firstFinish: false, newBest: false };
-      if (valid && run) {
-        const added = addRun(kept.progress, { level: def.id, maths: run.maths, seconds: score.seconds, medal, bumps: replay.state.bumps, checks, rightGaps: gapsOk, potionUsed: potion });
-        kept = { ...kept, progress: added.progress };
-        unlocks = added.unlocks;
-        save();
-        runs.delete(seed);
+    finish: async (seed, flaps, potion) => {
+      try {
+        return (await ask({ action: 'finish', seed, flaps, potion })) as unknown as FinishReply;
+      } catch (e) {
+        // A run the server couldn't check: the results screen says so kindly.
+        if (e instanceof ToonFlapError && (e.code === 'not-done' || e.code === 'too-fast')) {
+          return { valid: false } as FinishReply;
+        }
+        throw e;
       }
-      return {
-        valid,
-        score,
-        medal,
-        unlocks,
-        progress: kept.progress,
-        signs: course.signs.map((_, i) => ({
-          parts: run?.questions[plan.checks + i]?.parts ?? [],
-          answer: run?.questions[plan.checks + i]?.answer ?? NaN,
-          right: right[i],
-          picked: replay.state.picks[i],
-        })),
-      };
     },
+  };
+}
+
+interface TrialSave {
+  data: MemoryData;
+  maths: boolean;
+}
+
+/** The preview's one pretend pupil. */
+const PUPIL = 'preview-pupil';
+
+/** The whole game in this browser, kept under `storageKey`, plus the preview's tools. Never talks to the school's server. */
+export function trialBackend({ storageKey }: { storageKey: string }) {
+  const fresh = (): TrialSave => ({ data: emptyData(), maths: true });
+  const read = (): TrialSave => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null') as TrialSave | null;
+      if (saved?.data?.players && Array.isArray(saved.data.runs)) return saved;
+    } catch {
+      // A private window, or an old save: start fresh.
+    }
+    return fresh();
+  };
+  let save = read();
+  const write = () => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(save));
+    } catch {
+      // Not kept: it lasts until the page closes.
+    }
+  };
+  // The preview has no wait for real time: a run can be checked as soon as it finishes (the pretend clock runs ahead).
+  let ahead = 0;
+  const services = () =>
+    memoryServices({ data: save.data, settings: () => ({ enabled: true, maths: save.maths, readTime: true }), now: () => Date.now() + ahead, changed: write });
+
+  const backend = fromServer(async (body) => {
+    save = read();
+    if (body.action === 'finish') ahead += 10 * 60 * 1000;
+    return handleToonFlap(services(), PUPIL, body);
+  });
+
+  const progress = (): Progress => save.data.players[PUPIL]?.progress ?? { levels: {}, checksRight: 0, streak: 0, cleanFlights: 0, rightGaps: 0, potions: 0, potionsEarned: 0 };
+  const setProgress = (p: Progress) => {
+    const had = save.data.players[PUPIL] ?? { progress: p, picks: { flyer: 'fantail', trail: null }, version: 0 };
+    save.data.players[PUPIL] = { ...had, progress: p, version: had.version + 1 };
+    write();
   };
 
   /** Preview-only buttons. */
   const tools = {
     openAll: () => {
-      const levels = { ...kept.progress.levels };
+      const p = progress();
+      const levels = { ...p.levels };
       for (const l of LEVELS) levels[l.id] = { finishes: Math.max(levels[l.id]?.finishes ?? 0, 1), best: levels[l.id]?.best ?? null, bestPlain: levels[l.id]?.bestPlain ?? null, medal: levels[l.id]?.medal ?? 'bronze' };
-      kept = { ...kept, progress: { ...kept.progress, levels } };
-      save();
+      setProgress({ ...p, levels });
     },
     unlockAll: () => {
-      const levels = { ...kept.progress.levels };
+      const p = progress();
+      const levels = { ...p.levels };
       for (const l of LEVELS) levels[l.id] = { finishes: 3, best: levels[l.id]?.best ?? null, bestPlain: levels[l.id]?.bestPlain ?? null, medal: 'gold' };
-      kept = { ...kept, progress: { ...kept.progress, levels, checksRight: 20, cleanFlights: 3, potions: 3 } };
-      save();
+      setProgress({ ...p, levels, checksRight: Math.max(p.checksRight, 20), cleanFlights: Math.max(p.cleanFlights, 3), potions: 3 });
     },
     setMaths: (on: boolean) => {
-      kept = { ...kept, maths: on };
-      save();
+      save.maths = on;
+      write();
     },
-    maths: () => kept.maths,
+    maths: () => save.maths,
     restart: () => {
-      kept = { progress: emptyProgress(), picks: { flyer: 'fantail', trail: null }, maths: kept.maths };
-      save();
+      save = { ...fresh(), maths: save.maths };
+      write();
     },
   };
   return { backend, tools };

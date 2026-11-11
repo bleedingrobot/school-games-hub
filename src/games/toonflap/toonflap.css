@@ -259,3 +259,8 @@
   .tf-tap__hand { animation: none; }
   .tf-btn:active:not(:disabled) { transform: none; }
 }
+
+.tf-exit {
+  display: block;
+  margin: 12px auto;
+}

@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { LEVELS } from '../../../shared/toonflap/levels';
-import type { FinishReply, Loaded, Picks, StartReply, ToonFlapBackend } from './backend';
+import { ToonFlapError, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
 import { Hangar } from './Hangar';
 import { HowToPlay } from './HowToPlay';
 import { MapScreen } from './MapScreen';
@@ -23,7 +23,7 @@ const readGentle = (): boolean => {
   }
 };
 
-export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; extra?: (h: { reload(): void }) => ReactNode }) {
+export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBackend; extra?: (h: { reload(): void }) => ReactNode; onExit?: () => void }) {
   const [screen, setScreen] = useState<Screen>('map');
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failed, setFailed] = useState(false);
@@ -57,8 +57,8 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
       setRun(r);
       setLevel(n);
       setScreen('play');
-    } catch {
-      setError("Couldn't start that flight. Please try again.");
+    } catch (e) {
+      setError(e instanceof ToonFlapError ? e.message : "Couldn't start that flight. Please try again.");
       setScreen('map');
     }
     setBusy(false);
@@ -78,12 +78,21 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
     );
   }
   if (!loaded) return <div className="tf-root"><p className="tf-loading" role="status">Loading Toon Flap…</p></div>;
+  if (!loaded.enabled) {
+    return (
+      <div className="tf-root">
+        <p className="tf-error" role="status">Toon Flap isn’t switched on for your class yet.</p>
+        {onExit && <button type="button" className="tf-btn" onClick={onExit}>Back to games</button>}
+      </div>
+    );
+  }
 
   return (
     <div className="tf-root" data-screen={screen}>
       {screen === 'map' && (
         <>
           <MapScreen progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={begin} onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error} />
+          {onExit && <button type="button" className="tf-btn tf-exit" onClick={onExit}>Back to games</button>}
           {extra?.({ reload })}
         </>
       )}
