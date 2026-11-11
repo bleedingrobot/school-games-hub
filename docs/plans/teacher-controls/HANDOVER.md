@@ -42,6 +42,7 @@ Later, only if James asks: **Who can play** (games for some groups or pupils; mo
 - C3: Pupils see changes straight away (PR #423)
 - C2: Safer saves: every save names its class (PR #421)
 - C4: Games tab: what's on at a glance, and whole sections at once (PR #424)
+- C6: Who changed it, and when (PR #425)
 - C7: School defaults for new classes, and one rule for a new game (PR #426)
 
 ## C1

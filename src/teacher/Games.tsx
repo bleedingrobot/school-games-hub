@@ -10,6 +10,7 @@ import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, typ
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { fetchGameSwitches, fetchSchoolSwitches, NON_MATHS_COLUMN, saveGameSwitches, saveSchoolSwitches, switchColumnOf } from '../data/games';
 import { saveNonMathsGames } from '../data/nonMathsGames';
+import { gameMathsColumn, gameSwitchColumn, useChangedLine } from '../data/settingsChanges';
 import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
 import { GAMES } from '../games/registry';
 import type { DashboardGroup, GameDefinition } from '../games/types';
@@ -404,6 +405,7 @@ function GameRow({
   linkRef: (el: HTMLAnchorElement | null) => void;
 }) {
   const t = game.teacher;
+  const changedLine = useChangedLine(classId);
   const column = switchColumnOf(game);
   const unlimitedGame = UNLIMITED_GAMES.find((g) => g.id === game.id);
   return (
@@ -416,7 +418,7 @@ function GameRow({
       </th>
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
-          <GameSwitchSetting game={game} classId={classId} onSaved={column ? (on) => onSwitched(column, on) : undefined} />
+          <GameSwitchSetting game={game} classId={classId} changed={changedLine(gameSwitchColumn(game.id))} onSaved={column ? (on) => onSwitched(column, on) : undefined} />
         ) : game.group === 'no-maths' ? (
           <>
             <SettingToggle
@@ -426,6 +428,7 @@ function GameRow({
               value={nonMaths.value}
               savedText={PUPILS_SEE_IT}
               loadFailed={nonMaths.failed}
+              changed={changedLine('non_maths_games')}
               save={(on) => saveNonMathsGames(on, classId)}
               onSaved={nonMaths.onSaved}
             />
@@ -449,7 +452,7 @@ function GameRow({
       </td>
       <td role="cell" className="games-table__maths" data-label="Maths">
         {t?.maths ? (
-          <MathsSwitchSetting game={game} classId={classId} />
+          <MathsSwitchSetting game={game} classId={classId} changed={changedLine(gameMathsColumn(game.id))} />
         ) : t?.useSummary ? (
           <SummaryCell use={t.useSummary} classId={classId} />
         ) : (
@@ -478,7 +481,7 @@ function GameRow({
 }
 
 /** A game's on/off switch for the class, as it sits in its row of the Games table. */
-export function GameSwitchSetting({ game, classId, onSaved }: { game: GameDefinition; classId: string; onSaved?: (on: boolean) => void }) {
+export function GameSwitchSetting({ game, classId, changed, onSaved }: { game: GameDefinition; classId: string; changed?: string; onSaved?: (on: boolean) => void }) {
   const switchOf = game.teacher!.switch!;
   const value = switchOf.useValue(classId);
   return (
@@ -489,6 +492,7 @@ export function GameSwitchSetting({ game, classId, onSaved }: { game: GameDefini
       value={value.value}
       savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
+      changed={changed}
       save={(on) => switchOf.save(on, classId)}
       onSaved={onSaved}
     />
@@ -508,7 +512,7 @@ export const MATHS_CHOICES: Choice<MathsSwitch>[] = [
 ];
 
 /** A game's maths switch for the class, as it sits in its row of the Games table. */
-export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; classId: string }) {
+export function MathsSwitchSetting({ game, classId, changed }: { game: GameDefinition; classId: string; changed?: string }) {
   const maths = game.teacher!.maths!;
   const value = maths.useValue(classId);
   return (
@@ -520,6 +524,7 @@ export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; cl
       value={value.value}
       savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
+      changed={changed}
       save={(mode) => maths.save(mode, classId)}
     />
   );

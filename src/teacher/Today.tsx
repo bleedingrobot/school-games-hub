@@ -14,6 +14,7 @@ import { fetchReactionsEnabled } from '../data/spaceGames';
 import { setMultiplayer, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
 import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
+import { useChangedLine } from '../data/settingsChanges';
 import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
 import { UNLIMITED_GAMES } from '../../shared/unlimited';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
@@ -76,6 +77,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
   const s = pick(skip, 'question_skips', parseSkipMode);
   const saveColumn = <V extends boolean | string>(column: string, mine: (v: V) => Promise<void>) => (v: V) =>
     school ? saveSchoolDefaults({ [column]: v }) : mine(v);
+  const changed = useChangedLine(own ? classId : null);
   return (
     <section className="panel lesson-controls" aria-labelledby="lesson-title">
       <h2 id="lesson-title" className="panel__title">
@@ -88,6 +90,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
           value={f.value}
           savedText={PUPILS_SEE_IT}
           loadFailed={f.failed}
+          changed={changed('multiplayer_enabled')}
           save={saveColumn('multiplayer_enabled', (on: boolean) => setMultiplayer(on, classId))}
         />
         <SettingToggle
@@ -96,6 +99,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
           value={r.value}
           savedText={PUPILS_SEE_IT}
           loadFailed={r.failed}
+          changed={changed('space_reactions_enabled')}
           save={saveColumn('space_reactions_enabled', (on: boolean) => setSpaceReactions(on, classId))}
         />
         <SettingToggle
@@ -104,6 +108,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
           value={n.value}
           savedText={PUPILS_SEE_IT}
           loadFailed={n.failed}
+          changed={changed('non_maths_games')}
           save={saveColumn('non_maths_games', (on: boolean) => saveNonMathsGames(on, classId))}
         />
         {trainingOn() && (
@@ -113,6 +118,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
             value={t.value}
             savedText={PUPILS_SEE_IT}
             loadFailed={t.failed}
+            changed={changed('training_first')}
             save={saveColumn('training_first', (on: boolean) => saveTrainingFirst(on, classId))}
           />
         )}
@@ -123,6 +129,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
           value={s.value}
           savedText={PUPILS_SEE_IT}
           loadFailed={s.failed}
+          changed={changed('question_skips')}
           save={saveColumn('question_skips', (mode: SkipMode) => saveSkipMode(mode, classId))}
         />
       </div>
@@ -133,6 +140,7 @@ export function LessonControls({ target, name }: { target: SettingsTarget; name?
 /** One switch per game with a daily turn limit. Each lasts until midnight, then turns itself off. */
 function UnlimitedTurns({ classId }: { classId: string }) {
   const on = useSetting(() => fetchUnlimitedToday(classId), [classId]);
+  const changed = useChangedLine(classId)('unlimited_days');
   return (
     <section className="panel lesson-controls" aria-labelledby="unlimited-title">
       <h2 id="unlimited-title" className="panel__title">
@@ -142,6 +150,7 @@ function UnlimitedTurns({ classId }: { classId: string }) {
         Lifts a game’s daily limit for this class until midnight, then turns itself off. Normal turns are used first; extra
         turns give game rewards but no points.
       </p>
+      {changed && <p className="setting__changed">{changed}</p>}
       <div className="lesson-controls__grid">
         {UNLIMITED_GAMES.map((g) => (
           <SettingToggle
