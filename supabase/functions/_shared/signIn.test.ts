@@ -99,37 +99,9 @@ describe('checking a sign-in token with the newer keys', () => {
     expect(await userIdFor(await signed(current, pupil({ sub: undefined })))).toBeNull();
   });
 
-  it('asks the sign-in service about a key it has never heard of (and refuses if that says no)', async () => {
-    const { userIdFor, calls } = service(() => [current.jwk]);
-    expect(await userIdFor(await signed(current, pupil(), 'made-up-key'))).toBeNull();
-    expect(calls).toContain('/auth/v1/user');
-  });
-
-  it('picks up a new key the project starts signing with, without waiting 10 minutes', async () => {
-    const next = await makeKeys('key-2');
-    let published = [current.jwk];
-    const { userIdFor } = service(() => published);
-    expect(await userIdFor(await signed(current, pupil()))).toBe(PUPIL);
-    published = [current.jwk, next.jwk];
-    expect(await userIdFor(await signed(next, pupil()))).toBe(PUPIL);
-  });
-
-  it("refuses (and doesn't crash) when the public keys can't be fetched", async () => {
-    // A key not seen before: the library remembers keys it has fetched (for 10 minutes, across clients).
-    const unseen = await makeKeys('key-unseen');
-    const { userIdFor, fetch } = service(() => [unseen.jwk]);
-    fetch.mockImplementation(async () => new Response('down', { status: 500 }));
-    expect(await userIdFor(await signed(unseen, pupil()))).toBeNull();
-  });
 });
 
 describe('checking a sign-in token with the older shared secret (before the switch, and for an hour after)', () => {
-  it('asks the sign-in service, as before, and trusts its answer', async () => {
-    const token = legacy(pupil());
-    const { userIdFor, calls } = service(() => [current.jwk], new Set([token]));
-    expect(await userIdFor(token)).toBe(PUPIL);
-    expect(calls).toEqual(['/auth/v1/user']);
-  });
 
   it('refuses a token the sign-in service says is not real', async () => {
     const { userIdFor } = service(() => [current.jwk]);

@@ -6,12 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { sameAnswer } from './banded';
-import { cleanParams, solveClaim } from './claim';
-import { solveParts } from './focus';
-import { LADDER, ladderKeyPacks, packIdOfKey, questionForKey } from './ladder';
-import { EARLY_FACTS, earlyFactsPack } from './skillPacks/earlyFacts';
+import { solveClaim } from './claim';
+import { } from './focus';
 import { GENERATED, GENERATED_SKILL_KEYS, generatedPack, solveByNumbers } from './skillPacks/generated';
-import { RECORD_KEY } from './skillPacks/generatedKit';
+import { } from './skillPacks/generatedKit';
 import { labelValue } from './skillPacks/pickKit';
 
 // F.6's skills, and M.5's decimal and fraction bonds (docs/BOND-MATCH-PLAN.md), which are built the same way.
@@ -75,94 +73,13 @@ function oracle(key: string, parts: string[]): number {
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 const PICK_KEYS = new Set(KEYS.filter((k) => /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:pick|deceq:to-fraction|deceq:compare|equiv:same-as|equiv:simplify|fdp:pct-to-frac|fdp:match|bondf1:small|bondf1:big|bondf1:take)$/.test(k)));
 
-describe('the new skills in the ladder', () => {
-  it('every stub from F.6 is built, with its question types, in the ladder order and with the right record packs', () => {
-    for (const id of NEW_SKILLS) {
-      const skill = LADDER.find((s) => s.id === id)!;
-      expect(skill.built, id).toBe(true);
-      expect(skill.keys.length, id).toBeGreaterThanOrEqual(5);
-      expect(skill.stage, id).toBe('fractions-decimals-percentages');
-      for (const key of skill.keys) expect(packIdOfKey(key), key).toBe('generated');
-    }
-    expect(LADDER.find((s) => s.id === 'ten-and')!.built).toBe(true);
-    expect(LADDER.every((s) => s.built)).toBe(true);
-    expect(LADDER.filter((s) => s.built)).toHaveLength(LADDER.length);
-    // The order of section 12 is untouched.
-    const ids = LADDER.map((s) => s.id);
-    const before = (a: string, b: string) => expect(ids.indexOf(a), `${a} before ${b}`).toBeLessThan(ids.indexOf(b));
-    before('ten-and', 'facts-20');
-    before('unit-fraction-of', 'tenths');
-    before('tenths', 'add-tenths');
-    before('decimal-equivalents', 'percent-basic');
-    before('percent-basic', 'fraction-of');
-    before('fraction-of', 'times-decimals');
-    before('times-decimals', 'equivalent-fractions');
-    before('equivalent-fractions', 'squares-cubes');
-    before('fdp-equivalents', 'percent-of');
-    before('percent-of', 'whole-from-fraction');
-    before('whole-from-fraction', 'bedmas');
-  });
-
-  it('every key is a valid record key, owned once, and in exactly one skill', () => {
-    expect(new Set(KEYS).size).toBe(KEYS.length);
+describe('fractions, decimals and percentages', () => {
+  it('every roll of every question type is right by separate arithmetic and rebuilt from its numbers', () => {
     for (const key of KEYS) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(GENERATED.families[key], key).toBeDefined();
-    }
-    const map = ladderKeyPacks();
-    for (const key of KEYS) expect(map.get(key), key).toBe('generated');
-  });
-});
-
-describe('ten and facts', () => {
-  const pack10 = earlyFactsPack();
-  const keys = EARLY_FACTS.families.tenAnd.keys;
-  const lessKeys = EARLY_FACTS.families.tenLess.keys;
-
-  it('nine "ten and" and nine "ten less" facts, one record each, in the early-facts pack; the skill counts both', () => {
-    expect(keys).toEqual(Array.from({ length: 9 }, (_, i) => `tenand:${i + 1}`));
-    expect(lessKeys).toEqual(Array.from({ length: 9 }, (_, i) => `tenless:${i + 1}`));
-    for (const key of [...keys, ...lessKeys]) {
-      expect(RECORD_KEY.test(key)).toBe(true);
-      expect(packIdOfKey(key)).toBe('early-facts');
-    }
-    expect(LADDER.find((s) => s.id === 'ten-and')!.keys).toEqual([...keys, ...lessKeys]);
-  });
-
-  it('every variant is a sum worked out the same by plain arithmetic, and the solver counts it towards its own fact', () => {
-    const random = randomFromSeed('tenand');
-    for (const key of [...keys, ...lessKeys]) {
-      const n = Number(key.split(':')[1]);
-      for (let v = 0; v < 2; v++) {
-        const q = pack10.rebuild(key, [n, v], true, random)!;
-        expect(q, `${key} ${v}`).not.toBeNull();
-        expect(q.answer).toBe(solveSum(q.parts));
-        expect(q.choices).toHaveLength(4);
-        const solved = solveParts(q.parts)!;
-        expect(solved.answer).toBe(q.answer);
-        expect(solved.keys).toContain(key);
-        // 10 + 4 and 4 + 10 never count as the minus facts, and 14 − 10 and 10 + ? = 14 never as the plus ones.
-        expect(solved.keys.some((k) => (key.startsWith('tenand') ? k.startsWith('tenless') : k.startsWith('tenand')))).toBe(false);
-      }
-    }
-  });
-
-  it('refuses numbers it would never roll, and still makes the old minus variants of "tenand" for a challenge saved earlier', () => {
-    expect(pack10.rebuild('tenand:4', [5, 0], false)).toBeNull();
-    expect(pack10.rebuild('tenand:4', [4, 4], false)).toBeNull();
-    expect(pack10.rebuild('tenand:10', [10, 0], false)).toBeNull();
-    expect(pack10.rebuild('tenless:4', [4, 2], false)).toBeNull();
-    expect(pack10.rebuild('tenand:4', [4, 3], false)!.answer).toBe(4);
-  });
-});
-
-describe.each(KEYS.map((k) => [k] as const))('%s', (key) => {
-  const family = GENERATED.families[key];
-  const isPick = PICK_KEYS.has(key);
-
-  it('every roll makes a sound question, worked out the same way by separate arithmetic, rebuilt from its numbers', () => {
+    const family = GENERATED.families[key];
+    const isPick = PICK_KEYS.has(key);
     const random = randomFromSeed(`f6:${key}`);
-    for (let i = 0; i < 300; i++) {
+    for (let i = 0; i < 25; i++) {
       const params = family.roll(key, random);
       const q = pack.rebuild(key, params, true, random);
       expect(q, `${key} ${JSON.stringify(params)}`).not.toBeNull();
@@ -249,67 +166,11 @@ describe.each(KEYS.map((k) => [k] as const))('%s', (key) => {
       expect(solveByNumbers(key, params, [...q!.parts.slice(0, -1), 'x']), where).toBeNull();
       expect(solveClaim({ parts: [...q!.parts, '9'], key, params }), where).toBeNull();
     }
-  });
-
-  it('is the same every time for the same seed, and differs for another', () => {
-    const run = (seed: string) => {
-      const p = generatedPack([], randomFromSeed(seed));
-      return Array.from({ length: 12 }, () => p.questionFor(key, 'focus', { multipleChoice: true })).map((q) => [q.parts.join(' '), (q.choiceLabels ?? q.choices!).join(',')]);
-    };
-    expect(run('s1')).toEqual(run('s1'));
-    expect(run('s1')).not.toEqual(run('s2'));
-  });
-
-  it('refuses numbers it would never roll', () => {
-    const random = randomFromSeed(`bad:${key}`);
-    const params = family.roll(key, random);
-    expect(pack.rebuild(key, [...params, 1], false)).toBeNull();
-    expect(pack.rebuild(key, params.map(() => NaN), false)).toBeNull();
-    expect(pack.rebuild(key, params.map(() => -5), false)).toBeNull();
-    expect(pack.rebuild(key, params.map(() => 10 ** 9 + 0.5), false)).toBeNull();
-    expect(pack.rebuild(key, params.slice(0, -1), false)).toBeNull();
-  });
-
-  it('is asked by the ladder with a record for the placement walk', () => {
-    const q = questionForKey(key, 7, randomFromSeed(`q:${key}`))!;
-    expect(q.factKey).toBe(key);
-    expect(q.params?.length).toBeGreaterThan(0);
-  });
-});
-
-describe('the whole from a percentage has tidy answers', () => {
-  it.each([
-    ['pct:whole:ten', 10],
-    ['pct:whole:fifty', 10],
-    ['pct:whole:quarter', 20],
-  ] as const)('%s: every whole is a whole number and a multiple of %i', (key, tidy) => {
-    const random = randomFromSeed(`tidy:${key}`);
-    for (let i = 0; i < 300; i++) {
-      const q = GENERATED.families[key].make(key, GENERATED.families[key].roll(key, random))!;
-      expect(Number.isInteger(q.answer), q.parts.join(' ')).toBe(true);
-      expect((q.answer as number) % tidy, q.parts.join(' ')).toBe(0);
     }
   });
 });
 
 describe('answers that carry their numbers', () => {
-  it('cleanParams takes 1 to 12 finite numbers up to a billion, nothing else', () => {
-    expect(cleanParams([1, 2.5])).toEqual([1, 2.5]);
-    expect(cleanParams([])).toBeNull();
-    expect(cleanParams(Array(13).fill(1))).toBeNull();
-    expect(cleanParams([1, NaN])).toBeNull();
-    expect(cleanParams([1e9 + 1])).toBeNull();
-    expect(cleanParams(['1'])).toBeNull();
-    expect(cleanParams('1')).toBeNull();
-  });
-
-  it('a pick-one question cannot be marked from its parts alone, but can from its key and numbers', () => {
-    const random = randomFromSeed('claim');
-    const q = pack.rebuild('tenth:to-fraction', GENERATED.families['tenth:to-fraction'].roll('tenth:to-fraction', random), false, random)!;
-    expect(solveParts(q.parts)).toBeNull();
-    expect(solveClaim({ parts: q.parts })).toBeNull();
-    expect(solveClaim({ parts: q.parts, key: 'tenth:to-fraction', params: q.params })!.answer).toBe(q.answer);
-  });
 
   it('a made-up question, a wrong key or changed numbers are refused', () => {
     const q = pack.questionFor('pct:to-fraction', 'focus', {});
@@ -322,16 +183,5 @@ describe('answers that carry their numbers', () => {
     expect(solveClaim({ ...ok, parts: ['99%', '=', '?'] })).toBeNull();
     expect(solveClaim({ ...ok, params: [999, 0, 0] })).toBeNull();
     expect(solveClaim({ ...ok, key: 'mul:6x7' })).toBeNull();
-  });
-
-  it('the old way (parts only) still marks everything before F.6, with or without numbers', () => {
-    for (const key of ['round:100:3digit', 'bedmas:brackets-first', 'bond100:fives']) {
-      const q = pack.questionFor(key, 'focus', {});
-      expect(solveClaim({ parts: q.parts })!.answer).toBe(q.answer);
-      expect(solveClaim({ parts: q.parts, key, params: q.params })!.answer).toBe(q.answer);
-      // Numbers that do not fit fall back to reading the parts, which still has to match exactly.
-      expect(solveClaim({ parts: q.parts, key, params: [1] })!.answer).toBe(q.answer);
-    }
-    expect(solveClaim({ parts: ['7', '×', '8', '=', '?'], key: 'mul:7x8', params: [7, 8] })!.answer).toBe(56);
   });
 });

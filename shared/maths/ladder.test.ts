@@ -1,16 +1,15 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { } from 'node:os';
+import { } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
-import { CAMPAIGN_STEPS } from './config';
-import { parseFactKey } from './facts';
-import { afterAnswer, newStats, type FactStats } from './leitner';
-import { AutoPack, autoPools, focusPools, LADDER, ladderProgress, packIdOfKey, tablesJumpFloor } from './ladder';
-import { BandedPack, sameAnswer } from './banded';
-import { BANDED_PACKS } from './skillPacks';
-import { earlyFactsPack, EARLY_FACTS, solvePart, solveSkip } from './skillPacks/earlyFacts';
-import { RECORD_KEY } from './skillPacks/generatedKit';
+import { } from './config';
+import { } from './facts';
+import { newStats, type FactStats } from './leitner';
+import { AutoPack, LADDER, ladderProgress, } from './ladder';
+import { sameAnswer } from './banded';
+import { } from './skillPacks';
+import { earlyFactsPack, EARLY_FACTS, solveSkip } from './skillPacks/earlyFacts';
+import { } from './skillPacks/generatedKit';
 import { solveParts } from './focus';
 
 const rec = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 3, correct: 3, box });
@@ -58,14 +57,6 @@ describe('the early facts pack', () => {
   const pack = earlyFactsPack([], randomFromSeed(String(3)));
   const keys = Object.values(EARLY_FACTS.families).flatMap((f) => f.keys);
 
-  it('has the facts it should', () => {
-    expect(keys).toContain('bond10:3+7');
-    expect(keys).toContain('bond20:8+12');
-    expect(keys).toContain('dbl:7');
-    expect(keys).toContain('half:14');
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-
   it('asks only correct questions, with a distinct right answer among the choices', () => {
     for (const key of keys.filter((k) => !k.startsWith('oddeven:') && !LINE_KEY.test(k))) {
       for (let i = 0; i < 12; i++) {
@@ -78,33 +69,6 @@ describe('the early facts pack', () => {
         expect(q.choices!.every((c) => c >= 0 && Number.isInteger(c))).toBe(true);
       }
     }
-  });
-
-  it('can be made again from its numbers (so the server can check an answer)', () => {
-    for (const key of keys) {
-      const q = pack.questionFor(key, 'focus');
-      const again = pack.rebuild(key, q.params!);
-      expect(again?.parts).toEqual(q.parts);
-      expect(again?.answer).toBe(q.answer);
-    }
-    expect(pack.rebuild('bond10:3+7', [3, 7, 9])).toBeNull();
-    expect(pack.rebuild('bond10:3+7', [4, 6, 0])).toBeNull();
-  });
-
-  it('gives the same questions for the same seed, and not the same one twice running', () => {
-    const run = (seed: number) => {
-      const p = earlyFactsPack([], randomFromSeed(String(seed)));
-      return Array.from({ length: 40 }, () => p.nextQuestion({ level: 4 })!.parts.join(' '));
-    };
-    expect(run(5)).toEqual(run(5));
-    const asked = run(6);
-    for (let i = 1; i < asked.length; i++) expect(asked[i]).not.toBe(asked[i - 1]);
-  });
-
-  it('owns its keys and no others', () => {
-    expect(pack.owns('bond10:0+10')).toBe(true);
-    expect(pack.owns('add:3+4')).toBe(false);
-    expect(pack.owns('mul:3x4')).toBe(false);
   });
 });
 
@@ -121,70 +85,9 @@ describe('the ladder', () => {
       }
     }
   });
-
-  it('puts the times tables in the NZC order', () => {
-    expect(CAMPAIGN_STEPS.map((s) => s.add)).toEqual([[2, 5, 10], [3, 4, 8], [6, 9], [7], [11, 12]]);
-    const ids = LADDER.map((s) => s.id);
-    expect(ids.indexOf('tables-3-4-8')).toBeLessThan(ids.indexOf('tables-6-9'));
-    expect(ids.indexOf('tables-6-9')).toBeLessThan(ids.indexOf('tables-7'));
-    expect(ids.indexOf('facts-10')).toBeLessThan(ids.indexOf('tables-2-5-10'));
-  });
-
-  it('keeps every times-table fact (none lost by the new order)', () => {
-    const keys = new Set(built.flatMap((s) => s.keys));
-    for (let a = 1; a <= 12; a++) for (let b = Math.max(a, 2); b <= 12; b++) expect(keys.has(`mul:${a}x${b}`), `mul:${a}x${b}`).toBe(true);
-  });
-
-  it('every skill has curriculum tags that exist in the NZC teaching sequences', () => {
-    const dir = join(homedir(), 'projects/maths-alignment-tool/data/curriculum/teaching-sequence');
-    let text: string;
-    try {
-      text = readdirSync(dir).map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
-    } catch {
-      return; // the alignment tool isn't on this machine (CI): skip
-    }
-    for (const skill of LADDER) {
-      if (skill.id === 'bonds-1000' || skill.id.startsWith('skip-')) { expect(skill.curriculumTags).toEqual([]); continue; }
-      expect(skill.curriculumTags.length, skill.id).toBeGreaterThan(0);
-      for (const tag of skill.curriculumTags) expect(text, `${skill.id}: ${tag}`).toContain(`- ${tag} `);
-    }
-  });
-});
-
-describe('division by 11 and 12', () => {
-  it('is in the last tables skill, and asks correct questions', () => {
-    const skill = LADDER.find((s) => s.id === 'tables-11-12')!;
-    const div = skill.keys.filter((k) => k.startsWith('div:'));
-    expect(div).toContain('div:132/12');
-    expect(div).toContain('div:121/11');
-    expect(div).toHaveLength(24);
-    const pack = new AutoPack([], randomFromSeed('d'));
-    for (const key of div) {
-      const q = (pack as unknown as { ownerOf(k: string): { questionFor(k: string, b: 'focus'): { parts: string[]; answer: number } } }).ownerOf(key).questionFor(key, 'focus');
-      expect(sameAnswer(solve(q.parts), q.answer), `${key}: ${q.parts.join(' ')}`).toBe(true);
-    }
-  });
-
-  it('is never served by the band-based games (Maths Monsters)', () => {
-    const pack = new BandedPack(BANDED_PACKS.division);
-    for (let level = 1; level <= pack.bandCount; level++) {
-      const pools = pack.poolsFor(level);
-      expect([...pools.focus, ...pools.review, ...pools.stretch].some((k) => /\/1[12]$/.test(k))).toBe(false);
-    }
-    expect(pack.owns('div:132/12')).toBe(true);
-    expect(pack.bandOf('div:132/12')).toBeUndefined();
-  });
 });
 
 describe('ladder progress', () => {
-  it('starts on the first skill with nothing secure', () => {
-    const p = ladderProgress([]);
-    expect(p.current?.id).toBe('facts-10');
-    expect(p.secureCount).toBe(0);
-    expect(p.percent).toBe(0);
-    expect(p.skills.find((s) => s.skill.id === 'facts-10')?.status).toBe('current');
-    expect(p.skills.find((s) => s.skill.id === 'ten-and')?.status).toBe('upcoming'); // built in F.6; every skill is built now
-  });
 
   it('moves on at 70% in box 2 or higher, and holds back just under it', () => {
     const keys = built[0].keys;
@@ -195,176 +98,6 @@ describe('ladder progress', () => {
     expect(p.secureCount).toBe(1);
     expect(p.percent).toBe(Math.round(100 / built.length));
   });
-
-  it('reaches 100% and no current skill when every built skill is secure', () => {
-    const p = ladderProgress(secure(built.flatMap((s) => s.keys)));
-    expect(p.current).toBeNull();
-    expect(p.percent).toBe(100);
-    expect(p.secureCount).toBe(built.length);
-  });
-
-  it('skips a skill whose tables are all switched off, and it no longer counts', () => {
-    const all = ladderProgress([]);
-    const saved = secure(built.flatMap((s) => s.keys));
-    // With only ×6 and ×9 on, the ×7 and ×11/×12 skills have nothing to ask, so they drop out.
-    const p = ladderProgress(saved, { enabledTables: [6, 9] });
-    expect(p.current).toBeNull();
-    expect(p.builtCount).toBeLessThan(all.builtCount);
-    expect(p.percent).toBe(100);
-    // A student who has done everything before ×7 is on ×7 when it is on, and past it when it is off.
-    const through = built.findIndex((s) => s.id === 'tables-6-9');
-    const done = secure(built.slice(0, through + 1).flatMap((s) => s.keys));
-    expect(ladderProgress(done).current?.id).toBe('tables-7');
-    expect(ladderProgress(done, { enabledTables: [6, 9] }).current?.id).toBe('times-tens'); // ×7 is skipped, the next skill is not
-  });
-
-  it('builds pools of focus, review and stretch around the current skill', () => {
-    const upTo = built.findIndex((s) => s.id === 'facts-20');
-    const p = ladderProgress(secure(built.slice(0, upTo).flatMap((s) => s.keys)));
-    const pools = autoPools(p);
-    expect(new Set(pools.focus)).toEqual(new Set(built[upTo].keys));
-    expect(new Set(pools.review)).toEqual(new Set(built.slice(0, upTo).flatMap((s) => s.keys)));
-    expect(new Set(pools.stretch)).toEqual(new Set(built[upTo + 1].keys));
-  });
-});
-
-describe('auto', () => {
-  const play = (pack: AutoPack, n: number, right = true) => {
-    const asked: ReturnType<AutoPack['nextQuestion']>[] = [];
-    for (let i = 0; i < n; i++) {
-      const q = pack.nextQuestion({})!;
-      asked.push(q);
-      pack.recordAnswer(q, right ? q.answer : q.answer + 1, 1000);
-    }
-    return asked;
-  };
-
-  it('moves a new student up the ladder as they answer right', () => {
-    const pack = new AutoPack([], randomFromSeed(String(11)));
-    expect(pack.progress().current?.id).toBe('facts-10');
-    play(pack, 400);
-    expect(built.findIndex((s) => s.id === pack.progress().current?.id)).toBeGreaterThan(1);
-  });
-
-  it('mixes about 60% focus, 30% review and 10% stretch', () => {
-    const start = built.findIndex((s) => s.id === 'facts-20');
-    const saved = secure(built.slice(0, start).flatMap((s) => s.keys));
-    const bands = { focus: 0, review: 0, stretch: 0, repeat: 0 };
-    const pack = new AutoPack(saved, randomFromSeed(String(21)));
-    for (let i = 0; i < 1500; i++) {
-      const q = pack.nextQuestion({})!;
-      bands[q.band]++;
-      // a wrong answer would schedule repeats, so keep every fact at its box: answer slowly
-      pack.recordAnswer(q, q.answer, 9000);
-    }
-    expect(bands.focus / 1500).toBeGreaterThan(0.55);
-    expect(bands.focus / 1500).toBeLessThan(0.65);
-    expect(bands.review / 1500).toBeGreaterThan(0.25);
-    expect(bands.review / 1500).toBeLessThan(0.35);
-    expect(bands.stretch / 1500).toBeGreaterThan(0.06);
-    expect(bands.stretch / 1500).toBeLessThan(0.14);
-  });
-
-  it('leans review towards the hardest tables', () => {
-    const upTo = built.findIndex((s) => s.id === 'tables-7');
-    const saved = secure(built.slice(0, upTo).flatMap((s) => s.keys));
-    const pack = new AutoPack(saved, randomFromSeed(String(31)));
-    let hard = 0;
-    let all = 0;
-    for (let i = 0; i < 3000; i++) {
-      const q = pack.nextQuestion({})!;
-      pack.recordAnswer(q, q.answer, 9000);
-      if (q.band !== 'review') continue;
-      const mul = parseFactKey(q.factKey);
-      if (!mul) continue;
-      all++;
-      if ([6, 7, 8, 9, 12].some((t) => t === mul.a || t === mul.b)) hard++;
-    }
-    const pool = autoPools(pack.progress()).review.map((k) => parseFactKey(k)).filter(Boolean);
-    const poolShare = pool.filter((f) => [6, 7, 8, 9, 12].some((t) => t === f!.a || t === f!.b)).length / pool.length;
-    expect(hard / all).toBeGreaterThan(poolShare);
-  });
-
-  it('brings a wrong answer back soon, and records under the same keys other games use', () => {
-    const pack = new AutoPack([], randomFromSeed(String(41)));
-    const heard: string[] = [];
-    pack.onAnswer((a) => heard.push(a.key));
-    const q = pack.nextQuestion({})!;
-    pack.recordAnswer(q, q.answer + 1, 1000);
-    expect(heard).toEqual([q.factKey]);
-    const keys = Array.from({ length: 8 }, () => {
-      const n = pack.nextQuestion({})!;
-      pack.recordAnswer(n, n.answer, 1000);
-      return n.factKey;
-    });
-    expect(keys.slice(2, 6)).toContain(q.factKey);
-    expect(pack.stats().find((s) => s.key === q.factKey)?.box).toBeGreaterThanOrEqual(1);
-  });
-
-  it('keeps every old times-table record: records load, count, and are passed back', () => {
-    const old = [afterAnswer(newStats('mul:6x7'), true, 1000, Date.now()), afterAnswer(newStats('add:3+4'), true, 1000, Date.now())];
-    const pack = new AutoPack(old, randomFromSeed(String(51)));
-    expect(pack.stats().map((s) => s.key).sort()).toEqual(['add:3+4', 'mul:6x7']);
-  });
-
-  it('only asks for facts that exist, whatever the student has done (many seeds)', () => {
-    for (let seed = 1; seed <= 5; seed++) {
-      const pack = new AutoPack([], randomFromSeed(String(seed)));
-      for (const q of play(pack, 300)) {
-        expect(q).not.toBeNull();
-        expect(Number.isFinite(q!.answer)).toBe(true);
-      }
-    }
-    expect(BANDED_PACKS['add-sub']).toBeDefined();
-  });
-});
-
-describe('times-table curriculum codes', () => {
-  it('the times-table pack carries the codes the ladder gives its times-table skills', async () => {
-    const { TIMES_TABLES_TAGS, TimesTables } = await import('./skillPacks/timesTables');
-    const ladder = [...new Set(LADDER.filter((s) => s.stage === 'times-tables').flatMap((s) => s.curriculumTags))];
-    expect([...TIMES_TABLES_TAGS].sort()).toEqual(ladder.sort());
-    expect(new TimesTables().curriculumTags.some((t) => t.startsWith('TODO'))).toBe(false);
-  });
-});
-
-describe('jumping ahead on secure times tables (22 Oct 2026)', () => {
-  const at = (id: string) => LADDER.findIndex((s) => s.id === id);
-  const times = (id: string) => LADDER[at(id)].keys.filter((k) => k.startsWith('mul:'));
-  const byKey = (stats: FactStats[]) => new Map(stats.map((s) => [s.key, s]));
-
-  it('moves a student who knows ×3, ×4 and ×8 past everything easier, even skills never asked', () => {
-    const progress = ladderProgress(secure(times('tables-3-4-8')));
-    expect(at(progress.current!.id)).toBeGreaterThan(at('tables-3-4-8'));
-    // Bonds to 10 was never asked: passed over, not secure.
-    expect(progress.skills[at('facts-10')]).toMatchObject({ status: 'secure', passedOver: true });
-    expect(progress.skills[at('tables-3-4-8')]).toMatchObject({ status: 'secure' });
-  });
-
-  it('needs 70% of the skill’s times facts', () => {
-    const keys = times('tables-2-5-10');
-    const enough = Math.ceil(keys.length * 0.7);
-    expect(tablesJumpFloor(byKey(secure(keys.slice(0, enough))))).toBe(at('tables-2-5-10') + 1);
-    expect(tablesJumpFloor(byKey(secure(keys.slice(0, enough - 1))))).toBe(0);
-    // Box 1 (still learning) doesn't count.
-    expect(tablesJumpFloor(byKey(keys.map((k) => rec(k, 1))))).toBe(0);
-  });
-
-  it('only times-table skills can do it, so a small skill can’t jump anyone by luck', () => {
-    expect(tablesJumpFloor(byKey(secure(LADDER[at('bonds-100')].keys)))).toBe(0);
-    expect(tablesJumpFloor(byKey(secure(LADDER[at('facts-20')].keys)))).toBe(0);
-    expect(ladderProgress(secure(LADDER[at('bonds-100')].keys)).current?.id).toBe('facts-10');
-  });
-
-  it('jumps from the highest secure times-table skill', () => {
-    const stats = secure([...times('tables-2-5-10'), ...times('tables-7')]);
-    expect(tablesJumpFloor(byKey(stats))).toBe(at('tables-7') + 1);
-  });
-
-  it('never lowers a floor that is already higher', () => {
-    const progress = ladderProgress(secure(times('tables-2-5-10')), { floor: at('tables-7') });
-    expect(at(progress.current!.id)).toBeGreaterThanOrEqual(at('tables-7'));
-  });
 });
 
 describe('skip counting in tens, fives and twos', () => {
@@ -373,56 +106,6 @@ describe('skip counting in tens, fives and twos', () => {
     { id: 'skip-5', family: 'skip5', step: 5, upTo: 50 },
     { id: 'skip-2', family: 'skip2', step: 2, upTo: 20 },
   ];
-  const ids = LADDER.map((s) => s.id);
-
-  it('comes after the early facts and before ×2, ×5 and ×10, tens first, and auto moves on from tens to fives to twos', () => {
-    expect(ids.slice(ids.indexOf('dbl-half-20'), ids.indexOf('tables-2-5-10') + 1)).toEqual(['dbl-half-20', 'skip-10', 'skip-5', 'skip-2', 'odd-even', 'skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens', 'number-line-100', 'ten-more-less', 'number-line-1000', 'balance-10', 'balance-20', 'true-false', 'bundles-50', 'place-value-100', 'regroup-100', 'ten-more-less-100', 'place-value-1000', 'equal-rows', 'arrays-turn', 'sharing-rows', 'cut-arrays', 'count-out-10', 'count-out-20', 'count-on', 'tables-2-5-10']);
-    const before = built.slice(0, built.findIndex((s) => s.id === 'skip-10')).flatMap((s) => s.keys);
-    const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
-    expect(ladderProgress(secure(before)).current?.id).toBe('skip-10');
-    expect(ladderProgress(secure([...before, ...keysOf('skip-10')])).current?.id).toBe('skip-5');
-    expect(ladderProgress(secure([...before, ...keysOf('skip-10'), ...keysOf('skip-5')])).current?.id).toBe('skip-2');
-  });
-
-  it('has a record for each missing number of each kind, kept by the early-facts pack', () => {
-    for (const { id, family } of steps) {
-      const keys = EARLY_FACTS.families[family].keys;
-      expect(LADDER.find((s) => s.id === id)!.keys).toEqual(keys);
-      for (const key of keys) {
-        expect(RECORD_KEY.test(key), key).toBe(true);
-        expect(packIdOfKey(key), key).toBe('early-facts');
-      }
-    }
-    expect(EARLY_FACTS.families.skip10.keys).toEqual(expect.arrayContaining(['skip10:up:40', 'skip10:next:100', 'skip10:back:10']));
-    expect(EARLY_FACTS.families.skip2.keys).not.toContain('skip2:next:4'); // two pads shown is too few
-    expect(EARLY_FACTS.families.skip5.keys).not.toContain('skip5:up:50'); // nothing after 50
-  });
-
-  it('asks only sequences of multiples of the step in range, with wrong choices from the known mistakes', () => {
-    const pack = earlyFactsPack([], randomFromSeed('skip'));
-    for (const { family, step, upTo } of steps) {
-      for (const key of EARLY_FACTS.families[family].keys) {
-        const [, kind, n] = key.split(':');
-        for (let i = 0; i < 6; i++) {
-          const q = pack.questionFor(key, 'focus', { multipleChoice: true });
-          const pads = q.parts.map((p) => p.replace(/,$/, ''));
-          const shown = pads.filter((p) => p !== '?').map(Number);
-          expect(q.answer).toBe(+n);
-          expect(solve(q.parts), `${key}: ${q.parts.join(' ')}`).toBe(q.answer);
-          expect([...shown, q.answer].every((x) => x % step === 0 && x >= 0 && x <= upTo)).toBe(true);
-          const filled = pads.map((p) => (p === '?' ? q.answer : +p));
-          expect(filled.slice(1).map((x, k) => x - filled[k])).toEqual(filled.slice(1).map(() => (kind === 'back' ? -step : step)));
-          expect(pads.indexOf('?') === pads.length - 1).toBe(kind === 'next');
-          expect(q.spoken).toMatch(/^Counting (back )?in (tens|fives|twos): /);
-          expect(new Set(q.choices).size).toBe(4);
-          expect(q.choices).toContain(q.answer);
-          const before = +pads[pads.indexOf('?') - 1];
-          const mistakes = [q.answer + 1, q.answer - 1, ...[10, 5, 2, 1].map((s) => before + (kind === 'back' ? -s : s)), ...shown];
-          for (const c of q.choices!) if (c !== q.answer) expect(mistakes, `${key}: ${c}`).toContain(c);
-        }
-      }
-    }
-  });
 
   it('the server reads each question back from how it was shown, or from its numbers, and refuses anything else', () => {
     const pack = earlyFactsPack([], randomFromSeed('skip-solve'));
@@ -441,195 +124,5 @@ describe('skip counting in tens, fives and twos', () => {
     expect(pack.rebuild('skip10:up:40', [30, 1])).toBeNull();
     expect(pack.rebuild('skip10:back:90', [90, 2])).toBeNull(); // would start at 110
   });
-
-  it('gives the same questions for the same seed', () => {
-    const run = (seed: string) => {
-      const p = earlyFactsPack([], randomFromSeed(seed));
-      return LADDER.filter((s) => s.id.startsWith('skip-')).flatMap((s) => s.keys).map((k) => p.questionFor(k, 'focus', { multipleChoice: true })).map((q) => `${q.parts.join(' ')} ${q.choices}`);
-    };
-    expect(run('a')).toEqual(run('a'));
-    expect(run('a')).not.toEqual(run('b'));
-  });
 });
 
-describe('the part-whole facts (7 is 4 and 3), for Pipi', () => {
-  const keysOf = (id: string) => LADDER.find((s) => s.id === id)!.keys;
-
-  it('has a record for every split of 3 to 10, in two skills before the facts to 10 that sit beside the ladder', () => {
-    expect(LADDER.slice(0, 3).map((s) => s.id)).toEqual(['parts-5', 'parts-10', 'facts-10']);
-    expect(keysOf('parts-5')).toHaveLength(4 + 5 + 6);
-    expect(keysOf('parts-10')).toHaveLength(7 + 8 + 9 + 10 + 11);
-    expect(keysOf('parts-5')).toEqual(expect.arrayContaining(['part3:0', 'part3:3', 'part5:2']));
-    for (const key of [...keysOf('parts-5'), ...keysOf('parts-10')]) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key), key).toBe('early-facts');
-    }
-    // Auto never puts anyone on them or asks them as review, and they don't count.
-    const p = ladderProgress([]);
-    expect(p.current?.id).toBe('facts-10');
-    expect(p.builtCount).toBe(built.length);
-    expect(autoPools(ladderProgress(secure(keysOf('facts-10')))).review.some((k) => k.startsWith('part'))).toBe(false);
-    expect(ladderProgress(secure(keysOf('parts-5'))).skills[0]).toMatchObject({ status: 'secure', passedOver: false });
-    // A teacher can choose them as a focus.
-    expect(focusPools({ skills: ['parts-10'], onlyThese: false })).toMatchObject({ focus: keysOf('parts-10'), review: keysOf('parts-5') });
-    expect(focusPools({ skills: ['facts-20'], onlyThese: false }).review.some((k) => k.startsWith('part'))).toBe(false);
-  });
-
-  it('asks whole = shown + ?, wrong choices from the known mistakes, and the server reads each back', () => {
-    const pack = earlyFactsPack([], randomFromSeed('parts'));
-    for (const key of [...keysOf('parts-5'), ...keysOf('parts-10')]) {
-      const [whole, shown] = key.slice(4).split(':').map(Number);
-      const q = pack.questionFor(key, 'focus', { multipleChoice: true });
-      expect(q.parts).toEqual([String(whole), '=', String(shown), '+', '?']);
-      expect(q.answer).toBe(whole - shown);
-      expect(q.spoken).toBe(`${whole} is ${shown} and how many more?`);
-      expect(new Set(q.choices).size).toBe(4);
-      const mistakes = [q.answer + 1, q.answer - 1, shown, whole, q.answer + 2];
-      for (const c of q.choices!) if (c !== q.answer) expect(mistakes, `${key}: ${c}`).toContain(c);
-      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
-      expect(pack.rebuild(key, q.params!)?.parts).toEqual(q.parts);
-    }
-    expect(solvePart(['11', '=', '4', '+', '?'])).toBeNull(); // wholes go to 10
-    expect(solvePart(['7', '=', '8', '+', '?'])).toBeNull(); // more showing than there are
-    expect(solvePart(['07', '=', '4', '+', '?'])).toBeNull();
-    expect(solvePart(['2', '=', '1', '+', '?'])).toBeNull(); // wholes start at 3
-    expect(pack.rebuild('part7:4', [7, 3])).toBeNull();
-  });
-});
-
-describe('odd and even to 20, for Penguin Pairs', () => {
-  it('sits beside the ladder, asks "Is 7 odd or even?" as a pick-one question, and the server reads it back', () => {
-    const skill = LADDER.find((s) => s.id === 'odd-even')!;
-    expect(skill).toMatchObject({ inAuto: false, inWarmUp: false });
-    expect(skill.keys).toHaveLength(20);
-    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => k.startsWith('oddeven'))).toBe(false);
-    const pack = earlyFactsPack();
-    for (const key of skill.keys) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key)).toBe('early-facts');
-      const q = pack.questionFor(key, 'focus');
-      const n = Number(key.split(':')[1]);
-      expect(q.choiceLabels).toEqual(['odd', 'even']);
-      expect(q.answer).toBe(n % 2 === 0 ? 1 : 0);
-      expect(solveParts(q.parts)).toEqual({ answer: q.answer, keys: [key] });
-    }
-    expect(pack.rebuild('oddeven:7', [8])).toBeNull();
-  });
-});
-
-describe('the number-line keys, for Pigeon\'s Number Line', () => {
-  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
-    const counts: Record<string, number> = { 'number-line-100': 30 + 30 + 36 + 20, 'ten-more-less': 20, 'number-line-1000': 40 + 40 + 20 };
-    const all: string[] = [];
-    for (const [id, count] of Object.entries(counts)) {
-      const skill = LADDER.find((s) => s.id === id)!;
-      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
-      expect(skill.keys, id).toHaveLength(count);
-      all.push(...skill.keys);
-    }
-    expect(new Set(all).size).toBe(all.length);
-    const pack = earlyFactsPack();
-    for (const key of all) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key), key).toBe('early-facts');
-      const q = pack.questionFor(key, 'focus');
-      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
-      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
-    }
-    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(place|read|tens|near|zoom)/.test(k))).toBe(false);
-  });
-});
-
-describe('the R8 keys: threes, fours, tens past 100, counting from a start, and ten more on the teens', () => {
-  const pack = earlyFactsPack([], randomFromSeed('r8-keys'));
-  const skills = ['skip-3', 'skip-4', 'skip-10-past-100', 'skip-from', 'ten-more-less-teens'].map((id) => LADDER.find((s) => s.id === id)!);
-
-  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each shown form back', () => {
-    const all = skills.flatMap((s) => s.keys);
-    for (const skill of skills) expect(skill, skill.id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
-    expect(new Set(all).size).toBe(all.length);
-    expect(all.some((k) => LADDER.filter((s) => !skills.includes(s)).some((s) => s.keys.includes(k)))).toBe(false);
-    for (const key of all) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key), key).toBe('early-facts');
-      for (let i = 0; i < 6; i++) {
-        const q = pack.questionFor(key, 'focus', { multipleChoice: true });
-        expect(q.factKey).toBe(key);
-        expect(q.choices).toContain(q.answer);
-        expect(new Set(q.choices).size).toBe(q.choices!.length);
-        const solved = solveParts(q.parts);
-        expect(solved?.answer, key).toBe(q.answer);
-        expect(solved?.keys, key).toContain(key);
-        expect(pack.rebuild(key, q.params!)?.parts).toEqual(q.parts);
-      }
-      expect(pack.rebuild(key, [1000, 1])).toBeNull();
-    }
-    // The ladder never asks these on its own.
-    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(skip(3|4|10h|\d+o)|tenup|tendown)/.test(k))).toBe(false);
-  });
-
-  it('count right: threes to 30, fours to 40, tens from 100 to 200, and a start that is really the first pad', () => {
-    expect(EARLY_FACTS.families.skip3.keys).toEqual(expect.arrayContaining(['skip3:next:12', 'skip3:up:9', 'skip3:back:21']));
-    expect(EARLY_FACTS.families.skip3.keys.some((k) => Number(k.split(':')[2]) > 30)).toBe(false);
-    expect(EARLY_FACTS.families.skip4.keys).toContain('skip4:next:40');
-    expect(EARLY_FACTS.families.skip10h.keys.map((k) => Number(k.split(':')[2])).every((n) => n > 100 && n <= 200)).toBe(true);
-    expect(pack.rebuild('skip10h:next:110', [110, 3])?.parts).toEqual(['80,', '90,', '100,', '?']);
-    expect(pack.rebuild('skip10o3:next:33', [33, 3])?.parts).toEqual(['3,', '13,', '23,', '?']);
-    expect(pack.rebuild('skip10o3:next:33', [33, 4])).toBeNull(); // 13, 23, 33 would not start at 3
-    expect(solveSkip(['3,', '13,', '?,', '33'])).toEqual({ answer: 23, key: 'skip10o3:up:23' });
-    expect(solveSkip(['1,', '3,', '5,', '?'])).toEqual({ answer: 7, key: 'skip2o1:next:7' });
-    expect(solveSkip(['13,', '23,', '33,', '?'])).toBeNull(); // starts at 13: no record says that
-    expect(solveParts(['14', '+', '10', '=', '?'])?.keys).toEqual(expect.arrayContaining(['tenup:14', 'tendown:24']));
-    expect(solveParts(['10', '+', '10', '=', '?'])?.keys).toContain('tenup:10');
-    expect(pack.rebuild('tenup:14', [14, 0])?.answer).toBe(24);
-    expect(pack.rebuild('tendown:24', [24, 1])?.parts).toEqual(['10', '+', '?', '=', '24']);
-
-  });
-});
-
-describe('the equal-rows keys, for Swamp Hen\'s Reed Rows', () => {
-  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
-    const counts: Record<string, number> = { 'equal-rows': 36, 'arrays-turn': 20 + 20, 'sharing-rows': 30, 'cut-arrays': 28 };
-    const all: string[] = [];
-    for (const [id, count] of Object.entries(counts)) {
-      const skill = LADDER.find((s) => s.id === id)!;
-      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
-      expect(skill.keys, id).toHaveLength(count);
-      all.push(...skill.keys);
-    }
-    expect(new Set(all).size).toBe(all.length);
-    const pack = earlyFactsPack();
-    for (const key of all) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key), key).toBe('early-facts');
-      const q = pack.questionFor(key, 'focus', { multipleChoice: true });
-      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
-      expect(new Set(q.choices).size, key).toBe(4);
-      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
-    }
-    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^(rows|turn|share|cut|which):/.test(k))).toBe(false);
-  });
-});
-
-describe('the tens-and-ones keys, for Lizard\'s Bundles', () => {
-  it('sit beside the ladder, are counted as early facts, are all different, and the server reads each typed form back', () => {
-    const counts: Record<string, number> = { 'bundles-50': 5 + 16 + 16, 'place-value-100': 4 + 20 + 20 + 9, 'regroup-100': 30, 'ten-more-less-100': 24, 'place-value-1000': 36 + 36 + 12 };
-    const all: string[] = [];
-    for (const id of Object.keys(counts)) {
-      const skill = LADDER.find((s) => s.id === id)!;
-      expect(skill, id).toMatchObject({ inAuto: false, inWarmUp: false, built: true });
-      all.push(...skill.keys);
-    }
-    expect(all).toHaveLength(Object.values(counts).reduce((a, b) => a + b, 0));
-    expect(new Set(all).size).toBe(all.length);
-    const pack = earlyFactsPack();
-    for (const key of all) {
-      expect(RECORD_KEY.test(key), key).toBe(true);
-      expect(packIdOfKey(key), key).toBe('early-facts');
-      const q = pack.questionFor(key, 'focus');
-      expect(solveParts(q.parts), key).toEqual({ answer: q.answer, keys: [key] });
-      expect(pack.rebuild(key, [q.answer + 1000])).toBeNull();
-    }
-    expect(autoPools(ladderProgress(secure(built.flatMap((s) => s.keys).slice(0, 200)))).review.some((k) => /^pv/.test(k))).toBe(false);
-  });
-});

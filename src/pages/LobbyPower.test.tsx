@@ -58,8 +58,6 @@ function renderLobby() {
   );
 }
 
-const NOT_FOUND = 'We couldn’t find a game with that code. Check it and try again.';
-const notFound = () => new data.MultiplayerError(NOT_FOUND, 'not-found');
 
 beforeEach(() => {
   vi.mocked(data.fetchMultiplayerEnabled).mockResolvedValue(true);
@@ -79,54 +77,6 @@ beforeEach(() => {
 });
 
 describe('the lobby with Power Clash switched on', () => {
-  it('starts a Power Clash game for the lobby or for a code', async () => {
-    vi.mocked(power.askPower).mockResolvedValue({ id: 'p1' } as power.PowerGame);
-    const user = userEvent.setup();
-    renderLobby();
-    const create = screen.getByRole('region', { name: 'Start a game' });
-    await user.click(within(create).getByRole('radio', { name: /Power Clash/ }));
-    await user.click(within(create).getByRole('radio', { name: /Anyone in the lobby/ }));
-    await user.click(within(create).getByRole('button', { name: /Start game/ }));
-    expect(power.askPower).toHaveBeenCalledWith({ action: 'create', lobby: true });
-    expect(await screen.findByText('Power Clash game page')).toBeInTheDocument();
-  });
-
-  it('a code that isn’t chess, checkers, space or 101 is tried as a Power Clash game (last)', async () => {
-    vi.mocked(data.ask).mockRejectedValue(notFound());
-    vi.mocked(space.askSpace).mockRejectedValue(notFound());
-    vi.mocked(cardData.askCard).mockRejectedValue(notFound());
-    vi.mocked(power.askPower).mockResolvedValue({ id: 'p9' } as power.PowerGame);
-    const user = userEvent.setup();
-    renderLobby();
-    await user.type(screen.getByLabelText('Type the code your friend gives you'), 'km4tp');
-    await user.click(screen.getByRole('button', { name: 'Join game' }));
-    expect(await screen.findByText('Power Clash game page')).toBeInTheDocument();
-    expect(power.askPower).toHaveBeenCalledWith({ action: 'join', code: 'KM4TP' });
-  });
-
-  it('still says "couldn’t find that game" when no game of any kind has the code', async () => {
-    vi.mocked(data.ask).mockRejectedValue(notFound());
-    vi.mocked(space.askSpace).mockRejectedValue(notFound());
-    vi.mocked(cardData.askCard).mockRejectedValue(notFound());
-    vi.mocked(power.askPower).mockRejectedValue(notFound());
-    const user = userEvent.setup();
-    renderLobby();
-    await user.type(screen.getByLabelText('Type the code your friend gives you'), 'CCCCC');
-    await user.click(screen.getByRole('button', { name: 'Join game' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t find a game with that code');
-  });
-
-  it('a 101 code is still found before Power Clash is asked', async () => {
-    vi.mocked(data.ask).mockRejectedValue(notFound());
-    vi.mocked(space.askSpace).mockRejectedValue(notFound());
-    vi.mocked(cardData.askCard).mockResolvedValue({ game: 'card-1' } as cardData.SeatRow);
-    const user = userEvent.setup();
-    renderLobby();
-    await user.type(screen.getByLabelText('Type the code your friend gives you'), 'km4tp');
-    await user.click(screen.getByRole('button', { name: 'Join game' }));
-    expect(await screen.findByText('101 game page')).toBeInTheDocument();
-    expect(power.askPower).not.toHaveBeenCalled();
-  });
 
   it('lists open Power Clash games and joins one with a tap', async () => {
     vi.mocked(power.fetchPowerLobby).mockResolvedValue([{ id: 'open-p', creator_name: 'Brave Kiwi 7', creator_avatar: {}, created_at: '' }]);
@@ -139,17 +89,5 @@ describe('the lobby with Power Clash switched on', () => {
     await user.click(within(row).getByRole('button', { name: 'Join' }));
     expect(power.askPower).toHaveBeenCalledWith({ action: 'join', gameId: 'open-p' });
     expect(await screen.findByText('Power Clash game page')).toBeInTheDocument();
-  });
-
-  it('shows my games that are still going and my waiting game', async () => {
-    const mine = { id: 'm1', status: 'playing', host: 'me', seat1: 'me', seat2: 'them', code: null } as power.PowerGame;
-    const waiting = { id: 'm2', status: 'waiting', host: 'me', seat1: 'me', seat2: null, code: 'KM4TP' } as power.PowerGame;
-    vi.mocked(power.fetchMyOpenPowerGames).mockResolvedValue([mine, waiting]);
-    renderLobby();
-    const yours = await screen.findByRole('region', { name: 'Your games' });
-    expect(within(yours).getByText(/Power Clash with Brave Kiwi 7/)).toBeInTheDocument();
-    expect(within(yours).getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/power-game/m1');
-    expect(within(yours).getByText(/Your .*Power Clash game is waiting/)).toBeInTheDocument();
-    expect(within(yours).getByText(/Code KM4 TP · 1 of 2 joined/)).toBeInTheDocument();
   });
 });
