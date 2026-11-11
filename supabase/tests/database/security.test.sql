@@ -73,7 +73,7 @@ $$, array[
   'teacher_new_season', 'teacher_question_skips', 'teacher_remove_co_teacher', 'teacher_remove_from_class', 'teacher_rename_group', 'teacher_rename_village',
   'teacher_reset_clan', 'teacher_list_hero_names', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_placement', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clan_typed_names', 'teacher_set_clans',
-  'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_kingdom', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
+  'teacher_set_games', 'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_kingdom', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_unlimited_today', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader', 'teacher_set_trader_forge', 'teacher_set_trader_forge_typing', 'teacher_clear_trader_names', 'teacher_trader_class_systems',
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
