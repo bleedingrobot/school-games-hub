@@ -27,8 +27,8 @@ create function pg_temp.progress(finishes integer, medal text) returns jsonb lan
     'checksRight', 1, 'streak', 1, 'cleanFlights', 1, 'rightGaps', 0, 'potions', 0, 'potionsEarned', 0)
 $$;
 
--- ---- Off to start for every class, with maths and read time on ----
-select is((select bool_or(toonflap_enabled) from public.app_settings), false, 'the game starts switched off everywhere');
+-- ---- On for every class, with maths and read time on ----
+select is((select bool_and(toonflap_enabled) from public.app_settings), true, 'the game is on everywhere (switched on for every class, 20261111000200)');
 select is((select bool_and(toonflap_maths = 'on' and toonflap_read_time) from public.app_settings), true, '... with maths and read time on');
 
 -- ---- Pupils can't reach anything directly ----
