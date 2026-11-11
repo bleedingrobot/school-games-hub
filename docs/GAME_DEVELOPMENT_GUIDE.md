@@ -6,20 +6,20 @@
 
 ## 0. Quick start (read this first)
 
-1. **Who you work for.** James, a Year 4–6 teacher at Douglas Park School. Reply to him in plain, simple words: no jargon, file paths or commit hashes unless he asks. He decides every live step.
-2. **Your own branch and worktree.** Never work in `/Users/jriley/Games Hub` (the main checkout, moved there from `~/projects/school-games-hub`, which no longer exists; older prompts still name the old path) and never commit to `main`. Set up as in [section 6](#6-branch-and-worktree).
+1. **Who you work for.** James, a Year 4–6 teacher at Douglas Park School. Reply to him in plain, simple words: no jargon, file paths or commit hashes unless he asks. Merging and going live are pre-approved: work right through to live ([section 8](#8-going-live-one-step-at-a-time)). Ask him on a question card only before deleting anything, a destructive database change, or removing pupils' data.
+2. **Your own branch.** Never commit to `main`. In a cloud project thread you already have a `claude/…` branch; on James's Mac make a worktree, never work in `/Users/jriley/Games Hub`. See [section 6](#6-branch-and-worktree).
 3. **Stay in your folders.** Your game lives in its own folders ([section 2](#2-folder-layout-and-what-you-may-touch)). The shared files have one-line edits only, made at the end ([section 3](#3-where-sessions-clash-and-the-rule-for-each)).
 4. **Never touch these from a game branch:** `shared/maths/`, `src/maths/`, `src/styles.css`, other games' folders, other games' server functions, or old migrations. If your game needs one of them changed, stop and tell James. It becomes its own small branch.
 5. **Maths questions come from the shared focus system only** ([section 4](#4-maths-questions-the-one-approved-way)). Never work out a student's focus yourself, never write your own times-table or ladder questions, and never trust the browser's marking.
 6. **The server is in charge.** Anything that counts (a score, a best time, an answer, a reward) is checked or replayed by your server function before it is saved.
-7. **Nothing live without James's words in this session:** applying a migration, deploying a function, merging to `main`, switching the game on. Each one is separate. Approval for one is not approval for the next ([section 8](#8-going-live-one-step-at-a-time)).
+7. **Going live is pre-approved** (merging, migrations and functions going live on merge, switching the game on). Ask first only for the destructive steps in [section 8](#8-going-live-one-step-at-a-time).
 8. **Never** `supabase db reset` (other sessions share the local database), and never a bare `git push` from a worktree whose upstream might be `origin/main`. Push your branch by name: `git push origin <branch>`.
 9. **Write it down as you go.** Keep a plan in `docs/<GAME>-PLAN.md` with a "Stage X results" section after each stage (what you built, decisions you made, tests, what is untested, the go-live list). The next session starts from it.
-10. **Stop after each stage** and tell James what's ready and what he needs to decide.
+10. **Keep going between stages.** Don't stop for James after a stage. Put any choice that changes his goal on a question card, keep working on your recommended option, and update the Games Hub Prompts board at start, block, pause and finish.
 11. **Settle the design first.** Your plan answers the questions in [section 1a](#1a-design-decisions-to-settle-in-the-plan-before-building): the big goal, seasons, moves a day, progress bars, achievements, card art and a built-in guide for new players.
-12. **Keep tests few.** Read [docs/TESTING.md](TESTING.md) before writing any: a new game gets **at most 8 tests** in all ([section 7](#7-running-and-testing-the-game-on-its-own)).
+12. **Keep tests few.** Follow [docs/TESTING.md](TESTING.md) "How many" before writing any.
 13. **Design for learning.** If your game has maths in it, read [docs/LEARNING-DESIGN.md](LEARNING-DESIGN.md) before you plan: the maths is the move, help that fades with the child and comes back, mistakes that show why, fair timing, and evidence a teacher can use. Your plan answers its design check ([section 1a](#1a-design-decisions-to-settle-in-the-plan-before-building), item 8).
-14. **Reuse before you copy.** Check [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md) for shared parts that already exist (help levels, wrong-answer kinds, ten-frames, Hear it again). Until they do, copy the best example named in LEARNING-DESIGN.md and keep game words out of the logic so it can move into the kit later.
+14. **Use the game kit first.** `shared/kit/` (help, mistakes, slips, seen kinds, replay, finish band) and `src/kit/` (TenFrame, NumberLine, DotPicture, HearAgain, PointingHand, WhatsNext, FirstTimeTip, useGuidedFirstGo, useKindDemo, DemoBar). The catalogue is [src/kit/README.md](../src/kit/README.md). Copy a game only for what the kit lacks, and keep game words out of that logic.
 15. **Steps the teacher can see.** A game's ladder is made of **steps**, and every pupil's step shows on the teacher's Progress tab. Read [section 1b](#1b-steps-and-the-teachers-progress-tab-from-11-nov-2026) for the words and what to save.
 
 The best example to copy is **Marble Rush** (on `main`). **Star Trader** (`docs/TRADER-PLAN.md`, with its "Went live" section) and **Royal Decree** (`docs/DECREE-PLAN.md`, the rewrite of Kingdom Keeper after it flopped) are good, up-to-date examples of the whole route from plan to live. For a **junior game (ages 5 to 8)** copy **Weka's Stepping Stones** (`docs/WEKA-PLAN.md`, the review's top scorer) and Beanstalk's mistakes that teach (R5); LEARNING-DESIGN.md section 5 lists the shape. It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Dragon Maths' maths and Clan Quest's quest and shop maths are the older year-band kind, so don't copy that part (Clan Quest's Battle Cry is way A, like Marble).
@@ -187,7 +187,7 @@ docs/<GAME>-PLAN.md, docs/<GAME>-RULES.md, docs/prompts/<game>-*.md
 - `fetchMyFocus()` (`src/data/focus.ts`), only if your browser needs the focus (section 4).
 - `AvatarImage` (`src/avatar/`), `useSound()` / `playSound()` (`src/sound.tsx`, `src/games/sounds.ts`), `MuteButton`.
 - `speak(text, clipFolder, onEnd)` from `src/speech.ts` for read-aloud (`onEnd` runs when the line finishes: start the answer clock there), and `JUNIOR_QUICK_MS` from `shared/juniorQuick.ts` for ages 5 to 8 (pass it as `recordMathsAnswers`' last argument).
-- Shared learning parts from the game kit as they arrive (`shared/kit/`, `src/kit/`; [plans/GAME-KIT-PLAN.md](plans/GAME-KIT-PLAN.md)). Like `shared/maths/`, they're reuse-freely but never changed from a game branch.
+- The game kit (`shared/kit/`, `src/kit/`; catalogue in [src/kit/README.md](../src/kit/README.md)). Like `shared/maths/`, use it freely but never change it from a game branch.
 - `_shared/signIn.ts` (`userIdFromToken`), `_shared/recordAnswers.ts` (`recordMathsAnswers`), `_shared/stamp.ts`, `_shared/limits.ts`, `_shared/http.ts` in your server function, and `shared/maths/serverQuestions.ts` (`seededRandom`, `publicQuestion`).
 
 ### Looking like the hub
@@ -203,11 +203,11 @@ The site has a Douglas Park look (matching the Classroom Randomiser): school-red
 
 ### Painted art
 
-There is no shared art pipeline; each game copies the last one. The pattern that worked (Clan Quest, Dragon Maths, Kingdom Keeper, Gem Keep, Marble Rush, Star Trader: see `docs/TRADER-ART-PLAN.md`, the most recent):
+There is one art script for every game: `scripts/game_art.py` with `docs/<game>-art/config.json` ([GAME-KIT-PLAN.md section 8](plans/GAME-KIT-PLAN.md)). **Never write a new `<game>-art.py`** (the old per-game scripts stay only for old games). Build with drawn stand-ins; James paints in the evening, so never wait for art.
 1. Write `docs/<GAME>-ART-PLAN.md`: every picture needed, its size, and a prompt for each. Stage it so each screen can go live on its own.
 2. James paints them on his gaming PC (ComfyUI), usually 2 to 6 tries each. Pictures go to an inbox (a folder outside the repo or an `*-art-inbox` branch), **never straight to `main`**.
 3. Record the chosen try for each in a picks file (`docs/<game>-art/picks.json`).
-4. Copy `scripts/trader-art.py` (or `clans-art.py`) to `scripts/<game>-art.py`: it resizes the picks to `.webp` in `src/games/<game>/art/` and cuts out sprites (it needs Pillow, numpy and rembg).
+4. Copy `docs/weka-art/config.json` to `docs/<game>-art/config.json` (style words, every picture's prompt, size and kind: `cut`, `scene` or `card` for the home card), check it with `python3 scripts/game_art.py <game> paint OUT --dry-run`, then `paint` and `tidy` (rembg) write the `.webp` files into `src/games/<game>/art/`.
 5. Add a `CREDITS.md` in the art folder and one `art.test.ts` that checks no picture is missing or spare.
 6. **Keep the drawn (code) art as a fallback**, so a picture that hasn't downloaded, or a screen not painted yet, still works.
 7. Screenshot each stage at laptop and phone width for James.
@@ -358,6 +358,10 @@ Tests to copy: Marble's `handler.test.ts` (right, wrong, sent twice, a slot that
 
 ## 6. Branch and worktree
 
+**In a cloud project thread (the usual case):** the repo is already cloned on your own `claude/…` branch. Use it. GitHub goes through the GitHub MCP tools (`create_pull_request`, `merge_pull_request`); `gh` works only for search. Push with `git push -u origin <your branch>`.
+
+**On James's Mac:**
+
 ```bash
 git -C "/Users/jriley/Games Hub" fetch origin
 git -C "/Users/jriley/Games Hub" worktree add -b <game> ~/games-hub-<game> origin/main
@@ -367,7 +371,7 @@ npm ci
 git push -u origin <game>            # first push sets the upstream to origin/<game>
 ```
 
-- Worktrees live beside the main checkout as `~/games-hub-<name>` (`git worktree list` shows the current ones). If the Claude app made a worktree for your session (a `claude/…` branch), that is fine to use instead: the same rules apply.
+- Worktrees live beside the main checkout as `~/games-hub-<name>` (`git worktree list` shows the current ones).
 - Commit after each stage with a clear message. Push with `git push origin <game>`.
 - **Merge `origin/main` into your branch** (don't rebase a pushed branch) at the start of each stage and before go-live. Then re-check migration numbers and the shared functions (section 3).
 - Other sessions may share the stash: never bare `git stash` / `git stash pop`. Use a WIP commit.
@@ -376,7 +380,7 @@ git push -u origin <game>            # first push sets the upstream to origin/<g
 
 ## 7. Running and testing the game on its own
 
-- **How many tests:** follow [docs/TESTING.md](TESTING.md). A new game gets **at most 8** across its rules, screens and server function (Kingdom Keeper: 3 rule, 3 server, 2 screen), aimed first at the server protecting pupils (wrong is wrong, sent twice counts once, another pupil's seed refused), then maths a pupil sees, then the main rule. No tests of wording, colours or tuning numbers, and no slow tests: play-to-the-end runs go in `scripts/<game>-sim.mjs`. The database test file and the "index.ts is up to date" check are separate (below).
+- **How many tests:** [docs/TESTING.md](TESTING.md) "How many" is the rule (older and junior games differ). The database test file and the "index.ts is up to date" check are separate (below).
 - **Your tests:** `npx vitest run shared/<game> src/games/<game> src/data/<game>.test.ts supabase/functions/<name>` while you work. Before saying a stage is done: `npm run typecheck`, `npm run test:changed` (every test file touched by your changes, slow ones included) and `npm run build`. **Don't run the whole `test:all` on your own machine** (since 4 Nov 2026): it takes several minutes there, and the pull request's "Site checks" run every test anyway, split across 4 machines, in about 1.5 minutes. Open the PR early and let it do the full run; a red check is your signal. A few busy-computer timeouts pass when run alone with `--testTimeout=30000`: say so, don't hide it.
 - **Tests that depend on the date or time** (a "Today" label, weekends, midnight) must pin the clock. Two failed CI runs this way in late October (#105, #117).
 - **Database:** write `supabase/tests/database/<game>.test.sql` (pgTAP). Check: pupils can't read the server-only tables (42501), can't call the server-only functions, see only their school, and a save sent twice counts once. Run it on a throw-away copy: `scripts/scratch-db.sh <game>` then `scripts/scratch-test.sh <game> supabase/tests/database/<game>.test.sql`, then drop the copy. CI's "Database checks" runs every file on a fresh copy on every PR and when `main` is pushed, so a duplicate migration number fails there.
@@ -389,23 +393,23 @@ git push -u origin <game>            # first push sets the upstream to origin/<g
 
 ## 8. Going live, one step at a time
 
-Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). James has pre-approved merging and going live. Still ask him on a card before anything destructive (dropping, deleting, removing pupils' data), and say exactly what will happen.
+James has pre-approved merging and going live: carry finished, tested work right through. Still ask him on a question card before anything destructive (dropping, deleting, removing pupils' data), and say exactly what will happen. This is the one place that rule lives.
 
 0. **Pre-flight (nothing live).** Merge `origin/main`. Re-check migration numbers (renumber yours if needed) and any shared database functions you re-create (section 3). Run typecheck, `test:changed`, build (the PR's checks run every test), and your database tests on a scratch copy built from `main`'s migrations plus yours. Check the live database has what you depend on by querying for it (`select to_regclass('public.<table>')`), not by trusting docs. The live history (`supabase_migrations.schema_migrations`) is complete from 28 Oct 2026.
-1. **Migrations and functions go live by themselves when your PR merges** (since 28 Oct 2026). "Test and publish" runs every check, then `scripts/apply-live-migrations.sh` applies every migration not yet in the live history (`supabase_migrations.schema_migrations`), then deploys each function whose `supabase/functions/<name>/index.ts` changed, then publishes the site. So: rebuild only your function (`npm run build:functions -- <name>`) and commit its `index.ts`. Nobody pastes SQL or runs deploy commands any more.
+1. **How going live works: migrations and functions go live by themselves when your PR merges** (since 28 Oct 2026). "Test and publish" runs every check, then `scripts/apply-live-migrations.sh` applies every migration not yet in the live history (`supabase_migrations.schema_migrations`), then deploys each function whose `supabase/functions/<name>/index.ts` changed, then publishes the site. So: rebuild only your function (`npm run build:functions -- <name>`) and commit its `index.ts`. Nobody pastes SQL or runs deploy commands any more.
    - **Not ready to go live?** Put the migration's number in `supabase/migrations-on-hold.txt`; take it out in the PR that goes live.
    - **Destructive migration** (a line *starting* with `drop table`, `drop schema`, `truncate`, `delete from` or `alter table … drop column`): the job refuses it unless the file has the line `-- live-ok: destructive`. Add that only after James's yes on a card.
    - **Never apply a migration by hand** (SQL Editor, connector) without also adding its history row, or the job will apply it a second time: `insert into supabase_migrations.schema_migrations (version, name) values ('<number>', '<name>');`
    - To redeploy a function that didn't change: Actions → Test and publish → Run workflow, with its name (or `all`).
    - Database checks and site checks also run on every PR: don't merge a red PR. A PR that only changes notes and plans (`docs/`, or a `.md` file at the top level) skips the site checks; one that doesn't touch `supabase/migrations/`, `supabase/tests/` or the Supabase config skips the database checks.
    - **Merges close together are fine** (since 4 Nov 2026). Each publish works out what changed since the last publish that went green, so a run dropped from the queue or a failed run is caught up by the next one: its migrations, functions and site all go live then. A notes-only merge publishes nothing. After merging, check that a run **after** your merge went green (not necessarily the one started by your merge).
-2. **After the merge, check** the Test and publish run went green, your tables exist and are empty, switches start **off**, and an unsigned `curl -X POST …/functions/v1/<name>` answers a 401 message, not a crash or 404.
-3. **Check from outside.** Signed out and as a pupil: server-only tables and functions refused (42501), pupils see only their own and their school's rows, older data untouched (e.g. `select count(*) from public.scored_games;` not smaller).
-4. **Merge to `main`** (this is the step that goes live: see 1). Merge `origin/main` into your branch one last time, then either open a pull request for James (he has merged from his phone) or push `<game>:main` if he says so. Never push from the main checkout. "Test and publish" runs every test and publishes only if they pass. Watch it go green. (In the app's auto mode the safety check blocks `gh pr merge`. James either switches the session to Ask mode or allows `Bash(gh pr merge:*)` in `.claude/settings.local.json`; you can't add that rule yourself.)
+2. **Open the PR and merge it when green** (this is the step that goes live: see 1). Merge `origin/main` into your branch one last time, open the PR with the GitHub MCP tools, wait for the checks, then merge. Never push from the main checkout.
+3. **After the merge, check** the Test and publish run went green, your tables exist and are empty, switches start **off**, and an unsigned `curl -X POST …/functions/v1/<name>` answers a 401 message, not a crash or 404.
+4. **Check from outside.** Signed out and as a pupil: server-only tables and functions refused (42501), pupils see only their own and their school's rows, older data untouched (e.g. `select count(*) from public.scored_games;` not smaller).
 5. **Try it live as a teacher** while the pupils' switch is off (teachers can open `/#/<id>`).
-6. **Switch it on** for pupils (the code switch, then the teacher switch on the Teacher page). Only with James's OK. The code switch is its own small PR (`ON = true` in `src/games/<game>/switch.ts`, plus your id in `registry.test.ts`). For the teacher switch, James has sometimes asked for it to be set in every `app_settings` row at once with the Supabase connector (Star Trader, 1 Nov 2026); set only the columns `teacher_set_<game>()` would set.
-7. **Write it down:** a "went live" note in your plan (what was applied, deployed and checked, when), and update the memory note. Then stop for James's feedback.
-8. **Mark it finished.** Every time a branch is merged (not only at go-live), in the same session: change the **Status** line at the top of the plan to say what is live and which PR merged it, fix any other doc that still calls it "not live" or names the branch (`grep -rn "<branch>" docs/`), then delete the merged branch (`git push origin --delete <branch>`). A finished branch left on GitHub, or a plan still saying "not merged", makes the next session think the work is unfinished.
+6. **Switch it on** for pupils (the code switch, then the teacher switch on the Teacher page), unless James asked to keep it off. The code switch is its own small PR (`ON = true` in `src/games/<game>/switch.ts`, plus your id in `registry.test.ts`). For the teacher switch, James has sometimes asked for it to be set in every `app_settings` row at once with the Supabase connector (Star Trader, 1 Nov 2026); set only the columns `teacher_set_<game>()` would set.
+7. **Write it down:** a "went live" note in your plan (what was applied, deployed and checked, when), update project memory, and put the next part's copy-ready prompt on the Games Hub Prompts board.
+8. **Mark it finished (every merge, not only go-live).** Every time a branch is merged (not only at go-live), in the same session: change the **Status** line at the top of the plan to say what is live and which PR merged it, fix any other doc that still calls it "not live" or names the branch (`grep -rn "<branch>" docs/`), then delete the merged branch (`git push origin --delete <branch>`). A finished branch left on GitHub, or a plan still saying "not merged", makes the next session think the work is unfinished.
 
 **Turning it off again (rollback), from gentlest to strongest:**
 - **The teacher switch** on the Teacher page. Pupils see "not switched on", the data is kept, and the server refuses requests (make sure your function checks the switch itself).
@@ -419,10 +423,10 @@ Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). James has pre-ap
 
 **Must be true (stop if not):**
 - [ ] Nothing that counts is decided by the browser: the server replays or marks it, and a save sent twice counts once.
-- [ ] Maths comes only from `makeFocusPack` with the server's focus. It's marked on the server and recorded with `record_fact_answers` (per pack, `quickMsForPack`) and `countForFocuses`.
+- [ ] Older-pupil game: maths comes only from `makeFocusPack` with the server's focus. Junior game: rounds come from the child's early-facts records and the server replays the taps (section 4, "Junior games"). Either way it's marked on the server and recorded with `recordMathsAnswers`.
 - [ ] Every new table has RLS on. Server-only tables have no policy and no grant. Every new function is locked to the right role. Pupils only ever see their own school.
 - [ ] Your migration number is free across `main` and every branch, and comes after everything it builds on. Any shared function you re-create starts from `main`'s newest version.
-- [ ] Merged with the latest `origin/main`; typecheck, `test:all`, build and your database tests pass (or every failure is explained to James).
+- [ ] Merged with the latest `origin/main`; typecheck, `test:changed`, build and your database tests pass locally, and the PR's checks (which run every test) are green.
 - [ ] The game's switches start **off**, and the server refuses requests while it's off.
 - [ ] No other game's function or `index.ts` changed (or James knows which and why).
 
@@ -435,7 +439,9 @@ Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). James has pre-ap
 - [ ] A new pupil can get through their first go with no adult help: the guided first go works, can be skipped and replayed, and the next-step line always has something useful to say.
 - [ ] Learning design (maths games): tapping every choice or guessing doesn't win; a wrong answer shows why on the same picture and the child tries again; help fades with the child's success and comes back after struggle (not by the calendar); the answer clock starts after the voice; the teacher can see who is stuck. Scored against the research checklist with a 3 or better on every line (LEARNING-DESIGN.md section 6).
 - [ ] Steps are called steps, and the game shows on the teacher's Progress tab with each pupil's step, stuck and nearly ready (section 1b).
-- [ ] No more than 8 tests of your own (`docs/TESTING.md`), plus the database test file.
+- [ ] Tests within [docs/TESTING.md](TESTING.md) "How many", plus the database test file.
+- [ ] Turns limited? The game is in `UNLIMITED_GAMES` and `teacher_set_unlimited_today()` (section 1a item 3).
+- [ ] Plan's Status line says what is live and which PR merged it; Prompts board and memory updated (step 9).
 - [ ] Your id is in `src/games/registry.test.ts` in the PR that turns the code switch on; a card picture in `gameCardArt.ts` if James has painted one.
 - [ ] `docs/PRIVACY-SUMMARY.md`, `shared/README.md` and your plan are updated.
 - [ ] James has tried the preview, and ideally some pupils have too.
