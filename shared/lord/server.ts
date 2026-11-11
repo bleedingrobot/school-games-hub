@@ -622,7 +622,7 @@ async function bank(c: Ctx): Promise<Done | Refuse> {
   const ms = typeof c.req.ms === 'number' && Number.isFinite(c.req.ms) && c.req.ms >= 0 ? Math.round(Math.min(c.req.ms, 120_000)) : 120_000;
   return {
     hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today, interestAsk: null },
-    answers: pack ? [{ key: marked.key, correct: right, ms, at: c.now, pack }] : [],
+    answers: pack ? [{ key: marked.key, correct: right, ms, at: c.now, pack, ...(right ? {} : { given: answer }) }] : [],
     summary: { interest: extraGold, right }, result: { interest: extraGold, due: interestDue(hero.bank), right, answer: marked.answer },
   };
 }

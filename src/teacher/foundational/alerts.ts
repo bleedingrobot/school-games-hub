@@ -102,5 +102,5 @@ export async function foundationalHardest(game: FoundationalGameId, classId: str
     map.students.map((s) => s.facts),
     gameKeys(game),
     { minAttempts: HARDEST_MIN_ATTEMPTS, count: HARDEST_COUNT },
-  ).map((f) => ({ question: keyWords(f.key), topic: topic.get(f.key) ?? null, attempts: f.attempts, correct: f.correct, students: f.students }));
+  ).map((f) => ({ question: keyWords(f.key), topic: topic.get(f.key) ?? null, attempts: f.attempts, correct: f.correct, students: f.students, ...(f.commonWrong ? { commonWrong: f.commonWrong } : {}) }));
 }

@@ -113,7 +113,10 @@ function HardestTable({ classId, className, games }: { classId: string; classNam
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={`${r.game}:${r.topic}:${r.question}:${i}`}>
-                      <th scope="row">{r.question}</th>
+                      <th scope="row">
+                        {r.question}
+                        {r.commonWrong && <span className="hardest__wrong"> Class often answers {r.commonWrong}</span>}
+                      </th>
                       <td>{r.gameName}</td>
                       <td>{r.topic ?? '–'}</td>
                       <td>{percentRight(r)}</td>

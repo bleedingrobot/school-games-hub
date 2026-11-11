@@ -297,6 +297,24 @@ describe('the skill map', () => {
     ).toHaveFocus();
   });
 
+  it('says what a pupil often answers wrong, or the last wrong answers', async () => {
+    const user = userEvent.setup();
+    const types = skill('round-10-100').keys;
+    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(
+      map([
+        ana({ facts: [{ ...rec(types[0], 1), wrong: ['54', '56', '54'] }, { ...rec(types[1], 1), wrong: ['54', '56'] }] }),
+        ben(),
+      ]),
+    );
+    show();
+    await screen.findByRole('table', {}, LOADED);
+    await user.click(screen.getByRole('button', { name: /^Rounding/ }));
+    await user.click(screen.getByRole('button', { name: /Speedy Otter 27, Rounding to the nearest 10 and 100/ }));
+    const detail = screen.getByRole('region', { name: /Speedy Otter 27: Rounding/ });
+    expect(within(detail).getByText('Often answers 54')).toBeInTheDocument();
+    expect(within(detail).getByText('Last wrong: 54, 56')).toBeInTheDocument();
+  });
+
   it('opens the 12 × 12 grid for a times-table cell', async () => {
     const user = userEvent.setup();
     show();

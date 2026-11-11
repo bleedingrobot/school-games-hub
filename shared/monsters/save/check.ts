@@ -527,7 +527,7 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number, play
     ats.push(q.at);
     while (ats[ats.length - 1] - ats[windowStart] >= 60_000) windowStart += 1;
     if (ats.length - windowStart > LIMITS.answersPerMinute) return fail('answer-pace');
-    (answers[q.topic] ??= []).push({ key: q.key, correct, ms: q.ms, at: q.at });
+    (answers[q.topic] ??= []).push({ key: q.key, correct, ms: q.ms, at: q.at, ...(correct ? {} : { given: q.given }) });
   }
 
   summary.owned = w.owned.length;

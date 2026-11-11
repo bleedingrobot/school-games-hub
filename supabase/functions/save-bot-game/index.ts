@@ -12504,7 +12504,8 @@ function judgeSpaceGame(report) {
 			key: keyForAnswer(solved, a.key),
 			correct: claimedRight,
 			ms: keptMs(a.ms),
-			at: a.at
+			at: a.at,
+			...claimedRight ? {} : { given: a.given }
 		});
 	};
 	let replayed;

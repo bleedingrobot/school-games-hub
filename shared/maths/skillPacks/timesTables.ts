@@ -172,7 +172,7 @@ export class TimesTables implements SkillPack {
     const at = this.now();
     const after = afterAnswer(before, correct, ms, at);
     this.records.set(q.factKey, after);
-    for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at });
+    for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at, ...(correct ? {} : { given: answer }) });
     if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
     // The question with its blank filled in: "7 × 8 = 56", "? × 8 = 56" → "7 × 8 = 56", "56 ÷ 8 = 7".
     const fact = q.parts.map((p) => (p === '?' ? String(q.answer) : p)).join(' ');

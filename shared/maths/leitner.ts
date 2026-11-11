@@ -17,6 +17,8 @@ export interface FactStats {
   lastSeen: number;
   /** The most recent New Zealand days (YYYY-MM-DD) it was answered quickly and correctly. */
   quickDays: string[];
+  /** The last three wrong answers given (oldest first), when the teacher's view has them. */
+  wrong?: string[];
 }
 
 /** One answer, as saved: the record is rebuilt from these on the server. */
@@ -27,6 +29,25 @@ export interface FactAnswer {
   ms: number;
   /** When (milliseconds since 1970). */
   at: number;
+  /** What the pupil answered, kept (the last three) when it was wrong, so a teacher can see "Often answers 54". */
+  given?: number | string;
+}
+
+/** The most common value among a fact's recent wrong answers when it appears twice or more, else undefined. */
+export function commonWrong(wrong: readonly string[] | undefined): string | undefined {
+  if (!wrong) return undefined;
+  const counts = new Map<string, number>();
+  for (const w of wrong) counts.set(w, (counts.get(w) ?? 0) + 1);
+  let best: string | undefined;
+  for (const [w, n] of counts) if (n >= 2 && (best === undefined || n > counts.get(best)!)) best = w;
+  return best;
+}
+
+/** A teacher's line for a fact's wrong answers: "Often answers 54", or "Last wrong: 54, 56"; '' when none are kept. */
+export function wrongNote(wrong: readonly string[] | undefined): string {
+  if (!wrong || wrong.length === 0) return '';
+  const often = commonWrong(wrong);
+  return often !== undefined ? `Often answers ${often}` : `Last wrong: ${[...new Set(wrong)].join(', ')}`;
 }
 
 export type Mastery = 'not-tried' | 'learning' | 'secure' | 'fluent';

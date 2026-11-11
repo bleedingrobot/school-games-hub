@@ -9,7 +9,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { FriendlyError } from '../data/profile';
 import { fetchClassMap, type ClassMap, type MapStudent } from '../data/skillMap';
-import { mastery, type FactStats } from '../../shared/maths/leitner';
+import { mastery, wrongNote, type FactStats } from '../../shared/maths/leitner';
 import { parseFactKey } from '../../shared/maths/facts';
 import { packIdOfKey, type LadderStage } from '../../shared/maths/ladder';
 import { skillShortLabel } from '../../shared/maths/focus';
@@ -463,6 +463,7 @@ function KeyTable({ keys, byKey, tables }: { keys: string[]; byKey: Map<string, 
           <th scope="col">Right</th>
           <th scope="col">Asked</th>
           <th scope="col">Average time</th>
+          <th scope="col">Wrong answers</th>
         </tr>
       </thead>
       <tbody>
@@ -482,6 +483,7 @@ function KeyTable({ keys, byKey, tables }: { keys: string[]; byKey: Map<string, 
               <td>{stats?.attempts ? `${Math.round((stats.correct / stats.attempts) * 100)}%` : '–'}</td>
               <td>{stats?.attempts ?? 0}</td>
               <td>{stats?.attempts ? `${(stats.avgMs / 1000).toFixed(1)} s` : '–'}</td>
+              <td>{wrongNote(stats?.wrong) || '–'}</td>
             </tr>
           );
         })}

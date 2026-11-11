@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CAMPAIGN } from '../../shared/gem-keep/levels';
 import { TABLES } from '../../shared/maths/config';
 import { factKey, parseFactKey } from '../../shared/maths/facts';
-import { mastery, type FactStats, type Mastery } from '../../shared/maths/leitner';
+import { mastery, wrongNote, type FactStats, type Mastery } from '../../shared/maths/leitner';
 import {
   fetchClassGemKeep,
   fetchGemKeepSettings,
@@ -325,7 +325,7 @@ export function FactGrid({ facts }: { facts: FactStats[] }) {
               {TABLES.map((c) => {
                 const stats = byKey.get(factKey(r, c));
                 const m = mastery(stats);
-                const detail = stats?.attempts ? `, ${stats.correct} of ${stats.attempts} right` : '';
+                const detail = (stats?.attempts ? `, ${stats.correct} of ${stats.attempts} right` : '') + (wrongNote(stats?.wrong) ? `. ${wrongNote(stats?.wrong)}` : '');
                 return (
                   <td key={c} data-mastery={m} title={`${r} × ${c}: ${MASTERY[m].label}${detail}`}>
                     <span aria-hidden="true">{MASTERY[m].mark}</span>

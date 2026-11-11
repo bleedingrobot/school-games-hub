@@ -32,6 +32,7 @@ const raw = {
           box: 3,
           lastSeen: 1760000000000,
           quickDays: ['2026-10-17'],
+          wrong: ['54', 56, 7],
         },
       ],
     },
@@ -68,6 +69,7 @@ describe('reading the class map', () => {
         box: 3,
         lastSeen: 1760000000000,
         quickDays: ['2026-10-17'],
+        wrong: ['54', '56', '7'],
       },
     ]);
   });
@@ -100,6 +102,7 @@ describe('reading the class map', () => {
         avgMs: 0,
         box: 0,
         lastSeen: 0,
+        wrong: [],
         quickDays: [],
       },
     ]);

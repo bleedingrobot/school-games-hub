@@ -255,7 +255,7 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     const solved = a ? solveClaim(a) : null;
     if (!a || !solved) mathsProblem = 'missing maths answer';
     else if (sameAnswer(a.given, solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
-    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: keptMs(a.ms), at: a.at });
+    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: keptMs(a.ms), at: a.at, ...(claimedRight ? {} : { given: a.given }) });
   };
   let replayed: ReturnType<typeof replaySolo>;
   try {

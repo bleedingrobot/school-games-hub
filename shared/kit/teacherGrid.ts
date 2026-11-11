@@ -185,6 +185,8 @@ export interface WeakFact {
   correct: number;
   /** Pupils who have been asked it. */
   students: number;
+  /** The wrong answer most pupils gave lately (each pupil's last three counted), when two or more pupils' answers agree. */
+  commonWrong?: string;
 }
 
 /**
@@ -194,6 +196,7 @@ export interface WeakFact {
 export function weakestFacts(pupils: Iterable<readonly FactStats[]>, keys: Iterable<string>, opts: { minAttempts: number; count: number }): WeakFact[] {
   const want = new Set(keys);
   const total = new Map<string, WeakFact>();
+  const wrongCounts = new Map<string, Map<string, number>>();
   for (const facts of pupils) {
     for (const f of facts) {
       if (!want.has(f.key) || f.attempts <= 0) continue;
@@ -202,7 +205,17 @@ export function weakestFacts(pupils: Iterable<readonly FactStats[]>, keys: Itera
       row.correct += f.correct;
       row.students += 1;
       total.set(f.key, row);
+      if (f.wrong?.length) {
+        const counts = wrongCounts.get(f.key) ?? new Map<string, number>();
+        for (const w of f.wrong) counts.set(w, (counts.get(w) ?? 0) + 1);
+        wrongCounts.set(f.key, counts);
+      }
     }
+  }
+  for (const [key, counts] of wrongCounts) {
+    let best: string | undefined;
+    for (const [w, n] of counts) if (n >= 2 && (best === undefined || n > counts.get(best)!)) best = w;
+    if (best !== undefined) total.get(key)!.commonWrong = best;
   }
   return [...total.values()]
     .filter((r) => r.attempts >= opts.minAttempts)

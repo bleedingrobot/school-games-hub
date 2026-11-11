@@ -270,7 +270,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     // Asked again (a retry): the first mark stands and nothing is recorded twice.
     if (!claimed) return { status: 200, body: { correct: run.marks[String(n)] ?? false, answer: marked.answer, again: true } };
     const time = typeof ms === 'number' && Number.isFinite(ms) ? Math.max(0, Math.min(MAX_ANSWER_MS, Math.round(ms))) : MAX_ANSWER_MS;
-    await services.recordAnswers(player, `${seed}:${n}`, [{ key: marked.key, correct: right, ms: time, at: services.now() }]);
+    await services.recordAnswers(player, `${seed}:${n}`, [{ key: marked.key, correct: right, ms: time, at: services.now(), ...(right ? {} : { given: value }) }]);
     return { status: 200, body: { correct: right, answer: marked.answer } };
   }
 

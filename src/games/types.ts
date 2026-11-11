@@ -103,6 +103,8 @@ export interface HardestRow {
   attempts: number;
   correct: number;
   students: number;
+  /** The wrong answer the class gives most for it ("54"), when the game knows. */
+  commonWrong?: string;
 }
 
 /** One line for Today's "Needs you". Shown on a screen that may be projected, so made-up names only, never real names. */

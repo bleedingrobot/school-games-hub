@@ -9232,7 +9232,8 @@ function checkAnswers(x, nowMs) {
 			key: a.key,
 			correct,
 			ms: keptMs(a.ms),
-			at: a.at
+			at: a.at,
+			...!correct && typeof a.given === "number" && Number.isFinite(a.given) ? { given: a.given } : {}
 		});
 	}
 	return {
