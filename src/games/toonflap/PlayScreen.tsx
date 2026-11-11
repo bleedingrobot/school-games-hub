@@ -18,6 +18,7 @@ import type { FinishReply, Picks, StartReply, ToonFlapBackend } from './backend'
 import { drawScene, stepTrail, type TrailParticle } from './renderer';
 import type { FlyerPose } from './art/art';
 import { shiny as isShiny, FLYERS } from '../../../shared/toonflap/collection';
+import { GUIDE, SHORT } from './guide';
 
 const STEP_MS = 1000 / STEPS_PER_SECOND;
 const MAX_STEPS_A_FRAME = 5;
@@ -58,6 +59,8 @@ interface Game {
   time: number;
   seen: Set<number>;
   bumpTold: boolean;
+  pathTold: boolean;
+  signTold: boolean;
   particles: TrailParticle[];
   finishing: boolean;
 }
@@ -71,8 +74,15 @@ interface Hud {
   potionUsed: boolean;
 }
 
-export function PlayScreen({ backend, start, progress, picks, onFinished, onLeave }: {
+export function PlayScreen({ backend, start, progress, picks, onFinished, onLeave, guide = false, tip = false, talk = () => undefined, onSkipGuide }: {
   backend: ToonFlapBackend;
+  /** The guided first go: Pī's bubbles and the dotted path (level 1). */
+  guide?: boolean;
+  /** This level's first-time tip, and the help bubbles (the pupil's help setting). */
+  tip?: boolean;
+  /** Bella says a line (only fixed lines are ever said: see guide.ts). */
+  talk?: (text: string) => void;
+  onSkipGuide?: () => void;
   start: StartReply;
   progress: Progress;
   picks: Picks;
@@ -92,7 +102,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const G = useRef<Game | null>(null);
   if (G.current === null) {
-    G.current = { state: newRun(course), flaps: [], queued: false, paused: null, before: null, rightChecks: 0, potionUsed: false, shake: 0, dizzy: 0, flapAnim: 0, whoosh: 0, time: 0, seen: new Set(), bumpTold: false, particles: [], finishing: false };
+    G.current = { state: newRun(course), flaps: [], queued: false, paused: null, before: null, rightChecks: 0, potionUsed: false, shake: 0, dizzy: 0, flapAnim: 0, whoosh: 0, time: 0, seen: new Set(), bumpTold: false, pathTold: false, signTold: false, particles: [], finishing: false };
   }
   const [hud, setHud] = useState<Hud>({ tenths: 0, bumps: 0, perches: 0, hover: 'start', sign: null, potionUsed: false });
   const [card, setCard] = useState<number | null>(null);
@@ -101,12 +111,18 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   const [bubble, setBubble] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [announce, setAnnounce] = useState('');
+  const [guiding, setGuiding] = useState(guide);
+  // Help bubbles: the guide or the tip. Read inside the loop, so kept in a ref.
+  const helpRef = useRef(guide || tip);
+  const talkRef = useRef(talk);
+  talkRef.current = talk;
 
   const flyerId = picks.flyer;
   const shiny = isShiny(progress, FLYERS.find((f) => f.id === flyerId) ?? FLYERS[0]);
   const labels = useMemo(() => (start.maths ? start.signs.map((s) => s.labels) : null), [start]);
 
   const say = (text: string) => {
+    talkRef.current(text);
     setBubble(text);
     setAnnounce(text);
     clearTimeout(bubbleTimer.current);
@@ -127,7 +143,17 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
     const g = G.current as Game;
     if (g.paused === 'read') return go();
     if (g.paused || g.finishing) return;
+    if (helpRef.current && guiding && !g.pathTold && g.state.mode === 'hover' && g.state.hover === 'start') {
+      g.pathTold = true;
+      setTimeout(() => helpRef.current && say(GUIDE.path), 1400);
+    }
     g.queued = true;
+  };
+  const skipGuide = () => {
+    helpRef.current = false;
+    setGuiding(false);
+    onSkipGuide?.();
+    say(GUIDE.skipped);
   };
   const flapRef = useRef(flap);
   flapRef.current = flap;
@@ -167,6 +193,8 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
     resize();
     const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
     ro?.observe(stage);
+    if (guide) say(GUIDE.start);
+    else if (tip) say(def.newThing);
 
     const onEvent = (ev: StepEvent) => {
       const s = g.state;
@@ -174,9 +202,9 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
         g.shake = 0.45;
         g.dizzy = 0.9;
         play('knock');
-        if (!g.bumpTold) {
+        if (!g.bumpTold && helpRef.current) {
           g.bumpTold = true;
-          say('Bump! Just 3 seconds. Keep going.');
+          say(GUIDE.bump);
         } else setAnnounce('Bump. Plus 3 seconds.');
       } else if (ev === 'perch') {
         play('item');
@@ -184,7 +212,9 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
         if (start.maths && start.checks[idx]) {
           g.paused = 'card';
           setCard(idx);
-        } else setAnnounce('A rest. Tap to fly on.');
+          talkRef.current(helpRef.current ? GUIDE.check : SHORT.check);
+        } else if (helpRef.current) say(GUIDE.rest);
+        else setAnnounce(GUIDE.rest);
       } else if (ev === 'pick') {
         g.whoosh = 0.6;
         play('wormhole');
@@ -192,6 +222,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
         g.finishing = true;
         g.paused = 'end';
         play('win');
+        if (helpRef.current) say(GUIDE.nest);
         setSaving(true);
         void backend.finish(start.seed, encodeFlaps(g.flaps), g.potionUsed).then(onFinished);
       }
@@ -234,6 +265,10 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
             g.seen.add(sign.i);
             const info = start.signs[sign.i];
             if (info) setAnnounce(`Answer sign: ${info.parts.join(' ')}`);
+            if (info && helpRef.current && !g.signTold) {
+              g.signTold = true;
+              say(GUIDE.sign);
+            }
             if (start.readTime && info) {
               g.paused = 'read';
               setReading(true);
@@ -255,7 +290,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
       stepTrail(g.particles, s.x, s.y, dt, s.mode === 'fly' && !g.paused);
       const pose: FlyerPose = g.dizzy > 0 ? 'dizzy' : s.mode === 'hover' && s.hover === 'perch' ? 'perched' : s.mode === 'done' ? 'cheer' : g.flapAnim > 0 ? 'up' : 'glide';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawScene(ctx, { course, state: s, w, h, time: g.time, reduced, shake: reduced ? 0 : g.shake * 24, flyer: flyerId, shiny, trail: picks.trail, particles: g.particles, pose, labels, ghostPath: def.n === 1 });
+      drawScene(ctx, { course, state: s, w, h, time: g.time, reduced, shake: reduced ? 0 : g.shake * 24, flyer: flyerId, shiny, trail: picks.trail, particles: g.particles, pose, labels, ghostPath: def.n === 1 && helpRef.current });
       if (g.whoosh > 0 && !reduced) {
         // a few speed lines behind the bird: the pick was made, the results will say how it went
         ctx.strokeStyle = `rgba(255,255,255,${g.whoosh})`;
@@ -327,8 +362,39 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
             <span className="tf-chip">Bumps {bumpsLeft}</span>
             {start.gentle && <span className="tf-chip" title="Gentle wings">🪶</span>}
           </div>
-          <button type="button" className="tf-btn tf-btn--small" data-noflap onClick={askLeave}>Leave</button>
+          <div className="tf-hud__right">
+            {guiding && <button type="button" className="tf-btn tf-btn--small tf-btn--ghost" data-noflap onClick={skipGuide}>Skip guide</button>}
+            <button type="button" className="tf-btn tf-btn--small" data-noflap onClick={askLeave}>Leave</button>
+          </div>
         </div>
+        {confirm && (
+          <div className="tf-confirm" role="alertdialog" aria-label="Leave this flight?" data-noflap>
+            <div className="tf-confirm__box">
+              <p><strong>Leave this flight?</strong></p>
+              <p>This run won't be saved.</p>
+              <div className="tf-row">
+                <button type="button" className="tf-btn" onClick={stay} autoFocus>Keep flying</button>
+                <button type="button" className="tf-btn tf-btn--ghost" onClick={onLeave}>Leave</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {saving && <div className="tf-saving" role="status">Checking your flight…</div>}
+      </div>
+      {/* In portrait this sits below the flying area so nothing covers the gaps; in landscape it lies over it. */}
+      <div className="tf-dock">
+        {activeSign && (
+          <div className="tf-sign" role="status">
+            <span className="tf-sign__label">Fly through the answer</span>
+            <span className="tf-sign__sum">{activeSign.parts.join(' ')}</span>
+          </div>
+        )}
+        {reading && !confirm && (
+          <div className="tf-go-wrap" data-noflap>
+            <button type="button" className="tf-btn tf-btn--go" onClick={go} autoFocus>Go</button>
+            <span className="tf-go-note">Read it, then tap Go. The clock is stopped.</span>
+          </div>
+        )}
         {(canPotion || hud.potionUsed) && (
           <div className="tf-potion" data-noflap>
             {hud.potionUsed ? <span className="tf-chip tf-chip--good">Potion used: −3 s</span> : (
@@ -336,12 +402,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
                 🧪 Use a potion (cancels one bump)
               </button>
             )}
-          </div>
-        )}
-        {activeSign && (
-          <div className="tf-sign" role="status">
-            <span className="tf-sign__label">Fly through the answer</span>
-            <span className="tf-sign__sum">{activeSign.parts.join(' ')}</span>
           </div>
         )}
         {bubble && <div className="tf-bubble" role="status">{bubble}</div>}
@@ -362,25 +422,6 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
             <span className="tf-tap__text">Tap to fly again</span>
           </div>
         )}
-        {reading && !confirm && (
-          <div className="tf-go-wrap" data-noflap>
-            <button type="button" className="tf-btn tf-btn--go" onClick={go} autoFocus>Go</button>
-            <span className="tf-go-note">Read it, then tap Go. The clock is stopped.</span>
-          </div>
-        )}
-        {confirm && (
-          <div className="tf-confirm" role="alertdialog" aria-label="Leave this flight?" data-noflap>
-            <div className="tf-confirm__box">
-              <p><strong>Leave this flight?</strong></p>
-              <p>This run won't be saved.</p>
-              <div className="tf-row">
-                <button type="button" className="tf-btn" onClick={stay} autoFocus>Keep flying</button>
-                <button type="button" className="tf-btn tf-btn--ghost" onClick={onLeave}>Leave</button>
-              </div>
-            </div>
-          </div>
-        )}
-        {saving && <div className="tf-saving" role="status">Checking your flight…</div>}
       </div>
       <button type="button" className="tf-pad" data-noflap onPointerDown={(e) => { e.stopPropagation(); flap(); }} onClick={(e) => { if (e.detail === 0) flap(); }}>
         Tap to flap

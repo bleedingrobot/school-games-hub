@@ -69,7 +69,7 @@ select throws_ok($$ select public.score_bot_game(b) from public.bot_games b limi
 select throws_ok($$ select public.award_achievements(auth.uid(), 'chess', now()) $$, '42501', null,
   'a student can''t hand out achievements');
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student can''t change a saved game');
-select is((select count(*)::int from public.achievement_types), 186, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder and Giant Slayer + Diamond Drop's 6 + Maths Monsters quests' 5 + Sky Isles' 8 + Kiwi's Beanstalk's 6 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6 + Tūī's Ten Tree's 5 + Royal Decree's 6 + Pigeon's 5 + Parrot's See-saw's 5 + Lizard's Bundles' 5 + Swamp Hen's Reed Rows' 5 + Robin's Berry Basket's 5
+select is((select count(*)::int from public.achievement_types), 196, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder and Giant Slayer + Diamond Drop's 6 + Maths Monsters quests' 5 + Sky Isles' 8 + Kiwi's Beanstalk's 6 + Hop's Glow-worm Pond's 6 + Pipi's Hidden Shells' 6 + Penguin Pairs' 6 + Weka's Stepping Stones' 6 + Tūī's Ten Tree's 5 + Royal Decree's 6 + Pigeon's 5 + Parrot's See-saw's 5 + Lizard's Bundles' 5 + Swamp Hen's Reed Rows' 5 + Robin's Berry Basket's 5 + Toon Flap's 10
 
 -- ---- Signed-out visitors and outsiders see nothing ----
 select pg_temp.act_as_anon();

@@ -3,8 +3,10 @@
  * backend it is given: the trial one in the preview, the school's server in stage F.3.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { speak, stopSpeaking, useReadAloud } from '../../speech';
+import { guideSkipped, readHelp, saveHelp, setGuideSkipped, showTip, voiceLine, VOICE_FOLDER, type HelpSetting } from './guide';
 import { LEVELS } from '../../../shared/toonflap/levels';
-import type { FinishReply, Loaded, Picks, StartReply, ToonFlapBackend } from './backend';
+import { ToonFlapError, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
 import { Hangar } from './Hangar';
 import { HowToPlay } from './HowToPlay';
 import { MapScreen } from './MapScreen';
@@ -23,7 +25,7 @@ const readGentle = (): boolean => {
   }
 };
 
-export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; extra?: (h: { reload(): void }) => ReactNode }) {
+export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBackend; extra?: (h: { reload(): void }) => ReactNode; onExit?: () => void }) {
   const [screen, setScreen] = useState<Screen>('map');
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failed, setFailed] = useState(false);
@@ -33,6 +35,15 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
   const [reply, setReply] = useState<FinishReply | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [help, setHelp] = useState<HelpSetting>(readHelp);
+  const [guide, setGuide] = useState(false);
+  const [tip, setTip] = useState(false);
+  const voice = useReadAloud({ defaultOn: true });
+  const talk = useCallback((text: string) => {
+    const line = voiceLine(text);
+    if (voice.on && line) speak(line, VOICE_FOLDER);
+  }, [voice.on]);
+  useEffect(() => stopSpeaking, []);
 
   const reload = useCallback(() => {
     setFailed(false);
@@ -49,16 +60,27 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
     }
   };
 
-  const begin = async (n: number) => {
+  const chooseHelp = (h: HelpSetting) => {
+    setHelp(h);
+    saveHelp(h);
+  };
+
+  const begin = async (n: number, replayGuide = false) => {
     setBusy(true);
     setError(null);
     try {
       const r = await backend.start(LEVELS[n - 1].id, gentle);
+      const p = loaded?.progress;
+      const finishes = p?.levels[LEVELS[n - 1].id]?.finishes ?? 0;
+      const never = !p || Object.values(p.levels).every((l) => !l || l.finishes === 0);
+      if (replayGuide) setGuideSkipped(false);
+      setGuide(n === 1 && (replayGuide || (never && !guideSkipped())));
+      setTip(showTip(help, finishes));
       setRun(r);
       setLevel(n);
       setScreen('play');
-    } catch {
-      setError("Couldn't start that flight. Please try again.");
+    } catch (e) {
+      setError(e instanceof ToonFlapError ? e.message : "Couldn't start that flight. Please try again.");
       setScreen('map');
     }
     setBusy(false);
@@ -78,12 +100,25 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
     );
   }
   if (!loaded) return <div className="tf-root"><p className="tf-loading" role="status">Loading Toon Flap…</p></div>;
+  if (!loaded.enabled) {
+    return (
+      <div className="tf-root">
+        <p className="tf-error" role="status">Toon Flap isn’t switched on for your class yet.</p>
+        {onExit && <button type="button" className="tf-btn" onClick={onExit}>Back to games</button>}
+      </div>
+    );
+  }
 
   return (
     <div className="tf-root" data-screen={screen}>
       {screen === 'map' && (
         <>
-          <MapScreen progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={begin} onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error} />
+          <MapScreen
+            progress={loaded.progress} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)}
+            onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
+            help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
+          />
+          {onExit && <button type="button" className="tf-btn tf-exit" onClick={onExit}>Back to games</button>}
           {extra?.({ reload })}
         </>
       )}
@@ -96,6 +131,10 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
           start={run}
           progress={loaded.progress}
           picks={loaded.picks}
+          guide={guide}
+          tip={tip}
+          talk={talk}
+          onSkipGuide={() => setGuideSkipped(true)}
           onLeave={() => {
             setRun(null);
             setScreen('map');
@@ -108,7 +147,7 @@ export function ToonFlapGame({ backend, extra }: { backend: ToonFlapBackend; ext
         />
       )}
       {screen === 'results' && reply && run && (
-        <ResultsScreen reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
+        <ResultsScreen talk={talk} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
     </div>
   );

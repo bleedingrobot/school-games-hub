@@ -2,6 +2,8 @@
 import { FLYERS, finishesToUnlock, levelOpen, nextStep, type Progress } from '../../../shared/toonflap/collection';
 import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
+import { useEffect } from 'react';
+import { HELP_SETTINGS, type HelpSetting } from './guide';
 
 /** Each world's colours (top, bottom, accent) and a picture word, for its stop on the trail. */
 export const LEVEL_LOOK: Array<{ a: string; b: string; icon: string }> = [
@@ -22,7 +24,7 @@ export const MEDAL_WORD = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' } a
 
 export const fmtSeconds = (s: number | null): string => (s === null ? '' : `${s.toFixed(1)} s`);
 
-export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar, onHowTo, busy, error }: {
+export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
   progress: Progress;
   maths: boolean;
   gentle: boolean;
@@ -32,19 +34,33 @@ export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar,
   onHowTo: () => void;
   busy: boolean;
   error: string | null;
+  /** First-time tips: Lots, Some or Off. */
+  help?: HelpSetting;
+  onHelp?: (h: HelpSetting) => void;
+  onReplayGuide?: () => void;
+  voice?: { on: boolean; setOn: (on: boolean) => void; available: boolean };
+  talk?: (text: string) => void;
 }) {
+  const step = nextStep(progress);
+  // Bella says what to do next as the map opens.
+  useEffect(() => talk?.(step), [step, talk]);
   const next = LEVELS.find((l) => (progress.levels[l.id]?.finishes ?? 0) === 0 && levelOpen(progress, l.n));
   return (
     <section className="tf-map" aria-labelledby="tf-map-h">
       <header className="tf-map__top">
         <div>
           <h2 id="tf-map-h" className="tf-h">Toon Flap</h2>
-          <p className="tf-next" role="status">{nextStep(progress)}</p>
+          <p className="tf-next" role="status">{step}</p>
         </div>
         <div className="tf-map__buttons">
           {progress.potions > 0 && <span className="tf-chip tf-chip--potion" title="Revive potions: each cancels one bump in a run">🧪 × {progress.potions}</span>}
           <button type="button" className="tf-btn" onClick={onHangar}>Hangar</button>
           <button type="button" className="tf-btn tf-btn--ghost" onClick={onHowTo}>How to play</button>
+          {voice?.available && (
+            <button type="button" className="tf-btn tf-btn--ghost" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
+              {voice.on ? '🔊 Voice on' : '🔈 Voice off'}
+            </button>
+          )}
         </div>
       </header>
 
@@ -55,6 +71,17 @@ export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar,
           <small>Slower and wider gaps. Gold needs normal wings.</small>
         </span>
       </label>
+      {onHelp && (
+        <div className="tf-help" role="group" aria-label="Tips">
+          <span className="tf-help__label">Tips:</span>
+          {HELP_SETTINGS.map((h) => (
+            <button key={h.id} type="button" className="tf-btn tf-btn--small tf-btn--ghost" aria-pressed={help === h.id} onClick={() => onHelp(h.id)}>{h.name}</button>
+          ))}
+          {onReplayGuide && (progress.levels.garden?.finishes ?? 0) > 0 && (
+            <button type="button" className="tf-btn tf-btn--small tf-btn--ghost" disabled={busy} onClick={onReplayGuide}>Replay the guide</button>
+          )}
+        </div>
+      )}
       {error && <p className="tf-error" role="alert">{error}</p>}
 
       <ol className="tf-trail">

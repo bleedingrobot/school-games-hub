@@ -203,9 +203,15 @@
 .tf-stage { position: relative; flex: 1 1 auto; min-height: 0; }
 .tf-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .tf-pad { display: none; }
+/* Signs, prompts and the potion: over the flying area in landscape, in a strip below it in portrait (James, 11 Nov 2026). */
+.tf-dock { position: absolute; inset: 0; pointer-events: none; }
+.tf-dock .tf-potion, .tf-dock .tf-go-wrap { pointer-events: auto; }
 @media (orientation: portrait) {
-  .tf-stage { flex: 0 0 auto; aspect-ratio: 1 / 1.03; width: 100%; }
-  .tf-pad { display: block; flex: 1 1 auto; min-height: 110px; margin: 10px 14px 14px; border: 4px dashed rgba(255, 255, 255, 0.55); border-radius: 26px; background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 1.6rem; font-weight: 900; cursor: pointer; }
+  .tf-stage { flex: 0 1 auto; aspect-ratio: 1 / 1.2; width: 100%; max-height: 64dvh; }
+  .tf-dock { position: static; flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; min-height: 84px; padding: 8px 14px 0; }
+  .tf-play .tf-dock > * { position: static; transform: none; max-width: 100%; }
+  .tf-play .tf-dock .tf-sign { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3); }
+  .tf-pad { display: block; flex: 1 1 auto; min-height: 96px; margin: 8px 14px 14px; border: 4px dashed rgba(255, 255, 255, 0.55); border-radius: 26px; background: rgba(255, 255, 255, 0.1); color: #fff; font: inherit; font-size: 1.6rem; font-weight: 900; cursor: pointer; }
   .tf-pad:active { background: rgba(255, 255, 255, 0.24); }
 }
 .tf-bar { position: absolute; left: 14px; right: 40px; top: 16px; height: 10px; border-radius: 6px; background: rgba(15, 23, 42, 0.55); border: 2px solid rgba(255, 255, 255, 0.85); pointer-events: none; }
@@ -239,10 +245,12 @@
 .tf-confirm__box .tf-row { justify-content: center; }
 .tf-saving { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(2, 6, 23, 0.45); font-size: 1.4rem; font-weight: 800; }
 
-@media (max-width: 600px) {
+@media (max-width: 600px) and (orientation: landscape) {
   .tf-sign { top: 88px; max-width: 94%; padding: 2px 16px 4px; }
-  .tf-sign__label { font-size: 0.75rem; }
   .tf-potion { top: 150px; }
+}
+@media (max-width: 600px) {
+  .tf-sign__label { font-size: 0.75rem; }
 }
 @media (max-height: 460px) and (orientation: landscape) {
   .tf-time { font-size: 1.5rem; }
@@ -259,3 +267,14 @@
   .tf-tap__hand { animation: none; }
   .tf-btn:active:not(:disabled) { transform: none; }
 }
+
+.tf-exit {
+  display: block;
+  margin: 12px auto;
+}
+.tf-hud__right { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.tf-help { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.tf-help__label { font-weight: 800; }
+.tf-help .tf-btn[aria-pressed='true'] { outline: 3px solid #0f172a; }
+.tf-btn--small.tf-btn--ghost { background: #fff; color: #0f172a; }
+.tf-help .tf-btn[aria-pressed='true'] { background: #0f172a; color: #fff; }

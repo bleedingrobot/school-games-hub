@@ -9,7 +9,7 @@
 import { BIRD_HALF, BIRD_SIZE, SKY, START_X, START_Y, WALL_WIDTH } from '../../../shared/toonflap/config';
 import { gapsAt, zoneOn, type RunState } from '../../../shared/toonflap/engine';
 import type { Course, Wall, Zone } from '../../../shared/toonflap/levels';
-import { flyerArt, trailArt, worldArt, type FlyerPose, type WorldLayer } from './art/art';
+import { flyerArt, trailArt, worldArt, type FlyerPose } from './art/art';
 
 const TAU = Math.PI * 2;
 export const TOP_PAD = 0.25;
@@ -576,6 +576,45 @@ function mid(p: P) {
 
 /* ---------- walls ---------- */
 
+/**
+ * How much of each painted wall picture's width is the post itself (measured from the pictures), so the picture is drawn
+ * wide enough that the post matches the wall's hit box. The end pieces (flowers, caps) may stick out a little sideways.
+ */
+const POST_SHARE = [0.41, 0.42, 0.44, 0.58, 0.46, 0.65, 0.67, 0.66, 0.96, 0.4];
+
+/**
+ * A wall piece from the paintings: the repeating middle fills it, and an end piece sits at each edge that meets a gap
+ * (wall-bottom's end points up, for a wall coming up from the ground; wall-top's points down). False if not painted.
+ */
+function paintedSegment(p: P, x: number, w: number, y0: number, y1: number, capTop: boolean, capBot: boolean): boolean {
+  const { c, n } = p;
+  const middle = picture(worldArt(n, 'wall-middle'));
+  const up = picture(worldArt(n, 'wall-bottom'));
+  const down = picture(worldArt(n, 'wall-top'));
+  if (!middle || !up || !down) return false;
+  // The middle is stretched sideways so its post is exactly the wall's width; the end pieces keep their shape.
+  const Wm = w / POST_SHARE[n - 1];
+  const Wc = Math.min(Wm, w * 1.4);
+  const mid = x + w / 2;
+  const tileH = Wc * (middle.naturalHeight / middle.naturalWidth);
+  const capH = Wc * (up.naturalHeight / up.naturalWidth);
+  c.save();
+  c.beginPath();
+  c.rect(mid - Wm / 2 - 12, y0, Wm + 24, y1 - y0);
+  c.clip();
+  // A soft dark edge so the painted walls stand out from the painted back layer.
+  c.shadowColor = 'rgba(0, 0, 30, 0.45)';
+  c.shadowBlur = Math.max(4, w * 0.12);
+  // The middle repeats away from the end piece (or from the top, for a piece with no end).
+  const from = capTop ? y0 + capH * 0.6 : capBot ? y1 - capH * 0.6 : y0;
+  if (capBot && !capTop) for (let y = from - tileH; y > y0 - tileH; y -= tileH) c.drawImage(middle, mid - Wm / 2, y, Wm, tileH + 1);
+  else for (let y = from; y < y1; y += tileH) c.drawImage(middle, mid - Wm / 2, y, Wm, tileH + 1);
+  if (capTop) c.drawImage(up, mid - Wc / 2, y0, Wc, capH);
+  if (capBot) c.drawImage(down, mid - Wc / 2, y1 - capH, Wc, capH);
+  c.restore();
+  return true;
+}
+
 /** One solid piece of a wall. `capTop`/`capBot` say the piece borders a gap at its top/bottom edge. */
 function segment(p: P, wall: Wall, x: number, w: number, y0: number, y1: number, capTop: boolean, capBot: boolean, t: number) {
   const { c, v, n } = p;
@@ -583,12 +622,7 @@ function segment(p: P, wall: Wall, x: number, w: number, y0: number, y1: number,
   const lw = Math.max(2, v.s * 0.07);
   const H = y1 - y0;
   if (H <= 0) return;
-  const kind: WorldLayer = capTop && capBot ? 'wall-middle' : capTop ? 'wall-bottom' : 'wall-top';
-  const img = picture(worldArt(n, kind));
-  if (img) {
-    c.drawImage(img, x, y0, w, H);
-    return;
-  }
+  if (paintedSegment(p, x, w, y0, y1, capTop, capBot)) return;
   const alt = wall.i % 2 === 1;
   c.save();
   c.beginPath();
@@ -1152,7 +1186,7 @@ export function drawScene(c: Ctx, o: SceneOpts): View {
   const midImg = picture(worldArt(n, 'mid'));
   if (backImg) tile(c, backImg, v, o.reduced ? 0 : view.camX * v.s * 0.15);
   else back(p);
-  if (midImg) tile(c, midImg, v, o.reduced ? 0 : view.camX * v.s * 0.4);
+  if (midImg) tileOnGround(c, midImg, v, o.reduced ? 0 : view.camX * v.s * 0.4, sy(v, 0));
   else mid(p);
   // calm the back layers so the walls stand out
   c.fillStyle = n === 9 || n === 10 || n === 6 ? 'rgba(10,10,40,0.12)' : 'rgba(255,255,255,0.14)';
@@ -1234,6 +1268,17 @@ export function drawScene(c: Ctx, o: SceneOpts): View {
   c.restore();
   c.restore();
   return view;
+}
+
+/** The middle layer: the same scale as the back picture (768 rows = the screen), its bottom on the ground line. */
+function tileOnGround(c: Ctx, img: HTMLImageElement, v: View, off: number, ground: number) {
+  // Kept low and soft (at most a quarter of the sky) so it never looks like a wall.
+  const h = Math.min(img.naturalHeight * (v.h / 768), ground * 0.28);
+  const w = img.naturalWidth * (h / img.naturalHeight);
+  c.save();
+  c.globalAlpha = 0.75;
+  for (let x = -(off % w) - w; x < v.w; x += w) c.drawImage(img, x, ground - h, w + 1, h);
+  c.restore();
 }
 
 function tile(c: Ctx, img: HTMLImageElement, v: View, off: number) {

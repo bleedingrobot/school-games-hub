@@ -7,10 +7,11 @@ import type { FinishReply } from './backend';
 import { FlyerCanvas, TrailCanvas } from './Hangar';
 import { MEDAL_ICON, MEDAL_WORD, fmtSeconds } from './MapScreen';
 import { factText } from './PlayScreen';
+import { MEDAL_LINE, RESULT_LINES } from './guide';
 
 const secs = (steps: number) => (steps / STEPS_PER_SECOND).toFixed(1);
 
-export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, onMap }: {
+export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, onMap, talk }: {
   reply: FinishReply;
   level: number;
   gentle: boolean;
@@ -18,16 +19,25 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
   onNext: (n: number) => void;
   onAgain: () => void;
   onMap: () => void;
+  talk?: (text: string) => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    heading.current?.focus();
+    // Bella: the medal, then the best news (one line, so it stays short).
+    if (!reply.valid) return talk?.(RESULT_LINES.notChecked);
+    const u = reply.unlocks;
+    const news = u.flyers.length ? RESULT_LINES.flyer : u.newGold ? RESULT_LINES.newGold : u.potion ? RESULT_LINES.potion : u.trails.length ? RESULT_LINES.trail : null;
+    talk?.(news ?? MEDAL_LINE[reply.medal]);
+    // Said once, as the results open.
+  }, []);
   const def = LEVELS[level - 1];
   const { score, unlocks } = reply;
   if (!reply.valid) {
     return (
       <section className="tf-results" aria-labelledby="tf-res-h">
         <h2 id="tf-res-h" className="tf-h" tabIndex={-1} ref={heading}>{def.name}</h2>
-        <p className="tf-card-note">That run couldn't be checked, so it wasn't saved.</p>
+        <p className="tf-card-note">{RESULT_LINES.notChecked}</p>
         <div className="tf-row">
           <button type="button" className="tf-btn tf-btn--big" onClick={onAgain}>Fly again</button>
           <button type="button" className="tf-btn tf-btn--ghost" onClick={onMap}>Map</button>
@@ -101,7 +111,7 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
           {newTrails.map((t) => t && (
             <div key={t.id} className="tf-party__item">
               <TrailCanvas trail={t.id} size={56} />
-              <p className="tf-party__line">New trail! <strong>{t.name}</strong></p>
+              <p className="tf-party__line">{RESULT_LINES.trail} <strong>{t.name}</strong></p>
             </div>
           ))}
         </div>
