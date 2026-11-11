@@ -11,8 +11,9 @@ import { MEDAL_LINE, RESULT_LINES } from './guide';
 
 const secs = (steps: number) => (steps / STEPS_PER_SECOND).toFixed(1);
 
-export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, onMap, talk }: {
+export function ResultsScreen({ reply, today, level, gentle, maths, onNext, onAgain, onMap, talk }: {
   reply: FinishReply;
+  today: string;
   level: number;
   gentle: boolean;
   maths: boolean;
@@ -27,7 +28,7 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
     // Bella: the medal, then the best news (one line, so it stays short).
     if (!reply.valid) return talk?.(RESULT_LINES.notChecked);
     const u = reply.unlocks;
-    const news = u.flyers.length ? RESULT_LINES.flyer : u.newGold ? RESULT_LINES.newGold : u.potion ? RESULT_LINES.potion : u.trails.length ? RESULT_LINES.trail : null;
+    const news = u.levelTomorrow ? RESULT_LINES.tomorrow : u.newLevel ? RESULT_LINES.newLevel : u.flyers.length ? RESULT_LINES.flyer : u.newGold ? RESULT_LINES.newGold : u.potion ? RESULT_LINES.potion : u.trails.length ? RESULT_LINES.trail : null;
     talk?.(news ?? MEDAL_LINE[reply.medal]);
     // Said once, as the results open.
   }, []);
@@ -48,10 +49,10 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
   const bumps = Math.round(score.bumpSteps / BUMP_PENALTY_STEPS);
   const checks = Math.round(score.checkBonus / CHECK_BONUS_STEPS);
   const tails = Math.round(score.tailwind / TAILWIND_STEPS);
-  const nextOpen = level < LEVELS.length && levelOpen(reply.progress, level + 1);
+  const nextOpen = level < LEVELS.length && levelOpen(reply.progress, level + 1, today);
   const newFlyers = unlocks.flyers.map((id) => FLYERS.find((f) => f.id === id)).filter((f) => !!f);
   const newTrails = unlocks.trails.map((id) => TRAILS.find((t) => t.id === id)).filter((t) => !!t);
-  const celebrate = newFlyers.length > 0 || newTrails.length > 0 || unlocks.potion || unlocks.newGold || unlocks.newBest;
+  const celebrate = unlocks.newLevel || newFlyers.length > 0 || newTrails.length > 0 || unlocks.potion || unlocks.newGold || unlocks.newBest;
   return (
     <section className="tf-results" aria-labelledby="tf-res-h">
       <h2 id="tf-res-h" className="tf-h" tabIndex={-1} ref={heading}>{def.name}</h2>
@@ -102,6 +103,7 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
           {unlocks.newGold && <p className="tf-party__line">🥇 A new gold! That flyer is shiny now.</p>}
           {unlocks.newBest && !unlocks.firstFinish && <p className="tf-party__line">⭐ New best time!</p>}
           {unlocks.potion && <p className="tf-party__line">🧪 You earned a revive potion!</p>}
+          {unlocks.newLevel && <p className="tf-party__line">🗺️ {RESULT_LINES.newLevel}</p>}
           {newFlyers.map((f) => f && (
             <div key={f.id} className="tf-party__item">
               <FlyerCanvas flyer={f.id} gold={false} size={72} />
@@ -117,6 +119,7 @@ export function ResultsScreen({ reply, level, gentle, maths, onNext, onAgain, on
         </div>
       )}
 
+      {unlocks.levelTomorrow && <p className="tf-card-note" role="status">{RESULT_LINES.tomorrow}</p>}
       <div className="tf-row tf-row--end">
         {nextOpen && <button type="button" className="tf-btn tf-btn--big tf-btn--play" onClick={() => onNext(level + 1)}>Next level: {LEVELS[level].name}</button>}
         <button type="button" className={nextOpen ? 'tf-btn' : 'tf-btn tf-btn--big tf-btn--play'} onClick={onAgain}>Fly again</button>

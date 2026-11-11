@@ -55,6 +55,8 @@ export const RESULT_LINES = {
   flyer: 'You unlocked a new flyer!',
   trail: 'You got a new trail!',
   notChecked: 'That run couldn’t be checked, so it wasn’t saved.',
+  newLevel: 'A new level is open!',
+  tomorrow: 'Well done! The next level opens tomorrow. One new level opens each day.',
 } as const;
 
 /** Every next-step line the map can show (collection.ts nextStep). */
@@ -64,6 +66,7 @@ function nextStepLines(): string[] {
     ...LEVELS.slice(1).map((l) => `Fly ${l.name} next (level ${l.n}).`),
     ...LEVELS.map((l) => `Try for gold on ${l.name}.`),
     'Every level done with gold! Try Sky Dash.',
+    'A new level opens tomorrow. Try for a better medal today!',
   ];
 }
 

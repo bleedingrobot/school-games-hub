@@ -8739,8 +8739,22 @@ const record = (p, id) => p.levels[id] ?? {
 };
 const levelsFinished = (p) => LEVELS.filter((l) => record(p, l.id).finishes > 0).length;
 const golds = (p) => LEVELS.filter((l) => record(p, l.id).medal === "gold").length;
-/** Level 1 is always open; each finish opens the next. */
-const levelOpen = (p, n) => n <= 1 || record(p, LEVELS[n - 2].id).finishes > 0;
+/** The highest level opened (early saves had no `opened`: each finish opened the next). */
+function openedLevel(p) {
+	if (typeof p.opened === "number") return p.opened;
+	let n = 1;
+	while (n < LEVELS.length && record(p, LEVELS[n - 1].id).finishes > 0) n++;
+	return n;
+}
+/**
+* Level 1 is always open. Finishing the highest open level opens the next one, but only one new level a day: if one
+* already opened today (NZ day `today`), the next waits until tomorrow.
+*/
+function levelOpen(p, n, today) {
+	const opened = openedLevel(p);
+	if (n <= opened) return true;
+	return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
+}
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
 const finishesToUnlock = (p, level) => Math.max(0, 3 - record(p, level).finishes);
 function flyersUnlocked(p) {
@@ -8760,12 +8774,33 @@ const MEDAL_RANK = {
 	silver: 2,
 	gold: 3
 };
-/** Adds a finished run to a pupil's progress and says what it opened. Returns a new object; the old one is unchanged. */
-function addRun(before, run) {
+/**
+* Adds a finished run to a pupil's progress and says what it opened, on NZ day `today` (one new level a day). Returns a
+* new object; the old one is unchanged.
+*/
+function addRun(before, run, today) {
 	const p = {
 		...before,
 		levels: { ...before.levels }
 	};
+	const n = LEVELS.find((l) => l.id === run.level)?.n ?? 1;
+	let opened = openedLevel(before);
+	let openedDay = before.openedDay ?? null;
+	if (n === opened + 1) {
+		opened = n;
+		openedDay = today;
+	}
+	let newLevel = false;
+	let levelTomorrow = false;
+	if (n === opened && opened < LEVELS.length) {
+		if (openedDay !== today) {
+			opened++;
+			openedDay = today;
+			newLevel = true;
+		} else levelTomorrow = record(before, run.level).finishes === 0;
+	}
+	p.opened = opened;
+	p.openedDay = openedDay;
 	const was = record(before, run.level);
 	const best = run.maths ? was.best : was.bestPlain;
 	const newBest = best === null || run.seconds < best;
@@ -8807,7 +8842,9 @@ function addRun(before, run) {
 			potion,
 			newGold,
 			firstFinish: was.finishes === 0,
-			newBest
+			newBest,
+			newLevel,
+			levelTomorrow
 		}
 	};
 }
@@ -9160,7 +9197,8 @@ async function handleToonFlap(services, player, body) {
 				maths: settings.maths,
 				readTime: settings.readTime,
 				progress: saved.progress,
-				picks: saved.picks
+				picks: saved.picks,
+				today: nzDate(new Date(services.now()))
 			}
 		};
 	}
@@ -9203,10 +9241,10 @@ async function handleToonFlap(services, player, body) {
 		const gentle = body.gentle === true;
 		const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
 		if (saved === "busy" || today === "busy") return busy();
-		if (!levelOpen(saved.progress, def.n)) return {
+		if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) return {
 			status: 409,
 			body: {
-				error: "Finish the level before first.",
+				error: "That level isn’t open yet. One new level opens each day.",
 				code: "locked"
 			}
 		};
@@ -9369,7 +9407,7 @@ async function handleToonFlap(services, player, body) {
 			checks,
 			rightGaps: gapsOk,
 			potionUsed: score.potion
-		});
+		}, nzDate(new Date(services.now())));
 		const today = await services.runsToday(player, nzDate(new Date(services.now())));
 		const done = await services.finish(player, seed, saved.version, added.progress, {
 			flaps: body.flaps,

@@ -1,5 +1,5 @@
 /** The map: a cartoon trail through the 10 worlds (docs/TOON-FLAP-PLAN.md, section 1). Tap a lit stop to fly it. */
-import { FLYERS, finishesToUnlock, levelOpen, nextStep, type Progress } from '../../../shared/toonflap/collection';
+import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, type Progress } from '../../../shared/toonflap/collection';
 import { UNLOCK_RUNS } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
@@ -24,8 +24,10 @@ export const MEDAL_WORD = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' } a
 
 export const fmtSeconds = (s: number | null): string => (s === null ? '' : `${s.toFixed(1)} s`);
 
-export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
+export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
   progress: Progress;
+  /** The NZ day, for the one-new-level-a-day rule. */
+  today: string;
   maths: boolean;
   gentle: boolean;
   onGentle: (on: boolean) => void;
@@ -41,10 +43,10 @@ export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar,
   voice?: { on: boolean; setOn: (on: boolean) => void; available: boolean };
   talk?: (text: string) => void;
 }) {
-  const step = nextStep(progress);
+  const step = nextStep(progress, today);
   // Bella says what to do next as the map opens.
   useEffect(() => talk?.(step), [step, talk]);
-  const next = LEVELS.find((l) => (progress.levels[l.id]?.finishes ?? 0) === 0 && levelOpen(progress, l.n));
+  const next = LEVELS.find((l) => (progress.levels[l.id]?.finishes ?? 0) === 0 && levelOpen(progress, l.n, today));
   return (
     <section className="tf-map" aria-labelledby="tf-map-h">
       <header className="tf-map__top">
@@ -87,7 +89,7 @@ export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar,
       <ol className="tf-trail">
         {LEVELS.map((l) => {
           const rec = progress.levels[l.id];
-          const open = levelOpen(progress, l.n);
+          const open = levelOpen(progress, l.n, today);
           const flyer = FLYERS.find((f) => f.level === l.id);
           const left = finishesToUnlock(progress, l.id);
           const best = maths ? rec?.best ?? null : rec?.bestPlain ?? null;
@@ -120,7 +122,7 @@ export function MapScreen({ progress, maths, gentle, onGentle, onPlay, onHangar,
                       )}
                     </>
                   ) : (
-                    <span className="tf-stop__line tf-dim">Locked. Finish the one before.</span>
+                    <span className="tf-stop__line tf-dim">{l.n === openedLevel(progress) + 1 && opensTomorrow(progress, today) ? 'Opens tomorrow. One new level a day.' : 'Locked. Finish the one before.'}</span>
                   )}
                   {isNext && <span className="tf-stop__go">Fly this one!</span>}
                 </span>

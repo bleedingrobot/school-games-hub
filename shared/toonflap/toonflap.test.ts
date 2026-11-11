@@ -55,22 +55,34 @@ describe('Toon Flap rules', () => {
     expect(perfect.seconds).toBe(perfect.steps / STEPS_PER_SECOND);
   });
 
-  it('opens levels in order, unlocks a flyer after 3 finishes, and caps potions', () => {
+  it('opens one new level a day, unlocks a flyer after 3 finishes, and caps potions', () => {
     const finish = (level: string, extra: Partial<RunSummary> = {}): RunSummary => ({ level, maths: true, seconds: 40, medal: 'bronze', bumps: 1, checks: [true], rightGaps: 0, potionUsed: false, ...extra });
+    const D1 = '2026-11-11';
+    const D2 = '2026-11-12';
     let p = emptyProgress();
-    expect(levelOpen(p, 1)).toBe(true);
-    expect(levelOpen(p, 2)).toBe(false);
-    p = addRun(p, finish('garden')).progress;
-    expect(levelOpen(p, 2)).toBe(true);
-    p = addRun(p, finish('garden')).progress;
+    expect(levelOpen(p, 1, D1)).toBe(true);
+    expect(levelOpen(p, 2, D1)).toBe(false);
+    const first = addRun(p, finish('garden'), D1);
+    expect(first.unlocks.newLevel).toBe(true);
+    p = first.progress;
+    expect(levelOpen(p, 2, D1)).toBe(true);
+    // Finishing level 2 the same day doesn't open level 3 until tomorrow, and flying it tomorrow opens it then.
+    const second = addRun(p, finish('mesa'), D1);
+    expect(second.unlocks).toMatchObject({ newLevel: false, levelTomorrow: true });
+    p = second.progress;
+    expect(levelOpen(p, 3, D1)).toBe(false);
+    expect(levelOpen(p, 3, D2)).toBe(true);
+    p = addRun(p, finish('reef'), D2).progress;
+    expect([levelOpen(p, 4, D2), p.opened]).toEqual([false, 3]);
+    p = addRun(p, finish('garden'), D2).progress;
     expect(flyersUnlocked(p)).toEqual(['fantail']);
-    const third = addRun(p, finish('garden'));
+    const third = addRun(p, finish('garden'), D2);
     expect(third.unlocks.flyers).toEqual(['puppy-plane']);
     // A first gold earns a potion; a second gold on the same level doesn't; never more than POTIONS_MAX held.
     p = third.progress;
-    for (const level of ['garden', 'mesa', 'reef', 'kitchen', 'donut']) p = addRun(p, finish(level, { medal: 'gold' })).progress;
+    for (const level of ['garden', 'mesa', 'reef', 'kitchen', 'donut']) p = addRun(p, finish(level, { medal: 'gold' }), D2).progress;
     expect(p.potions).toBe(POTIONS_MAX);
-    expect(addRun(p, finish('garden', { medal: 'gold' })).unlocks.potion).toBe(false);
-    expect(addRun(p, finish('mesa', { potionUsed: true, bumps: 1 })).progress.potions).toBe(POTIONS_MAX - 1);
+    expect(addRun(p, finish('garden', { medal: 'gold' }), D2).unlocks.potion).toBe(false);
+    expect(addRun(p, finish('mesa', { potionUsed: true, bumps: 1 }), D2).progress.potions).toBe(POTIONS_MAX - 1);
   });
 });

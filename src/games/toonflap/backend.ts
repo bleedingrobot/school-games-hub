@@ -17,6 +17,8 @@ export interface Loaded {
   maths: boolean;
   readTime: boolean;
   picks: Picks;
+  /** The server's NZ day (YYYY-MM-DD): one new level opens a day. */
+  today: string;
 }
 
 export interface CheckMark {
@@ -128,13 +130,17 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
       const p = progress();
       const levels = { ...p.levels };
       for (const l of LEVELS) levels[l.id] = { finishes: Math.max(levels[l.id]?.finishes ?? 0, 1), best: levels[l.id]?.best ?? null, bestPlain: levels[l.id]?.bestPlain ?? null, medal: levels[l.id]?.medal ?? 'bronze' };
-      setProgress({ ...p, levels });
+      setProgress({ ...p, levels, opened: LEVELS.length });
+    },
+    /** Jumps the pretend clock a day on, so the next level can open (only one opens a day). */
+    nextDay: () => {
+      ahead += 24 * 60 * 60 * 1000;
     },
     unlockAll: () => {
       const p = progress();
       const levels = { ...p.levels };
       for (const l of LEVELS) levels[l.id] = { finishes: 3, best: levels[l.id]?.best ?? null, bestPlain: levels[l.id]?.bestPlain ?? null, medal: 'gold' };
-      setProgress({ ...p, levels, checksRight: Math.max(p.checksRight, 20), cleanFlights: Math.max(p.cleanFlights, 3), potions: 3 });
+      setProgress({ ...p, levels, opened: LEVELS.length, checksRight: Math.max(p.checksRight, 20), cleanFlights: Math.max(p.cleanFlights, 3), potions: 3 });
     },
     setMaths: (on: boolean) => {
       save.maths = on;

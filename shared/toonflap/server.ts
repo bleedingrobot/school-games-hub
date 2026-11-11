@@ -4,7 +4,7 @@
  * calls this with services kept in the browser (memoryServices.ts), so both run exactly the same rules. Built like
  * Robin's Berry Basket (shared/robin/server.ts).
  *
- *   load    the pupil's progress (levels, medals, flyers, trails, potions), their flyer and trail, and the class's switches;
+ *   load    the pupil's progress (levels, medals, flyers, trails, potions), their flyer and trail, the class's switches and the NZ day (one new level opens a day);
  *   picks   saves the flyer and trail (only ones the pupil has unlocked);
  *   start   makes the run's questions from the pupil's own focus (way A) with a fresh seed and keeps them: one per check,
  *           and a short confidence-builder fact per answer sign (with its gap labels; the right gap comes from the seed);
@@ -191,7 +191,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
   if (action === 'load') {
     const [settings, saved] = await Promise.all([services.settings(player), services.load(player)]);
     if (!settings || saved === 'busy') return busy();
-    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: saved.picks } };
+    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: saved.picks, today: nzDate(new Date(services.now())) } };
   }
 
   const settings = await services.settings(player);
@@ -217,7 +217,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const gentle = body.gentle === true;
     const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
     if (saved === 'busy' || today === 'busy') return busy();
-    if (!levelOpen(saved.progress, def.n)) return { status: 409, body: { error: 'Finish the level before first.', code: 'locked' } };
+    if (!levelOpen(saved.progress, def.n, nzDate(new Date(services.now())))) return { status: 409, body: { error: 'That level isn’t open yet. One new level opens each day.', code: 'locked' } };
     if (today.started >= BREAK_AFTER_RUNS) return { status: 429, body: { error: 'Time for a break? Your wings need a rest. Come back tomorrow!', code: 'break' } };
     const course = buildCourse(def, gentle);
     const seed = seedText(services.random);
@@ -299,7 +299,7 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const potion = body.potion === true && saved.progress.potions > 0 && replay.state.bumps > 0;
     const score = scoreRun(replay.state, { checksRight: checks.filter(Boolean).length, gapsRight: gapsOk, potion });
     const medal = medalFor(course, score.seconds, run.maths, run.gentle);
-    const added = addRun(saved.progress, { level: def.id, maths: run.maths, seconds: score.seconds, medal, bumps: replay.state.bumps, checks, rightGaps: gapsOk, potionUsed: score.potion });
+    const added = addRun(saved.progress, { level: def.id, maths: run.maths, seconds: score.seconds, medal, bumps: replay.state.bumps, checks, rightGaps: gapsOk, potionUsed: score.potion }, nzDate(new Date(services.now())));
     const today = await services.runsToday(player, nzDate(new Date(services.now())));
     const done = await services.finish(player, seed, saved.version, added.progress, {
       flaps: body.flaps, seconds: score.seconds, medal, bumps: replay.state.bumps, checksRight: checks.filter(Boolean).length, gapsRight: gapsOk, potion: score.potion,

@@ -46,6 +46,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         </section>
         <section>
           <h3 className="tf-h3">The 10 worlds</h3>
+          <p>Finish a level to open the next one. <strong>One new level opens each day</strong>, so come back tomorrow for the next world. You can fly any open level as often as you like.</p>
           <ol className="tf-howto__levels">
             {LEVELS.map((l) => (
               <li key={l.id}><strong>{l.name}.</strong> {l.newThing}</li>
