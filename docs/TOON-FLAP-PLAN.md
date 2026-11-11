@@ -2,7 +2,7 @@
 
 *Name **Toon Flap** (James picked it, 11 Nov 2026; id `toonflap`, prefix `.tf-`). James, 11 Nov 2026: "I have had a lot of requests for a flappy bird style game, it would go in the easy maths game section ... checks would ask maths questions to reduce time (like marble maths) there should be 10 initial levels of increasing difficulty."*
 
-**Status: plan only, nothing built.** Written 11 Nov 2026 from `main` after reading the game guide, LEARNING-DESIGN.md and Marble Rush's plan. Cartoon worlds picked from pupils' ideas (11 Nov); one series style per level (James); name Toon Flap (James) (section 11). Art waits for James's ComfyUI evenings: the game is built with drawn stand-ins first ([TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md)).
+**Status: F.1 and F.2 built (11 Nov 2026), not live.** Shared rules in `shared/toonflap/`, screens and a preview in `src/games/toonflap/` and `preview/toonflap/` (section 12 has what changed while building). Written 11 Nov 2026 from `main` after reading the game guide, LEARNING-DESIGN.md and Marble Rush's plan. Cartoon worlds picked from pupils' ideas (11 Nov); one series style per level (James); name Toon Flap (James) (section 11). Art waits for James's ComfyUI evenings: the game is built with drawn stand-ins first ([TOON-FLAP-ART-PLAN.md](TOON-FLAP-ART-PLAN.md)).
 
 ## The short version
 
@@ -208,3 +208,14 @@ Branch `toonflap`, own folders only (guide section 2). Next free migration numbe
 1. **Art style:** settled 11 Nov: a different animated series' style for each level (art plan section 1). Asked on a card: does the bird change style in each world (recommended) or stay one look?
 2. **Name:** Toon Flap (James, 11 Nov 2026).
 3. Decided in this plan unless James says otherwise: bump-and-carry-on (no game over) with +3 s; checks take 3 s off; answer gaps from level 3 take 2 s off; no rescue questions; no daily limit; Sky Dash after level 10.
+
+## 12. Built so far (11 Nov 2026)
+
+**F.1** `shared/toonflap/`: `config.ts` (every number), `levels.ts` (the 10 levels as data; each course is built from a fixed number stream, so it's the same every time), `engine.ts` (physics, replay, time, medals, flap encoding), `maths.ts` (question slots, the seed's right gaps, gap labels), `collection.ts` (flyers, trails, potions, unlocks, next-step line), `bot.ts`, `medals.ts` (written by `npm run toonflap:sim -- --write-medals`). The sim flies every level with no bumps through every answer gap, and with Gentle wings.
+
+Changes from the plan, found while building:
+- **A bump puts the bird back just in front of the wall it hit** (in the opening, a little low), not at the last perch, so a bump really costs about 3 seconds (Marble Rush works the same way since James's 20 Oct change). Hovering (start, after a bump, on a perch) costs no time; the next tap flies on.
+- **Perches sit at the height of the next opening**, so the tap that flies on doesn't send the bird into the next wall.
+- **Revive potions: 10 checks right in a row** (the run carries on between levels; no level has 5 checks, so "5 in one run" couldn't happen) or a first gold. The sim's steady pupil gets about 1.3 a week.
+- **All 10 levels open quickly:** bumps never end a run, so a pupil playing 8 runs a sitting opens all 10 in about a week, not 3. Flyers (3 finishes each) and golds are the longer goals.
+- Medal times (seconds, with maths / maths off): Toon Garden 28/31, Mesa Mayhem 35/41, Bubble Reef 38/46, Cheese Kitchen 41/51, Donut Town 42/55, Spooky Manor 48/61, Paper Peaks 45/60, Volcano Island 50/65, Robot City 53/71, Cosmic Storm 61/81. Silver allows 2 bumps and 1 miss.
