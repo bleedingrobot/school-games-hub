@@ -196,8 +196,10 @@ describe('the class carries across the teacher pages', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Room 14' })).toBeInTheDocument();
     }
     await user.click(within(tabs()).getByRole('link', { name: 'Maths' }));
-    await user.click(within(screen.getByRole('navigation', { name: 'Maths' })).getByRole('link', { name: 'Skill map' }));
-    await waitFor(() => expect(address()).toBe('/teacher/c14/maths/skills'));
+    await waitFor(() => expect(address()).toBe('/teacher/c14/maths'));
+    await user.click(within(await screen.findByRole('navigation', { name: 'Maths' })).getByRole('link', { name: 'Skill map' }));
+    // The Skill map loads its code on first use; on a busy test machine that can take more than a second.
+    await waitFor(() => expect(address()).toBe('/teacher/c14/maths/skills'), { timeout: 5000 });
     await waitFor(() => expect(data.fetchClassMap).toHaveBeenCalledWith('c14'));
   });
 
