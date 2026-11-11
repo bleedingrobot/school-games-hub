@@ -26,7 +26,7 @@ import { FoundationalGrid } from './FoundationalGrid';
 
 const student = (id: string, name: string): MapStudent => ({ id, name, realName: null, ladder: {} as MapStudent['ladder'], enabledTables: undefined, division: false, facts: [] });
 const names = ['Kiwi Fern', 'Tui Moss', 'Weka Reed', 'Pipi Dune', 'Hoki Bay'];
-const stuck = { daysDone: 6, lastDay: '2026-11-06', level: 5, recent: ['02', '03', '04', '05', '06', '09'].map((d) => ({ day: `2026-11-${d}`, wrong: 0, taps: 8, level: 5 })) };
+const stuck = { daysDone: 6, lastDay: '2026-11-06', level: 5, good: null, since: null, recent: ['02', '03', '04', '05', '06', '09'].map((d) => ({ day: `2026-11-${d}`, wrong: 0, taps: 8, level: 5 })) };
 const data: FoundationalClass = {
   map: { classId: 'c', className: '3B', yearLevel: 3, auto: false, students: names.map((n, i) => student(`s${i}`, n)) },
   pupils: new Map(names.map((_, i) => [`s${i}`, { games: { hop: { ...stuck, recent: stuck.recent.map((c, j) => ({ ...c, day: `2026-11-0${j + 1}` })) } }, quickLooks: null }])),
@@ -58,6 +58,19 @@ describe('Foundational grid', () => {
     const [alert] = await foundationalAlerts('hop', 'c');
     expect(alert.text).toContain('Hop: 5 pupils on the same step');
     expect(alert.text).toContain('(Kiwi Fern, Tui Moss, Weka Reed and 2 more)');
+    expect(alert.section).toBe('progress?show=stuck&game=hop');
+  });
+
+  it('keeps flags out of a column: a "! N" button by the name opens the list and closes again', () => {
+    render(<FoundationalGrid rows={classRows(data, '2026-11-09')} className="3B" />);
+    expect(screen.queryByRole('columnheader', { name: 'Flags' })).toBeNull();
+    const button = screen.getAllByRole('button', { name: /flags? for Kiwi Fern/ })[0];
+    expect(button).toHaveTextContent(/^! \d+$/);
+    expect(screen.queryByRole('region', { name: 'Flags for Kiwi Fern' })).toBeNull();
+    fireEvent.click(button);
+    expect(screen.getByRole('region', { name: 'Flags for Kiwi Fern' })).toHaveTextContent(/6 days on Step 2/);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('region', { name: 'Flags for Kiwi Fern' })).toBeNull();
   });
 });
 
@@ -116,7 +129,7 @@ describe('the five newer games in the teacher view (S17)', () => {
   });
 
   it('says "Robin: 5 pupils on the same step" when five pupils sit on step 3 for 5 or more days', async () => {
-    const on3 = { daysDone: 6, lastDay: '2026-11-06', level: 3, recent: ['02', '03', '04', '05', '06', '09'].map((d) => ({ day: `2026-11-${d}`, wrong: 0, taps: 8, level: 3 })) };
+    const on3 = { daysDone: 6, lastDay: '2026-11-06', level: 3, good: null, since: null, recent: ['02', '03', '04', '05', '06', '09'].map((d) => ({ day: `2026-11-${d}`, wrong: 0, taps: 8, level: 3 })) };
     const robin: FoundationalClass = { ...data, pupils: new Map(names.map((_, i) => [`s${i}`, { games: { robin: on3 }, quickLooks: null }])) };
     const spy = vi.spyOn(await import('../../data/foundational'), 'foundationalClass').mockResolvedValue(robin);
     const [alert] = await foundationalAlerts('robin', 'c');
@@ -156,7 +169,7 @@ describe('the older games keep up with their longer ladders (S23)', () => {
   });
 
   it('shows a Hop pupil on step 200 as top with its name, and one on step 3 with its name and not top', () => {
-    const at = (level: number) => tracksOf({ games: { hop: { daysDone: 4, lastDay: '2026-11-06', level, recent: [] } }, quickLooks: null }).find((t) => t.id === 'hop')!;
+    const at = (level: number) => tracksOf({ games: { hop: { daysDone: 4, lastDay: '2026-11-06', level, good: null, since: null, recent: [] } }, quickLooks: null }).find((t) => t.id === 'hop')!;
     expect(at(200)).toMatchObject({ levelLabel: 'Step 6 of 6: Counting in tens past 100', top: true });
     expect(at(3)).toMatchObject({ levelLabel: 'Step 4 of 6: Counting in threes', top: false });
   });

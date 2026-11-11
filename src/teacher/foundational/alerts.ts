@@ -77,7 +77,9 @@ function lineFor(track: string, name: string, levelWord: string, flagged: { name
   }
   const best = ORDER.map((kind) => ({ kind, names: byKind.get(kind) ?? [] })).reduce((a, b) => (b.names.length > a.names.length ? b : a));
   if (best.names.length === 0) return [];
-  return [{ id: `foundational-${track}`, text: `${name}: ${phrase(best.kind, best.names.length, levelWord)} (${who(best.names)})`, section: GRID_SECTION }];
+  // The "same step" line opens the Progress tab on the stuck pupils in that game; the other lines still open the grid.
+  const section = best.kind === 'same-level' ? `progress?show=stuck&game=${track}` : GRID_SECTION;
+  return [{ id: `foundational-${track}`, text: `${name}: ${phrase(best.kind, best.names.length, levelWord)} (${who(best.names)})`, section }];
 }
 
 /** Today's alert for one game, for its definition's `teacher.alerts`. Nothing while the game is switched off for the class. */

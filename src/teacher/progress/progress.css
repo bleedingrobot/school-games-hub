@@ -1,6 +1,7 @@
 /* The Progress tab. Colours are always paired with a mark or words, never colour alone. */
 .progress {
   --pg-moving: #3b82f6;
+  --pg-nearly: #10b981;
   --pg-stuck: #e11d48;
   --pg-top: #1e40af;
   --pg-quiet: #9ca3af;
@@ -34,6 +35,7 @@
   border-radius: 4px;
 }
 .progress__key--moving { background: var(--pg-moving); }
+.progress__key--nearly { background: var(--pg-nearly); }
 .progress__key--stuck { background: var(--pg-stuck); }
 .progress__key--top { background: var(--pg-top); }
 .progress__key--quiet { background: var(--pg-quiet); }
@@ -137,6 +139,7 @@
   background: var(--pg-rest);
 }
 .progress__cell[data-state='moving'] .progress__box--on { background: var(--pg-moving); }
+.progress__cell[data-state='nearly'] .progress__box--on { background: var(--pg-nearly); }
 .progress__cell[data-state='stuck'] .progress__box--on { background: var(--pg-stuck); }
 .progress__cell[data-state='top'] .progress__box--on { background: var(--pg-top); }
 .progress__cell[data-state='quiet'] .progress__box--on { background: var(--pg-quiet); }
@@ -151,6 +154,7 @@
   font-size: 0.78rem;
   font-weight: 800;
 }
+.progress__tag--nearly { background: #d1fae5; color: #047857; }
 .progress__tag--stuck { background: #ffe4e6; color: #be123c; }
 .progress__tag--top { background: #dbeafe; color: var(--pg-top); }
 .progress__tag--quiet { background: var(--pg-rest); color: #4b5563; }
@@ -257,6 +261,8 @@
 .ladder__chip:hover { background: var(--tint); }
 .ladder__chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .ladder__note { color: var(--ink-soft); font-weight: 400; font-size: 0.8rem; white-space: nowrap; }
+.ladder__chip[data-state='nearly'] { border-color: var(--pg-nearly); }
+.ladder__chip[data-state='nearly'] .ladder__note { color: #047857; font-weight: 700; }
 .ladder__chip[data-state='stuck'] { border-color: var(--pg-stuck); }
 .ladder__chip[data-state='stuck'] .ladder__note { color: #be123c; font-weight: 700; }
 .ladder__chip[data-state='top'] { border-color: var(--pg-moving); background: #eff6ff; }
@@ -278,3 +284,83 @@
   .ladder__head { margin: 0; }
   .ladder__chips { flex-direction: row; flex-wrap: wrap; }
 }
+
+/* Pupil page: "Steps in each game" */
+.pupil-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.pupil-steps__row--none {
+  display: flex;
+  gap: 12px;
+  padding: 8px 10px;
+  color: var(--ink-soft);
+}
+.pupil-steps__link {
+  display: grid;
+  grid-template-columns: 9rem auto minmax(0, 1fr) auto;
+  grid-template-areas: 'name track where first' '. . days first';
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+.pupil-steps__link:hover { background: var(--tint); }
+.pupil-steps__link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pupil-steps__name { grid-area: name; font-weight: 800; }
+.pupil-steps__row--none .pupil-steps__name { min-width: 9rem; }
+.pupil-steps__track { grid-area: track; display: inline-flex; gap: 3px; }
+.pupil-steps__where { grid-area: where; font-weight: 600; }
+.pupil-steps__days { grid-area: days; color: var(--ink-soft); font-size: 0.85rem; }
+.pupil-steps__days:empty { display: none; }
+.pupil-steps__first-try { grid-area: first; min-width: 4.5rem; text-align: right; color: var(--ink-soft); }
+.pupil-steps__first-try:empty { display: block; }
+.pupil-steps__box {
+  box-sizing: border-box;
+  width: 18px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--pg-rest);
+}
+.pupil-steps__box--current { outline: 2px solid var(--ink); outline-offset: 1px; }
+.pupil-steps__row[data-state='moving'] .pupil-steps__box--on { background: var(--pg-moving); }
+.pupil-steps__row[data-state='nearly'] .pupil-steps__box--on { background: var(--pg-nearly); }
+.pupil-steps__row[data-state='stuck'] .pupil-steps__box--on { background: var(--pg-stuck); }
+.pupil-steps__row[data-state='top'] .pupil-steps__box--on { background: var(--pg-top); }
+.pupil-steps__row[data-state='quiet'] .pupil-steps__box--on { background: var(--pg-quiet); }
+.pupil-steps__row[data-state='stuck'] .pupil-steps__days { color: #be123c; font-weight: 700; }
+@media (max-width: 760px) {
+  .pupil-steps__link {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'name name' 'track where' '. days' '. first';
+  }
+  .pupil-steps__first-try:empty { display: none; }
+}
+/* 'Who needs a look' pills above the table. */
+.progress__looks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.progress__look {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.progress__look[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: #fff; }
+.progress__only { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }

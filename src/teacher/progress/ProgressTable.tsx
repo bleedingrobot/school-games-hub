@@ -27,6 +27,7 @@ type SortId = (typeof SORTS)[number]['id'];
 
 const STATE_WORDS: Record<CellState['state'], string> = {
   moving: 'moving up',
+  nearly: 'nearly ready to move up',
   stuck: 'stuck',
   top: 'top step done',
   quiet: 'not played for 10 school days',
@@ -47,6 +48,7 @@ export function cellWords(col: ProgressColumn, cell: CellState): string {
 
 function Tag({ cell }: { cell: CellState }) {
   if (cell.state === 'stuck') return <span className="progress__tag progress__tag--stuck">{cell.daysOnStep}d</span>;
+  if (cell.state === 'nearly') return <span className="progress__tag progress__tag--nearly">↑</span>;
   if (cell.state === 'top') return <span className="progress__tag progress__tag--top">★</span>;
   if (cell.state === 'quiet') return <span className="progress__tag progress__tag--quiet">zz</span>;
   return null;
@@ -86,6 +88,7 @@ export function ProgressTable({ classId, columns, rows }: { classId: string; col
       <div className="progress__tools">
         <ul className="progress__legend" aria-label="What the colours and marks mean">
           <li><span className="progress__key progress__key--moving" aria-hidden="true" /> Moving up</li>
+          <li><span className="progress__key progress__key--nearly" aria-hidden="true" /> <b>↑</b> nearly ready for the next step</li>
           <li><span className="progress__key progress__key--stuck" aria-hidden="true" /> <b>7d</b> same step 5 or more days</li>
           <li><span className="progress__key progress__key--top" aria-hidden="true" /> <b>★</b> top step done</li>
           <li><span className="progress__key progress__key--quiet" aria-hidden="true" /> <b>zz</b> not played for 10 school days</li>

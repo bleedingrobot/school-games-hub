@@ -1,18 +1,22 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { FoundationalClass, GameProgress } from '../../data/foundational';
 import type { MapStudent } from '../../data/skillMap';
-import { buildTable } from './Progress';
+import { buildTable, filterRows, showCounts } from './Progress';
+import Progress from './Progress';
 import { buildBoard } from './LadderBoard';
 import { ProgressTable } from './ProgressTable';
 import { cellState } from './state';
+import { stepKeys as hopKeys } from '../../../shared/hop/round';
 
+vi.mock('../TeacherClass', () => ({ useTeacherClass: () => ({ current: { id: 'c', name: '3B' } }) }));
+vi.mock('../foundational/alerts', () => ({ enabledGames: async () => ['robin'] }));
 vi.mock('../../data/foundational', async (orig) => ({ ...(await orig<typeof import('../../data/foundational')>()), foundationalClass: async () => data }));
 
 const TODAY = '2026-11-11';
 const rounds = (level: number, days: string[]) => days.map((day) => ({ day, wrong: 0, taps: 8, level }));
-const game = (level: number, days: string[], lastDay = days[0]): GameProgress => ({ daysDone: days.length, lastDay, level, recent: rounds(level, days) });
+const game = (level: number, days: string[], lastDay = days[0], extra: Partial<GameProgress> = {}): GameProgress => ({ daysDone: days.length, lastDay, level, good: null, since: null, ...extra, recent: rounds(level, days) });
 const student = (id: string, name: string): MapStudent => ({ id, name, realName: `${id}.x`, ladder: {} as MapStudent['ladder'], enabledTables: undefined, division: false, facts: [] });
 
 const robin = {
@@ -34,6 +38,31 @@ describe('Progress', () => {
     expect(cellState('robin', robin.quiet, TODAY).state).toBe('quiet');
     expect(cellState('robin', robin.moving, TODAY)).toMatchObject({ state: 'moving', daysOnStep: 2 });
     expect(cellState('robin', undefined, TODAY).state).toBe('none');
+  });
+
+  it('is nearly ready for a step game one good go from passing, not before', () => {
+    const days = ['2026-11-10', '2026-11-09'];
+    expect(cellState('robin', game(2, days, days[0], { good: 1 }), TODAY)).toMatchObject({ state: 'nearly', step: { n: 2 } });
+    expect(cellState('robin', game(2, days, days[0], { good: 0 }), TODAY).state).toBe('moving');
+    expect(cellState('robin', game(2, days), TODAY).state).toBe('moving');
+    // Stuck and top still win.
+    expect(cellState('robin', game(6, days, days[0], { good: 1 }), TODAY).state).toBe('top');
+  });
+
+  it('is nearly ready for Hop when 60% of the step\'s facts are secure', () => {
+    const days = ['2026-11-10'];
+    const keys = hopKeys(10);
+    const fact = (key: string, box: number) => ({ key, attempts: 3, correct: 3, avgMs: 900, box, lastSeen: 0, quickDays: [] });
+    const enough = keys.map((k, i) => fact(k, i < Math.ceil(keys.length * 0.6) ? 2 : 1));
+    const few = keys.map((k, i) => fact(k, i < Math.ceil(keys.length * 0.6) - 1 ? 2 : 1));
+    expect(cellState('hop', game(10, days), TODAY, enough).state).toBe('nearly');
+    expect(cellState('hop', game(10, days), TODAY, few).state).toBe('moving');
+    expect(cellState('hop', game(10, days), TODAY).state).toBe('moving');
+  });
+
+  it('counts the days on a step from since, today included', () => {
+    expect(cellState('robin', game(2, ['2026-11-10', '2026-11-09'], '2026-11-10', { since: '2026-11-06' }), TODAY).daysOnStep).toBe(6);
+    expect(cellState('robin', game(2, ['2026-11-10'], '2026-11-10', { since: '2026-11-06' }), TODAY).state).toBe('stuck');
   });
 
   it('shows a row for each pupil and a column only for games that are on', () => {
@@ -74,5 +103,27 @@ describe('Progress', () => {
     const robinBoard = buildBoard(mk([1, 2, 3, 4, 5, 6], 'robin'), 'robin', TODAY);
     expect(robinBoard.map((c) => c.pupils.map((p) => p.name))).toEqual([['Nobody'], ['P0'], ['P1'], ['P2'], ['P3'], ['P4'], ['P5']]);
     expect(robinBoard[3].sub).toBe('Give 6 to 10');
+  });
+
+  it('counts pupils for each pill and ?show= keeps only those pupils', () => {
+    const { rows } = buildTable(data, ['robin'], TODAY);
+    expect(showCounts(rows, null)).toEqual({ stuck: 1, nearly: 0, top: 1, quiet: 1 });
+    expect(showCounts(rows, 'hop')).toEqual({ stuck: 0, nearly: 0, top: 0, quiet: 0 });
+    expect(filterRows(rows, 'stuck', null).map((r) => r.name)).toEqual(['Pupil stuck']);
+    expect(filterRows(rows, 'stuck', 'robin')).toHaveLength(1);
+    expect(filterRows(rows, null, null)).toHaveLength(4);
+  });
+
+  it('the page at ?show=stuck&game=robin shows only the stuck pupil, and a pill toggles it off', async () => {
+    render(
+      <MemoryRouter initialEntries={['/teacher/c/progress?show=stuck&game=robin']}>
+        <Progress />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Pupil stuck');
+    expect(screen.queryByText('Pupil top')).toBeNull();
+    expect(screen.getByRole('button', { name: '1 stuck' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: '1 stuck' }));
+    expect(await screen.findByText('Pupil top')).toBeTruthy();
   });
 });

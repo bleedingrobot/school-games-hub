@@ -36,7 +36,10 @@ the extra data that makes that sharper.
 
 ## Done and live
 
-Nothing yet.
+- P1 Same words for steps: PR #393, 11 Nov 2026.
+- P2 Progress tab, every game's steps: PR #394, 11 Nov 2026.
+- P3 Ladder board: PR #395, 11 Nov 2026.
+- P4, P5, P6 and P7 together: PR #396, 11 Nov 2026. P4 counts days on a step including today (on it since 6 Nov, today 11 Nov, is 6 days).
 
 ## Decided
 

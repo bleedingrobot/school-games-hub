@@ -82,6 +82,8 @@ export interface LizardStudent {
   hardest: string[];
   /** Their last three challenges, for the slips summary. */
   recent: { round: Round; taps: Tap[] }[];
+  /** The usual slip saved with their rounds (last 10), or null/missing: older rounds saved none, so the page works it out from `recent`. */
+  slip?: string | null;
 }
 
 /** One student's den, or null if they haven't played. */

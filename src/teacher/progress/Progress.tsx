@@ -29,10 +29,33 @@ export function buildTable(data: FoundationalClass, on: readonly FoundationalGam
   const rows = data.map.students.map((s) => {
     const p = data.pupils.get(s.id);
     const cells: ProgressRow['cells'] = {};
-    for (const c of columns) cells[c.id] = c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today);
+    for (const c of columns) cells[c.id] = c.id === QUICK_LOOKS_ID ? quickCellState(p?.quickLooks, today) : cellState(c.id as FoundationalGameId, p?.games[c.id as FoundationalGameId], today, s.facts);
     return { id: s.id, name: s.name, realName: s.realName, cells };
   });
   return { columns, rows };
+}
+
+export const SHOWS = ['stuck', 'nearly', 'top', 'quiet'] as const;
+export type Show = (typeof SHOWS)[number];
+
+const PILL_WORDS: Record<Show, (n: number) => string> = {
+  stuck: (n) => `${n} stuck`,
+  nearly: (n) => `${n} nearly ready to move up`,
+  top: (n) => `${n} finished a game`,
+  quiet: (n) => `${n} gone quiet`,
+};
+
+const hasState = (row: ProgressRow, show: Show, game: string | null) =>
+  game ? row.cells[game]?.state === show : Object.values(row.cells).some((c) => c.state === show);
+
+/** Pupils (not cells) with each state, over all games or just `game`. Exported for tests. */
+export function showCounts(rows: readonly ProgressRow[], game: string | null): Record<Show, number> {
+  return Object.fromEntries(SHOWS.map((s) => [s, rows.filter((r) => hasState(r, s, game)).length])) as Record<Show, number>;
+}
+
+/** Only the pupils with that state (in `game`, if given). No `show` keeps everyone. Exported for tests. */
+export function filterRows(rows: ProgressRow[], show: Show | null, game: string | null): ProgressRow[] {
+  return show ? rows.filter((r) => hasState(r, show, game)) : rows;
 }
 
 function Panel({ classId, name }: { classId: string; name: string }) {
@@ -56,6 +79,26 @@ function Panel({ classId, name }: { classId: string; name: string }) {
   const games = useMemo(() => (data ? boardGames(data.data, data.on) : []), [data]);
   const view = params.get('view') === 'board' ? 'board' : 'table';
   const game = games.find((g) => g.id === params.get('game'))?.id ?? games[0]?.id ?? '';
+  const showParam = params.get('show');
+  const show = SHOWS.find((s) => s === showParam) ?? null;
+  const narrowedTo = show ? table?.columns.find((c) => c.id === params.get('game')) ?? null : null;
+  const narrow = narrowedTo?.id ?? null;
+  const counts = useMemo(() => (table ? showCounts(table.rows, narrow) : null), [table, narrow]);
+  const rows = useMemo(() => (table ? filterRows(table.rows, show, narrow) : []), [table, show, narrow]);
+  const boardData = useMemo(() => {
+    if (!data || !show) return data?.data ?? null;
+    const keep = new Set(rows.map((r) => r.id));
+    return { ...data.data, map: { ...data.data.map, students: data.data.map.students.filter((s) => keep.has(s.id)) } };
+  }, [data, show, rows]);
+  const setShow = (next: Show | null) =>
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (next === null || next === show) {
+        n.delete('show');
+        if (view === 'table') n.delete('game');
+      } else n.set('show', next);
+      return n;
+    }, { replace: true });
   const setView = (v: 'table' | 'board') =>
     setParams((p) => {
       const n = new URLSearchParams(p);
@@ -92,8 +135,25 @@ function Panel({ classId, name }: { classId: string; name: string }) {
     <section className="panel" aria-labelledby="progress-title">
       <h2 id="progress-title" className="panel__title">
         {view === 'board' ? 'One game’s steps' : 'Every game’s steps'}
-        <span className="panel__count">{table.rows.length} student{table.rows.length === 1 ? '' : 's'}</span>
+        <span className="panel__count">{show ? `${rows.length} of ${table.rows.length}` : table.rows.length} student{table.rows.length === 1 ? '' : 's'}</span>
       </h2>
+      {counts && table.rows.length > 0 && table.columns.length > 0 && (
+        <div className="progress__looks" role="group" aria-label="Who needs a look">
+          {SHOWS.map((s) => (
+            <button key={s} type="button" className="progress__look" data-show={s} aria-pressed={show === s} onClick={() => setShow(s)}>
+              {PILL_WORDS[s](counts[s])}
+            </button>
+          ))}
+          {narrowedTo && (
+            <span className="progress__only">
+              {narrowedTo.name} only.{' '}
+              <button type="button" className="progress__sort" onClick={() => setParams((p) => { const n = new URLSearchParams(p); n.delete('game'); return n; }, { replace: true })}>
+                All games
+              </button>
+            </span>
+          )}
+        </div>
+      )}
       <div className="progress__views" role="group" aria-label="View">
         <button type="button" className="progress__sort" aria-pressed={view === 'table'} onClick={() => setView('table')}>Every game</button>
         <button type="button" className="progress__sort" aria-pressed={view === 'board'} onClick={() => setView('board')}>One game</button>
@@ -106,10 +166,12 @@ function Panel({ classId, name }: { classId: string; name: string }) {
         <p className="panel__empty">
           No Foundational games are switched on for {name}. <Link to={`/teacher/${classId}/games`}>Turn some on in Games.</Link>
         </p>
-      ) : view === 'board' && data ? (
-        <LadderBoard classId={classId} data={data.data} games={games} game={game} today={today} onPick={pick} />
+      ) : show && rows.length === 0 ? (
+        <p className="panel__empty">Nobody in this class is like that right now.</p>
+      ) : view === 'board' && data && boardData ? (
+        <LadderBoard classId={classId} data={boardData} games={games} game={game} today={today} onPick={pick} />
       ) : (
-        <ProgressTable classId={classId} columns={table.columns} rows={table.rows} />
+        <ProgressTable classId={classId} columns={table.columns} rows={rows} />
       )}
     </section>
   );
