@@ -17,10 +17,14 @@
 }
 /* The game and its Settings take what they need; the maths switch gets the rest. */
 .games-table__table thead th:nth-child(1),
-.games-table__table thead th:nth-child(4) {
+.games-table__table thead th:nth-child(5) {
   width: 1%;
 }
 .games-table__table thead th:nth-child(2) {
+  width: 9.5rem;
+}
+/* A narrow column: just the Unlimited switch for the six games that have one. */
+.games-table__table thead th:nth-child(3) {
   width: 9.5rem;
 }
 .games-table__group th {
@@ -29,6 +33,114 @@
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* What's on at a glance: the count, and the Show chips. */
+.games-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.games-summary__count {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.games-summary__show {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.games-summary__show-label {
+  margin-right: 4px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.games-summary__chip,
+.games-table__bulk {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+.games-summary__chip[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+.games-table__bulk {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.games-table__bulk:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+.games-table__bulk:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.games-table__bulk--confirm {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+.games-summary__chip:focus-visible,
+.games-table__bulk:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* A section's heading: its name, "8 of 11 on", and All on / All off (or the one question when All off is asked). */
+.games-table__group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+.games-table__group-count {
+  letter-spacing: normal;
+  text-transform: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.games-table__group-buttons,
+.games-table__confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.games-table__confirm-text {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+.games-table__group-status {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.games-table__group-status:empty {
+  display: none;
 }
 .games-table__game {
   padding-right: 20px;
@@ -130,6 +242,7 @@
     white-space: normal;
   }
   .games-table__table .games-table__on,
+  .games-table__table .games-table__unlimited,
   .games-table__table .games-table__maths {
     grid-column: 1 / -1;
     display: flex;
@@ -144,13 +257,21 @@
     flex: 1 0 auto;
     max-width: 100%;
   }
+  /* A game with no Unlimited switch has no line for it. */
+  .games-table__table .games-table__unlimited:empty {
+    display: none;
+  }
   .games-table__on::before,
+  .games-table__unlimited::before,
   .games-table__maths::before {
     content: attr(data-label);
-    flex: 0 0 3.5em;
+    flex: 0 0 6.5em;
     color: var(--ink-soft);
     font-size: 0.85rem;
     font-weight: 700;
+  }
+  .games-summary {
+    padding: 10px;
   }
   .games-table__table .games-table__settings {
     grid-row: 1;

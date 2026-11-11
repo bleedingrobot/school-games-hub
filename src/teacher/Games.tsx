@@ -6,13 +6,16 @@
  *
  * Each game says what goes in its row through `teacher` in its GameDefinition (section 6).
  */
-import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
-import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
+import { fetchGameSwitches, NON_MATHS_COLUMN, saveGameSwitches, switchColumnOf } from '../data/games';
+import { saveNonMathsGames } from '../data/nonMathsGames';
+import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
 import { GAMES } from '../games/registry';
 import type { DashboardGroup, GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
-import { PUPILS_SEE_IT, SettingChoice, SettingToggle, type Choice } from './Settings';
+import { UNLIMITED_GAMES, type UnlimitedGame } from '../../shared/unlimited';
+import { PUPILS_SEE_IT, SettingChoice, SettingToggle, settingErrorText, type Choice } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { useSetting } from './useSetting';
 import './games.css';
@@ -123,44 +126,205 @@ interface NonMaths {
   onSaved: (on: boolean) => void;
 }
 
+/** What the Games table shows: all games, only the ones that are on, or only the ones that are off. */
+type Show = 'all' | 'on' | 'off';
+const SHOW_KEY = 'teacher-games-show';
+const SHOWS: { value: Show; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+];
+
+/** The chip the teacher last picked, remembered on this computer. Browsers can refuse storage; then it is All each visit. */
+function useRememberedShow(): [Show, (next: Show) => void] {
+  const [show, setShow] = useState<Show>(() => {
+    try {
+      const kept = localStorage.getItem(SHOW_KEY);
+      return kept === 'on' || kept === 'off' ? kept : 'all';
+    } catch {
+      return 'all';
+    }
+  });
+  return [
+    show,
+    (next) => {
+      setShow(next);
+      try {
+        localStorage.setItem(SHOW_KEY, next);
+      } catch {
+        // Not remembered; the chip still works.
+      }
+    },
+  ];
+}
+
 function GamesTable({ classId, links }: { classId: string; links: Map<string, HTMLAnchorElement> }) {
-  const loaded = useSetting(() => fetchNonMathsGames(classId), [classId]);
-  const [saved, setSaved] = useState<boolean | null>(null);
-  useEffect(() => setSaved(null), [classId]);
-  const nonMaths: NonMaths = { value: saved ?? loaded.value, failed: loaded.failed, onSaved: setSaved };
+  const { current } = useTeacherClass();
+  const className = current?.name ?? 'this class';
+  const loaded = useSetting(() => fetchGameSwitches(classId), [classId]);
+  const unlimited = useSetting(() => fetchUnlimitedToday(classId), [classId]);
+  // Switches changed from this page, over what was loaded; the rows are built again (`version`) after a whole section changes.
+  const [changed, setChanged] = useState<Record<string, boolean>>({});
+  const [version, setVersion] = useState(0);
+  const [show, setShow] = useRememberedShow();
+  const [confirming, setConfirming] = useState<DashboardGroup | null>(null);
+  const [busy, setBusy] = useState<DashboardGroup | null>(null);
+  const [problem, setProblem] = useState<{ group: DashboardGroup; text: string } | null>(null);
+  const allOff = useRef(new Map<DashboardGroup, HTMLButtonElement>());
+  useEffect(() => {
+    setChanged({});
+    setConfirming(null);
+    setProblem(null);
+  }, [classId]);
+
+  const valueOf = (column: string): boolean | null => changed[column] ?? loaded.value?.[column] ?? null;
+  const nonMaths: NonMaths = {
+    value: valueOf(NON_MATHS_COLUMN),
+    failed: loaded.failed,
+    onSaved: (on) => setChanged((c) => ({ ...c, [NON_MATHS_COLUMN]: on })),
+  };
+  /** On, off, or null while it loads. A game with no switch is always on. */
+  const isOn = (game: GameDefinition): boolean | null => {
+    const column = switchColumnOf(game);
+    return column ? valueOf(column) : true;
+  };
+
+  const counts = useMemo(() => {
+    const on = GAMES.filter((g) => isOn(g) === true).length;
+    return { on, total: GAMES.length, ready: GAMES.every((g) => isOn(g) !== null) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded.value, changed]);
+
+  async function setSection(group: DashboardGroup, on: boolean) {
+    const columns = [...new Set(GAMES.filter((g) => g.group === group).map(switchColumnOf).filter((c): c is string => c !== null))];
+    setConfirming(null);
+    setProblem(null);
+    setBusy(group);
+    try {
+      await saveGameSwitches(Object.fromEntries(columns.map((c) => [c, on])), classId);
+      setChanged((c) => ({ ...c, ...Object.fromEntries(columns.map((column) => [column, on])) }));
+      setVersion((v) => v + 1);
+    } catch (error) {
+      setProblem({ group, text: settingErrorText(error) });
+    } finally {
+      setBusy(null);
+    }
+    if (!on) setTimeout(() => allOff.current.get(group)?.focus());
+  }
+
+  const sections = GAME_GROUPS.map(({ title, group }) => {
+    const games = GAMES.filter((g) => g.group === group);
+    const switchable = games.filter((g) => switchColumnOf(g) !== null);
+    const onCount = games.filter((g) => isOn(g) === true).length;
+    const shown = games.filter((g) => show === 'all' || isOn(g) === (show === 'on'));
+    return { title, group, games, switchable, onCount, shown };
+  }).filter((section) => section.games.length > 0);
+  const nothingShown = sections.every((section) => section.shown.length === 0);
+
   return (
     <section className="panel games-table" aria-labelledby="games-table-title">
       <h2 id="games-table-title" className="panel__title">
         Games for this class
       </h2>
+      <div className="games-summary">
+        <p className="games-summary__count" aria-live="polite">
+          On for {className}: <strong>{counts.ready ? `${counts.on} of ${counts.total} games` : '…'}</strong>
+        </p>
+        <div className="games-summary__show" role="group" aria-label="Show games">
+          <span className="games-summary__show-label" aria-hidden="true">
+            Show
+          </span>
+          {SHOWS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className="games-summary__chip"
+              aria-pressed={show === option.value}
+              onClick={() => setShow(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {nothingShown && counts.ready && <p className="panel__empty">{show === 'on' ? 'No games are on for this class.' : 'Every game is on for this class.'}</p>}
       {/* The roles are the table's own: they keep it a table for screen readers when a narrow screen lays the rows out as cards. */}
       <table role="table" className="games-table__table" aria-labelledby="games-table-title">
         <thead role="rowgroup">
           <tr role="row">
             <th role="columnheader" scope="col">Game</th>
             <th role="columnheader" scope="col">On</th>
+            <th role="columnheader" scope="col">Unlimited today</th>
             <th role="columnheader" scope="col">Maths</th>
             <th role="columnheader" scope="col">
               <span className="sr-only">Settings</span>
             </th>
           </tr>
         </thead>
-        {GAME_GROUPS.map(({ title, group }) => {
-          const games = GAMES.filter((g) => g.group === group);
-          if (games.length === 0) return null;
+        {sections.map(({ title, group, switchable, onCount, games, shown }) => {
+          if (shown.length === 0) return null;
+          const loadedAll = loaded.value !== null;
+          const mixed = (on: boolean) => switchable.some((g) => isOn(g) !== on);
           return (
             <tbody key={group} role="rowgroup">
               <tr role="row" className="games-table__group">
-                <th role="columnheader" scope="colgroup" colSpan={4}>
-                  {title}
+                <th role="columnheader" scope="colgroup" colSpan={5}>
+                  <div className="games-table__group-head">
+                    <span>{title}</span>
+                    <span className="games-table__group-count">{loadedAll ? `${onCount} of ${games.length} on` : '…'}</span>
+                    {switchable.length > 0 && confirming !== group && (
+                      <span className="games-table__group-buttons">
+                        <button
+                          type="button"
+                          className="games-table__bulk"
+                          disabled={!loadedAll || busy !== null || !mixed(true)}
+                          aria-label={`All on, ${title}`}
+                          onClick={() => void setSection(group, true)}
+                        >
+                          All on
+                        </button>
+                        <button
+                          type="button"
+                          className="games-table__bulk"
+                          ref={(el) => {
+                            if (el) allOff.current.set(group, el);
+                            else allOff.current.delete(group);
+                          }}
+                          disabled={!loadedAll || busy !== null || !mixed(false)}
+                          aria-label={`All off, ${title}`}
+                          onClick={() => setConfirming(group)}
+                        >
+                          All off
+                        </button>
+                      </span>
+                    )}
+                    {confirming === group && (
+                      <span className="games-table__confirm" role="alertdialog" aria-label="Turn off a section">
+                        <span className="games-table__confirm-text">
+                          Turn off all {switchable.length} {title} games for {className}?
+                        </span>
+                        <button type="button" className="games-table__bulk games-table__bulk--confirm" autoFocus onClick={() => void setSection(group, false)}>
+                          Turn off
+                        </button>
+                        <button type="button" className="games-table__bulk" onClick={() => setConfirming(null)}>
+                          Keep them on
+                        </button>
+                      </span>
+                    )}
+                    <span className="games-table__group-status" role="status">
+                      {busy === group ? 'Saving…' : problem?.group === group ? problem.text : ''}
+                    </span>
+                  </div>
                 </th>
               </tr>
-              {games.map((game) => (
+              {shown.map((game) => (
                 <GameRow
-                  key={`${game.id}-${classId}`}
+                  key={`${game.id}-${classId}-${version}`}
                   game={game}
                   classId={classId}
                   nonMaths={nonMaths}
+                  onSwitched={(column, on) => setChanged((c) => ({ ...c, [column]: on }))}
+                  unlimited={unlimited}
                   linkRef={(el) => (el ? links.set(game.id, el) : links.delete(game.id))}
                 />
               ))}
@@ -172,8 +336,24 @@ function GamesTable({ classId, links }: { classId: string; links: Map<string, HT
   );
 }
 
-function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; classId: string; nonMaths: NonMaths; linkRef: (el: HTMLAnchorElement | null) => void }) {
+function GameRow({
+  game,
+  classId,
+  nonMaths,
+  onSwitched,
+  unlimited,
+  linkRef,
+}: {
+  game: GameDefinition;
+  classId: string;
+  nonMaths: NonMaths;
+  onSwitched: (column: string, on: boolean) => void;
+  unlimited: { value: Record<UnlimitedGame, boolean> | null; failed: boolean };
+  linkRef: (el: HTMLAnchorElement | null) => void;
+}) {
   const t = game.teacher;
+  const column = switchColumnOf(game);
+  const unlimitedGame = UNLIMITED_GAMES.find((g) => g.id === game.id);
   return (
     <tr role="row">
       <th role="rowheader" scope="row" className="games-table__game">
@@ -184,7 +364,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
       </th>
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
-          <GameSwitchSetting game={game} classId={classId} />
+          <GameSwitchSetting game={game} classId={classId} onSaved={column ? (on) => onSwitched(column, on) : undefined} />
         ) : game.group === 'no-maths' ? (
           <>
             <SettingToggle
@@ -201,6 +381,18 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
           </>
         ) : (
           <span className="games-table__quiet">always</span>
+        )}
+      </td>
+      <td role="cell" className="games-table__unlimited" data-label="Unlimited today">
+        {unlimitedGame && (
+          <SettingToggle
+            compact
+            label={`${game.name} unlimited today`}
+            about={`Unlimited ${unlimitedGame.lifts} today. It turns itself off at midnight.`}
+            value={unlimited.value?.[unlimitedGame.id] ?? null}
+            loadFailed={unlimited.failed}
+            save={(on) => saveUnlimitedToday(unlimitedGame.id, on, classId)}
+          />
         )}
       </td>
       <td role="cell" className="games-table__maths" data-label="Maths">
@@ -234,7 +426,7 @@ function GameRow({ game, classId, nonMaths, linkRef }: { game: GameDefinition; c
 }
 
 /** A game's on/off switch for the class, as it sits in its row of the Games table. */
-export function GameSwitchSetting({ game, classId }: { game: GameDefinition; classId: string }) {
+export function GameSwitchSetting({ game, classId, onSaved }: { game: GameDefinition; classId: string; onSaved?: (on: boolean) => void }) {
   const switchOf = game.teacher!.switch!;
   const value = switchOf.useValue(classId);
   return (
@@ -246,6 +438,7 @@ export function GameSwitchSetting({ game, classId }: { game: GameDefinition; cla
       savedText={PUPILS_SEE_IT}
       loadFailed={value.failed}
       save={(on) => switchOf.save(on, classId)}
+      onSaved={onSaved}
     />
   );
 }
