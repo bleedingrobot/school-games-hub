@@ -6,6 +6,7 @@ import { themeOf } from '../avatar/avatarParts';
 import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
+import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
 import { CrashScreen } from './CrashScreen';
 import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
@@ -72,6 +73,7 @@ function ThemedLayout() {
           </Suspense>
         </CrashScreen>
       </main>
+      <NewTrophyMoment />
     </div>
   );
 }
