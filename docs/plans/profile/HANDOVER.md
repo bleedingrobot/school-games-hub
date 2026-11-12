@@ -10,7 +10,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - [ ] P6 Retire levels and show trophies around the hub (size M). Waits for: P5. Not alongside dashboard card D2.
 - [x] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Done 12 Nov 2026: eight trophies, a watcher on each record, back-awards, "Trophy won!" line (`src/trophies/`), full book needs 75.
 - [x] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Done 12 Nov 2026: six once-a-year trophies (Star Ring, Black Hole, Heart Diamond, Rainbow Toon, Gem Crown, Miner's Lamp), watchers, back-awards, "Trophy won!" line in each game.
-- [ ] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Waits for: P3.
+- [x] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Done 12 Nov 2026: `season_counts` (kept by the New Season), classmate wins per hub season (wins that earned points), 15-win trophies, Chess/Checkers season top three crowned by the hourly `season-crowns` job, Champion rank trophies, Hawk Feather, Golden Bow (counts from today: arrows used weren't kept before).
 - [ ] P8 part 2: Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training. Waits for: P3.
 - [ ] P9 The early-years games (size M, database). Waits for: P3.
 - [ ] P10 Coming back, two-game rewards and the school hall of fame (size M, database). Waits for: P4.
