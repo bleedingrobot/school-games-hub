@@ -85,12 +85,13 @@ select is((select array_agg(a.player order by a.player) from public.achievements
   array[pg_temp.uid(3)], 'Home learner for the Saturday go only');
 select ok(exists (select 1 from public.achievements a where a.player = pg_temp.uid(3) and a.achievement = 'hw-weekend-1'), 'and Weekend player');
 
--- New trophies: my school's pupils only.
+-- New trophies: my school's pupils only, and never a trophy won by a maths result (the Royal Crown).
+select public.award_trophy(pg_temp.uid(1), 'decree-crown');
 select public.award_trophy(pg_temp.uid(1), 'hub-regular'), public.award_trophy(pg_temp.uid(4), 'hub-regular'),
        public.award_trophy(pg_temp.uid(11), 'hub-regular');
 select pg_temp.as(2);
 select is((select jsonb_agg(e ->> 'title') from jsonb_array_elements(public.my_home_page() -> 'recentTrophies') e),
-  '["Season Regular"]'::jsonb, 'the home page shows a classmate''s new trophy, not a hidden pupil''s or a teacher''s');
+  '["Season Regular"]'::jsonb, 'the home page shows a classmate''s new trophy, not a hidden pupil''s, a teacher''s or a maths one');
 
 select pg_temp.reset();
 select set_config('role', 'anon', true);
