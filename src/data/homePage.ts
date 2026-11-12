@@ -15,6 +15,7 @@ import { cardsById, type FriendGame, type FriendStats, type PlayerCard } from '.
 import type { PowerGame } from './powerGames';
 import { FriendlyError } from './profile';
 import type { MyProgress } from './progress';
+import type { TrophyShelf } from './trophies';
 import type { SpaceGame } from './spaceGames';
 
 export interface HomePage {
@@ -47,6 +48,8 @@ export interface HomePage {
    * pupil with none yet. Empty lists if the answer has none (an older database).
    */
   topGames: TopGames;
+  /** My trophy count and favourite three, for the welcome strip (profile card P6). Null if the answer has none. */
+  trophyShelf: TrophyShelf | null;
   /**
    * The cards' parts as the database sent them, each read by its own card (so the maths code stays in the maths cards' download).
    * A part the answer doesn't have is left out, and that card asks for itself.
@@ -100,6 +103,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     season: readClock(row<RawMovesLeft>(raw, 'movesLeft')?.season),
     lordSeason: readLordSeason(row<RawMovesLeft>(raw, 'movesLeft')?.lordSeason, row<RawMovesLeft>(raw, 'movesLeft')?.lord, nzDate(new Date())),
     topGames: readTopGames(raw.topGames),
+    trophyShelf: row<TrophyShelf>(raw, 'trophyShelf'),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }

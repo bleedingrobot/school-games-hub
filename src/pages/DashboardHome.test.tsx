@@ -49,7 +49,10 @@ describe('the home page in one request', () => {
 
   it('shows a busy pupil the same cards and numbers', async () => {
     await show(busyPupil());
-    expect(screen.getAllByText('Level 2').length).toBeGreaterThan(0);
+    // Profile card P6: no level any more; the trophy count and favourite three instead.
+    expect(screen.getByText(/2 trophies/)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Favourite trophies: Slayer’s Sword \(gold\)/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Level \d/)).not.toBeInTheDocument();
     expect(screen.getByText('60 points')).toBeInTheDocument();
     // Recent games: the newest 3 of every kind, with the points and the classmate's name (the rest are on the profile page).
     const recent = within(screen.getByRole('region', { name: 'Recent games' })).getAllByRole('listitem');

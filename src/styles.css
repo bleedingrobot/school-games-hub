@@ -1897,27 +1897,6 @@ main:focus {
   color: var(--won);
   white-space: nowrap;
 }
-.level-bar {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
-}
-.level-bar__text {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 12px;
-  color: var(--ink-soft);
-  font-weight: 700;
-}
-.level-bar__text strong {
-  color: var(--ink);
-}
-.level-bar__link {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-.level-bar progress,
 .my-progress__ranks progress {
   width: 100%;
   height: 14px;
@@ -1927,16 +1906,13 @@ main:focus {
   background: var(--bg);
   overflow: hidden;
 }
-.level-bar progress::-webkit-progress-bar,
 .my-progress__ranks progress::-webkit-progress-bar {
   background: var(--bg);
 }
-.level-bar progress::-webkit-progress-value,
 .my-progress__ranks progress::-webkit-progress-value {
   background: var(--play-dark);
   border-radius: 999px;
 }
-.level-bar progress::-moz-progress-bar,
 .my-progress__ranks progress::-moz-progress-bar {
   background: var(--play-dark);
   border-radius: 999px;
@@ -2071,26 +2047,6 @@ main:focus {
 .badge-steps {
   list-style: none;
   padding-left: 0;
-}
-.level-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.level-steps li {
-  display: grid;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: var(--tint);
-  text-align: center;
-}
-.level-steps span {
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-  font-weight: 700;
 }
 
 /* ---------- Teacher view ---------- */
@@ -2413,29 +2369,6 @@ main:focus {
   align-items: center;
   gap: 4px 10px;
   font-variant-numeric: tabular-nums;
-}
-.hero-level > span:first-child {
-  color: var(--h-box-ink);
-}
-.hero-level progress {
-  width: 160px;
-  height: 10px;
-  appearance: none;
-  border: none;
-  border-radius: 999px;
-  background: var(--h-bar-track);
-  overflow: hidden;
-}
-.hero-level progress::-webkit-progress-bar {
-  background: var(--h-bar-track);
-}
-.hero-level progress::-webkit-progress-value {
-  background: var(--h-bar-fill);
-  border-radius: 999px;
-}
-.hero-level progress::-moz-progress-bar {
-  background: var(--h-bar-fill);
-  border-radius: 999px;
 }
 .hero-level__link {
   color: var(--h-link);
@@ -3336,9 +3269,6 @@ main:focus {
   }
   .in-progress__item .button {
     flex: 1;
-  }
-  .hero-level progress {
-    width: 120px;
   }
 }
 

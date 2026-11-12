@@ -22,7 +22,7 @@ const achievements = [
 vi.mock('../data/homePage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/homePage')>()),
   fetchMyHomePage: vi.fn(async () => ({
-    progress: { points: 60, level: 2, levelStart: 50, nextLevelAt: 125, weekPoints: 60, games: [], achievements, recent: [] },
+    progress: { points: 60, weekPoints: 60, games: [], achievements, recent: [] },
     botRecent: [], botStats: [], friendRecent: [], friendStats: [], friendOpen: [], players: new Map(),
     spaceRecent: [], spaceOpen: [], spaceStats: null, cardRecent: [], cardOpen: [], cardStats: null,
     powerRecent: [], powerOpen: [], powerStats: null, moves: {}, parts: {},
@@ -153,6 +153,7 @@ describe('my profile', () => {
     }
     await renderAt('/profile#stats', auth());
     expect(fold(/My stats/)).toHaveAttribute('aria-expanded', 'true');
-    expect(await screen.findByText(/Level 2/)).toBeInTheDocument();
+    expect(await screen.findByText(/this week/)).toBeInTheDocument();
+    expect(screen.queryByText(/Level \d/)).not.toBeInTheDocument();
   });
 });

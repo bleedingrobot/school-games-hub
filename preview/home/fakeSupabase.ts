@@ -38,7 +38,7 @@ world.tables.name_words = [
   { kind: 'animal', word: 'Otter' }, { kind: 'animal', word: 'Kiwi' },
 ];
 world.jobs.my_progress = {
-  points: 215, level: 3, levelStart: 125, nextLevelAt: 300, weekPoints: 48,
+  points: 215, weekPoints: 48,
   games: [
     { game: 'chess', rank: { rank: 'silver', next: 'gold', progress: 0.4, gamesNeeded: null, ratedGames: 6 }, weekRatingChange: 5 },
     { game: 'checkers', rank: { rank: 'bronze', next: 'silver', progress: 0.7, gamesNeeded: null, ratedGames: 4 }, weekRatingChange: 2 },
@@ -55,7 +55,20 @@ world.jobs.my_progress = {
 };
 world.jobs.my_maths_focus = focus;
 world.jobs.my_ladder = { facts: secure, settings: {}, focus };
-world.jobs.leaderboard = [];
+// How points work: the server's points rules, made up.
+world.jobs.progress_rules = {
+  bot: { 'very-easy': { lost: 1, drawn: 2, won: 3 }, easy: { lost: 2, drawn: 3, won: 5 }, medium: { lost: 3, drawn: 5, won: 8 } },
+  friend: { lost: 4, drawn: 6, won: 8 },
+  botDailyCap: 40, pairDailyLimit: 5, achievementPoints: 10, levels: [0, 50, 125, 225, 350, 500, 675, 875, 1100, 1350],
+  ratingK: 20, weeklyMinGames: 3, allTimeMinGames: 5, improvedMinGames: 3, championMinGames: 15,
+};
+// The leaderboard (profile card P6): made-up classmates with their favourite trophies beside their names.
+world.jobs.leaderboard = [
+  { place: 1, display_name: 'Brave Kiwi 7', avatar: {}, rank: 'gold', points: 64, games: 12, is_me: false },
+  { place: 2, display_name: 'Speedy Otter 27', avatar: {}, rank: 'silver', points: 48, games: 9, is_me: true },
+  { place: 3, display_name: 'Calm Tui 3', avatar: {}, rank: 'bronze', points: 31, games: 7, is_me: false },
+  { place: 4, display_name: 'Lively Lynx 5', avatar: {}, rank: 'bronze', points: 12, games: 3, is_me: false },
+];
 // My games (dashboard plan D2): what this made-up pupil plays most, and their class.
 world.jobs.my_top_games = { mine: ['dragon-maths', 'archery', 'diamond', 'isles'], classGames: ['dragon-maths', 'archery', 'isles', 'clan-quest'] };
 // The trophy cabinet (profile card P5): made-up trophies. ?trophies=0 shows an empty cabinet; ?new=1 shows the
@@ -84,6 +97,20 @@ world.jobs.my_trophies = {
   ],
   favourites,
 };
+/** My trophy count and favourite three (profile card P6), as trophy_shelves and the home page send them. */
+const myShelf = () => ({
+  count: TROPHIES.length,
+  favourites: favourites.map((id) => TROPHIES.find((t) => t.id === id)).filter((t) => t)
+    .map((t) => ({ id: t!.id, game: t!.game, kind: t!.kind, name: t!.name, tier: t!.tier })),
+});
+const OTHERS: Record<string, unknown> = {
+  'Brave Kiwi 7': { count: 6, favourites: [
+    { id: 'isles-all', game: 'isles', kind: 'trophy', name: 'Island Hopper', tier: 'gold' },
+    { id: 'cq-clan-win', game: 'clan-quest', kind: 'trophy', name: 'Clan Champion', tier: 'silver' },
+    { id: 'dm-first-five', game: 'dragon-maths', kind: 'picture', name: 'Dragon Head', tier: 'bronze' },
+  ] },
+  'Calm Tui 3': { count: 1, favourites: [{ id: 'chess-gold', game: 'chess', kind: 'trophy', name: 'Chess Gold', tier: 'bronze' }] },
+};
 let newOnes = params.get('new') ? [
   { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
   { id: 'dm-first-five', game: 'dragon-maths', name: 'Dragon Head', how: 'Be one of the first five in the school to slay the dragon in a season.', kind: 'picture', tier: 'silver', count: 2 },
@@ -105,7 +132,18 @@ export const supabase = {
       updateMe(avatar);
       return Promise.resolve({ data: null, error: null });
     }
-    if (name === 'my_home_page') return Promise.resolve({ data: homeAnswer(), error: null });
+    if (name === 'trophy_shelves') {
+      const out: Record<string, unknown> = {};
+      for (const n of (args?.names as string[]) ?? []) {
+        if (n === ME.display_name) out[n] = myShelf();
+        else if (OTHERS[n]) out[n] = OTHERS[n];
+      }
+      return Promise.resolve({ data: out, error: null });
+    }
+    if (name === 'my_home_page') {
+      world.jobs.my_trophy_shelf = myShelf();
+      return Promise.resolve({ data: homeAnswer(), error: null });
+    }
     if (name === 'my_trophies') return Promise.resolve({ data: { ...(world.jobs.my_trophies as object), favourites }, error: null });
     if (name === 'my_new_trophies') return Promise.resolve({ data: newOnes, error: null });
     if (name === 'mark_my_trophies_seen') {

@@ -7,6 +7,7 @@ import { AuthContext, type AuthState } from '../auth/AuthContext';
 import { fetchMyNewTrophies, markMyTrophiesSeen, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy } from '../data/trophies';
 import { playSound } from '../games/sounds';
 import { SoundProvider } from '../sound';
+import { FavouriteTrophies, TrophyCount } from './FavouriteTrophies';
 import { NewTrophyMoment } from './NewTrophyMoment';
 import { TrophyCabinet, type MyCabinet } from './TrophyCabinet';
 
@@ -141,5 +142,16 @@ describe('trophy cabinet', () => {
     // Already on the profile: no button to go there.
     expect(screen.queryByRole('button', { name: /See my cabinet/ })).not.toBeInTheDocument();
     vi.mocked(fetchMyNewTrophies).mockReset();
+  });
+});
+
+describe('trophies around the hub (P6)', () => {
+  it('shows the count and favourite three, and nothing for a pupil with no favourites', () => {
+    const shelf = { count: 4, favourites: [{ id: 'dm-slayer', game: 'lord', kind: 'trophy' as const, name: 'Slayer’s Sword', tier: 'gold' as const }] };
+    const { rerender } = render(<TrophyCount shelf={shelf} />);
+    expect(screen.getByText(/4 trophies/)).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Favourite trophies: Slayer’s Sword (gold)' })).toBeInTheDocument();
+    rerender(<FavouriteTrophies shelf={{ count: 1, favourites: [] }} />);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 });

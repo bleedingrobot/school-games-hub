@@ -96,3 +96,26 @@ export async function markMyTrophiesSeen(): Promise<number> {
   if (error) throw new FriendlyError("We couldn't save that. Please try again.");
   return (data ?? 0) as number;
 }
+
+/** One of a pupil's favourite trophies, as classmates see it. */
+export interface FavouriteTrophy extends Pick<TrophyType, 'id' | 'game' | 'kind' | 'name'> {
+  tier: Tier;
+}
+
+/** What shows beside a pupil's name around the hub: how many different trophies, and their favourite three. */
+export interface TrophyShelf {
+  count: number;
+  favourites: FavouriteTrophy[];
+}
+
+/** Trophy shelves for schoolmates, by made-up name (names outside my school are left out). Empty if it can't be read. */
+export async function fetchTrophyShelves(names: string[]): Promise<Record<string, TrophyShelf>> {
+  if (names.length === 0) return {};
+  try {
+    const { data, error } = await supabase.rpc('trophy_shelves', { names: names.slice(0, 60) });
+    if (error || !data || typeof data !== 'object') return {};
+    return data as Record<string, TrophyShelf>;
+  } catch {
+    return {};
+  }
+}
