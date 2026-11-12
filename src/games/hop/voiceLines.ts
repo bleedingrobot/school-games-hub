@@ -9,6 +9,7 @@ import { EARLY_FACTS, parseSkip, SKIP_FROM_STEPS } from '../../../shared/maths/s
 import { FRIEND_NAMES } from './art';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/hop/';
@@ -73,5 +74,7 @@ export function allVoiceLines(): string[] {
   for (const m of METALS.slice(1)) lines.add(WORDS.padTurned(m));
   for (const name of Object.values(FRIEND_NAMES)) lines.add(WORDS.jar(name));
   for (const s of HOP_STEPS.slice(1)) lines.add(WORDS.stepUp(s.step));
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }

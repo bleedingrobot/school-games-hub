@@ -2,7 +2,7 @@
  * One student's page (/teacher/:classId/students/:studentId; docs/TEACHER-VIEW-PLAN.md, section 4.3, stage 4). A real page, so
  * it can be linked to and the back button works. In order:
  *
- *   Overview      level and points, their maths (ladder place, warm-up, focus) and the last 7 days' questions and skips
+ *   Overview      points and trophies, their maths (ladder place, warm-up, focus) and the last 7 days' questions and skips
  *   Steps         the step they are on in each Foundational game (progress/PupilSteps.tsx)
  *   Games         wins and losses against bots and friends, then one folded line per game they've played; a game's own panel
  *                 loads only when its line is opened
@@ -16,6 +16,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
+import { TrophyCount, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { whenPlayed } from '../components/MyGames';
 import { fetchQuickLooksStudent, QUICK_SLIP_WORDS, type QuickLooksStudent } from '../data/foundational';
 import { fetchStudentCard, type StudentCard } from '../data/classOverview';
@@ -126,6 +127,7 @@ export function StudentPage() {
 /** Overview, Games and Recent games: everything that reads teacher_student_detail. */
 function StudentDetail({ card, classId }: { card: StudentCard; classId: string }) {
   const [detail, setDetail] = useState<PersonDetail | null>(null);
+  const shelves = useTrophyShelves([card.name]);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
@@ -147,7 +149,7 @@ function StudentDetail({ card, classId }: { card: StudentCard; classId: string }
         </h2>
         {detail ? (
           <p className="person-panel__summary">
-            Points level {detail.level} · {detail.points} points
+            {detail.points} points · <TrophyCount shelf={shelves[card.name]} />
           </p>
         ) : (
           <p className="panel__empty">{failed ?? 'Loading…'}</p>

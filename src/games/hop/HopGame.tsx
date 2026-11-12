@@ -205,7 +205,7 @@ function Home({ state, say, onPlay }: { state: HopState; say: (t: string) => voi
 }
 
 /** A pad changes colour, or, on the thirtieth day, Hop reaches the Glow-worm Party and the Golden Glow Jar is won. */
-function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t: string) => void; nextGame?: NextGame | null; onNext: () => void }) {
+function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t: string, onEnd?: () => void) => void; nextGame?: NextGame | null; onNext: () => void }) {
   // On a jar day the new pond has already started, so show the one just finished: every pad gold.
   const pond = pondAfter(result.jar ? result.daysDone - 1 : result.daysDone);
   const pads = result.jar
@@ -233,7 +233,7 @@ function Finish({ result, say, nextGame, onNext }: { result: HopFinish; say: (t:
         pose="cheer"
         at={result.jar ? PADS : result.padChanged ?? -1}
       />
-      <WhatsNext prefix="hp" title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="hp" wearMe={result.jar} title={main} spoken={line} note={stepUp} buttonLabel="OK" say={say} onNext={onNext}>
         {result.jar && <p className="hp-chip">{opening}</p>}
         {band === 'tricky' && <p className="hp-chip">{WORDS.trickyChip}</p>}
         {result.jar && (cushion ? <img className="hp-prize" src={cushion} alt="The Golden Glow Jar" /> : <span className="hp-jar hp-jar--big" role="img" aria-label="The Golden Glow Jar" />)}

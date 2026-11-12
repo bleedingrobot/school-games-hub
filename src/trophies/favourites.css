@@ -1,0 +1,25 @@
+/* Trophies around the hub (profile card P6): the favourite three beside a name, and the trophy count. */
+.fav-trophies {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  vertical-align: middle;
+  margin-left: 6px;
+  flex: none;
+}
+.fav-trophies .trophy-art__emblem {
+  display: none;
+}
+.fav-trophies .trophy-art > svg,
+.fav-trophies .trophy-art__pic {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+.trophy-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.trophy-count .fav-trophies {
+  margin-left: 2px;
+}

@@ -7,7 +7,7 @@ import { ActivityCard, GameCard } from '../components/GameCard';
 import { nzDay } from '../../shared/monsters/world/battleCap';
 import { spottedNote } from '../../shared/monsters/world/weather';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
-import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
+import { AchievementList, HeroPoints, nextAchievements, RankBadge } from '../components/Progress';
 import type { SeasonClock } from '../../shared/clans/season';
 import type { HomeLordSeason } from '../../shared/lord/seasonRoad';
 import { fetchMyHomePage, type HomePage, type TopGames } from '../data/homePage';
@@ -396,7 +396,7 @@ function DashboardPage() {
           <h1 id="hero-title">{profile?.display_name}</h1>
           {progress && (
             <div className="hero__meta">
-              <HeroLevel progress={progress} />
+              <HeroPoints progress={progress} shelf={answer?.trophyShelf ?? undefined} />
               {progress.games.map((g) => (
                 <RankBadge key={g.game} rank={g.rank.rank} game={g.game} />
               ))}

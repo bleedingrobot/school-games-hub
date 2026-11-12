@@ -30,9 +30,6 @@ vi.mock('../data/progress', async (importOriginal) => ({
   fetchRules: vi.fn(async () => rules),
   fetchMyProgress: vi.fn(async () => ({
     points: 60,
-    level: 2,
-    levelStart: 50,
-    nextLevelAt: 125,
     weekPoints: 60,
     games: [
       { game: 'checkers', rank: { rank: 'gold', next: 'champion', progress: 1, gamesNeeded: 4, ratedGames: 11 }, weekRatingChange: 30 },
@@ -67,7 +64,6 @@ vi.mock('../data/teacher', () => ({
   fetchPeople: vi.fn(async () => people),
   fetchPersonDetail: vi.fn(async () => ({
     points: 50,
-    level: 2,
     games: [
       { game: 'checkers', bot: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, friend: { played: 2, won: 1, lost: 1, drawn: 0, left: 1 }, rank: 'silver', achievements: 3 },
       { game: 'chess', bot: { played: 4, won: 2, lost: 1, drawn: 1, left: 0 }, friend: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, rank: 'bronze', achievements: 2 },
@@ -206,7 +202,7 @@ describe('teacher view', () => {
     expect(within(tabs).getByRole('link', { name: 'Maths' })).toHaveAttribute('href', '/teacher/c12/maths');
     expect(within(tabs).queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
     await user.click(within(await roster()).getByRole('link', { name: /Brave Kiwi 7/ }));
-    await screen.findByText('Points level 2 · 50 points');
+    await screen.findByText(/^50 points/);
     const manage = screen.getByRole('region', { name: 'Manage' });
     expect(within(manage).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
     expect(within(manage).getByRole('button', { name: /New name/ })).toBeInTheDocument();

@@ -246,7 +246,7 @@ function Home({ state, say, onPlay }: { state: RobinState; say: (t: string) => v
 }
 
 /** A basket changes colour, or, on the thirtieth day, the Golden Berry Feast is won; and what changes next time. */
-function Finish({ result, say, onNext }: { result: RobinFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: RobinFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Berry Feast day the next set of baskets has already started, so show the one just finished: every basket gold.
   const row = basketsAfter(result.feast ? result.daysDone - 1 : result.daysDone);
   const things = result.feast ? row.baskets.map(() => ({ metal: 'gold' as const })) : row.baskets.map((metal) => ({ metal }));
@@ -265,7 +265,7 @@ function Finish({ result, say, onNext }: { result: RobinFinish; say: (t: string)
   return (
     <div className={`rb-home${result.feast ? ' rb-home--prize' : ''}${showing ? ' rb-showing' : ''}`}>
       <Log baskets={things} friend={row.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="rb" title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="rb" wearMe={result.feast} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
         <p className="rb-chip">{how}</p>
         <p className="rb-chip">{next}</p>
         {result.feast && <span className="rb-prize"><GoldenFeast /></span>}
