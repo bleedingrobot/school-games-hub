@@ -39,7 +39,7 @@ Write a short answer to each in `docs/<GAME>-PLAN.md` (template: [templates/plan
 
 **4. Progress bars.** In the game: a bar or road to the big goal and a level bar (`LevelBar` in `src/components/Progress.tsx`). The home page's points level and next achievements come free from points and achievements. A season strip on the home page is not a hook: its own small PR. Never show a pupil's maths results to classmates or rank by maths.
 
-**5. Achievements.** A table in the plan: name, what it's for in pupil words, measure and number, roughly how many pupils get it, kept through New Season or not. One most pupils get on day one, a few for steady play, one for the big goal. Build through `hub_games` ([5-server-and-saving.md](5-server-and-saving.md)).
+**5. Achievements.** A table in the plan: name, what it's for in pupil words, measure and number, roughly how many pupils get it, kept through New Season or not. One most pupils get on day one, a few for steady play, one for the big goal. Build through `hub_games` ([5-server-and-saving.md](5-server-and-saving.md)). Every achievement counts on the school's main Leaderboard board (most achievements), so they are the main way a game shows up there: an achievement that measures maths level (which step, how many right) must use a measure ending `_step` or `maths_right`, which the board leaves out. Effort (the Hard workers board and the homework achievements) counts only finished goes that write a `scored_games` row, which `add_game_points` does.
 
 **6. Home card art.** A one-line scene and prompt for James to paint (style: [6-art-voice-cards.md](6-art-voice-cards.md)).
 
