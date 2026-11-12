@@ -23,7 +23,7 @@ export function storyLine({ v, n, teen }: Said): string {
   if (v === 0) return `Ten berries on the branch, and ${n} more. How many berries?`;
   if (v === 1) return `${n} berr${n === 1 ? 'y' : 'ies'}, and ten more on the branch. How many berries?`;
   if (v === 2) return `Tūī needs ${teen} berries. Here is a kete of ten. How many more berries?`;
-  return `${teen} berries. The kete of ten flies away. How many berries are left?`;
+  return `${teen} berries, and ten are eaten. How many berries are left?`;
 }
 
 /** The sum read aloud: levels 4 to 0. */
@@ -57,7 +57,7 @@ export function finishLine(title: string[], tricky: boolean, nextStep: Step | nu
 }
 
 export function allVoiceLines(): string[] {
-  const lines = new Set<string>([WORDS.berriesBack, WORDS.lookTogether, WORDS.nowTry, WORDS.tenAndTen, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
+  const lines = new Set<string>([WORDS.howManyBerries, WORDS.countAgain, WORDS.eaten, WORDS.berriesBack, WORDS.lookTogether, WORDS.nowTry, WORDS.tenAndTen, WORDS.whatsNext, nextPartWords(WORDS.part, false), nextPartWords(WORDS.part, true)]);
   for (const name of Object.values(FRIEND_NAMES)) {
     // The home line is said in parts (the title, then "come back tomorrow"), so each part is a clip of its own.
     for (const title of [WORDS.wants(name), WORDS.nextFriend(name)]) lines.add(homeLine(title, false));
@@ -71,6 +71,7 @@ export function allVoiceLines(): string[] {
       lines.add(WORDS.right(v >= 2 ? n : 10 + n, n));
     }
     lines.add(WORDS.rightRedo(n));
+    lines.add(WORDS.countRight(10 + n));
     // Mistakes that teach (maths review R5): why each kind of wrong nest is wrong. The number said is the nest tapped.
     if (n >= 2) lines.add(WORDS.why('reverse', n * 10 + 1, 0));
     lines.add(WORDS.why('total', 10 + n, 2));

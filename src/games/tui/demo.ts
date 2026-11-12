@@ -17,7 +17,7 @@ export function demoSteps(v: Way, n: number): DemoStep[] {
   const ask =
     v === 1 ? `Watch. ${n} plus ten. The ${n} berries come first.`
     : v === 2 ? `Watch. Ten plus how many makes ${teen}? Look for the empty spaces.`
-    : `Watch. ${teen} take away ten. The kete of ten flies away.`;
+    : `Watch. ${teen} berries. Munch, munch! Ten are eaten.`;
   const answer = v === 2 ? `${n} more berries. Ten and ${n} make ${teen}.` : v === 3 ? `${n} berries are left.` : `${n} and ten make ${teen}.`;
   return [
     { line: ask, target: 'start' },
