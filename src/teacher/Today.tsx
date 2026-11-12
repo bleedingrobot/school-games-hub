@@ -37,12 +37,14 @@ const errorText = (error: unknown) => (error instanceof FriendlyError ? error.me
 
 export function Today() {
   const { classId, current } = useTeacherClass();
+  // A game set changes Non-maths games too, so Lesson controls read their switches again after one is used.
+  const [setsUsed, setSetsUsed] = useState(0);
   if (!classId || !current) return null;
   return (
     <div className="today">
       <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
-      <GameSets key={`sets-${classId}`} classId={classId} name={current.name} />
-      <LessonControls key={`controls-${classId}`} target={{ kind: 'class', classId }} name={current.name} />
+      <GameSets key={`sets-${classId}`} classId={classId} name={current.name} onChanged={() => setSetsUsed((n) => n + 1)} />
+      <LessonControls key={`controls-${classId}-${setsUsed}`} target={{ kind: 'class', classId }} name={current.name} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
     </div>
