@@ -9,6 +9,7 @@ import { FRIEND_NAMES } from './art';
 import { demoLines } from './demo';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/korora/';
@@ -93,5 +94,7 @@ export function allVoiceLines(): string[] {
   for (const m of METALS.slice(1)) lines.add(WORDS.pebbleTurned(m));
   for (const line of shoes) lines.add(line);
   for (const up of [2, 3, 4] as const) lines.add(WORDS.levelUp(up));
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }

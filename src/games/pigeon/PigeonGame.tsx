@@ -194,7 +194,7 @@ function Home({ state, say, onPlay }: { state: PigeonState; say: (t: string) => 
 }
 
 /** A cluster changes colour, or, on the thirtieth day, the Golden Berry Branch is won. */
-function Finish({ result, say, onNext }: { result: PigeonFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: PigeonFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Berry Branch day the new branch has already started, so show the one just finished: every cluster gold.
   const branch = branchAfter(result.goldenBranch ? result.daysDone - 1 : result.daysDone);
   const clusters = result.goldenBranch
@@ -209,7 +209,7 @@ function Finish({ result, say, onNext }: { result: PigeonFinish; say: (t: string
   return (
     <div className={`pg-home${result.goldenBranch ? ' pg-home--prize' : ''}`}>
       <Branch scenery={result.goldenBranch ? 'gold' : branch.today} clusters={clusters} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="pg" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="pg" wearMe={result.goldenBranch} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="pg-chip">{how}</p>
         {up && <p className="pg-chip">{WORDS.nextStep(up)}</p>}
         {result.goldenBranch && <span className="pg-prize"><GoldenBranch /></span>}

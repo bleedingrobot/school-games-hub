@@ -9,6 +9,7 @@ import { FRIEND_NAMES } from './art';
 import { demoLines } from './demo';
 import { lookLine, whyLine, WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/pipi/';
@@ -72,5 +73,7 @@ export function allVoiceLines(): string[] {
   lines.add(WORDS.trickyChip);
   for (const level of [2, 3] as const) lines.add(WORDS.levelUp(level));
   lines.add(WORDS.whatsNext);
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }

@@ -4,6 +4,7 @@
  * ring's metal). The server checks `pic` and writes `picTier` itself (save_my_avatar, award_trophy), so the browser only
  * draws what it is given.
  */
+import { GARDEN_PICTURES } from './gardenPictures';
 
 export const TIERS = ['bronze', 'silver', 'gold'] as const;
 export type Tier = (typeof TIERS)[number];
@@ -35,7 +36,9 @@ export interface PictureArt {
  * One line per picture trophy, added by the card that adds the trophy (the first is P4's Dragon Head).
  * A picture that is not listed yet still draws: a trophy cup on its metal disc.
  */
-export const EARNED_PICTURES: Record<string, PictureArt> = {};
+export const EARNED_PICTURES: Record<string, PictureArt> = {
+  ...GARDEN_PICTURES, // P9: the 62 early-years friends
+};
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };
 

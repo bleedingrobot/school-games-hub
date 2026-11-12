@@ -7,6 +7,7 @@ import { FRIEND_NAMES, METALS } from '../../../shared/swamphen/progress';
 import { KEYS, STEPS, keyPair, kindOfKey, type Go, type Slip } from '../../../shared/swamphen/round';
 import { nextPartWords } from '../../components/NextPartChip';
 import { WORDS } from './words';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/swamphen/';
@@ -77,5 +78,7 @@ export function allVoiceLines(): string[] {
   }
   const mains = [WORDS.doneToday, ...METALS.slice(1).map((m) => WORDS.rowTurned(m as 'bronze')), ...Object.values(FRIEND_NAMES).map(WORDS.goldenGarden)];
   for (const main of mains) for (const how of Object.values(WORDS.how)) for (const up of [null, ...STEPS.slice(1).map((s) => s.step)]) lines.add(finishLine(main, how, up));
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }
