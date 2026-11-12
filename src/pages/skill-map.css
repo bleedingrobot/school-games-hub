@@ -311,15 +311,6 @@
   flex: none;
 }
 
-.skill-map__detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-top: 12px;
-}
-.skill-map__detail h2:focus {
-  outline: none;
-}
 .skill-map__keys {
   margin-top: 10px;
 }
@@ -337,4 +328,154 @@
     width: min(1480px, calc(100vw - 96px));
     transform: translateX(-50%);
   }
+}
+
+/* ---- Show menu and the "nobody yet" column */
+.skill-map__show {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.skill-map__show select {
+  font: inherit;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line, #ddd);
+  background: var(--surface, #fff);
+  color: var(--ink);
+}
+.skill-map .skill-map__rest {
+  width: 120px;
+  min-width: 120px;
+  max-width: 140px;
+  background: repeating-linear-gradient(135deg, var(--surface, #fff) 0 6px, var(--tint, #f3f4f6) 6px 7px);
+}
+.skill-map thead .skill-map__rest {
+  vertical-align: bottom;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line, #ddd);
+}
+.skill-map__rest button {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+.skill-map__rest button:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+}
+.skill-map__nothing {
+  margin: 8px 0;
+}
+.skill-map tbody tr[data-picked] > th,
+.skill-map tbody tr[data-picked] > .skill-map__place {
+  background-color: #fffbeb;
+}
+
+/* ---- the side panel: beside the table on a wide screen, a sheet from the bottom on a narrow one */
+.skill-map__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.skill-map__detail {
+  border: 1px solid var(--line, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+.skill-map__detail p {
+  margin: 0;
+}
+.skill-map__detail-top {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.skill-map__detail h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.skill-map__detail h3:focus {
+  outline: none;
+}
+.skill-map__close {
+  all: unset;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.skill-map__close:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+}
+.skill-map__detail-place {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.skill-map__detail-facts {
+  overflow-x: auto;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.skill-map__detail-class {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.skill-map__detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.skill-map__detail-actions .button {
+  min-height: 0;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+@media (min-width: 900px) {
+  .skill-map__body--detail {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+  .skill-map__detail {
+    position: sticky;
+    top: 12px;
+    max-height: max(320px, calc(100vh - 240px));
+    overflow-y: auto;
+  }
+}
+@media (max-width: 899px) {
+  .skill-map__detail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+.skill-map__show select {
+  width: auto;
+}
+.skill-map__detail .stats-table {
+  font-size: 0.78rem;
+}
+.skill-map__detail .stats-table :is(th, td) {
+  padding: 4px 5px;
 }

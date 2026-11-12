@@ -3,7 +3,7 @@ import { LADDER, } from './ladder';
 import { newStats, type FactStats } from './leitner';
 import { NO_LADDER, placeProgress, type LadderInfo } from './place';
 import { STEP_SECURE_SHARE } from './selector';
-import { cellFor, studentMap, } from './skillMap';
+import { cellFor, skillsInUse, studentMap } from './skillMap';
 
 // The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
 const built = LADDER.filter((s) => s.built && s.inAuto !== false);
@@ -21,14 +21,14 @@ const info = (over: Partial<LadderInfo> = {}): LadderInfo => ({
   ...over,
 });
 
-describe('the map agrees with ladderProgress', () => {
+describe('the skill map', () => {
   const everything = (box: number) =>
     withBox(
       allBuilt.flatMap((s) => s.keys),
       box,
     );
 
-  it('for every skill: secure or fluent exactly when ladderProgress says its share reaches 70%', () => {
+  it('agrees with ladderProgress on every skill, and shows a class only the skills it is using', () => {
     const cases: FactStats[][] = [
       [],
       everything(3),
@@ -48,6 +48,15 @@ describe('the map agrees with ladderProgress', () => {
       expect(map.progress.current?.id).toBe(progress.current?.id);
       expect(map.progress.secureCount).toBe(progress.secureCount);
     }
+
+    // Skills in use: what anyone has been asked or is on now, plus the next skill after the furthest pupil.
+    const [a, b, c] = built;
+    const ahead = studentMap([...withBox(a.keys, 3), ...withBox(b.keys.slice(0, 1), 1)], info());
+    const fresh = studentMap([], info());
+    expect([...skillsInUse([fresh])]).toEqual([a.id, b.id]);
+    const used = skillsInUse([ahead, fresh]);
+    expect(used.has(a.id) && used.has(b.id) && used.has(c.id)).toBe(true);
+    expect(used.size).toBe(3);
   });
 });
 

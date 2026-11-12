@@ -204,3 +204,28 @@ export function classCounts(maps: readonly StudentMap[], skillId: string): Recor
 /** One student's cell for a skill, or undefined if the skill isn't in the ladder. */
 export const cellFor = (map: StudentMap, skillId: string): SkillCell | undefined =>
   map.stages.flatMap((s) => s.cells).find((c) => c.skill.id === skillId);
+
+/**
+ * The skills a class is using, in ladder order: every skill a pupil has been asked or is on now, plus the next skill on the
+ * ladder after the furthest pupil's current one. Skills switched off for every pupil are left out. The teacher's Skill map shows
+ * these by default, so a class sees its own few skills rather than all 62.
+ */
+export function skillsInUse(maps: readonly StudentMap[]): Set<string> {
+  const used = new Set<string>();
+  let furthest = -1;
+  let path: readonly LadderSkill[] = [];
+  for (const m of maps) {
+    for (const cell of m.stages.flatMap((s) => s.cells)) if (cell.asked > 0 && cell.level !== 'off') used.add(cell.skill.id);
+    if (!m.current) continue;
+    used.add(m.current.id);
+    const skills = m.progress.skills.map((p) => p.skill);
+    const at = skills.findIndex((s) => s.id === m.current!.id);
+    if (at > furthest) {
+      furthest = at;
+      path = skills;
+    }
+  }
+  const next = path.slice(furthest + 1).find((s) => s.built && s.inAuto !== false && maps.some((m) => cellFor(m, s.id)?.level !== 'off'));
+  if (next) used.add(next.id);
+  return used;
+}
