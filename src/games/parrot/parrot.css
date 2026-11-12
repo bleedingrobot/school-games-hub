@@ -107,11 +107,11 @@
 .pr-progress { display: flex; gap: 6px; padding: 6px 8px 0; flex-wrap: wrap; }
 .pr-pip { width: 18px; height: 18px; border-radius: 50%; background: rgb(255 255 255 / 0.6); border: 2px solid var(--pr-teal-dark); }
 .pr-pip--done { background: var(--pr-gold); }
-.pr-stage { position: relative; flex: 1; width: min(100%, 720px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: pr-in 0.4s ease-out; }
+.pr-stage { position: relative; flex: 1; width: min(100%, 980px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; animation: pr-in 0.4s ease-out; }
 @keyframes pr-in { from { opacity: 0; translate: 0 10px; } }
 .pr-stage__friend { position: absolute; left: 0; bottom: 0; width: clamp(70px, 11vw, 140px); pointer-events: none; }
 
-.pr-saw { display: block; width: min(100%, 460px); height: auto; max-height: 38dvh; }
+.pr-saw { display: block; width: min(100%, 860px); height: auto; max-height: 44dvh; }
 .pr-saw--small { width: min(100%, 240px); }
 .pr-saw__props { transition: opacity 0.2s; }
 .pr-saw__props--gone { opacity: 0; }
