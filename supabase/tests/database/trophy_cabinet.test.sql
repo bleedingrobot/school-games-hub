@@ -1,4 +1,4 @@
--- The trophy cabinet (migration 20261112001000_trophy_cabinet.sql; docs/plans/profile/PLAN.md card P5):
+-- The trophy cabinet (migration 20261112002100_trophy_cabinet.sql; docs/plans/profile/PLAN.md card P5):
 -- favourites saved on the server, more "next" spots, and the small read for the "New trophy!" moment.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;

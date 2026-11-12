@@ -30,7 +30,7 @@ Every prompt assumes these standing rules, so they are not repeated in full each
 - Browser: `src/data/trophies.ts` (`fetchMyTrophies`, `fetchTrophiesOf`, `markMyTrophiesSeen`, `tierOf`). A picture's emoji and painting go in `EARNED_PICTURES` in `src/avatar/earnedPictures.ts`, one line per picture trophy; an unlisted one draws a cup on its metal disc.
 - `my_trophies().next` is the first three unearned by `sort`, whatever the class has switched on: P5 can filter by the games the pupil sees.
 
-**As built by P5** (migration `20261112001000_trophy_cabinet.sql`, test `supabase/tests/database/trophy_cabinet.test.sql`):
+**As built by P5** (migration `20261112002100_trophy_cabinet.sql`, test `supabase/tests/database/trophy_cabinet.test.sql`):
 
 - `my_trophies().next` now gives up to twelve, and the page shows the first three from games the class can see (`nextSpots` in `src/trophies/cabinet.ts`). It also gives `favourites`.
 - Favourites: `profiles.trophy_favourites` (up to three ids). `set_my_favourite_trophies(ids)` keeps only trophies the pupil holds and returns what it saved.
