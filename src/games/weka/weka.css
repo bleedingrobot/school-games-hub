@@ -201,6 +201,17 @@
 }
 @keyframes wk-nudge { 50% { translate: -50% -14%; } }
 
+/* Small arrows under the stones pointing up at the start, the big rock (10) and, once answered, the answer. */
+.wk-point {
+  position: absolute; top: 100%; left: 50%; translate: -50% 0; margin-top: 3px; width: max(15px, calc(var(--wk-step) * 0.4));
+  height: max(21px, calc(var(--wk-step) * 0.56)); overflow: visible; pointer-events: none; z-index: 2; animation: wk-fade 0.4s ease-out;
+}
+.wk-point path { stroke: #fffdf5; stroke-width: 2.5; stroke-linejoin: round; paint-order: stroke; }
+.wk-point--from path { fill: var(--wk-to); }
+.wk-point--ten path { fill: var(--wk-gold); }
+.wk-point--answer path { fill: var(--wk-on); }
+@keyframes wk-fade { from { opacity: 0; } }
+
 /* The split's two jumps under the stones, in the bond's colours. */
 .wk-jumps { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 3; }
 .wk-jumps__jump path { fill: none; stroke-width: 5; stroke-linecap: round; animation: wk-in 0.4s ease-out; }

@@ -616,9 +616,11 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
             {STONES.map((n) => {
               const numbered = shown === 'full' || n % 5 === 0 || phase !== 'ask' || toStones.has(n);
               const mark = toStones.has(n) ? 'to' : onStones.has(n) ? 'on' : null;
+              const point = n === go.from ? 'from' : n === 10 ? 'ten' : n === go.answer && phase !== 'ask' ? 'answer' : null;
               return (
                 <span key={n} data-n={n} className={`wk-path__spot${n < 5 ? ' wk-path__spot--narrow' : ''}${n === 10 ? ' wk-path__spot--big' : ''}${lit.includes(n) ? ' wk-path__spot--lit' : ''}`}>
                   <StepStone n={n} big={n === 10} shade={(n - 1) % 10 < 5 ? 'light' : 'dark'} number={numbered} mark={mark} />
+                  {point && <Pointer kind={point} />}
                   {n === pos && (
                     <span className="wk-scene__friend">
                       <Friend friend={friend} pose={pose} />
@@ -681,6 +683,18 @@ export function Goes({ round, setting, scenery, friend, guide = false, seen, onS
 }
 
 /**
+ * A small coloured arrow under a stone pointing up at it (James, 12 Nov 2026): orange at the start number, gold at the
+ * big rock (10), blue at the answer. The answer's arrow only comes once the child has answered, so it never gives it away.
+ */
+function Pointer({ kind }: { kind: 'from' | 'ten' | 'answer' }) {
+  return (
+    <svg className={`wk-point wk-point--${kind}`} viewBox="0 0 20 28" aria-hidden="true">
+      <path d="M10 2 L18 13 H13 V26 H7 V13 H2 Z" />
+    </svg>
+  );
+}
+
+/**
  * The two jumps of the split drawn under the stones as arrows (James, 5 Nov 2026): orange from the start to the big rock
  * ("+1"), then blue from the big rock to where Weka landed ("+4"), both shown as soon as the bond's circles appear (James).
  * Measured from the stones, so it works on one line or two rows of ten; a jump across the rows leaves one row and
@@ -697,13 +711,20 @@ function Jumps({ path, go, shown }: { path: React.RefObject<HTMLDivElement | nul
       el.querySelectorAll<HTMLElement>('[data-n]').forEach((s) => {
         const step = s.querySelector('.wk-step') ?? s;
         const r = step.getBoundingClientRect();
-        if (r.width) spots[Number(s.dataset.n)] = { x: r.left - base.left + r.width / 2, y: r.bottom - base.top, w: r.width, h: r.height };
+        // A stone with a pointer under it: the jump starts and lands at the pointer's foot, so the two don't cross.
+        const foot = s.querySelector('.wk-point')?.getBoundingClientRect().bottom ?? r.bottom;
+        if (r.width) spots[Number(s.dataset.n)] = { x: r.left - base.left + r.width / 2, y: foot - base.top, w: r.width, h: r.height };
       });
       setBox({ w: base.width, h: base.height, spots });
     };
     measure();
+    // When the stones come back with the jumps (after the pebbles), the row's ref is only set after this runs: measure again.
+    const frame = requestAnimationFrame(measure);
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', measure);
+    };
   }, [path]);
   if (!box) return null;
   const sign = go.kind === 'back' ? '−' : '+';
