@@ -1285,6 +1285,123 @@
       "file": "garden-gate-gold",
       "max": 512,
       "small": 160
+    },
+    {
+      "name": "homework-star-bronze",
+      "prompt": "A big five-pointed star badge with a small cosy house in its middle, one warm lit window and a curl of smoke from the chimney, the star made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "homework-star-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "homework-star-silver",
+      "prompt": "A big five-pointed star badge with a small cosy house in its middle, one warm lit window and a curl of smoke from the chimney, the star made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "homework-star-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "homework-star-gold",
+      "prompt": "A big five-pointed star badge with a small cosy house in its middle, one warm lit window and a curl of smoke from the chimney, the star made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "homework-star-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "weekend-explorer-bronze",
+      "prompt": "A round shield badge showing a bright smiling sun beside a flying kite with a ribbon tail, the shield made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "weekend-explorer-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "weekend-explorer-silver",
+      "prompt": "A round shield badge showing a bright smiling sun beside a flying kite with a ribbon tail, the shield made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "weekend-explorer-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "weekend-explorer-gold",
+      "prompt": "A round shield badge showing a bright smiling sun beside a flying kite with a ribbon tail, the shield made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "weekend-explorer-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "home-learning-cup-bronze",
+      "prompt": "A two-handled trophy cup with a small cosy house with a lit window on its front and a little open book on the lid, the cup made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "home-learning-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "home-learning-cup-silver",
+      "prompt": "A two-handled trophy cup with a small cosy house with a lit window on its front and a little open book on the lid, the cup made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "home-learning-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "home-learning-cup-gold",
+      "prompt": "A two-handled trophy cup with a small cosy house with a lit window on its front and a little open book on the lid, the cup made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "home-learning-cup-gold",
+      "max": 512,
+      "small": 160
     }
   ]
 }
