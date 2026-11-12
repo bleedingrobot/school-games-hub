@@ -1,7 +1,7 @@
 -- Trophies and earned profile pictures, the database half (docs/PROFILE-REVIEW.md section 4; docs/plans/profile/PLAN.md card P3;
 -- James, 12 Nov 2026). No screens and no trophies yet: each game's card adds its own trophy types and award calls.
 --
---   1. hub_season(school)          the hub's season number: Dragon Maths' 35-day clock on the school's default row, with the pause
+--   1. hub_season(school)          the hub's season number, from the hub's own clock on the school's row (not Dragon Maths')
 --   2. trophy_types                what can be won (each game's migration inserts its own rows)
 --      trophies                    what each pupil has won. The yearly New Season never touches either table.
 --   3. trophy_tier, trophy_counts  bronze, silver, gold
@@ -15,9 +15,21 @@
 -- 1. The hub's season
 -- ---------------------------------------------------------------------------
 
--- The season number for one school today: 35-day seasons back to back from app_settings.lord_season_start on the school's default
--- row (class_id is null). While the school is paused (lord_paused_since) the number stands still. 0 with no date or before it.
--- The same sum as clan_school_season (20261029000400), so "season 2" means the same five weeks in every game.
+-- The hub's own clock, one per school (James, 12 Nov 2026). It is NOT the Dragon Maths clock: changing or pausing the dragon's
+-- season (app_settings.lord_season_start, lord_paused_since) never moves a trophy season. They sit on the school's own row
+-- because they are the school's, not a class's. Nothing changes them yet: card P12 adds the admin panel.
+alter table public.schools
+  add column hub_season_start date not null default public.nz_day(now()),
+  add column hub_season_days integer not null default 35 check (hub_season_days between 7 and 366),
+  add column hub_paused_since date;
+comment on column public.schools.hub_season_start is 'Trophies: the first day of the hub''s season 1. A new school starts on the day it is made.';
+comment on column public.schools.hub_season_days is 'Trophies: how many days a hub season lasts.';
+comment on column public.schools.hub_paused_since is 'Trophies: while set, the hub''s season number stands still at this day (holidays).';
+-- Every school there is today starts where Dragon Maths season 1 started, so "season 1" is the same weeks so far.
+update public.schools set hub_season_start = date '2026-10-18';
+
+-- The hub's season number for one school today: seasons run back to back from hub_season_start, each hub_season_days long.
+-- While the school is paused the number stands still. 0 before the first day, or for a school that doesn't exist.
 create function public.hub_season(school integer)
 returns integer
 language sql
@@ -27,12 +39,10 @@ set search_path = ''
 as $$
   select coalesce((
     select case
-      when d.lord_season_start is null then 0
-      when least(public.nz_day(now()), coalesce(d.lord_paused_since, public.nz_day(now()))) < d.lord_season_start then 0
-      else (least(public.nz_day(now()), coalesce(d.lord_paused_since, public.nz_day(now()))) - d.lord_season_start) / 35 + 1 end
-    from public.app_settings d
-    where d.school_id = hub_season.school and d.class_id is null
-    limit 1), 0)
+      when least(public.nz_day(now()), coalesce(s.hub_paused_since, public.nz_day(now()))) < s.hub_season_start then 0
+      else (least(public.nz_day(now()), coalesce(s.hub_paused_since, public.nz_day(now()))) - s.hub_season_start) / s.hub_season_days + 1 end
+    from public.schools s
+    where s.id = hub_season.school), 0)
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -59,7 +69,7 @@ comment on table public.trophy_types is
   'Trophies and earned pictures that can be won. Each game''s migration inserts its own rows. Kept through New Season.';
 
 -- What each pupil has won: one row per win. `season` and `year` say which win it was, so the same feat counts once:
---   repeat 'season': season = the hub season, year = the calendar year      'year': season 0, year = the calendar year
+--   repeat 'season': season = the season won in, year = the calendar year      'year': season 0, year = the calendar year
 --   repeat 'once':   season 0, year 0                                       'steps': season = the step (1 to 3), year 0
 -- Rows go only when the pupil's account goes. teacher_new_season never touches this table.
 create table public.trophies (
@@ -121,8 +131,10 @@ $$;
 -- Gives a trophy. Server only: the server key, or a game's own security-definer function (where it already calls
 -- game_progress_changed). Safe to call again for the same feat: the second call changes nothing.
 -- A 'steps' trophy needs detail.step (1, 2 or 3). Gives no hub points.
+-- `season` is for a game with its own season number (Dragon Maths sends lord_hall.season). Left out, a 'season' trophy
+-- uses the hub's season. It is ignored for the other kinds.
 -- Returns { won, trophy, tier, count }: `won` is true only when this call added a row.
-create function public.award_trophy(who uuid, trophy text, detail jsonb default '{}'::jsonb)
+create function public.award_trophy(who uuid, trophy text, detail jsonb default '{}'::jsonb, season integer default null)
 returns jsonb
 language plpgsql
 security definer
@@ -150,7 +162,10 @@ begin
   end if;
 
   if t.repeat = 'season' then
-    s := public.hub_season(school);
+    if award_trophy.season < 0 then
+      raise exception 'A season number can''t be below 0.' using errcode = '22023';
+    end if;
+    s := coalesce(award_trophy.season, public.hub_season(school));
     y := extract(year from today)::integer;
   elsif t.repeat = 'year' then
     y := extract(year from today)::integer;
@@ -298,10 +313,10 @@ revoke execute on function
   public.hub_season(integer),
   public.trophy_tier(integer),
   public.trophy_counts(uuid),
-  public.award_trophy(uuid, text, jsonb),
+  public.award_trophy(uuid, text, jsonb, integer),
   public.my_trophies(),
   public.trophies_of(uuid),
   public.mark_my_trophies_seen()
 from public, anon, authenticated;
 grant execute on function public.my_trophies(), public.trophies_of(uuid), public.mark_my_trophies_seen() to authenticated;
-grant execute on function public.hub_season(integer), public.award_trophy(uuid, text, jsonb) to service_role;
+grant execute on function public.hub_season(integer), public.award_trophy(uuid, text, jsonb, integer) to service_role;
