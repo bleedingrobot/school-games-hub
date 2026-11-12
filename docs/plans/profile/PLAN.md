@@ -103,6 +103,14 @@ Size M. Database. Waits for: P3. **Aim to be live before season 2 starts (about 
 - Dragon Maths shows "First five: 3 of 5 places left this season" on its season strip.
 - Placeholder art: the existing Scorchtail picture, cropped.
 
+**As built by P4** (migration `20261112001000_dragon_trophies.sql`, test `supabase/tests/database/lord_trophies.test.sql`):
+
+- The trophies are given by a trigger on `lord_hall` (`lord_hall_trophies` → `lord_give_trophies(player, season)`), which fires inside `lord_commit` on every dragon win. `lord_commit` itself was not re-created. A failed award only logs a warning; the save still goes through.
+- The first-five race is between pupils only: teachers and hidden pupils win the Slayer's Sword but never take a place. A pupil is in the first five when fewer than five schoolmates first slew the dragon strictly before them, so ties all count. `detail` keeps `dragonSeason` and `place`.
+- `lord_first_five()` gives `{ season, left }` for the pupil's school; the season road shows "First five: N of 5 places left this season" (live game only, not the browser trial).
+- Stand-in picture: Scorchtail's head, cropped, at `src/avatar/pictures/dragon-head-standin.webp`. When P2's painting lands, change the `dm-first-five` line in `EARNED_PICTURES` and delete the stand-in.
+- Live on 12 Nov 2026 the season-1 Hall had four pupils and one teacher account, so four pupils got bronze heads and one season-1 place was still open.
+
 ```text
 You are adding the first Dragon Maths trophies in the School Games Hub repo.
 Read docs/game-guide/README.md, docs/PROFILE-REVIEW.md (sections 4, 5) and docs/plans/profile/PLAN.md (Shared design and card P4). P3 must be merged first.
