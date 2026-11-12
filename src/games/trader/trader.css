@@ -53,7 +53,7 @@
 
 /* ——— Panels ——— */
 .st-main {
-  position: absolute; z-index: 2; top: 60px; bottom: 0; left: 0;
+  position: absolute; z-index: 2; top: var(--st-top, 60px); bottom: 0; left: 0;
   width: min(680px, 100%);
   padding: 4px max(10px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-bottom, 0px));
   overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
@@ -241,7 +241,7 @@
   .st-hud { gap: 4px 8px; padding-top: 6px; }
   .st-hud__place strong { font-size: 1rem; }
   .st-hud__item { min-height: 32px; padding: 2px 10px; font-size: 0.85rem; }
-  .st-main { top: 48px; }
+  .st-main { top: var(--st-top, 48px); }
   .st-panel { padding: 10px 12px 12px; }
   .st-root[data-phase='fight'] .st-main { max-height: 60%; }
   .st-panel--fight .st-h { font-size: 1.05rem; margin-bottom: 0; }
@@ -285,7 +285,7 @@
 .st-prices__note { margin: 6px 0 0; font-size: 0.8rem; }
 /* On a narrow phone the top strip wraps onto two rows; start the panels below it so the tabs aren't covered. */
 @media (max-width: 560px) {
-  .st-main { top: 104px; }
+  .st-main { top: var(--st-top, 104px); }
 }
 
 /* ——— Bolt, the ship's robot (docs/TRADER-HINTS-PLAN.md) ——— */
@@ -467,10 +467,25 @@
 @media (max-width: 900px) { .stf-goal__text { display: none; } .stf-goal .st-moonbar { display: inline-block; width: 56px; } }
 .stf-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .stf-head .st-h { margin: 0; }
-.stf-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+/* The Forge uses the whole screen: the 3D view is the big left side, the pieces and choices the right. */
+.st-main--forge { width: 100%; padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+.st-main--forge .stf { flex: 1 0 auto; display: flex; flex-direction: column; }
+.stf-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 30rem); gap: 14px; align-items: start; flex: 1 0 auto; }
 .stf-left, .stf-right { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-@media (max-width: 900px) { .stf-grid { grid-template-columns: 1fr; } }
-.stf-viewer { position: relative; width: 100%; height: clamp(170px, 32vh, 280px); border-radius: 12px; overflow: hidden; background: #02040c; border: 1px solid var(--st-line); }
+.stf-left { position: sticky; top: 0; }
+.stf-viewer { position: relative; width: 100%; height: clamp(320px, calc(100dvh - var(--st-top, 60px) - 200px), 1400px); border-radius: 12px; overflow: hidden; background: #02040c; border: 1px solid var(--st-line); }
+@media (max-width: 900px) {
+  .stf-grid { grid-template-columns: 1fr; }
+  .stf-left { position: static; }
+  .stf-viewer { height: clamp(260px, min(92vw, 58dvh), 720px); }
+}
+/* A phone on its side: view on the left, choices on the right, and the long intro line hidden. */
+@media (max-height: 500px) and (min-width: 600px) {
+  .stf .st-sub { display: none; }
+  .stf-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px; }
+  .stf-left { position: sticky; top: 0; }
+  .stf-viewer { height: max(200px, calc(100dvh - var(--st-top, 48px) - 90px)); }
+}
 .stf-viewer__host { position: absolute; inset: 0; }
 .stf-viewer__host canvas { width: 100% !important; height: 100% !important; display: block; }
 .stf-viewer__msg { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--st-soft); }
@@ -479,7 +494,6 @@
 .stf-flat__sun { width: 70px; height: 70px; border-radius: 50%; flex: none; margin-left: -30px; box-shadow: 0 0 30px rgba(255, 200, 80, 0.6); display: grid; place-items: center; color: var(--st-soft); border: 2px dashed var(--st-line); }
 .stf-flat__planet { border-radius: 50%; flex: none; }
 .is-plan { opacity: 0.55; outline: 2px dashed var(--st-cyan); outline-offset: 2px; }
-@media (max-height: 460px) { .stf-viewer { height: 130px; } }
 
 .stf-slots { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; }
 .stf-slot {
