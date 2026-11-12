@@ -6,7 +6,6 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 - [ ] P2 Plan and paint the art (size M). Waits for: nothing. Needs ComfyUI running on the gaming PC.
 - [ ] P3 The trophy system (size L, database). Waits for: nothing.
-- [ ] P4 Dragon Maths: the first five and the Dragon Heads (size M, database). Waits for: P3.
 - [ ] P6 Retire levels and show trophies around the hub (size M). Waits for: P5. Not alongside dashboard card D2.
 - [x] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Done 12 Nov 2026: eight trophies, a watcher on each record, back-awards, "Trophy won!" line (`src/trophies/`), full book needs 75.
 - [x] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Done 12 Nov 2026: six once-a-year trophies (Star Ring, Black Hole, Heart Diamond, Rainbow Toon, Gem Crown, Miner's Lamp), watchers, back-awards, "Trophy won!" line in each game.
@@ -19,6 +18,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 ## Done and live
 
+- [x] P4 Dragon Maths: the first five and the Dragon Heads (#451, live 12 Nov 2026). Dragon Head picture and Slayer's Sword, both on the dragon's own season, given on every dragon win. The first-five race is between pupils only: teachers and hidden pupils get the sword but take no place. Checked live: the season-1 Hall had four pupils and one teacher account, so four pupils have bronze heads (places 1 to 4), all five have the sword, and one season-1 head is still open. The season road shows the places left. The picture is a stand-in (Scorchtail's head) until P2's painting lands: change the `dm-first-five` line in `src/avatar/earnedPictures.ts` and delete `src/avatar/pictures/dragon-head-standin.webp`.
 - [x] P1 Tidy the profile page (#439, 12 Nov 2026): top card with Sign out, closed folds, avatar maker behind "Change my look", achievements as earned plus the three nearest. A theme now saves when tapped. Styles are in `src/pages/profile.css`; P5 fills the My trophies fold.
 - [x] P5 The trophy cabinet and the "New trophy!" moment (#454, 12 Nov 2026): a lit shelf of trophies in their metals (favourites first, up to three, saved on the server), a plaque with how and when each was won, three grey next-to-win spots from games the class can see, earned pictures in "Change my look", and a once-only full-screen "New trophy!" on hub pages. Stand-in cups until P2's paintings.
 
