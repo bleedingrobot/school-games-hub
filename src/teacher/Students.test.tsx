@@ -160,6 +160,7 @@ describe('the class roster', () => {
     expect(tui.slice(2)).toEqual(['0', '–', 'Warm-up skipped', 'Own: Number facts to 10']);
     expect(within(table).getByRole('row', { name: /Lucky Tui 12/ })).toHaveTextContent('Hidden');
     expect(within(table).getByRole('link', { name: /Brave Kiwi 7/ })).toHaveAttribute('href', '/teacher/c12/students/s1');
+    expect(within(table).getByRole('link', { name: '×6, ×9' })).toHaveAttribute('href', '/teacher/c12/maths/skills?pupil=s1');
     expect(screen.getByRole('button', { name: 'Room 12' })).toHaveAttribute('aria-pressed', 'true');
   });
 

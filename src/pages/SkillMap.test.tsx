@@ -130,6 +130,13 @@ describe('the skill map', () => {
     first.unmount();
     localStorage.clear();
 
+    // A class with no ladder answers is pointed at the Foundational pages.
+    vi.mocked(skillMap.fetchClassMap).mockResolvedValueOnce(map([ben()]));
+    const empty = show(teacher, '/teacher/c12/maths/skills');
+    const nobody = await screen.findByText(/Nobody in Room 12 has answered ladder maths yet/, {}, { timeout: 5000 });
+    expect(within(nobody).getByRole('link', { name: 'Progress' })).toHaveAttribute('href', '/teacher/c12/progress');
+    empty.unmount();
+
     const cara = (id: string) =>
       ana({
         id,
@@ -138,7 +145,7 @@ describe('the skill map', () => {
         facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
       });
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
-    show(teacher, '/teacher/c12/maths/skills');
+    show(teacher, '/teacher/c12/maths/skills?pupil=s2');
     const grid = await screen.findByRole('table', {}, { timeout: 5000 });
     // Skills in use: Ana's skills and the next one, short names with class counts; untouched stages fold into one column.
     const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });
@@ -149,6 +156,13 @@ describe('the skill map', () => {
     expect(within(grid).getByRole('button', { name: /Rounding.*nobody yet/ })).toBeInTheDocument();
     expect(within(grid).queryByRole('link', { name: /Set focus/ })).toBeNull();
     expect(within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ })).toHaveTextContent('ana');
+    // ?pupil= (from the Students tab) lights up that row and opens nothing.
+    expect(
+      within(grid)
+        .getByRole('rowheader', { name: /Brave Kiwi 7/ })
+        .closest('tr'),
+    ).toHaveAttribute('data-marked');
+    expect(screen.queryByRole('dialog')).toBeNull();
 
     // Who needs a look: most of the class is 3 skills past Ana and Brave Kiwi; the pill keeps only those two, in the address too.
     await userEvent.click(screen.getByRole('button', { name: '2 behind the class' }));
