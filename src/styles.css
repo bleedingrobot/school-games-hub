@@ -2532,6 +2532,52 @@ main:focus {
   color: var(--h-title);
 }
 
+/* Games still going: one yellow line of chips that carry on (dashboard plan D4). They wrap on a phone. */
+.in-progress--chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 28px;
+  background: var(--h-going);
+  color: var(--h-going-ink);
+  border: 2px solid var(--h-going-edge);
+}
+.in-progress__label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-right: 2px;
+}
+.going-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 4px 16px 4px 8px;
+  border-radius: 999px;
+  background: var(--h-play);
+  color: var(--h-play-ink);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  max-width: 100%;
+}
+.going-chip__emoji {
+  font-size: 1.2rem;
+  line-height: 0;
+}
+.going-chip--more {
+  padding-left: 16px;
+  background: transparent;
+  color: var(--h-going-ink);
+  text-decoration: underline;
+}
+.going-chip:focus-visible {
+  outline: 3px solid var(--h-going-ink);
+  outline-offset: 2px;
+}
+
 /* Games, in their groups: a small label with a thin line, then 3 slim cards across on a Chromebook. */
 .game-groups {
   display: grid;

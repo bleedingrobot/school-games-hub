@@ -63,9 +63,11 @@ describe('the home page in one request', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     // Games still going: one of each kind with classmates, two friend games and a link to the rest.
     const going = screen.getByRole('region', { name: 'Games still going' });
-    expect(within(going).getAllByRole('link', { name: 'Carry on' })).toHaveLength(5);
-    expect(within(going).getByText(/Brave Kiwi 7/)).toBeInTheDocument();
-    expect(within(going).getByText('1 more game still going: see them in the lobby')).toBeInTheDocument();
+    // One line of chips (D4): the first 4 carry on, then '+2 more' goes to the lobby.
+    expect(within(going).getByText('6 games still going:')).toBeInTheDocument();
+    expect(within(going).getAllByRole('link', { name: /^Carry on/ })).toHaveLength(4);
+    expect(within(going).getByRole('link', { name: /with Brave Kiwi 7$/ })).toHaveAttribute('href', expect.stringMatching(/^\/play\//));
+    expect(within(going).getByRole('link', { name: /2 more games still going/ })).toHaveTextContent('+2 more');
     expect(screen.getByText('3 of 5 mine fights')).toBeInTheDocument();
     expect(screen.getByText('1 of 2')).toBeInTheDocument();
     // The cards, from the same answer.

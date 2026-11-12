@@ -136,20 +136,18 @@ function useMyGames(me: string | undefined) {
   return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, topGames, failed };
 }
 
-/** A "still going" line: what it is, and a Carry on button. */
-function GoingLine({ emoji, to, children }: { emoji: ReactNode; to: string; children: ReactNode }) {
-  return (
-    <div className="in-progress__item">
-      <span className="in-progress__emoji" aria-hidden={typeof emoji === 'string' ? true : undefined}>
-        {emoji}
-      </span>
-      <p>{children}</p>
-      <Link to={to} className="button button--play">
-        Carry on
-      </Link>
-    </div>
-  );
+/** A game still going: a chip that carries on (dashboard plan D4: all of them on one line, not a row each). */
+interface Going {
+  key: string;
+  emoji: ReactNode;
+  to: string;
+  /** What the chip says: the game, or who it is against. */
+  label: string;
+  /** The words a screen reader hears. */
+  name: string;
 }
+/** How many chips before "+N more". */
+const GOING_SHOWN = 4;
 
 /** A card on the home page and the group it sits in. */
 interface Tile {
@@ -246,6 +244,20 @@ function DashboardPage() {
   const inProgress = nonMathsShut ? [] : going.inProgress;
   const cardGoing = nonMathsShut ? [] : going.cardGoing;
   const powerGoing = nonMathsShut ? [] : going.powerGoing;
+  // Same order as before: one each of Power Clash, 101 and Wormholes with classmates, then chess and checkers with friends.
+  const goingChips: Going[] = [
+    ...powerGoing.slice(0, 1).map((g) => ({ key: g.id, emoji: '⚡', to: `/power-game/${g.id}`, label: 'Power Clash', name: `Carry on your ${gameLabel('power-clash') ?? 'Power Clash'} game` })),
+    ...cardGoing.slice(0, 1).map((g) => ({ key: g.game, emoji: '🃏', to: `/card-game/${g.game}`, label: '101', name: 'Carry on your 101 game' })),
+    ...spaceGoing.slice(0, 1).map((g) => {
+      const name = findGame('space')?.name ?? 'Wormholes';
+      return { key: g.id, emoji: '🚀', to: `/space-game/${g.id}`, label: 'Wormholes', name: `Carry on your ${name} game` };
+    }),
+    ...inProgress.map(({ game, opponent }) => {
+      const who = opponent?.display_name ?? 'a classmate';
+      const what = findGame(game.game)?.name.toLowerCase() ?? 'game';
+      return { key: game.id, emoji: <AvatarImage avatar={opponent?.avatar} size={28} />, to: `/play/${game.id}`, label: who, name: `Carry on your ${what} game with ${who}` };
+    }),
+  ];
   // Teachers see the season strips too, so they know what their class sees (James, 30 Oct 2026).
   const seasonShown = season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
   const lordSeasonShown = lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
@@ -388,35 +400,23 @@ function DashboardPage() {
 
       {pupil && <ClassWarpCard homePage={cardsFrom} />}
 
-      {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0 || powerGoing.length > 0) && (
-        <section className="in-progress" aria-label="Games still going">
-          {powerGoing.slice(0, 1).map((game) => (
-            <GoingLine key={game.id} emoji="⚡" to={`/power-game/${game.id}`}>
-              <strong>Your {gameLabel('power-clash')} game</strong> with a classmate is still going!
-            </GoingLine>
+      {goingChips.length > 0 && (
+        <section className="in-progress in-progress--chips" aria-label="Games still going">
+          <span className="in-progress__label">
+            {goingChips.length} game{goingChips.length === 1 ? '' : 's'} still going:
+          </span>
+          {goingChips.slice(0, GOING_SHOWN).map((g) => (
+            <Link key={g.key} to={g.to} className="going-chip" aria-label={g.name}>
+              <span className="going-chip__emoji" aria-hidden="true">
+                {g.emoji}
+              </span>
+              {g.label}
+            </Link>
           ))}
-          {cardGoing.slice(0, 1).map((game) => (
-            <GoingLine key={game.game} emoji="🃏" to={`/card-game/${game.game}`}>
-              <strong>Your 101 game</strong> with classmates is still going!
-            </GoingLine>
-          ))}
-          {spaceGoing.slice(0, 1).map((game) => (
-            <GoingLine key={game.id} emoji="🚀" to={`/space-game/${game.id}`}>
-              <strong>Your {findGame('space')?.name} game</strong> with classmates is still going!
-            </GoingLine>
-          ))}
-          {inProgress.slice(0, 2).map(({ game, opponent }) => (
-            <GoingLine key={game.id} emoji={<AvatarImage avatar={opponent?.avatar} size={32} />} to={`/play/${game.id}`}>
-              <strong>Your {findGame(game.game)?.name.toLowerCase()} game</strong> with {opponent?.display_name ?? 'a classmate'} is
-              still going!
-            </GoingLine>
-          ))}
-          {inProgress.length > 2 && (
-            <p className="in-progress__more">
-              <Link to="/lobby">
-                {inProgress.length - 2} more game{inProgress.length === 3 ? '' : 's'} still going: see them in the lobby
-              </Link>
-            </p>
+          {goingChips.length > GOING_SHOWN && (
+            <Link to="/lobby" className="going-chip going-chip--more" aria-label={`${goingChips.length - GOING_SHOWN} more games still going: see them in the lobby`}>
+              +{goingChips.length - GOING_SHOWN} more
+            </Link>
           )}
         </section>
       )}
