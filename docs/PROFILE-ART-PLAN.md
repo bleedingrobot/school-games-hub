@@ -2,7 +2,7 @@
 
 *Written 12 Nov 2026 for card P2 of [plans/profile/PLAN.md](plans/profile/PLAN.md). The reasons and the full reward table are in [PROFILE-REVIEW.md](PROFILE-REVIEW.md) (sections 4, 5 and 8). Everything here is painted in ComfyUI on James's gaming PC with `scripts/game_art.py`; nothing is drawn in code.*
 
-**Status: done, 12 Nov 2026.** All 98 paintings made, checked small, committed and in use: Dragon Heads, rings, shelf, pictures and trophies are wired in (`src/avatar/paintedArt.ts`). Still without art in the app until their cards add ids: the hub-wide and Two games rewards (season-regular, adventurers-badge, star-monarch, golden-wings, best-friends-cup, all-rounder, double-slayer, board-master, treasure-keeper, name-scroll): they are painted and waiting in `src/avatar/art/`. A few paintings keep a faint friendly silhouette behind the subject (the shelf and gold backdrop most).
+**Status: done, 12 Nov 2026.** All 98 paintings made, checked small, committed and in use: Dragon Heads, rings, shelf, pictures and trophies are wired in (`src/avatar/paintedArt.ts`). Only the name-scroll (the top reward's own picture) is painted but not used yet. A few paintings keep a faint friendly silhouette behind the subject (the shelf and gold backdrop most).
 
 **James's brief:** "I want the picture to look over the top AMAZING!" These are the top prizes in the hub and are worn beside a child's name everywhere, so they must look far more special than a built avatar: legendary, glowing, treasure-like. For ages 5 to 11: nothing gory or frightening.
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useClassSwitches } from '../data/classSwitches';
-import { fetchMyTrophies, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy } from '../data/trophies';
+import { fetchMyTrophies, fetchMyTrophyPairs, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy, type TrophyPair } from '../data/trophies';
 import { GAMES } from '../games/registry';
 import { SHELF_ART } from '../avatar/paintedArt';
-import { MAX_FAVOURITES, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyPlace, winLine } from './cabinet';
+import { MAX_FAVOURITES, halfLitPairs, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyPlace, winLine } from './cabinet';
 import { TrophyArt } from './TrophyArt';
 import './trophies.css';
 
@@ -42,12 +42,21 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
   const switchedOn = useClassSwitches(SWITCHED_GAMES);
   const [chosen, setChosen] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [pairs, setPairs] = useState<TrophyPair[]>([]);
+  useEffect(() => {
+    let current = true;
+    void fetchMyTrophyPairs().then((p) => current && setPairs(p));
+    return () => {
+      current = false;
+    };
+  }, []);
 
   if (!data) return <p className="panel__empty">{failed ? 'We couldn’t load your trophies just now.' : 'Loading…'}</p>;
 
   const shelf = shelfOrder(data.trophies, data.favourites);
   const next = nextSpots(data.next, switchedOn);
   const picked = shelf.find((t) => t.id === chosen) ?? null;
+  const halfLit = halfLitPairs(pairs, switchedOn);
 
   async function toggleFavourite(trophy: MyTrophy) {
     const was = data!.favourites;
@@ -136,6 +145,29 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
       <p className="cabinet__status" role="status">
         {status ?? (shelf.length > 0 && !picked ? `Tap a trophy to see how you won it. Pick up to ${MAX_FAVOURITES} favourites to show off.` : '')}
       </p>
+
+      {halfLit.length > 0 && (
+        <div className="cabinet__next cabinet__pairs">
+          <h3>Half lit: win the other half</h3>
+          <ul>
+            {halfLit.map((p) => (
+              <li key={p.id} className="cabinet__spot">
+                <span className="cabinet__half" aria-hidden="true">
+                  <TrophyArt id={p.id} game="hub" kind={p.kind} tier={null} size={60} />
+                  <span className="cabinet__half-lit">
+                    <TrophyArt id={p.id} game="hub" kind={p.kind} tier="bronze" size={60} />
+                  </span>
+                </span>
+                <span>
+                  <strong>{p.name}</strong>
+                  <span className="cabinet__spot-game">Two games</span>
+                  {p.hint}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {next.length > 0 && (
         <div className="cabinet__next">

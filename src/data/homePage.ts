@@ -50,6 +50,8 @@ export interface HomePage {
   topGames: TopGames;
   /** My trophy count and favourite three, for the welcome strip (profile card P6). Null if the answer has none. */
   trophyShelf: TrophyShelf | null;
+  /** The once-only "new season" note (profile card P10), or null when there is none to show. */
+  seasonNote: { season: number } | null;
   /**
    * The cards' parts as the database sent them, each read by its own card (so the maths code stays in the maths cards' download).
    * A part the answer doesn't have is left out, and that card asks for itself.
@@ -104,6 +106,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     lordSeason: readLordSeason(row<RawMovesLeft>(raw, 'movesLeft')?.lordSeason, row<RawMovesLeft>(raw, 'movesLeft')?.lord, nzDate(new Date())),
     topGames: readTopGames(raw.topGames),
     trophyShelf: row<TrophyShelf>(raw, 'trophyShelf'),
+    seasonNote: row<{ season: number }>(raw, 'seasonNote'),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }

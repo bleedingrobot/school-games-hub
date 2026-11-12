@@ -45,8 +45,11 @@ export const TROPHY_ART: Record<string, string> = {
   'isles-keeper': 'keepers-medal',
   'training-shield': 'times-tables-shield',
   'quick-looks-gate': 'garden-gate',
-  // Card P10 (hub-wide) and the Two games rewards add their ids here: season-regular, adventurers-badge, star-monarch,
-  // golden-wings and best-friends-cup are painted and waiting in src/avatar/art/trophies.
+  'hub-regular': 'season-regular',
+  'hub-best-friends': 'best-friends-cup',
+  'pair-adventurer': 'adventurers-badge',
+  'pair-star-monarch': 'star-monarch',
+  'pair-golden-wings': 'golden-wings',
 };
 
 /** Each early-years game's Garden Cup is `<game>-cup`. */

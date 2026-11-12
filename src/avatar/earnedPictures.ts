@@ -66,6 +66,11 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'bond-perfect': painted('💞', 'perfect-match'),
   'mine-pickaxe': painted('⛏️', 'golden-pickaxe'),
   'decree-crown': painted('👑', 'royal-crown'),
+  // Card P10: the hub-wide and Two games pictures.
+  'hub-allrounder': painted('🌟', 'all-rounder'),
+  'pair-double-slayer': painted('⚔️', 'double-slayer'),
+  'pair-board-master': painted('♞', 'board-master'),
+  'pair-treasure-keeper': painted('🗝️', 'treasure-keeper'),
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

@@ -119,3 +119,56 @@ export async function fetchTrophyShelves(names: string[]): Promise<Record<string
     return {};
   }
 }
+
+/** One half of a two-game reward: a trophy from one game, and whether I hold it in time to count. */
+export interface TrophyPairHalf {
+  trophy: string;
+  game: string;
+  name: string;
+  held: boolean;
+}
+
+/** A two-game reward (profile card P10): win both halves in the same season or year. */
+export interface TrophyPair extends Pick<TrophyType, 'id' | 'name' | 'how' | 'kind'> {
+  within: 'season' | 'year';
+  won: boolean;
+  halves: TrophyPairHalf[];
+}
+
+/** The two-game rewards and which halves I hold. Empty if it can't be read. */
+export async function fetchMyTrophyPairs(): Promise<TrophyPair[]> {
+  try {
+    const { data, error } = await supabase.rpc('my_trophy_pairs');
+    return error || !Array.isArray(data) ? [] : (data as TrophyPair[]);
+  } catch {
+    return [];
+  }
+}
+
+/** Someone in the hall of fame. `name` is null for a pupil without a made-up name: show "A classmate". */
+export interface HallPerson {
+  name: string | null;
+  avatar: unknown;
+}
+
+export interface HallOfFame {
+  /** The hub's season number today. */
+  season: number;
+  /** Each Dragon Maths season's first five slayers, newest season first. */
+  dragon: { season: number; slayers: (HallPerson & { place: number })[] }[];
+  /** New pictures won this hub season, newest first. */
+  pictures: (HallPerson & { trophy: string; title: string; game: string; tier: Tier; at: string })[];
+}
+
+/** My school's hall of fame: game feats only. */
+export async function fetchHallOfFame(): Promise<HallOfFame> {
+  const { data, error } = await supabase.rpc('hall_of_fame');
+  if (error || !data || typeof data !== 'object') throw new FriendlyError("We couldn't load the hall of fame. Please try again.");
+  const hall = data as Partial<HallOfFame>;
+  return { season: hall.season ?? 0, dragon: hall.dragon ?? [], pictures: hall.pictures ?? [] };
+}
+
+/** Tell the server I have seen this season's "new season" note. */
+export async function markSeasonNoteSeen(): Promise<void> {
+  await supabase.rpc('mark_season_note_seen');
+}
