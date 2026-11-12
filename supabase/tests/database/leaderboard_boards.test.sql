@@ -115,7 +115,8 @@ select throws_ok($$ select public.game_board('no-such-game', 'all-time', 'school
 
 -- Teachers pick a class (or a year) to filter by; pupils can't.
 select pg_temp.as(11);
-select is(pg_temp.names(public.achievements_board('all-time', 'class:' || (select id from pg_temp.made where name = 'room12'))),
+select is((select array_agg(x order by x) from unnest(pg_temp.names(
+             public.achievements_board('all-time', 'class:' || (select id from pg_temp.made where name = 'room12')))) x),
   array['Brave Otter 1', 'Calm Kea 2'], 'a teacher can see one class''s board');
 select is(public.achievements_board('all-time', 'class:00000000-0000-0000-0000-000000000099'), '[]'::jsonb, 'nothing for a class that isn''t there');
 select pg_temp.as(1);
