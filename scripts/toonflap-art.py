@@ -179,6 +179,9 @@ for f, (lvl, words) in FLYERS.items():
             PICTURES[f'{f}-{pose}'] = (style + f'{words.capitalize()}, {how}.' + FLYING + KIDS, SQUARE, None)
     else:
         PICTURES[f'{f}-glide'] = (style + words.capitalize() + '.' + FLYING + KIDS, SQUARE, None)
+        # 12 Nov 2026 (F.6): the flap picture, so a level flyer no longer just tilts its glide picture.
+        PICTURES[f'{f}-up'] = (style + words.capitalize() + ', zooming upward at a steep angle with its front tilted up, a burst of '
+                               'little speed lines and puffs below it, full of bounce.' + FLYING + KIDS, SQUARE, None)
 for f, (lvl, words) in FLYERS.items():
     PICTURES[f'{f}-dizzy'] = ((THING[lvl] if lvl else PLAIN) + words.capitalize() + ', dizzy after a bump, tumbling and tilted, swirly '
                               'spiral eyes and a wobbly grin, little stars circling its head.' + FLYING + KIDS, SQUARE, None)

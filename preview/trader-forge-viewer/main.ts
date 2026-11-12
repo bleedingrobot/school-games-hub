@@ -100,7 +100,7 @@ const DESIGNS: { name: string; design: SystemDesign; plans?: boolean }[] = [
       v: 1, name: [5, 10], background: 5, beltAfter: 2, comets: null,
       sun: { kind: 'red', name: [4, 4], ...B },
       belt: { kind: 'golden' },
-      tech: [{ kind: 'lanes' }],
+      tech: [{ kind: 'lanes' }, { kind: 'gate' }, { kind: 'sails' }],
       planets: [
         planet(1, 'toxic', { size: 1, clouds: 'thick', life: { kind: 'plants', creature: 0, ...B }, effects: [{ kind: 'islands', ...B }] }),
         planet(2, 'rocky', { size: 2, built: false, ring: { kind: 'dusty', tilt: 2 } }),

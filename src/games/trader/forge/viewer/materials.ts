@@ -467,3 +467,56 @@ export function ringStrip(kind: string, seed: number): THREE.DataTexture {
   tex.needsUpdate = true;
   return tex;
 }
+
+// A plan's own look (12 Nov 2026): the piece keeps its real material, faded, with light blue scan lines across it, so a
+// planned ring, engine or star gate still looks like itself (James: "everything looks the same with a blue glow").
+const PLAN_TAIL = /* glsl */ `
+  { float planScan=pow(0.5+0.5*sin(gl_FragCoord.y*0.35-uPlanT*4.0),10.0);
+    float planLit=min(max(max(gl_FragColor.r,gl_FragColor.g),gl_FragColor.b),1.0);
+    gl_FragColor.rgb=gl_FragColor.rgb*uPlanLift+vec3(0.12,0.32,0.7)*(0.2+0.6*planScan)*planLit;
+    gl_FragColor.a*=0.55; }
+`;
+const planned = new WeakSet<THREE.Material>();
+
+/** Adds the plan tail to a fragment shader: a uniform at the top, the tail as the last thing in main(). */
+export const planShader = (frag: string): string => {
+  const end = frag.lastIndexOf('}');
+  return 'uniform float uPlanT; uniform float uPlanLift;\n' + frag.slice(0, end) + PLAN_TAIL + frag.slice(end);
+};
+
+/**
+ * Turns one material into its plan look, in place (a material is only changed once). `lift` brightens (or dims) the
+ * piece's own colours: 0.6 by default; a thin see-through ring needs more to read at all.
+ */
+export function asPlanMaterial(mat: THREE.Material, time: { value: number }, lift = 0.6) {
+  if (planned.has(mat)) return;
+  planned.add(mat);
+  mat.transparent = true;
+  mat.depthWrite = false;
+  if ((mat as THREE.ShaderMaterial).isShaderMaterial) {
+    const sm = mat as THREE.ShaderMaterial;
+    sm.uniforms.uPlanT = time;
+    sm.uniforms.uPlanLift = { value: lift };
+    sm.fragmentShader = planShader(sm.fragmentShader);
+  } else {
+    const before = mat.onBeforeCompile;
+    mat.onBeforeCompile = (shader, r) => {
+      before?.call(mat, shader, r);
+      shader.uniforms.uPlanT = time;
+      shader.uniforms.uPlanLift = { value: lift };
+      shader.fragmentShader = planShader(shader.fragmentShader);
+    };
+    const key = mat.customProgramCacheKey.bind(mat);
+    mat.customProgramCacheKey = () => key() + '|plan';
+  }
+  mat.needsUpdate = true;
+}
+
+/** Gives every mesh, line and point cloud in an object its own look as a plan (see asPlanMaterial). */
+export function asPlan(o: THREE.Object3D, time: { value: number }) {
+  o.traverse((x) => {
+    const mat = (x as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    if (!mat) return;
+    for (const m of Array.isArray(mat) ? mat : [mat]) asPlanMaterial(m, time);
+  });
+}
