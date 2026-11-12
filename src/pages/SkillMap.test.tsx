@@ -130,17 +130,26 @@ describe('the skill map', () => {
     first.unmount();
     localStorage.clear();
 
+    const cara = (id: string) =>
+      ana({ id, name: `Calm Tui ${id}`, realName: null, facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)) });
+    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
     show(teacher, '/teacher/c12/maths/skills');
     const grid = await screen.findByRole('table', {}, { timeout: 5000 });
     // Skills in use: Ana's skills and the next one, short names with class counts; untouched stages fold into one column.
     const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });
     expect(head).toHaveAttribute('title', 'Doubles and halves to 10');
     expect(head).toHaveTextContent('Doubles, halves 10');
-    expect(head).toHaveTextContent('1 of 2');
+    expect(head).toHaveTextContent('4 of 5');
     expect(within(grid).queryByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeNull();
     expect(within(grid).getByRole('button', { name: /Rounding.*nobody yet/ })).toBeInTheDocument();
     expect(within(grid).queryByRole('link', { name: /Set focus/ })).toBeNull();
     expect(within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ })).toHaveTextContent('ana');
+
+    // Who needs a look: most of the class is 3 skills past Ana and Brave Kiwi; the pill keeps only those two, in the address too.
+    await userEvent.click(screen.getByRole('button', { name: '2 behind the class' }));
+    expect(screen.getByText(/Showing 2 of 5/)).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByRole('rowheader', { name: /Calm Tui/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Show' }), 'all');
     expect(within(screen.getByRole('table')).getByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeInTheDocument();
