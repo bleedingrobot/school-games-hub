@@ -54,9 +54,6 @@ vi.mock('./data/progress', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./data/progress')>()),
   fetchMyProgress: vi.fn(async () => ({
     points: 140,
-    level: 3,
-    levelStart: 125,
-    nextLevelAt: 225,
     weekPoints: 23,
     games: [
       { game: 'checkers', rank: { rank: 'silver', next: 'gold', progress: 0.5, gamesNeeded: null, ratedGames: 6 }, weekRatingChange: 12 },

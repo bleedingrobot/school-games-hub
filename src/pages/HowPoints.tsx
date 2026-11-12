@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { fetchRules, RANKS, type Rules } from '../data/progress';
 import { gameLabel, POWER_CLASH_ON } from '../games/registry';
 
@@ -289,21 +290,43 @@ export function HowPoints() {
         </section>
       ))}
 
-      <section className="panel" aria-labelledby="levels-title">
-        <h2 id="levels-title" className="panel__title">
-          Levels
+      <section className="panel" aria-labelledby="points-for-title">
+        <h2 id="points-for-title" className="panel__title">
+          What points are for
         </h2>
-        <p>Points take you up levels. Each level needs a few more points than the last.</p>
-        <ol className="level-steps">
-          {rules.levels.slice(1, 8).map((points, i) => (
-            <li key={points}>
-              <strong>Level {i + 2}</strong> <span>{points} points</span>
-            </li>
-          ))}
+        <ul className="how-points__list">
           <li>
-            <strong>…and on!</strong>
+            Your points this week put you on the <Link to="/leaderboard">This week</Link> leaderboard. Everyone starts again each
+            Monday.
           </li>
-        </ol>
+          <li>Because bot points stop at the daily limit, playing a little every day beats playing a lot in one go.</li>
+          <li>Your points total stays on your profile. There are no levels any more: big feats win trophies instead.</li>
+        </ul>
+      </section>
+
+      <section className="panel" aria-labelledby="trophies-title">
+        <h2 id="trophies-title" className="panel__title">
+          🏆 Trophies
+        </h2>
+        <ul className="how-points__list">
+          <li>
+            A trophy is won for <strong>one big feat in one game</strong>, like slaying the dragon in Dragon Maths. Your profile’s
+            trophy cabinet shows how to win each one.
+          </li>
+          <li>
+            Win it in one season and it’s <strong>bronze</strong>. Win it again in another season for <strong>silver</strong>,
+            and a third time for <strong>gold</strong>. The seasons don’t have to be in a row.
+          </li>
+          <li>
+            The very hardest feats also win a <strong>picture</strong> you can wear instead of your avatar, with a bronze, silver
+            or gold ring.
+          </li>
+          <li>Pick up to three favourite trophies. They show beside your name on the leaderboard and in the lobby.</li>
+          <li>Trophies stay for good, even at the start of a new school year. They don’t give points.</li>
+        </ul>
+        <Link to="/profile" className="link-button">
+          See my trophies
+        </Link>
       </section>
 
       <section className="panel" aria-labelledby="badges-title">

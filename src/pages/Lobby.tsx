@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
+import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { fetchLobbyPage } from '../data/lobby';
 import { ask, MultiplayerError, fetchMultiplayerEnabled, type Action, type FriendGame, type LobbyGame, type PlayerCard } from '../data/multiplayer';
 import { askSpace, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
@@ -227,29 +228,37 @@ export function Lobby() {
   const spaceGoing = mySpace.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.host !== profile?.id));
   const spaceWaiting = mySpace.find((g) => g.status === 'waiting' && g.host === profile?.id);
   const spaceName = findGame('space')?.name ?? 'Wormholes & Black Holes';
-  const crew = (g: SpaceGame) => {
-    const names = seatsOf(g)
-      .filter((p): p is string => !!p && p !== profile?.id)
-      .map((p) => cards.get(p)?.display_name ?? 'a classmate');
-    return names.length === 0 ? 'your classmates' : names.join(', ');
-  };
+  /** The other players' names in a game, or none (when they show as "your classmates" or "a classmate"). */
+  const others = (ids: (string | null | undefined)[]) =>
+    ids.filter((p): p is string => !!p && p !== profile?.id).map((p) => cards.get(p)?.display_name ?? 'a classmate');
+  const crewOf = (g: SpaceGame) => others(seatsOf(g));
   const gameName = (id: string) => findGame(id)?.name ?? id;
   const powerName = findGame('power-clash')?.name ?? 'Power Clash';
   const powerGoing = myPower.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.host !== profile?.id));
   const powerWaiting = myPower.find((g) => g.status === 'waiting' && g.host === profile?.id);
-  const powerMate = (g: PowerGame) =>
-    powerSeatsOf(g)
-      .filter((p): p is string => !!p && p !== profile?.id)
-      .map((p) => cards.get(p)?.display_name ?? 'a classmate')
-      .join(', ') || 'a classmate';
+  const powerMatesOf = (g: PowerGame) => others(powerSeatsOf(g));
   const cardGoing = myCards.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.info.host !== profile?.id));
   const cardWaiting = myCards.find((g) => g.status === 'waiting' && g.info.host === profile?.id);
-  const table = (g: SeatSummary) => {
-    const names = g.info.players
-      .filter((p): p is string => !!p && p !== profile?.id)
-      .map((p) => cards.get(p)?.display_name ?? 'a classmate');
-    return names.length === 0 ? 'your classmates' : names.join(', ');
-  };
+  const tableOf = (g: SeatSummary) => others(g.info.players);
+
+  const shelves = useTrophyShelves([
+    ...(shownOpen ?? []).map((o) => o.game.creator_name),
+    ...playing.map((g) => cards.get((g.first_player === profile?.id ? g.second_player : g.first_player) ?? '')?.display_name),
+    ...spaceGoing.flatMap(crewOf),
+    ...powerGoing.flatMap(powerMatesOf),
+    ...cardGoing.flatMap(tableOf),
+  ]);
+  /** Names with each one's favourite trophies beside it (profile card P6). */
+  const withTrophies = (names: string[], none: string) =>
+    names.length === 0
+      ? none
+      : names.map((n, i) => (
+          <Fragment key={`${n}-${i}`}>
+            {i > 0 && ', '}
+            {n}
+            <FavouriteTrophies shelf={shelves[n]} />
+          </Fragment>
+        ));
 
   return (
     <div className="lobby">
@@ -272,6 +281,7 @@ export function Lobby() {
                   <span className="lobby-list__what">
                     <strong>
                       {gameName(g.game)} vs {card?.display_name ?? 'a classmate'}
+                      <FavouriteTrophies shelf={card ? shelves[card.display_name] : undefined} />
                     </strong>
                     <span>Still going!</span>
                   </span>
@@ -288,7 +298,7 @@ export function Lobby() {
                 </span>
                 <span className="lobby-list__what">
                   <strong>
-                    {spaceName} with {crew(g)}
+                    {spaceName} with {withTrophies(crewOf(g), 'your classmates')}
                   </strong>
                   <span>{g.status === 'playing' ? 'Still going!' : 'Waiting for the host to launch'}</span>
                 </span>
@@ -303,7 +313,7 @@ export function Lobby() {
                   🃏
                 </span>
                 <span className="lobby-list__what">
-                  <strong>101 with {table(g)}</strong>
+                  <strong>101 with {withTrophies(tableOf(g), 'your classmates')}</strong>
                   <span>{g.status === 'playing' ? 'Still going!' : 'Waiting for more players'}</span>
                 </span>
                 <Link to={cardPath({ id: g.game })} className="button button--primary">
@@ -318,7 +328,7 @@ export function Lobby() {
                 </span>
                 <span className="lobby-list__what">
                   <strong>
-                    {powerName} with {powerMate(g)}
+                    {powerName} with {withTrophies(powerMatesOf(g), 'a classmate')}
                   </strong>
                   <span>{g.status === 'playing' ? 'Still going!' : 'Waiting to start'}</span>
                 </span>
@@ -618,6 +628,7 @@ export function Lobby() {
                       <span className="lobby-list__what">
                         <strong>
                           {o.game.creator_name} · {gameName(o.game.game)}
+                          <FavouriteTrophies shelf={shelves[o.game.creator_name]} />
                         </strong>
                         <span>
                           You’d play {colourName(o.game.game, o.game.open_side)}
@@ -640,6 +651,7 @@ export function Lobby() {
                       <span className="lobby-list__what">
                         <strong>
                           {o.game.creator_name} · {powerName}
+                          <FavouriteTrophies shelf={shelves[o.game.creator_name]} />
                         </strong>
                         <span>Two players. Pick three powers, first to win 3 rounds.</span>
                       </span>
@@ -656,7 +668,10 @@ export function Lobby() {
                     <li key={o.game.id}>
                       <AvatarImage avatar={o.game.creator_avatar} size={44} />
                       <span className="lobby-list__what">
-                        <strong>{o.game.creator_name} · 101</strong>
+                        <strong>
+                          {o.game.creator_name} · 101
+                          <FavouriteTrophies shelf={shelves[o.game.creator_name]} />
+                        </strong>
                         <span>
                           {o.game.target === 50 ? 'Quick game, to 50' : 'Normal game, to 101'}. {o.game.players} of {o.game.wanted} joined.
                         </span>
@@ -676,6 +691,7 @@ export function Lobby() {
                       <span className="lobby-list__what">
                         <strong>
                           {o.game.creator_name} · {spaceName}
+                          <FavouriteTrophies shelf={shelves[o.game.creator_name]} />
                         </strong>
                         <span>
                           {boardLabel(o.game.board)}, {o.game.mode === 'classic' ? 'Classic' : 'Cosmic'}. {o.game.players} of 4 joined.

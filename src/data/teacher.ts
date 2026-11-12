@@ -34,7 +34,6 @@ interface Tally {
 
 export interface PersonDetail {
   points: number;
-  level: number;
   /** Rank is null for games without badges (Wormholes & Black Holes). */
   games: { game: string; bot: Tally; friend: Tally; rank: Rank | null; achievements: number }[];
   recent: {

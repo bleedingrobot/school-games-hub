@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import {
@@ -15,7 +15,7 @@ import {
   type HubTheme,
 } from '../avatar/avatarParts';
 import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
-import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
+import { AchievementList, RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
 import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
@@ -562,7 +562,7 @@ function MyAchievements({ achievements }: { achievements: Achievement[] }) {
   );
 }
 
-/** Inside My stats: points, the level bar and badges, then recent games and the tables for bots and friends. */
+/** Inside My stats: points and badges, then recent games and the tables for bots and friends. */
 function MyStatsBody({ home }: { home: MyHome }) {
   const { progress, stats, recent, failed } = home;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
@@ -571,9 +571,9 @@ function MyStatsBody({ home }: { home: MyHome }) {
       {progress ? (
         <div className="my-progress">
           <p className="my-progress__points">
-            <strong>{progress.points}</strong> points · <strong>{progress.weekPoints}</strong> this week
+            <strong>{progress.points}</strong> points · <strong>{progress.weekPoints}</strong> this week ·{' '}
+            <Link to="/points">How points work</Link>
           </p>
-          <LevelBar progress={progress} />
           <ul className="my-progress__ranks">
             {progress.games.map((g) => (
               <li key={g.game}>
