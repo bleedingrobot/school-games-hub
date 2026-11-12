@@ -62,6 +62,12 @@ export interface Services {
    * stand-in). If it can't be read, throw: a maths game isn't started or saved on a guess.
    */
   mathsSwitch?(player: string): Promise<MathsSwitch>;
+  /**
+   * Is the class's "Non-maths games" switch on (chess, checkers, 101, Power Clash)? Optional: without it nothing is checked
+   * (the tests' stand-in). Only an answer of false stops a game; if the switch can't be read the game goes ahead, as on the
+   * website (a broken connection must never lock a class out).
+   */
+  nonMathsGames?(player: string): Promise<boolean>;
   /** Signs some text with a key only the server has (an HMAC), as URL-safe base64. Null if there's no key. */
   stamp(text: string): Promise<string | null>;
   /** The time now, in seconds. */
@@ -137,6 +143,11 @@ export async function handleSaveBotGame(request: Request, services: Services): P
 
   const body = await readJsonBody(request);
   const asked = body as { game?: unknown; start?: unknown; maths?: unknown } | null;
+  // Chess, checkers, 101 and Power Clash (starting or saving) wait for the class's Non-maths games switch. Wormholes is a maths game.
+  if (asked?.game !== 'space' && !(await nonMathsOpen(services, player))) {
+    console.warn('save-bot-game: refused a game (non-maths games are off)');
+    return reply(403, { error: NON_MATHS_OFF });
+  }
   if ((asked?.game === 'space' || asked?.game === '101' || asked?.game === 'power-clash') && asked.start === true) {
     // A new maths game can't start while the teacher has maths switched off.
     if (asked.game === 'space' && asked.maths === true && !(await mathsAllowed(services, player))) return reply(403, { error: MATHS_OFF });
@@ -185,6 +196,14 @@ const MATHS_OFF = 'Your teacher has switched Mission Control maths off, so this 
 async function mathsAllowed(services: Services, player: string): Promise<boolean> {
   if (!services.mathsSwitch) return true;
   return (await services.mathsSwitch(player).catch(() => 'off' as const)) !== 'off';
+}
+
+const NON_MATHS_OFF = 'Your teacher has switched these games off for now.';
+
+/** False only when the teacher has Non-maths games switched off. */
+async function nonMathsOpen(services: Services, player: string): Promise<boolean> {
+  if (!services.nonMathsGames) return true;
+  return services.nonMathsGames(player).catch(() => true);
 }
 
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";

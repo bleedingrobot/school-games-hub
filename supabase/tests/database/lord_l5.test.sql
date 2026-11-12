@@ -210,7 +210,7 @@ select pg_temp.reset();
 -- Switching a class off no longer pauses the season; a school admin's holiday pause does, for the whole school.
 update public.app_settings set lord_enabled = true, lord_season_start = pg_temp.today() - 10, lord_paused_since = null;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":false}') ->> 'pausedSince', null, 'switching the game off no longer pauses the season clock');
+select is(public.teacher_set_lord('{"enabled":false}', target_class => current_setting('test.everyone')::uuid) ->> 'pausedSince', null, 'switching the game off no longer pauses the season clock');
 select is(public.lord_school_season() ->> 'start', (pg_temp.today() - 10)::text, 'the school''s seasons carry on');
 select is(public.admin_set_lord_holiday(true) ->> 'pausedSince', pg_temp.today()::text, 'a school admin''s holiday pause starts the pause');
 select pg_temp.reset();

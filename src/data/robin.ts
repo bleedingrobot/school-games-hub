@@ -57,9 +57,9 @@ export async function fetchRobinSettings(classId?: string | null): Promise<Robin
 export const fetchRobinEnabled = async (classId?: string | null) => (await fetchRobinSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_robin leaves out the other). */
-export async function saveRobinSetting(change: Partial<RobinSettings>, classId?: string | null): Promise<void> {
+export async function saveRobinSetting(change: Partial<RobinSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_robin', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

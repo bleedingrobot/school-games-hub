@@ -60,7 +60,7 @@ Keep points themselves (they still drive "points this week" and stop any one gam
 
 **Bronze, silver, gold.** Most trophies can be won once per season. The first season is bronze, the second season is silver, the third is gold, and after that the gold one counts up (×4, ×5). The seasons don't need to be in a row. This is what rewards coming back.
 
-**One season for the whole hub.** Use the Dragon Maths 35-day clock as the hub's season for every game, so "season 2" means the same five weeks everywhere. No new clocks.
+**One season for the whole hub, on its own clock.** The hub gets its own season clock that James sets (start date and length, 35 days to begin with, and it can be paused). Every game's trophies use it, so "season 2" means the same weeks everywhere. It is not tied to Dragon Maths: pausing or changing the dragon's season does not move trophy seasons. The one exception is the Dragon Maths trophies, which follow the dragon's own season because that is the race they reward. (James, 12 Nov 2026.)
 
 **Earned profile pictures.** The very hardest feat in each game also unlocks a painted picture the pupil can wear in place of their built avatar, with a bronze, silver or gold ring. It shows everywhere the avatar shows today (top bar, leaderboard, lobby, across the board from an opponent): about 30 places from one change.
 

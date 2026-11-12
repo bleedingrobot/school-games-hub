@@ -70,10 +70,10 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     if (!row) throw new Error('no water row');
     fireEvent.click(within(row).getByLabelText('Buy one Water'));
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
-    // A maths check can come up; skip it.
-    const skip = screen.queryByText('No thanks');
-    if (skip) fireEvent.click(skip);
     await waitFor(() => {
+      // A maths check can come up (it can open a moment after Trade); skip it.
+      const skip = screen.queryByText('No thanks');
+      if (skip) fireEvent.click(skip);
       const after = Number(within(screen.getByTitle('Your credits')).getByText(/\d/).textContent?.replace(/,/g, ''));
       expect(after).toBeLessThan(before);
     });

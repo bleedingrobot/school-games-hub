@@ -117,8 +117,8 @@ export async function fetchTrainingFirst(classId?: string | null): Promise<boole
   return row.training_first === true;
 }
 
-export async function saveTrainingFirst(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_training_first', { enabled, target_class: classId ?? null });
+export async function saveTrainingFirst(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_training_first', { enabled, target_class: classId });
   forgetSettings();
   forgetTrainingLock();
   if (error) throw new FriendlyError('We couldn’t change that.');

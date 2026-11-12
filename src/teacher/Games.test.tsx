@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode, type ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, useLocation, useNavigate } from 'react-router';
@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import type { ClassSummary } from '../data/classes';
+import { switchColumnOf } from '../data/games';
+import { GAMES } from '../games/registry';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
@@ -27,7 +29,13 @@ const data = vi.hoisted(() => ({
   fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
   fetchClansEnabled: vi.fn(),
+  saveNonMathsGames: vi.fn(),
   fetchClassClanMaths: vi.fn(),
+  saveGameSwitches: vi.fn(),
+}));
+vi.mock('../data/games', async (original) => ({
+  ...(await original<typeof import('../data/games')>()),
+  saveGameSwitches: data.saveGameSwitches,
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -70,6 +78,10 @@ vi.mock('../data/clans', async (original) => ({
   ...(await original<typeof import('../data/clans')>()),
   fetchClansEnabled: data.fetchClansEnabled,
   fetchClassClanMaths: data.fetchClassClanMaths,
+}));
+vi.mock('../data/nonMathsGames', async (original) => ({
+  ...(await original<typeof import('../data/nonMathsGames')>()),
+  saveNonMathsGames: data.saveNonMathsGames,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -139,6 +151,7 @@ function screenIs(wide: boolean) {
 const realMatchMedia = window.matchMedia;
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
   screenIs(true);
   for (const fn of Object.values(data)) fn.mockReset();
   data.fetchClasses.mockResolvedValue([room('c12', 'Room 12'), room('c14', 'Room 14')]);
@@ -166,6 +179,8 @@ beforeEach(() => {
       : { gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false },
   );
   data.fetchClansEnabled.mockResolvedValue(true);
+  data.saveNonMathsGames.mockResolvedValue(undefined);
+  data.saveGameSwitches.mockResolvedValue(undefined);
   data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
 });
 afterEach(() => {
@@ -174,6 +189,26 @@ afterEach(() => {
 
 const table = () => screen.findByRole('table', { name: 'Games for this class' });
 const row = (t: HTMLElement, name: string) => within(t).getByRole('rowheader', { name }).closest('tr')!;
+
+/** A class where some games are on: the Foundational ones, Maths Monsters and Clan Quest; Non-maths games is off. */
+const switchedOn = (column: string) => column.startsWith('weka') || column.startsWith('tui') || column === 'monsters_enabled' || column === 'clans_enabled';
+function someGamesOn() {
+  const inner = data.readSettings.getMockImplementation()!;
+  data.readSettings.mockImplementation(async (columns: string[], classId?: string | null) => {
+    if (columns.includes('clans_year_band')) return inner(columns, classId);
+    const row: Record<string, unknown> = { ...(await inner(columns, classId)), non_maths_games: false };
+    for (const game of GAMES) {
+      const column = switchColumnOf(game);
+      if (column && column !== 'non_maths_games') row[column] = switchedOn(column);
+    }
+    return row;
+  });
+  const isOn = (game: (typeof GAMES)[number]) => {
+    const column = switchColumnOf(game);
+    return column === null || (column !== 'non_maths_games' && switchedOn(column));
+  };
+  return { isOn, onCount: GAMES.filter(isOn).length };
+}
 
 describe('the Games table', () => {
 
@@ -188,15 +223,104 @@ describe('the Games table', () => {
     await user.click(bond);
     expect(data.saveBondMatchEnabled).toHaveBeenCalledWith(true, 'c14');
     expect(bond).toHaveAttribute('aria-checked', 'true');
-    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓')).toBeInTheDocument();
+    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓ Pupils see it when their home page next opens.')).toBeInTheDocument();
 
     const maths = await within(row(t, 'Wormholes & Black Holes')).findByRole('radiogroup', { name: 'Wormholes & Black Holes maths' });
     expect(data.fetchMathsSwitch).toHaveBeenCalledWith('c14');
     expect(within(maths).getByRole('radio', { name: 'Students choose' })).toBeChecked();
     await user.click(within(maths).getByRole('radio', { name: 'On for everyone' }));
     expect(data.setSpaceMaths).toHaveBeenCalledWith('on', 'c14');
+
+    // The No maths rows share one switch (Non-maths games, as on Today); a game whose code switch is off has no row.
+    const chess = await within(row(t, 'Chess')).findByRole('switch', { name: 'Chess (with Non-maths games)' });
+    await waitFor(() => expect(chess).toBeEnabled());
+    await user.click(chess);
+    expect(data.saveNonMathsGames).toHaveBeenCalledWith(false, 'c14');
+    await waitFor(() => expect(within(row(t, 'Checkers')).getByRole('switch', { name: 'Checkers (with Non-maths games)' })).toHaveAttribute('aria-checked', 'false'));
+    expect(within(t).queryByRole('rowheader', { name: 'Kingdom Keeper' })).toBeNull();
+
+    // What's on at a glance, whole sections at once, and the Unlimited column (a class where some games are on).
+    {
+    const { onCount } = someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    expect(await screen.findByText(`${onCount} of ${GAMES.length} games`)).toBeInTheDocument();
+    expect(screen.getByText(/On for Room 12:/)).toBeInTheDocument();
+    const foundational = GAMES.filter((g) => g.group === 'foundational');
+    const foundationalOn = foundational.filter((g) => ['weka', 'tui'].includes(g.id)).length;
+    expect(within(t).getByText(`${foundationalOn} of ${foundational.length} on`)).toBeInTheDocument();
+    expect(within(t).getByText(`0 of ${GAMES.filter((g) => g.group === 'no-maths').length} on`)).toBeInTheDocument();
+    }
+    {
+    const user = userEvent.setup();
+    const { isOn } = someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    await screen.findByText(/ of \d+ games/);
+    expect(within(t).getByRole('rowheader', { name: 'Chess' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'On' }));
+    expect(screen.getByRole('button', { name: 'On' })).toHaveAttribute('aria-pressed', 'true');
+    for (const game of GAMES) {
+      if (isOn(game)) expect(within(t).getByRole('rowheader', { name: game.name })).toBeInTheDocument();
+      else expect(within(t).queryByRole('rowheader', { name: game.name })).toBeNull();
+    }
+    expect(localStorage.getItem('teacher-games-show')).toBe('on');
+    await user.click(screen.getByRole('button', { name: 'Off' }));
+    expect(within(t).getByRole('rowheader', { name: 'Chess' })).toBeInTheDocument();
+    expect(within(t).queryByRole('rowheader', { name: 'Maths Monsters' })).toBeNull();
+    }
+    {
+    const user = userEvent.setup();
+    someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    const foundational = GAMES.filter((g) => g.group === 'foundational');
+    const allOff = await within(t).findByRole('button', { name: 'All off, Foundational skills' });
+    await waitFor(() => expect(allOff).toBeEnabled());
+    await user.click(allOff);
+    expect(within(t).getByText(`Turn off all ${foundational.length} Foundational skills games for Room 12?`)).toBeInTheDocument();
+    expect(data.saveGameSwitches).not.toHaveBeenCalled();
+    await user.click(within(t).getByRole('button', { name: 'Turn off' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    expect(data.saveGameSwitches).toHaveBeenCalledWith(
+      Object.fromEntries(foundational.map((g) => [switchColumnOf(g)!, false])),
+      'c12',
+    );
+    expect(await within(t).findByText(`0 of ${foundational.length} on`)).toBeInTheDocument();
+    }
+    {
+    const user = userEvent.setup();
+    someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    const allOn = await within(t).findByRole('button', { name: 'All on, Foundational skills' });
+    await waitFor(() => expect(allOn).toBeEnabled());
+    await user.click(allOn);
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    expect(Object.values(data.saveGameSwitches.mock.calls[0][0]).every((v) => v === true)).toBe(true);
+    }
+    {
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    expect(await within(row(t, 'Maths Monsters')).findByRole('switch', { name: 'Maths Monsters unlimited today' })).toBeInTheDocument();
+    expect(within(row(t, 'Chess')).queryByRole('switch', { name: /unlimited/ })).toBeNull();
+    }
+    for (const game of GAMES) if (game.teacher?.switch) expect(switchColumnOf(game), game.name).not.toBeNull();
   });
 
 });
-
-

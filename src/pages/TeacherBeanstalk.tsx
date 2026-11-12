@@ -17,8 +17,8 @@ export function BeanstalkTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingToggle
-        label="Dots on the leaves"
-        about="On: each leaf shows a ten-frame of dots to count. Each student’s dots follow how they are doing: they fade after two good days in a row and come back after a hard one. Off: numbers only for everyone."
+        label="Help"
+        about="Ten-frame dots on the leaves. On: each leaf shows a ten-frame of dots to count. Each student’s dots follow how they are doing: they fade after two good days in a row and come back after a hard one. Off: numbers only for everyone."
         value={settings.value?.dots ?? null}
         loadFailed={settings.failed}
         save={(on) => saveBeanstalkSetting({ dots: on }, classId)}

@@ -49,8 +49,8 @@ export async function fetchNonMathsGames(classId?: string | null): Promise<boole
   return row.non_maths_games !== false;
 }
 
-export async function saveNonMathsGames(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_non_maths_games', { enabled, target_class: classId ?? null });
+export async function saveNonMathsGames(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_non_maths_games', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

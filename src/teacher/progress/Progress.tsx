@@ -20,7 +20,16 @@ import './progress.css';
 
 export default function Progress() {
   const { current } = useTeacherClass();
-  return <div className="classes progress">{current && <Panel key={current.id} classId={current.id} name={current.name} />}</div>;
+  return (
+    <div className="classes progress">
+      {current && (
+        <p className="teacher__classes-link">
+          Steps in the Foundational games. Maths ladder: <Link to={`/teacher/${current.id}/maths/skills`}>see the Skill map</Link>.
+        </p>
+      )}
+      {current && <Panel key={current.id} classId={current.id} name={current.name} />}
+    </div>
+  );
 }
 
 /** Rows and columns from the class data and the games that are on. Exported for tests. */

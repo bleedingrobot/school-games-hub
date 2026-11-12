@@ -86,9 +86,9 @@ export async function fetchToonFlapStudent(student: string): Promise<ToonFlapStu
 }
 
 /** Saves any of the settings (teacher_set_toonflap leaves out the rest). */
-export async function saveToonFlapSetting(change: Partial<ToonFlapSettings>, classId?: string | null): Promise<void> {
+export async function saveToonFlapSetting(change: Partial<ToonFlapSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_toonflap', {
-    enabled: change.enabled ?? null, maths: change.maths ?? null, read_time: change.readTime ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, maths: change.maths ?? null, read_time: change.readTime ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

@@ -14,6 +14,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000d', 'dan@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 -- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
 select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
@@ -164,17 +166,17 @@ select pg_temp.reset();
 
 -- ---- Teacher switches ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_monsters('{"enabled":true,"topics":["fractions","add-sub"]}') ->> 'enabled', 'true', 'a teacher switches the game on');
+select is(public.teacher_set_monsters('{"enabled":true,"topics":["fractions","add-sub"]}', target_class => current_setting('test.cls')::uuid) ->> 'enabled', 'true', 'a teacher switches the game on');
 select is((select monsters_topics from public.app_settings order by class_id nulls last limit 1), array['add-sub', 'fractions'], '... and picks the topics');
-select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":[]}') $$, '22023', 'Leave at least one topic on.',
+select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":[]}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Leave at least one topic on.',
   'at least one topic stays on');
-select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["pizza"]}') $$, '22023', null, 'unknown topics are refused');
+select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["pizza"]}', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'unknown topics are refused');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 13,
   'students see the thirteen achievements while the game is on');
 select is(public.progress_rules() -> 'monsters', '{"wildWinsPerPoint":3,"trainerWin":3,"badge":8}'::jsonb, '... and the points rules');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_monsters('{"enabled":false,"topics":["add-sub","fractions"]}') ->> 'enabled', 'false', 'and off again');
+select is(public.teacher_set_monsters('{"enabled":false,"topics":["add-sub","fractions"]}', target_class => current_setting('test.cls')::uuid) ->> 'enabled', 'false', 'and off again');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 0,
   'the achievements are hidden while it is off');

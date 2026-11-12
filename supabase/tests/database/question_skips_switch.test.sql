@@ -49,8 +49,8 @@ select throws_ok($$ select public.teacher_set_question_skips('off') $$, '42501',
 select pg_temp.reset();
 
 select pg_temp.fin();
-select throws_ok($$ select public.teacher_set_question_skips(null) $$, '22023', null, 'a missing setting is refused');
-select throws_ok($$ select public.teacher_set_question_skips('sometimes') $$, '22023', null, 'an unknown setting is refused');
+select throws_ok(format('select public.teacher_set_question_skips(null, %L)', current_setting('test.room_two')), '22023', null, 'a missing setting is refused');
+select throws_ok(format('select public.teacher_set_question_skips(''sometimes'', %L)', current_setting('test.room_two')), '22023', null, 'an unknown setting is refused');
 select throws_ok(format('select public.teacher_set_question_skips(''off'', %L)', current_setting('test.ana_class')),
   '42501', null, 'a teacher cannot change a class they don''t teach');
 select lives_ok(format('select public.teacher_set_question_skips(''limited'', %L)', current_setting('test.room_two')), 'a teacher sets 3 per game for their class');

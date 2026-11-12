@@ -225,8 +225,8 @@ export async function fetchMineEnabled(classId?: string | null): Promise<boolean
   return row.mine_enabled === true;
 }
 
-export async function saveMineEnabled(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_mine', { enabled, target_class: classId ?? null });
+export async function saveMineEnabled(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_mine', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
@@ -239,8 +239,8 @@ export async function fetchMineMaths(classId?: string | null): Promise<MathsSwit
   return parseMathsSwitch(row?.mine_maths);
 }
 
-export async function saveMineMaths(mode: MathsSwitch, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_mine_maths', { mode, target_class: classId ?? null });
+export async function saveMineMaths(mode: MathsSwitch, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_mine_maths', { mode, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

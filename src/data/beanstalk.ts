@@ -54,9 +54,9 @@ export async function fetchBeanstalkSettings(classId?: string | null): Promise<B
 export const fetchBeanstalkEnabled = async (classId?: string | null) => (await fetchBeanstalkSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_beanstalk leaves out the other). */
-export async function saveBeanstalkSetting(change: Partial<BeanstalkSettings>, classId?: string | null): Promise<void> {
+export async function saveBeanstalkSetting(change: Partial<BeanstalkSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_beanstalk', {
-    enabled: change.enabled ?? null, dots: change.dots ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, dots: change.dots ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

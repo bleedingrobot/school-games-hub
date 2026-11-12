@@ -135,10 +135,12 @@ select throws_ok($$ select public.teacher_set_mine_maths('on') $$, null, null, '
 select is((select mine_maths from public.app_settings limit 1), 'choose', 'the maths switch starts at "students choose"');
 select pg_temp.reset();
 update public.profiles set role = 'teacher', school_admin = true where id = pg_temp.id('0c');
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000c') on conflict do nothing;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_mine_maths('on') $$, 'a teacher can switch maths on for everyone');
-select is((select mine_maths from public.app_settings limit 1), 'on', '... and it is saved');
-select throws_ok($$ select public.teacher_set_mine_maths('sometimes') $$, '22023', null, 'an unknown setting is refused');
+select lives_ok($$ select public.teacher_set_mine_maths('on', target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch maths on for everyone');
+select is((select mine_maths from public.app_settings where class_id = current_setting('test.cls')::uuid), 'on', '... and it is saved');
+select throws_ok($$ select public.teacher_set_mine_maths('sometimes', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'an unknown setting is refused');
 select pg_temp.reset();
 
 -- ---- Maths: the question list of a run (the server function only) ----

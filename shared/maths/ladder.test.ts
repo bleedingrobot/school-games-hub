@@ -7,6 +7,7 @@ import { } from './facts';
 import { newStats, type FactStats } from './leitner';
 import { AutoPack, LADDER, ladderProgress, } from './ladder';
 import { sameAnswer } from './banded';
+import { skillTinyLabel, TINY_LABEL_MAX } from './skillNames';
 import { } from './skillPacks';
 import { earlyFactsPack, EARLY_FACTS, solveSkip } from './skillPacks/earlyFacts';
 import { } from './skillPacks/generatedKit';
@@ -73,11 +74,12 @@ describe('the early facts pack', () => {
 });
 
 describe('the ladder', () => {
-  it('has no key in two skills, and every key is owned by a pack', () => {
+  it('has no key in two skills, every key is owned by a pack, and every skill has a short name (Skill map headers)', () => {
     const seen = new Map<string, string>();
     const auto = new AutoPack();
     for (const skill of built) {
       expect(skill.keys.length).toBeGreaterThan(0);
+      expect([...skillTinyLabel(skill.id)].length, `${skill.id} needs a short name in skillNames.ts`).toBeLessThanOrEqual(TINY_LABEL_MAX);
       for (const key of skill.keys) {
         expect(seen.get(key), `${key} is in ${seen.get(key)} and ${skill.id}`).toBeUndefined();
         seen.set(key, skill.id);

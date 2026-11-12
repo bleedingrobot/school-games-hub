@@ -8,6 +8,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -43,8 +45,8 @@ select throws_ok($$ update public.app_settings set space_maths = 'off' $$, '4250
 select pg_temp.reset();
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_space_maths('on') $$, 'a teacher can change it');
-select throws_ok($$ select public.teacher_set_space_maths('sometimes') $$, '22023', null, 'to a known setting only');
+select lives_ok($$ select public.teacher_set_space_maths('on', target_class => current_setting('test.cls')::uuid) $$, 'a teacher can change it');
+select throws_ok($$ select public.teacher_set_space_maths('sometimes', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'to a known setting only');
 select pg_temp.reset();
 select is((select space_maths from public.app_settings order by class_id nulls last limit 1), 'on', 'and it is saved');
 
