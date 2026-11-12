@@ -19,6 +19,8 @@ export interface FactStats {
   quickDays: string[];
   /** The last three wrong answers given (oldest first), when the teacher's view has them. */
   wrong?: string[];
+  /** When it was first answered (milliseconds since 1970), when the teacher's view has it. Facts older than 12 Nov 2026 have none. */
+  firstSeen?: number;
 }
 
 /** One answer, as saved: the record is rebuilt from these on the server. */

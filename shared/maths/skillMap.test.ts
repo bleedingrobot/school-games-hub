@@ -71,6 +71,11 @@ describe('the skill map', () => {
     expect([...pupilLooks(maps[1], hard, middle, now)]).toEqual(['hard', 'behind']);
     expect([...pupilLooks(maps[2], far, middle, now)]).toEqual(['quiet']);
     expect(pupilLooks(maps[1], at(a.keys, 1, 5), middle, now).has('hard')).toBe(false);
+    // Stuck: on a Learning skill 14+ days, known only when every fact asked has a first-answer time.
+    const old = (days: number) => hard.map((f) => ({ ...f, firstSeen: now - days * 86_400_000 }));
+    expect(pupilLooks(maps[1], old(20), middle, now).has('stuck')).toBe(true);
+    expect(pupilLooks(maps[1], old(10), middle, now).has('stuck')).toBe(false);
+    expect(pupilLooks(maps[1], [...old(20).slice(1), hard[0]], middle, now).has('stuck')).toBe(false);
   });
 });
 
