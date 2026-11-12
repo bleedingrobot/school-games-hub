@@ -28,6 +28,7 @@ import { useHomeLayout } from '../data/homeLayout';
 import { useNextParts } from '../data/nextParts';
 import { readRememberedCards, rememberCards, useClassSwitches } from '../data/classSwitches';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
+import { SeasonNote } from '../trophies/SeasonNote';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -432,6 +433,8 @@ function DashboardPage() {
         <>
 
         <TrainingGateBanner />
+
+        {pupil && <SeasonNote note={answer?.seasonNote} />}
 
         {pupil && <ClassWarpCard homePage={cardsFrom} answer={answer} />}
 

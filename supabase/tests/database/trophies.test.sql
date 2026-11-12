@@ -164,7 +164,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.s
 select public.teacher_new_season('NEW SEASON');
 select pg_temp.reset();
 select is((select count(*)::integer from public.trophies), 11, 'a New Season keeps every trophy');
-select is((select count(*)::integer from public.trophy_types where game in ('test-game', 'hub')), 6, '... and every trophy type');
+select is((select count(*)::integer from public.trophy_types where id in ('t-head', 't-sword', 't-once', 't-year', 't-cup', 't-far')), 6, '... and every trophy type');
 select is((select avatar ->> 'pic' from public.profiles where id = pg_temp.id('0b')), 't-head', '... and the picture a pupil is wearing');
 delete from auth.users where id = pg_temp.id('0a');
 select is((select count(*)::integer from public.trophies where player = pg_temp.id('0a')), 0, 'deleting a pupil''s account removes their trophies');

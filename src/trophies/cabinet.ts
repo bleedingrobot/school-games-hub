@@ -2,7 +2,7 @@
  * The trophy cabinet's plain rules (docs/plans/profile/PLAN.md card P5): which game a trophy belongs to, the shelf order,
  * the "next to win" spots, and the words for each win. No screens here, so they are easy to test.
  */
-import type { MyTrophy, TrophyType, TrophyWin } from '../data/trophies';
+import type { MyTrophy, TrophyPair, TrophyType, TrophyWin } from '../data/trophies';
 import { ALL_GAMES, GAMES } from '../games/registry';
 import type { GameDefinition } from '../games/types';
 
@@ -79,4 +79,19 @@ export function nextMetalLine(trophy: MyTrophy, season: number): string | null {
 export function metalLabel(trophy: { tier: string; count: number }): string {
   const metal = trophy.tier[0].toUpperCase() + trophy.tier.slice(1);
   return trophy.count > 1 ? `${metal} ×${trophy.count}` : metal;
+}
+
+/**
+ * The half-lit two-game rewards: not won yet, one half held, and both games ones the pupil can see. The hint names the game
+ * still to win in.
+ */
+export function halfLitPairs(pairs: TrophyPair[], switchedOn: ReadonlySet<string> | null): (TrophyPair & { hint: string })[] {
+  const visible = (game: string) => nextSpots([{ id: game, game, name: '', how: '', kind: 'trophy', repeat: 'once', art: null }], switchedOn).length > 0;
+  return pairs.flatMap((p) => {
+    const held = p.halves.filter((h) => h.held);
+    const missing = p.halves.find((h) => !h.held);
+    if (p.won || held.length !== 1 || !missing || !p.halves.every((h) => visible(h.game))) return [];
+    const when = p.within === 'season' ? 'this season' : 'this year';
+    return [{ ...p, hint: `You have ${held[0].name}. Win ${missing.name} in ${trophyPlace(missing.game)} ${when} to light it up!` }];
+  });
 }

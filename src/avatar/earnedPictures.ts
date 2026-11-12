@@ -58,6 +58,11 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'bond-perfect': { emoji: '💞' },
   'mine-pickaxe': { emoji: '⛏️' },
   'decree-crown': { emoji: '👑' },
+  // Card P10 (placeholders until card P2's paintings land).
+  'hub-allrounder': { emoji: '🌟' },
+  'pair-double-slayer': { emoji: '⚔️' },
+  'pair-board-master': { emoji: '♞' },
+  'pair-treasure-keeper': { emoji: '🗝️' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

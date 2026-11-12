@@ -61,7 +61,7 @@ $$, array[
   'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
   'mark_my_trophies_seen', 'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_new_trophies', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_top_games',
-  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'owner_add_school', 'owner_add_school_domain',
+  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'my_trophy_pairs', 'my_season_note', 'mark_season_note_seen', 'hall_of_fame', 'owner_add_school', 'owner_add_school_domain',
   'owner_schools', 'owner_set_school_active', 'owner_set_school_contact', 'power_lobby_games', 'progress_rules',
   'save_my_avatar', 'save_my_home_layout', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_favourite_trophies', 'set_my_maths_focus', 'space_lobby_games',
   'teacher_add_co_teacher', 'teacher_add_to_class', 'teacher_answer_warp', 'teacher_archive_class', 'teacher_bond_match_student',

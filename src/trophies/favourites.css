@@ -23,3 +23,83 @@
 .trophy-count .fav-trophies {
   margin-left: 2px;
 }
+
+/* The Leaderboard's Hall of fame (profile card P10). */
+.hall__part {
+  margin-top: 18px;
+}
+.hall__part h2 {
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+.hall__season h3 {
+  font-size: 0.95rem;
+  margin: 12px 0 6px;
+  color: var(--ink-soft);
+}
+.hall__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.hall__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--surface-soft, rgba(148, 163, 184, 0.12));
+  min-width: 0;
+}
+.hall__place {
+  font-weight: 800;
+  min-width: 2.4em;
+}
+.hall__name {
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hall__won {
+  font-weight: 400;
+}
+.hall__where {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+/* The once-only "new season" note on the home page (profile card P10). */
+.season-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #422006;
+}
+.season-note p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.season-note a {
+  color: inherit;
+  font-weight: 700;
+}
+.season-note__icon {
+  font-size: 1.8rem;
+}
+.season-note__close {
+  border: 0;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
+  padding: 6px;
+}
