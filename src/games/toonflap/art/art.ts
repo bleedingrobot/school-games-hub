@@ -20,11 +20,11 @@ export type WorldLayer = WorldPart;
 
 export const FLYER_IDS = ['fantail', 'puppy-plane', 'rocket-carrot', 'bathtub-boat', 'mousetrap-glider', 'donut-cruiser', 'mini-van',
   'toilet-rocket', 'lava-lizard', 'jet-bot', 'saucer-kid', 'rainbow'] as const;
-/** Every flyer has glide and dizzy (after a bump); the birds also have up (wings raised); the fantail also perches and cheers. */
+/** Every flyer has glide, up (zooming upward, shown after a flap) and dizzy (after a bump); the fantail also perches and cheers. */
 export const FLYER_POSES = ['glide', 'up', 'perched', 'cheer', 'dizzy'] as const;
 export type FlyerPose = (typeof FLYER_POSES)[number];
 export const POSES_PAINTED: Record<string, readonly FlyerPose[]> = {
-  ...Object.fromEntries(FLYER_IDS.map((f) => [f, ['glide', 'dizzy']])),
+  ...Object.fromEntries(FLYER_IDS.map((f) => [f, ['glide', 'up', 'dizzy']])),
   fantail: ['glide', 'up', 'perched', 'cheer', 'dizzy'],
   rainbow: ['glide', 'up', 'dizzy'],
 };

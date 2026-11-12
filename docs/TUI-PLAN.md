@@ -157,12 +157,12 @@ Numbers and counts are always drawn in code: a painting can't be trusted to hold
 berry pictures itself, and draws the ten-frame outlines, the "10" tag text and every number. The sparkle is drawn in
 code too (the clay model keeps adding blobs, Beanstalk found).
 
-**The set: 30 pictures** (`python3 scripts/tui-art.py list`):
+**The set: 34 pictures** (`python3 scripts/tui-art.py list`):
 
 | Group | Pictures |
 |---|---|
 | `tui/` | tui-sit, tui-eat, tui-sing, tui-cheer, tui-fly, tui-nest |
-| `friends/` | kererū, pīwakawaka, korimako, kākā: each sit and cheer (scarves blue, green, orange, red) |
+| `friends/` | kererū, pīwakawaka, korimako, kākā: each sit, cheer and eat (eat added 12 Nov 2026, shown while the friend eats a ten; scarves blue, green, orange, red) |
 | `tree/` | berry, berry-gold, branch (wide, empty), kete-open, kete-full (plain tag), nest (an answer) |
 | `flowers/` | flower-bud, -bronze, -silver, -gold (foil-wrapped, like Beanstalk's leaves) |
 | `things/` | golden-nest, nest-cushion |
