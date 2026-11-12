@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { normaliseAvatar, type Avatar } from './avatarParts';
+import { pictureOf, TIER_COLOURS, type WornPicture } from './earnedPictures';
 
 const INK = '#1d1b3a';
 
@@ -203,8 +204,60 @@ function Extras({ a, layer }: { a: Avatar; layer: 'face' | 'over' }) {
   return null;
 }
 
-/** Draws an avatar from its saved codes. */
-export function AvatarImage({ avatar, size = 96, label }: { avatar: unknown; size?: number; label?: string }) {
+/**
+ * An earned picture in its bronze, silver or gold ring. Until its painting lands (and if the painting fails to load) it is
+ * the game's emoji on a disc of the same metal.
+ */
+function EarnedPicture({ picture, size, label }: { picture: WornPicture; size: number; label?: string }) {
+  const id = useId();
+  const [light, main, dark] = TIER_COLOURS[picture.tier];
+  return (
+    <svg
+      className="avatar"
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role={label ? 'img' : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      data-pic={picture.id}
+      data-tier={picture.tier}
+    >
+      <defs>
+        <linearGradient id={`${id}-ring`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={light} />
+          <stop offset="0.5" stopColor={main} />
+          <stop offset="1" stopColor={dark} />
+        </linearGradient>
+        <radialGradient id={`${id}-disc`} cx="0.35" cy="0.3" r="0.9">
+          <stop offset="0" stopColor={light} />
+          <stop offset="1" stopColor={main} />
+        </radialGradient>
+        <clipPath id={`${id}-clip`}>
+          <circle cx="50" cy="50" r="41" />
+        </clipPath>
+      </defs>
+      <circle cx="50" cy="50" r="50" fill={`url(#${id}-ring)`} />
+      <circle cx="50" cy="50" r="43" fill={dark} />
+      <circle cx="50" cy="50" r="41" fill={`url(#${id}-disc)`} />
+      <text x="50" y="52" fontSize="46" textAnchor="middle" dominantBaseline="central">
+        {picture.emoji}
+      </text>
+      {picture.art && (
+        <image href={picture.art} x="9" y="9" width="82" height="82" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-clip)`} />
+      )}
+    </svg>
+  );
+}
+
+/** Draws an avatar from its saved codes: the built avatar, or the earned picture the pupil is wearing (`pic`). */
+export function AvatarImage(props: { avatar: unknown; size?: number; label?: string }) {
+  const picture = pictureOf(props.avatar);
+  if (picture) return <EarnedPicture picture={picture} size={props.size ?? 96} label={props.label} />;
+  return <BuiltAvatar {...props} />;
+}
+
+function BuiltAvatar({ avatar, size = 96, label }: { avatar: unknown; size?: number; label?: string }) {
   const a = normaliseAvatar(avatar);
   const clipId = useId();
   const layers: ReactNode = (
