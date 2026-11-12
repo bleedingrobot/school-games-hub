@@ -20,6 +20,11 @@ export function trophyGame(game: string): GameDefinition | undefined {
   return ALL_GAMES.find((g) => g.id === id);
 }
 
+/** Where a trophy was won: the game's name, 'Training' for facts training (not a game card), else 'Games Hub'. */
+export function trophyPlace(game: string): string {
+  return trophyGame(game)?.name ?? (game === 'training' ? 'Training' : 'Games Hub');
+}
+
 /** The shelf: favourites first (in the pupil's order), then the rest in the server's shelf order. */
 export function shelfOrder(trophies: MyTrophy[], favourites: string[]): MyTrophy[] {
   const picked = favourites.flatMap((id) => trophies.filter((t) => t.id === id));
