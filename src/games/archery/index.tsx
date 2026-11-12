@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import { saveArcheryEnabled } from '../../data/archerySwitch';
 import type { GameDefinition } from '../types';
-import { useArcheryEnabled } from './switch';
 import { ARCHERY_ABOUT, useArcheryClassSwitch, useArcherySummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -37,7 +36,7 @@ export const archeryChallenge: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useArcheryEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row, whether classmate fights are on as its summary, and classmate
   // fights, the points and the class's week in its Settings.
   teacher: {

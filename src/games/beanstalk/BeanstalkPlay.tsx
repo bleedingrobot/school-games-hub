@@ -6,13 +6,13 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { liveBeanstalk } from '../../data/beanstalk';
 import { fetchMyLadder } from '../../data/ladder';
-import { useWekaEnabled } from '../weka/switch';
+import { useGameSwitch } from '../../data/classSwitches';
 import { BeanstalkGame } from './BeanstalkGame';
 import { sumSecure, type Signpost } from './signpost';
 
 export function BeanstalkPlay() {
   const navigate = useNavigate();
-  const wekaOn = useWekaEnabled();
+  const wekaOn = useGameSwitch('weka');
   // The card on to Weka (maths review R8): Weka's switch for this class, and this child's own records for the sum.
   const signpost = useMemo<Signpost>(
     () => ({

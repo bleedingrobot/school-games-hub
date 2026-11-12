@@ -1,6 +1,5 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
-import { useToonFlapEnabled } from './switch';
 import { saveToonFlapEnabled, TOONFLAP_ABOUT, useToonFlapCells, useToonFlapClassSwitch, useToonFlapSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -43,7 +42,7 @@ export const toonFlap: GameDefinition = {
   noBots: true,
   group: 'easy-maths',
   inDevelopment: true,
-  useTeacherSwitch: useToonFlapEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row, the class's levels and golds in the Maths column, and a drawer
   // with the maths and read-time settings.
   teacher: {

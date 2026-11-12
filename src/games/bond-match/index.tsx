@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
 import { saveBondMatchEnabled } from '../../data/bondMatch';
-import { useBondMatchClassSwitch, useBondMatchEnabled } from './switch';
+import { useBondMatchClassSwitch } from './switch';
 import { useBondMatchCells } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -33,7 +33,7 @@ export const bondMatch: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useBondMatchEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: just the on/off switch (nothing to open), and the student page's stars.
   teacher: {
     switch: {

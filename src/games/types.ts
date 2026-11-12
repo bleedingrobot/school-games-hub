@@ -39,10 +39,12 @@ export interface GameDefinition {
   /** Where the dashboard lists the game (in GAMES order within a group). A game without one has no dashboard card. */
   group?: DashboardGroup;
   /**
-   * The teacher's on/off switch for the pupil's class, as a React hook: true shows the card, false or null (still
-   * loading) hides it. Leave it out for a game that is always on. The dashboard calls it for every game in GAMES.
+   * The game has a teacher's on/off switch for the class: its card shows only when the class's setting column is exactly true.
+   * The column is `<id>_enabled` (dragon-maths is `lord_enabled`, clan-quest `clans_enabled`; src/data/settingsChanges.ts
+   * gameSwitchColumn). The home page reads every switch in one request (src/data/classSwitches.ts). Leave it out for a game
+   * that is always on.
    */
-  useTeacherSwitch?: () => boolean | null;
+  teacherSwitch?: boolean;
   /** The game on the teacher's Games table and student page (docs/TEACHER-VIEW-PLAN.md, section 6). */
   teacher?: TeacherContract;
   /**

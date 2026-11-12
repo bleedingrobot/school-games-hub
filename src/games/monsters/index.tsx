@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { saveMonstersEnabled } from '../../data/monsters';
-import { useMonstersEnabled } from './switch';
 import { MONSTERS_ABOUT, useMonstersClassSwitch, useMonstersSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -38,7 +37,7 @@ export const monsters: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
-  useTeacherSwitch: useMonstersEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row, how many topics are on as its summary, and the topics and the
   // class report in its Settings.
   teacher: {

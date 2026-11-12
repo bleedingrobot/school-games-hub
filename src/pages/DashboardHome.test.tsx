@@ -72,7 +72,8 @@ describe('the home page in one request', () => {
     expect(screen.getByText('1 of 2')).toBeInTheDocument();
     // The cards, from the same answer.
     expect(screen.getByRole('region', { name: 'Join your class' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /My maths$/ })).toBeInTheDocument();
+    // My maths is a lazy card that mounts once the page below the hero appears (D5), so a busy CI runner can need longer.
+    expect(await screen.findByRole('heading', { name: /My maths$/ }, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByText(/You can’t change it until it ends/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show my path' })).not.toBeInTheDocument();
     expect(asked()).toEqual(['rpc my_home_page']);

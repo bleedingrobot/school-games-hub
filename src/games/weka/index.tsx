@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { WORDS } from './words';
-import { useWekaEnabled } from './switch';
 import { WEKA_ABOUT, saveWekaEnabled, useWekaClassSwitch, useWekaSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -46,7 +45,7 @@ export const wekasSteppingStones: GameDefinition = {
   group: 'foundational',
   // The home page card's chip: today's stone ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
-  useTeacherSwitch: useWekaEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Picnic Baskets in
   // the Maths column, and a drawer with the help setting.
   teacher: {

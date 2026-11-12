@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { WORDS } from './words';
-import { usePipiEnabled } from './switch';
 import { PIPI_ABOUT, savePipiEnabled, usePipiClassSwitch, usePipiSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -43,7 +42,7 @@ export const pipisHiddenShells: GameDefinition = {
   group: 'foundational',
   // The home page card's chip: today's shell ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
-  useTeacherSwitch: usePipiEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Pearls in the
   // Maths column, and a drawer with the help in the sand on or off.
   teacher: {

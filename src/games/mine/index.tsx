@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import { saveMineEnabled, saveMineMaths } from '../../data/mine';
 import type { GameDefinition } from '../types';
-import { useMineEnabled } from './switch';
 import { MINE_ABOUT, MINE_MATHS_ABOUT, useMineClassMaths, useMineClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -36,7 +35,7 @@ export const mineRunner: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useMineEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch and the maths switch, both in the row, and nothing to open.
   teacher: {
     switch: { useValue: useMineClassSwitch, save: (on, classId) => saveMineEnabled(on, classId), about: MINE_ABOUT },

@@ -1,6 +1,5 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
-import { useTraderEnabled } from './switch';
 import { saveTraderEnabled, saveTraderMaths, TRADER_ABOUT, TRADER_MATHS_ABOUT, useTraderClassMaths, useTraderClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -36,7 +35,7 @@ export const starTrader: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
-  useTeacherSwitch: useTraderEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: on/off and the maths checks in the row, jumps a day and the bank in its Settings.
   teacher: {
     switch: { useValue: useTraderClassSwitch, save: saveTraderEnabled, about: TRADER_ABOUT },

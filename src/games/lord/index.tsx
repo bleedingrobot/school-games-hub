@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { saveLordEnabled } from '../../data/lord';
-import { useLordEnabled } from './switch';
 import { LORD_ABOUT, useLordCells, useLordClassSwitch, useLordSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -57,7 +56,7 @@ export const dragonMaths: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
-  useTeacherSwitch: useLordEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row, where the season is as its summary, and the school's season
   // box, forest fights, the topics and the class report in its Settings.
   teacher: {

@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { WORDS } from './words';
-import { usePigeonEnabled } from './switch';
 import { PIGEON_ABOUT, savePigeonEnabled, usePigeonClassSwitch, usePigeonSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -45,7 +44,7 @@ export const pigeonNumberLine: GameDefinition = {
   inDevelopment: true,
   // The home page card's chip: today's flower ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
-  useTeacherSwitch: usePigeonEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Berry Branches in
   // the Maths column, and a drawer with the help setting.
   teacher: {

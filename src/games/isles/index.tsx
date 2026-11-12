@@ -1,6 +1,5 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
-import { useIslesEnabled } from './switch';
 import { ISLES_ABOUT, islesSummary, saveIslesEnabled, useIslesClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -38,7 +37,7 @@ export const skyIsles: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useIslesEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), "Follows focus" for its
   // maths, and a drawer with Sky Races on or off, the class's islands and its Hall of the Skies.
   teacher: {

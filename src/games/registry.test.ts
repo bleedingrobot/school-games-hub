@@ -39,7 +39,7 @@ describe('game registry', () => {
   });
 
   it('the games with a teacher switch and teacher parts say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.teacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'kingdom']);
     // The teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3).
     expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'trader', 'diamond', 'isles', 'decree', 'robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen', 'toonflap', 'kingdom']);
   });
