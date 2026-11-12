@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes } from 'react-router';
 import { teacherRoutes } from '../App';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,9 +123,22 @@ beforeEach(() => {
 });
 
 describe('the skill map', () => {
-  it('is for teachers only', () => {
-    show(student);
+  it('is for teachers, and fits a class on a screen: short skill names with class counts, one line per pupil', async () => {
+    const first = show(student);
     expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).not.toHaveBeenCalled();
+    first.unmount();
+
+    show(teacher, '/teacher/c12/maths/skills');
+    await userEvent.click(await screen.findByRole('button', { name: /Open every stage/ }, { timeout: 5000 }));
+    const grid = screen.getByRole('table');
+    const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });
+    expect(head).toHaveAttribute('title', 'Doubles and halves to 10');
+    expect(head).toHaveTextContent('Doubles, halves 10');
+    expect(head).toHaveTextContent('1 of 2');
+    expect(within(grid).queryByRole('link', { name: /Set focus/ })).toBeNull();
+    const row = within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ });
+    expect(row).toHaveTextContent('ana');
   });
 });
+

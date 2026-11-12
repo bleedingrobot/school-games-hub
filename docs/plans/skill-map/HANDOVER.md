@@ -37,7 +37,7 @@ A teacher opens Maths > Skill map on a laptop or iPad and, without scrolling, se
 
 ## Done and live
 
-_None yet._
+- K1 (tidy grid): short skill names in `shared/maths/skillNames.ts` (checked in `ladder.test.ts`), sticky header and Pupil/Now on columns, class bars in the header, no footer, compact key, wider page on big screens. PR: see git log "Skill map K1".
 
 ## K1
 
