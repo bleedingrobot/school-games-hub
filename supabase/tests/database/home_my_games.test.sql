@@ -37,10 +37,10 @@ select pg_temp.reset();
 
 -- Ana: 3 chess and 1 checkers this week, and 9 chess a month ago (too old to count). Ben: 5 checkers.
 insert into public.bot_games (player, game, bot_level, player_side, moves, result, reason, player_moves, counts_for_points, finished_at)
-select pg_temp.uid(1), 'chess', 'easy', 'white', '{}', 'won', 'checkmate', 20, true, now() - n * interval '1 hour' from generate_series(1, 3) n
-union all select pg_temp.uid(1), 'checkers', 'easy', 'white', '{}', 'won', 'checkmate', 20, true, now() - interval '5 minutes'
-union all select pg_temp.uid(1), 'chess', 'easy', 'white', '{}', 'won', 'checkmate', 20, true, now() - interval '30 days' - n * interval '1 hour' from generate_series(1, 9) n
-union all select pg_temp.uid(2), 'checkers', 'easy', 'white', '{}', 'won', 'checkmate', 20, true, now() - n * interval '1 hour' from generate_series(1, 5) n;
+select pg_temp.uid(1), 'chess', 'easy', 'white', '{}'::text[], 'won', 'checkmate', 20, true, now() - n * interval '1 hour' from generate_series(1, 3) n
+union all select pg_temp.uid(1), 'checkers', 'easy', 'white', '{}'::text[], 'won', 'checkmate', 20, true, now() - interval '5 minutes'
+union all select pg_temp.uid(1), 'chess', 'easy', 'white', '{}'::text[], 'won', 'checkmate', 20, true, now() - interval '30 days' - n * interval '1 hour' from generate_series(1, 9) n
+union all select pg_temp.uid(2), 'checkers', 'easy', 'white', '{}'::text[], 'won', 'checkmate', 20, true, now() - n * interval '1 hour' from generate_series(1, 5) n;
 
 select is((select count(*)::integer from public.scored_games where player in (pg_temp.uid(1), pg_temp.uid(2))), 18, 'the bot games were scored');
 
