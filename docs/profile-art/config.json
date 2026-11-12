@@ -1,0 +1,1290 @@
+{
+  "game": "profile",
+  "filename_prefix": "profile/img",
+  "style": "epic",
+  "seed_by": "name+style",
+  "styles": {
+    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. ",
+    "plain": "Legendary fantasy game reward frame, painted with rich detail, mirror-bright polished metal with strong specular highlights and warm rim light, glittering. "
+  },
+  "inbox": "~/dragon-art-inbox/profile-art/set",
+  "picks": "docs/profile-art/picks.json",
+  "art_dir": "src/avatar/art",
+  "pictures": [
+    {
+      "name": "dragon-head-bronze",
+      "prompt": "Head and neck portrait of a proud friendly dragon with two big curved horns and a row of spikes down its neck, seen three-quarters from the front, mouth closed in a confident smile, the whole dragon head cast in warm reddish-brown bronze metal with hammered scales, glowing amber eyes, a few small orange embers drifting around it, sturdy and simple.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "dragon-head-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "dragon-head-silver",
+      "prompt": "Head and neck portrait of a proud friendly dragon with two big curved horns and a row of spikes down its neck, seen three-quarters from the front, mouth closed in a confident smile, the whole dragon head cast in bright gleaming silver metal with finely engraved scales, glowing icy-blue sapphire eyes, a blue sapphire gem set in its forehead, cool blue-white glow and frosty sparkles around it, ornate and precious.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "dragon-head-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "dragon-head-gold",
+      "prompt": "Head and neck portrait of a proud friendly dragon with two big curved horns and a row of spikes down its neck, seen three-quarters from the front, mouth closed in a confident smile, the whole dragon head cast in dazzling polished gold, wearing a small jewelled crown, glowing ruby-red eyes, rubies and emeralds set along its horns and brow, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "dragon-head-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "ring-bronze",
+      "prompt": "An empty round picture frame seen flat from straight in front: one thick, perfectly circular ring of warm reddish-brown bronze, plain and sturdy with a simple rope pattern around it, with nothing at all inside the ring. Single object, centred, the whole ring visible with space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "rings",
+      "file": "ring-bronze",
+      "max": 512
+    },
+    {
+      "name": "ring-silver",
+      "prompt": "An empty round picture frame seen flat from straight in front: one thick, perfectly circular ring of bright gleaming silver, engraved with leaves, set with four small blue sapphires, with nothing at all inside the ring. Single object, centred, the whole ring visible with space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "rings",
+      "file": "ring-silver",
+      "max": 512
+    },
+    {
+      "name": "ring-gold",
+      "prompt": "An empty round picture frame seen flat from straight in front: one thick, perfectly circular ring of dazzling polished gold, richly ornate with laurel leaves, set with rubies and emeralds and a small crown at the top, with nothing at all inside the ring. Single object, centred, the whole ring visible with space around it, on a plain pure white background, clean empty white all around and in the middle.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "cut",
+      "hollow": true,
+      "style": "plain",
+      "folder": "rings",
+      "file": "ring-gold",
+      "max": 512
+    },
+    {
+      "name": "shelf",
+      "prompt": "A wide empty shelf inside a grand trophy cabinet, seen from straight in front: a thick shelf board of dark polished walnut wood along the bottom with a carved golden trim on its front edge, a back wall of deep midnight-blue velvet, soft warm spotlights shining down from above, completely empty, nothing standing on the shelf. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1280,
+        448
+      ],
+      "kind": "scene",
+      "folder": "cabinet",
+      "file": "shelf"
+    },
+    {
+      "name": "clan-banner",
+      "prompt": "A heroic clan banner flying from a tall pole, rich crimson cloth with gold trim and gold tassels, a golden shield-and-star emblem in the middle, a small friendly village of round huts glowing far below it, golden light behind. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "clan-banner",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "chess-crown",
+      "prompt": "A majestic golden crown whose points are chess pieces, a king in the middle with a castle and a knight either side, a black and white chequered band around it, glowing with light and sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "chess-crown",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "checkers-crown",
+      "prompt": "A majestic golden crown with a ring of round flat red and black checkers game discs set around its band, a shining red checkers disc on top of every point, glowing with light and sparkles. Nothing else in the picture. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "checkers-crown",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "gem-crown",
+      "prompt": "A dazzling crown made almost entirely of huge faceted gems, ruby, emerald, sapphire and amethyst, held in fine gold, with a small golden key at the front, rainbow glints and sparkles flying off it. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "gem-crown",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "book-master",
+      "prompt": "A grand magical book lying open, glowing golden light pouring up out of its pages, three tiny cute round friendly monsters peeking happily over the top of the pages, golden clasps and corners, stars swirling above. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "book-master",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-marble",
+      "prompt": "One giant golden glass marble with a swirling rainbow ribbon inside it, glowing from within, a curved streak of light behind it showing it racing along, sparkles all around. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "golden-marble",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "perfect-match",
+      "prompt": "Two glowing star-shaped gems, one pink and one blue, clicking together in the middle with a burst of white light, inside a golden ring of twelve small gold stars. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "perfect-match",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-pickaxe",
+      "prompt": "A magnificent golden pickaxe struck into a mound of glittering gem ore, crystals of every colour sparkling around it, a small miner's lantern glowing beside it. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "golden-pickaxe",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-bow",
+      "prompt": "A magnificent golden bow standing upright with a glowing arrow drawn back on it, the tips of the bow shaped like hawk wings, a round target far behind it, golden light and sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "golden-bow",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "royal-crown",
+      "prompt": "The grandest royal crown of all resting on a plump purple velvet cushion with gold tassels, tall golden arches, a big ruby at the front, pearls and white fur trim, golden rays of light and sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "royal-crown",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "black-hole",
+      "prompt": "A spectacular black hole in space: a perfect dark circle ringed by a blazing swirling disc of orange, gold and violet light, a tiny bright star being built beside it, awe-inspiring and beautiful, not scary. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "black-hole",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "lighthouse",
+      "prompt": "A white and red striped lighthouse standing on a tiny floating grassy sky island among soft clouds, its lamp blazing two golden beams across a starry dusk sky, sparkles in the beams. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "lighthouse",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "all-rounder",
+      "prompt": "A five-pointed star medal where every point is a different coloured gem, red, blue, green, purple and orange, with a small golden trophy cup in the middle, bright rays of light behind it. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "all-rounder",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "double-slayer",
+      "prompt": "Two gleaming hero's swords crossed over a round golden shield that shows a proud dragon head, warm red fire glow on the left and bright green magic glow on the right. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "double-slayer",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "board-master",
+      "prompt": "A golden chess knight and a golden crowned checkers piece standing side by side on a small floating chequered board, a crown of light hanging in the air above them both. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "board-master",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "treasure-keeper",
+      "prompt": "An open treasure chest overflowing with gold coins and gems, a big pink heart-shaped diamond floating and shining above it, a small golden lighthouse charm resting on the pile, golden light pouring out. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "treasure-keeper",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "backdrop-gold",
+      "prompt": "An empty stage for a treasure: only a big soft radiant burst of golden light rays in the very centre with drifting golden sparkles around it, no object at all. Nothing else in the picture. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "backdrop-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "backdrop-pink",
+      "prompt": "An empty stage for a treasure: only a big soft radiant burst of rose-pink and white light rays in the very centre with drifting pink and silver sparkles around it, no object at all. Nothing else in the picture. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "backdrop-pink",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "name-scroll",
+      "prompt": "A parchment scroll, partly unrolled and completely blank, with golden rollers at each end and a red ribbon, a golden feather quill resting across it, glowing softly, sparkles around it. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "pictures",
+      "file": "name-scroll",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "slayers-sword-bronze",
+      "prompt": "A mighty hero's sword standing upright with its point down, a broad blade and a crossguard shaped like two dragon wings, the whole sword made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "slayers-sword-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "slayers-sword-silver",
+      "prompt": "A mighty hero's sword standing upright with its point down, a broad blade and a crossguard shaped like two dragon wings, the whole sword made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "slayers-sword-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "slayers-sword-gold",
+      "prompt": "A mighty hero's sword standing upright with its point down, a broad blade and a crossguard shaped like two dragon wings, the whole sword made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "slayers-sword-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-tooth-bronze",
+      "prompt": "One huge curved ivory monster fang standing on a round trophy stand, clean and smooth, the cap, bands and stand made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-tooth-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-tooth-silver",
+      "prompt": "One huge curved ivory monster fang standing on a round trophy stand, clean and smooth, the cap, bands and stand made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-tooth-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "monster-tooth-gold",
+      "prompt": "One huge curved ivory monster fang standing on a round trophy stand, clean and smooth, the cap, bands and stand made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "monster-tooth-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-knight-bronze",
+      "prompt": "A chess knight piece, a proud horse head on a round base, seen from the side, the whole piece made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-knight-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-knight-silver",
+      "prompt": "A chess knight piece, a proud horse head on a round base, seen from the side, the whole piece made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-knight-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-knight-gold",
+      "prompt": "A chess knight piece, a proud horse head on a round base, seen from the side, the whole piece made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-knight-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-king-bronze",
+      "prompt": "A checkers king: two thick round checkers discs stacked one on the other with a small crown sitting on top, the whole piece made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-king-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-king-silver",
+      "prompt": "A checkers king: two thick round checkers discs stacked one on the other with a small crown sitting on top, the whole piece made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-king-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "champions-king-gold",
+      "prompt": "A checkers king: two thick round checkers discs stacked one on the other with a small crown sitting on top, the whole piece made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "champions-king-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "card-shark-bronze",
+      "prompt": "A friendly grinning cartoon shark leaping up out of a fan of five playing cards, the cards are plain blank-faced cards, each marked with one simple big star shape and nothing else, no letters and no numbers on any card, the shark and the cards made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture. No letters or numbers anywhere. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "card-shark-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "card-shark-silver",
+      "prompt": "A friendly grinning cartoon shark leaping up out of a fan of five playing cards, the cards are plain blank-faced cards, each marked with one simple big star shape and nothing else, no letters and no numbers on any card, the shark and the cards made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture. No letters or numbers anywhere. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "card-shark-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "card-shark-gold",
+      "prompt": "A friendly grinning cartoon shark leaping up out of a fan of five playing cards, the cards are plain blank-faced cards, each marked with one simple big star shape and nothing else, no letters and no numbers on any card, the shark and the cards made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture. No letters or numbers anywhere. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "card-shark-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "clash-cup-bronze",
+      "prompt": "A two-handled trophy cup with a big lightning bolt on its front and two lightning bolts crossed behind it, the whole cup made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "clash-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "clash-cup-silver",
+      "prompt": "A two-handled trophy cup with a big lightning bolt on its front and two lightning bolts crossed behind it, the whole cup made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "clash-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "clash-cup-gold",
+      "prompt": "A two-handled trophy cup with a big lightning bolt on its front and two lightning bolts crossed behind it, the whole cup made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "clash-cup-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "wormhole-bronze",
+      "prompt": "A swirling spiral space portal of violet and blue light, held inside a thick round ring like a gateway, the ring made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "wormhole-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "wormhole-silver",
+      "prompt": "A swirling spiral space portal of violet and blue light, held inside a thick round ring like a gateway, the ring made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "wormhole-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "wormhole-gold",
+      "prompt": "A swirling spiral space portal of violet and blue light, held inside a thick round ring like a gateway, the ring made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "wormhole-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "league-champion-bronze",
+      "prompt": "A champion's badge: a big round medal with a cute monster paw print in the middle and a laurel wreath around it, hanging from a short ribbon, the medal made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "league-champion-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "league-champion-silver",
+      "prompt": "A champion's badge: a big round medal with a cute monster paw print in the middle and a laurel wreath around it, hanging from a short ribbon, the medal made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "league-champion-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "league-champion-gold",
+      "prompt": "A champion's badge: a big round medal with a cute monster paw print in the middle and a laurel wreath around it, hanging from a short ribbon, the medal made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "league-champion-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "shiny-star-bronze",
+      "prompt": "A chunky five-pointed star trophy on a small round stand, mirror-polished and twinkling all over, the whole star made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "shiny-star-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "shiny-star-silver",
+      "prompt": "A chunky five-pointed star trophy on a small round stand, mirror-polished and twinkling all over, the whole star made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "shiny-star-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "shiny-star-gold",
+      "prompt": "A chunky five-pointed star trophy on a small round stand, mirror-polished and twinkling all over, the whole star made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "shiny-star-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "marble-cup-bronze",
+      "prompt": "A trophy cup holding one big glass marble with a bright swirl of colour inside it, the cup made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "marble-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "marble-cup-silver",
+      "prompt": "A trophy cup holding one big glass marble with a bright swirl of colour inside it, the cup made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "marble-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "marble-cup-gold",
+      "prompt": "A trophy cup holding one big glass marble with a bright swirl of colour inside it, the cup made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "marble-cup-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "bond-star-bronze",
+      "prompt": "A big five-pointed star in two halves that fit together like two puzzle pieces, with a bright glowing seam down the middle, the star made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "bond-star-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "bond-star-silver",
+      "prompt": "A big five-pointed star in two halves that fit together like two puzzle pieces, with a bright glowing seam down the middle, the star made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "bond-star-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "bond-star-gold",
+      "prompt": "A big five-pointed star in two halves that fit together like two puzzle pieces, with a bright glowing seam down the middle, the star made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "bond-star-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "miners-lamp-bronze",
+      "prompt": "An old-fashioned miner's lantern with a carrying ring on top and a warm light shining out through its glass, the lantern made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "miners-lamp-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "miners-lamp-silver",
+      "prompt": "An old-fashioned miner's lantern with a carrying ring on top and a warm light shining out through its glass, the lantern made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "miners-lamp-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "miners-lamp-gold",
+      "prompt": "An old-fashioned miner's lantern with a carrying ring on top and a warm light shining out through its glass, the lantern made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "miners-lamp-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "hawk-feather-bronze",
+      "prompt": "A single large hawk feather standing upright with an arrow crossed behind it, the feather and the arrow made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "hawk-feather-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "hawk-feather-silver",
+      "prompt": "A single large hawk feather standing upright with an arrow crossed behind it, the feather and the arrow made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "hawk-feather-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "hawk-feather-gold",
+      "prompt": "A single large hawk feather standing upright with an arrow crossed behind it, the feather and the arrow made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "hawk-feather-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "royal-seal-bronze",
+      "prompt": "A round royal seal medallion embossed with a crown, with two ribbon tails hanging below it, the seal made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "royal-seal-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "royal-seal-silver",
+      "prompt": "A round royal seal medallion embossed with a crown, with two ribbon tails hanging below it, the seal made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture. Absolutely no people, no children, no figures and no silhouettes anywhere in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "royal-seal-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "royal-seal-gold",
+      "prompt": "A round royal seal medallion embossed with a crown, with two ribbon tails hanging below it, the seal made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "royal-seal-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-ring-bronze",
+      "prompt": "A small glowing sun with a great wide ring circling all the way around it, like the ring of a planet, the ring made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-ring-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-ring-silver",
+      "prompt": "A small glowing sun with a great wide ring circling all the way around it, like the ring of a planet, the ring made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-ring-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-ring-gold",
+      "prompt": "A small glowing sun with a great wide ring circling all the way around it, like the ring of a planet, the ring made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-ring-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "keepers-medal-bronze",
+      "prompt": "A round medal on a striped ribbon, embossed with a lighthouse standing on a little cloud island, the medal made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "keepers-medal-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "keepers-medal-silver",
+      "prompt": "A round medal on a striped ribbon, embossed with a lighthouse standing on a little cloud island, the medal made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "keepers-medal-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "keepers-medal-gold",
+      "prompt": "A round medal on a striped ribbon, embossed with a lighthouse standing on a little cloud island, the medal made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "keepers-medal-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "times-tables-shield-bronze",
+      "prompt": "A knight's shield with one big bold diagonal cross, like a multiplication sign, raised on its front, the shield made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "times-tables-shield-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "times-tables-shield-silver",
+      "prompt": "A knight's shield with one big bold diagonal cross, like a multiplication sign, raised on its front, the shield made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "times-tables-shield-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "times-tables-shield-gold",
+      "prompt": "A knight's shield with one big bold diagonal cross, like a multiplication sign, raised on its front, the shield made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "times-tables-shield-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "season-regular-bronze",
+      "prompt": "A round medallion embossed with a smiling rising sun above one big tick mark, a laurel wreath around its edge, the medallion made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-regular-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "season-regular-silver",
+      "prompt": "A round medallion embossed with a smiling rising sun above one big tick mark, a laurel wreath around its edge, the medallion made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-regular-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "season-regular-gold",
+      "prompt": "A round medallion embossed with a smiling rising sun above one big tick mark, a laurel wreath around its edge, the medallion made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "season-regular-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "adventurers-badge-bronze",
+      "prompt": "An explorer's badge: a compass star with a bow and a pickaxe crossed behind it, the badge made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "adventurers-badge-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "adventurers-badge-silver",
+      "prompt": "An explorer's badge: a compass star with a bow and a pickaxe crossed behind it, the badge made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "adventurers-badge-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "adventurers-badge-gold",
+      "prompt": "An explorer's badge: a compass star with a bow and a pickaxe crossed behind it, the badge made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "adventurers-badge-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-monarch-bronze",
+      "prompt": "A royal crown with a little ringed planet floating above its centre and tiny stars orbiting it, the crown made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-monarch-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-monarch-silver",
+      "prompt": "A royal crown with a little ringed planet floating above its centre and tiny stars orbiting it, the crown made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-monarch-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "star-monarch-gold",
+      "prompt": "A royal crown with a little ringed planet floating above its centre and tiny stars orbiting it, the crown made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "star-monarch-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-wings-bronze",
+      "prompt": "A pair of wide spread feathered wings with one round swirled glass marble held between them, the wings made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "golden-wings-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-wings-silver",
+      "prompt": "A pair of wide spread feathered wings with one round swirled glass marble held between them, the wings made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "golden-wings-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "golden-wings-gold",
+      "prompt": "A pair of wide spread feathered wings with one round swirled glass marble held between them, the wings made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "golden-wings-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "best-friends-cup-bronze",
+      "prompt": "A loving cup whose two handles are two little round birds facing each other, with a heart on its front, the cup made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "best-friends-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "best-friends-cup-silver",
+      "prompt": "A loving cup whose two handles are two little round birds facing each other, with a heart on its front, the cup made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "best-friends-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "best-friends-cup-gold",
+      "prompt": "A loving cup whose two handles are two little round birds facing each other, with a heart on its front, the cup made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "best-friends-cup-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-cup-bronze",
+      "prompt": "A trophy cup overflowing with bright flowers, fern fronds and green leaves, the cup made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-cup-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-cup-silver",
+      "prompt": "A trophy cup overflowing with bright flowers, fern fronds and green leaves, the cup made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-cup-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-cup-gold",
+      "prompt": "A trophy cup overflowing with bright flowers, fern fronds and green leaves, the cup made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-cup-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-gate-bronze",
+      "prompt": "An arched garden gate standing a little open with warm light shining through it, flowering vines winding up its bars, the gate made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-gate-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-gate-silver",
+      "prompt": "An arched garden gate standing a little open with warm light shining through it, flowering vines winding up its bars, the gate made of bright gleaming silver, finely engraved, set with blue sapphires, a cool blue-white glow and frosty sparkles all around, ornate and precious. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-gate-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "garden-gate-gold",
+      "prompt": "An arched garden gate standing a little open with warm light shining through it, flowering vines winding up its bars, the gate made of dazzling polished gold, richly ornate, crusted with rubies, emeralds and diamonds, brilliant golden light rays bursting out behind it, clouds of golden sparkles, the grandest treasure of all. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "trophies",
+      "file": "garden-gate-gold",
+      "max": 512,
+      "small": 160
+    }
+  ]
+}

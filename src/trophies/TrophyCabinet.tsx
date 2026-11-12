@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useClassSwitches } from '../data/classSwitches';
 import { fetchMyTrophies, fetchMyTrophyPairs, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy, type TrophyPair } from '../data/trophies';
 import { GAMES } from '../games/registry';
+import { SHELF_ART } from '../avatar/paintedArt';
 import { MAX_FAVOURITES, halfLitPairs, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyPlace, winLine } from './cabinet';
 import { TrophyArt } from './TrophyArt';
 import './trophies.css';
@@ -84,7 +85,7 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
             Your cabinet is waiting for its first trophy. Win one with a big feat in a game, and it lives here for good!
           </p>
         ) : (
-          <ul className="cabinet__shelf" aria-label="My trophies">
+          <ul className="cabinet__shelf" aria-label="My trophies" style={SHELF_ART ? { backgroundImage: `url(${SHELF_ART})`, backgroundSize: '100% var(--row)' } : undefined}>
             {shelf.map((t) => {
               const fav = data.favourites.includes(t.id);
               return (

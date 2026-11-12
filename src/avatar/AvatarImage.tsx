@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { normaliseAvatar, type Avatar } from './avatarParts';
 import { pictureOf, TIER_COLOURS, type WornPicture } from './earnedPictures';
+import { paintedRing } from './paintedArt';
 
 const INK = '#1d1b3a';
 
@@ -211,6 +212,7 @@ function Extras({ a, layer }: { a: Avatar; layer: 'face' | 'over' }) {
 function EarnedPicture({ picture, size, label }: { picture: WornPicture; size: number; label?: string }) {
   const id = useId();
   const [light, main, dark] = TIER_COLOURS[picture.tier];
+  const ring = paintedRing(picture.tier);
   return (
     <svg
       className="avatar"
@@ -243,9 +245,22 @@ function EarnedPicture({ picture, size, label }: { picture: WornPicture; size: n
       <text x="50" y="52" fontSize="46" textAnchor="middle" dominantBaseline="central">
         {picture.emoji}
       </text>
-      {picture.art && (
-        <image href={picture.art} x="9" y="9" width="82" height="82" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-clip)`} />
+      {picture.backdrop && (
+        <image href={picture.backdrop} x="9" y="9" width="82" height="82" preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-clip)`} />
       )}
+      {picture.art && (
+        <image
+          href={size <= 80 ? (picture.artSmall ?? picture.art) : picture.art}
+          x="9"
+          y="9"
+          width="82"
+          height="82"
+          preserveAspectRatio="xMidYMid slice"
+          clipPath={`url(#${id}-clip)`}
+        />
+      )}
+      {/* The painted ring is for big sizes only: at small sizes the drawn ring above is crisper. */}
+      {size >= 120 && ring && <image href={ring} x="0" y="0" width="100" height="100" />}
     </svg>
   );
 }
