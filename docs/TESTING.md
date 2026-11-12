@@ -16,7 +16,7 @@ budget deletes a weaker test to make room.
 - A change to an existing game normally adds **none** (change the tests that are there if behaviour changed), and at most 2.
 - A bug fix may add **one** test, only if the bug could quietly come back and would hurt pupils (wrong marking, lost saves,
   someone seeing another school's data). Otherwise fix it and move on.
-- **Site areas** (not games): `shared/maths` + `src/maths` 25, `src/pages` 25, `src/teacher` 25, `src/data` 20,
+- **Site areas** (not games): `shared/maths` + `src/maths` 25, `src/pages` 29 (25, plus 4 for the profile page, 12 Nov 2026), `src/teacher` 25, `src/data` 20,
   `supabase/functions/_shared` 10, `src/components` (with theme, avatar, speech) 8, `src/App.test.tsx` 6.
 - **Waiting in screen tests:** `findBy`/`waitFor` wait up to 5 seconds (`src/test-setup.ts`), so a lazy page loading on a
   busy machine doesn't fail. Don't lower it per test. A test that starts a background import must let it finish before it

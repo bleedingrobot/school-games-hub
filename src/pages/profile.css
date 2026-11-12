@@ -40,7 +40,7 @@
   color: var(--ink-soft);
 }
 
-.profile-fold {
+.profile .panel.profile-fold {
   padding: 0;
 }
 .profile-fold__heading {
