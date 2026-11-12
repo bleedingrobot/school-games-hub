@@ -197,7 +197,7 @@ export function SeeSaw({ left, right, tilt, label = 'A see-saw', className = '',
   const pivot = paint('seesaw/pivot');
   const painted = Boolean(plank && pivot);
   return (
-    <svg className={`pr-saw ${className}${wobble ? ' pr-saw--wobble' : ''}`} viewBox={close ? '0 76 440 174' : '0 0 440 250'} role="img" aria-label={label}>
+    <svg className={`pr-saw ${className}${wobble ? ' pr-saw--wobble' : ''}`} viewBox={close ? '0 76 440 174' : '0 60 440 190'} role="img" aria-label={label}>
       <ellipse cx="220" cy="236" rx="120" ry="9" fill="rgb(0 0 0 / 0.15)" />
       {painted ? (
         <image href={pivot} x="190" y="184" width="60" height="52" preserveAspectRatio="none" />
