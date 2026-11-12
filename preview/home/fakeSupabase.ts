@@ -233,6 +233,11 @@ export const supabase = {
     if (name === 'teacher_classes') {
       return Promise.resolve({ data: [{ id: 'c1', name: 'Room 12', archived: false }, { id: 'c2', name: 'Room 14', archived: false }], error: null });
     }
+    if (name === 'game_board') {
+      const rows = BOARD_PEOPLE.slice(0, 7)
+        .map((p, n) => ({ ...p, count: 7 - n, week: n % 3, games: p.games, place: n + 1, is_me: p.name === ME.display_name }));
+      return Promise.resolve({ data: rows, error: null });
+    }
     if (name === 'trophies_of') {
       return Promise.resolve({
         data: RECENT.slice(0, 4).map((t, n) => ({ trophy: t.trophy, title: t.title, how: t.how, game: t.game, kind: t.kind, tier: t.tier, wins: n === 1 ? 3 : 1 })),

@@ -69,6 +69,25 @@ export async function fetchAchievementsByGame(player: string): Promise<GameAchie
   return data as GameAchievements[];
 }
 
+export interface GameBoardRow {
+  place: number;
+  name: string;
+  avatar: unknown;
+  /** Achievements in this game (not the ones that measure maths level). */
+  count: number;
+  /** Of them, earned since Monday. */
+  week: number;
+  /** Games of it finished. */
+  games: number;
+  is_me: boolean;
+}
+
+export async function fetchGameBoard(game: string, board: 'all-time' | 'week', scope: BoardScope): Promise<GameBoardRow[]> {
+  const { data, error } = await supabase.rpc('game_board', { game, board, scope });
+  if (error || !Array.isArray(data)) throw new FriendlyError('We couldn’t load the leaderboard.');
+  return data as GameBoardRow[];
+}
+
 export interface TrophiesRow {
   place: number;
   name: string;

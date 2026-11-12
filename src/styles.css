@@ -2130,6 +2130,9 @@ main:focus {
   color: var(--ink-soft);
   font-size: 0.82rem;
 }
+.board-filter__game {
+  margin-bottom: 12px;
+}
 .board-filter__pick {
   display: inline-flex;
   align-items: center;

@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(23);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -106,6 +106,12 @@ select is(pg_temp.names(public.trophies_board('season', 'school')), array['Brave
 select is(pg_temp.names(public.trophies_board('all-time', 'class')), array['Brave Otter 1'], 'my class only');
 select is((select jsonb_agg(e ->> 'title' order by e ->> 'title') from jsonb_array_elements(public.trophies_of('Brave Otter 1')) e),
   '["Royal Crown", "Season Regular"]'::jsonb, 'a schoolmate''s trophies');
+
+-- A board for one game: the three pupils with chess achievements or goes; never the hidden pupil or the teacher.
+select pg_temp.as(2);
+select is((select array_agg(x order by x) from unnest(pg_temp.names(public.game_board('chess', 'all-time', 'school'))) x),
+  array['Brave Otter 1', 'Calm Kea 2', 'Swift Tui 3'], 'a game''s board: pupils with achievements or goes in that game');
+select throws_ok($$ select public.game_board('no-such-game', 'all-time', 'school') $$, '22023', null, 'no board for a game that isn''t there');
 
 -- Teachers pick a class (or a year) to filter by; pupils can't.
 select pg_temp.as(11);

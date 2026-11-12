@@ -189,3 +189,54 @@ begin
 end;
 $$;
 revoke execute on function public.board_pupils(text) from public, anon, authenticated;
+
+-- A board for every game (James, 13 Nov 2026: "why are so few games on here?"). [{ place, name, avatar, count, week, games,
+-- is_me }]: pupils ranked by achievements in that game (all time, or earned this week), then by finished goes of it. The
+-- achievements that measure maths level are left out, as on the main board, so no game's board ranks maths.
+create function public.game_board(game text, board text, scope text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  week_start timestamptz := public.nz_week_start(now());
+begin
+  perform public.require_school_user();
+  if board not in ('all-time', 'week') or not exists (select 1 from public.achievement_types t where t.game = game_board.game) then
+    raise exception 'That leaderboard doesn''t exist.' using errcode = '22023';
+  end if;
+  return coalesce((
+    with pupils as (select * from public.board_pupils(scope)),
+    counts as (
+      select a.player, count(*)::integer as total, count(*) filter (where a.earned_at >= week_start)::integer as week
+      from public.achievements a
+      join public.achievement_types t on t.id = a.achievement
+      where t.game = game_board.game and public.board_achievement_counts(t.measure) and a.player in (select id from pupils)
+      group by a.player),
+    goes as (
+      select s.player, count(*)::integer as n, count(*) filter (where s.nz_day >= public.nz_day(week_start))::integer as week
+      from public.scored_games s
+      where s.game = game_board.game and s.player in (select id from pupils)
+      group by s.player),
+    placed as (
+      select p.id, p.display_name, p.avatar, coalesce(c.total, 0) as total, coalesce(c.week, 0) as week,
+             coalesce(g.n, 0) as games,
+             case when board = 'week' then coalesce(c.week, 0) else coalesce(c.total, 0) end as score,
+             case when board = 'week' then coalesce(g.week, 0) else coalesce(g.n, 0) end as tie
+      from pupils p
+      left join counts c on c.player = p.id
+      left join goes g on g.player = p.id
+      where c.player is not null or g.player is not null),
+    ranked as (
+      select r.*, rank() over (order by r.score desc, r.tie desc)::integer as place,
+             row_number() over (order by r.score desc, r.tie desc, r.display_name)::integer as n
+      from placed r where r.score > 0 or r.tie > 0)
+    select jsonb_agg(jsonb_build_object('place', r.place, 'name', r.display_name, 'avatar', r.avatar, 'count', r.total,
+                                        'week', r.week, 'games', r.games, 'is_me', r.id = auth.uid()) order by r.n)
+    from ranked r where r.n <= 10 or r.id = auth.uid()), '[]'::jsonb);
+end;
+$$;
+revoke execute on function public.game_board(text, text, text) from public, anon, authenticated;
+grant execute on function public.game_board(text, text, text) to authenticated;

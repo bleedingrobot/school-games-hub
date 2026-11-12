@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -8,12 +8,13 @@ import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophi
 import { HallOfFame } from '../trophies/HallOfFame';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
-import { useGameSwitch } from '../data/classSwitches';
+import { useClassSwitches } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES, gameLabel } from '../games/registry';
 import {
   fetchAchievementsBoard,
   fetchAchievementsByGame,
+  fetchGameBoard,
   fetchHardWorkers,
   fetchTrophiesBoard,
   fetchTrophiesOf,
@@ -22,6 +23,7 @@ import {
   type TrophiesRow,
   type BoardScope,
   type GameAchievements,
+  type GameBoardRow,
   type HardWorkerRow,
   type HardWorkers,
 } from '../data/boards';
@@ -98,6 +100,21 @@ export function Leaderboard() {
   const [scope, setScope] = useState<BoardScope>('school');
   const [teacherScope, setTeacherScope] = useState<BoardScope>('school');
   const boardScope = pupil ? scope : teacherScope;
+  const scopeRow = pupil ? (
+    <fieldset className="choice-group">
+      <legend>Who</legend>
+      <div className="choice-group__chips">
+        {SCOPES.map((s) => (
+          <label key={s.id} className="chip">
+            <input type="radio" name="board-scope" checked={scope === s.id} onChange={() => setScope(s.id)} />
+            <span>{s.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  ) : (
+    <TeacherScope scope={teacherScope} onPick={setTeacherScope} />
+  );
   const pick = (id: Tab) => setParams(id === 'achievements' ? {} : { board: id }, { replace: true });
   return (
     <div className="leaderboard">
@@ -123,22 +140,7 @@ export function Leaderboard() {
             </button>
           ))}
         </div>
-        {(tab === 'achievements' || tab === 'effort' || tab === 'trophies') && !pupil && (
-          <TeacherScope scope={teacherScope} onPick={setTeacherScope} />
-        )}
-        {(tab === 'achievements' || tab === 'effort' || tab === 'trophies') && pupil && (
-          <fieldset className="choice-group">
-            <legend>Who</legend>
-            <div className="choice-group__chips">
-              {SCOPES.map((s) => (
-                <label key={s.id} className="chip">
-                  <input type="radio" name="board-scope" checked={scope === s.id} onChange={() => setScope(s.id)} />
-                  <span>{s.label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )}
+        {(tab === 'achievements' || tab === 'effort' || tab === 'trophies') && scopeRow}
         {tab === 'achievements' ? (
           <AchievementsBoard scope={boardScope} />
         ) : tab === 'trophies' ? (
@@ -148,32 +150,135 @@ export function Leaderboard() {
         ) : tab === HALL_TAB ? (
           <HallOfFame />
         ) : (
-          <GameBoards />
+          <GameBoards scope={boardScope} scopeRow={scopeRow} />
         )}
       </div>
     </div>
   );
 }
 
-/** The older boards, one game at a time: Chess and Checkers (points and rank), Gem Keep stars, Maths Monsters. */
-function GameBoards() {
-  const monstersOn = useGameSwitch('monsters') === true;
-  const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
-  const [game, setGame] = useState(boardGames[0]?.id ?? GAMES[0].id);
+/** Games with no achievements yet, so nothing to rank (Star Trader). */
+const NO_BOARD = new Set(['trader']);
+const SWITCHED = GAMES.filter((g) => g.teacherSwitch).map((g) => g.id);
+
+/**
+ * A board for every game (James, 13 Nov 2026). Chess and Checkers (points and rank), Gem Keep (stars) and Maths Monsters keep
+ * their own boards; every other game ranks achievements in that game, then games finished, so no board ranks maths.
+ */
+function GameBoards({ scope, scopeRow }: { scope: BoardScope; scopeRow: ReactNode }) {
+  const { profile } = useAuth();
+  const teacher = profile?.role === 'teacher';
+  const switchedOn = useClassSwitches(SWITCHED);
+  const boardGames = GAMES.filter((g) => !NO_BOARD.has(g.id) && (!g.teacherSwitch || teacher || (switchedOn?.has(g.id) ?? false)));
+  const [game, setGame] = useState(GAMES[0].id);
+  const special = BOARD_GAMES.some((g) => g.id === game);
+  return (
+    <>
+      <label className="board-filter__pick board-filter__game">
+        <span>Game</span>
+        <select value={game} onChange={(e) => setGame(e.target.value)}>
+          {boardGames.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {!special && scopeRow}
+      {game === 'gem-keep' ? (
+        <StarsBoard />
+      ) : game === 'monsters' ? (
+        <MonstersBoard />
+      ) : special ? (
+        <RankedBoard game={game} />
+      ) : (
+        <OneGameBoard game={game} scope={scope} />
+      )}
+    </>
+  );
+}
+
+function OneGameBoard({ game, scope }: { game: string; scope: BoardScope }) {
+  const [board, setBoard] = useState<'all-time' | 'week'>('all-time');
+  const [rows, setRows] = useState<GameBoardRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const { profile } = useAuth();
+  const pupil = profile?.role !== 'teacher';
+
+  useEffect(() => {
+    let current = true;
+    setRows(null);
+    setFailed(false);
+    fetchGameBoard(game, board, scope).then(
+      (r) => current && setRows(r),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [game, board, scope]);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.name));
+  const line = (row: GameBoardRow) => (
+    <li key={row.name} className={row.is_me ? 'is-me' : undefined} value={row.place}>
+      <span className="board-list__place" aria-label={`Place ${row.place}`}>
+        {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+      </span>
+      <AvatarImage avatar={row.avatar} size={40} />
+      <span className="board-list__name">
+        {row.name}
+        {row.is_me && <span className="board-list__you"> (you)</span>}
+        <FavouriteTrophies shelf={shelves[row.name]} />
+      </span>
+      <span className="board-list__points">
+        🏅 {board === 'week' ? row.week : row.count}
+        {row.games > 0 && <small className="board-list__sub">{row.games === 1 ? '1 game' : `${row.games} games`}</small>}
+      </span>
+    </li>
+  );
+  const name = GAMES.find((g) => g.id === game)?.name ?? 'this game';
+
   return (
     <>
       <fieldset className="choice-group">
-        <legend>Game</legend>
+        <legend>When</legend>
         <div className="choice-group__chips">
-          {boardGames.map((g) => (
-            <label key={g.id} className="chip">
-              <input type="radio" name="board-game" checked={game === g.id} onChange={() => setGame(g.id)} />
-              <span>{g.name}</span>
-            </label>
-          ))}
+          <label className="chip">
+            <input type="radio" name="game-board" checked={board === 'all-time'} onChange={() => setBoard('all-time')} />
+            <span>All time</span>
+          </label>
+          <label className="chip">
+            <input type="radio" name="game-board" checked={board === 'week'} onChange={() => setBoard('week')} />
+            <span>This week</span>
+          </label>
         </div>
       </fieldset>
-      {game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
+      <p className="leaderboard__about">
+        {board === 'week' ? `Achievements earned in ${name} since Monday, then games finished.` : `Achievements earned in ${name}, then games finished.`}
+      </p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, board === 'week' ? `played ${name} this week` : `played ${name}`)}</p>
+      ) : (
+        <ol className="board-list" aria-label={`${name} leaderboard`}>
+          {top.map(line)}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              {line(meBelow)}
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !failed && !me && pupil && <p className="leaderboard__me-off">Play {name} and earn an achievement to get on this board!</p>}
     </>
   );
 }
