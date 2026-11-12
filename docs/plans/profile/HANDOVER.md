@@ -13,7 +13,6 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - [ ] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Waits for: P3.
 - [ ] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Waits for: P3.
 - [ ] P8 part 2: Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training. Waits for: P3.
-- [ ] P9 The early-years games (size M, database). Waits for: P3.
 - [ ] P10 Coming back, two-game rewards and the school hall of fame (size M, database). Waits for: P4.
 - [ ] P11 Earn your own name (size L, database and privacy). Waits for: P3 and P5.
 - [ ] P12 Teacher tools, the yearly rollover and a last check (size M). Waits for: P4 to P11.
@@ -21,6 +20,8 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 ## Done and live
 
 - [x] P1 Tidy the profile page (#439, 12 Nov 2026): top card with Sign out, closed folds, avatar maker behind "Change my look", achievements as earned plus the three nearest. A theme now saves when tapped. Styles are in `src/pages/profile.css`; P5 fills the My trophies fold.
+
+- [x] P9 The early-years games (#453, 12 Nov 2026): each finished 30-day golden prize gives that friend's painting as a profile picture (62 friends), a Garden Cup per game at 30, 90 and 150 days played, Quick looks' Garden Gate, back-awarded from that day's records. The friend says "You can wear me on your profile now!". Given by triggers, no game's finish function changed; see "As built by P9" in PLAN.md.
 
 ## Decisions
 
