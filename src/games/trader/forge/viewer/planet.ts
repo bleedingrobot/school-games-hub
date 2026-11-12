@@ -8,7 +8,7 @@ import { PLANET_LOOK } from '../looks';
 import type { Baker, PlanetMaps, PlanetMapSpec } from './bake';
 import { KIND_ID } from './bakeShaders';
 import type { LevelSettings } from './levels';
-import { atmosphereMaterial, cloudMaterial, hologramMaterial, ringMaterial, ringStrip, surfaceMaterial, type Shared } from './materials';
+import { asPlan, asPlanMaterial, atmosphereMaterial, cloudMaterial, hologramMaterial, ringMaterial, ringStrip, surfaceMaterial, type Shared } from './materials';
 import { moonDist, moonSize, orbitRadius, orbitSpeed, planetRadius, ringOuterOf, startAngle } from './orbits';
 import * as P from './parts';
 
@@ -151,11 +151,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
     const land = new THREE.CylinderGeometry(orbitR, orbitR, W, segs, 1, true);
     disposables.push(land);
     let landMesh: THREE.Mesh;
-    if (planned) {
-      const holo = hologramMaterial(time, 0.4);
-      disposables.push(holo);
-      landMesh = new THREE.Mesh(land, holo);
-    } else {
+    {
       maps = baker.planet(spec);
       surfaceMat = surfaceMaterial(shared, ringTex, { albedo: maps.albedo, extra: maps.extra, clouds: null, radius: 2, bump: 0.04, mapMode: 1, repeat: 14, sky, atmo: 0, emisDay: 0 });
       surfaceMat.side = THREE.BackSide;
@@ -183,6 +179,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
       }
     }
     root.add(landMesh);
+    if (planned) asPlan(root, time); // a planned ring world shows its own land and hull, faded with the scan
     pick = landMesh;
     landMesh.userData.pick = p.id;
     root.rotation.x = 0.06;
@@ -295,19 +292,17 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
     const rg = new THREE.RingGeometry(inner, outer, s.level === 'simple' ? 64 : 160, 1);
     rg.rotateX(-Math.PI / 2);
     disposables.push(rg);
-    if (isPlan(p.ring, planned)) {
-      const holo = hologramMaterial(time, 2);
-      holo.uniforms.uOpacity.value = 0.45; // a flat ring adds up to a white sheet at full strength
-      disposables.push(holo);
-      ringMesh = new THREE.Mesh(rg, holo);
-    } else {
-      ringMat = ringMaterial(shared, ringTex, inner, outer, R, s.ringShadows, p.ring.kind === 'crystal' ? 1 : p.ring.kind === 'icy' ? 0.3 : 0);
+    const ringPlan = isPlan(p.ring, planned);
+    {
+      ringMat = ringMaterial(shared, ringTex, inner, outer, R, s.ringShadows && !ringPlan, p.ring.kind === 'crystal' ? 1 : p.ring.kind === 'icy' ? 0.3 : 0);
       ringMat.vertexShader = ringMat.vertexShader.replace('vLocal=position;', 'vLocal=vec3(position.x,position.z,0.0);');
       disposables.push(ringMat);
       ringMesh = new THREE.Mesh(rg, ringMat);
       const rm = ringMat;
       usePaint(ringArt(p.ring.kind), (t) => (rm.uniforms.uRingTex.value = t));
-      if (s.ringShadows) {
+      // a planned ring shows its own painted ring (dusty, icy, crystal) faded with the scan, and casts no shadow yet
+      if (ringPlan) asPlanMaterial(ringMat, time, 2.2);
+      else if (s.ringShadows) {
         for (const m of mats) {
           if (!m.uniforms.uHasRing) continue;
           m.uniforms.uHasRing.value = 1;
@@ -356,7 +351,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
 
   // ---- effects
   const add = (part: P.Part, parent: THREE.Object3D, hologram = false) => {
-    if (hologram) P.asHologram(part.obj, time);
+    if (hologram) asPlan(part.obj, time); // a planned piece keeps its own shape and colours, faded with the scan
     parent.add(part.obj);
     parts.push(part);
   };

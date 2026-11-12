@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { BeltKind, SystemDesign } from '../../../../../shared/trader/system';
 import { FINISH, LIGHTS, NOISE } from './glsl';
 import type { LevelSettings } from './levels';
-import { hologramMaterial, skyMaterial, twinkleMaterial, type Shared } from './materials';
+import { asPlan, skyMaterial, twinkleMaterial, type Shared } from './materials';
 import { beltRadius, beltWidth, orbitRadius, sunExtent, systemRadius, zoneBand } from './orbits';
 import { metal, orbiters, rng, type Part } from './parts';
 import type { PlanetObject } from './planet';
@@ -102,9 +102,7 @@ export function belt(shared: Shared, d: SystemDesign, s: LevelSettings, planned:
   inst.setAttribute('aSpin', new THREE.InstancedBufferAttribute(spinA, 4));
   inst.instanceCount = n;
   const [c1, c2] = BELT_COL[kind];
-  const mat = planned
-    ? hologramMaterial(shared.uTime, 1)
-    : new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({
         vertexShader: /* glsl */ `attribute vec4 aOrbit; attribute vec4 aSpin; uniform float uTime; uniform float uW;
 varying vec3 vN; varying vec3 vW; varying float vShade;
 mat3 rotA(vec3 ax,float a){ ax=normalize(ax); float c=cos(a),s=sin(a),t=1.0-c;
@@ -131,18 +129,7 @@ void main(){
 }`,
         uniforms: { ...shared, uC1: { value: c1 }, uC2: { value: c2 }, uW: { value: 0.12 }, uGlint: { value: kind === 'golden' ? 1.6 : kind === 'icy' ? 0.8 : 0.1 } },
       });
-  if (planned) {
-    // the hologram shader needs the moving positions too
-    mat.vertexShader = (mat.vertexShader as string).replace(
-      'void main(){',
-      /* glsl */ `attribute vec4 aOrbit; uniform float uTime;
-void main(){`,
-    ).replace(
-      'vec4 w=modelMatrix*vec4(position,1.0);',
-      'vec4 w=vec4(position*aOrbit.w+vec3(cos(aOrbit.y+uTime*0.02)*aOrbit.x,aOrbit.z,sin(aOrbit.y+uTime*0.02)*aOrbit.x),1.0);',
-    );
-    inst.instanceCount = Math.min(n, 1500);
-  }
+  if (planned) inst.instanceCount = Math.min(n, 1500);
   const mesh = new THREE.Mesh(inst, mat);
   mesh.frustumCulled = false;
   const g = new THREE.Group();
@@ -165,6 +152,8 @@ void main(){ float r=length(vP.xz); float x=(r-uR)/uW; float f=exp(-x*x*3.0); fl
   });
   const dust = new THREE.Mesh(dustGeo, dustMat);
   g.add(dust);
+  // a planned belt keeps its own rock colours, faded with the scan (12 Nov 2026)
+  if (planned) asPlan(g, shared.uTime);
   return { obj: g, radius: R, dispose: () => { geo.dispose(); inst.dispose(); mat.dispose(); dustGeo.dispose(); dustMat.dispose(); } };
 }
 
@@ -176,7 +165,7 @@ export function comets(shared: Shared, d: SystemDesign, s: LevelSettings, planne
   const list: { head: THREE.Mesh; tails: THREE.Points; a: number; e: number; w: number; ph: number; incl: number; node: number; away: THREE.Vector3 }[] = [];
   const disposables: { dispose(): void }[] = [];
   const headGeo = new THREE.SphereGeometry(0.35, 12, 8);
-  const headMat = planned ? hologramMaterial(shared.uTime, 3) : new THREE.MeshBasicMaterial({ color: new THREE.Color(2.5, 2.6, 2.8) });
+  const headMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.5, 2.6, 2.8) });
   disposables.push(headGeo, headMat);
   const per = Math.round(1400 * s.particles);
   for (let i = 0; i < count; i++) {
@@ -218,6 +207,7 @@ void main(){ vec2 c=gl_PointCoord*2.0-1.0; float r=dot(c,c); if(r>1.0) discard;
     g.add(head);
     list.push({ head, tails, a: sys * (0.55 + i * 0.12), e: 0.75 - i * 0.08, w: 0.05 / (1 + i * 0.4), ph: i * 2.1, incl: 0.25 + i * 0.3, node: i * 1.9, away });
   }
+  if (planned) asPlan(g, shared.uTime); // planned comets keep their white heads and tails, faded with the scan
   const sun = new THREE.Vector3();
   return {
     obj: g,
@@ -291,8 +281,7 @@ export function systemTech(shared: Shared, d: SystemDesign, s: LevelSettings, pl
   const planned = (k: string) => !d.tech.find((t) => t.kind === k)?.built;
   const holo = (o: THREE.Object3D, k: string) => {
     if (!planned(k)) return;
-    const h = hologramMaterial(time, 2);
-    o.traverse((x) => { const m = x as THREE.Mesh; if (m.isMesh) { (m.material as THREE.Material).dispose(); m.material = h; } });
+    asPlan(o, time); // its own shape and colours, faded with the scan (12 Nov 2026)
   };
   const sunR = sunExtent(d.sun?.kind);
 
@@ -302,7 +291,7 @@ export function systemTech(shared: Shared, d: SystemDesign, s: LevelSettings, pl
     const pos = new Float32Array(maxLanes * SEG * 2 * 3);
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const lineMat = new THREE.LineBasicMaterial({ color: planned('lanes') ? new THREE.Color(0.3, 0.7, 1.6) : new THREE.Color(0.4, 1.2, 1.6), transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false });
+    const lineMat = new THREE.LineBasicMaterial({ color: new THREE.Color(0.4, 1.2, 1.6), transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false });
     const lines = new THREE.LineSegments(lineGeo, lineMat);
     lines.frustumCulled = false;
     const SHIPS = 3;
@@ -313,6 +302,8 @@ export function systemTech(shared: Shared, d: SystemDesign, s: LevelSettings, pl
     const ships = new THREE.Points(shipGeo, shipMat);
     ships.frustumCulled = false;
     g.add(lines, ships);
+    holo(lines, 'lanes');
+    holo(ships, 'lanes');
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), q = new THREE.Vector3();
     const bez = (t: number, out: THREE.Vector3) => out.copy(a).multiplyScalar((1 - t) * (1 - t)).addScaledVector(c, 2 * t * (1 - t)).addScaledVector(b, t * t);
     parts.push({
@@ -377,7 +368,8 @@ export function systemTech(shared: Shared, d: SystemDesign, s: LevelSettings, pl
     const r = rng(5);
     const orbits: number[][] = [];
     for (let i = 0; i < 40; i++) orbits.push([R + (r() - 0.5) * beltWidth(d) * 2, (r() - 0.5) * 0.08, r() * 6.28, 0.02 + r() * 0.03, 0]);
-    const part = orbiters(time, orbits, planned('miners') ? new THREE.Color(0.4, 0.8, 2.0) : new THREE.Color(2.4, 1.4, 0.5), 3.5, s.pixelRatio);
+    const part = orbiters(time, orbits, new THREE.Color(2.4, 1.4, 0.5), 3.5, s.pixelRatio);
+    holo(part.obj, 'miners');
     g.add(part.obj);
     parts.push(part);
   }

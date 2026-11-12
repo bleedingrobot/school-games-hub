@@ -3,7 +3,7 @@
 *Written 12 Nov 2026 for James's three picks from the "what's next" list. Work runs in this order: quick wins first, the
 long build last. Each stage is its own PR and goes live on its own (Site checks + Database checks green).*
 
-## A. Star Forge: planned rings and technology get their own look (cloud only, no art)
+## A. Star Forge: planned rings and technology get their own look (cloud only, no art) — DONE 12 Nov 2026
 
 PR #429 made planned suns, planets and moons show their own painted map with a light blue scan. Rings, the ring world,
 belts, comets, life and every technology piece still draw as the same plain blue hologram.

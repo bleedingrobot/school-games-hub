@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { FINISH, LIGHTS, NOISE } from './glsl';
-import { glowMaterial, hologramMaterial, type Shared } from './materials';
+import { glowMaterial, type Shared } from './materials';
 
 export interface Part {
   obj: THREE.Object3D;
@@ -27,17 +27,6 @@ const disposeAll = (o: THREE.Object3D) =>
 
 export const metal = (color = 0xd2d8e2) => new THREE.MeshStandardMaterial({ color, metalness: 0.65, roughness: 0.35 });
 const lamp = (r: number, g: number, b: number) => new THREE.MeshBasicMaterial({ color: new THREE.Color(r, g, b), toneMapped: true });
-
-/** Gives every mesh in a part the hologram look (for plans). */
-export function asHologram(o: THREE.Object3D, time: { value: number }) {
-  const holo = hologramMaterial(time, 8);
-  o.traverse((x) => {
-    const m = x as THREE.Mesh;
-    if (!m.isMesh) return;
-    (m.material as THREE.Material).dispose();
-    m.material = holo;
-  });
-}
 
 // ---------------------------------------------------------------------------------------------- effects
 
