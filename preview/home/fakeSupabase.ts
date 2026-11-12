@@ -56,6 +56,8 @@ world.jobs.my_progress = {
 world.jobs.my_maths_focus = focus;
 world.jobs.my_ladder = { facts: secure, settings: {}, focus };
 world.jobs.leaderboard = [];
+// My games (dashboard plan D2): what this made-up pupil plays most, and their class.
+world.jobs.my_top_games = { mine: ['dragon-maths', 'archery', 'diamond', 'isles'], classGames: ['dragon-maths', 'archery', 'isles', 'clan-quest'] };
 setWorld(world);
 
 const base = fakeSupabase().supabase;
