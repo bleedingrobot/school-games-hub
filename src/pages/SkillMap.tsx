@@ -59,13 +59,33 @@ export default function SkillMap() {
   return <SkillMapView />;
 }
 
+/** The games that ask ladder maths (they call makeFocusPack and record to gem_keep_facts), most played first. */
+const LADDER_GAMES = [
+  'Marble Rush',
+  'Toon Flap',
+  'Gem Keep',
+  'Clan Quest',
+  'Star Trader',
+  'Dragon Maths',
+  'Mine Runner',
+  'Archery Challenge',
+  'Kingdom Keeper',
+  'Royal Decree',
+  'Diamond Drop',
+  'Sky Isles',
+  'Wormholes & Black Holes',
+];
+
 /** The Maths tab's Skill map page, for the class in the teacher header (src/teacher/TeacherShell.tsx). */
 function SkillMapView() {
   const { current } = useTeacherClass();
 
   return (
     <div className="classes skill-map-page">
-      <p className="teacher__classes-link">Where each pupil is on the maths ladder. Tap a cell to see the facts behind it.</p>
+      <p className="teacher__classes-link">
+        Where each pupil is on the maths ladder: the skills Maths focus and auto choose in {LADDER_GAMES.slice(0, 4).join(', ')} and{' '}
+        <span title={LADDER_GAMES.slice(4).join(', ')}>{LADDER_GAMES.length - 4} more games</span>. Tap a cell to see the facts behind it.
+      </p>
       {current && <ClassMapPanel key={current.id} classId={current.id} name={current.name} />}
     </div>
   );
@@ -174,6 +194,8 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   const [params, setParams] = useSearchParams();
   const lookParam = params.get('show');
   const look = isLook(lookParam) ? lookParam : null;
+  /** ?pupil= (from the Students tab) lights up that pupil's row and scrolls to it; it opens nothing. */
+  const pupil = params.get('pupil');
   const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -200,6 +222,11 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
     [data],
   );
   const allMaps = useMemo(() => [...maps.values()], [maps]);
+
+  useEffect(() => {
+    if (!data || !pupil) return;
+    requestAnimationFrame(() => document.querySelector('.skill-map-page [data-marked]')?.scrollIntoView?.({ block: 'center' }));
+  }, [data, pupil, view]);
   const inUse = useMemo(() => skillsInUse(allMaps), [allMaps]);
   const looks = useMemo(() => {
     const middle = classMiddle(allMaps);
@@ -317,7 +344,8 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   >;
   const pickedStudent = picked ? students.find((s) => s.id === picked.student) : undefined;
   const { bands, rest } = bandsFor(show, inUse, folded);
-  const nothingYet = show === 'in-use' && inUse.size === 0;
+  // Nobody has answered a ladder fact (a new pupil's first skill alone doesn't count): a junior class that only plays the Foundational games.
+  const nothingYet = show === 'in-use' && !allMaps.some((m) => m.stages.some((st) => st.cells.some((c) => c.asked > 0)));
 
   return (
     <section className="panel" aria-labelledby="map-title">
@@ -405,7 +433,11 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
             </div>
           )}
           {nothingYet ? (
-            <p className="panel__empty skill-map__nothing">Nobody in {name} has answered ladder maths yet.</p>
+            <p className="panel__empty skill-map__nothing">
+              Nobody in {name} has answered ladder maths yet. For the Foundational games, see{' '}
+              <Link to={`/teacher/${classId}/progress`}>Progress</Link> or{' '}
+              <Link to={`/teacher/${classId}/maths/foundational`}>Foundational skills</Link>.
+            </p>
           ) : (
             <div className={`skill-map__body${picked ? ' skill-map__body--detail' : ''}`}>
               {view === 'skill' ? (
@@ -414,6 +446,7 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
                   students={students}
                   maps={maps}
                   looks={looks}
+                  marked={pupil}
                   onPick={(student, skill) => setPicked({ student, skill })}
                 />
               ) : (
@@ -438,6 +471,7 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
                           rest={rest.length > 0}
                           looks={looks.get(s.id)!}
                           highlight={highlight}
+                          marked={pupil === s.id}
                           picked={picked}
                           onPick={setPicked}
                         />
@@ -615,6 +649,7 @@ function MapRow({
   rest,
   looks,
   highlight,
+  marked,
   picked,
   onPick,
 }: {
@@ -624,13 +659,14 @@ function MapRow({
   rest: boolean;
   looks: Set<Look>;
   highlight: string | null;
+  marked: boolean;
   picked: Picked | null;
   onPick: (p: Picked | null) => void;
 }) {
   const started = map.stages.some((s) => s.cells.some((c) => c.level !== 'not-started' && c.level !== 'off'));
   const isPicked = (skill: string) => picked?.student === student.id && picked.skill === skill;
   return (
-    <tr data-picked={picked?.student === student.id || undefined}>
+    <tr data-picked={picked?.student === student.id || undefined} data-marked={marked || undefined} data-pupil={student.id}>
       <th scope="row" className="skill-map__who" title={student.realName ? `${student.name} (${student.realName})` : student.name}>
         <span className="skill-map__name">{student.name}</span>
         {student.realName && <span className="skill-map__real">{student.realName}</span>}

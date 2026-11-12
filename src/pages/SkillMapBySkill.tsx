@@ -14,10 +14,12 @@ interface Props {
   /** Every pupil's map, for the class counts. */
   maps: Map<string, StudentMap>;
   looks: Map<string, Set<Look>>;
+  /** A pupil to light up (?pupil= from the Students tab). */
+  marked?: string | null;
   onPick: (student: string, skill: string) => void;
 }
 
-export default function SkillMapBySkill({ skills, students, maps, looks, onPick }: Props) {
+export default function SkillMapBySkill({ skills, students, maps, looks, marked, onPick }: Props) {
   const all = [...maps.values()];
   const cards = skills
     .map((skill, order) => {
@@ -54,6 +56,7 @@ export default function SkillMapBySkill({ skills, students, maps, looks, onPick 
                 data-level={level}
                 data-now={now || undefined}
                 data-look={flag}
+                data-marked={marked === s.id || undefined}
                 onClick={() => onPick(s.id, skill.id)}
               >
                 {s.name}

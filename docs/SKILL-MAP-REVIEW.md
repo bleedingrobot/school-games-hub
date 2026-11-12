@@ -1,5 +1,7 @@
 # Skill map review: making the maths ladder readable
 
+**Done: all eight plan cards (K1 to K8) are live as of 12 Nov 2026 (PRs #431 to #436). What was built, and what's left, is in [docs/plans/skill-map/HANDOVER.md](plans/skill-map/HANDOVER.md).**
+
 *Review only, 11 November 2026, from `main` and James's screenshot of Teacher > Maths > Skill map for class "Riley" (31
 pupils) on a laptop. No code was changed. James's screenshot and the mock-ups are in the project files folder `skill-map/`.
 The step-by-step plan with copy-ready prompts is in [docs/plans/skill-map/HANDOVER.md](plans/skill-map/HANDOVER.md) and on
