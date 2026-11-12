@@ -22,6 +22,7 @@ import {
   LEVELS,
   LOOKS,
   mostAreOn,
+  nowSince,
   pupilLooks,
   skillsInUse,
   STAGES,
@@ -97,6 +98,7 @@ function saveShow(show: Show) {
 }
 
 const LOOK_WORDS: Record<Look, (n: number) => string> = {
+  stuck: (n) => `${n} stuck 2+ weeks`,
   nearly: (n) => `${n} nearly ready to move up`,
   hard: (n) => `${n} finding it hard`,
   behind: (n) => `${n} behind the class`,
@@ -617,6 +619,22 @@ function StageTd({ student, stage }: { student: MapStudent; stage: StageCell }) 
   );
 }
 
+const DAY_MS = 86_400_000;
+const daysSince = (at: number) => Math.max(0, Math.floor((Date.now() - at) / DAY_MS));
+const shortDate = (at: number) => new Date(at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'Pacific/Auckland' });
+
+/** "On it since 3 Nov (9 days)", or "since before 12 Nov" for facts first answered before first answers were kept. */
+function onItSince(map: StudentMap, facts: readonly FactStats[]): string | null {
+  if (!map.current) return null;
+  const since = nowSince(map, facts);
+  if (since !== null) {
+    const days = daysSince(since);
+    return `On it since ${shortDate(since)} (${days} day${days === 1 ? '' : 's'})`;
+  }
+  const keys = new Set(map.current.keys);
+  return facts.some((f) => keys.has(f.key) && f.attempts > 0) ? 'On it since before 12 Nov 2026' : null;
+}
+
 /** "Now", "Furthest" and "Warm-up" in words, for the chip's tooltip and the side panel. */
 function placeNotes(student: MapStudent, map: StudentMap, started: boolean) {
   const info = student.ladder;
@@ -632,20 +650,28 @@ function placeNotes(student: MapStudent, map: StudentMap, started: boolean) {
 function Place({ student, map, started, looks }: { student: MapStudent; map: StudentMap; started: boolean; looks: Set<Look> }) {
   const here = map.current ? skillTinyLabel(map.current.id) : started ? 'Every skill secure' : 'Not started';
   const { now, notes } = placeNotes(student, map, started);
-  const state = looks.has('hard') ? 'hard' : looks.has('nearly') ? 'nearly' : undefined;
+  const state = looks.has('stuck') || looks.has('hard') ? 'hard' : looks.has('nearly') ? 'nearly' : undefined;
+  const since = looks.has('stuck') ? nowSince(map, student.facts) : null;
   const words = [...looks].map((l) => LOOK_WORDS[l](1).replace(/^1 /, ''));
   return (
-    <span className="skill-map__now" data-none={!map.current || undefined} data-look={state} title={[`Now: ${now}`, ...notes, ...words].join('\n')}>
-      <span aria-hidden="true">
-        {here}
-        {state === 'nearly' ? ' ↑' : ''}
+    <>
+      <span className="skill-map__now" data-none={!map.current || undefined} data-look={state} title={[`Now: ${now}`, ...notes, ...words].join('\n')}>
+        <span aria-hidden="true">
+          {here}
+          {state === 'nearly' ? ' ↑' : ''}
+        </span>
+        <span className="sr-only">
+          Now: {now}
+          {notes.length ? `. ${notes.join('. ')}` : ''}
+          {words.length ? `. ${words.join(', ')}` : ''}
+        </span>
       </span>
-      <span className="sr-only">
-        Now: {now}
-        {notes.length ? `. ${notes.join('. ')}` : ''}
-        {words.length ? `. ${words.join(', ')}` : ''}
-      </span>
-    </span>
+      {since !== null && (
+        <span className="skill-map__days" aria-hidden="true">
+          {daysSince(since)}d
+        </span>
+      )}
+    </>
   );
 }
 
@@ -687,6 +713,8 @@ function CellDetail({
   const others = cell.skill.keys.filter((k) => !parseFactKey(k));
   const started = map.stages.some((s) => s.cells.some((c) => c.level !== 'not-started' && c.level !== 'off'));
   const { now, notes } = placeNotes(student, map, started);
+  const since = onItSince(map, student.facts);
+  if (since) notes.unshift(since);
   const onIt = students.filter((s) => maps.get(s.id)?.current?.id === skillId);
   const counts = classCounts([...maps.values()], skillId);
   const first = student.name.split(' ')[0];

@@ -237,9 +237,10 @@ export const HARD_PER_FACT = 6;
 export const HARD_SHARE = 0.4;
 export const BEHIND_SKILLS = 3;
 export const QUIET_DAYS = 7;
+export const STUCK_DAYS = 14;
 
-export type Look = 'nearly' | 'hard' | 'behind' | 'quiet';
-export const LOOKS: readonly Look[] = ['nearly', 'hard', 'behind', 'quiet'];
+export type Look = 'stuck' | 'nearly' | 'hard' | 'behind' | 'quiet';
+export const LOOKS: readonly Look[] = ['stuck', 'nearly', 'hard', 'behind', 'quiet'];
 
 /** How far along the ladder a pupil is: the place of their current skill on their path (past the end when all secure, 0 when nothing is). */
 export function ladderPlace(map: StudentMap): number {
@@ -257,11 +258,13 @@ export function classMiddle(maps: readonly StudentMap[]): number {
 /**
  * Which looks a pupil needs. Nearly: half or more of their current skill is secure. Finding it hard: 6 or more answers per fact asked
  * on average and under 40% secure. Behind the class: 3 or more skills before the middle pupil. Gone quiet: answered ladder maths before, but not in
- * the last 7 days.
+ * the last 7 days. Stuck: on a Learning skill for 14 days or more (only known for facts first answered from 12 Nov 2026).
  */
 export function pupilLooks(map: StudentMap, facts: readonly FactStats[], middle: number, now: number): Set<Look> {
   const looks = new Set<Look>();
   const cell = map.current ? cellFor(map, map.current.id) : undefined;
+  const since = nowSince(map, facts);
+  if (cell && cell.level === 'learning' && since !== null && now - since >= STUCK_DAYS * 86_400_000) looks.add('stuck');
   if (cell && cell.level === 'learning') {
     const keys = new Set(cell.skill.keys);
     const asked = facts.filter((f) => keys.has(f.key) && f.attempts > 0);
@@ -287,4 +290,16 @@ export function mostAreOn(maps: readonly StudentMap[]): { skill: LadderSkill; pu
   let best: { skill: LadderSkill; pupils: number } | null = null;
   for (const c of counts.values()) if (!best || c.pupils > best.pupils) best = c;
   return best;
+}
+
+/**
+ * When the pupil first met their current skill: the earliest first answer among its facts, or null when none of them has a
+ * first-answer time (facts first answered before 12 Nov 2026, when the time started being kept).
+ */
+export function nowSince(map: StudentMap, facts: readonly FactStats[]): number | null {
+  if (!map.current) return null;
+  const keys = new Set(map.current.keys);
+  const asked = facts.filter((f) => keys.has(f.key) && f.attempts > 0);
+  if (asked.length === 0 || asked.some((f) => !f.firstSeen)) return null;
+  return Math.min(...asked.map((f) => f.firstSeen!));
 }

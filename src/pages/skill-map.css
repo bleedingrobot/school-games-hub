@@ -203,7 +203,7 @@
 }
 .skill-map__now {
   display: inline-block;
-  max-width: 100%;
+  max-width: calc(100% - 30px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -473,10 +473,9 @@
 .skill-map__show select {
   width: auto;
 }
-.skill-map__detail .stats-table {
+.skill-map__detail table.stats-table,
+.skill-map__detail table.stats-table :is(th, td, caption) {
   font-size: 0.78rem;
-}
-.skill-map__detail .stats-table :is(th, td) {
   padding: 4px 5px;
 }
 
@@ -503,4 +502,10 @@
 }
 .skill-map td[data-highlight]:not([data-here]) > button {
   box-shadow: inset 0 0 0 1px #93c5fd;
+}
+.skill-map__days {
+  margin-left: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #b91c1c;
 }
