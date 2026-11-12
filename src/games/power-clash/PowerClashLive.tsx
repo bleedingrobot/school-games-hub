@@ -7,6 +7,7 @@ import type { GameEvent, Player, PowerClashState, PowerId } from '../../../share
 import { AvatarImage } from '../../avatar/AvatarImage';
 import type { PowerSession } from '../../power-clash/usePowerGame';
 import { useSound } from '../../sound';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { playSound } from '../sounds';
 import { PowerClashGuide } from './Guide';
 import {
@@ -472,6 +473,7 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
         </div>
       </div>
       {help}
+      <TrophyWonLine games={['power-clash']} watch={finished ? row.id : null} />
     </section>
   );
 }
