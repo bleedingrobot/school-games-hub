@@ -20,7 +20,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 ## Done and live
 
 - [x] P1 Tidy the profile page (#439, 12 Nov 2026): top card with Sign out, closed folds, avatar maker behind "Change my look", achievements as earned plus the three nearest. A theme now saves when tapped. Styles are in `src/pages/profile.css`; P5 fills the My trophies fold.
-- [x] P5 The trophy cabinet and the "New trophy!" moment (#PRNUM, 12 Nov 2026): a lit shelf of trophies in their metals (favourites first, up to three, saved on the server), a plaque with how and when each was won, three grey next-to-win spots from games the class can see, earned pictures in "Change my look", and a once-only full-screen "New trophy!" on hub pages. Stand-in cups until P2's paintings.
+- [x] P5 The trophy cabinet and the "New trophy!" moment (#454, 12 Nov 2026): a lit shelf of trophies in their metals (favourites first, up to three, saved on the server), a plaque with how and when each was won, three grey next-to-win spots from games the class can see, earned pictures in "Change my look", and a once-only full-screen "New trophy!" on hub pages. Stand-in cups until P2's paintings.
 
 ## Decisions
 
