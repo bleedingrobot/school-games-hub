@@ -7,8 +7,11 @@ import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 import type { Tier } from './trophies';
 
-/** Who is on a board: the whole school, pupils in my year, or my class. */
-export type BoardScope = 'school' | 'year' | 'class';
+/**
+ * Who is on a board: the whole school, pupils in my year, or my class. Teachers (no year or class of their own) pick one:
+ * `year:<n>` or `class:<id>`.
+ */
+export type BoardScope = 'school' | 'year' | 'class' | `year:${number}` | `class:${string}`;
 
 export interface AchievementsRow {
   place: number;
@@ -64,6 +67,61 @@ export async function fetchAchievementsByGame(player: string): Promise<GameAchie
   const { data, error } = await supabase.rpc('achievements_by_game', { player });
   if (error || !Array.isArray(data)) throw new FriendlyError('We couldn’t load those achievements.');
   return data as GameAchievements[];
+}
+
+export interface GameBoardRow {
+  place: number;
+  name: string;
+  avatar: unknown;
+  /** Achievements in this game (not the ones that measure maths level). */
+  count: number;
+  /** Of them, earned since Monday. */
+  week: number;
+  /** Games of it finished. */
+  games: number;
+  is_me: boolean;
+}
+
+export async function fetchGameBoard(game: string, board: 'all-time' | 'week', scope: BoardScope): Promise<GameBoardRow[]> {
+  const { data, error } = await supabase.rpc('game_board', { game, board, scope });
+  if (error || !Array.isArray(data)) throw new FriendlyError('We couldn’t load the leaderboard.');
+  return data as GameBoardRow[];
+}
+
+export interface TrophiesRow {
+  place: number;
+  name: string;
+  avatar: unknown;
+  /** Different trophies held. */
+  count: number;
+  /** Every win (a trophy won in two seasons counts twice). */
+  wins: number;
+  /** Wins this hub season. */
+  season: number;
+  is_me: boolean;
+}
+
+export async function fetchTrophiesBoard(board: 'all-time' | 'season', scope: BoardScope): Promise<TrophiesRow[]> {
+  const { data, error } = await supabase.rpc('trophies_board', { board, scope });
+  if (error || !Array.isArray(data)) throw new FriendlyError('We couldn’t load the leaderboard.');
+  return data as TrophiesRow[];
+}
+
+/** One of a schoolmate's trophies, for their row on the trophies board. */
+export interface TheirTrophy {
+  trophy: string;
+  title: string;
+  how: string;
+  game: string;
+  kind: 'trophy' | 'picture';
+  tier: Tier;
+  wins: number;
+}
+
+export async function fetchTrophiesOf(player: string): Promise<TheirTrophy[]> {
+  const { data, error } = await supabase.rpc('trophies_of', { player });
+  if (error || !Array.isArray(data)) throw new FriendlyError('We couldn’t load those trophies.');
+  return data as TheirTrophy[];
 }
 
 /** A trophy won at my school this week, for the home page strip. `name` is null for a pupil without a made-up name. */
