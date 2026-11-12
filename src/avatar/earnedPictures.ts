@@ -44,6 +44,9 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'trader-blackhole': { emoji: '🕳️' },
   'diamond-heart': { emoji: '💎' },
   'toonflap-rainbow': { emoji: '🌈' },
+  'chess-crown': { emoji: '♛' },
+  'checkers-crown': { emoji: '⛀' },
+  'archery-bow': { emoji: '🏹' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };
