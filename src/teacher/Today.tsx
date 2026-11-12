@@ -29,6 +29,7 @@ import type { SettingsTarget } from './Games';
 import { useTeacherClass } from './TeacherClass';
 import { GameSets } from './GameSets';
 import { NeedsYou } from './WaitingToJoin';
+import { NewTrophiesThisWeek } from '../trophies/TeacherTrophies';
 import { percentRight, useHardest } from './Hardest';
 import { classOverview, useClassAlerts } from './useClassAlerts';
 import '../maths/focus.css';
@@ -47,6 +48,7 @@ export function Today() {
       <LessonControls key={`controls-${classId}-${setsUsed}`} target={{ kind: 'class', classId }} name={current.name} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
+      <NewTrophiesThisWeek key={`trophies-${classId}`} classId={classId} />
     </div>
   );
 }

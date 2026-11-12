@@ -7,7 +7,16 @@ import { fakeSupabase, homeAnswer, setWorld, busyPupil } from '../../src/pages/h
 import { LADDER } from '../../shared/maths/ladder';
 import { newStats } from '../../shared/maths/leitner';
 
-let ME = { id: 'me', display_name: 'Speedy Otter 27', role: 'student', school_admin: false, avatar: { kind: 'cat', bg: '#9b6bff', top: 'bow' } as Record<string, string> };
+// Profile card P12's child check: ?pupil=new (no avatar, no trophies), ?pupil=bronze (one bronze trophy) or ?pupil=gold (golds in two
+// games, wearing the gold Dragon Head, and a typed name the teacher said Yes to). Leave it out for the usual busy pupil.
+const PUPIL = new URLSearchParams(window.location.search).get('pupil');
+let ME = {
+  id: 'me',
+  display_name: PUPIL === 'gold' ? 'Moana Star' : 'Speedy Otter 27',
+  role: 'student',
+  school_admin: false,
+  avatar: (PUPIL === 'new' ? {} : PUPIL === 'gold' ? { kind: 'cat', bg: '#9b6bff', top: 'bow', pic: 'dm-first-five', picTier: 'gold' } : { kind: 'cat', bg: '#9b6bff', top: 'bow' }) as Record<string, string>,
+};
 const ago = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
 const secure = LADDER.filter((s) => s.built).slice(0, 4).flatMap((s) => s.keys.map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 })));
 const ladderInfo = { on: true, placed: 'done', placement: 'facts-10', furthest: null };
@@ -78,14 +87,20 @@ const win = (season: number, days: number) => ({ season, year: 2026, at: ago(day
 const cup = (id: string, game: string, name: string, how: string, tier: string, wins: ReturnType<typeof win>[], kind = 'trophy', repeat = 'season') => ({
   id, game, name, how, kind, repeat, art: null, tier, count: wins.length, firstAt: wins[0].at, lastAt: wins[wins.length - 1].at, isNew: false, wins,
 });
-const TROPHIES = params.get('trophies') === '0' ? [] : [
+const GOLD_PUPIL = [
+  cup('dm-first-five', 'dragon-maths', 'Dragon Head', 'Be one of the first five in the school to slay the dragon in a season.', 'gold', [win(1, 40), win(2, 20), win(3, 2)], 'picture'),
+  cup('isles-all', 'isles', 'Island Hopper', 'Light every island in Sky Isles.', 'gold', [win(1, 30), win(2, 12), win(3, 2)]),
+  cup('cq-clan-win', 'clan-quest', 'Clan Champion', 'Be in the clan that tops Clan Quest at the end of a season.', 'silver', [win(2, 8), win(3, 1)]),
+];
+const BRONZE_PUPIL = [cup('isles-all', 'isles', 'Island Hopper', 'Light every island in Sky Isles.', 'bronze', [win(3, 1)])];
+const TROPHIES = params.get('trophies') === '0' || PUPIL === 'new' ? [] : PUPIL === 'bronze' ? BRONZE_PUPIL : PUPIL === 'gold' ? GOLD_PUPIL : [
   cup('dm-first-five', 'dragon-maths', 'Dragon Head', 'Be one of the first five in the school to slay the dragon in a season.', 'silver', [win(1, 40), win(2, 3)], 'picture'),
   cup('dm-slayer', 'dragon-maths', 'Dragon Slayer', 'Slay the dragon in Dragon Maths.', 'gold', [win(1, 42), win(2, 5), win(3, 1), win(4, 0)]),
   cup('cq-clan-win', 'clan-quest', 'Clan Champion', 'Be in the clan that tops Clan Quest at the end of a season.', 'bronze', [win(2, 8)]),
   cup('isles-all', 'isles', 'Island Hopper', 'Light every island in Sky Isles.', 'gold', [win(1, 30), win(2, 12), win(3, 2)]),
   cup('chess-gold', 'chess', 'Chess Gold', 'Reach a gold rank in chess.', 'bronze', [win(0, 6)], 'trophy', 'once'),
 ];
-let favourites = ['dm-slayer'];
+let favourites = PUPIL ? [] : ['dm-slayer'];
 world.jobs.my_trophies = {
   season: 3,
   trophies: TROPHIES,
@@ -136,7 +151,7 @@ const HALL = {
     { trophy: 'pair-board-master', title: 'Board Master', game: 'hub', tier: 'bronze', name: null, avatar: null, at: '2026-11-06T01:00:00Z' },
   ],
 };
-let seasonNote = params.get('note') === '0' ? null : { season: 3 };
+let seasonNote = params.get('note') === '0' || PUPIL === 'new' ? null : { season: 3 };
 
 let newOnes = params.get('new') ? [
   { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
@@ -173,7 +188,13 @@ export const supabase = {
       return Promise.resolve({ data: homeAnswer(), error: null });
     }
     if (name === 'my_trophies') return Promise.resolve({ data: { ...(world.jobs.my_trophies as object), favourites }, error: null });
-    if (name === 'my_trophy_pairs') return Promise.resolve({ data: PAIRS, error: null });
+    if (name === 'my_trophy_pairs') return Promise.resolve({ data: PUPIL ? [] : PAIRS, error: null });
+    if (name === 'my_name_status') {
+      return Promise.resolve({
+        data: { scrolls: 0, waiting: null, last: PUPIL === 'gold' ? { name: ME.display_name, status: 'approved', at: ago(2) } : null, canPickToday: true, typed: PUPIL === 'gold' },
+        error: null,
+      });
+    }
     if (name === 'hall_of_fame') return Promise.resolve({ data: HALL, error: null });
     if (name === 'mark_season_note_seen') {
       seasonNote = null;

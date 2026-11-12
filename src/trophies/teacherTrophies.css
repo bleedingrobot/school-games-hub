@@ -1,0 +1,56 @@
+/* Teachers' trophy tools (card P12): the admin Trophy season panel, a pupil's trophies, and Today's new trophies. */
+
+.trophy-season__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+.trophy-season__note {
+  margin: 6px 0;
+  color: var(--ink-soft);
+}
+.trophy-season__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 10px 0 4px;
+}
+.trophy-season__form input {
+  width: 6em;
+}
+
+.pupil-trophies__list,
+.class-trophies__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.pupil-trophies__list li,
+.class-trophies__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: var(--tint);
+  min-width: 0;
+}
+.pupil-trophies__list li > span,
+.class-trophies__who {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+.pupil-trophies__meta,
+.class-trophies__who span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}

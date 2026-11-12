@@ -14,11 +14,12 @@ export function RankBadge({ rank, game }: { rank: Rank; game?: string }) {
   );
 }
 
-/** The home page's welcome strip: "🏆 5 trophies" with the favourite three, "140 points", and a link to how points work. */
+/** The home page's welcome strip: "🏆 5 trophies" (from the first one) with the favourite three, "140 points", and a link to how points work. */
 export function HeroPoints({ progress, shelf }: { progress: Pick<MyProgress, 'points'>; shelf: TrophyShelf | undefined }) {
   return (
     <span className="hero-level">
-      <TrophyCount shelf={shelf} />
+      {/* A new pupil isn't greeted with "0 trophies": the count shows from their first one. */}
+      {shelf && shelf.count > 0 && <TrophyCount shelf={shelf} />}
       <span>{progress.points} points</span>
       <Link to="/points" className="hero-level__link">
         How points work

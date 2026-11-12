@@ -4,6 +4,29 @@
 
 **One goal:** a child opens their profile and sees who they are and what they have won, and the best rewards are worth coming back for, season after season.
 
+## What shipped (all 12 cards live, 12 November 2026)
+
+- **The page is tidy.** Sign out and the avatar are on the first screen; the rest sits in folds (P1).
+- **Levels are gone.** No level number or bar anywhere; points stay for "points this week" (P6).
+- **Trophies, kept for ever.** Their own table that the New Season never touches. Most trophies can be won again each hub season and go bronze, then silver, then gold. The hub season is 35 days and an admin can change or pause it (P3, P12).
+- **A trophy cabinet** with painted trophies, a favourite three, how and when each was won, and a once-only "New trophy!" moment (P2, P5). The welcome strip, Leaderboard and Lobby show the favourite three (P6).
+- **Every game has something to win:** the Dragon Heads and Slayer's Sword (P4), trophies for the older games (P7, P8), friend pictures, Garden Cups and the Garden Gate for the early-years games (P9), two-game rewards, Season Regular, All-rounder, Best Friends Cup and a school Hall of fame (P10).
+- **Earn your own name:** Name Scrolls, and a typed name that waits for the teacher's Yes (P11).
+- **Teacher tools (P12):** a "Trophy season" panel on the admin Overview (season number, days left, length, pause for the holidays); each pupil's trophies and "Reset avatar" on their page, next to "Give a Name Scroll"; "New trophies this week" on Today for class shout-outs (game feats only, not early-years maths progress); the New Season page now says trophies, earned pictures and Name Scrolls are kept.
+- **Last check as a child (P12)**, at 1366×768 and phone size, as a new pupil, a pupil with one bronze and a pupil with a gold and a typed name: no sideways scrolling, Sign out on the first screen on a Chromebook. One fix: a new pupil's welcome strip said "0 trophies"; it now stays hidden until the first trophy.
+- **Players tracker:** the tracker page couldn't be opened from the building session, so trophies are not on it yet. The query piece to add is below.
+
+```sql
+-- Trophies won per pupil, all time and in the last 7 days (add to the players tracker query)
+select p.id, p.display_name,
+       count(t.*) as trophies,
+       count(t.*) filter (where t.earned_at > now() - interval '7 days') as trophies_this_week
+from public.profiles p
+left join public.trophies t on t.player = p.id
+where p.role = 'student'
+group by p.id, p.display_name;
+```
+
 ## Summary for James
 
 - **The page is more than four screens long and the avatar is not on the first one.** 3,219 px tall on a Chromebook with only 6 achievements shown (the real hub has 196), with 71 things to tap. Sign out is the very last thing on the page.
