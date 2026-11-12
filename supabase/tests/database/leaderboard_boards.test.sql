@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(21);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -85,13 +85,35 @@ select is((select array_agg(a.player order by a.player) from public.achievements
   array[pg_temp.uid(3)], 'Home learner for the Saturday go only');
 select ok(exists (select 1 from public.achievements a where a.player = pg_temp.uid(3) and a.achievement = 'hw-weekend-1'), 'and Weekend player');
 
--- New trophies: my school's pupils only, and never a trophy won by a maths result (the Royal Crown).
+-- New trophies: my school's pupils only (the Royal Crown shows too: James, 13 Nov 2026).
 select public.award_trophy(pg_temp.uid(1), 'decree-crown');
 select public.award_trophy(pg_temp.uid(1), 'hub-regular'), public.award_trophy(pg_temp.uid(4), 'hub-regular'),
        public.award_trophy(pg_temp.uid(11), 'hub-regular');
 select pg_temp.as(2);
-select is((select jsonb_agg(e ->> 'title') from jsonb_array_elements(public.my_home_page() -> 'recentTrophies') e),
-  '["Season Regular"]'::jsonb, 'the home page shows a classmate''s new trophy, not a hidden pupil''s, a teacher''s or a maths one');
+select is((select jsonb_agg(e ->> 'title' order by e ->> 'title') from jsonb_array_elements(public.my_home_page() -> 'recentTrophies') e),
+  '["Royal Crown", "Season Regular"]'::jsonb, 'the home page shows a classmate''s new trophies, not a hidden pupil''s or a teacher''s');
+
+-- Trophies board: Ana has 2 different trophies, Cat 1 (won twice in two seasons), Dan (hidden) and the teacher are left out.
+select pg_temp.reset();
+insert into public.trophies (player, trophy, season, earned_at) values
+  (pg_temp.uid(3), 'hub-regular', 1, now() - interval '400 days'), (pg_temp.uid(3), 'hub-regular', 2, now() - interval '300 days');
+select pg_temp.as(2);
+select is(pg_temp.names(public.trophies_board('all-time', 'school')), array['Brave Otter 1', 'Swift Tui 3'],
+  'trophies board: most different trophies first; no hidden pupils, teachers or pupils without one');
+select is((select e ->> 'wins' from jsonb_array_elements(public.trophies_board('all-time', 'school')) e where e ->> 'name' = 'Swift Tui 3'),
+  '2', 'every win is counted');
+select is(pg_temp.names(public.trophies_board('season', 'school')), array['Brave Otter 1'], 'this season: only trophies won since it started');
+select is(pg_temp.names(public.trophies_board('all-time', 'class')), array['Brave Otter 1'], 'my class only');
+select is((select jsonb_agg(e ->> 'title' order by e ->> 'title') from jsonb_array_elements(public.trophies_of('Brave Otter 1')) e),
+  '["Royal Crown", "Season Regular"]'::jsonb, 'a schoolmate''s trophies');
+
+-- Teachers pick a class (or a year) to filter by; pupils can't.
+select pg_temp.as(11);
+select is(pg_temp.names(public.achievements_board('all-time', 'class:' || (select id from pg_temp.made where name = 'room12'))),
+  array['Brave Otter 1', 'Calm Kea 2'], 'a teacher can see one class''s board');
+select is(public.achievements_board('all-time', 'class:00000000-0000-0000-0000-000000000099'), '[]'::jsonb, 'nothing for a class that isn''t there');
+select pg_temp.as(1);
+select throws_ok($$ select public.achievements_board('all-time', 'year:5') $$, '22023', null, 'a pupil can''t pick another year');
 
 select pg_temp.reset();
 select set_config('role', 'anon', true);

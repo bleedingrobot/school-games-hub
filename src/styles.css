@@ -2110,6 +2110,41 @@ main:focus {
   color: var(--ink-soft);
   font-size: 0.82rem;
 }
+.board-trophies {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.board-trophies li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 0;
+  background: none;
+}
+.board-trophies li > span {
+  display: grid;
+}
+.board-trophies__how {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.board-filter__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+.board-filter__pick select {
+  min-height: 40px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--line, #d4d9e2);
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+}
 .hard-band {
   padding: 10px 14px;
   border-radius: 16px;

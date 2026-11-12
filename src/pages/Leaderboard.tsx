@@ -15,13 +15,20 @@ import {
   fetchAchievementsBoard,
   fetchAchievementsByGame,
   fetchHardWorkers,
+  fetchTrophiesBoard,
+  fetchTrophiesOf,
   type AchievementsRow,
+  type TheirTrophy,
+  type TrophiesRow,
   type BoardScope,
   type GameAchievements,
   type HardWorkerRow,
   type HardWorkers,
 } from '../data/boards';
 import { isRanked } from '../games/types';
+import { fetchClasses, type ClassSummary } from '../data/classes';
+import { TrophyArt } from '../trophies/TrophyArt';
+import { trophyPlace } from '../trophies/cabinet';
 
 export const BOARDS: { id: Board; label: string; about: string; minGames: number; howToJoin: string }[] = [
   {
@@ -66,6 +73,7 @@ export function notOnBoardText(board: Board, gamesPlayed: number): string {
 /** The four tabs (leaderboard plan L2). Achievements opens first: it is the board that matters most. */
 const TABS = [
   { id: 'achievements', label: '🏅 Achievements' },
+  { id: 'trophies', label: '🏆 Trophies' },
   { id: 'effort', label: '💪 Hard workers' },
   { id: 'games', label: '🎮 Game boards' },
   { id: HALL_TAB, label: '🏛️ Hall of fame' },
@@ -88,6 +96,8 @@ export function Leaderboard() {
   const { profile } = useAuth();
   const pupil = profile?.role !== 'teacher';
   const [scope, setScope] = useState<BoardScope>('school');
+  const [teacherScope, setTeacherScope] = useState<BoardScope>('school');
+  const boardScope = pupil ? scope : teacherScope;
   const pick = (id: Tab) => setParams(id === 'achievements' ? {} : { board: id }, { replace: true });
   return (
     <div className="leaderboard">
@@ -113,7 +123,10 @@ export function Leaderboard() {
             </button>
           ))}
         </div>
-        {(tab === 'achievements' || tab === 'effort') && pupil && (
+        {(tab === 'achievements' || tab === 'effort' || tab === 'trophies') && !pupil && (
+          <TeacherScope scope={teacherScope} onPick={setTeacherScope} />
+        )}
+        {(tab === 'achievements' || tab === 'effort' || tab === 'trophies') && pupil && (
           <fieldset className="choice-group">
             <legend>Who</legend>
             <div className="choice-group__chips">
@@ -127,9 +140,11 @@ export function Leaderboard() {
           </fieldset>
         )}
         {tab === 'achievements' ? (
-          <AchievementsBoard scope={pupil ? scope : 'school'} />
+          <AchievementsBoard scope={boardScope} />
+        ) : tab === 'trophies' ? (
+          <TrophiesBoard scope={boardScope} />
         ) : tab === 'effort' ? (
-          <HardWorkersBoard scope={pupil ? scope : 'school'} />
+          <HardWorkersBoard scope={boardScope} />
         ) : tab === HALL_TAB ? (
           <HallOfFame />
         ) : (
@@ -163,8 +178,67 @@ function GameBoards() {
   );
 }
 
+/** Year levels a teacher can pick (Year 0 is a new entrant). */
+const YEARS = Array.from({ length: 9 }, (_, n) => n);
+
+/** Teachers have no class or year of their own: they pick one of the school's classes, or a year, to filter by. */
+function TeacherScope({ scope, onPick }: { scope: BoardScope; onPick: (s: BoardScope) => void }) {
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
+  useEffect(() => {
+    let current = true;
+    fetchClasses().then(
+      (c) => current && setClasses(c.filter((k) => !k.archived)),
+      () => undefined,
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
+  return (
+    <fieldset className="choice-group board-filter">
+      <legend>Who</legend>
+      <div className="choice-group__chips">
+        <label className="chip">
+          <input type="radio" name="board-scope" checked={scope === 'school'} onChange={() => onPick('school')} />
+          <span>Whole school</span>
+        </label>
+        <label className="board-filter__pick">
+          <span>Year</span>
+          <select
+            value={scope.startsWith('year:') ? scope.slice(5) : ''}
+            onChange={(e) => onPick(e.target.value === '' ? 'school' : (`year:${Number(e.target.value)}` as BoardScope))}
+          >
+            <option value="">Any</option>
+            {YEARS.map((y) => (
+              <option key={y} value={y}>
+                Year {y}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="board-filter__pick">
+          <span>Class</span>
+          <select
+            value={scope.startsWith('class:') ? scope.slice(6) : ''}
+            onChange={(e) => onPick(e.target.value === '' ? 'school' : (`class:${e.target.value}` as BoardScope))}
+          >
+            <option value="">Any</option>
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </fieldset>
+  );
+}
+
 /** What to say when a scoped board is empty. */
 function emptyText(scope: BoardScope, what: string): string {
+  if (scope.startsWith('class:')) return `Nobody in that class has ${what} yet.`;
+  if (scope.startsWith('year:')) return `Nobody in that year has ${what} yet.`;
   if (scope === 'class') return `Nobody in your class has ${what} yet. It could be you!`;
   if (scope === 'year') return `Nobody in your year has ${what} yet, or we don’t know your year yet.`;
   return `Nobody has ${what} yet. It could be you!`;
@@ -323,6 +397,153 @@ function AchievementsByGame({ player }: { player: string }) {
         <li key={g.game}>
           <strong>{gameLabel(g.game) ?? g.game}</strong> <span className="board-games__n">🏅 {g.count}</span>
           <span className="board-games__names">{g.names.join(' · ')}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Most trophies: different trophies held (then wins), all time or this hub season. */
+function TrophiesBoard({ scope }: { scope: BoardScope }) {
+  const [board, setBoard] = useState<'all-time' | 'season'>('all-time');
+  const [rows, setRows] = useState<TrophiesRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const pupil = profile?.role !== 'teacher';
+
+  useEffect(() => {
+    let current = true;
+    setRows(null);
+    setFailed(false);
+    fetchTrophiesBoard(board, scope).then(
+      (r) => current && setRows(r),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [board, scope]);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+  const line = (row: TrophiesRow) => (
+    <TrophiesLine
+      key={row.name}
+      row={row}
+      board={board}
+      open={open === row.name}
+      onToggle={() => setOpen((was) => (was === row.name ? null : row.name))}
+    />
+  );
+
+  return (
+    <>
+      <fieldset className="choice-group">
+        <legend>When</legend>
+        <div className="choice-group__chips">
+          <label className="chip">
+            <input type="radio" name="trophy-board" checked={board === 'all-time'} onChange={() => setBoard('all-time')} />
+            <span>All time</span>
+          </label>
+          <label className="chip">
+            <input type="radio" name="trophy-board" checked={board === 'season'} onChange={() => setBoard('season')} />
+            <span>This season</span>
+          </label>
+        </div>
+      </fieldset>
+      <p className="leaderboard__about">
+        {board === 'season'
+          ? 'Different trophies won this season. Tap a name to see them!'
+          : 'Every different trophy in their cabinet. Tap a name to see them!'}
+      </p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, board === 'season' ? 'won a trophy this season' : 'won a trophy')}</p>
+      ) : (
+        <ol className="board-list" aria-label={board === 'season' ? 'Trophies this season leaderboard' : 'Most trophies leaderboard'}>
+          {top.map(line)}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              {line(meBelow)}
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !failed && !me && pupil && (
+        <p className="leaderboard__me-off">Win a trophy with a big feat in a game to get on this board!</p>
+      )}
+    </>
+  );
+}
+
+function TrophiesLine({
+  row,
+  board,
+  open,
+  onToggle,
+}: {
+  row: TrophiesRow;
+  board: 'all-time' | 'season';
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li className={row.is_me ? 'is-me board-list__row--open' : 'board-list__row--open'} value={row.place}>
+      <button type="button" className="board-list__tap" aria-expanded={open} onClick={onToggle}>
+        <span className="board-list__place" aria-label={`Place ${row.place}`}>
+          {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+        </span>
+        <AvatarImage avatar={row.avatar} size={40} />
+        <span className="board-list__name">
+          {row.name}
+          {row.is_me && <span className="board-list__you"> (you)</span>}
+        </span>
+        <span className="board-list__points">
+          🏆 {board === 'season' ? row.season : row.count}
+          {board === 'all-time' && row.wins > row.count && <small className="board-list__sub">{row.wins} wins</small>}
+        </span>
+      </button>
+      {open && <TrophiesOf player={row.name} />}
+    </li>
+  );
+}
+
+function TrophiesOf({ player }: { player: string }) {
+  const [trophies, setTrophies] = useState<TheirTrophy[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let current = true;
+    fetchTrophiesOf(player).then(
+      (t) => current && setTrophies(t),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [player]);
+  if (failed) return <p className="board-list__more">We couldn’t load those just now.</p>;
+  if (!trophies) return <p className="board-list__more">Loading…</p>;
+  return (
+    <ul className="board-list__more board-trophies">
+      {trophies.map((t) => (
+        <li key={t.trophy} title={t.how}>
+          <TrophyArt id={t.trophy} game={t.game} kind={t.kind} tier={t.tier} size={48} />
+          <span>
+            <strong>{t.title}</strong>
+            <span className="board-trophies__how">
+              {trophyPlace(t.game)}
+              {t.wins > 1 && ` · won ${t.wins} times`}
+            </span>
+            <span className="board-trophies__how">{t.how}</span>
+          </span>
         </li>
       ))}
     </ul>

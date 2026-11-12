@@ -13,7 +13,7 @@ const PUPIL = new URLSearchParams(window.location.search).get('pupil');
 let ME = {
   id: 'me',
   display_name: PUPIL === 'gold' ? 'Moana Star' : 'Speedy Otter 27',
-  role: 'student',
+  role: PUPIL === 'teacher' ? 'teacher' : 'student',
   school_admin: false,
   avatar: (PUPIL === 'new' ? {} : PUPIL === 'gold' ? { kind: 'cat', bg: '#9b6bff', top: 'bow', pic: 'dm-first-five', picTier: 'gold' } : { kind: 'cat', bg: '#9b6bff', top: 'bow' }) as Record<string, string>,
 };
@@ -217,6 +217,27 @@ export const supabase = {
         .filter((r) => r.place <= 10 || r.is_me);
       const everyone = BOARD_PEOPLE.filter((p) => p.days >= 4).map((p) => ({ name: p.name, avatar: p.avatar, days: p.days }));
       return Promise.resolve({ data: { rows, everyone, season: 3 }, error: null });
+    }
+    if (name === 'trophies_board') {
+      const season = args?.board === 'season';
+      const scope = args?.scope as string;
+      const all = BOARD_PEOPLE.filter((_, n) => scope === 'school' || n % (scope.includes('year') ? 2 : 3) === 0);
+      const rows = all
+        .map((p) => ({ ...p, count: Math.round(p.count / 6), wins: Math.round(p.count / 4), season: p.week }))
+        .map((p) => ({ ...p, score: season ? p.season : p.count }))
+        .filter((p) => p.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((p, n, list) => ({ ...p, place: list.findIndex((q) => q.score === p.score) + 1, is_me: p.name === ME.display_name, n }));
+      return Promise.resolve({ data: rows.filter((r) => r.n < 10 || r.is_me), error: null });
+    }
+    if (name === 'teacher_classes') {
+      return Promise.resolve({ data: [{ id: 'c1', name: 'Room 12', archived: false }, { id: 'c2', name: 'Room 14', archived: false }], error: null });
+    }
+    if (name === 'trophies_of') {
+      return Promise.resolve({
+        data: RECENT.slice(0, 4).map((t, n) => ({ trophy: t.trophy, title: t.title, how: t.how, game: t.game, kind: t.kind, tier: t.tier, wins: n === 1 ? 3 : 1 })),
+        error: null,
+      });
     }
     if (name === 'achievements_by_game') {
       return Promise.resolve({
