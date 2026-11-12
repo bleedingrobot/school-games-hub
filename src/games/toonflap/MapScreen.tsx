@@ -1,8 +1,8 @@
 /** The map: a cartoon trail through the 10 worlds (docs/TOON-FLAP-PLAN.md, section 1). Tap a lit stop to fly it. */
-import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
+import { FLYERS, finishesToUnlock, levelOpen, nextStep, openedLevel, opensTomorrow, skyDashOpen, unlockRuns, type Progress } from '../../../shared/toonflap/collection';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { useEffect } from 'react';
-import { HELP_SETTINGS, type HelpSetting } from './guide';
+import { DASH_LINES, HELP_SETTINGS, type HelpSetting } from './guide';
 import { screenArt } from './art/art';
 
 /** A painted picture as a soft page background (the list stays easy to read over it). */
@@ -34,8 +34,10 @@ export const MEDAL_WORD = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze' } a
 
 export const fmtSeconds = (s: number | null): string => (s === null ? '' : `${s.toFixed(1)} s`);
 
-export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
+export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, onDash, onHangar, onHowTo, busy, error, help = 'lots', onHelp, onReplayGuide, voice, talk }: {
   progress: Progress;
+  /** Sky Dash (open after level 5). */
+  onDash?: () => void;
   /** The NZ day, for the one-new-level-a-day rule. */
   today: string;
   maths: boolean;
@@ -141,6 +143,22 @@ export function MapScreen({ progress, today, maths, gentle, onGentle, onPlay, on
           );
         })}
       </ol>
+
+      {onDash && (
+        <div className="tf-stop tf-dash" data-open={skyDashOpen(progress)} style={{ ['--tf-a' as string]: '#1D2340', ['--tf-b' as string]: '#7B5CFF' }}>
+          <button type="button" className="tf-stop__btn" disabled={!skyDashOpen(progress) || busy} onClick={onDash} aria-label={`Sky Dash${skyDashOpen(progress) ? '' : ', locked'}`}>
+            <span className="tf-stop__node" aria-hidden="true"><span className="tf-stop__icon">{skyDashOpen(progress) ? '☄️' : '🔒'}</span></span>
+            <span className="tf-stop__body">
+              <span className="tf-stop__name">{DASH_LINES.name}</span>
+              {skyDashOpen(progress) ? (
+                <span className="tf-stop__line">One bump ends it. How far can you fly?{progress.dashBest ? <span className="tf-stop__best">Best {progress.dashBest} walls</span> : null}</span>
+              ) : (
+                <span className="tf-stop__line tf-dim">{DASH_LINES.locked}</span>
+              )}
+            </span>
+          </button>
+        </div>
+      )}
     </section>
   );
 }

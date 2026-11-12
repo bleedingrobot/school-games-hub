@@ -9,6 +9,7 @@
  *   with changing numbers are never read aloud: `voiceLine()` gives null for anything not on the list.
  */
 import { LEVELS } from '../../../shared/toonflap/levels';
+import { DASH_DEF } from '../../../shared/toonflap/dash';
 import type { Medal } from '../../../shared/toonflap/engine';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
@@ -59,6 +60,18 @@ export const RESULT_LINES = {
   tomorrow: 'Well done! The next level opens tomorrow. One new level opens each day.',
 } as const;
 
+/** Sky Dash's fixed lines (stage F.7). Walls flown past change, so they are never said. */
+export const DASH_LINES = {
+  name: 'Sky Dash',
+  start: DASH_DEF.newThing,
+  check: 'A check! Get it right for a spare feather.',
+  feather: 'A spare feather saved you!',
+  potion: 'Your potion brought you back!',
+  over: 'Dash over!',
+  seasonBest: 'Your best dash this season!',
+  locked: 'Finish Donut Town to open Sky Dash.',
+} as const;
+
 /** Every next-step line the map can show (collection.ts nextStep). */
 function nextStepLines(): string[] {
   return [
@@ -80,6 +93,7 @@ export function allVoiceLines(): string[] {
     ...Object.values(MEDAL_LINE),
     ...Object.values(RESULT_LINES),
     ...nextStepLines(),
+    ...Object.values(DASH_LINES),
   ];
   return [...new Set(lines)];
 }

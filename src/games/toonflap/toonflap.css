@@ -278,3 +278,11 @@
 .tf-help .tf-btn[aria-pressed='true'] { outline: 3px solid #0f172a; }
 .tf-btn--small.tf-btn--ghost { background: #fff; color: #0f172a; }
 .tf-help .tf-btn[aria-pressed='true'] { background: #0f172a; color: #fff; }
+
+/* Sky Dash (stage F.7): its stop under the trail and the class board. */
+.tf-dash { list-style: none; margin-top: 14px; }
+.tf-board caption { text-align: left; padding: 8px 14px 4px; }
+.tf-board td:nth-child(2) { text-align: left; white-space: normal; }
+.tf-board__me td { background: rgba(255, 214, 102, 0.45); }
+.tf-dash-potion { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 8px; color: #fff; font-weight: 800; font-size: 0.95rem; pointer-events: auto; cursor: pointer; }
+.tf-dash-potion input { width: 22px; height: 22px; }
