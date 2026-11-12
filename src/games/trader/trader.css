@@ -551,6 +551,10 @@
 .stf-choice__label { font-size: 0.82rem; font-weight: 700; line-height: 1.15; }
 .stf-choice__sub { font-size: 0.75rem; color: var(--st-soft); }
 .stf-choice__why { font-size: 0.72rem; color: #fdba74; line-height: 1.1; }
+/* Not affordable yet: still shown so pupils can see what they are saving for, dimmed with a lock and how much more it needs. */
+.stf-choice.is-locked { opacity: 1; background: #10173a; border-style: dashed; cursor: not-allowed; }
+.stf-choice.is-locked .stf-choice__pic { filter: grayscale(0.6) brightness(0.75); }
+.stf-choice__lock { font-size: 0.72rem; font-weight: 700; color: var(--st-gold); line-height: 1.1; }
 .stf-choice__tag { font-size: 0.68rem; font-style: normal; font-weight: 700; background: #701a75; color: #fae8ff; border-radius: 999px; padding: 0 6px; }
 .stf-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .stf-swatch { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #0a1026; cursor: pointer; box-shadow: 0 0 0 2px var(--st-line); }
