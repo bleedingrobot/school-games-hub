@@ -90,6 +90,7 @@ $$, array[
   'teacher_set_robin', 'teacher_robin_class', 'teacher_robin_student',
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_progress_other_games',
+  'my_name_status', 'ask_for_my_name', 'cancel_my_name_request', 'teacher_name_requests', 'teacher_answer_name', 'teacher_name_history', 'teacher_made_up_name_back', 'teacher_give_name_scroll', 'teacher_name_scrolls',
   'teacher_game_sets', 'teacher_save_game_set', 'teacher_use_game_set', 'teacher_delete_game_set',
   'teacher_set_decree',
   'teacher_foundational_class', 'teacher_quick_looks_class',

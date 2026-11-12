@@ -22,6 +22,7 @@ import { fetchQuickLooksStudent, QUICK_SLIP_WORDS, type QuickLooksStudent } from
 import { fetchStudentCard, type StudentCard } from '../data/classOverview';
 import { moveStudent } from '../data/classes';
 import { FriendlyError } from '../data/profile';
+import { NameTools } from '../profile/NameTools';
 import { deletePerson, fetchPersonDetail, renamePerson, setHidden, setRole, type PersonDetail } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
@@ -529,6 +530,8 @@ function Manage({
           </div>
         </div>
       )}
+
+      {card.role === 'student' && <NameTools student={card.id} name={card.name} onChanged={onChanged} />}
 
       <p role="status" className="teacher__status">
         {status}
