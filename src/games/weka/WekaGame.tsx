@@ -193,7 +193,7 @@ function Home({ state, say, onPlay }: { state: WekaState; say: (t: string) => vo
 }
 
 /** A stone changes colour, or, on the thirtieth day, the Golden Picnic Basket is won. */
-function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Picnic Basket day the new stream has already started, so show the one just finished: every stone gold.
   const stream = streamAfter(result.goldenBasket ? result.daysDone - 1 : result.daysDone);
   const stones = result.goldenBasket
@@ -213,7 +213,7 @@ function Finish({ result, say, onNext }: { result: WekaFinish; say: (t: string) 
   return (
     <div className={`wk-home${result.goldenBasket ? ' wk-home--prize' : ''}`}>
       <Stream scenery={result.goldenBasket ? 'gold' : stream.today} stones={stones} friend={stream.friend} pose="cheer" />
-      <WhatsNext prefix="wk" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="wk" wearMe={result.goldenBasket} title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={say} onNext={onNext}>
         {result.goldenBasket && <p className="wk-chip">{opening}</p>}
         {band === 'tricky' && <p className="wk-chip">{WORDS.trickyChip}</p>}
         {result.goldenBasket && (cushion ? <img className="wk-prize" src={cushion} alt="The Golden Picnic Basket" /> : <span className="wk-prize" role="img" aria-label="The Golden Picnic Basket"><Basket /></span>)}

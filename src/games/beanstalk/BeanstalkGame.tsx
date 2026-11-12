@@ -4,7 +4,7 @@
  * Golden Egg, and the next friend is stuck on a fresh beanstalk. The screens only show what the backend says.
  */
 import { NextPartChip } from '../../components/NextPartChip';
-import { WhatsNext } from '../../kit/WhatsNext';
+import { WEAR_ME_LINE, WhatsNext } from '../../kit/WhatsNext';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { DAYS_PER_EGG, LEAVES_ON_STALK, METALS, shownDots, stageTarget, stalkAfter } from '../../../shared/beanstalk/progress';
 import { TARGETS, type Round as StageRound, type Tap } from '../../../shared/beanstalk/round';
@@ -272,6 +272,7 @@ export function Finish({ result, child, say, signpost, onNext }: { result: Finis
   const moveLine = result.moved === 0 ? null : result.moved === 1 ? WORDS.movedUp(TARGETS[result.stage]) : WORDS.movedBack(TARGETS[result.stage]);
   // The sum they just played, for the card on to Weka.
   const playedTarget = TARGETS[result.stage - result.moved];
+  const egg = result.egg;
   const heading = useRef<HTMLHeadingElement>(null);
   // The card comes once today's line has been heard (it reads its own line aloud, so it would cut this one off).
   const [heard, setHeard] = useState(false);
@@ -279,8 +280,10 @@ export function Finish({ result, child, say, signpost, onNext }: { result: Finis
   const wekaOn = signpost?.wekaOn === true;
   useEffect(() => {
     heading.current?.focus();
-    say(spoken, () => (moveLine ? say(moveLine, () => setHeard(true)) : setHeard(true)));
-  }, [say, spoken, moveLine]);
+    const then = () => (moveLine ? say(moveLine, () => setHeard(true)) : setHeard(true));
+    // On an egg day the friend says it can be worn on the profile now (card P9; the server gave the picture with the egg).
+    say(spoken, egg ? () => say(WEAR_ME_LINE, then) : then);
+  }, [say, spoken, moveLine, egg]);
   useEffect(() => {
     if (!signpost || !wekaOn || playedTarget < SIGNPOST_FROM) return;
     let current = true;
@@ -302,6 +305,7 @@ export function Finish({ result, child, say, signpost, onNext }: { result: Finis
         {band === 'tricky' && <p className="bs-moved">{WORDS.trickyChip}</p>}
         {moveLine && <p className="bs-moved">{moveLine}</p>}
         {result.egg && <img className="bs-prize" src={paint('things/egg-cushion')} alt="The Golden Egg" />}
+        {result.egg && <p className="bs-moved bs-wear-me">{WEAR_ME_LINE}</p>}
         <button type="button" className="button button--play bs-play-button" onClick={onNext}>
           OK
         </button>

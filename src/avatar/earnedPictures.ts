@@ -4,6 +4,7 @@
  * ring's metal). The server checks `pic` and writes `picTier` itself (save_my_avatar, award_trophy), so the browser only
  * draws what it is given.
  */
+import { GARDEN_PICTURES } from './gardenPictures';
 
 // Stand-in until P2's painting lands: Scorchtail's head, cropped from the Dragon Maths dragon.
 import dragonHead from './pictures/dragon-head-standin.webp';
@@ -39,6 +40,7 @@ export interface PictureArt {
  * A picture that is not listed yet still draws: a trophy cup on its metal disc.
  */
 export const EARNED_PICTURES: Record<string, PictureArt> = {
+  ...GARDEN_PICTURES, // P9: the 62 early-years friends
   // Dragon Maths (P4): one of the first five in the school to slay the dragon this season.
   'dm-first-five': { emoji: '🐉', art: dragonHead },
   // Card P7 (placeholders until card P2's paintings land).

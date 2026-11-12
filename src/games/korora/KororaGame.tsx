@@ -244,7 +244,7 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFini
     };
   }, [wekaOn]);
   const card = wekaOn === true;
-  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
+  const sayThen = useCallback((text: string, onEnd?: () => void) => say(text, onEnd ?? (card ? () => say(WORDS.whatsNext) : undefined)), [say, card]);
   // Before the walk: on the stone that just changed (or where they were). After a crossing: on the far bank.
   const at = won ? PEBBLES : result.pebbleChanged ?? (pool.day % PEBBLES) - 1;
   const scenery = result.goldenFish ? 'gold' : won ? (won as 'bronze' | 'silver') : pool.today;
@@ -252,7 +252,7 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: KororaFini
     <div className={`kr-home${won ? ' kr-home--prize' : ''}`}>
       <Pool scenery={scenery} pebbles={pebbles} friend={pool.friend} pose="cheer" at={at} shoes={won ? null : pool.today} />
       {wekaOn !== null && (
-        <WhatsNext prefix="kr" title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="kr" wearMe={result.goldenFish} title={main} spoken={line} note={up ? WORDS.levelUp(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {won && <p className="kr-chip">{opening}</p>}
           {band === 'tricky' && <p className="kr-chip">{WORDS.trickyChip}</p>}
           {won && (

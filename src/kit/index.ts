@@ -6,7 +6,7 @@ export { kitColor, type KitColors } from './colors';
 export { HearAgain } from './HearAgain';
 export { PointingHand, pointedLabel } from './PointingHand';
 export { useGuidedFirstGo } from './useGuidedFirstGo';
-export { WhatsNext } from './WhatsNext';
+export { WhatsNext, WEAR_ME_LINE } from './WhatsNext';
 export { FirstTimeTip } from './FirstTimeTip';
 export { useSeenKinds } from './useSeenKinds';
 export { useKindDemo, type DemoStep, type KindDemoOptions } from './useKindDemo';

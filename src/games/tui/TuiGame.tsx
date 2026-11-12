@@ -242,12 +242,12 @@ export function Finish({ result, say, onOpenWeka, onNext }: { result: TuiFinish;
     };
   }, [wekaOn]);
   const card = wekaOn === true;
-  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
+  const sayThen = useCallback((text: string, onEnd?: () => void) => say(text, onEnd ?? (card ? () => say(WORDS.whatsNext) : undefined)), [say, card]);
   return (
     <div className={`tui-home${result.goldenNest ? ' tui-home--prize' : ''}`}>
       <Tree scenery={result.goldenNest ? 'gold' : tree.today} flowers={flowers} friend={tree.friend} pose="cheer" />
       {wekaOn !== null && (
-        <WhatsNext prefix="tui" title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="tui" wearMe={result.goldenNest} title={main} spoken={line} note={up ? WORDS.nextStep(up) : null} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {result.goldenNest && <p className="tui-chip">{opening}</p>}
           {band === 'tricky' && <p className="tui-chip">{WORDS.trickyChip}</p>}
           {result.goldenNest && <span className="tui-prize"><GoldenNest cushion /></span>}
