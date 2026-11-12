@@ -131,7 +131,12 @@ describe('the skill map', () => {
     localStorage.clear();
 
     const cara = (id: string) =>
-      ana({ id, name: `Calm Tui ${id}`, realName: null, facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)) });
+      ana({
+        id,
+        name: `Calm Tui ${id}`,
+        realName: null,
+        facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
+      });
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
     show(teacher, '/teacher/c12/maths/skills');
     const grid = await screen.findByRole('table', {}, { timeout: 5000 });
@@ -164,5 +169,14 @@ describe('the skill map', () => {
     );
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
+
+    // By skill (iPad portrait, phones): one card per skill, name chips open the same panel; the choice is kept.
+    await userEvent.click(screen.getByRole('button', { name: 'By skill' }));
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(localStorage.getItem('skill-map-view')).toBe('skill');
+    await userEvent.click(
+      within(screen.getAllByRole('region')[0]).getAllByRole('button', { name: /Speedy Otter 27|Brave Kiwi|Calm Tui/ })[0],
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

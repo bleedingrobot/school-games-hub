@@ -33,6 +33,7 @@ import {
   type StageCell,
   type StudentMap,
 } from '../../shared/maths/skillMap';
+import SkillMapBySkill from './SkillMapBySkill';
 import { FactGrid } from './TeacherGemKeep';
 import { keyLabel } from './TeacherMonsters';
 import { useTeacherClass } from '../teacher/TeacherClass';
@@ -119,6 +120,19 @@ function readSort(): Sort {
   }
 }
 
+/** The grid, or one card per skill (the default on a narrow screen such as an iPad in portrait). */
+type View = 'grid' | 'skill';
+const VIEW_KEY = 'skill-map-view';
+function readView(): View {
+  try {
+    const v = localStorage.getItem(VIEW_KEY);
+    if (v === 'grid' || v === 'skill') return v;
+  } catch {
+    // fall through to the screen's width
+  }
+  return typeof window !== 'undefined' && window.matchMedia?.('(max-width: 899px)').matches ? 'skill' : 'grid';
+}
+
 /** One stage band in the table: its visible skills, or folded into one summary column. */
 interface Band {
   stage: LadderStage;
@@ -135,7 +149,13 @@ function bandsFor(show: Show, inUse: ReadonlySet<string>, folded: ReadonlySet<La
     if (show !== 'in-use' && show !== 'all' && show !== stage.id) continue;
     const skills = stageSkills(stage.id).filter((s) => show !== 'in-use' || inUse.has(s.id));
     if (skills.length === 0) rest.push(stage.label);
-    else bands.push({ stage: stage.id, label: stage.label, skills, folded: folded.has(stage.id) });
+    else
+      bands.push({
+        stage: stage.id,
+        label: stage.label,
+        skills,
+        folded: folded.has(stage.id),
+      });
   }
   return { bands, rest };
 }
@@ -149,6 +169,7 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   const [folded, setFolded] = useState<Set<LadderStage>>(new Set());
   const [picked, setPicked] = useState<Picked | null>(null);
   const [sort, setSortState] = useState<Sort>(readSort);
+  const [view, setViewState] = useState<View>(readView);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [params, setParams] = useSearchParams();
   const lookParam = params.get('show');
@@ -196,6 +217,15 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
     }
   }
 
+  function setView(next: View) {
+    setViewState(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // Remembering is only a convenience.
+    }
+  }
+
   function setLook(next: Look | null) {
     setParams(
       (p) => {
@@ -220,7 +250,11 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
       return n;
     });
     requestAnimationFrame(() =>
-      scroller.current?.querySelector(`th[data-skill="${id}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }),
+      scroller.current?.querySelector(`th[data-skill="${id}"]`)?.scrollIntoView({
+        block: 'nearest',
+        inline: 'center',
+        behavior: 'smooth',
+      }),
     );
   }
 
@@ -244,7 +278,10 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   function closeDetail() {
     const from = picked;
     setPicked(null);
-    if (from) requestAnimationFrame(() => scroller.current?.querySelector<HTMLButtonElement>(`[data-cell="${cellKey(from.student, from.skill)}"] button`)?.focus());
+    if (from)
+      requestAnimationFrame(() =>
+        scroller.current?.querySelector<HTMLButtonElement>(`[data-cell="${cellKey(from.student, from.skill)}"] button`)?.focus(),
+      );
   }
 
   if (failed) {
@@ -274,7 +311,10 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
       : (sort === 'place' ? 1 : -1) * (ladderPlace(maps.get(a.id)!) - ladderPlace(maps.get(b.id)!)) || name0(a).localeCompare(name0(b)),
   );
   const students = look ? sorted.filter((s) => looks.get(s.id)?.has(look)) : sorted;
-  const lookCounts = Object.fromEntries(LOOKS.map((l) => [l, everyone.filter((s) => looks.get(s.id)?.has(l)).length])) as Record<Look, number>;
+  const lookCounts = Object.fromEntries(LOOKS.map((l) => [l, everyone.filter((s) => looks.get(s.id)?.has(l)).length])) as Record<
+    Look,
+    number
+  >;
   const pickedStudent = picked ? students.find((s) => s.id === picked.student) : undefined;
   const { bands, rest } = bandsFor(show, inUse, folded);
   const nothingYet = show === 'in-use' && inUse.size === 0;
@@ -289,8 +329,8 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
       </h2>
       {!data.auto && (
         <p className="class-panel__hint" role="note">
-          Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student has
-          practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
+          Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student
+          has practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
         </p>
       )}
       {everyone.length === 0 ? (
@@ -300,6 +340,14 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
       ) : (
         <>
           <div className="skill-map__tools">
+            <div className="skill-map__views" role="group" aria-label="View">
+              <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>
+                Grid
+              </button>
+              <button type="button" aria-pressed={view === 'skill'} onClick={() => setView('skill')}>
+                By skill
+              </button>
+            </div>
             <label className="skill-map__show">
               Show{' '}
               <select id="skill-map-show" value={show} onChange={(e) => isShow(e.target.value) && setShow(e.target.value)}>
@@ -320,12 +368,17 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
                 <option value="furthest">Furthest along first</option>
               </select>
             </label>
-            <Legend />
+            {view === 'grid' && <Legend />}
           </div>
           {!nothingYet && (
             <div className="progress__looks skill-map__looks" role="group" aria-label="Who needs a look">
               {most && (
-                <button type="button" className="progress__look skill-map__most" aria-pressed={highlight === most.skill.id} onClick={showMost}>
+                <button
+                  type="button"
+                  className="progress__look skill-map__most"
+                  aria-pressed={highlight === most.skill.id}
+                  onClick={showMost}
+                >
                   Most are on: {skillTinyLabel(most.skill.id)} · {most.pupils} pupil{most.pupils === 1 ? '' : 's'}
                 </button>
               )}
@@ -355,27 +408,44 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
             <p className="panel__empty skill-map__nothing">Nobody in {name} has answered ladder maths yet.</p>
           ) : (
             <div className={`skill-map__body${picked ? ' skill-map__body--detail' : ''}`}>
-              <div className="skill-map__scroll" role="region" aria-label={`Skill map for ${name}`} tabIndex={0} ref={scroller}>
-                <table className="skill-map">
-                  <caption className="sr-only">Each row is a pupil. Each column is a ladder skill, grouped by stage.</caption>
-                  <MapHead bands={bands} rest={rest} onToggle={toggle} onShowAll={() => setShow('all')} maps={allMaps} highlight={highlight} />
-                  <tbody>
-                    {students.map((s) => (
-                      <MapRow
-                        key={s.id}
-                        student={s}
-                        map={maps.get(s.id)!}
-                        bands={bands}
-                        rest={rest.length > 0}
-                        looks={looks.get(s.id)!}
-                        highlight={highlight}
-                        picked={picked}
-                        onPick={setPicked}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {view === 'skill' ? (
+                <SkillMapBySkill
+                  skills={bands.flatMap((b) => b.skills)}
+                  students={students}
+                  maps={maps}
+                  looks={looks}
+                  onPick={(student, skill) => setPicked({ student, skill })}
+                />
+              ) : (
+                <div className="skill-map__scroll" role="region" aria-label={`Skill map for ${name}`} tabIndex={0} ref={scroller}>
+                  <table className="skill-map">
+                    <caption className="sr-only">Each row is a pupil. Each column is a ladder skill, grouped by stage.</caption>
+                    <MapHead
+                      bands={bands}
+                      rest={rest}
+                      onToggle={toggle}
+                      onShowAll={() => setShow('all')}
+                      maps={allMaps}
+                      highlight={highlight}
+                    />
+                    <tbody>
+                      {students.map((s) => (
+                        <MapRow
+                          key={s.id}
+                          student={s}
+                          map={maps.get(s.id)!}
+                          bands={bands}
+                          rest={rest.length > 0}
+                          looks={looks.get(s.id)!}
+                          highlight={highlight}
+                          picked={picked}
+                          onPick={setPicked}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {picked && pickedStudent && (
                 <CellDetail
                   key={cellKey(picked.student, picked.skill)}
@@ -474,7 +544,9 @@ function MapHead({
             >
               <button type="button" aria-expanded={isOpen} onClick={() => onToggle(band.stage)}>
                 <span aria-hidden="true">{isOpen ? '▾' : '▸'}</span> {band.label}
-                <span className="sr-only">{isOpen ? ', open. Press to fold it into one column' : ', folded. Press to open its skills'}</span>
+                <span className="sr-only">
+                  {isOpen ? ', open. Press to fold it into one column' : ', folded. Press to open its skills'}
+                </span>
               </button>
               {!isOpen && (
                 <>
@@ -621,7 +693,12 @@ function StageTd({ student, stage }: { student: MapStudent; stage: StageCell }) 
 
 const DAY_MS = 86_400_000;
 const daysSince = (at: number) => Math.max(0, Math.floor((Date.now() - at) / DAY_MS));
-const shortDate = (at: number) => new Date(at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'Pacific/Auckland' });
+const shortDate = (at: number) =>
+  new Date(at).toLocaleDateString('en-NZ', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Pacific/Auckland',
+  });
 
 /** "On it since 3 Nov (9 days)", or "since before 12 Nov" for facts first answered before first answers were kept. */
 function onItSince(map: StudentMap, facts: readonly FactStats[]): string | null {
@@ -655,7 +732,12 @@ function Place({ student, map, started, looks }: { student: MapStudent; map: Stu
   const words = [...looks].map((l) => LOOK_WORDS[l](1).replace(/^1 /, ''));
   return (
     <>
-      <span className="skill-map__now" data-none={!map.current || undefined} data-look={state} title={[`Now: ${now}`, ...notes, ...words].join('\n')}>
+      <span
+        className="skill-map__now"
+        data-none={!map.current || undefined}
+        data-look={state}
+        title={[`Now: ${now}`, ...notes, ...words].join('\n')}
+      >
         <span aria-hidden="true">
           {here}
           {state === 'nearly' ? ' ↑' : ''}
@@ -750,11 +832,13 @@ function CellDetail({
       </p>
       <div className="skill-map__detail-facts">
         {tables && times.length > 0 && <FactGrid facts={student.facts.filter((f) => f.key.startsWith('mul:'))} />}
-        {(!tables ? cell.skill.keys : others).length > 0 && <KeyTable keys={tables ? others : cell.skill.keys} byKey={byKey} tables={tables} />}
+        {(!tables ? cell.skill.keys : others).length > 0 && (
+          <KeyTable keys={tables ? others : cell.skill.keys} byKey={byKey} tables={tables} />
+        )}
       </div>
       <p className="skill-map__detail-class">
-        Class: {onIt.length} pupil{onIt.length === 1 ? ' is' : 's are'} on this skill now. {counts.secure + counts.fluent} of {students.length} are
-        secure on it.
+        Class: {onIt.length} pupil{onIt.length === 1 ? ' is' : 's are'} on this skill now. {counts.secure + counts.fluent} of{' '}
+        {students.length} are secure on it.
       </p>
       <div className="skill-map__detail-actions">
         <Link className="button button--light-outline" to={`/teacher/${classId}/maths?student=${student.id}&skill=${cell.skill.id}`}>
