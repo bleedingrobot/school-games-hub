@@ -4,7 +4,7 @@
  * points, recent games and moves left are always up to date after a game. The game switches are not in it: they come from the
  * remembered settings read (settingsMemory.ts).
  */
-import { readClock, type SeasonClock } from '../../shared/clans/season';
+import { readClock, type SeasonClock } from '../../shared/clans/clock';
 import { nzDate } from '../../shared/lord/engine';
 import { readLordSeason, type HomeLordSeason } from '../../shared/lord/seasonRoad';
 import { supabase } from '../lib/supabase';

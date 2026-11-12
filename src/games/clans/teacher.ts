@@ -1,5 +1,5 @@
 import { readSettings } from '../../data/classSettings';
-import { fetchClansEnabled } from '../../data/clans';
+import { fetchClansEnabled } from '../../data/clansSwitch';
 import { useSetting } from '../../teacher/useSetting';
 
 /**

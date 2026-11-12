@@ -3,7 +3,7 @@
  * may see or change a class, whatever the page does. Students only ever get a class or group
  * name back after typing a code that works.
  */
-import { normaliseCode } from '../../shared/multiplayer';
+import { normaliseCode } from '../../shared/gameCode';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 

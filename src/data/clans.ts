@@ -20,19 +20,7 @@ export function liveClanServer(): ClanServer {
 // The teacher's switch and tools
 // ---------------------------------------------------------------------------
 
-/** Is Clan Quest switched on for the class? (The dashboard hides the card when it isn't.) */
-export async function fetchClansEnabled(classId?: string | null): Promise<boolean> {
-  const data = await readSettings(['clans_enabled'], classId);
-  if (!data) throw new FriendlyError('We couldn’t load the Clan Quest setting.');
-  return data.clans_enabled === true;
-}
-
-export async function saveClansEnabled(enabled: boolean, classId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clans', { enabled, target_class: classId });
-  forgetSettings();
-  if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the Clan Quest setting.');
-  return data;
-}
+export { fetchClansEnabled, saveClansEnabled } from './clansSwitch';
 
 /** One pupil's clan at a glance, for the teacher page. Null if they have not made one. */
 export interface ClanInfo {

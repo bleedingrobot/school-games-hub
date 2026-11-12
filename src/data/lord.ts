@@ -14,7 +14,7 @@
 import type { FactStats } from '../../shared/maths/leitner';
 import type { LordAction, LordReply, LordRequest, LordState } from '../../shared/lord/server';
 import { topicsOn } from '../../shared/lord/maths';
-import { FINISH_ACTIONS } from '../../shared/lord/server';
+import { FINISH_ACTIONS } from '../../shared/lord/finish';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';

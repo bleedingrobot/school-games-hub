@@ -7,7 +7,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ToonFlapGame } from '../../src/games/toonflap/ToonFlapGame';
-import { trialBackend } from '../../src/games/toonflap/backend';
+import { trialBackend } from '../../src/games/toonflap/trial';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 import './preview.css';

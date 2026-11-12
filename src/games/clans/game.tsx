@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
-import { saveClansEnabled } from '../../data/clans';
+import { saveClansEnabled } from '../../data/clansSwitch';
 import { useClansEnabled } from './switch';
 import { CLANS_ABOUT, useClansClassSwitch, useClansSummary } from './teacher';
 

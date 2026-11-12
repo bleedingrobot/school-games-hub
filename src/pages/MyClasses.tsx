@@ -39,23 +39,14 @@ import { prettyCode } from '../../shared/multiplayer';
 import { RecentChanges } from '../teacher/RecentChanges';
 import { useTeacherClass } from '../teacher/TeacherClass';
 import './classes.css';
+import { ago, LIVE_MS } from '../data/ago';
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
 }
 
 /** How often the "who has joined" list and the requests look again, in milliseconds (and straight away when the tab comes back). */
-export const LIVE_MS = 30_000;
-
-/** "just now", "3 minutes ago", "2 hours ago", or the day. */
-export function ago(iso: string, now = Date.now()): string {
-  const minutes = Math.round((now - Date.parse(iso)) / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  return new Date(iso).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-}
+export { ago, LIVE_MS };
 
 export function eventText(e: WarpEvent): string {
   const group = e.group_name ? ` ${e.group_name}` : '';

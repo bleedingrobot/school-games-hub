@@ -39,6 +39,7 @@ import {
 import { islandWorth, newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
 import { isIslandName } from './names';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceProblem, type RaceResult } from './race';
+import { POINTS } from './points';
 
 export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper' | 'sky' | 'visit' | 'gift' | 'name' | 'hall';
 const ACTIONS: readonly string[] = ['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper', 'sky', 'visit', 'gift', 'name', 'hall'];
@@ -205,7 +206,7 @@ export interface IslesReply {
 }
 
 /** Points (docs/ISLES-PLAN.md, section 6.5). The hub caps points at 40 a day across every game. */
-export const POINTS = { turn: 1, raceWon: 2, grandIsle: 10, lighthouseStage: 5 } as const;
+export { POINTS };
 
 /** The longest an answer is said to have taken, for the maths records. */
 const MAX_ANSWER_MS = 120_000;

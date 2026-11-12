@@ -11,6 +11,7 @@
 import * as checkers from './checkers/rules';
 import * as chess from './chess/rules';
 import { MIN_MOVES_TO_COUNT } from './botGame';
+import { CODE_ALPHABET, CODE_LENGTH, normaliseCode } from './gameCode';
 
 export type GameKind = 'chess' | 'checkers';
 export type Side = 'first' | 'second';
@@ -24,9 +25,7 @@ export const MAX_DRAW_OFFERS = 3;
 /** ...and must make this many moves of their own between offers. */
 export const MOVES_BETWEEN_DRAW_OFFERS = 5;
 
-/** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
-export const CODE_ALPHABET = 'CDFGHJKMNPQRTVWXY34679';
-export const CODE_LENGTH = 5;
+export { CODE_ALPHABET, CODE_LENGTH, normaliseCode };
 
 export function isGameKind(value: unknown): value is GameKind {
   return GAME_KINDS.includes(value as GameKind);
@@ -64,14 +63,6 @@ export function movesBy(side: Side, plies: number): number {
 export function makeCode(random: () => number = Math.random): string {
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) code += CODE_ALPHABET[Math.floor(random() * CODE_ALPHABET.length)];
-  return code;
-}
-
-/** Tidies up what a student typed: any case, spaces or dashes are fine. Null if it can't be a code. */
-export function normaliseCode(typed: unknown): string | null {
-  if (typeof typed !== 'string' || typed.length > 20) return null;
-  const code = typed.toUpperCase().replace(/[\s-]/g, '');
-  if (code.length !== CODE_LENGTH || [...code].some((c) => !CODE_ALPHABET.includes(c))) return null;
   return code;
 }
 
