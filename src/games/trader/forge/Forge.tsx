@@ -144,7 +144,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
         <h2 id="stf-h" className="st-h">🌟 Star Forge: the {pieceName(draft)} System</h2>
         <button ref={opener} type="button" className="st-btn" onClick={(e) => setFull(e.currentTarget.closest<HTMLElement>('.st-root') ?? document.body)}>🔭 View in full screen</button>
       </div>
-      <p className="st-sub">Design your own solar system. New pieces appear as you earn credits, and planning them is free. Build each piece when you are ready. Plans look like holograms.</p>
+      <p className="st-sub">Design your own solar system. Locked pieces open up as you earn credits, and planning is free. Build each piece when you are ready. Plans look like holograms.</p>
 
       <div className="stf-grid">
         <div className="stf-left">
