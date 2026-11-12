@@ -10,7 +10,6 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - [x] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Done 12 Nov 2026: six once-a-year trophies (Star Ring, Black Hole, Heart Diamond, Rainbow Toon, Gem Crown, Miner's Lamp), watchers, back-awards, "Trophy won!" line in each game.
 - [x] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Done 12 Nov 2026: `season_counts` (kept by the New Season), classmate wins per hub season (wins that earned points), 15-win trophies, Chess/Checkers season top three crowned by the hourly `season-crowns` job, Champion rank trophies, Hawk Feather, Golden Bow (counts from today: arrows used weren't kept before).
 - [x] P8 part 2: Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training. Done 12 Nov 2026: Marble Cup and Golden Marble (gold times copied into `marble_gold_steps`, kept in step by a test), Bond Star and Perfect Match, Golden Pickaxe, Royal Crown (all 8 riddles right in a full reign), Times Tables Shield (20 facts sessions in a hub season, in `season_counts`); Marble Rush and Bond Match got their first three achievements each.
-- [ ] P11 Earn your own name (size L, database and privacy). Waits for: P3 and P5.
 - [ ] P12 Teacher tools, the yearly rollover and a last check (size M). Waits for: P4 to P11.
 
 ## Done and live
@@ -21,6 +20,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 - [x] P6 Retire levels and show trophies around the hub (#459, 12 Nov 2026): no level number or bar anywhere. The welcome strip shows the trophy count and favourite three, and favourites sit beside names on the Leaderboard and in the Lobby (`trophy_shelves`). "How points work" rewritten; points kept.
 - [x] P10 Coming back, two-game rewards and the hall of fame (#460, 12 Nov 2026): six two-game rewards (half lit in the cabinet), Season Regular, All-rounder, Best Friends Cup, a Hall of fame on the Leaderboard and a once-only new-season note. See "As built by P10" in PLAN.md.
+- [x] P11 Earn your own name (#461, live 12 Nov 2026): Name Scrolls (gold in two games, a third picture, or from a teacher); a typed name checked by the server waits for the teacher's Yes in Today's "Needs you" (and the nav count), old name kept till then; past names, "Put the made-up name back" and "Give a Name Scroll" on the pupil's page; new made-up names once a day. Privacy line approved by James. See "As built by P11" in PLAN.md.
 
 - [x] P9 The early-years games (#453, 12 Nov 2026): each finished 30-day golden prize gives that friend's painting as a profile picture (62 friends), a Garden Cup per game at 30, 90 and 150 days played, Quick looks' Garden Gate, back-awarded from that day's records. The friend says "You can wear me on your profile now!". Given by triggers, no game's finish function changed; see "As built by P9" in PLAN.md.
 
