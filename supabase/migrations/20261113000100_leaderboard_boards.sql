@@ -1,5 +1,6 @@
 -- Leaderboard redesign, card L1 (docs/LEADERBOARD-PLAN.md).
 --
+--   (Plan: docs/LEADERBOARD-PLAN.md.)
 --   1. board_achievement_counts(measure)  which achievements count on the boards: not the ones that measure maths level
 --                                          (the early-years '*_step' ones and Space's 'maths_right').
 --   2. achievements_board(board, scope)   most achievements: 'all-time' (every one held) or 'week' (earned since Monday NZ),

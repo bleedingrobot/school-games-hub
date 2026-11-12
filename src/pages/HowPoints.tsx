@@ -296,8 +296,16 @@ export function HowPoints() {
         </h2>
         <ul className="how-points__list">
           <li>
-            Your points this week put you on the <Link to="/leaderboard">This week</Link> leaderboard. Everyone starts again each
-            Monday.
+            The main <Link to="/leaderboard">Leaderboard</Link> counts achievements: every one you hold, or the ones you earned this week.
+            Achievements that measure maths level don’t count.
+          </li>
+          <li>
+            <Link to="/leaderboard?board=effort">Hard workers</Link> counts the school days you finish a game on. Everyone who plays on
+            4 or 5 school days in a week is named, and gets a 💪 beside their name.
+          </li>
+          <li>
+            Your Chess and Checkers points this week put you on their <Link to="/leaderboard?board=games">game board</Link>. Everyone
+            starts again each Monday.
           </li>
           <li>Because bot points stop at the daily limit, playing a little every day beats playing a lot in one go.</li>
           <li>Your points total stays on your profile. There are no levels any more: big feats win trophies instead.</li>
