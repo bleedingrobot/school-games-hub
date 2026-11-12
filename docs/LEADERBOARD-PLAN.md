@@ -13,6 +13,8 @@
 - **New trophies** strip on the home page (`src/trophies/RecentTrophies.tsx`): the newest 8 trophies won at the school in 7 days, as `recentTrophies` in `my_home_page()`. Same rules as the Hall of fame: pupils only, no hidden pupils, "A classmate" without a made-up name, no garden friend pictures.
 - **Homework** (James, 13 Nov 2026): a finished go counts as home play on school days 6:00 to 8:30 am and 3:00 to 8:30 pm, and at weekends 7:00 am to 8:30 pm (`home_time`). Late at night never counts. Hub game `homework` (no card, no switch) with 7 achievements (Home learner, Ten at home, Five home days, Weekend player, Homework hero, Weekend regular, Fifty at home), kept through New Season, and 3 trophies: Homework Star (8 home days in a season), Weekend Explorer (4 weekends in a season), Home Learning Cup (40 home days in a year), painted 13 Nov 2026. Back-awarded from saved goes when the migration ran.
 
+- **Maths trophies stay private** (James, 13 Nov 2026): `trophy_types.on_hall = false` keeps a trophy won by a maths result off the Hall of fame and the New trophies strip (migration `20261113000300`). Only the Royal Crown (all 8 Royal Decree riddles right) so far; a new trophy like that sets it too.
+
 ## Follow-ups (not built)
 
 - Garden games' days could count on Hard workers if they wrote a finished-go row.
