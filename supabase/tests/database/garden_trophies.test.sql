@@ -1,4 +1,4 @@
--- Early-years profile rewards (migration 20261112001900_garden_trophies.sql; docs/plans/profile/PLAN.md card P9).
+-- Early-years profile rewards (migration 20261112002500_garden_trophies.sql; docs/plans/profile/PLAN.md card P9).
 -- Garden Cups from days played, a friend's picture for each finished 30-day golden prize, Quick looks' Garden Gate, the
 -- back-award, and that a pupil can't give themselves any of it.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)

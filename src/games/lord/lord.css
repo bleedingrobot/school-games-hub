@@ -402,6 +402,7 @@
 .lord-road__note { margin: 10px 0 0; padding: 8px 10px; border-radius: 4px; background: rgba(247, 235, 207, 0.9); box-shadow: inset 0 0 0 1px var(--lord-line); color: var(--lord-ink); }
 .lord-road__note strong { color: var(--lord-yellow); }
 .lord-road__mine { margin: 8px 0 0; color: var(--lord-green); font-weight: 700; }
+.lord-road__five { margin: 6px 0 0; color: var(--lord-red); font-weight: 700; }
 @media (max-width: 760px) {
   .lord-road__medal { width: 56px; height: 56px; }
   .lord-road__stops li.is-now .lord-road__medal { width: 64px; height: 64px; }

@@ -20,6 +20,7 @@ import { factText } from './factText';
 import { HowToPlayBody } from './HowToPlay';
 import { speak, stopSpeaking } from '../../speech';
 import { haleVoiceOn, setHaleVoiceOn, setTutorialOn, spoken, TIPS, TOUR, tutorialOn, VOICE_FOLDER, YOUR_TURN, type Spot } from './tutorial';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './decree.css';
 
 const SEASON_NAMES = ['Spring', 'Summer', 'Autumn', 'Winter'];
@@ -399,6 +400,7 @@ export function DecreePlay({ backend = liveDecree }: { backend?: DecreeBackend; 
         {backend.trial && <span className="rd-trial">Trial: saved on this browser only, no points</span>}
       </header>
       {body}
+      <TrophyWonLine games={['decree']} watch={points} off={backend.trial} />
     </div>
   );
 

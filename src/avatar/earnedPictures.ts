@@ -6,6 +6,9 @@
  */
 import { GARDEN_PICTURES } from './gardenPictures';
 
+// Stand-in until P2's painting lands: Scorchtail's head, cropped from the Dragon Maths dragon.
+import dragonHead from './pictures/dragon-head-standin.webp';
+
 export const TIERS = ['bronze', 'silver', 'gold'] as const;
 export type Tier = (typeof TIERS)[number];
 
@@ -38,6 +41,23 @@ export interface PictureArt {
  */
 export const EARNED_PICTURES: Record<string, PictureArt> = {
   ...GARDEN_PICTURES, // P9: the 62 early-years friends
+  // Dragon Maths (P4): one of the first five in the school to slay the dragon this season.
+  'dm-first-five': { emoji: '🐉', art: dragonHead },
+  // Card P7 (placeholders until card P2's paintings land).
+  'clan-banner': { emoji: '🚩' },
+  'isles-lighthouse': { emoji: '🗼' },
+  'mm-book': { emoji: '📖' },
+  'gem-crown': { emoji: '👑' },
+  'trader-blackhole': { emoji: '🕳️' },
+  'diamond-heart': { emoji: '💎' },
+  'toonflap-rainbow': { emoji: '🌈' },
+  'chess-crown': { emoji: '♛' },
+  'checkers-crown': { emoji: '⛀' },
+  'archery-bow': { emoji: '🏹' },
+  'marble-golden': { emoji: '🟡' },
+  'bond-perfect': { emoji: '💞' },
+  'mine-pickaxe': { emoji: '⛏️' },
+  'decree-crown': { emoji: '👑' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

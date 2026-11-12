@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { playSound, type GameSound } from '../games/sounds';
 import { useSound } from '../sound';
+import { TrophyWonLine } from '../trophies/TrophyWonLine';
 import type { FriendSession } from './useFriendGame';
 
 export interface MoveRow {
@@ -201,6 +202,7 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
         <p className={`turn-status${myTurn && alert ? ' is-check' : ''}`} role="status" aria-live="polite">
           {status}
         </p>
+        <TrophyWonLine games={[game.game]} watch={finished ? game.id : null} />
         {myTurn && note}
 
         {session.live === 'down' && playing && (

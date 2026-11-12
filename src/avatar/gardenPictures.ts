@@ -1,7 +1,7 @@
 /**
  * The early-years friends as earned profile pictures (docs/plans/profile/PLAN.md card P9). Finishing a friend's 30-day
  * golden prize wins that friend's picture: trophy id `<game>-<friend>`, given by garden_rewards in
- * supabase/migrations/20261112001900_garden_trophies.sql. The painting is the friend's `-cheer` picture from its game (no new
+ * supabase/migrations/20261112002500_garden_trophies.sql. The painting is the friend's `-cheer` picture from its game (no new
  * art); a friend painted only sitting uses that, and Parrot's friends are one picture each. Only the addresses are bundled.
  */
 import type { PictureArt } from './earnedPictures';

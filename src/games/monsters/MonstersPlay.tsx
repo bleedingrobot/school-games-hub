@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import { WORLD_MAPS } from '../../../shared/monsters/maps';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import type { BattleReport } from '../../../shared/monsters/save/check';
 import type { TypeId } from '../../../shared/monsters/types';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
@@ -81,7 +82,12 @@ export function MonstersPlay() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, tryAgain]);
 
-  const report = useCallback((result: FlushResult) => setStatus(result === 'done' ? 'saved' : result === 'refused' ? 'stopped' : 'later'), []);
+  // Saves the server has taken: each one may have won a trophy (the line below says so).
+  const [saves, setSaves] = useState(0);
+  const report = useCallback((result: FlushResult) => {
+    setStatus(result === 'done' ? 'saved' : result === 'refused' ? 'stopped' : 'later');
+    if (result === 'done') setSaves((n) => n + 1);
+  }, []);
 
   /** Puts everything since the last save in the queue and sends it. */
   const saveNow = useCallback(
@@ -244,6 +250,7 @@ export function MonstersPlay() {
           {UNLIMITED_LABEL}
         </p>
       )}
+      <TrophyWonLine games={['monsters']} watch={saves || null} />
       <p className="mp-play__note" role="status">
         {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
       </p>

@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 
 /**
  * Said by the friend on a golden-prize day (profile card P9): the server has just given the child that friend's painting to
- * wear as their profile picture (garden_rewards in 20261112001900_garden_trophies.sql). Each early-years game lists it in its
+ * wear as their profile picture (garden_rewards in 20261112002500_garden_trophies.sql). Each early-years game lists it in its
  * `allVoiceLines()`, so it has a Bella clip in the game's own voice folder.
  */
 export const WEAR_ME_LINE = 'You can wear me on your profile now!';

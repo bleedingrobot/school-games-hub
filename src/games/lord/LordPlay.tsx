@@ -537,7 +537,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         <Village
           state={state} hero={hero} note={note} waiting={waiting} busy={busy} onRetry={() => void retry()}
           onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={() => void goForest()}
-          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial} road={!backend.trial || !!backend.seasonDated}
+          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial} road={!backend.trial || !!backend.seasonDated} fetchFirstFive={backend.fetchFirstFive}
         />
       );
   }
@@ -611,9 +611,9 @@ function StatusBar({ hero, unlimited }: { hero: Hero; unlimited: boolean }) {
   );
 }
 
-function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools, road }: {
+function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools, road, fetchFirstFive }: {
   state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
-  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean; road: boolean;
+  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean; road: boolean; fetchFirstFive?: LordBackend['fetchFirstFive'];
 }) {
   const check = canChallengeMaster(hero);
   const dragonReady = canFaceDragon(hero) || !!state.dragon;
@@ -632,7 +632,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
         </Stage>
       )}
       <div className="lord-panel">
-      {road && <SeasonRoad season={state.season} hero={hero} />}
+      {road && <SeasonRoad season={state.season} hero={hero} fetchFirstFive={fetchFirstFive} />}
       <div className="lord-village__intro">
         <div>
           <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : state.unlimited ? `Forest fights: ${UNLIMITED_LABEL}.` : 'No forest fights left today. The village is still open!'}</p>

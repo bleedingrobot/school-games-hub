@@ -12,14 +12,14 @@ import { FRIENDS as robin } from '../../shared/robin/config';
 import { FRIENDS as swamphen } from '../../shared/swamphen/progress';
 import { FRIENDS as tui } from '../../shared/tui/progress';
 import { FRIENDS as weka } from '../../shared/weka/progress';
-import { GARDEN_FRIENDS, GARDEN_PICTURES } from './gardenPictures';
+import { GARDEN_FRIENDS, GARDEN_PICTURES } from '../avatar/gardenPictures';
 
 describe('early-years friend pictures (card P9)', () => {
   // The server gives prize k the picture at place (k - 1) % n of the game's picture rows by sort, so a list out of step with
   // a game's FRIENDS would give a child the wrong friend.
   it('match each game\'s friends, in order, in the browser and the migration, and every friend has a painting', () => {
     const games = { beanstalk, hop, pipi, korora, weka, tui, lizard, parrot, pigeon, robin, swamphen };
-    const sql = readFileSync(join(process.cwd(), 'supabase/migrations/20261112001900_garden_trophies.sql'), 'utf8');
+    const sql = readFileSync(join(process.cwd(), 'supabase/migrations/20261112002500_garden_trophies.sql'), 'utf8');
     for (const [game, friends] of Object.entries(games)) {
       expect(GARDEN_FRIENDS[game].friends).toEqual([...friends]);
       const rows = [...sql.matchAll(new RegExp(`\\(\\d+, '${game}', (\\d+), '([a-z]+)'`, 'g'))];
