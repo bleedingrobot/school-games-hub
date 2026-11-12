@@ -60,3 +60,14 @@ jobs:
       - run: npm ci
       # Every test (test:all), a quarter of the files on each machine.
       - run: npm run test:all -- --shard=${{ matrix.shard }}/4
+
+  # One check for GitHub's "must pass before merging" rule (a skipped job, e.g. a notes-only PR, still passes it).
+  all-passed:
+    name: Site checks passed
+    needs: [changes, build, tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: echo "A site check failed." && exit 1
+      - run: echo "Every site check passed or was not needed."
