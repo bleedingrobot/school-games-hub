@@ -505,3 +505,36 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-line__worn { box-shadow: inset 0 0 0 1px var(--cq-yellow); }
 .cq-line__next { background: rgba(255, 220, 160, 0.06); }
 .cq-line__past { opacity: 0.55; }
+
+/* My Village as a scene you tap (docs/CLANS-VILLAGE-SCENE-PLAN.md, V1). The ground is drawn in code; plots are placed in % of it. */
+.cq-vwrap { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 10px; align-items: start; margin: 0 0 8px; }
+.cq-vscroll { overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; border: 1px solid var(--cq-line); border-radius: 6px;
+  background: radial-gradient(ellipse at 50% 55%, #23271f 0%, #141517 75%); }
+.cq-vscene { position: relative; width: 100%; min-width: 640px; aspect-ratio: 1000 / 620; }
+.cq-vground { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.cq-vplot { position: absolute; transform: translate(-50%, -82%); padding: 0; margin: 0; border: 0; background: none; cursor: pointer; color: inherit;
+  display: flex; flex-direction: column; align-items: center; scroll-snap-align: center; -webkit-tap-highlight-color: transparent; }
+.cq-vplot__art { display: block; width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); transition: transform 0.15s, filter 0.15s; }
+.cq-vsite { display: block; width: 100%; height: auto; }
+.cq-vplot__sign { position: absolute; transform: translate(-50%, 2px); display: flex; align-items: center; gap: 3px; cursor: pointer; z-index: 1; }
+.cq-vplot__chip { padding: 1px 8px; border: 1px solid #8a7444; border-radius: 9px; background: rgba(16, 17, 19, 0.88);
+  color: var(--f-head, #ecdcb8); font-weight: 700; font-size: clamp(0.7rem, 1.2vw, 0.95rem); white-space: nowrap; }
+.cq-vplot__badge { display: grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; font-size: clamp(0.8rem, 1.3vw, 1.05rem); line-height: 1; }
+.cq-vplot__badge--hammer { background: #e3b04a; color: #2a1a00; border: 2px solid #fff0c4; box-shadow: 0 0 10px rgba(227, 176, 74, 0.8); }
+.cq-vplot__badge--crown { color: #f0c860; text-shadow: 0 1px 3px #000; }
+.cq-vplot--gate { transform: translate(-50%, -70%); }
+.cq-vplot:hover .cq-vplot__art, .cq-vplot:focus-visible .cq-vplot__art { transform: translateY(-3px); filter: drop-shadow(0 0 8px rgba(240, 200, 96, 0.75)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); }
+.cq-vplot:focus-visible { outline: 3px solid #e39a4a; outline-offset: 2px; border-radius: 8px; }
+.cq-vplot__sign--picked .cq-vplot__chip { background: #e39a4a; color: #1a1006; border-color: #fff0c4; }
+.cq-vplot--picked .cq-vplot__art { filter: drop-shadow(0 0 10px rgba(240, 200, 96, 0.9)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); }
+.cq-vpanel { display: grid; gap: 6px; padding: 10px 12px; position: sticky; top: 8px; }
+.cq-vpanel h3, .cq-vpanel p { margin: 0; }
+.cq-vpanel__head { display: flex; align-items: center; gap: 8px; }
+.cq-vpanel__close { justify-self: start; }
+.cq-vtroops > summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+.cq-vtroops > .cq-panel { border: 0; padding: 0; }
+@media (max-width: 760px) {
+  .cq-vwrap { grid-template-columns: 1fr; }
+  .cq-vpanel { position: sticky; bottom: 0; top: auto; z-index: 2; box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5); }
+}
+@media (prefers-reduced-motion: reduce) { .cq-vplot__art { transition: none; } }

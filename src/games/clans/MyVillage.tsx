@@ -4,6 +4,7 @@ import { BUILDING_BLURBS, BUILDING_NAMES, TROOP_NAMES, VILLAGE_TOTAL, buildsLeft
 import { landPlot, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Troops, type VillageBuilding } from '../../../shared/clans/types';
 import { Moment } from './Moment';
+import { VillageScene } from './VillageScene';
 import { buildingArt, troopArt } from './art';
 import { buyTroopMix, canBuyMix, canUpgradeBuilding, upgradeBuilding } from './places';
 import { nextVillageStep, strengthKey } from './nextStep';
@@ -19,6 +20,8 @@ type Phase =
 const none = (): Troops => ({ footman: 0, axeman: 0, knight: 0 });
 const nameOf = (kind: keyof Troops, n: number) => (n === 1 ? TROOP_NAMES[kind].one : TROOP_NAMES[kind].many);
 const BUILDS = CONFIG.empire.buildsPerDay;
+const VIEW_KEY = 'cq-village-view';
+const savedView = (): 'scene' | 'list' => { try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'scene'; } catch { return 'scene'; } };
 
 /**
  * My Village: the clan's own buildings (one card each, with an Upgrade button), the troops, and the way to raids.
@@ -29,6 +32,9 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const [mix, setMix] = useState<Troops>(none());
+  const [view, setViewState] = useState<'scene' | 'list'>(savedView);
+  const [picked, setPicked] = useState<VillageBuilding | undefined>();
+  const setView = (v: 'scene' | 'list') => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* the choice just isn't remembered */ } };
   const idle = () => setPhase({ t: 'idle' });
   const step = nextVillageStep(clan);
   const left = buildsLeft(e);
@@ -88,67 +94,119 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
   } else if (phase.t === 'done') {
     body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text}</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>;
   } else {
-    body = (
-      <>
-        <ul className="cq-village" aria-label="Your buildings">
-          {VILLAGE_BUILDINGS.map((b) => {
-            const level = e.levels[b];
-            const max = maxLevel(b);
-            const check = canUpgradeBuilding(session, b);
-            const name = BUILDING_NAMES[b];
-            const art = buildingArt(b, level);
-            const price = level < max ? upgradeCost(b, level + 1) : 0;
-            return (
-              <li key={b} className="cq-panel cq-bcard">
-                {art && <img className={`cq-building-art cq-bcard__art${level === 0 ? ' cq-bcard__art--unbuilt' : ''}`} src={art} alt="" />}
-                <div className="cq-bcard__text">
-                  <h3>{name}</h3>
-                  <p className="cq-bcard__level">Level {level} of {max}{level === 0 && ' (not built yet)'}</p>
-                  <p className="cq-soft">{BUILDING_BLURBS[b]}</p>
-                  <button
-                    type="button" className="cq-btn cq-btn--hot" disabled={!check.ok} aria-describedby={check.ok ? undefined : `why-${b}`}
-                    aria-label={level >= max ? `${name} is fully built` : `Upgrade ${name} to level ${level + 1} for ${price} gold`}
-                    onClick={() => startUpgrade(b)}
-                  >
-                    {level >= max ? 'Fully built' : `Upgrade · ${price} gold`}
-                  </button>
-                  {!check.ok && <small id={`why-${b}`} className={check.why === 'max' ? 'cq-soft' : 'cq-warn'}>{check.say}</small>}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="cq-panel" role="group" aria-label="Troops">
-          <h3>Troops</h3>
-          <p className="cq-soft">Your Barracks (level {e.levels.barracks}) decide how many troops you can have.</p>
-          <ul className="cq-troops">
-            {TROOP_KINDS.map((k) => (
-              <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {nameOf(k, e.troops[k])} <span className="cq-soft">(room for {room(e, k)} more, holds {capacity(e, k)}, costs {CONFIG.empire.troopCost[k]} each)</span></li>
-            ))}
-          </ul>
-          <p>Army strength: <strong>{army}</strong> <span className="cq-soft">{strengthKey()}</span></p>
-          <p>You have <strong>{clan.followers}</strong> {clan.followers === 1 ? 'follower' : 'followers'}. New followers join as footmen while there is room.</p>
-          <h4>Buy troops</h4>
+    const upgradeButton = (b: VillageBuilding) => {
+      const level = e.levels[b];
+      const max = maxLevel(b);
+      const check = canUpgradeBuilding(session, b);
+      const name = BUILDING_NAMES[b];
+      const price = level < max ? upgradeCost(b, level + 1) : 0;
+      return (
+        <>
+          <button
+            type="button" className="cq-btn cq-btn--hot" disabled={!check.ok} aria-describedby={check.ok ? undefined : `why-${b}`}
+            aria-label={level >= max ? `${name} is fully built` : `Upgrade ${name} to level ${level + 1} for ${price} gold`}
+            onClick={() => startUpgrade(b)}
+          >
+            {level >= max ? 'Fully built' : `Upgrade · ${price} gold`}
+          </button>
+          {!check.ok && <small id={`why-${b}`} className={check.why === 'max' ? 'cq-soft' : 'cq-warn'}>{check.say}</small>}
+        </>
+      );
+    };
+    const troopsPanel = (
+      <div className="cq-panel" role="group" aria-label="Troops">
+        <h3>Troops</h3>
+        <p className="cq-soft">Your Barracks (level {e.levels.barracks}) decide how many troops you can have.</p>
+        <ul className="cq-troops">
           {TROOP_KINDS.map((k) => (
-            <p key={k}>
-              <label>
-                {TROOP_NAMES[k].many[0].toUpperCase() + TROOP_NAMES[k].many.slice(1)} ({CONFIG.empire.troopCost[k]} gold each, room for {room(e, k)})
-                {' '}<input type="number" min={0} value={mix[k]} aria-label={`How many ${TROOP_NAMES[k].many}`} onChange={(ev) => setMix({ ...mix, [k]: Math.max(0, Math.floor(Number(ev.target.value) || 0)) })} />
-              </label>
-            </p>
+            <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {nameOf(k, e.troops[k])} <span className="cq-soft">(room for {room(e, k)} more, holds {capacity(e, k)}, costs {CONFIG.empire.troopCost[k]} each)</span></li>
           ))}
-          {total > 0 && !mixCheck.ok && <p className="cq-warn">{mixCheck.say}</p>}
-          <div className="cq-actions">
-            <button type="button" className="cq-btn cq-btn--hot" disabled={total < 1 || !mixCheck.ok} onClick={startBuy}>{total < 1 ? 'Pick some troops' : troopBill(settings, mix.footman, mix.axeman, mix.knight) ? 'Work out the cost' : `Buy for ${bill} gold`}</button>
-            {total > 0 && <span className="cq-soft">(about {bill} gold)</span>}
-          </div>
-        </div>
+        </ul>
+        <p>Army strength: <strong>{army}</strong> <span className="cq-soft">{strengthKey()}</span></p>
+        <p>You have <strong>{clan.followers}</strong> {clan.followers === 1 ? 'follower' : 'followers'}. New followers join as footmen while there is room.</p>
+        <h4>Buy troops</h4>
+        {TROOP_KINDS.map((k) => (
+          <p key={k}>
+            <label>
+              {TROOP_NAMES[k].many[0].toUpperCase() + TROOP_NAMES[k].many.slice(1)} ({CONFIG.empire.troopCost[k]} gold each, room for {room(e, k)})
+              {' '}<input type="number" min={0} value={mix[k]} aria-label={`How many ${TROOP_NAMES[k].many}`} onChange={(ev) => setMix({ ...mix, [k]: Math.max(0, Math.floor(Number(ev.target.value) || 0)) })} />
+            </label>
+          </p>
+        ))}
+        {total > 0 && !mixCheck.ok && <p className="cq-warn">{mixCheck.say}</p>}
         <div className="cq-actions">
-          <button type="button" className="cq-btn cq-btn--hot" onClick={onRaid}>Raid a kingdom / Practice battle</button>
-          <button type="button" className="cq-btn cq-btn--hot" onClick={onClassRaid}>Raid a classmate</button>
+          <button type="button" className="cq-btn cq-btn--hot" disabled={total < 1 || !mixCheck.ok} onClick={startBuy}>{total < 1 ? 'Pick some troops' : troopBill(settings, mix.footman, mix.axeman, mix.knight) ? 'Work out the cost' : `Buy for ${bill} gold`}</button>
+          {total > 0 && <span className="cq-soft">(about {bill} gold)</span>}
         </div>
-      </>
+      </div>
     );
+    const raidButtons = (
+      <div className="cq-actions">
+        <button type="button" className="cq-btn cq-btn--hot" onClick={onRaid}>Raid a kingdom / Practice battle</button>
+        <button type="button" className="cq-btn cq-btn--hot" onClick={onClassRaid}>Raid a classmate</button>
+      </div>
+    );
+    if (view === 'list') {
+      body = (
+        <>
+          <div className="cq-actions">
+            <button type="button" className="cq-btn" onClick={() => setView('scene')}>Village view</button>
+          </div>
+          <ul className="cq-village" aria-label="Your buildings">
+            {VILLAGE_BUILDINGS.map((b) => {
+              const level = e.levels[b];
+              const max = maxLevel(b);
+              const name = BUILDING_NAMES[b];
+              const art = buildingArt(b, level);
+              return (
+                <li key={b} className="cq-panel cq-bcard">
+                  {art && <img className={`cq-building-art cq-bcard__art${level === 0 ? ' cq-bcard__art--unbuilt' : ''}`} src={art} alt="" />}
+                  <div className="cq-bcard__text">
+                    <h3>{name}</h3>
+                    <p className="cq-bcard__level">Level {level} of {max}{level === 0 && ' (not built yet)'}</p>
+                    <p className="cq-soft">{BUILDING_BLURBS[b]}</p>
+                    {upgradeButton(b)}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {troopsPanel}
+          {raidButtons}
+        </>
+      );
+    } else {
+      const states = Object.fromEntries(VILLAGE_BUILDINGS.map((b) => [b, { ok: canUpgradeBuilding(session, b).ok }])) as Record<VillageBuilding, { ok: boolean }>;
+      const b = picked;
+      body = (
+        <>
+          <div className="cq-vwrap">
+            <VillageScene e={e} states={states} picked={b} onPick={(x) => setPicked(x === picked ? undefined : x)} />
+            <div className="cq-panel cq-vpanel" aria-live="polite">
+              {b ? (
+                <>
+                  <div className="cq-vpanel__head">
+                    {buildingArt(b, e.levels[b]) && <img className={`cq-building-art${e.levels[b] === 0 ? ' cq-bcard__art--unbuilt' : ''}`} src={buildingArt(b, e.levels[b])} alt="" />}
+                    <h3>{BUILDING_NAMES[b]}</h3>
+                  </div>
+                  <p className="cq-bcard__level">Level {e.levels[b]} of {maxLevel(b)}{e.levels[b] === 0 && ' (not built yet)'}</p>
+                  <p className="cq-soft">{BUILDING_BLURBS[b]}</p>
+                  {upgradeButton(b)}
+                  <button type="button" className="cq-btn cq-vpanel__close" onClick={() => setPicked(undefined)}>Close</button>
+                </>
+              ) : (
+                <p className="cq-soft">Tap a building to see what it does and upgrade it. <span aria-hidden="true">⚒</span> means you can upgrade it now.</p>
+              )}
+            </div>
+          </div>
+          <div className="cq-actions">
+            <button type="button" className="cq-btn" onClick={() => setView('list')}>List view</button>
+          </div>
+          {b === 'barracks' ? troopsPanel : <details className="cq-panel cq-vtroops"><summary>Troops (in the Barracks)</summary>{troopsPanel}</details>}
+          {raidButtons}
+        </>
+      );
+    }
   }
 
   return (
