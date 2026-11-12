@@ -285,6 +285,31 @@ Each card is one PR. D2 is a database change. The prompts are on the Dashboard P
 
 **Waits for:** D1 to D8
 
+## After (D9, 12 Nov 2026)
+
+Measured the same way as section 5, on the home preview with every class switch on (as live), a made-up pupil whose most
+played games are Dragon Maths, Archery, Diamond Drop and Sky Isles, and the live build for script size. Pictures in the
+project files folder `dashboard-review/`: `after-phone.jpg`, `after-ipad.jpg`, `after-laptop.jpg`.
+
+| | Before | After |
+|---|---|---|
+| Phone page height | 13,506 px | 7,153 px |
+| Dragon Maths' Play button, phone | 11,741 px (screen 14) | 1,063 px (screen 2) |
+| Dragon Maths' Play button, iPad 1024 × 768 | 4,981 px (screen 7) | 728 px (first screen) |
+| Dragon Maths' Play button, laptop 1366 × 768 | 5,125 px (screen 7) | 692 px (first screen) |
+| Taps to a favourite game | scroll, then Play | Play in My games |
+| Layout shift, 1024 × 768 | 0.80 (all switches) / 0.114 (preview default) | 0.002 |
+| Layout shift, phone | 0.360 (preview default) | 0.032 |
+| Home page script before first paint (live build, zipped) | 473 KB | 325 KB |
+| First card (CPU 4×, 10 Mbps) | 3.3 s | 2.1 to 2.4 s |
+| Files touched to add a game's card | 5 to 7 | GameDefinition, registry line, two pictures |
+
+Card parts were not changed by D1 to D8 (GameCard still gets the same moves, next-part and unlimited props), so the checks in
+section 3 still hold. The big Play button is gone (behind `MY_GAMES_ON`), 'In development' stays, every card has its own
+painting, and Training is a card like the others.
+
+Not done: a check with a real pupil account. Teachers see the same cards on their own home page, so James can confirm on his.
+
 ## Decisions (James, 11 and 12 Nov 2026)
 
 1. Early-years games for Year 4+ classes: **leave them at the top**. D3 is dropped; My games (D2) is how older pupils reach their games quickly.
