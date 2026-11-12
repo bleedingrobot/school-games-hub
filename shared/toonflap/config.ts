@@ -88,3 +88,18 @@ export const BREAK_AFTER_RUNS = 30;
 export const SILVER_BUMPS = 2;
 /** Silver also allows this many wrong checks or gaps. */
 export const SILVER_MISSES = 1;
+
+/**
+ * Sky Dash (stage F.7, plan section 9): the classic one-touch mode. A bump ends the run unless a spare feather (one for
+ * each check right, at most `DASH_FEATHERS_MAX` held) or a revive potion (one a dash) saves it. Score = walls flown past.
+ * The course gets harder slowly: walls closer together and openings smaller over the first `DASH_RAMP_WALLS` walls.
+ */
+export const DASH_CHECK_SECONDS = 30;
+export const DASH_FEATHERS_MAX = 3;
+export const DASH_RAMP_WALLS = 80;
+export const DASH_START = { spacing: 2.4, gap: 4.6, wander: 1.6 } as const;
+export const DASH_END = { spacing: 1.9, gap: 3.7, wander: 2.4 } as const;
+/** Points: one for each finished dash (inside the day's point runs) and 3 for a new best. */
+export const DASH_POINTS = { dash: 1, newBest: 3 } as const;
+/** The class board shows this many. */
+export const DASH_BOARD_SIZE = 10;

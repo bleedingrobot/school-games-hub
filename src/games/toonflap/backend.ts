@@ -4,10 +4,10 @@
  * for the preview (./trial.ts, kept apart so the home page doesn't download the rules), with a pretend pupil kept in localStorage.
  * Built like Robin's Berry Basket.
  */
-import type { FinishReply, GapSign, Picks, Reply, StartReply } from '../../../shared/toonflap/server';
+import type { DashBoard, DashFinishReply, FinishReply, GapSign, Picks, Reply, StartReply } from '../../../shared/toonflap/server';
 import type { Progress } from '../../../shared/toonflap/collection';
 
-export type { FinishReply, GapSign, Picks, StartReply };
+export type { DashBoard, DashFinishReply, FinishReply, GapSign, Picks, StartReply };
 
 export interface Loaded {
   enabled: boolean;
@@ -33,6 +33,11 @@ export interface ToonFlapBackend {
   answer(seed: string, slot: number, value: number, ms: number): Promise<CheckMark>;
   /** `flaps` is encodeFlaps() of the step numbers. */
   finish(seed: string, flaps: string, potionUsed: boolean): Promise<FinishReply>;
+  /** Sky Dash (open after level 5). */
+  dashStart(): Promise<StartReply>;
+  /** `potion`: the pupil brought a revive potion (the server uses it only on a bump nothing else saved). Null: not checked. */
+  dashFinish(seed: string, flaps: string, potion: boolean): Promise<DashFinishReply | null>;
+  board(): Promise<DashBoard>;
 }
 
 /** A refusal or failure, with words a child (or their teacher) can be shown. */
@@ -74,5 +79,15 @@ export function fromServer(send: Send): ToonFlapBackend {
         throw e;
       }
     },
+    dashStart: async () => (await ask({ action: 'dash' })) as unknown as StartReply,
+    dashFinish: async (seed, flaps, potion) => {
+      try {
+        return (await ask({ action: 'dash-finish', seed, flaps, potion })) as unknown as DashFinishReply;
+      } catch (e) {
+        if (e instanceof ToonFlapError && (e.code === 'not-done' || e.code === 'too-fast')) return null;
+        throw e;
+      }
+    },
+    board: async () => (await ask({ action: 'board' })) as unknown as DashBoard,
   };
 }

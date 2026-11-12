@@ -15,7 +15,8 @@ const PUPIL = 'preview-pupil';
 
 /** The whole game in this browser, kept under `storageKey`, plus the preview's tools. Never talks to the school's server. */
 export function trialBackend({ storageKey }: { storageKey: string }) {
-  const fresh = (): TrialSave => ({ data: emptyData(), maths: true });
+  // Made-up classmates so the Sky Dash board looks like a class's in the preview.
+  const fresh = (): TrialSave => ({ data: { ...emptyData(), dashBests: { Aroha: 34, Leo: 21, Mere: 17 } }, maths: true });
   const read = (): TrialSave => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null') as TrialSave | null;

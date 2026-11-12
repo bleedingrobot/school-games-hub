@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
-import { unplayed, type KeptRun, type Saved } from '../../../shared/toonflap/server';
+import { unplayed, type DashBoard, type KeptRun, type Saved } from '../../../shared/toonflap/server';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler } from './handler';
@@ -75,6 +75,14 @@ Deno.serve(
         checks_right: r.checksRight, gaps_right: r.gapsRight, potion: r.potion,
       }),
     savePicks: (player, picks) => call<boolean>('toonflap_save_picks', { player, picks }),
+    async dashFinish(player, seed, version, progress, r) {
+      const done = await call<{ before: number } | null>('toonflap_dash_finish', {
+        player, seed, version, progress, flaps: r.flaps, seconds: r.seconds, walls: r.walls, bumps: r.bumps,
+        checks_right: r.checksRight, potion: r.potion,
+      });
+      return done === 'busy' ? 'busy' : (done ?? false);
+    },
+    board: (player) => call<DashBoard>('toonflap_dash_board', { player }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'toonflap');

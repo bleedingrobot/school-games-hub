@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { botRun } from '../../../shared/toonflap/bot';
 import { BREAK_AFTER_RUNS } from '../../../shared/toonflap/config';
 import { encodeFlaps } from '../../../shared/toonflap/engine';
+import { buildDashCourse, newDash, stepDash } from '../../../shared/toonflap/dash';
 import { emptyProgress } from '../../../shared/toonflap/collection';
 import { buildCourse, LEVELS } from '../../../shared/toonflap/levels';
 import { memoryServices, type MemoryOptions } from '../../../shared/toonflap/memoryServices';
@@ -80,6 +81,34 @@ it('follows the teacher’s switches, suggests a break after many runs, and only
   const { send: send2, services } = setup();
   services.data.players['pupil-c'] = { progress: { ...emptyProgress(), levels: { garden: { finishes: 4, best: null, bestPlain: null, medal: 'bronze' } } }, picks: { flyer: 'puppy-plane', trail: 'cookies' }, version: 1 };
   expect((await send2('pupil-c', { action: 'load' })).body.picks).toEqual({ flyer: 'fantail', trail: null });
+
+  // Sky Dash opens after level 5; the server replays it and keeps the season best for the class board.
+  expect((await send2('pupil-c', { action: 'dash' })).body.code).toBe('locked');
+  // pupil-d has finished Donut Town (level 5).
+  const had = emptyProgress();
+  had.levels.donut = { finishes: 1, best: null, bestPlain: null, medal: 'bronze' };
+  const dashSetup = setup();
+  dashSetup.services.data.players['pupil-d'] = { progress: had, picks: { flyer: 'fantail', trail: null }, version: 1 };
+  const dash = (await dashSetup.send('pupil-d', { action: 'dash' })).body;
+  expect(dash).toMatchObject({ level: 'dash', signs: [] });
+  expect(JSON.stringify(dash)).not.toContain('"answer"');
+  const course = buildDashCourse(dash.seed);
+  const bot = botRun(course);
+  const flown = newDash(course);
+  const used: number[] = [];
+  for (let k = 0; flown.run.mode !== 'done';) {
+    const f = bot.flaps[k] === flown.run.t;
+    if (f) { used.push(flown.run.t); k++; }
+    stepDash(course, flown, f, false);
+  }
+  expect((await dashSetup.send('pupil-d', { action: 'dash-finish', seed: dash.seed, flaps: encodeFlaps(used) })).body.code).toBe('too-fast');
+  dashSetup.wait(400);
+  expect((await dashSetup.send('pupil-d', { action: 'finish', seed: dash.seed, flaps: encodeFlaps(used) })).status).toBe(400); // not a level
+  const end = (await dashSetup.send('pupil-d', { action: 'dash-finish', seed: dash.seed, flaps: encodeFlaps(used) })).body;
+  expect(end).toMatchObject({ walls: flown.run.nextWall, seasonBest: true, newBest: true, potionUsed: false });
+  expect(end.walls).toBeGreaterThan(20);
+  expect(end.board.rows[0]).toMatchObject({ place: 1, walls: end.walls, me: true });
+  expect(dashSetup.log.points.at(-1)).toEqual({ player: 'pupil-d', points: 4, once: `toonflap:${dash.seed}` });
 
   for (let i = 1; i < BREAK_AFTER_RUNS; i++) await send('pupil-a', { action: 'start', level: 'garden' });
   expect((await send('pupil-a', { action: 'start', level: 'garden' })).body.code).toBe('break');

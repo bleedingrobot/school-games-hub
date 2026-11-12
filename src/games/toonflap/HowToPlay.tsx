@@ -1,6 +1,6 @@
 /** How to play, on its own page. Every number is read from the game's settings (shared/toonflap/config.ts). */
 import { useEffect, useRef } from 'react';
-import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS, EASY_LEVELS } from '../../../shared/toonflap/config';
+import { BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, GENTLE_SPEED, POTIONS_MAX, STEPS_PER_SECOND, TAILWIND_STEPS, UNLOCK_RUNS, EASY_LEVELS, DASH_CHECK_SECONDS, DASH_FEATHERS_MAX, SKY_DASH_AFTER } from '../../../shared/toonflap/config';
 import { LEVELS } from '../../../shared/toonflap/levels';
 
 const sec = (steps: number) => steps / STEPS_PER_SECOND;
@@ -43,6 +43,10 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
           <h3 className="tf-h3">Flyers, trails and potions</h3>
           <p>Finish a level <strong>{UNLOCK_RUNS.easy} times</strong> to unlock its flyer ({UNLOCK_RUNS.hard} times from level {EASY_LEVELS + 1}). Win gold to make it shiny. Trails are earned too. They only change how your bird looks, never how it flies.</p>
           <p>Sometimes you earn a 🧪 revive potion. Hold up to {POTIONS_MAX}. Use one in a run to cancel a bump.</p>
+        </section>
+        <section>
+          <h3 className="tf-h3">Sky Dash ☄️</h3>
+          <p>Opens when you finish level {SKY_DASH_AFTER}. The classic way: <strong>one bump and the dash is over</strong>. It goes on and gets harder. Your score is how many walls you fly past. Every {DASH_CHECK_SECONDS} seconds there is a check: get it right for a <strong>spare feather</strong> 🪶 that saves you from one bump (hold up to {DASH_FEATHERS_MAX}). Bring a revive potion to come back once. Your best this season goes on your class board.</p>
         </section>
         <section>
           <h3 className="tf-h3">The 10 worlds</h3>

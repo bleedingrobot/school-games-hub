@@ -8111,6 +8111,8 @@ const READ_TIME_LEVELS = [
 	4,
 	5
 ];
+/** A run longer than this (flying steps) is stopped: nobody needs 5 minutes for one level. */
+const MAX_RUN_STEPS = 18e3;
 /** Flying feel at each speed. "Floaty" early: less gravity and a softer lift. */
 const WINGS = {
 	slow: {
@@ -8162,6 +8164,21 @@ const POINTS = {
 	finish: 2,
 	firstFinish: 5,
 	newGold: 3
+};
+const DASH_START = {
+	spacing: 2.4,
+	gap: 4.6,
+	wander: 1.6
+};
+const DASH_END = {
+	spacing: 1.9,
+	gap: 3.7,
+	wander: 2.4
+};
+/** Points: one for each finished dash (inside the day's point runs) and 3 for a new best. */
+const DASH_POINTS = {
+	dash: 1,
+	newBest: 3
 };
 //#endregion
 //#region shared/toonflap/medals.ts
@@ -8410,7 +8427,7 @@ const LEVELS = [
 	}
 ];
 /** A small number stream with whole-number steps, so each course is the same everywhere. */
-function stream(seed) {
+function stream$1(seed) {
 	let s = seed;
 	return () => {
 		s = s * 48271 % 2147483647;
@@ -8423,7 +8440,7 @@ function buildCourse(def, gentle = false) {
 	const speed = wings.speed * (gentle ? .8 : 1);
 	const step = wings.speed * def.spacing;
 	const gapH = def.gap * BIRD_SIZE * (gentle ? 1.15 : 1);
-	const random = stream(1e3 + def.n * 7919);
+	const random = stream$1(1e3 + def.n * 7919);
 	const firstX = 2 + wings.speed * LEAD_IN_SECONDS;
 	const count = Math.max(4, Math.floor((def.seconds * wings.speed - (firstX - 2) - 4) / step) + 1);
 	const checkAfter = [];
@@ -8765,6 +8782,7 @@ function levelOpen(p, n, today) {
 	if (n <= opened) return true;
 	return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
 }
+const skyDashOpen = (p) => record(p, LEVELS[4].id).finishes > 0;
 /** Finishes of a level that unlock its flyer: 15 on the easy levels (1 to 5), 10 on the harder ones. */
 const unlockRuns = (level) => (LEVELS.find((l) => l.id === level)?.n ?? 1) <= 5 ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
@@ -8858,6 +8876,19 @@ function addRun(before, run, today) {
 			newLevel,
 			levelTomorrow
 		}
+	};
+}
+/** Adds a finished Sky Dash to a pupil's progress (a potion used is spent). Returns a new object. */
+function addDash(before, walls, potionUsed) {
+	const newBest = walls > (before.dashBest ?? 0);
+	return {
+		progress: {
+			...before,
+			dashes: (before.dashes ?? 0) + 1,
+			dashBest: Math.max(before.dashBest ?? 0, walls),
+			potions: potionUsed ? Math.max(0, before.potions - 1) : before.potions
+		},
+		newBest
 	};
 }
 //#endregion
@@ -9051,6 +9082,173 @@ function decodeFlaps(text) {
 		out.push(at);
 	}
 	return out;
+}
+//#endregion
+//#region shared/toonflap/dash.ts
+/**
+* Sky Dash (docs/TOON-FLAP-PLAN.md, section 9, stage F.7): the classic one-touch version, open after level 5.
+*
+* It runs on the same physics as the levels (engine.ts stepRun), on an endless-looking course made from the run's seed.
+* stepRun treats a bump the level way (+3 s, try again in front of the wall); Sky Dash then decides: a spare feather or the
+* revive potion saves the run, otherwise it ends there. Feathers come from checks answered right (the server marks them),
+* so the server replays a dash with the same marks and gets the same walls.
+*/
+/** Sky Dash as a level: the Cosmic Storm sky (world 10), medium wings. */
+const DASH_DEF = {
+	n: 10,
+	id: "dash",
+	name: "Sky Dash",
+	world: "cartoon outer space",
+	seconds: MAX_RUN_STEPS / 60,
+	pace: "medium",
+	gap: DASH_START.gap,
+	spacing: DASH_START.spacing,
+	checks: 0,
+	answerWalls: 0,
+	answerGaps: 2,
+	wander: DASH_START.wander,
+	features: [],
+	newThing: "One bump and the dash is over. Get checks right for spare feathers."
+};
+function stream(seed) {
+	let s = seed % 2147483646 + 1;
+	return () => {
+		s = s * 48271 % 2147483647;
+		return s / 2147483647;
+	};
+}
+/** The seed's own number (the last 9 digits), so each dash has its own course and the server builds the same one. */
+const seedNumber = (seed) => Number(seed.slice(-9)) || 1;
+/** A dash's course: long enough for the longest run (MAX_RUN_STEPS), with a perch (a check) every 30 s of flying. */
+function buildDashCourse(seed) {
+	const speed = WINGS[DASH_DEF.pace].speed;
+	const random = stream(seedNumber(seed));
+	const mid = 5;
+	const endX = 2 + speed * (MAX_RUN_STEPS / 60) + 20;
+	const walls = [];
+	let x = 2 + speed * LEAD_IN_SECONDS;
+	let lastY = mid;
+	for (let i = 0; x < endX; i++) {
+		const p = Math.min(1, i / 80);
+		const spacing = DASH_START.spacing + (DASH_END.spacing - DASH_START.spacing) * p;
+		const h = (DASH_START.gap + (DASH_END.gap - DASH_START.gap) * p) * BIRD_SIZE;
+		const reach = i === 0 ? .6 : DASH_START.wander + (DASH_END.wander - DASH_START.wander) * p;
+		const maxJump = 2.2 + spacing * .6;
+		let y = mid + (random() * 2 - 1) * reach;
+		y = Math.max(lastY - maxJump, Math.min(lastY + maxJump, y));
+		const room = h / 2 + .8;
+		y = Math.max(room, Math.min(10 - room, y));
+		walls.push({
+			i,
+			x,
+			gaps: [{
+				y,
+				h
+			}]
+		});
+		lastY = y;
+		x += speed * spacing;
+	}
+	const perches = [];
+	for (let c = 1;; c++) {
+		const target = 2 + speed * 30 * c;
+		const w = walls.findIndex((wall, k) => k + 1 < walls.length && wall.x <= target && walls[k + 1].x > target);
+		if (w < 0) break;
+		const a = walls[w].x + WALL_WIDTH;
+		perches.push({
+			i: perches.length,
+			x: a + (walls[w + 1].x - a) / 2,
+			y: walls[w + 1].gaps[0].y - RESPAWN_LOW
+		});
+	}
+	const big = 9999;
+	return {
+		def: DASH_DEF,
+		speed,
+		walls,
+		perches,
+		signs: [],
+		zones: [],
+		nestX: walls[walls.length - 1].x + WALL_WIDTH + 4,
+		medals: {
+			gold: big,
+			silver: big,
+			goldPlain: big,
+			silverPlain: big
+		}
+	};
+}
+const newDash = (course) => ({
+	run: newRun(course),
+	feathers: 0,
+	feathersUsed: 0,
+	potionUsed: false,
+	crashed: false
+});
+/** A check answered right: a spare feather (up to the most you can hold). */
+function earnFeather(d) {
+	d.feathers = Math.min(3, d.feathers + 1);
+}
+/**
+* One dash step. After a bump stepRun has already put the bird back to hover in front of the wall; Sky Dash then spends a
+* feather or the potion, or ends the run (the score stays the walls passed).
+*/
+function stepDash(course, d, flap, potion) {
+	const event = stepRun(course, d.run, flap);
+	if (event !== "bump") return {
+		event,
+		save: null
+	};
+	if (d.feathers > 0) {
+		d.feathers--;
+		d.feathersUsed++;
+		return {
+			event,
+			save: "feather"
+		};
+	}
+	if (potion && !d.potionUsed) {
+		d.potionUsed = true;
+		return {
+			event,
+			save: "potion"
+		};
+	}
+	d.crashed = true;
+	d.run.mode = "done";
+	return {
+		event,
+		save: "crash"
+	};
+}
+/** The score: walls flown past. */
+const dashWalls = (d) => d.run.nextWall;
+/**
+* Plays a whole dash from its flaps, with the server's marks (`right[i]`: was check i answered right) and whether a potion
+* could be used. Like replayRun: the flaps must be in order and every hover must end with the next flap.
+*/
+function replayDash(course, flaps, right, potion) {
+	const d = newDash(course);
+	let k = 0;
+	while (d.run.mode !== "done") {
+		const next = k < flaps.length ? flaps[k] : -1;
+		if (next >= 0 && next < d.run.t) return {
+			valid: false,
+			dash: d
+		};
+		const flap = next === d.run.t;
+		if (d.run.mode === "hover" && !flap) return {
+			valid: false,
+			dash: d
+		};
+		if (flap) k++;
+		const { event } = stepDash(course, d, flap, potion);
+		if (event === "perch" && right[d.run.perches - 1]) earnFeather(d);
+	}
+	return {
+		valid: k === flaps.length,
+		dash: d
+	};
 }
 //#endregion
 //#region shared/toonflap/maths.ts
@@ -9338,7 +9536,8 @@ async function handleToonFlap(services, player, body) {
 		};
 		const def = levelById(run.level);
 		const n = slot;
-		if (!def || n < 0 || n >= slotPlan(buildCourse(def, run.gentle)).checks) return bad();
+		const course = run.level === "dash" ? buildDashCourse(seed) : def ? buildCourse(def, run.gentle) : null;
+		if (!course || n < 0 || n >= slotPlan(course).checks) return bad();
 		const marked = markQuestion(run.questions[n]);
 		if (!marked) return bad();
 		const right = sameAnswer(value, marked.answer);
@@ -9366,6 +9565,144 @@ async function handleToonFlap(services, player, body) {
 				correct: right,
 				answer: marked.answer
 			}
+		};
+	}
+	if (action === "dash") {
+		const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
+		if (saved === "busy" || today === "busy") return busy();
+		if (!skyDashOpen(saved.progress)) return {
+			status: 409,
+			body: {
+				error: "Finish Donut Town (level 5) to open Sky Dash.",
+				code: "locked"
+			}
+		};
+		if (today.started >= 30) return {
+			status: 429,
+			body: {
+				error: "Time for a break? Your wings need a rest. Come back tomorrow!",
+				code: "break"
+			}
+		};
+		const seed = seedText(services.random);
+		const course = buildDashCourse(seed);
+		let questions = [];
+		if (settings.maths) {
+			const context = await services.maths(player);
+			if (context === "busy") return busy();
+			questions = makeRunQuestions(context, course, services.random);
+		}
+		const kept = await services.start(player, seed, {
+			level: "dash",
+			gentle: false,
+			maths: settings.maths,
+			questions,
+			labels: []
+		});
+		if (kept === "busy") return busy();
+		if (!kept) return {
+			status: 409,
+			body: {
+				error: "Try again.",
+				code: "again"
+			}
+		};
+		return {
+			status: 200,
+			body: {
+				seed,
+				level: "dash",
+				gentle: false,
+				maths: settings.maths,
+				checks: questions.map((q, slot) => publicQuestion(q, slot)),
+				signs: [],
+				readTime: false
+			}
+		};
+	}
+	if (action === "dash-finish") {
+		const { seed } = body;
+		if (!isSeed(seed) || typeof body.flaps !== "string") return bad();
+		const flaps = decodeFlaps(body.flaps);
+		if (!flaps) return bad();
+		const [run, saved] = await Promise.all([services.run(player, seed), services.load(player)]);
+		if (run === "busy" || saved === "busy") return busy();
+		if (!run || run.level !== "dash") return {
+			status: 404,
+			body: {
+				error: "That run isn’t yours.",
+				code: "not-yours"
+			}
+		};
+		if (!run.open) return {
+			status: 409,
+			body: {
+				error: "That run is already saved.",
+				code: "ended"
+			}
+		};
+		const course = buildDashCourse(seed);
+		const right = course.perches.map((_, slot) => run.marks[String(slot)] === true);
+		const replay = replayDash(course, flaps, right, body.potion === true && saved.progress.potions > 0);
+		if (!replay.valid || replay.dash.run.mode !== "done") return {
+			status: 422,
+			body: {
+				error: "That run couldn’t be checked.",
+				code: "not-done"
+			}
+		};
+		const d = replay.dash;
+		if (services.now() - run.startedAt < d.run.t / 60 * 1e3 * .95) return {
+			status: 422,
+			body: {
+				error: "That run couldn’t be checked.",
+				code: "too-fast"
+			}
+		};
+		const walls = dashWalls(d);
+		const added = addDash(saved.progress, walls, d.potionUsed);
+		const checksRight = right.slice(0, d.run.perches).filter(Boolean).length;
+		const today = await services.runsToday(player, nzDate(new Date(services.now())));
+		const done = await services.dashFinish(player, seed, saved.version, added.progress, {
+			flaps: body.flaps,
+			seconds: d.run.t / 60,
+			walls,
+			bumps: d.run.bumps,
+			checksRight,
+			potion: d.potionUsed
+		});
+		if (done === "busy") return busy();
+		if (!done) return {
+			status: 409,
+			body: {
+				error: "That run is already saved.",
+				code: "ended"
+			}
+		};
+		const seasonBest = walls > done.before && walls > 0;
+		if ((today === "busy" ? 10 : today.finished) < 10) await services.awardPoints(player, DASH_POINTS.dash + (seasonBest ? DASH_POINTS.newBest : 0), `toonflap:${seed}`);
+		await services.progressChanged(player);
+		const board = await services.board(player);
+		return {
+			status: 200,
+			body: {
+				walls,
+				seconds: d.run.t / 60,
+				feathersUsed: d.feathersUsed,
+				potionUsed: d.potionUsed,
+				seasonBest,
+				newBest: added.newBest,
+				best: added.progress.dashBest ?? walls,
+				progress: added.progress,
+				board: board === "busy" ? null : board
+			}
+		};
+	}
+	if (action === "board") {
+		const board = await services.board(player);
+		return board === "busy" ? busy() : {
+			status: 200,
+			body: board
 		};
 	}
 	if (action === "finish") {
@@ -9796,6 +10133,22 @@ Deno.serve(makeHandler({
 		player,
 		picks
 	}),
+	async dashFinish(player, seed, version, progress, r) {
+		const done = await call("toonflap_dash_finish", {
+			player,
+			seed,
+			version,
+			progress,
+			flaps: r.flaps,
+			seconds: r.seconds,
+			walls: r.walls,
+			bumps: r.bumps,
+			checks_right: r.checksRight,
+			potion: r.potion
+		});
+		return done === "busy" ? "busy" : done ?? false;
+	},
+	board: (player) => call("toonflap_dash_board", { player }),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "toonflap");
 	},

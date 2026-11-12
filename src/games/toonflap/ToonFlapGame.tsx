@@ -7,7 +7,9 @@ import { speak, stopSpeaking, useReadAloud } from '../../speech';
 import { guideSkipped, readHelp, saveHelp, setGuideSkipped, showTip, voiceLine, VOICE_FOLDER, type HelpSetting } from './guide';
 import { LEVELS } from '../../../shared/toonflap/levels';
 import { nzDate } from '../../../shared/kit/dayArc';
-import { ToonFlapError, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
+import { ToonFlapError, type DashFinishReply, type FinishReply, type Loaded, type Picks, type StartReply, type ToonFlapBackend } from './backend';
+import { DashScreen } from './DashScreen';
+import { DashResults } from './DashResults';
 import { Hangar } from './Hangar';
 import { HowToPlay } from './HowToPlay';
 import { MapScreen } from './MapScreen';
@@ -16,7 +18,7 @@ import { ResultsScreen } from './ResultsScreen';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './toonflap.css';
 
-type Screen = 'map' | 'hangar' | 'howto' | 'play' | 'results';
+type Screen = 'map' | 'hangar' | 'howto' | 'play' | 'results' | 'dash' | 'dash-results';
 
 const GENTLE_KEY = 'toonflap-gentle';
 const readGentle = (): boolean => {
@@ -35,6 +37,7 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
   const [run, setRun] = useState<StartReply | null>(null);
   const [level, setLevel] = useState(1);
   const [reply, setReply] = useState<FinishReply | null>(null);
+  const [dashReply, setDashReply] = useState<DashFinishReply | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [help, setHelp] = useState<HelpSetting>(readHelp);
@@ -88,6 +91,19 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
     setBusy(false);
   };
 
+  const beginDash = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setRun(await backend.dashStart());
+      setScreen('dash');
+    } catch (e) {
+      setError(e instanceof ToonFlapError ? e.message : "Couldn't start Sky Dash. Please try again.");
+      setScreen('map');
+    }
+    setBusy(false);
+  };
+
   const pick = (picks: Picks) => {
     setLoaded((l) => (l ? { ...l, picks } : l));
     void backend.savePicks(picks);
@@ -116,7 +132,7 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
       {screen === 'map' && (
         <>
           <MapScreen
-            progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)}
+            progress={loaded.progress} today={loaded.today ?? nzDate(new Date())} maths={loaded.maths} gentle={gentle} onGentle={chooseGentle} onPlay={(n) => void begin(n)} onDash={() => void beginDash()}
             onHangar={() => setScreen('hangar')} onHowTo={() => setScreen('howto')} busy={busy} error={error}
             help={help} onHelp={chooseHelp} onReplayGuide={() => void begin(1, true)} voice={voice} talk={talk}
           />
@@ -148,10 +164,32 @@ export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { bac
           }}
         />
       )}
+      {screen === 'dash' && run && (
+        <DashScreen
+          key={run.seed}
+          backend={backend}
+          start={run}
+          progress={loaded.progress}
+          picks={loaded.picks}
+          talk={talk}
+          onLeave={() => {
+            setRun(null);
+            setScreen('map');
+          }}
+          onFinished={(r) => {
+            setDashReply(r);
+            if (r) setLoaded((l) => (l ? { ...l, progress: r.progress } : l));
+            setScreen('dash-results');
+          }}
+        />
+      )}
+      {screen === 'dash-results' && (
+        <DashResults talk={talk} reply={dashReply} onAgain={() => void beginDash()} onMap={() => setScreen('map')} />
+      )}
       {screen === 'results' && reply && run && (
         <ResultsScreen talk={talk} today={loaded.today ?? nzDate(new Date())} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
-      <TrophyWonLine games={['toonflap']} watch={reply} off={!onServer} />
+      <TrophyWonLine games={['toonflap']} watch={reply ?? dashReply} off={!onServer} />
     </div>
   );
 }

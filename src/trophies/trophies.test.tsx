@@ -115,7 +115,8 @@ describe('trophy cabinet', () => {
     renderMoment('/');
     expect(await screen.findByRole('dialog', { name: 'New trophy!' })).toHaveTextContent('Gold, 4 times!');
     expect(markMyTrophiesSeen).toHaveBeenCalledTimes(1);
-    expect(playSound).toHaveBeenCalledWith('badge');
+    // The fanfare plays from an effect after the dialog commits, which can land a tick later under load.
+    await waitFor(() => expect(playSound).toHaveBeenCalledWith('badge'));
     await user.click(screen.getByRole('button', { name: /Next \(1 more\)/ }));
     expect(screen.getByRole('dialog', { name: 'New picture!' })).toHaveTextContent('Change my look');
     await user.click(screen.getByRole('button', { name: 'Yay!' }));

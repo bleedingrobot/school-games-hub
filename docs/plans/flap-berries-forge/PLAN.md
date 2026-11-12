@@ -31,7 +31,7 @@ Almost all F.6 art is live (PR #384, #387). Still missing:
 |---|---|
 | C1 | The **Rainbow stars** trail (the gold-on-every-level trail draws a stand-in) and the **wings-up pose** for the 10 level flyers (they tilt their glide picture today). Paint, pick, tidy into `src/games/toonflap/art/`, go live. Mark F.6 done in the plan. |
 
-## D. Toon Flap F.7: Sky Dash and its board
+## D. Toon Flap F.7: Sky Dash and its board — DONE 12 Nov 2026 (score is walls flown past)
 
 The classic one-touch version, opens after level 5 (plan section 9).
 
