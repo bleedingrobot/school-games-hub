@@ -47,6 +47,10 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'chess-crown': { emoji: '♛' },
   'checkers-crown': { emoji: '⛀' },
   'archery-bow': { emoji: '🏹' },
+  'marble-golden': { emoji: '🟡' },
+  'bond-perfect': { emoji: '💞' },
+  'mine-pickaxe': { emoji: '⛏️' },
+  'decree-crown': { emoji: '👑' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

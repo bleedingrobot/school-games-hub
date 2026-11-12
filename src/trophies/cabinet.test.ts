@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MyTrophy, TrophyType } from '../data/trophies';
 import { GAMES } from '../games/registry';
-import { metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, winLine } from './cabinet';
+import { metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, trophyPlace, winLine } from './cabinet';
 
 const type = (id: string, game: string, repeat: TrophyType['repeat'] = 'season'): TrophyType => ({
   id, game, name: id, how: `Win ${id}`, kind: 'trophy', repeat, art: null,
@@ -16,6 +16,7 @@ describe('trophy cabinet rules', () => {
     expect(trophyGame('lord')?.id).toBe('dragon-maths');
     expect(trophyGame('chess')?.id).toBe('chess');
     expect(trophyGame('hub')).toBeUndefined();
+    expect([trophyPlace('training'), trophyPlace('chess'), trophyPlace('hub')]).toEqual(['Training', 'Chess', 'Games Hub']);
     const shelf = [mine('a'), mine('b'), mine('c'), mine('d')];
     expect(shelfOrder(shelf, ['c', 'gone', 'a']).map((t) => t.id)).toEqual(['c', 'a', 'b', 'd']);
   });

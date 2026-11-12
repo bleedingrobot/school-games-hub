@@ -8,6 +8,7 @@ import type { SubState } from '../subitising/store';
 import { FactsMap } from './FactsMap';
 import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
+import { TrophyWonLine } from '../trophies/TrophyWonLine';
 import { TypingCheck } from './TypingCheck';
 import './training.css';
 import { SceneThumb } from '../subitising/Scene';
@@ -34,6 +35,8 @@ interface Props {
   };
   /** A whole session (or Quick looks round) was finished, with its seed: it counts for Training before games. */
   onSessionFinished?: (kind: 'facts' | 'quick', seed: number) => void;
+  /** Counts up each time the server has taken a finished session (the page bumps it after the send). Without it there is no server, so no trophy line. */
+  savedCount?: number | null;
   /** Shown on the home and end-of-session screens: whether the games are open (Training before games). */
   gateNote?: ReactNode;
   /** The maths warm-up comes first (the class uses the ladder and it isn't done): shown instead of Today's session. */
@@ -46,7 +49,7 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, gateNote, placementFirst }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, savedCount, gateNote, placementFirst }: Props) {
   const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
@@ -141,6 +144,7 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
         <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} note={gateNote} />
       )}
       {screen === 'map' && <FactsMap state={state} today={today} onBack={() => setScreen('home')} />}
+      <TrophyWonLine games={['training']} watch={savedCount ?? null} off={savedCount === undefined} />
     </main>
   );
 }

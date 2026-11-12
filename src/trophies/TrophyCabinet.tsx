@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useClassSwitches } from '../data/classSwitches';
 import { fetchMyTrophies, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy } from '../data/trophies';
 import { GAMES } from '../games/registry';
-import { MAX_FAVOURITES, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, winLine } from './cabinet';
+import { MAX_FAVOURITES, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyPlace, winLine } from './cabinet';
 import { TrophyArt } from './TrophyArt';
 import './trophies.css';
 
@@ -114,7 +114,7 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
           <div className="plaque__words">
             <h3 className="plaque__name">{picked.name}</h3>
             <p className="plaque__game">
-              {trophyGame(picked.game)?.name ?? 'Games Hub'} · <strong>{metalLabel(picked)}</strong>
+              {trophyPlace(picked.game)} · <strong>{metalLabel(picked)}</strong>
               {picked.kind === 'picture' && ' · a picture you can wear'}
             </p>
             <p className="plaque__how">
@@ -145,7 +145,7 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
                 <TrophyArt id={t.id} game={t.game} kind={t.kind} tier={null} size={60} />
                 <span>
                   <strong>{t.name}</strong>
-                  <span className="cabinet__spot-game">{trophyGame(t.game)?.name ?? 'Any game'}</span>
+                  <span className="cabinet__spot-game">{t.game === 'hub' ? 'Any game' : trophyPlace(t.game)}</span>
                   {t.how}
                 </span>
               </li>

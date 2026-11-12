@@ -23,6 +23,7 @@ import { HowToPlayBody } from './HowToPlay';
 import { COURSE_INFO } from './courseInfo';
 import { courseAccent, courseArt, courseGradient } from './courseArt';
 import type { FinishedRun } from './RunScreen';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './marble.css';
 
 // The picture (three.js) and the run screen load only when someone starts a run.
@@ -55,6 +56,9 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const [pick, setPick] = useState<{ id: string; mode: ClockMode; round: number; ghost: Ghost | null; two: boolean; setup: RunSetup; started: StartReply | null } | null>(null);
   const [ghostChoice, setGhostChoice] = useState<GhostKind | 'none'>('none');
   const [busy, setBusy] = useState(false);
+  // Runs the server has taken: each may have won a trophy (the line says so).
+  const [saves, setSaves] = useState(0);
+  const wonLine = <TrophyWonLine games={['marble']} watch={saves || null} off={localMaths || !player} />;
   const [note, setNote] = useState('');
   const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
   const wantMaths = mathsSwitch !== 'off';
@@ -132,6 +136,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
 
   if (pick && course) {
     return (
+      <>
       <Suspense fallback={<p className="loading" role="status">Setting up the course…</p>}>
         <RunScreen
           key={runKey}
@@ -161,7 +166,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
             const started = pick.started;
             if (started && player) {
               enqueueRun(player, { seed: started.seed, stamp: started.stamp, course: run.courseId, mode: run.mode, inputs });
-              void flushRuns(player);
+              void flushRuns(player).then(() => setSaves((n) => n + 1));
             }
             return { isBest: next.isBest };
           }}
@@ -170,12 +175,15 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
           onExit={() => setPick(null)}
         />
       </Suspense>
+      {wonLine}
+      </>
     );
   }
 
   if (showHow) return <HowToPlay mathsAllowed={mathsSwitch !== 'off'} onBack={() => setShowHow(false)} />;
 
   return (
+    <>
     <CoursePicker
       onHowTo={() => setShowHow(true)}
       bests={bests}
@@ -189,6 +197,8 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       busy={busy}
       note={note}
     />
+    {wonLine}
+    </>
   );
 }
 
