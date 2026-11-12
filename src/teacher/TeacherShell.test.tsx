@@ -203,18 +203,25 @@ describe('Today', () => {
     await user.click(training);
     expect(data.saveTrainingFirst).toHaveBeenLastCalledWith(false, 'c12');
 
-    // Game sets, on the same screen: one request, what is on, and the set marked in use.
+    // Game sets, on the same screen: one request, what changed, the set marked on now, and Undo puts it back.
     expect(await screen.findByText('Reading group')).toBeInTheDocument();
-    expect(screen.queryByText('In use')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Use now: Maths only' }));
+    expect(screen.queryByText('On now')).toBeNull();
+    expect(screen.getByText('Maths games on. Foundational and non-maths games off.', { exact: false })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Switch to Maths only' }));
     await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
     const [changes, classId] = data.saveGameSwitches.mock.calls[0];
     expect(classId).toBe('c12');
     expect(changes.non_maths_games).toBe(false);
     expect(Object.values(changes)).toContain(true);
-    expect(await screen.findByText(/^Room 12 now has Maths only: \d+ games on\.$/)).toBeInTheDocument();
-    expect(screen.getAllByText('In use')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Use now: Maths only' })).toBeDisabled();
+    expect(await screen.findByText(/^Room 12 now has Maths only: \d+ of \d+ games on/)).toBeInTheDocument();
+    expect(screen.getByText('On now')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Switch to Maths only' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(2));
+    const putBack = Object.entries(data.saveGameSwitches.mock.calls[1][0] as Record<string, boolean>);
+    expect(putBack.length).toBeGreaterThan(0);
+    for (const [column, on] of putBack) expect(on).toBe(!changes[column]);
+    expect(await screen.findByText(/^Put back as it was/)).toBeInTheDocument();
   });
 
 });
