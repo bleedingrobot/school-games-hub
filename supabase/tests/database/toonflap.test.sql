@@ -84,7 +84,7 @@ select pg_temp.reset();
 
 -- ---- In the hub ----
 select ok(exists (select 1 from public.hub_games where id = 'toonflap' and switch_column = 'toonflap_enabled' and counts_fn is not null
-  and rules_fn is not null and players_fn is not null and season_fn = 'public.toonflap_season(uuid[])' and last_played_fn is not null and keep_achievements),
+  and rules_fn is not null and players_fn is not null and season_fn = 'public.toonflap_season(uuid[])'::regprocedure and last_played_fn is not null and keep_achievements),
   'Toon Flap is registered with its hooks; New Season clears only the Sky Dash board');
 select is(public.toonflap_counts(pg_temp.id('0a')),
   '{"toonflap_levels": 1, "toonflap_clean": 1, "toonflap_gaps": 0, "toonflap_golds": 1, "toonflap_flyers": 0}'::jsonb,
