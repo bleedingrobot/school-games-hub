@@ -10,10 +10,10 @@
 - **The kids have already voted.** 38 of the 45 pupils with a saved layout have pinned games. The most pinned are Dragon Maths (21), Archery (18) and Diamond Drop (13), which are also the most played in the last 14 days (Dragon Maths 634 goes, Archery 301, Sky Isles 284, Clan Quest 179). Without a pin, Dragon Maths is card 28: about 14 phone screens down.
 - **The big Play button always starts Chess vs the Easy bot**, for everyone.
 - **The page jumps while it loads** (layout shift 0.80; "poor" starts at 0.25) because each game's switch loads on its own and cards pop in one by one.
-- **Mostly honest cards.** Moves left, unlimited days, next-part chips and switches all match the games. Three things don't: six games that are live for every class still say "In development" to pupils, Royal Decree shows Kingdom Keeper's picture, and Training is a plain box unlike every other card.
+- **Mostly honest cards.** Moves left, unlimited days, next-part chips and switches all match the games. Two things don't: Royal Decree shows Kingdom Keeper's picture, and Training is a plain box unlike every other card. (Six live games show "In development"; James keeps that on purpose, to ask pupils for feedback.)
 - **Heavy first load and a lot of copying to add a game.** The home page pulls in 107 script files (about 436 KB zipped), and a new game's card touches 5 to 7 files, including a copied 20-line switch hook (22 copies today).
 
-**The plan (section 6), in order:** D1 honest labels, D2 a "My games" row in place of the big Play button, (D3 dropped), D4 games still going in one line, D5 no more jumping, D6 smaller cards on phones, D7 lighter first load, D8 adding a game in one place, D9 check it as a child would. James decided (11 Nov): the early-years games stay at the top for every class, and the big Play button is removed.
+**The plan (section 6), in order:** D1 one card look, D2 a "My games" row in place of the big Play button, (D3 dropped), D4 games still going in one line, D5 no more jumping, D6 smaller cards on phones, D7 lighter first load, D8 adding a game in one place, D9 check it as a child would. James decided (11 Nov): the early-years games stay at the top for every class, and the big Play button is removed.
 
 ## 1. What's there now
 
@@ -107,8 +107,8 @@ Each card is one PR. D2 is a database change. The prompts are on the Dashboard P
 
 | Card | What the pupil gets | Size | Database | Waits for |
 |---|---|---|---|---|
-| D1 | Labels that tell the truth; every card looks the same | S | no | nothing |
-| D2 | Their own games at the top | M | yes | nothing (James chose to remove the Play button, 11 Nov 2026) |
+| D1 | Every card looks the same | S | no | nothing |
+| D2 | Their own games at the top (old Pinned section kept behind a switch) | M | yes | nothing (James chose to remove the Play button, 11 Nov 2026) |
 | D3 | (dropped) | M | yes | Dropped: James chose to leave the early-years games at the top for every class |
 | D4 | Games still going take one line, not five | S | no | nothing |
 | D5 | No jumping cards while it loads | S | no | nothing |
@@ -117,21 +117,22 @@ Each card is one PR. D2 is a database change. The prompts are on the Dashboard P
 | D8 | (For us) a new game card in one place | S | no | D5 and D7 |
 | D9 | Checked with real accounts | S | no | D1 to D8 |
 
-### D1. Honest labels and one card look (size S)
 
-**What's wrong:** Six games that are live for every class (Robin, Parrot, Lizard, Pigeon, Swamp Hen, Toon Flap) still show pupils a yellow 'In development' tag. The Training tile is a plain white box, unlike every other card. Royal Decree shows Kingdom Keeper's picture, a game pupils no longer have.
+### D1. One card look: Training card and the missing paintings (size S)
 
-**Done looks like:** Pupils never see 'In development' on a game that is on for their class (teachers still do, so they know it's new). Training is an ActivityCard like Quick looks, with its colours (a picture once James paints one). docs/HOME-ART-PLAN.md lists the two paintings still needed: Royal Decree and Training.
+**What's wrong:** The Training tile is a plain white box, unlike every other card. Royal Decree shows Kingdom Keeper's picture, a game pupils no longer have. (The 'In development' tag stays as it is: James uses it to tell pupils he wants their feedback on a game, 12 Nov 2026.)
+
+**Done looks like:** Training is an ActivityCard like Quick looks, with its colours (a picture once James paints one) and a pin box. docs/HOME-ART-PLAN.md lists the two paintings still needed, Royal Decree and Training, with a ComfyUI prompt for each. The 'In development' tag and every game's `inDevelopment` flag are unchanged, for pupils and teachers.
 
 **Steps:**
 
-1. src/components/GameCard.tsx: show `game-card__dev` only when `useAuth().profile?.role === 'teacher'` (pass a `teacher` prop from Dashboard rather than calling the hook inside the card). Leave each game's `inDevelopment` flag as it is.
-2. src/pages/Dashboard.tsx: replace the Training `link-tile` with `<ActivityCard id="training" name="Times tables training" tagline="A few minutes a day to build your facts" to="/training" colours={['#2f6fb5', '#7fc4e8']} pinned... />` so it can be pinned too.
-3. docs/HOME-ART-PLAN.md: add a 'Still to paint' list with a ComfyUI prompt for Royal Decree (a throne room with a scroll and wax seal, clay style like the others) and Training (an abacus on a classroom desk). Don't paint them; James does that on his PC.
+1. src/pages/Dashboard.tsx: replace the Training `link-tile` with `<ActivityCard id="training" name="Times tables training" tagline="A few minutes a day to build your facts" to="/training" colours={['#2f6fb5', '#7fc4e8']} pinned={isPinned('training')} onPinChange={() => togglePinned('training')} />`. Keep it in its own Training section.
+2. docs/HOME-ART-PLAN.md: add a 'Still to paint' list with a ComfyUI prompt for Royal Decree (a throne room with a scroll and wax seal, clay style like the others) and Training (an abacus on a classroom desk). Don't paint them; James does that on his PC.
+3. Do not touch the 'In development' tag (`game-card__dev`) or any `inDevelopment` flag.
 
-**Files:** src/components/GameCard.tsx, src/pages/Dashboard.tsx, docs/HOME-ART-PLAN.md, GameCard.test.tsx
+**Files:** src/pages/Dashboard.tsx, docs/HOME-ART-PLAN.md, the Dashboard tests that look for the Training tile
 
-**Tests:** Update GameCard.test.tsx: a pupil doesn't see 'In development', a teacher does. Check DashboardHome tests still pass with the Training card.
+**Tests:** Update the Dashboard tests that look for the Training link: it is now a card with 'Play Times tables training' linking to /training.
 
 **Waits for:** nothing
 
@@ -139,19 +140,19 @@ Each card is one PR. D2 is a database change. The prompts are on the Dashboard P
 
 **What's wrong:** The big yellow Play button always starts Chess against the Easy bot, for every pupil. Room Riley's favourite, Dragon Maths, is the 28th card: about 14 phone screens down (y 11,700 px) and 6 laptop screens down. 38 of 45 pupils with a saved layout have pinned games to get round this.
 
-**Done looks like:** Straight under the hero, a 'My games' row: the pupil's pinned games first, then the games they played most in the last 14 days, up to 4 cards (cards in this row hide the tagline and bot level picker to stay short). It replaces the Pinned section; the 📌 box still adds and removes. With nothing pinned or played it shows the class's 4 most played games, titled 'Popular in your class'. The big yellow Play button and its 'Chess vs Easy bot' hint are gone from the hero (James, 11 Nov 2026); Class Warp stays. The season strips sit under My games when Clan Quest or Dragon Maths is in it. Looks like mock-laptop-my-games and mock-phone-two-per-row, without the Play button.
+**Done looks like:** Straight under the hero, a 'My games' row: the pupil's pinned games first, then the games they played most in the last 14 days, up to 4 cards (cards in this row hide the tagline and bot level picker to stay short). It takes the Pinned section's place; the 📌 box still adds and removes. The old Pinned section's code stays in the file behind one switch (`MY_GAMES_ON = true` at the top of Dashboard.tsx; false brings back the old Pinned section exactly as now), so James can go back (12 Nov 2026). With nothing pinned or played it shows the class's 4 most played games, titled 'Popular in your class'. The big yellow Play button and its 'Chess vs Easy bot' hint are gone from the hero (James, 11 Nov 2026); Class Warp stays. The season strips sit under My games when Clan Quest or Dragon Maths is in it. Looks like mock-laptop-my-games and mock-phone-two-per-row, without the Play button.
 
 **Steps:**
 
 1. Migration `<next>_home_my_games.sql`: edit `public.my_home_page()` in place (its latest body is in supabase/migrations/20261102000300_home_chips.sql; check nothing newer defines it). Add `'myGames'`: the caller's game ids from `public.scored_games` with `finished_at > now() - interval '14 days'`, grouped by game, ordered by count desc, limit 4, and `'classGames'`: the same top 4 for the caller's class (`current_class_of(auth.uid())`, through class_members), for a pupil with no games yet.
 2. src/data/homePage.ts: parse the two new parts (null-safe; an old database without them leaves the row as it is now).
-3. src/pages/Dashboard.tsx: remove the hero's Play link, its hint line, and the `featured`/`featuredGame` state (cards still keep their own bot level). Build `myTiles` = pinned (in pin order) then myGames, without repeats, only games in `tiles`, max 4. Render it as the first GameGroup with id 'pinned' (keep the id so saved folds still work) and title 'My games'; add `className="game-grid game-grid--mine"`. A game shown in My games is NOT removed from its own section (only pinned ones are, as now).
+3. src/pages/Dashboard.tsx: when MY_GAMES_ON is true, don't render the hero's Play link and its hint line (keep the code; false shows them again). Cards keep their own bot level. Build `myTiles` = pinned (in pin order) then myGames, without repeats, only games in `tiles`, max 4. Keep the old Pinned code path as it is and add the new one beside it, chosen by `const MY_GAMES_ON = true` with a comment saying false brings back the old Pinned section (James wants to be able to revert). Render My games as the first GameGroup with id 'pinned' (keep the id so saved folds still work) and title 'My games'; add `className="game-grid game-grid--mine"`. A game shown in My games is NOT removed from its own section (only pinned ones are, as now).
 4. Move the `season-strips` block so it renders under My games when clan-quest or dragon-maths is among myTiles; otherwise leave it in Complex maths.
 5. CSS in src/styles.css (this is a shared-file card, so it's allowed here): `.game-grid--mine` columns `minmax(min(100%, 230px), 1fr)`, and inside it hide `.game-card__text > p:not(.game-card__note)` and the bot level picker.
 
 **Files:** new migration; src/data/homePage.ts; src/pages/Dashboard.tsx; src/styles.css; src/pages/homePageFake.ts (add the parts to the fake answer); DashboardLayout.test.tsx
 
-**Tests:** Two tests at most: My games orders pins then most played and stops at 4; the hero has no Play button. Scratch-DB check (scripts/scratch-db.sh) that myGames counts only the caller's games. RequestCount test: still one my_home_page request.
+**Tests:** Two tests at most: My games orders pins then most played and stops at 4; the hero has no Play button; and with MY_GAMES_ON false the old Pinned section renders as before. Scratch-DB check (scripts/scratch-db.sh) that myGames counts only the caller's games. RequestCount test: still one my_home_page request.
 
 **Waits for:** nothing (James chose to remove the Play button, 11 Nov 2026)
 
@@ -284,7 +285,8 @@ Each card is one PR. D2 is a database change. The prompts are on the Dashboard P
 
 **Waits for:** D1 to D8
 
-## Decisions (James, 11 Nov 2026)
+## Decisions (James, 11 and 12 Nov 2026)
 
 1. Early-years games for Year 4+ classes: **leave them at the top**. D3 is dropped; My games (D2) is how older pupils reach their games quickly.
 2. The big Play button: **remove it**. D2 puts My games in its place.
+3. 12 Nov feedback: **keep the "In development" tag** for pupils (it tells them James wants feedback on the game). **Keep the old Pinned section's code** (and the Play button) behind a switch in D2, so it can be reverted.
