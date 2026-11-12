@@ -5,10 +5,13 @@
  *
  * The list is fetched once for the whole site (the Layout, teachers only) and shared, so answering on the Teacher page
  * updates the nav count at once. Students never fetch it.
+ *
+ * Typed player names waiting for a Yes (card P11, earn your own name) come in the same way: in the nav count and in "Needs you".
  */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { answerWarp, fetchWarpRequests, type WarpRequest } from '../data/classes';
+import { answerName, fetchNameRequests, type NameRequest } from '../data/ownName';
 import { FriendlyError } from '../data/profile';
 import type { TeacherAlert } from '../games/types';
 import { ago, LIVE_MS } from '../data/ago';
@@ -16,6 +19,8 @@ import '../pages/teacher-page.css';
 
 interface WaitingValue {
   requests: WarpRequest[];
+  /** Typed names waiting for a teacher's Yes. */
+  names: NameRequest[];
   refresh(): Promise<void>;
 }
 
@@ -24,18 +29,17 @@ const Context = createContext<WaitingValue | null>(null);
 /** Looks every 30 seconds while the page is showing, and straight away when the tab comes back (like My classes). */
 function usePolledRequests(enabled: boolean): WaitingValue {
   const [requests, setRequests] = useState<WarpRequest[]>([]);
+  const [names, setNames] = useState<NameRequest[]>([]);
 
   const refresh = useCallback(async () => {
-    try {
-      setRequests(await fetchWarpRequests());
-    } catch {
-      // A count we can't load is just not shown; My classes still has the full list.
-    }
+    // Each list shows as soon as it's here. A count we can't load is just not shown; My classes still has the full list.
+    await Promise.allSettled([fetchWarpRequests().then(setRequests), fetchNameRequests().then((typed) => setNames(typed ?? []))]);
   }, []);
 
   useEffect(() => {
     if (!enabled) {
       setRequests([]);
+      setNames([]);
       return;
     }
     void refresh();
@@ -52,7 +56,7 @@ function usePolledRequests(enabled: boolean): WaitingValue {
     };
   }, [enabled, refresh]);
 
-  return { requests, refresh };
+  return { requests, names, refresh };
 }
 
 /** In the Layout: fetches only for a teacher. */
@@ -70,12 +74,13 @@ export function useWaitingToJoin(): WaitingValue {
 
 /** The count beside "Teacher" in the nav. Nothing at all while nobody is waiting. */
 export function WaitingCount() {
-  const { requests } = useWaitingToJoin();
-  if (requests.length === 0) return null;
+  const { requests, names } = useWaitingToJoin();
+  const total = requests.length + names.length;
+  if (total === 0) return null;
   return (
     <span className="topnav__count">
-      <span aria-hidden="true">{requests.length}</span>
-      <span className="sr-only">, {requests.length} waiting to join a class</span>
+      <span aria-hidden="true">{total}</span>
+      <span className="sr-only">, {names.length === 0 ? `${total} waiting to join a class` : `${total} waiting for you`}</span>
     </span>
   );
 }
@@ -86,8 +91,25 @@ export function WaitingCount() {
  * lot of skipping), each with a link to look. Only there when something is waiting; otherwise one quiet line.
  */
 export function NeedsYou({ classId, alerts = [] }: { classId: string; alerts?: TeacherAlert[] }) {
-  const { requests, refresh } = useWaitingToJoin();
+  const { requests, names, refresh } = useWaitingToJoin();
   const [status, setStatus] = useState<string | null>(null);
+
+  async function answerTyped(r: NameRequest, approve: boolean) {
+    setStatus('Saving…');
+    try {
+      const result = await answerName(r.id, approve);
+      setStatus(
+        result === 'approved'
+          ? `${r.student_name} is now ${r.wanted}.`
+          : result === 'taken'
+            ? `Someone else has ${r.wanted} now, so ${r.student_name} keeps their name and can try another.`
+            : `${r.student_name} keeps their name.`,
+      );
+      await refresh();
+    } catch (error) {
+      setStatus(error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
+    }
+  }
 
   async function answer(r: WarpRequest, approve: boolean) {
     setStatus('Saving…');
@@ -108,7 +130,16 @@ export function NeedsYou({ classId, alerts = [] }: { classId: string; alerts?: T
     elsewhere.set(r.class_id, { ...now, count: now.count + 1 });
   }
 
-  const count = requests.length + alerts.length;
+  // Pupils in no class only reach a school admin: show them with this class's names.
+  const namesHere = names.filter((r) => r.class_id === classId || r.class_id === null);
+  const namesElsewhere = new Map<string, { name: string; count: number }>();
+  for (const r of names) {
+    if (r.class_id === classId || r.class_id === null) continue;
+    const now = namesElsewhere.get(r.class_id) ?? { name: r.class_name ?? 'another class', count: 0 };
+    namesElsewhere.set(r.class_id, { ...now, count: now.count + 1 });
+  }
+
+  const count = requests.length + names.length + alerts.length;
   if (count === 0) {
     return (
       <p className="today__quiet" role="status">
@@ -151,6 +182,50 @@ export function NeedsYou({ classId, alerts = [] }: { classId: string; alerts?: T
             ))}
           </ul>
         </>
+      )}
+      {namesHere.length > 0 && (
+        <>
+          <p className="teacher-waiting__lead">
+            New player name{namesHere.length === 1 ? '' : 's'} to check. Say No to a real name or anything unkind:
+          </p>
+          <ul className="teacher-waiting__list">
+            {namesHere.map((r) => (
+              <li key={r.id}>
+                <span>
+                  <strong>{r.student_name}</strong>
+                  {r.real_name ? ` (${r.real_name})` : ''} wants to be <strong>{r.wanted}</strong> · {ago(r.asked_at)}
+                </span>
+                <span className="person-panel__actions">
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    aria-label={`Yes, ${r.student_name} can be ${r.wanted}`}
+                    onClick={() => void answerTyped(r, true)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--light-outline"
+                    aria-label={`No, ${r.student_name} can't be ${r.wanted}`}
+                    onClick={() => void answerTyped(r, false)}
+                  >
+                    No
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {namesElsewhere.size > 0 && (
+        <ul className="teacher-waiting__elsewhere">
+          {[...namesElsewhere].map(([id, c]) => (
+            <li key={id}>
+              {c.count} new player name{c.count === 1 ? '' : 's'} to check in <Link to={`/teacher/${id}`}>{c.name}</Link>
+            </li>
+          ))}
+        </ul>
       )}
       {elsewhere.size > 0 && (
         <ul className="teacher-waiting__elsewhere">

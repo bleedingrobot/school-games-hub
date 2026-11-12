@@ -1,0 +1,60 @@
+/* Earn your own name (card P11): the scroll in "My player name" and the line on the top card. */
+.own-name {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed currentColor;
+}
+
+.own-name__line,
+.own-name__note {
+  margin: 0;
+}
+
+.own-name__note {
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
+.own-name__scroll {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, #f5d77a 30%, transparent);
+}
+
+.own-name__scroll p {
+  margin: 0;
+}
+
+.own-name__field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.own-name__field input {
+  font: inherit;
+  font-size: 1.1rem;
+  padding: 0.45rem 0.6rem;
+  min-width: min(16rem, 70vw);
+  border-radius: 8px;
+  border: 2px solid currentColor;
+}
+
+/* The teacher's pupil page: names past and the scroll buttons. */
+.name-tools {
+  margin-top: 1rem;
+}
+
+.name-tools__list {
+  margin: 0.4rem 0 0.8rem;
+  padding-left: 1.2rem;
+}
+
+.name-tools__title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}

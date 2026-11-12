@@ -18,6 +18,7 @@ import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, typ
 import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
+import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
 import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
 import type { MyTrophy } from '../data/trophies';
@@ -131,6 +132,7 @@ export function Profile() {
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
+          <ScrollNote />
           <div className="profile-top__buttons">
             <button
               type="button"
@@ -455,6 +457,7 @@ function NamePicker({ onClose }: { onClose: () => void }) {
       <p className="name-picker__status" role="status">
         {status}
       </p>
+      <OwnNamePanel />
     </section>
   );
 }

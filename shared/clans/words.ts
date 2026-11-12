@@ -20,13 +20,13 @@ export const TYPED_NAME_MAX = 12;
 const NAME_SHAPE = /^[A-Za-z]+(?:[ '-][A-Za-z]+)?$/;
 
 // Refused anywhere inside a name. Each letter may be typed more than once ("fuuuck" is caught, "Bob" is not "boob").
-const NEVER_INSIDE = [
+export const NEVER_INSIDE = [
   'fuck', 'fuk', 'fck', 'shit', 'cunt', 'bitch', 'bastard', 'wank', 'twat', 'bollock', 'nigg', 'fagot', 'faggot',
   'retard', 'slut', 'whore', 'porn', 'penis', 'vagina', 'boob', 'dildo', 'hitler', 'pedo', 'sexy', 'horny',
   'poop', 'pussy', 'skank', 'tits', 'arsehole', 'asshole', 'dickhead', 'killyourself',
 ];
 // Refused as a whole name or a whole part only, because they are inside ordinary names ("Cassius", "Dickens", "Grape").
-const NEVER_ALONE = [
+export const NEVER_ALONE = [
   'ass', 'arse', 'butt', 'bum', 'poo', 'pee', 'piss', 'cock', 'dick', 'tit', 'hell', 'damn', 'crap', 'sex', 'fag', 'hoe',
   'nob', 'knob', 'prick', 'wee', 'weewee', 'willy', 'fart', 'stupid', 'dumb', 'idiot', 'loser', 'ugly', 'fat', 'kill', 'die',
   'dead', 'gay', 'homo', 'nude', 'naked', 'drug', 'drugs', 'weed', 'beer', 'vape', 'rape', 'kys', 'kkk', 'shag', 'puta', 'nazi',

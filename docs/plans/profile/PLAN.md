@@ -279,6 +279,14 @@ Size L. Database and privacy. Waits for: P3 and P5.
 - Stop pupils shuffling a new made-up name more than once a day.
 - Add the new line to `docs/PRIVACY-SUMMARY.md` and show James the wording before merging.
 
+**As built by P11** (migration `20261112002500_own_names.sql`, test `supabase/tests/database/own_names.test.sql`; screens `src/profile/OwnName.tsx`, `src/profile/NameTools.tsx`, `src/teacher/WaitingToJoin.tsx`):
+
+- `name_scrolls(player, how two-golds|pictures|teacher, used_at)`: one of each earned kind per pupil, given by a trigger on `trophies` (gold = level 3 or more, the hub's own trophies left out) and back-dated for trophies already won. A teacher may give one more, at most one unused at a time.
+- `name_requests` keeps one pending per pupil; `ask_for_my_name` uses a scroll, `cancel_my_name_request` gives it back, a No gives it back, a Yes spends it. A name someone got first ends as `taken` (scroll back).
+- `own_name_check`: letters, 2 to 14, one space, each word 2+, the clan rude-word lists (`src/profile/ownName.test.ts` checks the SQL copy matches `shared/clans/words.ts`), and none of the pupil's real name (3+ letters from their email before the @). Names are unique ignoring case (`profiles_display_name_any_case`).
+- `name_history` (last 30, from a trigger on `profiles.display_name`); `teacher_name_history`, `teacher_made_up_name_back`, `teacher_give_name_scroll`, `teacher_name_scrolls` for the pupil page; `teacher_name_requests` / `teacher_answer_name` for "Needs you" and the nav count.
+- `choose_my_name` refuses a second new made-up name on the same NZ day (teachers exempt). `tidy-name-requests` cron clears old answers.
+
 ```text
 You are building the earn-your-own-name reward in the School Games Hub repo.
 Read docs/game-guide/README.md, docs/PRIVACY-SUMMARY.md, docs/PROFILE-REVIEW.md (section 6) and docs/plans/profile/PLAN.md (Shared design and card P11). P3 and P5 must be merged first.

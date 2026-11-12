@@ -8,6 +8,10 @@ const data = vi.hoisted(() => ({
   answerWarp: vi.fn(async () => undefined),
 }));
 vi.mock('../data/classes', async (original) => ({ ...(await original<typeof import('../data/classes')>()), ...data }));
+vi.mock('../data/ownName', async (original) => ({
+  ...(await original<typeof import('../data/ownName')>()),
+  fetchNameRequests: vi.fn(async () => []),
+}));
 
 import { NeedsYou, WaitingCount, WaitingToJoinProvider } from './WaitingToJoin';
 
