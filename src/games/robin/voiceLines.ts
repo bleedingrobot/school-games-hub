@@ -15,6 +15,7 @@ import { METALS } from '../../../shared/robin/progress';
 import { ALL_COUNT_KEYS, showGo, SLIPS, type Go } from '../../../shared/robin/round';
 import { nextPartWords } from '../../components/NextPartChip';
 import { numWord, WORDS } from './words';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/robin/';
@@ -89,5 +90,7 @@ export function allVoiceLines(): string[] {
   lines.add(WORDS.lessHelp);
   lines.add(WORDS.moreHelp);
   lines.add(WORDS.sameAgain);
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }

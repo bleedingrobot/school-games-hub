@@ -231,12 +231,12 @@ export function Finish({ result, say, onOpenBeanstalk, onNext }: { result: PipiF
     };
   }, [beanstalkOn]);
   const card = beanstalkOn === true;
-  const sayThen = useCallback((text: string) => say(text, card ? () => say(WORDS.whatsNext) : undefined), [say, card]);
+  const sayThen = useCallback((text: string, onEnd?: () => void) => say(text, onEnd ?? (card ? () => say(WORDS.whatsNext) : undefined)), [say, card]);
   return (
     <div className={`pp-home${result.pearl ? ' pp-home--pearl' : ''}`}>
       <Beach scenery={result.pearl ? 'gold' : beach.today} shells={shells} friend={beach.friend} pose="cheer" />
       {beanstalkOn !== null && (
-        <WhatsNext prefix="pp" title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
+        <WhatsNext prefix="pp" wearMe={result.pearl} title={main} spoken={line} note={levelUp} buttonLabel="OK" say={sayThen} onNext={onNext}>
           {result.pearl && <p className="pp-chip">{opening}</p>}
           {band === 'tricky' && <p className="pp-chip">{WORDS.trickyChip}</p>}
           {result.pearl && (

@@ -9,6 +9,7 @@ import { FRIEND_NAMES } from './art';
 import { demoLines } from './demo';
 import { WORDS } from './words';
 import { nextPartWords } from '../../components/NextPartChip';
+import { WEAR_ME_LINE } from '../../kit/WhatsNext';
 
 /** Relative to the page (like public/stockfish), so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/beanstalk/';
@@ -70,5 +71,7 @@ export function allVoiceLines(): string[] {
   for (const how of Object.values(WORDS.how)) lines.add(how);
   lines.add(WORDS.trickyChip);
   for (const metal of METALS.slice(1)) lines.add(WORDS.leafTurned(metal));
+  // The friend on a golden-prize day: its picture can now be worn on the profile (card P9).
+  lines.add(WEAR_ME_LINE);
   return [...lines];
 }

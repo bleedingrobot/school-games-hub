@@ -238,6 +238,14 @@ Size M. Database. Waits for: P3.
 - Back-award from today's `days_done` and prizes.
 - The game's own friend tells the child ("You can wear me on your profile now!") with a Kokoro voice line.
 
+**As built by P9** (migration `20261112002500_garden_trophies.sql`, test `supabase/tests/database/garden_trophies.test.sql`):
+
+- Trophy ids: `<game>-cup` (Garden Cup, steps), `<game>-<friend>` (62 pictures, `once`), `quick-looks-gate` (once). Sorts 5000 to 5240.
+- No game's finish function changed: a trigger on each `<game>_progress` calls `garden_rewards(who, game, days)` when `days_done` reaches a multiple of 30. Prize k is the friend at place `(k - 1) % n` of the game's picture rows by `sort`, which must match the game's `FRIENDS` (checked by `src/avatar/gardenPictures.test.ts`). A failed award only logs a warning; the child's finish still saves.
+- Quick looks: a trigger on `training_students` gives the Garden Gate when `typing.q.f` reaches 7. That number is the game's own saved record (the browser sends it; the server keeps the larger), so the Gate is as trustworthy as the garden itself.
+- Pictures: `src/avatar/gardenPictures.ts` (in `EARNED_PICTURES`), the friend's `-cheer` painting, or its `-sit` one where there is no cheer (most of Lizard's and Robin's friends) or Parrot's single pictures.
+- In the games: the kit's `WhatsNext` takes `wearMe` and says `WEAR_ME_LINE` after the finish line on a golden-prize day (Beanstalk's own panel does the same). Each game lists the line in `allVoiceLines()`; one Bella clip copied into the 11 voice folders.
+
 ```text
 You are adding profile rewards to the 11 early-years maths games and Quick looks in the School Games Hub repo.
 Read docs/game-guide/README.md, docs/LEARNING-DESIGN.md, docs/PROFILE-REVIEW.md (sections 4, 5) and docs/plans/profile/PLAN.md (Shared design and card P9). P3 must be merged first.

@@ -188,7 +188,7 @@ function Home({ state, say, onPlay }: { state: LizardState; say: (t: string) => 
 }
 
 /** A bundle changes colour, or, on the thirtieth day, the Golden Raft is won. */
-function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Raft day the new den has already started, so show the one just finished: every bundle gold.
   const den = denAfter(result.goldenRaft ? result.daysDone - 1 : result.daysDone);
   const bundles = result.goldenRaft
@@ -203,7 +203,7 @@ function Finish({ result, say, onNext }: { result: LizardFinish; say: (t: string
   return (
     <div className={`lz-home${result.goldenRaft ? ' lz-home--prize' : ''}`}>
       <Den scenery={result.goldenRaft ? 'gold' : den.today} bundles={bundles} friend={den.friend} pose="cheer" />
-      <WhatsNext prefix="lz" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="lz" wearMe={result.goldenRaft} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="lz-chip">{how}</p>
         {up && <p className="lz-chip">{WORDS.nextStep(up)}</p>}
         <p className="lz-chip">{WORDS.firstTime(result.firstRight, GOES_PER_ROUND)}</p>

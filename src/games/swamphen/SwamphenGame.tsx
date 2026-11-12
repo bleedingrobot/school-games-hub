@@ -230,7 +230,7 @@ function Home({ state, say, onPlay }: { state: SwamphenState; say: (t: string) =
 }
 
 /** A cluster changes colour, or, on the thirtieth day, the Golden Berry Branch is won. */
-function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Berry Branch day the new branch has already started, so show the one just finished: every cluster gold.
   const branch = gardenAfter(result.goldenGarden ? result.daysDone - 1 : result.daysDone);
   const rowList = result.goldenGarden
@@ -245,7 +245,7 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
   return (
     <div className={`sh-home${result.goldenGarden ? ' sh-home--prize' : ''}`}>
       <Branch scenery={result.goldenGarden ? 'gold' : branch.today} rows={rowList} friend={branch.friend} pose="cheer" />
-      <WhatsNext prefix="sh" title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
+      <WhatsNext prefix="sh" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="sh-chip">{how}</p>
         {up && <p className="sh-chip">{WORDS.nextStep(up)}</p>}
         {result.goldenGarden && <span className="sh-prize"><GoldenGarden /></span>}
