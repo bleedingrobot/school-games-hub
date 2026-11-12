@@ -21,6 +21,15 @@ Every prompt assumes these standing rules, so they are not repeated in full each
 - **Pictures:** the avatar jsonb gains `pic` (a trophy id). `save_my_avatar` refuses a `pic` the pupil has not won. `AvatarImage` shows the painting with a bronze, silver or gold ring when `pic` is set; every other place gets it for free.
 - **No hub points** from trophies.
 
+**As built by P3** (migration `20261112000800_trophies.sql`, test `supabase/tests/database/trophies.test.sql`):
+
+- The hub clock is three columns on `public.schools`: `hub_season_start`, `hub_season_days`, `hub_paused_since`. Nothing changes them yet (P12's panel). `hub_season(school)` is server only.
+- A card adds its trophies with `insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort)`. The id is at most 24 characters (lower-case letters, digits, hyphens). `game` is the home card id, or `'hub'`.
+- `award_trophy(who, trophy, detail default '{}', season default null)` returns `{ won, trophy, tier, count }`; `won` is true only when the call added a row, so it is safe to call again. Leave `season` out to use the hub season; Dragon Maths passes `lord_hall.season`. A `'steps'` trophy needs `detail.step` (1, 2 or 3). To back-award an old win with its real date, call it, then set `earned_at` on the new row in the same migration.
+- The ring is saved in the avatar as `picTier` by the server (`save_my_avatar` and `award_trophy`), so every screen that draws an avatar gets it with no extra request. The browser can't set it.
+- Browser: `src/data/trophies.ts` (`fetchMyTrophies`, `fetchTrophiesOf`, `markMyTrophiesSeen`, `tierOf`). A picture's emoji and painting go in `EARNED_PICTURES` in `src/avatar/earnedPictures.ts`, one line per picture trophy; an unlisted one draws a cup on its metal disc.
+- `my_trophies().next` is the first three unearned by `sort`, whatever the class has switched on: P5 can filter by the games the pupil sees.
+
 ---
 
 ## P1 Tidy the profile page
