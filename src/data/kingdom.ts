@@ -44,8 +44,8 @@ export async function fetchKingdomEnabled(classId?: string | null): Promise<bool
   return row.kingdom_enabled === true;
 }
 
-export async function saveKingdomEnabled(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_kingdom', { enabled, target_class: classId ?? null });
+export async function saveKingdomEnabled(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_kingdom', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

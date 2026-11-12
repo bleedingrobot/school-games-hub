@@ -43,6 +43,8 @@ looking, not with a test.
 ## Shared checks (don't duplicate them)
 
 - `scripts/migrations.test.ts`: no two migrations share a number.
+- `scripts/test-budget.test.ts`: fails the PR when a game or site area goes over its budget below (or the whole suite
+  passes 650). Over budget: delete a weaker test. Change a number there only when James agrees a new budget.
 - Most server functions' `handler.test.ts` check its `index.ts` is up to date with the code. Rebuild with
   `npm run build:functions -- <name>`.
 - The database checks in `supabase/tests/database/` (pgTAP, run by CI on a fresh copy) are the security checks for pupils'

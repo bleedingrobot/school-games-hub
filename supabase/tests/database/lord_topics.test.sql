@@ -9,6 +9,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -32,7 +34,7 @@ select pg_temp.reset();
 
 -- ---- A teacher changes them ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is((select string_agg(t, ',' order by t) from jsonb_array_elements_text(public.teacher_set_lord('{"enabled":true,"topics":["money","add-sub","money"]}') -> 'topics') t),
+select is((select string_agg(t, ',' order by t) from jsonb_array_elements_text(public.teacher_set_lord('{"enabled":true,"topics":["money","add-sub","money"]}', target_class => current_setting('test.cls')::uuid) -> 'topics') t),
   'add-sub,money', 'a teacher sets the list (in order, no repeats)');
 select pg_temp.reset();
 select is(pg_temp.topics_of_student(), 'add-sub,money', 'and the pupil''s class gets it');
@@ -40,20 +42,20 @@ select is((select lord_topics from public.app_settings where lord_enabled order 
 
 -- ---- Leaving it out leaves it alone; the other settings still work ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":true,"forestPerDay":7}') ->> 'forestPerDay', '7', 'forest fights a day still saves');
+select is(public.teacher_set_lord('{"enabled":true,"forestPerDay":7}', target_class => current_setting('test.cls')::uuid) ->> 'forestPerDay', '7', 'forest fights a day still saves');
 select pg_temp.reset();
 select is(pg_temp.topics_of_student(), 'add-sub,money', 'without "topics" the list is left as it was');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":false}') ->> 'enabled', 'false', 'the switch still works');
-select is((public.teacher_set_lord('{"enabled":true}') -> 'topics')::text, '["add-sub", "money"]', 'switching on again keeps the list');
+select is(public.teacher_set_lord('{"enabled":false}', target_class => current_setting('test.cls')::uuid) ->> 'enabled', 'false', 'the switch still works');
+select is((public.teacher_set_lord('{"enabled":true}', target_class => current_setting('test.cls')::uuid) -> 'topics')::text, '["add-sub", "money"]', 'switching on again keeps the list');
 
 -- ---- Bad lists are refused ----
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":[]}') $$, '22023', 'Leave at least one topic on.', 'an empty list is refused');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":["spelling"]}') $$, '22023', 'Those topics couldn''t be read.', 'a topic that does not exist is refused');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":"add-sub"}') $$, '22023', 'Those topics couldn''t be read.', 'so is something that is not a list');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":[1,2]}') $$, '22023', 'Those topics couldn''t be read.', 'so is a list of numbers');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":null}') $$, '22023', 'Those topics couldn''t be read.', 'so is null');
-select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":["add-sub",{"a":1}]}') $$, '22023', 'Those topics couldn''t be read.', 'so is a list with something odd in it');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":[]}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Leave at least one topic on.', 'an empty list is refused');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":["spelling"]}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those topics couldn''t be read.', 'a topic that does not exist is refused');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":"add-sub"}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those topics couldn''t be read.', 'so is something that is not a list');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":[1,2]}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those topics couldn''t be read.', 'so is a list of numbers');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":null}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those topics couldn''t be read.', 'so is null');
+select throws_ok($$ select public.teacher_set_lord('{"enabled":true,"topics":["add-sub",{"a":1}]}', target_class => current_setting('test.cls')::uuid) $$, '22023', 'Those topics couldn''t be read.', 'so is a list with something odd in it');
 select pg_temp.reset();
 select is(pg_temp.topics_of_student(), 'add-sub,money', 'and a refused list changes nothing');
 select throws_ok($$ update public.app_settings set lord_topics = '{}' $$, '23514', null, 'the table itself refuses an empty list');
@@ -61,7 +63,7 @@ select throws_ok($$ update public.app_settings set lord_topics = '{spelling}' $$
 
 -- ---- All eight can be put back ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(jsonb_array_length(public.teacher_set_lord('{"enabled":true,"topics":["place-value","add-sub","times-tables","division","fractions","decimals","money","patterns"]}') -> 'topics'), 8, 'all eight can be put back');
+select is(jsonb_array_length(public.teacher_set_lord('{"enabled":true,"topics":["place-value","add-sub","times-tables","division","fractions","decimals","money","patterns"]}', target_class => current_setting('test.cls')::uuid) -> 'topics'), 8, 'all eight can be put back');
 select pg_temp.reset();
 select ok(not has_function_privilege('anon', 'public.teacher_set_lord(jsonb, uuid)', 'execute'), 'a signed-out visitor still cannot call it');
 select is((select count(*)::integer from pg_proc where proname = 'teacher_set_lord'), 1, 'there is still one teacher_set_lord (no stray older version)');

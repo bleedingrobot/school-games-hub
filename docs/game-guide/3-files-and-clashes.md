@@ -52,7 +52,7 @@ Why: each function's `index.ts` bundles the shared code it imports, so a shared 
 - **Migration numbers:** `YYYYMMDD` + a six-digit counter. Before your first migration and again before the PR: `git fetch`, then `node scripts/migration-numbers.mjs` (checks `main` and every branch). Write the number in your plan. If something took yours, rename yours to a free number after everything on `main`. Never rename a migration already on `main`. A fresh copy (CI, `scratch-db.sh`) refuses two files with one number.
 - **Shared functions** (`progress_counts`, `progress_rules`, `rebuild_progress`, `my_progress`, `teacher_students`, `teacher_new_season`, `my_home_page`, `settings_of`): never re-create them. Points, achievements, switches, New Season and "last played" go through `hub_games` hooks ([5-server-and-saving.md](5-server-and-saving.md)). If one truly needs a change, edit it in place with exact text edits that each match once (copy `20261020000100_game_hooks.sql`), as its own PR.
 - **Functions a game adds a block to** (`teacher_foundational_class`, `teacher_progress_other_games`): copy the **newest** body (`grep -l "function public.<name>" supabase/migrations/*.sql | tail -1`), add only your block, and check no open PR is changing the same function.
-- **`app_settings`:** add columns only (`alter table public.app_settings add column <id>_… not null default …`). Write `teacher_set_<id>(…, target_class uuid default null)` with `require_settings_target()`, as `teacher_set_marble_maths` does.
+- **`app_settings`:** add columns only (`alter table public.app_settings add column <id>_… not null default …`). Write `teacher_set_<id>(…, target_class uuid default null)` with `require_settings_target()`, as `teacher_set_marble_maths` does. Every save names a class: a null class is refused ("Pick a class first."), and the browser save helper takes `classId: string`.
 - **Shared tables** (`fact_answers`, `scored_games`, `achievements`, `maths_focus_results`): write only through their functions (`record_fact_answers` via `recordMathsAnswers`, `add_game_points`). Never alter their columns.
 - **Local database:** never `supabase db reset`. Test on a throw-away copy: `scripts/scratch-db.sh <name>`, `scripts/scratch-test.sh <name> <file>`, then drop it.
 
@@ -64,6 +64,15 @@ Don't edit the Dashboard or Teacher page. Your `GameDefinition` (`src/games/type
 - `teacher` (`TeacherContract`): `switch` or `maths` (each with an `about` line) or `useSummary`, lazy `Settings` and `StudentPanel`, and optionally `studentSummary`, `hardest(classId)`, `alerts(classId)`, `progressColumns` ([2-steps-and-progress.md](2-steps-and-progress.md)). `SeasonPanels` adds season resets. Copy `src/games/toonflap/teacher.ts` or `src/games/weka/teacher.ts`.
 - `colours` (a two-stop gradient that keeps white text readable) and `Icon` (an SVG component).
 - A season strip on the home page is not a hook (it lives in `Dashboard.tsx`, `my_moves_left()`, `my_home_page()`): ask James, its own PR.
+
+## The teacher switch
+
+A game with an on/off switch for teachers adds exactly these. Nothing else needs editing by hand: the Games tab count and section buttons, game sets, the school's New class settings and the "Changed by" lines all read them.
+- Column `<id>_enabled boolean not null default true` in the migration (new games start on for every class, James 11 Nov 2026; `school_defaults.test.sql` checks the default). Name it `<id with - as _>_enabled` so the change log finds it.
+- `hub_games.switch_column = '<id>_enabled'` in the game's `hub_games` row ([5-server-and-saving.md](5-server-and-saving.md)). `teacher_set_games`, `admin_set_school_default` and game sets accept only these columns.
+- One line in `GAME_SWITCH_COLUMNS` in `src/data/games.ts` (`Games.test.tsx` fails without it).
+- `teacher.switch` in the GameDefinition with an `about` line, and the server check in the edge function (`settings_of`): refuse while it's off.
+- Limited turns a day: also `UNLIMITED_GAMES` in `shared/unlimited.ts` and `teacher_set_unlimited_today()` (the Games tab's Unlimited today column follows `UNLIMITED_GAMES`).
 
 ## Reuse, don't copy
 

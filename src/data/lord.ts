@@ -263,8 +263,8 @@ export async function fetchLordEnabled(classId?: string | null): Promise<boolean
   return (await fetchLordSettings(classId)).enabled;
 }
 
-export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
-  const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId ?? null });
+export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId: string): Promise<LordSettings> {
+  const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId });
   forgetSettings();
   forgetSchoolSeason();
   if (error || !data) {

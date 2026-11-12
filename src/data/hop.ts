@@ -53,9 +53,9 @@ export async function fetchHopSettings(classId?: string | null): Promise<HopSett
 export const fetchHopEnabled = async (classId?: string | null) => (await fetchHopSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_hop leaves out the other). */
-export async function saveHopSetting(change: Partial<HopSettings>, classId?: string | null): Promise<void> {
+export async function saveHopSetting(change: Partial<HopSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_hop', {
-    enabled: change.enabled ?? null, labels: change.labels ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, labels: change.labels ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

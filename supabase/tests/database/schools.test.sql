@@ -124,10 +124,14 @@ select pg_temp.as_s2a();
 select is((select multiplayer_enabled from public.app_settings), false, 'the other school has its own settings');
 select pg_temp.reset();
 select is((select school_id from public.app_settings where id = public.settings_id_of('00000000-0000-0000-0000-00000000001a')), 2, 'school 2 students use school 2''s row');
+-- Every save names a class (card C2), so school 2's admin gets a class of their own to change.
+insert into public.classes (school_id, name, school_year, warp_code) values (2, 'Room X', 2026, 'XY346');
+select public.give_class_settings(id) from public.classes where name = 'Room X';
+select set_config('test.cls2', (select id::text from public.classes where name = 'Room X'), true);
 select pg_temp.as_adm2();
-select lives_ok($$ select public.teacher_set_space_maths('off') $$, 'a school admin changes their school''s settings');
+select lives_ok($$ select public.teacher_set_space_maths('off', target_class => current_setting('test.cls2')::uuid) $$, 'a school admin changes their school''s class settings');
 select pg_temp.reset();
-select is((select space_maths from public.app_settings where school_id = 2 and class_id is null), 'off', 'school 2''s default changed');
+select is((select space_maths from public.app_settings where class_id = current_setting('test.cls2')::uuid), 'off', 'school 2''s class changed');
 select is((select space_maths from public.app_settings where school_id = 1 and class_id is null), 'choose', 'school 1''s did not');
 select is((select count(*)::int from public.app_settings where school_id = 1 and space_maths <> 'choose'), 0, 'and none of school 1''s classes did either');
 

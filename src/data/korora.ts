@@ -55,9 +55,9 @@ export async function fetchKororaSettings(classId?: string | null): Promise<Koro
 export const fetchKororaEnabled = async (classId?: string | null) => (await fetchKororaSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_korora leaves out the other). */
-export async function saveKororaSetting(change: Partial<KororaSettings>, classId?: string | null): Promise<void> {
+export async function saveKororaSetting(change: Partial<KororaSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_korora', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

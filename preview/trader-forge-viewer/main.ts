@@ -110,6 +110,24 @@ const DESIGNS: { name: string; design: SystemDesign; plans?: boolean }[] = [
       ],
     },
   },
+  // Nothing built yet, as most pupils' systems start: every plan should still show its own look.
+  {
+    name: 'All plans',
+    plans: true,
+    design: {
+      v: 1, name: [6, 11], background: 1, beltAfter: 7, comets: null, belt: null,
+      sun: { kind: 'yellow', name: [5, 5] },
+      tech: [],
+      planets: [
+        planet(1, 'lava', { size: 1, built: false, clouds: 'none' }),
+        planet(2, 'desert', { size: 1, built: false, clouds: 'none' }),
+        planet(3, 'ocean', { size: 2, built: false, clouds: 'none', moons: [{ id: 1, look: 0 }] }),
+        planet(4, 'jungle', { size: 2, built: false, clouds: 'none' }),
+        planet(5, 'gas', { size: 3, built: false, clouds: 'none' }),
+        planet(6, 'crystal', { size: 1, built: false, clouds: 'none' }),
+      ],
+    },
+  },
 ];
 
 const SUN_KINDS: SunKind[] = ['yellow', 'red', 'blue', 'white', 'pulsar', 'binary', 'blackhole', 'baby'];

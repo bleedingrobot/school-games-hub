@@ -17,8 +17,8 @@ export function PipiTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingToggle
-        label="Help in the sand"
-        about="On: the pipi sit in a five-frame or ten-frame and the hiding ones leave an outline, bold at first, then faint, then gone, split by split as each student shows they know it. A student who gets three goes in a row wrong at the first try sees the frame and outlines again for the rest of that round. Off: no frame and no outlines, from the first day."
+        label="Help"
+        about="Outlines in the sand where the hiding shells are. On: the pipi sit in a five-frame or ten-frame and the hiding ones leave an outline, bold at first, then faint, then gone, split by split as each student shows they know it. A student who gets three goes in a row wrong at the first try sees the frame and outlines again for the rest of that round. Off: no frame and no outlines, from the first day."
         value={settings.value?.help ?? null}
         loadFailed={settings.failed}
         save={(on) => savePipiSetting({ help: on }, classId)}

@@ -74,5 +74,7 @@ describe('the home page in one request', () => {
     expect(screen.getByText(/You can’t change it until it ends/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show my path' })).not.toBeInTheDocument();
     expect(asked()).toEqual(['rpc my_home_page']);
+    // One settings request still serves every switch on the page.
+    expect(sent.filter((s) => s === 'from app_settings')).toHaveLength(1);
   });
 });

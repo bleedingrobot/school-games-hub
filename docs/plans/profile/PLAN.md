@@ -14,7 +14,7 @@ Every prompt assumes these standing rules, so they are not repeated in full each
 
 ## Shared design (read before P3 to P12)
 
-- **Hub season:** one number per school from the Dragon Maths 35-day clock (`app_settings.lord_season_start` on the school row, with the pause). `lord_school_season` is not live; P3 adds `hub_season(school)`.
+- **Hub season:** the hub's own clock, not the Dragon Maths one (James, 12 Nov 2026). New school-level settings `hub_season_start` (first value 2026-10-18), `hub_season_days` (35) and `hub_paused_since`; P3 adds `hub_season(school)` reading them. Every trophy uses it except the Dragon Maths ones (`dm-first-five`, `dm-slayer`), which use the dragon's own season number from `lord_hall.season`. P12 gives James a small admin panel to see the season, change its length and pause it.
 - **Tables (P3):** `trophy_types(id, game, name, how, kind 'trophy'|'picture', repeat 'season'|'year'|'once'|'steps', art, sort)` and `trophies(player, trophy, season int, year int, earned_at, seen_at, detail jsonb, primary key (player, trophy, season, year))`. Never touched by `teacher_new_season`. Rows go when the pupil's account goes.
 - **Tier:** bronze, silver, gold by how many rows the pupil has for that trophy (1, 2, 3 or more). "Steps" trophies (Garden Cup) get their tier from the step reached.
 - **Awarding:** `award_trophy(who, trophy, detail)` is `security definer`, never callable by pupils. Games call it from the same place they already call `game_progress_changed`, or from a per-game check function.
@@ -70,7 +70,7 @@ Check every painting at 44 px and 96 px, show James a review page, repaint what 
 
 Size L. Database. Waits for: nothing.
 
-- Migration: `hub_season(school)`, `trophy_types`, `trophies`, `award_trophy`, `my_trophies()` (own trophies with tier, plus the nearest unearned), `trophies_of(player)` for classmates (trophy id and tier only), and a new `save_my_avatar` that checks `pic`.
+- Migration: the hub's own season settings and `hub_season(school)`, `trophy_types`, `trophies`, `award_trophy`, `my_trophies()` (own trophies with tier, plus the nearest unearned), `trophies_of(player)` for classmates (trophy id and tier only), and a new `save_my_avatar` that checks `pic`.
 - Confirm `teacher_new_season` leaves both tables alone, with a database test that proves it.
 - `src/data/trophies.ts`, tier helper, and `AvatarImage` drawing a `pic` with its ring (placeholder: the game's emoji on a metal disc).
 - Database tests: a pupil cannot call `award_trophy`, cannot save a `pic` they have not won, cannot read another pupil's `detail`.
@@ -79,7 +79,7 @@ Size L. Database. Waits for: nothing.
 You are building the trophy system for the School Games Hub repo (database and data layer only, no new screens).
 Read docs/game-guide/README.md and the parts on migrations and shared files, then docs/PROFILE-REVIEW.md (section 4) and docs/plans/profile/PLAN.md (Shared design and card P3).
 Create branch profile/p3-trophies from origin/main in your own worktree.
-Build card P3: hub_season(school) from the Dragon Maths clock; tables trophy_types and trophies that the yearly New Season never touches; award_trophy (server only); my_trophies and trophies_of; save_my_avatar refusing a pic the pupil has not won; src/data/trophies.ts; AvatarImage showing an earned picture with a bronze, silver or gold ring.
+Build card P3: hub_season(school) from the hub's own clock (its own settings, not the Dragon Maths ones); tables trophy_types and trophies that the yearly New Season never touches; award_trophy (server only); my_trophies and trophies_of; save_my_avatar refusing a pic the pupil has not won; src/data/trophies.ts; AvatarImage showing an earned picture with a bronze, silver or gold ring.
 Write database tests for every rule on the card, including that teacher_new_season keeps trophies.
 Open a PR, merge when the checks pass, follow the guide's going-live part for the migration, then tick P3 in docs/plans/profile/HANDOVER.md.
 ```
@@ -88,7 +88,7 @@ Open a PR, merge when the checks pass, follow the guide's going-live part for th
 
 Size M. Database. Waits for: P3. **Aim to be live before season 2 starts (about 22 November 2026).**
 
-- Trophy types: `dm-first-five` (picture, each season) and `dm-slayer` (trophy, each season).
+- Trophy types: `dm-first-five` (picture, each season) and `dm-slayer` (trophy, each season). Both use the dragon's own season (`lord_hall.season`), not the hub clock.
 - In `lord_commit`, on a dragon win: award `dm-slayer`; award `dm-first-five` when the pupil's `lord_hall.first_at` is among the five earliest in their school for that season. Ties on the same instant all count.
 - Back-award from `lord_hall` in the migration: the five season-1 slayers get bronze now.
 - Dragon Maths shows "First five: 3 of 5 places left this season" on its season strip.
@@ -267,6 +267,7 @@ Write database tests for every rule. Open a PR, merge when the checks pass and J
 
 Size M. Waits for: P4 to P11.
 
+- Admin: a small "Trophy season" panel showing the season number and days left, with length and pause.
 - Teacher's pupil page: trophies list, "Reset avatar", "Give a Name Scroll".
 - Today page: "New trophies this week" for class shout-outs.
 - Year admin page: say plainly that trophies and earned pictures are kept at New Season.
@@ -278,7 +279,7 @@ Size M. Waits for: P4 to P11.
 You are finishing the profile and trophies plan in the School Games Hub repo.
 Read docs/game-guide/README.md, docs/PROFILE-REVIEW.md and docs/plans/profile/PLAN.md (card P12) and HANDOVER.md. Cards P4 to P11 should be done; list any that are not and ask James whether to go on.
 Create branch profile/p12-finish from origin/main in your own worktree.
-Build card P12: trophies, "Reset avatar" and "Give a Name Scroll" on the teacher's pupil page; "New trophies this week" on Today; the year admin page saying trophies are kept; trophies in the players tracker.
+Build card P12: the admin Trophy season panel (season number, days left, length, pause); trophies, "Reset avatar" and "Give a Name Scroll" on the teacher's pupil page; "New trophies this week" on Today; the year admin page saying trophies are kept; trophies in the players tracker.
 Then check the whole thing as a child would at 1366x768 and phone size (new pupil, one bronze, a gold with a typed name), fix what you find, and write what shipped at the top of docs/PROFILE-REVIEW.md.
 Open a PR, merge when the checks pass, then tick P12 in docs/plans/profile/HANDOVER.md.
 ```

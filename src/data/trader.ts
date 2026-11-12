@@ -168,8 +168,8 @@ export async function fetchTraderSettings(classId?: string | null): Promise<Trad
   };
 }
 
-export async function saveTraderSettings(s: TraderSettings, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_trader', { enabled: s.enabled, jumps: s.jumps, loans: s.loans, maths: s.maths, target_class: classId ?? null });
+export async function saveTraderSettings(s: TraderSettings, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_trader', { enabled: s.enabled, jumps: s.jumps, loans: s.loans, maths: s.maths, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
@@ -188,8 +188,8 @@ export async function fetchTraderForge(classId?: string | null): Promise<boolean
 }
 
 /** Teacher: open or close the Star Forge for a class (or the whole school's default). */
-export async function saveTraderForge(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_trader_forge', { enabled, target_class: classId ?? null });
+export async function saveTraderForge(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_trader_forge', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
@@ -202,8 +202,8 @@ export async function fetchTraderForgeTyping(classId?: string | null): Promise<b
 }
 
 /** Teacher: let pupils type Forge names, or use only the word lists, for a class (or the whole school's default). */
-export async function saveTraderForgeTyping(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_trader_forge_typing', { enabled, target_class: classId ?? null });
+export async function saveTraderForgeTyping(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_trader_forge_typing', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

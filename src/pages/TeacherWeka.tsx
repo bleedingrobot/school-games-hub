@@ -24,7 +24,7 @@ export function WekaTeacherSettings({ classId }: { classId: string }) {
   return (
     <div className="panel teacher__switch">
       <SettingChoice<HelpSetting>
-        label="Picture help"
+        label="Help"
         about="How much the stepping stones help with each sum."
         options={HELP_CHOICES}
         value={settings.value?.help ?? null}

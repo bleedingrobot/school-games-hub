@@ -8,12 +8,13 @@
  * row, or null if it could not be read.
  */
 import { supabase } from '../lib/supabase';
-import { forgetSettings, rememberedSettings, type SettingsRow } from './settingsMemory';
+import { forgetSettings, rememberedSettings, replaceSettingsIfChanged, type SettingsRow } from './settingsMemory';
 
 export type { SettingsRow };
 
-/** `columns` are the ones the caller uses; with no class picked the whole row comes back (it is shared by every caller). */
-export async function readSettings(_columns: string[], classId?: string | null): Promise<SettingsRow | null> {
+/** `maxAgeMs` (pupils' row only) is how old a remembered row may be before it is read again; the default is 5 minutes.
+ * `columns` are the ones the caller uses; with no class picked the whole row comes back (it is shared by every caller). */
+export async function readSettings(_columns: string[], classId?: string | null, maxAgeMs?: number): Promise<SettingsRow | null> {
   if (classId) {
     const { data, error } = await supabase.rpc('teacher_class_settings', { target_class: classId });
     if (error || !data || typeof data !== 'object') return null;
@@ -23,7 +24,13 @@ export async function readSettings(_columns: string[], classId?: string | null):
     const { data, error } = await supabase.from('app_settings').select('*').maybeSingle();
     if (error || !data) return null;
     return data as unknown as SettingsRow;
-  });
+  }, maxAgeMs);
+}
+
+/** Reads the person's own row afresh (one request) and says whether it differs from the remembered one; if so it is replaced. */
+export async function refreshSettings(): Promise<boolean> {
+  const { data, error } = await supabase.from('app_settings').select('*').maybeSingle();
+  return !error && !!data && replaceSettingsIfChanged(data as unknown as SettingsRow);
 }
 
 /** Whether students in this class may pick their own maths focus (the switch is on unless it was turned off). */
@@ -32,8 +39,8 @@ export async function fetchStudentsChooseFocus(classId?: string | null): Promise
   return row?.students_choose_focus !== false;
 }
 
-export async function saveStudentsChooseFocus(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_students_choose_focus', { enabled, target_class: classId ?? null });
+export async function saveStudentsChooseFocus(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_students_choose_focus', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new Error(error.message);
 }
@@ -44,8 +51,8 @@ export async function fetchMathsAuto(classId?: string | null): Promise<boolean> 
   return row?.maths_auto === true;
 }
 
-export async function saveMathsAuto(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_maths_auto', { enabled, target_class: classId ?? null });
+export async function saveMathsAuto(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_maths_auto', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new Error(error.message);
 }

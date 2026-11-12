@@ -55,9 +55,9 @@ export async function fetchTuiSettings(classId?: string | null): Promise<TuiSett
 export const fetchTuiEnabled = async (classId?: string | null) => (await fetchTuiSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_tui leaves out the other). */
-export async function saveTuiSetting(change: Partial<TuiSettings>, classId?: string | null): Promise<void> {
+export async function saveTuiSetting(change: Partial<TuiSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_tui', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

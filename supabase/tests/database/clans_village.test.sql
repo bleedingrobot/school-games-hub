@@ -17,6 +17,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000f', 'fay@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000e') on conflict do nothing;
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -205,7 +207,7 @@ select is((select count(*)::integer from information_schema.columns where table_
 
 -- ---- The raids switch ----
 select pg_temp.teacher();
-select is(public.teacher_set_clan_raids(true), true, 'a teacher switches raids on');
+select is(public.teacher_set_clan_raids(true, target_class => current_setting('test.cls')::uuid), true, 'a teacher switches raids on');
 select pg_temp.reset();
 
 -- ---- Tidying and the teacher's reset ----

@@ -30,6 +30,9 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 - Levels: retire the number and bar, keep points (James, 12 Nov 2026). Done in P6.
 
+- Trophy seasons run on the hub's own clock (35 days to start, James can change or pause it), not the Dragon Maths clock. Dragon Maths trophies follow the dragon's own season (James, 12 Nov 2026).
+- The five season-1 dragon slayers get the bronze Dragon Heads (James, 12 Nov 2026).
+
 ## Still James's call (the plan uses the first answer unless he says otherwise)
 
 - Name Scroll: gold in two games or three pictures (recommended), or teacher-given only.
