@@ -91,6 +91,7 @@ $$, array[
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_progress_other_games',
   'my_name_status', 'ask_for_my_name', 'cancel_my_name_request', 'teacher_name_requests', 'teacher_answer_name', 'teacher_name_history', 'teacher_made_up_name_back', 'teacher_give_name_scroll', 'teacher_name_scrolls',
+  'achievements_board', 'hard_workers_board', 'achievements_by_game', 'recent_trophies',
   'admin_trophy_season', 'admin_set_trophy_season', 'teacher_pupil_trophies', 'teacher_reset_avatar', 'teacher_new_trophies',
   'teacher_game_sets', 'teacher_save_game_set', 'teacher_use_game_set', 'teacher_delete_game_set',
   'teacher_set_decree',

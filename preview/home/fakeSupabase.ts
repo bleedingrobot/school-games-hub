@@ -157,6 +157,21 @@ let newOnes = params.get('new') ? [
   { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
   { id: 'dm-first-five', game: 'dragon-maths', name: 'Dragon Head', how: 'Be one of the first five in the school to slay the dragon in a season.', kind: 'picture', tier: 'silver', count: 2 },
 ] : [];
+/** Made-up pupils for the leaderboard redesign's boards (leaderboard plan L2). */
+const BOARD_PEOPLE = [
+  ['Swift Kea 3', 48, 5, 5, 31], ['Calm Tui 7', 44, 2, 5, 24], ['Lucky Weka 9', 41, 7, 4, 19], ['Happy Ruru 4', 37, 0, 2, 9],
+  ['Bold Tiger 2', 35, 3, 4, 40], ['Brave Kiwi 7', 33, 4, 4, 22], ['Quiet Moa 5', 30, 1, 1, 3], ['Jolly Fox 8', 28, 6, 3, 15],
+  ['Sunny Seal 1', 27, 2, 5, 12], ['Clever Owl 6', 25, 0, 0, 0], ['Gentle Bee 3', 22, 1, 3, 11], ['Mighty Ant 9', 20, 5, 2, 8],
+].map(([name, count, week, days, games]) => ({
+  name: name as string, avatar: null, count: count as number, week: week as number, days: days as number, games: games as number, hard: (days as number) >= 4,
+}));
+const RECENT = [
+  { trophy: 'hw-star', title: 'Homework Star', how: 'Play at home on 8 different days in one season.', game: 'hub', kind: 'trophy', tier: 'bronze', name: 'Swift Kea 3', avatar: null, at: ago(0) },
+  { trophy: 'dm-slayer', title: "Slayer's Sword", how: 'Slay the dragon in Dragon Maths.', game: 'dragon-maths', kind: 'trophy', tier: 'gold', name: 'Calm Tui 7', avatar: null, at: ago(1) },
+  { trophy: 'marble-cup', title: 'Marble Cup', how: 'Win gold on every Marble Rush course.', game: 'marble', kind: 'trophy', tier: 'silver', name: null, avatar: null, at: ago(1) },
+  { trophy: 'hub-regular', title: 'Season Regular', how: 'Finish a game on 15 different school days in one season.', game: 'hub', kind: 'trophy', tier: 'bronze', name: 'Lucky Weka 9', avatar: null, at: ago(2) },
+  { trophy: 'trader-ring', title: 'Star Ring', how: 'Build a ring world in Star Trader.', game: 'trader', kind: 'trophy', tier: 'bronze', name: 'Bold Tiger 2', avatar: null, at: ago(3) },
+];
 setWorld(world);
 
 const base = fakeSupabase().supabase;
@@ -182,7 +197,39 @@ export const supabase = {
       }
       return Promise.resolve({ data: out, error: null });
     }
+    if (name === 'achievements_board') {
+      const week = args?.board === 'week';
+      const scope = args?.scope as string;
+      const all = BOARD_PEOPLE.filter((_, n) => scope === 'school' || n % (scope === 'year' ? 2 : 3) === 0);
+      const rows = all
+        .map((p) => ({ ...p, score: week ? p.week : p.count }))
+        .filter((p) => p.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((p, n, list) => ({ ...p, place: list.findIndex((q) => q.score === p.score) + 1, is_me: p.name === ME.display_name, n }));
+      return Promise.resolve({ data: rows.filter((r) => r.n < 10 || r.is_me), error: null });
+    }
+    if (name === 'hard_workers_board') {
+      const season = args?.board === 'season';
+      const rows = BOARD_PEOPLE.map((p) => ({ ...p, days: season ? p.days * 3 + (p.count % 4) : p.days, games: season ? p.games * 3 : p.games }))
+        .filter((p) => p.days > 0)
+        .sort((a, b) => b.days - a.days || b.games - a.games)
+        .map((p, n) => ({ ...p, place: n + 1, is_me: p.name === ME.display_name }))
+        .filter((r) => r.place <= 10 || r.is_me);
+      const everyone = BOARD_PEOPLE.filter((p) => p.days >= 4).map((p) => ({ name: p.name, avatar: p.avatar, days: p.days }));
+      return Promise.resolve({ data: { rows, everyone, season: 3 }, error: null });
+    }
+    if (name === 'achievements_by_game') {
+      return Promise.resolve({
+        data: [
+          { game: 'dragon-maths', count: 7, names: ['🏟️ Win 10 arena fights', '🌲 Win 50 forest fights', '🐉 First dragon'] },
+          { game: 'homework', count: 4, names: ['🌞 Weekend player', '🔟 Ten at home', '🏠 Home learner'] },
+          { game: 'chess', count: 3, names: ['🏆 First win', '🎮 First game', '🐣 Beat the Very Easy bot'] },
+        ],
+        error: null,
+      });
+    }
     if (name === 'my_home_page') {
+      world.jobs.recent_trophies = params.get('recent') === '0' ? [] : RECENT;
       world.jobs.my_trophy_shelf = myShelf();
       world.jobs.my_season_note = seasonNote;
       return Promise.resolve({ data: homeAnswer(), error: null });

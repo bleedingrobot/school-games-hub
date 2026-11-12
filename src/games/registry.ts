@@ -82,8 +82,12 @@ export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep
 /** Every game that can have saved games: the dashboard's, plus Power Clash even while its card is switched off. */
 export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest]), ...(kingdomOn() ? [] : [kingdomKeeper])];
 
-/** A game's name for lists of saved games, even for Power Clash while its card is off. */
-export const gameLabel = (id: string | undefined) => ALL_GAMES.find((game) => game.id === id)?.name;
+/** The hub's own achievement groups that are not games and have no card (migration 20261113000100: homework). */
+export const HUB_ACHIEVEMENT_GROUPS: { id: string; name: string }[] = [{ id: 'homework', name: 'Homework' }];
+
+/** A game's name for lists of saved games, even for Power Clash while its card is off. Also names the hub's own groups. */
+export const gameLabel = (id: string | undefined) =>
+  ALL_GAMES.find((game) => game.id === id)?.name ?? HUB_ACHIEVEMENT_GROUPS.find((g) => g.id === id)?.name;
 
 export function findGame(id: string | undefined): GameDefinition | undefined {
   return GAMES.find((game) => game.id === id);

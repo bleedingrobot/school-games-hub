@@ -6,6 +6,10 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(38);
+-- Homework achievements (migration 20261113000100) depend on the time of day a game is saved; keep them out of this file's
+-- points so it gives the same answer whenever it runs.
+alter table public.scored_games disable trigger homework_when_scored;
+
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),

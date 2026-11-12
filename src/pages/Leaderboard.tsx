@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import type { TrophyShelf } from '../data/trophies';
@@ -9,7 +10,17 @@ import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
 import { useGameSwitch } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
-import { GAMES } from '../games/registry';
+import { GAMES, gameLabel } from '../games/registry';
+import {
+  fetchAchievementsBoard,
+  fetchAchievementsByGame,
+  fetchHardWorkers,
+  type AchievementsRow,
+  type BoardScope,
+  type GameAchievements,
+  type HardWorkerRow,
+  type HardWorkers,
+} from '../data/boards';
 import { isRanked } from '../games/types';
 
 export const BOARDS: { id: Board; label: string; about: string; minGames: number; howToJoin: string }[] = [
@@ -38,8 +49,8 @@ export const BOARDS: { id: Board; label: string; about: string; minGames: number
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-/** The Hall of fame's place among the Game choices (profile card P10). */
-const HALL = 'hall-of-fame';
+/** The Hall of fame's tab (profile card P10; ?board=hall opens it, as the home page's New trophies strip does). */
+const HALL_TAB = 'hall';
 
 /** Games with a leaderboard: the ranked ones, and Gem Keep (most stars). */
 const BOARD_GAMES = GAMES.filter((g) => isRanked(g) || g.id === 'gem-keep' || g.id === 'monsters');
@@ -52,10 +63,32 @@ export function notOnBoardText(board: Board, gamesPlayed: number): string {
   return `You’re not on this board yet. Play ${more} more ${more === 1 ? info.howToJoin.replace('games', 'game') : info.howToJoin} to join it!`;
 }
 
+/** The four tabs (leaderboard plan L2). Achievements opens first: it is the board that matters most. */
+const TABS = [
+  { id: 'achievements', label: '🏅 Achievements' },
+  { id: 'effort', label: '💪 Hard workers' },
+  { id: 'games', label: '🎮 Game boards' },
+  { id: HALL_TAB, label: '🏛️ Hall of fame' },
+] as const;
+type Tab = (typeof TABS)[number]['id'];
+
+const SCOPES: { id: BoardScope; label: string }[] = [
+  { id: 'school', label: 'Whole school' },
+  { id: 'year', label: 'My year' },
+  { id: 'class', label: 'My class' },
+];
+
+function readTab(raw: string | null): Tab {
+  return TABS.some((t) => t.id === raw) ? (raw as Tab) : 'achievements';
+}
+
 export function Leaderboard() {
-  const [game, setGame] = useState(GAMES[0].id);
-  const monstersOn = useGameSwitch('monsters') === true;
-  const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
+  const [params, setParams] = useSearchParams();
+  const tab = readTab(params.get('board'));
+  const { profile } = useAuth();
+  const pupil = profile?.role !== 'teacher';
+  const [scope, setScope] = useState<BoardScope>('school');
+  const pick = (id: Tab) => setParams(id === 'achievements' ? {} : { board: id }, { replace: true });
   return (
     <div className="leaderboard">
       <div className="leaderboard__head">
@@ -66,24 +99,340 @@ export function Leaderboard() {
       </div>
 
       <div className="panel leaderboard__panel">
-        <fieldset className="choice-group">
-          <legend>Game</legend>
-          <div className="choice-group__chips">
-            {boardGames.map((g) => (
-              <label key={g.id} className="chip">
-                <input type="radio" name="board-game" checked={game === g.id} onChange={() => setGame(g.id)} />
-                <span>{g.name}</span>
-              </label>
-            ))}
-            <label className="chip">
-              <input type="radio" name="board-game" checked={game === HALL} onChange={() => setGame(HALL)} />
-              <span>🏛️ Hall of fame</span>
-            </label>
-          </div>
-        </fieldset>
-        {game === HALL ? <HallOfFame /> : game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
+        <div className="leaderboard__tabs" role="tablist" aria-label="Boards">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={tab === t.id ? 'leaderboard__tab is-on' : 'leaderboard__tab'}
+              onClick={() => pick(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {(tab === 'achievements' || tab === 'effort') && pupil && (
+          <fieldset className="choice-group">
+            <legend>Who</legend>
+            <div className="choice-group__chips">
+              {SCOPES.map((s) => (
+                <label key={s.id} className="chip">
+                  <input type="radio" name="board-scope" checked={scope === s.id} onChange={() => setScope(s.id)} />
+                  <span>{s.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+        {tab === 'achievements' ? (
+          <AchievementsBoard scope={pupil ? scope : 'school'} />
+        ) : tab === 'effort' ? (
+          <HardWorkersBoard scope={pupil ? scope : 'school'} />
+        ) : tab === HALL_TAB ? (
+          <HallOfFame />
+        ) : (
+          <GameBoards />
+        )}
       </div>
     </div>
+  );
+}
+
+/** The older boards, one game at a time: Chess and Checkers (points and rank), Gem Keep stars, Maths Monsters. */
+function GameBoards() {
+  const monstersOn = useGameSwitch('monsters') === true;
+  const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
+  const [game, setGame] = useState(boardGames[0]?.id ?? GAMES[0].id);
+  return (
+    <>
+      <fieldset className="choice-group">
+        <legend>Game</legend>
+        <div className="choice-group__chips">
+          {boardGames.map((g) => (
+            <label key={g.id} className="chip">
+              <input type="radio" name="board-game" checked={game === g.id} onChange={() => setGame(g.id)} />
+              <span>{g.name}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
+    </>
+  );
+}
+
+/** What to say when a scoped board is empty. */
+function emptyText(scope: BoardScope, what: string): string {
+  if (scope === 'class') return `Nobody in your class has ${what} yet. It could be you!`;
+  if (scope === 'year') return `Nobody in your year has ${what} yet, or we don’t know your year yet.`;
+  return `Nobody has ${what} yet. It could be you!`;
+}
+
+/** Most achievements: every one held, or the ones earned this week. Never a maths result. */
+function AchievementsBoard({ scope }: { scope: BoardScope }) {
+  const [board, setBoard] = useState<'all-time' | 'week'>('all-time');
+  const [rows, setRows] = useState<AchievementsRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const pupil = profile?.role !== 'teacher';
+
+  useEffect(() => {
+    let current = true;
+    setRows(null);
+    setFailed(false);
+    fetchAchievementsBoard(board, scope).then(
+      (r) => current && setRows(r),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [board, scope]);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.name));
+  const line = (row: AchievementsRow) => (
+    <AchievementsLine
+      key={row.name}
+      row={row}
+      board={board}
+      shelf={shelves[row.name]}
+      open={open === row.name}
+      onToggle={() => setOpen((was) => (was === row.name ? null : row.name))}
+    />
+  );
+
+  return (
+    <>
+      <fieldset className="choice-group">
+        <legend>When</legend>
+        <div className="choice-group__chips">
+          <label className="chip">
+            <input type="radio" name="ach-board" checked={board === 'all-time'} onChange={() => setBoard('all-time')} />
+            <span>All time</span>
+          </label>
+          <label className="chip">
+            <input type="radio" name="ach-board" checked={board === 'week'} onChange={() => setBoard('week')} />
+            <span>This week</span>
+          </label>
+        </div>
+      </fieldset>
+      <p className="leaderboard__about">
+        {board === 'week'
+          ? 'Achievements earned since Monday. Everyone starts again each week!'
+          : 'Every achievement you have earned, in every game. Tap a name to see where they came from.'}
+      </p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, board === 'week' ? 'earned an achievement this week' : 'an achievement')}</p>
+      ) : (
+        <ol className="board-list" aria-label={board === 'week' ? 'Achievements this week leaderboard' : 'Most achievements leaderboard'}>
+          {top.map(line)}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              {line(meBelow)}
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !failed && !me && pupil && <MeOffHint board={board} />}
+      <p className="leaderboard__note">💪 = played on 4 or 5 school days this week.</p>
+    </>
+  );
+}
+
+function MeOffHint({ board }: { board: 'all-time' | 'week' }) {
+  return (
+    <p className="leaderboard__me-off">
+      {board === 'week' ? 'Earn an achievement this week to get on this board!' : 'Earn your first achievement to get on this board!'}
+    </p>
+  );
+}
+
+function AchievementsLine({
+  row,
+  board,
+  shelf,
+  open,
+  onToggle,
+}: {
+  row: AchievementsRow;
+  board: 'all-time' | 'week';
+  shelf?: TrophyShelf;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const score = board === 'week' ? row.week : row.count;
+  return (
+    <li className={row.is_me ? 'is-me board-list__row--open' : 'board-list__row--open'} value={row.place}>
+      <button type="button" className="board-list__tap" aria-expanded={open} onClick={onToggle}>
+        <span className="board-list__place" aria-label={`Place ${row.place}`}>
+          {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+        </span>
+        <AvatarImage avatar={row.avatar} size={40} />
+        <span className="board-list__name">
+          {row.name}
+          {row.is_me && <span className="board-list__you"> (you)</span>}
+          {row.hard && (
+            <span className="board-list__hard" title="Played on 4 or 5 school days this week" aria-label="Played on 4 or 5 school days this week">
+              {' '}
+              💪
+            </span>
+          )}
+          <FavouriteTrophies shelf={shelf} />
+        </span>
+        <span className="board-list__points">
+          🏅 {score}
+          {board === 'all-time' && row.week > 0 && <small className="board-list__sub">+{row.week} this week</small>}
+        </span>
+      </button>
+      {open && <AchievementsByGame player={row.name} />}
+    </li>
+  );
+}
+
+function AchievementsByGame({ player }: { player: string }) {
+  const [games, setGames] = useState<GameAchievements[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let current = true;
+    fetchAchievementsByGame(player).then(
+      (g) => current && setGames(g),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [player]);
+  if (failed) return <p className="board-list__more">We couldn’t load those just now.</p>;
+  if (!games) return <p className="board-list__more">Loading…</p>;
+  return (
+    <ul className="board-list__more board-games">
+      {games.map((g) => (
+        <li key={g.game}>
+          <strong>{gameLabel(g.game) ?? g.game}</strong> <span className="board-games__n">🏅 {g.count}</span>
+          <span className="board-games__names">{g.names.join(' · ')}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Effort: school days played (Monday to Friday, a finished game counts), then games finished. */
+function HardWorkersBoard({ scope }: { scope: BoardScope }) {
+  const [board, setBoard] = useState<'week' | 'season'>('week');
+  const [data, setData] = useState<HardWorkers | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    setData(null);
+    setFailed(false);
+    fetchHardWorkers(board, scope).then(
+      (d) => current && setData(d),
+      () => current && setFailed(true),
+    );
+    return () => {
+      current = false;
+    };
+  }, [board, scope]);
+
+  const rows = data?.rows ?? [];
+  const top = rows.slice(0, 10);
+  const meBelow = rows.slice(10).find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.name));
+  const most = board === 'week' ? 5 : null;
+
+  return (
+    <>
+      {data && data.everyone.length > 0 && (
+        <section className="hard-band" aria-labelledby="hard-band-title">
+          <h2 id="hard-band-title">Played 4 or 5 school days this week 💪</h2>
+          <ul className="hard-band__list">
+            {data.everyone.map((p) => (
+              <li key={p.name}>
+                <AvatarImage avatar={p.avatar} size={28} />
+                <span>{p.name}</span>
+                {p.days >= 5 && <span className="hard-band__five" aria-label="every school day"> ⭐</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <fieldset className="choice-group">
+        <legend>When</legend>
+        <div className="choice-group__chips">
+          <label className="chip">
+            <input type="radio" name="hard-board" checked={board === 'week'} onChange={() => setBoard('week')} />
+            <span>This week</span>
+          </label>
+          <label className="chip">
+            <input type="radio" name="hard-board" checked={board === 'season'} onChange={() => setBoard('season')} />
+            <span>This season</span>
+          </label>
+        </div>
+      </fieldset>
+      <p className="leaderboard__about">
+        {board === 'week'
+          ? 'School days this week you finished a game on. Turning up counts more than playing for hours!'
+          : 'School days this season you finished a game on. 15 days wins the Season Regular trophy.'}
+      </p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !data ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">{emptyText(scope, board === 'week' ? 'played this week' : 'played this season')}</p>
+      ) : (
+        <ol className="board-list" aria-label={board === 'week' ? 'Hard workers this week leaderboard' : 'Hard workers this season leaderboard'}>
+          {top.map((row) => (
+            <HardLine key={row.name} row={row} most={most} shelf={shelves[row.name]} />
+          ))}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              <HardLine row={meBelow} most={most} shelf={shelves[meBelow.name]} />
+            </>
+          )}
+        </ol>
+      )}
+    </>
+  );
+}
+
+function HardLine({ row, most, shelf }: { row: HardWorkerRow; most: number | null; shelf?: TrophyShelf }) {
+  return (
+    <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
+      <span className="board-list__place" aria-label={`Place ${row.place}`}>
+        {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+      </span>
+      <AvatarImage avatar={row.avatar} size={40} />
+      <span className="board-list__name">
+        {row.name}
+        {row.is_me && <span className="board-list__you"> (you)</span>}
+        <FavouriteTrophies shelf={shelf} />
+      </span>
+      <span className="board-list__points">
+        {row.days} {row.days === 1 ? 'day' : 'days'}
+        {most && row.days >= most ? ' ⭐' : ''}
+        <small className="board-list__sub">
+          {row.games} {row.games === 1 ? 'game' : 'games'}
+        </small>
+      </span>
+    </li>
   );
 }
 

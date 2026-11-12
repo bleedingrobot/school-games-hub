@@ -159,6 +159,7 @@ create function pg_temp.separate() returns jsonb language sql as $$
     'movesLeft', public.my_moves_left(),
     'seasonNote', public.my_season_note(),
     'trophyShelf', public.my_trophy_shelf(),
+    'recentTrophies', public.recent_trophies(),
     'topGames', public.my_top_games(),
     'myClass', public.my_class(),
     'focus', public.my_maths_focus(),

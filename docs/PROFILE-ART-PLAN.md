@@ -118,6 +118,9 @@ The two placed pictures are made by `scripts/game_art.py`'s sister step in secti
 | Keeper's Medal | Sky Isles | `trophies/keepers-medal` | a lighthouse medal on a ribbon |
 | Times Tables Shield | Training | `trophies/times-tables-shield` | a shield with a big multiplication cross |
 | Season Regular | Whole hub | `trophies/season-regular` | a rising-sun-and-tick medallion |
+| Homework Star | Homework (leaderboard plan, 13 Nov 2026) | `trophies/homework-star` | a star badge with a cosy lit house in its middle |
+| Weekend Explorer | Homework | `trophies/weekend-explorer` | a shield with a smiling sun and a kite (the silver one has a child flying it) |
+| Home Learning Cup | Homework | `trophies/home-learning-cup` | a cup with a lit house on the front and a book on the lid |
 | Adventurer's Badge | Two games: Archery + Mine Runner | `trophies/adventurers-badge` | a compass star over a bow and a pickaxe |
 | Star Monarch | Two games: Royal Decree + Star Trader | `trophies/star-monarch` | a crown with a ringed planet above it |
 | Golden Wings | Two games: Marble Rush + Toon Flap | `trophies/golden-wings` | spread wings holding a marble |

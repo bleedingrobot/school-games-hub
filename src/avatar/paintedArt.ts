@@ -50,6 +50,9 @@ export const TROPHY_ART: Record<string, string> = {
   'pair-adventurer': 'adventurers-badge',
   'pair-star-monarch': 'star-monarch',
   'pair-golden-wings': 'golden-wings',
+  'hw-star': 'homework-star',
+  'hw-weekend': 'weekend-explorer',
+  'hw-cup': 'home-learning-cup',
 };
 
 /** Each early-years game's Garden Cup is `<game>-cup`. */

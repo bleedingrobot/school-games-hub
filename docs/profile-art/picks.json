@@ -96,5 +96,14 @@
  "garden-cup-gold": 1,
  "garden-gate-bronze": 2,
  "garden-gate-silver": 1,
- "garden-gate-gold": 1
+ "garden-gate-gold": 1,
+ "homework-star-bronze": 3,
+ "homework-star-silver": 1,
+ "homework-star-gold": 2,
+ "weekend-explorer-bronze": 2,
+ "weekend-explorer-silver": 2,
+ "weekend-explorer-gold": 2,
+ "home-learning-cup-bronze": 3,
+ "home-learning-cup-silver": 3,
+ "home-learning-cup-gold": 3
 }

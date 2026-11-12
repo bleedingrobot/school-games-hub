@@ -2030,6 +2030,112 @@ main:focus {
   font-weight: 800;
 }
 
+/* The redesign's tabs, tappable rows and effort band (leaderboard plan L2). */
+.leaderboard__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.leaderboard__tab {
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.leaderboard__tab.is-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+.leaderboard__tab:focus-visible,
+.board-list__tap:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.leaderboard__note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.board-list li.board-list__row--open {
+  display: grid;
+  gap: 6px;
+}
+.board-list__tap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.board-list__sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.board-list__more {
+  margin: 0;
+  padding: 0 0 4px 48px;
+  font-size: 0.9rem;
+}
+.board-games {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.board-games li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  padding: 0;
+  background: none;
+}
+.board-games__n {
+  font-weight: 800;
+}
+.board-games__names {
+  flex-basis: 100%;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.hard-band {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #fff1c7;
+  color: #3b2a05;
+}
+.hard-band h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.hard-band__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.hard-band__list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
 /* ---------- How points work ---------- */
 
 .points-table caption {
@@ -2191,9 +2297,16 @@ main:focus {
 }
 
 @media (max-width: 520px) {
-  .board-list li {
+  .board-list li,
+  .board-list__tap {
     gap: 8px;
     padding: 8px;
+  }
+  .board-list__tap {
+    padding: 0;
+  }
+  .board-list__more {
+    padding-left: 8px;
   }
   .board-list .rank-badge {
     display: none;
