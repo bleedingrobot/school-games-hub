@@ -1,9 +1,9 @@
--- Toon Flap (migration 20261111000100, id toonflap): progress, runs, the switches and the hub hooks.
+-- Toon Flap (migration 20261111000100, id toonflap): progress, runs, the switches and the hub hooks; Sky Dash (20261112003000).
 -- Pupils can't read or change any of it directly; the server function does everything.
 -- Run on a throw-away copy: scripts/scratch-db.sh toonflap, then scripts/scratch-test.sh toonflap supabase/tests/database/toonflap.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(39);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -40,6 +40,8 @@ select throws_ok($$ select * from public.toonflap_runs $$, '42501', null, '... o
 select throws_ok($$ select public.toonflap_run(auth.uid(), '123456') $$, '42501', null, '... or read a run through the server functions');
 select throws_ok($$ select public.toonflap_finish(auth.uid(), '123456', 0, '{}', '', 1, 'gold', 0, 0, 0, false) $$, '42501', null, '... or finish one with any time');
 select throws_ok($$ select public.toonflap_claim(auth.uid(), '123456', 0, true) $$, '42501', null, '... or mark their own answer');
+select throws_ok($$ select public.toonflap_dash_finish(auth.uid(), '123456', 0, '{}', '', 1, 999, 0, 0, false) $$, '42501', null, '... or save a Sky Dash with any score');
+select throws_ok($$ select * from public.toonflap_dash_best $$, '42501', null, '... or read the Sky Dash bests directly');
 select throws_ok($$ select public.teacher_set_toonflap(true) $$, null, null, 'a pupil cannot switch the game on');
 
 -- ---- The teacher's switches ----
@@ -68,12 +70,22 @@ select ok(public.toonflap_start(pg_temp.id('0a'), '654321', 'garden', false, tru
 select ok(not public.toonflap_finish(pg_temp.id('0a'), '654321', 7, pg_temp.progress(2, 'gold'), '1', 30, 'silver', 1, 0, 0, false), 'an old version is refused');
 select ok(public.toonflap_save_picks(pg_temp.id('0a'), '{"flyer": "puppy-plane", "trail": null}'), 'a flyer is picked');
 select is(public.toonflap_load(pg_temp.id('0a')) -> 'version', '1'::jsonb, '... without moving the version on');
+
+-- ---- Sky Dash: kept like a run, the season best for the class board ----
+select ok(public.toonflap_start(pg_temp.id('0a'), '777778', 'dash', false, true, '[]', '[]'), 'a dash starts');
+select is(public.toonflap_dash_finish(pg_temp.id('0a'), '777778', (public.toonflap_load(pg_temp.id('0a')) ->> 'version')::int, pg_temp.progress(1, 'gold'), '1,2', 40, 25, 1, 1, false),
+  '{"before": 0}'::jsonb, 'a dash finishes and says the season best before it');
+select is(public.toonflap_dash_board(pg_temp.id('0a')) -> 'mine' -> 'walls', '25'::jsonb, '... and the pupil is on their class board');
+select is(public.toonflap_dash_finish(pg_temp.id('0a'), '777778', 2, pg_temp.progress(1, 'gold'), '1,2', 40, 25, 1, 1, false), null, '... once');
+select is(public.toonflap_dash_board(pg_temp.id('0b')) -> 'mine', 'null'::jsonb, 'a pupil with no dash has no line of their own');
+select public.toonflap_season(array[pg_temp.id('0a')]);
+select is(public.toonflap_dash_board(pg_temp.id('0a')) -> 'mine', 'null'::jsonb, 'New Season clears the board');
 select pg_temp.reset();
 
 -- ---- In the hub ----
 select ok(exists (select 1 from public.hub_games where id = 'toonflap' and switch_column = 'toonflap_enabled' and counts_fn is not null
-  and rules_fn is not null and players_fn is not null and season_fn is null and last_played_fn is not null and keep_achievements),
-  'Toon Flap is registered with its hooks, with nothing for New Season to clear');
+  and rules_fn is not null and players_fn is not null and season_fn = 'public.toonflap_season(uuid[])' and last_played_fn is not null and keep_achievements),
+  'Toon Flap is registered with its hooks; New Season clears only the Sky Dash board');
 select is(public.toonflap_counts(pg_temp.id('0a')),
   '{"toonflap_levels": 1, "toonflap_clean": 1, "toonflap_gaps": 0, "toonflap_golds": 1, "toonflap_flyers": 0}'::jsonb,
   'one level finished, one clean flight, one gold, no flyer yet');

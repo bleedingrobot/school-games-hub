@@ -84,6 +84,9 @@ export interface Progress {
   opened?: number;
   /** The NZ day (YYYY-MM-DD) a new level last opened: only one opens a day (James, 11 Nov 2026). */
   openedDay?: string | null;
+  /** Sky Dash: dashes finished, and the most walls ever flown past in one (the class board keeps the season's best). */
+  dashes?: number;
+  dashBest?: number;
 }
 
 export const emptyProgress = (): Progress => ({ levels: {}, checksRight: 0, streak: 0, cleanFlights: 0, rightGaps: 0, potions: 0, potionsEarned: 0 });
@@ -252,4 +255,18 @@ export function nextStep(p: Progress, today: string): string {
   const notGold = LEVELS.find((l) => record(p, l.id).medal !== 'gold');
   if (notGold) return `Try for gold on ${notGold.name}.`;
   return 'Every level done with gold! Try Sky Dash.';
+}
+
+/** Adds a finished Sky Dash to a pupil's progress (a potion used is spent). Returns a new object. */
+export function addDash(before: Progress, walls: number, potionUsed: boolean): { progress: Progress; newBest: boolean } {
+  const newBest = walls > (before.dashBest ?? 0);
+  return {
+    progress: {
+      ...before,
+      dashes: (before.dashes ?? 0) + 1,
+      dashBest: Math.max(before.dashBest ?? 0, walls),
+      potions: potionUsed ? Math.max(0, before.potions - 1) : before.potions,
+    },
+    newBest,
+  };
 }

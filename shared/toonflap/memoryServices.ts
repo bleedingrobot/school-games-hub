@@ -5,14 +5,15 @@
  */
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { nzDate } from '../kit/dayArc';
-import { unplayed, type FinishedRun, type KeptRun, type MathsContext, type Saved, type Settings, type ToonFlapServices } from './server';
+import { DASH_BOARD_SIZE } from './config';
+import { unplayed, type BoardRow, type FinishedDash, type FinishedRun, type KeptRun, type MathsContext, type Saved, type Settings, type ToonFlapServices } from './server';
 
 export interface MemoryRun {
   player: string;
   seed: string;
   run: KeptRun;
   day: string;
-  finished?: FinishedRun;
+  finished?: FinishedRun | FinishedDash;
   finishedDay?: string;
 }
 
@@ -22,6 +23,8 @@ export interface MemoryData {
   facts: Record<string, FactStats[]>;
   /** The `once` of every batch of answers or points, so one sent twice counts once. */
   recorded: string[];
+  /** Sky Dash season bests (everyone here is one class; the preview adds made-up classmates). */
+  dashBests?: Record<string, number>;
 }
 
 export interface MemoryOptions {
@@ -83,6 +86,30 @@ export function memoryServices(options: MemoryOptions = {}): ToonFlapServices & 
       data.players[player] = { ...had, progress: copy(progress), version: had.version + 1 };
       saved();
       return true;
+    },
+    async dashFinish(player, seed, version, progress, result) {
+      const r = find(player, seed);
+      const had = data.players[player] ?? unplayed();
+      if (!r || !r.run.open || had.version !== version) return false;
+      r.run.open = false;
+      r.finished = copy(result);
+      r.finishedDay = nzDate(new Date(now()));
+      data.players[player] = { ...had, progress: copy(progress), version: had.version + 1 };
+      data.dashBests ??= {};
+      const before = data.dashBests[player] ?? 0;
+      data.dashBests[player] = Math.max(before, result.walls);
+      saved();
+      return { before };
+    },
+    async board(player) {
+      const all = Object.entries(data.dashBests ?? {}).sort((a, b) => b[1] - a[1]);
+      const rows: BoardRow[] = [];
+      let place = 0;
+      all.forEach(([who, walls], i) => {
+        if (i === 0 || walls < all[i - 1][1]) place = i + 1;
+        rows.push({ place, name: who === player ? 'You' : who, walls, me: who === player });
+      });
+      return { rows: rows.slice(0, DASH_BOARD_SIZE), mine: rows.find((x) => x.me) ?? null };
     },
     async savePicks(player, picks) {
       const had = data.players[player] ?? unplayed();

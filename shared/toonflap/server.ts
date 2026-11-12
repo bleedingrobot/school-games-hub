@@ -13,6 +13,10 @@
  *   finish  replays the flaps on the kept run (it must reach the nest, no faster than real time allows), marks the answer
  *           gaps from the replay, works out the time and medal, saves the run with the new progress (unlocks, potions)
  *           and gives points for the first runs of the day.
+ *   dash    starts a Sky Dash (open after level 5): its own course from the seed, one question per check (stage F.7);
+ *   dash-finish  replays the dash with the server's marks (a right check is a spare feather) and the potion if one was
+ *           brought and held, saves the walls flown past, the season best for the class board, and points;
+ *   board   the class's Sky Dash board this season: the top ten and your own place.
  *
  * Nothing that counts comes from the browser: not the time, the gaps flown through, the checks, or the potions held.
  */
@@ -24,8 +28,9 @@ import type { Question, SkillPack } from '../maths/skillPack';
 import { TimesTables } from '../maths/skillPacks/timesTables';
 import { nzDate } from '../kit/dayArc';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
-import { addRun, emptyProgress, flyersUnlocked, levelOpen, trailsUnlocked, type Progress, type Unlocks } from './collection';
-import { BREAK_AFTER_RUNS, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
+import { addDash, addRun, emptyProgress, flyersUnlocked, levelOpen, skyDashOpen, trailsUnlocked, type Progress, type Unlocks } from './collection';
+import { BREAK_AFTER_RUNS, DASH_POINTS, POINT_RUNS_A_DAY, POINTS, READ_TIME_LEVELS, SIGN_SECONDS, STEPS_PER_SECOND } from './config';
+import { buildDashCourse, dashWalls, replayDash } from './dash';
 import { decodeFlaps, medalFor, replayRun, scoreRun, type Medal, type Score } from './engine';
 import { buildCourse, levelById, type Course } from './levels';
 import { gapLabels, gapsRight, rightGaps, slotPlan } from './maths';
@@ -83,6 +88,31 @@ export interface FinishedRun {
   potion: boolean;
 }
 
+/** A finished Sky Dash, as it's saved. */
+export interface FinishedDash {
+  flaps: string;
+  /** Flying seconds. */
+  seconds: number;
+  walls: number;
+  bumps: number;
+  checksRight: number;
+  potion: boolean;
+}
+
+/** One line of the class's Sky Dash board. */
+export interface BoardRow {
+  place: number;
+  name: string;
+  walls: number;
+  me: boolean;
+}
+
+export interface DashBoard {
+  rows: BoardRow[];
+  /** Your own line, even when you're not in the top ten (null: no dash this season). */
+  mine: BoardRow | null;
+}
+
 export interface ToonFlapServices {
   now(): number;
   random(): number;
@@ -100,6 +130,13 @@ export interface ToonFlapServices {
   /** Closes an open run with its result and saves the progress, together. False if it was closed or the version moved on. */
   finish(player: string, seed: string, version: number, progress: Progress, result: FinishedRun): Promise<boolean | 'busy'>;
   savePicks(player: string, picks: Picks): Promise<boolean | 'busy'>;
+  /**
+   * Closes an open dash with its result, saves the progress and keeps the season best for the board, together. Says the
+   * season best before this dash (0: none yet). False if it was closed or the version moved on.
+   */
+  dashFinish(player: string, seed: string, version: number, progress: Progress, result: FinishedDash): Promise<{ before: number } | false | 'busy'>;
+  /** The class's Sky Dash board this season (pupils only). */
+  board(player: string): Promise<DashBoard | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Points inside the hub's daily cap (once per `once`). A failure is only logged. */
@@ -129,6 +166,19 @@ export interface StartReply {
   checks: PublicQuestion[];
   signs: GapSign[];
   readTime: boolean;
+}
+
+export interface DashFinishReply {
+  walls: number;
+  seconds: number;
+  feathersUsed: number;
+  potionUsed: boolean;
+  /** A new best this season (the board's), and ever (the pupil's own). */
+  seasonBest: boolean;
+  newBest: boolean;
+  best: number;
+  progress: Progress;
+  board: DashBoard | null;
 }
 
 export interface FinishReply {
@@ -268,7 +318,8 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     if (!run) return { status: 404, body: { error: 'That run isn’t yours.', code: 'not-yours' } };
     const def = levelById(run.level);
     const n = slot as number;
-    if (!def || n < 0 || n >= slotPlan(buildCourse(def, run.gentle)).checks) return bad();
+    const course = run.level === 'dash' ? buildDashCourse(seed) : def ? buildCourse(def, run.gentle) : null;
+    if (!course || n < 0 || n >= slotPlan(course).checks) return bad();
     const marked = markQuestion(run.questions[n]);
     if (!marked) return bad();
     const right = sameAnswer(value, marked.answer);
@@ -279,6 +330,74 @@ export async function handleToonFlap(services: ToonFlapServices, player: string,
     const time = typeof ms === 'number' && Number.isFinite(ms) ? Math.max(0, Math.min(MAX_ANSWER_MS, Math.round(ms))) : MAX_ANSWER_MS;
     await services.recordAnswers(player, `${seed}:${n}`, [{ key: marked.key, correct: right, ms: time, at: services.now(), ...(right ? {} : { given: value }) }]);
     return { status: 200, body: { correct: right, answer: marked.answer } };
+  }
+
+  if (action === 'dash') {
+    const [saved, today] = await Promise.all([services.load(player), services.runsToday(player, nzDate(new Date(services.now())))]);
+    if (saved === 'busy' || today === 'busy') return busy();
+    if (!skyDashOpen(saved.progress)) return { status: 409, body: { error: 'Finish Donut Town (level 5) to open Sky Dash.', code: 'locked' } };
+    if (today.started >= BREAK_AFTER_RUNS) return { status: 429, body: { error: 'Time for a break? Your wings need a rest. Come back tomorrow!', code: 'break' } };
+    const seed = seedText(services.random);
+    const course = buildDashCourse(seed);
+    let questions: Question[] = [];
+    if (settings.maths) {
+      const context = await services.maths(player);
+      if (context === 'busy') return busy();
+      questions = makeRunQuestions(context, course, services.random);
+    }
+    const kept = await services.start(player, seed, { level: 'dash', gentle: false, maths: settings.maths, questions, labels: [] });
+    if (kept === 'busy') return busy();
+    if (!kept) return { status: 409, body: { error: 'Try again.', code: 'again' } };
+    const reply: StartReply = {
+      seed, level: 'dash', gentle: false, maths: settings.maths,
+      checks: questions.map((q, slot) => publicQuestion(q, slot)), signs: [], readTime: false,
+    };
+    return { status: 200, body: reply as unknown as Record<string, unknown> };
+  }
+
+  if (action === 'dash-finish') {
+    const { seed } = body;
+    if (!isSeed(seed) || typeof body.flaps !== 'string') return bad();
+    const flaps = decodeFlaps(body.flaps);
+    if (!flaps) return bad();
+    const [run, saved] = await Promise.all([services.run(player, seed), services.load(player)]);
+    if (run === 'busy' || saved === 'busy') return busy();
+    if (!run || run.level !== 'dash') return { status: 404, body: { error: 'That run isn’t yours.', code: 'not-yours' } };
+    if (!run.open) return { status: 409, body: { error: 'That run is already saved.', code: 'ended' } };
+    const course = buildDashCourse(seed);
+    const right = course.perches.map((_, slot) => run.marks[String(slot)] === true);
+    const potion = body.potion === true && saved.progress.potions > 0;
+    const replay = replayDash(course, flaps, right, potion);
+    if (!replay.valid || replay.dash.run.mode !== 'done') return { status: 422, body: { error: 'That run couldn’t be checked.', code: 'not-done' } };
+    const d = replay.dash;
+    if (services.now() - run.startedAt < (d.run.t / STEPS_PER_SECOND) * 1000 * 0.95) {
+      return { status: 422, body: { error: 'That run couldn’t be checked.', code: 'too-fast' } };
+    }
+    const walls = dashWalls(d);
+    const added = addDash(saved.progress, walls, d.potionUsed);
+    const checksRight = right.slice(0, d.run.perches).filter(Boolean).length;
+    const today = await services.runsToday(player, nzDate(new Date(services.now())));
+    const done = await services.dashFinish(player, seed, saved.version, added.progress, {
+      flaps: body.flaps, seconds: d.run.t / STEPS_PER_SECOND, walls, bumps: d.run.bumps, checksRight, potion: d.potionUsed,
+    });
+    if (done === 'busy') return busy();
+    if (!done) return { status: 409, body: { error: 'That run is already saved.', code: 'ended' } };
+    const seasonBest = walls > done.before && walls > 0;
+    const finishedToday = today === 'busy' ? POINT_RUNS_A_DAY : today.finished;
+    if (finishedToday < POINT_RUNS_A_DAY) await services.awardPoints(player, DASH_POINTS.dash + (seasonBest ? DASH_POINTS.newBest : 0), `toonflap:${seed}`);
+    await services.progressChanged(player);
+    const board = await services.board(player);
+    const reply: DashFinishReply = {
+      walls, seconds: d.run.t / STEPS_PER_SECOND, feathersUsed: d.feathersUsed, potionUsed: d.potionUsed,
+      seasonBest, newBest: added.newBest, best: added.progress.dashBest ?? walls, progress: added.progress,
+      board: board === 'busy' ? null : board,
+    };
+    return { status: 200, body: reply as unknown as Record<string, unknown> };
+  }
+
+  if (action === 'board') {
+    const board = await services.board(player);
+    return board === 'busy' ? busy() : { status: 200, body: board as unknown as Record<string, unknown> };
   }
 
   if (action === 'finish') {

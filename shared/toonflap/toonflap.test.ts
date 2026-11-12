@@ -6,6 +6,7 @@ import { addRun, emptyProgress, finishesToUnlock, flyersUnlocked, levelOpen, unl
 import { BUMP_PENALTY_STEPS, POTIONS_MAX, STEPS_PER_SECOND } from './config';
 import { decodeFlaps, encodeFlaps, medalFor, newRun, replayRun, scoreRun, stepRun } from './engine';
 import { buildCourse, LEVELS } from './levels';
+import { buildDashCourse, earnFeather, newDash, stepDash } from './dash';
 import { gapLabels, gapsRight, rightGaps } from './maths';
 
 const garden = buildCourse(LEVELS[0]);
@@ -31,6 +32,21 @@ describe('Toon Flap rules', () => {
     expect(event).toBe('bump');
     expect(s).toMatchObject({ mode: 'hover', hover: 'bump', bumps: 1, outcome: 'running' });
     expect(scoreRun(s, { checksRight: 0, gapsRight: 0 }).steps).toBe(s.t + BUMP_PENALTY_STEPS);
+
+    // Sky Dash: the same seed builds the same course; a bump ends it unless a feather (then the potion) saves it.
+    const dash = buildDashCourse('123456789012');
+    expect(buildDashCourse('123456789012')).toEqual(dash);
+    const d = newDash(dash);
+    earnFeather(d);
+    const saves: string[] = [];
+    let flapNext = true;
+    for (let i = 0; i < 5000 && d.run.mode !== 'done'; i++) {
+      const { save } = stepDash(dash, d, flapNext, true);
+      flapNext = d.run.mode === 'hover';
+      if (save) saves.push(save);
+    }
+    expect(saves).toEqual(['feather', 'potion', 'crash']);
+    expect(d).toMatchObject({ crashed: true, feathers: 0, feathersUsed: 1, potionUsed: true });
   });
 
   it('a perfect run with every bonus is gold; Gentle wings and maths-off have their own rules; a potion cancels only one bump', () => {
