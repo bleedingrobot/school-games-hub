@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { fetchKingdomEnabled } from '../../data/kingdom';
 
 /**
  * Is Kingdom Keeper in the hub? On since 27 Oct 2026 (James: "you do it all and switch it on"), after the migration and
@@ -10,17 +8,3 @@ import { fetchKingdomEnabled } from '../../data/kingdom';
 const ON = false;
 
 export const kingdomOn = (): boolean => ON || import.meta.env.VITE_KINGDOM_ON === 'true';
-
-/** Is Kingdom Keeper switched on for this pupil's class? null while loading (treated as off, so the card never flashes up). */
-export function useKingdomEnabled(): boolean | null {
-  const [on, setOn] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (!kingdomOn()) return;
-    let current = true;
-    fetchKingdomEnabled().then((v) => current && setOn(v), () => current && setOn(false));
-    return () => {
-      current = false;
-    };
-  }, []);
-  return on;
-}

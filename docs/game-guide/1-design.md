@@ -12,7 +12,7 @@ Write a short answer to each in `docs/<GAME>-PLAN.md` (template: [templates/plan
 | Server function | `supabase/functions/<id>/` `handler.ts` (logic, tested), `entry.ts` (database), `index.ts` (generated) | `toonflap`, `weka` |
 | Database | own tables prefixed with the id, new migrations only | [templates/migration.sql](templates/migration.sql) |
 | Teacher part | `teacher` on the game definition; settings through `teacher_set_<id>()` | `src/games/toonflap/teacher.ts`, `src/games/weka/teacher.ts` |
-| Code switch + teacher switch | `src/games/<id>/switch.ts` | `src/games/weka/switch.ts` |
+| Code switch (`teacherSwitch: true` in the GameDefinition for the teacher's) | `src/games/<id>/switch.ts` | `src/games/weka/switch.ts` |
 | Preview without sign-in | `preview/<id>/` | `preview/toonflap/` |
 | Simulator (balance games) | `scripts/<id>-sim.mjs` | `scripts/toonflap-sim.mjs` |
 | How to play (numbers read from config) | `src/games/<id>/HowToPlay.tsx` | `src/games/toonflap/HowToPlay.tsx` |

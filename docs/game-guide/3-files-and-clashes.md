@@ -35,7 +35,7 @@ public/voice/<id>/
 
 - `src/games/registry.ts`: import and **append** to the end of `GAMES` behind your code switch: `...(myGameOn() ? [myGame] : [])`. A Foundational game instead goes where its maths fits in the learning order (comment above `GAMES`), and also in `GAME_IDS` (`src/data/foundational.ts`).
 - `src/games/registry.test.ts` lists every game's id and group: the PR that turns your code switch on adds your id.
-- `src/components/gameCardArt.ts`: your home card picture ([6-art-voice-cards.md](6-art-voice-cards.md)).
+- Your home card picture: two files dropped into `src/assets/home/`, found by name, no code ([6-art-voice-cards.md](6-art-voice-cards.md)).
 - `scripts/build-functions.mjs`: add your name to the end of `FUNCTIONS`. While building, run only `npm run build:functions -- <id>`; the full build churns every function.
 - `package.json`: your scripts at the end of `scripts`. No new dependencies without James (check the licence, pin the version).
 - `src/App.tsx`: only for a second page; every game already gets `/#/<id>`.
@@ -60,7 +60,7 @@ Why: each function's `index.ts` bundles the shared code it imports, so a shared 
 
 Don't edit the Dashboard or Teacher page. Your `GameDefinition` (`src/games/types.ts`) says:
 - `group`: `'foundational'` for every early-years game (ages 5 to 7, James 4 Nov 2026), else `'no-maths' | 'easy-maths' | 'complex-maths'`.
-- `useTeacherSwitch`: copy `src/games/weka/switch.ts` (reads through `readSettings`). The card hides while it isn't `true`.
+- `teacherSwitch: true` when teachers can switch it off: the card shows only while the class's `<id>_enabled` column is `true` (the home page reads every switch in one request, `src/data/classSwitches.ts`; for another page use `useGameSwitch('<id>')`). No hook to copy. `src/games/<id>/switch.ts` keeps only the code switch (`myGameOn()`).
 - `teacher` (`TeacherContract`): `switch` or `maths` (each with an `about` line) or `useSummary`, lazy `Settings` and `StudentPanel`, and optionally `studentSummary`, `hardest(classId)`, `alerts(classId)`, `progressColumns` ([2-steps-and-progress.md](2-steps-and-progress.md)). `SeasonPanels` adds season resets. Copy `src/games/toonflap/teacher.ts` or `src/games/weka/teacher.ts`.
 - `colours` (a two-stop gradient that keeps white text readable) and `Icon` (an SVG component).
 - A season strip on the home page is not a hook (it lives in `Dashboard.tsx`, `my_moves_left()`, `my_home_page()`): ask James, its own PR.

@@ -11,7 +11,7 @@ The plan and the full card text are in [../../DASHBOARD-REVIEW.md](../../DASHBOA
 - [x] D5 Stop the page jumping while it loads (size S). Waits for: nothing.
 - [x] D6 Smaller cards on phones and iPads in portrait (size M). Waits for: D2.
 - [x] D7 Lighter first load on a school iPad (size M). Waits for: nothing (run before D8).
-- [ ] D8 Adding a game to the home page in one place (size S). Waits for: D5 and D7.
+- [x] D8 Adding a game to the home page in one place (size S). Waits for: D5 and D7.
 - [ ] D9 Check it as a child would, and close the review (size S). Waits for: D1 to D8.
 
 ## Done and live

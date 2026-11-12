@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { WORDS } from './words';
-import { useTuiEnabled } from './switch';
 import { TUI_ABOUT, saveTuiEnabled, useTuiClassSwitch, useTuiSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -47,7 +46,7 @@ export const tuisTenTree: GameDefinition = {
   group: 'foundational',
   // The home page card's chip: today's flower ready, or come back tomorrow.
   nextPart: { noun: WORDS.part },
-  useTeacherSwitch: useTuiEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game behind its "?"), the class's Golden Nests in
   // the Maths column, and a drawer with the help setting.
   teacher: {

@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { fetchBeanstalkEnabled } from '../../data/beanstalk';
 
 /**
  * Is Kiwi's Beanstalk in the hub at all? On since 4 Nov 2026 (docs/BEANSTALK-PLAN.md, Stage 5).
@@ -9,17 +7,3 @@ import { fetchBeanstalkEnabled } from '../../data/beanstalk';
 const ON = true;
 
 export const beanstalkOn = (): boolean => ON || import.meta.env.VITE_BEANSTALK_ON === 'true';
-
-/** Is Kiwi's Beanstalk switched on for this pupil's class? null while loading (treated as off, so the card never flashes up). */
-export function useBeanstalkEnabled(): boolean | null {
-  const [on, setOn] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (!beanstalkOn()) return;
-    let current = true;
-    fetchBeanstalkEnabled().then((v) => current && setOn(v), () => current && setOn(false));
-    return () => {
-      current = false;
-    };
-  }, []);
-  return on;
-}

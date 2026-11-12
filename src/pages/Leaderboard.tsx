@@ -4,7 +4,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
-import { useMonstersEnabled } from '../games/monsters/switch';
+import { useGameSwitch } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES } from '../games/registry';
 import { isRanked } from '../games/types';
@@ -48,7 +48,7 @@ export function notOnBoardText(board: Board, gamesPlayed: number): string {
 
 export function Leaderboard() {
   const [game, setGame] = useState(GAMES[0].id);
-  const monstersOn = useMonstersEnabled() === true;
+  const monstersOn = useGameSwitch('monsters') === true;
   const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
   return (
     <div className="leaderboard">

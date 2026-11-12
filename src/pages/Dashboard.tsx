@@ -38,12 +38,14 @@ const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
 const SeasonStrip = lazy(() => import('../components/SeasonStrip'));
 const DragonSeasonStrip = lazy(() => import('../components/DragonSeasonStrip'));
 
-/** Where Quick looks goes among the cards: after Robin, or first of the foundational games while Robin is off. */
-function quickLooksAt(tiles: { id: string; group?: DashboardGroup }[]): number {
-  const robin = tiles.findIndex((t) => t.id === 'robin');
-  if (robin >= 0) return robin + 1;
-  const first = tiles.findIndex((t) => t.group === 'foundational');
-  return first >= 0 ? first : tiles.length;
+/**
+ * Where a card that isn't a registry game goes (Quick looks, dashboard plan D8): straight after the card `after`, or first in
+ * its group while that card is hidden, or last.
+ */
+function placeAfter(tiles: Tile[], tile: Tile & { after?: string }): void {
+  const after = tile.after ? tiles.findIndex((t) => t.id === tile.after) : -1;
+  const first = tiles.findIndex((t) => t.group === tile.group);
+  tiles.splice(after >= 0 ? after + 1 : first >= 0 ? first : tiles.length, 0, tile);
 }
 
 /**
@@ -74,7 +76,7 @@ const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
  * turned them off, so they show while it loads). Each game's switch hook is called on every render, in GAMES order, which
  * never changes while the page is open.
  */
-const SWITCHED_GAMES = GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id);
+const SWITCHED_GAMES = GAMES.filter((g) => g.teacherSwitch).map((g) => g.id);
 
 /**
  * The games this class can see. Every teacher switch comes from one settings read, so the cards arrive together (dashboard plan
@@ -84,7 +86,7 @@ const SWITCHED_GAMES = GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id);
 function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | undefined): { games: GameDefinition[]; on: Set<string> | null } {
   const on = useClassSwitches(SWITCHED_GAMES);
   const isOn = (id: string) => (on ? on.has(id) : (remembered?.includes(id) ?? false));
-  const games = GAMES.filter((game) => (!game.useTeacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths'));
+  const games = GAMES.filter((game) => (!game.teacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths'));
   return { games, on };
 }
 
@@ -324,9 +326,10 @@ function DashboardPage() {
   // Quick looks is a training activity, but it sits with the foundational games (James, 4 Nov 2026), straight after Robin's
   // counting: seeing small numbers at a glance comes next (James, 10 Nov 2026).
   if (trainingOn())
-    tiles.splice(quickLooksAt(tiles), 0, {
+    placeAfter(tiles, {
       id: 'quick-looks',
       group: 'foundational',
+      after: 'robin',
       card: (
         <ActivityCard
           key="quick-looks"

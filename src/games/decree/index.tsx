@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import { saveDecreeEnabled } from '../../data/decree';
 import type { GameDefinition } from '../types';
-import { useDecreeEnabled } from './switch';
 import { DECREE_ABOUT, decreeSummary, useDecreeClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -40,7 +39,7 @@ export const royalDecree: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useDecreeEnabled,
+  teacherSwitch: true,
   teacher: {
     switch: { useValue: useDecreeClassSwitch, save: (on, classId) => saveDecreeEnabled(on, classId), about: DECREE_ABOUT },
     useSummary: decreeSummary,

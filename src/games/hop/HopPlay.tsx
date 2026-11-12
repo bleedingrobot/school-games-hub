@@ -6,13 +6,13 @@
 import { useNavigate } from 'react-router';
 import { liveHop } from '../../data/hop';
 import { penguinPairs } from '../korora';
-import { useKororaEnabled } from '../korora/switch';
+import { useGameSwitch } from '../../data/classSwitches';
 import { HopGame } from './HopGame';
 import { WORDS } from './words';
 
 export function HopPlay() {
   const navigate = useNavigate();
-  const kororaOn = useKororaEnabled();
+  const kororaOn = useGameSwitch('korora');
   const nextGame = kororaOn ? { name: WORDS.signpostGame, Icon: penguinPairs.Icon, open: () => navigate('/korora') } : null;
   return <HopGame backend={liveHop} onExit={() => navigate('/')} nextGame={nextGame} />;
 }

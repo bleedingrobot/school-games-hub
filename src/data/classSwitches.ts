@@ -24,6 +24,12 @@ export function useClassSwitches(gameIds: string[]): Set<string> | null {
   return on;
 }
 
+/** One game's teacher switch for the pupil's class: true, false, or null while loading (from the same remembered settings read). */
+export function useGameSwitch(gameId: string): boolean | null {
+  const on = useClassSwitches([gameId]);
+  return on ? on.has(gameId) : null;
+}
+
 /** What this device last showed on the home page, so a reload starts from the same cards (dashboard plan D5). */
 export interface RememberedCards {
   /** Games whose teacher switch was on. */

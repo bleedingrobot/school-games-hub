@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { saveClansEnabled } from '../../data/clansSwitch';
-import { useClansEnabled } from './switch';
 import { CLANS_ABOUT, useClansClassSwitch, useClansSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -33,7 +32,7 @@ export const clanQuest: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
-  useTeacherSwitch: useClansEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row, the maths settings summed up as its summary, and made-up hero
   // names, the maths settings, raids and the class report in its Settings. The fame season stays
   // with the other seasons under Students.
