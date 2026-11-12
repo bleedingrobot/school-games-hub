@@ -150,7 +150,9 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
         <div className="stf-left">
           {!full && <ViewerBox design={draft} showPlans labels reducedMotion={lessMotion} onLevel={setGraphics} onReady={(v) => setGraphics(v?.level ?? null)} onPick={(id) => id !== null && choose({ k: 'planet', id })} />}
           {full && <div className="stf-viewer stf-viewer--away"><p className="st-soft">Your system is open in full screen.</p></div>}
+        </div>
 
+        <div className="stf-right">
           <div className="stf-slots" data-coach="forge-slots" role="group" aria-label="Pieces of your system, from the sun outwards">
             <SlotCard on={selected('sun')} onClick={() => choose({ k: 'sun' })} emoji={draft.sun ? SUN_LOOK[draft.sun.kind].emoji : '☀️'} colour={draft.sun ? SUN_LOOK[draft.sun.kind].colour : undefined}
               title="Sun" line={draft.sun ? SUNS[draft.sun.kind].name : 'Choose a sun'} state={!draft.sun ? 'empty' : draft.sun.built ? 'built' : 'plan'} price={draft.sun ? SUNS[draft.sun.kind].price : 0} />
@@ -178,9 +180,6 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
             <button type="button" className="st-btn" disabled={busy || working} onClick={askAll}>🛠️ Build everything I can afford</button>
             <span className="st-soft">You have {cr(credits)}.</span>
           </div>
-        </div>
-
-        <div className="stf-right">
           {cheer && <p key={cheer.n} className="stf-cheer" role="status">🎉 {cheer.text}</p>}
           {pending.lines.length > 0 && !confirm && (
             <div className="stf-pending" role="group" aria-label="Changes to pay for">

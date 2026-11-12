@@ -116,6 +116,30 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
   useEffect(() => {
     void reload();
   }, [reload]);
+  // The top strip wraps onto more rows on narrower screens: start the panels just below it, however tall it is.
+  useEffect(() => {
+    const el = root.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let hud: HTMLElement | null = null;
+    const fit = () => {
+      const next = el.querySelector<HTMLElement>('.st-hud');
+      if (next !== hud) {
+        if (hud) sizes.unobserve(hud);
+        hud = next;
+        if (hud) sizes.observe(hud);
+      }
+      if (hud) el.style.setProperty('--st-top', `${Math.ceil(hud.getBoundingClientRect().height)}px`);
+      else el.style.removeProperty('--st-top');
+    };
+    const sizes = new ResizeObserver(fit);
+    const kids = new MutationObserver(fit);
+    kids.observe(el, { childList: true });
+    fit();
+    return () => {
+      sizes.disconnect();
+      kids.disconnect();
+    };
+  }, []);
 
   const galaxy: Galaxy | null = useMemo(() => (loaded ? makeGalaxy(loaded.galaxySeed) : null), [loaded?.galaxySeed]); // eslint-disable-line react-hooks/exhaustive-deps
   const forgeOn = loaded?.settings.forge === true;
@@ -615,7 +639,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
       ) : (
         <>
           <Hud goal={forgeOn ? goalOf(design, t.credits, t.moon) : null} t={t} jumpsPerDay={loaded.settings.jumpsPerDay} unlimited={loaded.settings.unlimited === true} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} captain={game?.captain} onCaptain={phase.k === 'planet' && !pending ? () => setPicking(true) : undefined} />
-          <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''}`}>
+          <div className={`st-main ${phase.k === 'planet' && !pending && (tab === 'map' || tab === 'forge' || tab === 'gallery') ? 'st-main--wide' : ''} ${phase.k === 'planet' && !pending && tab === 'forge' ? 'st-main--forge' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
                 <div role="tablist" aria-label="Where to go on the planet" className="st-tabs">
