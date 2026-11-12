@@ -34,6 +34,9 @@ Config (all paths are relative to the repo unless they start with ~):
           "texture" a plain flat texture (a mat): a `region` [x0, y0, x1, y1] (fractions of the painting, default the middle half),
                   optionally `mirror`ed 2x2 so it tiles without a seam, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
           "card"  a home page card, 1600 px and 800 px -> <home_dir>/<file>.webp and <file>-small.webp
+          "icon"  kept whole with its painted background (a trophy, an earned picture), shrunk to `max` px, and to `small` px
+                  too if given -> <art_dir>/<folder>/<file>.webp and <file>-small.webp
+    hollow true on a cut-out: it has a see-through middle (a picture ring), so the hole is cut out too, not filled in
     tints  {tint name: file name}: also write a recoloured copy of a cut-out to <art_dir>/<folder>/<file name>.webp
 """
 from __future__ import annotations
@@ -47,8 +50,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_COMFY = 'http://100.97.96.115:8188'
-KINDS = ('cut', 'scene', 'card', 'texture')
-QUALITY = {'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78}
+KINDS = ('cut', 'scene', 'card', 'texture', 'icon')
+QUALITY = {'cut': 82, 'scene': 72, 'scene_small': 70, 'card': 80, 'card_small': 78, 'icon': 86}
 GRAPH = {'steps': 8, 'cfg': 1.0, 'shift': 3.0, 'second_pass_scale': 1.5, 'second_pass_denoise': 0.4}
 
 
@@ -91,6 +94,8 @@ def check(c: dict) -> list[str]:
         if p['name'] in names:
             bad.append(f'{label}: name used twice')
         names.add(p['name'])
+        if p.get('style', c['style']) not in c['styles']:
+            bad.append(f'{label}: style "{p["style"]}" is not in styles')
         if not str(p.get('prompt', '')).strip():
             bad.append(f'{label}: empty prompt')
         size = p.get('size')
@@ -103,7 +108,7 @@ def check(c: dict) -> list[str]:
         if 'file' not in p or (kind != 'card' and 'folder' not in p):
             bad.append(f'{label}: needs "file"' + ('' if kind == 'card' else ' and "folder"'))
             continue
-        if kind in ('cut', 'texture') and not isinstance(p.get('max'), int):
+        if kind in ('cut', 'texture', 'icon') and not isinstance(p.get('max'), int):
             bad.append(f'{label}: a cut-out needs a whole-number "max" size')
         if kind == 'card' and 'home_dir' not in c:
             bad.append(f'{label}: a card needs "home_dir" in the config')
@@ -133,7 +138,8 @@ def seed_for(c: dict, name: str, style: str, n: int) -> int:
 
 
 def full_prompt(c: dict, style: str, p: dict) -> str:
-    return c['styles'][style] + p['prompt']
+    # A picture can name its own style (for example a ring painted on plain white to be cut out).
+    return c['styles'][p.get('style', style)] + p['prompt']
 
 
 def resolve(c: dict, key: str) -> Path:
@@ -234,6 +240,8 @@ def destinations(c: dict, p: dict) -> list[Path]:
     folder = resolve(c, 'art_dir') / p['folder']
     if p['kind'] == 'scene':
         return [folder / f'{p["file"]}.webp', folder / f'{p["file"]}-800.webp']
+    if p['kind'] == 'icon':
+        return [folder / f'{p["file"]}.webp'] + ([folder / f'{p["file"]}-small.webp'] if p.get('small') else [])
     return [folder / f'{p["file"]}.webp'] + [folder / f'{f}.webp' for f in p.get('tints', {}).values()]
 
 
@@ -293,6 +301,17 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         px[hole, 3] = 255
         return Image.fromarray(px, 'RGBA')
 
+    def punch_middle(cut, source):
+        # A ring: everything joined to the very middle that is the background's colour becomes see-through.
+        from scipy.ndimage import label
+        rgb = np.asarray(source).astype(np.int16)
+        cy, cx = rgb.shape[0] // 2, rgb.shape[1] // 2
+        same = np.abs(rgb - rgb[cy, cx]).sum(axis=2) < 60
+        areas, _ = label(same)
+        px = np.asarray(cut).copy()
+        px[areas == areas[cy, cx], 3] = 0
+        return Image.fromarray(px, 'RGBA')
+
     for name, t in picks.items():
         p = by_name[name]
         outs = destinations(c, p)
@@ -319,12 +338,18 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
             img = img.convert('RGB')
             save(fit(img, 1600), outs[0], quality['scene'])
             save(fit(img, 800), outs[1], quality['scene_small'])
+        elif p['kind'] == 'icon':
+            img = img.convert('RGB')
+            save(fit(img, p['max']), outs[0], quality['icon'])
+            if p.get('small'):
+                save(fit(img, p['small']), outs[1], quality['icon'])
         else:
             if session is None:
                 from rembg import new_session
                 session = new_session('isnet-general-use')
             from rembg import remove
-            cut = trim(fill_holes(remove(img.convert('RGB'), session=session, alpha_matting=True), img.convert('RGB')))
+            cut = remove(img.convert('RGB'), session=session, alpha_matting=True)
+            cut = trim(punch_middle(cut, img.convert('RGB')) if p.get('hollow') else fill_holes(cut, img.convert('RGB')))
             save(fit(cut, p['max']), outs[0], quality['cut'])
             for (tint_name, _), out in zip(p.get('tints', {}).items(), outs[1:]):
                 save(fit(tint(cut, c['tints'][tint_name]), p['max']), out, quality['cut'])

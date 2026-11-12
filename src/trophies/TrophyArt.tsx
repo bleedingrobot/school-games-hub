@@ -1,12 +1,13 @@
 import { useId } from 'react';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { TIER_COLOURS, type Tier } from '../avatar/earnedPictures';
+import { paintedTrophy } from '../avatar/paintedArt';
 import { trophyGame } from './cabinet';
 
 /**
  * A trophy drawn in its metal: a cup with the game's own icon on the front, or (for a picture trophy) the picture in its
- * ring on a little stand. `tier: null` is a grey "not won yet" shape with a question mark. Stand-in art until card P2's
- * paintings land; the size is the drawing's width.
+ * ring on a little stand. `tier: null` is a grey "not won yet" shape with a question mark. A trophy with a painting (card P2) shows
+ * the painting instead; the size is the drawing's width.
  */
 export function TrophyArt({
   id: trophyId,
@@ -30,6 +31,15 @@ export function TrophyArt({
     return (
       <span className="trophy-art trophy-art--picture" data-tier={tier} style={{ width: size, height }} aria-hidden="true">
         <PictureOnStand id={trophyId} tier={tier} size={size} />
+      </span>
+    );
+  }
+
+  const painting = tier ? paintedTrophy(trophyId, tier, size <= 80) : undefined;
+  if (painting && tier) {
+    return (
+      <span className="trophy-art trophy-art--painted" data-tier={tier} style={{ width: size, height }} aria-hidden="true">
+        <img src={painting} alt="" width={size} height={size} loading="lazy" draggable={false} />
       </span>
     );
   }

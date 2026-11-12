@@ -4,7 +4,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 ## To do
 
-- [ ] P2 Plan and paint the art (size M). Waits for: nothing. Needs ComfyUI running on the gaming PC.
+- [x] P2 Plan and paint the art (12 Nov 2026). 98 paintings (Dragon Heads, 3 rings, cabinet shelf, 19 pictures, 24 trophies x 3 metals) in `src/avatar/art/`, found by `src/avatar/paintedArt.ts` and already wired into the Dragon Head, the card P7 pictures, the cabinet trophies, shelf and rings. Cards that add a trophy id (P10, Two games) add it to `TROPHY_ART` or `EARNED_PICTURES`; their art is painted and waiting. See docs/PROFILE-ART-PLAN.md.
 - [ ] P3 The trophy system (size L, database). Waits for: nothing.
 - [x] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Done 12 Nov 2026: eight trophies, a watcher on each record, back-awards, "Trophy won!" line (`src/trophies/`), full book needs 75.
 - [x] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Done 12 Nov 2026: six once-a-year trophies (Star Ring, Black Hole, Heart Diamond, Rainbow Toon, Gem Crown, Miner's Lamp), watchers, back-awards, "Trophy won!" line in each game.
