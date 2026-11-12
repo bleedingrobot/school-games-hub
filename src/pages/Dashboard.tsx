@@ -28,6 +28,7 @@ import { useHomeLayout } from '../data/homeLayout';
 import { useNextParts } from '../data/nextParts';
 import { readRememberedCards, rememberCards, useClassSwitches } from '../data/classSwitches';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
+import { RecentTrophies } from '../trophies/RecentTrophies';
 import { SeasonNote } from '../trophies/SeasonNote';
 
 // The teacher pages and older tests still find these here.
@@ -431,6 +432,8 @@ function DashboardPage() {
         </div>
       ) : (
         <>
+
+        {answer && answer.recentTrophies.length > 0 && <RecentTrophies trophies={answer.recentTrophies} />}
 
         <TrainingGateBanner />
 

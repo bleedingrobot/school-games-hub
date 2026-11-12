@@ -8,6 +8,7 @@ import { readClock, type SeasonClock } from '../../shared/clans/clock';
 import { nzDate } from '../../shared/lord/engine';
 import { readLordSeason, type HomeLordSeason } from '../../shared/lord/seasonRoad';
 import { supabase } from '../lib/supabase';
+import { readRecentTrophies, type RecentTrophy } from './boards';
 import { tidyRecentGames, type GameStats, type RecentGameRow, type SavedGame } from './botGames';
 import type { SeatSummary } from './cardGames';
 import { movesFromRaw, type MovesByGame, type RawMovesLeft } from './movesLeft';
@@ -50,6 +51,8 @@ export interface HomePage {
   topGames: TopGames;
   /** My trophy count and favourite three, for the welcome strip (profile card P6). Null if the answer has none. */
   trophyShelf: TrophyShelf | null;
+  /** Trophies won at my school in the last 7 days, newest first (leaderboard plan L3). Empty if the answer has none. */
+  recentTrophies: RecentTrophy[];
   /** The once-only "new season" note (profile card P10), or null when there is none to show. */
   seasonNote: { season: number } | null;
   /**
@@ -107,6 +110,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     topGames: readTopGames(raw.topGames),
     trophyShelf: row<TrophyShelf>(raw, 'trophyShelf'),
     seasonNote: row<{ season: number }>(raw, 'seasonNote'),
+    recentTrophies: readRecentTrophies(raw.recentTrophies),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }

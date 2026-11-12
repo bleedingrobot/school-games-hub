@@ -22,7 +22,7 @@ import { OwnNamePanel, ScrollNote } from '../profile/OwnName';
 import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
 import { pictureOf } from '../avatar/earnedPictures';
 import type { MyTrophy } from '../data/trophies';
-import { ALL_GAMES, gameLabel } from '../games/registry';
+import { ALL_GAMES, gameLabel, HUB_ACHIEVEMENT_GROUPS } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
 import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
 import './profile.css';
@@ -508,7 +508,7 @@ function MyAchievements({ achievements }: { achievements: Achievement[] }) {
     .filter((a) => !a.earnedAt)
     .sort((a, b) => b.progress / b.goal - a.progress / a.goal)
     .slice(0, NEAREST_SHOWN);
-  const games = ALL_GAMES.filter((game) => achievements.some((a) => a.game === game.id));
+  const games = [...ALL_GAMES, ...HUB_ACHIEVEMENT_GROUPS].filter((game) => achievements.some((a) => a.game === game.id));
 
   return (
     <div className="profile-achievements">
