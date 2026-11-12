@@ -25,7 +25,7 @@ export const backFor = (scenery: Scenery): CSSProperties => {
 
 /** Tūī has every pose; the friends sit or cheer. */
 const friendArt = (friend: FriendName, pose: Pose) =>
-  friend === 'tui' ? paint(`tui/tui-${pose}`) ?? paint('tui/tui-sit') : paint(`friends/${friend}-${pose === 'cheer' ? 'cheer' : 'sit'}`);
+  friend === 'tui' ? paint(`tui/tui-${pose}`) ?? paint('tui/tui-sit') : paint(`friends/${friend}-${pose === 'cheer' || pose === 'eat' ? pose : 'sit'}`) ?? paint(`friends/${friend}-sit`);
 
 export function Friend({ friend, pose }: { friend: FriendName; pose: Pose }) {
   const src = friendArt(friend, pose);
