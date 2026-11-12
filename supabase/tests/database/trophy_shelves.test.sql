@@ -1,4 +1,4 @@
--- Trophies around the hub (migration 20261112002500_trophy_shelves.sql; docs/plans/profile/PLAN.md card P6):
+-- Trophies around the hub (migration 20261112002600_trophy_shelves.sql; docs/plans/profile/PLAN.md card P6):
 -- a schoolmate's trophy count and favourite three, by made-up name, and nothing from another school.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
