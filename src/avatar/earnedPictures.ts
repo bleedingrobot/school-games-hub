@@ -35,7 +35,12 @@ export interface PictureArt {
  * One line per picture trophy, added by the card that adds the trophy (the first is P4's Dragon Head).
  * A picture that is not listed yet still draws: a trophy cup on its metal disc.
  */
-export const EARNED_PICTURES: Record<string, PictureArt> = {};
+export const EARNED_PICTURES: Record<string, PictureArt> = {
+  // Card P7 (placeholders until card P2's paintings land).
+  'clan-banner': { emoji: '🚩' },
+  'isles-lighthouse': { emoji: '🗼' },
+  'mm-book': { emoji: '📖' },
+};
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };
 
