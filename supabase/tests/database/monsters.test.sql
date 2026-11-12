@@ -124,12 +124,12 @@ select ok(not pg_temp.has('d', 'mm-book-25'), '... not 25 yet');
 select pg_temp.save('d', 3, owned => 25, seen => 30, new_badges => array['leaf'], badges => 1);
 select ok(pg_temp.has('d', 'mm-book-25') and pg_temp.has('d', 'mm-first-badge'), '25 monsters and the first badge');
 select ok(not pg_temp.has('d', 'mm-three-badges'), '... one badge is not three');
-select pg_temp.save('d', 4, owned => 54, seen => 54, badges => 6, finals => 6, new_badges => array['water', 'fire', 'ice', 'spark', 'stone']);
+select pg_temp.save('d', 4, owned => 75, seen => 75, badges => 6, finals => 6, new_badges => array['water', 'fire', 'ice', 'spark', 'stone']);
 select ok(pg_temp.has('d', 'mm-book-54') and pg_temp.has('d', 'mm-three-badges') and pg_temp.has('d', 'mm-all-badges')
   and pg_temp.has('d', 'mm-full-team'), 'the whole book, six badges and a grown team');
 select is((select count(*)::integer from public.achievements where player = pg_temp.id('d') and achievement like 'mm-%'), 8,
   'eight achievements in all, each once');
-select pg_temp.save('d', 5, owned => 54, seen => 54, badges => 6, finals => 6);
+select pg_temp.save('d', 5, owned => 75, seen => 75, badges => 6, finals => 6);
 select is((select count(*)::integer from public.achievements where player = pg_temp.id('d') and achievement like 'mm-%'), 8,
   'saving again does not earn them twice');
 select is((select count(*)::integer from public.achievement_types where game = 'monsters'), 13, 'there are thirteen to earn (five for quests)');
@@ -138,7 +138,7 @@ select is((select count(*)::integer from public.achievement_types where game = '
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((select count(*)::integer from public.monsters_leaderboard()), 4, 'everyone with a save is on the board (4 here)');
 select is((select display_name || ':' || monsters from public.monsters_leaderboard() where place = 1 limit 1),
-  (select display_name || ':54' from public.profiles where id = pg_temp.id('d')), 'the most monsters owned comes first');
+  (select display_name || ':75' from public.profiles where id = pg_temp.id('d')), 'the most monsters owned comes first');
 select is((select monsters from public.monsters_leaderboard() where is_me), 2, 'it counts owned entries, not the 54 seen');
 select pg_temp.reset();
 update public.monster_saves set owned_count = 2, seen_count = 54 where player = pg_temp.id('c');
@@ -206,7 +206,7 @@ select is((public.teacher_monster_class(current_setting('test.everyone')::uuid) 
 select is(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'key', 'add:7+8', 'the hardest question is the one most often wrong');
 select is(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'refusals' -> 0 ->> 'reason', 'badge', 'refused saves are listed for the teacher');
 select is(jsonb_array_length(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'topics'), 6, 'there is a line for each topic');
-select is((public.teacher_monster_student(pg_temp.id('d')) -> 'save' ->> 'owned')::integer, 54, 'a student''s game at a glance');
+select is((public.teacher_monster_student(pg_temp.id('d')) -> 'save' ->> 'owned')::integer, 75, 'a student''s game at a glance');
 select is((public.teacher_monster_student(pg_temp.id('c')) ->> 'refused')::integer, 1, '... and how many of their saves were refused lately');
 select pg_temp.reset();
 
@@ -217,7 +217,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@dougla
 select public.teacher_new_season('NEW SEASON');
 select pg_temp.reset();
 select is((select count(*)::integer from public.scored_games where game = 'monsters'), 0, 'all the Maths Monsters points are gone');
-select is((select owned_count from public.monster_saves where player = pg_temp.id('d')), 54, 'the monster book is kept');
+select is((select owned_count from public.monster_saves where player = pg_temp.id('d')), 75, 'the monster book is kept');
 select is((select badges_count from public.monster_saves where player = pg_temp.id('d')), 6, '... and the badges');
 select is((select world ->> 'map' from public.monster_saves where player = pg_temp.id('a')), 'harbour-town', '... and the game');
 select is((select wild_wins_pending from public.monster_saves where player = pg_temp.id('a')), 0, 'a half-made point starts again');
