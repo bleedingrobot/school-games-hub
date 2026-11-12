@@ -433,7 +433,7 @@ function DashboardPage() {
       ) : (
         <>
 
-        {answer && answer.recentTrophies.length > 0 && <RecentTrophies trophies={answer.recentTrophies} />}
+        {answer?.recentTrophies && <RecentTrophies trophies={answer.recentTrophies} />}
 
         <TrainingGateBanner />
 
