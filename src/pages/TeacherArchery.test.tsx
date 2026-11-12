@@ -1,20 +1,25 @@
 import { render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as archery from '../data/archery';
+import * as archeryData from '../data/archery';
+import * as archerySwitch from '../data/archerySwitch';
 import { archeryChallenge } from '../games/archery';
 import { GameSwitchSetting } from '../teacher/Games';
 
 // Archery Challenge on the teacher's Games table: the on/off switch and a one-line summary in its row, and classmate fights,
 // the points and the class's week in its Settings.
-vi.mock('../data/archery', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../data/archery')>()),
+// The switches live in their own small file (dashboard plan D7); the summary in data/archery.
+vi.mock('../data/archerySwitch', () => ({
   fetchArcheryEnabled: vi.fn(),
   saveArcheryEnabled: vi.fn(),
   fetchArcheryDuels: vi.fn(),
   saveArcheryDuels: vi.fn(),
+}));
+vi.mock('../data/archery', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/archery')>()),
   fetchArcherySummary: vi.fn(),
 }));
+const archery = { ...archerySwitch, fetchArcherySummary: archeryData.fetchArcherySummary };
 
 beforeEach(() => {
   vi.mocked(archery.fetchArcheryEnabled).mockReset().mockResolvedValue(false);

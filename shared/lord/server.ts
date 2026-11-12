@@ -40,6 +40,7 @@ import {
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
 import type { FightAction, FightState, Hero, HeroClass, SkillId } from './types';
+import { FINISH_ACTIONS } from './finish';
 
 // ---------- What the server remembers ----------
 
@@ -269,7 +270,7 @@ export type LordAction =
 /** What the browser sends: an action, with an id that makes a repeat count once, and the version it was made from. */
 export type LordRequest = LordAction & { requestId?: string; version?: number };
 
-export const FINISH_ACTIONS = ['fight-finish', 'master-finish', 'dragon-finish'] as const;
+export { FINISH_ACTIONS };
 /** The most actions one fight may carry. */
 export const MAX_FIGHT_ACTIONS = 300;
 

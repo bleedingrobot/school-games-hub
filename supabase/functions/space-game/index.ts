@@ -8137,20 +8137,22 @@ async function countForFocuses(rpc, player, pack, answers, from) {
 	}
 }
 //#endregion
-//#region shared/multiplayer.ts
+//#region shared/gameCode.ts
 /** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
 const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
-/** A random code, e.g. 'KM4TP'. `random` gives numbers from 0 up to (not including) 1. */
-function makeCode(random = Math.random) {
-	let code = "";
-	for (let i = 0; i < 5; i++) code += CODE_ALPHABET[Math.floor(random() * 22)];
-	return code;
-}
 /** Tidies up what a student typed: any case, spaces or dashes are fine. Null if it can't be a code. */
 function normaliseCode(typed) {
 	if (typeof typed !== "string" || typed.length > 20) return null;
 	const code = typed.toUpperCase().replace(/[\s-]/g, "");
 	if (code.length !== 5 || [...code].some((c) => !"CDFGHJKMNPQRTVWXY34679".includes(c))) return null;
+	return code;
+}
+//#endregion
+//#region shared/multiplayer.ts
+/** A random code, e.g. 'KM4TP'. `random` gives numbers from 0 up to (not including) 1. */
+function makeCode(random = Math.random) {
+	let code = "";
+	for (let i = 0; i < 5; i++) code += CODE_ALPHABET[Math.floor(random() * 22)];
 	return code;
 }
 //#endregion

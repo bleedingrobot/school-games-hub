@@ -1,5 +1,5 @@
 import { GRAND_ISLE, TURNS_PER_DAY } from '../../../shared/isles/config';
-import { POINTS } from '../../../shared/isles/server';
+import { POINTS } from '../../../shared/isles/points';
 import { fetchIslesEnabled, saveIslesSetting } from '../../data/isles';
 import { useSetting } from '../../teacher/useSetting';
 

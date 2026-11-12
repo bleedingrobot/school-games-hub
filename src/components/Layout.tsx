@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -66,7 +67,9 @@ function ThemedLayout() {
       <main id="main" tabIndex={-1}>
         {/* A new page starts with a clean slate, so one broken page doesn't stay broken after you leave it. */}
         <CrashScreen key={pathname}>
-          <Outlet />
+          <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+            <Outlet />
+          </Suspense>
         </CrashScreen>
       </main>
     </div>

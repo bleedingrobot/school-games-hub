@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchArcheryEnabled } from '../../data/archery';
+import { fetchArcheryEnabled } from '../../data/archerySwitch';
 
 /**
  * Is Archery Challenge in the hub? On since the merge to main (James, 22 Oct 2026: going live without Stage 8).

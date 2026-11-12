@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { saveArcheryEnabled } from '../../data/archery';
+import { saveArcheryEnabled } from '../../data/archerySwitch';
 import type { GameDefinition } from '../types';
 import { useArcheryEnabled } from './switch';
 import { ARCHERY_ABOUT, useArcheryClassSwitch, useArcherySummary } from './teacher';

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,8 +48,9 @@ function auth(avatar: object = {}, extra: Partial<AuthState> = {}): AuthState {
   };
 }
 
-function renderAt(path: string, state: AuthState) {
-  return render(
+async function renderAt(path: string, state: AuthState) {
+  // Every page but home loads when opened (dashboard plan D7): let the lazy page arrive before looking.
+  const view = render(
     <SoundProvider>
       <AuthContext.Provider value={state}>
         <MemoryRouter initialEntries={[path]}>
@@ -58,6 +59,8 @@ function renderAt(path: string, state: AuthState) {
       </AuthContext.Provider>
     </SoundProvider>,
   );
+  await waitFor(() => expect(document.querySelector('[data-page-loading]')).toBeNull(), { timeout: 10_000 });
+  return view;
 }
 
 const fold = (name: RegExp) => screen.getByRole('button', { name });
@@ -70,7 +73,7 @@ describe('my profile', () => {
   it('opens on the pupil with every fold closed, and signs out', async () => {
     const user = userEvent.setup();
     const state = auth();
-    renderAt('/profile', state);
+    await renderAt('/profile', state);
     expect(screen.getByRole('heading', { name: 'Brave Kiwi 7' })).toBeInTheDocument();
     for (const name of [/My trophies/, /My achievements/, /My stats/, /Page theme/]) {
       expect(fold(name)).toHaveAttribute('aria-expanded', 'false');
@@ -85,7 +88,7 @@ describe('my profile', () => {
 
   it('shows what is earned, the three nearest achievements, and a game\'s full list on request', async () => {
     const user = userEvent.setup();
-    renderAt('/profile', auth());
+    await renderAt('/profile', auth());
     await user.click(fold(/My achievements/));
     expect(await within(fold(/My achievements/)).findByText('1 of 6')).toBeInTheDocument();
     const earned = screen.getByRole('heading', { name: 'Earned' }).parentElement!;
@@ -103,7 +106,7 @@ describe('my profile', () => {
   it('saves a new look together with the theme, and a new theme together with the look', async () => {
     const user = userEvent.setup();
     const state = auth({ kind: 'cat', theme: 'menu' });
-    renderAt('/profile', state);
+    await renderAt('/profile', state);
     await user.click(screen.getByRole('button', { name: /Change my look/ }));
     expect(screen.getByText('Build your avatar')).toBeInTheDocument();
     const save = screen.getByRole('button', { name: 'Save' });
@@ -124,14 +127,14 @@ describe('my profile', () => {
   it('nudges a pupil with no avatar to make one, and a link to #stats opens My stats', async () => {
     const user = userEvent.setup();
     for (const avatar of [{}, { theme: 'menu' }]) {
-      const { unmount } = renderAt('/profile', auth(avatar));
+      const { unmount } = await renderAt('/profile', auth(avatar));
       expect(screen.getByText(/You haven’t made your avatar yet/)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Change my look/ })).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: /Make your avatar/ }));
       expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
       unmount();
     }
-    renderAt('/profile#stats', auth());
+    await renderAt('/profile#stats', auth());
     expect(fold(/My stats/)).toHaveAttribute('aria-expanded', 'true');
     expect(await screen.findByText(/Level 2/)).toBeInTheDocument();
   });

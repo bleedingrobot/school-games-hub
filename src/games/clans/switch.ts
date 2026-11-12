@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchClansEnabled } from '../../data/clans';
+import { fetchClansEnabled } from '../../data/clansSwitch';
 import { CLAN_QUEST_ON } from '../registry';
 
 /**

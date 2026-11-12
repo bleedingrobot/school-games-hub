@@ -9107,6 +9107,15 @@ function settleRace(challenger, defender, result) {
 	};
 }
 //#endregion
+//#region shared/isles/points.ts
+/** Points for Sky Isles. Its own file so the teacher card can show them without the whole server (dashboard plan D7). */
+const POINTS = {
+	turn: 1,
+	raceWon: 2,
+	grandIsle: 10,
+	lighthouseStage: 5
+};
+//#endregion
 //#region shared/isles/server.ts
 const ACTIONS = [
 	"load",
@@ -9123,13 +9132,6 @@ const ACTIONS = [
 	"name",
 	"hall"
 ];
-/** Points (docs/ISLES-PLAN.md, section 6.5). The hub caps points at 40 a day across every game. */
-const POINTS = {
-	turn: 1,
-	raceWon: 2,
-	grandIsle: 10,
-	lighthouseStage: 5
-};
 /** The longest an answer is said to have taken, for the maths records. */
 const MAX_ANSWER_MS = 12e4;
 const MAX_ACTIONS = 40;

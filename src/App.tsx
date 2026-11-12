@@ -5,38 +5,47 @@ import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
 import { CLAN_QUEST_ON, DRAGON_MATHS_ON, GAMES, POWER_CLASH_ON } from './games/registry';
 import { Dashboard } from './pages/Dashboard';
-import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
-import { HowPoints } from './pages/HowPoints';
-import { Leaderboard } from './pages/Leaderboard';
-import { Lobby } from './pages/Lobby';
 import { NotFound } from './pages/NotFound';
-import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
-import { BadgeSignIn } from './pages/BadgeSignIn';
-import { SpaceGamePage } from './pages/SpaceGamePage';
-import { CardGamePage } from './pages/CardGamePage';
-import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
 import { dragonMaths } from './games/lord';
-import { ClassWarp } from './pages/ClassWarp';
-import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
-import { TeacherStudents } from './teacher/Students';
-import { StudentPage } from './teacher/StudentPage';
-import { BadgeSheet } from './teacher/BadgeSheet';
-import { HardestQuestions } from './teacher/Hardest'; // Today shows its top three, so it's in the teacher bundle anyway
-import { TeacherGames } from './teacher/Games';
-import { AdminClasses, AdminDefaults, AdminOverview, AdminStudents, AdminTeachers } from './teacher/Admin';
-import { AdminYear } from './teacher/AdminYear';
-import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
-import { Today } from './teacher/Today';
 import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
 import { GameGate } from './training/TrainFirst';
 import { NonMathsGate } from './components/NonMathsGate';
 
+// Every page but the home page, the games and sign-in loads when it is opened, so the home page downloads less (dashboard
+// plan D7). Layout and the teacher area wait for them with a Loading line under their own header.
+const FriendGamePage = lazy(() => import('./pages/FriendGamePage').then((m) => ({ default: m.FriendGamePage })));
+const HowPoints = lazy(() => import('./pages/HowPoints').then((m) => ({ default: m.HowPoints })));
+const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
+const Lobby = lazy(() => import('./pages/Lobby').then((m) => ({ default: m.Lobby })));
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })));
+const BadgeSignIn = lazy(() => import('./pages/BadgeSignIn').then((m) => ({ default: m.BadgeSignIn })));
+const SpaceGamePage = lazy(() => import('./pages/SpaceGamePage').then((m) => ({ default: m.SpaceGamePage })));
+const CardGamePage = lazy(() => import('./pages/CardGamePage').then((m) => ({ default: m.CardGamePage })));
+const PowerGamePage = lazy(() => import('./pages/PowerGamePage').then((m) => ({ default: m.PowerGamePage })));
+const ClassWarp = lazy(() => import('./pages/ClassWarp').then((m) => ({ default: m.ClassWarp })));
+const ClassSetup = lazy(() => import('./pages/MyClasses').then((m) => ({ default: m.ClassSetup })));
+const TeacherStudents = lazy(() => import('./teacher/Students').then((m) => ({ default: m.TeacherStudents })));
+const StudentPage = lazy(() => import('./teacher/StudentPage').then((m) => ({ default: m.StudentPage })));
+const BadgeSheet = lazy(() => import('./teacher/BadgeSheet').then((m) => ({ default: m.BadgeSheet })));
+const HardestQuestions = lazy(() => import('./teacher/Hardest').then((m) => ({ default: m.HardestQuestions })));
+const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
+const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
+const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
+const AdminClasses = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminClasses })));
+const AdminDefaults = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminDefaults })));
+const AdminOverview = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminOverview })));
+const AdminStudents = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminStudents })));
+const AdminTeachers = lazy(() => import('./teacher/Admin').then((m) => ({ default: m.AdminTeachers })));
+const TeacherAdmin = lazy(() => import('./teacher/TeacherShell').then((m) => ({ default: m.TeacherAdmin })));
+const TeacherEntry = lazy(() => import('./teacher/TeacherShell').then((m) => ({ default: m.TeacherEntry })));
+const TeacherMaths = lazy(() => import('./teacher/TeacherShell').then((m) => ({ default: m.TeacherMaths })));
+const TeacherShell = lazy(() => import('./teacher/TeacherShell').then((m) => ({ default: m.TeacherShell })));
 // Training has its own screens and styles, so it loads only when someone opens it.
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 // The maths focus screen brings the whole maths ladder with it, so it loads only when a teacher opens it.

@@ -10551,6 +10551,14 @@ function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
 	};
 }
 //#endregion
+//#region shared/lord/finish.ts
+/** The actions that finish a fight. Its own file so the browser can read it without the whole Dragon Maths server (dashboard plan D7). */
+const FINISH_ACTIONS = [
+	"fight-finish",
+	"master-finish",
+	"dragon-finish"
+];
+//#endregion
 //#region shared/lord/server.ts
 const newStats = () => ({
 	forestWins: 0,
@@ -10580,11 +10588,6 @@ const readExtra = (saved) => ({
 		...saved?.stats
 	}
 });
-const FINISH_ACTIONS = [
-	"fight-finish",
-	"master-finish",
-	"dragon-finish"
-];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS = [
 	"power-strike",
