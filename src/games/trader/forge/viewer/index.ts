@@ -140,7 +140,7 @@ export const createSystemViewer: CreateViewer = async (container, first, options
       const obj = buildSun(sunShown?.kind ?? null, !!sunShown?.built, s, shared.uTime, sphere, null);
       sunP = { key: sunKey, obj };
       scene.add(obj.group);
-      if (sunShown?.built) {
+      if (sunShown) {
         void load(sunArt(sunShown.kind)).then((t) => {
           if (!t || sunP?.obj !== obj) return;
           obj.group.traverse((o) => {

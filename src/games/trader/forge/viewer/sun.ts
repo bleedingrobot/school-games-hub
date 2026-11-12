@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { SunKind } from '../../../../../shared/trader/system';
 import { SUNS } from '../../../../../shared/trader/system';
 import { FINISH, NOISE } from './glsl';
+import { SUN_LOOK } from '../looks';
 import { glowMaterial, hologramMaterial, twinkleMaterial } from './materials';
 import { SUN_SCALE, SUN_SIZE } from './orbits';
 import type { LevelSettings } from './levels';
@@ -166,10 +167,16 @@ export function buildSun(kind: SunKind | null, built: boolean, s: LevelSettings,
     billboards.push(m);
     lights[0].col.setRGB(0.6, 0.65, 0.75);
   } else if (!built) {
-    const holo = new THREE.Mesh(sphere, hologramMaterial(time, 3));
+    const holo = new THREE.Mesh(sphere, hologramMaterial(time, 3, new THREE.Color(SUN_LOOK[kind].colour)));
     disposables.push(holo.material as THREE.Material);
     holo.scale.setScalar(radius);
     group.add(holo);
+    // a soft glow in the sun's own colour, so a planned sun still reads as a star
+    const halo = new THREE.Mesh(quad, glowMaterial(new THREE.Color(SUN_LOOK[kind].colour), 0.35, 3));
+    disposables.push(halo.material as THREE.Material);
+    halo.scale.setScalar(radius * 3);
+    group.add(halo);
+    billboards.push(halo);
     lights[0].col.multiplyScalar(0.6);
   } else if (kind === 'binary') {
     const a = star('binaryA', radius);

@@ -4,6 +4,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import type { Built, PlanetPick, SunKind, SystemDesign } from '../../../../../shared/trader/system';
 import { SUNS } from '../../../../../shared/trader/system';
 import { cloudArt, moonArt, planetArt, ringArt } from '../art';
+import { PLANET_LOOK } from '../looks';
 import type { Baker, PlanetMaps, PlanetMapSpec } from './bake';
 import { KIND_ID } from './bakeShaders';
 import type { LevelSettings } from './levels';
@@ -216,8 +217,9 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
   const bodies: THREE.Mesh[] = [];
   const shardDirs: THREE.Vector3[] = [];
   if (planned) {
-    const holo = hologramMaterial(time, 5);
+    const holo = hologramMaterial(time, 5, new THREE.Color(PLANET_LOOK[p.kind].colour));
     disposables.push(holo);
+    usePaint(planetArt(p.kind, p.surface, s.level), (t) => { holo.uniforms.uMap.value = t; holo.uniforms.uPainted.value = 1; });
     const m = new THREE.Mesh(geo, holo);
     m.scale.setScalar(shapeScale);
     spin.add(m);
@@ -295,6 +297,7 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
     disposables.push(rg);
     if (isPlan(p.ring, planned)) {
       const holo = hologramMaterial(time, 2);
+      holo.uniforms.uOpacity.value = 0.45; // a flat ring adds up to a white sheet at full strength
       disposables.push(holo);
       ringMesh = new THREE.Mesh(rg, holo);
     } else {
@@ -328,8 +331,9 @@ export function buildPlanet(p: PlanetPick, slot: number, ctx: Ctx): PlanetObject
     let mm: THREE.ShaderMaterial | undefined;
     let mmaps: PlanetMaps | undefined;
     if (isPlan(m, planned)) {
-      const holo = hologramMaterial(time, 4);
+      const holo = hologramMaterial(time, 4, new THREE.Color('#9a968f'));
       disposables.push(holo);
+      usePaint(moonArt(m.look), (t) => { holo.uniforms.uMap.value = t; holo.uniforms.uPainted.value = 1; });
       mesh = new THREE.Mesh(ctx.sphere, holo);
     } else {
       mmaps = baker.planet({ kind: 'moon', surface: m.look, tint: 0, plants: 0, life: 'none', lifeAmt: 0, volcano: 0, terraformer: 0, clouds: 'none', seed: m.look * 5 + 2 });
