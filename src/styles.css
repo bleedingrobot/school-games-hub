@@ -2665,6 +2665,17 @@ main:focus {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 12px;
 }
+/* My games at the top of the home page (dashboard plan D2): smaller cards, no tagline or bot level, so four fit across a laptop. */
+.game-grid--mine {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+}
+.game-grid--mine .game-card__text > p:not(.game-card__note),
+.game-grid--mine .game-card__do > :not(.game-card__go) {
+  display: none;
+}
+.game-group--pinned .season-strips {
+  margin-top: 12px;
+}
 
 /* A game card in the Marble Rush course-card look (docs/HOME-ART-PLAN.md): the painted scene on top, a light panel over
    its bottom edge, and a Play button that carries the same picture. A soft blurred copy of the picture fills the rest. */

@@ -124,10 +124,10 @@ function renderAt(path: string, auth: Partial<AuthState> = {}) {
 }
 
 describe('dashboard', () => {
-  it('shows the student, a Play button and both game cards', () => {
+  it('shows the student and both game cards, with no big Play button (My games instead)', () => {
     renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Play$/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Play$/ })).not.toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Chess' })).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Checkers' })).toBeInTheDocument();
   });

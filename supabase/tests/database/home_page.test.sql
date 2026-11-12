@@ -157,6 +157,7 @@ create function pg_temp.separate() returns jsonb language sql as $$
                   from public.power_games where status in ('waiting', 'playing') order by created_at desc limit 10) t),
     'powerStats', (select to_jsonb(t) from public.my_power_game_stats() t),
     'movesLeft', public.my_moves_left(),
+    'topGames', public.my_top_games(),
     'myClass', public.my_class(),
     'focus', public.my_maths_focus(),
     'ladder', public.my_ladder())

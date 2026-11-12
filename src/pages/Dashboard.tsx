@@ -10,7 +10,7 @@ import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGa
 import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
 import type { SeasonClock } from '../../shared/clans/season';
 import type { HomeLordSeason } from '../../shared/lord/seasonRoad';
-import { fetchMyHomePage, type HomePage } from '../data/homePage';
+import { fetchMyHomePage, type HomePage, type TopGames } from '../data/homePage';
 import type { FriendGame, PlayerCard } from '../data/multiplayer';
 import type { MovesByGame } from '../data/movesLeft';
 import type { MyProgress } from '../data/progress';
@@ -44,6 +44,16 @@ function quickLooksAt(tiles: { id: string; group?: DashboardGroup }[]): number {
   const first = tiles.findIndex((t) => t.group === 'foundational');
   return first >= 0 ? first : tiles.length;
 }
+
+/**
+ * The "My games" row at the top (dashboard plan D2, James 11 Nov 2026): pinned games, then the pupil's most played, in place of the
+ * big Play button and the Pinned section. Set to false to go back to the old Pinned section and the Play button exactly as before
+ * (James asked to keep that way back, 12 Nov 2026).
+ */
+const MY_GAMES_ON = true;
+
+/** How many games My games fills up to with most-played games (pinned games always all show). */
+const MY_GAMES_SHOWN = 4;
 
 /** How many games Recent games shows here (the profile page shows more). */
 const RECENT_SHOWN = 3;
@@ -88,6 +98,7 @@ function useMyGames(me: string | undefined) {
   const [season, setSeason] = useState<SeasonClock | null>(null);
   // The school's Dragon Maths season and the pupil's hero, for its strip.
   const [lordSeason, setLordSeason] = useState<HomeLordSeason | null>(null);
+  const [topGames, setTopGames] = useState<TopGames | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
@@ -101,6 +112,7 @@ function useMyGames(me: string | undefined) {
         setMoves(home.moves);
         setSeason(home.season);
         setLordSeason(home.lordSeason);
+        setTopGames(home.topGames);
         // Space and 101 games with classmates, and Power Clash with a classmate (nothing of it shows before it is switched on).
         setSpaceGoing(home.spaceOpen.filter((g) => g.status === 'playing'));
         setCardGoing(home.cardOpen.filter((g) => g.status === 'playing'));
@@ -121,7 +133,7 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, failed };
+  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, topGames, failed };
 }
 
 /** A "still going" line: what it is, and a Carry on button. */
@@ -170,7 +182,7 @@ function GameGroup({
       <h3 className="game-group__label">
         <button type="button" className="game-group__toggle" aria-expanded={!collapsed} aria-controls={`games-${id}`} onClick={onToggle}>
           <span className="game-group__name">
-            {id === 'pinned' && <span aria-hidden="true">📌 </span>}
+            {id === 'pinned' && <span aria-hidden="true">{title === 'Pinned' ? '📌 ' : '⭐ '}</span>}
             {title}
           </span>
           {collapsed && count !== undefined && count > 0 && (
@@ -220,7 +232,7 @@ function DashboardPage() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';
-  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, failed, ...going } = useMyGames(meId);
+  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, topGames, failed, ...going } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
@@ -317,6 +329,23 @@ function DashboardPage() {
   if (trainingTile) tiles.push(trainingTile);
   // In the order they were pinned (a pinned game the class can't see right now just waits).
   const pinnedTiles = layout.pinned.flatMap((id) => tiles.filter((t) => t.id === id));
+  // My games: every pinned game, then the pupil's most played, up to MY_GAMES_SHOWN. A pupil with neither sees their class's most
+  // played instead. A most-played game also stays in its own section; only pinned games move out of theirs.
+  const fill = (ids: string[]) => ids.flatMap((id) => tiles.filter((t) => t.id === id && !isPinned(t.id)));
+  const played = fill(topGames?.mine ?? []);
+  const popular = pinnedTiles.length === 0 && played.length === 0;
+  const myTiles = [...pinnedTiles, ...(popular ? fill(topGames?.classGames ?? []) : played)].slice(0, Math.max(MY_GAMES_SHOWN, pinnedTiles.length));
+  const topTiles = MY_GAMES_ON ? myTiles : pinnedTiles;
+  // The season timelines sit under My games when Clan Quest or Dragon Maths is in it, otherwise with the complex maths games.
+  const seasonsOnTop = MY_GAMES_ON && topTiles.some((t) => t.id === 'clan-quest' || t.id === 'dragon-maths');
+  const seasonStrips = (seasonShown || lordSeasonShown) && (
+    <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
+      <Suspense fallback={null}>
+        {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
+        {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
+      </Suspense>
+    </div>
+  );
 
   return (
     <div className="dashboard">
@@ -337,17 +366,21 @@ function DashboardPage() {
           )}
         </div>
         <div className="hero__play">
-          <Link className="button button--play hero__go" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>
-            <span aria-hidden="true">▶</span> Play
-          </Link>
+          {!MY_GAMES_ON && (
+            <Link className="button button--play hero__go" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>
+              <span aria-hidden="true">▶</span> Play
+            </Link>
+          )}
           {pupil && (
             <Link className="hero__warp" to="/warp">
               <span aria-hidden="true">🌀</span> Class Warp
             </Link>
           )}
-          <p className="hero__play-hint">
-            {featuredGame.name} vs {featuredLevel.label} bot
-          </p>
+          {!MY_GAMES_ON && (
+            <p className="hero__play-hint">
+              {featuredGame.name} vs {featuredLevel.label} bot
+            </p>
+          )}
         </div>
       </section>
 
@@ -392,9 +425,16 @@ function DashboardPage() {
         <h2 id="games-title" className="sr-only">
           Pick a game
         </h2>
-        {pinnedTiles.length > 0 && (
-          <GameGroup id="pinned" title="Pinned" count={pinnedTiles.length} collapsed={isCollapsed('pinned')} onToggle={() => toggleCollapsed('pinned')}>
-            <div className="game-grid">{pinnedTiles.map((tile) => tile.card)}</div>
+        {topTiles.length > 0 && (
+          <GameGroup
+            id="pinned"
+            title={!MY_GAMES_ON ? 'Pinned' : popular ? 'Popular in your class' : 'My games'}
+            count={topTiles.length}
+            collapsed={isCollapsed('pinned')}
+            onToggle={() => toggleCollapsed('pinned')}
+          >
+            <div className={MY_GAMES_ON ? 'game-grid game-grid--mine' : 'game-grid'}>{topTiles.map((tile) => tile.card)}</div>
+            {seasonsOnTop && seasonStrips}
           </GameGroup>
         )}
         {GAME_GROUPS.map((group) => {
@@ -416,14 +456,7 @@ function DashboardPage() {
                 >
                   {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
                       Dragon Maths', side by side on wide screens. */}
-                  {group.group === 'complex-maths' && (seasonShown || lordSeasonShown) && (
-                    <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
-                      <Suspense fallback={null}>
-                        {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
-                        {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
-                      </Suspense>
-                    </div>
-                  )}
+                  {group.group === 'complex-maths' && !seasonsOnTop && seasonStrips}
                   {groupTiles.length > 0 ? (
                     <div className="game-grid">{groupTiles.map((tile) => tile.card)}</div>
                   ) : (
