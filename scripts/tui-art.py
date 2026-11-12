@@ -63,6 +63,8 @@ FRIENDS = {
 }
 FRIEND_POSES = {
     'sit': 'perched calmly on a short twig, happy, looking ahead with a smile',
+    # 12 Nov 2026: the friend eats the ten on "take the ten away" goes, so it pecks a berry like Tūī's eat pose.
+    'eat': 'perched on a short twig and pecking happily at one round orange berry held in its beak',
     'cheer': 'jumping for joy with both wings up high, a big smile, tiny sparkles around',
 }
 
