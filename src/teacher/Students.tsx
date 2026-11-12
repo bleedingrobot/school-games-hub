@@ -13,6 +13,7 @@ import { whenPlayed } from '../components/MyGames';
 import { fetchClassOverview, type RosterStudent } from '../data/classOverview';
 import { FriendlyError } from '../data/profile';
 import { fetchPeople, type Person } from '../data/teacher';
+import { fetchStudentYears, setStudentYear, TEACHER_YEARS, yearName, type StudentYear } from '../data/years';
 import { ALL_GAMES } from '../games/registry';
 import { share } from '../pages/TeacherQuestionSkips';
 import { isTeacherFocus, skillList, skillShortLabel, type MathsFocus } from '../../shared/maths/focus';
@@ -137,14 +138,18 @@ export function TeacherStudents() {
 
 // ---------------------------------------------------------------- the class roster
 
-type SortKey = 'name' | 'real' | 'active' | 'shown' | 'skipped' | 'ladder' | 'focus';
-const SORT_KEYS: readonly SortKey[] = ['name', 'real', 'active', 'shown', 'skipped', 'ladder', 'focus'];
+type SortKey = 'name' | 'real' | 'year' | 'active' | 'shown' | 'skipped' | 'ladder' | 'focus';
+const SORT_KEYS: readonly SortKey[] = ['name', 'real', 'year', 'active', 'shown', 'skipped', 'ladder', 'focus'];
+type Years = Record<string, StudentYear>;
 
 const skipShare = (s: RosterStudent) => (s.shown > 0 ? s.skipped / s.shown : -1);
 const byText = (a: string, b: string) => a.localeCompare(b, 'en-NZ', { sensitivity: 'base', numeric: true });
 
-function compare(key: SortKey, a: RosterStudent, b: RosterStudent): number {
+function compare(key: SortKey, a: RosterStudent, b: RosterStudent, years: Years): number {
   switch (key) {
+    case 'year':
+      // Not set sorts first, so the gaps are easy to fill.
+      return (years[a.id]?.year ?? -1) - (years[b.id]?.year ?? -1);
     case 'name':
       return byText(a.name, b.name);
     case 'real':
@@ -168,6 +173,8 @@ const firstWay = (key: SortKey): 'ascending' | 'descending' => (['active', 'show
 
 function ClassRoster({ classId, name, hideReal }: { classId: string; name: string; hideReal: boolean }) {
   const [students, setStudents] = useState<RosterStudent[] | null>(null);
+  const [years, setYears] = useState<Years>({});
+  const [yearNote, setYearNote] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [params, setParams] = useSearchParams();
@@ -182,10 +189,33 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
       (list) => current && setStudents(list),
       (error) => current && setFailed(errorText(error)),
     );
+    // The years load on their own: if they fail, the roster still shows (with a note).
+    fetchStudentYears(classId).then(
+      (list) => current && setYears(list),
+      (error) => current && setYearNote(errorText(error)),
+    );
     return () => {
       current = false;
     };
   }, [classId]);
+
+  async function changeYear(student: RosterStudent, value: string) {
+    const level = value === '' ? null : Number(value);
+    const before = years;
+    setYears((y) => {
+      const next = { ...y };
+      if (level === null) delete next[student.id];
+      else next[student.id] = { year: level, by: 'teacher' };
+      return next;
+    });
+    try {
+      await setStudentYear(student.id, level);
+      setYearNote(level === null ? `${student.name} will be asked their year next time they sign in.` : `${student.name} is now in ${yearName(level)}.`);
+    } catch (error) {
+      setYears(before);
+      setYearNote(errorText(error));
+    }
+  }
 
   function sortBy(next: SortKey) {
     const nextWay = next === key ? (way === 'ascending' ? 'descending' : 'ascending') : firstWay(next);
@@ -206,8 +236,8 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
       (s) => s.name.toLowerCase().includes(wanted) || (!hideReal && (s.realName ?? '').toLowerCase().includes(wanted)),
     );
     const sign = way === 'ascending' ? 1 : -1;
-    return list.sort((a, b) => sign * compare(key, a, b) || byText(a.name, b.name));
-  }, [students, wanted, hideReal, key, way]);
+    return list.sort((a, b) => sign * compare(key, a, b, years) || byText(a.name, b.name));
+  }, [students, wanted, hideReal, key, way, years]);
 
   const head = (k: SortKey, label: string) => (
     <th scope="col" aria-sort={k === key ? way : undefined}>
@@ -242,13 +272,18 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
       ) : shown.length === 0 ? (
         <p className="panel__empty">No students match.</p>
       ) : (
-        <div className="roster__scroll">
+        <>
+          <p className="roster__year-hint" role="status">
+            {yearNote ?? 'Each student picks their year the first time they sign in. Change it here if it’s wrong. It moves up by itself each new school year.'}
+          </p>
+          <div className="roster__scroll">
           <table className="stats-table roster">
             <caption className="sr-only">Students in {name}. Questions and skips are for the last 7 days.</caption>
             <thead>
               <tr>
                 {head('name', 'Student')}
                 {!hideReal && head('real', 'Real name')}
+                {head('year', 'Year')}
                 {head('active', 'Last active')}
                 {head('shown', 'Questions (7 days)')}
                 {head('skipped', 'Skipped')}
@@ -267,6 +302,24 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                     {s.hidden && <span className="tag tag--hidden">Hidden</span>}
                   </th>
                   {!hideReal && <td>{s.realName ?? '–'}</td>}
+                  <td>
+                    <select
+                      className="roster__year"
+                      aria-label={`Year for ${s.name}`}
+                      value={years[s.id] ? String(years[s.id].year) : ''}
+                      onChange={(e) => void changeYear(s, e.target.value)}
+                    >
+                      <option value="">Not set</option>
+                      {TEACHER_YEARS.map((y) => (
+                        <option key={y} value={y}>
+                          {yearName(y)}
+                        </option>
+                      ))}
+                      {years[s.id] && !(TEACHER_YEARS as readonly number[]).includes(years[s.id].year) && (
+                        <option value={years[s.id].year}>{yearName(years[s.id].year)}</option>
+                      )}
+                    </select>
+                  </td>
                   <td>{s.lastActive ? whenPlayed(s.lastActive) : 'Not yet'}</td>
                   <td>{s.shown}</td>
                   <td>{share(s.skipped, s.shown)}</td>
@@ -284,7 +337,8 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </section>
   );

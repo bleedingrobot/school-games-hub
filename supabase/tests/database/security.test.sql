@@ -98,7 +98,8 @@ $$, array[
   'teacher_class_badges', 'teacher_renew_badge',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'trophies_of', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
-  'teacher_warp_requests', 'warp_join', 'warp_preview'
+  'teacher_warp_requests', 'warp_join', 'warp_preview',
+  'my_year', 'set_my_year', 'teacher_student_years', 'teacher_set_student_year', 'class_years'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
 select is_empty($$

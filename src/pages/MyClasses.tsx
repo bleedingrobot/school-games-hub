@@ -35,6 +35,7 @@ import {
   type WarpRequest,
 } from '../data/classes';
 import { FriendlyError } from '../data/profile';
+import { fetchClassYears, yearsText, type ClassYears } from '../data/years';
 import { prettyCode } from '../../shared/multiplayer';
 import { RecentChanges } from '../teacher/RecentChanges';
 import { useTeacherClass } from '../teacher/TeacherClass';
@@ -98,6 +99,8 @@ export function MyClasses({ onChanged }: { onChanged?: () => void } = {}) {
 
 function MyClassesView({ me, onChanged }: { me: string; onChanged?: () => void }) {
   const [classes, setClasses] = useState<ClassSummary[] | null>(null);
+  // The years of each class's pupils (they pick their own; data/years.ts). Just a label: missing is fine.
+  const [years, setYears] = useState<Record<string, ClassYears>>({});
   const [school, setSchool] = useState<SchoolInfo | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -107,6 +110,7 @@ function MyClassesView({ me, onChanged }: { me: string; onChanged?: () => void }
     try {
       const list = await fetchClasses(showArchived);
       setClasses(list);
+      fetchClassYears().then(setYears, () => undefined);
       setFailed(null);
       // Keep the class that was open; otherwise open the first one this teacher teaches.
       setOpen((current) => (current && list.some((c) => c.id === current) ? current : (list.find((c) => c.teaching)?.id ?? list[0]?.id ?? null)));
@@ -177,7 +181,7 @@ function MyClassesView({ me, onChanged }: { me: string; onChanged?: () => void }
                     {c.waiting > 0 && <span className="tag classes__waiting-tag">{c.waiting} waiting</span>}
                     <span className="people-list__real">
                       {c.school_year}
-                      {c.year_level !== null && ` · Year ${c.year_level}`}
+                      {yearsText(years[c.id]) && ` · ${yearsText(years[c.id])}`}
                     </span>
                   </span>
                   <span className="people-list__games">
@@ -303,14 +307,13 @@ function MakeClass({ onMade }: { onMade: (id: string) => void }) {
   const thisYear = new Date().getFullYear();
   const [name, setName] = useState('');
   const [year, setYear] = useState(thisYear);
-  const [level, setLevel] = useState('');
   const [status, setStatus] = useState<string | null>(null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setStatus('Saving…');
     try {
-      const id = await createClass(name.trim(), year, level === '' ? null : Number(level));
+      const id = await createClass(name.trim(), year, null);
       setName('');
       setStatus('Class made. Its code is below, ready to share.');
       onMade(id);
@@ -335,17 +338,6 @@ function MakeClass({ onMade }: { onMade: (id: string) => void }) {
             {[thisYear - 1, thisYear, thisYear + 1].map((y) => (
               <option key={y} value={y}>
                 {y}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="teacher__type">
-          <span>Year level (optional)</span>
-          <select value={level} onChange={(e) => setLevel(e.target.value)}>
-            <option value="">Not set</option>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((l) => (
-              <option key={l} value={l}>
-                Year {l}
               </option>
             ))}
           </select>
@@ -388,7 +380,6 @@ function ClassPanel({
   const [moveTo, setMoveTo] = useState<Record<string, string>>({});
   const [confirming, setConfirming] = useState<'reset' | 'archive' | `reset-group:${string}` | `delete-group:${string}` | null>(null);
   const [rename, setRename] = useState<string | null>(null);
-  const [level, setLevel] = useState<string | null>(null);
   const [newGroup, setNewGroup] = useState('');
   const [groupNames, setGroupNames] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
@@ -457,7 +448,6 @@ function ClassPanel({
   const editable = !detail.archived && (summary.teaching || isAdmin);
 
   const nameNow = rename ?? detail.name;
-  const levelNow = level ?? (detail.yearLevel === null ? '' : String(detail.yearLevel));
 
   return (
     <div className="class-panel">
@@ -470,10 +460,10 @@ function ClassPanel({
               e.preventDefault();
               const name = nameNow.trim();
               void act(async () => {
-                await updateClass(id, name, detail.schoolYear, levelNow === '' ? null : Number(levelNow));
+                // The old class year level is kept as it was: pupils' own years replace it (data/years.ts).
+                await updateClass(id, name, detail.schoolYear, detail.yearLevel);
                 setRename(null);
-                setLevel(null);
-                return `Saved. The class is called ${name}${levelNow === '' ? '' : `, Year ${levelNow}`}.`;
+                return `Saved. The class is called ${name}.`;
               });
             }}
           >
@@ -481,28 +471,17 @@ function ClassPanel({
               <span>Name</span>
               <input value={nameNow} onChange={(e) => setRename(e.target.value)} maxLength={30} />
             </label>
-            <label className="teacher__type">
-              <span>Year level</span>
-              <select value={levelNow} onChange={(e) => setLevel(e.target.value)}>
-                <option value="">Not set</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((l) => (
-                  <option key={l} value={l}>
-                    Year {l}
-                  </option>
-                ))}
-              </select>
-            </label>
             <button
               type="submit"
               className="button button--light-outline"
-              disabled={nameNow.trim() === '' || (nameNow.trim() === detail.name && levelNow === (detail.yearLevel === null ? '' : String(detail.yearLevel)))}
+              disabled={nameNow.trim() === '' || nameNow.trim() === detail.name}
             >
               Save
             </button>
           </form>
           <p className="class-panel__hint">
-            Your students see this name after they type the class code, so make it one they will recognise. The year level is just a label for you:
-            students never see it, and it doesn&rsquo;t change the maths.{' '}
+            Your students see this name after they type the class code, so make it one they will recognise. Each student picks their own year the
+            first time they sign in; change it on the <Link to={`/teacher/${id}/students`}>Students tab</Link>.{' '}
             <Link to={`/teacher/${id}/maths`}>🎯 Choose the maths for this class</Link> ·{' '}
             <Link to={`/teacher/${id}/maths/skills`}>🗺️ See the skill map</Link>
           </p>

@@ -16,6 +16,8 @@ const data = vi.hoisted(() => ({
   fetchPersonDetail: vi.fn(),
   deletePerson: vi.fn(),
   fetchStudentLadder: vi.fn(),
+  fetchStudentYears: vi.fn(),
+  setStudentYear: vi.fn(),
   /** Each game's own student panel, and its one-line summary (see the registry mock below). */
   panelShown: vi.fn(),
   summary: vi.fn(),
@@ -36,6 +38,11 @@ vi.mock('../data/teacher', async (original) => ({
   fetchPeople: data.fetchPeople,
   fetchPersonDetail: data.fetchPersonDetail,
   deletePerson: data.deletePerson,
+}));
+vi.mock('../data/years', async (original) => ({
+  ...(await original<typeof import('../data/years')>()),
+  fetchStudentYears: data.fetchStudentYears,
+  setStudentYear: data.setStudentYear,
 }));
 vi.mock('../data/skillMap', async (original) => ({
   ...(await original<typeof import('../data/skillMap')>()),
@@ -124,8 +131,14 @@ const address = () => screen.getByRole('status', { name: 'address' }).textConten
 const roster = (name = 'Room 12') => screen.findByRole('table', { name: new RegExp(`^Students in ${name}`) });
 /** The student names down the roster, in order. */
 const order = (table: HTMLElement) => within(table).getAllByRole('rowheader').map((h) => h.textContent?.replace('Hidden', ''));
+// A Year cell reads as the picked year, not every option in its list.
 const cells = (table: HTMLElement, name: string) =>
-  within(within(table).getByRole('row', { name: new RegExp(name) })).getAllByRole('cell').map((c) => c.textContent);
+  within(within(table).getByRole('row', { name: new RegExp(name) }))
+    .getAllByRole('cell')
+    .map((c) => {
+      const pick = c.querySelector('select');
+      return pick ? pick.selectedOptions[0]?.textContent : c.textContent;
+    });
 
 beforeEach(async () => {
   sessionStorage.clear();
@@ -138,13 +151,15 @@ beforeEach(async () => {
   data.fetchPersonDetail.mockResolvedValue({ points: 50, level: 2, games: [], recent: [] });
   data.deletePerson.mockResolvedValue(undefined);
   data.moveStudent.mockResolvedValue(undefined);
+  data.fetchStudentYears.mockResolvedValue({ s1: { year: 4, by: 'pupil' } });
+  data.setStudentYear.mockResolvedValue(undefined);
   data.fetchStudentLadder.mockResolvedValue({ on: true, placed: 'done', placement: 'tables-6-9', furthest: 'tables-6-9' });
   // Maths Monsters hasn't been played; every other game has.
   data.summary.mockImplementation(async (game: string) => (game === 'monsters' ? null : `${game} so far`));
 });
 
 describe('the class roster', () => {
-  it('shows only the class’s students, with their questions, skips, ladder and focus', async () => {
+  it('shows only the class’s students, with their year, questions, skips, ladder and focus, and changes a year', async () => {
     show('/teacher/c12/students');
     const table = await roster();
     expect(data.fetchClassOverview).toHaveBeenCalledWith('c12');
@@ -152,16 +167,24 @@ describe('the class roster', () => {
     expect(order(table)).toEqual(['Brave Kiwi 7', 'Calm Fox 9', 'Lucky Tui 12']);
     expect(screen.queryByText('Zippy Meerkat 79')).not.toBeInTheDocument();
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent?.replace(/[▲▼]/g, '').trim())).toEqual([
-      'Student', 'Real name', 'Last active', 'Questions (7 days)', 'Skipped', 'Maths ladder', 'Focus',
+      'Student', 'Real name', 'Year', 'Last active', 'Questions (7 days)', 'Skipped', 'Maths ladder', 'Focus',
     ]);
-    expect(cells(table, 'Brave Kiwi 7')).toEqual(['jane.smith', 'Today', '20', '10%', '×6, ×9', 'Class: Number facts to 10']);
-    expect(cells(table, 'Calm Fox 9')).toEqual(['–', 'Not yet', '5', '100%', 'No warm-up yet', 'None']);
+    expect(cells(table, 'Brave Kiwi 7')).toEqual(['jane.smith', 'Year 4', 'Today', '20', '10%', '×6, ×9', 'Class: Number facts to 10']);
+    expect(cells(table, 'Calm Fox 9')).toEqual(['–', 'Not set', 'Not yet', '5', '100%', 'No warm-up yet', 'None']);
     const tui = cells(table, 'Lucky Tui 12');
-    expect(tui.slice(2)).toEqual(['0', '–', 'Warm-up skipped', 'Own: Number facts to 10']);
+    expect(tui.slice(3)).toEqual(['0', '–', 'Warm-up skipped', 'Own: Number facts to 10']);
     expect(within(table).getByRole('row', { name: /Lucky Tui 12/ })).toHaveTextContent('Hidden');
     expect(within(table).getByRole('link', { name: /Brave Kiwi 7/ })).toHaveAttribute('href', '/teacher/c12/students/s1');
     expect(within(table).getByRole('link', { name: '×6, ×9' })).toHaveAttribute('href', '/teacher/c12/maths/skills?pupil=s1');
     expect(screen.getByRole('button', { name: 'Room 12' })).toHaveAttribute('aria-pressed', 'true');
+    // The teacher changes or clears a student's year.
+    const user = userEvent.setup();
+    await user.selectOptions(within(table).getByRole('combobox', { name: 'Year for Calm Fox 9' }), '5');
+    expect(data.setStudentYear).toHaveBeenCalledWith('s3', 5);
+    expect(await screen.findByText('Calm Fox 9 is now in Year 5.')).toBeInTheDocument();
+    await user.selectOptions(within(table).getByRole('combobox', { name: 'Year for Brave Kiwi 7' }), '');
+    expect(data.setStudentYear).toHaveBeenCalledWith('s1', null);
+    expect(await screen.findByText('Brave Kiwi 7 will be asked their year next time they sign in.')).toBeInTheDocument();
   });
 
 });
