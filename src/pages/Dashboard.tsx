@@ -295,6 +295,26 @@ function DashboardPage() {
         />
       ),
     });
+  // Training's card, in the same look as the games (dashboard plan D1). It has its own section, but can be pinned like a game.
+  const trainingTile: Tile | null = trainingOn()
+    ? {
+        id: 'training',
+        group: undefined,
+        card: (
+          <ActivityCard
+            key="training"
+            id="training"
+            name="Multiplication and division training"
+            tagline="A few minutes a day to build your facts"
+            to="/training"
+            colours={['#2f6fb5', '#7fc4e8']}
+            pinned={isPinned('training')}
+            onPinChange={() => togglePinned('training')}
+          />
+        ),
+      }
+    : null;
+  if (trainingTile) tiles.push(trainingTile);
   // In the order they were pinned (a pinned game the class can't see right now just waits).
   const pinnedTiles = layout.pinned.flatMap((id) => tiles.filter((t) => t.id === id));
 
@@ -414,17 +434,11 @@ function DashboardPage() {
               {/* Training has a line of its own, under the non-maths games. */}
               {training && (
                 <GameGroup id="training" title="Training" collapsed={isCollapsed('training')} onToggle={() => toggleCollapsed('training')}>
-                  <div className="game-grid">
-                    <Link to="/training" className="link-tile">
-                      <span className="link-tile__emoji" aria-hidden="true">
-                        🧮
-                      </span>
-                      <span>
-                        <strong>Multiplication and division training</strong>
-                        <span>A few minutes a day to build your facts</span>
-                      </span>
-                    </Link>
-                  </div>
+                  {isPinned('training') ? (
+                    <p className="game-group__empty">Pinned to the top.</p>
+                  ) : (
+                    <div className="game-grid">{trainingTile?.card}</div>
+                  )}
                 </GameGroup>
               )}
             </Fragment>
