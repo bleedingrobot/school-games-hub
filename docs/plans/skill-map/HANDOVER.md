@@ -37,7 +37,8 @@ A teacher opens Maths > Skill map on a laptop or iPad and, without scrolling, se
 
 ## Done and live
 
-- K1 (tidy grid): short skill names in `shared/maths/skillNames.ts` (checked in `ladder.test.ts`), sticky header and Pupil/Now on columns, class bars in the header, no footer, compact key, wider page on big screens. PR: see git log "Skill map K1".
+- K1 (tidy grid): short skill names in `shared/maths/skillNames.ts` (checked in `ladder.test.ts`), sticky header and Pupil/Now on columns, class bars in the header, no footer, compact key, wider page on big screens. PR #431.
+- K2 (skills in use) and K3 (side panel): a Show menu (Skills in use, Every skill, one stage; remembered in localStorage `skill-map-show`), `skillsInUse` in `shared/maths/skillMap.ts`, untouched stages fold into one "nobody yet" column, stage bands fold; a cell opens a side panel (bottom sheet under 900px) with Now/Furthest/Warm-up, the facts, a class line and focus links; Focus accepts `?students=a,b`. PR: see git log "Skill map K2 and K3".
 
 ## K1
 

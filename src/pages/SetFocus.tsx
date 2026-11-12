@@ -55,14 +55,15 @@ function SetFocusView() {
       <p className="teacher__classes-link">
         Choose the maths that Gem Keep and Mission Control ask. With no focus, they ask what each student is ready for.
       </p>
-      {current && <ClassFocus key={current.id} summary={current} preset={{ student: params.get('student'), skill: params.get('skill') }} />}
+      {current && <ClassFocus key={current.id} summary={current} preset={{ student: params.get('student'), students: (params.get('students') ?? '').split(',').filter(Boolean), skill: params.get('skill') }} />}
     </div>
   );
 }
 
-/** A skill map link can ask for a student, a skill or both to be ticked already. */
+/** A skill map link can ask for a student (or several), a skill or both to be ticked already. */
 interface Preset {
   student: string | null;
+  students?: string[];
   skill: string | null;
 }
 
@@ -270,11 +271,12 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
 }
 
 function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string; detail: ClassDetail; preset: Preset; onSet: (message: string) => void; onError: (error: unknown) => void }) {
-  const presetStudent = detail.members.find((m) => m.id === preset.student)?.id ?? null;
+  const wanted = new Set([preset.student, ...(preset.students ?? [])]);
+  const presetStudents = detail.members.filter((m) => wanted.has(m.id)).map((m) => m.id);
   const presetSkill = LADDER.find((l) => l.built && l.id === preset.skill)?.id ?? null;
-  const [scope, setScope] = useState<FocusScope>(presetStudent ? 'student' : 'class');
+  const [scope, setScope] = useState<FocusScope>(presetStudents.length ? 'student' : 'class');
   const [group, setGroup] = useState('');
-  const [students, setStudents] = useState<Set<string>>(new Set(presetStudent ? [presetStudent] : []));
+  const [students, setStudents] = useState<Set<string>>(new Set(presetStudents));
   const [skills, setSkills] = useState<string[]>(presetSkill ? [presetSkill] : []);
   const [onlyThese, setOnlyThese] = useState(false);
   const [length, setLength] = useState<FocusLength>('friday');

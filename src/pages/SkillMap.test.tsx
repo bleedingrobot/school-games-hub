@@ -123,22 +123,37 @@ beforeEach(() => {
 });
 
 describe('the skill map', () => {
-  it('is for teachers, and fits a class on a screen: short skill names with class counts, one line per pupil', async () => {
+  it('is for teachers; shows the skills in use on one line per pupil; a cell opens a side panel with focus links', async () => {
     const first = show(student);
     expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).not.toHaveBeenCalled();
     first.unmount();
+    localStorage.clear();
 
     show(teacher, '/teacher/c12/maths/skills');
-    await userEvent.click(await screen.findByRole('button', { name: /Open every stage/ }, { timeout: 5000 }));
-    const grid = screen.getByRole('table');
+    const grid = await screen.findByRole('table', {}, { timeout: 5000 });
+    // Skills in use: Ana's skills and the next one, short names with class counts; untouched stages fold into one column.
     const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });
     expect(head).toHaveAttribute('title', 'Doubles and halves to 10');
     expect(head).toHaveTextContent('Doubles, halves 10');
     expect(head).toHaveTextContent('1 of 2');
+    expect(within(grid).queryByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeNull();
+    expect(within(grid).getByRole('button', { name: /Rounding.*nobody yet/ })).toBeInTheDocument();
     expect(within(grid).queryByRole('link', { name: /Set focus/ })).toBeNull();
-    const row = within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ });
-    expect(row).toHaveTextContent('ana');
+    expect(within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ })).toHaveTextContent('ana');
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Show' }), 'all');
+    expect(within(screen.getByRole('table')).getByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeInTheDocument();
+    expect(localStorage.getItem('skill-map-show')).toBe('all');
+
+    const cell = screen.getByRole('button', { name: /Speedy Otter 27, Doubles and halves to 10: Fluent/ });
+    await userEvent.click(cell);
+    const panel = screen.getByRole('dialog', { name: /Speedy Otter 27: Doubles and halves to 10/ });
+    expect(within(panel).getByRole('link', { name: /Set a focus for Speedy/ })).toHaveAttribute(
+      'href',
+      '/teacher/c12/maths?student=s1&skill=dbl-half-10',
+    );
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
-

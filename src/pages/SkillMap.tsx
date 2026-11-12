@@ -1,8 +1,9 @@
 /**
- * The teacher's skill map: one row for each student in a class, one column for each stage of the maths ladder, each cell coloured
- * (and lettered) from not started to fluent. A stage opens into its skills; a skill opens into the facts or question types
- * behind it, or for the times tables the 12 × 12 grid. Every colour comes from the shared maths the games use
- * (shared/maths/skillMap.ts), and the database only hands over the records of classes this teacher teaches.
+ * The teacher's skill map: one row for each pupil in a class, one column for each ladder skill the class is using (or every
+ * skill, or one stage), each cell coloured (and lettered) from not started to fluent. Tapping a cell opens a side panel with the
+ * facts or question types behind it (for the times tables, the 12 × 12 grid) and focus buttons. Every colour comes from the
+ * shared maths the games use (shared/maths/skillMap.ts), and the database only hands over the records of classes this teacher
+ * teaches.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -11,14 +12,14 @@ import { FriendlyError } from '../data/profile';
 import { fetchClassMap, type ClassMap, type MapStudent } from '../data/skillMap';
 import { mastery, wrongNote, type FactStats } from '../../shared/maths/leitner';
 import { parseFactKey } from '../../shared/maths/facts';
-import { packIdOfKey, type LadderStage } from '../../shared/maths/ladder';
+import { packIdOfKey, type LadderSkill, type LadderStage } from '../../shared/maths/ladder';
 import { skillTinyLabel } from '../../shared/maths/skillNames';
 import {
   cellFor,
   classCounts,
   LEVELS,
+  skillsInUse,
   STAGES,
-  stageOfSkill,
   stageSkills,
   studentMap,
   type CellLevel,
@@ -55,9 +56,7 @@ function SkillMapView() {
 
   return (
     <div className="classes skill-map-page">
-      <p className="teacher__classes-link">
-        Where each pupil is on the maths ladder. Tap a cell to see the facts behind it.
-      </p>
+      <p className="teacher__classes-link">Where each pupil is on the maths ladder. Tap a cell to see the facts behind it.</p>
       {current && <ClassMapPanel key={current.id} classId={current.id} name={current.name} />}
     </div>
   );
@@ -70,12 +69,56 @@ interface Picked {
   skill: string;
 }
 
+/** Which skills are columns: the ones the class is using (the default), every skill, or one stage. */
+type Show = 'in-use' | 'all' | LadderStage;
+const SHOW_KEY = 'skill-map-show';
+const isShow = (v: unknown): v is Show => v === 'in-use' || v === 'all' || STAGES.some((s) => s.id === v);
+function readShow(): Show {
+  try {
+    const v = localStorage.getItem(SHOW_KEY);
+    return isShow(v) ? v : 'in-use';
+  } catch {
+    return 'in-use';
+  }
+}
+function saveShow(show: Show) {
+  try {
+    localStorage.setItem(SHOW_KEY, show);
+  } catch {
+    // Remembering is only a convenience.
+  }
+}
+
+/** One stage band in the table: its visible skills, or folded into one summary column. */
+interface Band {
+  stage: LadderStage;
+  label: string;
+  skills: LadderSkill[];
+  folded: boolean;
+}
+
+/** The bands for what is shown, and the stages left out because nobody has started them (one hatched column). */
+function bandsFor(show: Show, inUse: ReadonlySet<string>, folded: ReadonlySet<LadderStage>): { bands: Band[]; rest: string[] } {
+  const bands: Band[] = [];
+  const rest: string[] = [];
+  for (const stage of STAGES) {
+    if (show !== 'in-use' && show !== 'all' && show !== stage.id) continue;
+    const skills = stageSkills(stage.id).filter((s) => show !== 'in-use' || inUse.has(s.id));
+    if (skills.length === 0) rest.push(stage.label);
+    else bands.push({ stage: stage.id, label: stage.label, skills, folded: folded.has(stage.id) });
+  }
+  return { bands, rest };
+}
+
+const cellKey = (student: string, skill: string) => `${student}:${skill}`;
+
 function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   const [data, setData] = useState<ClassMap | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
-  const [open, setOpen] = useState<Set<LadderStage>>(new Set());
+  const [show, setShowState] = useState<Show>(readShow);
+  const [folded, setFolded] = useState<Set<LadderStage>>(new Set());
   const [picked, setPicked] = useState<Picked | null>(null);
-  const detailHeading = useRef<HTMLHeadingElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let current = true;
@@ -100,20 +143,30 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
       ),
     [data],
   );
+  const allMaps = useMemo(() => [...maps.values()], [maps]);
+  const inUse = useMemo(() => skillsInUse(allMaps), [allMaps]);
 
-  useEffect(() => {
-    if (picked) detailHeading.current?.focus();
-  }, [picked]);
+  function setShow(next: Show) {
+    setShowState(next);
+    saveShow(next);
+    setPicked(null);
+  }
 
   function toggle(stage: LadderStage) {
-    setOpen((now) => {
+    setFolded((now) => {
       const next = new Set(now);
       if (next.has(stage)) next.delete(stage);
       else next.add(stage);
       return next;
     });
-    // A skill that is no longer on screen can't stay picked.
-    setPicked((p) => (p && stageOfSkill(p.skill) === stage ? null : p));
+    setPicked(null);
+  }
+
+  /** Closing the panel puts the keyboard back on the cell it came from. */
+  function closeDetail() {
+    const from = picked;
+    setPicked(null);
+    if (from) requestAnimationFrame(() => scroller.current?.querySelector<HTMLButtonElement>(`[data-cell="${cellKey(from.student, from.skill)}"] button`)?.focus());
   }
 
   if (failed) {
@@ -136,85 +189,107 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
   }
 
   const students = data.students;
-  const allOpen = open.size === STAGES.length;
   const pickedStudent = picked ? students.find((s) => s.id === picked.student) : undefined;
+  const { bands, rest } = bandsFor(show, inUse, folded);
+  const nothingYet = show === 'in-use' && inUse.size === 0;
 
   return (
-    <>
-      <section className="panel" aria-labelledby="map-title">
-        <h2 id="map-title" className="panel__title">
-          {name}
-          <span className="panel__count">
-            {students.length} student{students.length === 1 ? '' : 's'}
-          </span>
-        </h2>
-        {!data.auto && (
-          <p className="class-panel__hint" role="note">
-            Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student
-            has practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
-          </p>
-        )}
-        {students.length === 0 ? (
-          <p className="panel__empty">
-            No students in this class yet. <Link to={`/teacher/${classId}/setup`}>Add some on Class set-up.</Link>
-          </p>
-        ) : (
-          <>
-            <div className="skill-map__tools">
-              <button
-                type="button"
-                className="button button--light-outline skill-map__all"
-                onClick={() => setOpen(allOpen ? new Set() : new Set(STAGES.map((s) => s.id)))}
-              >
-                {allOpen ? 'Close every stage' : 'Open every stage'}
-              </button>
-              <ul className="skill-map__legend" aria-label="Key">
-                {(['not-started', 'learning', 'secure', 'fluent'] as CellLevel[]).map((level) => (
-                  <li key={level}>
-                    <span className="skill-map__swatch" data-level={level} aria-hidden="true">
-                      {LEVELS[level].mark}
-                    </span>
-                    <span title={LEVELS[level].about}>
-                      {LEVELS[level].label}
-                      <span className="sr-only">: {LEVELS[level].about}</span>
-                    </span>
-                  </li>
-                ))}
-                <li>
-                  <span className="skill-map__swatch skill-map__swatch--now" aria-hidden="true" />
-                  <span>Now (where auto is)</span>
-                </li>
-              </ul>
-            </div>
-            <div className="skill-map__scroll" role="region" aria-label={`Skill map for ${name}`} tabIndex={0}>
-              <table className="skill-map">
-                <caption className="sr-only">
-                  Each row is a student. Each column is a stage of the maths ladder; open a stage to see its skills.
-                </caption>
-                <MapHead open={open} onToggle={toggle} maps={students.map((s) => maps.get(s.id)!)} />
-                <tbody>
-                  {students.map((s) => (
-                    <MapRow key={s.id} student={s} map={maps.get(s.id)!} open={open} picked={picked} onPick={setPicked} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </section>
-
-      {picked && pickedStudent && (
-        <CellDetail
-          key={`${picked.student}-${picked.skill}`}
-          student={pickedStudent}
-          map={maps.get(pickedStudent.id)!}
-          skillId={picked.skill}
-          classId={classId}
-          heading={detailHeading}
-          onClose={() => setPicked(null)}
-        />
+    <section className="panel" aria-labelledby="map-title">
+      <h2 id="map-title" className="panel__title">
+        {name}
+        <span className="panel__count">
+          {students.length} student{students.length === 1 ? '' : 's'}
+        </span>
+      </h2>
+      {!data.auto && (
+        <p className="class-panel__hint" role="note">
+          Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student has
+          practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
+        </p>
       )}
-    </>
+      {students.length === 0 ? (
+        <p className="panel__empty">
+          No students in this class yet. <Link to={`/teacher/${classId}/setup`}>Add some on Class set-up.</Link>
+        </p>
+      ) : (
+        <>
+          <div className="skill-map__tools">
+            <label className="skill-map__show">
+              Show{' '}
+              <select id="skill-map-show" value={show} onChange={(e) => isShow(e.target.value) && setShow(e.target.value)}>
+                <option value="in-use">Skills in use</option>
+                <option value="all">Every skill</option>
+                {STAGES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Legend />
+          </div>
+          {nothingYet ? (
+            <p className="panel__empty skill-map__nothing">Nobody in {name} has answered ladder maths yet.</p>
+          ) : (
+            <div className={`skill-map__body${picked ? ' skill-map__body--detail' : ''}`}>
+              <div className="skill-map__scroll" role="region" aria-label={`Skill map for ${name}`} tabIndex={0} ref={scroller}>
+                <table className="skill-map">
+                  <caption className="sr-only">Each row is a pupil. Each column is a ladder skill, grouped by stage.</caption>
+                  <MapHead bands={bands} rest={rest} onToggle={toggle} onShowAll={() => setShow('all')} maps={allMaps} />
+                  <tbody>
+                    {students.map((s) => (
+                      <MapRow
+                        key={s.id}
+                        student={s}
+                        map={maps.get(s.id)!}
+                        bands={bands}
+                        rest={rest.length > 0}
+                        picked={picked}
+                        onPick={setPicked}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {picked && pickedStudent && (
+                <CellDetail
+                  key={cellKey(picked.student, picked.skill)}
+                  student={pickedStudent}
+                  map={maps.get(pickedStudent.id)!}
+                  skillId={picked.skill}
+                  classId={classId}
+                  students={students}
+                  maps={maps}
+                  onClose={closeDetail}
+                />
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function Legend() {
+  return (
+    <ul className="skill-map__legend" aria-label="Key">
+      {(['not-started', 'learning', 'secure', 'fluent'] as CellLevel[]).map((level) => (
+        <li key={level}>
+          <span className="skill-map__swatch" data-level={level} aria-hidden="true">
+            {LEVELS[level].mark}
+          </span>
+          <span title={LEVELS[level].about}>
+            {LEVELS[level].label}
+            <span className="sr-only">: {LEVELS[level].about}</span>
+          </span>
+        </li>
+      ))}
+      <li>
+        <span className="skill-map__swatch skill-map__swatch--now" aria-hidden="true" />
+        <span>Now (where auto is)</span>
+      </li>
+    </ul>
   );
 }
 
@@ -234,7 +309,19 @@ function ClassBar({ fluent, secure, learning, total }: { fluent: number; secure:
   );
 }
 
-function MapHead({ open, onToggle, maps }: { open: Set<LadderStage>; onToggle: (stage: LadderStage) => void; maps: StudentMap[] }) {
+function MapHead({
+  bands,
+  rest,
+  onToggle,
+  onShowAll,
+  maps,
+}: {
+  bands: Band[];
+  rest: string[];
+  onToggle: (stage: LadderStage) => void;
+  onShowAll: () => void;
+  maps: StudentMap[];
+}) {
   const total = maps.length;
   return (
     <thead>
@@ -245,23 +332,22 @@ function MapHead({ open, onToggle, maps }: { open: Set<LadderStage>; onToggle: (
         <th scope="col" rowSpan={2} className="skill-map__place">
           Now on
         </th>
-        {STAGES.map((stage) => {
-          const isOpen = open.has(stage.id);
-          const levels = maps.map((m) => m.stages.find((s) => s.stage === stage.id)?.level);
-          const secure = levels.filter(isSecure).length;
+        {bands.map((band) => {
+          const isOpen = !band.folded;
+          const levels = maps.map((m) => m.stages.find((s) => s.stage === band.stage)?.level);
           return (
             <th
-              key={stage.id}
+              key={band.stage}
               scope="col"
               className="skill-map__stage"
-              data-stage={stage.id}
+              data-stage={band.stage}
               rowSpan={isOpen ? 1 : 2}
-              colSpan={isOpen ? stageSkills(stage.id).length : 1}
+              colSpan={isOpen ? band.skills.length : 1}
               data-open={isOpen || undefined}
             >
-              <button type="button" aria-expanded={isOpen} onClick={() => onToggle(stage.id)}>
-                <span aria-hidden="true">{isOpen ? '▾' : '▸'}</span> {stage.label}
-                <span className="sr-only">{isOpen ? ', open. Press to close' : ', closed. Press to open its skills'}</span>
+              <button type="button" aria-expanded={isOpen} onClick={() => onToggle(band.stage)}>
+                <span aria-hidden="true">{isOpen ? '▾' : '▸'}</span> {band.label}
+                <span className="sr-only">{isOpen ? ', open. Press to fold it into one column' : ', folded. Press to open its skills'}</span>
               </button>
               {!isOpen && (
                 <>
@@ -272,34 +358,44 @@ function MapHead({ open, onToggle, maps }: { open: Set<LadderStage>; onToggle: (
                     total={total}
                   />
                   <span className="skill-map__secure">
-                    {secure} of {total}
-                    <span className="sr-only"> students are secure on every skill in {stage.label}</span>
+                    {levels.filter(isSecure).length} of {total}
+                    <span className="sr-only"> students are secure on every skill in {band.label}</span>
                   </span>
                 </>
               )}
             </th>
           );
         })}
+        {rest.length > 0 && (
+          <th scope="col" rowSpan={2} className="skill-map__rest">
+            <button type="button" onClick={onShowAll}>
+              {rest.join(', ')}: nobody yet
+              <span className="sr-only">. Press to show every skill</span>
+            </button>
+          </th>
+        )}
       </tr>
       <tr className="skill-map__names">
-        {STAGES.filter((stage) => open.has(stage.id)).flatMap((stage) =>
-          stageSkills(stage.id).map((skill) => {
-            const counts = classCounts(maps, skill.id);
-            return (
-              <th key={skill.id} scope="col" className="skill-map__skill" data-stage={stage.id} title={skill.label}>
-                <span className="skill-map__skill-name" aria-hidden="true">
-                  {skillTinyLabel(skill.id)}
-                </span>
-                <span className="sr-only">{skill.label}</span>
-                <ClassBar fluent={counts.fluent} secure={counts.secure} learning={counts.learning} total={total} />
-                <span className="skill-map__secure">
-                  {counts.secure + counts.fluent} of {total}
-                  <span className="sr-only"> students are secure on {skill.label}</span>
-                </span>
-              </th>
-            );
-          }),
-        )}
+        {bands
+          .filter((band) => !band.folded)
+          .flatMap((band) =>
+            band.skills.map((skill) => {
+              const counts = classCounts(maps, skill.id);
+              return (
+                <th key={skill.id} scope="col" className="skill-map__skill" data-stage={band.stage} title={skill.label}>
+                  <span className="skill-map__skill-name" aria-hidden="true">
+                    {skillTinyLabel(skill.id)}
+                  </span>
+                  <span className="sr-only">{skill.label}</span>
+                  <ClassBar fluent={counts.fluent} secure={counts.secure} learning={counts.learning} total={total} />
+                  <span className="skill-map__secure">
+                    {counts.secure + counts.fluent} of {total}
+                    <span className="sr-only"> students are secure on {skill.label}</span>
+                  </span>
+                </th>
+              );
+            }),
+          )}
       </tr>
     </thead>
   );
@@ -308,19 +404,22 @@ function MapHead({ open, onToggle, maps }: { open: Set<LadderStage>; onToggle: (
 function MapRow({
   student,
   map,
-  open,
+  bands,
+  rest,
   picked,
   onPick,
 }: {
   student: MapStudent;
   map: StudentMap;
-  open: Set<LadderStage>;
+  bands: Band[];
+  rest: boolean;
   picked: Picked | null;
   onPick: (p: Picked | null) => void;
 }) {
   const started = map.stages.some((s) => s.cells.some((c) => c.level !== 'not-started' && c.level !== 'off'));
+  const isPicked = (skill: string) => picked?.student === student.id && picked.skill === skill;
   return (
-    <tr>
+    <tr data-picked={picked?.student === student.id || undefined}>
       <th scope="row" className="skill-map__who" title={student.realName ? `${student.name} (${student.realName})` : student.name}>
         <span className="skill-map__name">{student.name}</span>
         {student.realName && <span className="skill-map__real">{student.realName}</span>}
@@ -328,39 +427,38 @@ function MapRow({
       <td className="skill-map__place">
         <Place student={student} map={map} started={started} />
       </td>
-      {map.stages.flatMap((stage) =>
-        open.has(stage.stage)
-          ? stage.cells.map((cell) => (
-              <td
-                key={cell.skill.id}
-                className="skill-map__cell"
-                data-level={cell.level}
-                data-here={cell.status === 'current' || undefined}
-                data-picked={picked?.student === student.id && picked.skill === cell.skill.id ? true : undefined}
+      {bands.flatMap((band) => {
+        const stage = map.stages.find((s) => s.stage === band.stage)!;
+        if (band.folded) return [<StageTd key={band.stage} student={student} stage={stage} />];
+        return band.skills.map((skill) => {
+          const cell = cellFor(map, skill.id)!;
+          return (
+            <td
+              key={skill.id}
+              className="skill-map__cell"
+              data-cell={cellKey(student.id, skill.id)}
+              data-level={cell.level}
+              data-here={cell.status === 'current' || undefined}
+              data-picked={isPicked(skill.id) || undefined}
+            >
+              <button
+                type="button"
+                aria-pressed={isPicked(skill.id)}
+                onClick={() => onPick(isPicked(skill.id) ? null : { student: student.id, skill: skill.id })}
+                title={`${student.name}: ${skill.label}: ${levelWords(cell)}`}
               >
-                <button
-                  type="button"
-                  aria-pressed={picked?.student === student.id && picked.skill === cell.skill.id}
-                  onClick={() =>
-                    onPick(
-                      picked?.student === student.id && picked.skill === cell.skill.id
-                        ? null
-                        : { student: student.id, skill: cell.skill.id },
-                    )
-                  }
-                  title={`${student.name}: ${cell.skill.label}: ${levelWords(cell)}`}
-                >
-                  <span aria-hidden="true">{cell.level === 'not-started' ? '·' : LEVELS[cell.level].mark}</span>
-                  <span className="sr-only">
-                    {student.name}, {cell.skill.label}: {levelWords(cell)}
-                    {cell.level !== 'off' && cell.keys > 0 ? `, ${Math.round(cell.share * 100)}% secure` : ''}
-                    {cell.status === 'current' ? ', where they are now' : ''}
-                  </span>
-                </button>
-              </td>
-            ))
-          : [<StageTd key={stage.stage} student={student} stage={stage} />],
-      )}
+                <span aria-hidden="true">{cell.level === 'not-started' ? '·' : LEVELS[cell.level].mark}</span>
+                <span className="sr-only">
+                  {student.name}, {skill.label}: {levelWords(cell)}
+                  {cell.level !== 'off' && cell.keys > 0 ? `, ${Math.round(cell.share * 100)}% secure` : ''}
+                  {cell.status === 'current' ? ', where they are now' : ''}
+                </span>
+              </button>
+            </td>
+          );
+        });
+      })}
+      {rest && <td className="skill-map__rest" aria-hidden="true" />}
     </tr>
   );
 }
@@ -381,55 +479,87 @@ function StageTd({ student, stage }: { student: MapStudent; stage: StageCell }) 
   );
 }
 
-/** Where the pupil is now, as a chip. Furthest and warm-up are in its tooltip (and in the detail panel). */
-function Place({ student, map, started }: { student: MapStudent; map: StudentMap; started: boolean }) {
+/** "Now", "Furthest" and "Warm-up" in words, for the chip's tooltip and the side panel. */
+function placeNotes(student: MapStudent, map: StudentMap, started: boolean) {
   const info = student.ladder;
-  const here = map.current ? skillTinyLabel(map.current.id) : started ? 'Every skill secure' : 'Not started';
-  const full = map.current ? map.current.label : here;
+  const now = map.current ? map.current.label : started ? 'Every skill secure' : 'Not started';
   const notes = [
     map.furthest ? `Furthest: ${map.furthest.label}` : '',
     info.on ? `Warm-up: ${info.placed === 'done' ? 'done' : info.placed === 'skipped' ? 'skipped' : 'not done'}` : '',
   ].filter(Boolean);
+  return { now, notes };
+}
+
+/** Where the pupil is now, as a chip. Furthest and warm-up are in its tooltip (and in the side panel). */
+function Place({ student, map, started }: { student: MapStudent; map: StudentMap; started: boolean }) {
+  const here = map.current ? skillTinyLabel(map.current.id) : started ? 'Every skill secure' : 'Not started';
+  const { now, notes } = placeNotes(student, map, started);
   return (
-    <span className="skill-map__now" data-none={!map.current || undefined} title={[`Now: ${full}`, ...notes].join('\n')}>
+    <span className="skill-map__now" data-none={!map.current || undefined} title={[`Now: ${now}`, ...notes].join('\n')}>
       <span aria-hidden="true">{here}</span>
       <span className="sr-only">
-        Now: {full}
+        Now: {now}
         {notes.length ? `. ${notes.join('. ')}` : ''}
       </span>
     </span>
   );
 }
 
-// ---------------------------------------------------------------- one cell, opened
+// ---------------------------------------------------------------- one cell, opened: the side panel
 
 function CellDetail({
   student,
   map,
   skillId,
   classId,
-  heading,
+  students,
+  maps,
   onClose,
 }: {
   student: MapStudent;
   map: StudentMap;
   skillId: string;
   classId: string;
-  heading: React.RefObject<HTMLHeadingElement | null>;
+  students: MapStudent[];
+  maps: Map<string, StudentMap>;
   onClose: () => void;
 }) {
+  const heading = useRef<HTMLHeadingElement>(null);
   const cell = cellFor(map, skillId);
   const byKey = useMemo(() => new Map(student.facts.map((f) => [f.key, f])), [student.facts]);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   if (!cell) return null;
   const tables = cell.skill.stage === 'times-tables';
   const times = cell.skill.keys.filter((k) => parseFactKey(k));
   const others = cell.skill.keys.filter((k) => !parseFactKey(k));
+  const started = map.stages.some((s) => s.cells.some((c) => c.level !== 'not-started' && c.level !== 'off'));
+  const { now, notes } = placeNotes(student, map, started);
+  const onIt = students.filter((s) => maps.get(s.id)?.current?.id === skillId);
+  const counts = classCounts([...maps.values()], skillId);
+  const first = student.name.split(' ')[0];
   return (
-    <section className="panel skill-map__detail" aria-labelledby="cell-title">
-      <h2 id="cell-title" className="panel__title" tabIndex={-1} ref={heading}>
-        {student.name}: {cell.skill.label}
-      </h2>
+    <aside className="skill-map__detail" role="dialog" aria-modal="false" aria-labelledby="cell-title">
+      <div className="skill-map__detail-top">
+        <h3 id="cell-title" tabIndex={-1} ref={heading}>
+          {student.name}: {cell.skill.label}
+        </h3>
+        <button type="button" className="skill-map__close" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
       <p>
+        <span className="skill-map__swatch" data-level={cell.level} aria-hidden="true">
+          {LEVELS[cell.level].mark}
+        </span>{' '}
         <strong>{LEVELS[cell.level].label}.</strong>{' '}
         {cell.level === 'off'
           ? 'All of this skill’s tables are switched off for the class.'
@@ -437,19 +567,40 @@ function CellDetail({
         {cell.status === 'current' && 'This is where they are now.'}
         {cell.passedOver && ' It is behind their starting point, so the games don’t ask it unless they come back to it.'}
       </p>
-      {tables && times.length > 0 && <FactGrid facts={student.facts.filter((f) => f.key.startsWith('mul:'))} />}
-      {(!tables ? cell.skill.keys : others).length > 0 && (
-        <KeyTable keys={tables ? others : cell.skill.keys} byKey={byKey} tables={tables} />
-      )}
+      <p className="skill-map__detail-place">
+        Now: {now}
+        {notes.map((n) => (
+          <span key={n}>
+            <br />
+            {n}
+          </span>
+        ))}
+      </p>
+      <div className="skill-map__detail-facts">
+        {tables && times.length > 0 && <FactGrid facts={student.facts.filter((f) => f.key.startsWith('mul:'))} />}
+        {(!tables ? cell.skill.keys : others).length > 0 && <KeyTable keys={tables ? others : cell.skill.keys} byKey={byKey} tables={tables} />}
+      </div>
+      <p className="skill-map__detail-class">
+        Class: {onIt.length} pupil{onIt.length === 1 ? ' is' : 's are'} on this skill now. {counts.secure + counts.fluent} of {students.length} are
+        secure on it.
+      </p>
       <div className="skill-map__detail-actions">
         <Link className="button button--light-outline" to={`/teacher/${classId}/maths?student=${student.id}&skill=${cell.skill.id}`}>
-          🎯 Set a focus on this for {student.name}
+          🎯 Set a focus for {first}
         </Link>
-        <button type="button" className="button button--light-outline" onClick={onClose}>
-          Close
-        </button>
+        {onIt.length > 1 && (
+          <Link
+            className="button button--light-outline"
+            to={`/teacher/${classId}/maths?students=${onIt.map((s) => s.id).join(',')}&skill=${cell.skill.id}`}
+          >
+            🎯 Focus for all {onIt.length} on this skill
+          </Link>
+        )}
+        <Link className="button button--light-outline" to={`/teacher/${classId}/students/${student.id}`}>
+          Open pupil page
+        </Link>
       </div>
-    </section>
+    </aside>
   );
 }
 
