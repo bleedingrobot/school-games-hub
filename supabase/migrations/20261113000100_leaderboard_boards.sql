@@ -3,7 +3,7 @@
 --   1. board_achievement_counts(measure)  which achievements count on the boards: not the ones that measure maths level
 --                                          (the early-years '*_step' ones and Space's 'maths_right').
 --   2. achievements_board(board, scope)   most achievements: 'all-time' (every one held) or 'week' (earned since Monday NZ),
---                                          for my 'school' or my 'class'.
+--                                          for my 'school', my 'year' or my 'class'.
 --   3. hard_workers_board(board, scope)   effort: school days (Monday to Friday) with a finished game ('week' or this hub
 --                                          'season'), then games finished; plus everyone with 4 or more school days this week.
 --   4. achievements_by_game(player)       one schoolmate's board achievements, counted per game (tap a row).
@@ -30,8 +30,9 @@ as $$ select not (measure like '%\_step' or measure = 'maths_right') $$;
 -- Shared: who can be on my boards
 -- ---------------------------------------------------------------------------
 
--- The pupils on my boards: my school's (or my class's) pupils, not hidden. A teacher gets their school; with 'class' and no
--- class, nobody.
+-- The pupils on my boards: my school's pupils, not hidden; with 'year' only those in my year, with 'class' only my class.
+-- A teacher (no year, no class) gets nobody for 'year' and 'class'. The year comes from year_level_of() (migration
+-- 20261113000200, the pupils' own years); until that is live, from the class's year level. Nobody's year is ever sent.
 create function public.board_pupils(scope text)
 returns table (id uuid, display_name text, avatar jsonb)
 language plpgsql
@@ -42,11 +43,36 @@ as $$
 declare
   school integer := public.my_school();
   mine uuid := public.current_class_of(auth.uid());
+  own_years boolean := to_regprocedure('public.year_level_of(uuid)') is not null;
+  my_year integer;
 begin
-  if scope not in ('school', 'class') then
+  if scope not in ('school', 'year', 'class') then
     raise exception 'That leaderboard doesn''t exist.' using errcode = '22023';
   end if;
   if scope = 'class' and mine is null then
+    return;
+  end if;
+  if scope = 'year' then
+    if own_years then
+      execute 'select public.year_level_of($1)' into my_year using auth.uid();
+      if my_year is null then
+        return;
+      end if;
+      return query execute
+        'select p.id, p.display_name, p.avatar::jsonb from public.profiles p
+         where p.school_id = $1 and p.role = ''student'' and not p.hidden and public.year_level_of(p.id) = $2'
+        using school, my_year;
+      return;
+    end if;
+    select c.year_level into my_year from public.classes c where c.id = mine;
+    if my_year is null then
+      return;
+    end if;
+    return query
+    select p.id, p.display_name, p.avatar::jsonb
+    from public.profiles p
+    join public.classes c on c.id = public.current_class_of(p.id)
+    where p.school_id = school and p.role = 'student' and not p.hidden and c.year_level = my_year;
     return;
   end if;
   return query
@@ -268,3 +294,154 @@ $migration$;
 
 revoke execute on function public.my_home_page() from public, anon, authenticated;
 grant execute on function public.my_home_page() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 6. Homework: achievements and trophies for playing at home (James, 13 Nov 2026)
+-- ---------------------------------------------------------------------------
+-- A finished go (a row in scored_games) counts as home play when it ends outside school hours, NZ time:
+--   Monday to Friday 6:00 to 8:30 am or 3:00 to 8:30 pm; Saturday and Sunday 7:00 am to 8:30 pm.
+-- Late at night never counts, so nothing nudges a child to play at bedtime. School holidays count only in those hours too.
+-- The achievements belong to the hub game 'homework' (no card, no switch: on for everyone) and stay through a New Season.
+
+create function public.home_time(at timestamptz)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when extract(isodow from l) between 1 and 5
+              then (l::time >= '06:00' and l::time < '08:30') or (l::time >= '15:00' and l::time < '20:30')
+              else l::time >= '07:00' and l::time < '20:30' end
+  from (select at at time zone 'Pacific/Auckland' as l) x
+$$;
+
+-- Home goes since `since` (null = all of them): goes, different days, different weekends.
+create function public.homework_tally(who uuid, since date)
+returns table (games integer, days integer, weekends integer)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)::integer,
+         count(distinct s.nz_day)::integer,
+         count(distinct date_trunc('week', s.nz_day)) filter (where extract(isodow from s.nz_day) in (6, 7))::integer
+  from public.scored_games s
+  where s.player = who and public.home_time(s.finished_at) and (since is null or s.nz_day >= since)
+$$;
+revoke execute on function public.homework_tally(uuid, date) from public, anon, authenticated;
+
+create function public.homework_counts(who uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object('homework_games', t.games, 'homework_days', t.days, 'homework_weekends', t.weekends)
+  from public.homework_tally(who, null) t
+$$;
+revoke execute on function public.homework_counts(uuid) from public, anon, authenticated;
+
+create function public.homework_players_list()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$ select distinct s.player from public.scored_games s where public.home_time(s.finished_at) $$;
+revoke execute on function public.homework_players_list() from public, anon, authenticated;
+
+create function public.homework_point_rules()
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select jsonb_build_object('lines', jsonb_build_array(
+    'Homework: finish a game at home (before 8:30 am or after 3 pm on school days, or at the weekend) to earn homework achievements and trophies. Games after 8:30 pm don''t count.'))
+$$;
+
+insert into public.hub_games (id, counts_fn, rules_fn, players_fn, keep_achievements)
+values ('homework', 'public.homework_counts(uuid)', 'public.homework_point_rules()', 'public.homework_players_list()', true);
+
+insert into public.achievement_measures (measure) values ('homework_games'), ('homework_days'), ('homework_weekends');
+
+insert into public.achievement_types (id, game, name, emoji, measure, goal, sort) values
+  ('hw-first', 'homework', 'Home learner', '🏠', 'homework_games', 1, 1),
+  ('hw-games-10', 'homework', 'Ten at home', '🔟', 'homework_games', 10, 2),
+  ('hw-days-5', 'homework', 'Five home days', '📅', 'homework_days', 5, 3),
+  ('hw-weekend-1', 'homework', 'Weekend player', '🌞', 'homework_weekends', 1, 4),
+  ('hw-days-20', 'homework', 'Homework hero', '🦸', 'homework_days', 20, 5),
+  ('hw-weekend-4', 'homework', 'Weekend regular', '🪁', 'homework_weekends', 4, 6),
+  ('hw-games-50', 'homework', 'Fifty at home', '📚', 'homework_games', 50, 7);
+
+insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort) values
+  ('hw-star', 'hub', 'Homework Star', 'Play at home on 8 different days in one season.', 'trophy', 'season', 'homework-star', 340),
+  ('hw-weekend', 'hub', 'Weekend Explorer', 'Play at home on 4 different weekends in one season.', 'trophy', 'season', 'weekend-explorer', 341),
+  ('hw-cup', 'hub', 'Home Learning Cup', 'Play at home on 40 different days in one year.', 'trophy', 'year', 'home-learning-cup', 342);
+
+-- Gives the homework trophies `who` has reached. Safe to run again: award_trophy gives each once per season or year.
+create function public.homework_trophy_check(who uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  since date;
+  season_t record;
+  year_days integer;
+begin
+  select public.hub_season_start_day(p.school_id) into since from public.profiles p where p.id = who and p.role = 'student';
+  if since is not null then
+    select * into season_t from public.homework_tally(who, since);
+    if season_t.days >= 8 then
+      perform public.award_trophy(who, 'hw-star', jsonb_build_object('days', season_t.days));
+    end if;
+    if season_t.weekends >= 4 then
+      perform public.award_trophy(who, 'hw-weekend', jsonb_build_object('weekends', season_t.weekends));
+    end if;
+  end if;
+  if exists (select 1 from public.profiles p where p.id = who and p.role = 'student') then
+    select t.days into year_days
+    from public.homework_tally(who, make_date(extract(year from public.nz_day(now()))::integer, 1, 1)) t;
+    if year_days >= 40 then
+      perform public.award_trophy(who, 'hw-cup', jsonb_build_object('days', year_days));
+    end if;
+  end if;
+end;
+$$;
+revoke execute on function public.homework_trophy_check(uuid) from public, anon, authenticated;
+
+-- On a finished go at home: achievements, then trophies. Never loses a save if this goes wrong.
+create function public.scored_games_homework_trigger()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if public.home_time(new.finished_at) then
+    begin
+      perform public.award_achievements(new.player, 'homework', new.finished_at);
+      perform public.homework_trophy_check(new.player);
+    exception when others then
+      raise warning 'homework check failed (%)', sqlstate;
+    end;
+  end if;
+  return null;
+end;
+$$;
+revoke execute on function public.scored_games_homework_trigger() from public, anon, authenticated;
+
+create trigger homework_when_scored
+after insert on public.scored_games
+for each row execute function public.scored_games_homework_trigger();
+
+-- Back-award from the goes already saved (achievements dated now; trophies only for this season and year).
+select public.award_achievements(p, 'homework', now()) from public.homework_players_list() p;
+select public.homework_trophy_check(p) from public.homework_players_list() p;
+
+revoke execute on function public.board_achievement_counts(text), public.home_time(timestamptz), public.homework_point_rules()
+  from public, anon, authenticated;
