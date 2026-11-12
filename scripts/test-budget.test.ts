@@ -45,7 +45,7 @@ const BUDGET: Record<string, number> = {
   monsters: 10,
   'chess+checkers': 16,
   maths: 27,
-  'src/pages': 29, // 25 plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
+  'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
   'src/teacher': 25,
   'src/data': 20,
   'src/App': 6,
