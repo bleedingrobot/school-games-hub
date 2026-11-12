@@ -24,6 +24,8 @@ const data = vi.hoisted(() => ({
   listHeroNames: vi.fn(),
 }));
 vi.mock('../data/clans', async (original) => ({ ...(await original<typeof import('../data/clans')>()), ...data }));
+// The on/off switch lives in its own small file (dashboard plan D7).
+vi.mock('../data/clansSwitch', () => ({ fetchClansEnabled: data.fetchClansEnabled, saveClansEnabled: data.saveClansEnabled }));
 
 
 /** The fame season panel says whose fame it resets, so it needs to know who is signed in. */

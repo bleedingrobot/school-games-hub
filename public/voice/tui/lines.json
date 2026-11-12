@@ -1,5 +1,17 @@
 [
  {
+  "slug": "how-many-berries-are-on-the-tree",
+  "text": "How many berries are on the tree?"
+ },
+ {
+  "slug": "count-them-again-the-ten-and-then-the-loose-berries",
+  "text": "Count them again. The ten, and then the loose berries."
+ },
+ {
+  "slug": "munch-munch-ten-berries-are-eaten",
+  "text": "Munch, munch! Ten berries are eaten."
+ },
+ {
   "slug": "here-are-the-berries-again-to-help",
   "text": "Here are the berries again to help."
  },
@@ -100,8 +112,8 @@
   "text": "1! 10 and 1 is 11."
  },
  {
-  "slug": "11-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "11 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "11-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "11 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "11-take-away-ten-how-many-are-left",
@@ -110,6 +122,10 @@
  {
   "slug": "you-found-it-10-and-1-is-11",
   "text": "You found it. 10 and 1 is 11."
+ },
+ {
+  "slug": "yes-11-berries",
+  "text": "Yes! 11 berries."
  },
  {
   "slug": "11-is-all-the-berries-together-how-many-go-with-the-ten",
@@ -152,8 +168,8 @@
   "text": "2! 10 and 2 is 12."
  },
  {
-  "slug": "12-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "12 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "12-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "12 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "12-take-away-ten-how-many-are-left",
@@ -162,6 +178,10 @@
  {
   "slug": "you-found-it-10-and-2-is-12",
   "text": "You found it. 10 and 2 is 12."
+ },
+ {
+  "slug": "yes-12-berries",
+  "text": "Yes! 12 berries."
  },
  {
   "slug": "21-is-two-tens-and-one-we-only-have-one-ten",
@@ -208,8 +228,8 @@
   "text": "3! 10 and 3 is 13."
  },
  {
-  "slug": "13-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "13 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "13-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "13 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "13-take-away-ten-how-many-are-left",
@@ -218,6 +238,10 @@
  {
   "slug": "you-found-it-10-and-3-is-13",
   "text": "You found it. 10 and 3 is 13."
+ },
+ {
+  "slug": "yes-13-berries",
+  "text": "Yes! 13 berries."
  },
  {
   "slug": "31-is-three-tens-and-one-we-only-have-one-ten",
@@ -264,8 +288,8 @@
   "text": "4! 10 and 4 is 14."
  },
  {
-  "slug": "14-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "14 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "14-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "14 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "14-take-away-ten-how-many-are-left",
@@ -274,6 +298,10 @@
  {
   "slug": "you-found-it-10-and-4-is-14",
   "text": "You found it. 10 and 4 is 14."
+ },
+ {
+  "slug": "yes-14-berries",
+  "text": "Yes! 14 berries."
  },
  {
   "slug": "41-is-four-tens-and-one-we-only-have-one-ten",
@@ -320,8 +348,8 @@
   "text": "5! 10 and 5 is 15."
  },
  {
-  "slug": "15-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "15 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "15-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "15 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "15-take-away-ten-how-many-are-left",
@@ -330,6 +358,10 @@
  {
   "slug": "you-found-it-10-and-5-is-15",
   "text": "You found it. 10 and 5 is 15."
+ },
+ {
+  "slug": "yes-15-berries",
+  "text": "Yes! 15 berries."
  },
  {
   "slug": "51-is-five-tens-and-one-we-only-have-one-ten",
@@ -376,8 +408,8 @@
   "text": "6! 10 and 6 is 16."
  },
  {
-  "slug": "16-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "16 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "16-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "16 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "16-take-away-ten-how-many-are-left",
@@ -386,6 +418,10 @@
  {
   "slug": "you-found-it-10-and-6-is-16",
   "text": "You found it. 10 and 6 is 16."
+ },
+ {
+  "slug": "yes-16-berries",
+  "text": "Yes! 16 berries."
  },
  {
   "slug": "61-is-six-tens-and-one-we-only-have-one-ten",
@@ -432,8 +468,8 @@
   "text": "7! 10 and 7 is 17."
  },
  {
-  "slug": "17-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "17 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "17-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "17 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "17-take-away-ten-how-many-are-left",
@@ -442,6 +478,10 @@
  {
   "slug": "you-found-it-10-and-7-is-17",
   "text": "You found it. 10 and 7 is 17."
+ },
+ {
+  "slug": "yes-17-berries",
+  "text": "Yes! 17 berries."
  },
  {
   "slug": "71-is-seven-tens-and-one-we-only-have-one-ten",
@@ -488,8 +528,8 @@
   "text": "8! 10 and 8 is 18."
  },
  {
-  "slug": "18-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "18 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "18-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "18 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "18-take-away-ten-how-many-are-left",
@@ -498,6 +538,10 @@
  {
   "slug": "you-found-it-10-and-8-is-18",
   "text": "You found it. 10 and 8 is 18."
+ },
+ {
+  "slug": "yes-18-berries",
+  "text": "Yes! 18 berries."
  },
  {
   "slug": "81-is-eight-tens-and-one-we-only-have-one-ten",
@@ -544,8 +588,8 @@
   "text": "9! 10 and 9 is 19."
  },
  {
-  "slug": "19-berries-the-kete-of-ten-flies-away-how-many-berries-are-left",
-  "text": "19 berries. The kete of ten flies away. How many berries are left?"
+  "slug": "19-berries-and-ten-are-eaten-how-many-berries-are-left",
+  "text": "19 berries, and ten are eaten. How many berries are left?"
  },
  {
   "slug": "19-take-away-ten-how-many-are-left",
@@ -554,6 +598,10 @@
  {
   "slug": "you-found-it-10-and-9-is-19",
   "text": "You found it. 10 and 9 is 19."
+ },
+ {
+  "slug": "yes-19-berries",
+  "text": "Yes! 19 berries."
  },
  {
   "slug": "91-is-nine-tens-and-one-we-only-have-one-ten",
@@ -684,19 +732,23 @@
   "text": "6 more berries. Ten and 6 make 16."
  },
  {
-  "slug": "watch-15-take-away-ten-the-kete-of-ten-flies-away",
-  "text": "Watch. 15 take away ten. The kete of ten flies away."
+  "slug": "watch-15-berries-munch-munch-ten-are-eaten",
+  "text": "Watch. 15 berries. Munch, munch! Ten are eaten."
  },
  {
   "slug": "5-berries-are-left",
   "text": "5 berries are left."
  },
  {
-  "slug": "watch-16-take-away-ten-the-kete-of-ten-flies-away",
-  "text": "Watch. 16 take away ten. The kete of ten flies away."
+  "slug": "watch-16-berries-munch-munch-ten-are-eaten",
+  "text": "Watch. 16 berries. Munch, munch! Ten are eaten."
  },
  {
   "slug": "6-berries-are-left",
   "text": "6 berries are left."
+ },
+ {
+  "slug": "you-can-wear-me-on-your-profile-now",
+  "text": "You can wear me on your profile now!"
  }
 ]

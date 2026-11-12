@@ -143,8 +143,18 @@
 .tui-picture { display: flex; align-items: center; justify-content: center; gap: clamp(12px, 3vw, 36px); flex-wrap: wrap; }
 .tui-picture--faint { opacity: 0.55; scale: 0.72; }
 .tui-ten, .tui-ones { position: relative; }
-.tui-ten--fly { animation: tui-fly 1.2s ease-in 1.6s forwards; }
-@keyframes tui-fly { to { translate: -30vw -40vh; rotate: -20deg; scale: 0.3; opacity: 0; } }
+/* "Take the ten away": the friend eats the ten one berry at a time, last first; each leaves a dashed space (James, 12 Nov 2026). */
+.tui-frame__cell--eaten { position: relative; }
+.tui-frame__cell--eaten::before {
+  content: ''; position: absolute; inset: 7%; border: 3px dashed var(--tui-ink); border-radius: 50%; opacity: 0;
+  animation: tui-space-in 0.3s ease-out forwards; animation-delay: calc(0.3s + var(--tui-eat, 0) * 0.25s);
+}
+@keyframes tui-space-in { to { opacity: 0.7; } }
+.tui-berry--eaten { position: relative; z-index: 1; animation: tui-eat 0.4s ease-in forwards; animation-delay: calc(var(--tui-eat, 0) * 0.25s); }
+@keyframes tui-eat { 40% { scale: 1.15; } to { translate: -40px 20px; scale: 0; opacity: 0; } }
+.tui-kete--eating { animation: tui-kete-eat 2.6s ease-in forwards; }
+@keyframes tui-kete-eat { 20% { rotate: -6deg; } 40% { rotate: 6deg; } to { translate: -40px 20px; scale: 0.8; opacity: 0.15; } }
+.tui-kete--eaten { opacity: 0.15; }
 .tui-gap {
   display: grid; place-items: center; width: calc(var(--tui-cell) * 2); aspect-ratio: 1; border-radius: 50%;
   border: 4px dashed var(--tui-ink); background: rgb(255 253 245 / 0.8); font: 900 calc(var(--tui-cell) * 1.1) system-ui, sans-serif;
@@ -233,6 +243,8 @@
 @media (prefers-reduced-motion: reduce) {
   .tui-root *, .tui-root *::before, .tui-root *::after { animation: none !important; transition: none !important; }
   .tui-card--ones { translate: calc(-0.82em - 18px - 3px) 0; }
-  .tui-ten--fly { opacity: 0.15; }
+  .tui-berry--eaten { opacity: 0; }
+  .tui-frame__cell--eaten::before { opacity: 0.7; }
+  .tui-kete--eating { opacity: 0.15; }
 }
 .tui-demo { display: flex; justify-content: center; gap: 10px; min-height: 52px; }

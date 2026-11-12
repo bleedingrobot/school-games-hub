@@ -1,73 +1,11 @@
 /**
  * The painted scene on each home page game card (the Marble Rush course-card look, docs/HOME-ART-PLAN.md).
  *
- * To add a picture: put `<game-id>.webp` (about 1600 wide) and `<game-id>-small.webp` (about 800 wide) in
- * src/assets/home/, then add two import lines and one line in ART below. A game with no picture yet keeps a band of its
- * own card colours, so a new game never breaks the page.
+ * To add a picture: drop `<game-id>.webp` (about 1600 wide) and `<game-id>-small.webp` (about 640 to 800 wide) into
+ * src/assets/home/. They are found by name (dashboard plan D8); add a line to FOCUS only if the Play button's strip needs a
+ * different crop. A game with no picture yet keeps a band of its own card colours, so a new game never breaks the page.
  */
-import chess from '../assets/home/chess.webp';
-import chessSmall from '../assets/home/chess-small.webp';
-import checkers from '../assets/home/checkers.webp';
-import checkersSmall from '../assets/home/checkers-small.webp';
-import g101 from '../assets/home/101.webp';
-import g101Small from '../assets/home/101-small.webp';
-import powerClash from '../assets/home/power-clash.webp';
-import powerClashSmall from '../assets/home/power-clash-small.webp';
-import space from '../assets/home/space.webp';
-import spaceSmall from '../assets/home/space-small.webp';
-import gemKeep from '../assets/home/gem-keep.webp';
-import gemKeepSmall from '../assets/home/gem-keep-small.webp';
-import bondMatch from '../assets/home/bond-match.webp';
-import bondMatchSmall from '../assets/home/bond-match-small.webp';
-import archery from '../assets/home/archery.webp';
-import archerySmall from '../assets/home/archery-small.webp';
-import mine from '../assets/home/mine.webp';
-import mineSmall from '../assets/home/mine-small.webp';
-import monsters from '../assets/home/monsters.webp';
-import monstersSmall from '../assets/home/monsters-small.webp';
-import dragonMaths from '../assets/home/dragon-maths.webp';
-import dragonMathsSmall from '../assets/home/dragon-maths-small.webp';
-import clanQuest from '../assets/home/clan-quest.webp';
-import clanQuestSmall from '../assets/home/clan-quest-small.webp';
-import kingdom from '../assets/home/kingdom.webp';
-import kingdomSmall from '../assets/home/kingdom-small.webp';
-import marble from '../assets/home/marble.webp';
-import marbleSmall from '../assets/home/marble-small.webp';
-import trader from '../assets/home/trader.webp';
-import traderSmall from '../assets/home/trader-small.webp';
-import diamond from '../assets/home/diamond.webp';
-import diamondSmall from '../assets/home/diamond-small.webp';
-import isles from '../assets/home/isles.webp';
-import islesSmall from '../assets/home/isles-small.webp';
-import beanstalk from '../assets/home/beanstalk.webp';
-import beanstalkSmall from '../assets/home/beanstalk-small.webp';
-import hop from '../assets/home/hop.webp';
-import hopSmall from '../assets/home/hop-small.webp';
-import pipi from '../assets/home/pipi.webp';
-import pipiSmall from '../assets/home/pipi-small.webp';
-import korora from '../assets/home/korora.webp';
-import kororaSmall from '../assets/home/korora-small.webp';
-import weka from '../assets/home/weka.webp';
-import wekaSmall from '../assets/home/weka-small.webp';
-import pigeon from '../assets/home/pigeon.webp';
-import pigeonSmall from '../assets/home/pigeon-small.webp';
-import parrot from '../assets/home/parrot.webp';
-import parrotSmall from '../assets/home/parrot-small.webp';
-import lizard from '../assets/home/lizard.webp';
-import lizardSmall from '../assets/home/lizard-small.webp';
-import swamphen from '../assets/home/swamphen.webp';
-import swamphenSmall from '../assets/home/swamphen-small.webp';
-import robin from '../assets/home/robin.webp';
-import robinSmall from '../assets/home/robin-small.webp';
-import tui from '../assets/home/tui.webp';
-import tuiSmall from '../assets/home/tui-small.webp';
-// Toon Flap: painted by scripts/toonflap-art.py (11 Nov 2026); the game id is 'toonflap'.
-import toonflap from '../assets/home/toonflap.webp';
-import toonflapSmall from '../assets/home/toonflap-small.webp';
-// Quick looks is a Training activity, not a game, but it has a card with the foundational games. Clay painting from
-// scripts/quick-looks-card-art.py (5 Nov 2026).
-import quickLooks from '../assets/home/quick-looks.webp';
-import quickLooksSmall from '../assets/home/quick-looks-small.webp';
+const FILES = import.meta.glob<string>('../assets/home/*.webp', { eager: true, query: '?url', import: 'default' });
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -78,42 +16,43 @@ export interface GameCardArt {
   focus?: string;
 }
 
-/** One line per game that has a picture. */
-const ART: Record<string, GameCardArt> = {
-  'chess': { card: chess, small: chessSmall },
-  'checkers': { card: checkers, small: checkersSmall, focus: 'center 75%' },
-  '101': { card: g101, small: g101Small, focus: 'center 80%' },
-  'power-clash': { card: powerClash, small: powerClashSmall },
-  'space': { card: space, small: spaceSmall },
-  'gem-keep': { card: gemKeep, small: gemKeepSmall },
-  'bond-match': { card: bondMatch, small: bondMatchSmall },
-  'archery': { card: archery, small: archerySmall },
-  'mine': { card: mine, small: mineSmall },
-  'monsters': { card: monsters, small: monstersSmall },
-  'dragon-maths': { card: dragonMaths, small: dragonMathsSmall },
-  'clan-quest': { card: clanQuest, small: clanQuestSmall },
-  'kingdom': { card: kingdom, small: kingdomSmall },
-  // Royal Decree shares Kingdom Keeper's picture (same town and rulers) until it has its own.
-  'decree': { card: kingdom, small: kingdomSmall },
-  'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
-  'trader': { card: trader, small: traderSmall, focus: 'center 55%' },
-  'diamond': { card: diamond, small: diamondSmall, focus: 'center 80%' },
-  'isles': { card: isles, small: islesSmall, focus: 'center 50%' },
-  'beanstalk': { card: beanstalk, small: beanstalkSmall, focus: 'center 45%' },
-  'hop': { card: hop, small: hopSmall, focus: 'center 40%' },
-  'pipi': { card: pipi, small: pipiSmall, focus: 'center 45%' },
-  'korora': { card: korora, small: kororaSmall, focus: 'center 45%' },
-  'weka': { card: weka, small: wekaSmall, focus: 'center 45%' },
-  'pigeon': { card: pigeon, small: pigeonSmall, focus: 'center 45%' },
-  'parrot': { card: parrot, small: parrotSmall, focus: 'center 45%' },
-  'robin': { card: robin, small: robinSmall, focus: 'center 45%' },
-  'lizard': { card: lizard, small: lizardSmall, focus: 'center 50%' },
-  'swamphen': { card: swamphen, small: swamphenSmall, focus: 'center 45%' },
-  'tui': { card: tui, small: tuiSmall, focus: 'center 45%' },
-  'toonflap': { card: toonflap, small: toonflapSmall, focus: 'center 45%' },
-  'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 50%' },
+/** Where the Play button's strip of the picture sits (CSS background-position); 'center 65%' when not listed. */
+const FOCUS: Record<string, string> = {
+  'checkers': 'center 75%',
+  '101': 'center 80%',
+  'decree': 'center 55%',
+  'marble': 'center 80%',
+  'trader': 'center 55%',
+  'diamond': 'center 80%',
+  'isles': 'center 50%',
+  'beanstalk': 'center 45%',
+  'hop': 'center 40%',
+  'pipi': 'center 45%',
+  'korora': 'center 45%',
+  'weka': 'center 45%',
+  'pigeon': 'center 45%',
+  'parrot': 'center 45%',
+  'robin': 'center 45%',
+  'lizard': 'center 50%',
+  'swamphen': 'center 45%',
+  'tui': 'center 45%',
+  'toonflap': 'center 45%',
+  'training': 'center 50%',
+  'quick-looks': 'center 50%',
 };
+
+/** Every picture, by the id in its file name. */
+const ART: Record<string, GameCardArt> = {};
+for (const [path, url] of Object.entries(FILES)) {
+  const name = path.split('/').pop()!.replace(/\.webp$/, '');
+  if (name.endsWith('-small')) continue;
+  const small = FILES[`../assets/home/${name}-small.webp`];
+  if (small) ART[name] = { card: url, small, ...(FOCUS[name] ? { focus: FOCUS[name] } : {}) };
+}
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {
   return ART[gameId];
 }
+
+/** The ids that have a picture (for the art test). */
+export const PAINTED_IDS = (): string[] => Object.keys(ART);

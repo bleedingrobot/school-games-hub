@@ -85,6 +85,8 @@ export function homeAnswer(): Row {
     powerOpen: newest(open(t.power_games), 'created_at', 10),
     powerStats: job('my_power_game_stats'),
     movesLeft: job('my_moves_left'),
+    topGames: job('my_top_games'),
+    trophyShelf: job('my_trophy_shelf'),
     myClass: job('my_class'),
     focus: job('my_maths_focus'),
     ladder: job('my_ladder'),
@@ -215,7 +217,7 @@ export function busyPupil(): World {
     },
     jobs: {
       my_progress: {
-        points: 60, level: 2, levelStart: 50, nextLevelAt: 125, weekPoints: 60,
+        points: 60, weekPoints: 60,
         games: [{ game: 'chess', rank: { rank: 'silver', next: 'gold', progress: 0.5, gamesNeeded: null, ratedGames: 3 }, weekRatingChange: 5 }],
         achievements: [
           { id: 'chess-first-win', game: 'chess', name: 'First win', emoji: '🏆', measure: 'wins', goal: 1, progress: 1, earnedAt: at(100) },
@@ -223,6 +225,7 @@ export function busyPupil(): World {
         ],
         recent: [{ id: 'b1', points: 3 }, { id: 'f1', points: 5 }],
       },
+      my_trophy_shelf: { count: 2, favourites: [{ id: 'dm-slayer', game: 'lord', kind: 'trophy', name: 'Slayer’s Sword', tier: 'gold' }] },
       my_bot_game_stats: [
         { game: 'chess', played: 3, won: 2, lost: 0, drawn: 1 },
         { game: 'checkers', played: 1, won: 0, lost: 1, drawn: 0 },
@@ -249,7 +252,7 @@ export function newPupil(): World {
     me: 'me',
     tables: { app_settings: [SETTINGS] },
     jobs: {
-      my_progress: { points: 0, level: 1, levelStart: 0, nextLevelAt: 20, weekPoints: 0, games: [], achievements: [], recent: [] },
+      my_progress: { points: 0, weekPoints: 0, games: [], achievements: [], recent: [] },
       my_bot_game_stats: [],
       my_friend_game_stats: [],
       my_space_game_stats: { played: 0, firsts: 0 },

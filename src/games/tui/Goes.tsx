@@ -4,7 +4,10 @@
  *  - Way 0 "10 + 4": the full branch, then 4 loose berries. How many berries?
  *  - Way 1 "4 + 10": the loose berries first, on the left.
  *  - Way 2 "10 + ? = 14": the ten, and empty spaces where berries are missing. How many more?
- *  - Way 3 "14 − 10": the ten flies away. How many are left?
+ *  - Way 3 "14 − 10": first "How many berries?" (all of them, not marked or sent), then the friend eats the ten, one
+ *    berry at a time, leaving an empty frame. Only then: how many are left? (James, 12 Nov 2026: slow it down, count the
+ *    berries that are there first, and the ten is eaten, not flown away.) Only when the berries are drawn (level 2 up);
+ *    a "Now you try" go starts with the ten already eaten.
  *
  * Each go comes with its help level from the server (plan section 4): 5 every berry, popping in one at a time; 4 every
  * berry at once, with the sum written; 3 the ten tucked into a kete with a "10" tag; 2 the kete small and faint beside a
@@ -13,7 +16,7 @@
  *
  * Mistakes that teach (maths review R5). Every go has four nests, each wrong one tagged with its mistake (round.ts). The
  * first wrong tap greys that nest out for good and says why, with a picture of that kind (arrow cards of 4 tens and 1 for
- * 41, two full frames for 20, the ten lit, the berries counted in, the whole with the ten greyed, the ten flying off). The
+ * 41, two full frames for 20, the ten lit, the berries counted in, the whole with the ten greyed, the ten eaten). The
  * second stops the free taps: "Let's look together", the arrow cards play the whole sum, then "Now you try one like it.": a sister
  * go (the ones moved by one or two, same way and level, nothing marked, never sent). A right tap on it sends the first go's
  * right pick instead; a wrong one shows why, then the first go comes back with its right nest ringed. Praise after that is
@@ -45,9 +48,25 @@ const WOBBLE_MS = 500;
 const FINALE_MS = 4200;
 /** The guided first go: the hand at the full branch, then the loose berries, then over the nests. */
 const GUIDE_AT = { branch: 400, loose: 3200, nests: 6000 };
+/** Way 3: "Yes! 14 berries." shows at least this long before the eating starts. */
+const COUNT_RIGHT_MS = 1600;
+/** Way 3: the ten berries are eaten one by one (tui.css .tui-berry--eaten: 0.25s apart, 0.4s each), then the go is asked. */
+const EAT_MS = 3200;
 
 type Phase = 'ask' | 'right' | 'finale' | 'done';
 type Guide = 'branch' | 'loose' | 'nests' | null;
+/** Way 3's ten: all there while the child counts, being eaten, or gone (an empty frame, or a faint kete). */
+type TenState = 'whole' | 'eating' | 'eaten';
+
+/** Way 3 starts with "How many berries?" when the berries are drawn. */
+const countsFirst = (go: Go) => go.v === 3 && go.l >= 2;
+
+/** The nests for "How many berries?": the whole, the loose berries alone (forgetting the ten), and one either side. */
+export function countChoices(teen: number): number[] {
+  const all = [teen, teen - 10, teen + 1, teen - 1];
+  const turn = teen % 4;
+  return [...all.slice(turn), ...all.slice(0, turn)];
+}
 
 interface Props {
   round: Round;
@@ -87,6 +106,10 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   const [peek, setPeek] = useState(false);
   const [pointAt, setPointAt] = useState<Guide>(null);
   const [pose, setPose] = useState<Pose>('sit');
+  /** Way 3: the go whose "How many berries?" is done (its `at`), whether the ten is being eaten, and the wrong count nests. */
+  const [countedAt, setCountedAt] = useState(-1);
+  const [eating, setEating] = useState(false);
+  const [countOff, setCountOff] = useState<number[]>([]);
   const since = useRef(Date.now());
   /** Set by the first tap on this question, so the end of its read-aloud no longer restarts the clock. */
   const tappedYet = useRef(false);
@@ -109,6 +132,11 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   const base: Go = boosted && planned.l < 5 ? { ...planned, l: 5 } : planned;
   const go: Go = sister ? sister.go : base;
   const guided = guide && at === 0;
+  /** "How many berries?" is being asked (way 3, before the ten is eaten). */
+  const counting = !sister && countsFirst(base) && countedAt !== at && !eating;
+  const tenState: TenState = go.v !== 3 || counting ? 'whole' : eating ? 'eating' : 'eaten';
+  /** What Bella says to start this part of the go, and on "Hear it again". */
+  const firstLine = () => (counting ? WORDS.howManyBerries : askLine(go));
   const kinds = useSeenKinds(seen, onSeen);
   /** A way not yet seen (turning round, how many more, taking away) gets its demo before the first go of it, once. */
   const needsDemo = DEMO_WAYS.includes(go.v) && !kinds.has(KIND_OF_WAY[go.v]);
@@ -136,7 +164,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
     setPeek(false);
     // A way not yet seen is shown first; its question is read when the demo is over.
     if (!(DEMO_WAYS.includes(go.v) && !kinds.has(KIND_OF_WAY[go.v]))) {
-      say(askLine(go), () => {
+      say(firstLine(), () => {
         if (live && !tappedYet.current) since.current = Date.now();
       });
     }
@@ -161,11 +189,47 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
     if (!demoWas.current) return;
     demoWas.current = false;
     since.current = Date.now();
-    say(askLine(go), () => {
+    say(firstLine(), () => {
       if (!tappedYet.current) since.current = Date.now();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo.playing]);
+
+  /** Way 3: a tap on "How many berries?". Never sent or marked. A right one: the ten is eaten, then the go is asked. */
+  function pickCount(n: number) {
+    if (eating || countOff.includes(n)) return;
+    if (n !== go.teen) {
+      setCountOff((c) => [...c, n]);
+      setWobble(n);
+      if (sound) playSound('tap');
+      later(WOBBLE_MS, () => setWobble(null));
+      say(WORDS.countAgain);
+      return;
+    }
+    if (sound) playSound('tap');
+    setPointAt(null);
+    // The eating starts once "Yes! 14 berries." has been said and shown long enough.
+    let waits = 2;
+    const eat = () => {
+      if (--waits > 0) return;
+      setEating(true);
+      setPose('eat');
+      say(WORDS.eaten);
+      later(EAT_MS, () => {
+        setEating(false);
+        setCountedAt(at);
+        setPose('sit');
+        // The go's own clock starts now: counting and watching are not timed.
+        tappedYet.current = false;
+        since.current = Date.now();
+        say(askLine(go), () => {
+          if (!tappedYet.current) since.current = Date.now();
+        });
+      });
+    };
+    later(COUNT_RIGHT_MS, eat);
+    say(WORDS.countRight(go.teen), eat);
+  }
 
   function nextGo(all: Tap[]) {
     clearTimers();
@@ -177,6 +241,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
       setTapped([]);
       setSister(null);
       setStuck(false);
+      setCountOff([]);
+      setEating(false);
       return;
     }
     if (finale) {
@@ -235,6 +301,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   function pick(n: number) {
     if (phase !== 'ask' || look || demo.playing || tapped.includes(n)) return;
     if (sister) return pickSister(sister, n);
+    if (counting || eating) return pickCount(n);
     tappedYet.current = true;
     const now = Date.now();
     const next = [...taps, { pick: n, ms: now - since.current }];
@@ -293,7 +360,8 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
   const made = at + (phase === 'ask' ? 0 : 1);
   const style = backFor(scenery);
   // Four nests always; in "Now you try" they come back in a new order (the server only cares which nest was tapped).
-  const nests = redo && !sister ? [...go.choices].reverse() : go.choices;
+  const nests = counting || eating ? countChoices(go.teen) : redo && !sister ? [...go.choices].reverse() : go.choices;
+  const off = counting || eating ? countOff : tapped;
 
   if (demo.playing && demoWay !== null) {
     const shown: Go = { ...go, n: demoN, teen: 10 + demoN, l: 4 };
@@ -310,7 +378,7 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
         </div>
         <div className="tui-stage">
           <span className="tui-stage__friend" aria-hidden="true"><Friend friend={friend} pose={answered ? 'cheer' : 'sit'} /></span>
-          <Picture go={shown} level={4} pointAt={null} solved={answered} lit={null} />
+          <Picture go={shown} level={4} pointAt={null} solved={answered} lit={null} ten={shown.v === 3 ? (answered ? 'eaten' : 'eating') : 'whole'} />
           {!answered && <p className="tui-sum" aria-live="polite">{written(shown)}</p>}
           {answered && <ArrowCards n={demoN} />}
         </div>
@@ -321,14 +389,14 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
 
   return (
     <div className={`tui-play tui-scene--${scenery}`} style={style}>
-      <h2 className="tui-sr" tabIndex={-1} ref={heading}>{WORDS.pickNest}</h2>
+      <h2 className="tui-sr" tabIndex={-1} ref={heading}>{counting ? WORDS.howManyBerries : WORDS.pickNest}</h2>
       <div className="tui-top">
         <div className="tui-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
           {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
             <span key={i} className={i < made ? 'tui-pip tui-pip--done' : 'tui-pip'} />
           ))}
         </div>
-        <HearAgain prefix="tui" label={WORDS.hearAgain} onHear={() => say(askLine(go))} />
+        <HearAgain prefix="tui" label={WORDS.hearAgain} onHear={() => say(firstLine())} />
       </div>
 
       {phase === 'finale' ? (
@@ -344,9 +412,10 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
         <>
           <div className="tui-stage" key={at}>
             <span className="tui-stage__friend" aria-hidden="true"><Friend friend={friend} pose={pose} /></span>
-            <Picture key={why ? `why${taps.length}` : 'p'} go={go} level={level} pointAt={pointAt} solved={phase !== 'ask'} lit={why?.kind ?? null} />
-            {/* The sum from level 4 down; on "how many more?" and "take the ten away" always, as the picture can't say the target. */}
-            {(level <= 4 || go.v >= 2) && phase === 'ask' && <p className={`tui-sum${level <= 2 ? ' tui-sum--big' : ''}`} aria-live="polite">{written(go)}</p>}
+            <Picture key={why ? `why${taps.length}` : 'p'} go={go} level={level} pointAt={pointAt} solved={phase !== 'ask'} lit={why?.kind ?? null} ten={tenState} />
+            {/* The sum from level 4 down; on "how many more?" and "take the ten away" always, as the picture can't say the target. Not while the berries are counted or eaten. */}
+            {counting && <p className="tui-sum" aria-live="polite">{WORDS.howManyBerries}</p>}
+            {(level <= 4 || go.v >= 2) && phase === 'ask' && !counting && !eating && <p className={`tui-sum${level <= 2 ? ' tui-sum--big' : ''}`} aria-live="polite">{written(go)}</p>}
             {phase !== 'ask' && <ArrowCards n={go.n} />}
             {canPeek && !peek && phase === 'ask' && (
               <button type="button" className="tui-button tui-peek" onClick={() => setPeek(true)}>
@@ -364,10 +433,10 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
           <div className={`tui-nests${pointAt === 'nests' ? ' tui-nests--guide' : ''}`} role="group" aria-label={WORDS.pickNest}>
             {nests.map((n) => (
               <button
-                key={`${at}-${n}`}
+                key={`${at}-${counting || eating ? 'c' : 'g'}-${n}`}
                 type="button"
-                disabled={phase === 'ask' && (look !== null || tapped.includes(n) || (sister !== null && sister.wrong !== null))}
-                className={`tui-choice${tapped.includes(n) && phase === 'ask' ? ' tui-choice--off' : ''}${stuck && !sister && phase === 'ask' && n === go.answer ? ' tui-choice--hint' : ''}${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
+                disabled={phase === 'ask' && (eating || look !== null || off.includes(n) || (sister !== null && sister.wrong !== null))}
+                className={`tui-choice${off.includes(n) && phase === 'ask' ? ' tui-choice--off' : ''}${stuck && !sister && phase === 'ask' && n === go.answer ? ' tui-choice--hint' : ''}${wobble === n ? ' tui-choice--wobble' : ''}${phase !== 'ask' && n === go.answer ? ' tui-choice--right' : ''}${phase !== 'ask' && n !== go.answer ? ' tui-choice--off' : ''}`}
                 onClick={() => pick(n)}
                 aria-label={String(n)}
               >
@@ -386,13 +455,21 @@ export function Goes({ round, scenery, friend, guide = false, finale = false, se
  * The berries for a go at a help level. Levels 5 and 4: two ten-frames (the full branch and the loose berries, or the
  * empty spaces on "how many more?"). Levels 3 and 2: the ten is one kete with a "10" tag. Below 2: no picture.
  */
-function Picture({ go, level, pointAt, solved, lit }: { go: Go; level: HelpLevel; pointAt: Guide; solved: boolean; lit: TuiKind | null }) {
+function Picture({ go, level, pointAt, solved, lit, ten: tenState = 'whole' }: { go: Go; level: HelpLevel; pointAt: Guide; solved: boolean; lit: TuiKind | null; ten?: TenState }) {
   if (level <= 1) return null;
   const frames = level >= 4;
   const hand = (where: Guide) => pointAt === where && <span className="tui-hand" aria-hidden="true">👆</span>;
   const ten = (
-    <div className={`tui-ten${go.v === 3 ? ' tui-ten--fly' : ''}${lit === 'ones' ? ' tui-lit' : ''}${lit === 'total' && go.v === 2 ? ' tui-grey' : ''}`} key="ten">
-      {frames ? <TenFrame count={10} branch label={WORDS.berries(10)} /> : <Kete className="tui-kete--in" label={WORDS.keteOfTen} />}
+    <div className={`tui-ten${tenState !== 'whole' ? ` tui-ten--${tenState}` : ''}${lit === 'ones' ? ' tui-lit' : ''}${lit === 'total' && go.v === 2 ? ' tui-grey' : ''}`} key="ten">
+      {frames ? (
+        tenState === 'eaten' ? (
+          <TenFrame count={0} empty={10} branch label={WORDS.eatenSpaces} />
+        ) : (
+          <TenFrame count={10} branch eaten={tenState === 'eating'} label={WORDS.berries(10)} />
+        )
+      ) : (
+        <Kete className={tenState === 'whole' ? 'tui-kete--in' : `tui-kete--${tenState}`} label={tenState === 'eaten' ? WORDS.eatenSpaces : WORDS.keteOfTen} />
+      )}
       {hand('branch')}
     </div>
   );

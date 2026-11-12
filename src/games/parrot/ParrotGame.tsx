@@ -242,7 +242,7 @@ function Home({ state, say, onPlay }: { state: ParrotState; say: (t: string) => 
 }
 
 /** A shiny thing changes colour, or, on the thirtieth day, the Golden Bell is won; and what changes next time. */
-function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string) => void; onNext: () => void }) {
+function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string, onEnd?: () => void) => void; onNext: () => void }) {
   // On a Golden Bell day the next rope has already started, so show the one just finished: every thing gold.
   const rope = ropeAfter(result.goldenBell ? result.daysDone - 1 : result.daysDone);
   const things = result.goldenBell ? rope.things.map(() => ({ metal: 'gold' as const })) : rope.things.map((metal) => ({ metal }));
@@ -259,7 +259,7 @@ function Finish({ result, say, onNext }: { result: ParrotFinish; say: (t: string
   return (
     <div className={`pr-home${result.goldenBell ? ' pr-home--prize' : ''}`}>
       <Rope things={things} friend={rope.friend} glowAt={result.changed} pose="cheer" />
-      <WhatsNext prefix="pr" title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
+      <WhatsNext prefix="pr" wearMe={result.goldenBell} title={main} spoken={finishLine(main, how, next)} buttonLabel={WORDS.ok} say={say} onNext={onNext}>
         <p className="pr-chip">{how}</p>
         <p className="pr-chip">{next}</p>
         {result.goldenBell && <span className="pr-prize"><GoldenBell /></span>}

@@ -6,10 +6,12 @@
  * more; only a student in an auto class asks for their ladder, and once the warm-up is done that is remembered on the device.
  */
 import { useEffect, useState } from 'react';
-import { needsPlacement } from '../../shared/training/start';
+import type { LadderInfo } from '../../shared/maths/place';
 import { useAuth } from '../auth/AuthContext';
 import { readSettings } from './classSettings';
-import { fetchMyLadder } from './ladder';
+
+/** The class wants the warm-up and this student hasn't done it yet (the same rule as shared/training/start's needsPlacement). */
+const needsPlacement = (info: LadderInfo, role: string): boolean => info.on && info.placed === null && role !== 'teacher';
 
 const placedKey = (player: string) => `sgh-placed:${player}`;
 
@@ -36,6 +38,8 @@ export async function placementNeeded(player: string, role: string): Promise<boo
   try {
     const settings = await readSettings(['maths_auto']);
     if (!settings || (settings as { maths_auto?: unknown }).maths_auto !== true) return false;
+    // The ladder code is big, so it loads only for a student in an auto class (dashboard plan D7).
+    const { fetchMyLadder } = await import('./ladder');
     const ladder = (await fetchMyLadder()).focus.ladder;
     if (!ladder) return false;
     if (ladder.placed !== null) rememberPlaced(player);

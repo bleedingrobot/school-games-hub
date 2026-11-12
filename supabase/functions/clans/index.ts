@@ -13413,8 +13413,19 @@ function payFight(clan, fight) {
 	};
 }
 //#endregion
-//#region shared/clans/season.ts
-const S = CONFIG.season;
+//#region shared/clans/clock.ts
+/** Clan Quest's days are New Zealand calendar days, like the other daily games. */
+const nz = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+});
+/** Whole days since 1970 of the New Zealand date at this moment (milliseconds since 1970). */
+function nzDayNumber(ms) {
+	const [y, m, d] = nz.format(new Date(ms)).split("-").map(Number);
+	return Math.round(Date.UTC(y, m - 1, d) / 864e5);
+}
 const whole = (v) => typeof v === "number" && Number.isInteger(v) && v >= 0;
 /** Read the clock the database sends. Anything odd (missing, wrong types) gives null. */
 function readClock(raw) {
@@ -13428,6 +13439,9 @@ function readClock(raw) {
 		clockOn: r.clockOn
 	};
 }
+//#endregion
+//#region shared/clans/season.ts
+const S = CONFIG.season;
 /** Raids on classmates rest from day `warnFrom` to the end of the season (computer kingdoms stay open). */
 const classRaidsResting = (clock) => clock?.clockOn === true && clock.day >= S.warnFrom;
 /**
@@ -14785,20 +14799,6 @@ function applyInner(saved, action, ctx, flags) {
 			}, true, effects);
 		}
 	}
-}
-//#endregion
-//#region shared/clans/clock.ts
-/** Clan Quest's days are New Zealand calendar days, like the other daily games. */
-const nz = new Intl.DateTimeFormat("en-CA", {
-	timeZone: "Pacific/Auckland",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit"
-});
-/** Whole days since 1970 of the New Zealand date at this moment (milliseconds since 1970). */
-function nzDayNumber(ms) {
-	const [y, m, d] = nz.format(new Date(ms)).split("-").map(Number);
-	return Math.round(Date.UTC(y, m - 1, d) / 864e5);
 }
 //#endregion
 //#region supabase/functions/_shared/http.ts

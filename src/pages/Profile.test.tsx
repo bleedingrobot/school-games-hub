@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,10 +22,24 @@ const achievements = [
 vi.mock('../data/homePage', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/homePage')>()),
   fetchMyHomePage: vi.fn(async () => ({
-    progress: { points: 60, level: 2, levelStart: 50, nextLevelAt: 125, weekPoints: 60, games: [], achievements, recent: [] },
+    progress: { points: 60, weekPoints: 60, games: [], achievements, recent: [] },
     botRecent: [], botStats: [], friendRecent: [], friendStats: [], friendOpen: [], players: new Map(),
     spaceRecent: [], spaceOpen: [], spaceStats: null, cardRecent: [], cardOpen: [], cardStats: null,
     powerRecent: [], powerOpen: [], powerStats: null, moves: {}, parts: {},
+  })),
+}));
+
+vi.mock('../data/trophies', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/trophies')>()),
+  fetchMyNewTrophies: vi.fn(async () => []),
+  fetchMyTrophies: vi.fn(async () => ({
+    season: 1,
+    trophies: [
+      { id: 'knight', game: 'chess', name: 'Knight Head', how: 'Win with a knight', kind: 'picture', repeat: 'once', art: null, tier: 'silver',
+        count: 1, firstAt: '2026-10-14T01:00:00Z', lastAt: '2026-10-14T01:00:00Z', isNew: false, wins: [] },
+    ],
+    next: [],
+    favourites: [],
   })),
 }));
 
@@ -48,8 +62,9 @@ function auth(avatar: object = {}, extra: Partial<AuthState> = {}): AuthState {
   };
 }
 
-function renderAt(path: string, state: AuthState) {
-  return render(
+async function renderAt(path: string, state: AuthState) {
+  // Every page but home loads when opened (dashboard plan D7): let the lazy page arrive before looking.
+  const view = render(
     <SoundProvider>
       <AuthContext.Provider value={state}>
         <MemoryRouter initialEntries={[path]}>
@@ -58,6 +73,8 @@ function renderAt(path: string, state: AuthState) {
       </AuthContext.Provider>
     </SoundProvider>,
   );
+  await waitFor(() => expect(document.querySelector('[data-page-loading]')).toBeNull(), { timeout: 10_000 });
+  return view;
 }
 
 const fold = (name: RegExp) => screen.getByRole('button', { name });
@@ -67,25 +84,24 @@ beforeEach(() => {
 });
 
 describe('my profile', () => {
-  it('opens on the pupil with every fold closed, and signs out', async () => {
+  it('opens on the pupil with My trophies open and the other folds closed, and signs out', async () => {
     const user = userEvent.setup();
     const state = auth();
-    renderAt('/profile', state);
+    await renderAt('/profile', state);
     expect(screen.getByRole('heading', { name: 'Brave Kiwi 7' })).toBeInTheDocument();
-    for (const name of [/My trophies/, /My achievements/, /My stats/, /Page theme/]) {
+    expect(fold(/My trophies/)).toHaveAttribute('aria-expanded', 'true');
+    for (const name of [/My achievements/, /My stats/, /Page theme/]) {
       expect(fold(name)).toHaveAttribute('aria-expanded', 'false');
     }
+    expect(await screen.findByRole('button', { name: 'Knight Head, Silver' })).toBeInTheDocument();
     expect(screen.queryByText('Build your avatar')).not.toBeInTheDocument();
-    await user.click(fold(/My trophies/));
-    expect(fold(/My trophies/)).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/No trophies yet/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(state.signOut).toHaveBeenCalled();
   });
 
   it('shows what is earned, the three nearest achievements, and a game\'s full list on request', async () => {
     const user = userEvent.setup();
-    renderAt('/profile', auth());
+    await renderAt('/profile', auth());
     await user.click(fold(/My achievements/));
     expect(await within(fold(/My achievements/)).findByText('1 of 6')).toBeInTheDocument();
     const earned = screen.getByRole('heading', { name: 'Earned' }).parentElement!;
@@ -103,7 +119,7 @@ describe('my profile', () => {
   it('saves a new look together with the theme, and a new theme together with the look', async () => {
     const user = userEvent.setup();
     const state = auth({ kind: 'cat', theme: 'menu' });
-    renderAt('/profile', state);
+    await renderAt('/profile', state);
     await user.click(screen.getByRole('button', { name: /Change my look/ }));
     expect(screen.getByText('Build your avatar')).toBeInTheDocument();
     const save = screen.getByRole('button', { name: 'Save' });
@@ -114,25 +130,30 @@ describe('my profile', () => {
     expect(saveMyAvatar).toHaveBeenCalledTimes(1);
     expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'robot', theme: 'menu' }));
     expect(state.refreshProfile).toHaveBeenCalled();
+    // A picture trophy can be worn instead (the server checks it is mine).
+    await user.click(screen.getByRole('radio', { name: /Knight Head/ }));
+    await user.click(save);
+    expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'robot', pic: 'knight' }));
 
     await user.click(fold(/Page theme/));
     await user.click(screen.getByRole('radio', { name: /Soft and bright/ }));
-    expect(saveMyAvatar).toHaveBeenCalledTimes(2);
+    expect(saveMyAvatar).toHaveBeenCalledTimes(3);
     expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'cat', theme: 'soft' }));
   });
 
   it('nudges a pupil with no avatar to make one, and a link to #stats opens My stats', async () => {
     const user = userEvent.setup();
     for (const avatar of [{}, { theme: 'menu' }]) {
-      const { unmount } = renderAt('/profile', auth(avatar));
+      const { unmount } = await renderAt('/profile', auth(avatar));
       expect(screen.getByText(/You haven’t made your avatar yet/)).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /Change my look/ })).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: /Make your avatar/ }));
       expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
       unmount();
     }
-    renderAt('/profile#stats', auth());
+    await renderAt('/profile#stats', auth());
     expect(fold(/My stats/)).toHaveAttribute('aria-expanded', 'true');
-    expect(await screen.findByText(/Level 2/)).toBeInTheDocument();
+    expect(await screen.findByText(/this week/)).toBeInTheDocument();
+    expect(screen.queryByText(/Level \d/)).not.toBeInTheDocument();
   });
 });

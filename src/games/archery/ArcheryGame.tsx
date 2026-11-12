@@ -26,6 +26,7 @@ import { loadChoices, loadPrefs, saveChoices, wantsLessMotion } from './prefs';
 import { WORLD_NAMES as WORLD_NAMES_FOR } from './text';
 import { SpeedRound } from './SpeedRound';
 import { useDuels } from './useDuels';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './archery.css';
 
 type Screen =
@@ -46,7 +47,7 @@ type Screen =
   | { kind: 'classmates' }
   | { kind: 'duel' };
 
-export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
+export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer = false }: {
   api: ArcheryApi;
   /** Back to the hub (left out in the preview). */
   onExit?: () => void;
@@ -56,6 +57,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   duels?: DuelLink;
   /** The signed-in pupil's id (for classmate fights). */
   me?: string;
+  /** The school's server is behind `api`, so trophies can be won. */
+  onServer?: boolean;
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [state, setState] = useState<ArmoryState | null>(null);
@@ -78,6 +81,11 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   const [inFight, setInFight] = useState(false);
   const duels = useDuels(link, me, inFight);
   const duel = duels.duel;
+  // Saved fights (bot or classmate): each one may have won a trophy (the line below says so).
+  const [saves, setSaves] = useState(0);
+  useEffect(() => {
+    if (duel?.status === 'done') setSaves((n) => n + 1);
+  }, [duel?.id, duel?.status]);
   useEffect(() => setInFight(screen.kind === 'duel' && duel?.status === 'playing'), [screen.kind, duel?.status]);
 
   async function load() {
@@ -202,6 +210,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     const r = await api.fightFinish(fight.fight, shots);
     if (!r.ok) return { line: r.message };
     setState(r.value.state);
+    setSaves((n) => n + 1);
     if (r.value.result === 'ok') setOverFight({ set: { kind: 'chest', fight: fight.fight }, won: r.value.winner === 0 });
     const pts = r.value.points;
     return {
@@ -401,6 +410,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   return (
     <div className="ar-shell" data-screen={screen.kind}>
       {body}
+      <TrophyWonLine games={['archery']} watch={saves} off={!onServer} />
       {ask && (
         <ChallengeAsk
           key={ask.duel} ask={ask} serverNow={duels.serverNow} busy={duelBusy} problem={askProblem}

@@ -1,4 +1,4 @@
-import { fetchArcheryDuels, fetchArcheryEnabled } from '../../data/archery';
+import { fetchArcheryDuels, fetchArcheryEnabled } from '../../data/archerySwitch';
 import { useSetting } from '../../teacher/useSetting';
 
 /**

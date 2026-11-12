@@ -14,7 +14,7 @@
 import type { FactStats } from '../../shared/maths/leitner';
 import type { LordAction, LordReply, LordRequest, LordState } from '../../shared/lord/server';
 import { topicsOn } from '../../shared/lord/maths';
-import { FINISH_ACTIONS } from '../../shared/lord/server';
+import { FINISH_ACTIONS } from '../../shared/lord/finish';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
@@ -88,6 +88,15 @@ export interface LordBackend {
   fetchNews(): Promise<NewsItem[] | null>;
   fetchWarriors(): Promise<WarriorRow[] | null>;
   fetchHall(): Promise<HallRow[] | null>;
+  /** The Dragon Head race (profile plan P4): how many of this season's five first-five places are left in my school.
+   * Null if it couldn't be fetched. The browser-only trial has no race, so it leaves this out. */
+  fetchFirstFive?(): Promise<FirstFive | null>;
+}
+
+/** lord_first_five(): the dragon season in my school today (null before season 1) and the first-five places left (0 to 5). */
+export interface FirstFive {
+  season: number | null;
+  left: number;
 }
 
 export const isFinish = (action: string) => (FINISH_ACTIONS as readonly string[]).includes(action);
@@ -203,6 +212,15 @@ export function createServerBackend(player: string): LordBackend {
     fetchNews: () => readList<NewsItem>('lord_news'),
     fetchWarriors: () => readList<WarriorRow>('lord_warriors'),
     fetchHall: () => readList<HallRow>('lord_hall'),
+    async fetchFirstFive() {
+      try {
+        const { data, error } = await supabase.rpc('lord_first_five');
+        if (error || !data || typeof (data as FirstFive).left !== 'number') return null;
+        return data as FirstFive;
+      } catch {
+        return null;
+      }
+    },
     async load() {
       await flush();
       let teacher = false;

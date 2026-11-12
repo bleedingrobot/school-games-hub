@@ -35,7 +35,6 @@ async function show(nonMaths: boolean | undefined, role?: string) {
 }
 
 const hrefs = () => screen.getAllByRole('link').map((a) => a.getAttribute('href') ?? '');
-const playHref = () => screen.getByRole('link', { name: /Play$/ }).getAttribute('href')!;
 
 describe('the home page with the non-maths games switch', () => {
 
@@ -47,8 +46,8 @@ describe('the home page with the non-maths games switch', () => {
     }
     expect(links.some((h) => h.startsWith('/space'))).toBe(true);
     expect(links.some((h) => h.startsWith('/monsters'))).toBe(true);
-    // The big Play button does not point at a non-maths game.
-    expect(playHref()).not.toMatch(/^\/(chess|checkers|101|power-clash)\b/);
+    // No big Play button (James, 11 Nov 2026: My games takes its place), so nothing can point at a non-maths game from the top.
+    expect(screen.queryByRole('link', { name: /^▶?\s*Play$/ })).toBeNull();
   });
 
   it('still shows a teacher every card', async () => {

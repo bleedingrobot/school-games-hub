@@ -1,0 +1,28 @@
+/* The small "Trophy won!" line (src/trophies/TrophyWonLine.tsx). Fixed at the bottom so it shows over any game. */
+.trophy-won {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #1c1917;
+  color: #fef3c7;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  animation: trophy-won-in 0.4s ease-out;
+}
+.trophy-won__more { font-weight: 400; }
+@keyframes trophy-won-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trophy-won { animation: none; }
+}

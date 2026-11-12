@@ -40,9 +40,6 @@ export interface Achievement {
 
 export interface MyProgress {
   points: number;
-  level: number;
-  levelStart: number;
-  nextLevelAt: number;
   weekPoints: number;
   games: { game: string; rank: RankProgress; weekRatingChange: number | null }[];
   achievements: Achievement[];
@@ -119,12 +116,6 @@ export async function fetchRules(): Promise<Rules> {
   const { data, error } = await supabase.rpc('progress_rules');
   if (error || !data) throw new FriendlyError('We couldn’t load the rules.');
   return data as Rules;
-}
-
-/** How far through the current level, 0 to 1. */
-export function levelProgress(p: Pick<MyProgress, 'points' | 'levelStart' | 'nextLevelAt'>): number {
-  const span = p.nextLevelAt - p.levelStart;
-  return span > 0 ? Math.min(1, Math.max(0, (p.points - p.levelStart) / span)) : 0;
 }
 
 /** A short line about the next badge, e.g. "Halfway to Silver". */

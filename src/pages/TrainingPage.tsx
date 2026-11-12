@@ -86,6 +86,8 @@ function Loaded({ player, start, offline, quickStart, placeFirst }: { player: st
   // The dashboard's Quick looks card opens Training with ?quick=1, straight into Quick looks.
   const [openQuick] = useState(() => search.get('quick') === '1');
 
+  // Bumped when the server has taken a finished session: each may have won a trophy (the line says so).
+  const [sent, setSent] = useState(0);
   const flush = useCallback((keepalive = false) => void flushQueue(player, keepalive), [player]);
 
   // Send when the Wi-Fi comes back, and when the student leaves or switches away.
@@ -129,7 +131,7 @@ function Loaded({ player, start, offline, quickStart, placeFirst }: { player: st
     // Typing check times, the auto-submit choice and the sessions count are saved when they change.
     if (next.typing !== before.typing || next.autoSubmit !== before.autoSubmit || next.sessionsDone !== before.sessionsDone) {
       saveStudent();
-      if (next.sessionsDone !== before.sessionsDone) flush();
+      if (next.sessionsDone !== before.sessionsDone) void flushQueue(player).then((ok) => ok && setSent((n) => n + 1));
     }
   };
 
@@ -167,6 +169,7 @@ function Loaded({ player, start, offline, quickStart, placeFirst }: { player: st
         today={today}
         onAnswered={onAnswered}
         openQuick={openQuick}
+        savedCount={sent}
         quick={{ state: quick, onState: onQuickState, onAnswered: onQuickAnswered, onSessionEnd: () => flush() }}
         onSessionFinished={(kind, seed) => {
           enqueueSession(player, kind, seed);

@@ -1,5 +1,6 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
 import { useEffect, useRef, useState } from 'react';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { monsterWeek, suppliesOnSale, type Action, type MonsterOutcome, type ShownFight } from '../../../shared/clans/actions';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
@@ -431,6 +432,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
+      <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
       {newSeasonNotice && (
         <div className="cq-celebrate" role="status">
           <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>

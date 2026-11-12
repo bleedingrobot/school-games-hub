@@ -171,7 +171,7 @@ describe('a student’s page', () => {
     const user = userEvent.setup();
     show('/teacher/c12/students');
     await user.click(within(await roster()).getByRole('link', { name: /Brave Kiwi 7/ }));
-    await screen.findByText('Points level 2 · 50 points');
+    await screen.findByText(/^50 points/);
     expect(address()).toBe('/teacher/c12/students/s1');
     return user;
   }

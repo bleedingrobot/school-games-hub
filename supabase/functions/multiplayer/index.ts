@@ -272,6 +272,17 @@ function replay(moves) {
 	};
 }
 //#endregion
+//#region shared/gameCode.ts
+/** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
+const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
+/** Tidies up what a student typed: any case, spaces or dashes are fine. Null if it can't be a code. */
+function normaliseCode(typed) {
+	if (typeof typed !== "string" || typed.length > 20) return null;
+	const code = typed.toUpperCase().replace(/[\s-]/g, "");
+	if (code.length !== 5 || [...code].some((c) => !"CDFGHJKMNPQRTVWXY34679".includes(c))) return null;
+	return code;
+}
+//#endregion
 //#region shared/multiplayer.ts
 /**
 * Games between two students, shared by the website and the "multiplayer" server function.
@@ -286,8 +297,6 @@ function replay(moves) {
 const GAME_KINDS = ["chess", "checkers"];
 /** If it's your opponent's turn and they haven't moved for this long, you can claim the win. */
 const CLAIM_WIN_AFTER_MS = 12e4;
-/** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
-const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
 function isGameKind(value) {
 	return GAME_KINDS.includes(value);
 }
@@ -306,13 +315,6 @@ function movesBy(side, plies) {
 function makeCode(random = Math.random) {
 	let code = "";
 	for (let i = 0; i < 5; i++) code += CODE_ALPHABET[Math.floor(random() * 22)];
-	return code;
-}
-/** Tidies up what a student typed: any case, spaces or dashes are fine. Null if it can't be a code. */
-function normaliseCode(typed) {
-	if (typeof typed !== "string" || typed.length > 20) return null;
-	const code = typed.toUpperCase().replace(/[\s-]/g, "");
-	if (code.length !== 5 || [...code].some((c) => !"CDFGHJKMNPQRTVWXY34679".includes(c))) return null;
 	return code;
 }
 /** Replays a game's moves and says whose turn it is, or how it ended by the rules. */

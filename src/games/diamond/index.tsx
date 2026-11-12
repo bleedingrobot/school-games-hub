@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import { saveDiamondEnabled } from '../../data/diamond';
 import type { GameDefinition } from '../types';
-import { useDiamondEnabled } from './switch';
 import { DIAMOND_ABOUT, useDiamondCells, useDiamondClassSwitch, useDiamondSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -35,7 +34,7 @@ export const diamondDrop: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  useTeacherSwitch: useDiamondEnabled,
+  teacherSwitch: true,
   // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), how far the class
   // has dug in the Maths column, and starting one student again on their page.
   teacher: {

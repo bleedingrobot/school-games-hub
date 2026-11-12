@@ -54,9 +54,6 @@ vi.mock('./data/progress', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./data/progress')>()),
   fetchMyProgress: vi.fn(async () => ({
     points: 140,
-    level: 3,
-    levelStart: 125,
-    nextLevelAt: 225,
     weekPoints: 23,
     games: [
       { game: 'checkers', rank: { rank: 'silver', next: 'gold', progress: 0.5, gamesNeeded: null, ratedGames: 6 }, weekRatingChange: 12 },
@@ -124,11 +121,12 @@ function renderAt(path: string, auth: Partial<AuthState> = {}) {
 }
 
 describe('dashboard', () => {
-  it('shows the student, a Play button and both game cards', () => {
+  it('shows the student and both game cards, with no big Play button (My games instead)', async () => {
     renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Play$/ })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Chess' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^Play$/ })).not.toBeInTheDocument();
+    // The cards arrive together once the home page has answered (dashboard plan D5).
+    expect(await screen.findByRole('article', { name: 'Chess' }, LAZY_PAGE)).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Checkers' })).toBeInTheDocument();
   });
 });

@@ -21,6 +21,23 @@ Every prompt assumes these standing rules, so they are not repeated in full each
 - **Pictures:** the avatar jsonb gains `pic` (a trophy id). `save_my_avatar` refuses a `pic` the pupil has not won. `AvatarImage` shows the painting with a bronze, silver or gold ring when `pic` is set; every other place gets it for free.
 - **No hub points** from trophies.
 
+**As built by P3** (migration `20261112000800_trophies.sql`, test `supabase/tests/database/trophies.test.sql`):
+
+- The hub clock is three columns on `public.schools`: `hub_season_start`, `hub_season_days`, `hub_paused_since`. Nothing changes them yet (P12's panel). `hub_season(school)` is server only.
+- A card adds its trophies with `insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort)`. The id is at most 24 characters (lower-case letters, digits, hyphens). `game` is the home card id, or `'hub'`.
+- `award_trophy(who, trophy, detail default '{}', season default null)` returns `{ won, trophy, tier, count }`; `won` is true only when the call added a row, so it is safe to call again. Leave `season` out to use the hub season; Dragon Maths passes `lord_hall.season`. A `'steps'` trophy needs `detail.step` (1, 2 or 3). To back-award an old win with its real date, call it, then set `earned_at` on the new row in the same migration.
+- The ring is saved in the avatar as `picTier` by the server (`save_my_avatar` and `award_trophy`), so every screen that draws an avatar gets it with no extra request. The browser can't set it.
+- Browser: `src/data/trophies.ts` (`fetchMyTrophies`, `fetchTrophiesOf`, `markMyTrophiesSeen`, `tierOf`). A picture's emoji and painting go in `EARNED_PICTURES` in `src/avatar/earnedPictures.ts`, one line per picture trophy; an unlisted one draws a cup on its metal disc.
+- `my_trophies().next` is the first three unearned by `sort`, whatever the class has switched on: P5 can filter by the games the pupil sees.
+
+**As built by P5** (migration `20261112002100_trophy_cabinet.sql`, test `supabase/tests/database/trophy_cabinet.test.sql`):
+
+- `my_trophies().next` now gives up to twelve, and the page shows the first three from games the class can see (`nextSpots` in `src/trophies/cabinet.ts`). It also gives `favourites`.
+- Favourites: `profiles.trophy_favourites` (up to three ids). `set_my_favourite_trophies(ids)` keeps only trophies the pupil holds and returns what it saved.
+- The "New trophy!" moment: `my_new_trophies()` lists the unseen ones; `NewTrophyMoment` (in `Layout`) shows them on hub pages only and calls `mark_my_trophies_seen()` straight away, so each shows once. Sound only when it is on; still for reduced motion.
+- A trophy's `game` can be a home-card art id (`lord`, `clans`, `card101`): `trophyGame()` maps them to the game. A new card with a different art id adds a line to `SAME_GAME` there.
+- The cabinet draws a stand-in cup in the trophy's metal with the game's icon; P2's paintings can replace `TrophyArt` in `src/trophies/TrophyArt.tsx`.
+
 ---
 
 ## P1 Tidy the profile page
@@ -93,6 +110,14 @@ Size M. Database. Waits for: P3. **Aim to be live before season 2 starts (about 
 - Back-award from `lord_hall` in the migration: the five season-1 slayers get bronze now.
 - Dragon Maths shows "First five: 3 of 5 places left this season" on its season strip.
 - Placeholder art: the existing Scorchtail picture, cropped.
+
+**As built by P4** (migration `20261112002400_dragon_trophies.sql`, test `supabase/tests/database/lord_trophies.test.sql`):
+
+- The trophies are given by a trigger on `lord_hall` (`lord_hall_trophies` → `lord_give_trophies(player, season)`), which fires inside `lord_commit` on every dragon win. `lord_commit` itself was not re-created. A failed award only logs a warning; the save still goes through.
+- The first-five race is between pupils only: teachers and hidden pupils win the Slayer's Sword but never take a place. A pupil is in the first five when fewer than five schoolmates first slew the dragon strictly before them, so ties all count. `detail` keeps `dragonSeason` and `place`.
+- `lord_first_five()` gives `{ season, left }` for the pupil's school; the season road shows "First five: N of 5 places left this season" (live game only, not the browser trial).
+- Stand-in picture: Scorchtail's head, cropped, at `src/avatar/pictures/dragon-head-standin.webp`. When P2's painting lands, change the `dm-first-five` line in `EARNED_PICTURES` and delete the stand-in.
+- Live on 12 Nov 2026 the season-1 Hall had four pupils and one teacher account, so four pupils got bronze heads and one season-1 place was still open.
 
 ```text
 You are adding the first Dragon Maths trophies in the School Games Hub repo.
@@ -212,6 +237,14 @@ Size M. Database. Waits for: P3.
 - Nothing from speed, steps or being first. No hub points. Follow `docs/LEARNING-DESIGN.md`: the reward celebrates real finished rounds.
 - Back-award from today's `days_done` and prizes.
 - The game's own friend tells the child ("You can wear me on your profile now!") with a Kokoro voice line.
+
+**As built by P9** (migration `20261112002500_garden_trophies.sql`, test `supabase/tests/database/garden_trophies.test.sql`):
+
+- Trophy ids: `<game>-cup` (Garden Cup, steps), `<game>-<friend>` (62 pictures, `once`), `quick-looks-gate` (once). Sorts 5000 to 5240.
+- No game's finish function changed: a trigger on each `<game>_progress` calls `garden_rewards(who, game, days)` when `days_done` reaches a multiple of 30. Prize k is the friend at place `(k - 1) % n` of the game's picture rows by `sort`, which must match the game's `FRIENDS` (checked by `src/avatar/gardenPictures.test.ts`). A failed award only logs a warning; the child's finish still saves.
+- Quick looks: a trigger on `training_students` gives the Garden Gate when `typing.q.f` reaches 7. That number is the game's own saved record (the browser sends it; the server keeps the larger), so the Gate is as trustworthy as the garden itself.
+- Pictures: `src/avatar/gardenPictures.ts` (in `EARNED_PICTURES`), the friend's `-cheer` painting, or its `-sit` one where there is no cheer (most of Lizard's and Robin's friends) or Parrot's single pictures.
+- In the games: the kit's `WhatsNext` takes `wearMe` and says `WEAR_ME_LINE` after the finish line on a golden-prize day (Beanstalk's own panel does the same). Each game lists the line in `allVoiceLines()`; one Bella clip copied into the 11 voice folders.
 
 ```text
 You are adding profile rewards to the 11 early-years maths games and Quick looks in the School Games Hub repo.

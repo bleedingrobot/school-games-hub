@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
+import type { TrophyShelf } from '../data/trophies';
+import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
-import { useMonstersEnabled } from '../games/monsters/switch';
+import { useGameSwitch } from '../data/classSwitches';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES } from '../games/registry';
 import { isRanked } from '../games/types';
@@ -48,7 +50,7 @@ export function notOnBoardText(board: Board, gamesPlayed: number): string {
 
 export function Leaderboard() {
   const [game, setGame] = useState(GAMES[0].id);
-  const monstersOn = useMonstersEnabled() === true;
+  const monstersOn = useGameSwitch('monsters') === true;
   const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
   return (
     <div className="leaderboard">
@@ -99,6 +101,7 @@ function RankedBoard({ game }: { game: string }) {
   const top = placed.slice(0, 10);
   const meBelow = placed.slice(10).find((r) => r.is_me);
   const meOff = rows?.find((r) => r.is_me && r.place === null);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.display_name));
 
   return (
     <>
@@ -126,14 +129,14 @@ function RankedBoard({ game }: { game: string }) {
           ) : (
             <ol className="board-list" aria-label={`${info.label} leaderboard`}>
               {top.map((row) => (
-                <BoardLine key={row.display_name} row={row} board={board} />
+                <BoardLine key={row.display_name} row={row} board={board} shelf={shelves[row.display_name]} />
               ))}
               {meBelow && (
                 <>
                   <li className="board-list__gap" aria-hidden="true">
                     ⋯
                   </li>
-                  <BoardLine row={meBelow} board={board} />
+                  <BoardLine row={meBelow} board={board} shelf={shelves[meBelow.display_name]} />
                 </>
               )}
             </ol>
@@ -163,6 +166,7 @@ function StarsBoard() {
   const top = rows?.slice(0, 10) ?? [];
   const meBelow = rows?.slice(10).find((r) => r.is_me);
   const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.display_name));
 
   return (
     <>
@@ -176,14 +180,14 @@ function StarsBoard() {
       ) : (
         <ol className="board-list" aria-label="Most stars leaderboard">
           {top.map((row) => (
-            <StarsLine key={row.display_name} row={row} />
+            <StarsLine key={row.display_name} row={row} shelf={shelves[row.display_name]} />
           ))}
           {meBelow && (
             <>
               <li className="board-list__gap" aria-hidden="true">
                 ⋯
               </li>
-              <StarsLine row={meBelow} />
+              <StarsLine row={meBelow} shelf={shelves[meBelow.display_name]} />
             </>
           )}
         </ol>
@@ -211,6 +215,7 @@ function MonstersBoard() {
   const top = rows?.slice(0, 10) ?? [];
   const meBelow = rows?.slice(10).find((r) => r.is_me);
   const me = rows?.find((r) => r.is_me);
+  const shelves = useTrophyShelves([...top, meBelow].map((r) => r?.display_name));
 
   return (
     <>
@@ -224,14 +229,14 @@ function MonstersBoard() {
       ) : (
         <ol className="board-list" aria-label="Most monsters leaderboard">
           {top.map((row) => (
-            <MonstersLine key={row.display_name} row={row} />
+            <MonstersLine key={row.display_name} row={row} shelf={shelves[row.display_name]} />
           ))}
           {meBelow && (
             <>
               <li className="board-list__gap" aria-hidden="true">
                 ⋯
               </li>
-              <MonstersLine row={meBelow} />
+              <MonstersLine row={meBelow} shelf={shelves[meBelow.display_name]} />
             </>
           )}
         </ol>
@@ -241,7 +246,7 @@ function MonstersBoard() {
   );
 }
 
-function MonstersLine({ row }: { row: MonstersRow }) {
+function MonstersLine({ row, shelf }: { row: MonstersRow; shelf?: TrophyShelf }) {
   return (
     <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
       <span className="board-list__place" aria-label={`Place ${row.place}`}>
@@ -251,13 +256,14 @@ function MonstersLine({ row }: { row: MonstersRow }) {
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">🐾 {row.monsters}</span>
     </li>
   );
 }
 
-function StarsLine({ row }: { row: StarsRow }) {
+function StarsLine({ row, shelf }: { row: StarsRow; shelf?: TrophyShelf }) {
   return (
     <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
       <span className="board-list__place" aria-label={`Place ${row.place}`}>
@@ -267,13 +273,14 @@ function StarsLine({ row }: { row: StarsRow }) {
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <FavouriteTrophies shelf={shelf} />
       </span>
       <span className="board-list__points">★ {row.stars}</span>
     </li>
   );
 }
 
-function BoardLine({ row, board }: { row: BoardRow; board: Board }) {
+function BoardLine({ row, board, shelf }: { row: BoardRow; board: Board; shelf?: TrophyShelf }) {
   const place = row.place ?? 0;
   return (
     <li className={row.is_me ? 'is-me' : undefined} value={place}>
@@ -284,6 +291,7 @@ function BoardLine({ row, board }: { row: BoardRow; board: Board }) {
       <span className="board-list__name">
         {row.display_name}
         {row.is_me && <span className="board-list__you"> (you)</span>}
+        <FavouriteTrophies shelf={shelf} />
       </span>
       <RankBadge rank={row.rank} />
       {board === 'week' && <span className="board-list__points">{row.points} pts</span>}

@@ -15,7 +15,7 @@ James paints the final art himself in the evening, on his gaming PC with ComfyUI
 
 - A game without a card picture shows a band of its `colours` and its `Icon`, so nothing breaks while you build.
 - Style: the Marble Rush course-card look (`docs/HOME-ART-PLAN.md`): a bright, flat storybook landscape, wide 16:9, about 1600 × 900, subject in the middle, calm sky at the top, **no text**. Put its prompt in your `config.json` as a `card` picture.
-- When it is painted: `src/assets/home/<id>.webp` (about 1600 px) and `<id>-small.webp` (about 800 px), plus two imports and one `ART` line in `src/components/gameCardArt.ts` (optional `focus` for the crop). It is a shared file: do it at the merge step.
+- When it is painted: drop `src/assets/home/<id>.webp` (about 1600 px) and `<id>-small.webp` (about 640 to 800 px) in. They are found by file name, no import lines; add a `FOCUS` line in `src/components/gameCardArt.ts` only if the Play button's crop needs moving. `src/games/art.test.ts` fails if a game has no picture (add it to `NOT_PAINTED_YET` until it does) or a picture has no game.
 
 ## Read-aloud: Bella for every game
 

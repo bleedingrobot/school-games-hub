@@ -11,7 +11,7 @@ import { Link } from 'react-router';
 import { answerWarp, fetchWarpRequests, type WarpRequest } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import type { TeacherAlert } from '../games/types';
-import { ago, LIVE_MS } from '../pages/MyClasses';
+import { ago, LIVE_MS } from '../data/ago';
 import '../pages/teacher-page.css';
 
 interface WaitingValue {

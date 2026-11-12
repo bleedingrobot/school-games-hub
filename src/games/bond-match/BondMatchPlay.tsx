@@ -6,6 +6,7 @@ import { BondMatchGame, type FinishedGame } from './BondMatchGame';
 import type { BondMatchSaver, ServerBest } from '../../data/bondMatch';
 import { BondPicker, type StarsBySet } from './BondPicker';
 import { recordGame, type RecordedGame } from './bests';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { Finish, VersusFinish, type SaveState } from './Finish';
 import { TEXT, type Players } from './strings';
 import type { BondSuggestion } from './suggest';
@@ -53,6 +54,8 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   // The board size last played, so the picker opens on it again.
   const [lastSize, setLastSize] = useState<BoardSize>('medium');
   const [saved, setSaved] = useState<SaveState | undefined>();
+  // Games the server has taken: each may have won a trophy (the line says so).
+  const [saves, setSaves] = useState(0);
   const [stars, setStars] = useState<StarsBySet>({});
 
   // The student's saved stars, for the picker. Anything waiting to be sent goes first.
@@ -80,6 +83,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
         setSaved(undefined);
       } else {
         setSaved({ status: 'saved', points: result.points });
+        setSaves((n) => n + 1);
         const best = result.best;
         if (best) setStars((was) => ({ ...was, [set.id]: { ...was[set.id], [size]: best.stars } }));
       }
@@ -131,6 +135,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
           onAnother={() => setScreen({ name: 'pick' })}
         />
       )}
+      <TrophyWonLine games={['bond-match']} watch={saves || null} off={!saver} />
     </div>
   );
 }

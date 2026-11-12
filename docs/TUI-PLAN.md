@@ -96,7 +96,10 @@ arrow-cards moment after a right answer (section 2, point 7).
 | 0 | Numbers only | Only "10 + 4 = ?". |
 
 Ways 2 and 3 use the same levels: on "how many more?" the missing berries are empty dashed circles in the frame
-(levels 5 and 4) or one empty space beside the kete (level 3); on "take the ten away" the kete visibly flies off.
+(levels 5 and 4) or one empty space beside the kete (level 3); on "take the ten away" the child first answers "How many berries are on the tree?" (a nest
+tap that is not sent or marked), then the friend eats the ten one berry at a time, leaving an empty frame (or a faint
+kete), and only then is the go asked (James, 12 Nov 2026: count what is there first; the ten is eaten, not flown away).
+This happens when the berries are drawn (level 2 up); a "Now you try" go starts with the ten already eaten.
 
 ### How a child's help level moves (between challenges)
 

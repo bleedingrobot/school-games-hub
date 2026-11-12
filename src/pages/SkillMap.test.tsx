@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { Suspense } from 'react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes } from 'react-router';
 import { teacherRoutes } from '../App';
@@ -105,14 +106,19 @@ const map = (students: skillMap.MapStudent[], over: Partial<skillMap.ClassMap> =
   ...over,
 });
 
-function show(auth: AuthState = teacher, url = '/skills') {
-  return render(
+async function show(auth: AuthState = teacher, url = '/skills') {
+  // The teacher pages load when opened (dashboard plan D7): wait for them before looking.
+  const view = render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={[url]}>
-        <Routes>{teacherRoutes()}</Routes>
+        <Suspense fallback={<p data-page-loading>Loading…</p>}>
+          <Routes>{teacherRoutes()}</Routes>
+        </Suspense>
       </MemoryRouter>
     </AuthContext.Provider>,
   );
+  await waitFor(() => expect(document.querySelector('[data-page-loading]')).toBeNull(), { timeout: 10_000 });
+  return view;
 }
 
 beforeEach(() => {
@@ -124,7 +130,7 @@ beforeEach(() => {
 
 describe('the skill map', () => {
   it('is for teachers; shows the skills in use on one line per pupil; a cell opens a side panel with focus links', async () => {
-    const first = show(student);
+    const first = await show(student);
     expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).not.toHaveBeenCalled();
     first.unmount();
@@ -132,7 +138,7 @@ describe('the skill map', () => {
 
     // A class with no ladder answers is pointed at the Foundational pages.
     vi.mocked(skillMap.fetchClassMap).mockResolvedValueOnce(map([ben()]));
-    const empty = show(teacher, '/teacher/c12/maths/skills');
+    const empty = await show(teacher, '/teacher/c12/maths/skills');
     const nobody = await screen.findByText(/Nobody in Room 12 has answered ladder maths yet/, {}, { timeout: 5000 });
     expect(within(nobody).getByRole('link', { name: 'Progress' })).toHaveAttribute('href', '/teacher/c12/progress');
     empty.unmount();
@@ -145,7 +151,7 @@ describe('the skill map', () => {
         facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
       });
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
-    show(teacher, '/teacher/c12/maths/skills?pupil=s2');
+    await show(teacher, '/teacher/c12/maths/skills?pupil=s2');
     const grid = await screen.findByRole('table', {}, { timeout: 5000 });
     // Skills in use: Ana's skills and the next one, short names with class counts; untouched stages fold into one column.
     const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });

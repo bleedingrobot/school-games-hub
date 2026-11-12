@@ -58,12 +58,12 @@ select set_eq($$
 $$, array[
   'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'hub_answer_totals', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
-  'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
-  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'owner_add_school', 'owner_add_school_domain',
+  'mark_my_trophies_seen', 'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_new_trophies', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_top_games',
+  'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'owner_add_school', 'owner_add_school_domain',
   'owner_schools', 'owner_set_school_active', 'owner_set_school_contact', 'power_lobby_games', 'progress_rules',
-  'save_my_avatar', 'save_my_home_layout', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_maths_focus', 'space_lobby_games',
+  'save_my_avatar', 'save_my_home_layout', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_favourite_trophies', 'set_my_maths_focus', 'space_lobby_games',
   'teacher_add_co_teacher', 'teacher_add_to_class', 'teacher_answer_warp', 'teacher_archive_class', 'teacher_bond_match_student',
   'teacher_clan_info', 'teacher_clan_maths_class', 'teacher_clan_maths_student', 'teacher_clans_new_season',
   'teacher_class_detail', 'teacher_class_events', 'teacher_class_overview', 'teacher_class_settings', 'teacher_class_skill_map', 'teacher_classes', 'teacher_create_class', 'teacher_create_group',
@@ -77,7 +77,7 @@ $$, array[
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_non_maths_games', 'teacher_set_unlimited_today', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader', 'teacher_set_trader_forge', 'teacher_set_trader_forge_typing', 'teacher_clear_trader_names', 'teacher_trader_class_systems',
   'diamond_hall', 'teacher_diamond_class', 'teacher_diamond_student', 'teacher_diamond_restart', 'teacher_set_diamond',
   'teacher_set_isles', 'my_isles', 'isles_sky', 'teacher_isles_class', 'teacher_isles_student', 'teacher_reset_isles', 'teacher_isles_halls',
-  'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
+  'trophy_shelves', 'teacher_set_beanstalk', 'teacher_beanstalk_class', 'teacher_beanstalk_student',
   'teacher_set_hop', 'teacher_hop_class', 'teacher_hop_student',
   'teacher_set_pipi', 'teacher_pipi_class', 'teacher_pipi_student',
   'teacher_set_korora', 'teacher_korora_class', 'teacher_korora_student',
@@ -95,7 +95,7 @@ $$, array[
   'teacher_foundational_class', 'teacher_quick_looks_class',
   'teacher_class_badges', 'teacher_renew_badge',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
-  'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
+  'teacher_training_student', 'trophies_of', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 

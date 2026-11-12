@@ -1,5 +1,7 @@
 import { Link } from 'react-router';
-import { RANKS, levelProgress, type Achievement, type MyProgress, type Rank } from '../data/progress';
+import { RANKS, type Achievement, type MyProgress, type Rank } from '../data/progress';
+import type { TrophyShelf } from '../data/trophies';
+import { TrophyCount } from '../trophies/FavouriteTrophies';
 import { gameLabel } from '../games/registry';
 
 export function RankBadge({ rank, game }: { rank: Rank; game?: string }) {
@@ -12,42 +14,12 @@ export function RankBadge({ rank, game }: { rank: Rank; game?: string }) {
   );
 }
 
-/** "Level 4" with a bar showing how far to the next level. */
-export function LevelBar({ progress }: { progress: Pick<MyProgress, 'points' | 'level' | 'levelStart' | 'nextLevelAt'> }) {
-  const toGo = progress.nextLevelAt - progress.points;
-  return (
-    <div className="level-bar">
-      <div className="level-bar__text">
-        <strong>Level {progress.level}</strong>
-        <span>
-          {toGo} point{toGo === 1 ? '' : 's'} to level {progress.level + 1}
-        </span>
-      </div>
-      <progress
-        max={1}
-        value={levelProgress(progress)}
-        aria-label={`Level ${progress.level}: ${toGo} points to level ${progress.level + 1}`}
-      />
-      <Link to="/points" className="level-bar__link">
-        How points work
-      </Link>
-    </div>
-  );
-}
-
-/** The home page's welcome strip: "Level 3", a slim bar, "140 points · 85 to level 4", and a link to how points work. */
-export function HeroLevel({ progress }: { progress: Pick<MyProgress, 'points' | 'level' | 'levelStart' | 'nextLevelAt'> }) {
-  const toGo = progress.nextLevelAt - progress.points;
+/** The home page's welcome strip: "🏆 5 trophies" with the favourite three, "140 points", and a link to how points work. */
+export function HeroPoints({ progress, shelf }: { progress: Pick<MyProgress, 'points'>; shelf: TrophyShelf | undefined }) {
   return (
     <span className="hero-level">
-      <span>Level {progress.level}</span>
-      <progress
-        max={1}
-        value={levelProgress(progress)}
-        aria-label={`Level ${progress.level}: ${toGo} points to level ${progress.level + 1}`}
-      />
+      <TrophyCount shelf={shelf} />
       <span>{progress.points} points</span>
-      <span className="hero-level__to-go">· {toGo} to level {progress.level + 1}</span>
       <Link to="/points" className="hero-level__link">
         How points work
       </Link>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import {
@@ -15,12 +15,15 @@ import {
   type HubTheme,
 } from '../avatar/avatarParts';
 import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
-import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
+import { AchievementList, RankBadge } from '../components/Progress';
 import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
 import { nextRankText, type Achievement, type MyProgress } from '../data/progress';
+import { pictureOf } from '../avatar/earnedPictures';
+import type { MyTrophy } from '../data/trophies';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { useThemeTrial } from '../theme/hubTheme';
+import { TrophyCabinet, useMyTrophies } from '../trophies/TrophyCabinet';
 import './profile.css';
 
 /** How many recent games the profile's My stats shows. */
@@ -53,6 +56,11 @@ function hasSavedAvatar(saved: unknown): boolean {
   return !!saved && typeof saved === 'object' && PARTS.some((part) => part in (saved as object));
 }
 
+/** What to save: the built avatar and theme, plus the earned picture worn over them (the server checks it and adds the ring). */
+function lookToSave(avatar: Avatar, theme: HubTheme, pic: string | null) {
+  return pic ? { ...avatarToSave(avatar, theme), pic } : avatarToSave(avatar, theme);
+}
+
 /**
  * My profile: the pupil first (avatar, name, Sign out), then folds that start closed. The avatar maker and the name picker
  * open from the top card's buttons, one at a time.
@@ -64,9 +72,13 @@ export function Profile() {
   const savedAvatar = normaliseAvatar(profile?.avatar);
   const savedTheme = themeOf(profile?.avatar);
   const madeAvatar = hasSavedAvatar(profile?.avatar);
+  const savedPic = pictureOf(profile?.avatar)?.id ?? null;
+  const cabinet = useMyTrophies(profile?.id);
+  const trophyCount = cabinet.data?.trophies.length;
 
   const [editing, setEditing] = useState<'look' | 'name' | null>(null);
-  const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set());
+  // My trophies starts open: they are the hub's top rewards.
+  const [open, setOpen] = useState<ReadonlySet<FoldId>>(() => new Set(['trophies']));
   const toggle = (id: FoldId) =>
     setOpen((was) => {
       const next = new Set(was);
@@ -97,7 +109,7 @@ export function Profile() {
     setTrial(next);
     setThemeStatus('Saving…');
     try {
-      await saveMyAvatar(avatarToSave(savedAvatar, next));
+      await saveMyAvatar(lookToSave(savedAvatar, next, savedPic));
       await refreshProfile();
       setThemeStatus('Saved! Enjoy your new look.');
     } catch (error) {
@@ -115,7 +127,7 @@ export function Profile() {
       <h1 className="page-title">My profile</h1>
 
       <section className="panel profile-top" aria-label="Me">
-        <AvatarImage avatar={savedAvatar} size={112} label="Your avatar" />
+        <AvatarImage avatar={profile?.avatar} size={112} label="Your avatar" />
         <div className="profile-top__who">
           <h2 className="profile-top__name">{profile?.display_name}</h2>
           {!madeAvatar && <p className="profile-top__nudge">You haven’t made your avatar yet. Pick a face, hair and colours!</p>}
@@ -146,11 +158,19 @@ export function Profile() {
         </div>
       </section>
 
-      {editing === 'look' && <LookMaker onClose={() => setEditing(null)} />}
+      {editing === 'look' && (
+        <LookMaker pictures={cabinet.data?.trophies.filter((t) => t.kind === 'picture') ?? null} onClose={() => setEditing(null)} />
+      )}
       {editing === 'name' && <NamePicker onClose={() => setEditing(null)} />}
 
-      <Fold id="trophies" title="🏆 My trophies" open={open.has('trophies')} onToggle={toggle}>
-        <p className="panel__empty">No trophies yet. Trophies for big wins in your games are coming soon!</p>
+      <Fold
+        id="trophies"
+        title="🏆 My trophies"
+        count={trophyCount === undefined ? undefined : `${trophyCount} ${trophyCount === 1 ? 'trophy' : 'trophies'}`}
+        open={open.has('trophies')}
+        onToggle={toggle}
+      >
+        <TrophyCabinet cabinet={cabinet} />
       </Fold>
 
       <Fold
@@ -239,18 +259,27 @@ function Fold({
 }
 
 /** The avatar maker, opened by "Change my look": one Save, which keeps the saved theme with the new avatar. */
-function LookMaker({ onClose }: { onClose: () => void }) {
+function LookMaker({ pictures, onClose }: { pictures: MyTrophy[] | null; onClose: () => void }) {
   const { profile, refreshProfile } = useAuth();
   const savedAvatar = normaliseAvatar(profile?.avatar);
+  const savedPic = pictureOf(profile?.avatar)?.id ?? null;
   const [avatar, setAvatar] = useState<Avatar>(savedAvatar);
+  const [pic, setPic] = useState<string | null>(savedPic);
   const [status, setStatus] = useState<string | null>(null);
   // A pupil with no avatar yet can save the starting one as it is.
-  const canSave = !hasSavedAvatar(profile?.avatar) || JSON.stringify(avatar) !== JSON.stringify(savedAvatar);
+  const canSave = !hasSavedAvatar(profile?.avatar) || JSON.stringify(avatar) !== JSON.stringify(savedAvatar) || pic !== savedPic;
+  const wearing = pictures?.find((p) => p.id === pic);
+  // Picking any part of the built avatar takes the earned picture off.
+  const build = (change: (prev: Avatar) => Avatar) => {
+    setAvatar(change);
+    setPic(null);
+    setStatus(null);
+  };
 
   async function save() {
     setStatus('Saving…');
     try {
-      await saveMyAvatar(avatarToSave(avatar, themeOf(profile?.avatar)));
+      await saveMyAvatar(lookToSave(avatar, themeOf(profile?.avatar), pic));
       await refreshProfile();
       setStatus('Saved! Looking good.');
     } catch (error) {
@@ -261,15 +290,12 @@ function LookMaker({ onClose }: { onClose: () => void }) {
   return (
     <section className="panel avatar-maker" aria-labelledby="avatar-title">
       <div className="avatar-maker__preview">
-        <AvatarImage avatar={avatar} size={180} label="Your new look" />
+        <AvatarImage avatar={wearing ? { pic: wearing.id, picTier: wearing.tier } : avatar} size={180} label="Your new look" />
         <div className="avatar-maker__buttons">
           <button
             type="button"
             className="button button--light-outline"
-            onClick={() => {
-              setAvatar(randomAvatar());
-              setStatus(null);
-            }}
+            onClick={() => build(() => randomAvatar())}
           >
             🎲 Surprise me
           </button>
@@ -285,6 +311,37 @@ function LookMaker({ onClose }: { onClose: () => void }) {
         </p>
       </div>
       <div className="avatar-maker__parts">
+        <fieldset className="choice-group earned-pics">
+          <legend>My earned pictures</legend>
+          {pictures && pictures.length > 0 ? (
+            <div className="earned-pics__row">
+              <label className="earned-pic">
+                <input type="radio" name="earned-pic" checked={pic === null} onChange={() => setPic(null)} />
+                <AvatarImage avatar={avatar} size={64} />
+                <span>My own avatar</span>
+              </label>
+              {pictures.map((p) => (
+                <label key={p.id} className="earned-pic">
+                  <input
+                    type="radio"
+                    name="earned-pic"
+                    checked={pic === p.id}
+                    onChange={() => {
+                      setPic(p.id);
+                      setStatus(null);
+                    }}
+                  />
+                  <AvatarImage avatar={{ pic: p.id, picTier: p.tier }} size={64} />
+                  <span>{p.name}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="earned-pics__none">
+              {pictures ? 'Win a picture trophy in a game and you can wear it here, with a bronze, silver or gold ring.' : 'Loading…'}
+            </p>
+          )}
+        </fieldset>
         <h2 id="avatar-title" className="panel__title">
           Build your avatar
         </h2>
@@ -301,10 +358,7 @@ function LookMaker({ onClose }: { onClose: () => void }) {
                       name={`avatar-${part}`}
                       value={option}
                       checked={avatar[part] === option}
-                      onChange={() => {
-                        setAvatar((prev) => ({ ...prev, [part]: option }));
-                        setStatus(null);
-                      }}
+                      onChange={() => build((prev) => ({ ...prev, [part]: option }))}
                       aria-label={isColour ? `${PART_LABELS[part]} ${AVATAR_OPTIONS[part].indexOf(option as never) + 1}` : undefined}
                     />
                     {isColour ? <span style={{ background: option }} /> : <span>{OPTION_LABELS[option] ?? option}</span>}
@@ -508,7 +562,7 @@ function MyAchievements({ achievements }: { achievements: Achievement[] }) {
   );
 }
 
-/** Inside My stats: points, the level bar and badges, then recent games and the tables for bots and friends. */
+/** Inside My stats: points and badges, then recent games and the tables for bots and friends. */
 function MyStatsBody({ home }: { home: MyHome }) {
   const { progress, stats, recent, failed } = home;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
@@ -517,9 +571,9 @@ function MyStatsBody({ home }: { home: MyHome }) {
       {progress ? (
         <div className="my-progress">
           <p className="my-progress__points">
-            <strong>{progress.points}</strong> points · <strong>{progress.weekPoints}</strong> this week
+            <strong>{progress.points}</strong> points · <strong>{progress.weekPoints}</strong> this week ·{' '}
+            <Link to="/points">How points work</Link>
           </p>
-          <LevelBar progress={progress} />
           <ul className="my-progress__ranks">
             {progress.games.map((g) => (
               <li key={g.game}>

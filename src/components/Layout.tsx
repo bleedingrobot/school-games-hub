@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -5,6 +6,7 @@ import { themeOf } from '../avatar/avatarParts';
 import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
+import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
 import { CrashScreen } from './CrashScreen';
 import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
@@ -66,9 +68,12 @@ function ThemedLayout() {
       <main id="main" tabIndex={-1}>
         {/* A new page starts with a clean slate, so one broken page doesn't stay broken after you leave it. */}
         <CrashScreen key={pathname}>
-          <Outlet />
+          <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+            <Outlet />
+          </Suspense>
         </CrashScreen>
       </main>
+      <NewTrophyMoment />
     </div>
   );
 }

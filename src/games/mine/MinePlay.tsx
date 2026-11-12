@@ -15,6 +15,7 @@ import { LEVELS, PRACTICE, baseOf, formatClock, hardOf, type LevelInfo } from '.
 import { MineBoard } from './MineBoard';
 import { loadBests, loadPrefs, savePrefs, type Bests, type MinePrefs } from './prefs';
 import { ControlsHelp, HowToPlayBody, SettingsPanel } from './Settings';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './mine.css';
 
 // The picture (three.js) and the run screen load only when someone starts a mine.
@@ -39,7 +40,7 @@ interface Dive {
  * `trial` is for the stand-alone preview (no server): question doors and pads use trial questions made and marked in the
  * browser, and nothing is sent anywhere.
  */
-function MineRoot({ trial }: { trial: boolean }) {
+function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }) {
   const { profile } = useAuth();
   const player = profile?.id ?? '';
   const [prefs, setPrefs] = useState<MinePrefs>(() => loadPrefs(player));
@@ -118,7 +119,11 @@ function MineRoot({ trial }: { trial: boolean }) {
           trial={trial}
           started={run.started}
           serverBest={serverBest}
-          onFinish={() => (trial ? setDeviceBests(loadBests(player)) : reloadBests())}
+          onFinish={() => {
+            if (trial) setDeviceBests(loadBests(player));
+            else reloadBests();
+            onSaved();
+          }}
           onAgain={() => dive(run.level, run.round + 1)}
           onNext={next ? () => dive(next, 0) : null}
           onExit={() => setRun(null)}
@@ -231,6 +236,17 @@ function MineRoot({ trial }: { trial: boolean }) {
       </div>
       <ul className="mn-levels">{LEVELS.map(card)}</ul>
     </section>
+  );
+}
+
+function MineRoot({ trial }: { trial: boolean }) {
+  // Finished runs: each one the server has taken may have won a trophy (the line says so).
+  const [saves, setSaves] = useState(0);
+  return (
+    <>
+      <MineScreens trial={trial} onSaved={() => setSaves((n) => n + 1)} />
+      <TrophyWonLine games={['mine']} watch={saves || null} off={trial} />
+    </>
   );
 }
 

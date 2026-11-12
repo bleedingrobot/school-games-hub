@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,9 +30,6 @@ vi.mock('../data/progress', async (importOriginal) => ({
   fetchRules: vi.fn(async () => rules),
   fetchMyProgress: vi.fn(async () => ({
     points: 60,
-    level: 2,
-    levelStart: 50,
-    nextLevelAt: 125,
     weekPoints: 60,
     games: [
       { game: 'checkers', rank: { rank: 'gold', next: 'champion', progress: 1, gamesNeeded: 4, ratedGames: 11 }, weekRatingChange: 30 },
@@ -67,7 +64,6 @@ vi.mock('../data/teacher', () => ({
   fetchPeople: vi.fn(async () => people),
   fetchPersonDetail: vi.fn(async () => ({
     points: 50,
-    level: 2,
     games: [
       { game: 'checkers', bot: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, friend: { played: 2, won: 1, lost: 1, drawn: 0, left: 1 }, rank: 'silver', achievements: 3 },
       { game: 'chess', bot: { played: 4, won: 2, lost: 1, drawn: 1, left: 0 }, friend: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, rank: 'bronze', achievements: 2 },
@@ -165,8 +161,9 @@ const student: AuthState = {
 /** A teacher who isn't a school admin: they can't make teachers or start a new season. */
 const plainTeacher: AuthState = { ...student, profile: { id: 't2', display_name: 'Calm Fox 2', avatar: {}, role: 'teacher' } };
 
-function renderAt(path: string, auth: AuthState = student) {
-  return render(
+async function renderAt(path: string, auth: AuthState = student) {
+  // Every page but home loads when opened (dashboard plan D7): let the lazy page arrive before looking.
+  const view = render(
     <SoundProvider>
       <AuthContext.Provider value={auth}>
         <MemoryRouter initialEntries={[path]}>
@@ -175,6 +172,8 @@ function renderAt(path: string, auth: AuthState = student) {
       </AuthContext.Provider>
     </SoundProvider>,
   );
+  await waitFor(() => expect(document.querySelector('[data-page-loading]')).toBeNull(), { timeout: 10_000 });
+  return view;
 }
 
 beforeEach(() => {
@@ -183,7 +182,7 @@ beforeEach(() => {
 
 describe('teacher view', () => {
   it('is only shown to teachers', async () => {
-    renderAt('/teacher');
+    await renderAt('/teacher');
     expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Teacher/ })).not.toBeInTheDocument();
     const { fetchPeople } = await import('../data/teacher');
@@ -194,7 +193,7 @@ describe('teacher view', () => {
 
   it('shows a plain teacher no way to make teachers or start a new season (only a school admin does)', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher/c12/students', plainTeacher);
+    await renderAt('/teacher/c12/students', plainTeacher);
     await roster();
     expect(screen.getByRole('button', { name: 'All my students' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
@@ -203,7 +202,7 @@ describe('teacher view', () => {
     expect(within(tabs).getByRole('link', { name: 'Maths' })).toHaveAttribute('href', '/teacher/c12/maths');
     expect(within(tabs).queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
     await user.click(within(await roster()).getByRole('link', { name: /Brave Kiwi 7/ }));
-    await screen.findByText('Points level 2 · 50 points');
+    await screen.findByText(/^50 points/);
     const manage = screen.getByRole('region', { name: 'Manage' });
     expect(within(manage).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
     expect(within(manage).getByRole('button', { name: /New name/ })).toBeInTheDocument();

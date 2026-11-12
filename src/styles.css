@@ -1897,27 +1897,6 @@ main:focus {
   color: var(--won);
   white-space: nowrap;
 }
-.level-bar {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
-}
-.level-bar__text {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 12px;
-  color: var(--ink-soft);
-  font-weight: 700;
-}
-.level-bar__text strong {
-  color: var(--ink);
-}
-.level-bar__link {
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-.level-bar progress,
 .my-progress__ranks progress {
   width: 100%;
   height: 14px;
@@ -1927,16 +1906,13 @@ main:focus {
   background: var(--bg);
   overflow: hidden;
 }
-.level-bar progress::-webkit-progress-bar,
 .my-progress__ranks progress::-webkit-progress-bar {
   background: var(--bg);
 }
-.level-bar progress::-webkit-progress-value,
 .my-progress__ranks progress::-webkit-progress-value {
   background: var(--play-dark);
   border-radius: 999px;
 }
-.level-bar progress::-moz-progress-bar,
 .my-progress__ranks progress::-moz-progress-bar {
   background: var(--play-dark);
   border-radius: 999px;
@@ -2071,26 +2047,6 @@ main:focus {
 .badge-steps {
   list-style: none;
   padding-left: 0;
-}
-.level-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.level-steps li {
-  display: grid;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: var(--tint);
-  text-align: center;
-}
-.level-steps span {
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-  font-weight: 700;
 }
 
 /* ---------- Teacher view ---------- */
@@ -2414,29 +2370,6 @@ main:focus {
   gap: 4px 10px;
   font-variant-numeric: tabular-nums;
 }
-.hero-level > span:first-child {
-  color: var(--h-box-ink);
-}
-.hero-level progress {
-  width: 160px;
-  height: 10px;
-  appearance: none;
-  border: none;
-  border-radius: 999px;
-  background: var(--h-bar-track);
-  overflow: hidden;
-}
-.hero-level progress::-webkit-progress-bar {
-  background: var(--h-bar-track);
-}
-.hero-level progress::-webkit-progress-value {
-  background: var(--h-bar-fill);
-  border-radius: 999px;
-}
-.hero-level progress::-moz-progress-bar {
-  background: var(--h-bar-fill);
-  border-radius: 999px;
-}
 .hero-level__link {
   color: var(--h-link);
   font-size: 0.85rem;
@@ -2530,6 +2463,76 @@ main:focus {
 }
 .in-progress__more a {
   color: var(--h-title);
+}
+
+/* While the home page loads (dashboard plan D5): grey cards the size of game cards, so nothing jumps when the real ones come. */
+.home-waiting {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 42px;
+}
+.home-waiting__card {
+  height: 300px;
+  border-radius: var(--h-r);
+  background: var(--h-box-soft, rgba(255, 255, 255, 0.35));
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-waiting__card {
+    animation: home-waiting 1.4s ease-in-out infinite alternate;
+  }
+}
+@keyframes home-waiting {
+  to {
+    opacity: 0.25;
+  }
+}
+
+/* Games still going: one yellow line of chips that carry on (dashboard plan D4). They wrap on a phone. */
+.in-progress--chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 28px;
+  background: var(--h-going);
+  color: var(--h-going-ink);
+  border: 2px solid var(--h-going-edge);
+}
+.in-progress__label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-right: 2px;
+}
+.going-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 4px 16px 4px 8px;
+  border-radius: 999px;
+  background: var(--h-play);
+  color: var(--h-play-ink);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  max-width: 100%;
+}
+.going-chip__emoji {
+  font-size: 1.2rem;
+  line-height: 0;
+}
+.going-chip--more {
+  padding-left: 16px;
+  background: transparent;
+  color: var(--h-going-ink);
+  text-decoration: underline;
+}
+.going-chip:focus-visible {
+  outline: 3px solid var(--h-going-ink);
+  outline-offset: 2px;
 }
 
 /* Games, in their groups: a small label with a thin line, then 3 slim cards across on a Chromebook. */
@@ -2664,6 +2667,17 @@ main:focus {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: 12px;
+}
+/* My games at the top of the home page (dashboard plan D2): smaller cards, no tagline or bot level, so four fit across a laptop. */
+.game-grid--mine {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+}
+.game-grid--mine .game-card__text > p:not(.game-card__note),
+.game-grid--mine .game-card__do > :not(.game-card__go) {
+  display: none;
+}
+.game-group--pinned .season-strips {
+  margin-top: 12px;
 }
 
 /* A game card in the Marble Rush course-card look (docs/HOME-ART-PLAN.md): the painted scene on top, a light panel over
@@ -3256,9 +3270,6 @@ main:focus {
   .in-progress__item .button {
     flex: 1;
   }
-  .hero-level progress {
-    width: 120px;
-  }
 }
 
 /* ---------- Profile: My stats and My theme ---------- */
@@ -3372,5 +3383,105 @@ main:focus {
 @media (min-width: 1000px) {
   .season-strips--two {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Phones and iPads in portrait (dashboard plan D6): two smaller cards per row. The picture is 4:3, the tagline is hidden, the pin
+   box is just 📌 and the bot levels fold into one chip. The Play button stays at least 44px tall. */
+@media (max-width: 700px) {
+  .game-grid,
+  .game-grid--mine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .home-waiting {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .home-waiting__card {
+    height: 230px;
+  }
+  .game-card__pic {
+    aspect-ratio: 4 / 3;
+  }
+  .game-card__body {
+    gap: 6px;
+    margin: -18px 5px 5px;
+    padding: 8px 9px;
+  }
+  .game-card h3 {
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+  .game-card__text > p:not(.game-card__note) {
+    display: none;
+  }
+  .game-card__text .game-card__note {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+  }
+  .game-card__moves {
+    font-size: 0.7rem;
+  }
+  .game-card__moves-title {
+    display: none;
+  }
+  .game-card__go {
+    min-height: 44px;
+    padding: 6px 10px;
+    border-radius: 11px;
+    font-size: 0.85rem;
+  }
+  .game-card__pin {
+    top: 6px;
+    right: 6px;
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+  .game-card__pin-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .game-card__dev {
+    top: 8px;
+    left: 4px;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+  .game-card__level summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: #e8edf5;
+    color: #0f172a;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    list-style: none;
+  }
+  .game-card__level summary::-webkit-details-marker {
+    display: none;
+  }
+  .game-card__level[open] summary {
+    margin-bottom: 6px;
+  }
+  .game-card__level .level-picker__options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .game-card__level .level-picker--joined .level-picker__option + .level-picker__option {
+    border-left: 0;
+    border-top: 2px solid #c5cee0;
+  }
+  [data-hub-theme='menu'] .game-card__level summary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
   }
 }

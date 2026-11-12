@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { WORDS } from './words';
-import { useSwamphenEnabled } from './switch';
 import { SWAMPHEN_ABOUT, saveSwamphenEnabled, useSwamphenClassSwitch, useSwamphenSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
@@ -42,7 +41,7 @@ export const swamphenReedRows: GameDefinition = {
   group: 'foundational',
   inDevelopment: true,
   nextPart: { noun: WORDS.part },
-  useTeacherSwitch: useSwamphenEnabled,
+  teacherSwitch: true,
   teacher: {
     switch: { useValue: useSwamphenClassSwitch, save: saveSwamphenEnabled, about: SWAMPHEN_ABOUT },
     useSummary: useSwamphenSummary,

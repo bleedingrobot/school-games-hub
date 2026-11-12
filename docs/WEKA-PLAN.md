@@ -2,7 +2,9 @@
 
 Short id `weka`. **Status: built 4 Nov 2026 with clay stand-in art and Bella's voice; final paintings in
 `docs/WEKA-ART-PLAN.md`. 6 Nov 2026: help lasts longer (a split-first step before the picture fades) and pebble
-ten-frames show the same question after a right answer (James).** Game D in `docs/EARLY-GAMES-PLAN.md`; the parts every early game shares are in section 7 there
+ten-frames show the same question after a right answer (James). 12 Nov 2026: small arrows under the stones point up at
+the start (orange), the big rock 10 (gold) and, once answered, the answer (blue); the jump arcs now start and land at
+those arrows, and show again after the pebbles (they had gone missing there).** Game D in `docs/EARLY-GAMES-PLAN.md`; the parts every early game shares are in section 7 there
 and aren't repeated here. Built alongside Tūī's Ten Tree (`docs/TUI-PLAN.md`), with the same look, voice, words and way
 of fading help.
 

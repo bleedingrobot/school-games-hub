@@ -49,3 +49,14 @@ Painted with ComfyUI on James's gaming PC, in the same style and prompt base as 
 - "Less motion" turns off the hover lift. No database change, no migration.
 
 Files: `src/components/GameCard.tsx`, `src/styles.css`, `src/games/types.ts`, `src/games/registry.ts` (or each game's `index.ts`), the dashboard tests and the home preview.
+
+## Painted for the dashboard plan (12 Nov 2026)
+
+Both scenes below are now painted (ComfyUI on James's PC, same clay settings as Weka and Quick looks) and live in `src/assets/home/`. The prompts are kept for repaints.
+
+Two home cards still have no scene of their own. Paint them in the same clay style as the other cards (about 1600 × 800, subject in the middle third so the 2:1 crop keeps it), then add `<id>.webp` and `<id>-small.webp` to `src/assets/home/` and one line in `src/components/gameCardArt.ts`.
+
+| Card id | Now shows | Prompt idea |
+|---|---|---|
+| `decree` (Royal Decree) | Kingdom Keeper's scene | A cosy clay throne room: a small wooden throne, a long scroll with a red wax seal on a table, banners, warm window light, soft pastel colours, no people, no text. |
+| `training` (Multiplication and division training) | A band of blue colours | A clay classroom desk with a bright wooden abacus, a few times-table flash cards and a pencil pot, morning light, soft pastel colours, no text. |

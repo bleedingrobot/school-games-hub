@@ -13,7 +13,7 @@
  * The old addresses (/teacher, /classes, /focus?class=, /skills?class=) land on the remembered class through TeacherEntry.
  * The pages hide themselves from students, but that's only for tidiness: the database checks every action.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClasses, type ClassSummary } from '../data/classes';
@@ -84,7 +84,9 @@ function ShellBody({ inAddress, mode, isAdmin }: { inAddress: string | null; mod
   return (
     <div className="teacher teacher-shell">
       <TeacherHeader isAdmin={isAdmin} />
-      <Outlet />
+      <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+        <Outlet />
+      </Suspense>
     </div>
   );
 }
@@ -228,7 +230,9 @@ export function TeacherMaths() {
           Foundational skills
         </NavLink>
       </nav>
-      <Outlet />
+      <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+        <Outlet />
+      </Suspense>
     </>
   );
 }
@@ -266,7 +270,9 @@ export function TeacherAdmin() {
           End of year
         </NavLink>
       </nav>
-      <Outlet />
+      <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+        <Outlet />
+      </Suspense>
     </>
   );
 }

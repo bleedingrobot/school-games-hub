@@ -41,23 +41,28 @@ export function Friend({ friend, pose }: { friend: FriendName; pose: Pose }) {
  * One berry. In a ten, berries 1 to 5 are orange and 6 to 10 a deeper red-orange (`deep`), tinted in code from the one
  * picture, as Weka's stones and the shared ten-frames do. `empty` is a dashed space where a berry is missing.
  */
-export function Berry({ deep = false, gold = false, empty = false, pop = false }: { deep?: boolean; gold?: boolean; empty?: boolean; pop?: boolean }) {
+export function Berry({ deep = false, gold = false, empty = false, pop = false, eaten = false }: { deep?: boolean; gold?: boolean; empty?: boolean; pop?: boolean; eaten?: boolean }) {
   if (empty) return <span className="tui-berry tui-berry--empty" />;
   const src = paint(gold ? 'tree/berry-gold' : 'tree/berry');
-  const cls = `tui-berry${deep ? ' tui-berry--deep' : ''}${pop ? ' tui-berry--pop' : ''}`;
+  const cls = `tui-berry${deep ? ' tui-berry--deep' : ''}${pop ? ' tui-berry--pop' : ''}${eaten ? ' tui-berry--eaten' : ''}`;
   return <span className={cls}>{src ? <img src={src} alt="" draggable={false} /> : <span className="tui-berry__drawn" />}</span>;
 }
 
 /**
  * A ten-frame: two rows of five, filled left to right, top row first. `count` berries; `empty` dashed spaces after
- * them; `popFrom` makes the berries from that one on pop in one at a time (level 5).
+ * them; `popFrom` makes the berries from that one on pop in one at a time (level 5); `eaten` makes them go one at a
+ * time, last first, each leaving a dashed space (the friend eating the ten on "take the ten away").
  */
-export function TenFrame({ count, empty = 0, popFrom, label, branch = false }: { count: number; empty?: number; popFrom?: number; label: string; branch?: boolean }) {
+export function TenFrame({ count, empty = 0, popFrom, label, branch = false, eaten = false }: { count: number; empty?: number; popFrom?: number; label: string; branch?: boolean; eaten?: boolean }) {
   return (
     <div className={`tui-frame${branch ? ' tui-frame--branch' : ''}`} role="img" aria-label={label}>
       {Array.from({ length: 10 }, (_, i) => (
-        <span key={i} className="tui-frame__cell" style={popFrom !== undefined && i >= popFrom ? ({ '--tui-pop': i - popFrom } as CSSProperties) : undefined}>
-          {i < count ? <Berry deep={i >= 5} pop={popFrom !== undefined && i >= popFrom} /> : i < count + empty ? <Berry empty /> : null}
+        <span
+          key={i}
+          className={`tui-frame__cell${eaten ? ' tui-frame__cell--eaten' : ''}`}
+          style={eaten ? ({ '--tui-eat': count - 1 - i } as CSSProperties) : popFrom !== undefined && i >= popFrom ? ({ '--tui-pop': i - popFrom } as CSSProperties) : undefined}
+        >
+          {i < count ? <Berry deep={i >= 5} pop={popFrom !== undefined && i >= popFrom} eaten={eaten} /> : i < count + empty ? <Berry empty /> : null}
         </span>
       ))}
     </div>
