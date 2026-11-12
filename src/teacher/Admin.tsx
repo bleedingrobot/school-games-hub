@@ -29,6 +29,7 @@ import { trainingOn } from '../training/switch';
 import { GamesTable } from './Games';
 import { useHideRealNames } from './Students';
 import { LessonControls } from './Today';
+import { TrophySeasonPanel } from '../trophies/TeacherTrophies';
 import { useTeacherClass } from './TeacherClass';
 import '../pages/teacher-page.css';
 import '../pages/classes.css';
@@ -66,6 +67,7 @@ export function AdminOverview() {
     <>
       <NeedsAdmin o={data} />
       <TheSchool o={data} />
+      <TrophySeasonPanel />
     </>
   );
 }

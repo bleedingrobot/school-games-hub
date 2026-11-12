@@ -23,6 +23,7 @@ import { fetchStudentCard, type StudentCard } from '../data/classOverview';
 import { moveStudent } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { NameTools } from '../profile/NameTools';
+import { PupilTrophies } from '../trophies/TeacherTrophies';
 import { deletePerson, fetchPersonDetail, renamePerson, setHidden, setRole, type PersonDetail } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
@@ -113,6 +114,9 @@ export function StudentPage() {
         </div>
       </header>
       <StudentDetail key={card.id} card={card} classId={classId} />
+      {card.role === 'student' && (
+        <PupilTrophies key={`trophies-${card.id}`} student={card.id} name={card.name} onChanged={() => setVersion((v) => v + 1)} />
+      )}
       <Manage
         key={`manage-${card.id}`}
         card={card}

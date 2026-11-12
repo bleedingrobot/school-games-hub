@@ -343,6 +343,10 @@ function StepPoints({ data, reload }: StepProps) {
         <li>
           <strong>keeps</strong> every account, player name and avatar, the teachers, who is hidden, and games still being played
         </li>
+        <li>
+          <strong>keeps</strong> every trophy, earned picture and Name Scroll. Trophies are never wiped: a pupil’s cabinet grows
+          from year to year
+        </li>
       </ul>
       <p>
         It can’t be undone. To go ahead, type <strong>{NEW_SEASON_WORDS}</strong> in capitals.
