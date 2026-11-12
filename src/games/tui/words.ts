@@ -52,6 +52,12 @@ export const WORDS = {
   keteOfTen: 'A kete of ten berries',
   berries: (n: number) => `${n} berr${n === 1 ? 'y' : 'ies'}`,
   missing: (n: number) => `${n} empty space${n === 1 ? '' : 's'}`,
+  /** "Take the ten away" starts by counting what is there (James, 12 Nov 2026), then the ten is eaten. */
+  howManyBerries: 'How many berries are on the tree?',
+  countRight: (teen: number) => `Yes! ${teen} berries.`,
+  countAgain: 'Count them again. The ten, and then the loose berries.',
+  eaten: 'Munch, munch! Ten berries are eaten.',
+  eatenSpaces: 'Ten berries eaten',
   /** After a right answer: the number, then the stem sentence ("14! 10 and 4 is 14."). English numbers, as Weka (James, 5 Nov 2026). */
   right: (answer: number, n: number) => `${answer}! 10 and ${n} is ${10 + n}.`,
   /** After a right answer to a sister question or a second go ("Now you try"): plain, not the praise for a first try (R5). */
