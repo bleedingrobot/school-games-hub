@@ -20,8 +20,13 @@ function wasSkipped(): boolean {
  * On the home page it takes its part of the page's one request (`homePage`, null while that is on its way); anywhere else it asks
  * for itself.
  */
-export function ClassWarpCard({ homePage }: { homePage?: Promise<HomePage> | null }) {
-  const [needsClass, setNeedsClass] = useState(false);
+export function ClassWarpCard({ homePage, answer }: { homePage?: Promise<HomePage> | null; answer?: HomePage | null }) {
+  // With the home page's answer already in, it shows from the first paint, so nothing below it jumps (dashboard plan D5).
+  const [needsClass, setNeedsClass] = useState(() => {
+    if (!answer || !('myClass' in answer.parts)) return false;
+    const mine = myClassFrom(answer.parts.myClass);
+    return mine.className === null && mine.waitingFor === null;
+  });
   const [skipped, setSkipped] = useState(wasSkipped);
 
   useEffect(() => {

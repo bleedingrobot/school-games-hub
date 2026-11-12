@@ -2532,6 +2532,30 @@ main:focus {
   color: var(--h-title);
 }
 
+/* While the home page loads (dashboard plan D5): grey cards the size of game cards, so nothing jumps when the real ones come. */
+.home-waiting {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 42px;
+}
+.home-waiting__card {
+  height: 300px;
+  border-radius: var(--h-r);
+  background: var(--h-box-soft, rgba(255, 255, 255, 0.35));
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-waiting__card {
+    animation: home-waiting 1.4s ease-in-out infinite alternate;
+  }
+}
+@keyframes home-waiting {
+  to {
+    opacity: 0.25;
+  }
+}
+
 /* Games still going: one yellow line of chips that carry on (dashboard plan D4). They wrap on a phone. */
 .in-progress--chips {
   display: flex;

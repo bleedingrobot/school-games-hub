@@ -124,11 +124,12 @@ function renderAt(path: string, auth: Partial<AuthState> = {}) {
 }
 
 describe('dashboard', () => {
-  it('shows the student and both game cards, with no big Play button (My games instead)', () => {
+  it('shows the student and both game cards, with no big Play button (My games instead)', async () => {
     renderAt('/');
     expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /^Play$/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Chess' })).toBeInTheDocument();
+    // The cards arrive together once the home page has answered (dashboard plan D5).
+    expect(await screen.findByRole('article', { name: 'Chess' }, LAZY_PAGE)).toBeInTheDocument();
     expect(screen.getByRole('article', { name: 'Checkers' })).toBeInTheDocument();
   });
 });

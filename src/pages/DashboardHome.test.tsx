@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Link, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
@@ -27,7 +27,7 @@ async function settle() {
   for (let i = 0; i < 30; i++) await act(() => new Promise((r) => setTimeout(r, 5)));
 }
 
-async function show(world: World, role?: string) {
+async function show(world: World, role?: string, wait = true) {
   setWorld(world);
   render(
     <AuthContext.Provider value={signedIn(role)}>
@@ -39,7 +39,7 @@ async function show(world: World, role?: string) {
       </MemoryRouter>
     </AuthContext.Provider>,
   );
-  await settle();
+  if (wait) await settle();
 }
 
 // The home layout (folded sections, pinned games) is asked once while the site is open, not each time the page opens.
@@ -78,5 +78,16 @@ describe('the home page in one request', () => {
     expect(asked()).toEqual(['rpc my_home_page']);
     // One settings request still serves every switch on the page.
     expect(sent.filter((s) => s === 'from app_settings')).toHaveLength(1);
+    // D5: until the answers are in, grey cards hold the space; then every card arrives at once, the same as last time.
+    const games = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+    const before = games();
+    expect(before).toContain('Maths Monsters');
+    expect(localStorage.getItem('home-cards:me')).toContain('monsters');
+    cleanup();
+    await show(busyPupil(), undefined, false);
+    expect(screen.getByLabelText('Loading your games')).toBeInTheDocument();
+    expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0);
+    await settle();
+    expect(games()).toEqual(before);
   });
 });

@@ -8,7 +8,7 @@ The plan and the full card text are in [../../DASHBOARD-REVIEW.md](../../DASHBOA
 - [x] D2 'My games' at the top instead of the big Play button (size M, database). Waits for: nothing.
 - [x] ~~D3 Older classes see their own games first~~ Dropped: James kept the early-years games at the top (11 Nov 2026).
 - [x] D4 Games still going in one line (size S). Waits for: nothing.
-- [ ] D5 Stop the page jumping while it loads (size S). Waits for: nothing.
+- [x] D5 Stop the page jumping while it loads (size S). Waits for: nothing.
 - [ ] D6 Smaller cards on phones and iPads in portrait (size M). Waits for: D2.
 - [ ] D7 Lighter first load on a school iPad (size M). Waits for: nothing (run before D8).
 - [ ] D8 Adding a game to the home page in one place (size S). Waits for: D5 and D7.

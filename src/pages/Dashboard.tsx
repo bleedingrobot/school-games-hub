@@ -26,6 +26,7 @@ import { FRESH_HOME_MS, forgetSettingsOlderThan } from '../data/settingsMemory';
 import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import { useHomeLayout } from '../data/homeLayout';
 import { useNextParts } from '../data/nextParts';
+import { readRememberedCards, rememberCards, useClassSwitches } from '../data/classSwitches';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
 // The teacher pages and older tests still find these here.
@@ -73,10 +74,18 @@ const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
  * turned them off, so they show while it loads). Each game's switch hook is called on every render, in GAMES order, which
  * never changes while the page is open.
  */
-function useShownGames(nonMathsOpen: boolean | null): GameDefinition[] {
-  const off = new Set<string>();
-  for (const game of GAMES) if (game.useTeacherSwitch && game.useTeacherSwitch() !== true) off.add(game.id);
-  return GAMES.filter((game) => !off.has(game.id) && (nonMathsOpen !== false || game.group !== 'no-maths'));
+const SWITCHED_GAMES = GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id);
+
+/**
+ * The games this class can see. Every teacher switch comes from one settings read, so the cards arrive together (dashboard plan
+ * D5). While it loads, the games this device showed last time stand in, so a reload doesn't jump; with no memory, games with a
+ * switch wait (as before, so nothing flashes up that the class can't play).
+ */
+function useShownGames(nonMathsOpen: boolean | null, remembered: string[] | undefined): { games: GameDefinition[]; on: Set<string> | null } {
+  const on = useClassSwitches(SWITCHED_GAMES);
+  const isOn = (id: string) => (on ? on.has(id) : (remembered?.includes(id) ?? false));
+  const games = GAMES.filter((game) => (!game.useTeacherSwitch || isOn(game.id)) && (nonMathsOpen !== false || game.group !== 'no-maths'));
+  return { games, on };
 }
 
 /**
@@ -99,6 +108,7 @@ function useMyGames(me: string | undefined) {
   // The school's Dragon Maths season and the pupil's hero, for its strip.
   const [lordSeason, setLordSeason] = useState<HomeLordSeason | null>(null);
   const [topGames, setTopGames] = useState<TopGames | null>(null);
+  const [answer, setAnswer] = useState<HomePage | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
@@ -108,6 +118,7 @@ function useMyGames(me: string | undefined) {
     answer.then(
       (home) => {
         if (!current) return;
+        setAnswer(home);
         setProgress(home.progress);
         setMoves(home.moves);
         setSeason(home.season);
@@ -133,7 +144,7 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, topGames, failed };
+  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, topGames, answer, failed };
 }
 
 /** A game still going: a chip that carries on (dashboard plan D4: all of them on one line, not a row each). */
@@ -230,15 +241,25 @@ function DashboardPage() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';
-  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, topGames, failed, ...going } = useMyGames(meId);
+  const { homePage, recent, spaceGoing, progress, moves, season, lordSeason, topGames, answer, failed, ...going } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const nonMathsOpen = useNonMathsGamesOpen();
-  const shownGames = useShownGames(nonMathsOpen);
+  // What this device showed last time, so the page starts from the same cards and doesn't jump (dashboard plan D5).
+  const [remembered] = useState(() => readRememberedCards(meId));
+  const { games: shownGames, on: switchesOn } = useShownGames(nonMathsOpen, remembered?.on);
   // The daily Foundational games' "next part" chips: one request, only when one of them is showing.
   // Teachers get them too, for their own goes, so they see what the class sees (James, 5 Nov 2026).
   const nextParts = useNextParts(meId, shownGames.some((g) => g.nextPart));
+  // D5: the page below the hero appears once, when the home page has answered and the teacher switches are in (or this device
+  // remembers them), so cards don't pop in one by one and push each other down. Until then: grey cards the same size.
+  const waiting = (!!meId && topGames === null && !failed) || (switchesOn === null && !remembered);
+  const onKey = switchesOn ? [...switchesOn].sort().join(',') : null;
+  useEffect(() => {
+    if (onKey === null || !topGames) return;
+    rememberCards(meId, { on: onKey ? onKey.split(',') : [], mine: topGames.mine, classGames: topGames.classGames });
+  }, [meId, onKey, topGames]);
   // Chess and checkers, 101 and Power Clash games still going wait quietly while the non-maths games are off.
   const nonMathsShut = nonMathsOpen === false;
   const inProgress = nonMathsShut ? [] : going.inProgress;
@@ -344,9 +365,11 @@ function DashboardPage() {
   // My games: every pinned game, then the pupil's most played, up to MY_GAMES_SHOWN. A pupil with neither sees their class's most
   // played instead. A most-played game also stays in its own section; only pinned games move out of theirs.
   const fill = (ids: string[]) => ids.flatMap((id) => tiles.filter((t) => t.id === id && !isPinned(t.id)));
-  const played = fill(topGames?.mine ?? []);
+  // Until the home page answers, My games is what this device showed last time.
+  const top = topGames ?? (remembered ? { mine: remembered.mine, classGames: remembered.classGames } : null);
+  const played = fill(top?.mine ?? []);
   const popular = pinnedTiles.length === 0 && played.length === 0;
-  const myTiles = [...pinnedTiles, ...(popular ? fill(topGames?.classGames ?? []) : played)].slice(0, Math.max(MY_GAMES_SHOWN, pinnedTiles.length));
+  const myTiles = [...pinnedTiles, ...(popular ? fill(top?.classGames ?? []) : played)].slice(0, Math.max(MY_GAMES_SHOWN, pinnedTiles.length));
   const topTiles = MY_GAMES_ON ? myTiles : pinnedTiles;
   // The season timelines sit under My games when Clan Quest or Dragon Maths is in it, otherwise with the complex maths games.
   const seasonsOnTop = MY_GAMES_ON && topTiles.some((t) => t.id === 'clan-quest' || t.id === 'dragon-maths');
@@ -396,151 +419,162 @@ function DashboardPage() {
         </div>
       </section>
 
-      <TrainingGateBanner />
-
-      {pupil && <ClassWarpCard homePage={cardsFrom} />}
-
-      {goingChips.length > 0 && (
-        <section className="in-progress in-progress--chips" aria-label="Games still going">
-          <span className="in-progress__label">
-            {goingChips.length} game{goingChips.length === 1 ? '' : 's'} still going:
-          </span>
-          {goingChips.slice(0, GOING_SHOWN).map((g) => (
-            <Link key={g.key} to={g.to} className="going-chip" aria-label={g.name}>
-              <span className="going-chip__emoji" aria-hidden="true">
-                {g.emoji}
-              </span>
-              {g.label}
-            </Link>
+      {waiting ? (
+        <div className="home-waiting" aria-busy="true" aria-label="Loading your games">
+          {Array.from({ length: 6 }, (_, n) => (
+            <div key={n} className="home-waiting__card" />
           ))}
-          {goingChips.length > GOING_SHOWN && (
-            <Link to="/lobby" className="going-chip going-chip--more" aria-label={`${goingChips.length - GOING_SHOWN} more games still going: see them in the lobby`}>
-              +{goingChips.length - GOING_SHOWN} more
-            </Link>
-          )}
-        </section>
-      )}
+        </div>
+      ) : (
+        <>
 
-      <section className={gamesLocked ? 'game-groups game-groups--locked' : 'game-groups'} aria-labelledby="games-title">
-        <h2 id="games-title" className="sr-only">
-          Pick a game
-        </h2>
-        {topTiles.length > 0 && (
-          <GameGroup
-            id="pinned"
-            title={!MY_GAMES_ON ? 'Pinned' : popular ? 'Popular in your class' : 'My games'}
-            count={topTiles.length}
-            collapsed={isCollapsed('pinned')}
-            onToggle={() => toggleCollapsed('pinned')}
-          >
-            <div className={MY_GAMES_ON ? 'game-grid game-grid--mine' : 'game-grid'}>{topTiles.map((tile) => tile.card)}</div>
-            {seasonsOnTop && seasonStrips}
-          </GameGroup>
-        )}
-        {GAME_GROUPS.map((group) => {
-          const groupTiles = tiles.filter((t) => t.group === group.group && !isPinned(t.id));
-          // Training sits under the non-maths games, and stays when they are switched off.
-          const training = group.group === 'no-maths' && trainingOn();
-          // A group whose games are all pinned keeps its heading, so it is clear where they went.
-          const hasGames = tiles.some((t) => t.group === group.group);
-          if (!hasGames && !training) return null;
-          return (
-            <Fragment key={group.title}>
-              {hasGames && (
-                <GameGroup
-                  id={group.group}
-                  title={group.title}
-                  count={groupTiles.length}
-                  collapsed={isCollapsed(group.group)}
-                  onToggle={() => toggleCollapsed(group.group)}
-                >
-                  {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
-                      Dragon Maths', side by side on wide screens. */}
-                  {group.group === 'complex-maths' && !seasonsOnTop && seasonStrips}
-                  {groupTiles.length > 0 ? (
-                    <div className="game-grid">{groupTiles.map((tile) => tile.card)}</div>
-                  ) : (
-                    <p className="game-group__empty">All pinned to the top.</p>
-                  )}
-                </GameGroup>
-              )}
-              {/* Training has a line of its own, under the non-maths games. */}
-              {training && (
-                <GameGroup id="training" title="Training" collapsed={isCollapsed('training')} onToggle={() => toggleCollapsed('training')}>
-                  {isPinned('training') ? (
-                    <p className="game-group__empty">Pinned to the top.</p>
-                  ) : (
-                    <div className="game-grid">{trainingTile?.card}</div>
-                  )}
-                </GameGroup>
-              )}
-            </Fragment>
-          );
-        })}
-      </section>
+        <TrainingGateBanner />
 
-      <nav className="quick-links" aria-label="More">
-        <Link to="/lobby" className="quick-link">
-          <span aria-hidden="true">🤝</span> <strong>Play a friend</strong> <span className="quick-link__note">Lobby or game code</span>
-        </Link>
-        <Link to="/leaderboard" className="quick-link">
-          <span aria-hidden="true">🏅</span> <strong>Leaderboard</strong> <span className="quick-link__note">See the top players this week</span>
-        </Link>
-        <Link to="/profile#stats" className="quick-link">
-          <span aria-hidden="true">📊</span> <strong>See my stats</strong>
-        </Link>
-      </nav>
+        {pupil && <ClassWarpCard homePage={cardsFrom} answer={answer} />}
 
-      <div className="panel-grid">
-        <section className="panel" aria-labelledby="recent-title">
-          <div className="panel__head">
-            <h2 id="recent-title" className="panel__title">
-              Recent games
-            </h2>
-            {recent && recent.length > 0 && (
-              <Link to="/profile#stats" className="panel__link">
-                See more
+        {goingChips.length > 0 && (
+          <section className="in-progress in-progress--chips" aria-label="Games still going">
+            <span className="in-progress__label">
+              {goingChips.length} game{goingChips.length === 1 ? '' : 's'} still going:
+            </span>
+            {goingChips.slice(0, GOING_SHOWN).map((g) => (
+              <Link key={g.key} to={g.to} className="going-chip" aria-label={g.name}>
+                <span className="going-chip__emoji" aria-hidden="true">
+                  {g.emoji}
+                </span>
+                {g.label}
+              </Link>
+            ))}
+            {goingChips.length > GOING_SHOWN && (
+              <Link to="/lobby" className="going-chip going-chip--more" aria-label={`${goingChips.length - GOING_SHOWN} more games still going: see them in the lobby`}>
+                +{goingChips.length - GOING_SHOWN} more
               </Link>
             )}
-          </div>
-          {failed ? (
-            <p className="panel__empty">We couldn’t load your games just now.</p>
-          ) : !recent ? (
-            <p className="panel__empty">Loading…</p>
-          ) : recent.length === 0 ? (
-            <p className="panel__empty">No games yet. Press Play to start your first one!</p>
-          ) : (
-            <RecentList games={recent} pointsFor={pointsFor} />
-          )}
-        </section>
-
-        {pupil && (
-          <Suspense fallback={null}>
-            <MathsFocusCard homePage={cardsFrom} path={<MathsPathCard homePage={cardsFrom} folded />} />
-          </Suspense>
+          </section>
         )}
 
-        <section className="panel" aria-labelledby="achievements-title">
-          <h2 id="achievements-title" className="panel__title">
-            Achievements
-            {progress && (
-              <span className="panel__count">
-                {progress.achievements.filter((a) => a.earnedAt).length} of {progress.achievements.length}
-              </span>
-            )}
+        <section className={gamesLocked ? 'game-groups game-groups--locked' : 'game-groups'} aria-labelledby="games-title">
+          <h2 id="games-title" className="sr-only">
+            Pick a game
           </h2>
-          {progress ? (
-            <>
-              <AchievementList achievements={nextAchievements(progress.achievements)} showGame compact />
-              <p className="panel__more">
-                <Link to="/profile#achievements">See them all</Link>
-              </p>
-            </>
-          ) : (
-            <p className="panel__empty">Loading…</p>
+          {topTiles.length > 0 && (
+            <GameGroup
+              id="pinned"
+              title={!MY_GAMES_ON ? 'Pinned' : popular ? 'Popular in your class' : 'My games'}
+              count={topTiles.length}
+              collapsed={isCollapsed('pinned')}
+              onToggle={() => toggleCollapsed('pinned')}
+            >
+              <div className={MY_GAMES_ON ? 'game-grid game-grid--mine' : 'game-grid'}>{topTiles.map((tile) => tile.card)}</div>
+              {seasonsOnTop && seasonStrips}
+            </GameGroup>
           )}
+          {GAME_GROUPS.map((group) => {
+            const groupTiles = tiles.filter((t) => t.group === group.group && !isPinned(t.id));
+            // Training sits under the non-maths games, and stays when they are switched off.
+            const training = group.group === 'no-maths' && trainingOn();
+            // A group whose games are all pinned keeps its heading, so it is clear where they went.
+            const hasGames = tiles.some((t) => t.group === group.group);
+            if (!hasGames && !training) return null;
+            return (
+              <Fragment key={group.title}>
+                {hasGames && (
+                  <GameGroup
+                    id={group.group}
+                    title={group.title}
+                    count={groupTiles.length}
+                    collapsed={isCollapsed(group.group)}
+                    onToggle={() => toggleCollapsed(group.group)}
+                  >
+                    {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
+                        Dragon Maths', side by side on wide screens. */}
+                    {group.group === 'complex-maths' && !seasonsOnTop && seasonStrips}
+                    {groupTiles.length > 0 ? (
+                      <div className="game-grid">{groupTiles.map((tile) => tile.card)}</div>
+                    ) : (
+                      <p className="game-group__empty">All pinned to the top.</p>
+                    )}
+                  </GameGroup>
+                )}
+                {/* Training has a line of its own, under the non-maths games. */}
+                {training && (
+                  <GameGroup id="training" title="Training" collapsed={isCollapsed('training')} onToggle={() => toggleCollapsed('training')}>
+                    {isPinned('training') ? (
+                      <p className="game-group__empty">Pinned to the top.</p>
+                    ) : (
+                      <div className="game-grid">{trainingTile?.card}</div>
+                    )}
+                  </GameGroup>
+                )}
+              </Fragment>
+            );
+          })}
         </section>
-      </div>
+
+        <nav className="quick-links" aria-label="More">
+          <Link to="/lobby" className="quick-link">
+            <span aria-hidden="true">🤝</span> <strong>Play a friend</strong> <span className="quick-link__note">Lobby or game code</span>
+          </Link>
+          <Link to="/leaderboard" className="quick-link">
+            <span aria-hidden="true">🏅</span> <strong>Leaderboard</strong> <span className="quick-link__note">See the top players this week</span>
+          </Link>
+          <Link to="/profile#stats" className="quick-link">
+            <span aria-hidden="true">📊</span> <strong>See my stats</strong>
+          </Link>
+        </nav>
+
+        <div className="panel-grid">
+          <section className="panel" aria-labelledby="recent-title">
+            <div className="panel__head">
+              <h2 id="recent-title" className="panel__title">
+                Recent games
+              </h2>
+              {recent && recent.length > 0 && (
+                <Link to="/profile#stats" className="panel__link">
+                  See more
+                </Link>
+              )}
+            </div>
+            {failed ? (
+              <p className="panel__empty">We couldn’t load your games just now.</p>
+            ) : !recent ? (
+              <p className="panel__empty">Loading…</p>
+            ) : recent.length === 0 ? (
+              <p className="panel__empty">No games yet. Press Play to start your first one!</p>
+            ) : (
+              <RecentList games={recent} pointsFor={pointsFor} />
+            )}
+          </section>
+
+          {pupil && (
+            <Suspense fallback={null}>
+              <MathsFocusCard homePage={cardsFrom} path={<MathsPathCard homePage={cardsFrom} folded />} />
+            </Suspense>
+          )}
+
+          <section className="panel" aria-labelledby="achievements-title">
+            <h2 id="achievements-title" className="panel__title">
+              Achievements
+              {progress && (
+                <span className="panel__count">
+                  {progress.achievements.filter((a) => a.earnedAt).length} of {progress.achievements.length}
+                </span>
+              )}
+            </h2>
+            {progress ? (
+              <>
+                <AchievementList achievements={nextAchievements(progress.achievements)} showGame compact />
+                <p className="panel__more">
+                  <Link to="/profile#achievements">See them all</Link>
+                </p>
+              </>
+            ) : (
+              <p className="panel__empty">Loading…</p>
+            )}
+          </section>
+        </div>
+        </>
+      )}
     </div>
   );
 }
