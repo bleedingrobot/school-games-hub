@@ -5,9 +5,7 @@
  * draws what it is given.
  */
 import { GARDEN_PICTURES } from './gardenPictures';
-
-// Stand-in until P2's painting lands: Scorchtail's head, cropped from the Dragon Maths dragon.
-import dragonHead from './pictures/dragon-head-standin.webp';
+import { BACKDROP_GOLD, paintedPicture, paintedPictureByTier } from './paintedArt';
 
 export const TIERS = ['bronze', 'silver', 'gold'] as const;
 export type Tier = (typeof TIERS)[number];
@@ -33,31 +31,41 @@ export interface PictureArt {
   emoji: string;
   /** The painting's URL (an imported image), once there is one. */
   art?: string;
+  /** The same painting at 160 px, for sizes of 80 px or less. */
+  artSmall?: string;
+  /** A glow painted behind a cut-out picture (the early-years friends). */
+  backdrop?: string;
+  /** A picture with its own painting for each metal (the Dragon Head). */
+  byTier?: Record<Tier, { art: string; artSmall: string }>;
 }
+
+/** An emoji placeholder plus the painting named `name`, if it is there. */
+const painted = (emoji: string, name: string): PictureArt => ({ emoji, ...paintedPicture(name) });
 
 /**
  * One line per picture trophy, added by the card that adds the trophy (the first is P4's Dragon Head).
  * A picture that is not listed yet still draws: a trophy cup on its metal disc.
  */
 export const EARNED_PICTURES: Record<string, PictureArt> = {
-  ...GARDEN_PICTURES, // P9: the 62 early-years friends
+  // P9: the 62 early-years friends, each on the painted gold glow.
+  ...Object.fromEntries(Object.entries(GARDEN_PICTURES).map(([id, pic]) => [id, { ...pic, backdrop: BACKDROP_GOLD?.art }])),
   // Dragon Maths (P4): one of the first five in the school to slay the dragon this season.
-  'dm-first-five': { emoji: '🐉', art: dragonHead },
-  // Card P7 (placeholders until card P2's paintings land).
-  'clan-banner': { emoji: '🚩' },
-  'isles-lighthouse': { emoji: '🗼' },
-  'mm-book': { emoji: '📖' },
-  'gem-crown': { emoji: '👑' },
-  'trader-blackhole': { emoji: '🕳️' },
-  'diamond-heart': { emoji: '💎' },
-  'toonflap-rainbow': { emoji: '🌈' },
-  'chess-crown': { emoji: '♛' },
-  'checkers-crown': { emoji: '⛀' },
-  'archery-bow': { emoji: '🏹' },
-  'marble-golden': { emoji: '🟡' },
-  'bond-perfect': { emoji: '💞' },
-  'mine-pickaxe': { emoji: '⛏️' },
-  'decree-crown': { emoji: '👑' },
+  'dm-first-five': { emoji: '🐉', byTier: paintedPictureByTier('dragon-head') },
+  // Card P7: the painted pictures (card P2); the emoji draws if a painting is missing.
+  'clan-banner': painted('🚩', 'clan-banner'),
+  'isles-lighthouse': painted('🗼', 'lighthouse'),
+  'mm-book': painted('📖', 'book-master'),
+  'gem-crown': painted('👑', 'gem-crown'),
+  'trader-blackhole': painted('🕳️', 'black-hole'),
+  'diamond-heart': painted('💎', 'heart-diamond'),
+  'toonflap-rainbow': painted('🌈', 'rainbow-toon'),
+  'chess-crown': painted('♛', 'chess-crown'),
+  'checkers-crown': painted('⛀', 'checkers-crown'),
+  'archery-bow': painted('🏹', 'golden-bow'),
+  'marble-golden': painted('🟡', 'golden-marble'),
+  'bond-perfect': painted('💞', 'perfect-match'),
+  'mine-pickaxe': painted('⛏️', 'golden-pickaxe'),
+  'decree-crown': painted('👑', 'royal-crown'),
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };
@@ -73,5 +81,6 @@ export function pictureOf(saved: unknown): WornPicture | null {
   const { pic, picTier } = saved as Record<string, unknown>;
   if (typeof pic !== 'string' || !/^[a-z0-9][a-z0-9-]{0,23}$/.test(pic)) return null;
   const tier = (TIERS as readonly unknown[]).includes(picTier) ? (picTier as Tier) : 'bronze';
-  return { id: pic, tier, ...(EARNED_PICTURES[pic] ?? UNKNOWN_PICTURE) };
+  const { byTier, ...found } = EARNED_PICTURES[pic] ?? UNKNOWN_PICTURE;
+  return { id: pic, tier, ...found, ...(byTier?.[tier] ?? {}) };
 }

@@ -2,7 +2,7 @@
 
 *Written 12 Nov 2026 for card P2 of [plans/profile/PLAN.md](plans/profile/PLAN.md). The reasons and the full reward table are in [PROFILE-REVIEW.md](PROFILE-REVIEW.md) (sections 4, 5 and 8). Everything here is painted in ComfyUI on James's gaming PC with `scripts/game_art.py`; nothing is drawn in code.*
 
-**Status: STATUS_LINE**
+**Status: done, 12 Nov 2026.** All 98 paintings made, checked small, committed and in use: Dragon Heads, rings, shelf, pictures and trophies are wired in (`src/avatar/paintedArt.ts`). Still without art in the app until their cards add ids: the hub-wide and Two games rewards (season-regular, adventurers-badge, star-monarch, golden-wings, best-friends-cup, all-rounder, double-slayer, board-master, treasure-keeper, name-scroll): they are painted and waiting in `src/avatar/art/`. A few paintings keep a faint friendly silhouette behind the subject (the shelf and gold backdrop most).
 
 **James's brief:** "I want the picture to look over the top AMAZING!" These are the top prizes in the hub and are worn beside a child's name everywhere, so they must look far more special than a built avatar: legendary, glowing, treasure-like. For ages 5 to 11: nothing gory or frightening.
 
@@ -37,7 +37,7 @@ Rules for every picture:
 | `rings/` | the three picture rings, cut out with a see-through middle | `ring-bronze.webp`, `ring-silver.webp`, `ring-gold.webp` |
 | `cabinet/` | the trophy cabinet shelf | `shelf.webp` (1600 px) and `shelf-800.webp` |
 
-No code under `src/` uses them yet. P4 adds the Dragon Heads to `EARNED_PICTURES` in `src/avatar/earnedPictures.ts`; P5 uses the shelf, rings and trophies; P7 to P10 add the rest as each trophy is built. The trophy ids in the database are chosen by those cards; the file names here are the art's names, and the table in section 4 says which reward each one is for.
+`src/avatar/paintedArt.ts` finds them: `EARNED_PICTURES` (earnedPictures.ts) uses the pictures and Dragon Heads, `TrophyArt` the trophies, `AvatarImage` the rings (big sizes only) and the cabinet the shelf. A new trophy adds its id to `TROPHY_ART` in paintedArt.ts. The trophy ids in the database are chosen by those cards; the file names here are the art's names, and the table in section 4 says which reward each one is for.
 
 Two small additions to `scripts/game_art.py` came with this set: the kind `icon` (kept whole with its background, shrunk to `max` and `small`) and `hollow` on a cut-out (a ring's middle is cut out, not filled in).
 

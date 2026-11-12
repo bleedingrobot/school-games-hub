@@ -19,6 +19,9 @@ PLACED = [
 for name, cut_path, backdrop, share in PLACED:
     back = Image.open(OUT / f'{backdrop}.webp').convert('RGBA')
     cut = Image.open(ROOT / cut_path).convert('RGBA')
+    if cut.getextrema()[3][0] == 255:  # painted on its own background (the Heart Diamond): cut the gem out first
+        from rembg import new_session, remove
+        cut = remove(cut.convert('RGB'), session=new_session('isnet-general-use'), alpha_matting=True)
     cut = cut.crop(cut.getbbox())
     scale = back.width * share / max(cut.size)
     cut = cut.resize((round(cut.width * scale), round(cut.height * scale)), Image.LANCZOS)
