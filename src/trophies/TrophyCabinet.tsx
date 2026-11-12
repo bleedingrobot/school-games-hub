@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useClassSwitches } from '../data/classSwitches';
 import { fetchMyTrophies, fetchMyTrophyPairs, saveMyFavouriteTrophies, type MyTrophies, type MyTrophy, type TrophyPair } from '../data/trophies';
 import { GAMES } from '../games/registry';
@@ -43,6 +43,11 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pairs, setPairs] = useState<TrophyPair[]>([]);
+  const plaqueRef = useRef<HTMLElement>(null);
+  // On a tablet or phone the plaque can open below the screen's edge: bring it into view when a trophy is tapped.
+  useEffect(() => {
+    if (chosen) plaqueRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+  }, [chosen]);
   useEffect(() => {
     let current = true;
     void fetchMyTrophyPairs().then((p) => current && setPairs(p));
@@ -111,6 +116,10 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
                     <span className="cabinet__name">{t.name}</span>
                     <span className={`cabinet__metal cabinet__metal--${t.tier}`}>{metalLabel(t)}</span>
                   </button>
+                  {/* Pointing at a trophy with a mouse shows how it was won; a tap opens the plaque below instead. */}
+                  <span className="cabinet__how" aria-hidden="true">
+                    <strong>How you won it:</strong> {t.how}
+                  </span>
                 </li>
               );
             })}
@@ -119,7 +128,7 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
       </div>
 
       {picked && (
-        <section className="plaque" data-tier={picked.tier} aria-label={`${picked.name}: how you won it`}>
+        <section ref={plaqueRef} className="plaque" data-tier={picked.tier} aria-label={`${picked.name}: how you won it`}>
           <TrophyArt id={picked.id} game={picked.game} kind={picked.kind} tier={picked.tier} size={120} />
           <div className="plaque__words">
             <h3 className="plaque__name">{picked.name}</h3>
@@ -143,7 +152,7 @@ export function TrophyCabinet({ cabinet }: { cabinet: MyCabinet }) {
         </section>
       )}
       <p className="cabinet__status" role="status">
-        {status ?? (shelf.length > 0 && !picked ? `Tap a trophy to see how you won it. Pick up to ${MAX_FAVOURITES} favourites to show off.` : '')}
+        {status ?? (shelf.length > 0 && !picked ? `Tap a trophy (or point at it) to see how you won it. Pick up to ${MAX_FAVOURITES} favourites to show off.` : '')}
       </p>
 
       {halfLit.length > 0 && (
