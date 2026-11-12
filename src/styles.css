@@ -3455,3 +3455,103 @@ main:focus {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Phones and iPads in portrait (dashboard plan D6): two smaller cards per row. The picture is 4:3, the tagline is hidden, the pin
+   box is just 📌 and the bot levels fold into one chip. The Play button stays at least 44px tall. */
+@media (max-width: 700px) {
+  .game-grid,
+  .game-grid--mine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .home-waiting {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .home-waiting__card {
+    height: 230px;
+  }
+  .game-card__pic {
+    aspect-ratio: 4 / 3;
+  }
+  .game-card__body {
+    gap: 6px;
+    margin: -18px 5px 5px;
+    padding: 8px 9px;
+  }
+  .game-card h3 {
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+  .game-card__text > p:not(.game-card__note) {
+    display: none;
+  }
+  .game-card__text .game-card__note {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+  }
+  .game-card__moves {
+    font-size: 0.7rem;
+  }
+  .game-card__moves-title {
+    display: none;
+  }
+  .game-card__go {
+    min-height: 44px;
+    padding: 6px 10px;
+    border-radius: 11px;
+    font-size: 0.85rem;
+  }
+  .game-card__pin {
+    top: 6px;
+    right: 6px;
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+  .game-card__pin-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .game-card__dev {
+    top: 8px;
+    left: 4px;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+  .game-card__level summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: #e8edf5;
+    color: #0f172a;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    list-style: none;
+  }
+  .game-card__level summary::-webkit-details-marker {
+    display: none;
+  }
+  .game-card__level[open] summary {
+    margin-bottom: 6px;
+  }
+  .game-card__level .level-picker__options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .game-card__level .level-picker--joined .level-picker__option + .level-picker__option {
+    border-left: 0;
+    border-top: 2px solid #c5cee0;
+  }
+  [data-hub-theme='menu'] .game-card__level summary {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
+  }
+}

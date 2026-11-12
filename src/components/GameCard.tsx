@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
-import type { CSSProperties } from 'react';
-import type { BotLevel, GameDefinition } from '../games/types';
+import { useSyncExternalStore, type CSSProperties } from 'react';
+import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
 import type { CardMoves } from '../data/movesLeft';
 import { BotLevelPicker } from './BotLevelPicker';
 import { gameCardArt, type GameCardArt } from './gameCardArt';
@@ -14,6 +14,17 @@ function artStyle(art: GameCardArt, colours: [string, string]): CSSProperties {
     '--card-focus': art.focus ?? 'center 65%',
   } as CSSProperties;
 }
+
+/** Phones and iPads in portrait get two smaller cards per row (dashboard plan D6, the same width as the CSS). */
+const NARROW = '(max-width: 700px)';
+const narrowNow = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(NARROW).matches;
+function onNarrowChange(change: () => void) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => undefined;
+  const query = window.matchMedia(NARROW);
+  query.addEventListener?.('change', change);
+  return () => query.removeEventListener?.('change', change);
+}
+const useNarrow = () => useSyncExternalStore(onNarrowChange, narrowNow, () => false);
 
 /** The "Pin to top" tick box in a card's top corner. Not shown where nothing can be pinned (no onPinChange). */
 export function PinBox({ id, name, pinned, onPinChange }: { id: string; name: string; pinned: boolean; onPinChange: (pinned: boolean) => void }) {
@@ -77,6 +88,8 @@ export function GameCard({
   nextPartDone?: boolean;
 }) {
   const { Icon } = game;
+  const narrow = useNarrow();
+  const levelLabel = BOT_LEVELS.find((l) => l.id === level)?.label ?? 'Easy';
   const art = gameCardArt(game.id);
   const style = art
     ? artStyle(art, game.colours)
@@ -118,9 +131,18 @@ export function GameCard({
           </div>
         )}
         <div className="game-card__do">
-          {!game.noBots && (
-            <BotLevelPicker name={`level-${game.id}`} legend="Bot level" value={level} onChange={onLevelChange} joined />
-          )}
+          {!game.noBots &&
+            (narrow ? (
+              // On a small card the three levels fold into one chip that says the level (D6).
+              <details className="game-card__level">
+                <summary aria-label={`Bot level: ${levelLabel}`}>
+                  {levelLabel} <span aria-hidden="true">▾</span>
+                </summary>
+                <BotLevelPicker name={`level-${game.id}`} legend="Bot level" value={level} onChange={onLevelChange} joined />
+              </details>
+            ) : (
+              <BotLevelPicker name={`level-${game.id}`} legend="Bot level" value={level} onChange={onLevelChange} joined />
+            ))}
           <Link
             className="game-card__go"
             to={game.noBots ? `/${game.id}` : `/${game.id}?bot=${level}`}
