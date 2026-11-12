@@ -8,5 +8,5 @@ import { ToonFlapGame } from './ToonFlapGame';
 
 export function ToonFlapPlay() {
   const navigate = useNavigate();
-  return <ToonFlapGame backend={liveToonFlap} onExit={() => navigate('/')} />;
+  return <ToonFlapGame backend={liveToonFlap} onServer onExit={() => navigate('/')} />;
 }

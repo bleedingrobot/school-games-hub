@@ -7,6 +7,7 @@ import type { ShownAnswer } from '../../../shared/maths/claim';
 import type { FactStats } from '../../../shared/maths/leitner';
 import type { CampaignProgress } from './progress';
 import { TEXT } from './strings';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
 
 /**
@@ -18,6 +19,8 @@ export function GemKeepPlay() {
   const player = profile?.id ?? '';
   const [data, setData] = useState<(GemKeepData & { offline: boolean }) | null>(null);
   const [offline, setOffline] = useState(false);
+  // Saves the server has taken: each one may have won a trophy (the line below says so).
+  const [saves, setSaves] = useState(0);
 
   useEffect(() => {
     let current = true;
@@ -33,7 +36,11 @@ export function GemKeepPlay() {
 
   // Sends the queue now; says on the map whether it got through.
   const flush = useCallback(
-    (keepalive = false) => void flushQueue(player, keepalive).then((done) => setOffline(!done)),
+    (keepalive = false) =>
+      void flushQueue(player, keepalive).then((done) => {
+        setOffline(!done);
+        if (done) setSaves((n) => n + 1);
+      }),
     [player],
   );
 
@@ -85,19 +92,22 @@ export function GemKeepPlay() {
     );
   }
   return (
-    <GemKeepCampaign
-      settings={data.settings}
-      focus={data.focus}
-      loadFocus={offline ? undefined : tryFetchMyFocus}
-      initialProgress={data.progress}
-      initialFacts={data.facts}
-      note={offline ? TEXT.savingLater : TEXT.savedAccount}
-      onProgress={onProgress}
-      onLevelEnd={onLevelEnd}
-      onKey={onKey}
-      onAnswers={onAnswers}
-      // Local browser checks drive the game through this. Left out of the real site.
-      onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
-    />
+    <>
+      <GemKeepCampaign
+        settings={data.settings}
+        focus={data.focus}
+        loadFocus={offline ? undefined : tryFetchMyFocus}
+        initialProgress={data.progress}
+        initialFacts={data.facts}
+        note={offline ? TEXT.savingLater : TEXT.savedAccount}
+        onProgress={onProgress}
+        onLevelEnd={onLevelEnd}
+        onKey={onKey}
+        onAnswers={onAnswers}
+        // Local browser checks drive the game through this. Left out of the real site.
+        onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
+      />
+      <TrophyWonLine games={['gem-keep']} watch={saves || null} />
+    </>
   );
 }
