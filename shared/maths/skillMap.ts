@@ -229,3 +229,62 @@ export function skillsInUse(maps: readonly StudentMap[]): Set<string> {
   if (next) used.add(next.id);
   return used;
 }
+
+/** "Who needs a look" on the Skill map. The numbers are guesses a teacher can trust at a glance, not marks. */
+export const NEARLY_SHARE = 0.5;
+/** Answers per fact asked, on average, before a low share counts as finding it hard. */
+export const HARD_PER_FACT = 6;
+export const HARD_SHARE = 0.4;
+export const BEHIND_SKILLS = 3;
+export const QUIET_DAYS = 7;
+
+export type Look = 'nearly' | 'hard' | 'behind' | 'quiet';
+export const LOOKS: readonly Look[] = ['nearly', 'hard', 'behind', 'quiet'];
+
+/** How far along the ladder a pupil is: the place of their current skill on their path (past the end when all secure, 0 when nothing is). */
+export function ladderPlace(map: StudentMap): number {
+  const skills = map.progress.skills;
+  if (!map.current) return map.progress.secureCount > 0 ? skills.length : 0;
+  return skills.findIndex((p) => p.skill.id === map.current!.id);
+}
+
+/** The middle pupil's place: half the class is at or behind it. */
+export function classMiddle(maps: readonly StudentMap[]): number {
+  const places = maps.map(ladderPlace).sort((a, b) => a - b);
+  return places.length ? places[Math.floor((places.length - 1) / 2)] : 0;
+}
+
+/**
+ * Which looks a pupil needs. Nearly: half or more of their current skill is secure. Finding it hard: 6 or more answers per fact asked
+ * on average and under 40% secure. Behind the class: 3 or more skills before the middle pupil. Gone quiet: answered ladder maths before, but not in
+ * the last 7 days.
+ */
+export function pupilLooks(map: StudentMap, facts: readonly FactStats[], middle: number, now: number): Set<Look> {
+  const looks = new Set<Look>();
+  const cell = map.current ? cellFor(map, map.current.id) : undefined;
+  if (cell && cell.level === 'learning') {
+    const keys = new Set(cell.skill.keys);
+    const asked = facts.filter((f) => keys.has(f.key) && f.attempts > 0);
+    const perFact = asked.length ? asked.reduce((n, f) => n + f.attempts, 0) / asked.length : 0;
+    if (cell.share >= NEARLY_SHARE) looks.add('nearly');
+    else if (perFact >= HARD_PER_FACT && cell.share < HARD_SHARE) looks.add('hard');
+  }
+  if (middle - ladderPlace(map) >= BEHIND_SKILLS) looks.add('behind');
+  const last = facts.reduce((m, f) => Math.max(m, f.attempts > 0 ? f.lastSeen : 0), 0);
+  if (last > 0 && now - last > QUIET_DAYS * 86_400_000) looks.add('quiet');
+  return looks;
+}
+
+/** The skill most pupils are on now, and how many. */
+export function mostAreOn(maps: readonly StudentMap[]): { skill: LadderSkill; pupils: number } | null {
+  const counts = new Map<string, { skill: LadderSkill; pupils: number }>();
+  for (const m of maps) {
+    if (!m.current) continue;
+    const c = counts.get(m.current.id) ?? { skill: m.current, pupils: 0 };
+    c.pupils++;
+    counts.set(m.current.id, c);
+  }
+  let best: { skill: LadderSkill; pupils: number } | null = null;
+  for (const c of counts.values()) if (!best || c.pupils > best.pupils) best = c;
+  return best;
+}
