@@ -287,7 +287,7 @@ Size L. Database and privacy. Waits for: P3 and P5.
 - Stop pupils shuffling a new made-up name more than once a day.
 - Add the new line to `docs/PRIVACY-SUMMARY.md` and show James the wording before merging.
 
-**As built by P11** (migration `20261112002500_own_names.sql`, test `supabase/tests/database/own_names.test.sql`; screens `src/profile/OwnName.tsx`, `src/profile/NameTools.tsx`, `src/teacher/WaitingToJoin.tsx`):
+**As built by P11** (migration `20261112002800_own_names.sql`, test `supabase/tests/database/own_names.test.sql`; screens `src/profile/OwnName.tsx`, `src/profile/NameTools.tsx`, `src/teacher/WaitingToJoin.tsx`):
 
 - `name_scrolls(player, how two-golds|pictures|teacher, used_at)`: one of each earned kind per pupil, given by a trigger on `trophies` (gold = level 3 or more, the hub's own trophies left out) and back-dated for trophies already won. A teacher may give one more, at most one unused at a time.
 - `name_requests` keeps one pending per pupil; `ask_for_my_name` uses a scroll, `cancel_my_name_request` gives it back, a No gives it back, a Yes spends it. A name someone got first ends as `taken` (scroll back).

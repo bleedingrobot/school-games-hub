@@ -1,4 +1,4 @@
--- Earn your own name (migration 20261112002500_own_names.sql; docs/plans/profile/PLAN.md card P11): Name Scrolls, typed names
+-- Earn your own name (migration 20261112002800_own_names.sql; docs/plans/profile/PLAN.md card P11): Name Scrolls, typed names
 -- waiting for a teacher, the name history, putting the made-up name back, and the once-a-day limit on made-up names.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;

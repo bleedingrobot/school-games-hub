@@ -4,7 +4,7 @@ import { NEVER_ALONE, NEVER_INSIDE } from "../../shared/clans/words";
 import { nameHint } from "./OwnName";
 
 const sql = readFileSync(
-  "supabase/migrations/20261112002500_own_names.sql",
+  "supabase/migrations/20261112002800_own_names.sql",
   "utf8",
 );
 

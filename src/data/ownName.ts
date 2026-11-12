@@ -1,5 +1,5 @@
 /**
- * Earn your own name (docs/plans/profile/PLAN.md card P11). Every rule is on the server (migration 20261112002500): who has a
+ * Earn your own name (docs/plans/profile/PLAN.md card P11). Every rule is on the server (migration 20261112002800): who has a
  * Name Scroll, the letter and rude-word checks, and that a typed name is shown to nobody else until a teacher says Yes.
  */
 import { supabase } from "../lib/supabase";
