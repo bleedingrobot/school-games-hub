@@ -9,7 +9,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - [ ] P4 Dragon Maths: the first five and the Dragon Heads (size M, database). Waits for: P3.
 - [ ] P5 The trophy cabinet and the "New trophy!" moment (size M). Waits for: P1 and P3.
 - [ ] P6 Retire levels and show trophies around the hub (size M). Waits for: P5. Not alongside dashboard card D2.
-- [ ] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Waits for: P3.
+- [x] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Done 12 Nov 2026: eight trophies, a watcher on each record, back-awards, "Trophy won!" line (`src/trophies/`), full book needs 75.
 - [ ] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Waits for: P3.
 - [ ] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Waits for: P3.
 - [ ] P8 part 2: Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training. Waits for: P3.
