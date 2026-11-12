@@ -12,5 +12,5 @@ export function ArcheryPlay() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const api = useMemo(() => archeryApi(serverTransport, profile?.id ?? 'me'), [profile?.id]);
-  return <ArcheryGame api={api} duels={serverDuelLink} me={profile?.id ?? ''} onExit={() => navigate('/')} />;
+  return <ArcheryGame api={api} duels={serverDuelLink} me={profile?.id ?? ''} onServer onExit={() => navigate('/')} />;
 }

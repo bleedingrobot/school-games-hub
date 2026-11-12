@@ -15,6 +15,7 @@ import { PROBLEM_TEXT } from '../../../shared/isles/server';
 import { QuestionModal } from '../../maths/QuestionModal';
 import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
@@ -440,6 +441,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   return (
     <div className="si">
       <Say text={voiceLine} say={voice.say} />
+      <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
         {screen.kind === 'turn' ? <h2>Your turn</h2> : (
           // A named island is called by its name at the top (James, 4 Nov 2026); until then it's "My island".

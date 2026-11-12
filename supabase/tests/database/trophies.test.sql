@@ -149,8 +149,8 @@ select is((select jsonb_agg(t ->> 'id') from jsonb_array_elements(public.my_trop
 select is((select jsonb_build_array(t ->> 'tier', t -> 'count', t -> 'isNew', t -> 'wins' -> 0 -> 'detail')
   from jsonb_array_elements(public.my_trophies() -> 'trophies') t where t ->> 'id' = 't-head'),
   '["gold", 4, true, {"place": 2}]'::jsonb, '... with the metal, the count, that it is new, and my own detail');
-select is((select jsonb_agg(t ->> 'id') from jsonb_array_elements(public.my_trophies() -> 'next') t),
-  '["t-sword", "t-cup", "t-far"]'::jsonb, '... and up to three I could win next');
+select is((select jsonb_agg(t ->> 'id') from (select t from jsonb_array_elements(public.my_trophies() -> 'next') with ordinality as n(t, i) where i <= 3) x),
+  '["t-sword", "t-cup", "t-far"]'::jsonb, '... and the ones I could win next, in shelf order');
 select pg_temp.ben();
 select is(public.trophies_of(pg_temp.id('0a')),
   '[{"id": "t-head", "tier": "gold"}, {"id": "t-once", "tier": "bronze"}, {"id": "t-year", "tier": "bronze"}]'::jsonb,

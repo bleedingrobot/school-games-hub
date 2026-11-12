@@ -30,6 +30,14 @@ Every prompt assumes these standing rules, so they are not repeated in full each
 - Browser: `src/data/trophies.ts` (`fetchMyTrophies`, `fetchTrophiesOf`, `markMyTrophiesSeen`, `tierOf`). A picture's emoji and painting go in `EARNED_PICTURES` in `src/avatar/earnedPictures.ts`, one line per picture trophy; an unlisted one draws a cup on its metal disc.
 - `my_trophies().next` is the first three unearned by `sort`, whatever the class has switched on: P5 can filter by the games the pupil sees.
 
+**As built by P5** (migration `20261112002100_trophy_cabinet.sql`, test `supabase/tests/database/trophy_cabinet.test.sql`):
+
+- `my_trophies().next` now gives up to twelve, and the page shows the first three from games the class can see (`nextSpots` in `src/trophies/cabinet.ts`). It also gives `favourites`.
+- Favourites: `profiles.trophy_favourites` (up to three ids). `set_my_favourite_trophies(ids)` keeps only trophies the pupil holds and returns what it saved.
+- The "New trophy!" moment: `my_new_trophies()` lists the unseen ones; `NewTrophyMoment` (in `Layout`) shows them on hub pages only and calls `mark_my_trophies_seen()` straight away, so each shows once. Sound only when it is on; still for reduced motion.
+- A trophy's `game` can be a home-card art id (`lord`, `clans`, `card101`): `trophyGame()` maps them to the game. A new card with a different art id adds a line to `SAME_GAME` there.
+- The cabinet draws a stand-in cup in the trophy's metal with the game's icon; P2's paintings can replace `TrophyArt` in `src/trophies/TrophyArt.tsx`.
+
 ---
 
 ## P1 Tidy the profile page
@@ -103,7 +111,7 @@ Size M. Database. Waits for: P3. **Aim to be live before season 2 starts (about 
 - Dragon Maths shows "First five: 3 of 5 places left this season" on its season strip.
 - Placeholder art: the existing Scorchtail picture, cropped.
 
-**As built by P4** (migration `20261112001000_dragon_trophies.sql`, test `supabase/tests/database/lord_trophies.test.sql`):
+**As built by P4** (migration `20261112002400_dragon_trophies.sql`, test `supabase/tests/database/lord_trophies.test.sql`):
 
 - The trophies are given by a trigger on `lord_hall` (`lord_hall_trophies` → `lord_give_trophies(player, season)`), which fires inside `lord_commit` on every dragon win. `lord_commit` itself was not re-created. A failed award only logs a warning; the save still goes through.
 - The first-five race is between pupils only: teachers and hidden pupils win the Slayer's Sword but never take a place. A pupil is in the first five when fewer than five schoolmates first slew the dragon strictly before them, so ties all count. `detail` keeps `dragonSeason` and `place`.

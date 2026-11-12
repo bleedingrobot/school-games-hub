@@ -41,6 +41,7 @@ import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { COACH_NAME } from './text';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './trader.css';
 
 type Tab = CoachTab;
@@ -56,8 +57,10 @@ export interface PreviewHelpers {
   reload: () => void;
 }
 
-export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
+export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = false }: {
   api: TraderApi;
+  /** The school's server is behind `api` (not the preview's pretend one), so trophies can be won. */
+  onServer?: boolean;
   onExit?: () => void;
   extra?: (h: PreviewHelpers) => ReactNode;
   startAt?: 'title' | 'planet';
@@ -701,6 +704,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
         />
       )}
       {modal}
+      <TrophyWonLine games={['trader']} watch={trophyPieces(loaded?.game?.system)} off={!onServer} />
     </div>
   );
 }
@@ -838,4 +842,13 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
       </div>
     </div>
   );
+}
+
+/** The Star Forge pieces that win trophies (the Dyson ring, a black hole sun), built or not: the "Trophy won!" line checks
+ * again only when one of them changes. */
+function trophyPieces(system: SystemDesign | undefined): string | null {
+  if (!system) return null;
+  const ring = system.tech.some((t) => t.kind === 'dyson' && t.built);
+  const hole = system.sun?.kind === 'blackhole' && !!system.sun.built;
+  return `${ring ? 'ring' : ''}|${hole ? 'hole' : ''}`;
 }

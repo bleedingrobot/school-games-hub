@@ -1,4 +1,4 @@
--- Dragon Maths trophies (migration 20261112001000_dragon_trophies.sql; docs/plans/profile/PLAN.md card P4).
+-- Dragon Maths trophies (migration 20261112002400_dragon_trophies.sql; docs/plans/profile/PLAN.md card P4).
 -- The Dragon Head (first five in the school each dragon season) and the Slayer's Sword (any dragon win), given on the
 -- dragon's own season number, with bronze then silver; who takes a first-five place; what the season road reads; and that
 -- pupils cannot give themselves either.

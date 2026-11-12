@@ -19,8 +19,8 @@
 
 insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort) values
   ('dm-first-five', 'dragon-maths', 'Dragon Head', 'Be one of the first five in your school to slay the dragon this season.',
-   'picture', 'season', null, 100),
-  ('dm-slayer', 'dragon-maths', 'Slayer''s Sword', 'Slay the dragon this season.', 'trophy', 'season', null, 101);
+   'picture', 'season', null, 10),
+  ('dm-slayer', 'dragon-maths', 'Slayer''s Sword', 'Slay the dragon this season.', 'trophy', 'season', null, 20);
 
 -- ---------------------------------------------------------------------------
 -- 2. Giving them

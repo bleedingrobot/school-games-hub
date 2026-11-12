@@ -41,6 +41,21 @@ export interface PictureArt {
 export const EARNED_PICTURES: Record<string, PictureArt> = {
   // Dragon Maths (P4): one of the first five in the school to slay the dragon this season.
   'dm-first-five': { emoji: '🐉', art: dragonHead },
+  // Card P7 (placeholders until card P2's paintings land).
+  'clan-banner': { emoji: '🚩' },
+  'isles-lighthouse': { emoji: '🗼' },
+  'mm-book': { emoji: '📖' },
+  'gem-crown': { emoji: '👑' },
+  'trader-blackhole': { emoji: '🕳️' },
+  'diamond-heart': { emoji: '💎' },
+  'toonflap-rainbow': { emoji: '🌈' },
+  'chess-crown': { emoji: '♛' },
+  'checkers-crown': { emoji: '⛀' },
+  'archery-bow': { emoji: '🏹' },
+  'marble-golden': { emoji: '🟡' },
+  'bond-perfect': { emoji: '💞' },
+  'mine-pickaxe': { emoji: '⛏️' },
+  'decree-crown': { emoji: '👑' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

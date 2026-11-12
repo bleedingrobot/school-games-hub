@@ -58,6 +58,36 @@ world.jobs.my_ladder = { facts: secure, settings: {}, focus };
 world.jobs.leaderboard = [];
 // My games (dashboard plan D2): what this made-up pupil plays most, and their class.
 world.jobs.my_top_games = { mine: ['dragon-maths', 'archery', 'diamond', 'isles'], classGames: ['dragon-maths', 'archery', 'isles', 'clan-quest'] };
+// The trophy cabinet (profile card P5): made-up trophies. ?trophies=0 shows an empty cabinet; ?new=1 shows the
+// "New trophy!" moment on the first hub page.
+const params = new URLSearchParams(window.location.search);
+const win = (season: number, days: number) => ({ season, year: 2026, at: ago(days), detail: {} });
+const cup = (id: string, game: string, name: string, how: string, tier: string, wins: ReturnType<typeof win>[], kind = 'trophy', repeat = 'season') => ({
+  id, game, name, how, kind, repeat, art: null, tier, count: wins.length, firstAt: wins[0].at, lastAt: wins[wins.length - 1].at, isNew: false, wins,
+});
+const TROPHIES = params.get('trophies') === '0' ? [] : [
+  cup('dm-first-five', 'dragon-maths', 'Dragon Head', 'Be one of the first five in the school to slay the dragon in a season.', 'silver', [win(1, 40), win(2, 3)], 'picture'),
+  cup('dm-slayer', 'dragon-maths', 'Dragon Slayer', 'Slay the dragon in Dragon Maths.', 'gold', [win(1, 42), win(2, 5), win(3, 1), win(4, 0)]),
+  cup('cq-clan-win', 'clan-quest', 'Clan Champion', 'Be in the clan that tops Clan Quest at the end of a season.', 'bronze', [win(2, 8)]),
+  cup('isles-all', 'isles', 'Island Hopper', 'Light every island in Sky Isles.', 'gold', [win(1, 30), win(2, 12), win(3, 2)]),
+  cup('chess-gold', 'chess', 'Chess Gold', 'Reach a gold rank in chess.', 'bronze', [win(0, 6)], 'trophy', 'once'),
+];
+let favourites = ['dm-slayer'];
+world.jobs.my_trophies = {
+  season: 3,
+  trophies: TROPHIES,
+  next: [
+    { id: 'trader-forge', game: 'trader', name: 'Star Forge', how: 'Build the whole solar system in Star Trader.', kind: 'picture', repeat: 'season', art: null },
+    { id: 'archery-bull', game: 'archery', name: 'Bullseye Ace', how: 'Hit five bullseyes in a row in Archery.', kind: 'trophy', repeat: 'season', art: null },
+    { id: 'hub-regular', game: 'hub', name: 'Season Regular', how: 'Play on 15 different school days in one season.', kind: 'trophy', repeat: 'season', art: null },
+    { id: 'diamond-gems', game: 'diamond', name: 'Gem Hoard', how: 'Fill the whole gem wall in Diamond Drop.', kind: 'trophy', repeat: 'season', art: null },
+  ],
+  favourites,
+};
+let newOnes = params.get('new') ? [
+  { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
+  { id: 'dm-first-five', game: 'dragon-maths', name: 'Dragon Head', how: 'Be one of the first five in the school to slay the dragon in a season.', kind: 'picture', tier: 'silver', count: 2 },
+] : [];
 setWorld(world);
 
 const base = fakeSupabase().supabase;
@@ -68,10 +98,25 @@ export const supabase = {
   ...base,
   rpc: (name: string, args?: Record<string, unknown>) => {
     if (name === 'save_my_avatar') {
-      updateMe({ ...(args?.avatar as Record<string, string>) });
+      const avatar = { ...(args?.avatar as Record<string, string>) };
+      // The server writes the ring itself.
+      const worn = TROPHIES.find((t) => t.id === avatar.pic);
+      if (worn) avatar.picTier = worn.tier;
+      updateMe(avatar);
       return Promise.resolve({ data: null, error: null });
     }
     if (name === 'my_home_page') return Promise.resolve({ data: homeAnswer(), error: null });
+    if (name === 'my_trophies') return Promise.resolve({ data: { ...(world.jobs.my_trophies as object), favourites }, error: null });
+    if (name === 'my_new_trophies') return Promise.resolve({ data: newOnes, error: null });
+    if (name === 'mark_my_trophies_seen') {
+      const n = newOnes.length;
+      newOnes = [];
+      return Promise.resolve({ data: n, error: null });
+    }
+    if (name === 'set_my_favourite_trophies') {
+      favourites = ((args?.ids as string[]) ?? []).slice(0, 3);
+      return Promise.resolve({ data: favourites, error: null });
+    }
     return base.rpc(name);
   },
   auth: {

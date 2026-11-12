@@ -8,5 +8,5 @@ import { DiamondGame } from './DiamondGame';
 
 export function DiamondPlay() {
   const navigate = useNavigate();
-  return <DiamondGame backend={liveDiamond} onExit={() => navigate('/')} />;
+  return <DiamondGame backend={liveDiamond} onServer onExit={() => navigate('/')} />;
 }

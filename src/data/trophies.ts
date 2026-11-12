@@ -43,8 +43,16 @@ export interface MyTrophies {
   /** The hub's season number today (0 before the first season). */
   season: number;
   trophies: MyTrophy[];
-  /** Up to three I have not won yet. */
+  /** Some I have not won yet, in shelf order (up to twelve: the page shows three from games my class can see). */
   next: TrophyType[];
+  /** Up to three trophy ids I picked to show off, in my order. */
+  favourites: string[];
+}
+
+/** A trophy waiting for its "New trophy!" moment. */
+export interface NewTrophy extends Pick<TrophyType, 'id' | 'game' | 'name' | 'how' | 'kind'> {
+  tier: Tier;
+  count: number;
 }
 
 /** What classmates may see of someone's trophies: which, and the metal. */
@@ -57,7 +65,22 @@ export interface TrophyBadge {
 export async function fetchMyTrophies(): Promise<MyTrophies> {
   const { data, error } = await supabase.rpc('my_trophies');
   if (error || !data) throw new FriendlyError("We couldn't load your trophies. Please try again.");
-  return data as MyTrophies;
+  const mine = data as MyTrophies;
+  return { ...mine, favourites: mine.favourites ?? [] };
+}
+
+/** Only my trophies I haven't been shown yet (for the "New trophy!" moment). Empty if it can't be read. */
+export async function fetchMyNewTrophies(): Promise<NewTrophy[]> {
+  const { data, error } = await supabase.rpc('my_new_trophies');
+  if (error || !Array.isArray(data)) return [];
+  return data as NewTrophy[];
+}
+
+/** Save my favourite trophies (up to three). Returns what the server kept: only trophies I hold. */
+export async function saveMyFavouriteTrophies(ids: string[]): Promise<string[]> {
+  const { data, error } = await supabase.rpc('set_my_favourite_trophies', { ids });
+  if (error) throw new FriendlyError("We couldn't save your favourites. Please try again.");
+  return (data ?? []) as string[];
 }
 
 /** A schoolmate's trophies (empty for anyone outside my school). */

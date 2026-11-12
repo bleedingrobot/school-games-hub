@@ -13,6 +13,7 @@ import { swappableSlots, type GameEvent } from '../../../shared/card101/engine';
 import type { Slot } from '../../../shared/card101/cards';
 import type { CardSession } from '../../card101/useCardGame';
 import { useSound } from '../../sound';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { playSound, type GameSound } from '../sounds';
 import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
 import { Card101Guide } from './Guide';
@@ -326,6 +327,7 @@ export function Card101Live({ session }: { session: CardSession }) {
         <ScoresPanel seats={seats} view={view} turnSeat={turnSeat} />
         <ValuesPanel />
         <LogPanel lines={lines} note={session.live === 'live' ? 'Live' : 'Reconnecting…'} />
+        <TrophyWonLine games={['101']} watch={over ? id : null} />
         {confirming ? (
           <div className="chess-confirm" role="group" aria-label="Are you sure?">
             <p>Leave this game? You’ll be out, and it won’t earn you points.</p>
