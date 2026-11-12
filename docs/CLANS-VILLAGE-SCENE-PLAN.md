@@ -1,7 +1,7 @@
 # Clan Quest: clickable village scene plan
 
 Turn **My Village** (`src/games/clans/MyVillage.tsx`, today a grid of 8 building cards) into a painted village you look down on, where you tap a building to upgrade it and every level makes the building look bigger and grander.
-Written 13 November 2026 (NZ) for James. **Status: plan only, nothing built.**
+Written 13 November 2026 (NZ) for James. **Status: V1 live 13 Nov 2026 NZ (the tappable scene with placeholders). James chose a new painting for every building level.**
 Sketch: project files `clans/village-scene/mock-laptop.jpg`.
 
 ## What stays the same
@@ -58,7 +58,7 @@ Each stage goes live on its own (merging and deploying are pre-approved).
 
 | Stage | What | Needs |
 |---|---|---|
-| V1 | The scene with placeholders: code ground, 8 plots, tap panel, hammer badges, level numbers, List view, troops inside Barracks. Phone scrolling. | Code only |
+| V1 (LIVE) | The scene with placeholders: code ground, 8 plots, tap panel, hammer badges, level numbers, List view, troops inside Barracks. Phone scrolling. | Code only |
 | V2 | The upgrade moment (scaffold, dust, glow, "Level 4!"), raid smoke, the 3 ground looks switched by Village total. | Code only |
 | V3 | Art brief and paint script `scripts/clans-village-art.py` (level-by-level image to image, cut-out, tidy to WebP, `buildings/<kind>-<level>.webp`). `pickBuildingArt` looks for `<kind>-<level>` first, then today's sizes. | Code; James's PC for painting |
 | V4 | Paint, pick the best try of each, swap them in, line the plots up on the painted ground, check on laptop, iPad and phone. | James's PC (evening) |
@@ -73,3 +73,11 @@ V1 and V2 can be built now. V4 waits for an evening on the PC.
 - `src/games/clans/art.ts` (`pickBuildingArt` gains per-level names)
 - `src/games/clans/clans.css`
 - Tests: the scene renders all 8 plots with the right labels, tapping opens the panel, Upgrade still runs the area and fence questions, List view matches today's cards.
+
+## V1 as built
+
+- `VillageScene.tsx` draws the ground, roads, well, trees and the Walls (dashed outline at 0, low fence 1-2, palisade 3, palisade + watch platforms 4, stone walls with corner towers 5) in one SVG, and puts each building on its plot as a button. Name-and-level signs sit in their own layer on top so later buildings never hide them; ⚒ = can upgrade now, ♛ = fully built.
+- The panel beside the scene (below it under 760px, sticky at the bottom) shows the picked building, its Upgrade button and the reason it can't be upgraded. Upgrading still goes through the area and fence questions.
+- Troops sit in a "Troops (in the Barracks)" fold under the scene, and open fully when the Barracks is picked. The "List view" button shows the old cards, and the choice is remembered on that device (`cq-village-view`).
+- On phones the scene is at least 640px wide and scrolls sideways, starting in the middle.
+- Screenshots: project files `clans/village-scene/v1/`. Next: V2 (upgrade moment, raid smoke, 3 ground looks).
