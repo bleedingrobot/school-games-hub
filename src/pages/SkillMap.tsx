@@ -12,9 +12,10 @@ import { fetchClassMap, type ClassMap, type MapStudent } from '../data/skillMap'
 import { mastery, wrongNote, type FactStats } from '../../shared/maths/leitner';
 import { parseFactKey } from '../../shared/maths/facts';
 import { packIdOfKey, type LadderStage } from '../../shared/maths/ladder';
-import { skillShortLabel } from '../../shared/maths/focus';
+import { skillTinyLabel } from '../../shared/maths/skillNames';
 import {
   cellFor,
+  classCounts,
   LEVELS,
   STAGES,
   stageOfSkill,
@@ -55,7 +56,7 @@ function SkillMapView() {
   return (
     <div className="classes skill-map-page">
       <p className="teacher__classes-link">
-        How each student is getting on across the maths ladder. Open a stage to see its skills, and a cell to see the facts behind it.
+        Where each pupil is on the maths ladder. Tap a cell to see the facts behind it.
       </p>
       {current && <ClassMapPanel key={current.id} classId={current.id} name={current.name} />}
     </div>
@@ -162,7 +163,7 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
             <div className="skill-map__tools">
               <button
                 type="button"
-                className="button button--light-outline"
+                className="button button--light-outline skill-map__all"
                 onClick={() => setOpen(allOpen ? new Set() : new Set(STAGES.map((s) => s.id)))}
               >
                 {allOpen ? 'Close every stage' : 'Open every stage'}
@@ -173,11 +174,16 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
                     <span className="skill-map__swatch" data-level={level} aria-hidden="true">
                       {LEVELS[level].mark}
                     </span>
-                    <span>
-                      <strong>{LEVELS[level].label}</strong>: {LEVELS[level].about}
+                    <span title={LEVELS[level].about}>
+                      {LEVELS[level].label}
+                      <span className="sr-only">: {LEVELS[level].about}</span>
                     </span>
                   </li>
                 ))}
+                <li>
+                  <span className="skill-map__swatch skill-map__swatch--now" aria-hidden="true" />
+                  <span>Now (where auto is)</span>
+                </li>
               </ul>
             </div>
             <div className="skill-map__scroll" role="region" aria-label={`Skill map for ${name}`} tabIndex={0}>
@@ -185,13 +191,12 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
                 <caption className="sr-only">
                   Each row is a student. Each column is a stage of the maths ladder; open a stage to see its skills.
                 </caption>
-                <MapHead open={open} onToggle={toggle} classId={classId} />
+                <MapHead open={open} onToggle={toggle} maps={students.map((s) => maps.get(s.id)!)} />
                 <tbody>
                   {students.map((s) => (
-                    <MapRow key={s.id} student={s} map={maps.get(s.id)!} open={open} picked={picked} onPick={setPicked} classId={classId} />
+                    <MapRow key={s.id} student={s} map={maps.get(s.id)!} open={open} picked={picked} onPick={setPicked} />
                   ))}
                 </tbody>
-                <MapFoot maps={students.map((s) => maps.get(s.id)!)} open={open} />
               </table>
             </div>
           </>
@@ -215,23 +220,41 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
 
 // ---------------------------------------------------------------- the table
 
-function MapHead({ open, onToggle, classId }: { open: Set<LadderStage>; onToggle: (stage: LadderStage) => void; classId: string }) {
+const isSecure = (level: CellLevel | undefined) => level === 'secure' || level === 'fluent';
+
+/** A small bar of the class on one column: fluent, secure and learning, out of every pupil. */
+function ClassBar({ fluent, secure, learning, total }: { fluent: number; secure: number; learning: number; total: number }) {
+  const w = (n: number) => `${total ? (n / total) * 100 : 0}%`;
+  return (
+    <span className="skill-map__bar" aria-hidden="true">
+      <i data-level="fluent" style={{ width: w(fluent) }} />
+      <i data-level="secure" style={{ width: w(secure) }} />
+      <i data-level="learning" style={{ width: w(learning) }} />
+    </span>
+  );
+}
+
+function MapHead({ open, onToggle, maps }: { open: Set<LadderStage>; onToggle: (stage: LadderStage) => void; maps: StudentMap[] }) {
+  const total = maps.length;
   return (
     <thead>
-      <tr>
+      <tr className="skill-map__bands">
         <th scope="col" rowSpan={2} className="skill-map__who">
-          Student
+          Pupil
         </th>
         <th scope="col" rowSpan={2} className="skill-map__place">
-          On the ladder
+          Now on
         </th>
         {STAGES.map((stage) => {
           const isOpen = open.has(stage.id);
+          const levels = maps.map((m) => m.stages.find((s) => s.stage === stage.id)?.level);
+          const secure = levels.filter(isSecure).length;
           return (
             <th
               key={stage.id}
               scope="col"
               className="skill-map__stage"
+              data-stage={stage.id}
               rowSpan={isOpen ? 1 : 2}
               colSpan={isOpen ? stageSkills(stage.id).length : 1}
               data-open={isOpen || undefined}
@@ -240,20 +263,42 @@ function MapHead({ open, onToggle, classId }: { open: Set<LadderStage>; onToggle
                 <span aria-hidden="true">{isOpen ? '▾' : '▸'}</span> {stage.label}
                 <span className="sr-only">{isOpen ? ', open. Press to close' : ', closed. Press to open its skills'}</span>
               </button>
+              {!isOpen && (
+                <>
+                  <ClassBar
+                    fluent={levels.filter((l) => l === 'fluent').length}
+                    secure={levels.filter((l) => l === 'secure').length}
+                    learning={levels.filter((l) => l === 'learning').length}
+                    total={total}
+                  />
+                  <span className="skill-map__secure">
+                    {secure} of {total}
+                    <span className="sr-only"> students are secure on every skill in {stage.label}</span>
+                  </span>
+                </>
+              )}
             </th>
           );
         })}
       </tr>
-      <tr>
+      <tr className="skill-map__names">
         {STAGES.filter((stage) => open.has(stage.id)).flatMap((stage) =>
-          stageSkills(stage.id).map((skill) => (
-            <th key={skill.id} scope="col" className="skill-map__skill">
-              <span className="skill-map__skill-name">{skillShortLabel(skill.id)}</span>
-              <Link className="skill-map__focus" to={`/teacher/${classId}/maths?skill=${skill.id}`}>
-                Set focus <span className="sr-only">on {skill.label}</span>
-              </Link>
-            </th>
-          )),
+          stageSkills(stage.id).map((skill) => {
+            const counts = classCounts(maps, skill.id);
+            return (
+              <th key={skill.id} scope="col" className="skill-map__skill" data-stage={stage.id} title={skill.label}>
+                <span className="skill-map__skill-name" aria-hidden="true">
+                  {skillTinyLabel(skill.id)}
+                </span>
+                <span className="sr-only">{skill.label}</span>
+                <ClassBar fluent={counts.fluent} secure={counts.secure} learning={counts.learning} total={total} />
+                <span className="skill-map__secure">
+                  {counts.secure + counts.fluent} of {total}
+                  <span className="sr-only"> students are secure on {skill.label}</span>
+                </span>
+              </th>
+            );
+          }),
         )}
       </tr>
     </thead>
@@ -266,24 +311,19 @@ function MapRow({
   open,
   picked,
   onPick,
-  classId,
 }: {
   student: MapStudent;
   map: StudentMap;
   open: Set<LadderStage>;
   picked: Picked | null;
   onPick: (p: Picked | null) => void;
-  classId: string;
 }) {
   const started = map.stages.some((s) => s.cells.some((c) => c.level !== 'not-started' && c.level !== 'off'));
   return (
     <tr>
-      <th scope="row" className="skill-map__who">
+      <th scope="row" className="skill-map__who" title={student.realName ? `${student.name} (${student.realName})` : student.name}>
         <span className="skill-map__name">{student.name}</span>
         {student.realName && <span className="skill-map__real">{student.realName}</span>}
-        <Link className="skill-map__focus" to={`/teacher/${classId}/maths?student=${student.id}`}>
-          Set focus <span className="sr-only">for {student.name}</span>
-        </Link>
       </th>
       <td className="skill-map__place">
         <Place student={student} map={map} started={started} />
@@ -295,6 +335,7 @@ function MapRow({
                 key={cell.skill.id}
                 className="skill-map__cell"
                 data-level={cell.level}
+                data-here={cell.status === 'current' || undefined}
                 data-picked={picked?.student === student.id && picked.skill === cell.skill.id ? true : undefined}
               >
                 <button
@@ -309,7 +350,7 @@ function MapRow({
                   }
                   title={`${student.name}: ${cell.skill.label}: ${levelWords(cell)}`}
                 >
-                  <span aria-hidden="true">{LEVELS[cell.level].mark}</span>
+                  <span aria-hidden="true">{cell.level === 'not-started' ? '·' : LEVELS[cell.level].mark}</span>
                   <span className="sr-only">
                     {student.name}, {cell.skill.label}: {levelWords(cell)}
                     {cell.level !== 'off' && cell.keys > 0 ? `, ${Math.round(cell.share * 100)}% secure` : ''}
@@ -340,57 +381,23 @@ function StageTd({ student, stage }: { student: MapStudent; stage: StageCell }) 
   );
 }
 
+/** Where the pupil is now, as a chip. Furthest and warm-up are in its tooltip (and in the detail panel). */
 function Place({ student, map, started }: { student: MapStudent; map: StudentMap; started: boolean }) {
   const info = student.ladder;
-  const here = map.current ? skillShortLabel(map.current.id) : started ? 'Every skill secure' : 'Not started';
-  const furthest = map.furthest ? skillShortLabel(map.furthest.id) : null;
+  const here = map.current ? skillTinyLabel(map.current.id) : started ? 'Every skill secure' : 'Not started';
+  const full = map.current ? map.current.label : here;
+  const notes = [
+    map.furthest ? `Furthest: ${map.furthest.label}` : '',
+    info.on ? `Warm-up: ${info.placed === 'done' ? 'done' : info.placed === 'skipped' ? 'skipped' : 'not done'}` : '',
+  ].filter(Boolean);
   return (
-    <>
-      <span className="skill-map__here">
-        <span className="skill-map__tag">Now</span> {here}
+    <span className="skill-map__now" data-none={!map.current || undefined} title={[`Now: ${full}`, ...notes].join('\n')}>
+      <span aria-hidden="true">{here}</span>
+      <span className="sr-only">
+        Now: {full}
+        {notes.length ? `. ${notes.join('. ')}` : ''}
       </span>
-      {furthest && (
-        <span className="skill-map__far">
-          <span className="skill-map__tag">Furthest</span> {furthest}
-        </span>
-      )}
-      {info.on && (
-        <span className="skill-map__far">
-          <span className="skill-map__tag">Warm-up</span>{' '}
-          {info.placed === 'done' ? 'done' : info.placed === 'skipped' ? 'skipped' : 'not done'}
-        </span>
-      )}
-    </>
-  );
-}
-
-const isSecure = (level: CellLevel | undefined) => level === 'secure' || level === 'fluent';
-
-function MapFoot({ maps, open }: { maps: StudentMap[]; open: Set<LadderStage> }) {
-  return (
-    <tfoot>
-      <tr>
-        <th scope="row" className="skill-map__who">
-          Secure or fluent
-        </th>
-        <td className="skill-map__place" />
-        {STAGES.flatMap((stage) =>
-          open.has(stage.id)
-            ? stageSkills(stage.id).map((skill) => (
-                <td key={skill.id} className="skill-map__total">
-                  {maps.filter((m) => isSecure(cellFor(m, skill.id)?.level)).length} of {maps.length}{' '}
-                  <span className="sr-only">students are secure on {skill.label}</span>
-                </td>
-              ))
-            : [
-                <td key={stage.id} className="skill-map__total">
-                  {maps.filter((m) => isSecure(m.stages.find((s) => s.stage === stage.id)?.level)).length} of {maps.length}{' '}
-                  <span className="sr-only">students are secure on every skill in {stage.label}</span>
-                </td>,
-              ],
-        )}
-      </tr>
-    </tfoot>
+    </span>
   );
 }
 
