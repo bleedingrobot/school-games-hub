@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { TABLES, TOP_BOX } from './config';
-import { LADDER, ladderProgress } from './ladder';
+import { LADDER, } from './ladder';
 import { newStats, type FactStats } from './leitner';
-import { NO_LADDER, parseLadderInfo, placeProgress, type LadderInfo } from './place';
+import { NO_LADDER, placeProgress, type LadderInfo } from './place';
 import { STEP_SECURE_SHARE } from './selector';
-import { cellFor, classCounts, LEVELS, STAGES, stageOfSkill, stageSkills, studentMap, type CellLevel } from './skillMap';
+import { cellFor, classMiddle, pupilLooks, skillsInUse, studentMap } from './skillMap';
 
 // The built skills on the ladder (the part-whole skills sit beside it: see `inAuto`).
 const built = LADDER.filter((s) => s.built && s.inAuto !== false);
@@ -21,105 +20,15 @@ const info = (over: Partial<LadderInfo> = {}): LadderInfo => ({
   on: true,
   ...over,
 });
-const levels = (stats: FactStats[], i: LadderInfo = info(), settings = {}) =>
-  Object.fromEntries(
-    studentMap(stats, i, settings)
-      .stages.flatMap((s) => s.cells)
-      .map((c) => [c.skill.id, c.level]),
-  );
 
-describe('the stages', () => {
-  it('are the six stages of the ladder, in order, with every built skill in exactly one', () => {
-    expect(STAGES.map((s) => s.id)).toEqual([
-      'early-facts',
-      'times-tables',
-      'place-value',
-      'rounding',
-      'order-of-operations',
-      'fractions-decimals-percentages',
-    ]);
-    const all = STAGES.flatMap((s) => stageSkills(s.id));
-    expect(all.map((s) => s.id).sort()).toEqual(allBuilt.map((s) => s.id).sort());
-    for (const s of allBuilt) expect(stageOfSkill(s.id)).toBe(s.stage);
-    expect(stageOfSkill('nope')).toBeNull();
-  });
-
-  it("keep a skill in the ladder's own order inside its stage", () => {
-    for (const stage of STAGES) {
-      const ranks = stageSkills(stage.id).map((s) => LADDER.indexOf(s));
-      expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
-    }
-  });
-
-  it('use words a teacher can read, with no year levels', () => {
-    for (const stage of STAGES) expect(stage.label).not.toMatch(/year/i);
-    for (const level of Object.values(LEVELS)) {
-      expect(level.label.length).toBeGreaterThan(0);
-      expect(level.about).not.toMatch(/year/i);
-    }
-  });
-});
-
-describe('a student with no records', () => {
-  it('has every skill not started, on the first skill, with nothing secure', () => {
-    const map = studentMap([], info());
-    for (const stage of map.stages) {
-      expect(stage.level).toBe('not-started');
-      expect(stage.secure).toBe(0);
-      expect(stage.counted).toBe(stage.cells.length);
-    }
-    expect(map.current?.id).toBe(built[0].id);
-    expect(map.progress.secureCount).toBe(0);
-    expect(map.furthest).toBeNull();
-    expect(map.stages.filter((s) => s.hasCurrent).map((s) => s.stage)).toEqual([built[0].stage]);
-  });
-});
-
-describe("a cell's level", () => {
-  const skill = built.find((s) => s.id === 'bedmas')!;
-  const n = skill.keys.length;
-
-  it('is not started until something has been asked', () => {
-    expect(cellFor(studentMap([], info()), 'bedmas')?.level).toBe('not-started');
-    expect(cellFor(studentMap([{ ...newStats(skill.keys[0]), attempts: 0 }], info()), 'bedmas')?.level).toBe('not-started');
-  });
-
-  it('is learning when something is asked but fewer than 70% are in box 2', () => {
-    const stats = [rec(skill.keys[0], 1), ...withBox(skill.keys.slice(1, 2), 2)];
-    expect(cellFor(studentMap(stats, info()), 'bedmas')?.level).toBe('learning');
-  });
-
-  it('turns secure at exactly the share auto uses, and fluent at the same share in the top box', () => {
-    const need = Math.ceil(STEP_SECURE_SHARE * n);
-    const under = withBox(skill.keys.slice(0, need - 1), 3);
-    const at = withBox(skill.keys.slice(0, need), 3);
-    expect(cellFor(studentMap(under, info()), 'bedmas')?.level).toBe('learning');
-    expect(cellFor(studentMap(at, info()), 'bedmas')?.level).toBe('secure');
-    const fluent = withBox(skill.keys.slice(0, need), TOP_BOX);
-    expect(cellFor(studentMap(fluent, info()), 'bedmas')?.level).toBe('fluent');
-    // box 4 on some, box 2 on others: secure, not fluent
-    const mixed = [...withBox(skill.keys.slice(0, need - 1), TOP_BOX), ...withBox(skill.keys.slice(need - 1, need), 2)];
-    expect(cellFor(studentMap(mixed, info()), 'bedmas')?.level).toBe('secure');
-  });
-
-  it('keeps the numbers a teacher sees in the detail honest', () => {
-    const stats = [...withBox(skill.keys.slice(0, 2), 3), rec(skill.keys[2], 1)];
-    const cell = cellFor(studentMap(stats, info()), 'bedmas')!;
-    expect(cell.keys).toBe(n);
-    expect(cell.asked).toBe(3);
-    expect(cell.share).toBeCloseTo(2 / n);
-    expect(cell.fluentShare).toBe(0);
-  });
-});
-
-describe('the map agrees with ladderProgress', () => {
+describe('the skill map', () => {
   const everything = (box: number) =>
     withBox(
       allBuilt.flatMap((s) => s.keys),
       box,
     );
 
-  it('for every skill: secure or fluent exactly when ladderProgress says its share reaches 70%', () => {
+  it('agrees with ladderProgress on every skill, and shows a class only the skills it is using and who needs a look', () => {
     const cases: FactStats[][] = [
       [],
       everything(3),
@@ -139,194 +48,34 @@ describe('the map agrees with ladderProgress', () => {
       expect(map.progress.current?.id).toBe(progress.current?.id);
       expect(map.progress.secureCount).toBe(progress.secureCount);
     }
-  });
 
-  it('puts "where they are now" on the same skill as ladderProgress', () => {
-    for (const s of built) {
-      const upToHere = built.slice(0, built.indexOf(s)).flatMap((x) => withBox(x.keys, 3));
-      const map = studentMap(upToHere, info());
-      expect(map.current?.id).toBe(s.id);
-      expect(ladderProgress(upToHere).current?.id).toBe(s.id);
-      expect(cellFor(map, s.id)?.status).toBe('current');
-    }
-  });
+    // Skills in use: what anyone has been asked or is on now, plus the next skill after the furthest pupil.
+    const [a, b, c] = built;
+    const ahead = studentMap([...withBox(a.keys, 3), ...withBox(b.keys.slice(0, 1), 1)], info());
+    const fresh = studentMap([], info());
+    expect([...skillsInUse([fresh])]).toEqual([a.id, b.id]);
+    const used = skillsInUse([ahead, fresh]);
+    expect(used.has(a.id) && used.has(b.id) && used.has(c.id)).toBe(true);
+    expect(used.size).toBe(3);
 
-  it('with every skill secure has no current skill', () => {
-    const map = studentMap(everything(3), info());
-    expect(map.current).toBeNull();
-    for (const stage of map.stages) expect(stage.secure).toBe(stage.counted);
-  });
-
-  it('with tables and division switched off: skipped skills read "switched off" and are not counted', () => {
-    const only67 = [6, 7];
-    const stats = withBox(
-      built.flatMap((s) => s.keys),
-      3,
-    );
-    const map = studentMap(stats, info(), { enabledTables: only67 });
-    const progress = ladderProgress(stats, { enabledTables: only67 });
-    for (const p of progress.skills) {
-      const cell = cellFor(map, p.skill.id)!;
-      expect(cell.level === 'off').toBe(p.status === 'upcoming' && p.share === 1);
-    }
-    const timesStage = map.stages.find((s) => s.stage === 'times-tables')!;
-    expect(timesStage.counted).toBeLessThan(timesStage.cells.length);
-    expect(map.progress.builtCount).toBe(progress.builtCount);
-    expect(map.progress.secureCount).toBe(progress.secureCount);
-  });
-
-  it('a stage whose tables are all switched off reads switched off, not not-started', () => {
-    const map = studentMap([], info(), { enabledTables: [] });
-    expect(map.stages.find((s) => s.stage === 'times-tables')!.level).toBe('off');
-    expect(map.stages.find((s) => s.stage === 'early-facts')!.level).toBe('not-started');
-  });
-
-  it("with division switched off, division facts are left out of a times-table skill's share", () => {
-    const skill = built.find((s) => s.id === 'tables-6-9')!;
-    const mul = skill.keys.filter((k) => k.startsWith('mul:'));
-    const stats = withBox(mul, 3);
-    const withDivision = cellFor(studentMap(stats, info(), { division: true }), skill.id)!;
-    const without = cellFor(studentMap(stats, info(), { division: false }), skill.id)!;
-    expect(without.share).toBe(ladderProgress(stats, { division: false }).skills.find((p) => p.skill.id === skill.id)!.share);
-    expect(withDivision.share).toBeLessThanOrEqual(without.share);
-    expect(without.level).toBe('secure');
-  });
-
-  it('with a placement or a year level: skills behind the start are marked passed over, and "current" starts there', () => {
-    const start = built.find((s) => s.id === 'tables-6-9')!;
-    const map = studentMap([], info({ placed: 'done', placement: start.id }));
-    expect(map.current?.id).toBe(start.id);
-    const before = built.filter((s) => LADDER.indexOf(s) < LADDER.indexOf(start));
-    for (const s of before) {
-      const cell = cellFor(map, s.id)!;
-      expect(cell.passedOver).toBe(true);
-      expect(cell.level).toBe('not-started'); // the colour only tells what the records show
-    }
-    expect(cellFor(map, start.id)?.passedOver).toBe(false);
-    // A class year level moves nobody.
-    const year = studentMap([], parseLadderInfo({ on: true, yearLevel: 6 }));
-    expect(year.current?.id).toBe(built[0].id);
-  });
-
-  it('with auto off: no floor, nothing kept, and the furthest place is not shown', () => {
-    const map = studentMap([], {
-      ...info({
-        placed: 'done',
-        placement: 'tables-6-9',
-        furthest: 'tables-6-9',
-      }),
-      on: false,
-    });
-    expect(map.current?.id).toBe(built[0].id);
-    expect(map.furthest).toBeNull();
-  });
-
-  it('shows the furthest place when auto is on, and never moves current behind it', () => {
-    const far = built.find((s) => s.id === 'round-1000')!;
-    const map = studentMap(withBox(built[0].keys, 3), info({ furthest: far.id }));
-    expect(map.furthest?.id).toBe(far.id);
-    expect(map.current).not.toBeNull();
-    expect(LADDER.indexOf(map.current!)).toBeGreaterThanOrEqual(LADDER.indexOf(far));
+    // Who needs a look: nearly (half secure), finding it hard (6+ answers a fact, under 40%), behind (3+ skills back), quiet (7 days).
+    const now = Date.UTC(2026, 10, 12);
+    const at = (keys: string[], box: number, attempts: number, daysAgo = 1) => keys.map((k) => ({ ...rec(k, box, attempts), lastSeen: now - daysAgo * 86_400_000 }));
+    const half = Math.ceil(a.keys.length / 2);
+    const nearly = at(a.keys.slice(0, half), 2, 3);
+    const hard = at(a.keys, 1, 6);
+    const far = at(built.slice(0, 4).flatMap((s) => s.keys), 3, 3, 10);
+    const maps = [nearly, hard, far, far, far].map((f) => studentMap(f, info()));
+    const middle = classMiddle(maps);
+    expect([...pupilLooks(maps[0], nearly, middle, now)]).toEqual(['nearly', 'behind']);
+    expect([...pupilLooks(maps[1], hard, middle, now)]).toEqual(['hard', 'behind']);
+    expect([...pupilLooks(maps[2], far, middle, now)]).toEqual(['quiet']);
+    expect(pupilLooks(maps[1], at(a.keys, 1, 5), middle, now).has('hard')).toBe(false);
+    // Stuck: on a Learning skill 14+ days, known only when every fact asked has a first-answer time.
+    const old = (days: number) => hard.map((f) => ({ ...f, firstSeen: now - days * 86_400_000 }));
+    expect(pupilLooks(maps[1], old(20), middle, now).has('stuck')).toBe(true);
+    expect(pupilLooks(maps[1], old(10), middle, now).has('stuck')).toBe(false);
+    expect(pupilLooks(maps[1], [...old(20).slice(1), hard[0]], middle, now).has('stuck')).toBe(false);
   });
 });
 
-describe("a stage's cell", () => {
-  it('counts its secure skills and takes its colour from all of them', () => {
-    const early = stageSkills('early-facts');
-    const [first, ...rest] = early;
-    const one = studentMap(withBox(first.keys, 3), info());
-    const stage = one.stages.find((s) => s.stage === 'early-facts')!;
-    expect(stage.secure).toBe(1);
-    expect(stage.counted).toBe(early.length);
-    expect(stage.level).toBe('learning'); // some asked, not all secure
-    const all = studentMap(
-      withBox(
-        early.flatMap((s) => s.keys),
-        3,
-      ),
-      info(),
-    ).stages.find((s) => s.stage === 'early-facts')!;
-    expect(all.level).toBe('secure');
-    expect(all.secure).toBe(early.length);
-    const fluent = studentMap(
-      withBox(
-        early.flatMap((s) => s.keys),
-        TOP_BOX,
-      ),
-      info(),
-    ).stages.find((s) => s.stage === 'early-facts')!;
-    expect(fluent.level).toBe('fluent');
-    expect(rest.length).toBeGreaterThan(0);
-  });
-
-  it("marks the stage the student's current skill is in, and only that one", () => {
-    for (const s of built) {
-      const upToHere = built.slice(0, built.indexOf(s)).flatMap((x) => withBox(x.keys, 3));
-      const here = studentMap(upToHere, info())
-        .stages.filter((st) => st.hasCurrent)
-        .map((st) => st.stage);
-      expect(here).toEqual([s.stage]);
-    }
-  });
-});
-
-describe('class counts', () => {
-  it('count students by level for a skill', () => {
-    const skill = built.find((s) => s.id === 'bedmas')!;
-    const maps = [
-      studentMap([], info()),
-      studentMap(withBox(skill.keys, 3), info()),
-      studentMap(withBox(skill.keys, TOP_BOX), info()),
-      studentMap([rec(skill.keys[0], 1)], info()),
-    ];
-    expect(classCounts(maps, 'bedmas')).toEqual({
-      off: 0,
-      'not-started': 1,
-      learning: 1,
-      secure: 1,
-      fluent: 1,
-    } satisfies Record<CellLevel, number>);
-    expect(classCounts(maps, 'nope')).toEqual({
-      off: 0,
-      'not-started': 0,
-      learning: 0,
-      secure: 0,
-      fluent: 0,
-    });
-  });
-});
-
-describe('the default tables', () => {
-  it('count every table as on when the class has none listed', () => {
-    const a = levels(
-      withBox(
-        built.flatMap((s) => s.keys),
-        3,
-      ),
-    );
-    const b = levels(
-      withBox(
-        built.flatMap((s) => s.keys),
-        3,
-      ),
-      info(),
-      { enabledTables: [...TABLES] },
-    );
-    expect(a).toEqual(b);
-  });
-});
-
-describe('bonds to 100 and 1000 kept one pair at a time (S34)', () => {
-  const stat = (key: string, box: number): FactStats => ({ ...newStats(key), attempts: 4, correct: 4, avgMs: 2000, box });
-  const bonds100 = (stats: FactStats[]) => ladderProgress(stats).skills.find((p) => p.skill.id === 'bonds-100')!;
-
-  it('counts the pair records and the old record towards the same skill, whichever says secure', () => {
-    const pairs = [10, 20, 30, 40, 50].map((n) => `bond100:${n}+${100 - n}`);
-    expect(bonds100([]).share).toBe(0);
-    expect(bonds100([stat('bond100:tens', 2)]).share).toBe(0.25); // as before: 1 of its 4 keys
-    expect(bonds100(pairs.map((k) => stat(k, 2))).share).toBe(0.25); // the pairs stand in for the old key
-    expect(bonds100(pairs.slice(0, 3).map((k) => stat(k, 3))).share).toBe(0); // 3 of 5 is not secure
-    expect(bonds100([stat('bond100:tens', 3), ...pairs.slice(0, 1).map((k) => stat(k, 0))]).share).toBe(0.25); // the old record is never made smaller
-    expect(studentMap(pairs.map((k) => stat(k, 2)), NO_LADDER).stages.flatMap((s) => s.cells).find((c) => c.skill.id === 'bonds-100')!.asked).toBeGreaterThan(0);
-  });
-});

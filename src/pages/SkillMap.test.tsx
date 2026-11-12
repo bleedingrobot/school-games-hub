@@ -5,7 +5,6 @@ import { teacherRoutes } from '../App';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as classes from '../data/classes';
-import { FriendlyError } from '../data/profile';
 import * as skillMap from '../data/skillMap';
 import { LADDER } from '../../shared/maths/ladder';
 import { newStats, type FactStats } from '../../shared/maths/leitner';
@@ -21,7 +20,6 @@ vi.mock('../data/skillMap', async (importOriginal) => ({
 }));
 
 // The teacher pages load lazily: on a busy machine the first one can take longer than findBy's usual second.
-const LOADED = { timeout: 5000 };
 
 const teacher: AuthState = {
   status: 'signed-in',
@@ -124,350 +122,75 @@ beforeEach(() => {
   vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben()]));
 });
 
-const cellOf = (student: string, column: string) => {
-  const row = screen.getByRole('row', { name: new RegExp(student) });
-  const stage = within(row)
-    .getAllByRole('cell')
-    .find((c) => new RegExp(column).test(c.textContent ?? ''));
-  return stage!;
-};
-
 describe('the skill map', () => {
-  it('is for teachers only', () => {
-    show(student);
+  it('is for teachers; shows the skills in use on one line per pupil; a cell opens a side panel with focus links', async () => {
+    const first = show(student);
     expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).not.toHaveBeenCalled();
-  });
+    first.unmount();
+    localStorage.clear();
 
-  it('is a table with a row for each student and a column for each of the six stages', async () => {
-    show();
-    const table = await screen.findByRole('table', {}, LOADED);
-    const headers = within(table)
-      .getAllByRole('columnheader')
-      .map((h) => h.textContent ?? '');
-    expect(headers.join('|')).toMatch(
-      /Student.*On the ladder.*Early number facts.*Times tables.*Place value.*Rounding.*Order of operations.*Fractions, decimals and percentages/,
-    );
-    expect(within(table).getAllByRole('columnheader')).toHaveLength(8);
-    expect(within(table).getByRole('rowheader', { name: /Speedy Otter 27/ })).toBeInTheDocument();
-    expect(within(table).getByRole('rowheader', { name: /Brave Kiwi 7/ })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: /Room 12/ })).toBeInTheDocument();
-    expect(skillMap.fetchClassMap).toHaveBeenCalledWith('c12');
-  });
+    // A class with no ladder answers is pointed at the Foundational pages.
+    vi.mocked(skillMap.fetchClassMap).mockResolvedValueOnce(map([ben()]));
+    const empty = show(teacher, '/teacher/c12/maths/skills');
+    const nobody = await screen.findByText(/Nobody in Room 12 has answered ladder maths yet/, {}, { timeout: 5000 });
+    expect(within(nobody).getByRole('link', { name: 'Progress' })).toHaveAttribute('href', '/teacher/c12/progress');
+    empty.unmount();
 
-  it('shows a real name where teachers already see one, and no year level anywhere', async () => {
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    expect(screen.getByText('ana')).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/\bYear \d/);
-  });
-
-  it('colours a closed stage with how many of its skills are secure, and says it in words and a letter', async () => {
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    const early = cellOf('Speedy Otter 27', 'Early number facts');
-    expect(early).toHaveAttribute('data-level', 'learning'); // 2 of 26 secure (with the two part-whole skills, odd-even, the five skills beside the ladder that Hop's and Tūī's later steps record and Parrot's three equals-sign skills and Robin's three counting skills): some asked, not all secure
-    expect(early).toHaveTextContent('2 of 26');
-    expect(early).toHaveTextContent('Learning');
-    const times = cellOf('Speedy Otter 27', 'Times tables');
-    expect(times).toHaveAttribute('data-level', 'learning');
-    const idle = cellOf('Brave Kiwi 7', 'Early number facts');
-    expect(idle).toHaveAttribute('data-level', 'not-started');
-    expect(idle).toHaveTextContent('Not started');
-    // The letter is the same information as the colour.
-    expect(early.querySelector('[aria-hidden="true"]')).toHaveTextContent('L');
-  });
-
-  it('says where each student is now and their furthest place, and the warm-up, without years', async () => {
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(
-      map([
-        ana({
-          ladder: {
-            ...NO_LADDER,
-            on: true,
-            placed: 'done',
-            placement: 'tables-6-9',
-            furthest: 'round-1000',
-          },
-        }),
-        ben({ ladder: { ...NO_LADDER, on: true, placed: 'skipped' } }),
-      ]),
-    );
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    const row = screen.getByRole('row', { name: /Speedy Otter 27/ });
-    expect(row).toHaveTextContent('Now');
-    expect(row).toHaveTextContent('Furthest');
-    expect(row).toHaveTextContent('Rounding to the nearest 1000');
-    expect(row).toHaveTextContent('Warm-up done');
-    expect(screen.getByRole('row', { name: /Brave Kiwi 7/ })).toHaveTextContent('Warm-up skipped');
-    expect(document.body.textContent).not.toMatch(/\bYear \d/);
-  });
-
-  it('marks the stage a student is working on', async () => {
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    expect(cellOf('Brave Kiwi 7', 'Early number facts')).toHaveAttribute('data-here', 'true');
-    expect(cellOf('Brave Kiwi 7', 'Times tables')).not.toHaveAttribute('data-here');
-  });
-
-  it('opens a stage into its skills with a button, from the keyboard too, and closes it again', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    const button = screen.getByRole('button', { name: /Early number facts/ });
-    expect(button).toHaveAttribute('aria-expanded', 'false');
-    button.focus();
-    await user.keyboard('{Enter}');
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    const table = screen.getByRole('table');
-    const headers = within(table)
-      .getAllByRole('columnheader')
-      .map((h) => h.textContent);
-    expect(headers.join('|')).toContain('Number facts to 10');
-    expect(headers.join('|')).toContain('Doubles and halves to 10');
-    // A cell for each skill in the stage, with the student and the skill in its name.
+    const cara = (id: string) =>
+      ana({
+        id,
+        name: `Calm Tui ${id}`,
+        realName: null,
+        facts: ['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20'].flatMap((k) => known(k)),
+      });
+    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben(), cara('c1'), cara('c2'), cara('c3')]));
+    show(teacher, '/teacher/c12/maths/skills?pupil=s2');
+    const grid = await screen.findByRole('table', {}, { timeout: 5000 });
+    // Skills in use: Ana's skills and the next one, short names with class counts; untouched stages fold into one column.
+    const head = within(grid).getByRole('columnheader', { name: /Doubles and halves to 10/ });
+    expect(head).toHaveAttribute('title', 'Doubles and halves to 10');
+    expect(head).toHaveTextContent('Doubles, halves 10');
+    expect(head).toHaveTextContent('4 of 5');
+    expect(within(grid).queryByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeNull();
+    expect(within(grid).getByRole('button', { name: /Rounding.*nobody yet/ })).toBeInTheDocument();
+    expect(within(grid).queryByRole('link', { name: /Set focus/ })).toBeNull();
+    expect(within(grid).getByRole('rowheader', { name: /Speedy Otter 27/ })).toHaveTextContent('ana');
+    // ?pupil= (from the Students tab) lights up that row and opens nothing.
     expect(
-      screen.getByRole('button', {
-        name: /Speedy Otter 27, Number facts to 10: Secure/,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: /Speedy Otter 27, Doubles and halves to 10: Fluent/,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', {
-        name: /Brave Kiwi 7, Number facts to 10: Not started/,
-      }),
-    ).toBeInTheDocument();
-    await user.keyboard(' ');
-    expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(
-      screen.queryByRole('button', {
-        name: /Speedy Otter 27, Number facts to 10/,
-      }),
-    ).toBeNull();
-  });
+      within(grid)
+        .getByRole('rowheader', { name: /Brave Kiwi 7/ })
+        .closest('tr'),
+    ).toHaveAttribute('data-marked');
+    expect(screen.queryByRole('dialog')).toBeNull();
 
-  it('opens and closes every stage at once', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: 'Open every stage' }));
-    const built = LADDER.filter((l) => l.built).length;
-    expect(screen.getAllByRole('button', { name: /Speedy Otter 27, / })).toHaveLength(built);
-    await user.click(screen.getByRole('button', { name: 'Close every stage' }));
-    expect(screen.queryAllByRole('button', { name: /Speedy Otter 27, / })).toHaveLength(0);
-  });
+    // Who needs a look: most of the class is 3 skills past Ana and Brave Kiwi; the pill keeps only those two, in the address too.
+    await userEvent.click(screen.getByRole('button', { name: '2 behind the class' }));
+    expect(screen.getByText(/Showing 2 of 5/)).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByRole('rowheader', { name: /Calm Tui/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
-  it('shows the facts behind a cell for a skill made of question types, and who is in the table', async () => {
-    const user = userEvent.setup();
-    const types = skill('round-10-100').keys;
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(
-      map([
-        ana({
-          facts: [rec(types[0], 4), { ...rec(types[1], 1), correct: 1, attempts: 4 }],
-        }),
-        ben(),
-      ]),
-    );
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: /^Rounding/ }));
-    await user.click(
-      screen.getByRole('button', {
-        name: /Speedy Otter 27, Rounding to the nearest 10 and 100: Learning/,
-      }),
-    );
-    const detail = screen.getByRole('region', {
-      name: /Speedy Otter 27: Rounding to the nearest 10 and 100/,
-    });
-    expect(within(detail).getByRole('table', { name: 'Question types' })).toBeInTheDocument();
-    expect(within(detail).getAllByRole('row')).toHaveLength(types.length + 1);
-    expect(within(detail).getAllByRole('rowheader')).toHaveLength(types.length);
-    expect(within(detail).getAllByRole('rowheader')[0]).toHaveTextContent(/Rounding 2-digit numbers to the nearest 10/);
-    expect(within(detail).getByText(new RegExp(`2 of ${types.length} asked`))).toBeInTheDocument();
-    // The heading takes focus so a keyboard or screen-reader user lands on it.
-    expect(
-      within(detail).getByRole('heading', {
-        name: /Speedy Otter 27: Rounding/,
-      }),
-    ).toHaveFocus();
-  });
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Show' }), 'all');
+    expect(within(screen.getByRole('table')).getByRole('columnheader', { name: /Rounding to the nearest 10 and 100/ })).toBeInTheDocument();
+    expect(localStorage.getItem('skill-map-show')).toBe('all');
 
-  it('says what a pupil often answers wrong, or the last wrong answers', async () => {
-    const user = userEvent.setup();
-    const types = skill('round-10-100').keys;
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(
-      map([
-        ana({ facts: [{ ...rec(types[0], 1), wrong: ['54', '56', '54'] }, { ...rec(types[1], 1), wrong: ['54', '56'] }] }),
-        ben(),
-      ]),
-    );
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: /^Rounding/ }));
-    await user.click(screen.getByRole('button', { name: /Speedy Otter 27, Rounding to the nearest 10 and 100/ }));
-    const detail = screen.getByRole('region', { name: /Speedy Otter 27: Rounding/ });
-    expect(within(detail).getByText('Often answers 54')).toBeInTheDocument();
-    expect(within(detail).getByText('Last wrong: 54, 56')).toBeInTheDocument();
-  });
-
-  it('opens the 12 × 12 grid for a times-table cell', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: /^Times tables/ }));
-    await user.click(
-      screen.getByRole('button', {
-        name: /Speedy Otter 27, Times tables: ×6, ×9: Learning/,
-      }),
-    );
-    const detail = screen.getByRole('region', {
-      name: /Speedy Otter 27: Times tables: ×6, ×9/,
-    });
-    expect(
-      within(detail).getByRole('table', {
-        name: 'Times tables: how well each fact is known',
-      }),
-    ).toBeInTheDocument();
-    expect(
-      within(detail).getByText('6 × 7: Learning, 4 of 4 right', {
-        exact: false,
-      }),
-    ).toBeInTheDocument();
-    // Division facts of the table are listed beside the grid.
-    const division = within(detail).getByRole('table', { name: 'Division facts' });
-    expect(within(division).getAllByRole('rowheader')[0]).toHaveTextContent(/^\d+ ÷ \d+$/);
-  });
-
-  it('tapping the same cell again, or closing its stage, closes the detail', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    const cell = screen.getByRole('button', {
-      name: /Speedy Otter 27, Number facts to 10: Secure/,
-    });
-    await user.click(cell);
-    expect(cell).toHaveAttribute('aria-pressed', 'true');
-    expect(
-      screen.getByRole('region', {
-        name: /Speedy Otter 27: Number facts to 10/,
-      }),
-    ).toBeInTheDocument();
-    await user.click(cell);
-    expect(
-      screen.queryByRole('region', {
-        name: /Speedy Otter 27: Number facts to 10/,
-      }),
-    ).toBeNull();
-    await user.click(cell);
-    await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    expect(
-      screen.queryByRole('region', {
-        name: /Speedy Otter 27: Number facts to 10/,
-      }),
-    ).toBeNull();
-  });
-
-  it('leaves out switched-off tables: the cell says so, and is not counted as not started', async () => {
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana({ enabledTables: [] })]));
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    const times = cellOf('Speedy Otter 27', 'Times tables');
-    expect(times).toHaveAttribute('data-level', 'off');
-    expect(times).toHaveTextContent('Switched off');
-  });
-
-  it('links a row and a skill to Set a focus for that student or skill', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    expect(screen.getByRole('link', { name: 'Set focus for Speedy Otter 27' })).toHaveAttribute('href', '/teacher/c12/maths?student=s1');
-    await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    expect(screen.getByRole('link', { name: 'Set focus on Number facts to 10' })).toHaveAttribute(
+    const cell = screen.getByRole('button', { name: /Speedy Otter 27, Doubles and halves to 10: Fluent/ });
+    await userEvent.click(cell);
+    const panel = screen.getByRole('dialog', { name: /Speedy Otter 27: Doubles and halves to 10/ });
+    expect(within(panel).getByRole('link', { name: /Set a focus for Speedy/ })).toHaveAttribute(
       'href',
-      '/teacher/c12/maths?skill=facts-10',
+      '/teacher/c12/maths?student=s1&skill=dbl-half-10',
     );
-    await user.click(
-      screen.getByRole('button', {
-        name: /Speedy Otter 27, Number facts to 10/,
-      }),
-    );
-    expect(
-      screen.getByRole('link', {
-        name: /Set a focus on this for Speedy Otter 27/,
-      }),
-    ).toHaveAttribute('href', '/teacher/c12/maths?student=s1&skill=facts-10');
-  });
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
 
-  it('counts how many students are secure at the foot of each column', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    const foot = screen.getAllByRole('row').at(-1)!;
-    expect(foot).toHaveTextContent('Secure or fluent');
-    expect(foot).toHaveTextContent('0 of 2');
-    await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    expect(screen.getAllByRole('row').at(-1)).toHaveTextContent('1 of 2'); // Number facts to 10 is secure for one of them
-  });
-
-  it('says when auto is off for the class, and not when it is on', async () => {
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana()], { auto: false }));
-    const { unmount } = show();
-    expect(await screen.findByText(/Auto is off for this class/)).toBeInTheDocument();
-    unmount();
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana()], { auto: true }));
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    expect(screen.queryByText(/Auto is off for this class/)).toBeNull();
-  });
-
-  it('picks a class, and asks for the one picked', async () => {
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ben()], { classId: 'c14', className: 'Room 14' }));
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Class' }), 'c14');
-    expect(await screen.findByRole('heading', { level: 2, name: /Room 14/ })).toBeInTheDocument();
-    expect(skillMap.fetchClassMap).toHaveBeenLastCalledWith('c14');
-    expect(screen.queryByRole('rowheader', { name: /Speedy Otter 27/ })).toBeNull();
-  });
-
-  it('opens on the class the link names', async () => {
-    show(teacher, '/skills?class=c14');
-    await screen.findByRole('table', {}, LOADED);
-    expect(skillMap.fetchClassMap).toHaveBeenCalledWith('c14');
-  });
-
-  it('says so for a class with no students, and for a teacher with no class', async () => {
-    vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([]));
-    const { unmount } = show();
-    expect(await screen.findByText(/No students in this class yet/)).toBeInTheDocument();
+    // By skill (iPad portrait, phones): one card per skill, name chips open the same panel; the choice is kept.
+    await userEvent.click(screen.getByRole('button', { name: 'By skill' }));
     expect(screen.queryByRole('table')).toBeNull();
-    unmount();
-    vi.mocked(classes.fetchClasses).mockResolvedValue([]);
-    show();
-    expect(await screen.findByText(/You don’t teach a class yet/)).toBeInTheDocument();
-  });
-
-  it("shows the database's message when the map cannot be loaded", async () => {
-    vi.mocked(skillMap.fetchClassMap).mockRejectedValue(new FriendlyError('That isn’t one of your classes.'));
-    show();
-    expect(await screen.findByRole('alert')).toHaveTextContent('That isn’t one of your classes.');
-  });
-
-  it('does not keep anything in browser storage', async () => {
-    const set = vi.spyOn(Storage.prototype, 'setItem');
-    const user = userEvent.setup();
-    show();
-    await screen.findByRole('table', {}, LOADED);
-    await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    // Only the teacher pages' remembered class (TeacherClass.tsx), never anything from the map.
-    expect(set.mock.calls.filter(([key]) => key !== 'sgh-teacher-class')).toEqual([]);
-    set.mockRestore();
+    expect(localStorage.getItem('skill-map-view')).toBe('skill');
+    await userEvent.click(
+      within(screen.getAllByRole('region')[0]).getAllByRole('button', { name: /Speedy Otter 27|Brave Kiwi|Calm Tui/ })[0],
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

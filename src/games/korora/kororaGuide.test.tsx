@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { fastClock } from '../../fastClock';
 import { SoundProvider } from '../../sound';
 import { trialBackend } from './backend';
 import { KororaGame } from './KororaGame';
@@ -8,8 +9,15 @@ import { KororaGame } from './KororaGame';
 const hand = () => document.querySelector('.kr-hand');
 
 describe('Penguin Pairs help', () => {
-  beforeEach(() => localStorage.clear());
-  afterEach(cleanup);
+  let stop = () => {};
+  beforeEach(() => {
+    localStorage.clear();
+    stop = fastClock();
+  });
+  afterEach(() => {
+    cleanup();
+    stop();
+  });
 
   it("guides the very first go to the right number, then shows why after wrong taps: a grey stone and a line, Let's look together, Now you try one like it, then the hand", async () => {
     const trial = trialBackend({ storageKey: 'guide' });

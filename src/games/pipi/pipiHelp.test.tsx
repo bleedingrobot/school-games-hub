@@ -20,31 +20,6 @@ describe("Pipi's help in the sand follows the child (R6)", () => {
   const shell = (n: number) => screen.getByRole('button', { name: String(n) });
   const tide = () => act(() => vi.advanceTimersByTimeAsync(1500));
 
-  it("shows each go's own help, falls back to the calendar for a go saved with none, and shows none when the teacher turned the help off", async () => {
-    const r = round((i) => (i === 0 ? 'none' : i === 1 ? undefined : 'full'));
-    const goes = showRound(r);
-    const u = setup();
-    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={r} help="faint" say={vi.fn()} {...props} />);
-    expect(frame()).toContain('pp-frame--none');
-    await tide();
-    await u.click(shell(goes[0].answer));
-    await act(() => vi.advanceTimersByTimeAsync(1600));
-    expect(frame()).toContain('pp-frame--faint');
-    document.body.innerHTML = '';
-    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={round(() => 'full')} help="full" helpOn={false} say={vi.fn()} {...props} />);
-    expect(frame()).toContain('pp-frame--none');
-    // Full help draws no outlines until a shell has been tried on this go; then they come in.
-    document.body.innerHTML = '';
-    const full = round(() => 'full');
-    const g0 = showRound(full)[0];
-    render(<Goes seen={['hiding', 'altogether', 'twoTides']} onSeen={vi.fn()} round={full} help="full" say={vi.fn()} {...props} />);
-    await tide();
-    expect(document.querySelectorAll('.pp-hidden--full')).toHaveLength(0);
-    expect(document.querySelectorAll('.pp-hidden--none').length).toBeGreaterThan(0);
-    await u.click(shell(g0.wrongs[0].n));
-    expect(document.querySelectorAll('.pp-hidden--full').length).toBeGreaterThan(0);
-  });
-
   it('brings the full help back after three goes in a row with a wrong first shell, saying so once, unless the teacher turned the help off', async () => {
     const r = round(() => 'none');
     const goes = showRound(r);

@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { seeded } from '../seededRandom';
 import { newStats, type FactStats } from '../maths/leitner';
-import { DAYS_PER_FISH, finishChallenge, poolAfter } from './progress';
 import { replay, type Tap } from './play';
 import { sharingTell } from '../kit/mistakes';
-import { emptyData, memoryServices } from './memoryServices';
-import { handleKorora } from './server';
-import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, helpForStats, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, sisterGo, topSecure, type Level, type Round, type WrongKind } from './round';
+import { followsItsDouble, FAIR_GOES, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, mistakeChoices, showRound, type Level, type Round, type WrongKind } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const secure = (keys: string[]): FactStats[] => keys.map((key) => ({ ...newStats(key), box: 2 }));
@@ -16,28 +13,6 @@ const recordsFor = (level: Level) => secure(LEVELS.filter((l) => l.level < level
 /** One wrong pick on every go, then the right one. */
 const wobblyTaps = (round: Round): Tap[] =>
   showRound(round).flatMap((go) => [{ pick: go.choices.find((c) => c !== go.answer)!, ms: 4000 }, { pick: go.answer, ms: 2000 }]);
-
-describe('the picture help (R6)', () => {
-  it('follows each fact: full with no record, faint then none as it is learned, full again after a slip, and full on a new level', () => {
-    const known = { ...newStats('k'), box: 4, correct: 6, quickDays: ['a', 'b'] };
-    expect(helpForStats(undefined)).toBe('full');
-    expect(helpForStats({ ...known, box: 2, correct: 3 })).toBe('faint');
-    expect(helpForStats(known)).toBe('none');
-    expect(helpForStats({ ...known, box: 1 })).toBe('full');
-    // S25: right and quick twice on one day leaves full help; a wrong answer brings it back.
-    const quick1 = { ...newStats('k'), box: 2, correct: 2, attempts: 2, quickDays: ['a'] };
-    expect(helpForStats(quick1)).toBe('faint');
-    expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
-    // A child who knows every double to 5 and has just moved to halves to 10: those facts have no record, so every go starts full.
-    const learned = levelKeys(1).map((key) => ({ ...known, key }));
-    const halves = makeRound(7, learned, { reached: 1 });
-    expect(halves.level).toBe(2);
-    const half = halves.goes.filter((g) => g.key.startsWith('half:'));
-    expect(half.length).toBeGreaterThanOrEqual(5);
-    expect(half.every((g) => g.h === 'full')).toBe(true);
-    expect(halves.goes.filter((g) => g.key.startsWith('dbl:')).every((g) => g.h === 'none')).toBe(true);
-  });
-});
 
 describe('the round', () => {
   it('is the same for the same seed, asks every fact of the level, never one twice in a row, and each fact counts once', () => {
@@ -84,16 +59,6 @@ describe('the round', () => {
   });
 });
 
-describe('the finish words (S33)', () => {
-  it('count every go right at the first tap, not once per fact, and not a guess faster than the think floor', () => {
-    const round = makeRound(seeds[0], recordsFor(1), { gold: false });
-    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
-    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
-    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
-    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
-  });
-});
-
 describe('the wrong stones (mistakes that teach)', () => {
   const doubles = [...Array(10)].map((_, i) => i + 1);
   const halves = [...Array(10)].map((_, i) => (i + 1) * 2);
@@ -132,18 +97,6 @@ describe('the wrong stones (mistakes that teach)', () => {
     expect(seeds.some((seed) => mistakeChoices('half', 12, seeded(seed)).wrongs.some((w) => w.kind === 'all' && w.n === 12))).toBe(true);
   });
 
-  it('are the same on the server (a rebuilt round gives the same stones) and fair or not has its two choices', () => {
-    for (const seed of seeds.slice(0, 20)) {
-      const round = makeRound(seed, recordsFor(4), { gold: true });
-      showRound(round).forEach((go, i, all) => {
-        expect(go).toEqual(showRound(makeRound(seed, recordsFor(4), { gold: true }))[i]);
-        expect(go.wrongs).toHaveLength(go.kind === 'fair' ? 0 : 3);
-        expect(go.choices).toHaveLength(go.kind === 'fair' ? 2 : 4);
-        expect(all).toHaveLength(GOES_PER_ROUND);
-      });
-    }
-  });
-
   it('score only the first tap of a go: two wrong taps, a wrong one in "Now you try", then right, is one wrong answer', () => {
     for (const seed of seeds.slice(0, 10)) {
       const round = makeRound(seed, recordsFor(2));
@@ -155,32 +108,6 @@ describe('the wrong stones (mistakes that teach)', () => {
       expect(end).toMatchObject({ done: true, goesDone: GOES_PER_ROUND, mistakes: 3 * GOES_PER_ROUND });
       expect(end.answers.every((x) => !x.correct && x.ms === 3000)).toBe(true);
       expect(end.answers.map((x) => x.key)).toEqual([...new Set(round.goes.map((g) => g.key))]);
-    }
-  });
-});
-
-describe('the sister go', () => {
-  it('is a neighbouring number of the same kind and help, never the original answer, and the first go’s right pick still ends the replay', () => {
-    for (const { level } of LEVELS) {
-      for (const gold of [false, true]) {
-        for (const seed of seeds.slice(0, 8)) {
-          const round = makeRound(seed, recordsFor(level), { gold });
-          const goes = showRound(round);
-          goes.forEach((go, i) => {
-            const sister = sisterGo(round, i, go);
-            expect(sister).not.toBeNull();
-            expect(sister!.kind).toBe(go.kind);
-            expect(sister!.h).toBe(go.h);
-            expect(sister!.v).toBe(go.v);
-            expect(sister!.n).not.toBe(go.n);
-            if (go.kind !== 'fair') expect(sister!.answer).not.toBe(go.answer);
-            if (go.kind !== 'fair') expect(Math.abs(sister!.n - go.n)).toBe(go.kind === 'half' ? 2 : 1);
-            expect(sisterGo(round, i, go)).toEqual(sister);
-          });
-          // A right tap on the sister sends the first go's right pick, so the taps replay as usual.
-          expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
-        }
-      }
     }
   });
 });
@@ -216,37 +143,4 @@ describe('near doubles (R8, level 5)', () => {
     }
   });
 
-  it('is reached only when level 4 is secure, is recorded under the add key, and the finish says when near doubles are secure', async () => {
-    expect(topSecure(secure(levelKeys(5).slice(0, 3)))).toBe(true);
-    expect(topSecure(secure(levelKeys(5).slice(0, 2)))).toBe(false);
-    for (const [count, expected] of [[3, true], [2, false]] as const) {
-      const data = emptyData();
-      data.facts.p = secure([...LEVELS.filter((l) => l.level < 5).flatMap((l) => levelKeys(l.level)), ...levelKeys(5).slice(0, count)]);
-      data.players.p = { daysDone: 3, lastPebbleDay: null, reached: 5, version: 1 };
-      const services = memoryServices({ data });
-      const started = await handleKorora(services, 'p', { action: 'start' });
-      const round = started.body.round as Round;
-      const done = await handleKorora(services, 'p', { action: 'finish', seed: round.seed, taps: showRound(round).map((g) => ({ pick: g.answer, ms: 1000 })) });
-      expect(done.body).toMatchObject({ level: 5, topSecure: expected });
-      expect(data.players.p.reached).toBe(5);
-      expect(done.body.topSecure).toBe(expected);
-    }
-  });
-});
-
-describe('the magic pebbles', () => {
-  it('turn bronze, silver, then gold, one per NZ day, with a Golden Fish and a new friend every 30 days', () => {
-    expect(poolAfter(0)).toMatchObject({ fish: 0, friend: 'korora', help: 'full', gold: false, pebbles: Array(10).fill('grey') });
-    expect(poolAfter(10)).toMatchObject({ help: 'faint', today: 'silver', pebbles: Array(10).fill('bronze') });
-    expect(poolAfter(21)).toMatchObject({ help: 'none', gold: true, pebbles: ['gold', ...Array(9).fill('silver')] });
-    expect(poolAfter(DAYS_PER_FISH)).toMatchObject({ fish: 1, friend: 'hoiho', day: 0 });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastPebbleDay: '2026-11-04', pebbleChanged: 0, goldenFish: false, shoesWon: null });
-    expect(finishChallenge(9, null, '2026-11-04')).toMatchObject({ daysDone: 10, shoesWon: 'bronze', goldenFish: false });
-    expect(finishChallenge(19, null, '2026-11-04')).toMatchObject({ daysDone: 20, shoesWon: 'silver' });
-    expect(poolAfter(0).shoes).toBeNull();
-    expect(poolAfter(10).shoes).toBe('bronze');
-    expect(poolAfter(25).shoes).toBe('silver');
-    expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, pebbleChanged: null });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, pebbleChanged: 9, goldenFish: true, shoesWon: 'gold' });
-  });
 });

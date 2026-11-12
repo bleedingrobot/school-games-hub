@@ -186,12 +186,19 @@ const seedText = (random: () => number) => `${Math.floor(random() * 1e9)}${Math.
 const isSeed = (v: unknown): v is string => typeof v === 'string' && /^[0-9]{6,18}$/.test(v);
 const isFlyer = (v: unknown): v is string => typeof v === 'string' && /^[a-z-]{2,30}$/.test(v);
 
+/** The saved flyer and trail, or the fantail and no trail if they aren't unlocked (any more: unlocks got harder on 11 Nov 2026). */
+function keptPicks(saved: Saved): Picks {
+  const flyer = flyersUnlocked(saved.progress).includes(saved.picks.flyer) ? saved.picks.flyer : 'fantail';
+  const trail = saved.picks.trail !== null && trailsUnlocked(saved.progress).includes(saved.picks.trail) ? saved.picks.trail : null;
+  return { flyer, trail };
+}
+
 export async function handleToonFlap(services: ToonFlapServices, player: string, body: Record<string, unknown>): Promise<Reply> {
   const action = body.action;
   if (action === 'load') {
     const [settings, saved] = await Promise.all([services.settings(player), services.load(player)]);
     if (!settings || saved === 'busy') return busy();
-    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: saved.picks, today: nzDate(new Date(services.now())) } };
+    return { status: 200, body: { enabled: settings.enabled, maths: settings.maths, readTime: settings.readTime, progress: saved.progress, picks: keptPicks(saved), today: nzDate(new Date(services.now())) } };
   }
 
   const settings = await services.settings(player);

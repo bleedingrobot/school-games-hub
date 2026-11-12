@@ -14,13 +14,22 @@ export interface Services {
   signInKeyFor(email: string): Promise<string | 'busy'>;
 }
 
-/** Scans one device may make a minute. A class of 30 often shares one internet address, so this is per address and generous. */
-export const MAX_SCANS_PER_MINUTE = 60;
+/**
+ * Scans one internet address may make a minute. A whole school usually shares one address, and several classes may sign
+ * in at once at 9 am, so this is generous. Guessing a code is hopeless anyway (122 random bits).
+ */
+export const MAX_SCANS_PER_MINUTE = 300;
+
+/** Wrong codes one address may try a minute: a class scanning old cards by mistake stays well under this. */
+export const MAX_WRONG_PER_MINUTE = 20;
 
 export const BADGE_CODE = /^[0-9a-f]{32}$/;
 
 export function makeHandler(services: Services) {
   const limiter = new RateLimiter(() => services.now());
+  /** When each address last tried a wrong code, so a run of wrong codes can be slowed down. */
+  const wrongAt = new Map<string, number[]>();
+  const recentWrong = (from: string) => (wrongAt.get(from) ?? []).filter((t) => services.now() - t < 60_000);
 
   return async function handleBadgeRequest(request: Request): Promise<Response> {
     const cors = corsHeaders(request.headers.get('Origin'));
@@ -37,9 +46,14 @@ export function makeHandler(services: Services) {
     const code = typeof raw?.code === 'string' ? raw.code.trim().toLowerCase() : '';
     if (!BADGE_CODE.test(code)) return reply(400, { error: 'That isn’t a sign-in badge.' });
 
+    if (recentWrong(from).length >= MAX_WRONG_PER_MINUTE) return reply(429, { error: 'Too many scans. Wait a minute and try again.' });
     const email = await services.emailForBadge(code);
     if (email === 'busy') return reply(503, { error: 'Sign-in is busy. Try again in a minute.' });
-    if (!email) return reply(404, { error: 'That badge doesn’t work any more. Ask your teacher for a new one.' });
+    if (!email) {
+      if (wrongAt.size > 5000) wrongAt.clear();
+      wrongAt.set(from, [...recentWrong(from), services.now()]);
+      return reply(404, { error: 'That badge doesn’t work any more. Ask your teacher for a new one.' });
+    }
 
     const key = await services.signInKeyFor(email);
     if (key === 'busy') return reply(503, { error: 'Sign-in is busy. Try again in a minute.' });

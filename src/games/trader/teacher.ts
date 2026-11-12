@@ -1,5 +1,5 @@
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
-import { fetchTraderForgeTyping, fetchTraderSettings, saveTraderForgeTyping, saveTraderSettings, type TraderSettings } from '../../data/trader';
+import { fetchTraderForge, fetchTraderForgeTyping, saveTraderForge, fetchTraderSettings, saveTraderForgeTyping, saveTraderSettings, type TraderSettings } from '../../data/trader';
 import { useSetting } from '../../teacher/useSetting';
 
 /**
@@ -29,6 +29,11 @@ export function useTraderForgeTyping(classId: string) {
   return useSetting(() => fetchTraderForgeTyping(classId), [classId]);
 }
 
+export function useTraderForge(classId: string) {
+  return useSetting(() => fetchTraderForge(classId), [classId]);
+}
+
+export const saveForge = (on: boolean, classId: string) => saveTraderForge(on, classId);
 export const saveForgeTyping = (on: boolean, classId: string) => saveTraderForgeTyping(on, classId);
 export const FORGE_TYPING_ABOUT =
   'On: pupils can type their own names for their sun, planets and system (letters only, up to 14, rude words refused). Classmates can see them. Off: names come from word lists; names already typed are kept.';

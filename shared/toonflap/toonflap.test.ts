@@ -2,7 +2,7 @@
 // Playing every level to the end is the sim's job (npm run toonflap:sim), not a test.
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
-import { addRun, emptyProgress, flyersUnlocked, levelOpen, type RunSummary } from './collection';
+import { addRun, emptyProgress, finishesToUnlock, flyersUnlocked, levelOpen, unlockRuns, type RunSummary } from './collection';
 import { BUMP_PENALTY_STEPS, POTIONS_MAX, STEPS_PER_SECOND } from './config';
 import { decodeFlaps, encodeFlaps, medalFor, newRun, replayRun, scoreRun, stepRun } from './engine';
 import { buildCourse, LEVELS } from './levels';
@@ -55,7 +55,7 @@ describe('Toon Flap rules', () => {
     expect(perfect.seconds).toBe(perfect.steps / STEPS_PER_SECOND);
   });
 
-  it('opens one new level a day, unlocks a flyer after 3 finishes, and caps potions', () => {
+  it('opens one new level a day, unlocks a flyer after 15 finishes (10 on harder levels), and caps potions', () => {
     const finish = (level: string, extra: Partial<RunSummary> = {}): RunSummary => ({ level, maths: true, seconds: 40, medal: 'bronze', bumps: 1, checks: [true], rightGaps: 0, potionUsed: false, ...extra });
     const D1 = '2026-11-11';
     const D2 = '2026-11-12';
@@ -74,8 +74,11 @@ describe('Toon Flap rules', () => {
     expect(levelOpen(p, 3, D2)).toBe(true);
     p = addRun(p, finish('reef'), D2).progress;
     expect([levelOpen(p, 4, D2), p.opened]).toEqual([false, 3]);
-    p = addRun(p, finish('garden'), D2).progress;
+    // An easy level's flyer takes 15 finishes (garden has 1 so far); a harder level's takes 10.
+    expect([unlockRuns('garden'), unlockRuns('donut'), unlockRuns('manor'), unlockRuns('cosmic')]).toEqual([15, 15, 10, 10]);
+    for (let i = 0; i < 13; i++) p = addRun(p, finish('garden'), D2).progress;
     expect(flyersUnlocked(p)).toEqual(['fantail']);
+    expect(finishesToUnlock(p, 'garden')).toBe(1);
     const third = addRun(p, finish('garden'), D2);
     expect(third.unlocks.flyers).toEqual(['puppy-plane']);
     // A first gold earns a potion; a second gold on the same level doesn't; never more than POTIONS_MAX held.

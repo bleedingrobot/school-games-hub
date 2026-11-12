@@ -302,6 +302,7 @@ export function ringMaterial(shared: Shared, tex: THREE.Texture, inner: number, 
 
 const HOLO_FRAG = /* glsl */ `
 uniform vec3 uColor; uniform float uGrid; uniform float uOpacity; uniform float uTime;
+uniform float uOwn; uniform sampler2D uMap; uniform float uPainted; uniform vec3 uLook;
 varying vec3 vObj; varying vec3 vWorld; varying vec3 vNrm; varying vec2 vUv;
 void main(){
   vec3 N=normalize(vNrm); vec3 V=normalize(cameraPosition-vWorld);
@@ -312,22 +313,37 @@ void main(){
   float grid=max(max(line.x,line.y),line.z);
   float scan=pow(0.5+0.5*sin(vWorld.y*6.0-uTime*3.0),12.0);
   float flick=0.9+0.1*sin(uTime*23.0+vWorld.x);
-  float a=(0.05+fres*0.55+grid*0.35+scan*0.25)*flick*uOpacity;
-  gl_FragColor=vec4(uColor*(1.2+scan),a);
+  if(uOwn>0.5){
+    // a plan that still shows its own look (painted map, or its colour), faded, with a light blue scan over it
+    vec3 own=uPainted>0.5 ? pow(texture2D(uMap,vUv).rgb,vec3(2.2)) : uLook;
+    vec3 col=own*(0.75+0.25*(1.0-fres))+uColor*(grid*0.12+scan*0.12+fres*0.3)*0.5;
+    float a=clamp(0.55+fres*0.25+grid*0.1,0.0,0.85)*flick*uOpacity;
+    gl_FragColor=vec4(col,a);
+  } else {
+    float a=(0.05+fres*0.55+grid*0.35+scan*0.25)*flick*uOpacity;
+    gl_FragColor=vec4(uColor*(1.2+scan),a);
+  }
   ${FINISH}
 }
 `;
 
-/** A plan not built yet: see-through blue, scan lines and a wire glow. */
-export function hologramMaterial(time: { value: number }, grid = 6): THREE.ShaderMaterial {
+/**
+ * A plan not built yet: see-through blue, scan lines and a wire glow. Given `own` (the piece's colour), it shows the piece's
+ * own look instead, faded with a light blue scan, so planned pieces don't all look the same; set uMap + uPainted = 1 to
+ * show its painted map.
+ */
+export function hologramMaterial(time: { value: number }, grid = 6, own?: THREE.Color): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     vertexShader: WORLD_VERT,
     fragmentShader: HOLO_FRAG,
     transparent: true,
     depthWrite: false,
-    side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
-    uniforms: { uColor: { value: new THREE.Color(0.25, 0.65, 1.4) }, uGrid: { value: grid }, uOpacity: { value: 1 }, uTime: time },
+    side: own ? THREE.FrontSide : THREE.DoubleSide,
+    blending: own ? THREE.NormalBlending : THREE.AdditiveBlending,
+    uniforms: {
+      uColor: { value: new THREE.Color(0.25, 0.65, 1.4) }, uGrid: { value: grid }, uOpacity: { value: 1 }, uTime: time,
+      uOwn: { value: own ? 1 : 0 }, uMap: { value: null }, uPainted: { value: 0 }, uLook: { value: own ?? new THREE.Color() },
+    },
   });
 }
 

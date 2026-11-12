@@ -36,6 +36,7 @@ import {
 } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { prettyCode } from '../../shared/multiplayer';
+import { RecentChanges } from '../teacher/RecentChanges';
 import { useTeacherClass } from '../teacher/TeacherClass';
 import './classes.css';
 
@@ -931,6 +932,8 @@ function ClassPanel({
           </div>
         )}
       </section>
+
+      {!detail.archived && <RecentChanges classId={id} />}
 
       {isAdmin && (
         <section aria-labelledby={`archive-${id}`} className="class-panel__section">

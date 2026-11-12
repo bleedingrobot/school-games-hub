@@ -1,8 +1,9 @@
 -- P10: a fact keeps a pupil's last three wrong answers; an answer without `given` still saves.
+-- Skill map K5: a new fact row gets first_seen, and later answers keep it.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(7);
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 
@@ -28,6 +29,11 @@ select pg_temp.answer('5', 'mul:7x8', true, '56');
 select is(pg_temp.wrong('mul:7x8'), '["56", "54", "48"]', 'a right answer leaves the list alone');
 select is(pg_temp.answer('6', 'mul:2x5', false, null), 1, 'a wrong answer without given (an old client) still saves');
 select is(pg_temp.wrong('mul:2x5'), '[]', '... and leaves the list empty');
+
+update public.gem_keep_facts set first_seen = '2026-11-01' where fact_key = 'mul:7x8';
+select pg_temp.answer('7', 'mul:7x8', true, null);
+select is((select first_seen from public.gem_keep_facts where fact_key = 'mul:7x8'), '2026-11-01'::timestamptz, 'a later answer keeps first_seen');
+select isnt((select first_seen from public.gem_keep_facts where fact_key = 'mul:2x5'), null, 'a new fact row gets first_seen');
 
 select * from finish();
 rollback;

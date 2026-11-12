@@ -1,0 +1,84 @@
+{
+  "_from": "docs/weka-art/config.json (every <id> was weka), cut down to one cut-out, one scene and the home card. Check with: python3 scripts/game_art.py <id> paint OUT --dry-run",
+  "game": "<id>",
+  "filename_prefix": "<id>/img",
+  "style": "b",
+  "styles": {
+    "b": "Handmade plasticine claymation scene, everything sculpted from smooth modelling clay with soft fingerprint texture, chunky rounded shapes, bright cheerful colours, soft studio light. "
+  },
+  "inbox": "~/dragon-art-inbox/<id>-art/set",
+  "picks": "docs/<id>-art/picks.json",
+  "art_dir": "src/games/<id>/art/paint",
+  "home_dir": "src/assets/home",
+  "tints": {
+    "bronze": {
+      "dark": [
+        70,
+        30,
+        12
+      ],
+      "mid": [
+        190,
+        112,
+        50
+      ],
+      "shine": [
+        255,
+        222,
+        180
+      ]
+    },
+    "silver": {
+      "dark": [
+        48,
+        54,
+        64
+      ],
+      "mid": [
+        168,
+        176,
+        188
+      ],
+      "shine": [
+        250,
+        252,
+        255
+      ]
+    }
+  },
+  "pictures": [
+    {
+      "name": "ten-frame",
+      "prompt": "Top-down flat-on view of a chunky wide rectangular ten-frame tray made of one single honey-coloured clay, a smooth board with a raised rounded rim, and ten round shallow dents pressed into the board, all the same size, all the same honey colour as the board, in a perfect grid of two straight rows of five, evenly spaced, tidy and symmetrical, wide landscape. Single object, centred, the whole tray visible with space around it, on a plain pure white background, clean empty white all around. Suitable for young children aged 5 to 7.",
+      "size": [
+        1152,
+        480
+      ],
+      "kind": "cut",
+      "folder": "frames",
+      "file": "ten-frame",
+      "max": 1000
+    },
+    {
+      "name": "back-morning",
+      "prompt": "A wide view of a sunny New Zealand bush stream seen from the side: a grassy near bank along the bottom, a calm, wide, shallow stream right across the middle with smooth plain water, a far bank with ferns, flax and native bush behind it, a tidy uncluttered scene with an empty middle band of water, bright blue sky, the water clear light blue and calm. Empty background scenery for a children's game, calm soft colours in the middle so things placed on top stand out. Wide landscape. Suitable for young children aged 5 to 7.",
+      "size": [
+        1072,
+        672
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "morning"
+    },
+    {
+      "name": "card",
+      "prompt": "Weka, a cute round New Zealand <id> bird, streaky warm brown and chestnut feathers, a strong straight grey beak, bright friendly red eyes, rosy cheeks, sturdy pinkish-red legs and feet, a short perky tail, wearing a little knitted green scarf, facing to the right, side view, hopping happily along a straight line of round grey stepping stones across a sunny bush stream, a big flat sandy-gold rock in the middle of the line, a picnic basket waiting on the far bank, wide landscape picture for a game title card. Suitable for young children aged 5 to 7.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "<id>"
+    }
+  ]
+}

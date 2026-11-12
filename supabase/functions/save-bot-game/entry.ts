@@ -80,6 +80,12 @@ Deno.serve((request) =>
       if (error) throw new Error(error.code ?? 'unknown');
       return parseMathsSwitch((data as { space_maths?: string } | null)?.space_maths);
     },
+    async nonMathsGames(player) {
+      // The switch of this student's class (or their school's default if they have no class).
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
+      if (error) throw new Error(error.code ?? 'unknown');
+      return (data as { non_maths_games?: boolean } | null)?.non_maths_games !== false;
+    },
     async recordAnswers(player, batchId, answers, pack = 'times-tables') {
       const { data, error } = await admin.rpc('record_fact_answers', {
         player, pack, batch_id: batchId, answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,

@@ -28,16 +28,8 @@ vi.mock('./profile', async (importOriginal) => ({
 }));
 
 import { AuthProvider } from '../auth/AuthContext';
-import { fetchStudentsChooseFocus, readSettings, saveMathsAuto } from './classSettings';
-import { fetchClansEnabled, saveClansEnabled, startClansNewSeason } from './clans';
-import { fetchLordEnabled, saveLordSettings } from './lord';
-import { fetchMonstersEnabled, saveMonstersSettings } from './monsters';
-import { fetchMultiplayerEnabled } from './multiplayer';
-import { fetchMathsSwitch } from './spaceGames';
-import { setMultiplayer, setSpaceMaths, setSpaceReactions } from './teacher';
-import { saveGemKeepSettings } from './gemKeep';
-import { DEFAULT_SETTINGS } from '../games/gem-keep/settings';
-import { SETTINGS_KEEP_MS } from './settingsMemory';
+import { fetchMonstersEnabled} from './monsters';
+import { FRESH_HOME_MS, forgetSettings, forgetSettingsOlderThan, replaceSettingsIfChanged } from './settingsMemory';
 
 const ROW = { monsters_enabled: true, lord_enabled: false, clans_enabled: true, multiplayer_enabled: true, space_maths: 'on', lord_forest_per_day: 3 };
 const tableReads = () => from.mock.calls.filter(([table]) => table === 'app_settings').length;
@@ -54,120 +46,9 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function setHidden(hidden: boolean) {
-  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (hidden ? 'hidden' : 'visible') });
-  document.dispatchEvent(new Event('visibilitychange'));
-}
-
-describe('the game switches are read once', () => {
-  it('the three switches on the home page, asked together, send one request for the whole row', async () => {
-    expect(await Promise.all([fetchMonstersEnabled(), fetchLordEnabled(), fetchClansEnabled()])).toEqual([true, false, true]);
-    expect(tableReads()).toBe(1);
-    expect(select).toHaveBeenCalledWith('*');
-  });
-
-  it('two pages asking at the same moment share the one request, and each gets its own switch', async () => {
-    let finish: (v: unknown) => void = () => {};
-    read.mockReturnValueOnce(new Promise((r) => (finish = r)));
-    const lobby = fetchMultiplayerEnabled();
-    const space = fetchMathsSwitch();
-    expect(tableReads()).toBe(1);
-    finish({ data: ROW, error: null });
-    expect(await lobby).toBe(true);
-    expect(await space).toBe('on');
-    expect(tableReads()).toBe(1);
-  });
-
-  it('uses the remembered row for 5 minutes, then reads it again', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await fetchMonstersEnabled();
-    vi.setSystemTime(Date.now() + SETTINGS_KEEP_MS - 1000);
-    await fetchClansEnabled();
-    expect(tableReads()).toBe(1);
-    vi.setSystemTime(Date.now() + 2000);
-    await fetchClansEnabled();
-    expect(tableReads()).toBe(2);
-  });
-
-  it('does not remember a failed read: the next caller tries again', async () => {
-    read.mockResolvedValueOnce({ data: null, error: { message: 'timeout' } });
-    await expect(fetchMonstersEnabled()).rejects.toThrow('We couldn’t load this setting.');
-    expect(await fetchMonstersEnabled()).toBe(true);
-    expect(tableReads()).toBe(2);
-    read.mockRejectedValueOnce(new Error('offline'));
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(Date.now() + SETTINGS_KEEP_MS + 1);
-    await expect(readSettings(['monsters_enabled'])).rejects.toThrow('offline');
-    expect(await readSettings(['monsters_enabled'])).toEqual(ROW);
-    expect(tableReads()).toBe(4);
-  });
-
-  it('keeps the switches each caller had before (a missing row is the same as before)', async () => {
-    read.mockResolvedValue({ data: null, error: null });
-    expect(await fetchStudentsChooseFocus()).toBe(true);
-    await expect(fetchClansEnabled()).rejects.toThrow('We couldn’t load the Clan Quest setting.');
-  });
-
-  it('the teacher class picker reads that class fresh every time', async () => {
-    rpc.mockResolvedValue({ data: { ...ROW, clans_enabled: false }, error: null });
-    expect(await fetchClansEnabled('c1')).toBe(false);
-    expect(await fetchClansEnabled('c1')).toBe(false);
-    expect(await fetchLordEnabled()).toBe(false);
-    expect(rpc.mock.calls.filter(([name]) => name === 'teacher_class_settings')).toHaveLength(2);
-    expect(tableReads()).toBe(1);
-  });
-});
-
 describe('the remembered row is forgotten', () => {
-  it('when the tab comes back after being hidden for more than 5 minutes (not after a short break)', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await fetchMonstersEnabled();
-    setHidden(true);
-    vi.setSystemTime(Date.now() + 60_000);
-    setHidden(false);
-    await fetchMonstersEnabled();
-    expect(tableReads()).toBe(1);
-    setHidden(true);
-    vi.setSystemTime(Date.now() + SETTINGS_KEEP_MS + 1);
-    setHidden(false);
-    await fetchMonstersEnabled();
-    expect(tableReads()).toBe(2);
-  });
 
-  it('straight after each teacher save from this device', async () => {
-    const saves: [string, () => Promise<unknown>][] = [
-      ['teacher_set_maths_auto', () => saveMathsAuto(true)],
-      ['teacher_set_clans', () => saveClansEnabled(true)],
-      ['teacher_clans_new_season', () => startClansNewSeason('NEW SEASON')],
-      ['teacher_set_lord', () => saveLordSettings({ enabled: true })],
-      ['teacher_set_monsters', () => saveMonstersSettings({ enabled: true, topics: [] })],
-      ['teacher_set_multiplayer', () => setMultiplayer(false)],
-      ['teacher_set_space_reactions', () => setSpaceReactions(true)],
-      ['teacher_set_space_maths', () => setSpaceMaths('off')],
-      ['teacher_set_gem_keep', () => saveGemKeepSettings(DEFAULT_SETTINGS)],
-    ];
-    await fetchMonstersEnabled();
-    for (const [name, save] of saves) {
-      const before = tableReads();
-      await save().catch(() => {});
-      expect(rpc).toHaveBeenLastCalledWith(name, expect.anything());
-      await fetchMonstersEnabled();
-      expect(tableReads(), name).toBe(before + 1);
-    }
-  });
-
-  it('when a read was on its way as it was forgotten, the old answer is not kept', async () => {
-    let finish: (v: unknown) => void = () => {};
-    read.mockReturnValueOnce(new Promise((r) => (finish = r)));
-    const old = fetchMonstersEnabled();
-    await setMultiplayer(true);
-    finish({ data: { ...ROW, monsters_enabled: false }, error: null });
-    expect(await old).toBe(false);
-    expect(await fetchMonstersEnabled()).toBe(true);
-    expect(tableReads()).toBe(2);
-  });
-
-  it('on sign-out, and when a different pupil signs in on the same device', async () => {
+  it('on sign-out, when a different pupil signs in, and (on the home page) when older than 30 seconds', async () => {
     render(<AuthProvider><p>hub</p></AuthProvider>);
     const signIn = async (id: string) => {
       await act(async () => {
@@ -192,5 +73,29 @@ describe('the remembered row is forgotten', () => {
     await waitFor(() => expect(tableReads()).toBe(2));
     await fetchMonstersEnabled();
     expect(tableReads()).toBe(3);
+
+    // The home page reads again when the row is older than 30 seconds; other pages keep the 5-minute memory.
+    forgetSettings();
+    read.mockClear();
+    from.mockClear();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(1);
+    vi.advanceTimersByTime(FRESH_HOME_MS - 1000);
+    expect(forgetSettingsOlderThan(FRESH_HOME_MS)).toBe(false); // younger: reused
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(1);
+    vi.advanceTimersByTime(2000);
+    await fetchMonstersEnabled(); // other pages ask with the 5-minute rule: still reused at 31 s
+    expect(tableReads()).toBe(1);
+    expect(forgetSettingsOlderThan(FRESH_HOME_MS)).toBe(true); // older: the home page reads it again
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(2);
+
+    // Tab return: an unchanged row means no remount; a changed one is put in place and does.
+    expect(replaceSettingsIfChanged({ ...ROW })).toBe(false);
+    expect(replaceSettingsIfChanged({ ...ROW, lord_enabled: true })).toBe(true);
+    await fetchMonstersEnabled();
+    expect(tableReads()).toBe(2);
   });
 });

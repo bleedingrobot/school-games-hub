@@ -1,11 +1,15 @@
 /* The teacher's skill map. Colours match the times-table grid; every level also has a letter (and a pattern), never colour alone. */
 .skill-map__tools {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
   margin-bottom: 10px;
 }
-.skill-map__tools > .button {
-  justify-self: start;
+.skill-map__all {
+  min-height: 0;
+  padding: 4px 12px;
+  font-size: 0.85rem;
 }
 .skill-map__legend {
   display: flex;
@@ -23,11 +27,17 @@
 }
 
 .skill-map__scroll {
-  /* The screen-reader-only text is positioned; this keeps it inside the box so it can't make the whole page scroll sideways. */
+  /* Both scrollbars stay on screen, so the header rows and the first two columns can stay put while the rest scrolls. */
   position: relative;
   max-width: 100%;
-  overflow-x: auto;
+  max-height: max(320px, calc(100vh - 240px));
+  overflow: auto;
+  border: 1px solid var(--line, #ddd);
   border-radius: 10px;
+  background: var(--surface, #fff);
+  --who-w: 180px;
+  --now-w: 150px;
+  --band-h: 28px;
 }
 .skill-map__scroll:focus-visible {
   outline: 3px solid var(--focus, #1d4ed8);
@@ -35,8 +45,8 @@
 }
 .skill-map {
   border-collapse: separate;
-  border-spacing: 2px;
-  font-size: 0.85rem;
+  border-spacing: 0;
+  font-size: 0.8rem;
   width: max-content;
   min-width: 100%;
 }
@@ -44,105 +54,185 @@
 .skill-map td {
   vertical-align: middle;
 }
+
+/* ---- header: a band of stage names, then the skill names with a class bar */
 .skill-map thead th {
+  position: sticky;
+  z-index: 2;
+  background: var(--surface, #fff);
   color: var(--ink);
   font-weight: 700;
   text-align: center;
-  padding: 4px 6px;
-  background: var(--tint, transparent);
-  border-radius: 8px;
+}
+.skill-map__bands th {
+  top: 0;
+  height: var(--band-h);
+}
+.skill-map__names th {
+  top: var(--band-h);
 }
 .skill-map thead .skill-map__who,
 .skill-map thead .skill-map__place {
   text-align: left;
+  vertical-align: bottom;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line, #ddd);
+}
+.skill-map__stage {
+  padding: 0;
+  border-left: 2px solid var(--surface, #fff);
+  background: var(--tint, #f2f5f9) !important;
+}
+.skill-map__stage[data-open] {
+  text-align: left !important;
+}
+.skill-map__stage:not([data-open]) {
+  min-width: 96px;
+  vertical-align: bottom;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line, #ddd);
 }
 .skill-map__stage button {
   all: unset;
-  display: block;
   box-sizing: border-box;
-  width: 100%;
   cursor: pointer;
-  padding: 4px 2px;
+  padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
+}
+.skill-map__stage[data-open] button {
+  /* The stage name stays in view while its skills scroll under it. */
+  position: sticky;
+  left: calc(var(--who-w) + var(--now-w));
+  display: inline-block;
+}
+.skill-map__stage:not([data-open]) button {
+  display: block;
+  white-space: normal;
+  padding: 2px;
 }
 .skill-map__stage button:focus-visible {
   outline: 3px solid var(--focus, #1d4ed8);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 .skill-map__skill {
-  min-width: 78px;
-  max-width: 120px;
-  font-size: 0.78rem;
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  padding: 4px 3px;
+  vertical-align: bottom;
+  font-size: 0.72rem;
+  border-bottom: 1px solid var(--line, #ddd);
 }
 .skill-map__skill-name {
   display: block;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
-.skill-map__focus {
+.skill-map__bar {
+  display: flex;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--line, #e5e7eb);
+}
+.skill-map__bar i[data-level='fluent'] {
+  background: #22c55e;
+}
+.skill-map__bar i[data-level='secure'] {
+  background: #facc15;
+}
+.skill-map__bar i[data-level='learning'] {
+  background: #f87171;
+}
+.skill-map__secure {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-/* The first column stays put while the rest scrolls sideways. */
-.skill-map tbody th.skill-map__who,
-.skill-map tfoot th.skill-map__who {
+/* ---- the first two columns stay put */
+.skill-map .skill-map__who {
   position: sticky;
   left: 0;
   z-index: 1;
+  width: var(--who-w);
+  min-width: var(--who-w);
+  max-width: var(--who-w);
   background: var(--surface, #fff);
+}
+.skill-map .skill-map__place {
+  position: sticky;
+  left: var(--who-w);
+  z-index: 1;
+  width: var(--now-w);
+  min-width: var(--now-w);
+  max-width: var(--now-w);
+  background: var(--surface, #fff);
+  border-right: 2px solid var(--line, #ddd);
+}
+.skill-map thead .skill-map__who,
+.skill-map thead .skill-map__place {
+  z-index: 3;
+}
+.skill-map tbody th.skill-map__who {
   text-align: left;
-  min-width: 130px;
-  max-width: 180px;
-  padding: 3px 8px 3px 4px;
   font-weight: 400;
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .skill-map__name {
-  display: block;
   font-weight: 700;
-  overflow-wrap: anywhere;
 }
 .skill-map__real {
-  display: block;
+  margin-left: 5px;
   color: var(--ink-soft);
-  font-size: 0.75rem;
-  overflow-wrap: anywhere;
+  font-size: 0.72rem;
 }
-.skill-map__place {
-  text-align: left;
-  min-width: 150px;
-  font-size: 0.8rem;
-  padding: 3px 6px;
+.skill-map tbody td.skill-map__place {
+  padding: 0 6px;
 }
-.skill-map__here,
-.skill-map__far {
-  display: block;
-  line-height: 1.25;
-}
-.skill-map__far {
-  color: var(--ink-soft);
-}
-.skill-map__tag {
+.skill-map__now {
   display: inline-block;
-  min-width: 3.4em;
+  max-width: calc(100% - 30px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-radius: 6px;
+  padding: 1px 6px;
   font-weight: 700;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+  background: #e0e7ff;
+  color: #1e3a8a;
+}
+.skill-map__now[data-none] {
+  background: transparent;
   color: var(--ink-soft);
+  font-weight: 600;
+}
+.skill-map tbody tr > * {
+  border-bottom: 1px solid var(--tint, #f1f3f5);
 }
 
+/* ---- cells */
 .skill-map__cell {
-  min-width: 56px;
-  height: 40px;
-  padding: 0;
-  border-radius: 8px;
+  height: 30px;
+  padding: 2px;
   text-align: center;
   font-weight: 700;
   position: relative;
+  background-clip: content-box;
+  border-radius: 7px;
 }
 .skill-map__cell > button {
   all: unset;
@@ -150,36 +240,33 @@
   display: grid;
   place-items: center;
   width: 100%;
-  min-height: 40px;
+  min-height: 26px;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 5px;
 }
 .skill-map__cell > button:focus-visible {
   outline: 3px solid var(--focus, #1d4ed8);
-  outline-offset: 1px;
+  outline-offset: -1px;
 }
-.skill-map__cell[data-picked] {
-  box-shadow: 0 0 0 3px var(--ink, #111);
+.skill-map__cell[data-here] > button {
+  box-shadow: inset 0 0 0 2.5px #1e3a8a;
+}
+.skill-map__cell[data-picked] > button {
+  box-shadow: inset 0 0 0 3px var(--ink, #111);
 }
 .skill-map__cell--stage {
-  display: table-cell;
   padding: 2px 6px;
-}
-.skill-map__mark {
-  font-size: 1rem;
-  margin-right: 4px;
-}
-.skill-map__count {
-  font-size: 0.8rem;
   white-space: nowrap;
 }
 .skill-map__cell--stage[data-here] {
-  box-shadow: inset 0 0 0 3px var(--ink, #111);
+  box-shadow: inset 0 0 0 2.5px #1e3a8a;
 }
-.skill-map__total {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--ink-soft);
+.skill-map__mark {
+  font-size: 0.9rem;
+  margin-right: 4px;
+}
+.skill-map__count {
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -190,8 +277,10 @@
 }
 :is(.skill-map__cell, .skill-map__swatch)[data-level='not-started'] {
   background: var(--surface, #fff);
+  color: var(--line, #c0c7d0);
+}
+.skill-map__swatch[data-level='not-started'] {
   box-shadow: inset 0 0 0 1px var(--line, #ddd);
-  color: var(--ink-soft);
 }
 :is(.skill-map__cell, .skill-map__swatch)[data-level='learning'] {
   background: #fecaca;
@@ -205,11 +294,10 @@
   background: #86efac;
   color: #14532d;
 }
-.skill-map__cell--stage[data-here][data-level='not-started'],
-.skill-map__cell[data-level='not-started'][data-picked] {
-  box-shadow:
-    inset 0 0 0 1px var(--line, #ddd),
-    0 0 0 3px var(--ink, #111);
+
+.skill-map__swatch--now {
+  box-shadow: inset 0 0 0 2.5px #1e3a8a;
+  border: none;
 }
 .skill-map__swatch {
   display: inline-block;
@@ -223,15 +311,342 @@
   flex: none;
 }
 
+.skill-map__keys {
+  margin-top: 10px;
+}
+
+/* Coloured cells keep a 2px gap to the next one. */
+.skill-map .skill-map__cell[data-level] {
+  background-clip: content-box;
+}
+
+/* On a wide screen the map may use more width than the other teacher pages, as the Progress tab does. */
+@media (min-width: 1320px) {
+  .skill-map-page {
+    position: relative;
+    left: 50%;
+    width: min(1480px, calc(100vw - 96px));
+    transform: translateX(-50%);
+  }
+}
+
+/* ---- Show menu and the "nobody yet" column */
+.skill-map__show {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.skill-map__show select {
+  font: inherit;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line, #ddd);
+  background: var(--surface, #fff);
+  color: var(--ink);
+}
+.skill-map .skill-map__rest {
+  width: 120px;
+  min-width: 120px;
+  max-width: 140px;
+  background: repeating-linear-gradient(135deg, var(--surface, #fff) 0 6px, var(--tint, #f3f4f6) 6px 7px);
+}
+.skill-map thead .skill-map__rest {
+  vertical-align: bottom;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line, #ddd);
+}
+.skill-map__rest button {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.25;
+}
+.skill-map__rest button:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+}
+.skill-map__nothing {
+  margin: 8px 0;
+}
+.skill-map tbody tr[data-picked] > th,
+.skill-map tbody tr[data-picked] > .skill-map__place {
+  background-color: #fffbeb;
+}
+
+/* ---- the side panel: beside the table on a wide screen, a sheet from the bottom on a narrow one */
+.skill-map__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.skill-map__detail {
+  border: 1px solid var(--line, #ddd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+.skill-map__detail p {
+  margin: 0;
+}
+.skill-map__detail-top {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.skill-map__detail h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.skill-map__detail h3:focus {
+  outline: none;
+}
+.skill-map__close {
+  all: unset;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--ink-soft);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.skill-map__close:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+}
+.skill-map__detail-place {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+.skill-map__detail-facts {
+  overflow-x: auto;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.skill-map__detail-class {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
 .skill-map__detail-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-top: 12px;
+  gap: 8px;
 }
-.skill-map__detail h2:focus {
-  outline: none;
+.skill-map__detail-actions .button {
+  min-height: 0;
+  padding: 6px 12px;
+  font-size: 0.85rem;
 }
-.skill-map__keys {
-  margin-top: 10px;
+@media (min-width: 900px) {
+  .skill-map__body--detail {
+    grid-template-columns: minmax(0, 1fr) 380px;
+  }
+  .skill-map__detail {
+    position: sticky;
+    top: 12px;
+    max-height: max(320px, calc(100vh - 240px));
+    overflow-y: auto;
+  }
+}
+@media (max-width: 899px) {
+  .skill-map__detail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / 0.25);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+.skill-map__show select {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.skill-map__show {
+  max-width: 100%;
+  min-width: 0;
+}
+.skill-map__detail table.stats-table,
+.skill-map__detail table.stats-table :is(th, td, caption) {
+  font-size: 0.78rem;
+  padding: 4px 5px;
+}
+
+/* ---- Who needs a look */
+.skill-map__looks .progress__look {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+.skill-map__most {
+  border-color: #93c5fd;
+}
+.skill-map__now[data-look='nearly'] {
+  background: #dcfce7;
+  color: #14532d;
+}
+.skill-map__now[data-look='hard'] {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+.skill-map th[data-highlight] {
+  box-shadow: inset 0 -3px 0 #2563eb;
+  background: #eff6ff;
+}
+.skill-map td[data-highlight]:not([data-here]) > button {
+  box-shadow: inset 0 0 0 1px #93c5fd;
+}
+.skill-map__days {
+  margin-left: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+/* ---- Grid | By skill */
+.skill-map__views {
+  display: inline-flex;
+  border: 1.5px solid var(--line, #ddd);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.skill-map__views button {
+  all: unset;
+  cursor: pointer;
+  padding: 5px 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.skill-map__views button[aria-pressed='true'] {
+  background: var(--ink, #1f2933);
+  color: var(--surface, #fff);
+}
+.skill-map__views button:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: -3px;
+}
+
+/* ---- By skill: a card per skill */
+.skill-cards {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.skill-cards__card {
+  border: 1.5px solid var(--line, #ddd);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.skill-cards__name {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 10px;
+}
+.skill-cards__meta {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.skill-cards__bar {
+  height: 9px;
+  margin: 0;
+}
+.skill-cards__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.skill-cards__group ul {
+  display: contents;
+  list-style: none;
+}
+.skill-cards__group li {
+  display: inline;
+}
+details.skill-cards__group {
+  display: block;
+}
+details.skill-cards__group ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.skill-cards__label {
+  min-width: 90px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+}
+.skill-cards__none {
+  color: var(--ink-soft);
+}
+.skill-cards__kid {
+  all: unset;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background: var(--tint, #f2f5f9);
+}
+.skill-cards__kid:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+}
+.skill-cards__kid[data-level='learning'] {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+.skill-cards__kid[data-level='secure'] {
+  background: #fde68a;
+  color: #713f12;
+}
+.skill-cards__kid[data-level='fluent'] {
+  background: #86efac;
+  color: #14532d;
+}
+.skill-cards__kid[data-now] {
+  box-shadow: inset 0 0 0 2px #1e3a8a;
+}
+.skill-cards__kid[data-look='nearly'] {
+  background: #dcfce7;
+  color: #14532d;
+}
+.skill-cards__kid[data-look='hard'] {
+  box-shadow: inset 0 0 0 2px #b91c1c;
+}
+
+/* ?pupil= from the Students tab: that pupil's row (or chips) lit up */
+.skill-map tr[data-marked] > th,
+.skill-map tr[data-marked] > .skill-map__place {
+  background: #fff3c4;
+  box-shadow: inset 4px 0 0 #e0a800;
+}
+.skill-cards__kid[data-marked] {
+  outline: 3px solid #e0a800;
+  outline-offset: 1px;
 }

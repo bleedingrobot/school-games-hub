@@ -1,0 +1,614 @@
+{
+ "lede": "The profile page is over four screens long, sign out is at the very bottom, and nothing a child does in a game changes how they look to anyone else. This plan tidies the page, swaps levels for trophies that last, and makes the hardest feats in every game win a painted profile picture, with a typed name as the top prize.",
+ "findings": [
+  {
+   "title": "Too long, and sign out is last",
+   "text": "On a Chromebook the page is 3,219 px tall with 71 things to tap. The child's own avatar is two screens down and Sign out is the last thing on the page."
+  },
+  {
+   "title": "Levels: retire them",
+   "text": "100 of 162 pupils are level 1 and one has reached level 7. A level unlocks nothing, classmates never see it, the early-years games give no points, and it is wiped each year. Keep points for \"points this week\"; let trophies replace the level bar."
+  },
+  {
+   "title": "Achievements are a list, not a reward",
+   "text": "196 kinds across 27 games, shown all at once as an emoji and a name. 115 pupils have at least one; the most is 49. None is visible to classmates."
+  },
+  {
+   "title": "Nothing lasts",
+   "text": "The yearly New Season wipes most game records. Trophies need their own table that it never touches, written at the moment of the feat."
+  },
+  {
+   "title": "One season for the whole hub",
+   "text": "The hub gets its own season clock that you set (35 days to start, and you can pause it). Every game's trophies use it. Dragon Maths trophies follow the dragon's own season: season 1 ends about 21 November, and its five slayers get the first bronze Dragon Heads."
+  },
+  {
+   "title": "Bronze, silver, gold",
+   "text": "Win a trophy in one season for bronze, a second season for silver, a third for gold. That is the reward for coming back. The hardest feat in each game also unlocks a painted profile picture."
+  },
+  {
+   "title": "A typed name needs a teacher's Yes",
+   "text": "The privacy summary promises no free typing. An earned name is fine if nobody sees it until a teacher approves it, the server checks for rude words, and the summary gets one new line."
+  },
+  {
+   "title": "The best rewards need two games",
+   "text": "Seven rewards need a feat in two different games, such as slaying the dragon and beating the clan monster in one season. The Name Scroll needs gold trophies in two different games. This pushes pupils to vary their play."
+  },
+  {
+   "title": "Fair for the youngest",
+   "text": "Early-years rewards come from days played and prizes finished: the game's painted friends become profile pictures. No races, no speed, no maths levels on show."
+  }
+ ],
+ "recs": [
+  {
+   "id": "P1",
+   "kind": "page",
+   "title": "Tidy the profile page: sign out at the top",
+   "effort": "S",
+   "impact": "Very high",
+   "games": [
+    "Profile"
+   ],
+   "wrong": "The page is over four screens long, everything is open at once, and Sign out is at the bottom.",
+   "done": "Avatar, name and Sign out are on the first screen. Everything else is behind closed folds or a \"Change my look\" button.",
+   "why": "Every child signs out of a shared Chromebook every lesson. It should take one tap.",
+   "waits": [],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are tidying the pupils' My profile page in the School Games Hub repo.\nRead docs/game-guide/README.md, then docs/PROFILE-REVIEW.md (sections 1, 2) and docs/plans/profile/PLAN.md (the standing rules and card P1).\nCreate branch profile/p1-tidy from origin/main in your own worktree.\nBuild card P1: a top card with the avatar, name and Sign out at the top; closed folds for trophies (empty for now), achievements, stats and theme; the avatar maker behind \"Change my look\" with one Save; achievements showing earned plus the three nearest.\nCheck it in the home preview at 1366x768 and at phone size: Sign out must be on the first screen and the page no more than two screens with folds closed. Add tests for src/pages/Profile.tsx.\nOpen a PR, merge when the checks pass, then tick P1 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P2",
+   "kind": "art",
+   "title": "Plan and paint the art",
+   "effort": "M",
+   "impact": "High",
+   "games": [
+    "Art"
+   ],
+   "wrong": "There is no dragon head, no trophies and no cabinet. Every avatar is made from the same free parts.",
+   "done": "An art plan in the repo and about 100 small paintings, approved by James: Dragon Heads first.",
+   "why": "It can run tonight on the gaming PC while the code is built. Nothing else waits for it.",
+   "waits": [],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are planning and painting the art for the profile trophies in the School Games Hub repo.\nRead docs/game-guide/README.md and its art part, docs/PROFILE-REVIEW.md (sections 4, 5, 8) and docs/plans/profile/PLAN.md (card P2).\nCreate branch profile/p2-art from origin/main in your own worktree.\nWrite docs/PROFILE-ART-PLAN.md and docs/profile-art/config.json for scripts/game_art.py, listing every picture and trophy from the review's section 5 table, in the paint order on card P2 (Dragon Heads first).\nAll paintings go through ComfyUI on James's gaming PC, never code sketches. If ComfyUI does not answer, stop and ask James to start it. Reuse existing paintings where the card says so.\nCheck every painting at 44 px and 96 px, show James a review page, repaint what he turns down, then commit the approved art, open a PR and merge when the checks pass. Tick P2 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P3",
+   "kind": "system",
+   "title": "The trophy system",
+   "effort": "L",
+   "impact": "Very high",
+   "games": [
+    "Database"
+   ],
+   "wrong": "There is nowhere to keep a reward that lasts, and the server does not check what picture a pupil wears.",
+   "done": "Trophies are given only by the server, survive the yearly New Season, and an earned picture shows wherever the avatar shows.",
+   "why": "Everything after this card stands on it.",
+   "waits": [],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are building the trophy system for the School Games Hub repo (database and data layer only, no new screens).\nRead docs/game-guide/README.md and the parts on migrations and shared files, then docs/PROFILE-REVIEW.md (section 4) and docs/plans/profile/PLAN.md (Shared design and card P3).\nCreate branch profile/p3-trophies from origin/main in your own worktree.\nBuild card P3: hub_season(school) from the hub's own clock (its own settings, not the Dragon Maths ones); tables trophy_types and trophies that the yearly New Season never touches; award_trophy (server only); my_trophies and trophies_of; save_my_avatar refusing a pic the pupil has not won; src/data/trophies.ts; AvatarImage showing an earned picture with a bronze, silver or gold ring.\nWrite database tests for every rule on the card, including that teacher_new_season keeps trophies.\nOpen a PR, merge when the checks pass, follow the guide's going-live part for the migration, then tick P3 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P4",
+   "kind": "game",
+   "title": "Dragon Maths: the first five and the Dragon Heads",
+   "effort": "M",
+   "impact": "Very high",
+   "games": [
+    "Dragon Maths"
+   ],
+   "wrong": "Slaying the dragon first gets a line in a hall of fame and nothing else.",
+   "done": "The first five each season wear a bronze, silver or gold Dragon Head. Everyone who slays it gets a Slayer's Sword. Season 1's five get theirs on day one.",
+   "why": "This is the reward you asked for, and season 2 starts about 22 November.",
+   "waits": [
+    "P3"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are adding the first Dragon Maths trophies in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (sections 4, 5) and docs/plans/profile/PLAN.md (Shared design and card P4). P3 must be merged first.\nCreate branch profile/p4-dragon-heads from origin/main in your own worktree.\nBuild card P4: trophy types dm-first-five (Dragon Head picture) and dm-slayer (Slayer's Sword); award both from lord_commit on a dragon win, first five by lord_hall.first_at per school per season; back-award everyone already in lord_hall; show how many first-five places are left in Dragon Maths.\nUse the painted Dragon Heads from P2 if they are in the repo, otherwise the placeholder on the card.\nWrite database tests (sixth slayer gets the sword but not the head; a second season gives silver). Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P4 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P5",
+   "kind": "page",
+   "title": "The trophy cabinet and the \"New trophy!\" moment",
+   "effort": "M",
+   "impact": "Very high",
+   "games": [
+    "Profile"
+   ],
+   "wrong": "A pupil has nowhere to see what they have won, and winning something is silent.",
+   "done": "A painted shelf on the profile, earned pictures to wear, three \"next to win\" spots, and a full-screen celebration.",
+   "why": "This is what makes a reward visible and feel special.",
+   "waits": [
+    "P1",
+    "P3"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are building the trophy cabinet on the pupils' profile in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (sections 4, 7) and docs/plans/profile/PLAN.md (Shared design and card P5). P1 and P3 must be merged first.\nCreate branch profile/p5-cabinet from origin/main in your own worktree.\nBuild card P5: the My trophies shelf with metals, counts and \"how you won it\"; three grey next-to-win spots; earned pictures in \"Change my look\"; up to three favourites saved on the server; a once-only full-screen \"New trophy!\" on hub pages that obeys mute and reduced motion.\nCheck it in the home preview at 1366x768 and phone size with made-up trophies. Add tests.\nOpen a PR, merge when the checks pass, then tick P5 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P6",
+   "kind": "page",
+   "title": "Retire levels and show trophies around the hub",
+   "effort": "M",
+   "impact": "High",
+   "games": [
+    "Home",
+    "Leaderboard",
+    "Lobby"
+   ],
+   "wrong": "The level bar takes the best spot on the home page and profile, and means little to most pupils.",
+   "done": "No level number anywhere. Trophy count and a favourite three in its place, and beside names on the Leaderboard and Lobby.",
+   "why": "Classmates seeing a trophy is most of what makes it worth winning.",
+   "waits": [
+    "P5"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are retiring the points level and showing trophies around the School Games Hub.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (section 3) and docs/plans/profile/PLAN.md (card P6). P5 must be merged first. Check docs/plans/dashboard/HANDOVER.md: if card D2 is in progress, wait for it.\nCreate branch profile/p6-levels from origin/main in your own worktree.\nBuild card P6: remove the level number and bar everywhere pupils and teachers see it; show the trophy count and favourite three instead; favourites beside names on the Leaderboard and Lobby; rewrite the How points work page. Keep points. No destructive database change.\nUpdate the tests that mention levels. Open a PR, merge when the checks pass, then tick P6 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P7",
+   "kind": "game",
+   "title": "Trophies for the games that already keep a record",
+   "effort": "L",
+   "impact": "High",
+   "games": [
+    "Clan Quest",
+    "Sky Isles",
+    "Royal Decree",
+    "Maths Monsters",
+    "Star Trader",
+    "Diamond Drop",
+    "Toon Flap",
+    "Gem Keep",
+    "Mine Runner"
+   ],
+   "wrong": "Nine games have a hard end-goal on record but no lasting reward for it.",
+   "done": "Each has its trophy and its picture, and pupils who have already done the feat get theirs straight away.",
+   "why": "These need no new counting, so they are the quickest way to fill the cabinet.",
+   "waits": [
+    "P3"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompts": [
+    {
+     "label": "Clan Quest, Sky Isles, Royal Decree, Maths Monsters",
+     "text": "You are adding trophies to four games in the School Games Hub repo: Clan Quest, Sky Isles, Royal Decree and Maths Monsters.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (section 5) and docs/plans/profile/PLAN.md (Shared design and card P7). P3 must be merged first.\nCreate branch profile/p7a-trophies from origin/main in your own worktree.\nFor these four games, add every trophy in the review's section 5 table that is not marked \"new\": the trophy types, the award call where the game already writes its record, a back-award from today's records, and a small \"Trophy won!\" line in the game. Fix the Maths Monsters full-book goal (75, not 54).\nTrophies give no hub points. Write a database test per trophy. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P7 part 1 in docs/plans/profile/HANDOVER.md."
+    },
+    {
+     "label": "Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner",
+     "text": "You are adding trophies to five games in the School Games Hub repo: Star Trader, Diamond Drop, Toon Flap, Gem Keep and Mine Runner.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (section 5) and docs/plans/profile/PLAN.md (Shared design and card P7). P3 must be merged first.\nCreate branch profile/p7b-trophies from origin/main in your own worktree.\nFor these five games, add every trophy in the review's section 5 table that is not marked \"new\": the trophy types, the award call where the game already writes its record, a back-award from today's records, and a small \"Trophy won!\" line in the game.\nTrophies give no hub points. Write a database test per trophy. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P7 part 2 in docs/plans/profile/HANDOVER.md."
+    }
+   ]
+  },
+  {
+   "id": "P8",
+   "kind": "game",
+   "title": "Trophies that need a new counter or achievement",
+   "effort": "L",
+   "impact": "High",
+   "games": [
+    "Chess",
+    "Checkers",
+    "101",
+    "Power Clash",
+    "Wormholes",
+    "Archery",
+    "Marble Rush",
+    "Bond Match",
+    "Mine Runner",
+    "Royal Decree",
+    "Training"
+   ],
+   "wrong": "These games have no season record, and Marble Rush and Bond Match have no achievements at all.",
+   "done": "Season wins are counted in a table that lasts, and each game has its trophy and picture.",
+   "why": "It brings the most-played older games into the cabinet.",
+   "waits": [
+    "P3"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompts": [
+    {
+     "label": "Chess, Checkers, 101, Power Clash, Wormholes, Archery",
+     "text": "You are adding season trophies to six games in the School Games Hub repo: Chess, Checkers, 101, Power Clash, Wormholes and Archery.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (section 5) and docs/plans/profile/PLAN.md (Shared design and card P8). P3 must be merged first.\nCreate branch profile/p8a-trophies from origin/main in your own worktree.\nBuild card P8 part 1: a season_counts table the yearly New Season keeps; wins against classmates counted per hub season; the trophies for these six games from the review's section 5 table; the Chess and Checkers top three worked out by the server when the season rolls over; Archery's Hawk and Golden Bow feats.\nOnly game wins are counted or ranked, never maths results. Write database tests. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P8 part 1 in docs/plans/profile/HANDOVER.md."
+    },
+    {
+     "label": "Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training",
+     "text": "You are adding trophies and the achievements that lead to them in the School Games Hub repo: Marble Rush, Bond Match, Mine Runner on hard, Royal Decree's perfect reign and Training.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (section 5) and docs/plans/profile/PLAN.md (Shared design and card P8). P3 must be merged first.\nCreate branch profile/p8b-trophies from origin/main in your own worktree.\nBuild card P8 part 2: the trophies marked \"new\" for these games in the review's section 5 table, each awarded by the server from the game's own records; two or three ordinary achievements on the way for Marble Rush and Bond Match, which have none today; Training's 20 sessions in a hub season.\nWrite database tests. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P8 part 2 in docs/plans/profile/HANDOVER.md."
+    }
+   ]
+  },
+  {
+   "id": "P9",
+   "kind": "game",
+   "title": "The early-years games",
+   "effort": "M",
+   "impact": "High",
+   "games": [
+    "11 early-years games",
+    "Quick looks"
+   ],
+   "wrong": "The youngest pupils earn no points and would have an empty cabinet.",
+   "done": "Each golden prize lets a child wear that friend as their picture, with a Garden Cup at 30, 90 and 150 days.",
+   "why": "It rewards coming back and finishing, never speed or maths level.",
+   "waits": [
+    "P3"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are adding profile rewards to the 11 early-years maths games and Quick looks in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/LEARNING-DESIGN.md, docs/PROFILE-REVIEW.md (sections 4, 5) and docs/plans/profile/PLAN.md (Shared design and card P9). P3 must be merged first.\nCreate branch profile/p9-early-years from origin/main in your own worktree.\nBuild card P9: each finished golden prize unlocks that friend's painted picture for the profile; a Garden Cup per game at 30, 90 and 150 days played; Quick looks' Garden Gate; back-award from today's records; the friend says so in the game with a Kokoro voice line.\nNothing may come from speed, step level or being first, and nothing here may show a maths level to classmates. Use the game kit where it fits rather than editing 11 games by hand. Write tests.\nOpen a PR, merge when the checks pass, follow the guide's going-live part, then tick P9 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P10",
+   "kind": "system",
+   "title": "Coming back, two-game rewards and a school hall of fame",
+   "effort": "M",
+   "impact": "Medium",
+   "games": [
+    "Leaderboard"
+   ],
+   "wrong": "Nothing marks a new season or remembers past ones, and nothing rewards playing more than one game.",
+   "done": "Seven rewards that need feats in two different games, a Season Regular trophy, an All-rounder picture, and a Hall of fame tab that keeps every season's winners.",
+   "why": "It gives pupils a reason to return each season, to vary what they play, and a place to be remembered.",
+   "waits": [
+    "P4"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are adding the coming-back rewards and the school hall of fame in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md (sections 4, 5, 7) and docs/plans/profile/PLAN.md (Shared design and card P10). P4 must be merged first.\nCreate branch profile/p10-seasons from origin/main in your own worktree.\nBuild card P10: the two-game rewards from the review's section 5 table (one server check run whenever a trophy is awarded, and half-lit pairs in the cabinet); the Season Regular trophy (15 different school days in a hub season), the All-rounder picture (trophies from 5 games), a Hall of fame tab on the Leaderboard with each season's first five dragon slayers and new picture winners, and a once-only \"new season\" note.\nThe hall shows game feats only, never maths results. Write tests. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P10 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P11",
+   "kind": "system",
+   "title": "Earn your own name",
+   "effort": "L",
+   "impact": "High",
+   "games": [
+    "Profile",
+    "Teacher"
+   ],
+   "wrong": "Names can only be picked from two word lists.",
+   "done": "A pupil with a Name Scroll types a name; their teacher says Yes or No; nobody sees it before then.",
+   "why": "It is the top prize, and the one that most needs care.",
+   "waits": [
+    "P3",
+    "P5"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are building the earn-your-own-name reward in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/PRIVACY-SUMMARY.md, docs/PROFILE-REVIEW.md (section 6) and docs/plans/profile/PLAN.md (Shared design and card P11). P3 and P5 must be merged first.\nCreate branch profile/p11-names from origin/main in your own worktree.\nBuild card P11: Name Scrolls granted by the server; a typed name with the server's letter and rude-word checks; a teacher approval list copied from the Class Warp pattern, shown in \"Needs you\" on the Today page; the old name kept until the teacher says Yes; name history and \"Put the made-up name back\" for teachers; a once-a-day limit on made-up name changes.\nNothing typed is ever shown to another pupil before a teacher approves it. Add the new line to docs/PRIVACY-SUMMARY.md and ask James (on a card) to approve the wording before you merge.\nWrite database tests for every rule. Open a PR, merge when the checks pass and James has approved the wording, follow the guide's going-live part, then tick P11 in docs/plans/profile/HANDOVER.md."
+  },
+  {
+   "id": "P12",
+   "kind": "page",
+   "title": "Teacher tools, the yearly rollover and a last check",
+   "effort": "M",
+   "impact": "Medium",
+   "games": [
+    "Teacher"
+   ],
+   "wrong": "Teachers cannot see trophies or reset an avatar, and the year pages do not mention trophies.",
+   "done": "Teachers can see, celebrate and tidy up, and the whole thing has been checked as a child would use it.",
+   "why": "It closes the plan.",
+   "waits": [
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P8",
+    "P9",
+    "P10",
+    "P11"
+   ],
+   "plan": "docs/plans/profile/PLAN.md",
+   "prompt": "You are finishing the profile and trophies plan in the School Games Hub repo.\nRead docs/game-guide/README.md, docs/PROFILE-REVIEW.md and docs/plans/profile/PLAN.md (card P12) and HANDOVER.md. Cards P4 to P11 should be done; list any that are not and ask James whether to go on.\nCreate branch profile/p12-finish from origin/main in your own worktree.\nBuild card P12: the admin Trophy season panel (season number, days left, length, pause); trophies, \"Reset avatar\" and \"Give a Name Scroll\" on the teacher's pupil page; \"New trophies this week\" on Today; the year admin page saying trophies are kept; trophies in the players tracker.\nThen check the whole thing as a child would at 1366x768 and phone size (new pupil, one bronze, a gold with a typed name), fix what you find, and write what shipped at the top of docs/PROFILE-REVIEW.md.\nOpen a PR, merge when the checks pass, then tick P12 in docs/plans/profile/HANDOVER.md."
+  }
+ ],
+ "rewards": [
+  {
+   "game": "Dragon Maths",
+   "feat": "One of the first five in the school to slay the dragon",
+   "picture": true,
+   "reward": "Dragon Head picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Dragon Maths",
+   "feat": "Slay the dragon",
+   "picture": false,
+   "reward": "Slayer's Sword trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Clan Quest",
+   "feat": "Your clan beats the season monster",
+   "picture": false,
+   "reward": "Monster Tooth trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Clan Quest",
+   "feat": "Village finished and monster beaten in one season",
+   "picture": true,
+   "reward": "Clan Banner picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Chess",
+   "feat": "Top three in the school for the season",
+   "picture": true,
+   "reward": "Chess Crown picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Chess",
+   "feat": "Reach Champion rank",
+   "picture": false,
+   "reward": "Champion's Knight trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Checkers",
+   "feat": "Top three in the school for the season",
+   "picture": true,
+   "reward": "Checkers Crown picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Checkers",
+   "feat": "Reach Champion rank",
+   "picture": false,
+   "reward": "Champion's King trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "101",
+   "feat": "Win 15 games against classmates (new)",
+   "picture": false,
+   "reward": "Card Shark trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Power Clash",
+   "feat": "Win 15 games against classmates (new)",
+   "picture": false,
+   "reward": "Clash Cup trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Wormholes",
+   "feat": "Win 15 games against classmates (new)",
+   "picture": false,
+   "reward": "Wormhole trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Gem Keep",
+   "feat": "All 30 stars and all 10 keys",
+   "picture": true,
+   "reward": "Gem Crown picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Maths Monsters",
+   "feat": "All 6 badges",
+   "picture": false,
+   "reward": "League Champion trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Maths Monsters",
+   "feat": "Every monster in the book (75)",
+   "picture": true,
+   "reward": "Book Master picture",
+   "often": "Once"
+  },
+  {
+   "game": "Maths Monsters",
+   "feat": "Own a shiny monster",
+   "picture": false,
+   "reward": "Shiny Star trophy",
+   "often": "Once"
+  },
+  {
+   "game": "Marble Rush",
+   "feat": "Gold on all 8 courses (new)",
+   "picture": false,
+   "reward": "Marble Cup trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Marble Rush",
+   "feat": "Gold on all 8 courses on hard (new)",
+   "picture": true,
+   "reward": "Golden Marble picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Bond Match",
+   "feat": "72 stars (new)",
+   "picture": false,
+   "reward": "Bond Star trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Bond Match",
+   "feat": "All 144 stars (new)",
+   "picture": true,
+   "reward": "Perfect Match picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Mine Runner",
+   "feat": "Gold medal in all 6 mines",
+   "picture": false,
+   "reward": "Miner's Lamp trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Mine Runner",
+   "feat": "Gold in all 6 mines on hard (new)",
+   "picture": true,
+   "reward": "Golden Pickaxe picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Archery",
+   "feat": "Beat Hawk",
+   "picture": false,
+   "reward": "Hawk Feather trophy",
+   "often": "Each season (new season counter)"
+  },
+  {
+   "game": "Archery",
+   "feat": "Beat Hawk with plain arrows in all 4 worlds (new)",
+   "picture": true,
+   "reward": "Golden Bow picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Royal Decree",
+   "feat": "Finish a full reign",
+   "picture": false,
+   "reward": "Royal Seal trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Royal Decree",
+   "feat": "A full reign with all 8 riddles right (new)",
+   "picture": true,
+   "reward": "Royal Crown picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Star Trader",
+   "feat": "Build the ring around your sun",
+   "picture": false,
+   "reward": "Star Ring trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Star Trader",
+   "feat": "Make the black hole",
+   "picture": true,
+   "reward": "Black Hole picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Diamond Drop",
+   "feat": "Find the Heart Diamond",
+   "picture": true,
+   "reward": "Heart Diamond picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Sky Isles",
+   "feat": "Light the Sky Lighthouse",
+   "picture": true,
+   "reward": "Lighthouse picture",
+   "often": "Each island"
+  },
+  {
+   "game": "Sky Isles",
+   "feat": "Class top three when the island ends",
+   "picture": false,
+   "reward": "Keeper's Medal trophy",
+   "often": "Each island"
+  },
+  {
+   "game": "Toon Flap",
+   "feat": "Gold on all 10 levels",
+   "picture": true,
+   "reward": "Rainbow Toon picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Training",
+   "feat": "20 training sessions in a season (new)",
+   "picture": false,
+   "reward": "Times Tables Shield",
+   "often": "Each season"
+  },
+  {
+   "game": "Whole hub",
+   "feat": "Play on 15 different school days in a season (new)",
+   "picture": false,
+   "reward": "Season Regular trophy",
+   "often": "Each season"
+  },
+  {
+   "game": "Whole hub",
+   "feat": "Trophies from 5 different games",
+   "picture": true,
+   "reward": "All-rounder picture",
+   "often": "Once"
+  },
+  {
+   "game": "Two games: Dragon Maths + Clan Quest",
+   "feat": "Slay the dragon and beat the clan's season monster in the same season",
+   "picture": true,
+   "reward": "Double Slayer picture",
+   "often": "Each season"
+  },
+  {
+   "game": "Two games: Chess + Checkers",
+   "feat": "Champion rank in both",
+   "picture": true,
+   "reward": "Board Master picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Two games: Sky Isles + Diamond Drop",
+   "feat": "Light the Lighthouse and find the Heart Diamond",
+   "picture": true,
+   "reward": "Treasure Keeper picture",
+   "often": "Once a year"
+  },
+  {
+   "game": "Two games: Archery + Mine Runner",
+   "feat": "Beat Hawk and win gold in all 6 mines",
+   "picture": false,
+   "reward": "Adventurer's Badge trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Two games: Royal Decree + Star Trader",
+   "feat": "Finish a full reign and build the Star Ring",
+   "picture": false,
+   "reward": "Star Monarch trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Two games: Marble Rush + Toon Flap",
+   "feat": "Gold on every course and every level",
+   "picture": false,
+   "reward": "Golden Wings trophy",
+   "often": "Once a year"
+  },
+  {
+   "game": "Two games: any two early-years games",
+   "feat": "Finish a golden prize in two different games",
+   "picture": false,
+   "reward": "Best Friends Cup trophy",
+   "often": "Builds up"
+  },
+  {
+   "game": "Each early-years game (11)",
+   "feat": "Finish a friend's 30-day golden prize",
+   "picture": true,
+   "reward": "That friend as your picture (already painted)",
+   "often": "Each friend"
+  },
+  {
+   "game": "Each early-years game (11)",
+   "feat": "30, 90 and 150 days played",
+   "picture": false,
+   "reward": "Garden Cup: bronze, silver, gold",
+   "often": "Builds up"
+  },
+  {
+   "game": "Quick looks",
+   "feat": "Grow the whole garden (7 stages) (new)",
+   "picture": false,
+   "reward": "Garden Gate trophy",
+   "often": "Once"
+  }
+ ],
+ "reportPath": "docs/PROFILE-REVIEW.md",
+ "pageUrl": "https://claude.ai/artifact/1tJJiKP48gJBaitmQwUizW"
+}

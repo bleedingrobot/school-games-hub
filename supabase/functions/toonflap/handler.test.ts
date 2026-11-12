@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { botRun } from '../../../shared/toonflap/bot';
 import { BREAK_AFTER_RUNS } from '../../../shared/toonflap/config';
 import { encodeFlaps } from '../../../shared/toonflap/engine';
+import { emptyProgress } from '../../../shared/toonflap/collection';
 import { buildCourse, LEVELS } from '../../../shared/toonflap/levels';
 import { memoryServices, type MemoryOptions } from '../../../shared/toonflap/memoryServices';
 import type { Settings } from '../../../shared/toonflap/server';
@@ -74,6 +75,11 @@ it('follows the teacher’s switches, suggests a break after many runs, and only
 
   expect((await send('pupil-a', { action: 'picks', flyer: 'puppy-plane', trail: null })).body.code).toBe('locked');
   expect((await send('pupil-a', { action: 'picks', flyer: 'fantail', trail: null })).status).toBe(200);
+
+  // A flyer picked when 3 finishes unlocked it falls back to the fantail now that it needs 15.
+  const { send: send2, services } = setup();
+  services.data.players['pupil-c'] = { progress: { ...emptyProgress(), levels: { garden: { finishes: 4, best: null, bestPlain: null, medal: 'bronze' } } }, picks: { flyer: 'puppy-plane', trail: 'cookies' }, version: 1 };
+  expect((await send2('pupil-c', { action: 'load' })).body.picks).toEqual({ flyer: 'fantail', trail: null });
 
   for (let i = 1; i < BREAK_AFTER_RUNS; i++) await send('pupil-a', { action: 'start', level: 'garden' });
   expect((await send('pupil-a', { action: 'start', level: 'garden' })).body.code).toBe('break');

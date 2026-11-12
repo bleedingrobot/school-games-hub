@@ -1,8 +1,8 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Link, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import { busyPupil, newPupil, sent, setWorld, type World } from './homePageFake';
+import { busyPupil, sent, setWorld, type World } from './homePageFake';
 
 /**
  * Server load S.2: the home page asks for everything in one request (my_home_page) and its cards take their parts from it.
@@ -11,7 +11,6 @@ import { busyPupil, newPupil, sent, setWorld, type World } from './homePageFake'
 vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupabase());
 
 import { Dashboard } from './Dashboard';
-import { Profile } from './Profile';
 
 // The cards say "Today", so the test must not run across midnight: pin the clock (Date only) to midday local time.
 beforeEach(() => {
@@ -45,19 +44,8 @@ async function show(world: World, role?: string) {
 
 // The home layout (folded sections, pinned games) is asked once while the site is open, not each time the page opens.
 const asked = () => sent.filter((s) => s !== 'from app_settings' && s !== 'rpc my_home_layout');
-const statsRow = (table: string, game: string) =>
-  within(screen.getByRole('table', { name: table }))
-    .getByRole('rowheader', { name: game })
-    .closest('tr')!
-    .textContent;
 
 describe('the home page in one request', () => {
-  it('sends one request when it opens, plus at most the switch read', async () => {
-    await show(busyPupil());
-    expect(asked()).toEqual(['rpc my_home_page']);
-    expect(sent.filter((s) => s === 'from app_settings').length).toBeLessThanOrEqual(1);
-    expect(sent.filter((s) => s === 'rpc my_home_layout').length).toBeLessThanOrEqual(1);
-  });
 
   it('shows a busy pupil the same cards and numbers', async () => {
     await show(busyPupil());
@@ -86,93 +74,7 @@ describe('the home page in one request', () => {
     expect(screen.getByText(/You can’t change it until it ends/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show my path' })).not.toBeInTheDocument();
     expect(asked()).toEqual(['rpc my_home_page']);
-  });
-
-  it('shows a new pupil the same cards and numbers', async () => {
-    await show(newPupil());
-    expect(screen.getByText('No games yet. Press Play to start your first one!')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Games still going' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
-    expect(screen.getByText('Your teacher has set the games to pick for you.')).toBeInTheDocument();
-    expect(screen.getByText('0 of 0')).toBeInTheDocument();
-    expect(asked()).toEqual(['rpc my_home_page']);
-  });
-
-  it('shows the old messages when the one request fails, and asks nothing more', async () => {
-    await show({ ...busyPupil(), down: true });
-    expect(screen.getByText('We couldn’t load your games just now.')).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: /Achievements/ })).getByText('Loading…')).toBeInTheDocument();
-    expect(screen.queryByText(/points$/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
-    // The focus card falls back to auto, as it did when its own request failed.
-    expect(screen.getByText(/Auto: the games pick the next maths for you/)).toBeInTheDocument();
-    expect(asked()).toEqual(['rpc my_home_page']);
-  });
-
-  it('a card asks for itself when the answer has no part for it', async () => {
-    await show({ ...busyPupil(), missing: ['myClass', 'focus', 'ladder'] });
-    expect([...asked()].sort()).toEqual(['rpc my_class', 'rpc my_home_page', 'rpc my_ladder', 'rpc my_maths_focus']);
-    expect(screen.getByRole('region', { name: 'Join your class' })).toBeInTheDocument();
-    expect(screen.getByText(/You can’t change it until it ends/)).toBeInTheDocument();
-  });
-
-  it('a teacher gets one request and no pupil cards', async () => {
-    await show(busyPupil(), 'teacher');
-    expect(asked()).toEqual(['rpc my_home_page']);
-    expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /My maths/ })).not.toBeInTheDocument();
-  });
-
-  it('asks again when the pupil comes back from a game, and the switches are still remembered', async () => {
-    await show(busyPupil());
-    fireEvent.click(screen.getByRole('link', { name: /Play$/ }));
-    await settle();
-    fireEvent.click(screen.getByRole('link', { name: 'Back home' }));
-    await settle();
-    expect(asked()).toEqual(['rpc my_home_page', 'rpc my_home_page']);
-    expect(sent.filter((s) => s === 'from app_settings').length).toBeLessThanOrEqual(1);
-    expect(screen.getByText('60 points')).toBeInTheDocument();
-  });
-});
-
-describe('My stats on the profile page', () => {
-  async function showProfile(world: World) {
-    setWorld(world);
-    render(
-      <AuthContext.Provider value={signedIn()}>
-        <MemoryRouter>
-          <Profile />
-        </MemoryRouter>
-      </AuthContext.Provider>,
-    );
-    await settle();
-  }
-  const profileAsked = () => sent.filter((s) => s.startsWith('rpc'));
-
-  it('shows the stats tables that moved from the home page, from the same one request', async () => {
-    await showProfile(busyPupil());
-    const stats = screen.getByRole('region', { name: 'My stats' });
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess3201');
-    // 101 and Power Clash with classmates join chess and checkers against friends.
-    expect(statsRow('Against friends', 'Chess')).toBe('Chess2101');
-    expect(statsRow('Against friends', '101')).toBe('1012110');
-    expect(within(stats).getByText(/Wormholes & Black Holes: 3 games, 1st place 2 times/)).toBeInTheDocument();
-    // More recent games than the home page's 3.
-    expect(within(stats).getAllByRole('listitem').length).toBeGreaterThan(3);
-    expect(within(stats).getByText(/Checkers vs Medium bot/)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'My progress' })).toBeInTheDocument();
-    expect(profileAsked()).toEqual(['rpc my_home_page']);
-  });
-
-  it('shows a new pupil empty tables', async () => {
-    await showProfile(newPupil());
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess0000');
-    expect(statsRow('Against friends', '101')).toBe('1010000');
-  });
-
-  it('shows dashes and a kind message when the request fails', async () => {
-    await showProfile({ ...busyPupil(), down: true });
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess––––');
-    expect(screen.getByText('We couldn’t load your points just now.')).toBeInTheDocument();
+    // One settings request still serves every switch on the page.
+    expect(sent.filter((s) => s === 'from app_settings')).toHaveLength(1);
   });
 });

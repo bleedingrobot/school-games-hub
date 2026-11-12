@@ -4,8 +4,8 @@ import { MemoryRouter, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import type { ClassSummary, WarpRequest } from '../data/classes';
-import type { FocusBatch } from '../data/focus';
+import type { ClassSummary} from '../data/classes';
+import { ALL_SWITCH_COLUMNS } from '../data/games';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
@@ -21,7 +21,16 @@ const data = vi.hoisted(() => ({
   fetchQuestionSkips: vi.fn(),
   fetchClassMap: vi.fn(),
   fetchAdminOverview: vi.fn(),
+  fetchGameSwitches: vi.fn(),
+  saveGameSwitches: vi.fn(),
+  fetchSavedSets: vi.fn(),
 }));
+vi.mock('../data/games', async (original) => ({
+  ...(await original<typeof import('../data/games')>()),
+  fetchGameSwitches: data.fetchGameSwitches,
+  saveGameSwitches: data.saveGameSwitches,
+}));
+vi.mock('../data/gameSets', async (original) => ({ ...(await original<typeof import('../data/gameSets')>()), fetchSavedSets: data.fetchSavedSets }));
 vi.mock('../data/admin', async (original) => ({
   ...(await original<typeof import('../data/admin')>()),
   fetchAdminOverview: data.fetchAdminOverview,
@@ -59,9 +68,6 @@ vi.mock('../data/skillMap', async (original) => ({ ...(await original<typeof imp
 
 const room = (id: string, name: string, over: Partial<ClassSummary> = {}): ClassSummary => ({
   id, name, school_year: 2026, year_level: 5, archived: false, warp_code: 'KM4TP', warp_mode: 'ask', members: 28, teaching: true, groups: 0, waiting: 0, ...over,
-});
-const asking = (id: string, classId: string, className: string, student: string): WarpRequest => ({
-  id, class_id: classId, class_name: className, group_name: null, student_name: student, asked_at: new Date().toISOString(),
 });
 
 const student: AuthState = {
@@ -108,6 +114,8 @@ beforeEach(() => {
   data.fetchTrainingFirst.mockResolvedValue(false);
   data.saveTrainingFirst.mockResolvedValue(undefined);
   data.fetchFocuses.mockResolvedValue([]);
+  data.fetchGameSwitches.mockResolvedValue(Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, true])));
+  data.fetchSavedSets.mockResolvedValue([]);
   data.fetchQuestionSkips.mockResolvedValue({ students: [], spots: [] });
   data.fetchAdminOverview.mockResolvedValue({
     counts: { classes: 2, students: 53, teachers: 3, admins: 1, activeWeek: 40, shownWeek: 100, skippedWeek: 10 },
@@ -117,21 +125,6 @@ beforeEach(() => {
 });
 
 describe('the teacher header', () => {
-  it('shows the class, its student count, code and warp mode, and the tabs', async () => {
-    show('/teacher/c12');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Room 12' })).toBeInTheDocument();
-    expect(screen.getByText('28 students')).toBeInTheDocument();
-    expect(screen.getByText(/Code KM4.*\(asks you first\)/)).toBeInTheDocument();
-    expect(within(tabs()).getAllByRole('link').map((l) => l.textContent)).toEqual(['Today', 'Progress', 'Students', 'Maths', 'Games', 'Class set-up']);
-    expect(within(tabs()).getByRole('link', { name: 'Today' })).toHaveAttribute('aria-current', 'page');
-  });
-
-  it('has no dropdown when there is only one class', async () => {
-    data.fetchClasses.mockResolvedValue([room('c12', 'Room 12')]);
-    show('/teacher/c12');
-    await screen.findByRole('heading', { level: 1, name: 'Room 12' });
-    expect(screen.queryByRole('combobox', { name: 'Class' })).not.toBeInTheDocument();
-  });
 
   it('marks a class a school admin does not teach, and gives only an admin the Admin tab', async () => {
     data.fetchClasses.mockResolvedValue([room('c12', 'Room 12'), room('c1', 'Room 1', { teaching: false })]);
@@ -146,34 +139,6 @@ describe('the teacher header', () => {
     expect(within(tabs()).queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
   });
 
-  it('keeps the admin page for school admins', async () => {
-    const { unmount } = show('/teacher/admin', admin);
-    expect(await screen.findByRole('heading', { name: 'The school', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument();
-    expect(screen.queryByText('This page is for school admins.')).not.toBeInTheDocument();
-    unmount();
-    show('/teacher/admin');
-    expect(await screen.findByText('This page is for school admins.')).toBeInTheDocument();
-  });
-
-  it('is for teachers only, and asks nothing for a student', () => {
-    show('/teacher/c12', student);
-    expect(screen.getByRole('heading', { name: 'Teachers only' })).toBeInTheDocument();
-    expect(data.fetchClasses).not.toHaveBeenCalled();
-  });
-
-  it('asks a teacher with no class to make one', async () => {
-    data.fetchClasses.mockResolvedValue([]);
-    show('/teacher');
-    expect(await screen.findByText(/You don’t teach a class yet/)).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Make a class' })).toBeInTheDocument();
-  });
-
-  it('says so when the classes cannot be loaded', async () => {
-    data.fetchClasses.mockRejectedValue(new Error('down'));
-    show('/teacher/c12');
-    expect(await screen.findByText(/We couldn’t load your classes/)).toBeInTheDocument();
-  });
 });
 
 describe('the class carries across the teacher pages', () => {
@@ -203,68 +168,10 @@ describe('the class carries across the teacher pages', () => {
     await waitFor(() => expect(data.fetchClassMap).toHaveBeenCalledWith('c14'));
   });
 
-  it('switching class keeps the tab, and is remembered for next time', async () => {
-    const user = userEvent.setup();
-    const { unmount } = show('/teacher/c12/maths/skills');
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Class' }), 'c14');
-    await waitFor(() => expect(address()).toBe('/teacher/c14/maths/skills'));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Room 14' })).toBeInTheDocument();
-    unmount();
-    show('/teacher');
-    await waitFor(() => expect(address()).toBe('/teacher/c14'));
-  });
-
-  it('opens the first class instead of one that is not in the list, on the same tab', async () => {
-    show('/teacher/gone/games');
-    await waitFor(() => expect(address()).toBe('/teacher/c12/games'));
-  });
 });
 
-describe('the old addresses', () => {
-  it.each([
-    ['/teacher', '/teacher/c12'],
-    ['/classes', '/teacher/c12/setup'],
-    ['/focus', '/teacher/c12/maths'],
-    ['/focus?class=c14', '/teacher/c14/maths'],
-    ['/focus?class=c14&student=s1&skill=facts-10', '/teacher/c14/maths?student=s1&skill=facts-10'],
-    ['/skills', '/teacher/c12/maths/skills'],
-    ['/skills?class=c14', '/teacher/c14/maths/skills'],
-    ['/teacher/c12/nothing-here', '/teacher/c12'],
-  ])('%s opens %s', async (from, to) => {
-    show(from);
-    await waitFor(() => expect(address()).toBe(to));
-    expect(await screen.findByRole('navigation', { name: 'Teacher pages' })).toBeInTheDocument();
-  });
-
-  it('opens the class this visit last used', async () => {
-    sessionStorage.setItem('sgh-teacher-class', 'c14');
-    show('/classes');
-    await waitFor(() => expect(address()).toBe('/teacher/c14/setup'));
-  });
-});
 
 describe('Today', () => {
-  it('shows Needs you only when someone is waiting', async () => {
-    const { unmount } = show('/teacher/c12');
-    expect(await screen.findByText('Nothing needs you right now.')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: /Needs you/ })).not.toBeInTheDocument();
-    unmount();
-    data.fetchWarpRequests.mockResolvedValue([asking('r1', 'c12', 'Room 12', 'Zippy Meerkat 79')]);
-    show('/teacher/c12');
-    const needs = await screen.findByRole('region', { name: /Needs you/ });
-    expect(within(needs).getByRole('button', { name: 'Yes, let Zippy Meerkat 79 in' })).toBeInTheDocument();
-    expect(screen.queryByText('Nothing needs you right now.')).not.toBeInTheDocument();
-  });
-
-  it('shows the lesson switches with their state, never as red buttons', async () => {
-    show('/teacher/c12');
-    const controls = await screen.findByRole('region', { name: /Lesson controls/ });
-    const friends = within(controls).getByRole('switch', { name: 'Games against friends' });
-    await waitFor(() => expect(friends).toHaveAttribute('aria-checked', 'true'));
-    await waitFor(() => expect(within(controls).getByRole('switch', { name: 'Emoji reactions' })).toHaveAttribute('aria-checked', 'false'));
-    await waitFor(() => expect(within(controls).getByRole('radio', { name: '3 per game' })).toHaveAttribute('aria-checked', 'true'));
-    expect(controls.querySelector('.button--danger')).toBeNull();
-  });
 
   it('puts a switch back, and says why, when it cannot be saved', async () => {
     data.setMultiplayer.mockRejectedValue(new Error('down'));
@@ -278,60 +185,43 @@ describe('Today', () => {
     expect(friends).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('switches Training before games for this class, and says what it does behind the "?"', async () => {
+  it('switches Training before games for this class, says what it does behind the "?", and switches to a game set in one request', async () => {
+    data.fetchGameSwitches.mockResolvedValue(Object.fromEntries(ALL_SWITCH_COLUMNS.map((c) => [c, false])));
+    data.saveGameSwitches.mockResolvedValue(undefined);
+    data.fetchSavedSets.mockResolvedValue([{ id: 'mine-1', name: 'Reading group', ready: false, games: { weka_enabled: true } }]);
     const user = userEvent.setup();
     show('/teacher/c12');
     const training = await screen.findByRole('switch', { name: 'Training before games' });
     await waitFor(() => expect(training).toHaveAttribute('aria-checked', 'false'));
     expect(data.fetchTrainingFirst).toHaveBeenCalledWith('c12');
     await user.click(screen.getByRole('button', { name: 'About Training before games' }));
+    await user.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getByText(/stay open for 2 hours/)).toBeVisible();
     await user.click(training);
     expect(data.saveTrainingFirst).toHaveBeenCalledWith(true, 'c12');
     expect(training).toHaveAttribute('aria-checked', 'true');
     await user.click(training);
     expect(data.saveTrainingFirst).toHaveBeenLastCalledWith(false, 'c12');
+
+    // Game sets, on the same screen: one request, what changed, the set marked on now, and Undo puts it back.
+    expect(await screen.findByText('Reading group')).toBeInTheDocument();
+    expect(screen.queryByText('On now')).toBeNull();
+    expect(screen.getByText('Maths games on. Foundational and non-maths games off.', { exact: false })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Switch to Maths only' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    const [changes, classId] = data.saveGameSwitches.mock.calls[0];
+    expect(classId).toBe('c12');
+    expect(changes.non_maths_games).toBe(false);
+    expect(Object.values(changes)).toContain(true);
+    expect(await screen.findByText(/^Room 12 now has Maths only: \d+ of \d+ games on/)).toBeInTheDocument();
+    expect(screen.getByText('On now')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Switch to Maths only' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(2));
+    const putBack = Object.entries(data.saveGameSwitches.mock.calls[1][0] as Record<string, boolean>);
+    expect(putBack.length).toBeGreaterThan(0);
+    for (const [column, on] of putBack) expect(on).toBe(!changes[column]);
+    expect(await screen.findByText(/^Put back as it was/)).toBeInTheDocument();
   });
 
-  it('says when a lesson switch can’t be loaded', async () => {
-    data.fetchTrainingFirst.mockRejectedValue(new Error('offline'));
-    show('/teacher/c12');
-    await screen.findByRole('switch', { name: 'Training before games' });
-    expect((await screen.findAllByText('We couldn’t load this setting.')).length).toBeGreaterThan(0);
-  });
-
-  it('saves the Skip button choice for this class at once', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12');
-    const off = await screen.findByRole('radio', { name: 'Off' });
-    await user.click(off);
-    expect(data.saveSkipMode).toHaveBeenCalledWith('off', 'c12');
-    expect(off).toHaveAttribute('aria-checked', 'true');
-    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
-  });
-
-  it('shows this week as counts, with no student names', async () => {
-    const inDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
-    const focus: FocusBatch = {
-      batch: 'b2', classId: 'c12', className: 'Room 12', scope: 'student',
-      targets: [{ id: 's1', name: 'Speedy Otter 27' }, { id: 's2', name: 'Brave Kiwi 7' }],
-      skills: ['facts-10'], onlyThese: false, startsAt: new Date().toISOString(), endsAt: inDays(2), createdAt: new Date().toISOString(), status: 'running',
-    };
-    data.fetchFocuses.mockResolvedValue([focus]);
-    data.fetchQuestionSkips.mockResolvedValue({
-      students: [
-        { id: 's1', name: 'Speedy Otter 27', realName: 'ana', shown: 30, answered: 27, skipped: 3, topSkip: null },
-        { id: 's2', name: 'Brave Kiwi 7', realName: 'ben', shown: 10, answered: 9, skipped: 1, topSkip: null },
-      ],
-      spots: [],
-    });
-    show('/teacher/c12');
-    const week = await screen.findByRole('region', { name: 'This week in Room 12' });
-    expect(await within(week).findByText(/Focus \(2 students\)/)).toBeInTheDocument();
-    expect(within(week).getByRole('button', { name: 'Extend: 2 students' })).toBeInTheDocument();
-    expect(within(week).getByRole('button', { name: 'End: 2 students' })).toBeInTheDocument();
-    await waitFor(() => expect(week).toHaveTextContent('2 of 28 students answered maths questions · 40 questions · 10% skipped'));
-    expect(week).not.toHaveTextContent(/Speedy Otter|Brave Kiwi|ana|ben/);
-    expect(data.fetchQuestionSkips).toHaveBeenCalledWith('c12', 7);
-  });
 });

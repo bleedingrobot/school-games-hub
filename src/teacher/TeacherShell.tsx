@@ -233,7 +233,7 @@ export function TeacherMaths() {
   );
 }
 
-/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, End of year. */
+/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers, New class settings, End of year. */
 export function TeacherAdmin() {
   const { profile } = useAuth();
   if (profile?.school_admin !== true) {
@@ -258,6 +258,9 @@ export function TeacherAdmin() {
         </NavLink>
         <NavLink to="/teacher/admin/teachers" className="teacher-subtabs__tab">
           Teachers
+        </NavLink>
+        <NavLink to="/teacher/admin/defaults" className="teacher-subtabs__tab">
+          New class settings
         </NavLink>
         <NavLink to="/teacher/admin/year" className="teacher-subtabs__tab">
           End of year

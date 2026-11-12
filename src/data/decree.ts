@@ -44,8 +44,8 @@ export async function fetchDecreeEnabled(classId?: string | null): Promise<boole
   return row.decree_enabled === true;
 }
 
-export async function saveDecreeEnabled(enabled: boolean, classId?: string | null): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_decree', { enabled, target_class: classId ?? null });
+export async function saveDecreeEnabled(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_decree', { enabled, target_class: classId });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }

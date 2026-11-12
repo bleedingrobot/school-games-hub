@@ -53,9 +53,9 @@ export async function fetchPipiSettings(classId?: string | null): Promise<PipiSe
 export const fetchPipiEnabled = async (classId?: string | null) => (await fetchPipiSettings(classId)).enabled;
 
 /** Saves one setting or both (teacher_set_pipi leaves out the other). */
-export async function savePipiSetting(change: Partial<PipiSettings>, classId?: string | null): Promise<void> {
+export async function savePipiSetting(change: Partial<PipiSettings>, classId: string): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_pipi', {
-    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId ?? null,
+    enabled: change.enabled ?? null, help: change.help ?? null, target_class: classId,
   });
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');

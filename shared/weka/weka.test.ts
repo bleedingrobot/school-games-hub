@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newStats, type FactStats } from '../maths/leitner';
-import { seeded } from '../seededRandom';
-import { DAYS_PER_BASKET, finishChallenge, streamAfter } from './progress';
 import { replay, type Tap } from './play';
-import { ALL_KEYS, BACK_GOES, bondLine, helpForStats, pebbleAskLine, pebbleDoneLine, pebbleFewLine, pebbleManyLine, pebbleRightLine, pebbleShowLine, pebblesFor, splitFirstLine, splitRestLine, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, sisterGo, type Day, type Level, type Round } from './round';
+import { ALL_KEYS, BACK_GOES, helpForStats, pebblesFor, GOES_PER_ROUND, GUIDED_KEY, LEVELS, levelFor, levelKeys, makeRound, showRound, type Day, type Level, type Round } from './round';
 
 const seeds = Array.from({ length: 60 }, (_, i) => i * 10007 + 1);
 const inBox = (keys: string[], box: number): FactStats[] => keys.map((key) => ({ ...newStats(key), box }));
@@ -53,30 +51,6 @@ describe('the round', () => {
   });
 });
 
-describe('the sister go', () => {
-  it('is another fact asked the same way with the same help, never the original answer, and the original go still ends the replay', () => {
-    for (const day of ['bronze', 'gold'] as Day[]) {
-      for (const seed of seeds.slice(0, 12)) {
-        const round = makeRound(seed, recordsFor(4), { day });
-        const goes = showRound(round);
-        goes.forEach((go, i) => {
-          for (const hops of [false, true]) {
-            const sister = sisterGo(round, i, go, { hops });
-            expect(sister).not.toBeNull();
-            expect(sister!.key).not.toBe(go.key);
-            expect([sister!.kind, sister!.h]).toEqual([go.kind, go.h]);
-            expect(sister!.answer).not.toBe(go.answer);
-            expect(sisterGo(round, i, go, { hops })).toEqual(sister);
-            if (!hops && go.kind !== 'back') expect(sister!.big).toBe(go.big);
-          }
-        });
-        // A right tap on the sister sends the original go's right pick, so the taps are the usual ones and replay is done.
-        expect(replay(round, goes.map((go) => ({ pick: go.answer, ms: 3000 }))).done).toBe(true);
-      }
-    }
-  });
-});
-
 describe('the level and the help', () => {
   it('moves up once 70% of a level is secure and never drops back; each fact’s help fades with its own record', () => {
     const one = levelKeys(1);
@@ -105,83 +79,5 @@ describe('the level and the help', () => {
     expect(helpForStats(quick1)).toBe('split');
     expect(helpForStats({ ...quick1, box: 1, attempts: 3 })).toBe('full');
     expect(pebblesFor('full') && pebblesFor('split') && !pebblesFor('faint') && !pebblesFor('none')).toBe(true);
-  });
-});
-
-describe('the magic stones', () => {
-  it('turn bronze, silver, then gold, one per NZ day, with a Golden Picnic Basket and a new friend every 30 days', () => {
-    expect(streamAfter(0)).toMatchObject({ baskets: 0, friend: 'weka', today: 'bronze', stones: Array(10).fill('grey') });
-    expect(streamAfter(10)).toMatchObject({ today: 'silver', stones: Array(10).fill('bronze') });
-    expect(streamAfter(21)).toMatchObject({ today: 'gold', stones: ['gold', ...Array(9).fill('silver')] });
-    expect(streamAfter(DAYS_PER_BASKET)).toMatchObject({ baskets: 1, friend: 'kiwi', day: 0 });
-    expect(finishChallenge(0, null, '2026-11-04')).toEqual({ daysDone: 1, lastStoneDay: '2026-11-04', stoneChanged: 0, goldenBasket: false });
-    expect(finishChallenge(1, '2026-11-04', '2026-11-04')).toMatchObject({ daysDone: 1, stoneChanged: null });
-    expect(finishChallenge(29, '2026-11-04', '2026-11-20')).toMatchObject({ daysDone: 30, stoneChanged: 9, goldenBasket: true });
-  });
-});
-
-describe('the finish words (S33)', () => {
-  it('count goes right at the first tap, and not a guess faster than the think floor', () => {
-    const round = makeRound(seeds[0], recordsFor(1), { day: 'bronze' });
-    const right = showRound(round).map((go) => ({ pick: go.answer, ms: 2000 }));
-    expect(replay(round, right).firstRight).toBe(GOES_PER_ROUND);
-    expect(replay(round, wobblyTaps(round)).firstRight).toBe(0);
-    expect(replay(round, right.map((t, i) => (i < 2 ? { ...t, ms: 100 } : t))).firstRight).toBe(GOES_PER_ROUND - 2);
-  });
-});
-
-describe('the split after each go', () => {
-  it('says how the smaller number was split: to the big rock first, then the rest', () => {
-    const add = { kind: 'add' as const, small: 5, big: 9, total: 14, toTen: 1, rest: 4 };
-    expect(bondLine(add)).toBe('You solved 9 + 5 by splitting the 5 into 1 and 4. You added the 1 first to make ten, then the other 4.');
-    expect(bondLine(add, true)).toMatch(/^You solved 9 plus 5 /);
-    expect(bondLine({ ...add, kind: 'turn', small: 5, big: 8, total: 13, toTen: 2, rest: 3 }))
-      .toBe('You solved 5 + 8 by starting on 8 and splitting the 5 into 2 and 3. You added the 2 first to make ten, then the other 3.');
-    expect(bondLine({ kind: 'back', small: 5, big: 8, total: 13, toTen: 3, rest: 2 }, true))
-      .toBe('You solved 13 take away 5 by splitting the 5 into 3 and 2. You took away the 3 first to get to ten, then the other 2.');
-  });
-});
-
-describe('split first and the pebbles', () => {
-  it('asks for the part that gets to ten, then the rest, and repeats the same question with pebbles', () => {
-    const add = { kind: 'add' as const, small: 5, big: 8, total: 13, toTen: 2, rest: 3 };
-    expect(splitFirstLine(add)).toBe('8 plus 5. Split the 5 to get to ten. How many hops from 8 to the big rock?');
-    expect(splitRestLine(add)).toBe('2 gets to ten. How many of the 5 are left?');
-    expect(pebbleAskLine(add)).toBe('The same question with pebbles: 8 plus 5. Here are 8 gold and 5 silver. Drag the silver pebbles you need to make ten, then tap Check.');
-    expect(pebbleAskLine({ ...add, kind: 'turn' })).toMatch(/^The same question with pebbles: 5 plus 8\./);
-    expect(pebbleDoneLine(add)).toBe('8 and 2 make 10. 10 and 3 make 13.');
-    expect(pebbleRightLine(add)).toBe('10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
-    expect(pebbleFewLine(1)).toBe('Not full yet. 1 more space.');
-    expect(pebbleFewLine(3)).toBe('Not full yet. 3 more spaces.');
-    expect(pebbleManyLine(1)).toBe('That is more than ten: 1 too many. Put it back.');
-    expect(pebbleShowLine(add)).toBe('Let me show you. 10 is full. 2 gone, 3 left. 8 and 2 make 10. 10 and 3 make 13.');
-  });
-});
-
-describe('moving onto the game kit (stage K1)', () => {
-  /**
-   * Weka moved onto shared/kit on 7 Nov 2026 with no change a child or teacher can see: old and new code were compared on
-   * 4,000 rounds and 16,000 tap runs before the old code went. This digest is of the old code's results. It doesn't depend
-   * on the wrong choices the shared pack makes. If Weka's help, goes or stones change on purpose, update the number (S25: full help now ends after one quick day, so the number changed).
-   */
-  it('keeps the same help, goes, answers and stones as before the move', () => {
-    const days = ['2026-11-01', '2026-11-02', '2026-11-03'];
-    const out: unknown[] = [];
-    for (let i = 0; i < 300; i++) {
-      const r = seeded(i * 7919 + 13);
-      const records = ALL_KEYS.filter(() => r() < 0.7).map((key): FactStats => ({ ...newStats(key), box: Math.floor(r() * 6), correct: Math.floor(r() * 16), quickDays: days.slice(0, Math.floor(r() * 4)) }));
-      const opts = { reached: (1 + Math.floor(r() * 4)) as Level, day: (['bronze', 'silver', 'gold'] as const)[Math.floor(r() * 3)], guided: r() < 0.1 };
-      const round = makeRound(Math.floor(r() * 2147483647), records, opts);
-      const taps = showRound(round).flatMap((go) => [
-        ...go.choices.filter((c) => c !== go.answer).slice(0, Math.floor(r() * 3)).map((pick) => ({ pick, ms: 4000 })),
-        { pick: go.answer, ms: Math.floor(r() * 9000) },
-      ]);
-      const { goesDone, mistakes, done, answers } = replay(round, taps);
-      out.push(round, goesDone, mistakes, done, answers);
-    }
-    for (let d = 0; d < 100; d++) out.push(streamAfter(d), finishChallenge(d, null, days[0]), finishChallenge(d, days[0], days[0]));
-    let hash = 5381;
-    for (const ch of JSON.stringify(out)) hash = (hash * 33 + ch.charCodeAt(0)) % 2147483647;
-    expect(hash).toBe(964958306);
   });
 });

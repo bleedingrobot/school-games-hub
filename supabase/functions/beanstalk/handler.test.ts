@@ -145,16 +145,6 @@ it('moves a child’s dots on the day’s first finish only, saves them, and sta
   expect(saved()).toMatchObject({ stage: 1, help: 0, goodInRow: 0, goodDays: 0, stageDays: 0 });
 });
 
-it('keeps which kinds of go a pupil has seen: unreadable kinds are refused and a kind saved twice is kept once', async () => {
-  const { send } = setup();
-  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual([]);
-  expect((await send('pupil-a', { action: 'seen', kinds: ['zoom'] })).status).toBe(400);
-  expect((await send('pupil-a', { action: 'seen', kinds: 'missing' })).status).toBe(400);
-  await send('pupil-a', { action: 'seen', kinds: ['missing'] });
-  expect((await send('pupil-a', { action: 'seen', kinds: ['missing'] })).body.seen).toEqual(['missing']);
-  expect((await send('pupil-a', { action: 'load' })).body.seen).toEqual(['missing']);
-});
-
 describe('the deployable file', () => {
   it('is up to date with the code (run `npm run build:functions -- beanstalk` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script

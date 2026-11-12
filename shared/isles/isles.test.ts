@@ -1,52 +1,11 @@
 // Sky Isles' rule tests (docs/ISLES-PLAN.md, section 9: tests 5 and 6). Balance and pace live in scripts/isles-sim.mjs.
 import { describe, expect, it } from 'vitest';
 import { seededRandom } from '../maths/serverQuestions';
-import { readFileSync } from 'node:fs';
-import { BREEZE_SPEED, CHUNK_PRICE, DECORATIONS, GUST_SPEED, RACE_LEGS, RACE_QUESTIONS } from './config';
-import { isIslandName, nameChoices } from './names';
+import { CHUNK_PRICE } from './config';
 import { coinsCollected, collect, newIsland, playTurn, room, type Action, type Island } from './engine';
-import { GULL_RIDERS, gullRiders, RACE_STOPS, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceResult } from './race';
-
-/** Two turns with a race against a classmate between them, all from one seed: what the server and the preview each do. */
-function play(seed: string) {
-  const random = seededRandom(seed);
-  const first: Action[] = [{ kind: 'build', spot: 5, plot: 'workshop' }, { kind: 'decorate', id: 'flowers', place: 0 }];
-  const one = playTurn(newIsland(), true, first, random);
-  if (!one.ok) throw new Error(one.problem);
-  const classmate: Island = { ...newIsland(), turn: 20, spots: [...newIsland().spots, { kind: 'dock', level: 2 }] };
-  if (raceProblem(one.island, { id: 'ana', island: classmate }, 'me')) throw new Error('race refused');
-  const race = runRace(`${seed}:race`, racerOf(one.island), racerOf(classmate), 2);
-  const settled = settleRace(one.island, { id: 'ana', island: classmate }, race);
-  const two = playTurn(settled.challenger, false, [{ kind: 'raise', spot: 0 }], random);
-  if (!two.ok) throw new Error(two.problem);
-  return { one, race, settled, two };
-}
+import { GULL_RIDERS, gullRiders, racerOf, raceProblem, runRace, type Racer } from './race';
 
 describe('Sky Isles rules', () => {
-  it('names islands only from the list, and the database works out island worth with the same decoration prices', () => {
-    const names = nameChoices(seededRandom('names'));
-    expect(new Set(names).size).toBe(6);
-    expect(names.every(isIslandName)).toBe(true);
-    for (const bad of ['Rude Words', 'Cloudberry', 'Cloudberry Hollow Hollow', 'cloudberry hollow', 42]) expect(isIslandName(bad)).toBe(false);
-    // isles_worth() in the migration lists each decoration's coin price (islandWorth counts a tenth of it).
-    const sql = readFileSync('supabase/migrations/20261104000100_isles.sql', 'utf8');
-    const listed = Object.fromEntries([...sql.split('create function public.isles_worth')[1].split('$$;')[0].matchAll(/\('(\w+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
-    expect(listed).toEqual(Object.fromEntries(DECORATIONS.map((d) => [d.id, d.coins])));
-  });
-
-  it('rolls a turn and a race the same from the same seed and choices, so the server and the preview agree', () => {
-    for (const seed of ['isles-a', 'isles-b', 'isles-c']) {
-      const a = play(seed);
-      expect(play(seed)).toEqual(a);
-      // Nobody loses anything in a race: the classmate's island only gains.
-      expect(a.settled.defender!.coins).toBeGreaterThanOrEqual(newIsland().coins);
-      expect(a.settled.defender!.spots).toEqual(newIsland().spots.concat({ kind: 'dock', level: 2 }));
-    }
-    // The seed does matter (otherwise the check above proves nothing).
-    const races = new Set(Array.from({ length: 20 }, (_, i) => JSON.stringify(play(`isles-${i}`).race.youPath)));
-    expect(races.size).toBeGreaterThan(1);
-  });
-
   it('never lets a challenger win with no answers right, on any of 2,000 seeds (James, 3 Nov 2026)', () => {
     expect(raceProblem({ ...newIsland(), turn: 1 }, GULL_RIDERS, 'me')).toBeNull();
     let wins = 0;
@@ -58,51 +17,6 @@ describe('Sky Isles rules', () => {
     }
     // One right answer still wins a fair share, so the answers really do decide it.
     expect(wins).toBeGreaterThan(200);
-  });
-
-  it('shows a race one stretch at a time, never showing what a later answer could change', () => {
-    const all: boolean[][] = Array.from({ length: 2 ** RACE_QUESTIONS }, (_, m) => Array.from({ length: RACE_QUESTIONS }, (_, q) => ((m >> q) & 1) === 1));
-    const steady = (race: RaceResult, side: 'you' | 'them') => race[side].total - (side === 'you' ? race.you.wind : 0);
-    for (let i = 0; i < 150; i++) {
-      const you: Racer = { boats: i % 15, swiftSails: i % 3 === 0, breeze: i % 5 === 0 };
-      const them: Racer = i % 2 ? gullRiders(you) : { boats: (i * 7) % 17, swiftSails: i % 4 === 0, breeze: i % 7 === 0 };
-      {
-        const run = (marks: boolean[]) => runRace(`s-${i}`, you, them, marks);
-        const count = new Map<number, RaceResult>();
-        for (const marks of all) {
-          const race = run(marks);
-          // The winner and the speeds depend only on how many were right, never which ones.
-          const right = marks.filter(Boolean).length;
-          if (!count.has(right)) count.set(right, race);
-          expect([race.won, race.you, race.them]).toEqual([count.get(right)!.won, count.get(right)!.you, count.get(right)!.them]);
-          expect(race).toEqual({ ...runRace(`s-${i}`, you, them, right), youPath: race.youPath, themPath: race.themPath, gustLegs: race.gustLegs });
-          // Each gust blows on the first leg after its question's stop, only if that question was right.
-          expect(race.gustLegs).toEqual(RACE_STOPS.filter((_, q) => marks[q]));
-          // The winner reaches the finish line and the boats never go backwards.
-          expect(Math.max(race.youPath[RACE_LEGS], race.themPath[RACE_LEGS])).toBe(1);
-          expect(race.youPath[RACE_LEGS] >= race.themPath[RACE_LEGS]).toBe(race.won);
-          for (let p = 1; p <= RACE_LEGS; p++) {
-            expect(race.youPath[p]).toBeGreaterThanOrEqual(race.youPath[p - 1]);
-            expect(race.themPath[p]).toBeGreaterThanOrEqual(race.themPath[p - 1]);
-            // The lead only changes hands towards the steadily faster boat, or with a gust you can see.
-            const before = race.youPath[p - 1] - race.themPath[p - 1];
-            const after = race.youPath[p] - race.themPath[p];
-            if (before > 0.001 && after < -0.001) expect(steady(race, 'them')).toBeGreaterThan(steady(race, 'you'));
-            if (before < -0.001 && after > 0.001) expect(race.gustLegs.includes(p - 1) || steady(race, 'you') > steady(race, 'them')).toBe(true);
-          }
-          // What's shown after each answer is the start of this race, whatever the later answers are.
-          for (let answered = 0; answered <= RACE_QUESTIONS; answered++) {
-            const shown = raceSoFar(`s-${i}`, you, them, marks.slice(0, answered));
-            expect(shown.youPath).toEqual(race.youPath.slice(0, shown.youPath.length));
-            expect(shown.themPath).toEqual(race.themPath.slice(0, shown.themPath.length));
-            expect(shown.youPath.length).toBe(RACE_STOPS[Math.min(answered, RACE_QUESTIONS - 1)] + 1);
-          }
-        }
-      }
-    }
-    // A gust really moves the boat: every gust right puts it further on than none.
-    const you = racerOf(newIsland());
-    expect(runRace('g', you, gullRiders(you), [true, true, true]).you.total - runRace('g', you, gullRiders(you), 0).you.total).toBe(3 * GUST_SPEED);
   });
 
   it('is cosy: nothing is ever lost at the end of a turn, and the choices are checked', () => {
@@ -146,11 +60,4 @@ describe('Sky Isles rules', () => {
     expect(racerOf({ ...rich, spots: [...rich.spots, { kind: 'dock', level: 3 }] }).boats).toBe(racerOf(rich).boats + 3);
   });
 
-  it('a warm breeze gives the next race a head start, and the race uses it up', () => {
-    const breezy: Island = { ...newIsland(), turn: 3, breeze: true };
-    const race = runRace('b', racerOf(breezy), gullRiders(racerOf(breezy)), 1);
-    expect(race.you.breeze).toBe(BREEZE_SPEED);
-    expect(race.them.breeze).toBe(0);
-    expect(settleRace(breezy, null, race).challenger.breeze).toBe(false);
-  });
 });

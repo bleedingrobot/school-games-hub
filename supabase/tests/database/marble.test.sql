@@ -128,12 +128,14 @@ select is((select marble_maths from public.app_settings limit 1), 'choose', 'the
 select is((select marble_rescue from public.app_settings limit 1), true, '... and rescue questions start on');
 select pg_temp.reset();
 update public.profiles set role = 'teacher', school_admin = true where id = pg_temp.id('0c');
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000c') on conflict do nothing;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
-select lives_ok($$ select public.teacher_set_marble_maths('on') $$, 'a teacher can switch maths on for everyone');
-select is((select marble_maths from public.app_settings limit 1), 'on', '... and it is saved');
-select throws_ok($$ select public.teacher_set_marble_maths('sometimes') $$, '22023', null, 'an unknown setting is refused');
-select lives_ok($$ select public.teacher_set_marble_rescue(false) $$, 'a teacher can switch rescue questions off');
-select is((select marble_rescue from public.app_settings limit 1), false, '... and it is saved');
+select lives_ok($$ select public.teacher_set_marble_maths('on', target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch maths on for everyone');
+select is((select marble_maths from public.app_settings where class_id = current_setting('test.cls')::uuid), 'on', '... and it is saved');
+select throws_ok($$ select public.teacher_set_marble_maths('sometimes', target_class => current_setting('test.cls')::uuid) $$, '22023', null, 'an unknown setting is refused');
+select lives_ok($$ select public.teacher_set_marble_rescue(false, target_class => current_setting('test.cls')::uuid) $$, 'a teacher can switch rescue questions off');
+select is((select marble_rescue from public.app_settings where class_id = current_setting('test.cls')::uuid), false, '... and it is saved');
 select pg_temp.reset();
 
 -- The question list of a run: only the server function can use it
@@ -151,6 +153,8 @@ select throws_ok($$ select public.marble_store_run(pg_temp.id('0a'), 'question-s
 
 -- ---- A new season clears the school's Marble Rush times (and only that school's) ----
 update public.profiles set role = 'teacher', school_admin = true where id = pg_temp.id('0c');
+select set_config('test.cls', (select default_class::text from public.schools where id = 1), true);
+insert into public.class_teachers (class_id, teacher_id) values (current_setting('test.cls')::uuid, '00000000-0000-0000-0000-00000000000c') on conflict do nothing;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
 select lives_ok($$ select public.teacher_new_season('NEW SEASON') $$, 'a school admin can start a new season');
 select pg_temp.reset();

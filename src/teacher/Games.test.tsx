@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { StrictMode, type ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, useLocation, useNavigate } from 'react-router';
@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import type { ClassSummary } from '../data/classes';
-import { ALL_GAMES } from '../games/registry';
+import { switchColumnOf } from '../data/games';
+import { GAMES } from '../games/registry';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
@@ -28,7 +29,13 @@ const data = vi.hoisted(() => ({
   fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
   fetchClansEnabled: vi.fn(),
+  saveNonMathsGames: vi.fn(),
   fetchClassClanMaths: vi.fn(),
+  saveGameSwitches: vi.fn(),
+}));
+vi.mock('../data/games', async (original) => ({
+  ...(await original<typeof import('../data/games')>()),
+  saveGameSwitches: data.saveGameSwitches,
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -71,6 +78,10 @@ vi.mock('../data/clans', async (original) => ({
   ...(await original<typeof import('../data/clans')>()),
   fetchClansEnabled: data.fetchClansEnabled,
   fetchClassClanMaths: data.fetchClassClanMaths,
+}));
+vi.mock('../data/nonMathsGames', async (original) => ({
+  ...(await original<typeof import('../data/nonMathsGames')>()),
+  saveNonMathsGames: data.saveNonMathsGames,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -122,7 +133,6 @@ function show(url: string, { likeTheApp = false } = {}) {
   );
   return render(likeTheApp ? <StrictMode>{tree}</StrictMode> : tree);
 }
-const address = () => screen.getByRole('status', { name: 'address' }).textContent;
 
 /** A narrow screen (or not): the drawer needs `min-width: 800px`. */
 function screenIs(wide: boolean) {
@@ -141,6 +151,7 @@ function screenIs(wide: boolean) {
 const realMatchMedia = window.matchMedia;
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
   screenIs(true);
   for (const fn of Object.values(data)) fn.mockReset();
   data.fetchClasses.mockResolvedValue([room('c12', 'Room 12'), room('c14', 'Room 14')]);
@@ -168,6 +179,8 @@ beforeEach(() => {
       : { gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false },
   );
   data.fetchClansEnabled.mockResolvedValue(true);
+  data.saveNonMathsGames.mockResolvedValue(undefined);
+  data.saveGameSwitches.mockResolvedValue(undefined);
   data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
 });
 afterEach(() => {
@@ -177,31 +190,27 @@ afterEach(() => {
 const table = () => screen.findByRole('table', { name: 'Games for this class' });
 const row = (t: HTMLElement, name: string) => within(t).getByRole('rowheader', { name }).closest('tr')!;
 
-describe('the Games table', () => {
-  it('lists every game once, under its dashboard group, with the four columns', async () => {
-    show('/teacher/c12/games');
-    const t = await table();
-    expect(within(t).getAllByRole('columnheader').slice(0, 4).map((h) => h.textContent)).toEqual(['Game', 'On', 'Maths', 'Settings']);
-    const groups = within(t).getAllByRole('rowgroup').slice(1);
-    // The name, without the icon (hidden from screen readers, but the 101 card's icon says 101).
-    const names = (g: HTMLElement) => within(g).getAllByRole('rowheader').map((h) => h.lastChild?.textContent);
-    const want = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.name);
-    expect(groups.map((g) => within(g).getAllByRole('columnheader')[0].textContent)).toEqual(['Foundational skills', 'No maths', 'Easy maths', 'Complex maths']);
-    expect(names(groups[0])).toEqual(want('foundational'));
-    expect(names(groups[1])).toEqual(want('no-maths'));
-    expect(names(groups[2])).toEqual(want('easy-maths'));
-    expect(names(groups[3])).toEqual(want('complex-maths'));
-    expect(within(t).getAllByRole('rowheader')).toHaveLength(ALL_GAMES.length);
+/** A class where some games are on: the Foundational ones, Maths Monsters and Clan Quest; Non-maths games is off. */
+const switchedOn = (column: string) => column.startsWith('weka') || column.startsWith('tui') || column === 'monsters_enabled' || column === 'clans_enabled';
+function someGamesOn() {
+  const inner = data.readSettings.getMockImplementation()!;
+  data.readSettings.mockImplementation(async (columns: string[], classId?: string | null) => {
+    if (columns.includes('clans_year_band')) return inner(columns, classId);
+    const row: Record<string, unknown> = { ...(await inner(columns, classId)), non_maths_games: false };
+    for (const game of GAMES) {
+      const column = switchColumnOf(game);
+      if (column && column !== 'non_maths_games') row[column] = switchedOn(column);
+    }
+    return row;
   });
+  const isOn = (game: (typeof GAMES)[number]) => {
+    const column = switchColumnOf(game);
+    return column === null || (column !== 'non_maths_games' && switchedOn(column));
+  };
+  return { isOn, onCount: GAMES.filter(isOn).length };
+}
 
-  it('says "always" for a game with no switch, and gives a game with nothing to open no Settings', async () => {
-    show('/teacher/c12/games');
-    const chess = row(await table(), 'Chess');
-    expect(within(chess).getByText('always')).toBeInTheDocument();
-    expect(within(chess).queryByRole('link')).not.toBeInTheDocument();
-    const space = row(await table(), 'Wormholes & Black Holes');
-    expect(within(space).getByText('always')).toBeInTheDocument();
-  });
+describe('the Games table', () => {
 
   it('saves a row’s on/off switch and maths choice for the header’s class', async () => {
     const user = userEvent.setup();
@@ -214,235 +223,104 @@ describe('the Games table', () => {
     await user.click(bond);
     expect(data.saveBondMatchEnabled).toHaveBeenCalledWith(true, 'c14');
     expect(bond).toHaveAttribute('aria-checked', 'true');
-    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓')).toBeInTheDocument();
+    expect(await within(row(t, 'Bond Match')).findByText('Saved ✓ Pupils see it when their home page next opens.')).toBeInTheDocument();
 
     const maths = await within(row(t, 'Wormholes & Black Holes')).findByRole('radiogroup', { name: 'Wormholes & Black Holes maths' });
     expect(data.fetchMathsSwitch).toHaveBeenCalledWith('c14');
     expect(within(maths).getByRole('radio', { name: 'Students choose' })).toBeChecked();
     await user.click(within(maths).getByRole('radio', { name: 'On for everyone' }));
     expect(data.setSpaceMaths).toHaveBeenCalledWith('on', 'c14');
-  });
 
-  it('works from the keyboard: Space flips the switch, arrows then Enter pick a maths choice', async () => {
-    const user = userEvent.setup();
+    // The No maths rows share one switch (Non-maths games, as on Today); a game whose code switch is off has no row.
+    const chess = await within(row(t, 'Chess')).findByRole('switch', { name: 'Chess (with Non-maths games)' });
+    await waitFor(() => expect(chess).toBeEnabled());
+    await user.click(chess);
+    expect(data.saveNonMathsGames).toHaveBeenCalledWith(false, 'c14');
+    await waitFor(() => expect(within(row(t, 'Checkers')).getByRole('switch', { name: 'Checkers (with Non-maths games)' })).toHaveAttribute('aria-checked', 'false'));
+    expect(within(t).queryByRole('rowheader', { name: 'Kingdom Keeper' })).toBeNull();
+
+    // What's on at a glance, whole sections at once, and the Unlimited column (a class where some games are on).
+    {
+    const { onCount } = someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
     show('/teacher/c12/games');
     const t = await table();
-    const bond = await within(row(t, 'Bond Match')).findByRole('switch', { name: 'Bond Match' });
-    await waitFor(() => expect(bond).toBeEnabled());
-    bond.focus();
-    await user.keyboard(' ');
-    expect(data.saveBondMatchEnabled).toHaveBeenCalledWith(true, 'c12');
-    const choose = await within(row(t, 'Wormholes & Black Holes')).findByRole('radio', { name: 'Students choose' });
-    choose.focus();
-    await user.keyboard('{ArrowRight}');
-    expect(data.setSpaceMaths).not.toHaveBeenCalled();
-    await user.keyboard('{Enter}');
-    expect(data.setSpaceMaths).toHaveBeenCalledWith('on', 'c12');
-  });
-
-  it('opens a game’s Settings in a drawer that keeps focus, closes on Escape and gives focus back', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/games');
-    const open = within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: 'Wormholes & Black Holes settings' });
-    await user.click(open);
-    const drawer = await screen.findByRole('dialog', { name: 'Wormholes & Black Holes' });
-    expect(drawer).toHaveAttribute('aria-modal', 'true');
-    expect(address()).toBe('/teacher/c12/games/space');
-    const close = within(drawer).getByRole('button', { name: /^Close/ });
-    expect(close).toHaveFocus();
-    const reactions = await within(drawer).findByRole('switch', { name: 'Emoji reactions' });
-    await waitFor(() => expect(reactions).toBeEnabled());
-    expect(data.fetchReactionsEnabled).toHaveBeenCalledWith('c12');
-
-    // Round and round inside the drawer.
-    await user.tab();
-    expect(within(drawer).getByRole('button', { name: 'About Emoji reactions' })).toHaveFocus();
-    await user.tab();
-    expect(reactions).toHaveFocus();
-    await user.tab();
-    expect(close).toHaveFocus();
-    await user.tab({ shift: true });
-    expect(reactions).toHaveFocus();
-
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(address()).toBe('/teacher/c12/games');
-    expect(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ })).toHaveFocus();
-  });
-
-  it('closes the drawer with its Close button too', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/games');
-    await user.click(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ }));
-    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: /^Close/ }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ })).toHaveFocus();
-  });
-
-  it('shows Clan Quest’s switch and maths for the header’s class, and opens its settings for that class', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c14/games');
-    const clans = row(await table(), 'Clan Quest');
-    const on = await within(clans).findByRole('switch', { name: 'Clan Quest' });
-    await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
-    expect(await within(clans).findByText('Year 4 · 5 topics · 10/day')).toBeInTheDocument();
-    expect(data.fetchClansEnabled).toHaveBeenCalledWith('c14');
-    expect(data.readSettings).toHaveBeenCalledWith(expect.arrayContaining(['clans_year_band']), 'c14');
-    await user.click(within(clans).getByRole('link', { name: 'Clan Quest settings' }));
-    const drawer = await screen.findByRole('dialog', { name: 'Clan Quest' });
-    expect(await within(drawer).findByRole('region', { name: 'Clan Quest settings' })).toBeInTheDocument();
-    expect(await within(drawer).findByRole('region', { name: /^Clan Quest maths: this class/ })).toBeInTheDocument();
-    expect(within(drawer).queryByRole('region', { name: 'Clan Quest villages (whole school)' })).not.toBeInTheDocument();
-    expect(data.fetchClassClanMaths).toHaveBeenCalledWith('c14');
-  });
-
-  it('says when Clan Quest’s maths settings couldn’t load, in its row', async () => {
-    data.readSettings.mockResolvedValue(null);
-    show('/teacher/c12/games');
-    expect(await within(row(await table(), 'Clan Quest')).findByText('Couldn’t load')).toBeInTheDocument();
-  });
-
-  it('shows Dragon Maths’ switch and season for the header’s class, and opens its settings for that class', async () => {
-    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-28T00:00:00Z') });
-    try {
-      const user = userEvent.setup();
-      show('/teacher/c14/games');
-      const dragon = row(await table(), 'Dragon Maths');
-      const on = await within(dragon).findByRole('switch', { name: 'Dragon Maths' });
-      await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
-      expect(await within(dragon).findByText('Season 2, 12 days left')).toBeInTheDocument();
-      expect(data.fetchLordEnabled).toHaveBeenCalledWith('c14');
-      await user.click(within(dragon).getByRole('link', { name: 'Dragon Maths settings' }));
-      const drawer = await screen.findByRole('dialog', { name: 'Dragon Maths' });
-      expect(await within(drawer).findByRole('region', { name: 'Dragon Maths settings' })).toBeInTheDocument();
-      expect(await within(drawer).findByRole('region', { name: /^Dragon Maths: this class/ })).toBeInTheDocument();
-      expect(data.fetchClassLord).toHaveBeenCalledWith('c14');
-    } finally {
-      vi.useRealTimers();
+    expect(await screen.findByText(`${onCount} of ${GAMES.length} games`)).toBeInTheDocument();
+    expect(screen.getByText(/On for Room 12:/)).toBeInTheDocument();
+    const foundational = GAMES.filter((g) => g.group === 'foundational');
+    const foundationalOn = foundational.filter((g) => ['weka', 'tui'].includes(g.id)).length;
+    expect(within(t).getByText(`${foundationalOn} of ${foundational.length} on`)).toBeInTheDocument();
+    expect(within(t).getByText(`0 of ${GAMES.filter((g) => g.group === 'no-maths').length} on`)).toBeInTheDocument();
     }
-  });
-
-  it('shows Maths Monsters’ switch and topics for the header’s class, and opens its settings for that class', async () => {
+    {
     const user = userEvent.setup();
-    show('/teacher/c14/games');
-    const monsters = row(await table(), 'Maths Monsters');
-    const on = await within(monsters).findByRole('switch', { name: 'Maths Monsters' });
-    await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
-    expect(await within(monsters).findByText('4 of 6 topics')).toBeInTheDocument();
-    expect(data.fetchMonstersEnabled).toHaveBeenCalledWith('c14');
-    await user.click(within(monsters).getByRole('link', { name: 'Maths Monsters settings' }));
-    const drawer = await screen.findByRole('dialog', { name: 'Maths Monsters' });
-    expect(await within(drawer).findByRole('region', { name: 'Maths Monsters settings' })).toBeInTheDocument();
-    expect(await within(drawer).findByRole('region', { name: /^Maths Monsters: this class/ })).toBeInTheDocument();
-    expect(data.fetchClassMonsters).toHaveBeenCalledWith('c14');
-  });
-
-  it('shows Gem Keep as always on, sums up its settings for the header’s class, and opens them for that class', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c14/games');
-    const gem = row(await table(), 'Gem Keep');
-    expect(within(gem).getByText('always')).toBeInTheDocument();
-    expect(await within(gem).findByText('Calm · ×2–×10 · typing')).toBeInTheDocument();
-    expect(data.readSettings).toHaveBeenCalledWith(expect.arrayContaining(['gem_keep_mode']), 'c14');
-    expect(data.fetchGemKeepSettings).not.toHaveBeenCalled();
-    await user.click(within(gem).getByRole('link', { name: 'Gem Keep settings' }));
-    const drawer = await screen.findByRole('dialog', { name: 'Gem Keep' });
-    expect(await within(drawer).findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
-    expect(await within(drawer).findByRole('region', { name: /^Gem Keep: this class/ })).toBeInTheDocument();
-    expect(data.fetchGemKeepSettings).toHaveBeenCalledWith('c14');
-    expect(data.fetchClassGemKeep).toHaveBeenCalledWith('c14');
-  });
-
-  it('says when Gem Keep’s settings couldn’t load, in its row', async () => {
-    data.readSettings.mockResolvedValue(null);
+    const { isOn } = someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
     show('/teacher/c12/games');
-    expect(await within(row(await table(), 'Gem Keep')).findByText('Couldn’t load')).toBeInTheDocument();
-  });
-
-  it('never makes a reversible control red', async () => {
+    const t = await table();
+    await screen.findByText(/ of \d+ games/);
+    expect(within(t).getByRole('rowheader', { name: 'Chess' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'On' }));
+    expect(screen.getByRole('button', { name: 'On' })).toHaveAttribute('aria-pressed', 'true');
+    for (const game of GAMES) {
+      if (isOn(game)) expect(within(t).getByRole('rowheader', { name: game.name })).toBeInTheDocument();
+      else expect(within(t).queryByRole('rowheader', { name: game.name })).toBeNull();
+    }
+    expect(localStorage.getItem('teacher-games-show')).toBe('on');
+    await user.click(screen.getByRole('button', { name: 'Off' }));
+    expect(within(t).getByRole('rowheader', { name: 'Chess' })).toBeInTheDocument();
+    expect(within(t).queryByRole('rowheader', { name: 'Maths Monsters' })).toBeNull();
+    }
+    {
     const user = userEvent.setup();
-    const { container } = show('/teacher/c12/games');
-    await table();
-    expect(container.querySelector('.button--danger')).toBeNull();
-    await user.click(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ }));
-    await screen.findByRole('switch', { name: 'Emoji reactions' });
-    expect(container.querySelector('.button--danger')).toBeNull();
-  });
-});
-
-describe('a game’s settings on a narrow screen', () => {
-  beforeEach(() => screenIs(false));
-
-  it('opens on their own page, and the back link goes back to the table with focus on the game', async () => {
-    const user = userEvent.setup();
+    someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
     show('/teacher/c12/games');
-    await user.click(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ }));
-    expect(address()).toBe('/teacher/c12/games/space');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Wormholes & Black Holes' })).toHaveFocus();
-    expect(await screen.findByRole('switch', { name: 'Emoji reactions' })).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: /All games/ }));
-    expect(address()).toBe('/teacher/c12/games');
-    expect(within(row(await table(), 'Wormholes & Black Holes')).getByRole('link', { name: /settings/ })).toHaveFocus();
-  });
-
-  it('goes back with the browser’s Back button too', async () => {
+    const t = await table();
+    const foundational = GAMES.filter((g) => g.group === 'foundational');
+    const allOff = await within(t).findByRole('button', { name: 'All off, Foundational skills' });
+    await waitFor(() => expect(allOff).toBeEnabled());
+    await user.click(allOff);
+    expect(within(t).getByText(`Turn off all ${foundational.length} Foundational skills games for Room 12?`)).toBeInTheDocument();
+    expect(data.saveGameSwitches).not.toHaveBeenCalled();
+    await user.click(within(t).getByRole('button', { name: 'Turn off' }));
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    expect(data.saveGameSwitches).toHaveBeenCalledWith(
+      Object.fromEntries(foundational.map((g) => [switchColumnOf(g)!, false])),
+      'c12',
+    );
+    expect(await within(t).findByText(`0 of ${foundational.length} on`)).toBeInTheDocument();
+    }
+    {
     const user = userEvent.setup();
+    someGamesOn();
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
     show('/teacher/c12/games');
-    await user.click(within(row(await table(), 'Gem Keep')).getByRole('link', { name: /settings/ }));
-    expect(await screen.findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Browser back' }));
-    expect(address()).toBe('/teacher/c12/games');
-    expect(await table()).toBeInTheDocument();
+    const t = await table();
+    const allOn = await within(t).findByRole('button', { name: 'All on, Foundational skills' });
+    await waitFor(() => expect(allOn).toBeEnabled());
+    await user.click(allOn);
+    await waitFor(() => expect(data.saveGameSwitches).toHaveBeenCalledTimes(1));
+    expect(Object.values(data.saveGameSwitches.mock.calls[0][0]).every((v) => v === true)).toBe(true);
+    }
+    {
+    cleanup();
+    localStorage.clear();
+    data.saveGameSwitches.mockClear();
+    show('/teacher/c12/games');
+    const t = await table();
+    expect(await within(row(t, 'Maths Monsters')).findByRole('switch', { name: 'Maths Monsters unlimited today' })).toBeInTheDocument();
+    expect(within(row(t, 'Chess')).queryByRole('switch', { name: /unlimited/ })).toBeNull();
+    }
+    for (const game of GAMES) if (game.teacher?.switch) expect(switchColumnOf(game), game.name).not.toBeNull();
   });
 
-  it('opens straight from a link, and its back link still reaches the table', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c14/games/space');
-    expect(await screen.findByRole('heading', { name: 'Wormholes & Black Holes' })).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: /All games/ }));
-    expect(address()).toBe('/teacher/c14/games');
-    expect(await table()).toBeInTheDocument();
-  });
-
-  it('sends a game with nothing to open (or no such game) back to the table', async () => {
-    show('/teacher/c12/games/bond-match');
-    expect(await table()).toBeInTheDocument();
-    expect(address()).toBe('/teacher/c12/games');
-  });
-});
-
-describe('focus goes back to the game’s Settings when the page is built again', () => {
-  const settingsLink = async (name: string) => within(row(await table(), name)).getByRole('link', { name: `${name} settings` });
-
-  it('after Escape closes the drawer', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/games', { likeTheApp: true });
-    await user.click(await settingsLink('Wormholes & Black Holes'));
-    await screen.findByRole('dialog', { name: 'Wormholes & Black Holes' });
-    await user.keyboard('{Escape}');
-    expect(address()).toBe('/teacher/c12/games');
-    await waitFor(async () => expect(await settingsLink('Wormholes & Black Holes')).toHaveFocus());
-  });
-
-  it('after the browser’s Back button, from a narrow screen’s page', async () => {
-    screenIs(false);
-    const user = userEvent.setup();
-    show('/teacher/c12/games', { likeTheApp: true });
-    await user.click(await settingsLink('Gem Keep'));
-    await screen.findByRole('heading', { name: 'Gem Keep' });
-    await user.click(screen.getByRole('button', { name: 'Browser back' }));
-    expect(address()).toBe('/teacher/c12/games');
-    await waitFor(async () => expect(await settingsLink('Gem Keep')).toHaveFocus());
-  });
-
-  it('after closing a drawer that was opened straight from a link', async () => {
-    const user = userEvent.setup();
-    show('/teacher/c12/games/space', { likeTheApp: true });
-    const drawer = await screen.findByRole('dialog', { name: 'Wormholes & Black Holes' });
-    await user.click(within(drawer).getByRole('button', { name: /^Close/ }));
-    expect(address()).toBe('/teacher/c12/games');
-    await waitFor(async () => expect(await settingsLink('Wormholes & Black Holes')).toHaveFocus());
-  });
 });

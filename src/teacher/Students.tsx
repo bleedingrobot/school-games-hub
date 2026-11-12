@@ -270,7 +270,15 @@ function ClassRoster({ classId, name, hideReal }: { classId: string; name: strin
                   <td>{s.lastActive ? whenPlayed(s.lastActive) : 'Not yet'}</td>
                   <td>{s.shown}</td>
                   <td>{share(s.skipped, s.shown)}</td>
-                  <td>{ladderText(s.focus)}</td>
+                  <td>
+                    {s.focus.ladder?.furthest ? (
+                      <Link to={`/teacher/${classId}/maths/skills?pupil=${s.id}`} title="See on the Skill map">
+                        {ladderText(s.focus)}
+                      </Link>
+                    ) : (
+                      ladderText(s.focus)
+                    )}
+                  </td>
                   <td>{focusText(s.focus)}</td>
                 </tr>
               ))}

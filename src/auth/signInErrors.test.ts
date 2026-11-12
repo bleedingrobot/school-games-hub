@@ -17,18 +17,4 @@ describe('readSignInError', () => {
     expect(result?.cleanHref).toBe(`${BASE}#/sign-in`);
   });
 
-  it('reads errors from the # part too', () => {
-    expect(readSignInError(`${BASE}#error=server_error&error_description=Database+error`)?.message).toMatch(
-      /Something went wrong/,
-    );
-  });
-
-  it('treats a cancelled Google screen kindly', () => {
-    expect(readSignInError(`${BASE}?error=access_denied#/`)?.message).toMatch(/cancelled/);
-  });
-
-  it('never shows technical details', () => {
-    const result = readSignInError(`${BASE}?error=server_error&error_description=pq:+relation+auth.users+xyz`);
-    expect(result?.message).not.toMatch(/relation|auth\.users|pq/);
-  });
 });

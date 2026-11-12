@@ -27,7 +27,7 @@ import { StudentPage } from './teacher/StudentPage';
 import { BadgeSheet } from './teacher/BadgeSheet';
 import { HardestQuestions } from './teacher/Hardest'; // Today shows its top three, so it's in the teacher bundle anyway
 import { TeacherGames } from './teacher/Games';
-import { AdminClasses, AdminOverview, AdminStudents, AdminTeachers } from './teacher/Admin';
+import { AdminClasses, AdminDefaults, AdminOverview, AdminStudents, AdminTeachers } from './teacher/Admin';
 import { AdminYear } from './teacher/AdminYear';
 import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
 import { Today } from './teacher/Today';
@@ -69,6 +69,7 @@ export function teacherRoutes() {
           <Route path="classes" element={<AdminClasses />} />
           <Route path="students" element={<AdminStudents />} />
           <Route path="teachers" element={<AdminTeachers />} />
+          <Route path="defaults" element={<AdminDefaults />} />
           <Route path="year" element={<AdminYear />} />
         </Route>
       </Route>

@@ -8149,6 +8149,14 @@ const ANSWER_GAP_MIN = {
 	2: 2.6,
 	3: 2.2
 };
+/**
+* Flyers: finish a level this many times (any medal) to unlock its flyer. More on the easy levels, so flyers take a
+* while (James, 11 Nov 2026: 15 on easy levels, 10 on harder ones).
+*/
+const UNLOCK_RUNS = {
+	easy: 15,
+	hard: 10
+};
 /** Points (plan section 5): only the first runs of a day earn points; a break is suggested after many runs. */
 const POINTS = {
 	finish: 2,
@@ -8662,9 +8670,9 @@ const TRAILS = [
 		name: "Sparkly flowers",
 		rule: {
 			kind: "levels",
-			count: 5
+			count: 8
 		},
-		how: "Finish 5 levels",
+		how: "Finish 8 levels",
 		pupils: true
 	},
 	{
@@ -8672,9 +8680,9 @@ const TRAILS = [
 		name: "Cookies",
 		rule: {
 			kind: "checks",
-			count: 10
+			count: 50
 		},
-		how: "Get 10 checks right",
+		how: "Get 50 checks right",
 		pupils: true
 	},
 	{
@@ -8712,9 +8720,9 @@ const TRAILS = [
 		name: "Mouse tail",
 		rule: {
 			kind: "clean",
-			count: 3
+			count: 15
 		},
-		how: "3 clean flights (no bumps)",
+		how: "15 clean flights (no bumps)",
 		pupils: true
 	},
 	{
@@ -8757,8 +8765,10 @@ function levelOpen(p, n, today) {
 	if (n <= opened) return true;
 	return n === opened + 1 && record(p, LEVELS[opened - 1].id).finishes > 0 && p.openedDay !== today;
 }
+/** Finishes of a level that unlock its flyer: 15 on the easy levels (1 to 5), 10 on the harder ones. */
+const unlockRuns = (level) => (LEVELS.find((l) => l.id === level)?.n ?? 1) <= 5 ? UNLOCK_RUNS.easy : UNLOCK_RUNS.hard;
 /** Finishes still needed to unlock a level's flyer (0 = unlocked). */
-const finishesToUnlock = (p, level) => Math.max(0, 3 - record(p, level).finishes);
+const finishesToUnlock = (p, level) => Math.max(0, unlockRuns(level) - record(p, level).finishes);
 function flyersUnlocked(p) {
 	return FLYERS.filter((f) => f.id === "fantail" ? true : f.id === "rainbow" ? golds(p) === LEVELS.length : f.level !== null && finishesToUnlock(p, f.level) === 0).map((f) => f.id);
 }
@@ -9187,6 +9197,13 @@ function makeRunQuestions(context, course, random) {
 const seedText = (random) => `${Math.floor(random() * 1e9)}${Math.floor(random() * 1e9)}`.padStart(12, "0").slice(0, 18);
 const isSeed = (v) => typeof v === "string" && /^[0-9]{6,18}$/.test(v);
 const isFlyer = (v) => typeof v === "string" && /^[a-z-]{2,30}$/.test(v);
+/** The saved flyer and trail, or the fantail and no trail if they aren't unlocked (any more: unlocks got harder on 11 Nov 2026). */
+function keptPicks(saved) {
+	return {
+		flyer: flyersUnlocked(saved.progress).includes(saved.picks.flyer) ? saved.picks.flyer : "fantail",
+		trail: saved.picks.trail !== null && trailsUnlocked(saved.progress).includes(saved.picks.trail) ? saved.picks.trail : null
+	};
+}
 async function handleToonFlap(services, player, body) {
 	const action = body.action;
 	if (action === "load") {
@@ -9199,7 +9216,7 @@ async function handleToonFlap(services, player, body) {
 				maths: settings.maths,
 				readTime: settings.readTime,
 				progress: saved.progress,
-				picks: saved.picks,
+				picks: keptPicks(saved),
 				today: nzDate(new Date(services.now()))
 			}
 		};

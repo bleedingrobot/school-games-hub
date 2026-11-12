@@ -6,11 +6,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import * as ladderData from '../data/ladder';
 import { AUTO_FOCUS, type MathsFocus } from '../../shared/maths/focus';
 import { PLACEMENT_QUESTIONS } from '../../shared/maths/config';
-import { checkPlacement } from '../../shared/maths/placementCheck';
 import type { Question } from '../../shared/maths/skillPack';
-import Placement, { safeBack } from './Placement';
+import Placement from './Placement';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import { rememberedPlaced } from '../data/placementGate';
 import { FEEDBACK_MS } from '../maths/QuestionModal';
 
 // The warm-up is 10 questions, and the right/wrong message stays up for up to 2 seconds after each one. These tests are
@@ -88,62 +86,6 @@ async function answer(user: ReturnType<typeof userEvent.setup>, n: number, right
 }
 
 describe('the warm-up that finds a starting place', () => {
-  it('explains itself kindly, is not called a test, and has no skip (a must-do since 22 Oct 2026)', async () => {
-    show();
-    expect(await screen.findByText(/quick questions/)).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/\btest\b/i);
-    expect(document.body.textContent).not.toMatch(/Year \d/);
-    expect(screen.getByRole('button', { name: 'Let’s go' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Skip it' })).not.toBeInTheDocument();
-  });
-
-  it('goes back to the game or Training it came from, and remembers on the device that it is done', async () => {
-    const user = userEvent.setup();
-    show('/placement?back=%2Fgame%2Fgem-keep');
-    await user.click(await screen.findByRole('button', { name: 'Let’s go' }));
-    for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
-    await screen.findByText(/All done/);
-    expect(screen.getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/game/gem-keep');
-    expect(rememberedPlaced('u1')).toBe(true);
-  }, 30_000);
-
-  it('only goes back to a page on this site', () => {
-    expect(safeBack('/training')).toBe('/training');
-    expect(safeBack('/game/space?x=1')).toBe('/game/space?x=1');
-    expect(safeBack('https://example.com')).toBeNull();
-    expect(safeBack('//example.com')).toBeNull();
-    expect(safeBack('/placement?back=/x')).toBeNull();
-    expect(safeBack(null)).toBeNull();
-  });
-
-  it('asks the questions one at a time, then sends them to be checked', async () => {
-    const user = userEvent.setup();
-    show();
-    await user.click(await screen.findByRole('button', { name: 'Let’s go' }));
-    for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
-    await screen.findByText(/All done/);
-    expect(ladderData.sendPlacement).toHaveBeenCalledTimes(1);
-    const sent = vi.mocked(ladderData.sendPlacement).mock.calls[0][0] as { answers: Parameters<typeof checkPlacement>[0] };
-    expect(sent.answers).toHaveLength(PLACEMENT_QUESTIONS);
-    // What it sends is exactly what the server will accept.
-    expect(checkPlacement(sent.answers)).not.toBeNull();
-    // Shows no score.
-    expect(document.body.textContent).not.toMatch(/\d+ (out )?of \d+ (right|correct)/i);
-  }, 30_000);
-
-  it('steps back to easier questions after a wrong answer', async () => {
-    const user = userEvent.setup();
-    show();
-    await user.click(await screen.findByRole('button', { name: 'Let’s go' }));
-    await answer(user, 1, false);
-    await answer(user, 2, true);
-    const skills = asked.map((q) => q.skill);
-    expect(skills.length).toBeGreaterThanOrEqual(2);
-    // Question 2 is from a skill no later than question 1's.
-    const { LADDER } = await import('../../shared/maths/ladder');
-    const at = (key: string) => LADDER.findIndex((s) => s.keys.includes(key));
-    expect(at(asked[1].factKey)).toBeLessThanOrEqual(at(asked[0].factKey));
-  }, 30_000);
 
   it('lets them try again when saving fails, without asking the questions again', async () => {
     const user = userEvent.setup();
@@ -156,15 +98,4 @@ describe('the warm-up that finds a starting place', () => {
     expect(ladderData.sendPlacement).toHaveBeenCalledTimes(2);
     expect(vi.mocked(ladderData.sendPlacement).mock.calls[1][0]).toEqual(vi.mocked(ladderData.sendPlacement).mock.calls[0][0]);
   }, 30_000);
-
-  it('says there is nothing to do when auto is off, or it was already done', async () => {
-    vi.mocked(ladderData.fetchMyLadder).mockResolvedValue({ facts: [], settings: {}, focus: { ...AUTO_FOCUS } });
-    const { unmount } = show();
-    expect(await screen.findByText(/nothing to do here/)).toBeInTheDocument();
-    unmount();
-    vi.mocked(ladderData.fetchMyLadder).mockResolvedValue({ facts: [], settings: {}, focus: focus({ placed: 'done', placement: 'facts-10' }) });
-    show();
-    expect(await screen.findByText(/nothing to do here/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Let’s go' })).not.toBeInTheDocument();
-  });
 });

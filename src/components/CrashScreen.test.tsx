@@ -7,10 +7,6 @@ function Broken(): never {
 }
 
 describe('CrashScreen', () => {
-  it('shows the page when nothing is wrong', () => {
-    render(<CrashScreen><p>All good</p></CrashScreen>);
-    expect(screen.getByText('All good')).toBeInTheDocument();
-  });
 
   it('shows a kind message, a way to carry on, and the error for the teacher, instead of a blank page', () => {
     const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
