@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
@@ -33,6 +33,7 @@ function show(role: 'student' | 'teacher' = 'student') {
 
 beforeEach(() => {
   localStorage.clear();
+  localStorage.setItem('sgh-read-aloud', 'true');
   for (const fn of Object.values(data)) fn.mockReset();
   data.fetchMyYear.mockResolvedValue({ student: true, year: null });
   data.saveMyYear.mockResolvedValue(undefined);
@@ -43,7 +44,7 @@ describe('the year question', () => {
     const user = userEvent.setup();
     show();
     expect(await screen.findByRole('heading', { name: 'What year are you in at school?' })).toBeInTheDocument();
-    expect(data.speak).toHaveBeenCalledWith('What year are you in at school?', 'voice/year/', undefined);
+    await waitFor(() => expect(data.speak).toHaveBeenCalledWith('What year are you in at school?', 'voice/year/', undefined));
     await user.click(screen.getByRole('button', { name: 'Year 4' }));
     expect(screen.getByRole('heading', { name: 'Year 4. Is that right?' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /No, go back/ }));

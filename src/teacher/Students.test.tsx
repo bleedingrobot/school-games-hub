@@ -159,7 +159,7 @@ beforeEach(async () => {
 });
 
 describe('the class roster', () => {
-  it('shows only the class’s students, with their questions, skips, ladder and focus', async () => {
+  it('shows only the class’s students, with their year, questions, skips, ladder and focus, and changes a year', async () => {
     show('/teacher/c12/students');
     const table = await roster();
     expect(data.fetchClassOverview).toHaveBeenCalledWith('c12');
@@ -177,12 +177,8 @@ describe('the class roster', () => {
     expect(within(table).getByRole('link', { name: /Brave Kiwi 7/ })).toHaveAttribute('href', '/teacher/c12/students/s1');
     expect(within(table).getByRole('link', { name: '×6, ×9' })).toHaveAttribute('href', '/teacher/c12/maths/skills?pupil=s1');
     expect(screen.getByRole('button', { name: 'Room 12' })).toHaveAttribute('aria-pressed', 'true');
-  });
-
-  it('lets the teacher change or clear a student’s year', async () => {
+    // The teacher changes or clears a student's year.
     const user = userEvent.setup();
-    show('/teacher/c12/students');
-    const table = await roster();
     await user.selectOptions(within(table).getByRole('combobox', { name: 'Year for Calm Fox 9' }), '5');
     expect(data.setStudentYear).toHaveBeenCalledWith('s3', 5);
     expect(await screen.findByText('Calm Fox 9 is now in Year 5.')).toBeInTheDocument();
