@@ -5,6 +5,9 @@
  * draws what it is given.
  */
 
+// Stand-in until P2's painting lands: Scorchtail's head, cropped from the Dragon Maths dragon.
+import dragonHead from './pictures/dragon-head-standin.webp';
+
 export const TIERS = ['bronze', 'silver', 'gold'] as const;
 export type Tier = (typeof TIERS)[number];
 
@@ -36,6 +39,8 @@ export interface PictureArt {
  * A picture that is not listed yet still draws: a trophy cup on its metal disc.
  */
 export const EARNED_PICTURES: Record<string, PictureArt> = {
+  // Dragon Maths (P4): one of the first five in the school to slay the dragon this season.
+  'dm-first-five': { emoji: '🐉', art: dragonHead },
   // Card P7 (placeholders until card P2's paintings land).
   'clan-banner': { emoji: '🚩' },
   'isles-lighthouse': { emoji: '🗼' },
