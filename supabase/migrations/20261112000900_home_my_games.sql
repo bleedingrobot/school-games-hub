@@ -72,12 +72,13 @@ grant execute on function public.my_top_games() to authenticated;
 do $migration$
 declare
   def text := pg_get_functiondef('public.my_home_page()'::regprocedure);
-  needle text := E'    ''myClass'', public.my_class(),\n';
+  -- No line ending in the needle: the live copy of my_home_page has Windows (\r\n) line endings.
+  needle text := '''myClass'', public.my_class(),';
 begin
   if (length(def) - length(replace(def, needle, ''))) / length(needle) <> 1 then
     raise exception 'my_home_page edit did not match exactly once; nothing was changed';
   end if;
-  def := replace(def, needle, E'    ''topGames'', public.my_top_games(),\n' || needle);
+  def := replace(def, needle, '''topGames'', public.my_top_games(), ' || needle);
   execute def;
 end;
 $migration$;
