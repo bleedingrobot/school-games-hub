@@ -50,7 +50,9 @@ Painted with ComfyUI on James's gaming PC, in the same style and prompt base as 
 
 Files: `src/components/GameCard.tsx`, `src/styles.css`, `src/games/types.ts`, `src/games/registry.ts` (or each game's `index.ts`), the dashboard tests and the home preview.
 
-## Still to paint (dashboard plan D1, 12 Nov 2026)
+## Painted for the dashboard plan (12 Nov 2026)
+
+Both scenes below are now painted (ComfyUI on James's PC, same clay settings as Weka and Quick looks) and live in `src/assets/home/`. The prompts are kept for repaints.
 
 Two home cards still have no scene of their own. Paint them in the same clay style as the other cards (about 1600 × 800, subject in the middle third so the 2:1 crop keeps it), then add `<id>.webp` and `<id>-small.webp` to `src/assets/home/` and one line in `src/components/gameCardArt.ts`.
 

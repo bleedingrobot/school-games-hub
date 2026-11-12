@@ -66,6 +66,11 @@ import toonflap from '../assets/home/toonflap.webp';
 import toonflapSmall from '../assets/home/toonflap-small.webp';
 // Quick looks is a Training activity, not a game, but it has a card with the foundational games. Clay painting from
 // scripts/quick-looks-card-art.py (5 Nov 2026).
+// Royal Decree and Training: painted on James's PC in ComfyUI (dashboard plan, 12 Nov 2026).
+import decree from '../assets/home/decree.webp';
+import decreeSmall from '../assets/home/decree-small.webp';
+import training from '../assets/home/training.webp';
+import trainingSmall from '../assets/home/training-small.webp';
 import quickLooks from '../assets/home/quick-looks.webp';
 import quickLooksSmall from '../assets/home/quick-looks-small.webp';
 
@@ -93,8 +98,7 @@ const ART: Record<string, GameCardArt> = {
   'dragon-maths': { card: dragonMaths, small: dragonMathsSmall },
   'clan-quest': { card: clanQuest, small: clanQuestSmall },
   'kingdom': { card: kingdom, small: kingdomSmall },
-  // Royal Decree shares Kingdom Keeper's picture (same town and rulers) until it has its own.
-  'decree': { card: kingdom, small: kingdomSmall },
+  'decree': { card: decree, small: decreeSmall, focus: 'center 55%' },
   'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
   'trader': { card: trader, small: traderSmall, focus: 'center 55%' },
   'diamond': { card: diamond, small: diamondSmall, focus: 'center 80%' },
@@ -111,6 +115,7 @@ const ART: Record<string, GameCardArt> = {
   'swamphen': { card: swamphen, small: swamphenSmall, focus: 'center 45%' },
   'tui': { card: tui, small: tuiSmall, focus: 'center 45%' },
   'toonflap': { card: toonflap, small: toonflapSmall, focus: 'center 45%' },
+  'training': { card: training, small: trainingSmall, focus: 'center 50%' },
   'quick-looks': { card: quickLooks, small: quickLooksSmall, focus: 'center 50%' },
 };
 

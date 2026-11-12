@@ -43,10 +43,28 @@ export interface HomePage {
   /** The school's Dragon Maths season and the pupil's hero (for the Dragon Maths strip), or null when it isn't running for them. */
   lordSeason: HomeLordSeason | null;
   /**
+   * The "My games" row's games (dashboard plan D2): the pupil's most played game ids in the last 14 days, and their class's, for a
+   * pupil with none yet. Empty lists if the answer has none (an older database).
+   */
+  topGames: TopGames;
+  /**
    * The cards' parts as the database sent them, each read by its own card (so the maths code stays in the maths cards' download).
    * A part the answer doesn't have is left out, and that card asks for itself.
    */
   parts: Partial<Record<CardPart, unknown>>;
+}
+
+export interface TopGames {
+  mine: string[];
+  classGames: string[];
+}
+
+const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+
+/** The topGames part, read safely. */
+export function readTopGames(raw: unknown): TopGames {
+  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  return { mine: ids(r.mine), classGames: ids(r.classGames) };
 }
 
 export type CardPart = 'myClass' | 'focus' | 'ladder';
@@ -81,6 +99,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     moves: movesFromRaw(row<RawMovesLeft>(raw, 'movesLeft')),
     season: readClock(row<RawMovesLeft>(raw, 'movesLeft')?.season),
     lordSeason: readLordSeason(row<RawMovesLeft>(raw, 'movesLeft')?.lordSeason, row<RawMovesLeft>(raw, 'movesLeft')?.lord, nzDate(new Date())),
+    topGames: readTopGames(raw.topGames),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }

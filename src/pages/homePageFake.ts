@@ -85,6 +85,7 @@ export function homeAnswer(): Row {
     powerOpen: newest(open(t.power_games), 'created_at', 10),
     powerStats: job('my_power_game_stats'),
     movesLeft: job('my_moves_left'),
+    topGames: job('my_top_games'),
     myClass: job('my_class'),
     focus: job('my_maths_focus'),
     ladder: job('my_ladder'),
