@@ -10,5 +10,5 @@ import { TraderGame } from './TraderGame';
 export function TraderPlay() {
   const navigate = useNavigate();
   const api = useMemo(() => traderApi(serverTransport), []);
-  return <TraderGame api={api} onExit={() => navigate('/')} />;
+  return <TraderGame api={api} onServer onExit={() => navigate('/')} />;
 }

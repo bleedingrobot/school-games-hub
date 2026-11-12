@@ -40,6 +40,10 @@ export const EARNED_PICTURES: Record<string, PictureArt> = {
   'clan-banner': { emoji: '🚩' },
   'isles-lighthouse': { emoji: '🗼' },
   'mm-book': { emoji: '📖' },
+  'gem-crown': { emoji: '👑' },
+  'trader-blackhole': { emoji: '🕳️' },
+  'diamond-heart': { emoji: '💎' },
+  'toonflap-rainbow': { emoji: '🌈' },
 };
 
 export const UNKNOWN_PICTURE: PictureArt = { emoji: '🏆' };

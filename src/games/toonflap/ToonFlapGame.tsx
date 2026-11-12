@@ -13,6 +13,7 @@ import { HowToPlay } from './HowToPlay';
 import { MapScreen } from './MapScreen';
 import { PlayScreen } from './PlayScreen';
 import { ResultsScreen } from './ResultsScreen';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './toonflap.css';
 
 type Screen = 'map' | 'hangar' | 'howto' | 'play' | 'results';
@@ -26,7 +27,7 @@ const readGentle = (): boolean => {
   }
 };
 
-export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBackend; extra?: (h: { reload(): void }) => ReactNode; onExit?: () => void }) {
+export function ToonFlapGame({ backend, extra, onExit, onServer = false }: { backend: ToonFlapBackend; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: { reload(): void }) => ReactNode; onExit?: () => void }) {
   const [screen, setScreen] = useState<Screen>('map');
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [failed, setFailed] = useState(false);
@@ -150,6 +151,7 @@ export function ToonFlapGame({ backend, extra, onExit }: { backend: ToonFlapBack
       {screen === 'results' && reply && run && (
         <ResultsScreen talk={talk} today={loaded.today ?? nzDate(new Date())} reply={reply} level={level} gentle={run.gentle} maths={run.maths} onNext={(n) => void begin(n)} onAgain={() => void begin(level)} onMap={() => setScreen('map')} />
       )}
+      <TrophyWonLine games={['toonflap']} watch={reply} off={!onServer} />
     </div>
   );
 }

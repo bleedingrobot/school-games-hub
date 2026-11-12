@@ -29,6 +29,20 @@ vi.mock('../data/homePage', async (importOriginal) => ({
   })),
 }));
 
+vi.mock('../data/trophies', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/trophies')>()),
+  fetchMyNewTrophies: vi.fn(async () => []),
+  fetchMyTrophies: vi.fn(async () => ({
+    season: 1,
+    trophies: [
+      { id: 'knight', game: 'chess', name: 'Knight Head', how: 'Win with a knight', kind: 'picture', repeat: 'once', art: null, tier: 'silver',
+        count: 1, firstAt: '2026-10-14T01:00:00Z', lastAt: '2026-10-14T01:00:00Z', isNew: false, wins: [] },
+    ],
+    next: [],
+    favourites: [],
+  })),
+}));
+
 vi.mock('../data/profile', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/profile')>()),
   saveMyAvatar: vi.fn(async () => {}),
@@ -70,18 +84,17 @@ beforeEach(() => {
 });
 
 describe('my profile', () => {
-  it('opens on the pupil with every fold closed, and signs out', async () => {
+  it('opens on the pupil with My trophies open and the other folds closed, and signs out', async () => {
     const user = userEvent.setup();
     const state = auth();
     await renderAt('/profile', state);
     expect(screen.getByRole('heading', { name: 'Brave Kiwi 7' })).toBeInTheDocument();
-    for (const name of [/My trophies/, /My achievements/, /My stats/, /Page theme/]) {
+    expect(fold(/My trophies/)).toHaveAttribute('aria-expanded', 'true');
+    for (const name of [/My achievements/, /My stats/, /Page theme/]) {
       expect(fold(name)).toHaveAttribute('aria-expanded', 'false');
     }
+    expect(await screen.findByRole('button', { name: 'Knight Head, Silver' })).toBeInTheDocument();
     expect(screen.queryByText('Build your avatar')).not.toBeInTheDocument();
-    await user.click(fold(/My trophies/));
-    expect(fold(/My trophies/)).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText(/No trophies yet/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(state.signOut).toHaveBeenCalled();
   });
@@ -117,10 +130,14 @@ describe('my profile', () => {
     expect(saveMyAvatar).toHaveBeenCalledTimes(1);
     expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'robot', theme: 'menu' }));
     expect(state.refreshProfile).toHaveBeenCalled();
+    // A picture trophy can be worn instead (the server checks it is mine).
+    await user.click(screen.getByRole('radio', { name: /Knight Head/ }));
+    await user.click(save);
+    expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'robot', pic: 'knight' }));
 
     await user.click(fold(/Page theme/));
     await user.click(screen.getByRole('radio', { name: /Soft and bright/ }));
-    expect(saveMyAvatar).toHaveBeenCalledTimes(2);
+    expect(saveMyAvatar).toHaveBeenCalledTimes(3);
     expect(saveMyAvatar).toHaveBeenLastCalledWith(expect.objectContaining({ kind: 'cat', theme: 'soft' }));
   });
 

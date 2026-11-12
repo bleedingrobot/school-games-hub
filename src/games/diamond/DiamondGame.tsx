@@ -13,6 +13,7 @@ import { GemBook, Hall, HowToPlay, LevelEnd, Shop, type ShopTab } from './Pages'
 import { PlayLevel } from './PlayLevel';
 import { helpFor, shopAdvice, type TipId } from './guide';
 import { loadPrefs, savePrefs, wantsLessMotion, type DiamondPrefs } from './prefs';
+import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import './diamond.css';
 
 type Screen = 'map' | 'play' | 'end' | 'shop' | 'book' | 'how' | 'hall';
@@ -29,7 +30,7 @@ function bestLevel(p: Player, now: Date, unlimited = false): number {
   return Math.max(1, p.deepest);
 }
 
-export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBackend; onExit?: () => void; extra?: (h: GameHandle) => ReactNode }) {
+export function DiamondGame({ backend, onExit, extra, onServer = false }: { backend: DiamondBackend; onExit?: () => void; /** The school's server is behind `backend`, so trophies can be won. */ onServer?: boolean; extra?: (h: GameHandle) => ReactNode }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [clock, setClock] = useState<{ server: number; at: number }>({ server: Date.now(), at: Date.now() });
   const [screen, setScreen] = useState<Screen>('map');
@@ -208,6 +209,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
       {screen === 'how' && <HowToPlay onBack={() => go('map')} />}
       {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
       {extra && screen !== 'play' && extra({ reload: () => void load() })}
+      <TrophyWonLine games={['diamond']} watch={ended} off={!onServer} />
     </div>
   );
 }

@@ -7,10 +7,9 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 - [ ] P2 Plan and paint the art (size M). Waits for: nothing. Needs ComfyUI running on the gaming PC.
 - [ ] P3 The trophy system (size L, database). Waits for: nothing.
 - [ ] P4 Dragon Maths: the first five and the Dragon Heads (size M, database). Waits for: P3.
-- [ ] P5 The trophy cabinet and the "New trophy!" moment (size M). Waits for: P1 and P3.
 - [ ] P6 Retire levels and show trophies around the hub (size M). Waits for: P5. Not alongside dashboard card D2.
 - [x] P7 part 1: Clan Quest, Sky Isles, Royal Decree, Maths Monsters (size L, database). Done 12 Nov 2026: eight trophies, a watcher on each record, back-awards, "Trophy won!" line (`src/trophies/`), full book needs 75.
-- [ ] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Waits for: P3.
+- [x] P7 part 2: Star Trader, Diamond Drop, Toon Flap, Gem Keep, Mine Runner. Done 12 Nov 2026: six once-a-year trophies (Star Ring, Black Hole, Heart Diamond, Rainbow Toon, Gem Crown, Miner's Lamp), watchers, back-awards, "Trophy won!" line in each game.
 - [ ] P8 part 1: Chess, Checkers, 101, Power Clash, Wormholes, Archery (size L, database). Waits for: P3.
 - [ ] P8 part 2: Marble Rush, Bond Match, Mine Runner hard, Royal Decree, Training. Waits for: P3.
 - [ ] P9 The early-years games (size M, database). Waits for: P3.
@@ -21,6 +20,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 ## Done and live
 
 - [x] P1 Tidy the profile page (#439, 12 Nov 2026): top card with Sign out, closed folds, avatar maker behind "Change my look", achievements as earned plus the three nearest. A theme now saves when tapped. Styles are in `src/pages/profile.css`; P5 fills the My trophies fold.
+- [x] P5 The trophy cabinet and the "New trophy!" moment (#454, 12 Nov 2026): a lit shelf of trophies in their metals (favourites first, up to three, saved on the server), a plaque with how and when each was won, three grey next-to-win spots from games the class can see, earned pictures in "Change my look", and a once-only full-screen "New trophy!" on hub pages. Stand-in cups until P2's paintings.
 
 ## Decisions
 
