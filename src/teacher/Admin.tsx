@@ -22,6 +22,7 @@ import {
 } from '../data/admin';
 import { addCoTeacher, archiveClass, removeCoTeacher } from '../data/classes';
 import { FriendlyError } from '../data/profile';
+import { fetchClassYears, yearsText, type ClassYears } from '../data/years';
 import { setRole } from '../data/teacher';
 import { share } from '../pages/TeacherQuestionSkips';
 import { ALL_SWITCH_COLUMNS } from '../data/games';
@@ -155,6 +156,11 @@ const CODE_MODES = { on: '(on)', ask: '(asks first)', off: '(off)' };
 
 export function AdminClasses() {
   const { data, failed, reload } = useLoaded(fetchAdminClasses);
+  // The years of each class's pupils (they pick their own; data/years.ts). Just a label: missing is fine.
+  const [years, setYears] = useState<Record<string, ClassYears>>({});
+  useEffect(() => {
+    if (data) fetchClassYears().then(setYears, () => undefined);
+  }, [data]);
   const people = useLoaded(fetchAdminTeachers);
   const [params, setParams] = useSearchParams();
   const [status, setStatus] = useState<string | null>(null);
@@ -230,7 +236,7 @@ export function AdminClasses() {
                 {shown.map((c) => (
                   <tr key={c.id} className={c.archived ? 'is-hidden' : undefined}>
                     <th scope="row">{c.archived ? <span>{c.name} (archived)</span> : <Link to={`/teacher/${c.id}`}>{c.name}</Link>}</th>
-                    <td>{c.schoolYear ? `${c.schoolYear}${c.yearLevel !== null ? ` · Year ${c.yearLevel}` : ''}` : c.yearLevel !== null ? `Year ${c.yearLevel}` : '–'}</td>
+                    <td>{[c.schoolYear || '', yearsText(years[c.id])].filter(Boolean).join(' · ') || '–'}</td>
                     <td>
                       <ClassTeachers
                         c={c}
@@ -324,7 +330,6 @@ function MakeClassFor({ teachers, onMade }: { teachers: AdminTeacher[]; onMade: 
   const me = profile?.id ?? '';
   const [name, setName] = useState('');
   const [year, setYear] = useState(String(thisYear));
-  const [level, setLevel] = useState('');
   const [teacher, setTeacher] = useState(me);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -339,7 +344,7 @@ function MakeClassFor({ teachers, onMade }: { teachers: AdminTeacher[]; onMade: 
     setBusy(true);
     setStatus('Saving…');
     try {
-      await createClassFor(name.trim(), inYear, level === '' ? null : Number(level), teacher || me);
+      await createClassFor(name.trim(), inYear, null, teacher || me);
       setName('');
       setStatus('Class made.');
       await onMade();
@@ -363,17 +368,6 @@ function MakeClassFor({ teachers, onMade }: { teachers: AdminTeacher[]; onMade: 
         <label className="teacher__type">
           <span>School year</span>
           <input type="number" value={year} onChange={(e) => setYear(e.target.value)} min={2000} max={2100} />
-        </label>
-        <label className="teacher__type">
-          <span>Year level (optional)</span>
-          <select value={level} onChange={(e) => setLevel(e.target.value)}>
-            <option value="">Not set</option>
-            {Array.from({ length: 14 }, (_, l) => (
-              <option key={l} value={l}>
-                Year {l}
-              </option>
-            ))}
-          </select>
         </label>
         <label className="teacher__type">
           <span>Teacher</span>

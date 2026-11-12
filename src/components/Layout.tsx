@@ -7,6 +7,7 @@ import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
 import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
+import { YearGate } from '../year/YearQuestion';
 import { CrashScreen } from './CrashScreen';
 import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
@@ -66,12 +67,15 @@ function ThemedLayout() {
         </div>
       </header>
       <main id="main" tabIndex={-1}>
-        {/* A new page starts with a clean slate, so one broken page doesn't stay broken after you leave it. */}
-        <CrashScreen key={pathname}>
-          <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
-            <Outlet />
-          </Suspense>
-        </CrashScreen>
+        {/* A pupil with no year saved is asked it first, once (checked once per visit, not per page). */}
+        <YearGate>
+          {/* A new page starts with a clean slate, so one broken page doesn't stay broken after you leave it. */}
+          <CrashScreen key={pathname}>
+            <Suspense fallback={<div className="loading" role="status" data-page-loading>Loading…</div>}>
+              <Outlet />
+            </Suspense>
+          </CrashScreen>
+        </YearGate>
       </main>
       <NewTrophyMoment />
     </div>

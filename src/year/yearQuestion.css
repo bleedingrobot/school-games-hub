@@ -1,0 +1,119 @@
+/* "What year are you in?" (YearQuestion.tsx). Big, tappable, calm. Prefix: year-q. */
+.year-q {
+  max-width: 680px;
+  margin: 32px auto;
+  padding: 32px 24px;
+  border-radius: 28px;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: pop-in 0.4s ease-out both;
+}
+.year-q__emoji {
+  font-size: 4rem;
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: bob 2.4s ease-in-out infinite;
+}
+.year-q__title {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  margin: 0 0 24px;
+  outline: none;
+}
+.year-q__years {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.year-q__year {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 104px;
+  padding: 10px 6px;
+  border: none;
+  border-radius: 20px;
+  background: var(--play-grad, #fde68a);
+  color: #0f172a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease;
+}
+.year-q__year:hover {
+  transform: translateY(-2px);
+}
+.year-q__year:active {
+  transform: translateY(3px);
+}
+.year-q__year:focus-visible {
+  outline: 4px solid var(--brand);
+  outline-offset: 3px;
+}
+.year-q__word {
+  font-size: 1rem;
+}
+.year-q__number {
+  font-size: 2.6rem;
+  line-height: 1;
+}
+.year-q__big {
+  font-size: 6rem;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0 0 20px;
+}
+.year-q__answers,
+.year-q__hear {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+.year-q__hear {
+  margin: 20px 0 12px;
+}
+.year-q__error {
+  margin-top: 14px;
+  color: #b91c1c;
+  font-weight: 700;
+}
+.year-q-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 20px;
+  border: 2px solid var(--card-edge);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 520px) {
+  .year-q {
+    margin: 16px auto;
+    padding: 24px 16px;
+  }
+  .year-q__years {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .year-q__year {
+    min-height: 84px;
+  }
+}
+.year-q__title:focus,
+.year-q__title:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.year-q .button {
+  width: auto;
+}

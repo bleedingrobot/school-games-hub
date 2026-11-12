@@ -229,3 +229,16 @@
 .students__notice {
   font-weight: 800;
 }
+
+/* The Year picker in each roster row (data/years.ts). */
+.roster__year {
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font: inherit;
+}
+.roster__year-hint {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  margin: 8px 0 12px;
+}
