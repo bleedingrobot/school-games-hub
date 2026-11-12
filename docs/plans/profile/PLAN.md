@@ -275,6 +275,16 @@ Build card P10: the two-game rewards from the review's section 5 table (one serv
 The hall shows game feats only, never maths results. Write tests. Open a PR, merge when the checks pass, follow the guide's going-live part, then tick P10 in docs/plans/profile/HANDOVER.md.
 ```
 
+**As built by P10** (migration `20261112002700_trophy_seasons.sql`, test `supabase/tests/database/trophy_seasons.test.sql`):
+
+- `trophy_pairs` lists each two-game reward and its two halves, with `within` 'season' (both since this hub season's first day, `hub_season_start_day`) or 'year'. Six pairs: Double Slayer (Slayer's Sword + Monster Tooth, season), Board Master (both Champion ranks), Treasure Keeper (Sky Lighthouse + Heart Diamond), Adventurer's Badge (Hawk Feather + Miner's Lamp), Star Monarch (Royal Seal + Star Ring), Golden Wings (Marble Cup + Rainbow Toon). A pair whose half isn't built yet isn't listed: add its row in the card that builds the half.
+- One check, `trophy_followups(player)`, runs from a trigger after every trophy insert (not for 'hub' trophies, so it never loops). It gives the pairs, the All-rounder picture (trophies from 5 different games, 'hub' not counted) and the Best Friends Cup (golden prizes in 2, 4 and 6 garden games). A failed check only warns: the trophy and the game's save stay.
+- Season Regular: `season_regular_check` runs from a trigger on `scored_games`, only on a pupil's first finished go of a weekday; 15 different Monday-to-Friday days since this hub season started.
+- Cabinet: `my_trophy_pairs()`; a pair with one half held shows half lit under "Half lit: win the other half", with the game still to win in (both games must be ones the class can see).
+- Hall of fame: `hall_of_fame()`, the last choice on the Leaderboard's Game row. Each Dragon Maths season's first five, and this hub season's new pictures (not the Dragon Head, not garden pictures: those are maths progress). Pupils in my school only, never hidden ones; a name that isn't made up (P11's own names) shows as "A classmate".
+- The new-season note: `my_season_note()` in `my_home_page` as `seasonNote`, for a pupil holding a trophy from before this season, once per season (`season_notes`); marked seen as soon as it shows.
+- Back-award on the day it went live: Season Regular from the last 60 days of finished goes, the rest from trophies already held. Stand-in pictures (an emoji on its metal) in `earnedPictures.ts` until P2.
+
 ## P11 Earn your own name
 
 Size L. Database and privacy. Waits for: P3 and P5.

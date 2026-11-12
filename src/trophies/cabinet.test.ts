@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { MyTrophy, TrophyType } from '../data/trophies';
+import type { MyTrophy, TrophyPair, TrophyType } from '../data/trophies';
 import { GAMES } from '../games/registry';
-import { metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, trophyPlace, winLine } from './cabinet';
+import { halfLitPairs, metalLabel, nextMetalLine, nextSpots, shelfOrder, trophyGame, trophyPlace, winLine } from './cabinet';
 
 const type = (id: string, game: string, repeat: TrophyType['repeat'] = 'season'): TrophyType => ({
   id, game, name: id, how: `Win ${id}`, kind: 'trophy', repeat, art: null,
@@ -21,12 +21,23 @@ describe('trophy cabinet rules', () => {
     expect(shelfOrder(shelf, ['c', 'gone', 'a']).map((t) => t.id)).toEqual(['c', 'a', 'b', 'd']);
   });
 
-  it('shows up to three next spots, only from games the class can see', () => {
+  it('shows next spots and half-lit two-game rewards only from games the class can see', () => {
     const switched = GAMES.find((g) => g.teacherSwitch)!;
     const next = [type('off', switched.id), type('nowhere', 'not-a-game'), type('hubby', 'hub'), type('c1', 'chess'), type('c2', 'chess'), type('c3', 'chess')];
     // While the switches load, switched games wait.
     expect(nextSpots(next, null).map((t) => t.id)).toEqual(['hubby', 'c1', 'c2']);
     expect(nextSpots(next, new Set([switched.id])).map((t) => t.id)).toEqual(['off', 'hubby', 'c1']);
+    // Two-game rewards: half lit with one half held, naming the game still to win in.
+    const pair = (id: string, held: boolean[], games = ['chess', 'checkers'], won = false): TrophyPair => ({
+      id, name: id, how: '', kind: 'picture', within: 'year', won,
+      halves: games.map((game, i) => ({ trophy: `${id}-${i}`, game, name: `Half ${i}`, held: held[i] })),
+    });
+    const pairs = [pair('one', [true, false]), pair('none', [false, false]), pair('both', [true, true], undefined, true),
+      pair('hidden', [true, false], ['chess', switched.id])];
+    const lit = halfLitPairs(pairs, null);
+    expect(lit.map((p) => p.id)).toEqual(['one']);
+    expect(lit[0].hint).toBe('You have Half 0. Win Half 1 in Checkers this year to light it up!');
+    expect(halfLitPairs(pairs, new Set([switched.id])).map((p) => p.id)).toEqual(['one', 'hidden']);
   });
 
   it('says each win, the metal and what winning again would do in plain words', () => {

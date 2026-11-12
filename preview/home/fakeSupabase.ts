@@ -111,6 +111,33 @@ const OTHERS: Record<string, unknown> = {
   ] },
   'Calm Tui 3': { count: 1, favourites: [{ id: 'chess-gold', game: 'chess', kind: 'trophy', name: 'Chess Gold', tier: 'bronze' }] },
 };
+/** Two-game rewards (profile card P10): Board Master half lit, Double Slayer won. */
+const half = (trophy: string, game: string, name: string, held: boolean) => ({ trophy, game, name, held });
+const PAIRS = [
+  { id: 'pair-double-slayer', name: 'Double Slayer', how: '', kind: 'picture', within: 'season', won: true,
+    halves: [half('dm-slayer', 'dragon-maths', 'Slayer\'s Sword', true), half('clan-tooth', 'clan-quest', 'Monster Tooth', true)] },
+  { id: 'pair-board-master', name: 'Board Master', how: '', kind: 'picture', within: 'year', won: false,
+    halves: [half('chess-knight', 'chess', 'Champion\'s Knight', true), half('checkers-king', 'checkers', 'Champion\'s King', false)] },
+  { id: 'pair-treasure-keeper', name: 'Treasure Keeper', how: '', kind: 'picture', within: 'year', won: false,
+    halves: [half('isles-lighthouse', 'isles', 'Sky Lighthouse', true), half('diamond-heart', 'diamond', 'Heart Diamond', false)] },
+];
+/** The Leaderboard's Hall of fame (P10). Calm Tui 3's own name stays hidden: "A classmate". */
+const HALL = {
+  season: 3,
+  dragon: [
+    { season: 2, slayers: [
+      { place: 1, name: 'Brave Kiwi 7', avatar: null }, { place: 2, name: ME.display_name, avatar: null }, { place: 3, name: null, avatar: null },
+    ] },
+    { season: 1, slayers: [{ place: 1, name: 'Calm Tui 3', avatar: null }] },
+  ],
+  pictures: [
+    { trophy: 'pair-double-slayer', title: 'Double Slayer', game: 'hub', tier: 'bronze', name: ME.display_name, avatar: null, at: '2026-11-10T01:00:00Z' },
+    { trophy: 'hub-allrounder', title: 'All-rounder', game: 'hub', tier: 'bronze', name: 'Brave Kiwi 7', avatar: null, at: '2026-11-08T01:00:00Z' },
+    { trophy: 'pair-board-master', title: 'Board Master', game: 'hub', tier: 'bronze', name: null, avatar: null, at: '2026-11-06T01:00:00Z' },
+  ],
+};
+let seasonNote = params.get('note') === '0' ? null : { season: 3 };
+
 let newOnes = params.get('new') ? [
   { id: 'dm-slayer', game: 'dragon-maths', name: 'Dragon Slayer', how: 'Slay the dragon in Dragon Maths.', kind: 'trophy', tier: 'gold', count: 4 },
   { id: 'dm-first-five', game: 'dragon-maths', name: 'Dragon Head', how: 'Be one of the first five in the school to slay the dragon in a season.', kind: 'picture', tier: 'silver', count: 2 },
@@ -142,9 +169,16 @@ export const supabase = {
     }
     if (name === 'my_home_page') {
       world.jobs.my_trophy_shelf = myShelf();
+      world.jobs.my_season_note = seasonNote;
       return Promise.resolve({ data: homeAnswer(), error: null });
     }
     if (name === 'my_trophies') return Promise.resolve({ data: { ...(world.jobs.my_trophies as object), favourites }, error: null });
+    if (name === 'my_trophy_pairs') return Promise.resolve({ data: PAIRS, error: null });
+    if (name === 'hall_of_fame') return Promise.resolve({ data: HALL, error: null });
+    if (name === 'mark_season_note_seen') {
+      seasonNote = null;
+      return Promise.resolve({ data: null, error: null });
+    }
     if (name === 'my_new_trophies') return Promise.resolve({ data: newOnes, error: null });
     if (name === 'mark_my_trophies_seen') {
       const n = newOnes.length;

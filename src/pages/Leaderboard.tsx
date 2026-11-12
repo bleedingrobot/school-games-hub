@@ -4,6 +4,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import type { TrophyShelf } from '../data/trophies';
 import { FavouriteTrophies, useTrophyShelves } from '../trophies/FavouriteTrophies';
+import { HallOfFame } from '../trophies/HallOfFame';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
 import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
 import { useGameSwitch } from '../data/classSwitches';
@@ -36,6 +37,9 @@ export const BOARDS: { id: Board; label: string; about: string; minGames: number
 ];
 
 const MEDALS = ['🥇', '🥈', '🥉'];
+
+/** The Hall of fame's place among the Game choices (profile card P10). */
+const HALL = 'hall-of-fame';
 
 /** Games with a leaderboard: the ranked ones, and Gem Keep (most stars). */
 const BOARD_GAMES = GAMES.filter((g) => isRanked(g) || g.id === 'gem-keep' || g.id === 'monsters');
@@ -71,9 +75,13 @@ export function Leaderboard() {
                 <span>{g.name}</span>
               </label>
             ))}
+            <label className="chip">
+              <input type="radio" name="board-game" checked={game === HALL} onChange={() => setGame(HALL)} />
+              <span>🏛️ Hall of fame</span>
+            </label>
           </div>
         </fieldset>
-        {game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
+        {game === HALL ? <HallOfFame /> : game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
       </div>
     </div>
   );

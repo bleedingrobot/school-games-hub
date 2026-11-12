@@ -522,3 +522,16 @@
     justify-items: center;
   }
 }
+
+/* A two-game reward with one half won: the left half lit, the right half grey (profile card P10). */
+.cabinet__half {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+}
+.cabinet__half-lit {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 50% 0 0);
+}
