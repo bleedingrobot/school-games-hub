@@ -4,7 +4,6 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 ## To do
 
-- [ ] P1 Tidy the profile page: sign out at the top (size S). Waits for: nothing.
 - [ ] P2 Plan and paint the art (size M). Waits for: nothing. Needs ComfyUI running on the gaming PC.
 - [ ] P3 The trophy system (size L, database). Waits for: nothing.
 - [ ] P4 Dragon Maths: the first five and the Dragon Heads (size M, database). Waits for: P3.
@@ -21,7 +20,7 @@ The reasons are in [../../PROFILE-REVIEW.md](../../PROFILE-REVIEW.md). The cards
 
 ## Done and live
 
-(none yet)
+- [x] P1 Tidy the profile page (#439, 12 Nov 2026): top card with Sign out, closed folds, avatar maker behind "Change my look", achievements as earned plus the three nearest. A theme now saves when tapped. Styles are in `src/pages/profile.css`; P5 fills the My trophies fold.
 
 ## Decisions
 
