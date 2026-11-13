@@ -9,13 +9,14 @@ import { GlyphError, type GlyphBackend, type Loaded, type StartReply } from './b
 import { guideWall } from './guide';
 import { HowToPlay } from './HowToPlay';
 import { MapScreen } from './MapScreen';
+import { useGlyphVoice, type Say } from './voice';
 import { ResultsScreen } from './ResultsScreen';
 import { WallScreen } from './WallScreen';
 import './glyph.css';
 
 type Screen = 'map' | 'howto' | 'guide' | 'play' | 'results';
 
-function TempleRun({ start, onFinish, onLeave }: { start: StartReply; onFinish: (plays: WallPlay[]) => void; onLeave: (plays: WallPlay[]) => void }) {
+function TempleRun({ start, onFinish, onLeave, say }: { start: StartReply; onFinish: (plays: WallPlay[]) => void; onLeave: (plays: WallPlay[]) => void; say: Say }) {
   const [plays, setPlays] = useState<WallPlay[]>([]);
   const name = TEMPLES.find((t) => t.id === start.temple)?.name ?? '';
   const marks = plays.map((p) => (p.goes.length === 1 && p.goes[0].pick !== null ? 'first' : 'help') as 'first' | 'help');
@@ -34,6 +35,7 @@ function TempleRun({ start, onFinish, onLeave }: { start: StartReply; onFinish: 
         if (all.length >= WALLS_PER_TEMPLE) onFinish(all);
       }}
       onLeave={() => onLeave(plays)}
+      say={say}
     />
   );
 }
@@ -48,6 +50,7 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
   const [after, setAfter] = useState<number | null>(null);
   const [res, setRes] = useState<{ temple: number; result: TempleResult; points: number } | null>(null);
   const gwall = useMemo(guideWall, []);
+  const voice = useGlyphVoice();
 
   const reload = useCallback(() => {
     setFailed(false);
@@ -128,6 +131,11 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
 
   return (
     <div className="gg-root" data-screen={screen}>
+      {voice.available && (
+        <button type="button" className="gg-btn gg-voice" aria-label="Read aloud" aria-pressed={voice.on} onClick={() => voice.setOn(!voice.on)}>
+          <span aria-hidden="true">{voice.on ? '🔊' : '🔇'}</span><span aria-hidden="true"> {voice.on ? 'Voice on' : 'Voice off'}</span>
+        </button>
+      )}
       {screen === 'map' && (
         <>
           <MapScreen
@@ -144,14 +152,15 @@ export function GlyphGame({ backend, extra, onExit }: { backend: GlyphBackend; e
       )}
       {screen === 'howto' && <HowToPlay onBack={() => setScreen('map')} />}
       {screen === 'guide' && (
-        <WallScreen key="guide" wall={gwall} index={0} templeName="" help={0} guide onDone={guideDone} onSkipGuide={guideDone} onLeave={guideDone} />
+        <WallScreen key="guide" wall={gwall} index={0} templeName="" help={0} guide onDone={guideDone} onSkipGuide={guideDone} onLeave={guideDone} say={voice.say} />
       )}
-      {screen === 'play' && run && <TempleRun key={run.seed} start={run} onFinish={(p) => void finish(p)} onLeave={(p) => void finish(p)} />}
+      {screen === 'play' && run && <TempleRun key={run.seed} start={run} onFinish={(p) => void finish(p)} onLeave={(p) => void finish(p)} say={voice.say} />}
       {screen === 'results' && res && (
         <ResultsScreen
           temple={res.temple}
           result={res.result}
           points={res.points}
+          say={voice.say}
           onNext={() => play(res.temple + 1)}
           onAgain={() => play(res.temple)}
           onMap={() => setScreen('map')}

@@ -18,14 +18,42 @@ export function spokenFrac({ n, d }: Frac): string {
 /** The one-sentence next step under the grid: one action, real numbers. */
 export function nextStep(gold: Frac, litCount: number, phase: Phase): string {
   if (phase === 'open') return 'The wall is opening!';
-  if (phase === 'glyphs') return 'Pick the glyph that matches your green tiles.';
+  if (phase === 'glyphs') return PICK_GLYPH;
   if (litCount === 0) return `Find the tiles equal to ${fracText(gold)}. You've lit 0.`;
   return `Find the tiles equal to ${fracText(gold)}. You've lit ${litCount}. Press Light the runes when you're done.`;
 }
 
+export const WALL_ASK = 'Find the tiles equal to the gold stone';
+export const PICK_GLYPH = 'Pick the glyph that matches your green tiles.';
+export const NO_MATCH = 'None of the glyphs match your tiles. Look again.';
 export const PRESS_LIGHT = 'Press Light the runes.';
+/** The results, said and shown the same way. */
+export const RESULT_PASSED = 'Temple passed!';
+export const RESULT_CLOSE = 'So close. Try again to pass the temple.';
 export const LOOK_CLOSELY = "Look closely: that glyph doesn't match your green tiles.";
 export const LOOK_CLOSELY_NONE = 'Look closely: one of the glyphs does match your green tiles.';
+
+/**
+ * What Bella says for each mistake: the same idea as the shown line, in fixed words (no tile fractions or counts, which change
+ * every wall). The shown line starts with these words for the kinds that need no number.
+ */
+export const WHY_VOICE: Record<TrapKind | 'missed', string> = {
+  'add-same': 'Adding the same number to the top and bottom changes the size. Times both by the same number.',
+  'top-only': 'Only the top was multiplied, so there are more pieces but they are the same size.',
+  'bottom-only': 'Only the bottom was multiplied, so each piece got smaller but you still have the same number of pieces.',
+  'same-bottom': 'The pieces are the same size, but you have a different number of them.',
+  'same-top': 'Same number of pieces, but the pieces are a different size.',
+  'near-miss': 'The top and bottom need the same number of times.',
+  'diff-mult': 'The top and bottom were not changed by the same number. Both need the same.',
+  missed: 'That tile is worth the same as the gold stone. Times or divide both top and bottom by the same number.',
+};
+
+/** The guided first wall's lines, one lit thing at a time (step 0 the stone, 1 tap tiles, 2 press, 3 pick the glyph). */
+export function guideLine(step: number, gold: Frac, wrong?: Frac, next?: Frac): string {
+  if (step === 0) return `This is the gold stone: ${fracText(gold)}. The tiles to light are the ones worth the same.`;
+  if (step === 1) return wrong ? `${fracText(wrong)} is not worth ${fracText(gold)}. Tap it again to put it out.` : `Tap a tile worth ${fracText(gold)}. Try ${next ? fracText(next) : 'one'}.`;
+  return step === 2 ? 'Now press Light the runes.' : PICK_GLYPH;
+}
 
 export interface Why {
   line: string;
@@ -42,11 +70,11 @@ export function whyOf(wall: PublicWall, judged: Judged): Why | null {
     const t = wall.tiles[cell];
     const kind = judged.mistakes[0] as TrapKind;
     const lines: Record<TrapKind, string> = {
-      'add-same': `Adding the same to the top and the bottom changes the size. Equal fractions times both by the same number. ${fracText(t)} is not ${fracText(g)}.`,
-      'top-only': `Only the top was multiplied, so there are more pieces but they are the same size. ${fracText(t)} is bigger than ${fracText(g)}.`,
+      'add-same': `${WHY_VOICE['add-same']} ${fracText(t)} is not ${fracText(g)}.`,
+      'top-only': `${WHY_VOICE['top-only']} ${fracText(t)} is bigger than ${fracText(g)}.`,
       'bottom-only': `Only the bottom was multiplied, so each piece got smaller but you still have ${t.n}. ${fracText(t)} is smaller than ${fracText(g)}.`,
       'same-bottom': `Same pieces, but ${t.n} of them, not ${g.n}. ${fracText(t)} is not ${fracText(g)}.`,
-      'same-top': `Same number of pieces, but the pieces are a different size. ${fracText(t)} is not ${fracText(g)}.`,
+      'same-top': `${WHY_VOICE['same-top']} ${fracText(t)} is not ${fracText(g)}.`,
       'near-miss': nearMiss(g, t),
       'diff-mult': diffMult(g, t),
     };
