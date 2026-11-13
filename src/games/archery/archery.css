@@ -376,6 +376,8 @@
 .ar-item__have { font-weight: 700; }
 .ar-item__buy { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
 .ar-price { font-weight: 700; }
+.ar-price__was { margin-right: 0.35em; opacity: 0.7; font-weight: 400; }
+.ar-armory__discount { margin: 0; justify-self: start; padding: 0.3em 0.8em; border-radius: 999px; background: #ffd23f; color: #3a2400; font-weight: 800; }
 .ar-item__lock { font-weight: 700; color: #6b3a1c; }
 
 @media (max-width: 700px) {

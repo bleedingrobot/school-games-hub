@@ -104,6 +104,18 @@ describe('the Armory', () => {
     expect((await h.send({ action: 'buy', request: 'x', kind: 'gear', item: 'steel' })).status).toBe(400);
   });
 
+  it('on the teacher\'s Discount day every arrow is half price (rounded down), selling gives back half of that, and nothing else changes', async () => {
+    const h = setup({ settings: async () => ({ on: true, duels: true, discount: true }) });
+    expect((await h.send({ action: 'load' })).body.discount).toBe(true);
+    const steel = await h.send({ action: 'buy', request: 'req-000010', kind: 'gear', item: 'steel' });
+    expect(steel.body.state).toMatchObject({ coins: 88, gear: { steel: 2 }, spent: 12 });
+    const apple = await h.send({ action: 'buy', request: 'req-000011', kind: 'gear', item: 'apple' });
+    expect(apple.body.state).toMatchObject({ coins: 63, spent: 37 });
+    const sold = await h.send({ action: 'sell', request: 'req-000012', kind: 'gear', item: 'steel' });
+    expect(sold.body.state.coins).toBe(66);
+    expect((await setup().send({ action: 'load' })).body.discount).toBe(false);
+  });
+
 });
 
 describe('fights against bots', () => {

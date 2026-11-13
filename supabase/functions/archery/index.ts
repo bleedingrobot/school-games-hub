@@ -10378,6 +10378,14 @@ const SHOP = [
 	}))
 ];
 const SHOP_BY = new Map(SHOP.map((s) => [`${s.kind}:${s.id}`, s]));
+/** An item at today's price: arrows are half price (rounded down) on a Discount day; everything else is unchanged. */
+function onDiscount(item, discount) {
+	if (!discount || item.kind !== "gear" || !isArrowId(item.id)) return item;
+	return {
+		...item,
+		price: Math.floor(item.price / 2)
+	};
+}
 /** Everything the Armory sells, in shop order. */
 function shopItems() {
 	return SHOP;
@@ -10568,6 +10576,27 @@ function parseDuel(raw) {
 		last_action_at: String(r.last_action_at ?? ""),
 		finished_at: typeof r.finished_at === "string" ? r.finished_at : null
 	};
+}
+//#endregion
+//#region shared/unlimited.ts
+/** Today's date in New Zealand, 'YYYY-MM-DD'. */
+const nzToday = (now = new Date()) => new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+}).format(now);
+//#endregion
+//#region shared/discountDay.ts
+/**
+* Discount day (James, 13 Nov 2026; migration 20261113000500_discount_day.sql): one class switch per game, on the
+* teacher's Today page. For the rest of that New Zealand day the game's shop is cheaper; at midnight it turns itself off.
+* Only the Archery Challenge has one: every arrow is half price (shared/archery/shop.ts, `onDiscount`).
+*/
+/** Is this game's switch on today? `days` is the settings row's `discount_days` ({ game id: NZ date }). */
+function isDiscountFor(days, game, now = new Date()) {
+	if (!days || typeof days !== "object") return false;
+	return days[game] === nzToday(now);
 }
 //#endregion
 //#region shared/maths/focusResults.ts
@@ -11858,7 +11887,8 @@ function makeHandler(services) {
 				if (!s.ok) return busy("Your Armory");
 				return reply(200, {
 					state: withoutCount(s.value),
-					coinsLeft: Math.max(0, 600 - s.value.coinsToday)
+					coinsLeft: Math.max(0, 600 - s.value.coinsToday),
+					discount: switches.discount === true
 				});
 			}
 			case "round-start": {
@@ -11957,8 +11987,9 @@ function makeHandler(services) {
 			}
 			case "buy":
 			case "sell": {
-				const item = shopItem(body.kind, body.item);
-				if (!item || !isRequestId(body.request)) return reply(400, { error: "That isn't in the Armory." });
+				const listed = shopItem(body.kind, body.item);
+				if (!listed || !isRequestId(body.request)) return reply(400, { error: "That isn't in the Armory." });
+				const item = onDiscount(listed, switches.discount === true);
 				const action = body.action;
 				const price = action === "buy" ? item.price : sellPrice(item);
 				const done = await services.shop(player, body.request, action, item.kind, item.id, price, action === "buy" ? item.qty : 1, LEVEL_SPEND[item.level - 1] ?? 0, 5);
@@ -12129,7 +12160,8 @@ Deno.serve(makeHandler({
 		const row = data;
 		return {
 			on: row.archery_enabled === true,
-			duels: row.archery_duels !== false
+			duels: row.archery_duels !== false,
+			discount: isDiscountFor(row.discount_days, "archery")
 		};
 	},
 	async mathsContext(player) {

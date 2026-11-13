@@ -16,6 +16,7 @@ const CONTROLS: Record<string, string> = {
   training_first: 'Training before games',
   question_skips: 'Skip button',
   unlimited_days: 'Unlimited turns today',
+  discount_days: 'Discount day',
   students_choose_focus: 'Students choose their focus',
   maths_auto: 'Auto maths',
 };
@@ -44,8 +45,8 @@ const sentence = (v: unknown): string => {
 export function describeChange(c: Pick<SettingChange, 'who' | 'setting' | 'from' | 'to'>, labels = gameLabels()): string {
   const game = labels.get(c.setting);
   const label = game?.name ?? CONTROLS[c.setting] ?? c.setting.replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
-  if (typeof c.to === 'boolean' && c.setting !== 'unlimited_days') return `${c.who} turned ${label} ${c.to ? 'on' : 'off'}`;
-  if (c.setting === 'unlimited_days') return `${c.who} changed ${label}`;
+  if (typeof c.to === 'boolean' && c.setting !== 'unlimited_days' && c.setting !== 'discount_days') return `${c.who} turned ${label} ${c.to ? 'on' : 'off'}`;
+  if (c.setting === 'unlimited_days' || c.setting === 'discount_days') return `${c.who} changed ${label}`;
   return `${c.who} changed ${label} from ${sentence(c.from)} to ${sentence(c.to)}`;
 }
 

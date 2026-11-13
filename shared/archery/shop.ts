@@ -9,6 +9,8 @@
  * - The Armory level goes up as you spend (LEVEL_SPEND), and opens more of the shop. Selling never lowers it.
  * - Selling gives back half (rounded down) of what one item cost.
  * - New Season wipes coins and gear (James, 21 Oct 2026).
+ * - Discount day (a teacher's switch, shared/discountDay.ts): every arrow is half price, rounded down. Selling gives
+ *   back half of that day's price, so buying and selling can't earn coins or Armory levels.
  */
 import { ARROWS, arrowKind, isArrowId } from './arrows';
 import { BOWS, HELPERS, SHIELDS, isBowId, isHelperId, isShieldId } from './gear';
@@ -60,6 +62,12 @@ const SHOP: ShopItem[] = [
   ...BOWS.filter((b) => b.price > 0).map((b): ShopItem => ({ id: b.id, kind: 'bow', name: b.name, does: b.does, price: b.price, qty: 1, level: 1 })),
 ];
 const SHOP_BY = new Map(SHOP.map((s) => [`${s.kind}:${s.id}`, s]));
+
+/** An item at today's price: arrows are half price (rounded down) on a Discount day; everything else is unchanged. */
+export function onDiscount(item: ShopItem, discount: boolean): ShopItem {
+  if (!discount || item.kind !== 'gear' || !isArrowId(item.id)) return item;
+  return { ...item, price: Math.floor(item.price / 2) };
+}
 
 /** Everything the Armory sells, in shop order. */
 export function shopItems(): readonly ShopItem[] {

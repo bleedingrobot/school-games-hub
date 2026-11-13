@@ -63,6 +63,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [state, setState] = useState<ArmoryState | null>(null);
   const [coinsLeft, setCoinsLeft] = useState(DAILY_COINS);
+  /** The teacher's Discount day: every arrow half price today (the server sets the real price). */
+  const [discount, setDiscount] = useState(false);
   const choices = loadChoices();
   const [world, setWorld] = useState<WorldId>(choices.world);
   const [level, setLevel] = useState<BotLevel>(choices.level);
@@ -98,6 +100,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
     }
     setState(r.value.state);
     setCoinsLeft(r.value.coinsLeft);
+    setDiscount(r.value.discount === true);
     setScreen({ kind: 'home' });
   }
 
@@ -335,7 +338,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '', onServer
       );
       break;
     case 'armory':
-      body = <ArmoryScreen api={api} state={state} onState={setState} startShelf={screen.shelf} onExit={home} onEarn={() => speed('armory')} />;
+      body = <ArmoryScreen api={api} state={state} discount={discount} onState={setState} startShelf={screen.shelf} onExit={home} onEarn={() => speed('armory')} />;
       break;
     case 'how':
       body = <HowToPlay onBack={home} />;
