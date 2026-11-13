@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react';
 import { BUILDING_NAMES, maxLevel, upgradeCost } from '../../../shared/clans/empire';
 import { VILLAGE_BUILDINGS, type Empire, type VillageBuilding } from '../../../shared/clans/types';
 import { buildingArt, villageArt } from './art';
@@ -67,6 +67,61 @@ function Walls({ level }: { level: number }) {
       ))}
     </g>
   );
+}
+
+/** How tall the painted wall strip stands at each Walls level (ground units); the strip is 3 times as wide as it is tall. */
+const WALL_H = [0, 20, 26, 40, 48, 58];
+const CORNER_W = [0, 18, 24, 40, 52, 62];
+const GATE_W = [0, 70, 80, 96, 110, 124];
+
+/**
+ * The painted Walls (James, 14 Nov 2026): the level's strip repeated along each edge, slanted to follow it, a corner piece
+ * at the back, left and right corners and the gate at the front. The back half sits behind the buildings and the front
+ * half in front of them. Null until the level is painted; the drawn walls are used then.
+ */
+function paintedWalls(level: number, uid: string): { back: ReactNode; front: ReactNode } | null {
+  if (level <= 0) return null;
+  const lv = Math.min(5, level) as 1 | 2 | 3 | 4 | 5;
+  const strip = villageArt(`wall-${lv}`);
+  if (!strip) return null;
+  const corner = villageArt(`corner-${lv}`);
+  const gate = villageArt(`gate-${lv}`);
+  const H = WALL_H[lv];
+  const W = H * 3;
+  const [back, right, front, left] = diamond(8);
+  const gap = (GATE_W[lv] * 0.42) / GROUND.rx;
+  // Each edge runs left to right; the front two stop short of the gate.
+  const towards = (a: [number, number], b: [number, number], t: number): [number, number] => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const edge = (id: string, a: [number, number], b: [number, number]) => {
+    const deg = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+    return (
+      <g key={id}>
+        <defs>
+          <pattern id={`${uid}-${id}`} patternUnits="userSpaceOnUse" width={W} height={H} patternTransform={`translate(${a[0]} ${a[1] - H}) skewY(${deg})`}>
+            <image href={strip} width={W} height={H} preserveAspectRatio="none" />
+          </pattern>
+        </defs>
+        <polygon points={pts([[a[0], a[1] - H], [b[0], b[1] - H], b, a])} fill={`url(#${uid}-${id})`} />
+      </g>
+    );
+  };
+  const piece = (src: string | undefined, [x, y]: [number, number], w: number, key: string) =>
+    src ? <image key={key} href={src} x={x - w / 2} y={y - w * 1.5 + 6} width={w} height={w * 1.5} preserveAspectRatio="xMidYMax meet" /> : null;
+  return {
+    back: (
+      <g className="cq-vwalls cq-vwalls--painted">
+        {edge('lb', left, back)}{edge('br', back, right)}
+        {piece(corner, back, CORNER_W[lv], 'cb')}
+      </g>
+    ),
+    front: (
+      <g className="cq-vwalls cq-vwalls--painted">
+        {piece(corner, left, CORNER_W[lv], 'cl')}{piece(corner, right, CORNER_W[lv], 'cr')}
+        {edge('lf', left, towards(left, front, 1 - gap))}{edge('fr', towards(front, right, gap), right)}
+        {gate && <image href={gate} x={front[0] - GATE_W[lv] / 2} y={front[1] - GATE_W[lv] + 8} width={GATE_W[lv]} height={GATE_W[lv]} preserveAspectRatio="xMidYMax meet" />}
+      </g>
+    ),
+  };
 }
 
 /** The gate at the front, which is also the button for the Walls. */
@@ -221,6 +276,12 @@ function roads(): [Plot, Plot][] {
   ];
 }
 const COATS = ['#6a4a8a', '#8a5a2a', '#3a6a5a'];
+/** The painted villagers (James, 14 Nov 2026), in the order they join; the drawn one stands in until painted. */
+const VILLAGERS = ['farmer', 'water', 'guard', 'child'] as const;
+const Walker = ({ i }: { i: number }) => {
+  const painted = villageArt(`villager-${VILLAGERS[i]}`);
+  return painted ? <img src={painted} alt="" draggable={false} /> : <Villager coat={COATS[i]} />;
+};
 
 /** V5: fireworks over a finished village (all 39 levels). */
 function Fireworks() {
@@ -254,6 +315,7 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
   smoky?: ReadonlySet<VillageBuilding>;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
+  const walls = paintedWalls(e.levels.walls, useId().replace(/:/g, ''));
   useEffect(() => {
     // On a phone the village is wider than the screen: start in the middle.
     const el = scroller.current;
@@ -272,15 +334,14 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
       <div className="cq-vscene" role="group" aria-label="Your village. Tap a building.">
         <svg className={`cq-vground${cheer ? ' cq-vground--shake' : ''}`} key={cheer ? `g${cheer.n}` : 'g'} viewBox={`0 0 ${GROUND.w} ${GROUND.h}`} aria-hidden="true" preserveAspectRatio="xMidYMid meet">
           <Ground look={groundLook(total)} />
-          <Walls level={e.levels.walls} />
-          <Gate level={e.levels.walls} />
+          {walls ? walls.back : <><Walls level={e.levels.walls} /><Gate level={e.levels.walls} /></>}
         </svg>
         {roads().slice(0, groundLook(total)).map(([a, b], i) => (
           <span
             key={`walker-${i}`} className="cq-vwalker" aria-hidden="true"
             style={{ '--x0': pct(a).left, '--y0': pct(a).top, '--x1': pct(b).left, '--y1': pct(b).top, animationDelay: `${-i * 7}s`, animationDuration: `${22 + i * 5}s` } as CSSProperties}
           >
-            <Villager coat={COATS[i]} />
+            <Walker i={i} />
           </span>
         ))}
         {order.map((b) => {
@@ -310,6 +371,9 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
           {smoky?.has('walls') && cheer?.b !== 'walls' && <Puffs kind="smoke" />}
           {cheer?.b === 'walls' && <><Puffs kind="dust" /><span className="cq-vfloat" aria-hidden="true">{floatText(cheer)}</span></>}
         </button>
+        {walls && (
+          <svg className="cq-vground cq-vground--front" viewBox={`0 0 ${GROUND.w} ${GROUND.h}`} aria-hidden="true" preserveAspectRatio="xMidYMid meet">{walls.front}</svg>
+        )}
         {VILLAGE_BUILDINGS.every((b) => e.levels[b] >= maxLevel(b)) && <Fireworks />}
         {order.map((b) => sign(b, e.levels[b], PLOTS[b]))}
         {sign('walls', e.levels.walls, { x: GATE.x, y: GATE.y - 10 })}
