@@ -23,12 +23,12 @@ Source: James's Google Doc "bedmas" (id `1hDLgfY7ewHxfCooOiXqWvUYEX6RivhBYc9JQPz
 | Help for kids who need it | The help ladder below | James asked for it (13 Nov); below |
 
 ## What an Activity is (the new section)
-- `activity: true` on the `GameDefinition`, with **no `group`**, so it never gets a home card. The new page `/activities` (`src/pages/Activities.tsx`) lists every activity whose teacher switch is on, using `ActivityCard` and `useClassSwitches`.
+- `activity: true` on the `GameDefinition`, with **no `group`**, so it never gets a home card. The new page `/activities` (`src/activities/ActivitiesPage.tsx`) lists every activity whose teacher switch is on, using `ActivityCard` and `useClassSwitches`.
 - The top menu gets "📝 Activities" behind a code switch (`ACTIVITIES_ON`, off until Order Up's levels 1 to 3 are live), so pupils never see an empty page.
 - No points: an activity never calls `add_game_points`, so there's nothing on the points, Hard workers or homework boards.
 - Achievements use measures ending `_step`, which the Leaderboard's "most achievements" board leaves out (game guide 1-design question 5), so there's no leaderboard, as James chose.
 - Everything else is a normal game: teacher switch, `teacher` contract, server function, own tables, and the Skill map.
-- Shared files touched (each its own small PR, as 3-files-and-clashes.md says): `src/games/types.ts` (the `activity` field), `src/components/Layout.tsx` (menu link), `src/App.tsx` (route), and `src/pages/Activities.tsx` (new).
+- Shared files touched (each its own small PR, as 3-files-and-clashes.md says): `src/games/types.ts` (the `activity` field), `src/components/Layout.tsx` (menu link), `src/App.tsx` (route), and `src/activities/ActivitiesPage.tsx` (new).
 
 ## Design (game-guide/1-design.md)
 1. **Big goal:** pass all 7 levels; with the game layer, a full diner and a full loyalty card. With 10 to 15 minutes, 3 days a week, levels 1 to 3 take about 2 weeks and all 7 about a term.

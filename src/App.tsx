@@ -21,7 +21,7 @@ import { NonMathsGate } from './components/NonMathsGate';
 // Every page but the home page, the games and sign-in loads when it is opened, so the home page downloads less (dashboard
 // plan D7). Layout and the teacher area wait for them with a Loading line under their own header.
 const FriendGamePage = lazy(() => import('./pages/FriendGamePage').then((m) => ({ default: m.FriendGamePage })));
-const Activities = lazy(() => import('./pages/Activities').then((m) => ({ default: m.Activities })));
+const Activities = lazy(() => import('./activities/ActivitiesPage').then((m) => ({ default: m.Activities })));
 const HowPoints = lazy(() => import('./pages/HowPoints').then((m) => ({ default: m.HowPoints })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
 const Lobby = lazy(() => import('./pages/Lobby').then((m) => ({ default: m.Lobby })));
