@@ -1,6 +1,6 @@
 # Glyph Gates: plan
 
-**Status: stages 1 to 6 built. Stages 1-3 live (PR #493); teacher part, Bella voice (35 lines) and painted art in PR #495. Switched on in its own PR after that. Escape run (stage 7) still to do.** Migration number when building starts: `20261113000800` (`20261113000700` is held by Order Up's plan; check again with `node scripts/migration-numbers.mjs`). Game id `glyph`. Thread: "Plan the equivalent fractions glyph game". Source: James's mock-up (jungle temple wall, 4 × 4 fraction tiles, gold target stone, 4 glyphs, cheering monkeys), project files `glyph/glyph-mockup.png`.
+**Status: stages 1 to 6 built. Stages 1-3 live (PR #493); teacher part, Bella voice (35 lines) and painted art live (PR #495); switched on for pupils 14 Nov 2026 (code switch `glyphOn()` true, teacher switch `glyph_enabled` default on). Escape run (stage 7) still to do.** Migration number when building starts: `20261113000800` (`20261113000700` is held by Order Up's plan; check again with `node scripts/migration-numbers.mjs`). Game id `glyph`. Thread: "Plan the equivalent fractions glyph game". Source: James's mock-up (jungle temple wall, 4 × 4 fraction tiles, gold target stone, 4 glyphs, cheering monkeys), project files `glyph/glyph-mockup.png`.
 
 ## The short version
 - Pupils are explorers trapped in an old jungle temple. Each **wall** is sealed by a **gold stone** showing a fraction (5/6).
