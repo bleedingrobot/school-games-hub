@@ -50,8 +50,17 @@ export function buildWalls(level: Level, palette: Palette): WallChunk[] {
           for (let y = j * S; y < (j + 1) * S; y++)
             for (let x = i * S; x < (i + 1) * S; x++) {
               if (isSolid(x, y, z)) continue;
-              const inRoom = roomAt(level, x + 0.5, y + 0.5, z + 0.5) >= 0;
+              const roomIndex = roomAt(level, x + 0.5, y + 0.5, z + 0.5);
+              const inRoom = roomIndex >= 0;
               const base = inRoom ? palette.room : palette.tunnel;
+              // A warm lantern glow in the middle of each room, fading to the walls; tunnels stay a little cooler.
+              let warm = 0;
+              if (inRoom) {
+                const room = level.rooms[roomIndex];
+                const ddx = (x - room.cx) / (room.hx + 1), ddy = (y - room.cy) / (room.hy + 1), ddz = (z - room.cz) / (room.hz + 1);
+                warm = Math.max(0, 1 - Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz) / 1.6);
+              }
+              const tint: [number, number, number] = inRoom ? [1 + 0.45 * warm, 1 + 0.3 * warm, 1 + 0.08 * warm] : [0.94, 0.98, 1.06];
               for (let axis = 0; axis < 3; axis++)
                 for (const sign of [1, -1]) {
                   const nxx = x + (axis === 0 ? sign : 0);
@@ -84,9 +93,9 @@ export function buildWalls(level: Level, palette: Palette): WallChunk[] {
                   if (cx * nScreen[0] + cy * nScreen[1] + cz * nScreen[2] < 0) [b, d] = [d, b];
                   const name = `${'xyz'[axis]}${-sign > 0 ? 'p' : 'n'}`;
                   const shade = SHADE[name] * (0.92 + 0.16 * hash(x, y, z, axis * 2 + (sign > 0 ? 1 : 0)));
-                  const r = Math.min(1, base[0] * shade);
-                  const g = Math.min(1, base[1] * shade);
-                  const bl = Math.min(1, base[2] * shade);
+                  const r = Math.min(1, base[0] * shade * tint[0]);
+                  const g = Math.min(1, base[1] * shade * tint[1]);
+                  const bl = Math.min(1, base[2] * shade * tint[2]);
                   for (const p of [a, b, c, a, c, d]) {
                     pos.push(p[0], p[1], p[2]);
                     nor.push(nScreen[0], nScreen[1], nScreen[2]);

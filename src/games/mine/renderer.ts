@@ -37,7 +37,21 @@ export interface MineView {
 
 export interface ViewOptions {
   lessMotion: boolean;
+  /** Where the camera sits, read every frame so a change in Settings shows at once. Cockpit when left out. */
+  view?: () => 'behind' | 'cockpit';
 }
+
+/** The chase camera (docs/plans/mine-flight/PLAN.md, M1): this far behind the ship and this far above it, in blocks. */
+const CHASE_BACK = 2.3;
+const CHASE_UP = 0.75;
+/** It looks at a point this far ahead of the ship, so the middle of the screen is where the shots go. */
+const CHASE_AHEAD = 10;
+/** How quickly the camera catches up (a critically damped follow): bigger is tighter. */
+const CHASE_FOLLOW = 11;
+/** The camera stays this far out of the rock. */
+const CHASE_MARGIN = 0.3;
+/** Closer than this, the ship is hidden (it would fill the screen). */
+const CHASE_MIN_SHOW = 1.3;
 
 const v3 = (x: number, y: number, z: number) => new THREE.Vector3(x, z, -y);
 
@@ -74,11 +88,13 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
 
   const scene = new THREE.Scene();
   // Distance does the lighting: near rock is bright and far rock fades into the dark, like a miner's lamp.
-  scene.fog = new THREE.Fog(palette.fog, 2.5, 34);
-  const camera = new THREE.PerspectiveCamera(78, 1, 0.08, 70);
+  // It starts well away from the ship so a room or a long tunnel can be seen (docs/plans/mine-flight/PLAN.md, M1).
+  scene.fog = new THREE.Fog(palette.fog, 7, 58);
+  const camera = new THREE.PerspectiveCamera(85, 1, 0.08, 90);
   scene.add(camera);
   // Robots, keys and the like are lit from the ship's side so their shapes read.
-  scene.add(new THREE.AmbientLight(0xb4bcd6, 1.4));
+  scene.add(new THREE.AmbientLight(0xb4bcd6, 1));
+  scene.add(new THREE.HemisphereLight(0xfff1d6, 0x2a2f3a, 0.45));
   const lamp = new THREE.DirectionalLight(0xfff4e0, 2.4);
   lamp.position.set(0.4, 0.8, 0.6);
   camera.add(lamp);
@@ -91,8 +107,72 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
     return thing;
   };
 
+  // ——— The headlamp: a soft beam from the ship, so the rock ahead lights up as you fly ———
+  const headlamp = new THREE.SpotLight(0xfff0d0, 7, 34, 0.9, 1, 1.6);
+  scene.add(headlamp);
+  scene.add(headlamp.target);
+
+  // ——— The pupil's own ship, seen from behind (drawn in code; painted later) ———
+  const ship = new THREE.Group();
+  {
+    const hull = own(lit(0xd8dde6, 0x223044, 0.3));
+    const dark = own(lit(0x2b3444));
+    const glowMat = own(basic(0x7fe8ff));
+    const body = new THREE.Mesh(own(new THREE.ConeGeometry(0.2, 0.75, 6)), hull);
+    body.rotation.x = -Math.PI / 2;
+    ship.add(body);
+    const wing = new THREE.Mesh(own(new THREE.BoxGeometry(0.9, 0.05, 0.3)), hull);
+    wing.position.set(0, -0.02, 0.18);
+    ship.add(wing);
+    for (const side of [-1, 1]) {
+      const pod = new THREE.Mesh(own(new THREE.BoxGeometry(0.12, 0.12, 0.38)), dark);
+      pod.position.set(side * 0.42, 0, 0.2);
+      ship.add(pod);
+      const engine = new THREE.Mesh(own(new THREE.CircleGeometry(0.055, 8)), glowMat);
+      engine.position.set(side * 0.42, 0, 0.4);
+      ship.add(engine);
+    }
+    const canopy = new THREE.Mesh(own(new THREE.SphereGeometry(0.11, 8, 6)), own(lit(0x2f6df6, 0x2f6df6, 0.6)));
+    canopy.position.set(0, 0.09, -0.02);
+    canopy.scale.set(1, 0.7, 1.6);
+    ship.add(canopy);
+  }
+  ship.scale.setScalar(0.8);
+  scene.add(ship);
+  const shipPos = new THREE.Vector3();
+  const chasePos = new THREE.Vector3();
+  const chaseWant = new THREE.Vector3();
+  let chaseReady = false;
+  const solidAt = (sx: number, sy: number, sz: number) => {
+    // The picture's (x, y, z) is the mine's (x, −z, y).
+    const x = Math.floor(sx), y = Math.floor(-sz), z = Math.floor(sy);
+    if (x < 0 || y < 0 || z < 0 || x >= level.nx || y >= level.ny || z >= level.nz) return true;
+    const idx = x + level.nx * (y + level.ny * z);
+    const door = level.doorAt[idx];
+    return level.solid[idx] === 1 || (door >= 0 && session.state.doorsOpen[door] === 0);
+  };
+  /** The furthest spot from `from` towards `to` that stays out of the rock (a short march along the line). */
+  const clearTo = (from: THREE.Vector3, to: THREE.Vector3, out: THREE.Vector3): THREE.Vector3 => {
+    const d = tmp2.copy(to).sub(from);
+    const len = d.length();
+    const steps = Math.max(1, Math.ceil(len / 0.1));
+    let ok = 0;
+    for (let i = 1; i <= steps; i++) {
+      const k = i / steps;
+      if (solidAt(from.x + d.x * k, from.y + d.y * k, from.z + d.z * k)) break;
+      ok = k;
+    }
+    // Only a blocked line is shortened (by the margin), so a clear one is left exactly as it was.
+    const keep = ok >= 1 ? 1 : Math.max(0, ok * len - CHASE_MARGIN) / (len || 1);
+    return out.copy(from).addScaledVector(d, keep);
+  };
+  const tmp2 = new THREE.Vector3();
+  const tmp2b = new THREE.Vector3();
+  const chaseUp = new THREE.Vector3();
+
   // ——— Walls: one mesh per chunk, so out-of-view chunks are skipped ———
-  const wallMaterial = own(new THREE.MeshBasicMaterial({ vertexColors: true }));
+  // Lit rock: the faces' own shades plus the light, so the ship's headlamp shows the shape of the walls.
+  const wallMaterial = own(new THREE.MeshLambertMaterial({ vertexColors: true }));
   for (const chunk of buildWalls(level, palette)) {
     const g = own(new THREE.BufferGeometry());
     g.setAttribute('position', new THREE.BufferAttribute(chunk.positions, 3));
@@ -336,13 +416,40 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       const p = session.prev;
       clock += seconds;
       const t = clock;
-      // The ship's eye, smoothed between the two latest steps.
-      camera.position.copy(v3(lerp(p.px, s.px, alpha), lerp(p.py, s.py, alpha), lerp(p.pz, s.pz, alpha)));
+      // The ship, smoothed between the two latest steps.
+      shipPos.copy(v3(lerp(p.px, s.px, alpha), lerp(p.py, s.py, alpha), lerp(p.pz, s.pz, alpha)));
       const f = v3(lerp(p.fx, s.fx, alpha), lerp(p.fy, s.fy, alpha), lerp(p.fz, s.fz, alpha)).normalize();
       const u = v3(lerp(p.ux, s.ux, alpha), lerp(p.uy, s.uy, alpha), lerp(p.uz, s.uz, alpha)).normalize();
-      camera.up.copy(u);
-      lookAtPoint.copy(camera.position).add(f);
-      camera.lookAt(lookAtPoint);
+      const behind = (options.view?.() ?? 'cockpit') === 'behind';
+      ship.visible = behind;
+      if (behind) {
+        // Chase camera: behind and above the ship, pulled in when rock is in the way, following with a smooth catch-up.
+        ship.position.copy(shipPos);
+        ship.up.copy(u);
+        ship.lookAt(tmp.copy(shipPos).sub(f));
+        // Rise first, then back off, so a wall behind still leaves the camera above the ship rather than inside it.
+        clearTo(shipPos, tmp2b.copy(shipPos).addScaledVector(u, CHASE_UP), chaseUp);
+        clearTo(chaseUp, tmp2b.copy(chaseUp).addScaledVector(f, -CHASE_BACK), chaseWant);
+        if (!chaseReady || seconds > 0.5) chasePos.copy(chaseWant);
+        else chasePos.lerp(chaseWant, 1 - Math.exp(-CHASE_FOLLOW * seconds));
+        // Never let the smoothing drag the camera through rock: check the line from the ship again.
+        clearTo(shipPos, chasePos, chasePos);
+        chaseReady = true;
+        // Squeezed against a wall, the ship would fill the screen: hide it and fly from its nose until there is room.
+        ship.visible = chasePos.distanceTo(shipPos) > CHASE_MIN_SHOW;
+        camera.position.copy(chasePos);
+        camera.up.copy(u);
+        lookAtPoint.copy(shipPos).addScaledVector(f, CHASE_AHEAD);
+        camera.lookAt(lookAtPoint);
+      } else {
+        chaseReady = false;
+        camera.position.copy(shipPos);
+        camera.up.copy(u);
+        lookAtPoint.copy(shipPos).add(f);
+        camera.lookAt(lookAtPoint);
+      }
+      headlamp.position.copy(shipPos);
+      headlamp.target.position.copy(shipPos).addScaledVector(f, 6);
 
       // Doors: gone when open; the one you can use glows.
       session.world.level.doors.forEach((d, i) => {
@@ -400,8 +507,7 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
         if (!r.alive) return;
         g.position.set(lerp(p.robots[i * 3], r.x, alpha), lerp(p.robots[i * 3 + 2], r.z, alpha), -lerp(p.robots[i * 3 + 1], r.y, alpha));
         if (r.alert) {
-          tmp.copy(camera.position);
-          g.lookAt(tmp);
+          g.lookAt(shipPos);
         } else if (!less) {
           g.rotation.y += seconds * 0.6;
         }
@@ -465,7 +571,7 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       renderer.setSize(lastWidth, lastHeight, false);
       camera.aspect = lastWidth / lastHeight;
       // A tall phone gets a wider angle so the view isn't a thin slice.
-      camera.fov = camera.aspect < 1 ? 90 : 78;
+      camera.fov = camera.aspect < 1 ? 96 : 85;
       camera.updateProjectionMatrix();
     },
 

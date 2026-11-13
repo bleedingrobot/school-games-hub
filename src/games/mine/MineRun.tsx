@@ -343,7 +343,7 @@ export function MineRun({
     void import('./renderer')
       .then((m) => {
         if (gone) return;
-        view = m.createView(el, session, { lessMotion });
+        view = m.createView(el, session, { lessMotion, view: () => prefsRef.current.view });
         viewRef.current = view;
         if (new URLSearchParams(window.location.search).has('debug')) (window as unknown as { __mineStats?: () => unknown }).__mineStats = () => view?.stats();
         ratioNow = view.stats().pixelRatio;

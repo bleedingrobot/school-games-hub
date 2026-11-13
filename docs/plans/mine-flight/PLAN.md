@@ -1,6 +1,6 @@
 # Mine Runner: easier flying, open feel, better graphics (plan)
 
-Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: plan only, waiting on James's pick of direction (question card in the thread "Make Mine Runner fun to fly").** Branch `claude/project-thread-rpsdb0`.
+Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: James picked "all stages, in order" (13 Nov 2026). M1 built 13 Nov (chase camera default with a Camera setting, fog 7–58, FOV 85/96, lit walls with headlamp and room lantern glow baked into `walls.ts`); live with this PR. Next: M2.** Branch `claude/project-thread-rpsdb0`.
 
 ## 1. Why it feels hard and closed in (from the code)
 
