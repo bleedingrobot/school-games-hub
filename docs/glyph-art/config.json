@@ -4,7 +4,8 @@
   "filename_prefix": "glyph/img",
   "style": "t",
   "styles": {
-    "t": "Painted cartoon adventure game art, soft painterly shading, an ancient overgrown jungle temple, mossy green and grey carved stone, hanging vines and leaves, warm orange torchlight with gentle glow, rich deep greens with touches of gold, friendly and exciting, not scary, clean readable shapes, children's video game illustration. "
+    "t": "Painted cartoon adventure game art, soft painterly shading, an ancient overgrown jungle temple, mossy green and grey carved stone, hanging vines and leaves, warm orange torchlight with gentle glow, rich deep greens with touches of gold, friendly and exciting, not scary, clean readable shapes, children's video game illustration. ",
+    "c": "Painted cartoon children's video game illustration, soft painterly shading, clean readable shapes, bright friendly colours, a single isolated object only, nothing else in the picture, no scenery, no pillars, no torches, no plants, no background details. "
   },
   "inbox": "~/dragon-art-inbox/glyph-art/set",
   "picks": "docs/glyph-art/picks.json",
@@ -14,7 +15,10 @@
     {
       "name": "back-wall",
       "prompt": "A wide front-on view of one huge ancient temple wall deep in a jungle, made of big mossy grey-green stone blocks with faint carved rune bands, a calm plain flat empty stone area across the middle of the wall, a lit wall torch on the left edge, leafy vines and jungle plants framing the edges and the top, soft green gloom with warm torchlight, empty background scenery for a game screen, calm and uncluttered in the middle so tiles placed on top stand out, no text, no characters. Wide landscape.",
-      "size": [1344, 768],
+      "size": [
+        1344,
+        768
+      ],
       "kind": "scene",
       "folder": "back",
       "file": "wall"
@@ -22,15 +26,21 @@
     {
       "name": "back-map",
       "prompt": "A top-down treasure map style view of a thick jungle with a winding dirt path linking six small ancient stone temples, from a mossy gate at the bottom left, past a snake-carved hall, a temple beside a waterfall, a tunnel through giant tree roots, a dark cave mouth, up to a glowing golden temple at the top right, river and palm trees, warm sunlight, no text, no characters. Wide landscape.",
-      "size": [1344, 768],
+      "size": [
+        1344,
+        768
+      ],
       "kind": "scene",
       "folder": "back",
       "file": "map"
     },
     {
       "name": "gold-stone",
-      "prompt": "A single square carved golden stone tablet, chunky bevelled edges, smooth flat plain blank face with nothing on it, warm shiny gold with soft highlights, front-on view. Single object, centred, the whole tablet visible with space around it, on a plain pure white background, clean empty white all around.",
-      "size": [768, 768],
+      "prompt": "A single square carved golden stone tablet, chunky bevelled edges, smooth flat plain blank face with nothing on it, warm shiny gold with soft highlights, front-on view. Single object, centred, the whole tablet visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
       "kind": "cut",
       "folder": "stones",
       "file": "gold",
@@ -38,8 +48,11 @@
     },
     {
       "name": "tile-stone",
-      "prompt": "A single square mossy grey-green carved stone tile, chunky rounded bevelled edges, a smooth flat plain blank face with nothing on it, a few small moss patches on the corners, front-on view. Single object, centred, the whole tile visible with space around it, on a plain pure white background, clean empty white all around.",
-      "size": [768, 768],
+      "prompt": "A single square mossy grey-green carved stone tile, chunky rounded bevelled edges, a smooth flat plain blank face with nothing on it, a few small moss patches on the corners, front-on view. Single object, centred, the whole tile visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        768
+      ],
       "kind": "cut",
       "folder": "stones",
       "file": "tile",
@@ -47,8 +60,11 @@
     },
     {
       "name": "monkey-brown",
-      "prompt": "A cute cheeky cartoon brown monkey with a cream face and big happy grin, jumping up with both arms raised in celebration, curly tail, full body, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
-      "size": [768, 1024],
+      "prompt": "A cute cheeky cartoon brown monkey with a cream face and big happy grin, jumping up with both arms raised in celebration, curly tail, full body, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
       "kind": "cut",
       "folder": "monkeys",
       "file": "brown",
@@ -56,8 +72,11 @@
     },
     {
       "name": "monkey-grey",
-      "prompt": "A cute cheeky cartoon grey monkey with a pale face and big happy open-mouthed laugh, arms spread wide cheering, long tail, full body, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
-      "size": [768, 1024],
+      "prompt": "A cute cheeky cartoon grey monkey with a pale face and big happy open-mouthed laugh, arms spread wide cheering, long tail, full body, front view. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
       "kind": "cut",
       "folder": "monkeys",
       "file": "grey",
@@ -65,8 +84,11 @@
     },
     {
       "name": "monkey-gold",
-      "prompt": "A cute cheeky cartoon golden-orange monkey with a cream face and big grin, leaping sideways with one fist in the air, curly tail, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
-      "size": [768, 1024],
+      "prompt": "A cute cheeky cartoon golden-orange monkey with a cream face and big grin, leaping sideways with one fist in the air, curly tail, full body. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around. Isolated sticker on a plain pure white background only.",
+      "size": [
+        768,
+        1024
+      ],
       "kind": "cut",
       "folder": "monkeys",
       "file": "gold",
@@ -75,9 +97,13 @@
     {
       "name": "card",
       "prompt": "An ancient jungle temple wall seen from the front, a grid of square stone tiles carved into it with some tiles glowing bright green in a rune shape, a big shining gold stone tablet beside them, two cheeky cartoon monkeys swinging on vines and cheering, a lit torch, leafy jungle around the edges, calm misty green sky at the top, wide landscape picture for a game title card, no text.",
-      "size": [1216, 688],
+      "size": [
+        1216,
+        688
+      ],
       "kind": "card",
       "file": "glyph"
     }
-  ]
+  ],
+  "_cutouts": "Paint cut-outs with --style c (plain white backgrounds); scenes and the card with style t."
 }

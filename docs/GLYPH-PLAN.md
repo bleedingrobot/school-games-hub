@@ -15,9 +15,9 @@
 ## Decisions
 | Question | Recommendation | James chose |
 |---|---|---|
-| When the four glyphs appear | **After "Light the runes"**, so nobody can copy a glyph's shape onto the tiles before doing the maths | (card) |
-| Escape-room timer | Calm temples with no clock; an optional **Escape run** (5 walls against a falling-sand timer, best time) opens after temple 3 | (card) |
-| Build now? | Start with stages 1 to 3 (rules, server, first 3 temples) | (card) |
+| When the four glyphs appear | **After "Light the runes"**, so nobody can copy a glyph's shape onto the tiles before doing the maths | **After Light the runes** (13 Nov) |
+| Escape-room timer | Calm temples with no clock; an optional **Escape run** (5 walls against a falling-sand timer, best time) opens after temple 3 | **Optional Escape run after temple 3** (13 Nov) |
+| Build now? | Start with stages 1 to 3 (rules, server, first 3 temples) | **Build stages 1 to 3 now** (13 Nov) |
 | Card group and years | `'complex-maths'`, Years 4 to 6 (equivalent fractions is MS.Y5.NUM.RN.P9; temples 1 to 2 suit Year 4) | recommendation |
 | Name | Glyph Gates | recommendation |
 
