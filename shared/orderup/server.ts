@@ -7,7 +7,8 @@
  *          worked examples seen;
  *   start  makes a set of bags for a level from a fresh seed (short ones first on full help) and keeps it;
  *   bag    replays one bag's picks and answers on the kept set, saves it, records it once for the maths records, and on
- *          the set's last bag moves the pupil's place on (passing a level gives its achievement);
+ *          the set's last bag moves the pupil's place on (passing a level gives its achievement; a set's first bag checks
+ *          the "First order" one);
  *   seen   marks a level's worked example as seen.
  *
  * Nothing that counts comes from the browser. Bags are saved in order, each once.
@@ -149,6 +150,8 @@ export async function handleOrderUp(services: OrderUpServices, player: string, b
       const answer: FactAnswer = { key, correct: result.clean, ms: result.ms, at, ...(result.given.length ? { given: result.given[0] } : {}) };
       await services.recordAnswers(player, `orderup:${seed}:${slot}`, [answer]);
     }
+    // A set's first bag: the hub checks the "First order" achievement (a no-op once it is given).
+    if (slot === 0) await services.progressChanged(player);
     const reply: Record<string, unknown> = { bag: { good: result.good, clean: result.clean, wrongPicks: result.wrongPicks, wrongAnswers: result.wrongAnswers }, done: saved.done, good: saved.good };
     if (saved.done < ORDERUP.setSize) return ok(reply);
     // The last bag: move the pupil's place on.

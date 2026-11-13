@@ -36,7 +36,8 @@ describe('the orderup server', () => {
     expect((await handleOrderUp(services, 'p1', { action: 'start', level: 2 })).body.code).toBe('locked');
     const { set, last } = await playSet(services, 1);
     expect(last.body).toMatchObject({ passedSet: true, newLevel: true, passed: 1, open: 2, good: 8 });
-    expect(services.data.changed).toEqual(['p1']);
+    // The first bag ("First order") and the passed level.
+    expect(services.data.changed).toEqual(['p1', 'p1']);
     expect(services.data.answers).toHaveLength(8);
     expect(services.data.answers.every((a) => a.answers[0].key === 'bedmas:left-to-right' && a.answers[0].correct)).toBe(true);
     // The same bag sent again counts once.
