@@ -71,8 +71,8 @@ export class MineSession {
   private announcedPads = new Set<number>();
 
   /** `maths: false` is a run with no questions (question doors start open and pads do nothing). */
-  constructor(recipe: Recipe, options: { steady: boolean; maths?: boolean }) {
-    this.world = makeWorld(makeLevel(recipe), { steady: options.steady, maths: options.maths ?? true });
+  constructor(recipe: Recipe, options: { steady: boolean; easy?: boolean; maths?: boolean }) {
+    this.world = makeWorld(makeLevel(recipe), { steady: options.steady, easy: options.easy ?? false, maths: options.maths ?? true });
     this.state = newRun(this.world);
     this.prev = snapshot(this.state);
     this.visited.add(this.state.lastRoom);

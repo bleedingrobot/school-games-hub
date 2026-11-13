@@ -54,6 +54,8 @@ function startedFor(levelId: string, maths = true): StartReply {
 
 beforeEach(() => {
   localStorage.clear();
+  // The bot flies classic steady inputs, so this pupil has picked Classic controls.
+  localStorage.setItem('mine-runner-prefs-v1:pilot-1', JSON.stringify({ scheme: 'classic' }));
   window.history.replaceState({}, '', '/?debug=1');
   Object.values(view).forEach((f) => typeof f === 'function' && 'mockClear' in f && (f as ReturnType<typeof vi.fn>).mockClear());
   for (const m of Object.values(mocks)) m.mockReset();

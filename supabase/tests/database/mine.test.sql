@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(65);
+select plan(67);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -159,6 +159,12 @@ select is(public.mine_load_run(pg_temp.id('0a'), 'question-seed-1') #>> '{answer
 select is(public.mine_claim_answer(pg_temp.id('0b'), 'question-seed-1', 4, 1, true), false, 'another pupil cannot answer this run''s questions');
 select throws_ok($$ select public.mine_store_run(pg_temp.id('0a'), 'question-seed-2', 'l3', '[]') $$, '22023', null, 'an empty question list is refused');
 select throws_ok($$ select public.mine_store_run(pg_temp.id('0a'), 'question-seed-3', 'nope', '[{"answer":1}]') $$, '23514', null, 'a question list for a level that does not exist is refused');
+
+-- ---- Easy flying (20261113000600): runs in the 'easy' flight mode save; an unknown mode is still refused ----
+select pg_temp.act_as_server();
+select lives_ok($$ select pg_temp.save('0a', 900, 4000, 'l6', false, 1000, 'easy') $$, 'an easy-flying run saves');
+select throws_ok($$ select pg_temp.save('0a', 901, 4000, 'l6', false, 1000, 'hover') $$, '23514', null, 'an unknown flight mode is refused');
+select pg_temp.reset();
 
 select * from finish();
 rollback;

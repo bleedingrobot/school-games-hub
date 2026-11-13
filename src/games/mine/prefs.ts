@@ -6,7 +6,9 @@ export interface MinePrefs {
   hand: 'right' | 'left';
   /** Show the on-screen thumb sticks: by itself on a touch screen, or always, or never. */
   touch: 'auto' | 'on' | 'off';
-  /** Steady flight keeps the ship level (up is always up). Free flight lets it roll. */
+  /** Easy: the ship flies forward by itself and you point to steer (docs/plans/mine-flight/PLAN.md, M2). Classic: all six ways by hand. */
+  scheme: 'easy' | 'classic';
+  /** Classic only. Steady flight keeps the ship level (up is always up). Free flight lets it roll. */
   steady: boolean;
   /** The little arrow that points to the next goal. */
   arrow: boolean;
@@ -24,7 +26,7 @@ export interface MinePrefs {
   maths: boolean;
 }
 
-export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 2, invertY: false, view: 'behind', maths: true };
+export const DEFAULT_PREFS: MinePrefs = { scheme: 'easy', hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 2, invertY: false, view: 'behind', maths: true };
 
 const keyFor = (player?: string) => `mine-runner-prefs-v1${player ? `:${player}` : ''}`;
 
@@ -33,6 +35,7 @@ export function parsePrefs(raw: unknown): MinePrefs {
   const bool = (k: keyof MinePrefs, fallback: boolean) => (typeof o[k] === 'boolean' ? (o[k] as boolean) : fallback);
   const sens = typeof o.sensitivity === 'number' && Number.isFinite(o.sensitivity) ? Math.min(2.5, Math.max(0.4, o.sensitivity)) : DEFAULT_PREFS.sensitivity;
   return {
+    scheme: o.scheme === 'classic' ? 'classic' : 'easy',
     hand: o.hand === 'left' ? 'left' : 'right',
     touch: o.touch === 'on' || o.touch === 'off' ? o.touch : 'auto',
     steady: bool('steady', DEFAULT_PREFS.steady),

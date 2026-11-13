@@ -145,9 +145,11 @@ export function MineRun({
   const stage = useRef<HTMLDivElement>(null);
   // Steady or free flight is decided when the run starts and never changes during it.
   const steadyAtStart = useRef(prefs.steady);
+  // Easy or classic controls, also fixed for the run (the server replays the run under the same rules).
+  const easyAtStart = useRef(prefs.scheme === 'easy');
   // A run has maths when it is the preview's trial maths, or the server made it a run with questions.
   const mathsRun = trial || started?.maths === true;
-  const session = useMemo(() => new MineSession(level.recipe, { steady: steadyAtStart.current, maths: mathsRun }), [level.recipe, mathsRun]);
+  const session = useMemo(() => new MineSession(level.recipe, { steady: steadyAtStart.current, easy: easyAtStart.current, maths: mathsRun }), [level.recipe, mathsRun]);
   const controls = useMemo(() => new Controls(), []);
   const viewRef = useRef<MineView | null>(null);
   const [problem, setProblem] = useState('');
@@ -164,7 +166,7 @@ export function MineRun({
   const slotsUsed = useRef(new Map<number, number>());
   const pending = useRef(new Map<number, number>());
   const plan = useMemo(() => questionPlan(session.world.level), [session]);
-  const flight = steadyAtStart.current ? 'steady' : 'free';
+  const flight = easyAtStart.current ? 'easy' : steadyAtStart.current ? 'steady' : 'free';
   const [needsStart, setNeedsStart] = useState(true);
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
@@ -183,7 +185,7 @@ export function MineRun({
   const lessMotion = wantsLessMotion(prefs);
   const lastSound = useRef<Record<string, number>>({});
 
-  controls.settings = { sensitivity: prefs.sensitivity, invertY: prefs.invertY, lock: prefs.lock };
+  controls.settings = { sensitivity: prefs.sensitivity, invertY: prefs.invertY, lock: prefs.lock, easy: easyAtStart.current };
 
   const say = useCallback((text: string) => {
     setMessage(text);
@@ -517,6 +519,7 @@ export function MineRun({
   useEffect(() => () => window.clearTimeout(messageTimer.current), []);
 
   // Mouse: drag to look (or captured look), click to fire.
+  const aimRing = useRef<HTMLDivElement>(null);
   const drag = useRef<{ id: number; x: number; y: number; moved: number; at: number } | null>(null);
   function pointerDown(e: React.PointerEvent) {
     if (isBlocked() || e.pointerType === 'touch') return;
@@ -536,10 +539,29 @@ export function MineRun({
       controls.setMouseButtons(false, true);
       return;
     }
+    // Easy flying: the mouse steers by where it points, so a press just fires.
+    if (easyAtStart.current) {
+      el?.setPointerCapture?.(e.pointerId);
+      controls.setMouseButtons(true, false);
+      return;
+    }
     el?.setPointerCapture?.(e.pointerId);
     drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0, at: performance.now() };
   }
   function pointerMove(e: React.PointerEvent) {
+    if (easyAtStart.current && e.pointerType !== 'touch') {
+      const r = canvas.current?.getBoundingClientRect();
+      if (r && r.width > 0 && r.height > 0 && !isBlocked()) {
+        controls.setPoint(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+        // A ring where the mouse points, so it is clear the ship is turning towards it.
+        const ring = aimRing.current;
+        if (ring) {
+          ring.style.transform = `translate(${e.clientX - r.left}px, ${e.clientY - r.top}px)`;
+          ring.hidden = false;
+        }
+      }
+      return;
+    }
     const d = drag.current;
     if (!d || d.id !== e.pointerId || isBlocked()) return;
     const dx = e.clientX - d.x;
@@ -626,9 +648,14 @@ export function MineRun({
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
         onPointerCancel={pointerUp}
+        onPointerLeave={() => {
+          controls.setPoint(null);
+          if (aimRing.current) aimRing.current.hidden = true;
+        }}
         onContextMenu={(e) => e.preventDefault()}
       >
         <canvas ref={canvas} className="mn-canvas" role="img" aria-label="The view from your ship, flying through the mine." />
+        {easyAtStart.current && <div ref={aimRing} className="mn-aim" hidden aria-hidden="true" />}
       </div>
 
       <div className="mn-hud" aria-hidden={problem ? true : undefined}>
@@ -708,7 +735,7 @@ export function MineRun({
           </button>
         )}
         <p className="mn-rotate">Turn your phone sideways for a better view.</p>
-        {touch && <TouchControls controls={controls} hand={prefs.hand} canUse={target !== null && mathsRun} onUse={openQuestion} />}
+        {touch && <TouchControls controls={controls} easy={easyAtStart.current} hand={prefs.hand} canUse={target !== null && mathsRun} onUse={openQuestion} />}
       </div>
 
       {needsStart && !problem && <p className="mn-loading" role="status">Starting the mine…</p>}

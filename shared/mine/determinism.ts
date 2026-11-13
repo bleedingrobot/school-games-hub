@@ -1,7 +1,7 @@
 /**
  * A long, busy workload used to prove the rules give bit-for-bit the same answers everywhere
  * (docs/MINE-PLAN.md, section 4). `determinismReport` plays odd, random-looking runs on every
- * level in steady and free flight and writes down the whole state every 100 steps. The test pins
+ * level in steady, free and easy flight and writes down the whole state every 100 steps. The test pins
  * the text in Node; Stage 3 adds a script that runs it in real WebKit and Chromium and compares.
  */
 import { makeWorld, newRun, stateKey, stepRun } from './engine';
@@ -21,10 +21,11 @@ export function determinismReport(): string {
   const lines: string[] = [];
   for (const recipe of [...RECIPES, ...RECIPES.map(hardRecipe)]) {
     const level = makeLevel(recipe);
-    for (const steady of [true, false]) {
+    // Easy flying (docs/plans/mine-flight/PLAN.md, M2) is added after the two classic modes, so their lines are unchanged.
+    for (const mode of ['steady', 'free', 'easy'] as const) {
       for (const seed of [7, 99]) {
         const next = lcg(seed);
-        const w = makeWorld(level, { steady });
+        const w = makeWorld(level, { steady: mode !== 'free', easy: mode === 'easy' });
         const s = newRun(w);
         let tx = 0, ty = 0, tz = 0, yaw = 0, pitch = 0, roll = 0;
         for (let i = 0; i < 1500 && s.outcome === 'running'; i++) {
@@ -40,9 +41,9 @@ export function determinismReport(): string {
           // Every so often a held pause, a wrong answer or a made-up grant, so those are covered too.
           const code = r === 0 ? HOLD : r === 1 ? PENALTY : r === 2 ? GRANT + (next() % (level.doors.length + level.pads.length)) : packInput({ tx, ty, tz, yaw, pitch, roll, fire: r % 5 === 0, missile: r % 29 === 0 });
           stepRun(w, s, code);
-          if (i % 100 === 0) lines.push(`${recipe.id}/${steady ? 'steady' : 'free'}/${seed}/${i}: ${stateKey(s)}`);
+          if (i % 100 === 0) lines.push(`${recipe.id}/${mode}/${seed}/${i}: ${stateKey(s)}`);
         }
-        lines.push(`${recipe.id}/${steady ? 'steady' : 'free'}/${seed}/end: ${stateKey(s)}`);
+        lines.push(`${recipe.id}/${mode}/${seed}/end: ${stateKey(s)}`);
       }
     }
   }

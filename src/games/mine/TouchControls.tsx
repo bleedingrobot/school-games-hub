@@ -75,7 +75,29 @@ function HoldButton({ controls, which, className, children, label }: { controls:
   );
 }
 
-export function TouchControls({ controls, hand, canUse, onUse }: { controls: Controls; hand: 'right' | 'left'; canUse: boolean; onUse: () => void }) {
+export function TouchControls({ controls, easy = false, hand, canUse, onUse }: { controls: Controls; easy?: boolean; hand: 'right' | 'left'; canUse: boolean; onUse: () => void }) {
+  if (easy) {
+    // Easy flying: one stick steers (the ship flies forward by itself), the other thumb has Brake; Fire sits by the stick.
+    return (
+      <div className="mn-touch mn-touch--easy" data-hand={hand}>
+        <div className="mn-touch__side mn-touch__side--move">
+          <HoldButton controls={controls} which="brake" className="mn-touchbtn--brake" label="Brake">BRAKE</HoldButton>
+          <HoldButton controls={controls} which="missile" className="mn-touchbtn--missile" label="Missile">🚀</HoldButton>
+        </div>
+        <div className="mn-touch__side mn-touch__side--look">
+          <div className="mn-touch__fire">
+            <HoldButton controls={controls} which="fire" className="mn-touchbtn--fire" label="Laser">FIRE</HoldButton>
+          </div>
+          <Stick label="Steer" className="mn-stick--look" onChange={(x, y) => controls.setLook(x, y)} />
+        </div>
+        {canUse && (
+          <button type="button" className="mn-touchbtn mn-touchbtn--use" onClick={onUse}>
+            Use
+          </button>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="mn-touch" data-hand={hand}>
       <div className="mn-touch__side mn-touch__side--move">

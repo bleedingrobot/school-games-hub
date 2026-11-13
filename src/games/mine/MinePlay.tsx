@@ -78,7 +78,7 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
 
   /** Does this pupil fly with maths? The teacher's switch decides, or the pupil does when the teacher lets them. */
   const wantsMaths = mathsSwitch === 'on' ? true : mathsSwitch === 'off' ? false : prefs.maths;
-  const flight = prefs.steady ? 'steady' : 'free';
+  const flight = prefs.scheme === 'easy' ? 'easy' : prefs.steady ? 'steady' : 'free';
 
   /** Starts a dive. Anything that isn't practice asks the server first. Returns when the dive screen is up (or the notice is). */
   async function dive(level: LevelInfo, round: number): Promise<void> {
@@ -136,7 +136,7 @@ function MineScreens({ trial, onSaved }: { trial: boolean; onSaved: () => void }
     return (
       <section className="mn-picker">
         <Heading>{screen === 'howto' ? 'How to play Mine Runner' : 'Controls'}</Heading>
-        <div className="mn-card">{screen === 'howto' ? <HowToPlayBody questions /> : <ControlsHelp />}</div>
+        <div className="mn-card">{screen === 'howto' ? <HowToPlayBody questions /> : <ControlsHelp easy={prefs.scheme === 'easy'} />}</div>
         <button type="button" className="button button--play mn-btn" onClick={() => setScreen('picker')}>Back to the mines</button>
       </section>
     );

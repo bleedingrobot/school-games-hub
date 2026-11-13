@@ -9,7 +9,7 @@
  * Everything that looks random (a robot's aim, how long it waits) comes from `state.rng`.
  */
 import {
-  AIM_ASSIST_COS, AIM_ASSIST_RANGE, CALM_RADIUS, DRAG, DT, ENERGY_PICKUP, ENERGY_REGEN, EXIT_RADIUS, KEY_DOOR_RANGE, KEY_RADIUS, LASER_COOLDOWN, LASER_COST, LASER_DAMAGE,
+  AIM_ASSIST_COS, AIM_ASSIST_RANGE, EASY_AIM_COS, EASY_AIM_RANGE, EASY_BRAKE_DRAG, EASY_MAX_SPEED, EASY_TURN_UNIT, WALL_ASSIST_ACCEL, WALL_ASSIST_RANGE, CALM_RADIUS, DRAG, DT, ENERGY_PICKUP, ENERGY_REGEN, EXIT_RADIUS, KEY_DOOR_RANGE, KEY_RADIUS, LASER_COOLDOWN, LASER_COST, LASER_DAMAGE,
   LASER_LIFE, LASER_SPEED, LOSE_SIGHT_STEPS, MAX_ENERGY, MAX_MISSILES, MAX_PAD_BONUSES, MAX_RUN_STEPS, MAX_SHIELD, MAX_SPEED, MISSILE_COOLDOWN,
   MISSILE_DAMAGE, MISSILE_LIFE, MISSILE_PICKUP, MISSILE_SPEED, MISSILE_SPLASH, PAD_ANSWERS, PAD_BONUS_STEPS, PAD_ENERGY, PAD_MISSILES, PAD_SHIELD,
   PICKUP_RADIUS, PROJECTILE_SUBSTEPS, REACTOR_HP, REACTOR_LOCK_ANSWERS, REACTOR_RADIUS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, ROBOT_SHOT_LIFE, ACCEL,
@@ -28,6 +28,12 @@ export interface World {
    * (a class with maths switched off) question doors start open and pads do nothing. Decided before the run.
    */
   maths: boolean;
+  /**
+   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): always steady, the ship cruises forward by itself (pulling back
+   * brakes), turns faster, walls push it gently back to the middle, and shots bend to a robot near the nose. Old runs
+   * (steady and free) never set it, so they replay exactly as before.
+   */
+  easy: boolean;
 }
 
 export type RunOutcome = 'running' | 'finished' | 'timeout';
@@ -112,8 +118,9 @@ export interface RunState {
   finishSteps: number;
 }
 
-export function makeWorld(level: Level, options: { steady?: boolean; maths?: boolean } = {}): World {
-  return { level, steady: options.steady ?? true, maths: options.maths ?? true };
+export function makeWorld(level: Level, options: { steady?: boolean; maths?: boolean; easy?: boolean } = {}): World {
+  const easy = options.easy ?? false;
+  return { level, steady: easy || (options.steady ?? true), maths: options.maths ?? true, easy };
 }
 
 /**
@@ -285,8 +292,9 @@ function smallCos(t: number): number {
 }
 
 function turnShip(w: World, s: RunState, yaw: number, pitch: number, roll: number): void {
+  const unit = w.easy ? EASY_TURN_UNIT : TURN_UNIT;
   if (yaw !== 0) {
-    const t = yaw * TURN_UNIT;
+    const t = yaw * unit;
     const c = smallCos(t);
     const n = smallSin(t);
     if (w.steady) {
@@ -302,7 +310,7 @@ function turnShip(w: World, s: RunState, yaw: number, pitch: number, roll: numbe
     }
   }
   if (pitch !== 0) {
-    const t = pitch * TURN_UNIT;
+    const t = pitch * unit;
     const c = smallCos(t);
     const n = smallSin(t);
     const fx = s.fx * c + s.ux * n; const fy = s.fy * c + s.uy * n; const fz = s.fz * c + s.uz * n;
@@ -333,6 +341,30 @@ function turnShip(w: World, s: RunState, yaw: number, pitch: number, roll: numbe
   s.ux = s.ry * s.fz - s.rz * s.fy;
   s.uy = s.rz * s.fx - s.rx * s.fz;
   s.uz = s.rx * s.fy - s.ry * s.fx;
+}
+
+/**
+ * Easy flying's tunnel help: along each of the six ways, a wall nearer than WALL_ASSIST_RANGE pushes the ship back
+ * towards the middle, harder the closer it is. Only whole-block look-ups, adds and multiplies, so it is the same everywhere.
+ */
+function wallAssist(w: World, s: RunState): void {
+  const bx = Math.floor(s.px), by = Math.floor(s.py), bz = Math.floor(s.pz);
+  const reach = Math.floor(WALL_ASSIST_RANGE) + 1;
+  // Distance to the nearest wall face along one way (or the range, if none is that close).
+  const along = (dx: number, dy: number, dz: number, from: number): number => {
+    for (let k = 1; k <= reach; k++) {
+      if (solidAt(w, s, bx + dx * k, by + dy * k, bz + dz * k)) {
+        const d = dx + dy + dz > 0 ? k - from : from - 1 + k;
+        return d < WALL_ASSIST_RANGE ? d : WALL_ASSIST_RANGE;
+      }
+    }
+    return WALL_ASSIST_RANGE;
+  };
+  const fx = s.px - bx, fy = s.py - by, fz = s.pz - bz;
+  const push = (near: number) => (1 - near / WALL_ASSIST_RANGE) * WALL_ASSIST_ACCEL * DT;
+  s.vx += push(along(-1, 0, 0, fx)) - push(along(1, 0, 0, fx));
+  s.vy += push(along(0, -1, 0, fy)) - push(along(0, 1, 0, fy));
+  s.vz += push(along(0, 0, -1, fz)) - push(along(0, 0, 1, fz));
 }
 
 // ——— One step ———
@@ -386,18 +418,43 @@ function explode(w: World, s: RunState, x: number, y: number, z: number): void {
  * look straight down a shaft, and the reactor often sits at the bottom of one.)
  */
 function aimOf(w: World, s: RunState): [number, number, number] {
-  if (s.reactorDown || s.reactorLock > 0) return [s.fx, s.fy, s.fz];
+  const atReactor = reactorAim(w, s);
+  if (atReactor || !w.easy) return atReactor ?? [s.fx, s.fy, s.fz];
+  return robotAim(w, s) ?? [s.fx, s.fy, s.fz];
+}
+
+/** Easy aim help: the nearest living robot in clear view, close and near the nose, or null. Robots are checked in order, so it is the same everywhere. */
+function robotAim(w: World, s: RunState): [number, number, number] | null {
+  let best: [number, number, number] | null = null;
+  let bestD = EASY_AIM_RANGE;
+  for (const r of s.robots) {
+    if (!r.alive) continue;
+    const dx = r.x - s.px;
+    const dy = r.y - s.py;
+    const dz = r.z - s.pz;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (d < 1 || d >= bestD) continue;
+    if ((dx * s.fx + dy * s.fy + dz * s.fz) / d < EASY_AIM_COS) continue;
+    if (!lineClear(w, s, s.px, s.py, s.pz, r.x, r.y, r.z)) continue;
+    best = [dx / d, dy / d, dz / d];
+    bestD = d;
+  }
+  return best;
+}
+
+function reactorAim(w: World, s: RunState): [number, number, number] | null {
+  if (s.reactorDown || s.reactorLock > 0) return null;
   const R = w.level.reactor;
   const dx = R.x - s.px;
   const dy = R.y - s.py;
   const dz = R.z - s.pz;
   const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  if (d < 1 || d > AIM_ASSIST_RANGE) return [s.fx, s.fy, s.fz];
+  if (d < 1 || d > AIM_ASSIST_RANGE) return null;
   const ax = dx / d;
   const ay = dy / d;
   const az = dz / d;
-  if (ax * s.fx + ay * s.fy + az * s.fz < AIM_ASSIST_COS) return [s.fx, s.fy, s.fz];
-  if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return [s.fx, s.fy, s.fz];
+  if (ax * s.fx + ay * s.fy + az * s.fz < AIM_ASSIST_COS) return null;
+  if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return null;
   return [ax, ay, az];
 }
 
@@ -493,20 +550,26 @@ export function stepRun(w: World, s: RunState, code: number): void {
 
   // Turn, then push.
   turnShip(w, s, input.yaw, input.pitch, input.roll);
-  let ax = s.rx * input.tx + s.ux * input.ty + s.fx * input.tz;
-  let ay = s.ry * input.tx + s.uy * input.ty + s.fy * input.tz;
-  let az = s.rz * input.tx + s.uz * input.ty + s.fz * input.tz;
-  const want = input.tx * input.tx + input.ty * input.ty + input.tz * input.tz;
+  // Easy flying cruises forward by itself; pulling back (tz −1) brakes instead of reversing.
+  const braking = w.easy && input.tz < 0;
+  const tz = w.easy ? (braking ? 0 : 1) : input.tz;
+  let ax = s.rx * input.tx + s.ux * input.ty + s.fx * tz;
+  let ay = s.ry * input.tx + s.uy * input.ty + s.fy * tz;
+  let az = s.rz * input.tx + s.uz * input.ty + s.fz * tz;
+  const want = input.tx * input.tx + input.ty * input.ty + tz * tz;
   if (want > 1) {
     const k = 1 / Math.sqrt(want);
     ax *= k; ay *= k; az *= k;
   }
-  s.vx = (s.vx + ax * ACCEL * DT) * (1 - DRAG);
-  s.vy = (s.vy + ay * ACCEL * DT) * (1 - DRAG);
-  s.vz = (s.vz + az * ACCEL * DT) * (1 - DRAG);
+  const drag = braking ? DRAG + EASY_BRAKE_DRAG : DRAG;
+  s.vx = (s.vx + ax * ACCEL * DT) * (1 - drag);
+  s.vy = (s.vy + ay * ACCEL * DT) * (1 - drag);
+  s.vz = (s.vz + az * ACCEL * DT) * (1 - drag);
+  if (w.easy) wallAssist(w, s);
+  const top = w.easy ? EASY_MAX_SPEED : MAX_SPEED;
   const speed2 = s.vx * s.vx + s.vy * s.vy + s.vz * s.vz;
-  if (speed2 > MAX_SPEED * MAX_SPEED) {
-    const k = MAX_SPEED / Math.sqrt(speed2);
+  if (speed2 > top * top) {
+    const k = top / Math.sqrt(speed2);
     s.vx *= k; s.vy *= k; s.vz *= k;
   }
   const ship: Body = { x: s.px + s.vx * DT, y: s.py + s.vy * DT, z: s.pz + s.vz * DT };

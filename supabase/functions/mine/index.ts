@@ -8004,9 +8004,17 @@ const DT = 1 / 30;
 /** A room is 7 or 9 blocks across each way (half of it, not counting the middle block). */
 const ROOM_HALF_SIZES = [3, 4];
 const SHIP_RADIUS = .45;
+/** The share of speed lost each step. Top speed is about ACCEL × DT ÷ DRAG = 10 units/s. */
+const DRAG = .08;
 /** Each unit of turn input turns the ship by this many radians a step. Inputs go from −TURN_MAX to TURN_MAX. */
 const TURN_UNIT = .012;
 const ROLL_UNIT = .03;
+/** Easy turns half as fast again as classic, so a corner never feels like a fight. */
+const EASY_TURN_UNIT = .018;
+/** The ship cruises forward by itself at this top speed (classic tops out at MAX_SPEED). */
+const EASY_MAX_SPEED = 7.5;
+/** Walls closer than this (in blocks, along each way) push the ship gently back towards the middle. */
+const WALL_ASSIST_RANGE = 1.5;
 const LASER_SPEED = 40 * DT;
 const ENERGY_REGEN = .3;
 const MISSILE_SPEED = 18 * DT;
@@ -8751,10 +8759,12 @@ function recipeById(id) {
 * Everything that looks random (a robot's aim, how long it waits) comes from `state.rng`.
 */
 function makeWorld(level, options = {}) {
+	const easy = options.easy ?? false;
 	return {
 		level,
-		steady: options.steady ?? true,
-		maths: options.maths ?? true
+		steady: easy || (options.steady ?? true),
+		maths: options.maths ?? true,
+		easy
 	};
 }
 /**
@@ -8988,8 +8998,9 @@ function smallCos(t) {
 	return 1 - t2 / 2 + t2 * t2 / 24;
 }
 function turnShip(w, s, yaw, pitch, roll) {
+	const unit = w.easy ? EASY_TURN_UNIT : TURN_UNIT;
 	if (yaw !== 0) {
-		const t = yaw * TURN_UNIT;
+		const t = yaw * unit;
 		const c = smallCos(t);
 		const n = smallSin(t);
 		if (w.steady) {
@@ -9010,7 +9021,7 @@ function turnShip(w, s, yaw, pitch, roll) {
 		}
 	}
 	if (pitch !== 0) {
-		const t = pitch * TURN_UNIT;
+		const t = pitch * unit;
 		const c = smallCos(t);
 		const n = smallSin(t);
 		const fx = s.fx * c + s.ux * n;
@@ -9061,6 +9072,26 @@ function turnShip(w, s, yaw, pitch, roll) {
 	s.uy = s.rz * s.fx - s.rx * s.fz;
 	s.uz = s.rx * s.fy - s.ry * s.fx;
 }
+/**
+* Easy flying's tunnel help: along each of the six ways, a wall nearer than WALL_ASSIST_RANGE pushes the ship back
+* towards the middle, harder the closer it is. Only whole-block look-ups, adds and multiplies, so it is the same everywhere.
+*/
+function wallAssist(w, s) {
+	const bx = Math.floor(s.px), by = Math.floor(s.py), bz = Math.floor(s.pz);
+	const reach = Math.floor(WALL_ASSIST_RANGE) + 1;
+	const along = (dx, dy, dz, from) => {
+		for (let k = 1; k <= reach; k++) if (solidAt(w, s, bx + dx * k, by + dy * k, bz + dz * k)) {
+			const d = dx + dy + dz > 0 ? k - from : from - 1 + k;
+			return d < 1.5 ? d : WALL_ASSIST_RANGE;
+		}
+		return WALL_ASSIST_RANGE;
+	};
+	const fx = s.px - bx, fy = s.py - by, fz = s.pz - bz;
+	const push = (near) => (1 - near / WALL_ASSIST_RANGE) * 18 * DT;
+	s.vx += push(along(-1, 0, 0, fx)) - push(along(1, 0, 0, fx));
+	s.vy += push(along(0, -1, 0, fy)) - push(along(0, 1, 0, fy));
+	s.vz += push(along(0, 0, -1, fz)) - push(along(0, 0, 1, fz));
+}
 function dist(ax, ay, az, bx, by, bz) {
 	const dx = ax - bx;
 	const dy = ay - by;
@@ -9105,34 +9136,53 @@ function explode(w, s, x, y, z) {
 * look straight down a shaft, and the reactor often sits at the bottom of one.)
 */
 function aimOf(w, s) {
-	if (s.reactorDown || s.reactorLock > 0) return [
+	const atReactor = reactorAim(w, s);
+	if (atReactor || !w.easy) return atReactor ?? [
 		s.fx,
 		s.fy,
 		s.fz
 	];
+	return robotAim(w, s) ?? [
+		s.fx,
+		s.fy,
+		s.fz
+	];
+}
+/** Easy aim help: the nearest living robot in clear view, close and near the nose, or null. Robots are checked in order, so it is the same everywhere. */
+function robotAim(w, s) {
+	let best = null;
+	let bestD = 22;
+	for (const r of s.robots) {
+		if (!r.alive) continue;
+		const dx = r.x - s.px;
+		const dy = r.y - s.py;
+		const dz = r.z - s.pz;
+		const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (d < 1 || d >= bestD) continue;
+		if ((dx * s.fx + dy * s.fy + dz * s.fz) / d < .95) continue;
+		if (!lineClear(w, s, s.px, s.py, s.pz, r.x, r.y, r.z)) continue;
+		best = [
+			dx / d,
+			dy / d,
+			dz / d
+		];
+		bestD = d;
+	}
+	return best;
+}
+function reactorAim(w, s) {
+	if (s.reactorDown || s.reactorLock > 0) return null;
 	const R = w.level.reactor;
 	const dx = R.x - s.px;
 	const dy = R.y - s.py;
 	const dz = R.z - s.pz;
 	const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-	if (d < 1 || d > 40) return [
-		s.fx,
-		s.fy,
-		s.fz
-	];
+	if (d < 1 || d > 40) return null;
 	const ax = dx / d;
 	const ay = dy / d;
 	const az = dz / d;
-	if (ax * s.fx + ay * s.fy + az * s.fz < .94) return [
-		s.fx,
-		s.fy,
-		s.fz
-	];
-	if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return [
-		s.fx,
-		s.fy,
-		s.fz
-	];
+	if (ax * s.fx + ay * s.fy + az * s.fz < .94) return null;
+	if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return null;
 	return [
 		ax,
 		ay,
@@ -9237,22 +9287,27 @@ function stepRun(w, s, code) {
 	const L = w.level;
 	const input = unpackInput(code);
 	turnShip(w, s, input.yaw, input.pitch, input.roll);
-	let ax = s.rx * input.tx + s.ux * input.ty + s.fx * input.tz;
-	let ay = s.ry * input.tx + s.uy * input.ty + s.fy * input.tz;
-	let az = s.rz * input.tx + s.uz * input.ty + s.fz * input.tz;
-	const want = input.tx * input.tx + input.ty * input.ty + input.tz * input.tz;
+	const braking = w.easy && input.tz < 0;
+	const tz = w.easy ? braking ? 0 : 1 : input.tz;
+	let ax = s.rx * input.tx + s.ux * input.ty + s.fx * tz;
+	let ay = s.ry * input.tx + s.uy * input.ty + s.fy * tz;
+	let az = s.rz * input.tx + s.uz * input.ty + s.fz * tz;
+	const want = input.tx * input.tx + input.ty * input.ty + tz * tz;
 	if (want > 1) {
 		const k = 1 / Math.sqrt(want);
 		ax *= k;
 		ay *= k;
 		az *= k;
 	}
-	s.vx = (s.vx + ax * 24 * DT) * .92;
-	s.vy = (s.vy + ay * 24 * DT) * .92;
-	s.vz = (s.vz + az * 24 * DT) * .92;
+	const drag = braking ? .28 : DRAG;
+	s.vx = (s.vx + ax * 24 * DT) * (1 - drag);
+	s.vy = (s.vy + ay * 24 * DT) * (1 - drag);
+	s.vz = (s.vz + az * 24 * DT) * (1 - drag);
+	if (w.easy) wallAssist(w, s);
+	const top = w.easy ? EASY_MAX_SPEED : 10;
 	const speed2 = s.vx * s.vx + s.vy * s.vy + s.vz * s.vz;
-	if (speed2 > 100) {
-		const k = 10 / Math.sqrt(speed2);
+	if (speed2 > top * top) {
+		const k = top / Math.sqrt(speed2);
 		s.vx *= k;
 		s.vy *= k;
 		s.vz *= k;
@@ -9422,6 +9477,7 @@ function replay(w, runs) {
 	}
 	return s;
 }
+const isFlightMode = (m) => m === "steady" || m === "free" || m === "easy";
 const SEED_PATTERN = /^n1-(\d{10})-[0-9a-f]{24}$/;
 const LEVEL_ID = /^l[1-6](:hard)?$/;
 /** A new seed: when it was made and 12 random bytes. */
@@ -9453,7 +9509,7 @@ function parseMineReport(input) {
 	if (typeof input !== "object" || input === null) return null;
 	const r = input;
 	if (typeof r.seed !== "string" || typeof r.stamp !== "string" || !isCountedLevel(r.level)) return null;
-	if (r.mode !== "steady" && r.mode !== "free") return null;
+	if (!isFlightMode(r.mode)) return null;
 	if (typeof r.maths !== "boolean") return null;
 	if (typeof r.inputs !== "string" || r.inputs.length > 2e5) return null;
 	if (r.seed.length > 80 || r.stamp.length > 200) return null;
@@ -9483,7 +9539,8 @@ function judgeRun(report, nowSeconds) {
 		problem: "inputs not readable"
 	};
 	const world = makeWorld(makeLevel(recipe), {
-		steady: report.mode === "steady",
+		steady: report.mode !== "free",
+		easy: report.mode === "easy",
 		maths: report.maths
 	});
 	const state = replay(world, runs);
@@ -10044,7 +10101,7 @@ function makeHandler(services) {
 		};
 		if (body.action === "start") {
 			const { level, mode } = body;
-			if (!isCountedLevel(level) || mode !== "steady" && mode !== "free") return reply(400, { error: "That mine couldn't be found." });
+			if (!isCountedLevel(level) || !isFlightMode(mode)) return reply(400, { error: "That mine couldn't be found." });
 			const wantsMaths = body.maths === true;
 			const settings = await services.settings(player);
 			if (!settings) return reply(503, { error: "The mine couldn't start just now." });
@@ -10087,7 +10144,7 @@ function makeHandler(services) {
 		}
 		if (body.action === "answer") {
 			const { level, mode, seed, stamp, slot, value } = body;
-			if (!isCountedLevel(level) || mode !== "steady" && mode !== "free" || typeof seed !== "string" || typeof stamp !== "string" || seed.length > 80 || stamp.length > 200) return reply(400, { error: "That answer couldn't be read." });
+			if (!isCountedLevel(level) || !isFlightMode(mode) || typeof seed !== "string" || typeof stamp !== "string" || seed.length > 80 || stamp.length > 200) return reply(400, { error: "That answer couldn't be read." });
 			if (!Number.isInteger(slot) || typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1e6) return reply(400, { error: "That answer couldn't be read." });
 			const problem = await stampProblem(level, mode, true, seed, stamp);
 			if (problem) {

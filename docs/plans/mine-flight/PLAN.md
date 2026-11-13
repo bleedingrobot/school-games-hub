@@ -1,6 +1,6 @@
 # Mine Runner: easier flying, open feel, better graphics (plan)
 
-Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: James picked "all stages, in order" (13 Nov 2026). M1 built 13 Nov (chase camera default with a Camera setting, fog 7–58, FOV 85/96, lit walls with headlamp and room lantern glow baked into `walls.ts`); live with this PR. Next: M2.** Branch `claude/project-thread-rpsdb0`.
+Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: James picked "all stages, in order" (13 Nov 2026). M1 LIVE 13 Nov (PR #485). M2 built 13 Nov: a third flight mode `easy` (World `easy`, migration `20261113000600` widens the mode checks); Easy controls are the default, Classic in Settings. Old steady/free runs replay unchanged (determinism fingerprint of the old modes stayed `384a26e9`). Boards: question card to James on old best times (recommended: keep them). Next: M3.** Branch `claude/project-thread-rpsdb0`.
 
 ## 1. Why it feels hard and closed in (from the code)
 
@@ -59,7 +59,7 @@ The rules (`shared/mine/`) must stay our own: the server replays every run bit-f
 `docs/MINE-ART-PLAN.md` and `docs/mine-art/config.json` (`scripts/game_art.py`, `kind: scene` for tileable textures): 6 rock textures + 6 normal maps (1024 px, seamless), crystal/pounamu/gold-seam decals, glow-worm ceiling, 6 level-picker cards, robot and ship skins, the home card if missing. James paints in the evening on his PC (ComfyUI); the thread fetches the files itself.
 
 ## 4. Rules version (M2, M3)
-There is no rules version today: a change to `shared/mine/` changes every replay. Add `rules: number` to runs (`mine_runs`, `mine_bests`, the function's replay), default 1 for old runs, 2 for new; the server replays with the run's own version. Keeps old runs valid without deleting them.
+The flight mode is the rules version: each run is replayed under its own `mode` ('steady', 'free', 'easy'), so a new way of flying is a new mode and old runs stay valid without deleting anything. Rule changes must only touch code behind `w.easy` (or a later new mode); check with the determinism report that the old modes' lines are unchanged. M3 changes the levels themselves, which changes every mode's replay: it needs a level version in the seed recipe or fresh boards (James's card).
 
 ## 5. Order and size
 M1 small (one PR, live the same day). M2 medium (two PRs: rules + server, then screens). M3 medium. M4 large (two or three PRs). M5 alongside M4. Recommended order: M1, M2, M3, M4+M5.
