@@ -12,6 +12,13 @@ function Plant({ stage, level }: { stage: StageId; level: Level }) {
   return <PlantSvg stage={stage} level={level} />;
 }
 
+/** The raised bed under each plant: the painted bed if there is one, else a drawn wooden box. */
+function Bed() {
+  const url = artUrl('bed');
+  if (url) return <img src={url} alt="" aria-hidden="true" className="sb-bed sb-bed--art" loading="lazy" decoding="async" />;
+  return <div className="sb-bed" aria-hidden="true" />;
+}
+
 /** One plant in its own raised bed for each stage (seven now). They only ever grow. `grew` lists stages that just moved up a step. */
 export function Garden({ progress, grew = [] }: { progress: Progress; grew?: number[] }) {
   return (
@@ -23,7 +30,7 @@ export function Garden({ progress, grew = [] }: { progress: Progress; grew?: num
             <div className={grew.includes(s.id) ? 'sb-plantbox sb-grow' : 'sb-plantbox'}>
               <Plant stage={s.id as StageId} level={level} />
             </div>
-            <div className="sb-bed" aria-hidden="true" />
+            <Bed />
             <div className="sb-plaque">
               <strong>{s.name}</strong>
               <span>{WORDS[level]}</span>
