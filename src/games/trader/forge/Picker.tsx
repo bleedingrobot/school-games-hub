@@ -1,5 +1,5 @@
 /** The Forge's step-by-step picker (docs/TRADER-SYSTEM-PLAN.md, section 3): big picture buttons, one short step at a time. */
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type MutableRefObject, type ReactNode } from 'react';
 import { checkTypedName, TYPED_NAME_MAX } from '../../../../shared/trader/names';
 import {
   BELTS, CLOUDS, COMET_PRICE, EFFECTS, LIFE, MAX_COMETS, MAX_EFFECTS, MAX_MOONS, MOON_LOOKS, MOON_PRICE_PIECE, NAME_FIRST, NAME_SECOND, PLANETS, RINGS, SIZES, SKY_COLOURS,
@@ -23,6 +23,10 @@ export const STEPS: Record<Sel['k'], [string, string][]> = {
 
 // ——— Building blocks ———
 
+/** What a locked button sets while its click runs, so the picker shows the change as a look instead of planning it. */
+export interface PeekAsk { label: string; lock: number }
+const PeekRef = createContext<MutableRefObject<PeekAsk | null> | null>(null);
+
 /** A big picture button. The picture is the painted one when it exists, else an emoji on a colour. */
 export function Choice({ group, k, emoji, colour, label, sub, tag, on, why, disabled, lock, onClick }: {
   group: string;
@@ -41,9 +45,12 @@ export function Choice({ group, k, emoji, colour, label, sub, tag, on, why, disa
   onClick: () => void;
 }) {
   const art = buttonArt(group, k);
+  const peek = useContext(PeekRef);
+  // A locked piece can't be planned, but tapping it shows it in the 3D view for a look (James, 13 Nov).
+  const click = lock && peek ? () => { peek.current = { label, lock }; try { onClick(); } finally { peek.current = null; } } : onClick;
   return (
-    <button type="button" className={`stf-choice ${on ? 'is-on' : ''} ${why ? 'is-grey' : ''} ${lock ? 'is-locked' : ''}`} aria-pressed={on} disabled={disabled || !!why || !!lock} onClick={onClick} data-group={group} data-key={k}
-      aria-label={lock ? `${label}, ${sub ?? ''}, locked: ${cr(lock)} more to save` : undefined}>
+    <button type="button" className={`stf-choice ${on ? 'is-on' : ''} ${why ? 'is-grey' : ''} ${lock ? 'is-locked' : ''}`} aria-pressed={on} disabled={disabled || !!why || (!!lock && !peek)} onClick={click} data-group={group} data-key={k}
+      aria-label={lock ? `${label}, ${sub ?? ''}, locked: ${cr(lock)} more to save${peek ? '. Tap to see how it looks' : ''}` : undefined}>
       <span className="stf-choice__pic" style={colour ? { background: colour } : undefined} aria-hidden="true">
         {art ? <img src={art} alt="" width={48} height={48} loading="lazy" decoding="async" /> : emoji}
       </span>
@@ -125,7 +132,7 @@ export function NamePicker({ value, onChange, what, typing }: { value: Named; on
 
 // ——— The picker ———
 
-export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePlanet, onMove, options, credits, busy, typing }: {
+export function Picker({ sel, design, step, onStep, onEdit: edit, onPeek, onBuild, onRemovePlanet, onMove, options, credits, busy, typing }: {
   sel: Sel;
   /** The class lets pupils type names. */
   typing: boolean;
@@ -134,6 +141,8 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
   onStep: (s: string) => void;
   /** A new draft (planning is free). */
   onEdit: (next: SystemDesign, why?: string) => void;
+  /** A locked piece was tapped: show this design for a look, without planning it. Without it, locked pieces can't be tapped. */
+  onPeek?: (next: SystemDesign, ask: PeekAsk) => void;
   /** Ask to build one piece (shows the cost first). */
   onBuild: (o: BuildOption) => void;
   onRemovePlanet: (id: number) => void;
@@ -142,6 +151,8 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
   credits: number;
   busy: boolean;
 }) {
+  const peek = useRef<PeekAsk | null>(null);
+  const onEdit = (next: SystemDesign, why?: string) => (peek.current && onPeek ? onPeek(next, peek.current) : edit(next, why));
   const steps = STEPS[sel.k];
   const at = Math.max(0, steps.findIndex(([id]) => id === step));
   const planet = sel.k === 'planet' ? design.planets.find((p) => p.id === sel.id) : undefined;
@@ -152,6 +163,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
   const id = step === steps[at][0] ? step : steps[0][0];
 
   return (
+    <PeekRef.Provider value={onPeek ? peek : null}>
     <section className="stf-picker" aria-label={`Design: ${title}`}>
       <div className="stf-picker__top">
         <h3 className="stf-picker__h" id="stf-picker-h">{title}</h3>
@@ -250,6 +262,7 @@ export function Picker({ sel, design, step, onStep, onEdit, onBuild, onRemovePla
         <button type="button" className="st-btn st-btn--primary" disabled={at >= steps.length - 1} onClick={() => onStep(steps[at + 1][0])}>Next →</button>
       </div>
     </section>
+    </PeekRef.Provider>
   );
 }
 

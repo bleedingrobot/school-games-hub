@@ -90,7 +90,7 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
 
 describe('The Star Forge (S.4)', () => {
 
-  it('planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
+  it('a locked sun is only a look; planning a sun is free; building it sends a forge action, shows the price first, and the card turns built', async () => {
     const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
     await traderApi(trial.transport).load();
     trial.tools.give(5000);
@@ -99,7 +99,12 @@ describe('The Star Forge (S.4)', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Forge/ }));
     expect(await screen.findByRole('heading', { name: /Star Forge/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^Sun: Choose a sun/ }));
+    // a locked sun can be tapped for a look in the view, but isn't planned
+    fireEvent.click(screen.getByRole('button', { name: /Two suns.*locked.*Tap to see how it looks/ }));
+    expect(screen.getByText(/Just a look at/).parentElement?.textContent).toMatch(/Two suns/);
+    expect(screen.getByRole('button', { name: /^Sun: Choose a sun/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Yellow star/ }));
+    expect(screen.queryByText(/Just a look at/)).toBeNull();
     expect(screen.getByRole('button', { name: /^Sun: Yellow star, planned/ })).toBeTruthy();
     expect(sent.some((b) => b.type === 'act')).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Build' }));
