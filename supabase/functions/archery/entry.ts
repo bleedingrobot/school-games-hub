@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
 import { parseDuel, type DuelRow } from '../../../shared/archery/duel';
 import type { MathsContext } from '../../../shared/archery/speed';
+import { isDiscountFor } from '../../../shared/discountDay';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler, type Outcome } from './handler';
@@ -68,8 +69,8 @@ Deno.serve(
         console.error(`archery: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
-      const row = data as { archery_enabled?: boolean; archery_duels?: boolean };
-      return { on: row.archery_enabled === true, duels: row.archery_duels !== false };
+      const row = data as { archery_enabled?: boolean; archery_duels?: boolean; discount_days?: unknown };
+      return { on: row.archery_enabled === true, duels: row.archery_duels !== false, discount: isDiscountFor(row.discount_days, 'archery') };
     },
     async mathsContext(player): Promise<MathsContext | null> {
       const { data, error } = await admin.rpc('space_maths_context', { player });

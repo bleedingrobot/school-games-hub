@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import {
-  CARRY_MOST, TOP_LEVEL, armoryLevel, buyProblem, sellPrice, shopItems, toNextLevel, type ShopItem, type ShopKind,
+  CARRY_MOST, TOP_LEVEL, armoryLevel, buyProblem, onDiscount, sellPrice, shopItems, toNextLevel, type ShopItem, type ShopKind,
 } from '../../../shared/archery/shop';
 import type { ItemId } from '../../../shared/archery/types';
 import type { ArcheryApi, ArmoryState } from '../../data/archery';
@@ -35,9 +35,11 @@ const PROBLEM_WORDS: Record<string, string> = {
   none: "You haven't got one to sell.",
 };
 
-export function ArmoryScreen({ api, state, onState, onExit, onEarn, startShelf = 'arrows' }: {
+export function ArmoryScreen({ api, state, discount = false, onState, onExit, onEarn, startShelf = 'arrows' }: {
   api: ArcheryApi;
   state: ArmoryState;
+  /** The teacher's Discount day: every arrow is half price today. */
+  discount?: boolean;
   onState: (s: ArmoryState) => void;
   onExit: () => void;
   /** Go to a speed round to earn coins. */
@@ -53,7 +55,8 @@ export function ArmoryScreen({ api, state, onState, onExit, onEarn, startShelf =
   const level = armoryLevel(state.spent);
   const next = toNextLevel(state.spent);
   const pct = next === null ? 100 : Math.round((100 * state.spent) / (state.spent + next));
-  const items = shopItems().filter((i) => shelfOf(i) === shelf);
+  const items = shopItems().filter((i) => shelfOf(i) === shelf).map((i) => onDiscount(i, discount));
+  const fullPrice = new Map(shopItems().map((i) => [`${i.kind}:${i.id}`, i.price]));
   const have = (i: ShopItem) =>
     i.kind === 'gear' ? state.gear[i.id as ItemId] ?? 0 : i.kind === 'shield' ? (state.shields.includes(i.id as never) ? 1 : 0) : state.bows.includes(i.id as never) ? 1 : 0;
 
@@ -94,6 +97,7 @@ export function ArmoryScreen({ api, state, onState, onExit, onEarn, startShelf =
           <button key={s.id} type="button" role="tab" aria-selected={shelf === s.id} className="button button--light ar-btn ar-tab" onClick={() => setShelf(s.id)}>{s.name}</button>
         ))}
       </div>
+      {discount && <p className="ar-armory__discount">Discount day! Every arrow is half price today.</p>}
       <p className="ar-armory__shelfnote">{SHELVES.find((s) => s.id === shelf)!.note}</p>
       <p className="ar-armory__note" role="status" aria-live="polite">{note}</p>
       <div className="ar-shelves" role="tabpanel" aria-label={SHELVES.find((s) => s.id === shelf)!.name}>
@@ -115,7 +119,10 @@ export function ArmoryScreen({ api, state, onState, onExit, onEarn, startShelf =
                       <p className="ar-item__have">{kept ? (owned ? 'Yours' : '') : `You have ${owned}`}</p>
                     </div>
                     <div className="ar-item__buy">
-                      <span className="ar-price">{i.price} coins{i.qty > 1 ? ` for ${i.qty}` : ''}</span>
+                      <span className="ar-price">
+                        {fullPrice.get(`${i.kind}:${i.id}`) !== i.price && <s className="ar-price__was">{fullPrice.get(`${i.kind}:${i.id}`)}</s>}
+                        {i.price} coins{i.qty > 1 ? ` for ${i.qty}` : ''}
+                      </span>
                       {locked ? (
                         <span className="ar-item__lock">Opens at level {i.level}</span>
                       ) : kept && owned ? (

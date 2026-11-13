@@ -17,6 +17,8 @@ import { fetchNonMathsGames, saveNonMathsGames } from '../data/nonMathsGames';
 import { useChangedLine } from '../data/settingsChanges';
 import { fetchUnlimitedToday, saveUnlimitedToday } from '../data/unlimitedTurns';
 import { UNLIMITED_GAMES } from '../../shared/unlimited';
+import { fetchDiscountToday, saveDiscountToday } from '../data/discountDay';
+import { DISCOUNT_GAMES } from '../../shared/discountDay';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
 import { LengthPicker } from '../maths/LengthPicker';
 import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
@@ -47,6 +49,7 @@ export function Today() {
       <GameSets key={`sets-${classId}`} classId={classId} name={current.name} onChanged={() => setSetsUsed((n) => n + 1)} />
       <LessonControls key={`controls-${classId}-${setsUsed}`} target={{ kind: 'class', classId }} name={current.name} />
       <UnlimitedTurns key={`unlimited-${classId}`} classId={classId} />
+      <DiscountDay key={`discount-${classId}`} classId={classId} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
       <NewTrophiesThisWeek key={`trophies-${classId}`} classId={classId} />
     </div>
@@ -167,6 +170,34 @@ function UnlimitedTurns({ classId }: { classId: string }) {
             savedText={PUPILS_SEE_IT}
             loadFailed={on.failed}
             save={(value) => saveUnlimitedToday(g.id, value, classId)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Discount day: a game's shop is cheaper for this class until midnight, then it turns itself off. */
+function DiscountDay({ classId }: { classId: string }) {
+  const on = useSetting(() => fetchDiscountToday(classId), [classId]);
+  const changed = useChangedLine(classId)('discount_days');
+  return (
+    <section className="panel lesson-controls" aria-labelledby="discount-title">
+      <h2 id="discount-title" className="panel__title">
+        Discount day
+      </h2>
+      <p className="this-week__line">A treat for this class until midnight, then it turns itself off.</p>
+      {changed && <p className="setting__changed">{changed}</p>}
+      <div className="lesson-controls__grid">
+        {DISCOUNT_GAMES.map((g) => (
+          <SettingToggle
+            key={g.id}
+            label={g.name}
+            about={g.does}
+            value={on.value ? on.value[g.id] : null}
+            savedText={PUPILS_SEE_IT}
+            loadFailed={on.failed}
+            save={(value) => saveDiscountToday(g.id, value, classId)}
           />
         ))}
       </div>

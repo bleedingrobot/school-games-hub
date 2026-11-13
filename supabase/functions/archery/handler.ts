@@ -27,7 +27,7 @@ import { BOT_LEVELS, botSetup, type BotLevel } from '../../../shared/archery/bot
 import { judgeBotFight, readShots } from '../../../shared/archery/judge';
 import { FIGHT_POINTS, ROUND_POINTS, WIN_POINTS } from '../../../shared/archery/points';
 import {
-  CARRY_MOST, LEVEL_SPEND, readPack, sellPrice, shopItem, shopItems, unused, type Armory, type ShopProblem,
+  CARRY_MOST, LEVEL_SPEND, readPack, sellPrice, shopItem, onDiscount, shopItems, unused, type Armory, type ShopProblem,
 } from '../../../shared/archery/shop';
 import {
   COINS_PER_RIGHT, DAILY_COINS, POINT_AT, SET_KINDS, baseCoins, inTime, limitMs, makeRoundQuestions, markQuestion, recordedMs,
@@ -69,8 +69,8 @@ export interface StoredFight {
 
 export interface Services extends DuelServices {
   userIdFor(token: string): Promise<string | null>;
-  /** The teacher's switches for this pupil's class: the game, and classmate fights (null if they can't be read). */
-  settings(player: string): Promise<{ on: boolean; duels: boolean } | null>;
+  /** The teacher's switches for this pupil's class: the game, classmate fights and Discount day (null if they can't be read). */
+  settings(player: string): Promise<{ on: boolean; duels: boolean; discount?: boolean } | null>;
   mathsContext(player: string): Promise<MathsContext | null>;
   /** The Armory, made the first time, with the coins maths earned in the last day. */
   state(player: string): Promise<Outcome<ArmoryState & { coinsToday: number }>>;
@@ -142,7 +142,7 @@ export function makeHandler(services: Services) {
       case 'load': {
         const s = await services.state(player);
         if (!s.ok) return busy('Your Armory');
-        return reply(200, { state: withoutCount(s.value), coinsLeft: Math.max(0, DAILY_COINS - s.value.coinsToday) });
+        return reply(200, { state: withoutCount(s.value), coinsLeft: Math.max(0, DAILY_COINS - s.value.coinsToday), discount: switches.discount === true });
       }
 
       case 'round-start': {
@@ -231,8 +231,10 @@ export function makeHandler(services: Services) {
 
       case 'buy':
       case 'sell': {
-        const item = shopItem(body.kind, body.item);
-        if (!item || !isRequestId(body.request)) return reply(400, { error: "That isn't in the Armory." });
+        const listed = shopItem(body.kind, body.item);
+        if (!listed || !isRequestId(body.request)) return reply(400, { error: "That isn't in the Armory." });
+        // Today's price: arrows are half price on the teacher's Discount day (selling gives back half of that).
+        const item = onDiscount(listed, switches.discount === true);
         const action = body.action;
         const price = action === 'buy' ? item.price : sellPrice(item);
         const done = await services.shop(player, body.request, action, item.kind, item.id, price, action === 'buy' ? item.qty : 1, LEVEL_SPEND[item.level - 1] ?? 0, CARRY_MOST);

@@ -73,6 +73,7 @@ A game with an on/off switch for teachers adds exactly these. Nothing else needs
 - One line in `GAME_SWITCH_COLUMNS` in `src/data/games.ts` (`Games.test.tsx` fails without it).
 - `teacher.switch` in the GameDefinition with an `about` line, and the server check in the edge function (`settings_of`): refuse while it's off.
 - Limited turns a day: also `UNLIMITED_GAMES` in `shared/unlimited.ts` and `teacher_set_unlimited_today()` (the Games tab's Unlimited today column follows `UNLIMITED_GAMES`).
+- A shop that could have a cheaper day: `DISCOUNT_GAMES` in `shared/discountDay.ts` and the list in `teacher_set_discount_today()`; the server reads `discount_days` from `settings_of` and sets the price itself (Archery: `onDiscount` in `shared/archery/shop.ts`). The Today page's Discount day panel follows `DISCOUNT_GAMES`.
 
 ## Reuse, don't copy
 

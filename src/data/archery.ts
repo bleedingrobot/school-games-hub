@@ -164,7 +164,7 @@ export function archeryApi(send: Transport, player = 'me') {
   }
 
   const api = {
-    load: () => ask<{ state: ArmoryState; coinsLeft: number }>({ action: 'load' }),
+    load: () => ask<{ state: ArmoryState; coinsLeft: number; discount?: boolean }>({ action: 'load' }),
     roundStart: (set: SetRequest = { kind: 'speed' }) => ask<RoundStart>({ action: 'round-start', ...set }),
     /** `value` null means the timer ran out. */
     roundAnswer: (seed: string, slot: number, value: number | null, ms: number) =>
