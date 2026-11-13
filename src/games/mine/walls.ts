@@ -17,6 +17,8 @@ export interface WallChunk {
   positions: Float32Array;
   normals: Float32Array;
   colors: Float32Array;
+  /** Where a painted rock picture sits on each corner (one repeat of the picture every ROCK_TILE blocks). */
+  uvs: Float32Array;
   /** Quads (two triangles each). */
   faces: number;
   /** Where the chunk's middle is, in the screen's directions. */
@@ -29,6 +31,9 @@ function hash(x: number, y: number, z: number, f: number): number {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
+
+/** A painted rock picture repeats every this many blocks (docs/plans/mine-flight/PLAN.md, M4). */
+export const ROCK_TILE = 4;
 
 /** How bright a face looks by the way it faces: floors are lightest, ceilings darkest. */
 const SHADE: Record<string, number> = { zp: 1, zn: 0.5, xp: 0.82, xn: 0.82, yp: 0.66, yn: 0.66 };
@@ -45,6 +50,7 @@ export function buildWalls(level: Level, palette: Palette): WallChunk[] {
         const pos: number[] = [];
         const nor: number[] = [];
         const col: number[] = [];
+        const uv: number[] = [];
         let faces = 0;
         for (let z = k * S; z < (k + 1) * S; z++)
           for (let y = j * S; y < (j + 1) * S; y++)
@@ -97,6 +103,10 @@ export function buildWalls(level: Level, palette: Palette): WallChunk[] {
                   const g = Math.min(1, base[1] * shade * tint[1]);
                   const bl = Math.min(1, base[2] * shade * tint[2]);
                   for (const p of [a, b, c, a, c, d]) {
+                    // The picture lies flat on the face: use the two directions along it (the screen's axes, not the face's normal).
+                    const sa = (axis + 1) % 3, sb = (axis + 2) % 3;
+                    const screen = (k: number) => (k === 0 ? p[0] : k === 1 ? -p[2] : p[1]);
+                    uv.push(screen(sa) / ROCK_TILE, screen(sb) / ROCK_TILE);
                     pos.push(p[0], p[1], p[2]);
                     nor.push(nScreen[0], nScreen[1], nScreen[2]);
                     col.push(r, g, bl);
@@ -106,7 +116,7 @@ export function buildWalls(level: Level, palette: Palette): WallChunk[] {
             }
         out.push({
           i, j, k, faces,
-          positions: new Float32Array(pos), normals: new Float32Array(nor), colors: new Float32Array(col),
+          positions: new Float32Array(pos), normals: new Float32Array(nor), colors: new Float32Array(col), uvs: new Float32Array(uv),
           centre: [(i + 0.5) * S, (k + 0.5) * S, -((j + 0.5) * S)],
         });
       }

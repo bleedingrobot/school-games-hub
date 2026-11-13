@@ -7,6 +7,12 @@
  * (x, y, z) in the mine is drawn at (x, z, −y).
  */
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { rockArt } from './art/art';
+import { decorFor } from './decor';
 import { PAD_ANSWERS, REACTOR_RADIUS, ROBOTS, type RobotType } from '../../../shared/mine/config';
 import { KEY_COLOURS } from '../../../shared/mine/level';
 import { DOOR_COLOURS, PICKUP_COLOURS, paletteFor } from './palette';
@@ -178,9 +184,94 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
     g.setAttribute('position', new THREE.BufferAttribute(chunk.positions, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(chunk.normals, 3));
     g.setAttribute('color', new THREE.BufferAttribute(chunk.colors, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(chunk.uvs, 2));
     g.computeBoundingSphere();
     scene.add(new THREE.Mesh(g, wallMaterial));
   }
+
+  // Painted rock, when James has painted it for this mine: the face colours still tint it, so rooms and tunnels differ.
+  const rockUrl = rockArt(palette.mine);
+  if (rockUrl) {
+    new THREE.TextureLoader().load(rockUrl, (tex) => {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      own(tex);
+      wallMaterial.map = tex;
+      // The face colours (about 0.3 to 0.7) darken the picture they tint, so lift it back to about its painted brightness.
+      wallMaterial.color.setScalar(1.7);
+      wallMaterial.needsUpdate = true;
+    });
+  }
+
+  // ——— Glowing crystals and glow-worms (docs/plans/mine-flight/PLAN.md, M4): bright colours, so the bloom makes them glow ———
+  const decor = decorFor(level, palette.worms);
+  const glowColour = new THREE.Color(palette.glow);
+  if (decor.crystals.length) {
+    const shard = own(new THREE.OctahedronGeometry(0.22, 0));
+    shard.scale(0.7, 2.2, 0.7);
+    shard.translate(0, 0.3, 0);
+    const crystalMat = own(new THREE.MeshBasicMaterial({ color: glowColour.clone().multiplyScalar(1.6) }));
+    const perCluster = 3;
+    const crystals = new THREE.InstancedMesh(shard, crystalMat, decor.crystals.length * perCluster);
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const tilt = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const out = new THREE.Vector3();
+    const pos = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    let n = 0;
+    for (const c of decor.crystals) {
+      out.set(c.nx, c.ny, c.nz);
+      for (let k = 0; k < perCluster; k++) {
+        const spin = (c.r * 7 + k * 2.1) % (Math.PI * 2);
+        q.setFromUnitVectors(up, out);
+        tilt.setFromEuler(new THREE.Euler((k - 1) * 0.45, spin, (k === 1 ? 0.2 : -0.3) * (c.r - 0.5)));
+        q.multiply(tilt);
+        const s = (0.7 + c.r * 0.8) * (k === 0 ? 1.25 : 0.8);
+        size.set(s, s, s);
+        pos.set(c.x + (k - 1) * 0.18, c.y, c.z + ((k * 7) % 3 - 1) * 0.15);
+        m.compose(pos, q, size);
+        crystals.setMatrixAt(n++, m);
+      }
+    }
+    crystals.instanceMatrix.needsUpdate = true;
+    crystals.computeBoundingSphere();
+    scene.add(crystals);
+    // A soft pool of the crystals' colour on the rock round each room's crystals is too costly as real lights, so the
+    // lantern glow baked into the walls (walls.ts) does that job.
+  }
+  let wormMat: THREE.PointsMaterial | null = null;
+  if (decor.worms.length) {
+    const g = own(new THREE.BufferGeometry());
+    const p = new Float32Array(decor.worms.length * 3);
+    decor.worms.forEach((w, i) => p.set([w.x, w.y, w.z], i * 3));
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    wormMat = own(new THREE.PointsMaterial({ color: new THREE.Color(0x9ff4ff).multiplyScalar(1.5), size: 0.09, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
+    scene.add(new THREE.Points(g, wormMat));
+  }
+
+  // ——— Dust in the headlamp: a small box of specks round the ship that drifts, wrapping round (not with Less motion) ———
+  const DUST = less ? 0 : 140;
+  const DUST_BOX = 8;
+  const dustSeed = new Float32Array(DUST * 3).map(() => Math.random() * DUST_BOX);
+  const dustPos = new Float32Array(DUST * 3);
+  const dustGeo = own(new THREE.BufferGeometry());
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dustMat = own(new THREE.PointsMaterial({ color: 0xfff1d0, size: 0.018, transparent: true, opacity: 0.5, depthWrite: false }));
+  const dust = new THREE.Points(dustGeo, dustMat);
+  dust.frustumCulled = false;
+  if (DUST) scene.add(dust);
+
+  // ——— Bloom: bright things (crystals, shots, the reactor, glow-worms) glow. Dropped first on a slow device ———
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.4, 0.92);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+  let bloomOn = true;
 
   // ——— Doors ———
   const doorMeshes: THREE.Group[] = [];
@@ -448,6 +539,20 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
         lookAtPoint.copy(shipPos).add(f);
         camera.lookAt(lookAtPoint);
       }
+      if (DUST) {
+        // Each speck keeps its own spot in a box that follows the ship, so they seem to hang still as you fly through.
+        const half = DUST_BOX / 2;
+        for (let i = 0; i < DUST; i++) {
+          for (let a = 0; a < 3; a++) {
+            const base = a === 0 ? shipPos.x : a === 1 ? shipPos.y : shipPos.z;
+            const drift = dustSeed[i * 3 + a] + t * (a === 1 ? -0.05 : 0.03);
+            const local = ((((drift - base) % DUST_BOX) + DUST_BOX) % DUST_BOX) - half;
+            dustPos[i * 3 + a] = base + local;
+          }
+        }
+        dustGeo.attributes.position.needsUpdate = true;
+      }
+      if (wormMat && !less) wormMat.opacity = 0.8 + 0.15 * Math.sin(t * 1.3);
       headlamp.position.copy(shipPos);
       headlamp.target.position.copy(shipPos).addScaledVector(f, 6);
 
@@ -562,13 +667,16 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       }
       flashMat.opacity = 0.7;
 
-      renderer.render(scene, camera);
+      if (bloomOn) composer.render(seconds);
+      else renderer.render(scene, camera);
     },
 
     resize(width, height) {
       lastWidth = Math.max(1, Math.floor(width));
       lastHeight = Math.max(1, Math.floor(height));
       renderer.setSize(lastWidth, lastHeight, false);
+      composer.setPixelRatio(pixelRatio);
+      composer.setSize(lastWidth, lastHeight);
       camera.aspect = lastWidth / lastHeight;
       // A tall phone gets a wider angle so the view isn't a thin slice.
       camera.fov = camera.aspect < 1 ? 96 : 85;
@@ -610,9 +718,16 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
     },
 
     setQuality(ratio) {
+      // A slow device first loses the glow (the most costly part), and only then the sharpness.
+      if (bloomOn && ratio < pixelRatio) {
+        bloomOn = false;
+        return pixelRatio;
+      }
       pixelRatio = Math.min(Math.max(ratio, 0.5), Math.min(window.devicePixelRatio || 1, 1.5));
       renderer.setPixelRatio(pixelRatio);
       renderer.setSize(lastWidth, lastHeight, false);
+      composer.setPixelRatio(pixelRatio);
+      composer.setSize(lastWidth, lastHeight);
       return pixelRatio;
     },
 
@@ -623,6 +738,8 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       }
       for (const sp of sparks) scene.remove(sp.mesh);
       for (const thing of owned) thing.dispose();
+      bloom.dispose();
+      composer.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
     },
