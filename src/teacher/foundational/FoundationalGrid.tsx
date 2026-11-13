@@ -68,11 +68,12 @@ export function FoundationalGrid({
                       type="button"
                       className="fg__flagbtn"
                       aria-expanded={flagsFor === row.id}
-                      aria-label={`${row.flags.length} flag${row.flags.length === 1 ? '' : 's'} for ${row.name}`}
+                      aria-label={`${row.flags.length} thing${row.flags.length === 1 ? '' : 's'} to check for ${row.name}`}
+                      title="Press to see what this student may be stuck on"
                       data-quiet={row.flags.every((f) => f.quiet) || undefined}
                       onClick={() => setFlagsFor(flagsFor === row.id ? null : row.id)}
                     >
-                      <span aria-hidden="true">! {row.flags.length}</span>
+                      <span aria-hidden="true">! {row.flags.length} to check</span>
                     </button>
                   )}
                 </th>
