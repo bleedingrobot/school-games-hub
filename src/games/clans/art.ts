@@ -46,15 +46,17 @@ export const buildingSize = (level: number): BuildingSize => (level >= 5 ? 'big'
 /** The one-size pictures that were made first. The Forge was the Steel Mill. */
 const OLD_BUILDING_FILE: Partial<Record<VillageBuilding, string>> = { forge: 'steelmill' };
 /**
- * The picture for a building at a level: buildings/<kind>-small|medium|big.webp (kind in lower case: trainingHall → traininghall),
- * then the old one-size buildings/<kind>.webp. Undefined when neither is there, and the screen simply shows no picture.
+ * The picture for a building at a level: buildings/<kind>-<level>.webp (one painting per level, docs/CLANS-VILLAGE-SCENE-PLAN.md),
+ * then buildings/<kind>-small|medium|big.webp (kind in lower case: trainingHall → traininghall), then the old one-size buildings/<kind>.webp. Undefined when neither is there, and the screen simply shows no picture.
  */
 export function pickBuildingArt(kind: VillageBuilding, level: number, find: (name: string) => string | undefined): string | undefined {
   const name = kind.toLowerCase();
   const old = OLD_BUILDING_FILE[kind];
-  return find(`${name}-${buildingSize(level)}`) ?? find(name) ?? (old ? find(old) : undefined);
+  return (level > 0 ? find(`${name}-${level}`) : undefined) ?? find(`${name}-${buildingSize(level)}`) ?? find(name) ?? (old ? find(old) : undefined);
 }
 export const buildingArt = (kind: VillageBuilding, level = 1): string | undefined => pickBuildingArt(kind, level, (name) => file('buildings', name));
+/** The village scene's own paintings (ground-1..3, site, scaffold, smoke); undefined until painted, and the scene draws its own. */
+export const villageArt = (name: 'ground-1' | 'ground-2' | 'ground-3' | 'site' | 'scaffold' | 'smoke') => file('village', name);
 /** A kingdom you can raid, by its id (bunny-hollow). */
 export const kingdomArt = (id: string) => file('kingdoms', id);
 export function kingdomScene(id: string): { wide?: string; small?: string } {

@@ -1,7 +1,7 @@
 # Clan Quest: clickable village scene plan
 
 Turn **My Village** (`src/games/clans/MyVillage.tsx`, today a grid of 8 building cards) into a painted village you look down on, where you tap a building to upgrade it and every level makes the building look bigger and grander.
-Written 13 November 2026 (NZ) for James. **Status: V1 live 13 Nov 2026 NZ (the tappable scene with placeholders). James chose a new painting for every building level.**
+Written 13 November 2026 (NZ) for James. **Status: V1 and V2 live 13 Nov 2026 NZ (the tappable scene, the upgrade moment, raid smoke, 3 ground looks; drawn in code until painted). Paintings (V3-V4) are done by the "Paint village and Quick looks art" thread. James chose a new painting for every building level.**
 Sketch: project files `clans/village-scene/mock-laptop.jpg`.
 
 ## What stays the same
@@ -59,7 +59,7 @@ Each stage goes live on its own (merging and deploying are pre-approved).
 | Stage | What | Needs |
 |---|---|---|
 | V1 (LIVE) | The scene with placeholders: code ground, 8 plots, tap panel, hammer badges, level numbers, List view, troops inside Barracks. Phone scrolling. | Code only |
-| V2 | The upgrade moment (scaffold, dust, glow, "Level 4!"), raid smoke, the 3 ground looks switched by Village total. | Code only |
+| V2 (LIVE) | The upgrade moment (scaffold, dust, glow, "Level 4!"), raid smoke, the 3 ground looks switched by Village total. | Code only |
 | V3 | Art brief and paint script `scripts/clans-village-art.py` (level-by-level image to image, cut-out, tidy to WebP, `buildings/<kind>-<level>.webp`). `pickBuildingArt` looks for `<kind>-<level>` first, then today's sizes. | Code; James's PC for painting |
 | V4 | Paint, pick the best try of each, swap them in, line the plots up on the painted ground, check on laptop, iPad and phone. | James's PC (evening) |
 | V5 | Village life: chimney smoke, flags, walking villagers, fireworks at 39. | Code only |
@@ -81,3 +81,13 @@ V1 and V2 can be built now. V4 waits for an evening on the PC.
 - Troops sit in a "Troops (in the Barracks)" fold under the scene, and open fully when the Barracks is picked. The "List view" button shows the old cards, and the choice is remembered on that device (`cq-village-view`).
 - On phones the scene is at least 640px wide and scrolls sideways, starting in the middle.
 - Screenshots: project files `clans/village-scene/v1/`. Next: V2 (upgrade moment, raid smoke, 3 ground looks).
+
+## V2 as built
+
+- After the area and fence questions the scene comes back with scaffolding and dust over the building (about 1.3 s), then the new picture pops in with a gold glow, the ground gives a small shake and "Level 4!" (or "Fully built!") floats up. The panel says what it cost. With reduced motion there is no movement: the text shows and fades. List view keeps the old "done" message.
+- Raid smoke: the levels a pupil last saw are kept on that device (`cq-village-seen:<clan name>`). A building now below that level has grey smoke and a darker, ember-lit look until it is rebuilt, and the panel says which buildings raiders knocked down.
+- Ground looks by Village total (`groundLook`): 0-12 mud, tents and a campfire; 13-29 the well, lanterns and a cart; 30-39 a paved square with a fountain, cobbled roads and four flags.
+- Buildings now grow every level: width (13.5 + 1.3 x level)% of the scene.
+- Picture names read (art.ts): `buildings/<kind>-<level>.webp` first (traininghall, smithy, church, barracks, tower, forge, strongroom), then the small/medium/big ones; `village/ground-1..3.webp` (2000x1240, covers the 1000x620 box), `village/site.webp`, `village/scaffold.webp`, `village/smoke.webp`. Code draws each one until its file exists. The Walls stay drawn in code.
+- Start pictures for painting the ground (img2img): project files `clans/village-scene/ground-init/`.
+- Screenshots: project files `clans/village-scene/v2/`.

@@ -516,7 +516,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   display: flex; flex-direction: column; align-items: center; scroll-snap-align: center; -webkit-tap-highlight-color: transparent; }
 .cq-vplot__art { display: block; width: 100%; height: auto; pointer-events: none; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); transition: transform 0.15s, filter 0.15s; }
 .cq-vsite { display: block; width: 100%; height: auto; }
-.cq-vplot__sign { position: absolute; transform: translate(-50%, 2px); display: flex; align-items: center; gap: 3px; cursor: pointer; z-index: 1; }
+.cq-vplot__sign { position: absolute; transform: translate(-50%, 2px); display: flex; align-items: center; gap: 3px; cursor: pointer; z-index: 4; }
 .cq-vplot__chip { padding: 1px 8px; border: 1px solid #8a7444; border-radius: 9px; background: rgba(16, 17, 19, 0.88);
   color: var(--f-head, #ecdcb8); font-weight: 700; font-size: clamp(0.7rem, 1.2vw, 0.95rem); white-space: nowrap; }
 .cq-vplot__badge { display: grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; font-size: clamp(0.8rem, 1.3vw, 1.05rem); line-height: 1; }
@@ -538,3 +538,47 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-vpanel { position: sticky; bottom: 0; top: auto; z-index: 2; box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5); }
 }
 @media (prefers-reduced-motion: reduce) { .cq-vplot__art { transition: none; } }
+
+/* V2: the upgrade moment (scaffolding and dust, then the new building with a glow and "Level 4!"), raid smoke. */
+.cq-vplot { --cq-vt: 2.2s; }
+.cq-vscaffold { position: absolute; left: 6%; right: 6%; top: 8%; bottom: 14%; width: 88%; height: 78%; pointer-events: none; opacity: 0; }
+.cq-vsmoke-art { position: absolute; left: 10%; bottom: 30%; width: 80%; pointer-events: none; }
+.cq-vpuffs { position: absolute; left: 0; right: 0; bottom: 18%; height: 70%; pointer-events: none; }
+.cq-vpuffs i { position: absolute; bottom: 0; width: 34%; aspect-ratio: 1; border-radius: 50%; opacity: 0; }
+.cq-vpuffs i:nth-child(1) { left: 2%; } .cq-vpuffs i:nth-child(2) { left: 22%; } .cq-vpuffs i:nth-child(3) { left: 40%; }
+.cq-vpuffs i:nth-child(4) { left: 58%; } .cq-vpuffs i:nth-child(5) { left: 30%; bottom: 20%; }
+.cq-vpuffs--dust i { background: radial-gradient(circle, rgba(214, 196, 160, 0.9) 0%, rgba(214, 196, 160, 0) 70%); }
+.cq-vpuffs--smoke { left: 20%; right: 20%; bottom: 45%; height: 90%; }
+.cq-vpuffs--smoke i { width: 60%; background: radial-gradient(circle, rgba(178, 176, 172, 0.95) 0%, rgba(140, 138, 134, 0.55) 40%, rgba(120, 118, 114, 0) 70%); opacity: 0.8; }
+.cq-vplot--smoky .cq-vplot__art { filter: grayscale(0.5) brightness(0.7) drop-shadow(0 0 6px rgba(224, 106, 60, 0.7)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); }
+.cq-vpuffs--smoke i:nth-child(n+4) { display: none; }
+.cq-vfloat { position: absolute; left: 50%; top: -6%; transform: translateX(-50%); white-space: nowrap; pointer-events: none; z-index: 3;
+  font-family: 'IM Fell English SC', Georgia, serif; font-size: clamp(1rem, 2.4vw, 1.7rem); color: #ffe08a;
+  text-shadow: 0 0 8px rgba(255, 190, 70, 0.9), 0 2px 3px #000; opacity: 0; }
+.cq-vplot--building { z-index: 2; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-vplot--building .cq-vplot__art, .cq-vplot--building .cq-vsite { animation: cq-vreveal var(--cq-vt) ease-out both; }
+  .cq-vplot--building .cq-vscaffold { animation: cq-vscaffold var(--cq-vt) ease-in-out both; }
+  .cq-vpuffs--dust i { animation: cq-vdust 1.5s ease-out both; }
+  .cq-vpuffs--dust i:nth-child(2) { animation-delay: 0.25s; } .cq-vpuffs--dust i:nth-child(3) { animation-delay: 0.5s; }
+  .cq-vpuffs--dust i:nth-child(4) { animation-delay: 0.15s; } .cq-vpuffs--dust i:nth-child(5) { animation-delay: 0.9s; }
+  .cq-vpuffs--smoke i { animation: cq-vsmoke 3.2s ease-out infinite; }
+  .cq-vpuffs--smoke i:nth-child(2) { animation-delay: 1.1s; } .cq-vpuffs--smoke i:nth-child(3) { animation-delay: 2.1s; }
+  .cq-vplot--building .cq-vfloat { animation: cq-vfloat 2.6s ease-out 1.3s both; }
+  .cq-vground--shake { animation: cq-vshake 0.5s ease-in-out 1.25s both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cq-vplot--building .cq-vfloat { opacity: 1; animation: cq-vfade 3s linear both; }
+  .cq-vplot--building .cq-vplot__art { filter: drop-shadow(0 0 10px rgba(240, 200, 96, 0.9)); }
+}
+@keyframes cq-vreveal {
+  0%, 55% { opacity: 0.25; transform: scale(0.92); filter: brightness(0.6); }
+  68% { opacity: 1; transform: scale(1.08); filter: brightness(1.5) drop-shadow(0 0 18px rgba(255, 200, 90, 1)); }
+  100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 6px rgba(255, 200, 90, 0.5)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)); }
+}
+@keyframes cq-vscaffold { 0% { opacity: 0; transform: translateY(8%); } 10%, 52% { opacity: 1; transform: none; } 66%, 100% { opacity: 0; transform: translateY(-4%); } }
+@keyframes cq-vdust { 0% { opacity: 0; transform: translateY(0) scale(0.5); } 25% { opacity: 0.95; } 100% { opacity: 0; transform: translateY(-60%) scale(1.6); } }
+@keyframes cq-vsmoke { 0% { opacity: 0; transform: translateY(0) scale(0.6); } 30% { opacity: 0.95; } 100% { opacity: 0; transform: translateY(-120%) scale(1.5); } }
+@keyframes cq-vfloat { 0% { opacity: 0; transform: translate(-50%, 20%) scale(0.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 30% { transform: translate(-50%, -10%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -80%); } }
+@keyframes cq-vfade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cq-vshake { 0%, 100% { transform: none; } 25% { transform: translateY(2px); } 50% { transform: translateY(-2px); } 75% { transform: translateY(1px); } }
