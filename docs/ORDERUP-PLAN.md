@@ -100,7 +100,7 @@ The doc's hints are rung 1. Every child gets the same rules of the help ladder (
 
 ## Maths and evidence
 - **This activity teaches one skill**, so it doesn't follow the pupil's maths focus (like Basic facts training has its own). The server makes every problem from a seeded engine and marks every pick and answer (game guide rule: the browser decides nothing).
-- **Recorded on the Skill map:** every finished bag is one answer under the existing order-of-operations keys (`bedmas:left-to-right`, `mul-first`, `div-first`, `brackets-first`, `brackets-div`, `mixed`, `mixed-brackets`), right only when solved with no help past rung 2, through `recordMathsAnswers` with the `generated` pack's quick time. Exponents and the level 6 and 7 bags need new keys in `shared/maths/skillPacks/bedmas.ts`: a shared maths PR of its own at stage 4.
+- **Recorded on the Skill map:** every finished bag is one answer under the existing order-of-operations keys (`bedmas:left-to-right`, `mul-first`, `div-first`, `brackets-first`, `brackets-div`, `mixed`, `mixed-brackets`), right only when solved with no wrong pick or answer, through `recordMathsAnswers` with the `generated` pack's quick time. Exponents and the level 6 and 7 bags need new keys in `shared/maths/skillPacks/bedmas.ts`: a shared maths PR of its own at stage 4.
 - **Saved per bag:** level, expression, each pick (right, or the kind of mistake), each answer given, help rung reached, time.
 
 ## Steps and the Progress tab
@@ -117,7 +117,7 @@ The doc's hints are rung 1. Every child gets the same rules of the help ladder (
 Any passed level can be played again; replays never move the level. `progressColumns`: "level passed", of 7, with "zz" and "stuck".
 
 ## Server, data and cost
-Function `orderup` (`start` a set: makes 8 bags from a seed and stores them; `pick`; `answer`; `finish`). Tables `orderup_players` (level, help level, guide seen), `orderup_sets`, `orderup_steps`. Migration `20261113000700_orderup.sql`. About 30 requests per pupil per lesson (one per pick and answer); a class of 30 is about 900 small requests.
+Function `orderup` (`load`; `start` a set: makes 8 bags from a seed and keeps them; `bag`: replays one bag's picks and answers from `shared/orderup/play.ts`, saves it and records it; `seen`). The browser checks each pick and answer itself with the same rules, so there is one request per bag, not per tap. Tables `orderup_progress` (levels passed, help per level), `orderup_sets`, `orderup_bags`; worked examples seen in `kit_seen`. Migration `20261114000200_orderup.sql`. About 10 requests per pupil per lesson; a class of 30 is about 300.
 
 ## Stages
 | Stage | What | Live? |
