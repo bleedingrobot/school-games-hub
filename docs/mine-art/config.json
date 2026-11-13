@@ -6,14 +6,14 @@
   "styles": {
     "rock": "Stylised hand-painted video game texture, painterly brush strokes, soft even light with no strong shadows, rich but gentle colours, clean and readable, made for a children's 3D game. "
   },
-  "inbox": "~/dragon-art-inbox/mine-art/set",
+  "inbox": "~/dragon-art-inbox/mine-art",
   "picks": "docs/mine-art/picks.json",
   "art_dir": "src/games/mine/art",
   "home_dir": "src/assets/home",
   "pictures": [
     {
       "name": "rock-1",
-      "prompt": "Rough grey-green cave rock wall with thin veins and small flecks of glossy deep-green pounamu greenstone running through it, damp and cool. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "prompt": "Rough grey-green cave rock wall with thin veins and small flecks of glossy deep-green pounamu greenstone running through it, damp and cool. Natural uneven cave rock in irregular organic shapes, no bricks, no tiles, no blocks, no grid, no symmetry. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
       "size": [
         1024,
         1024
@@ -23,12 +23,12 @@
       "file": "1",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     },
     {
       "name": "rock-2",
@@ -42,16 +42,16 @@
       "file": "2",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     },
     {
       "name": "rock-3",
-      "prompt": "Smooth-cut warm tan quartz rock tunnel wall with pale quartz streaks and a few small gold specks, chisel marks. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "prompt": "Smooth-cut warm tan quartz rock tunnel wall with pale quartz streaks and a few small gold specks, chisel marks. Natural uneven cave rock in irregular organic shapes, no bricks, no tiles, no blocks, no grid, no symmetry. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
       "size": [
         1024,
         1024
@@ -61,16 +61,16 @@
       "file": "3",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     },
     {
       "name": "rock-4",
-      "prompt": "Dark blue-grey layered coal seam rock wall, shiny black coal bands between grey shale layers, a few faint orange ember glints. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "prompt": "Dark blue-grey layered coal seam rock wall, shiny black coal bands between grey shale layers, a few faint orange ember glints. Natural uneven cave rock in irregular organic shapes, no bricks, no tiles, no blocks, no grid, no symmetry. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
       "size": [
         1024,
         1024
@@ -80,12 +80,12 @@
       "file": "4",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     },
     {
       "name": "rock-5",
@@ -99,16 +99,16 @@
       "file": "5",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     },
     {
       "name": "rock-6",
-      "prompt": "Dark reddish-brown volcanic rock wall, rough basalt with small bubbles, thin glowing orange cracks here and there. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
+      "prompt": "Dark reddish-brown volcanic rock wall, rough basalt with small bubbles, thin glowing orange cracks here and there. Natural uneven cave rock in irregular organic shapes, no bricks, no tiles, no blocks, no grid, no symmetry. Seen straight on, flat, filling the whole frame edge to edge, even all over with no single focal point, no objects, no tools, no people, no text, no border, no vignette, no perspective. Seamless tileable texture.",
       "size": [
         1024,
         1024
@@ -118,12 +118,12 @@
       "file": "6",
       "max": 1024,
       "region": [
-        0.1,
-        0.1,
-        0.6,
-        0.6
+        0.04,
+        0.04,
+        0.96,
+        0.96
       ],
-      "mirror": true
+      "blend": true
     }
   ]
 }
