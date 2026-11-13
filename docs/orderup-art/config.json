@@ -4,7 +4,8 @@
   "filename_prefix": "orderup/img",
   "style": "quirky",
   "styles": {
-    "quirky": "Quirky painterly caricature illustration for a maths game for 11 to 13 year olds, loose expressive digital oil brushwork, visible textured strokes, exaggerated grotesque-funny proportions with big noses, bulging eyes and lumpy shapes, gritty detailed characters, earthy muted palette with pops of red and orange, sky-blue painterly background, humorous and grown-up, not cute, not babyish, no text, no letters, no numbers, no logos. "
+    "quirky": "Gritty editorial caricature illustration in thick visible oil paint, rough loose painterly texture with bold heavy brush strokes and palette-knife marks, dark sketchy outlines, any characters are grotesque-funny caricatures with gritty weathered wrinkled skin, lumpy noses and bulging eyes, earthy muted palette of olive, ochre, umber and brown with pops of red, rough brushy painterly blue sky where there is sky, humorous and grown-up for a maths game for 11 to 13 year olds, not cute, not smooth, not glossy, not 3D render, not Pixar, not babyish, no text, no letters, no numbers, no logos. ",
+    "quirky-still": "Gritty editorial still-life illustration in thick visible oil paint, rough loose painterly texture with bold heavy brush strokes and palette-knife marks, dark sketchy outlines, worn weathered surfaces, earthy muted palette of olive, ochre, umber and brown with pops of red, grown-up and characterful, not smooth, not glossy, not 3D render, no text, no letters, no numbers, no logos. "
   },
   "inbox": "~/dragon-art-inbox/orderup-art",
   "picks": "docs/orderup-art/picks.json",
@@ -13,7 +14,7 @@
   "pictures": [
     {
       "name": "card",
-      "prompt": "A cosy little retro take-away diner at night seen from the street, warm glowing windows, a red and white striped awning, a blank shop sign with no writing, a chunky brown paper take-away bag and a curly paper order ticket sitting on the front counter, a kiwi bird chef in a white hat working behind the counter, a calm deep-blue evening sky with a few stars at the top, wide landscape picture for a title card, the diner in the middle.",
+      "prompt": "A battered little retro take-away diner at night seen from the street, warm glowing window, a faded red and white striped awning, a completely blank shop sign with no writing, a brown paper take-away bag and a paper order ticket on the front counter, at most one grotesque caricature human cook with a huge red nose and a tall white chef's hat working behind the window, no other people, no customers, nobody in the street, a rough brushy deep-blue evening sky, wide landscape picture for a title card, the diner in the middle.",
       "size": [
         1216,
         688
@@ -23,7 +24,7 @@
     },
     {
       "name": "back-diner",
-      "prompt": "Inside a bright friendly retro diner kitchen seen straight on from the customer side: a long clean pale counter across the bottom, a big plain pale-cream wall in the middle with a few simple shelves of jars and plates near the edges, a round wall clock, checkered tiles at the very top edge, the middle of the wall empty and calm so things placed on top stand out. Completely empty background scenery, absolutely no people, no characters, no faces, nobody at the counter, soft muted colours in the middle, wide landscape.",
+      "prompt": "An empty worn retro diner interior after closing time, seen straight on from the customer side: a long bare pale counter across the bottom, a big plain cream wall in the middle with a few shelves of jars and plates near the edges, a round wall clock, checkered tiles at the very top edge, the middle of the wall bare and calm so things placed on top stand out. Deserted, still, only furniture and objects, wide landscape.",
       "size": [
         1344,
         768
@@ -34,7 +35,7 @@
     },
     {
       "name": "bag",
-      "prompt": "One plain brown paper take-away bag standing upright, seen straight on from the front, a wide flat empty front face with no print, the top folded over twice, crisp gentle creases, slightly rounded corners. Single object, centred, the whole bag visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "One plain brown kraft paper take-away bag standing upright, seen straight on from the front, the top folded over twice, rough creases, a bare blank brown paper front. Single object, centred, the whole bag visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         896,
         1024
@@ -46,7 +47,7 @@
     },
     {
       "name": "ticket",
-      "prompt": "One long blank paper order ticket from a diner, a tall narrow strip of off-white paper with a gently torn zigzag bottom edge and a small curl at the bottom, completely blank with no writing and no lines, seen straight on. Single object, centred, the whole ticket visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "One long blank paper order ticket from a diner, a tall narrow strip of bare off-white paper with a torn zigzag bottom edge and a small curl at the bottom, seen straight on, completely blank paper from top to bottom. Single object, centred, the whole ticket visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         640,
         1152
