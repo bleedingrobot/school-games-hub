@@ -1,8 +1,8 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { BUILDING_NAMES, maxLevel, upgradeCost } from '../../../shared/clans/empire';
 import { VILLAGE_BUILDINGS, type Empire, type VillageBuilding } from '../../../shared/clans/types';
 import { buildingArt, villageArt } from './art';
-import { GATE, GROUND, PLOTS, aroundEdge, diamond, pct } from './villageLayout';
+import { GATE, GROUND, PLOTS, aroundEdge, diamond, pct, type Plot } from './villageLayout';
 
 export type PlotState = { ok: boolean };
 
@@ -187,6 +187,55 @@ function Puffs({ kind }: { kind: 'dust' | 'smoke' }) {
   return <span className={`cq-vpuffs cq-vpuffs--${kind}`} aria-hidden="true">{[0, 1, 2, 3, 4].map((i) => <i key={i} />)}</span>;
 }
 
+/** V5, village life: chimney smoke, made in code and laid over the painting. */
+const Chimney = () => <span className="cq-vchimney" aria-hidden="true"><i /><i /><i /></span>;
+
+/** V5: a pennant flying from the top of the Tower. */
+const Pennant = () => (
+  <svg className="cq-vpennant" viewBox="0 0 40 50" aria-hidden="true">
+    <rect x="2" y="0" width="2.5" height="50" fill="#3a2d22" />
+    <path className="cq-vpennant__cloth" d="M4.5 3 L38 10 L4.5 19 Z" fill="#b8423a" stroke="#5a1a14" strokeWidth="1" />
+  </svg>
+);
+
+/** V5: a villager (hood, body, legs) seen from the side, small enough for the roads. */
+const Villager = ({ coat }: { coat: string }) => (
+  <svg viewBox="0 0 20 34" aria-hidden="true">
+    <ellipse cx="10" cy="32" rx="7" ry="2" fill="rgba(0,0,0,0.35)" />
+    <rect className="cq-vwalker__leg" x="6.5" y="22" width="3" height="10" rx="1.4" fill="#3a2d22" />
+    <rect className="cq-vwalker__leg cq-vwalker__leg--b" x="10.5" y="22" width="3" height="10" rx="1.4" fill="#2e241b" />
+    <path d="M4 24 Q4 12 10 11 Q16 12 16 24 Z" fill={coat} stroke="#1e1812" strokeWidth="1" />
+    <circle cx="10" cy="8" r="4.2" fill="#d9b48c" />
+    <path d="M5.5 8 Q6 2 10 2 Q14 2 14.5 8 Q12 5 10 5.2 Q8 5 5.5 8 Z" fill={coat} />
+  </svg>
+);
+
+/** The roads the villagers walk along (in ground units), back and forth. More walk as the village grows. */
+function roads(): [Plot, Plot][] {
+  const [back, right, front, left] = diamond(60);
+  const mid = (a: [number, number], b: [number, number]): Plot => ({ x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2 });
+  return [
+    [mid(back, left), mid(front, right)],
+    [mid(front, left), mid(back, right)],
+    [{ x: GROUND.cx, y: GROUND.cy + 20 }, { x: GATE.x, y: GATE.y - 30 }],
+  ];
+}
+const COATS = ['#6a4a8a', '#8a5a2a', '#3a6a5a'];
+
+/** V5: fireworks over a finished village (all 39 levels). */
+function Fireworks() {
+  const bursts = [{ x: 18, y: 14, c: '#ffd36b', d: 0 }, { x: 80, y: 12, c: '#ff7b6b', d: 0.9 }, { x: 50, y: 6, c: '#8fd0ff', d: 1.7 }, { x: 30, y: 22, c: '#b6ff8f', d: 2.6 }];
+  return (
+    <span className="cq-vfireworks" aria-hidden="true">
+      {bursts.map((b, i) => (
+        <span key={i} className="cq-vburst" style={{ left: `${b.x}%`, top: `${b.y}%`, color: b.c, animationDelay: `${b.d}s` }}>
+          {Array.from({ length: 12 }, (_, k) => <i key={k} style={{ transform: `rotate(${k * 30}deg)`, animationDelay: `${b.d}s` }} />)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** "Level 4!" (or "Fully built!") floating up when the dust clears. */
 const floatText = (c: Cheer) => (c.level >= maxLevel(c.b) ? 'Fully built!' : `Level ${c.level}!`);
 
@@ -226,6 +275,14 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
           <Walls level={e.levels.walls} />
           <Gate level={e.levels.walls} />
         </svg>
+        {roads().slice(0, groundLook(total)).map(([a, b], i) => (
+          <span
+            key={`walker-${i}`} className="cq-vwalker" aria-hidden="true"
+            style={{ '--x0': pct(a).left, '--y0': pct(a).top, '--x1': pct(b).left, '--y1': pct(b).top, animationDelay: `${-i * 7}s`, animationDuration: `${22 + i * 5}s` } as CSSProperties}
+          >
+            <Villager coat={COATS[i]} />
+          </span>
+        ))}
         {order.map((b) => {
           const level = e.levels[b];
           const art = level > 0 ? buildingArt(b, level) : undefined;
@@ -238,6 +295,8 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
               aria-label={plotLabel(b, level, states[b].ok)} aria-pressed={picked === b} onClick={() => onPick(b)}
             >
               {art ? <img className="cq-vplot__art" src={art} alt="" draggable={false} /> : <BuildingSite />}
+              {level > 0 && !building && !smoky?.has(b) && (b === 'smithy' || b === 'forge') && <Chimney />}
+              {level > 0 && !building && b === 'tower' && <Pennant />}
               {smoky?.has(b) && !building && <Puffs kind="smoke" />}
               {building && <><Scaffold /><Puffs kind="dust" /><span className="cq-vfloat" aria-hidden="true">{floatText(cheer)}</span></>}
             </button>
@@ -251,6 +310,7 @@ export function VillageScene({ e, states, picked, onPick, total, cheer, smoky }:
           {smoky?.has('walls') && cheer?.b !== 'walls' && <Puffs kind="smoke" />}
           {cheer?.b === 'walls' && <><Puffs kind="dust" /><span className="cq-vfloat" aria-hidden="true">{floatText(cheer)}</span></>}
         </button>
+        {VILLAGE_BUILDINGS.every((b) => e.levels[b] >= maxLevel(b)) && <Fireworks />}
         {order.map((b) => sign(b, e.levels[b], PLOTS[b]))}
         {sign('walls', e.levels.walls, { x: GATE.x, y: GATE.y - 10 })}
       </div>
