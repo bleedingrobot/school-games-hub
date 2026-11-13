@@ -315,8 +315,8 @@ begin
           'slip', (select sl.kind from slips sl where sl.player = o.player order by sl.n desc, sl.kind limit 1)))
         from public.orderup_progress o join students s on s.id = o.player), '[]'::jsonb),
       'slips', coalesce((
-        select jsonb_agg(jsonb_build_object('kind', t.kind, 'pupils', t.pupils) order by t.pupils desc, t.kind)
-        from (select sl.kind, count(distinct sl.player) as pupils from slips sl group by sl.kind) t), '[]'::jsonb))
+        select jsonb_agg(jsonb_build_object('kind', t.kind, 'pupils', t.pupils) order by t.pupils desc, t.times desc, t.kind)
+        from (select sl.kind, count(distinct sl.player) as pupils, sum(sl.n) as times from slips sl group by sl.kind) t), '[]'::jsonb))
   );
 end;
 $$;
