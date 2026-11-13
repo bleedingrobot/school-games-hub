@@ -1,0 +1,75 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Order Up! (docs/ORDERUP-ART-PLAN.md). Check with: python3 scripts/game_art.py orderup paint OUT --dry-run",
+  "game": "orderup",
+  "filename_prefix": "orderup/img",
+  "style": "neon",
+  "styles": {
+    "neon": "Cinematic night-time illustration, moody teal and deep blue shadows with glowing magenta and amber neon light, wet reflective surfaces, soft rain haze, stylish and atmospheric like a modern indie video game. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "graphic": "Bold graphic-novel illustration, confident black ink lines, flat rich colours with hard cel shadows, dramatic angles, modern comic book style. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "iso": "Clean stylised 3D render, isometric view, smooth low-poly shapes, soft global illumination, muted modern palette with one warm accent colour, polished like a premium mobile game. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "concept": "Painterly cinematic video game concept art, realistic warm lamplight and cool night shadows, rich detail, depth and atmosphere, polished and grown-up. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. "
+  },
+  "inbox": "~/dragon-art-inbox/orderup-art",
+  "picks": "docs/orderup-art/picks.json",
+  "art_dir": "src/games/orderup/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "card",
+      "prompt": "A stylish late-night street-food diner on a city corner, a glowing counter window with a chrome edge, steam rising from the kitchen, a brown paper take-away bag and a long curling paper order ticket on the counter, a cook in a dark apron and cap working behind the window, the street quiet and atmospheric, wide landscape picture for a title card, the diner in the middle.",
+      "size": [
+        1216,
+        688
+      ],
+      "kind": "card",
+      "file": "orderup"
+    },
+    {
+      "name": "back-diner",
+      "prompt": "Inside a stylish modern diner kitchen at night, seen straight on from the customer side: a long steel counter across the bottom, a dark tiled wall behind with a glowing order rail and a few hanging pans near the edges, warm lights, the middle of the wall plain and calm so things placed on top stand out. Empty background scenery, no people, wide landscape.",
+      "size": [
+        1344,
+        768
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "diner"
+    },
+    {
+      "name": "bag",
+      "prompt": "One plain brown paper take-away bag standing upright, seen straight on from the front, a wide flat empty front face with no print, the top folded over twice, crisp gentle creases, slightly rounded corners. Single object, centred, the whole bag visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        896,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "props",
+      "file": "bag",
+      "max": 800
+    },
+    {
+      "name": "ticket",
+      "prompt": "One long blank paper order ticket from a diner, a tall narrow strip of off-white paper with a gently torn zigzag bottom edge and a small curl at the bottom, completely blank with no writing and no lines, seen straight on. Single object, centred, the whole ticket visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        640,
+        1152
+      ],
+      "kind": "cut",
+      "folder": "props",
+      "file": "ticket",
+      "max": 900
+    },
+    {
+      "name": "chef",
+      "prompt": "A cool young diner cook, a confident teenage-looking character in a dark apron, rolled sleeves and a backwards cap, a pencil behind one ear, one hand raised pointing upward as if explaining something, a relaxed half smile, full body, facing the viewer. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
+      "size": [
+        832,
+        1024
+      ],
+      "kind": "cut",
+      "folder": "props",
+      "file": "chef",
+      "max": 700
+    }
+  ]
+}

@@ -39,6 +39,12 @@ export interface GameDefinition {
   /** Where the dashboard lists the game (in GAMES order within a group). A game without one has no dashboard card. */
   group?: DashboardGroup;
   /**
+   * An Activity: calm practice of one skill, listed on the Activities page (/activities), never on the home page. Give it no
+   * `group`. It earns achievements only (measures ending `_step`, so not on the Leaderboard) and no points
+   * (docs/ORDERUP-PLAN.md, "What an Activity is").
+   */
+  activity?: boolean;
+  /**
    * The game has a teacher's on/off switch for the class: its card shows only when the class's setting column is exactly true.
    * The column is `<id>_enabled` (dragon-maths is `lord_enabled`, clan-quest `clans_enabled`; src/data/settingsChanges.ts
    * gameSwitchColumn). The home page reads every switch in one request (src/data/classSwitches.ts). Leave it out for a game
