@@ -19,10 +19,17 @@ export const MAX_RUN_STEPS = STEPS_PER_SECOND * 60 * 15;
 export const CELL = 1;
 /** Rooms sit on a coarse grid this many blocks apart. */
 export const ROOM_SPACING = 18;
-/** Tunnels are this many blocks across (odd, so they have a middle). */
-export const TUNNEL_WIDTH = 5;
-/** A room is 7 or 9 blocks across each way (half of it, not counting the middle block). */
-export const ROOM_HALF_SIZES = [3, 4] as const;
+/**
+ * Tunnels are this many blocks across (odd, so they have a middle). Widened from 5 to 7 and rooms from 7–9 to 11–13
+ * blocks (docs/plans/mine-flight/PLAN.md, M3: kids found it claustrophobic). ROOM_SPACING is unchanged, so the way
+ * through each mine is the same length and the medal times still fit. Saved runs are never replayed again, so changing
+ * the layout is safe for the boards.
+ */
+export const TUNNEL_WIDTH = 7;
+/** A room is 11 or 13 blocks across each way (half of it, not counting the middle block). Still two sizes, so each mine keeps its maze. */
+export const ROOM_HALF_SIZES = [5, 6] as const;
+/** The reactor sits in a big cavern this size (half, so 15 blocks across). */
+export const CAVERN_HALF_SIZE = 7;
 
 // ——— The ship ———
 export const SHIP_RADIUS = 0.45;
