@@ -102,7 +102,7 @@ export function HowToPlayBody() {
         <h3 id="mht-quests">Quests and puzzles</h3>
         <p>
           People with a <strong>!</strong> need your help: there are {QUESTS.length} story quests. The quest log in the Menu shows what to do next, and so does the line at the bottom of the map.
-          The notice board in Harbour Town has 3 small jobs every day. Puzzles hide around the map (stepping stones, ice slides, lanterns, locks and crates). After 3 tries you can ask for a hint.
+          The notice board in Harbour Town has 3 small jobs every day. Puzzles hide around the map (stepping stones, ice slides, lanterns, locks and crates): a sparkle shows where, until you solve it. After 3 tries you can ask for a hint.
         </p>
       </section>
 
