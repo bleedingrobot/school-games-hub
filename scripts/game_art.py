@@ -32,7 +32,8 @@ Config (all paths are relative to the repo unless they start with ~):
     kind  "cut"   cut out of its white background, trimmed, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
           "scene" kept whole, 1600 px and an 800 px copy -> <art_dir>/<folder>/<file>.webp and <file>-800.webp
           "texture" a plain flat texture (a mat): a `region` [x0, y0, x1, y1] (fractions of the painting, default the middle half),
-                  optionally `mirror`ed 2x2 so it tiles without a seam, shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
+                  optionally `mirror`ed 2x2 so it tiles without a seam, or `blend`ed (cross-faded with a copy moved half a tile,
+                  so the edges wrap with no mirror pattern; better for rock), shrunk to `max` px -> <art_dir>/<folder>/<file>.webp
           "card"  a home page card, 1600 px and 800 px -> <home_dir>/<file>.webp and <file>-small.webp
           "icon"  kept whole with its painted background (a trophy, an earned picture), shrunk to `max` px, and to `small` px
                   too if given -> <art_dir>/<folder>/<file>.webp and <file>-small.webp
@@ -312,6 +313,17 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
         px[areas == areas[cy, cx], 3] = 0
         return Image.fromarray(px, 'RGBA')
 
+    def blend_tile(part):
+        # Seamless without mirroring: the painting's own middle forms the tile's edges (a copy moved half a tile wraps
+        # cleanly), faded into the untouched painting towards the centre.
+        a = np.asarray(part).astype(np.float32)
+        h, w = a.shape[:2]
+        moved = np.roll(a, (h // 2, w // 2), axis=(0, 1))
+        wy = 1 - np.abs(np.linspace(-1, 1, h))
+        wx = 1 - np.abs(np.linspace(-1, 1, w))
+        k = np.clip(np.minimum.outer(wy, wx) * 2.5, 0, 1)[..., None]
+        return Image.fromarray((a * k + moved * (1 - k)).round().astype(np.uint8), 'RGB')
+
     for name, t in picks.items():
         p = by_name[name]
         outs = destinations(c, p)
@@ -328,7 +340,9 @@ def tidy(c: dict, style: str, force: bool, dry: bool):
             x0, y0, x1, y1 = p.get('region', [0.25, 0.25, 0.75, 0.75])
             part = img.crop((int(w * x0), int(h * y0), int(w * x1), int(h * y1)))
             tile = part
-            if p.get('mirror'):
+            if p.get('blend'):
+                tile = blend_tile(part)
+            elif p.get('mirror'):
                 flip = part.transpose(Image.FLIP_LEFT_RIGHT)
                 tile = Image.new('RGB', (part.width * 2, part.height * 2))
                 tile.paste(part, (0, 0)); tile.paste(flip, (part.width, 0))
