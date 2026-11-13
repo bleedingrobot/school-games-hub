@@ -55,7 +55,8 @@ export interface FrameInput {
   /** People with a quest step for you (a gold "!" over them). */
   quests?: ReadonlySet<string>;
   /** Trees hiding a seed pod you are looking for (a little twinkle on each). */
-  twinkles?: readonly { x: number; y: number }[];
+  /** `big` for a puzzle place (twice the size, as the only thing that marks it). */
+  twinkles?: readonly { x: number; y: number; big?: boolean }[];
   /** Hatching spots where an egg in the basket is ready (a glowing ring on the ground). */
   rings?: readonly { x: number; y: number }[];
 }
@@ -169,7 +170,7 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   // Glowing rings where a ready egg can hatch: over the tree tops too, since some spots sit under painted trees.
   for (const r of f.rings ?? []) drawRing(ctx, Math.round((r.x * TILE + 8) * S - offX), Math.round((r.y * TILE + 11) * S - offY), S, ringPhase(now), RING_RGB);
   // Over the tree tops, so a pod hidden in a tree still shows.
-  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 8) * S - offX), Math.round((t.y * TILE + 5) * S - offY), S, twinklePhase(now, i)));
+  f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 8) * S - offX), Math.round((t.y * TILE + 5) * S - offY), t.big ? 2 * S : S, twinklePhase(now, i)));
 
   if (f.fade > 0) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;

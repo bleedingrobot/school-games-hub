@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cratesStart, light, lockStart, push, PUZZLES, slide, slideStart, stepStone, stonesGrid, tryLock, turnDial, type CratesState, type Puzzle, type SlideDir, type SlideState } from './puzzles';
 import { WORLD_MAPS } from '../maps';
-import { hatchRings } from '../world/questWorld';
+import { hatchRings, puzzleTwinkles } from '../world/questWorld';
 import type { WorldState } from '../world/types';
 import { findEgg, HATCH_SPOTS } from './eggs';
 import { emptyQuestSave, type EggKind } from './types';
@@ -20,7 +20,7 @@ function fewest<S extends { done: boolean }>(start: S, moves: (s: S) => S[], key
 }
 
 describe('the puzzles', () => {
-  it('every puzzle can be solved but not by luck, a wrong move costs a try, and every egg spot glows once its egg is ready', () => {
+  it('every puzzle can be solved but not by luck, a wrong move costs a try, each puzzle place sparkles until solved, and every egg spot glows once its egg is ready', () => {
     for (const p of PUZZLES as Puzzle[]) {
       if (p.kind === 'stones') {
         // A path of multiples crosses the pool, and the first column is not all multiples (a real choice).
@@ -76,6 +76,14 @@ describe('the puzzles', () => {
       }
     }
     expect(new Set(PUZZLES.map((p) => p.id)).size).toBe(PUZZLES.length);
+    // Every puzzle place (not seed pods) sparkles until it is solved.
+    for (const map of Object.values(WORLD_MAPS)) {
+      for (const t of map.things.filter((x) => x.kind === 'puzzle' && PUZZLES.find((p) => p.id === x.puzzle)?.kind !== 'pods')) {
+        const at = (flags: string[]) => puzzleTwinkles({ quest: { ...emptyQuestSave(), flags } } as unknown as WorldState, map).some((s) => s.x === t.x && s.y === t.y);
+        expect(at([]), t.id).toBe(true);
+        expect(at([`solved:${t.puzzle}`]), t.id).toBe(false);
+      }
+    }
     // Every egg's hatching spot is on its map, and its glowing ring shows there only once the egg is ready.
     for (const [kind, home] of Object.entries(HATCH_SPOTS)) {
       const map = WORLD_MAPS[home.map];

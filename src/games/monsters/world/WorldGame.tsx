@@ -18,7 +18,7 @@ import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wil
 import type { Giant } from '../../../../shared/monsters/quests/giants';
 import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
 import { nextStep } from '../../../../shared/monsters/quests/nextStep';
-import { badgeStep, hatchRings, podTwinkles, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
+import { badgeStep, hatchRings, podTwinkles, puzzleTwinkles, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
@@ -288,7 +288,7 @@ export function WorldGame({
       const sc = sceneFor(sheets, maps[view.state.map]);
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
-      const twinkles = podTwinkles(view.state, maps[view.state.map]);
+      const twinkles = [...podTwinkles(view.state, maps[view.state.map]), ...puzzleTwinkles(view.state, maps[view.state.map])];
       const rings = hatchRings(view.state, maps[view.state.map], playDays.current);
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
       const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${questKey(view.state)},${paintedVersion()},${twinkles.map((_, i) => twinklePhase(now, i)).join('')},${rings.length ? `${rings.map((r) => `${r.x}.${r.y}`).join()}:${ringPhase(now)}` : ''}`;

@@ -289,7 +289,7 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
     const p = puzzleById(id)!;
     const solved = q.flags.includes(`solved:${id}`);
     if (p.kind === 'pods') hints.push(solved ? 'You found all the seed pods here.' : `Seed pods are hidden in the trees here. You have found ${podsFound(q.flags, id)} of ${p.count}. ${p.hint}`);
-    else hints.push(solved ? `You solved the ${p.title.toLowerCase()} here.` : `There is a puzzle to solve here: ${p.title.toLowerCase()}.`);
+    else hints.push(solved ? `You solved the ${p.title.toLowerCase()} here.` : `There is a puzzle to solve here: ${p.title.toLowerCase()}. Look for the sparkle.`);
   }
   for (const g of GIANTS.filter((x) => x.map === map.id)) {
     const giant = speciesOf(g.species).name;
@@ -351,6 +351,18 @@ export function podTwinkles(state: WorldState, map: GameMap): { x: number; y: nu
     if (step?.do === 'solve' && step.id && !q.flags.includes(`solved:${step.id}`)) looking.add(step.id);
   }
   return map.things.filter((t) => t.kind === 'puzzle' && t.puzzle && looking.has(t.puzzle) && !q.flags.includes(podFlag(t.puzzle, t.id))).map((t) => ({ x: t.x, y: t.y }));
+}
+
+/**
+ * Puzzle places not solved yet (not seed pods, which twinkle only while a quest asks for them). The
+ * maps don't draw most of them (the lantern door is plain dry grass), so each twinkles until it is
+ * solved: James, 13 Nov 2026.
+ */
+export function puzzleTwinkles(state: WorldState, map: GameMap): { x: number; y: number; big: true }[] {
+  const q = questOf(state);
+  return map.things
+    .filter((t) => t.kind === 'puzzle' && t.puzzle && puzzleById(t.puzzle)?.kind !== 'pods' && !q.flags.includes(`solved:${t.puzzle}`))
+    .map((t) => ({ x: t.x, y: t.y, big: true as const }));
 }
 
 export function questMarks(state: WorldState, map: GameMap): Set<string> {
