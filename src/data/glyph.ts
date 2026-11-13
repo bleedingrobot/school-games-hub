@@ -8,6 +8,7 @@ import { fromServer, type GlyphBackend } from '../games/glyph/backend';
 import { readSettings } from './classSettings';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
+import { shortCache } from '../teacher/shortCache';
 
 /** The real school server. */
 export const liveGlyph: GlyphBackend = fromServer(async (body) => {
@@ -47,4 +48,56 @@ export async function saveGlyphEnabled(enabled: boolean, classId: string): Promi
   const { error } = await supabase.rpc('teacher_set_glyph' as never, { enabled, target_class: classId } as never);
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+// ---------------------------------------------------------------- the teacher's reads (migration 20261114000100)
+
+export interface GlyphClassPupil {
+  student: string;
+  /** Temples passed, of 6. */
+  passed: number;
+  walls: number;
+  lastPlayed: string | null;
+  /** The temple tried on 3 or more days without a pass, and on how many days; null when not stuck. */
+  stuckTemple: number | null;
+  stuckDays: number | null;
+}
+
+export interface GlyphMistakeCount {
+  /** A named mistake (shared/glyph/config.ts TrapKind, or 'missed'). */
+  mistake: string;
+  count: number;
+  /** Pupils who made it (class read only). */
+  students?: number;
+}
+
+export interface GlyphClass {
+  players: GlyphClassPupil[];
+  /** The class's most common mistakes over the last 14 days. */
+  hardest: GlyphMistakeCount[];
+}
+
+/** One read for the class (stuck pupils and the common mistakes). Shared for a few seconds between Today's parts. */
+export function fetchGlyphClass(classId: string): Promise<GlyphClass> {
+  return shortCache(`glyph:${classId}`, async () => {
+    const { data, error } = await supabase.rpc('teacher_glyph_class' as never, { target_class: classId } as never);
+    if (error || !data) throw new FriendlyError('We couldn’t load Glyph Gates for this class.');
+    return data as GlyphClass;
+  });
+}
+
+export interface GlyphStudent {
+  passed: number;
+  walls: number;
+  /** Best first-go walls (of 9) by temple number. */
+  best: Record<string, number>;
+  lastPlayed: string | null;
+  mistakes: GlyphMistakeCount[];
+}
+
+/** One student's temples, or null if they haven't played. */
+export async function fetchGlyphStudent(student: string): Promise<GlyphStudent | null> {
+  const { data, error } = await supabase.rpc('teacher_glyph_student' as never, { student } as never);
+  if (error) throw new FriendlyError('We couldn’t load Glyph Gates for this student.');
+  return (data ?? null) as GlyphStudent | null;
 }

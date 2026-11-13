@@ -10,8 +10,9 @@ import { glyphOfLit, judgeGo, rightCells, type Go, type Judged, type WallPlay } 
 import type { PublicWall } from '../../../shared/glyph/walls';
 import { PointingHand } from '../../kit/PointingHand';
 import { ShowWhy } from '../../kit/ShowWhy';
+import type { Say } from './voice';
 import { ArrowCurve, FractionBar, GlyphPicture, Monkey, Stack } from './Art';
-import { arrowWords, LOOK_CLOSELY, LOOK_CLOSELY_NONE, nextStep, spokenFrac, whyOf, type Phase, type Why } from './words';
+import { arrowWords, guideLine as guideWords, LOOK_CLOSELY, LOOK_CLOSELY_NONE, NO_MATCH, nextStep, PICK_GLYPH, PRESS_LIGHT, spokenFrac, WALL_ASK, WHY_VOICE, whyOf, type Phase, type Why } from './words';
 
 export interface WallScreenProps {
   wall: PublicWall;
@@ -26,12 +27,14 @@ export interface WallScreenProps {
   onDone: (play: WallPlay | null) => void;
   onSkipGuide?: () => void;
   onLeave: () => void;
+  /** Bella reads a line (only the recorded ones, and only while the voice is on). */
+  say?: Say;
 }
 
 const OPEN_MS = 1200;
 const REVEAL_STEP_MS = 650;
 
-export function WallScreen({ wall, index, templeName, help, guide = false, marks = [], onDone, onSkipGuide, onLeave }: WallScreenProps) {
+export function WallScreen({ wall, index, templeName, help, guide = false, marks = [], onDone, onSkipGuide, onLeave, say }: WallScreenProps) {
   const heading = useRef<HTMLHeadingElement>(null);
   const t0 = useRef(performance.now());
   const used = useRef(0);
@@ -125,7 +128,7 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
     }
     const w = whyOf(wall, judged);
     setWhy(w && { ...w, judged });
-    setNote(judged.outcome === 'nomatch' ? 'None of the glyphs matched your tiles. Look again.' : '');
+    setNote(judged.outcome === 'nomatch' ? NO_MATCH : '');
     setPhase('tiles');
   };
 
@@ -145,12 +148,22 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
   const nextRight = right.find((c) => !lit.includes(c));
   const guideStep = !guide ? -1 : !intro ? 0 : phase === 'glyphs' ? 3 : guideReady ? 2 : 1;
   const handTile = guideStep === 1 ? (wrongLit ?? nextRight ?? null) : null;
-  const guideLine = [
-    `This is the gold stone: ${fracText(wall.gold)}. The tiles to light are the ones worth the same.`,
-    wrongLit !== undefined ? `${fracText(wall.tiles[wrongLit])} is not worth ${fracText(wall.gold)}. Tap it again to put it out.` : `Tap a tile worth ${fracText(wall.gold)}. Try ${nextRight !== undefined ? fracText(wall.tiles[nextRight]) : 'one'}.`,
-    'Now press Light the runes.',
-    'Pick the glyph that matches your green tiles.',
-  ][Math.max(guideStep, 0)];
+  const guideLine = guideWords(Math.max(guideStep, 0), wall.gold, wrongLit === undefined ? undefined : wall.tiles[wrongLit], nextRight === undefined ? undefined : wall.tiles[nextRight]);
+
+  // Bella: the ask when a wall opens (or the guide's line), the glyph step, the mistakes and the result of a wrong go.
+  useEffect(() => {
+    if (!guide) say?.(WALL_ASK);
+  }, [say, guide]);
+  useEffect(() => {
+    if (guide) say?.(guideLine);
+    else if (phase === 'glyphs') say?.(PICK_GLYPH);
+  }, [say, guide, guideLine, phase]);
+  useEffect(() => {
+    if (note) say?.(note);
+  }, [say, note]);
+  useEffect(() => {
+    if (why) say?.(WHY_VOICE[why.kind], () => say(PRESS_LIGHT));
+  }, [say, why]);
 
   const skip = useCallback(() => onSkipGuide?.(), [onSkipGuide]);
 
@@ -179,7 +192,7 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
         )}
       </header>
 
-      <p className="gg-ask">Find the tiles equal to the gold stone</p>
+      <p className="gg-ask">{WALL_ASK}</p>
 
       <div className="gg-wall__body">
         <div className="gg-stone" key={`stone-${index}`}>
@@ -258,7 +271,7 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
               : phase === 'tiles' && lit.length > 0 && !guide
                 ? `${nextStep(wall.gold, lit.length, 'tiles')}`
                 : phase === 'tiles' && guide && guideStep === 2
-                  ? 'Press Light the runes.'
+                  ? PRESS_LIGHT
                   : nextStep(wall.gold, lit.length, phase === 'open' ? 'open' : phase === 'glyphs' ? 'glyphs' : 'tiles')}
           </p>
           {guide && <p className="gg-tip" role="status"><b>Mango:</b> {guideLine}{guideStep === 0 && <button type="button" className="gg-btn gg-btn--primary gg-btn--small" onClick={() => setIntro(true)}>Next</button>}</p>}

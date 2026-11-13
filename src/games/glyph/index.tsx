@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
-import { GLYPH_ABOUT, saveGlyphClassSwitch, useGlyphClassSwitch } from './teacher';
+import { GLYPH_ABOUT, glyphAlerts, glyphHardest, glyphStudentSummary, saveGlyphClassSwitch, useGlyphCells, useGlyphClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const GlyphPlay = lazy(() => import('./GlyphPlay').then((m) => ({ default: m.GlyphPlay })));
@@ -39,6 +39,10 @@ export const glyph: GameDefinition = {
   teacherSwitch: true,
   teacher: {
     switch: { useValue: useGlyphClassSwitch, save: saveGlyphClassSwitch, about: GLYPH_ABOUT },
+    progressColumns: { note: 'temples passed', useCells: useGlyphCells },
+    hardest: glyphHardest,
+    alerts: glyphAlerts,
+    studentSummary: glyphStudentSummary,
   },
 };
 
