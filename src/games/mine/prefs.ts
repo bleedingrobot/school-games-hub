@@ -18,11 +18,13 @@ export interface MinePrefs {
   sensitivity: number;
   /** Looking up and down the other way round. */
   invertY: boolean;
+  /** Where the camera sits: just behind the ship (you see your ship and the walls round it), or in its nose. */
+  view: 'behind' | 'cockpit';
   /** Fly with maths questions at the doors and pads, when the teacher lets pupils choose. */
   maths: boolean;
 }
 
-export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 2, invertY: false, maths: true };
+export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 2, invertY: false, view: 'behind', maths: true };
 
 const keyFor = (player?: string) => `mine-runner-prefs-v1${player ? `:${player}` : ''}`;
 
@@ -39,6 +41,7 @@ export function parsePrefs(raw: unknown): MinePrefs {
     lessMotion: typeof o.lessMotion === 'boolean' ? o.lessMotion : null,
     sensitivity: sens,
     invertY: bool('invertY', DEFAULT_PREFS.invertY),
+    view: o.view === 'cockpit' ? 'cockpit' : 'behind',
     maths: bool('maths', DEFAULT_PREFS.maths),
   };
 }

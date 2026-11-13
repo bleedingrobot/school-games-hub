@@ -17,6 +17,13 @@ export function SettingsPanel({
         <input type="checkbox" checked={prefs.steady} onChange={(e) => set('steady', e.target.checked)} />
         <span>Steady flight <small>Keeps your ship level, so up is always up. Best for most pilots. {inRun ? 'Changes the next time you start a mine.' : ''}</small></span>
       </label>
+      <label className="mn-field">
+        <span>Camera</span>
+        <select value={prefs.view} onChange={(e) => set('view', e.target.value as MinePrefs['view'])}>
+          <option value="behind">Behind the ship: see your ship and the walls round it</option>
+          <option value="cockpit">From the cockpit</option>
+        </select>
+      </label>
       <label className="mn-check">
         <input type="checkbox" checked={prefs.arrow} onChange={(e) => set('arrow', e.target.checked)} />
         <span>Arrow to the next goal <small>Points the way to the next key, door, reactor or exit.</small></span>
