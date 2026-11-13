@@ -11,6 +11,7 @@ import type { PublicWall } from '../../../shared/glyph/walls';
 import { PointingHand } from '../../kit/PointingHand';
 import { ShowWhy } from '../../kit/ShowWhy';
 import type { Say } from './voice';
+import { paint } from './art';
 import { ArrowCurve, FractionBar, GlyphPicture, Monkey, Stack } from './Art';
 import { arrowWords, guideLine as guideWords, LOOK_CLOSELY, LOOK_CLOSELY_NONE, NO_MATCH, nextStep, PICK_GLYPH, PRESS_LIGHT, spokenFrac, WALL_ASK, WHY_VOICE, whyOf, type Phase, type Why } from './words';
 
@@ -170,9 +171,10 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
   const arrowInfo = arrowTile !== null ? arrowsBetween(wall.gold, wall.tiles[arrowTile]) : null;
   const same = (c: number) => equal(wall.tiles[c], wall.gold);
   const cheering = phase === 'open';
+  const wallBg = paint('back/wall') ? { ['--gg-bg' as string]: `url(${paint('back/wall')})`, ['--gg-bg-s' as string]: `url(${paint('back/wall-800') ?? paint('back/wall')})`, ['--gg-gold-img' as string]: paint('stones/gold') ? `url(${paint('stones/gold')})` : 'none', ['--gg-tile-img' as string]: paint('stones/tile') ? `url(${paint('stones/tile')})` : 'none' } : undefined;
 
   return (
-    <section className={`gg-wall${cheering ? ' gg-wall--open' : ''}`} aria-labelledby="gg-wall-h">
+    <section className={`gg-wall${cheering ? ' gg-wall--open' : ''}${paint('back/wall') ? ' gg-wall--painted' : ''}`} aria-labelledby="gg-wall-h" style={wallBg}>
       <header className="gg-wall__top">
         <div>
           <h2 id="gg-wall-h" className="gg-h" tabIndex={-1} ref={heading}>{guide ? 'Practice wall' : `Wall ${index + 1} of ${WALLS_PER_TEMPLE}`}</h2>
@@ -329,9 +331,9 @@ export function WallScreen({ wall, index, templeName, help, guide = false, marks
 
       {cheering && (
         <div className="gg-cheer" role="status">
-          <Monkey cheer />
-          <Monkey cheer flip />
-          <Monkey cheer />
+          <Monkey cheer which="brown" />
+          <Monkey cheer flip which="grey" />
+          <Monkey cheer which="gold" />
           <p className="gg-cheer__say">The wall opens!</p>
         </div>
       )}

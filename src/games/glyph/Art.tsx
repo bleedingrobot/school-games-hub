@@ -2,6 +2,7 @@
 import { GRID } from '../../../shared/glyph/config';
 import { rowCol } from '../../../shared/glyph/glyphs';
 import type { Frac } from '../../../shared/glyph/fractions';
+import { paint, type MonkeyKind } from './art';
 
 /** A glyph: a 4 × 4 mini grid with the glyph's cells lit. `ghost` shows the empty cells faintly. */
 export function GlyphPicture({ cells, size = 96, tone = 'green' }: { cells: readonly number[]; size?: number; tone?: 'green' | 'gold' }) {
@@ -30,8 +31,12 @@ export function FractionBar({ frac, tone = 'gold', label }: { frac: Frac; tone?:
   );
 }
 
-/** A cartoon monkey; arms up when `cheer` is set. */
-export function Monkey({ cheer = false, flip = false }: { cheer?: boolean; flip?: boolean }) {
+/** A monkey: the painted one (`which`) if it is there, else a drawn cartoon; hops when `cheer` is set. */
+export function Monkey({ cheer = false, flip = false, which = 'brown' }: { cheer?: boolean; flip?: boolean; which?: MonkeyKind }) {
+  const src = paint(`monkeys/${which}`);
+  if (src) {
+    return <img className={`gg-monkey gg-monkey--painted${cheer ? ' gg-monkey--cheer' : ''}`} src={src} alt="" aria-hidden="true" draggable={false} style={flip ? { scale: '-1 1' } : undefined} />;
+  }
   return (
     <svg className={`gg-monkey${cheer ? ' gg-monkey--cheer' : ''}`} viewBox="0 0 80 90" width="64" height="72" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
       <g className="gg-monkey__armL"><path d="M20 52 Q6 44 8 24" stroke="#7a4a24" strokeWidth="9" strokeLinecap="round" fill="none" /><circle cx="8" cy="22" r="6" fill="#c98f5a" /></g>
