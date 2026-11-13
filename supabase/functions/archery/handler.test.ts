@@ -88,7 +88,7 @@ describe('speed rounds', () => {
 });
 
 describe('the Armory', () => {
-  it('buys with the shop\'s own prices, never more than you have, and a purchase sent twice counts once', async () => {
+  it('buys with the shop\'s own prices, never more than you have, and a purchase sent twice counts once (arrows half price on Discount day)', async () => {
     const h = setup();
     // A new pupil has 100 coins: not enough for the 150-coin Longbow.
     expect((await h.send({ action: 'buy', request: 'req-000001', kind: 'bow', item: 'long' })).body.result).toBe('coins');
@@ -102,18 +102,17 @@ describe('the Armory', () => {
     expect((await h.send({ action: 'buy', request: 'req-000003', kind: 'gear', item: 'plain' })).status).toBe(400);
     expect((await h.send({ action: 'buy', request: 'req-000004', kind: 'gear', item: 'nonsense' })).status).toBe(400);
     expect((await h.send({ action: 'buy', request: 'x', kind: 'gear', item: 'steel' })).status).toBe(400);
-  });
+    expect((await h.send({ action: 'load' })).body.discount).toBe(false);
 
-  it('on the teacher\'s Discount day every arrow is half price (rounded down), selling gives back half of that, and nothing else changes', async () => {
-    const h = setup({ settings: async () => ({ on: true, duels: true, discount: true }) });
-    expect((await h.send({ action: 'load' })).body.discount).toBe(true);
-    const steel = await h.send({ action: 'buy', request: 'req-000010', kind: 'gear', item: 'steel' });
+    // The teacher's Discount day: every arrow half price (rounded down), selling gives back half of that, helpers unchanged.
+    const d = setup({ settings: async () => ({ on: true, duels: true, discount: true }) });
+    expect((await d.send({ action: 'load' })).body.discount).toBe(true);
+    const steel = await d.send({ action: 'buy', request: 'req-000010', kind: 'gear', item: 'steel' });
     expect(steel.body.state).toMatchObject({ coins: 88, gear: { steel: 2 }, spent: 12 });
-    const apple = await h.send({ action: 'buy', request: 'req-000011', kind: 'gear', item: 'apple' });
+    const apple = await d.send({ action: 'buy', request: 'req-000011', kind: 'gear', item: 'apple' });
     expect(apple.body.state).toMatchObject({ coins: 63, spent: 37 });
-    const sold = await h.send({ action: 'sell', request: 'req-000012', kind: 'gear', item: 'steel' });
+    const sold = await d.send({ action: 'sell', request: 'req-000012', kind: 'gear', item: 'steel' });
     expect(sold.body.state.coins).toBe(66);
-    expect((await setup().send({ action: 'load' })).body.discount).toBe(false);
   });
 
 });
