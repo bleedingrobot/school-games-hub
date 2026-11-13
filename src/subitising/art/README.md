@@ -5,7 +5,8 @@ Add an optional `<name>-small.webp` copy (about half the size) and narrow screen
 
 | Name | Size | What |
 |---|---|---|
-| `garden-scene` | 1600 x 900 | Sunny garden, low fence, path, seven empty raised beds along the bottom third, sky at the top (the panel covers the top half). While this picture exists the code hides its own CSS beds, so the plants stand over the painted ones. |
+| `garden-scene` | 1600 x 900 | Sunny garden, low fence, hills, sky at the top (the panel covers the top half), and an empty grass foreground with **no beds**: the code puts a bed under each plant so they line up at every screen size (one row, or 4 + 3 on phones). |
+| `bed` | about 512 x 280 cut-out | One clay raised wooden bed full of soil, seen from the front. Drawn under every plant; a CSS box stands in until it exists. |
 | `plant-1-0` to `plant-1-4` | 512 x 512 cut-out | Daisy: seed, sprout, leafy, bud, in flower |
 | `plant-2-0` to `plant-2-4` | 512 x 512 cut-out | Tulip: same five steps |
 | `plant-3-0` to `plant-3-4` | 512 x 512 cut-out | Sunflower: same five steps |

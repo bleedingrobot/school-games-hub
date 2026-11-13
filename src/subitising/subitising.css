@@ -294,11 +294,19 @@
   border-radius: 4px 4px 0 0;
   background: #5e4026;
 }
-.sb-scene--painted ~ .sb-garden .sb-bed {
-  display: none;
+/* The painted bed (the painted scene has none, so every plant gets its own bed at every screen size). */
+.sb-bed--art,
+.sb-garden .sb-bed--art {
+  display: block;
+  height: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
-.sb-scene--painted ~ .sb-garden .sb-plantbox {
-  margin-bottom: 4px;
+.sb-bed--art::before {
+  content: none;
 }
 .sb-plaque {
   margin-top: 12px;

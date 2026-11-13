@@ -1,7 +1,7 @@
 # Clan Quest: clickable village scene plan
 
 Turn **My Village** (`src/games/clans/MyVillage.tsx`, today a grid of 8 building cards) into a painted village you look down on, where you tap a building to upgrade it and every level makes the building look bigger and grander.
-Written 13 November 2026 (NZ) for James. **Status: V1 and V2 live 13 Nov 2026 NZ (the tappable scene, the upgrade moment, raid smoke, 3 ground looks; drawn in code until painted). Paintings (V3-V4) are done by the "Paint village and Quick looks art" thread. James chose a new painting for every building level.**
+Written 13 November 2026 (NZ) for James. **Status: V1 and V2 live 13 Nov 2026 NZ (the tappable scene, the upgrade moment, raid smoke, 3 ground looks; drawn in code until painted). Paintings (V3-V4) done 13 Nov 2026 NZ (PR #487, `scripts/clans-village-art.py`): every building level, 3 grounds, site, scaffold, smoke; walls stay drawn in code. Next: V5 village life. James chose a new painting for every building level.**
 Sketch: project files `clans/village-scene/mock-laptop.jpg`.
 
 ## What stays the same

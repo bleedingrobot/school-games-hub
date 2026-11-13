@@ -4,7 +4,7 @@
  */
 const FILES = import.meta.glob('./*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
-export type ArtName = 'garden-scene' | 'friend-happy' | 'friend-calm' | `plant-${1 | 2 | 3 | 4 | 5 | 6 | 7}-${0 | 1 | 2 | 3 | 4}`;
+export type ArtName = 'garden-scene' | 'bed' | 'friend-happy' | 'friend-calm' | `plant-${1 | 2 | 3 | 4 | 5 | 6 | 7}-${0 | 1 | 2 | 3 | 4}`;
 
 /** Phones and small Chromebooks get the `-small` copy when there is one. */
 function narrowScreen(): boolean {
