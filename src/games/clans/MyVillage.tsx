@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_BLURBS, BUILDING_NAMES, TROOP_NAMES, VILLAGE_TOTAL, buildsLeft, capacity, empireOf, maxLevel, might, room, troopBillOf, upgradeCost, villageComplete, villageLevels } from '../../../shared/clans/empire';
 import { landPlot, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Troops, type VillageBuilding } from '../../../shared/clans/types';
 import { Moment } from './Moment';
-import { VillageScene } from './VillageScene';
+import { VillageScene, type Cheer } from './VillageScene';
 import { buildingArt, troopArt } from './art';
 import { buyTroopMix, canBuyMix, canUpgradeBuilding, upgradeBuilding } from './places';
 import { nextVillageStep, strengthKey } from './nextStep';
@@ -21,6 +21,11 @@ const none = (): Troops => ({ footman: 0, axeman: 0, knight: 0 });
 const nameOf = (kind: keyof Troops, n: number) => (n === 1 ? TROOP_NAMES[kind].one : TROOP_NAMES[kind].many);
 const BUILDS = CONFIG.empire.buildsPerDay;
 const VIEW_KEY = 'cq-village-view';
+/** The building levels this pupil last saw, so a level a raid knocked off shows smoke (V2). Kept on this device only. */
+const seenKey = (clanName: string) => `cq-village-seen:${clanName}`;
+const readSeen = (clanName: string): Partial<Record<VillageBuilding, number>> => {
+  try { return JSON.parse(localStorage.getItem(seenKey(clanName)) ?? '{}') ?? {}; } catch { return {}; }
+};
 const savedView = (): 'scene' | 'list' => { try { return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'scene'; } catch { return 'scene'; } };
 
 /**
@@ -34,6 +39,15 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
   const [mix, setMix] = useState<Troops>(none());
   const [view, setViewState] = useState<'scene' | 'list'>(savedView);
   const [picked, setPicked] = useState<VillageBuilding | undefined>();
+  const [cheer, setCheer] = useState<Cheer | undefined>();
+  const [note, setNote] = useState<string | undefined>();
+  // The levels seen last time, read once: a building now below that level was knocked down by a raid.
+  const [seenBefore] = useState(() => readSeen(clan.name));
+  const smoky = new Set(VILLAGE_BUILDINGS.filter((b) => (seenBefore[b] ?? 0) > e.levels[b]));
+  const levelsKey = VILLAGE_BUILDINGS.map((b) => e.levels[b]).join(',');
+  useEffect(() => {
+    try { localStorage.setItem(seenKey(clan.name), JSON.stringify(Object.fromEntries(VILLAGE_BUILDINGS.map((b, i) => [b, Number(levelsKey.split(',')[i])])))); } catch { /* smoke just won't show next time */ }
+  }, [clan.name, levelsKey]);
   const setView = (v: 'scene' | 'list') => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* the choice just isn't remembered */ } };
   const idle = () => setPhase({ t: 'idle' });
   const step = nextVillageStep(clan);
@@ -59,10 +73,13 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
     onChange(next, { type: 'upgrade', building: b });
     const after = empireOf(next.clan);
     const joined = after.troops.footman - before.troops.footman;
-    setPhase({
-      t: 'done',
-      text: `The ${BUILDING_NAMES[b]} is now level ${level}. That cost ${cost} gold. Builds left: ${buildsLeft(after)}.${joined > 0 ? ` ${joined} ${nameOf('footman', joined)} joined your army.` : ''}`,
-    });
+    const text = `The ${BUILDING_NAMES[b]} is now level ${level}. That cost ${cost} gold. Builds left: ${buildsLeft(after)}.${joined > 0 ? ` ${joined} ${nameOf('footman', joined)} joined your army.` : ''}`;
+    if (view === 'list') return setPhase({ t: 'done', text });
+    // In the village: back to the scene, where the scaffolding comes down on the new building.
+    setPhase({ t: 'idle' });
+    setPicked(b);
+    setNote(text);
+    setCheer((c) => ({ b, level, n: (c?.n ?? 0) + 1 }));
   };
   const startUpgrade = (b: VillageBuilding) => {
     const level = e.levels[b] + 1;
@@ -181,8 +198,9 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
       body = (
         <>
           <div className="cq-vwrap">
-            <VillageScene e={e} states={states} picked={b} onPick={(x) => setPicked(x === picked ? undefined : x)} />
+            <VillageScene e={e} states={states} picked={b} total={levels} cheer={cheer} smoky={smoky} onPick={(x) => { setNote(undefined); setPicked(x === picked ? undefined : x); }} />
             <div className="cq-panel cq-vpanel" aria-live="polite">
+              {note && <p className="cq-ok" role="status">{note}</p>}
               {b ? (
                 <>
                   <div className="cq-vpanel__head">
@@ -192,10 +210,13 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
                   <p className="cq-bcard__level">Level {e.levels[b]} of {maxLevel(b)}{e.levels[b] === 0 && ' (not built yet)'}</p>
                   <p className="cq-soft">{BUILDING_BLURBS[b]}</p>
                   {upgradeButton(b)}
-                  <button type="button" className="cq-btn cq-vpanel__close" onClick={() => setPicked(undefined)}>Close</button>
+                  <button type="button" className="cq-btn cq-vpanel__close" onClick={() => { setNote(undefined); setPicked(undefined); }}>Close</button>
                 </>
               ) : (
-                <p className="cq-soft">Tap a building to see what it does and upgrade it. <span aria-hidden="true">⚒</span> means you can upgrade it now.</p>
+                <>
+                  {smoky.size > 0 && <p className="cq-warn">Raiders knocked down part of your {[...smoky].map((x) => BUILDING_NAMES[x]).join(', ')}. Upgrade {smoky.size === 1 ? 'it' : 'them'} to rebuild.</p>}
+                  <p className="cq-soft">Tap a building to see what it does and upgrade it. <span aria-hidden="true">⚒</span> means you can upgrade it now.</p>
+                </>
               )}
             </div>
           </div>
