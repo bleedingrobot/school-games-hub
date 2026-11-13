@@ -9,6 +9,8 @@ reach ComfyUI on Tailscale, never in the site build. Tries go to ~/dragon-art-in
   python3 scripts/clans-village-art.py level N [kinds] [--tries 2]   # level N of each building, img2img from level N-1's pick
   python3 scripts/clans-village-art.py ground [1 2 3] [--tries 2]    # img2img from ground-<n>-init.png (code-drawn start)
   python3 scripts/clans-village-art.py extras [site scaffold smoke] [--tries 2]
+  python3 scripts/clans-village-art.py walls [1-5] [--tries 2]       # wall strip, corner tower and gate for each Walls level
+  python3 scripts/clans-village-art.py villagers [names] [--tries 2] # the villagers who walk the roads
   python3 scripts/clans-village-art.py sheet NAME FILES...           # a contact sheet to compare tries
   ~/.cache/rembg-venv/bin/python scripts/clans-village-art.py tidy   # picks.json in the inbox -> src/games/clans/art/
 
@@ -87,6 +89,68 @@ EXTRAS = {
               'earth, with thick grey smoke rising from it in a soft column and a few small glowing embers, wider than it is '
               'tall. The whole pile and smoke visible, centred, on a plain pure white background, clean empty white all around.'),
 }
+
+# ---- The Walls round the village and the villagers on the roads (James, 14 Nov 2026: painted, not drawn in code) ----
+# Walls are painted side-on: a long straight strip the game repeats along each edge of the village (slanted in code to
+# follow the edge), a corner tower or post, and the gate at the front corner. Five looks, one per Walls level.
+SIDE = ('Dark gritty painterly medieval fantasy game art, hand-painted texture, rich muted earthy colours with warm '
+        'firelight glow, dramatic soft light, seen straight from the side at eye level. ')
+WALLS = {
+    1: ('a low rough wooden fence of uneven split timber posts and two horizontal rails', 'a single thick wooden fence post with '
+        'a rope tied round it', 'a simple wooden farm gate between two posts'),
+    2: ('a sturdy wooden fence of planks with crossbars, about chest height, with a few iron nails and moss', 'a tall square '
+        'wooden post with a small hanging lantern', 'a wooden gate with two doors under a timber arch with a little sign board'),
+    3: ('a tall palisade wall of sharpened upright logs lashed together with rope', 'a short round log tower with a pointed '
+        'log roof', 'a palisade gate of sharpened logs with two heavy wooden doors and a log lintel'),
+    4: ('a tall palisade wall of sharpened logs with a wooden walkway along the top and iron spikes', 'a wooden watchtower on '
+        'thick log legs with a shingle roof and a lookout platform', 'a big timber gatehouse with two watch platforms, '
+        'heavy iron-bound doors and torches'),
+    5: ('a high grey stone castle wall with battlements along the top, mossy stones and arrow slits', 'a round grey stone castle '
+        'tower with battlements and a pointed slate roof with a flag', 'a grey stone castle gatehouse with two round towers, a '
+        'raised iron portcullis and a wooden drawbridge door'),
+}
+STRIP = (' A long straight section only, filling the whole picture from the left edge to the right edge, on a plain pure '
+         'white background above it, flat even ground line along the bottom.')
+PIECE = ' Just the one piece, whole and centred, with space all around, on a plain pure white background, clean empty white all around.'
+VILLAGERS = {
+    'farmer': 'a cheerful medieval farmer in a brown tunic and straw hat carrying a basket of red apples',
+    'water': 'a medieval village woman in a green dress and headscarf carrying a wooden bucket of water',
+    'child': 'a happy medieval village child in a blue tunic running with a little wooden toy sword',
+    'guard': 'a friendly medieval town guard in a red tabard and round helmet walking with a long spear',
+}
+WALKER = (' Full body, walking to the right, seen from the side, small and friendly, suitable for children aged 8 to 12.' + PIECE)
+
+
+def paint_walls(levels: list[int], tries: int):
+    out = INBOX / 'walls'
+    out.mkdir(parents=True, exist_ok=True)
+    for lv in levels:
+        strip, corner, gate = WALLS[lv]
+        for t in range(1, tries + 1):
+            run(out / f'wall-{lv}-{t}.png', SIDE + f'A village wall: {strip}.' + STRIP, (1536, 512))
+            run(out / f'corner-{lv}-{t}.png', SIDE + f'A corner piece of a village wall: {corner}.' + PIECE, (768, 1024))
+            run(out / f'gate-{lv}-{t}.png', SIDE + f'The front entrance of a village wall: {gate}, seen from the front.' + PIECE, SQUARE)
+
+
+def paint_villagers(names: list[str], tries: int):
+    out = INBOX / 'villagers'
+    out.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        for t in range(1, tries + 1):
+            run(out / f'villager-{name}-{t}.png', SIDE + f'A villager: {VILLAGERS[name]}.' + WALKER, (768, 1024))
+
+
+def tileable(img, blend: float = 0.18):
+    """A wall strip that repeats without a seam: its last part is faded into its first, then cut off."""
+    import numpy as np
+    from PIL import Image
+    a = np.asarray(img.convert('RGBA')).astype(float)
+    w = a.shape[1]
+    n = int(w * blend)
+    ramp = np.linspace(0, 1, n)[None, :, None]
+    a[:, :n] = a[:, :n] * ramp + a[:, w - n:] * (1 - ramp)
+    return Image.fromarray(a[:, : w - n].clip(0, 255).astype('uint8'), 'RGBA')
+
 
 GROUND_BASE = (STYLE + 'Looking down on a medieval fantasy village green, a big diamond-shaped plot of land with a plain grass '
                'edge, seven flat empty patches of bare trodden earth ready for buildings, everything else ')
@@ -290,6 +354,13 @@ def tidy():
             img = Image.open(INBOX / 'ground' / f'{key}-{t}.png').convert('RGB').resize((2000, 1240), Image.LANCZOS)
             save(img, ART / 'village' / f'{key}.webp', 74)
             save(img.resize((1000, 620), Image.LANCZOS), ART / 'village' / f'{key}-800.webp', 72)
+        elif key.startswith('wall-'):
+            img = tileable(cut(INBOX / 'walls' / f'{key}-{t}.png', 1536))
+            save(img.resize((768, round(img.height * 768 / img.width)), Image.LANCZOS), ART / 'village' / f'{key}.webp', 80)
+        elif key.startswith(('corner-', 'gate-')):
+            save(cut(INBOX / 'walls' / f'{key}-{t}.png', 320), ART / 'village' / f'{key}.webp', 80)
+        elif key.startswith('villager-'):
+            save(cut(INBOX / 'villagers' / f'{key}-{t}.png', 120), ART / 'village' / f'{key}.webp', 82)
         elif key in EXTRAS:
             save(cut(INBOX / 'extras' / f'{key}-{t}.png', 480), ART / 'village' / f'{key}.webp', 80)
         else:
@@ -309,6 +380,10 @@ if __name__ == '__main__':
         paint_ground([int(x) for x in a[1:]] or [1, 2, 3], tries)
     elif a[:1] == ['extras']:
         paint_extras(a[1:] or list(EXTRAS), tries)
+    elif a[:1] == ['walls']:
+        paint_walls([int(x) for x in a[1:]] or [1, 2, 3, 4, 5], tries)
+    elif a[:1] == ['villagers']:
+        paint_villagers(a[1:] or list(VILLAGERS), tries)
     elif a[:1] == ['sheet'] and len(a) >= 3:
         sheet(a[1], [Path(f) for f in a[2:]])
     elif a[:1] == ['tidy']:
