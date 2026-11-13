@@ -7,6 +7,7 @@ ladybird in a yellow scarf). Runs on a computer that can reach ComfyUI on Tailsc
   python3 scripts/quick-looks-art.py paint OUT_DIR [names] [--tries 3]   # OUT_DIR/q/<name>-<try>.png
   python3 scripts/quick-looks-art.py list
   python3 scripts/quick-looks-art.py scene7 OUT_DIR OUT_DIR/q/garden-scene-1.png   # seven beds, from a painted try
+  python3 scripts/quick-looks-art.py bedless OUT_DIR    # the picked scene with its beds taken away (the game draws them)
   ~/.cache/rembg-venv/bin/python scripts/quick-looks-art.py tidy PICKS.json OUT_DIR   # {name: try or "other-name-try"} -> src/subitising/art/
 
 Same graph and seeds as scripts/weka-art.py (Z-Image Turbo, 8 steps, 1.5x second pass). Positive wording only, and no
@@ -109,6 +110,12 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
         (1088, 608)),
     **{f'plant-{s}-{k}': (plant_words(s, k), weka.SQUARE) for s in PLANTS for k in range(5)},
     'seed': (plant_words(0, 0), weka.SQUARE),
+    # The game draws a bed under each plant itself (it lays the plants out in its own row), so the scene has none.
+    'bed': ('One small empty raised garden bed made of clay, a chunky box shape about twice as wide as it is tall with deep sides, '
+            'seen straight on from the front and slightly above, its long front side facing the viewer flat and level, '
+            'the front made of smooth light tan clay wooden planks running across, a flat even top of dark brown clay soil '
+            'showing just above the front edge, nothing growing in it.'
+            + SPRITE, (1216, 832)),
     'friend-happy': (LADYBIRD + 'cheering with both arms up high, a big open happy smile, tiny sparkles around, the whole ladybird.' + SPRITE, weka.SQUARE),
     'friend-calm': (LADYBIRD + 'standing calmly with a gentle kind encouraging smile, one arm raised in a small friendly wave, the whole ladybird.' + SPRITE, weka.SQUARE),
 }
@@ -149,6 +156,41 @@ def scene7(out: Path, base: Path, tries: int):
         cv.run(out / 'q' / f'garden-scene7-{n}.png', words, PICTURES['garden-scene'][1], init, 0.55 + 0.05 * (n - 1))
 
 
+def bedless(out: Path, tries: int):
+    """The current garden-scene.webp with its beds taken away: the grass below the fence is refilled row by row from its
+    plain edges, painted over lightly (image to image), and only that bottom part kept, so the sky, hills and fence stay
+    exactly the same -> OUT_DIR/q/garden-bedless-<n>.png (1600x900)."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    spec = importlib.util.spec_from_file_location('cv_art', ROOT / 'scripts' / 'clans-village-art.py')
+    cv = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cv)
+    src = Image.open(ART / 'garden-scene.webp').convert('RGB')
+    w, h = src.size
+    px = np.asarray(src).astype(float)
+    y0 = int(0.735 * h)
+    edge = np.concatenate([px[:, :40], px[:, -40:]], axis=1)
+    fill = px.copy()
+    rng = np.random.default_rng(7)
+    for y in range(y0, h):
+        fill[y, :] = np.median(edge[y], axis=0) + rng.normal(0, 2.5, (w, 3))
+    filled = Image.fromarray(fill.clip(0, 255).astype('uint8'))
+    init = out / 'garden-bedless-init.png'
+    filled.filter(ImageFilter.GaussianBlur(1.5)).save(init)
+    words = STYLE + PICTURES['garden-scene'][0].split(', and along the bottom third')[0] + (
+        ', and along the bottom third a wide open stretch of smooth plain clay grass. Wide landscape background for a '
+        "children's game, calm and uncluttered." + AGE)
+    mask = Image.new('L', (w, h), 0)
+    m = np.zeros((h, w), dtype='uint8')
+    m[y0 - 30:] = 255
+    mask = Image.fromarray(m).filter(ImageFilter.GaussianBlur(14))
+    for n in range(1, tries + 1):
+        raw = out / 'q' / f'garden-bedless-raw-{n}.png'
+        cv.run(raw, words, (1088, 608), init, 0.28 + 0.07 * (n - 1))
+        painted = Image.open(raw).convert('RGB').resize((w, h), Image.LANCZOS)
+        Image.composite(painted, src, mask).save(out / 'q' / f'garden-bedless-{n}.png')
+
+
 def tidy(picks_file: Path, inbox: Path):
     import numpy as np
     from PIL import Image
@@ -184,6 +226,13 @@ def tidy(picks_file: Path, inbox: Path):
         a = np.asarray(c)[..., 3] > 40
         ys, xs = np.where(a)
         top, bottom = ys.min(), ys.max()
+        if name == 'bed':
+            # Trimmed tight and 512 wide, so the game can stretch it under a plant.
+            box = c.crop((xs.min(), top, xs.max() + 1, bottom + 1))
+            box = box.resize((512, round(box.height * 512 / box.width)), Image.LANCZOS)
+            save(box, name, 512, 84)
+            save(box, f'{name}-small', 256, 82)
+            continue
         if name.startswith('plant-'):
             # The mound: the widest row in the bottom eighth of the cut-out. Every mound ends up 300 px wide, its foot at
             # y 500, centred; a plant too tall for that is shrunk to fit (only the trees).
@@ -217,6 +266,8 @@ if __name__ == '__main__':
         paint(Path(a[1]).expanduser(), a[2:] or list(PICTURES), tries)
     elif a[:1] == ['scene7'] and len(a) == 3:
         scene7(Path(a[1]).expanduser(), Path(a[2]).expanduser(), 3)
+    elif a[:1] == ['bedless'] and len(a) == 2:
+        bedless(Path(a[1]).expanduser(), 3)
     elif a[:1] == ['tidy'] and len(a) == 3:
         tidy(Path(a[1]).expanduser(), Path(a[2]).expanduser())
     else:
