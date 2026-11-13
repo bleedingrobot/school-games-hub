@@ -90,6 +90,7 @@ $$, array[
   'teacher_set_robin', 'teacher_robin_class', 'teacher_robin_student',
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_set_glyph', 'my_glyph',
+  'teacher_set_orderup', 'teacher_orderup_class',
   'teacher_progress_other_games',
   'my_name_status', 'ask_for_my_name', 'cancel_my_name_request', 'teacher_name_requests', 'teacher_answer_name', 'teacher_name_history', 'teacher_made_up_name_back', 'teacher_give_name_scroll', 'teacher_name_scrolls',
   'achievements_board', 'hard_workers_board', 'achievements_by_game', 'recent_trophies', 'trophies_board', 'trophies_of', 'game_board',

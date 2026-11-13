@@ -19,4 +19,9 @@ export const ORDERUP = {
   /** Tries before a problem maker gives up on a pattern (it then tries the next one). */
   tries: 400,
   levels: 7,
+  /** Levels pupils can play now (stage 3: 1 to 3; raise as each stage goes live). */
+  liveLevels: 3,
+  /** Most events in one bag (picks and answers), and the longest one may take. */
+  maxEvents: 80,
+  maxEventMs: 600_000,
 } as const;
