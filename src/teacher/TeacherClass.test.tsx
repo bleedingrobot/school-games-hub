@@ -56,7 +56,7 @@ beforeEach(() => {
 });
 
 describe('the class switcher in the teacher header', () => {
-  it('lets a teacher with several classes pick one, and the switches follow it', async () => {
+  it('lets a teacher with several classes pick one, the switches follow it, and a change goes only to that class', async () => {
     const user = userEvent.setup();
     show();
     const picker = await screen.findByRole('combobox', { name: 'Class' });
@@ -67,12 +67,7 @@ describe('the class switcher in the teacher header', () => {
     await user.selectOptions(picker, 'c14');
     expect(space.fetchMathsSwitch).toHaveBeenLastCalledWith('c14');
     expect(await screen.findByRole('radio', { name: /On for everyone/ })).toBeChecked();
-  });
-
-  it('changes only the picked class', async () => {
-    const user = userEvent.setup();
-    show();
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Class' }), 'c14');
+    // A change goes to the picked class only.
     await user.click(await screen.findByRole('radio', { name: /^Off/ }));
     expect(teacher.setSpaceMaths).toHaveBeenCalledWith('off', 'c14');
   });

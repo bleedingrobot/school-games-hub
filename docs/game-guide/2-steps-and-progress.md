@@ -45,4 +45,10 @@ the game's own teacher `switch` is on for the class. The number comes from `src/
 (copy the newest body of that function) giving `{ student, game, value, at }`, and save when the pupil last played. Name levels as
 steps where they are steps.
 
+**Leaving the game (nothing to add):** the Progress tab's "Leaving the game" panel lists pupils who leave game pages a lot
+(`src/data/pageAway.ts`, `teacher_page_away`, migration 20261114000400). It watches every page by its address, so a new game is
+included without any code. Ask maths in the shared question box (`QuestionModal` or `PracticalAsk`) and a time away counts as
+"during a question" too; a game with its own question screen can call `questionOpened(spot)` from `src/maths/questionLog.ts`.
+A page that is not play (like `leaderboard`) goes in `NOT_PLAY` in `pageAway.ts`.
+
 **Keep this file current.** A change to what a new game must save or add to show on the Progress tab updates this file in the same PR.

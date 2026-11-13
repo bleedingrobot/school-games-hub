@@ -372,3 +372,4 @@
 }
 .progress__look[aria-pressed='true'] { background: var(--brand); border-color: var(--brand); color: #fff; }
 .progress__only { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.away-panel { margin-top: 16px; }
