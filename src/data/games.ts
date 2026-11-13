@@ -40,6 +40,7 @@ export const GAME_SWITCH_COLUMNS: Readonly<Record<string, string>> = {
   pigeon: 'pigeon_enabled',
   swamphen: 'swamphen_enabled',
   toonflap: 'toonflap_enabled',
+  glyph: 'glyph_enabled',
 };
 
 /**

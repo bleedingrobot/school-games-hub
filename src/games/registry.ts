@@ -50,6 +50,8 @@ import { robinsBerryBasket } from './robin';
 import { robinOn } from './robin/switch';
 import { toonFlap } from './toonflap';
 import { toonflapOn } from './toonflap/switch';
+import { glyph as glyphGates } from './glyph';
+import { glyphOn } from './glyph/switch';
 
 /**
  * Is Power Clash on the dashboard? The switch James flips when he's happy with it (it needs the
@@ -77,7 +79,7 @@ export const CLAN_QUEST_ON = true;
  * home page after Robin), parts of a number, bonds to 10, doubles, teen numbers, making ten, equals, skip counting, tens and
  * ones, the number line, then equal rows. A new early game goes where its maths fits.
  */
-export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(decreeOn() ? [royalDecree] : []), ...(robinOn() ? [robinsBerryBasket] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(kororaOn() ? [penguinPairs] : []), ...(tuiOn() ? [tuisTenTree] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(parrotOn() ? [parrotsSeesaw] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(lizardOn() ? [lizardBundles] : []), ...(pigeonOn() ? [pigeonNumberLine] : []), ...(swamphenOn() ? [swamphenReedRows] : []), ...(toonflapOn() ? [toonFlap] : [])];
+export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : []), ...(marbleOn() ? [marbleRush] : []), ...(BOND_MATCH_ON ? [bondMatch] : []), ...(mineOn() ? [mineRunner] : []), ...(archeryOn() ? [archeryChallenge] : []), ...(kingdomOn() ? [kingdomKeeper] : []), ...(traderOn() ? [starTrader] : []), ...(diamondOn() ? [diamondDrop] : []), ...(islesOn() ? [skyIsles] : []), ...(decreeOn() ? [royalDecree] : []), ...(robinOn() ? [robinsBerryBasket] : []), ...(pipiOn() ? [pipisHiddenShells] : []), ...(beanstalkOn() ? [kiwisBeanstalk] : []), ...(kororaOn() ? [penguinPairs] : []), ...(tuiOn() ? [tuisTenTree] : []), ...(wekaOn() ? [wekasSteppingStones] : []), ...(parrotOn() ? [parrotsSeesaw] : []), ...(hopOn() ? [hopsGlowwormPond] : []), ...(lizardOn() ? [lizardBundles] : []), ...(pigeonOn() ? [pigeonNumberLine] : []), ...(swamphenOn() ? [swamphenReedRows] : []), ...(toonflapOn() ? [toonFlap] : []), ...(glyphOn() ? [glyphGates] : [])];
 
 /** Every game that can have saved games: the dashboard's, plus Power Clash even while its card is switched off. */
 export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest]), ...(kingdomOn() ? [] : [kingdomKeeper])];
