@@ -41,6 +41,7 @@ export const GAME_SWITCH_COLUMNS: Readonly<Record<string, string>> = {
   swamphen: 'swamphen_enabled',
   toonflap: 'toonflap_enabled',
   glyph: 'glyph_enabled',
+  orderup: 'orderup_enabled',
 };
 
 /**

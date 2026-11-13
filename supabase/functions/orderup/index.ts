@@ -7232,7 +7232,8 @@ function afterSet(p, level, goodBags, today) {
 *          worked examples seen;
 *   start  makes a set of bags for a level from a fresh seed (short ones first on full help) and keeps it;
 *   bag    replays one bag's picks and answers on the kept set, saves it, records it once for the maths records, and on
-*          the set's last bag moves the pupil's place on (passing a level gives its achievement);
+*          the set's last bag moves the pupil's place on (passing a level gives its achievement; a set's first bag checks
+*          the "First order" one);
 *   seen   marks a level's worked example as seen.
 *
 * Nothing that counts comes from the browser. Bags are saved in order, each once.
@@ -7360,6 +7361,7 @@ async function handleOrderUp(services, player, body) {
 			};
 			await services.recordAnswers(player, `orderup:${seed}:${slot}`, [answer]);
 		}
+		if (slot === 0) await services.progressChanged(player);
 		const reply = {
 			bag: {
 				good: result.good,
