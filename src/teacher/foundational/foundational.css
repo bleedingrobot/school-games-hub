@@ -139,22 +139,10 @@
   outline: 3px solid var(--focus, #1d4ed8);
   outline-offset: 1px;
 }
-.fg__flagpanel {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 2px solid var(--line, #ddd);
-  border-radius: 12px;
-  background: var(--surface, #fff);
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-}
-.fg__flagtitle {
-  margin: 0;
-  font-size: 1rem;
-}
 .fg__flaglist {
-  margin: 0;
+  margin: 4px 0 2px;
+  font-weight: 500;
+  white-space: normal;
   padding: 0;
   list-style: none;
   display: grid;
