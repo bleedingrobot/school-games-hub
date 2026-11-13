@@ -1,6 +1,6 @@
 # Mine Runner: easier flying, open feel, better graphics (plan)
 
-Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: James picked "all stages, in order" (13 Nov 2026). M1 LIVE (PR #485). M2 LIVE (PR #486); James: old best times stay on the same boards. M3 built 13 Nov: tunnels 7 wide, rooms 11–13, reactor in a 15-block cavern, ROOM_SPACING unchanged so path lengths and medals still fit (pretend pilot still wins a medal on all 12 boards). Daylight shafts moved to M4 (draw only). Next: M4.** Branch `claude/project-thread-rpsdb0`.
+Written 13 Nov 2026 for James's ask: kids say Mine Runner's **controls are hard** and it **feels claustrophobic**; can we draw on open-source flight controls, and vastly improve the graphics? For Claude threads. **Status: James picked "all stages, in order" (13 Nov 2026). M1 LIVE (PR #485). M2 LIVE (PR #486); old best times stay on the same boards. M3 LIVE (PR #488). M4 built 13 Nov (draw only): bloom (dropped first on a slow device), glowing crystals per mine, glow-worm ceilings, headlamp dust, painted-rock support (`art/art.ts`, uv on walls). M5: `docs/MINE-ART-PLAN.md` + `docs/mine-art/config.json` (6 rock textures). Left for later: smooth rock (surface nets), robot/ship skins, daylight shafts, level cards.** Branch `claude/project-thread-rpsdb0`.
 
 ## 1. Why it feels hard and closed in (from the code)
 
