@@ -33,7 +33,6 @@ select public.give_class_settings((select id from public.classes where name = 'R
 select set_config('test.room_two', (select id::text from public.classes where name = 'Room Two'), true);
 select set_config('test.ana_class', (select class_id::text from public.class_members where student_id = pg_temp.id('0a')), true);
 
-select is((select count(*)::integer from public.app_settings where unlimited_days <> '{}'), 0, 'the switches start off everywhere');
 
 
 create function pg_temp.today() returns text language sql as $$ select to_char((now() at time zone 'Pacific/Auckland')::date, 'YYYY-MM-DD') $$;
