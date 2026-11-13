@@ -21,6 +21,7 @@ import { medalFor, type Medal } from '../../../shared/mine/medals';
 import { addGateChoices, makeRunQuestions, markQuestion, questionPlan, sameAnswer, type MathsContext, type QuestionPlan, type StartReply } from '../../../shared/mine/maths';
 import {
   isCountedLevel,
+  isFlightMode,
   judgeRun,
   makeMineSeed,
   mineSeedProblem,
@@ -141,7 +142,7 @@ export function makeHandler(services: Services) {
 
     if (body.action === 'start') {
       const { level, mode } = body;
-      if (!isCountedLevel(level) || (mode !== 'steady' && mode !== 'free')) return reply(400, { error: "That mine couldn't be found." });
+      if (!isCountedLevel(level) || !isFlightMode(mode)) return reply(400, { error: "That mine couldn't be found." });
       const wantsMaths = body.maths === true;
 
       // The teacher's switches decide whether the game is on and whether this run has maths. If they can't be read, nothing starts.
@@ -180,7 +181,7 @@ export function makeHandler(services: Services) {
 
     if (body.action === 'answer') {
       const { level, mode, seed, stamp, slot, value } = body;
-      if (!isCountedLevel(level) || (mode !== 'steady' && mode !== 'free') || typeof seed !== 'string' || typeof stamp !== 'string' || seed.length > 80 || stamp.length > 200) {
+      if (!isCountedLevel(level) || !isFlightMode(mode) || typeof seed !== 'string' || typeof stamp !== 'string' || seed.length > 80 || stamp.length > 200) {
         return reply(400, { error: "That answer couldn't be read." });
       }
       if (!Number.isInteger(slot) || typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1_000_000) {

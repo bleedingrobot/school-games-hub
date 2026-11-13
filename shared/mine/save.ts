@@ -25,7 +25,9 @@ export const MAX_INPUTS_TEXT = 200_000;
  */
 export const MIN_REAL_TIME_SLACK_SECONDS = 3;
 
-export type FlightMode = 'steady' | 'free';
+/** 'easy' is easy flying (docs/plans/mine-flight/PLAN.md, M2); 'steady' and 'free' are the classic controls. */
+export type FlightMode = 'steady' | 'free' | 'easy';
+export const isFlightMode = (m: unknown): m is FlightMode => m === 'steady' || m === 'free' || m === 'easy';
 
 const SEED_PATTERN = /^n1-(\d{10})-[0-9a-f]{24}$/;
 const LEVEL_ID = /^l[1-6](:hard)?$/;
@@ -74,7 +76,7 @@ export function parseMineReport(input: unknown): MineRunReport | null {
   if (typeof input !== 'object' || input === null) return null;
   const r = input as Record<string, unknown>;
   if (typeof r.seed !== 'string' || typeof r.stamp !== 'string' || !isCountedLevel(r.level)) return null;
-  if (r.mode !== 'steady' && r.mode !== 'free') return null;
+  if (!isFlightMode(r.mode)) return null;
   if (typeof r.maths !== 'boolean') return null;
   if (typeof r.inputs !== 'string' || r.inputs.length > MAX_INPUTS_TEXT) return null;
   if (r.seed.length > 80 || r.stamp.length > 200) return null;
@@ -107,7 +109,7 @@ export function judgeRun(report: MineRunReport, nowSeconds: number): RunJudgemen
   if (!recipe) return { ok: false, problem: 'unknown level' };
   const runs = decodeInputs(report.inputs);
   if (!runs) return { ok: false, problem: 'inputs not readable' };
-  const world = makeWorld(makeLevel(recipe), { steady: report.mode === 'steady', maths: report.maths });
+  const world = makeWorld(makeLevel(recipe), { steady: report.mode !== 'free', easy: report.mode === 'easy', maths: report.maths });
   const state = replay(world, runs);
   if (state.outcome !== 'finished' || state.finishSteps <= 0) return { ok: false, problem: 'no finish' };
   if (state.badGrants > 0) return { ok: false, problem: 'a door or pad opened that was not earned' };

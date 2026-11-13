@@ -54,14 +54,24 @@ export interface ControlSettings {
   invertY: boolean;
   /** The mouse is captured, so moving it looks around and the buttons fire. */
   lock: boolean;
+  /**
+   * Easy flying (docs/plans/mine-flight/PLAN.md, M2): the ship cruises by itself. Arrows or WASD steer, Shift brakes,
+   * X fires a missile, and the mouse steers by where it points (the further from the middle, the faster the turn).
+   */
+  easy?: boolean;
 }
 
-export type TouchButton = 'up' | 'down' | 'fire' | 'missile';
+export type TouchButton = 'up' | 'down' | 'fire' | 'missile' | 'brake';
 
-const LETTERS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'KeyF', 'KeyQ', 'KeyE', 'KeyX', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+/** Easy pointing: the middle of the picture this wide (a share of half the picture) does not turn the ship. */
+export const POINT_DEADZONE = 0.1;
+
+const LETTERS = new Set(['KeyB', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyR', 'KeyF', 'KeyQ', 'KeyE', 'KeyX', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 export class Controls {
-  settings: ControlSettings = { sensitivity: 1, invertY: false, lock: false };
+  settings: ControlSettings = { sensitivity: 1, invertY: false, lock: false, easy: false };
+  /** Easy pointing: where the mouse is on the picture, −1 to 1 each way from the middle (right and down are positive), or null. */
+  private point: { x: number; y: number } | null = null;
   private down = new Set<string>();
   private mouse = new MouseAim();
   private buttons = new Set<TouchButton>();
@@ -99,6 +109,13 @@ export class Controls {
     this.tapFire = 5;
   }
 
+  /** Easy flying: where the mouse is over the picture, as a share of half its width and height from the middle; null when it leaves. */
+  setPoint(x: number, y: number): void;
+  setPoint(p: null): void;
+  setPoint(x: number | null, y?: number): void {
+    this.point = x === null ? null : { x: clamp(x, -1, 1), y: clamp(y ?? 0, -1, 1) };
+  }
+
   // ——— Touch ———
   setMove(x: number, y: number): void {
     this.move = { x, y };
@@ -122,6 +139,7 @@ export class Controls {
     this.move = { x: 0, y: 0 };
     this.look = { x: 0, y: 0 };
     this.held = { yaw: 0, pitch: 0 };
+    this.point = null;
     this.count = 0;
   }
 
@@ -135,6 +153,51 @@ export class Controls {
 
   /** The input for the next step. Call once per step. */
   sample(): PilotInput {
+    return this.settings.easy ? this.sampleEasy() : this.sampleClassic();
+  }
+
+  /** Easy flying: one way to steer (stick, keys or pointing), fire, missile and brake. The ship pushes forward by itself. */
+  private sampleEasy(): PilotInput {
+    if (this.count % AIM_EVERY === 0) {
+      const m = this.mouse.take();
+      const sens = this.settings.sensitivity;
+      const flip = this.settings.invertY ? -1 : 1;
+      const curve = (v: number, dead: number) => (Math.abs(v) < dead ? 0 : Math.sign(v) * ((Math.abs(v) - dead) / (1 - dead)) ** 1.5);
+      const stickYaw = curve(this.look.x, STICK_DEADZONE) * TURN_MAX * sens;
+      const stickPitch = curve(-this.look.y, STICK_DEADZONE) * TURN_MAX * sens * flip;
+      const steeringByKey = this.key('ArrowRight', 'KeyD', 'ArrowLeft', 'KeyA', 'ArrowUp', 'KeyW', 'ArrowDown', 'KeyS');
+      // Keys win over pointing, so a mouse left resting to one side can't fight a pupil who is using the keys.
+      const p = this.point && !this.settings.lock && !steeringByKey ? this.point : { x: 0, y: 0 };
+      const pointYaw = curve(p.x, POINT_DEADZONE) * TURN_MAX * sens * 0.75;
+      const pointPitch = curve(-p.y, POINT_DEADZONE) * TURN_MAX * sens * 0.75 * flip;
+      const right = this.key('ArrowRight', 'KeyD') ? 1 : 0;
+      const left = this.key('ArrowLeft', 'KeyA') ? 1 : 0;
+      const up = this.key('ArrowUp', 'KeyW') ? 1 : 0;
+      const down = this.key('ArrowDown', 'KeyS') ? 1 : 0;
+      const keyYaw = (right - left) * (KEY_TURN + 1);
+      const keyPitch = (up - down) * (KEY_TURN + 1) * flip;
+      this.held = {
+        yaw: clamp(Math.round(m.yaw + stickYaw + pointYaw + keyYaw), -TURN_MAX, TURN_MAX),
+        pitch: clamp(Math.round(m.pitch + stickPitch + pointPitch + keyPitch), -TURN_MAX, TURN_MAX),
+      };
+    }
+    this.count++;
+    const fire = this.key('Space') || this.mouseFire || this.buttons.has('fire') || this.tapFire > 0;
+    if (this.tapFire > 0) this.tapFire--;
+    const brake = this.key('ShiftLeft', 'ShiftRight', 'KeyB') || this.buttons.has('brake');
+    return {
+      tx: 0,
+      ty: 0,
+      tz: brake ? -1 : 0,
+      yaw: this.held.yaw,
+      pitch: this.held.pitch,
+      roll: 0,
+      fire,
+      missile: this.key('KeyX') || this.mouseMissile || this.buttons.has('missile'),
+    };
+  }
+
+  private sampleClassic(): PilotInput {
     if (this.count % AIM_EVERY === 0) {
       const m = this.mouse.take();
       const sens = this.settings.sensitivity;

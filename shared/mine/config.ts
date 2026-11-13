@@ -38,6 +38,21 @@ export const ROLL_UNIT = 0.03;
 /** In steady flight the ship can look up or down this far (the vertical part of "forward") before it stops. */
 export const STEADY_PITCH_LIMIT = 0.97;
 
+// ——— Easy flying (docs/plans/mine-flight/PLAN.md, M2): only for runs in the 'easy' flight mode ———
+/** Easy turns half as fast again as classic, so a corner never feels like a fight. */
+export const EASY_TURN_UNIT = 0.018;
+/** The ship cruises forward by itself at this top speed (classic tops out at MAX_SPEED). */
+export const EASY_MAX_SPEED = 7.5;
+/** Braking: no cruise push and this much more speed lost each step. */
+export const EASY_BRAKE_DRAG = 0.2;
+/** Walls closer than this (in blocks, along each way) push the ship gently back towards the middle. */
+export const WALL_ASSIST_RANGE = 1.5;
+/** How hard the nearest a wall can push, units/s² (the push fades to nothing at WALL_ASSIST_RANGE). */
+export const WALL_ASSIST_ACCEL = 18;
+/** Easy aim help on robots: shots bend to the nearest robot this close and within about 18 degrees (cosine) of the nose. */
+export const EASY_AIM_RANGE = 22;
+export const EASY_AIM_COS = 0.95;
+
 export const MAX_SHIELD = 100;
 export const MAX_ENERGY = 100;
 export const START_MISSILES = 4;

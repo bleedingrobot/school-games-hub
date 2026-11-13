@@ -13,10 +13,19 @@ export function SettingsPanel({
   return (
     <div className="mn-settings">
       <h3>Settings</h3>
-      <label className="mn-check">
-        <input type="checkbox" checked={prefs.steady} onChange={(e) => set('steady', e.target.checked)} />
-        <span>Steady flight <small>Keeps your ship level, so up is always up. Best for most pilots. {inRun ? 'Changes the next time you start a mine.' : ''}</small></span>
+      <label className="mn-field">
+        <span>Controls {inRun ? <small>(changes the next time you start a mine)</small> : null}</span>
+        <select value={prefs.scheme} onChange={(e) => set('scheme', e.target.value as MinePrefs['scheme'])}>
+          <option value="easy">Easy: your ship flies by itself, you steer</option>
+          <option value="classic">Classic: move every way yourself</option>
+        </select>
       </label>
+      {prefs.scheme === 'classic' && (
+        <label className="mn-check">
+          <input type="checkbox" checked={prefs.steady} onChange={(e) => set('steady', e.target.checked)} />
+          <span>Steady flight <small>Keeps your ship level, so up is always up. Best for most pilots. {inRun ? 'Changes the next time you start a mine.' : ''}</small></span>
+        </label>
+      )}
       <label className="mn-field">
         <span>Camera</span>
         <select value={prefs.view} onChange={(e) => set('view', e.target.value as MinePrefs['view'])}>
@@ -67,10 +76,30 @@ export function SettingsPanel({
   );
 }
 
-export function ControlsHelp() {
+export function ControlsHelp({ easy = true }: { easy?: boolean }) {
+  if (easy) {
+    return (
+      <div className="mn-controls">
+        <h3>Controls (Easy)</h3>
+        <p>Your ship flies forward by itself. You just steer, and shoot.</p>
+        <dl className="mn-keys-list">
+          <div><dt>Mouse</dt><dd>Point where you want to go: the ship turns towards it. Click to fire.</dd></div>
+          <div><dt>Arrow keys or W A S D</dt><dd>Steer</dd></div>
+          <div><dt>Space</dt><dd>Fire the laser (it bends towards a robot near the middle)</dd></div>
+          <div><dt>Shift or B</dt><dd>Brake</dd></div>
+          <div><dt>X or right-click</dt><dd>Launch a missile</dd></div>
+          <div><dt>Enter</dt><dd>Use a question door, pad or the reactor lock</dd></div>
+          <div><dt>M</dt><dd>Map</dd></div>
+          <div><dt>Esc or P</dt><dd>Pause</dd></div>
+          <div><dt>Touch</dt><dd>The stick steers, big buttons fire and brake</dd></div>
+        </dl>
+        <p><small>Want to move every way yourself? Pick Classic controls in Settings.</small></p>
+      </div>
+    );
+  }
   return (
     <div className="mn-controls">
-      <h3>Controls</h3>
+      <h3>Controls (Classic)</h3>
       <dl className="mn-keys-list">
         <div><dt>W / S</dt><dd>Forward and back</dd></div>
         <div><dt>A / D</dt><dd>Slide left and right</dd></div>
@@ -114,7 +143,7 @@ export function HowToPlayBody({ questions }: { questions: boolean }) {
         Your best time on each mine goes on your school’s board (names and avatars only). Finish a mine for the first time for {MINE_POINTS_FIRST} points, and beat your own best for {MINE_POINTS_BEST}{' '}
         point (once a day for each mine). Right answers earn no points, so there is no need to rush them.
       </p>
-      <p>Feeling dizzy? Turn on Steady flight and Less motion in Settings, and fly slowly.</p>
+      <p>Feeling dizzy? Turn on Less motion in Settings, and brake to slow down.</p>
     </div>
   );
 }
