@@ -20,7 +20,7 @@ export const useGlyphCells = (classId: string) => useOtherGameCells(classId, 'gl
 /** Each named mistake in a teacher's words (the pupil's wrong tile, and what they did to get it). */
 const MISTAKE_WORDS: Record<string, string> = {
   'add-same': 'adds the same to top and bottom (5/6 → 6/7)',
-  'top-only': 'multiplies only the top (5/6 → 10/6)',
+  'top-only': 'multiplies only the top (1/6 → 2/6)',
   'bottom-only': 'multiplies only the bottom (5/6 → 5/12)',
   'same-bottom': 'keeps the bottom and changes the top (5/6 → 4/6)',
   'same-top': 'keeps the top and changes the bottom (5/6 → 5/7)',
