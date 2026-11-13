@@ -1,6 +1,6 @@
 # Order Up!: plan (the first Activity)
 
-**Status: plan only, nothing built (13 Nov 2026).** Migration number when building starts: `20261113000700` (free on 13 Nov; check again with `node scripts/migration-numbers.mjs`).
+**Status: stage 1 (Activities page, behind `ACTIVITIES_ON = false`) built 13 Nov 2026; plan merged in PR #491.** Migration number when building starts: `20261113000700` (free on 13 Nov; check again with `node scripts/migration-numbers.mjs`).
 
 Source: James's Google Doc "bedmas" (id `1hDLgfY7ewHxfCooOiXqWvUYEX6RivhBYc9JQPzwCYtg`). Game id `orderup`. Thread: "Plan the order of operations activity".
 

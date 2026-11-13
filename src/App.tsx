@@ -13,6 +13,7 @@ import { dragonMaths } from './games/lord';
 import { clanQuest } from './games/clans/game';
 import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
+import { activitiesOn } from './activities/switch';
 import { trainingOn } from './training/switch';
 import { GameGate } from './training/TrainFirst';
 import { NonMathsGate } from './components/NonMathsGate';
@@ -20,6 +21,7 @@ import { NonMathsGate } from './components/NonMathsGate';
 // Every page but the home page, the games and sign-in loads when it is opened, so the home page downloads less (dashboard
 // plan D7). Layout and the teacher area wait for them with a Loading line under their own header.
 const FriendGamePage = lazy(() => import('./pages/FriendGamePage').then((m) => ({ default: m.FriendGamePage })));
+const Activities = lazy(() => import('./pages/Activities').then((m) => ({ default: m.Activities })));
 const HowPoints = lazy(() => import('./pages/HowPoints').then((m) => ({ default: m.HowPoints })));
 const Leaderboard = lazy(() => import('./pages/Leaderboard').then((m) => ({ default: m.Leaderboard })));
 const Lobby = lazy(() => import('./pages/Lobby').then((m) => ({ default: m.Lobby })));
@@ -137,6 +139,7 @@ export function AppRoutes() {
           <Route path="card-game/:id" element={<NonMathsGate><CardGamePage /></NonMathsGate>} />
           <Route path="power-game/:id" element={<NonMathsGate><PowerGamePage /></NonMathsGate>} />
           <Route path="leaderboard" element={<Leaderboard />} />
+          {activitiesOn() && <Route path="activities" element={<Activities />} />}
           {/* Basic facts training: no address at all until it is switched on (training/switch.ts). */}
           {trainingOn() && (
             <Route

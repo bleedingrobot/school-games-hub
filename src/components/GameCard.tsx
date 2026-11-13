@@ -168,6 +168,7 @@ export function ActivityCard({
   colours,
   pinned = false,
   onPinChange,
+  verb = 'Play',
 }: {
   id: string;
   name: string;
@@ -176,6 +177,8 @@ export function ActivityCard({
   colours: [string, string];
   pinned?: boolean;
   onPinChange?: (pinned: boolean) => void;
+  /** The button's first word ("Play", or "Start" on the Activities page). */
+  verb?: string;
 }) {
   const art = gameCardArt(id);
   const style = art ? artStyle(art, colours) : ({ '--card-a': colours[0], '--card-b': colours[1] } as CSSProperties);
@@ -190,7 +193,7 @@ export function ActivityCard({
         </div>
         <div className="game-card__do">
           <Link className="game-card__go" to={to}>
-            Play {name}
+            {verb} {name}
           </Link>
         </div>
       </div>

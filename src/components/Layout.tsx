@@ -5,6 +5,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { themeOf } from '../avatar/avatarParts';
 import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
+import { activitiesOn } from '../activities/switch';
 import { trainingOn } from '../training/switch';
 import { NewTrophyMoment } from '../trophies/NewTrophyMoment';
 import { YearGate } from '../year/YearQuestion';
@@ -49,6 +50,7 @@ function ThemedLayout() {
           {[
             ...NAV,
             ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
+            ...(activitiesOn() ? [{ to: '/activities', label: 'Activities', emoji: '📝' }] : []),
             ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
           ].map((item) => (
             // The Teacher link stays lit on every teacher page (/teacher/:classId/…).
