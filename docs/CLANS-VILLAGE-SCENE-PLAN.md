@@ -62,7 +62,7 @@ Each stage goes live on its own (merging and deploying are pre-approved).
 | V2 (LIVE) | The upgrade moment (scaffold, dust, glow, "Level 4!"), raid smoke, the 3 ground looks switched by Village total. | Code only |
 | V3 | Art brief and paint script `scripts/clans-village-art.py` (level-by-level image to image, cut-out, tidy to WebP, `buildings/<kind>-<level>.webp`). `pickBuildingArt` looks for `<kind>-<level>` first, then today's sizes. | Code; James's PC for painting |
 | V4 | Paint, pick the best try of each, swap them in, line the plots up on the painted ground, check on laptop, iPad and phone. | James's PC (evening) |
-| V5 | Village life: chimney smoke, flags, walking villagers, fireworks at 39. | Code only |
+| V5 (LIVE) | Village life: chimney smoke, flags, walking villagers, fireworks at 39. | Code only |
 
 V1 and V2 can be built now. V4 waits for an evening on the PC.
 
@@ -91,3 +91,11 @@ V1 and V2 can be built now. V4 waits for an evening on the PC.
 - Picture names read (art.ts): `buildings/<kind>-<level>.webp` first (traininghall, smithy, church, barracks, tower, forge, strongroom), then the small/medium/big ones; `village/ground-1..3.webp` (2000x1240, covers the 1000x620 box), `village/site.webp`, `village/scaffold.webp`, `village/smoke.webp`. Code draws each one until its file exists. The Walls stay drawn in code.
 - Start pictures for painting the ground (img2img): project files `clans/village-scene/ground-init/`.
 - Screenshots: project files `clans/village-scene/v2/`.
+
+## V5 as built (13-14 Nov 2026 NZ)
+
+- Chimney smoke rises from the Smithy and the Forge, and a red pennant flies on the Tower (both laid over the paintings, not when the building is being upgraded or is smoking from a raid).
+- Villagers walk the roads, more as the village grows: 1 in the mud camp, 2 in the gravel village and 3 in the paved town.
+- Fireworks burst over the village while all 39 levels are built.
+- With reduced motion: no smoke or fireworks, and the villagers stand still.
+- Screenshots: project files `clans/village-scene/v5/`.

@@ -7,7 +7,7 @@
 --    here. Instead `hardest` is the most common named mistakes (glyph_goes.result.walls[].mistakes, first go of each wall)
 --    across the class's goes finished in the last 14 days, with how many pupils made each.
 -- 2. teacher_glyph_student(student): best first goes per temple and the pupil's most common mistakes.
--- 3. teacher_progress_other_games: re-created from its newest body (20261111000800) plus a glyph block (temples passed).
+-- 3. teacher_progress_other_games: re-created from its newest body (20261114000200_orderup.sql) plus a glyph block (temples passed).
 -- Same guards as Toon Flap's teacher reads (20261111000200): require_teacher() and teaches_class(), or require_teacher_of().
 
 create function public.teacher_glyph_class(target_class uuid)
@@ -127,6 +127,9 @@ begin
       select t.player, 'toonflap',
              (select count(*) from jsonb_each(t.progress -> 'levels') l(id, rec) where (l.rec ->> 'finishes')::int > 0)::integer, t.updated_at
         from public.toonflap_progress t join students s on s.id = t.player
+      union all
+      select o.player, 'orderup', o.passed, o.updated_at
+        from public.orderup_progress o join students s on s.id = o.player
       union all
       select p.player, 'glyph', coalesce((p.progress ->> 'passed')::integer, 0),
              (select max(g.started_at) from public.glyph_goes g where g.player = p.player)

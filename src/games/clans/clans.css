@@ -582,3 +582,39 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 @keyframes cq-vfloat { 0% { opacity: 0; transform: translate(-50%, 20%) scale(0.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 30% { transform: translate(-50%, -10%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -80%); } }
 @keyframes cq-vfade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes cq-vshake { 0%, 100% { transform: none; } 25% { transform: translateY(2px); } 50% { transform: translateY(-2px); } 75% { transform: translateY(1px); } }
+
+/* V5: village life. Chimney smoke, the Tower's pennant, villagers on the roads, fireworks over a finished village. All made in code. */
+.cq-vchimney { position: absolute; left: 30%; top: -2%; width: 30%; height: 45%; pointer-events: none; }
+.cq-vchimney i { position: absolute; left: 20%; bottom: 0; width: 60%; aspect-ratio: 1; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, rgba(200, 198, 192, 0.75) 0%, rgba(160, 158, 152, 0.35) 45%, rgba(150, 148, 142, 0) 70%); }
+.cq-vpennant { position: absolute; left: 47%; top: -9%; width: 16%; transform: translateX(-10%); pointer-events: none; overflow: visible; }
+.cq-vpennant__cloth { transform-origin: 4.5px 11px; }
+.cq-vwalker { position: absolute; width: 2.4%; min-width: 12px; transform: translate(-50%, -100%); pointer-events: none; left: var(--x0); top: var(--y0); }
+.cq-vwalker svg { display: block; width: 100%; height: auto; }
+.cq-vfireworks { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.cq-vburst { position: absolute; width: 0; height: 0; opacity: 0; }
+.cq-vburst i { position: absolute; left: 0; top: 0; width: 3px; height: 34px; margin-left: -1.5px; transform-origin: 50% 0;
+  background: linear-gradient(currentColor, transparent); border-radius: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-vchimney i { animation: cq-vchimney 4.5s ease-out infinite; }
+  .cq-vchimney i:nth-child(2) { animation-delay: 1.5s; } .cq-vchimney i:nth-child(3) { animation-delay: 3s; }
+  .cq-vpennant__cloth { animation: cq-vflap 1.6s ease-in-out infinite alternate; }
+  .cq-vwalker { animation: cq-vwalk 22s linear infinite; }
+  .cq-vwalker svg { animation: cq-vbob 0.5s ease-in-out infinite alternate; }
+  .cq-vwalker__leg { animation: cq-vstep 0.5s ease-in-out infinite alternate; transform-origin: 50% 0; transform-box: fill-box; }
+  .cq-vwalker__leg--b { animation-direction: alternate-reverse; }
+  .cq-vburst { animation: cq-vburst 3.6s ease-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) { .cq-vchimney, .cq-vfireworks { display: none; } }
+@keyframes cq-vchimney { 0% { opacity: 0; transform: translateY(0) scale(0.4); } 20% { opacity: 0.85; } 100% { opacity: 0; transform: translate(25%, -170%) scale(1.5); } }
+@keyframes cq-vflap { from { transform: skewY(-6deg) scaleX(0.92); } to { transform: skewY(5deg) scaleX(1.04); } }
+@keyframes cq-vwalk {
+  0% { left: var(--x0); top: var(--y0); transform: translate(-50%, -100%) scaleX(1); }
+  48% { left: var(--x1); top: var(--y1); transform: translate(-50%, -100%) scaleX(1); }
+  50% { left: var(--x1); top: var(--y1); transform: translate(-50%, -100%) scaleX(-1); }
+  98% { left: var(--x0); top: var(--y0); transform: translate(-50%, -100%) scaleX(-1); }
+  100% { left: var(--x0); top: var(--y0); transform: translate(-50%, -100%) scaleX(1); }
+}
+@keyframes cq-vbob { from { transform: translateY(0); } to { transform: translateY(-6%); } }
+@keyframes cq-vstep { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+@keyframes cq-vburst { 0% { opacity: 0; transform: scale(0.1); } 8% { opacity: 1; } 45% { opacity: 1; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.15) translateY(8px); } }

@@ -50,7 +50,7 @@ export async function saveGlyphEnabled(enabled: boolean, classId: string): Promi
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
 
-// ---------------------------------------------------------------- the teacher's reads (migration 20261114000100)
+// ---------------------------------------------------------------- the teacher's reads (migration 20261114000300)
 
 export interface GlyphClassPupil {
   student: string;
