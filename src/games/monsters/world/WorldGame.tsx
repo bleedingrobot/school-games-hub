@@ -18,7 +18,7 @@ import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wil
 import type { Giant } from '../../../../shared/monsters/quests/giants';
 import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
 import { nextStep } from '../../../../shared/monsters/quests/nextStep';
-import { badgeStep, podTwinkles, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
+import { badgeStep, hatchRings, podTwinkles, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
@@ -29,7 +29,7 @@ import { monsterPic, personPic, preload, scenePic } from '../art/painted';
 import { nameOf } from '../text';
 import { MapMenu, type MenuPage } from './MapMenu';
 import { WalkController, type ControllerEvents } from './controller';
-import { drawFrame, paintedVersion, scaleFor, tileAt, twinklePhase, type Scene } from './render';
+import { drawFrame, paintedVersion, ringPhase, scaleFor, tileAt, twinklePhase, type Scene } from './render';
 import type { WorldSettings } from './settings';
 import { loadSheets, paintMap, TileCache } from './tiles';
 import './world.css';
@@ -108,6 +108,8 @@ export function WorldGame({
   const { soundOn } = useSound();
   const live = useRef({ scene, talk, menu, settings, onState, onBattle, onMoment, timeScale, soundOn });
   live.current = { scene, talk, menu, settings, onState, onBattle, onMoment, timeScale, soundOn };
+  const playDays = useRef(0);
+  playDays.current = quest.playDays ?? 0;
   /** Plays a sound, but only when the hub's speaker button is on. */
   const cue = useCallback((sound: GameSound) => {
     if (live.current.soundOn) playSound(sound);
@@ -287,12 +289,13 @@ export function WorldGame({
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
       const twinkles = podTwinkles(view.state, maps[view.state.map]);
+      const rings = hatchRings(view.state, maps[view.state.map], playDays.current);
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
-      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${questKey(view.state)},${paintedVersion()},${twinkles.map((_, i) => twinklePhase(now, i)).join('')}`;
+      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${questKey(view.state)},${paintedVersion()},${twinkles.map((_, i) => twinklePhase(now, i)).join('')},${rings.length ? `${rings.map((r) => `${r.x}.${r.y}`).join()}:${ringPhase(now)}` : ''}`;
       if (key === lastKey) return;
       lastKey = key;
       const t0 = performance.now();
-      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f, quests: questMarks(view.state, maps[view.state.map]), twinkles });
+      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f, quests: questMarks(view.state, maps[view.state.map]), twinkles, rings });
       perf.draws += 1;
       perf.drawMs += performance.now() - t0;
       perf.worst = Math.max(perf.worst, performance.now() - t0);

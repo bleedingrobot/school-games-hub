@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { cratesStart, light, lockStart, push, PUZZLES, slide, slideStart, stepStone, stonesGrid, tryLock, turnDial, type CratesState, type Puzzle, type SlideDir, type SlideState } from './puzzles';
+import { WORLD_MAPS } from '../maps';
+import { hatchRings } from '../world/questWorld';
+import type { WorldState } from '../world/types';
+import { findEgg, HATCH_SPOTS } from './eggs';
+import { emptyQuestSave, type EggKind } from './types';
 
 const DIRS: SlideDir[] = ['up', 'down', 'left', 'right'];
 
@@ -15,7 +20,7 @@ function fewest<S extends { done: boolean }>(start: S, moves: (s: S) => S[], key
 }
 
 describe('the puzzles', () => {
-  it('every puzzle can be solved but not by luck, and a wrong move costs a try', () => {
+  it('every puzzle can be solved but not by luck, a wrong move costs a try, and every egg spot glows once its egg is ready', () => {
     for (const p of PUZZLES as Puzzle[]) {
       if (p.kind === 'stones') {
         // A path of multiples crosses the pool, and the first column is not all multiples (a real choice).
@@ -71,5 +76,15 @@ describe('the puzzles', () => {
       }
     }
     expect(new Set(PUZZLES.map((p) => p.id)).size).toBe(PUZZLES.length);
+    // Every egg's hatching spot is on its map, and its glowing ring shows there only once the egg is ready.
+    for (const [kind, home] of Object.entries(HATCH_SPOTS)) {
+      const map = WORLD_MAPS[home.map];
+      const spot = map?.spots.find((s) => s.name === home.spot);
+      expect(spot, kind).toBeDefined();
+      const state = { quest: { ...emptyQuestSave(), eggs: [findEgg(`t:${kind}`, kind as EggKind, 0, () => 0)] } } as unknown as WorldState;
+      expect(hatchRings(state, map, 0), kind).toEqual([]);
+      expect(hatchRings(state, map, 20), kind).toEqual([{ x: spot!.x, y: spot!.y }]);
+      expect(hatchRings(state, Object.values(WORLD_MAPS).find((m) => m.id !== home.map)!, 20), kind).toEqual([]);
+    }
   });
 });

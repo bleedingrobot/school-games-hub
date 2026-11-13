@@ -126,7 +126,7 @@ export function HowToPlayBody() {
         <h3 id="mht-eggs">Eggs</h3>
         <p>
           Some quests, puzzles and nests give you an egg. You can carry {EGGS.basket}. An egg needs <strong>days of play</strong> to hatch: {EGGS.days.uncommon} days, or {EGGS.days.rare} or {EGGS.days.ultra} for
-          rarer ones. A day of play is a day you answer at least one question. When it’s ready, take it to its own place to hatch (a leafy egg likes {HATCH_SPOTS.leafy.place}).
+          rarer ones. A day of play is a day you answer at least one question. When it’s ready, take it to its own place to hatch (a leafy egg likes {HATCH_SPOTS.leafy.place}). A glowing ring on the ground shows the spot, then open the egg basket and tap Hatch.
         </p>
         <p>
           <strong>Keep your eggs warm!</strong> If you have no battles for {EGGS.coldAfter} days in a row, your eggs go cold and are lost. The game warns you on the last day.
