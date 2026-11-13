@@ -2,7 +2,7 @@
 
 *Written 4 November 2026 for James, as part of the Quick looks review ([SUBITISING-REVIEW-PLAN.md](SUBITISING-REVIEW-PLAN.md)). James asked for the review to include a graphics upgrade. Final art is painted by James's gaming PC (ComfyUI) in the evening ([prompts/quick-looks-art.md](prompts/quick-looks-art.md)). The code goes in first with stand-in art, so the paintings slot in by file name.*
 
-**Status: Q.A1 (code with stand-ins) built 4 Nov 2026; screenshots in project files `quick-looks-art/`. Paintings (Q.A2) not made yet.**
+**Status: Q.A1 (code with stand-ins) built 4 Nov 2026; screenshots in project files `quick-looks-art/`. Q.A2 paintings made 13 Nov 2026 with `scripts/quick-looks-art.py` (garden scene, 7 plants x 5 steps sharing one seed picture, 2 ladybirds) and added to `src/subitising/art/`.**
 
 ## What it looks like now
 
