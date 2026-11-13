@@ -2,9 +2,12 @@
   "_from": "docs/game-guide/templates/art-config.json. Order Up! (docs/ORDERUP-ART-PLAN.md). Check with: python3 scripts/game_art.py orderup paint OUT --dry-run",
   "game": "orderup",
   "filename_prefix": "orderup/img",
-  "style": "diner",
+  "style": "neon",
   "styles": {
-    "diner": "Bright flat storybook illustration for a children's maths app, clean simple shapes, warm cheerful colours, soft even light, gentle texture, friendly and tidy, no text, no letters, no numbers, no logos. "
+    "neon": "Cinematic night-time illustration, moody teal and deep blue shadows with glowing magenta and amber neon light, wet reflective surfaces, soft rain haze, stylish and atmospheric like a modern indie video game. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "graphic": "Bold graphic-novel illustration, confident black ink lines, flat rich colours with hard cel shadows, dramatic angles, modern comic book style. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "iso": "Clean stylised 3D render, isometric view, smooth low-poly shapes, soft global illumination, muted modern palette with one warm accent colour, polished like a premium mobile game. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. ",
+    "concept": "Painterly cinematic video game concept art, realistic warm lamplight and cool night shadows, rich detail, depth and atmosphere, polished and grown-up. Made for a maths app for 11 to 13 year olds: cool and grown-up, not babyish. No text, no letters, no numbers, no logos. "
   },
   "inbox": "~/dragon-art-inbox/orderup-art",
   "picks": "docs/orderup-art/picks.json",
@@ -13,7 +16,7 @@
   "pictures": [
     {
       "name": "card",
-      "prompt": "A cosy little retro take-away diner at night seen from the street, warm glowing windows, a red and white striped awning, a chunky brown paper take-away bag and a curly paper order ticket sitting on the front counter, a friendly round chef in a white hat waving from behind the counter, a calm deep-blue evening sky with a few stars at the top, wide landscape picture for a title card, the diner in the middle.",
+      "prompt": "A stylish late-night street-food diner on a city corner, a glowing counter window with a chrome edge, steam rising from the kitchen, a brown paper take-away bag and a long curling paper order ticket on the counter, a cook in a dark apron and cap working behind the window, the street quiet and atmospheric, wide landscape picture for a title card, the diner in the middle.",
       "size": [
         1216,
         688
@@ -23,7 +26,7 @@
     },
     {
       "name": "back-diner",
-      "prompt": "Inside a bright friendly retro diner kitchen seen straight on from the customer side: a long clean pale counter across the bottom, a big plain pale-cream wall in the middle with a few simple shelves of jars and plates near the edges, a round wall clock, checkered tiles at the very top edge, the middle of the wall empty and calm so things placed on top stand out. Empty background scenery, no people, soft muted colours in the middle, wide landscape.",
+      "prompt": "Inside a stylish modern diner kitchen at night, seen straight on from the customer side: a long steel counter across the bottom, a dark tiled wall behind with a glowing order rail and a few hanging pans near the edges, warm lights, the middle of the wall plain and calm so things placed on top stand out. Empty background scenery, no people, wide landscape.",
       "size": [
         1344,
         768
@@ -58,7 +61,7 @@
     },
     {
       "name": "chef",
-      "prompt": "A friendly round cartoon diner chef, a cheerful kiwi bird with soft brown feathers, a long thin beak, a tall white chef's hat and a small white apron, smiling, one wing raised pointing upward as if explaining something, standing, full body, facing the viewer. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
+      "prompt": "A cool young diner cook, a confident teenage-looking character in a dark apron, rolled sleeves and a backwards cap, a pencil behind one ear, one hand raised pointing upward as if explaining something, a relaxed half smile, full body, facing the viewer. Single character, centred, the whole body visible with space around it, on a plain pure white background, clean empty white all around.",
       "size": [
         832,
         1024
