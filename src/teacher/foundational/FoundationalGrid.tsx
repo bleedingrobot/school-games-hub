@@ -29,7 +29,6 @@ export function FoundationalGrid({
   onPick?: (cell: PickedCell | null) => void;
 }) {
   const [flagsFor, setFlagsFor] = useState<string | null>(null);
-  const flagged = rows.find((r) => r.id === flagsFor);
   return (
     <div className="fg">
       <ul className="fg__legend" aria-label="Key">
@@ -76,6 +75,18 @@ export function FoundationalGrid({
                       <span aria-hidden="true">! {row.flags.length} to check</span>
                     </button>
                   )}
+                  {flagsFor === row.id && (
+                    <ul className="fg__flaglist" aria-label={`Things to check for ${row.name}`}>
+                      {row.flags.map((flag) => (
+                        <li key={`${flag.kind}:${flag.track ?? ''}:${flag.reason}`} data-quiet={flag.quiet || undefined}>
+                          <span className="fg__bang" aria-hidden="true">
+                            !
+                          </span>
+                          <span>{flag.reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </th>
                 {row.cells.map((cell) => (
                   <td key={cell.idea.id} className="fg__cell">
@@ -117,24 +128,6 @@ export function FoundationalGrid({
           </tbody>
         </table>
       </div>
-      {flagged && (
-        <section className="fg__flagpanel" aria-label={`Flags for ${flagged.name}`}>
-          <h3 className="fg__flagtitle">{flagged.name}</h3>
-          <ul className="fg__flaglist">
-            {flagged.flags.map((flag) => (
-              <li key={`${flag.kind}:${flag.track ?? ''}:${flag.reason}`} data-quiet={flag.quiet || undefined}>
-                <span className="fg__bang" aria-hidden="true">
-                  !
-                </span>
-                <span>{flag.reason}</span>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="button button--light-outline" onClick={() => setFlagsFor(null)}>
-            Close
-          </button>
-        </section>
-      )}
     </div>
   );
 }
