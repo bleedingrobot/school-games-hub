@@ -1,0 +1,5 @@
+html, body { margin: 0; min-height: 100%; }
+body { background: #0f3d22; }
+.ggp-tools { margin: 12px auto 0; max-width: 460px; background: #fff; border: 2px solid #1f7a3f; border-radius: 12px; padding: 4px 10px; font: 14px system-ui, sans-serif; color: #0f172a; }
+.ggp-tools summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; }
+.ggp-tools button { margin: 3px; min-height: 44px; padding: 2px 12px; border-radius: 8px; border: 1px solid #1f7a3f; background: #e6f7ea; cursor: pointer; font: inherit; color: #0f172a; }

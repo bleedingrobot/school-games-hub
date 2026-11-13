@@ -1,6 +1,6 @@
 # Glyph Gates: plan
 
-**Status: plan only, nothing built (13 Nov 2026).** Migration number when building starts: `20261113000800` (`20261113000700` is held by Order Up's plan; check again with `node scripts/migration-numbers.mjs`). Game id `glyph`. Thread: "Plan the equivalent fractions glyph game". Source: James's mock-up (jungle temple wall, 4 × 4 fraction tiles, gold target stone, 4 glyphs, cheering monkeys), project files `glyph/glyph-mockup.png`.
+**Status: stages 1 to 3 built (rules, server, migration `20261113000800`, screens for every temple, guided first wall, drawn stand-in art), PR #493; code and teacher switches off. Voice, painted art, teacher Progress column still to do.** Migration number when building starts: `20261113000800` (`20261113000700` is held by Order Up's plan; check again with `node scripts/migration-numbers.mjs`). Game id `glyph`. Thread: "Plan the equivalent fractions glyph game". Source: James's mock-up (jungle temple wall, 4 × 4 fraction tiles, gold target stone, 4 glyphs, cheering monkeys), project files `glyph/glyph-mockup.png`.
 
 ## The short version
 - Pupils are explorers trapped in an old jungle temple. Each **wall** is sealed by a **gold stone** showing a fraction (5/6).
@@ -116,14 +116,18 @@ This game teaches one skill (equivalent fractions), so like Order Up and Basic f
 `progressColumns`: "Temples" (passed, of 6), plus a `teacher_progress_other_games` block. Saved per wall: `glyph_walls` rows; per pupil `glyph_progress` (temples passed, best stars, guide seen).
 
 ## Server, data and cost
-Function `glyph`: `start` (temple → 9 walls from a fresh seed, stored in `glyph_walls_made`, which pupils can't read; sends the tiles only), `light` (lit cells → the four glyph shapes, saves the lit set), `pick` (glyph → marks, claims the go once, records). Tables `glyph_progress`, `glyph_goes`, `glyph_walls_made`. About 3 requests per wall: ~27 per pupil per temple, ~800 per class per lesson. Migration `20261113000800`.
+Function `glyph` (`shared/glyph/server.ts`, replay like Toon Flap):
+- `load` → progress, switch, NZ day. `guide-seen` → marks the guide seen.
+- `start {temple}` → a fresh seed kept in `glyph_goes` (only the seed: the 9 walls come back the same from it), the walls without answers (`publicWall`) and the help level. The browser judges each go itself with the same rules so the wall reacts at once.
+- `finish {seed, plays}` → replays every go on the server's own walls (`replayTemple`), saves the go and progress, records one `equiv:same-as` answer per wall, gives points (pass 5, try 2, first 4 finished goes a day). A part go saves walls and records but gives no points.
+Tables `glyph_progress`, `glyph_goes`; `teacher_set_glyph()`; migration `20261113000800`. 3 requests per temple go: about 100 per class per lesson.
 
 ## Stages
 | Stage | What | Live? |
 |---|---|---|
-| 1 | Rules: wall maker, glyph library, trap tiles, marking (`shared/glyph/`), tests | no |
-| 2 | Server function and migration (tables, achievements, `record_glyph`) | no |
-| 3 | Screens: temple wall, grid, glyphs, map, temples 1 to 3, guided first wall, drawn stand-in art; teacher switch off | no |
+| 1 | Rules: wall maker, glyph library, trap tiles, marking (`shared/glyph/`), tests | built (#493) |
+| 2 | Server function and migration (tables, achievements, `teacher_set_glyph`) | built (#493) |
+| 3 | Screens: temple wall, grid, glyphs, map, guided first wall, drawn stand-in art, help ladder and show-why lines; code switch off | built (#493) |
 | 4 | Help ladder, show-why, Bella lines | no |
 | 5 | Temples 4 to 6, teacher part, Progress column; switch on | no |
 | 6 | Painted art in (from the art plan) | no |
