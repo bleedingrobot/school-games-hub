@@ -21,7 +21,7 @@ export default function FoundationalSkills() {
   return (
     <div className="classes fg-page">
       <p className="teacher__classes-link">
-        How each student is getting on in the Foundational games and Quick looks. A “!” says in words what a student is stuck on.
+        How each student is getting on in the Foundational games and Quick looks. Press a yellow “! to check” button under a name to see, in words, what that student may be stuck on (grey means they've gone quiet).
         Press a cell to see the facts behind it.
       </p>
       {current && <Panel key={current.id} classId={current.id} name={current.name} />}
