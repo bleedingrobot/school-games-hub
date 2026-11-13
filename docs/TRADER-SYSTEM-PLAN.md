@@ -79,7 +79,7 @@ A new tab beside Market, Ship and Bank: **🌟 Forge**. Built in the same dark p
 ### 2.2 Planning is free, building costs
 
 - Changing a *planned* piece is free and unlimited. Kids can redesign all week.
-- Every piece shows in the picker. One the pupil can't afford yet is locked, showing its price and how many more credits it needs (James, 12 Nov: "kids don't know what they are aiming for" when they were hidden). A piece already picked is never locked.
+- Every piece shows in the picker. One the pupil can't afford yet is locked, showing its price and how many more credits it needs (James, 12 Nov: "kids don't know what they are aiming for" when they were hidden). A piece already picked is never locked. Tapping a locked piece shows it in the 3D view for a look ("Just a look at …", with a Back to my plan button); it is never planned or saved (James, 13 Nov).
 - Once **built**, changing the look of a piece is cheap (a tenth of its price: "repaint"), and removing it gives half back. Kept simple so a pupil can't wreck their own savings by accident: removing asks "Are you sure?" and shows what they get back.
 - The server checks every build against the shared rules (as every move is checked now: `shared/trader/server.ts`), so the browser can't give itself free planets.
 

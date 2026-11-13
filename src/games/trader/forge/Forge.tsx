@@ -14,7 +14,7 @@ import { FullscreenView } from './Fullscreen';
 import { drawGalleryPicture, pictureDue, rememberPicture } from './galleryPicture';
 import { LIFE_LOOK, PLANET_LOOK, SUN_LOOK } from './looks';
 import { addPlanet, buildOptions, buildWhatICan, cr, movePlanet, removePlanet, zoneTip, type BuildOption } from './parts';
-import { Picker, STEPS, type Sel } from './Picker';
+import { Picker, STEPS, type PeekAsk, type Sel } from './Picker';
 import { ViewerBox } from './ViewerBox';
 import { PICTURE_GAP_MINUTES } from '../../../../shared/trader/gallery';
 import type { GraphicsLevel } from './viewer/types';
@@ -55,6 +55,9 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
   const [working, setWorking] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
   const [graphics, setGraphics] = useState<GraphicsLevel | null>(null);
+  /** A locked piece shown in the 3D view for a look only: never planned or saved. */
+  const [peek, setPeek] = useState<(PeekAsk & { design: SystemDesign }) | null>(null);
+  useEffect(() => setPeek(null), [draft, sel, step]);
   useGalleryPicture(saved, graphics, onPicture);
   const confirmHead = useRef<HTMLHeadingElement>(null);
 
@@ -148,7 +151,7 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
 
       <div className="stf-grid">
         <div className="stf-left">
-          {!full && <ViewerBox design={draft} showPlans labels reducedMotion={lessMotion} onLevel={setGraphics} onReady={(v) => setGraphics(v?.level ?? null)} onPick={(id) => id !== null && choose({ k: 'planet', id })} />}
+          {!full && <ViewerBox design={peek?.design ?? draft} showPlans labels reducedMotion={lessMotion} onLevel={setGraphics} onReady={(v) => setGraphics(v?.level ?? null)} onPick={(id) => id !== null && choose({ k: 'planet', id })} />}
           {full && <div className="stf-viewer stf-viewer--away"><p className="st-soft">Your system is open in full screen.</p></div>}
         </div>
 
@@ -193,7 +196,13 @@ export function Forge({ saved, draft, credits, ownsMoon, busy, lessMotion, level
           {confirm && <ConfirmCard confirm={confirm} saved={saved} credits={credits} ownsMoon={ownsMoon} busy={busy || working} head={confirmHead} onGo={() => void go(confirm)} onCancel={() => { setConfirm(null); setNote(''); }} />}
           {note && <p className="st-warn" role="status">{note}</p>}
           {!sel && !confirm && <div className="st-card stf-hint"><p>👆 Tap the <strong>Sun</strong> to choose your star, or <strong>+ planet</strong> to add a world. Planning is free!</p></div>}
-          {sel && <Picker sel={sel} design={draft} step={step} onStep={setStep} onEdit={edit} onBuild={askBuild} onRemovePlanet={askRemove} onMove={(id, by) => edit(movePlanet(draft, id, by))} options={options} credits={credits} busy={busy || working} typing={typing} />}
+          {peek && (
+            <div className="stf-peek" role="status">
+              <span>👀 Just a look at <strong>{peek.label}</strong>. Save {cr(peek.lock)} more to plan it.</span>
+              <button type="button" className="st-btn st-btn--small" onClick={() => setPeek(null)}>Back to my plan</button>
+            </div>
+          )}
+          {sel && <Picker sel={sel} design={draft} step={step} onStep={setStep} onEdit={edit} onPeek={(design, ask) => { if (!designProblem(design)) setPeek({ ...ask, design }); }} onBuild={askBuild} onRemovePlanet={askRemove} onMove={(id, by) => edit(movePlanet(draft, id, by))} options={options} credits={credits} busy={busy || working} typing={typing} />}
           {sel && <Facts sel={sel} design={draft} planet={planetAt} />}
         </div>
       </div>
