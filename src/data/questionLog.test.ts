@@ -28,15 +28,15 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe('the queue', () => {
-  it('is kept per student, and keeps only the newest notes', () => {
+  it('is kept per student, keeps only the newest notes, and keeps everything when the send fails or is offline', async () => {
     for (let i = 0; i < MAX_QUEUED + 5; i++) addNote(ME, note(i));
     expect(queuedNotes(ME)).toHaveLength(MAX_QUEUED);
     expect(queuedNotes(ME)[0].ms).toBe(1005);
     expect(queuedNotes(crypto.randomUUID())).toEqual([]);
     expect(JSON.parse(localStorage.getItem(`sgh-question-log:${ME}`)!)).toHaveLength(MAX_QUEUED);
-  });
+    expect(await sendNotes(ME)).toBe(MAX_QUEUED);
 
-  it('keeps everything when the send fails, and when offline', async () => {
+    // Keeps everything when the send fails, and when offline.
     addNote(ME, note());
     rpc.mockResolvedValueOnce({ data: null, error: { message: 'busy' } });
     expect(await sendNotes(ME)).toBe(0);

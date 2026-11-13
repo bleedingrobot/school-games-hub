@@ -58,7 +58,7 @@ select set_eq($$
 $$, array[
   'admin_archive_classes', 'admin_copy_defaults_to_classes', 'admin_school_defaults', 'admin_set_school_default', 'admin_classes', 'admin_clans_new_season', 'admin_create_class', 'admin_delete_leavers', 'admin_mark_step', 'admin_new_points_season', 'admin_year', 'admin_overview', 'admin_students', 'admin_teachers', 'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_hall_of_legends', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'hub_answer_totals', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_page_away', 'log_questions', 'lord_first_five', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
   'mark_my_trophies_seen', 'my_gem_keep', 'my_home_layout', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_new_trophies', 'my_next_parts', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_top_games',
   'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'my_trophies', 'my_trophy_shelf', 'my_trophy_pairs', 'my_season_note', 'mark_season_note_seen', 'hall_of_fame', 'owner_add_school', 'owner_add_school_domain',
@@ -91,7 +91,7 @@ $$, array[
   'teacher_set_toonflap', 'teacher_toonflap_class', 'teacher_toonflap_student',
   'teacher_set_glyph', 'my_glyph', 'teacher_glyph_class', 'teacher_glyph_student',
   'teacher_set_orderup', 'teacher_orderup_class',
-  'teacher_progress_other_games',
+  'teacher_progress_other_games', 'teacher_page_away',
   'my_name_status', 'ask_for_my_name', 'cancel_my_name_request', 'teacher_name_requests', 'teacher_answer_name', 'teacher_name_history', 'teacher_made_up_name_back', 'teacher_give_name_scroll', 'teacher_name_scrolls',
   'achievements_board', 'hard_workers_board', 'achievements_by_game', 'recent_trophies', 'trophies_board', 'trophies_of', 'game_board',
   'admin_trophy_season', 'admin_set_trophy_season', 'teacher_pupil_trophies', 'teacher_reset_avatar', 'teacher_new_trophies',

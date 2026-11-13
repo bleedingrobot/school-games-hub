@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PracticalQuestion } from '../../shared/maths/practical';
 import { NumberPad } from './NumberPad';
 import { SkipsLeft } from './QuestionModal';
-import { noteQuestion, spendSkip, spotFromTitle, useSkipRule } from './questionLog';
+import { noteQuestion, questionOpened, spendSkip, spotFromTitle, useSkipRule } from './questionLog';
 import './maths.css';
 
 const MAX_CHARS = 6;
@@ -50,7 +50,9 @@ export function PracticalAsk({
   spot.current = spotFromTitle(title);
   useEffect(() => {
     const started = performance.now();
+    const close = questionOpened(spot.current);
     return () => {
+      close();
       if (noted.current !== question) noteQuestion({ spot: spot.current, skipped: true, ms: performance.now() - started });
     };
   }, [question]);

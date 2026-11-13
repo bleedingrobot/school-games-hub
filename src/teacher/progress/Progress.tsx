@@ -16,6 +16,7 @@ import { boardGames, LadderBoard } from './LadderBoard';
 import { GAMES as HUB_GAMES } from '../../games/registry';
 import type { GameDefinition, Loaded, ProgressCell } from '../../games/types';
 import { cellState, otherCellState, quickCellState } from './state';
+import { AwayPanel } from './AwayPanel';
 import './progress.css';
 
 export default function Progress() {
@@ -28,6 +29,7 @@ export default function Progress() {
         </p>
       )}
       {current && <Panel key={current.id} classId={current.id} name={current.name} />}
+      {current && <AwayPanel key={`away-${current.id}`} classId={current.id} />}
     </div>
   );
 }

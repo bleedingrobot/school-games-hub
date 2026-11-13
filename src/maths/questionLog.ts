@@ -32,6 +32,27 @@ export function setQuestionSink(next: QuestionSink | null): void {
   sink = next;
 }
 
+// Which question boxes are on screen right now (newest last), so "left the page" notes can say a question was open
+// (src/data/pageAway.ts). A box adds itself when its question shows and takes itself off when it goes.
+const openSpots: string[] = [];
+
+/** A question box's question is showing. Call the returned function when it goes. */
+export function questionOpened(spot: string): () => void {
+  openSpots.push(spot);
+  let closed = false;
+  return () => {
+    if (closed) return;
+    closed = true;
+    const i = openSpots.lastIndexOf(spot);
+    if (i >= 0) openSpots.splice(i, 1);
+  };
+}
+
+/** The kind of question showing now, or null when no question box is open. */
+export function openQuestion(): string | null {
+  return openSpots.length ? openSpots[openSpots.length - 1] : null;
+}
+
 // Right answers in a row, in any game, since the page opened. A wrong answer or a skip starts it again.
 let inARow = 0;
 

@@ -14,7 +14,7 @@ import { spokenLabel } from '../../shared/maths/banded';
 import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
-import { countAnswer, noteQuestion, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
+import { countAnswer, noteQuestion, questionOpened, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -166,7 +166,9 @@ export function QuestionModal({
   useEffect(() => {
     const id = question.id;
     const started = performance.now();
+    const close = questionOpened(spotName.current);
     return () => {
+      close();
       if (answeredId.current !== id) noteQuestion({ spot: spotName.current, skipped: true, ms: performance.now() - started });
     };
   }, [question.id]);
