@@ -55,8 +55,12 @@ export function pickBuildingArt(kind: VillageBuilding, level: number, find: (nam
   return (level > 0 ? find(`${name}-${level}`) : undefined) ?? find(`${name}-${buildingSize(level)}`) ?? find(name) ?? (old ? find(old) : undefined);
 }
 export const buildingArt = (kind: VillageBuilding, level = 1): string | undefined => pickBuildingArt(kind, level, (name) => file('buildings', name));
-/** The village scene's own paintings (ground-1..3, site, scaffold, smoke); undefined until painted, and the scene draws its own. */
-export const villageArt = (name: 'ground-1' | 'ground-2' | 'ground-3' | 'site' | 'scaffold' | 'smoke') => file('village', name);
+/**
+ * The village scene's own paintings: ground-1..3, site, scaffold, smoke, the Walls (wall-<level> a 3:1 strip repeated along
+ * each edge, corner-<level>, gate-<level>) and the villagers (villager-<name>). Undefined until painted; the scene draws its own.
+ */
+export type VillageArtName = 'ground-1' | 'ground-2' | 'ground-3' | 'site' | 'scaffold' | 'smoke' | `${'wall' | 'corner' | 'gate'}-${1 | 2 | 3 | 4 | 5}` | `villager-${string}`;
+export const villageArt = (name: VillageArtName) => file('village', name);
 /** A kingdom you can raid, by its id (bunny-hollow). */
 export const kingdomArt = (id: string) => file('kingdoms', id);
 export function kingdomScene(id: string): { wide?: string; small?: string } {

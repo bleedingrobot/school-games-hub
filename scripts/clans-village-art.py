@@ -355,8 +355,9 @@ def tidy():
             save(img, ART / 'village' / f'{key}.webp', 74)
             save(img.resize((1000, 620), Image.LANCZOS), ART / 'village' / f'{key}-800.webp', 72)
         elif key.startswith('wall-'):
+            # Always 768 x 256 (3:1): the game repeats it along each edge at that shape (VillageScene.tsx, PaintedWalls).
             img = tileable(cut(INBOX / 'walls' / f'{key}-{t}.png', 1536))
-            save(img.resize((768, round(img.height * 768 / img.width)), Image.LANCZOS), ART / 'village' / f'{key}.webp', 80)
+            save(img.resize((768, 256), Image.LANCZOS), ART / 'village' / f'{key}.webp', 80)
         elif key.startswith(('corner-', 'gate-')):
             save(cut(INBOX / 'walls' / f'{key}-{t}.png', 320), ART / 'village' / f'{key}.webp', 80)
         elif key.startswith('villager-'):

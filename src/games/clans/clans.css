@@ -618,3 +618,6 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 @keyframes cq-vbob { from { transform: translateY(0); } to { transform: translateY(-6%); } }
 @keyframes cq-vstep { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
 @keyframes cq-vburst { 0% { opacity: 0; transform: scale(0.1); } 8% { opacity: 1; } 45% { opacity: 1; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.15) translateY(8px); } }
+/* Painted walls: the front half is drawn over the buildings, and taps go through it to them. */
+.cq-vground--front { pointer-events: none; z-index: 1; }
+.cq-vwalker img { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
