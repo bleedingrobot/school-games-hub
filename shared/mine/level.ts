@@ -10,7 +10,7 @@
  * Everything here is whole numbers and a seeded counter, so a level is identical everywhere.
  */
 import {
-  ESCAPE_EXTRA_SECONDS, ESCAPE_SPEED, MAX_TARGETS, ROBOT_TYPES, ROOM_HALF_SIZES, ROOM_SPACING, STEPS_PER_SECOND,
+  CAVERN_HALF_SIZE, ESCAPE_EXTRA_SECONDS, ESCAPE_SPEED, MAX_TARGETS, ROBOT_TYPES, ROOM_HALF_SIZES, ROOM_SPACING, STEPS_PER_SECOND,
   TUNNEL_WIDTH, type RobotType,
 } from './config';
 
@@ -260,6 +260,10 @@ export function makeLevel(recipe: Recipe): Level {
     edges.push(spare[at]);
     spare.splice(at, 1);
   }
+
+  // The reactor's room is a big cavern (docs/plans/mine-flight/PLAN.md, M3).
+  const cavern = rooms[reactorRoom];
+  cavern.hx = CAVERN_HALF_SIZE; cavern.hy = CAVERN_HALF_SIZE; cavern.hz = CAVERN_HALF_SIZE;
 
   // Carve the rock: everything solid, then rooms, then tunnels.
   const solid = new Uint8Array(nx * ny * nz).fill(1);

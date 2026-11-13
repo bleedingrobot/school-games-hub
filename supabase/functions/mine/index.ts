@@ -8001,8 +8001,8 @@ function solveParts(parts) {
 	} : null;
 }
 const DT = 1 / 30;
-/** A room is 7 or 9 blocks across each way (half of it, not counting the middle block). */
-const ROOM_HALF_SIZES = [3, 4];
+/** A room is 11 or 13 blocks across each way (half of it, not counting the middle block). Still two sizes, so each mine keeps its maze. */
+const ROOM_HALF_SIZES = [5, 6];
 const SHIP_RADIUS = .45;
 /** The share of speed lost each step. Top speed is about ACCEL × DT ÷ DRAG = 10 units/s. */
 const DRAG = .08;
@@ -8307,6 +8307,10 @@ function makeLevel(recipe) {
 		edges.push(spare[at]);
 		spare.splice(at, 1);
 	}
+	const cavern = rooms[reactorRoom];
+	cavern.hx = 7;
+	cavern.hy = 7;
+	cavern.hz = 7;
 	const solid = new Uint8Array(nx * ny * nz).fill(1);
 	const doorAt = new Int8Array(nx * ny * nz).fill(-1);
 	const at = (x, y, z) => x + nx * (y + ny * z);
@@ -8314,7 +8318,7 @@ function makeLevel(recipe) {
 		for (let z = z0; z <= z1; z++) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) solid[at(x, y, z)] = 0;
 	};
 	for (const r of rooms) carve(r.cx - r.hx, r.cx + r.hx, r.cy - r.hy, r.cy + r.hy, r.cz - r.hz, r.cz + r.hz);
-	const tw = 2;
+	const tw = 3;
 	for (const [a, b] of edges) {
 		const A = rooms[a];
 		const B = rooms[b];
@@ -8328,7 +8332,7 @@ function makeLevel(recipe) {
 		const mz = (a.cz + b.cz) / 2;
 		const axis = a.cx !== b.cx ? 0 : a.cy !== b.cy ? 1 : 2;
 		const blocks = [];
-		for (let u = -2; u <= tw; u++) for (let v = -2; v <= tw; v++) {
+		for (let u = -3; u <= tw; u++) for (let v = -3; v <= tw; v++) {
 			const bx = axis === 0 ? mx : mx + u;
 			const by = axis === 1 ? my : axis === 0 ? my + u : my + v;
 			const bz = axis === 2 ? mz : mz + v;
