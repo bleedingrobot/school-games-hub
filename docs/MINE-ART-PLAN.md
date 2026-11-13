@@ -2,7 +2,7 @@
 
 *Written 13 Nov 2026 with [plans/mine-flight/PLAN.md](plans/mine-flight/PLAN.md) stages M4–M5. James paints final art on his gaming PC (ComfyUI) in the evening; the game runs on code colours until then, and they stay as the fallback.*
 
-**Status: nothing painted yet.** The code is ready: drop the tidied files in and they show with no code change.
+**Status: all six rock textures painted and live (13 Nov 2026).** Tiled with the script's `blend` mode (no mirror pattern). Weakest: coal (rock-4) still reads as stacked layers; rock-1/3/6 are cobble-ish. Repaint any one with `paint OUT rock-N --tries 4 --force`, pick, then `tidy --force`.
 
 ## What the game already draws in code (M4, live)
 Lit block rock in each mine's colours, warm lantern glow in rooms, glowing crystals in each mine's colour (pounamu green, gold, embers, lava), a glow-worm ceiling in the glow-worm caves (a few elsewhere), dust in the headlamp, bloom on bright things, and a chase-camera ship. All in `src/games/mine/renderer.ts`, `decor.ts`, `walls.ts`, `palette.ts`.
