@@ -3,10 +3,12 @@ import { useEffect, useRef } from 'react';
 import { PASS_FIRST_GO, TEMPLES, WALLS_PER_TEMPLE } from '../../../shared/glyph/config';
 import { templeOpen, type Progress } from '../../../shared/glyph/play';
 import { GlyphStar, Lock } from './Art';
+import { paint } from './art';
 
-/** Where each temple sits, in percent of the map, wide and narrow. */
-const WIDE = [[9, 76], [27, 42], [45, 72], [60, 30], [78, 62], [92, 22]];
-const NARROW = [[26, 88], [72, 72], [28, 56], [72, 40], [28, 25], [66, 11]];
+/** Where each temple button sits, in percent of the map, wide and narrow (wide: just below the six painted temples, in order). */
+
+const WIDE = [[24, 88], [27, 68], [44, 58], [60, 88], [80, 82], [79, 48]];
+const NARROW = [[26, 88], [72, 74], [28, 60], [72, 46], [28, 32], [66, 16]];
 
 const stars = (best: number): number => (best >= WALLS_PER_TEMPLE ? 3 : best >= PASS_FIRST_GO ? 2 : best > 0 ? 1 : 0);
 
@@ -45,6 +47,7 @@ export function MapScreen({ progress, busy, error, onPlay, onHowTo, onReplayGuid
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
+  const painted = !!paint('back/map');
   return (
     <section className="gg-map" aria-labelledby="gg-map-h">
       <header className="gg-map__top">
@@ -58,10 +61,10 @@ export function MapScreen({ progress, busy, error, onPlay, onHowTo, onReplayGuid
         </div>
       </header>
       {error && <p className="gg-error" role="alert">{error}</p>}
-      <div className="gg-map__land">
-        <Foliage />
-        <PathSvg points={WIDE} className="gg-map__path gg-map__path--wide" />
-        <PathSvg points={NARROW} className="gg-map__path gg-map__path--narrow" />
+      <div className={`gg-map__land${painted ? ' gg-map__land--painted' : ''}`} style={painted ? { ['--gg-bg' as string]: `url(${paint('back/map')})`, ['--gg-bg-s' as string]: `url(${paint('back/map-800') ?? paint('back/map')})` } : undefined}>
+        {!painted && <Foliage />}
+        {!painted && <PathSvg points={WIDE} className="gg-map__path gg-map__path--wide" />}
+        {!painted && <PathSvg points={NARROW} className="gg-map__path gg-map__path--narrow" />}
         {TEMPLES.map((t, i) => {
           const open = templeOpen(progress, t.id);
           const best = progress.best[t.id] ?? 0;

@@ -1,0 +1,142 @@
+[
+ {
+  "slug": "find-the-tiles-equal-to-the-gold-stone",
+  "text": "Find the tiles equal to the gold stone"
+ },
+ {
+  "slug": "pick-the-glyph-that-matches-your-green-tiles",
+  "text": "Pick the glyph that matches your green tiles."
+ },
+ {
+  "slug": "press-light-the-runes",
+  "text": "Press Light the runes."
+ },
+ {
+  "slug": "none-of-the-glyphs-match-your-tiles-look-again",
+  "text": "None of the glyphs match your tiles. Look again."
+ },
+ {
+  "slug": "look-closely-that-glyph-doesn-t-match-your-green-tiles",
+  "text": "Look closely: that glyph doesn't match your green tiles."
+ },
+ {
+  "slug": "look-closely-one-of-the-glyphs-does-match-your-green-tiles",
+  "text": "Look closely: one of the glyphs does match your green tiles."
+ },
+ {
+  "slug": "adding-the-same-number-to-the-top-and-bottom-changes-the-size-times-both-by-the-same-number",
+  "text": "Adding the same number to the top and bottom changes the size. Times both by the same number."
+ },
+ {
+  "slug": "only-the-top-was-multiplied-so-there-are-more-pieces-but-they-are-the-same-size",
+  "text": "Only the top was multiplied, so there are more pieces but they are the same size."
+ },
+ {
+  "slug": "only-the-bottom-was-multiplied-so-each-piece-got-smaller-but-you-still-have-the-same-number-of-pieces",
+  "text": "Only the bottom was multiplied, so each piece got smaller but you still have the same number of pieces."
+ },
+ {
+  "slug": "the-pieces-are-the-same-size-but-you-have-a-different-number-of-them",
+  "text": "The pieces are the same size, but you have a different number of them."
+ },
+ {
+  "slug": "same-number-of-pieces-but-the-pieces-are-a-different-size",
+  "text": "Same number of pieces, but the pieces are a different size."
+ },
+ {
+  "slug": "the-top-and-bottom-need-the-same-number-of-times",
+  "text": "The top and bottom need the same number of times."
+ },
+ {
+  "slug": "the-top-and-bottom-were-not-changed-by-the-same-number-both-need-the-same",
+  "text": "The top and bottom were not changed by the same number. Both need the same."
+ },
+ {
+  "slug": "that-tile-is-worth-the-same-as-the-gold-stone-times-or-divide-both-top-and-bottom-by-the-same-number",
+  "text": "That tile is worth the same as the gold stone. Times or divide both top and bottom by the same number."
+ },
+ {
+  "slug": "temple-passed",
+  "text": "Temple passed!"
+ },
+ {
+  "slug": "so-close-try-again-to-pass-the-temple",
+  "text": "So close. Try again to pass the temple."
+ },
+ {
+  "slug": "this-is-the-gold-stone-1-2-the-tiles-to-light-are-the-ones-worth-the-same",
+  "text": "This is the gold stone: 1/2. The tiles to light are the ones worth the same."
+ },
+ {
+  "slug": "1-3-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "1/3 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "2-3-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "2/3 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "1-4-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "1/4 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "3-4-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "3/4 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "1-5-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "1/5 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "2-5-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "2/5 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "3-5-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "3/5 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "4-5-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "4/5 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "3-8-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "3/8 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "5-6-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "5/6 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "1-6-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "1/6 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "7-8-is-not-worth-1-2-tap-it-again-to-put-it-out",
+  "text": "7/8 is not worth 1/2. Tap it again to put it out."
+ },
+ {
+  "slug": "tap-a-tile-worth-1-2-try-2-4",
+  "text": "Tap a tile worth 1/2. Try 2/4."
+ },
+ {
+  "slug": "tap-a-tile-worth-1-2-try-3-6",
+  "text": "Tap a tile worth 1/2. Try 3/6."
+ },
+ {
+  "slug": "tap-a-tile-worth-1-2-try-4-8",
+  "text": "Tap a tile worth 1/2. Try 4/8."
+ },
+ {
+  "slug": "tap-a-tile-worth-1-2-try-5-10",
+  "text": "Tap a tile worth 1/2. Try 5/10."
+ },
+ {
+  "slug": "tap-a-tile-worth-1-2-try-one",
+  "text": "Tap a tile worth 1/2. Try one."
+ },
+ {
+  "slug": "now-press-light-the-runes",
+  "text": "Now press Light the runes."
+ }
+]

@@ -76,6 +76,7 @@ def spoken(text: str) -> str:
     text = text.replace(': ', '. ')
     for word, say in SAY_AS.items():
         text = text.replace(word, say)
+    text = re.sub(r'(\d+)/(\d+)', r'\1 over \2', text)  # a fraction, 1/2, as "one over two" (Glyph Gates)
     text = re.sub(r'\d+', lambda m: number(int(m.group(0))), text)
     return re.sub(r'(^|[.!?] )([a-z])', lambda m: m.group(1) + m.group(2).upper(), text)
 
