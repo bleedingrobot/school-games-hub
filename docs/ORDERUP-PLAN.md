@@ -1,6 +1,6 @@
 # Order Up!: plan (the first Activity)
 
-**Status: stage 1 (Activities page, hidden behind `ACTIVITIES_ON = false`) merged in PR #492; stage 2 (step engine, `shared/orderup/`) built 13 Nov 2026. Art style: James's "quirky" painted caricature look (13 Nov).** Migration number when building starts: `20261113000700` (free on 13 Nov; check again with `node scripts/migration-numbers.mjs`).
+**Status: levels 1 to 3 LIVE for pupils (14 Nov 2026 NZ).** Stage 1 Activities page (PR #492), stage 2 step engine (PR #494), stage 3a server and database (PR #497, migration `20261114000200_orderup.sql`, function `orderup` deployed), stage 3b screens and teacher part (PR #499), switched on with `ACTIVITIES_ON` and `ORDERUP_ON` (this PR; home card picture is James's round-2 card-1 until the final paint). Next: stage 4 (exponents, all together, new bedmas skill keys). Art style: James's "quirky" painted caricature look (13 Nov). Preview: `npx vite --config vite.orderup-preview.config.ts`.
 
 Source: James's Google Doc "bedmas" (id `1hDLgfY7ewHxfCooOiXqWvUYEX6RivhBYc9JQPzwCYtg`). Game id `orderup`. Thread: "Plan the order of operations activity".
 
