@@ -56,7 +56,15 @@ export interface FrameInput {
   quests?: ReadonlySet<string>;
   /** Trees hiding a seed pod you are looking for (a little twinkle on each). */
   twinkles?: readonly { x: number; y: number }[];
+  /** Hatching spots where an egg in the basket is ready (a glowing ring on the ground). */
+  rings?: readonly { x: number; y: number }[];
 }
+
+/** Which step of a ring's slow glow it is on, so the frame is only drawn again when it changes. */
+export const ringPhase = (now: number) => Math.floor(now / 120) % 16;
+
+/** The ring's glow: pale gold, which shows up on grass, sand, snow and rock alike. */
+const RING_RGB = '253, 224, 71';
 
 /** Which step of its twinkle a pod is on (0 is a rest), so the frame is only drawn again when one changes. */
 export const twinklePhase = (now: number, i: number) => Math.floor((now + i * 600) / 160) % 12;
@@ -158,6 +166,8 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
     layer(above, above.naturalWidth / mapW);
   }
   ctx.imageSmoothingEnabled = false;
+  // Glowing rings where a ready egg can hatch: over the tree tops too, since some spots sit under painted trees.
+  for (const r of f.rings ?? []) drawRing(ctx, Math.round((r.x * TILE + 8) * S - offX), Math.round((r.y * TILE + 11) * S - offY), S, ringPhase(now), RING_RGB);
   // Over the tree tops, so a pod hidden in a tree still shows.
   f.twinkles?.forEach((t, i) => drawTwinkle(ctx, Math.round((t.x * TILE + 8) * S - offX), Math.round((t.y * TILE + 5) * S - offY), S, twinklePhase(now, i)));
 
@@ -165,6 +175,36 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;
     ctx.fillRect(0, 0, W, H);
   }
+}
+
+/** A flat glowing ring on the ground that slowly brightens and dims, with a soft glow inside. */
+function drawRing(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, phase: number, rgb: string) {
+  const glow = 0.55 + 0.45 * Math.sin((phase / 16) * Math.PI * 2);
+  const rx = 9 * S;
+  const ry = 4.5 * S;
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  const fill = ctx.createRadialGradient(x, y, 0, x, y, rx);
+  fill.addColorStop(0, `rgba(${rgb}, ${0.6 * glow})`);
+  fill.addColorStop(0.7, `rgba(${rgb}, ${0.35 * glow})`);
+  fill.addColorStop(1, `rgba(${rgb}, 0)`);
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 2 * S;
+  ctx.strokeStyle = 'rgba(63, 38, 49, 0.45)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + 0.5 * S, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.shadowColor = `rgba(${rgb}, 1)`;
+  ctx.shadowBlur = 6 * S * glow;
+  ctx.strokeStyle = `rgba(${rgb}, ${0.7 + 0.3 * glow})`;
+  ctx.lineWidth = 1.5 * S;
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 /** A four-point sparkle that grows, shines and fades, then rests a moment: pale gold, in pixel-art style (1 art pixel a block, small enough to stay a hint). */

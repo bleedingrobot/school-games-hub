@@ -193,6 +193,20 @@ export function handIn(state: WorldState, opts: QuestOptions): QuestResult {
   return { ok: true, state: out.state, message: ['Job done! Thank you.', ...out.lines].join(' ') };
 }
 
+/**
+ * Hatching spots on this map with an egg in the basket that is ready to hatch there: the map draws a
+ * glowing ring on each, since nothing else marks them (James, 13 Nov 2026).
+ */
+export function hatchRings(state: WorldState, map: GameMap, playDays: number): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  for (const egg of questOf(state).eggs) {
+    const home = HATCH_SPOTS[egg.kind];
+    const spot = home.map === map.id && isReady(egg, playDays) ? map.spots.find((s) => s.name === home.spot) : undefined;
+    if (spot && !out.some((r) => r.x === spot.x && r.y === spot.y)) out.push({ x: spot.x, y: spot.y });
+  }
+  return out;
+}
+
 /** The hatching spot you are standing on or right next to, if any. */
 export function spotHere(state: WorldState, map: GameMap): string | undefined {
   return map.spots.find((s) => Math.abs(s.x - state.x) + Math.abs(s.y - state.y) <= 1 && Object.values(HATCH_SPOTS).some((h) => h.map === map.id && h.spot === s.name))?.name;

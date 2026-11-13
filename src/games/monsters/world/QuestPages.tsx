@@ -89,7 +89,7 @@ export function EggPage({ world, apply, map, opts }: PageProps & { map: GameMap;
                 <span className="mq-pips" aria-label={`${had} of ${need} days`}>
                   {Array.from({ length: need }, (_, i) => <span key={i} className={i < had ? 'is-on' : ''} />)}
                 </span>
-                <small>{ready ? (atSpot ? 'Ready, and this is the place!' : `Ready! It wants ${spot.wants}: ${spot.place}.`) : `Keep playing on different days. ${need - had} to go.`}{egg.warmed ? ' Warmed.' : ''}</small>
+                <small>{ready ? (atSpot ? 'Ready, and this is the place!' : `Ready! It wants ${spot.wants}: ${spot.place}. Look for the glowing ring.`) : `Keep playing on different days. ${need - had} to go.`}{egg.warmed ? ' Warmed.' : ''}</small>
               </div>
               {ready && atSpot && (
                 <button type="button" className="mb-btn mb-btn--primary" onClick={() => apply(hatchHere(world, map, egg.id, opts))}>Hatch</button>
