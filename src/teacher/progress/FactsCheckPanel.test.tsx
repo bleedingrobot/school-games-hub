@@ -15,13 +15,10 @@ const CLASS = [
   pupil('dan', []),
 ];
 
-it('compares first and latest checks for pupils with two, and finds the hardest facts', () => {
+it('compares first and latest checks, finds the hardest facts, and shows each pupil who has done one', async () => {
   const s = classSummary(CLASS);
   expect(s).toMatchObject({ done: 3, notDone: 1, twice: 2, quickBefore: 11, quickNow: 12, better: 1, worse: 1, middleBefore: 3000 });
   expect(s.hardest[0]).toEqual({ prompt: '56 ÷ 7', right: 0 });
-});
-
-it('shows the class change and each pupil who has done a check', async () => {
   render(<FactsCheckPanel classId="c1" load={async () => CLASS} />);
   expect(await screen.findByText(/2 pupils with two or more checks/)).toBeInTheDocument();
   expect(screen.getByText('+4')).toBeInTheDocument();
