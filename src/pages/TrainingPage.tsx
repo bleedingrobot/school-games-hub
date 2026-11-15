@@ -12,7 +12,8 @@ import { fetchMyLadder } from '../data/ladder';
 import { NO_LADDER, type LadderInfo } from '../../shared/maths/place';
 import { needsPlacement, trainingPassedSteps } from '../../shared/training/start';
 import { PlacementFirstCard } from '../training/PlacementFirst';
-import { addAnswer, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
+import { fetchMyFactsCheck, type MyFactsCheck } from '../data/factsCheck';
+import { addAnswer, enqueueCheck, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
 import { GamesGateNote } from '../training/TrainFirst';
 import type { QuickAnswerEvent } from '../subitising/SubitisingApp';
 import { settingsOf, toTrainingAnswer } from '../subitising/saving';
@@ -32,16 +33,18 @@ export default function TrainingPage() {
 const ladderInfo = (): Promise<LadderInfo> => fetchMyLadder().then((d) => d.focus.ladder ?? NO_LADDER, () => NO_LADDER);
 
 function StudentTraining({ player, role }: { player: string; role: string }) {
-  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean; quick?: QuickLoad; placeFirst: boolean } | null>(null);
+  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean; quick?: QuickLoad; placeFirst: boolean; check: MyFactsCheck } | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let current = true;
     // The starting place (the maths warm-up) decides which steps are already behind the student (22 Oct 2026).
-    Promise.all([loadTraining(player), ladderInfo()])
-      .then(([result, ladder]) => {
+    // The facts check never stops Training opening: if it can't be asked, none is due.
+    const check = fetchMyFactsCheck().catch((): MyFactsCheck => ({ due: false, count: 0, last: null }));
+    Promise.all([loadTraining(player), ladderInfo(), check])
+      .then(([result, ladder, factsCheck]) => {
         if (!current) return;
-        setLoaded({ ...result, state: { ...result.state, passedSteps: trainingPassedSteps(ladder) }, placeFirst: needsPlacement(ladder, role) });
+        setLoaded({ ...result, state: { ...result.state, passedSteps: trainingPassedSteps(ladder) }, placeFirst: needsPlacement(ladder, role), check: factsCheck });
       })
       .catch(() => current && setFailed(true));
     return () => {
@@ -57,7 +60,7 @@ function StudentTraining({ player, role }: { player: string; role: string }) {
       </div>
     );
   }
-  return <Loaded player={player} start={loaded.state} offline={loaded.offline} quickStart={loaded.quick} placeFirst={loaded.placeFirst} />;
+  return <Loaded player={player} start={loaded.state} offline={loaded.offline} quickStart={loaded.quick} placeFirst={loaded.placeFirst} check={loaded.check} />;
 }
 
 /** Quick looks as the page keeps it: the saved answers and settings, with the session count worked out from the answers. */
@@ -75,7 +78,7 @@ function subStateFrom(quick: QuickLoad | undefined): SubState {
   };
 }
 
-function Loaded({ player, start, offline, quickStart, placeFirst }: { player: string; start: TrainingState; offline: boolean; quickStart?: QuickLoad; placeFirst: boolean }) {
+function Loaded({ player, start, offline, quickStart, placeFirst, check }: { player: string; start: TrainingState; offline: boolean; quickStart?: QuickLoad; placeFirst: boolean; check: MyFactsCheck }) {
   const [state, setState] = useState(start);
   const stateRef = useRef(start);
   const [quick, setQuick] = useState(() => subStateFrom(quickStart));
@@ -177,6 +180,15 @@ function Loaded({ player, start, offline, quickStart, placeFirst }: { player: st
         }}
         gateNote={<GamesGateNote />}
         placementFirst={placeFirst ? <PlacementFirstCard back="/training" /> : undefined}
+        check={{
+          due: check.due,
+          last: check.last,
+          onDone: (item) => {
+            enqueueCheck(player, item);
+            sinceSend.current = 0;
+            void flushQueue(player).then((ok) => ok && setSent((n) => n + 1));
+          },
+        }}
       />
     </>
   );

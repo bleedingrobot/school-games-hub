@@ -16,6 +16,7 @@ import { isQuickKey, parseKey } from '../subitising/keys';
 import { typingWithSettings, type QuickSettings } from '../subitising/saved';
 import { TRAINING_CONFIG } from './config';
 import { FACT_BY_KEY } from './facts';
+import { checkCheckItem, type CheckItem } from './check';
 
 /**
  * The right answer for a saved key: a times-table fact, or a Quick looks picture (worked out from the key
@@ -77,12 +78,14 @@ export interface SessionItem {
 
 export type SessionKind = 'facts' | 'quick';
 
-export type SaveItem = AnswersItem | StudentItem | SessionItem;
+/** A basic facts check (check.ts): marked on the server from the fixed set. */
+export type SaveItem = AnswersItem | StudentItem | SessionItem | CheckItem;
 
 export type ItemResult =
   | { type: 'answers'; added: number }
   | { type: 'student' }
   | { type: 'session' }
+  | { type: 'check' }
   | { type: 'invalid'; problem: string };
 
 export interface SaveResponse {
@@ -99,7 +102,8 @@ export interface CheckedAnswer extends AnswerInput {
 export type CheckedItem =
   | { type: 'answers'; batchId: string; seed: number; answers: CheckedAnswer[] }
   | { type: 'student'; typing: Record<string, number[]>; autoSubmit: boolean; sessionsDone: number; quick?: QuickSettings }
-  | SessionItem;
+  | SessionItem
+  | CheckItem;
 
 /** What the database stores as the student's `typing`: the typing times, with the Quick looks settings under "q". */
 export const studentTyping = (item: Extract<CheckedItem, { type: 'student' }>): Record<string, unknown> => typingWithSettings(item.typing, item.quick);
@@ -208,5 +212,6 @@ export function checkItem(raw: unknown, now: number): Checked<CheckedItem> {
     if (!isInt(item.at, now - DAY_MS / 2, now + 10 * 60_000)) return { ok: false, problem: 'when' };
     return { ok: true, item: { type: 'session', kind: item.kind, seed: item.seed, at: item.at } };
   }
+  if (item.type === 'check') return checkCheckItem(item, now);
   return { ok: false, problem: 'type' };
 }

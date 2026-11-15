@@ -10,10 +10,12 @@ import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
 import { TrophyWonLine } from '../trophies/TrophyWonLine';
 import { TypingCheck } from './TypingCheck';
+import { FactsCheck } from './FactsCheck';
+import type { CheckItem } from '../../shared/training/check';
 import './training.css';
 import { SceneThumb } from '../subitising/Scene';
 
-type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map' | 'quick';
+type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map' | 'quick' | 'check';
 
 interface Props {
   state: TrainingState;
@@ -41,6 +43,8 @@ interface Props {
   gateNote?: ReactNode;
   /** The maths warm-up comes first (the class uses the ladder and it isn't done): shown instead of Today's session. */
   placementFirst?: ReactNode;
+  /** The basic facts check (every 4 weeks). While it is due it comes before Today's session. Without it there is no check. */
+  check?: { due: boolean; last: { right: number; quick: number } | null; onDone: (item: CheckItem) => void };
 }
 
 function seedFor(today: string, n: number): number {
@@ -49,11 +53,13 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, savedCount, gateNote, placementFirst }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, savedCount, gateNote, placementFirst, check }: Props) {
   const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
   const [seed, setSeed] = useState(1);
+  const [checkDone, setCheckDone] = useState(false);
+  const checkDue = !!check?.due && !checkDone;
 
   const start = () => {
     setSeed(seedFor(today, state.sessionsDone));
@@ -89,11 +95,19 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
               For now, your sessions practise facts you’ve already met, to make them really strong. New facts come back soon.
             </p>
           )}
-          {placementFirst ?? (
-            <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
-              Today’s session
-            </button>
-          )}
+          {placementFirst ??
+            (checkDue ? (
+              <>
+                <p className="tr-note">Time for your facts check: the same facts every few weeks, to see how you’re growing.</p>
+                <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={() => setScreen('check')}>
+                  Facts check
+                </button>
+              </>
+            ) : (
+              <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
+                Today’s session
+              </button>
+            ))}
           {quick && (
             <button type="button" className="tr-btn tr-btn-primary" onClick={() => setScreen('quick')}>
               <SceneThumb className="sb-thumb--inline" />
@@ -142,6 +156,18 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
       )}
       {screen === 'summary' && summary && (
         <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} note={gateNote} />
+      )}
+      {screen === 'check' && check && (
+        <FactsCheck
+          state={state}
+          last={check.last}
+          onState={onState}
+          onDone={(item) => {
+            setCheckDone(true);
+            check.onDone(item);
+          }}
+          onHome={() => setScreen('home')}
+        />
       )}
       {screen === 'map' && <FactsMap state={state} today={today} onBack={() => setScreen('home')} />}
       <TrophyWonLine games={['training']} watch={savedCount ?? null} off={savedCount === undefined} />

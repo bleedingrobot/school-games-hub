@@ -238,3 +238,7 @@ An audit on 22 Oct found that nobody had got past step 1 (×1, ×2, ×5, ×10: 1
 4. **Practice fortnight (James).** When a student starts struggling (under 60% right over their last 12 answers), Training stops pushing them on: for 14 days there are no new facts, and every session is facts they have already met, best known first (`rest`, `isResting`). It starts on the day they begin struggling and isn't stretched while it runs; if they are still struggling afterwards, the next wrong-heavy run starts another. Their Training home says so kindly. A student with no facts yet carries on as usual. Worked out from the saved answers like everything else. On 22 Oct's records 2 students would have been in one.
 
 The `training` server function only bundles the settings file, so redeploying it changes nothing it does; it is redeployed to keep its "up to date" test honest.
+
+## 16. Basic facts check (James, 15 Nov 2026)
+
+Every 4 weeks a pupil in Year 3 and up starts Training with the same 24 facts, so teachers can see whether facts really improve (Training's own numbers can't, since it moves pupils on as they improve). It counts as a session. See [FACTS-CHECK-PLAN.md](FACTS-CHECK-PLAN.md).

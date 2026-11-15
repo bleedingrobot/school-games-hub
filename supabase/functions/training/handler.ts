@@ -20,6 +20,7 @@ export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'too-many' |
 type AnswersItem = Extract<CheckedItem, { type: 'answers' }>;
 type StudentItem = Extract<CheckedItem, { type: 'student' }>;
 type SessionItem = Extract<CheckedItem, { type: 'session' }>;
+type CheckItem = Extract<CheckedItem, { type: 'check' }>;
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
 export interface Services {
@@ -30,6 +31,8 @@ export interface Services {
   recordStudent(player: string, item: StudentItem): Promise<Outcome<null>>;
   /** Counts a finished session (Training before games). Refused if its answers aren't saved. */
   recordSession(player: string, item: SessionItem): Promise<Outcome<unknown>>;
+  /** Saves a basic facts check, marked here (scoreCheck). Saving the same id twice keeps the first. */
+  recordCheck(player: string, item: CheckItem): Promise<Outcome<unknown>>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -83,7 +86,9 @@ async function save(player: string, item: CheckedItem, services: Services): Prom
       ? await services.recordAnswers(player, item)
       : item.type === 'student'
         ? await services.recordStudent(player, item)
-        : await services.recordSession(player, item);
+        : item.type === 'check'
+          ? await services.recordCheck(player, item)
+          : await services.recordSession(player, item);
   if (!saved.ok) return saved.why === 'refused' ? { type: 'invalid', problem: 'refused' } : 'stop';
   return item.type === 'answers' ? { type: 'answers', added: saved.value as number } : { type: item.type };
 }

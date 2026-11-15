@@ -61,7 +61,7 @@ function Preview() {
     </div>
   );
 
-  return <TrainingApp key={run} state={state} onState={setState} today={today} tools={tools} />;
+  return <TrainingApp key={run} state={state} onState={setState} today={today} tools={tools} check={{ due: true, last: { right: 15, quick: 6 }, onDone: (item) => console.log("check", JSON.stringify(item)) }} />;
 }
 
 createRoot(document.getElementById('root')!).render(

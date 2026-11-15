@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+import { CHECK_FACTS, CHECK_VERSION } from '../../../shared/training/check';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Services } from './handler';
 
 const NOW = 1_792_000_000_000;
@@ -14,6 +15,7 @@ function services(over: Partial<Services> = {}) {
     recordAnswers: vi.fn(async (_p, item) => ({ ok: true as const, value: item.answers.length })),
     recordStudent: vi.fn(async () => ({ ok: true as const, value: null })),
     recordSession: vi.fn(async () => ({ ok: true as const, value: null })),
+    recordCheck: vi.fn(async () => ({ ok: true as const, value: null })),
     ...over,
   };
   return s;
@@ -34,7 +36,24 @@ async function send(s: Services, items: unknown[]) {
   return { status: response.status, body: await response.json() };
 }
 
+const check = (over: Record<string, unknown> = {}) => ({
+  type: 'check',
+  id: BATCH,
+  version: CHECK_VERSION,
+  at: NOW - 1000,
+  answers: CHECK_FACTS.map((f) => ({ given: f.answer, ms: 2000, typingMs: 900 })),
+  ...over,
+});
+
 describe('the training server function', () => {
+  it('saves a basic facts check, and drops one that is the wrong length or claims too much typing time', async () => {
+    const s = services();
+    const tooMuchTyping = check({ answers: CHECK_FACTS.map((f) => ({ given: f.answer, ms: 2000, typingMs: 5000 })) });
+    const { body } = await send(s, [check(), check({ answers: [] }), tooMuchTyping]);
+    expect(body.results.map((r: { type: string }) => r.type)).toEqual(['check', 'invalid', 'invalid']);
+    expect(vi.mocked(s.recordCheck).mock.calls[0][1].answers).toHaveLength(CHECK_FACTS.length);
+  });
+
   it('turns away a request with no signed-in student, a bad request, or too many requests', async () => {
     const handle = makeHandler(services());
     expect((await handle(post({ items: [] }, null))).status).toBe(401);

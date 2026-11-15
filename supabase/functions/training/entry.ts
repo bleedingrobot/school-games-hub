@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { studentTyping } from '../../../shared/training/save';
+import { CHECK_FACTS, scoreCheck, thinkMsOf } from '../../../shared/training/check';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler, SAVE_LIMITS, SESSION_MIN_ANSWERS, type Outcome } from './handler';
 
@@ -61,5 +62,19 @@ Deno.serve(
         at: item.at,
         min_answers: SESSION_MIN_ANSWERS[item.kind],
       }),
+    recordCheck: (player, item) => {
+      const score = scoreCheck(item.answers);
+      return call('record_facts_check', {
+        player,
+        check_id: item.id,
+        version: item.version,
+        at: item.at,
+        right_count: score.right,
+        quick_count: score.quick,
+        middle_ms: score.middleMs,
+        marks: score.marks,
+        answers: item.answers.map((a, i) => ({ q: CHECK_FACTS[i].prompt, given: a.given, ms: a.ms, think: thinkMsOf(a) })),
+      });
+    },
   }),
 );

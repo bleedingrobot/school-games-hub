@@ -46,7 +46,7 @@ const BUDGET: Record<string, number> = {
   'chess+checkers': 16,
   maths: 27,
   'src/pages': 29, // 25, plus 4 for the profile page (docs/TESTING.md, 12 Nov 2026)
-  'src/teacher': 25,
+  'src/teacher': 26, // 25, plus 1 for the basic facts check panel (15 Nov 2026)
   'src/data': 20,
   'src/App': 6,
   'site parts': 8,
@@ -57,6 +57,7 @@ const BUDGET: Record<string, number> = {
   'src/games top level': 10,
   kit: 14, // shared/kit: the junior games' shared rules
   badge: 8,
+  training: 10, // 8, plus 2 for the basic facts check (15 Nov 2026)
 };
 
 function testFiles(dir: string): string[] {
