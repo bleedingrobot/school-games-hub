@@ -35,6 +35,7 @@ import {
   type SessionKind,
   type StudentItem,
 } from '../../shared/training/save';
+import type { CheckItem } from '../../shared/training/check';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 
@@ -112,6 +113,16 @@ export function enqueueSession(player: string, kind: SessionKind, seed: number, 
   sealPending(player);
   set(queueKey(player), [...queuedItems(player), { type: 'session', kind, seed, at }].slice(-MAX_QUEUE));
   rememberFinished(player, at);
+}
+
+/**
+ * A finished basic facts check (shared/training/check.ts). It also counts as a finished session for Training before games,
+ * on the server and on this device.
+ */
+export function enqueueCheck(player: string, item: CheckItem) {
+  sealPending(player);
+  set(queueKey(player), [...queuedItems(player), item].slice(-MAX_QUEUE));
+  rememberFinished(player, item.at);
 }
 
 const finishedKey = (player: string) => `sgh-training-finished:${player}`;

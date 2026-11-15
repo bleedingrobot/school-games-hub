@@ -180,6 +180,51 @@ function typingWithSettings(typing, quick) {
 }
 //#endregion
 //#region shared/training/config.ts
+/** Fastest first. A thinking time of exactly 1500 ms is "Quick thinking", not "Just know it!". */
+const BANDS = [
+	{
+		id: "bright",
+		label: "Just know it!",
+		upToMs: 1500,
+		bg: "#2fd35a",
+		fg: "#053b16"
+	},
+	{
+		id: "light",
+		label: "Quick thinking",
+		upToMs: 3500,
+		bg: "#a8e6a1",
+		fg: "#11411a"
+	},
+	{
+		id: "yellow",
+		label: "Getting there",
+		upToMs: 5e3,
+		bg: "#ffe066",
+		fg: "#4a3b00"
+	},
+	{
+		id: "orange",
+		label: "Working it out",
+		upToMs: 8e3,
+		bg: "#ffc58a",
+		fg: "#5a2f00"
+	},
+	{
+		id: "blue",
+		label: "Still learning",
+		upToMs: 1e4,
+		bg: "#9ec9f5",
+		fg: "#0f3057"
+	},
+	{
+		id: "grey",
+		label: "New to me",
+		upToMs: Infinity,
+		bg: "#b4bfcf",
+		fg: "#26303f"
+	}
+];
 const TRAINING_CONFIG = {
 	/** How many of the latest answers decide its colour (the middle of these). */
 	colourFromLastAnswers: 3,
@@ -392,6 +437,137 @@ const FAMILIES = buildFamilies();
 const FACTS = buildFacts();
 const FACT_BY_KEY = new Map(FACTS.map((f) => [f.key, f]));
 new Map(FAMILIES.map((f) => [f.key, f]));
+/** Digits in an answer, 1 to 3. */
+const digitsOf = (n) => String(Math.abs(n)).length;
+BANDS.length - 1;
+/** The most typing time that can be taken off an answer this many digits long. */
+function typingCeilingMs(digits, config = TRAINING_CONFIG) {
+	const d = Math.min(Math.max(digits, 1), 3);
+	return config.typing.ceilingMs[d];
+}
+const mul = (a, b) => ({
+	prompt: `${a} × ${b}`,
+	answer: a * b
+});
+const div = (p, d) => ({
+	prompt: `${p} ÷ ${d}`,
+	answer: p / d
+});
+/**
+* 16 times and 8 division facts, easy to hard across the tables taught in Years 3 to 6 (×2 ×5 ×10, then ×3 ×4 ×8, ×6 ×9, ×7,
+* ×11 ×12). Hard facts are in on purpose: a Year 4 who can't do 7 × 8 yet has room to show growth.
+*/
+const CHECK_FACTS = [
+	mul(2, 8),
+	mul(5, 7),
+	mul(10, 6),
+	mul(5, 9),
+	mul(3, 7),
+	mul(4, 6),
+	mul(3, 9),
+	mul(8, 8),
+	mul(6, 7),
+	mul(6, 9),
+	mul(9, 9),
+	mul(7, 8),
+	mul(7, 7),
+	mul(8, 9),
+	mul(11, 4),
+	mul(12, 6),
+	div(20, 5),
+	div(18, 3),
+	div(32, 4),
+	div(42, 6),
+	div(56, 7),
+	div(63, 9),
+	div(72, 8),
+	div(48, 12)
+];
+const CHECK_CONFIG = {
+	/** A pupil is asked again this many days after their last check. */
+	everyDays: 28,
+	/** Right with less thinking time than this (ms) counts as "quick": the "Quick thinking" line in Training (config.ts BANDS). */
+	quickMs: 3500,
+	/** A question moves on by itself after this long, as not answered. */
+	questionMs: 3e4,
+	/** The website says who is due (my_facts_check()); pupils below this school year aren't asked. */
+	fromYear: 3
+};
+function thinkMsOf(a) {
+	return Math.max(0, a.ms - a.typingMs);
+}
+/** Marks a check against CHECK_FACTS. What the browser thinks was right is never used. */
+function scoreCheck(answers) {
+	const marks = CHECK_FACTS.map((f, i) => {
+		const a = answers[i];
+		if (!a || a.given !== f.answer) return 0;
+		return thinkMsOf(a) < CHECK_CONFIG.quickMs ? 2 : 1;
+	});
+	const times = answers.filter((_, i) => marks[i] > 0).map(thinkMsOf).sort((x, y) => x - y);
+	return {
+		right: marks.filter((m) => m > 0).length,
+		quick: marks.filter((m) => m === 2).length,
+		middleMs: times.length ? times[Math.floor(times.length / 2)] : null,
+		marks
+	};
+}
+const UUID$1 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DAY_MS$1 = 864e5;
+const isInt$1 = (v, min, max) => typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
+/** Checks a check item from the queue. A bad one is dropped for good, so the problem is a short word for the logs. */
+function checkCheckItem(raw, now) {
+	if (typeof raw.id !== "string" || !UUID$1.test(raw.id)) return {
+		ok: false,
+		problem: "check-id"
+	};
+	if (raw.version !== 1) return {
+		ok: false,
+		problem: "check-version"
+	};
+	if (!isInt$1(raw.at, now - 7 * DAY_MS$1, now + 6e5)) return {
+		ok: false,
+		problem: "when"
+	};
+	if (!Array.isArray(raw.answers) || raw.answers.length !== CHECK_FACTS.length) return {
+		ok: false,
+		problem: "answers"
+	};
+	const answers = [];
+	for (let i = 0; i < raw.answers.length; i++) {
+		const a = raw.answers[i];
+		if (typeof a !== "object" || a === null) return {
+			ok: false,
+			problem: "answer-shape"
+		};
+		if (a.given !== null && !isInt$1(a.given, 0, 999)) return {
+			ok: false,
+			problem: "given"
+		};
+		if (!isInt$1(a.ms, 0, CHECK_CONFIG.questionMs + 5e3)) return {
+			ok: false,
+			problem: "time"
+		};
+		if (!isInt$1(a.typingMs, 0, typingCeilingMs(digitsOf(CHECK_FACTS[i].answer)))) return {
+			ok: false,
+			problem: "typing"
+		};
+		answers.push({
+			given: a.given,
+			ms: a.ms,
+			typingMs: a.typingMs
+		});
+	}
+	return {
+		ok: true,
+		item: {
+			type: "check",
+			id: raw.id.toLowerCase(),
+			version: 1,
+			at: raw.at,
+			answers
+		}
+	};
+}
 //#endregion
 //#region shared/training/save.ts
 /**
@@ -602,6 +778,7 @@ function checkItem(raw, now) {
 			}
 		};
 	}
+	if (item.type === "check") return checkCheckItem(item, now);
 	return {
 		ok: false,
 		problem: "type"
@@ -735,7 +912,7 @@ function makeHandler(services) {
 	};
 }
 async function save(player, item, services) {
-	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : item.type === "student" ? await services.recordStudent(player, item) : await services.recordSession(player, item);
+	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : item.type === "student" ? await services.recordStudent(player, item) : item.type === "check" ? await services.recordCheck(player, item) : await services.recordSession(player, item);
 	if (!saved.ok) return saved.why === "refused" ? {
 		type: "invalid",
 		problem: "refused"
@@ -809,6 +986,25 @@ Deno.serve(makeHandler({
 		seed: item.seed,
 		at: item.at,
 		min_answers: SESSION_MIN_ANSWERS[item.kind]
-	})
+	}),
+	recordCheck: (player, item) => {
+		const score = scoreCheck(item.answers);
+		return call("record_facts_check", {
+			player,
+			check_id: item.id,
+			version: item.version,
+			at: item.at,
+			right_count: score.right,
+			quick_count: score.quick,
+			middle_ms: score.middleMs,
+			marks: score.marks,
+			answers: item.answers.map((a, i) => ({
+				q: CHECK_FACTS[i].prompt,
+				given: a.given,
+				ms: a.ms,
+				think: thinkMsOf(a)
+			}))
+		});
+	}
 }));
 //#endregion
