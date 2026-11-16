@@ -26,15 +26,16 @@ export const hasMap = () => !!sceneArt('map').wide;
 
 /**
  * The village: the kingdom map as big as the screen allows, every place a label on it (a real button, with its letter
- * key), your hero standing by the fountain (tap to see your hero), and whatever is passed in (the purse, notes) on top.
+ * key), your hero standing by the fountain (tap to see your hero), whatever is passed in (the purse, the help button) on top, and `below` (notes) under it.
  */
-export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, busy, children }: {
-  onGo: (spot: MapSpot) => void; dragonReady: boolean; forestOpen: boolean; heroClass: HeroClass; look?: string; busy: boolean; children?: ReactNode;
+export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, busy, children, below }: {
+  onGo: (spot: MapSpot) => void; dragonReady: boolean; forestOpen: boolean; heroClass: HeroClass; look?: string; busy: boolean; children?: ReactNode; below?: ReactNode;
 }) {
   const art = sceneArt('map');
   if (!art.wide) return null;
   return (
     <div className="lord-map">
+      <div className="lord-map__frame">
       <div className="lord-map__scroll">
         <div className="lord-map__paper">
           <picture aria-hidden="true">
@@ -54,13 +55,15 @@ export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, bus
               </button>
             );
           })}
-          <button type="button" className="lord-map__hero" style={{ left: '56%', top: '66%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
+          <button type="button" className="lord-map__hero" style={{ left: '45%', top: '73%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
             <HeroSprite heroClass={heroClass} look={look} scale={4} label="" />
             <span><kbd>Y</kbd>You</span>
           </button>
         </div>
       </div>
       {children}
+      </div>
+      {below}
     </div>
   );
 }

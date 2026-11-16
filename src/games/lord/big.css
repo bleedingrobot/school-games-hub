@@ -149,7 +149,7 @@
 .lord-map__hero > span { display: inline-flex; gap: 4px; align-items: center; margin-top: -4px; padding: 0 8px 0 3px; border-radius: 6px; border: 1px solid var(--lord-gold); background: rgba(20, 12, 6, 0.86); color: #ffe9b8; font-family: var(--lord-display); font-size: 0.95rem; }
 .lord-map__hero:hover .lord-art { filter: drop-shadow(0 0 16px rgba(255, 220, 140, 1)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.8)); }
 
-/* Title and purse on the top of the map, notes and the help button on its foot */
+/* Title and purse on the top of the map, the help button on its foot, notes just under it so no place is covered */
 .lord-map__top { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; padding: 8px 12px 28px; pointer-events: none; background: linear-gradient(rgba(8, 5, 2, 0.75), rgba(8, 5, 2, 0)); }
 .lord .lord-map__top h1:not(.question__title) { font-size: clamp(1.3rem, 2.6vw, 2rem); }
 .lord-map__top h1 small { font-family: var(--lord-body); font-size: 0.5em; font-style: italic; color: var(--lord-cream); opacity: 0.8; }
@@ -157,9 +157,10 @@
 .lord-purse li { padding: 2px 12px; border-radius: 999px; background: rgba(15, 9, 4, 0.82); border: 1px solid rgba(224, 178, 90, 0.7); color: var(--lord-cream); font-size: clamp(0.9rem, 1.4vw, 1.05rem); white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
 .lord-purse strong { color: #ffd36b; }
 .lord-purse__stars { color: #ffd36b; }
-.lord-map__notes { position: absolute; left: 50%; bottom: 12px; z-index: 4; transform: translateX(-50%); width: min(620px, calc(100% - 120px)); display: grid; gap: 6px; }
+.lord-map__notes { display: grid; gap: 6px; padding: 8px; }
 .lord-map__notes p { margin: 0; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--lord-gold); background: rgba(20, 12, 6, 0.9); color: #ffe9b8; font-weight: 700; text-align: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7); }
 .lord-map__notes .lord-btn { min-height: 36px; padding: 2px 12px; margin-left: 6px; }
+.lord-map__frame { position: relative; }
 .lord-map__corner { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
 .lord-map__help { width: 48px; height: 48px; padding: 0; border-radius: 50%; text-align: center; font-family: var(--lord-display); font-size: 1.6rem; }
 @media (prefers-reduced-motion: no-preference) {
@@ -174,9 +175,7 @@
   .lord-map__paper { min-width: 760px; width: 760px; }
   .lord-map__spot > span { font-size: 0.95rem; }
   .lord-map__top { padding: 6px 8px 24px; }
-  .lord-map__notes { position: static; width: auto; transform: none; padding: 8px; }
-  .lord-map__corner { bottom: auto; top: calc(760px * 9 / 16 - 58px); }
-  .lord-map__corner { right: 8px; }
+  .lord-map__corner { right: 8px; bottom: 8px; }
 }
 
 /* ---------------------------------------------------------------- every place: a big painting with its name, Back and

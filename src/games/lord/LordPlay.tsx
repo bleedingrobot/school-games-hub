@@ -622,13 +622,13 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
   if (state.classOpen && hero.forestWins === 0 && hero.exp === 0) notes.push(<>A new season has begun, and everyone starts again. <button type="button" className="lord-btn lord-btn--glass" onClick={onClass}>Pick a class</button></>);
   if (!hero.look) notes.push(<>New: you can choose how your hero looks! <button type="button" className="lord-btn lord-btn--glass" onClick={onLook}>Choose my look</button></>);
   if (!road && state.season.daysLeft <= 4) notes.push(<>{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</>);
+  const below = notes.length > 0 && <div className="lord-map__notes">{notes.map((n, i) => <p key={i}>{n}</p>)}</div>;
   const over = (
     <>
       <div className="lord-map__top">
         <h1>Dragon Maths{trial && <small> (trial)</small>}</h1>
         <Purse />
       </div>
-      {notes.length > 0 && <div className="lord-map__notes">{notes.map((n, i) => <p key={i}>{n}</p>)}</div>}
       <div className="lord-map__corner">
         {tools && <button type="button" className="lord-btn lord-btn--glass" onClick={() => onPlace('tools')}><kbd>X</kbd> Test tools</button>}
         <button type="button" className="lord-btn lord-btn--glass lord-map__help" onClick={() => onPlace('howto')} aria-label="How to play" aria-keyshortcuts="?">?</button>
@@ -641,6 +641,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
         <KingdomMap
           heroClass={hero.heroClass} look={hero.look} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0 || !!state.unlimited}
           onGo={(spot) => (spot === 'forest' ? onForest() : spot === 'dragon' ? onDragon() : onPlace(spot))}
+          below={below}
         >{over}</KingdomMap>
       ) : (
         <Stage scene="village" size="normal">
