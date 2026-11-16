@@ -4,7 +4,21 @@
  * constants, so they cannot drift.
  */
 import { ARENA_FIGHTS_PER_DAY, MAX_LEVEL, FOREST_FIGHTS_PER_DAY, SKILL_USES_PER_DAY } from '../../../shared/lord/data';
+import { useState } from 'react';
 import { Place } from './Places';
+import { setShortcuts, shortcutsOn } from './shortcuts';
+
+/** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
+function KeysSwitch() {
+  const [on, setOn] = useState(shortcutsOn);
+  return (
+    <p className="lord-soft">
+      <label>
+        <input type="checkbox" checked={on} onChange={(e) => { setShortcuts(e.target.checked); setOn(e.target.checked); }} /> Letter-key shortcuts (F, S, A…). Turn off if keys get pressed by accident.
+      </label>
+    </p>
+  );
+}
 
 export function HowToPlayBody() {
   return (
@@ -46,11 +60,16 @@ export function HowToPlayBody() {
 
       <h3>Keys</h3>
       <p>
-        In the village, press the letter on a button (F for the forest, S for the shop, and so on). <kbd>Esc</kbd> goes back. In a fight, number keys pick moves. In a question, type the answer and press Enter. The whole game works with only a keyboard or by tapping.
+        In the village, press the letter by a place on the map (F for the forest, S for the shop, Y for your hero, and so on), or tap it. <kbd>Esc</kbd> goes back. In a fight, number keys pick moves. In a question, type the answer and press Enter. The whole game works with only a keyboard or by tapping.
       </p>
+
+      <KeysSwitch />
 
       <h3>Seasons</h3>
       <p>Every five weeks there is a new season and everyone starts again at level 1. Your stars, the Hall of Heroes and your achievements stay. Fights you win against the computer earn hub points, within the same daily limit as every other game.</p>
+
+      <h3>Thanks</h3>
+      <p className="lord-soft">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</p>
     </div>
   );
 }
