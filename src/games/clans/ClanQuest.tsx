@@ -9,14 +9,14 @@ import type { Draft } from '../../../shared/clans/create';
 import { YEAR_BANDS, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
 import { Creator } from './Creator';
-import { Fight, type CryChecked } from './Fight';
+import { Fight, type BestNote, type CryChecked } from './Fight';
 import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { MonsterWarning, MonsterWeek, MonsterResult, type MonsterTry } from './MonsterWeek';
 import { finishPracticeTry, startPracticeTry } from './monsterPlay';
 import { Repick } from './Repick';
-import { Mines, Results } from './Mines';
+import { Mines, Results, depthArt } from './Mines';
 import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome } from './places';
 import { ClassRaid } from './ClassRaid';
 import { News } from './News';
@@ -137,6 +137,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [newSeasonNotice, setNewSeasonNotice] = useState(false);
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
+  /** The last fight's best hit, for the results screen. */
+  const bestNote = useRef<BestNote | undefined>(undefined);
   /** When a new screen opens, focus its heading so a keyboard or screen-reader user starts at the top of it (not on a button that is gone). */
   const root = useRef<HTMLDivElement>(null);
   const firstScreen = useRef(true);
@@ -418,7 +420,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const repicking = !!session && session.clan.repick !== undefined && session.clan.repick === session.clan.season;
   // The title sits on the top left of the screen's painting and the gold, followers and fame on its top right (James, 17 Nov 2026).
   // Screens with no painting keep it as a plain line above.
-  const onPicture = loading === null && screen !== 'fight' && (session && screen === 'quest' ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
+  const onPicture = loading === null && screen !== 'fight' && (session && (screen === 'quest' || screen === 'results') ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
   const top = (over: boolean) => (
     <header className={over ? 'cq-top cq-top--over' : 'cq-top'}>
       <h1>Clan Quest</h1>
@@ -432,7 +434,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       {/* In a fight the picture gets the room: no title, gold, followers or fame (the fight names itself for screen readers). */}
       {screen !== 'fight' && !onPicture && top(false)}
       {/* The quest is one painted stage of its own (Quest.tsx), so no painting across the top. */}
-      {screen !== 'quest' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} top={onPicture ? top(true) : undefined} />}
+      {screen !== 'quest' && screen !== 'results' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} top={onPicture ? top(true) : undefined} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
@@ -529,13 +531,14 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} top={onPicture ? top(true) : undefined} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={finish} />}
+          {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={(f, b) => { bestNote.current = b; finish(f); }} />}
           {screen === 'fight' && server && activeFight && (
-            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />
+            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={(_f, b) => { bestNote.current = b; finishServer(); }} />
           )}
           {screen === 'results' && summary && (
             <Results
               summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')}
+              best={bestNote.current} top={top(true)} art={monsterDone && afterFight ? sceneArt(afterFight) : depthArt(session.depth)}
               extra={monsterDone && <MonsterResult outcome={monsterDone} session={session} />}
               onMines={!monsterDone && (session.fightsLeft > 0 || session.unlimitedToday === true) && session.clan.members.some((m) => !m.knockedOut) ? () => setScreen('mines') : undefined}
             />

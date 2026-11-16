@@ -6,7 +6,10 @@ import { fightsLabel } from './fightView';
 import { useEffect, useRef, useState } from 'react';
 import { averageLevel, hintFor, type FightSummary, type Session } from './session';
 import { depthHint } from '../../../shared/clans/character';
-import { mineArt, sceneArt, zoneScene } from './art';
+import { memberArt, memberThumb, mineArt, sceneArt, zoneScene } from './art';
+import { lookOf } from '../../../shared/clans/looks';
+import { Portrait } from './Sprite';
+import type { BestNote } from './Fight';
 import { ZONE_TEXT, depthName, zoneForDepth } from './text';
 import type { Member } from '../../../shared/clans/types';
 
@@ -26,6 +29,12 @@ export function recommendedDepth(clan: Session['clan']): number {
  * recommended depth unless the clan already chose one that is just right or tough. Keys: Enter goes in, B takes on the
  * boss, the arrow keys (or - and +) change the depth.
  */
+/** The painting of a mine depth, or its zone's painting when that depth has none of its own. */
+export function depthArt(depth: number): { wide?: string; small?: string } {
+  const own = mineArt(depth);
+  return own.wide ? own : sceneArt(zoneScene(zoneForDepth(depth)));
+}
+
 export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Session; onDepth: (d: number) => void; onGo: (boss: boolean) => void; onBack: () => void; locked?: string }) {
   const hint = hintFor(session);
   const boss = bossAt(session.depth);
@@ -67,8 +76,7 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   const zone = zoneForDepth(session.depth);
-  const own = mineArt(session.depth);
-  const art = own.wide ? own : sceneArt(zoneScene(zone));
+  const art = depthArt(session.depth);
   return (
     <section className="cq-mines" aria-label="The Mines">
       <div className={`cq-mines__stage ${art.wide ? '' : 'is-plain'}`}>
@@ -124,13 +132,31 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
  * How the fight went, member by member. `onMines` is given only when the clan can fight again today.
  * Keys: M goes back to the Mines, C back to the clan (not while typing in a box).
  */
-export function Results({ summary, members, fame = 0, extra, onDone, onMines }: { summary: FightSummary; members: Member[]; fame?: number; extra?: React.ReactNode; onDone: () => void; onMines?: () => void }) {
+/** Where the coins fly to from the middle of the clan, as [x, y] in percent of the stage (fixed, so no shuffle on re-render). */
+const COINS: [number, number][] = [[-30, -34], [-18, -48], [-6, -40], [8, -52], [20, -38], [32, -46], [-38, -18], [40, -22], [-24, -60], [26, -62], [0, -66], [-12, -28], [14, -30]];
+
+/**
+ * After a fight: the mine's painting fills the stage, the clan stands on it and the rewards burst over them (experience on
+ * each member, gold, followers and fame over the clan), with the buttons on the painting (James, 17 Nov 2026).
+ * Enter goes back to the Mines when that's open; C goes back to the clan.
+ */
+export function Results({ summary, members, fame = 0, extra, onDone, onMines, art, top, best }: {
+  summary: FightSummary; members: Member[]; fame?: number; extra?: React.ReactNode; onDone: () => void; onMines?: () => void;
+  /** The painting behind it all (the mine depth the clan fought at). */
+  art?: { wide?: string; small?: string };
+  /** The game's title and the clan's gold, followers and fame, over the top of the painting. */
+  top?: React.ReactNode;
+  /** The fight's best hit, slammed in under the title. */
+  best?: BestNote;
+}) {
   const keys = useRef<(e: KeyboardEvent) => void>(() => {});
   keys.current = (e: KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey || e.altKey || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     const k = e.key.toLowerCase();
-    if (k === 'm' && onMines) onMines();
-    else if (k === 'c') onDone();
+    // Enter on a focused button is that button's own click, so leave it alone.
+    if (k === 'enter' && e.target instanceof HTMLButtonElement) return;
+    if ((k === 'enter' || k === 'm') && onMines) onMines();
+    else if (k === 'c' || (k === 'enter' && !onMines)) onDone();
     else return;
     e.preventDefault();
   };
@@ -139,22 +165,67 @@ export function Results({ summary, members, fame = 0, extra, onDone, onMines }: 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+  const won = summary.result === 'won';
+  const title = won ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe';
+  const rewards = [
+    { cls: 'gold', text: `+${summary.gold} gold`, show: summary.gold > 0 },
+    { cls: 'followers', text: `+${summary.followers} followers`, show: summary.followers > 0 },
+    { cls: 'fame', text: `+${fame} fame`, show: fame > 0 },
+  ].filter((r) => r.show);
+  const step = (i: number) => ({ '--d': `${(1.3 + i * 0.35).toFixed(2)}s` }) as React.CSSProperties;
   return (
-    <section className="cq-results" aria-label="Fight results">
-      <h2>{summary.result === 'won' ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe'}</h2>
+    <>
+      <section className={`cq-vstage ${won ? 'is-won' : 'is-plain'} ${art?.wide ? '' : 'is-bare'}`} aria-label="Fight results">
+        {art?.wide && (
+          <img className="cq-vstage__pic" src={art.wide} srcSet={art.small && art.small !== art.wide ? `${art.small} 800w, ${art.wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" />
+        )}
+        <div className="cq-vstage__glow" aria-hidden="true" />
+        {won && <div className="cq-vstage__rays" aria-hidden="true" />}
+        {top}
+        <h2 className="cq-vstage__title">{title}</h2>
+        {best && (
+          <div className={`cq-vbest ${best.isNew ? 'is-new' : ''}`} role="status">
+            <span className="cq-vbest__burst" aria-hidden="true" />
+            <span className="cq-vbest__label">Best hit</span>
+            <strong className="cq-vbest__num">{best.best.amount}!</strong>
+            <span className="cq-vbest__text">{best.best.text}</span>
+            {best.isNew ? <span className="cq-vbest__new">★ Your best hit today! ★</span> : best.before && <span className="cq-vbest__old">Today's best is still {best.before.amount}</span>}
+          </div>
+        )}
+        {/* The rewards burst out over the clan. Screen readers get the plain line below instead. */}
+        <div className="cq-vstage__pops" aria-hidden="true">
+          {summary.gold > 0 && COINS.map(([x, y], i) => (
+            <span key={i} className="cq-vcoin" style={{ '--x': `${x}%`, '--y': `${y}%`, '--i': i } as React.CSSProperties} />
+          ))}
+          {rewards.map((r, i) => (
+            <span key={r.cls} className={`cq-vpop cq-vpop--${r.cls}`} style={step(members.length + i)}>{r.text}</span>
+          ))}
+        </div>
+        <ul className="cq-vstage__clan">
+          {members.map((m, i) => {
+            const pic = memberArt(m.race, m.cls, lookOf(m)) ?? memberThumb(m.race, m.cls, lookOf(m));
+            return (
+              <li key={m.name} className={m.knockedOut ? 'is-out' : undefined} style={step(i)}>
+                <span className="cq-vxp" aria-hidden="true">+{summary.xp[i]} XP</span>
+                {summary.levels[i] > 0 && <span className="cq-vlevel" aria-hidden="true">Level up!</span>}
+                {pic ? <img className="cq-vstage__hero" src={pic} alt="" /> : <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={6} />}
+                <span className="cq-vstage__name">{m.name}</span>
+                <span className="sr-only">{m.name}: +{summary.xp[i]} experience{summary.levels[i] > 0 && `. Level up! Now level ${m.level}`}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="cq-vstage__foot">
+          <p className="cq-vstage__sum" style={step(members.length + rewards.length)}>
+            {rewards.length ? rewards.map((r) => <strong key={r.cls} className={`cq-vchip cq-vchip--${r.cls}`}>{r.text}</strong>) : <span>No gold this time.</span>}
+          </p>
+          <div className="cq-vstage__row">
+            {onMines && <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onMines}><kbd>Enter</kbd> Back to the Mines</button>}
+            <button type="button" className={onMines ? 'cq-btn' : 'cq-btn cq-btn--hot'} autoFocus={!onMines} onClick={onDone}><kbd>{onMines ? 'C' : 'Enter'}</kbd> Back to the clan</button>
+          </div>
+        </div>
+      </section>
       {extra}
-      <p>Gold: <strong>+{summary.gold}</strong>{summary.followers > 0 && <> · Followers: <strong>+{summary.followers}</strong></>}{fame > 0 && <> · Fame: <strong>+{fame}</strong></>}</p>
-      <ul className="cq-xp">
-        {members.map((m, i) => (
-          <li key={m.name}>
-            {m.name}: +{summary.xp[i]} experience{summary.levels[i] > 0 && <strong className="cq-levelup"> · Level up! Now level {m.level}</strong>}
-          </li>
-        ))}
-      </ul>
-      <div className="cq-actions">
-        {onMines && <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onMines}><kbd>M</kbd> Back to the Mines</button>}
-        <button type="button" className={onMines ? 'cq-btn' : 'cq-btn cq-btn--hot'} autoFocus={!onMines} onClick={onDone}><kbd>C</kbd> Back to the clan</button>
-      </div>
-    </section>
+    </>
   );
 }
