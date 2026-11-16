@@ -173,7 +173,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
                 <ol className="cq-line" aria-label={`${m.name}'s ${word.toLowerCase()} line`}>
                   {line.map((i) => (
                     <li key={i.name} className={i.tier === tier ? 'cq-line__worn' : i.tier === tier + 1 ? 'cq-line__next' : i.tier < tier ? 'cq-line__past' : undefined}>
-                      <ItemSprite name={i.name} kind={kind} scale={2} />
+                      <ItemSprite name={i.name} kind={kind} scale={3} />
                       <span className="cq-line__text">
                         <span><strong>{i.name}</strong> <small className="cq-soft">{i.tier === tier ? 'wearing' : i.tier === tier + 1 ? 'next' : `tier ${i.tier}`}</small></span>
                         {i.tier >= tier && <Gains member={m} item={i} />}
