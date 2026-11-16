@@ -951,3 +951,44 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-town__label { background: rgba(12, 10, 8, 0.5); border-color: rgba(176, 138, 74, 0.7); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); text-shadow: 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, 0.8); }
 .cq-town__spot[data-place='monster'].cq-town__spot--hot .cq-town__label { background: rgba(122, 28, 14, 0.62); }
 .cq-town__spot:hover:not(:disabled) .cq-town__label, .cq-town__spot:focus-visible .cq-town__label { background: #6b4a16; }
+
+/* The quest as one painted stage (Quest.tsx): the painting fills it, the story and buttons sit on its lower part, a puzzle pops up over it. */
+.cq-qstage { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: clamp(440px, 72vh, 700px); margin: 0 0 10px; padding: 0; border-radius: 2px; outline: 2px solid var(--f-edge); outline-offset: 2px; background: var(--f-deep); isolation: isolate; }
+.cq-qstage__pic { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+.cq-qstage__glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0, rgba(0, 0, 0, 0) 18%, rgba(0, 0, 0, 0) 42%, rgba(6, 5, 4, 0.82) 72%, rgba(6, 5, 4, 0.94) 100%); box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.6); }
+.cq-qstage__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 0; }
+.cq-qstage__top h2 { margin: 0; color: #ffd36b; font-size: clamp(1.4rem, 3.4vw, 2.2rem); text-shadow: 0 3px 0 #000, 0 0 18px rgba(0, 0, 0, 0.9); }
+.cq-qstage__top .cq-btn { min-height: 40px; padding: 2px 12px; background: rgba(20, 18, 16, 0.75); }
+.cq-qstage__test { margin: 4px 12px 0; text-shadow: 0 1px 2px #000; }
+.cq-qstage__box { margin-top: auto; padding: 14px clamp(12px, 3vw, 28px) 16px; color: #f3e6c8; text-shadow: 0 2px 3px #000; }
+.cq-qstage__box p { margin: 0 0 8px; max-width: 62ch; font-size: clamp(1.05rem, 2.1vw, 1.3rem); line-height: 1.45; }
+.cq-qstage .cq-quest-story p { font-size: clamp(1.05rem, 2.1vw, 1.3rem); max-width: 62ch; }
+.cq-qstage__row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.cq-qstage .cq-btn--hot { font-size: 1.1rem; min-height: 50px; padding: 4px 22px; background: rgba(40, 30, 10, 0.88); box-shadow: 0 0 14px rgba(255, 190, 60, 0.35); }
+.cq-qstage .cq-quest-choices { display: flex; flex-wrap: wrap; gap: 8px; max-width: none; }
+.cq-qstage .cq-quest-choices > div { flex: 1 1 230px; max-width: 420px; }
+.cq-qstage .cq-quest-choice { height: 100%; background: rgba(22, 20, 18, 0.88); border-color: #6a5233; text-shadow: none; }
+.cq-qstage .cq-quest-choice:hover:not(.cq-quest-choice--locked), .cq-qstage .cq-quest-choice:focus-visible { border-color: var(--cq-yellow); box-shadow: 0 0 14px rgba(255, 190, 60, 0.45); }
+.cq-qstage .cq-quest-charm { flex-basis: 100%; margin: 0; font-size: 0.95rem; }
+.cq-qstage__badge { display: inline-block; padding: 2px 12px; border-radius: 4px; background: rgba(0, 0, 0, 0.6); color: #c9a86a; font-weight: 700; }
+.cq-qstage__badge.is-win { color: #1b1204; background: linear-gradient(#ffe08a, #f0b43c); text-shadow: none; box-shadow: 0 0 18px rgba(255, 190, 60, 0.6); }
+.cq-qstage__prize { color: #ffd36b; font-weight: 700; }
+.cq-qstage__pop { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 12px; overflow: auto; background: radial-gradient(ellipse at center, rgba(6, 6, 8, 0.45), rgba(6, 6, 8, 0.78)); }
+.cq-qstage__pop .cq-panel { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 10px 14px; border: 2px solid #6a5233; border-radius: 6px; background: rgba(24, 22, 20, 0.97); box-shadow: 0 0 0 1px #000, 0 12px 40px rgba(0, 0, 0, 0.85); text-shadow: none; }
+.cq-qstage__sparkle { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.cq-qstage__sparkle span { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-qstage__pic { animation: cq-intro-in 0.7s ease-out, cq-kenburns 16s ease-out both; }
+  .cq-qstage__box { animation: cq-qbox-in 0.35s ease-out; }
+  .cq-qstage__pop .cq-panel { animation: cq-pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+  .cq-qstage__badge.is-win { animation: cq-title-slam 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  .cq-qstage.is-done .cq-qstage__pic { animation: cq-qend-in 1.1s ease-out, cq-kenburns 16s ease-out both; }
+  .cq-qstage__sparkle span { display: block; position: absolute; top: -20px; left: calc(4% + var(--i) * 6.8%); width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 10px #ffcf4a; opacity: 0; animation: cq-qcoin 1.8s ease-in calc(0.3s + var(--i) * 0.11s) 1 both; }
+  @keyframes cq-qbox-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes cq-qend-in { from { opacity: 0; filter: brightness(2.2) saturate(0.4); } to { opacity: 1; filter: none; } }
+  @keyframes cq-qcoin { 0% { opacity: 0; transform: translateY(0) rotate(0); } 10% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(min(68vh, 640px)) rotate(540deg); } }
+}
+@media (max-width: 600px) {
+  .cq-qstage { min-height: 82vh; }
+  .cq-qstage__top .cq-btn { font-size: 0.9rem; }
+}

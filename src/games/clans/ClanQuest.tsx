@@ -426,7 +426,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
         </header>
       )}
-      {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
+      {/* The quest is one painted stage of its own (Quest.tsx), so no painting across the top. */}
+      {screen !== 'quest' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
