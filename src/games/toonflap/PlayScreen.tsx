@@ -142,7 +142,7 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   };
   const flap = () => {
     const g = G.current as Game;
-    if (g.paused === 'read') return go();
+    // A flap (tap or Space) never closes the answer sign: only the Go button or Enter does, so nobody skips it by accident.
     if (g.paused || g.finishing) return;
     if (helpRef.current && guiding && !g.pathTold && g.state.mode === 'hover' && g.state.hover === 'start') {
       g.pathTold = true;
@@ -158,10 +158,19 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
   };
   const flapRef = useRef(flap);
   flapRef.current = flap;
+  const goRef = useRef(go);
+  goRef.current = go;
+  const readingRef = useRef(reading);
+  readingRef.current = reading;
 
   // keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && readingRef.current && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        goRef.current();
+        return;
+      }
       if (e.key !== ' ' && e.key !== 'ArrowUp' && e.code !== 'Space') return;
       const t = e.target as HTMLElement | null;
       if (t && /^(BUTTON|INPUT|TEXTAREA|SELECT|A)$/.test(t.tagName)) return;
@@ -392,8 +401,8 @@ export function PlayScreen({ backend, start, progress, picks, onFinished, onLeav
         )}
         {reading && !confirm && (
           <div className="tf-go-wrap" data-noflap>
-            <button type="button" className="tf-btn tf-btn--go" onClick={go} autoFocus>Go</button>
-            <span className="tf-go-note">Read it, then tap Go. The clock is stopped.</span>
+            <button type="button" className="tf-btn tf-btn--go" onClick={go}>Go</button>
+            <span className="tf-go-note">Read it, then tap Go (or press Enter). The clock is stopped.</span>
           </div>
         )}
         {(canPotion || hud.potionUsed) && (
