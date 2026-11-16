@@ -29,5 +29,5 @@ Each picture has a drawn stand-in, so the code works before the paintings exist.
 
 - [x] #504 one fight a day + season keys saved (live 16 Nov)
 - [x] Big fight, lose message, story (code)
-- [ ] Giant paintings
+- [x] Giant paintings (16 Nov)
 - [ ] Golem and troll paintings
