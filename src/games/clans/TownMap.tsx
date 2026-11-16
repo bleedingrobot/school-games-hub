@@ -27,13 +27,17 @@ export const hasTownMap = () => !!sceneArt('town').wide;
  * for everyone: each place is a real button, reached with Tab and read out with its full name and note. `notes` add a short word under a label ("2 fights", "done today"); `off` places are faded and can't be tapped;
  * `hot` places glow (something to do there now). A place missing from `shown` is not on the map today (the monster outside its week).
  */
-export function TownMap({ onGo, shown, off = [], hot = [], notes = {} }: {
+export function TownMap({ onGo, shown, off = [], hot = [], notes = {}, top }: {
+  /** The game's title and the clan's gold, followers and fame, laid over the top of the painting. */
+  top?: React.ReactNode;
   onGo: (place: TownPlace) => void; shown: TownPlace[]; off?: TownPlace[]; hot?: TownPlace[]; notes?: Partial<Record<TownPlace, string>>;
 }) {
   const art = sceneArt('town');
   if (!art.wide) return null;
   return (
-    <nav className="cq-town" aria-label="Places in town">
+    <div className="cq-town">
+      {top}
+      <nav aria-label="Places in town">
       <picture>
         <source media="(max-width: 900px)" srcSet={art.small} />
         <img src={art.wide} alt="" draggable={false} />
@@ -51,6 +55,7 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {} }: {
           </span>
         </button>
       ))}
-    </nav>
+      </nav>
+    </div>
   );
 }

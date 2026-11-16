@@ -27,7 +27,7 @@ function prizeLine(p: QuestPrize): string {
  * One quest a day, as one painted stage: the quest's painting fills the screen, the story and the choice buttons sit on
  * it, a puzzle pops up over it, and the ending swaps in its own painting (when painted) with the prize.
  */
-export function Quest({ session, ask, onChange, onBack }: { session: Session; ask?: Asker; onChange: Change; onBack: () => void }) {
+export function Quest({ session, ask, onChange, onBack, top }: { session: Session; ask?: Asker; onChange: Change; onBack: () => void; top?: React.ReactNode }) {
   const quest = questToday(session);
   const [phase, setPhase] = useState<Phase>({ t: 'story', shown: 1 });
   const used = questUsed(session) && phase.t !== 'result';
@@ -136,6 +136,7 @@ export function Quest({ session, ask, onChange, onBack }: { session: Session; as
           {Array.from({ length: 14 }, (_, i) => <span key={i} style={{ '--i': i } as React.CSSProperties} />)}
         </div>
       )}
+      {top}
       <div className="cq-qstage__top">
         <h2>{quest && !used ? quest.title : 'Today’s quest'}</h2>
         <button type="button" className="cq-btn" autoFocus={used || !quest} onClick={onBack}>Back to the clan</button>

@@ -992,3 +992,18 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-qstage { min-height: 82vh; }
   .cq-qstage__top .cq-btn { font-size: 0.9rem; }
 }
+
+/* The title on the top left of the painting, the gold, followers and fame on its top right (James, 17 Nov 2026). */
+.cq-scenebox { position: relative; margin: 0 0 10px; }
+.cq-scenebox > .cq-scene { margin: 0; }
+.cq-top--over { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 16px; margin: 0; padding: 8px 14px 26px; border: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0)); text-shadow: 0 2px 2px #000, 0 0 10px rgba(0, 0, 0, 0.9); }
+.cq-top--over h1 { margin: 0; color: #ffd36b; }
+.cq-top--over .cq-soft { color: #f3e6c8; font-weight: 700; }
+/* On the quest the quest's own name and "Back" sit just under it. */
+.cq-qstage > .cq-top--over { position: relative; background: none; padding-bottom: 0; }
+.cq-qstage > .cq-top--over + .cq-qstage__top { padding-top: 2px; }
+@media (max-width: 600px) {
+  .cq-top--over { padding: 4px 8px 18px; }
+  .cq-top--over h1 { font-size: 1.4rem; }
+  .cq-top--over .cq-soft { font-size: 0.85rem; }
+}
