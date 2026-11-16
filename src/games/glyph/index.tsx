@@ -22,8 +22,8 @@ function GlyphIcon({ size = 64 }: { size?: number }) {
 
 /**
  * Glyph Gates (docs/GLYPH-PLAN.md; id glyph): light the fraction tiles equal to the gold stone, pick the glyph they make and
- * open the temple walls. The `glyph` server function makes and replays every wall. On the dashboard only while `glyphOn()`
- * is true and the teacher has the game on for the class.
+ * open the temple walls. The `glyph` server function makes and replays every wall. An Activity (James, 17 Nov 2026): it has
+ * no `group`, so no home card; it is listed on the Activities page while `glyphOn()` is true and the teacher has it on.
  */
 export const glyph: GameDefinition = {
   id: 'glyph',
@@ -34,8 +34,8 @@ export const glyph: GameDefinition = {
   Play: GlyphPlay,
   ranked: false,
   noBots: true,
-  group: 'complex-maths',
   inDevelopment: true,
+  activity: true,
   teacherSwitch: true,
   teacher: {
     switch: { useValue: useGlyphClassSwitch, save: saveGlyphClassSwitch, about: GLYPH_ABOUT },

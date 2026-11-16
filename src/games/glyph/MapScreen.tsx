@@ -94,7 +94,7 @@ export function MapScreen({ progress, busy, error, onPlay, onHowTo, onReplayGuid
         })}
       </div>
       <p className="gg-soft gg-map__pass">Open {PASS_FIRST_GO} of {WALLS_PER_TEMPLE} walls at the first go to pass a temple.</p>
-      {onExit && <button type="button" className="gg-btn" onClick={onExit}>Back to games</button>}
+      {onExit && <button type="button" className="gg-btn" onClick={onExit}>Back to activities</button>}
     </section>
   );
 }
