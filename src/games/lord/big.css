@@ -106,10 +106,91 @@
 @media (max-width: 640px) {
   .lord--bare { padding: 2px; }
   .lord-big { --lord-big-h: calc(100dvh - 70px); }
-  .lord-big__floor { bottom: 120px; height: 50cqh; padding: 0 2%; }
+  .lord-big__floor { bottom: 110px; height: 60cqh; padding: 0 2%; }
   .lord-big__fig { width: 48%; }
   .lord-big__side { width: 47%; }
   .lord-hp { height: 18px; }
   .lord-btn--big { font-size: 1.1rem; min-height: 48px; padding: 4px 18px; }
   .lord-big__bar .lord-btn { flex: 1 1 40%; }
+}
+
+/* ---------------------------------------------------------------- the village: the map is the menu (James, 17 Nov 2026)
+   The map as big as the screen allows, every place a label on it, the purse on its top right, notes on its foot. On a
+   phone the map keeps a readable size and scrolls sideways. These rules come after lord.css and replace its map rules. */
+.lord-map { position: relative; display: block; border-radius: 6px; border: 2px solid var(--lord-line); overflow: hidden; background: #1b130c; }
+.lord-map__scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.lord-map__paper { position: relative; width: min(100%, calc((100dvh - 30px) * 16 / 9)); min-width: 100%; aspect-ratio: 16 / 9; margin: 0 auto; filter: none; }
+.lord-map__paper > picture, .lord-map__paper > picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.lord-map__spot {
+  position: absolute; z-index: 2; transform: translate(-50%, -50%); width: auto; min-width: 0; aspect-ratio: auto; padding: 0;
+  background: none; border: 0; border-radius: 6px; cursor: pointer; font: inherit;
+}
+.lord-map__spot > span {
+  display: inline-flex; align-items: center; gap: 6px; transform: none; white-space: nowrap; padding: 3px 12px 3px 4px;
+  font-family: var(--lord-display); font-size: clamp(0.95rem, 1.7vw, 1.35rem); color: #ffe9b8;
+  background: rgba(20, 12, 6, 0.86); border: 1px solid var(--lord-gold); border-radius: 6px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.7); text-shadow: 0 1px 2px #000;
+}
+.lord-map__spot kbd, .lord-map__hero kbd { min-width: 1.5em; padding: 0 4px; font-size: 0.72em; line-height: 1.5; background: rgba(224, 178, 90, 0.18); }
+.lord-map__spot small { font-family: var(--lord-body); font-size: 0.7em; font-style: italic; opacity: 0.85; }
+.lord-map__spot:hover:not(:disabled) > span, .lord-map__spot:focus-visible > span { background: #7a2410; color: #fff; transform: scale(1.08); }
+.lord-map__spot:focus-visible, .lord-map__hero:focus-visible { outline: 3px solid #ffd36b; outline-offset: 3px; }
+.lord-map__spot:disabled { cursor: not-allowed; }
+.lord-map__spot:disabled > span { opacity: 0.75; filter: grayscale(0.5); }
+.lord-map__spot--forest:not(:disabled) > span { background: rgba(28, 64, 24, 0.92); border-color: #a6e07a; font-size: clamp(1.1rem, 2.1vw, 1.7rem); box-shadow: 0 0 18px rgba(140, 230, 90, 0.5), 0 3px 10px rgba(0, 0, 0, 0.7); }
+.lord-map__spot--dragon:not(:disabled) > span { background: #7a1c0e; border-color: #ff9a6a; font-size: clamp(1.1rem, 2.1vw, 1.7rem); }
+.lord-map__hero {
+  position: absolute; z-index: 3; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; padding: 0;
+  background: none; border: 0; cursor: pointer; font: inherit; pointer-events: auto;
+}
+.lord-map__hero { height: auto; min-height: 0; overflow: visible; }
+.lord-map__hero > * { flex: none; }
+.lord-map__hero .lord-art { height: clamp(80px, 22cqh, 200px) !important; filter: drop-shadow(0 0 10px rgba(255, 210, 120, 0.6)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.8)); }
+.lord-map__paper { container-type: size; }
+.lord-map__hero > span { display: inline-flex; gap: 4px; align-items: center; margin-top: -4px; padding: 0 8px 0 3px; border-radius: 6px; border: 1px solid var(--lord-gold); background: rgba(20, 12, 6, 0.86); color: #ffe9b8; font-family: var(--lord-display); font-size: 0.95rem; }
+.lord-map__hero:hover .lord-art { filter: drop-shadow(0 0 16px rgba(255, 220, 140, 1)) drop-shadow(0 6px 6px rgba(0, 0, 0, 0.8)); }
+
+/* Title and purse on the top of the map, notes and the help button on its foot */
+.lord-map__top { position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; padding: 8px 12px 28px; pointer-events: none; background: linear-gradient(rgba(8, 5, 2, 0.75), rgba(8, 5, 2, 0)); }
+.lord .lord-map__top h1:not(.question__title) { font-size: clamp(1.3rem, 2.6vw, 2rem); }
+.lord-map__top h1 small { font-family: var(--lord-body); font-size: 0.5em; font-style: italic; color: var(--lord-cream); opacity: 0.8; }
+.lord-purse { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; pointer-events: auto; }
+.lord-purse li { padding: 2px 12px; border-radius: 999px; background: rgba(15, 9, 4, 0.82); border: 1px solid rgba(224, 178, 90, 0.7); color: var(--lord-cream); font-size: clamp(0.9rem, 1.4vw, 1.05rem); white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); }
+.lord-purse strong { color: #ffd36b; }
+.lord-purse__stars { color: #ffd36b; }
+.lord-map__notes { position: absolute; left: 50%; bottom: 12px; z-index: 4; transform: translateX(-50%); width: min(620px, calc(100% - 120px)); display: grid; gap: 6px; }
+.lord-map__notes p { margin: 0; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--lord-gold); background: rgba(20, 12, 6, 0.9); color: #ffe9b8; font-weight: 700; text-align: center; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7); }
+.lord-map__notes .lord-btn { min-height: 36px; padding: 2px 12px; margin-left: 6px; }
+.lord-map__corner { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; gap: 8px; }
+.lord-map__help { width: 48px; height: 48px; padding: 0; border-radius: 50%; text-align: center; font-family: var(--lord-display); font-size: 1.6rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .lord-map__spot--dragon:not(:disabled) > span { animation: lord-pulse 1.6s ease-in-out infinite; }
+  .lord-map__spot--forest:not(:disabled) > span { animation: lord-forest-glow 2.2s ease-in-out infinite; }
+  .lord-map__spot > span { transition: transform 0.15s, background 0.15s; }
+  .lord-map__hero .lord-art { animation: lord-breathe 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+  .lord-map__notes p { animation: lord-rise 0.4s ease-out both; }
+  @keyframes lord-forest-glow { 50% { box-shadow: 0 0 30px rgba(160, 255, 100, 0.85), 0 3px 10px rgba(0, 0, 0, 0.7); } }
+}
+@media (max-width: 760px) {
+  .lord-map__paper { min-width: 760px; width: 760px; }
+  .lord-map__spot > span { font-size: 0.95rem; }
+  .lord-map__top { padding: 6px 8px 24px; }
+  .lord-map__notes { position: static; width: auto; transform: none; padding: 8px; }
+  .lord-map__corner { bottom: auto; top: calc(760px * 9 / 16 - 58px); }
+  .lord-map__corner { right: 8px; }
+}
+
+/* ---------------------------------------------------------------- every place: a big painting with its name, Back and
+   the purse on it, and nothing above it (James, 17 Nov 2026). The name and Back sit on the painting's foot, the purse
+   on its top left, so the person who works there (on the right) stays in view. */
+.lord-stage--short { min-height: clamp(240px, 50vh, 500px); align-items: stretch; }
+.lord-stage--short.has-art { background-position: center 55%; }
+.lord-stage .lord-place__head { top: auto; bottom: 12px; left: 12px; right: 12px; }
+.lord-stage__purse { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 2; pointer-events: none; }
+.lord-stage::after { background: linear-gradient(180deg, rgba(15, 9, 4, 0.55), transparent 25%, transparent 60%, rgba(15, 9, 4, 0.8)); }
+.lord .lord-stage .lord-sign:not(.question__title) { font-size: clamp(1.5rem, 3.2vw, 2.2rem); padding: 6px 16px 4px; }
+.lord-stage .lord-place__head .lord-btn { color: #f6e9cc; background: rgba(24, 15, 8, 0.85); border-color: var(--lord-gold); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6); }
+.lord-stage .lord-place__head .lord-btn:hover { color: #fff; background: rgba(70, 40, 15, 0.92); }
+@media (max-width: 640px) {
+  .lord-stage--short { min-height: 42vh; }
+  .lord-purse li { padding: 1px 8px; font-size: 0.82rem; }
 }

@@ -7,23 +7,23 @@
  * Chromebook) offers a half-finished fight again from the start, with no extra fight used.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { SKILL_USES_PER_DAY, WEAPONS, expNeeded, masterFor } from '../../../shared/lord/data';
+import { masterFor } from '../../../shared/lord/data';
 import { canChallengeMaster, canFaceDragon } from '../../../shared/lord/engine';
 import { EVENT_BY_ID } from '../../../shared/lord/events';
 import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
-import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { useAuth } from '../../auth/AuthContext';
 import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
 import { BigStage, FightScreen, fightScene } from './Fight';
-import { setShortcuts, shortcutsOn } from './shortcuts';
+import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
-import { HeroSprite, Icon, MonsterSprite } from './Sprite';
+import { HeroSprite, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
 import { Stage } from './Stage';
+import { HudContext, Purse } from './Purse';
 import { forestScene } from './art';
 import { KingdomMap, hasMap } from './KingdomMap';
 import { SeasonRoad } from './SeasonRoad';
@@ -459,18 +459,20 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'event': {
       const event = EVENT_BY_ID[screen.eventId];
       body = event ? (
-        <section className="lord-place" aria-label={event.title}>
-          <Stage scene={forestScene(hero.level)} size="short">
-            <header className="lord-place__head"><h2 className="lord-sign">{event.title}</h2></header>
-          </Stage>
-          <div className="lord-panel">
-            <p className="lord-lead">{event.text}</p>
-            <p className="lord-soft">Events do not use up a forest fight.</p>
-            <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
+        <BigStage scene={forestScene(hero.level)} label={event.title} className="lord-encounter lord-event">
+          <div className="lord-big__title">
+            <h2>{event.title}</h2>
+            <p>{event.text}</p>
+          </div>
+          <div className="lord-big__floor">
+            <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
+          </div>
+          <div className="lord-big__bar">
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
               {event.maths ? 'Have a go' : 'Continue'}
             </button>
           </div>
-        </section>
+        </BigStage>
       ) : null;
       break;
     }
@@ -517,25 +519,24 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     }
     case 'dragon': {
       const next = state.dragon?.next ?? 1;
+      const triedToday = state.dragonTried && next === 1;
       body = (
-        <section className="lord-place lord-encounter" aria-label="The Red Dragon">
-          <Stage scene="lair" size="tall">
-            <div className="lord-stage__foe lord-breathe"><MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={13} /></div>
-          </Stage>
-          <div className="lord-panel">
-          <h2>The Red Dragon’s lair</h2>
-          <p className="lord-lead">
-            The dragon has the village’s treasure, food and light. There are three fights, with a riddle before each one and a short rest between. You can’t run. If it goes badly, you wake at the healer and lose nothing but today’s try.
-          </p>
-          {state.dragonTried && next === 1 && <p className="lord-note">You have already faced the dragon today. Come back tomorrow!</p>}
-          <div className="lord-actions">
-            <button type="button" className="lord-btn lord-btn--hot" disabled={busy || (state.dragonTried && next === 1)} onClick={() => void beginDragonStage(next)}>
+        <BigStage scene="lair" label="The Red Dragon" className="lord-encounter lord-lair">
+          <div className="lord-big__title">
+            <h2>The Red Dragon’s lair</h2>
+            <p>{triedToday ? 'You have already faced the dragon today. Come back tomorrow!' : 'Three fights, with a riddle before each. You can’t run. If it goes badly, you lose nothing but today’s try.'}</p>
+          </div>
+          <div className="lord-big__floor">
+            <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
+            <div className="lord-big__fig lord-big__fig--foe lord-big__fig--dragon"><div className="lord-big__body lord-breathe"><MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={13} /></div></div>
+          </div>
+          <div className="lord-big__bar">
+            <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus={!triedToday} disabled={busy || triedToday} onClick={() => void beginDragonStage(next)}>
               {next === 1 ? 'Go in' : `Carry on: fight ${next} of 3`}
             </button>
-            <button type="button" className="lord-btn" onClick={toVillage}>Not yet</button>
+            <button type="button" className="lord-btn lord-btn--glass lord-btn--big" autoFocus={triedToday} onClick={toVillage}>Not yet</button>
           </div>
-          </div>
-        </section>
+        </BigStage>
       );
       break;
     }
@@ -544,14 +545,14 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         <Village
           state={state} hero={hero} note={note} waiting={waiting} busy={busy} onRetry={() => void retry()}
           onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={() => void goForest()}
-          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial} road={!backend.trial || !!backend.seasonDated} fetchFirstFive={backend.fetchFirstFive}
+          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} tools={backend.trial} trial={backend.trial} road={!backend.trial || !!backend.seasonDated} fetchFirstFive={backend.fetchFirstFive}
         />
       );
   }
 
   const keysOn = screen.name === 'village';
   return (
-    <Frame backend={backend} state={state} hero={hero} bare={screen.name === 'fight' || screen.name === 'encounter'}>
+    <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
       {keysOn && <VillageKeys onKey={(k) => {
         if (busyRef.current) return;
         if (k === 'f') void goForest();
@@ -584,128 +585,70 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
   return null;
 }
 
-/** `bare`: a fight on its big painting, with nothing else on the screen (no title, season or stats). */
+/**
+ * Before there is a hero the frame has the game's name on top. After that every screen is a painting with what it
+ * needs on it (the purse, the place's name): no title, season or stats rows above the art (James, 17 Nov 2026).
+ * `bare`: the painting fills the frame (fights and the map).
+ */
 function Frame({ children, hero, bare, backend, state }: { children: ReactNode; hero?: Hero; bare?: boolean; backend: LordBackend; state?: LordState }) {
+  const hud = useMemo(() => (hero ? { hero, unlimited: !!state?.unlimited } : null), [hero, state?.unlimited]);
   return (
     <div className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
-      {!bare && <header className="lord-top">
-        <h1>Dragon Maths</h1>
-        {backend.trial ? (
-          <span className="lord-trial">Trial: saved on this browser only, no points yet</span>
-        ) : (
-          state?.hero && <span className="lord-trial">Season {state.season.number}, day {state.season.dayOfSeason} of 35{state.season.daysLeft <= 4 ? `: ${state.season.daysLeft} days left!` : ''}</span>
-        )}
-      </header>}
-      {hero && !bare && <StatusBar hero={hero} unlimited={!!state?.unlimited} />}
-      {children}
+      {!hero && (
+        <header className="lord-top">
+          <h1>Dragon Maths</h1>
+          {backend.trial && <span className="lord-trial">Trial: saved on this browser only, no points yet</span>}
+        </header>
+      )}
+      <HudContext.Provider value={hud}>{children}</HudContext.Provider>
     </div>
   );
 }
 
-function StatusBar({ hero, unlimited }: { hero: Hero; unlimited: boolean }) {
-  const need = expNeeded(hero.level);
-  return (
-    <ul className="lord-status" aria-label="Your hero at a glance">
-      <li>Level <strong>{hero.level}</strong></li>
-      <li><Icon name="heart" scale={1} colour="#ff5555" /> <strong>{hero.hp}</strong> / {hero.maxHp}</li>
-      <li><Icon name="gold" scale={1} /> <strong>{hero.gold}</strong> <span className="lord-soft">(bank {hero.bank})</span></li>
-      <li>Exp <strong>{hero.exp}</strong>{Number.isFinite(need) ? ` / ${need}` : ''}</li>
-      <li>Forest fights <strong>{unlimited && hero.forestLeft <= 0 ? UNLIMITED_LABEL : hero.forestLeft}</strong></li>
-      <li>Arena <strong>{unlimited && hero.arenaLeft <= 0 ? UNLIMITED_LABEL : hero.arenaLeft}</strong></li>
-      <li>Skills <strong>{hero.skillLeft}</strong> / {SKILL_USES_PER_DAY}</li>
-      {hero.dragonKills > 0 && <li>{'★'.repeat(Math.min(hero.dragonKills, 5))}</li>}
-    </ul>
-  );
-}
-
-function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools, road, fetchFirstFive }: {
+function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, tools, road, fetchFirstFive, trial }: {
   state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
-  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean; road: boolean; fetchFirstFive?: LordBackend['fetchFirstFive'];
+  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; tools: boolean; road: boolean; fetchFirstFive?: LordBackend['fetchFirstFive']; trial: boolean;
 }) {
   const check = canChallengeMaster(hero);
   const dragonReady = canFaceDragon(hero) || !!state.dragon;
   const fight = state.openFight;
+  // Only what a pupil needs right now, one line each, on the map (James, 17 Nov 2026).
+  const notes: ReactNode[] = [];
+  if (note) notes.push(<span role="status">{note}</span>);
+  if (waiting > 0) notes.push(<>Your last fight is saved on this Chromebook and will be sent when you are back online. <button type="button" className="lord-btn lord-btn--glass" disabled={busy} onClick={onRetry}>Try again now</button></>);
+  if (fight) notes.push(<>You were in the middle of a fight! Tap the Forest to carry on from its start. It won’t use another fight.</>);
+  if (check.ok) notes.push(<>Your master is ready to fight you. Go to Training!</>);
+  if (hero.forestLeft > state.forestPerDay) notes.push(<>You were away, so you have saved-up forest fights: {hero.forestLeft} today!</>);
+  if (state.classOpen && hero.forestWins === 0 && hero.exp === 0) notes.push(<>A new season has begun, and everyone starts again. <button type="button" className="lord-btn lord-btn--glass" onClick={onClass}>Pick a class</button></>);
+  if (!hero.look) notes.push(<>New: you can choose how your hero looks! <button type="button" className="lord-btn lord-btn--glass" onClick={onLook}>Choose my look</button></>);
+  if (!road && state.season.daysLeft <= 4) notes.push(<>{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</>);
+  const over = (
+    <>
+      <div className="lord-map__top">
+        <h1>Dragon Maths{trial && <small> (trial)</small>}</h1>
+        <Purse />
+      </div>
+      {notes.length > 0 && <div className="lord-map__notes">{notes.map((n, i) => <p key={i}>{n}</p>)}</div>}
+      <div className="lord-map__corner">
+        {tools && <button type="button" className="lord-btn lord-btn--glass" onClick={() => onPlace('tools')}><kbd>X</kbd> Test tools</button>}
+        <button type="button" className="lord-btn lord-btn--glass lord-map__help" onClick={() => onPlace('howto')} aria-label="How to play" aria-keyshortcuts="?">?</button>
+      </div>
+    </>
+  );
   return (
     <section className="lord-village" aria-label="The village">
       {hasMap() ? (
         <KingdomMap
           heroClass={hero.heroClass} look={hero.look} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0 || !!state.unlimited}
           onGo={(spot) => (spot === 'forest' ? onForest() : spot === 'dragon' ? onDragon() : onPlace(spot))}
-        />
+        >{over}</KingdomMap>
       ) : (
         <Stage scene="village" size="normal">
           <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={9} /></div>
           <header className="lord-place__head"><h2 className="lord-sign">The village of Hollowbrook</h2></header>
         </Stage>
       )}
-      <div className="lord-panel">
-      {road && <SeasonRoad season={state.season} hero={hero} fetchFirstFive={fetchFirstFive} />}
-      <div className="lord-village__intro">
-        <div>
-          <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : state.unlimited ? `Forest fights: ${UNLIMITED_LABEL}.` : 'No forest fights left today. The village is still open!'}</p>
-          {note && <p className="lord-note" role="status">{note}</p>}
-          {waiting > 0 && (
-            <p className="lord-note" role="status">
-              Your last fight is saved on this Chromebook and will be sent when you are back online.{' '}
-              <button type="button" className="lord-btn" disabled={busy} onClick={onRetry}>Try again now</button>
-            </p>
-          )}
-          {fight && <p className="lord-note">You were in the middle of a fight! Press F to carry on from the start of it. It won’t use another fight.</p>}
-          {check.ok && <p className="lord-note">Your master is ready to fight you. Visit the Training grounds!</p>}
-          {hero.forestLeft > state.forestPerDay && <p className="lord-note">You were away, so you have saved-up forest fights: {hero.forestLeft} today!</p>}
-          {state.classOpen && hero.forestWins === 0 && hero.exp === 0 && (
-            <p className="lord-note">
-              A new season has begun, and everyone starts again.{' '}
-              <button type="button" className="lord-btn" onClick={onClass}>Pick a class</button>
-            </p>
-          )}
-          {!hero.look && (
-            <p className="lord-note">
-              New: you can choose how your hero looks!{' '}
-              <button type="button" className="lord-btn" onClick={onLook}>Choose my look</button>
-            </p>
-          )}
-          {!road && state.season.daysLeft <= 4 && <p className="lord-soft">{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</p>}
-        </div>
-      </div>
-      <div className="lord-menu">
-        <button type="button" className="lord-place-btn lord-place-btn--forest" onClick={onForest} disabled={busy || (!fight && !state.pendingEvent && hero.forestLeft <= 0 && !state.unlimited)}>
-          <kbd>F</kbd> <strong>{fight ? 'Carry on with your fight' : 'The Forest'}</strong> <span>{fight ? 'From the start of it' : 'Fight monsters, find gold'}</span>
-        </button>
-        {dragonReady && (
-          <button type="button" className="lord-place-btn lord-place-btn--dragon" onClick={onDragon}>
-            <kbd>D</kbd> <strong>The Red Dragon</strong> <span>{state.dragon ? 'The fight goes on' : 'You are ready'}</span>
-          </button>
-        )}
-        {PLACES.map((p) => (
-          <button key={p.name} type="button" className="lord-place-btn" onClick={() => onPlace(p.name)}>
-            <kbd>{p.key.toUpperCase()}</kbd> <strong>{p.label}</strong> <span>{p.blurb}</span>
-          </button>
-        ))}
-        <button type="button" className="lord-place-btn" onClick={() => onPlace('howto')}>
-          <kbd>?</kbd> <strong>How to play</strong> <span>Rules and tips</span>
-        </button>
-        {tools && (
-          <button type="button" className="lord-place-btn lord-place-btn--tools" onClick={() => onPlace('tools')}>
-            <kbd>X</kbd> <strong>Test tools</strong> <span>For trying things out</span>
-          </button>
-        )}
-      </div>
-      <p className="lord-soft">Your weapon: {WEAPONS[hero.weapon].name}.</p>
-      <KeysSwitch />
-      </div>
+      {road && <div className="lord-panel"><SeasonRoad season={state.season} hero={hero} fetchFirstFive={fetchFirstFive} /></div>}
     </section>
-  );
-}
-
-/** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
-function KeysSwitch() {
-  const [on, setOn] = useState(shortcutsOn);
-  return (
-    <p className="lord-soft">
-      <label>
-        <input type="checkbox" checked={on} onChange={(e) => { setShortcuts(e.target.checked); setOn(e.target.checked); }} /> Letter-key shortcuts (F, S, A…). Turn off if keys get pressed by accident.
-      </label>
-    </p>
   );
 }
