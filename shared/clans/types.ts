@@ -145,10 +145,26 @@ export interface Empire {
   /** Raids on classmates and on computer kingdoms made today. */
   raidsToday: number;
   kingdomRaidsToday: number;
-  /** Nobody can raid this empire on or before this day (set after a raid on it). */
+  /** From the old classmate raids (no longer set: Village Raids have no shields). Kept so old saves still read. */
   shieldUntil: number;
-  /** Classmate empires this one raided today (a clan can be raided by the same empire once a day). */
+  /** Classmate clans this one raided today (each clan once a day). */
   raidedToday: string[];
+  /** Banners won this week in Village Raids. Missing: none yet. */
+  banners?: Banners;
+  /** Raids this village held on one New Zealand day (the first few a day are paid). Missing: none. */
+  held?: Held;
+}
+
+/** Village Raid Banners: `count` won in the week `week` (village.ts, `weekOf`). A new week starts again from 0. */
+export interface Banners {
+  week: number;
+  count: number;
+}
+
+/** How many raids a village held and was paid for on the New Zealand day `nzDay`. */
+export interface Held {
+  nzDay: number;
+  paid: number;
 }
 
 /** The empire before "My Village" (no version marker). Only `upgradeSave` reads this shape. */

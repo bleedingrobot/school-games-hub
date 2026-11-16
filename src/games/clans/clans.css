@@ -1029,6 +1029,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-vpop--gold { left: 27%; top: 36%; color: #ffd84a; }
 .cq-vpop--followers { left: 73%; top: 32%; color: #8fd8ff; }
 .cq-vpop--fame { left: 50%; top: 46%; color: #ff9de0; }
+.cq-vpop--banners { left: 73%; top: 32%; color: #ff9a5a; }
 .cq-vcoin { position: absolute; left: 50%; top: 66%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; opacity: 0; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 12px #ffcf4a, inset 0 -2px 0 rgba(0, 0, 0, 0.3); }
 .cq-vstage__foot { position: relative; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 8px clamp(12px, 3vw, 24px) 14px; }
 .cq-vstage__sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
@@ -1036,6 +1037,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-vchip--gold { color: #ffd84a; }
 .cq-vchip--followers { color: #8fd8ff; }
 .cq-vchip--fame { color: #ff9de0; }
+.cq-vchip--banners { color: #ff9a5a; }
 .cq-vstage__row { display: flex; flex-wrap: wrap; gap: 8px; }
 .cq-vstage__row .cq-btn { background: rgba(20, 18, 16, 0.85); }
 .cq-vstage__row .cq-btn--hot { font-size: 1.15rem; min-height: 52px; padding: 4px 24px; background: rgba(40, 30, 10, 0.92); box-shadow: 0 0 16px rgba(255, 190, 60, 0.45); }
@@ -1147,3 +1149,46 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-vlevel { top: calc(16% + 40px); }
   .cq-vstage__foot { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px clamp(12px, 3vw, 24px) 10px; }
 }
+
+/* Village Raids (docs/CLANS-PVP-PLAN.md): rival cards with a traffic light, the Banners board, the siege. */
+.cq-raids { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 10px; align-items: start; }
+@media (max-width: 760px) { .cq-raids { grid-template-columns: 1fr; } }
+.cq-raids h3 { margin: 4px 0 10px; }
+.cq-rivals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0 0 10px; padding: 0; list-style: none; }
+.cq-rival { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px 12px; border-radius: 8px; text-align: center;
+  background: linear-gradient(rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.25)); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 6px 14px rgba(0, 0, 0, 0.4); transition: transform 0.15s; }
+.cq-rival--big:hover { transform: translateY(-3px); }
+.cq-rival--easy { box-shadow: 0 0 0 2px #4caf6a, 0 6px 14px rgba(0, 0, 0, 0.4); }
+.cq-rival--close { box-shadow: 0 0 0 2px #e0a93a, 0 6px 14px rgba(0, 0, 0, 0.4); }
+.cq-rival--tough { box-shadow: 0 0 0 2px #d9534f, 0 0 18px rgba(217, 83, 79, 0.35), 0 6px 14px rgba(0, 0, 0, 0.4); }
+.cq-rival.is-raided { opacity: 0.55; filter: grayscale(0.6); }
+.cq-rival__banner { height: 110px; width: auto; filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.7)); animation: cq-rival-sway 3.2s ease-in-out infinite; transform-origin: top center; }
+@keyframes cq-rival-sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+.cq-rival__name { font-weight: 700; font-size: 1.1rem; color: var(--f-head); }
+.cq-rival .cq-btn--hot { min-width: 110px; font-size: 1.1rem; }
+.cq-rivals--small .cq-rival { flex-direction: row; justify-content: space-between; padding: 6px 10px; }
+.cq-rivals--small { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.cq-rivals__more summary { cursor: pointer; margin-bottom: 8px; }
+.cq-light { padding: 1px 10px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; color: #111; }
+.cq-light--easy { background: #6fd08b; }
+.cq-light--close { background: #f0c25a; }
+.cq-light--tough { background: #f07a75; }
+.cq-board { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 4px; }
+.cq-board li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.25); }
+.cq-board li.is-me { background: rgba(255, 190, 70, 0.16); box-shadow: 0 0 0 1px rgba(255, 190, 70, 0.5); }
+.cq-board__place { font-family: 'IM Fell English SC', Georgia, serif; font-size: 1.2rem; text-align: center; color: var(--f-head); }
+.cq-board li:first-child .cq-board__place { color: #ffd84a; }
+.cq-board__count { color: #ff9a5a; font-weight: 700; white-space: nowrap; }
+.cq-raidsiege { text-align: center; }
+.cq-raidsiege__steps { display: grid; gap: 12px; max-width: 640px; margin: 12px auto; padding: 0; list-style: none; }
+.cq-raidsiege__step { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; text-align: left; font-size: 1.15rem;
+  background: rgba(0, 0, 0, 0.55); box-shadow: 0 0 0 1px rgba(255, 190, 70, 0.3); }
+.cq-raidsiege__icon { font-size: 2rem; }
+.cq-raidsiege .cq-actions { justify-content: center; }
+.cq-raidsiege .cq-btn--hot { font-size: 1.2rem; min-height: 52px; padding: 4px 28px; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-raidsiege__step { opacity: 0; animation: cq-raidsiege-in 0.5s ease-out forwards; }
+  .cq-raidsiege__step:nth-child(2) { animation-delay: 0.9s; }
+  @keyframes cq-raidsiege-in { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) { .cq-rival__banner { animation: none; } }

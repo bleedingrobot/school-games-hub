@@ -352,7 +352,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const zone = MONSTERS_BY_NAME[fight.enemies[0]?.name.replace(/ [A-D]$/, '') ?? '']?.zone ?? 'Meadow';
   const zoneArt = sceneArt(zoneScene(zone)).small;
   // Mine fights are one painted stage: the zone, full size, behind both sides, with the buttons along its bottom edge.
-  const stageArt = fight.monster ? undefined : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
+  // A Village Raid is fought in front of the raided village (the raid painting).
+  const stageArt = fight.monster ? undefined : fight.raid ? sceneArt('raid').wide ?? sceneArt('village').wide : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
   // Each side gets room for its own fighters, so four members facing two monsters aren't squeezed into half the stage.
   const stageColumns = `minmax(0, ${Math.max(1.5, fight.enemies.length)}fr) minmax(0, ${Math.max(1.5, fight.clan.length)}fr)`;
   const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
@@ -410,7 +411,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       >
         {!look && (
           <p className="cq-stage__round">
-            Depth {fight.depth} · Round {roundNow}
+            {fight.raid ? `Raid on the ${open?.raid?.name ?? ''} clan · Round ${roundNow} of ${maxRoundsOf(fight)}` : `Depth ${fight.depth} · Round ${roundNow}`}
           </p>
         )}
         {!look && shownStep && (
@@ -421,7 +422,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
         {flourish && <Victory />}
         {fight.monster && <BossWeather kind={fight.monster.kind} />}
         {fight.monster && bigLanding && <BigMove kind={fight.monster.kind} />}
-        <ul className="cq-side cq-side--enemies" aria-label="Enemies" data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
+        <ul className={`cq-side cq-side--enemies ${fight.raid ? 'cq-side--raiders' : ''}`} aria-label={fight.raid ? 'Their heroes' : 'Enemies'} data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
           {fight.enemies.map((e) => {
             const hp = hpOf(`e${e.index}`, e.hp);
             const fx = effect(`e${e.index}`);
@@ -433,6 +434,11 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                 <>
                   <BossFigure kind={fight.monster!.kind} state={bossState} />
                   <span className="cq-name sr-only">{look.name}</span>
+                </>
+              ) : fight.raid ? (
+                <>
+                  <Portrait race={fight.raid.defenders[e.index]?.race ?? ''} cls={fight.raid.defenders[e.index]?.cls ?? ''} look={fight.raid.defenders[e.index]?.look} scale={8} />
+                  <span className="cq-name">{e.name}</span>
                 </>
               ) : (
                 <>

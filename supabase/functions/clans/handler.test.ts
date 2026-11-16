@@ -3,10 +3,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { OpenFight, Result, ServerState } from '../../../shared/clans/actions';
 import { startingDrafts } from '../../../shared/clans/create';
-import { nzDayNumber } from '../../../shared/clans/clock';
-import type { Empire, Village } from '../../../shared/clans/types';
+import type { Village } from '../../../shared/clans/types';
 import { empireOf } from '../../../shared/clans/empire';
-import type { Sketch } from '../../../shared/clans/village';
+import type { RivalSketch } from '../../../shared/clans/raids';
 import { addEarned, fameFor, measures, NO_STATS, pointsFor, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { parseFocus } from '../../../shared/maths/focus';
@@ -21,7 +20,7 @@ const TH_COST = CONFIG.empire.buildings.trainingHall.base;
 const json = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 /**
- * Stands in for the database the way load_clan(), save_clan() and save_raid() behave: copies in and out, versions, remembered requests,
+ * Stands in for the database the way load_clan(), save_clan() and save_village_raid() behave: copies in and out, versions, remembered requests,
  * the village news every pupil reads, each clan's private notes, and the old group village's levels (used once, to convert an old save).
  */
 function fakeDb() {
@@ -101,11 +100,11 @@ function fakeDb() {
       if (!ladder.kept.some((k) => k.player === player && k.once === once)) ladder.kept.push({ player, once, list: json(list) });
     },
     async mates(player) {
-      const list: Sketch[] = [];
+      const list: RivalSketch[] = [];
       for (const [p, row] of clans) {
         if (p === player) continue;
         const e = empireOf(row.state.clan);
-        list.push({ id: publicId(p), name: row.state.clan.name, createdNzDay: row.state.createdNzDay, shieldUntil: e.shieldUntil, troops: { ...e.troops } });
+        list.push({ id: publicId(p), name: row.state.clan.name, heroLevels: row.state.clan.members.reduce((t, m) => t + m.level, 0), levels: { ...e.levels }, troops: { ...e.troops }, banners: e.banners ?? null });
       }
       return { ok: true, value: list };
     },
@@ -113,11 +112,9 @@ function fakeDb() {
       const p = playerOf(id);
       const row = p && p !== player ? clans.get(p) : undefined;
       if (!p || !row) return { ok: true, value: null };
-      return { ok: true, value: { id, name: row.state.clan.name, createdNzDay: row.state.createdNzDay, empire: json(empireOf(row.state.clan)), gold: row.state.clan.gold, version: row.version } satisfies LoadedTarget };
+      return { ok: true, value: { id, name: row.state.clan.name, empire: json(empireOf(row.state.clan)), gold: row.state.clan.gold, members: json(row.state.clan.members), version: row.version } satisfies LoadedTarget };
     },
     async saveRaid(player, expected, raid, requestId, state, result): Promise<Outcome<SaveStatus>> {
-      db.raceOnce?.();
-      db.raceOnce = undefined;
       const defender = playerOf(raid.targetId);
       const a = clans.get(player);
       const d = defender ? clans.get(defender) : undefined;
@@ -126,18 +123,18 @@ function fakeDb() {
       if (dup) return { ok: true, value: { status: 'duplicate', result: json(dup) } };
       if (a.version !== expected || d.version !== raid.targetVersion) return { ok: true, value: { status: 'stale' } };
       if (!flags.raidsOn) return { ok: false, why: 'refused' };
-      // Like the database: the gold the raiders gain is the gold the raided clan loses, and nothing else is made or lost.
-      if (a.state.clan.gold + d.state.clan.gold !== state.clan.gold + raid.gold) return { ok: false, why: 'refused' };
+      // Like the database: the raided clan can only be given the held reward, never have anything taken.
+      if (raid.gold < 0 || raid.gold > 45) return { ok: false, why: 'refused' };
       a.requests.set(requestId, json(result));
       clans.set(player, { version: a.version + 1, state: json(state), requests: a.requests });
       earn(player, result);
       const after = json(d.state);
-      after.clan.empire = json(raid.empire) as Empire;
-      after.clan.gold = raid.gold;
+      Object.assign(empireOf(after.clan), { banners: json(raid.banners), held: json(raid.held) });
+      after.clan.gold += raid.gold;
       clans.set(defender, { version: d.version + 1, state: after, requests: d.requests });
       village.news.unshift(raid.news);
       notes.set(defender, [raid.note, ...(notes.get(defender) ?? [])]);
-      log.push(`${player}:raidClass`);
+      log.push(`${player}:villageRaid`);
       return { ok: true, value: { status: 'saved', version: a.version + 1 } };
     },
   };
@@ -210,38 +207,56 @@ describe('the clans server function', () => {
   });
 });
 
-const DAY = nzDayNumber(NOW);
-const PUSH = 'steady';
 
-/** Three pupils with clans that began a fortnight ago, each with an army and 1000 gold in the purse. */
+/** Three pupils with brand-new clans (raids work from the very first day). */
 async function village(t: ReturnType<typeof setup>) {
-  for (const [token, name] of [['ana', 'Red Banner'], ['ben', 'Swift Foxes'], ['cai', 'Brave Owls']] as const) {
-    await t.send({ ...create(), name }, { token });
-    const row = t.clans.get(token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : 'student-3')!;
-    row.state.createdNzDay = DAY - 14;
-    row.state.day = 15;
-    const e = empireOf(row.state.clan);
-    e.day = 15;
-    e.troops.footman = 40;
-    row.state.clan.gold = 1000;
-  }
+  for (const [token, name] of [['ana', 'Red Banner'], ['ben', 'Swift Foxes'], ['cai', 'Brave Owls']] as const) await t.send({ ...create(), name }, { token });
   t.flags.raidsOn = true;
 }
-const selfOf = async (t: ReturnType<typeof setup>, token: string) => {
-  const list = await t.send({ type: 'raidTargets' }, { token: token === 'ana' ? 'ben' : 'ana' });
-  return list.body.result.targets.find((x: any) => x.name === (token === 'ana' ? 'Red Banner' : 'Swift Foxes')).id as string;
-};
+const idOf = async (t: ReturnType<typeof setup>, name: string, token = 'ana') =>
+  (await t.send({ type: 'raidTargets' }, { token })).body.result.targets.find((x: any) => x.name === name)?.id as string;
 
-describe('raids on classmates', () => {
-  it('refuses a clan that is not in the class, a raid on yourself, and a second raid the same day', async () => {
+describe('Village Raids on classmates', () => {
+  it('starts from day one, takes nothing from anyone, pays both sides and refuses what the rules refuse', async () => {
     const t = setup();
     await village(t);
-    const ben = await selfOf(t, 'ben');
-    expect((await t.send({ type: 'raidClass', target: 'nobody', take: 'gold', push: PUSH })).body).toMatchObject({ ok: false, why: 'target' });
-    expect((await t.send({ type: 'raidClass', target: await selfOf(t, 'ana'), take: 'gold', push: PUSH })).body).toMatchObject({ ok: false, why: 'target' });
-    expect((await t.send({ type: 'raidClass', target: ben, take: 'gold', push: PUSH })).body.ok).toBe(true);
-    const owls = (await t.send({ type: 'raidTargets' })).body.result.targets.find((x: any) => x.name === 'Brave Owls').id;
-    expect((await t.send({ type: 'raidClass', target: owls, take: 'buildings', push: PUSH })).body).toMatchObject({ ok: false, why: 'limit' });
+    const ben = await idOf(t, 'Swift Foxes');
+    expect((await t.send({ type: 'raidStart', target: 'nobody' })).body).toMatchObject({ ok: false, why: 'target' });
+    expect((await t.send({ type: 'raidStart', target: await idOf(t, 'Red Banner', 'ben') })).body).toMatchObject({ ok: false, why: 'target' });
+    const before = json(t.clans.get('student-2')!.state.clan);
+    const anaGold = t.clans.get('student-1')!.state.clan.gold;
+    const start = await t.send({ type: 'raidStart', target: ben });
+    expect(start.body).toMatchObject({ ok: true, result: { type: 'raidStart', resumed: false } });
+    // The browser sees the defenders by race and class only, never a pupil's hero names.
+    const shown = start.body.state.fight;
+    expect(shown.raid.defenders.map((m: any) => m.name)).toEqual(before.members.map((m) => `${m.race} ${m.cls}`));
+    expect(JSON.stringify(shown)).not.toContain(before.members[0].name);
+    let last: Record<string, any> = start.body;
+    for (let round = 1; round <= CONFIG.maxRounds && !last.result?.over; round++) {
+      last = (await t.send({ type: 'fightRound', round, orders: before.members.map(() => ({ action: 'attack', target: 0 })), cry: null })).body;
+      expect(last.ok).toBe(true);
+    }
+    const raid = last.result.raid;
+    expect(raid).toMatchObject({ name: 'Swift Foxes' });
+    const after = t.clans.get('student-2')!.state.clan;
+    // Nothing taken: the raided clan's heroes, troops and buildings are as they were; its purse only goes up when it held.
+    expect(after.members).toEqual(before.members);
+    expect(empireOf(after).levels).toEqual(empireOf(before).levels);
+    expect(empireOf(after).troops).toEqual(empireOf(before).troops);
+    expect(after.gold).toBe(before.gold + (raid.won ? 0 : CONFIG.classRaids.reward.held.gold));
+    // The raiders are paid either way, and their own heroes come home unhurt.
+    expect(t.clans.get('student-1')!.state.clan.gold).toBe(anaGold + raid.gold);
+    expect(raid.gold).toBe(raid.won ? CONFIG.classRaids.reward[raid.light === 'tough' ? 'wonTough' : 'won'].gold : CONFIG.classRaids.reward.lost.gold);
+    expect(t.clans.get('student-1')!.state.clan.members.every((m) => !m.knockedOut)).toBe(true);
+    expect(t.notes.get('student-2')?.[0]).toMatch(raid.won ? /got past your walls\. Nothing was taken\./ : /held off raiders from the Red Banner clan!/);
+    // Same clan twice in a day: no. The Banners board shows the raiders.
+    expect((await t.send({ type: 'raidStart', target: ben })).body).toMatchObject({ ok: false, why: 'same' });
+    const list = (await t.send({ type: 'raidTargets' })).body.result;
+    expect(list.left).toBe(CONFIG.classRaids.perDay - 1);
+    expect(list.board.find((r: any) => r.me)).toMatchObject({ name: 'Red Banner', banners: raid.banners });
+    // The teacher's switch stops a raid before it starts.
+    t.flags.raidsOn = false;
+    expect((await t.send({ type: 'raidStart', target: await idOf(t, 'Brave Owls') })).body).toMatchObject({ ok: false, why: 'off' });
   });
 });
 

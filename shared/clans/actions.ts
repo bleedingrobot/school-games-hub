@@ -17,8 +17,10 @@
  * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
  * rest waits until the fight is over. Every new fight is a ladder fight (when the child's maths can be read): it keeps the questions the
  * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
- * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
- * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
+ * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse). A save from before My Village is converted by
+ * `upgradeSave` when it loads. A Village Raid on a classmate (raids.ts) is `raidStart` (the siege) and then an open fight played
+ * with `cryCheck` and `fightRound` like a mine fight; when it ends, the raided clan's reward (if it held) is saved in the same
+ * transaction. Raids never take anything from anyone.
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
@@ -27,7 +29,7 @@ import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound 
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
-import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, TAKES, upgrade, upgradeSave, type BattleResult, type Push, type Take } from './empire';
+import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, upgrade, upgradeSave, type BattleResult, type Push } from './empire';
 import { bossAt, newFight, type FightState, type Order } from './fight';
 import { buySupply, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
 import { classByName, raceByName, refreshGear, rollMember } from './character';
@@ -36,10 +38,11 @@ import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, recordBossWin, type Earned } from './rewards';
 import { buyItem, buyTroopMix, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
-import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
+import { newSeasonSave, type SeasonClock } from './season';
 import { finishQuest, todaysQuest, type QuestPrize } from './quests';
-import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type MonsterKind, type Troops, type Village, type VillageBuilding } from './types';
-import { raidClassmateNz, raidTargetList, type RaidTarget, type Sketch, type TargetEntry } from './village';
+import { TROOP_KINDS, VILLAGE_BUILDINGS, type Banners, type Clan, type Held, type MonsterKind, type Troops, type Village, type VillageBuilding } from './types';
+import { addBanners, bannerBoard, clanPower, defenderCopy, heldReward, lightOf, newRaidFight, raidNews, raidNote, raidReward, raidSiege, raidsLeft, rivalList, sketchPower, targetEmpire, type BoardRow, type Light, type RaidSetup, type RaidTarget, type Rival, type RivalSketch } from './raids';
+import { weekOf } from './village';
 
 
 /**
@@ -67,6 +70,8 @@ export interface OpenFight<Q = Question> {
   marks?: (CryMark | null)[];
   /** A monster try (not a mine fight): how it was set up and how the siege went. `depth` and `boss` are then unused. */
   monster?: { setup: MonsterSetup; siege: Siege };
+  /** A Village Raid on a classmate (not a mine fight): the defenders and how the siege went. `depth` and `boss` are then unused. */
+  raid?: RaidSetup;
 }
 
 /** The fight in progress as the browser is given it: a ladder fight's questions without their answers. */
@@ -96,10 +101,10 @@ export interface ServerState {
 }
 
 /** What ladder questions can be asked for, outside fights. */
-export const ASK_FOR = ['shop', 'quest', 'siege'] as const;
+export const ASK_FOR = ['shop', 'quest', 'siege', 'raid'] as const;
 export type AskFor = (typeof ASK_FOR)[number];
 /** How many questions each one asks: the quest asks two (both right wins the big prize). */
-export const ASK_COUNT: Record<AskFor, number> = { shop: 1, quest: 2, siege: 1 };
+export const ASK_COUNT: Record<AskFor, number> = { shop: 1, quest: 2, siege: 1, raid: 1 };
 
 /** Questions waiting for an answer. `no` makes the answers' record id (`clans:ask:<seed>:<no>`). */
 export interface Asked<Q = Question> {
@@ -135,9 +140,9 @@ export interface Context {
   raidsOn?: boolean;
   /** The teacher's switch for made-up hero names. Off unless it is given: names come from the list. */
   typedNames?: boolean;
-  /** The other clans in the class, for the list of who can be raided. */
-  mates?: Sketch[];
-  /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this class). */
+  /** The other clans in the class, for the list of who can be raided and the Banners board. */
+  mates?: RivalSketch[];
+  /** The clan a Village Raid is aimed at, loaded by the server (null if it is not in this class). */
   target?: RaidTarget | null;
   /** The season clock from the database. Missing or null: no season rules (stamping, resets and resting raids all wait for it). */
   clock?: SeasonClock | null;
@@ -170,7 +175,8 @@ export type Action =
   | { type: 'cryCheck'; round: number; answer: number; ms: number }
   | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null }
   | { type: 'raidTargets' }
-  | { type: 'raidClass'; target: string; take: Take; push: Push }
+  /** A Village Raid: the siege (with the answer to the `ask` for 'raid' question, kept by the server), then the fight opens. */
+  | { type: 'raidStart'; target: string }
   /** Monster week: today's try. `siege` is the answer to the siege's question (null: "No thanks"). Then rounds go through `fightRound`. */
   | { type: 'monsterStart'; siege: number | null; ladder?: boolean; ms?: number }
   /** Monster supplies, from day `warnFrom` of the season. */
@@ -182,7 +188,7 @@ export type Action =
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'ask' | 'askCheck' | 'buy' | 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
+  | { type: Exclude<ActionType, 'ask' | 'askCheck' | 'buy' | 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidStart' | 'monsterStart'> }
   /** The questions to show (never their answers). */
   | { type: 'ask'; for: AskFor; questions: PublicQuestion[] }
   /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent). */
@@ -198,12 +204,22 @@ export type Result =
   /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent for this question). */
   | { type: 'cryCheck'; round: number; correct: boolean; answer: number; given: number }
   /** `summary` is there when the round ended the fight and it has been paid. `monster`: a finished monster try (`first`: this season's first win). */
-  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned; monster?: MonsterOutcome }
+  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned; monster?: MonsterOutcome; raid?: RaidOutcome }
   /** `right`: the siege question's mark (null if there was none or it was skipped); `answer`: the right answer, to show. */
   | { type: 'monsterStart'; resumed: boolean; right: boolean | null; answer: number | null }
-  /** `resting`: raids on classmates are resting for the last two weeks of the season, so `targets` is empty. */
-  | { type: 'raidTargets'; targets: TargetEntry[]; resting?: true }
-  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; destroyed: VillageBuilding[]; earned?: Earned };
+  /** Who can be raided (closest first), this week's Banners board and the raids left today. */
+  | { type: 'raidTargets'; targets: Rival[]; board: BoardRow[]; left: number }
+  /** `breach`/`tower`: how the siege went. `right`: the siege question's mark (null: none or skipped). */
+  | { type: 'raidStart'; resumed: boolean; right: boolean | null; breach: number; tower: number };
+
+/** How a Village Raid ended: what the raiders got (the raided village's reward is not shown to them). */
+export interface RaidOutcome {
+  name: string;
+  light: Light;
+  won: boolean;
+  gold: number;
+  banners: number;
+}
 
 /** How a monster try ended, kept in the saved result: the database gives the rewards for a first win (once a season) and counts tries. */
 export interface MonsterOutcome {
@@ -227,8 +243,9 @@ export const monsterWeek = (clock: SeasonClock | null | undefined): clock is Sea
 export const suppliesOnSale = (clock: SeasonClock | null | undefined): clock is SeasonClock =>
   !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.warnFrom;
 
-/** The fight an open fight starts from: a mine fight, or a monster try's clan fight. */
-export function fightOf(members: Clan['members'], open: Pick<OpenFight<unknown>, 'depth' | 'seed' | 'boss' | 'monster'>): FightState {
+/** The fight an open fight starts from: a mine fight, a monster try's clan fight, or a Village Raid's hero fight. */
+export function fightOf(members: Clan['members'], open: Pick<OpenFight<unknown>, 'depth' | 'seed' | 'boss' | 'monster' | 'raid'>): FightState {
+  if (open.raid) return newRaidFight(members, open.raid, open.seed);
   return open.monster ? newMonsterFight(members, open.monster.setup, open.seed) : newFight(members, open.depth, open.seed, open.boss);
 }
 
@@ -237,8 +254,8 @@ export const monsterSeed = (baseSeed: number, season: number, tryNo: number) => 
 
 /** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
 export interface Effects {
-  /** A raid on a classmate: the raided clan's new empire and purse (gold) and the lines to write. */
-  raid?: { targetId: string; empire: Empire; gold: number; news: string; note: string };
+  /** A finished Village Raid: what the raided clan gets (gold if it held, its Banners and held count) and the lines to write. */
+  villageRaid?: { targetId: string; gold: number; banners: Banners; held: Held; news: string; note: string };
   /** Maths answers to keep in the teacher's private records: the question's kind and year band (never the numbers), and whether it was right. */
   answers?: { key: string; correct: boolean }[];
   /** Ladder answers, for the child's own maths records (ladder place, skill map, focus results). `once` makes a resend count once. */
@@ -387,11 +404,7 @@ export function parseAction(raw: unknown): Action | null {
     case 'repick':
       return member !== null && typeof raw.race === 'string' && raw.race.length <= 40 && typeof raw.cls === 'string' && raw.cls.length <= 40 ? { type: 'repick', member, race: raw.race, cls: raw.cls } : null;
     case 'repickDone': return { type: 'repickDone' };
-    case 'raidClass': {
-      const push = parsePush(raw.push);
-      const take = TAKES.includes(raw.take as Take) ? (raw.take as Take) : null;
-      return push && take && typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidClass', target: raw.target, take, push } : null;
-    }
+    case 'raidStart': return typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidStart', target: raw.target } : null;
     default: return null;
   }
 }
@@ -494,7 +507,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       rested = true;
     }
   }
-  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'monsterStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets') {
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'monsterStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets' && action.type !== 'raidStart') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
   const { clan } = state;
@@ -573,22 +586,46 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       return done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize, ...(marked ? { marks: marked.marks } : {}) }, true, marked?.effects);
     }
     case 'raidTargets': {
-      if (classRaidsResting(clock)) return done(state, { type: 'raidTargets', targets: [], resting: true }, rested || upgraded);
-      const targets = raidTargetList(state, ctx.today, ctx.self ?? '', ctx.raidsOn ?? false, ctx.mates ?? []);
-      return done(state, { type: 'raidTargets', targets }, rested || upgraded);
+      const e = empireOf(clan);
+      const mates = ctx.mates ?? [];
+      return done(state, { type: 'raidTargets', targets: rivalList(clan, e.raidedToday, mates), board: bannerBoard(clan, weekOf(ctx.today), mates), left: raidsLeft(e) }, rested || upgraded);
     }
-    case 'raidClass': {
-      if (classRaidsResting(clock)) return refuse('resting-season', 'Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!');
-      if (!ctx.target || !ctx.self) return refuse('target', 'That clan is not in your class.');
-      const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.push, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
-      if (!out.ok) return refuse(out.why, out.say);
-      state.raidNo++;
-      const { gold, destroyed } = out.raid;
-      return {
-        ok: true, state, changed: true,
-        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, destroyed, ...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === 'won' ? 1 : 0 })) },
-        effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, gold: out.defenderGold, news: out.news, note: out.note } },
+    case 'raidStart': {
+      // A raid is already open (a refresh, or another Chromebook): this is that raid again, and nothing more is used.
+      if (state.fight) {
+        return state.fight.raid && state.fight.raid.target === action.target
+          ? done(state, { type: 'raidStart', resumed: true, right: state.fight.raid.right, breach: state.fight.raid.breach, tower: state.fight.raid.tower }, false)
+          : refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
+      }
+      if (!ctx.raidsOn) return refuse('off', 'Your teacher has switched raids on classmates off.');
+      const target = ctx.target;
+      if (!target || target.id === ctx.self) return refuse('target', 'That clan is not in your class.');
+      const e = empireOf(clan);
+      if (raidsLeft(e) <= 0) return refuse('limit', `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!`);
+      if (e.raidedToday.includes(target.id)) return refuse('same', 'You already raided that clan today. Pick another one!');
+      if (target.members.length === 0) return refuse('target', 'That clan has no heroes yet.');
+      const theirs = targetEmpire(target);
+      const asked = takeAnswers(state, 'raid', [], 0);
+      const mark = asked?.marks[0];
+      const right = asked ? mark?.correct === true : null;
+      const seed = raidSeed(state.seed, state.raidNo);
+      const siege = raidSiege(e, theirs, right, seed);
+      const sketch: RivalSketch = { id: target.id, name: target.name, heroLevels: target.members.reduce((t, m) => t + m.level, 0), levels: theirs.levels, troops: theirs.troops };
+      const setup: RaidSetup = {
+        target: target.id, name: target.name, light: lightOf(Math.max(1, clanPower(clan)), sketchPower(sketch)),
+        defenders: target.members.map(defenderCopy), breach: siege.breach, tower: siege.tower, right,
       };
+      state.fight = { depth: 0, boss: false, seed, no: state.fightNo + 1, settings, rounds: [], raid: setup };
+      if (ctx.maths) {
+        state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:raid:${seed}:${state.fightNo + 1}`));
+        state.fight.marks = [];
+      }
+      state.fightNo++;
+      state.raidNo++;
+      // The raid counts from now (even if the page is closed).
+      e.raidsToday++;
+      e.raidedToday.push(target.id);
+      return done(state, { type: 'raidStart', resumed: false, right, breach: siege.breach, tower: siege.tower }, true, asked?.effects);
     }
     case 'monsterStart': {
       if (state.fight) {
@@ -683,7 +720,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       if (!open) return refuse('no-fight', 'That fight is already over.');
       if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
       const played: RecordedRound = { orders: action.orders, cry: action.cry };
-      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster ? fightOf(clan.members, open) : undefined);
+      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster || open.raid ? fightOf(clan.members, open) : undefined);
       // The replay stops once the fight is over, so a round that was sent after the end has no result.
       if (cries.length !== open.rounds.length + 1) return refuse('no-fight', 'That fight is already over.');
       // The question was marked by the server's own replay. A question that was taken goes in the teacher's private records.
@@ -695,6 +732,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
         open.rounds.push(played);
         return done(state, { type: 'fightRound', round: action.round, over: false, summary: null, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
       }
+      if (open.raid) return finishRaid(state, open.raid, replayed, action.round, rightCry, effects, ctx);
       const boss = open.boss;
       const summary = payFight(clan, replayed);
       state.fight = null;
@@ -725,4 +763,31 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       return done(state, { type: 'fightRound', round: action.round, over: true, summary, ...earnedPart(earned) }, true, effects);
     }
   }
+}
+
+/**
+ * A Village Raid's last round: nobody's heroes, gold, troops or buildings change. The raiders are paid (more for a win), and
+ * the raided clan (loaded again for this request) is paid when it held; both are saved together (`Effects.villageRaid`).
+ */
+function finishRaid(state: ServerState, raid: RaidSetup, fight: FightState, round: number, rightCry: number, effects: Effects | undefined, ctx: Context): Applied {
+  const clan = state.clan;
+  const e = empireOf(clan);
+  const won = fight.result === 'won';
+  const week = weekOf(ctx.today);
+  const pay = raidReward(fight.result, raid.light, e);
+  clan.gold += pay.gold;
+  e.banners = addBanners(e.banners, week, pay.banners);
+  state.fight = null;
+  const summary: FightSummary = { result: fight.result, gold: pay.gold, followers: 0, xp: clan.members.map(() => 0), levels: clan.members.map(() => 0) };
+  const outcome: RaidOutcome = { name: raid.name, light: raid.light, won, gold: pay.gold, banners: pay.banners };
+  const result: Result = { type: 'fightRound', round, over: true, summary, raid: outcome, ...earnedPart(earnedOrNone({ classRaids: won ? 1 : 0, cries: rightCry })) };
+  // The raided clan, as it is now. It may have left the class since the raid began: then only the raiders are paid.
+  const target = ctx.target && ctx.target.id === raid.target ? ctx.target : null;
+  if (!target) return done(state, result, true, effects);
+  const theirs = targetEmpire(target);
+  const held = won ? { gold: 0, banners: addBanners(theirs.banners, week, 0), held: theirs.held ?? { nzDay: ctx.today, paid: 0 } } : heldReward(theirs, ctx.today);
+  return done(state, result, true, {
+    ...(effects ?? {}),
+    villageRaid: { targetId: target.id, gold: held.gold, banners: held.banners, held: held.held, news: raidNews(clan.name, target.name, won), note: raidNote(clan.name, won, held.gold) },
+  });
 }

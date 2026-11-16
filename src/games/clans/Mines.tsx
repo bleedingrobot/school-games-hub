@@ -141,8 +141,10 @@ const COINS: [number, number][] = [[-30, -34], [-18, -48], [-6, -40], [8, -52], 
  * each member, gold, followers and fame over the clan), with the buttons on the painting (James, 17 Nov 2026).
  * Enter goes back to the Mines when that's open; C goes back to the clan.
  */
-export function Results({ summary, members, fame = 0, extra, onDone, onMines, art, top, best }: {
+export function Results({ summary, members, fame = 0, extra, onDone, onMines, art, top, best, raid }: {
   summary: FightSummary; members: Member[]; fame?: number; extra?: React.ReactNode; onDone: () => void; onMines?: () => void;
+  /** A Village Raid: its own title and Banners, and no experience (a raid never changes the heroes). */
+  raid?: { title: string; banners: number };
   /** The painting behind it all (the mine depth the clan fought at). */
   art?: { wide?: string; small?: string };
   /** The game's title and the clan's gold, followers and fame, over the top of the painting. */
@@ -167,9 +169,10 @@ export function Results({ summary, members, fame = 0, extra, onDone, onMines, ar
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   const won = summary.result === 'won';
-  const title = won ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe';
+  const title = raid ? raid.title : won ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe';
   const rewards = [
     { cls: 'gold', text: `+${summary.gold} gold`, show: summary.gold > 0 },
+    { cls: 'banners', text: `+${raid?.banners ?? 0} ${raid?.banners === 1 ? 'Banner' : 'Banners'}`, show: (raid?.banners ?? 0) > 0 },
     { cls: 'followers', text: `+${summary.followers} followers`, show: summary.followers > 0 },
     { cls: 'fame', text: `+${fame} fame`, show: fame > 0 },
   ].filter((r) => r.show);
@@ -206,12 +209,12 @@ export function Results({ summary, members, fame = 0, extra, onDone, onMines, ar
           {members.map((m, i) => {
             const pic = memberArt(m.race, m.cls, lookOf(m)) ?? memberThumb(m.race, m.cls, lookOf(m));
             return (
-              <li key={m.name} className={m.knockedOut ? 'is-out' : undefined} style={step(i)}>
-                <span className="cq-vxp" aria-hidden="true">+{summary.xp[i]} XP</span>
+              <li key={m.name} className={m.knockedOut && !raid ? 'is-out' : undefined} style={step(i)}>
+                {!raid && <span className="cq-vxp" aria-hidden="true">+{summary.xp[i]} XP</span>}
                 {summary.levels[i] > 0 && <span className="cq-vlevel" aria-hidden="true">Level up!</span>}
                 {pic ? <img className="cq-vstage__hero" src={pic} alt="" /> : <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={6} />}
                 <span className="cq-vstage__name">{m.name}</span>
-                <span className="sr-only">{m.name}: +{summary.xp[i]} experience{summary.levels[i] > 0 && `. Level up! Now level ${m.level}`}</span>
+                {!raid && <span className="sr-only">{m.name}: +{summary.xp[i]} experience{summary.levels[i] > 0 && `. Level up! Now level ${m.level}`}</span>}
               </li>
             );
           })}
