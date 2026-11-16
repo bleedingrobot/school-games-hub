@@ -357,6 +357,9 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
   // The phases whose choices fit one slim row: they sit on the painting. The question and the end stay below it.
   const onStage = !fight.monster && (phase === 'orders' || phase === 'replay' || phase === 'summary' || phase === 'reward');
+  // The maths question, its working and the end of the fight pop up over the painting, so nothing needs scrolling.
+  // The end waits for the win flourish (the crest and the coins) to finish first.
+  const popUp = phase === 'ask' || phase === 'working' || phase === 'over';
   const look = fight.monster ? MONSTER_LOOKS[fight.monster.kind] : null;
   // The last thing in the log is the monster getting ready: the big move comes next round.
   const warned = !!look && phase !== 'replay' && !fight.result && fight.log[fight.log.length - 1]?.type === 'warn';
@@ -369,7 +372,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     : '';
   const backdrop = fight.monster ? arenaBackdrop(fight.monster.kind) : undefined;
   return (
-    <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''} ${onStage ? '' : 'is-tall-panel'}`} aria-label="The fight">
+    <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''} `.trim()} aria-label="The fight">
       {intro && fight.monster && <BossIntro kind={fight.monster.kind} clan={session.clan.name} onDone={() => setIntro(false)} />}
       {bossFoe && fight.monster && <BossBar kind={fight.monster.kind} hp={bossHp} maxHp={bossFoe.maxHp} startHp={bossStart} rage={warned} />}
       {look && (
@@ -377,7 +380,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
           <strong>The monster attacks!</strong> · Round {roundNow} of {maxRoundsOf(fight)}
         </p>
       )}
-      <div className={`cq-fightwrap ${onStage ? 'is-on-stage' : ''}`}>
+      <div className={`cq-fightwrap ${onStage ? 'is-on-stage' : ''} ${popUp ? 'is-pop' : ''}`}>
       <div
         className={`cq-arena ${bump || bigLanding ? 'is-bump' : ''} ${fight.monster ? 'cq-arena--boss' : 'cq-arena--stage'} ${bigLanding ? 'is-quake' : ''}`} onClick={skip}
         style={backdrop ? ({ '--cq-arena-back': `url(${backdrop})` } as React.CSSProperties) : ({ '--cq-stage': stageArt ? `url(${stageArt})` : undefined, gridTemplateColumns: stageColumns } as React.CSSProperties)}
@@ -573,7 +576,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               )}
             </div>
           )}
-          {phase === 'over' && <FightOver fight={fight} look={look} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
+          {phase === 'over' && !flourish && <FightOver fight={fight} look={look} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
         </div>
         {/* The fight shows each action on the painting; screen readers hear each one here. */}
         <ol className="sr-only" aria-label="Fight log" aria-live="polite" aria-relevant="additions">

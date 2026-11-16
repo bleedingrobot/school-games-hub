@@ -13,7 +13,7 @@
  "pictures": [
   {
    "name": "mine-0",
-   "prompt": "A sunny green meadow at the foot of rolling hills, a small wooden mine entrance in a grassy hillside, a rusty mine cart on short rails, wildflowers, a winding dirt path, soft morning light. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A sunny green meadow at the foot of rolling hills, a small wooden mine entrance in a grassy hillside, a rusty mine cart on short rails, wildflowers, a winding dirt path, soft morning light. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -24,7 +24,7 @@
   },
   {
    "name": "mine-1",
-   "prompt": "Grassy hills dotted with rabbit holes and mossy boulders, an old cart track leading towards a hillside, a broken wooden fence, butterflies, warm afternoon light. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "Grassy hills dotted with rabbit holes and mossy boulders, an old cart track leading towards a hillside, a broken wooden fence, butterflies, warm afternoon light. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -35,7 +35,7 @@
   },
   {
    "name": "mine-2",
-   "prompt": "The edge of an old apple orchard at golden hour, an abandoned tipped-over mine cart in long grass, a lantern hanging on a post, a dark hill with a timber-framed tunnel mouth behind. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "The edge of an old apple orchard at golden hour, an abandoned tipped-over mine cart in long grass, a lantern hanging on a post, a dark hill with a timber-framed tunnel mouth behind. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -46,7 +46,7 @@
   },
   {
    "name": "mine-3",
-   "prompt": "A wide timber-framed tunnel mouth at the end of a meadow at dusk, lanterns glowing on wooden beams, mine rails disappearing into the dark, grass giving way to stony ground. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A wide timber-framed tunnel mouth at the end of a meadow at dusk, lanterns glowing on wooden beams, mine rails disappearing into the dark, grass giving way to stony ground. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -57,7 +57,7 @@
   },
   {
    "name": "mine-4",
-   "prompt": "Inside a lantern-lit mine tunnel, thick timber supports, iron rails on the floor, pickaxes leaning on the wall, warm orange lantern glow on rough rock walls. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "Inside a lantern-lit mine tunnel, thick timber supports, iron rails on the floor, pickaxes leaning on the wall, warm orange lantern glow on rough rock walls. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -68,7 +68,7 @@
   },
   {
    "name": "mine-5",
-   "prompt": "A huge cavern full of glowing blue crystals growing from the walls and floor, cold blue light reflecting on smooth rock, a few old lanterns. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A huge cavern full of glowing blue crystals growing from the walls and floor, cold blue light reflecting on smooth rock, a few old lanterns. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -79,7 +79,7 @@
   },
   {
    "name": "mine-6",
-   "prompt": "A vast underground cavern with a dark river flowing through it, an old rope bridge across a chasm, dripping stalactites, green and blue cave glow. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A vast underground cavern with a dark river flowing through it, an old rope bridge across a chasm, dripping stalactites, green and blue cave glow. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -90,7 +90,7 @@
   },
   {
    "name": "mine-7",
-   "prompt": "A deep cavern forest of giant glowing mushrooms in purple and teal, dripping stalactites, drifting spores in the light, a narrow rocky floor. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A deep cavern forest of giant glowing mushrooms in purple and teal, dripping stalactites, drifting spores in the light, a narrow rocky floor. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -101,7 +101,7 @@
   },
   {
    "name": "mine-8",
-   "prompt": "A misty underground swamp under a cave roof, a rickety wooden boardwalk over murky water, hanging roots, reeds and floating lanterns. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A misty underground swamp under a cave roof, a rickety wooden boardwalk over murky water, hanging roots, reeds and floating lanterns. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -112,7 +112,7 @@
   },
   {
    "name": "mine-9",
-   "prompt": "A glowing green bog with twisted black roots and thick moss, bubbling pools, will-o'-the-wisp lights, fog hanging low. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A glowing green bog with twisted black roots and thick moss, bubbling pools, will-o'-the-wisp lights, fog hanging low. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -123,7 +123,7 @@
   },
   {
    "name": "mine-10",
-   "prompt": "A sunken village of crooked stilt huts standing in foggy swamp water, rope walkways between them, dim lamplight in round windows. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A deserted sunken village of crooked stilt huts standing in foggy swamp water, rope walkways between them, dim lamplight in round windows. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -134,7 +134,7 @@
   },
   {
    "name": "mine-11",
-   "prompt": "The heart of a vast swamp, an enormous gnarled ancient tree with roots like walls, giant lily pads, clouds of fireflies, deep green gloom. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "The heart of a vast swamp, an enormous gnarled ancient tree with roots like walls, giant lily pads, clouds of fireflies, deep green gloom. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -145,7 +145,7 @@
   },
   {
    "name": "mine-12",
-   "prompt": "Crumbling stone archways overgrown with ivy deep underground, broken pillars, scattered carved stones, soft shafts of pale light from above. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "Crumbling stone archways overgrown with ivy deep underground, broken pillars, scattered carved stones, soft shafts of pale light from above. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -156,7 +156,7 @@
   },
   {
    "name": "mine-13",
-   "prompt": "A ruined great hall with fallen statues and cracked mosaic floor, faint ghostly blue light drifting between pillars, cobwebs and dust. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A ruined great hall with fallen statues and cracked mosaic floor, faint ghostly blue light drifting between pillars, cobwebs and dust. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -167,7 +167,7 @@
   },
   {
    "name": "mine-14",
-   "prompt": "Ancient temple stairs climbing between two huge stone guardian statues, worn carvings, torches in iron brackets, mysterious golden glow at the top. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "Ancient temple stairs climbing between two huge stone guardian statues, worn carvings, torches in iron brackets, mysterious golden glow at the top. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -178,7 +178,7 @@
   },
   {
    "name": "mine-15",
-   "prompt": "A collapsed ancient throne room, an empty stone throne, broken columns, moonlight pouring through cracks in the high ceiling, dust in the air. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A collapsed ancient throne room, an empty stone throne, broken columns, moonlight pouring through cracks in the high ceiling, dust in the air. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -189,7 +189,7 @@
   },
   {
    "name": "mine-16",
-   "prompt": "A rocky mountain path leading out of a tunnel onto snowy cliffs, pine trees bent by wind, distant jagged peaks, cold evening light. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A rocky mountain path leading out of a tunnel onto snowy cliffs, pine trees bent by wind, distant jagged peaks, cold evening light. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -200,7 +200,7 @@
   },
   {
    "name": "mine-17",
-   "prompt": "A narrow icy ledge high on a mountain, swirling storm clouds, a flash of distant lightning, snow blowing across the rocks. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A narrow icy ledge high on a mountain, swirling storm clouds, a flash of distant lightning, snow blowing across the rocks. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -211,7 +211,7 @@
   },
   {
    "name": "mine-18",
-   "prompt": "The broken stone tower of an old wizard on a crag in a storm, glowing purple runes on the walls, lightning in the clouds, rain sweeping over rock. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "The broken stone tower of an old wizard on a crag in a storm, glowing purple runes on the walls, lightning in the clouds, rain sweeping over rock. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -222,7 +222,7 @@
   },
   {
    "name": "mine-19",
-   "prompt": "A volcanic mountain ridge with rivers of glowing lava, huge old dragon bones half buried in black rock, ash and embers drifting, red sky. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "A volcanic mountain ridge with rivers of glowing lava, huge old dragon bones half buried in black rock, ash and embers drifting, red sky. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
@@ -233,7 +233,7 @@
   },
   {
    "name": "mine-20",
-   "prompt": "The summit of a great dragon mountain, a gigantic cave lair glowing with embers and piles of gold coins inside, a storm raging overhead, lightning, epic and dramatic. Wide landscape, open flat ground across the whole foreground for figures to stand on, the scene's interest in the middle and upper part.",
+   "prompt": "The summit of a great dragon mountain, a gigantic cave lair glowing with embers and piles of gold coins inside, a storm raging overhead, lightning, epic and dramatic. Wide landscape, a wide open empty stretch of flat ground across the whole foreground, the scene's interest in the middle and upper part.",
    "size": [
     1536,
     864
