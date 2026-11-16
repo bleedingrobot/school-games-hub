@@ -33,6 +33,15 @@ export const ZONE_TEXT: Record<string, string> = {
   Ruins: 'Old ruins: stony guardians and ghosts.',
   Mountain: 'The high mountain: dragons, wizards and storms.',
 };
+/** Each depth's own place, matching its painting (docs/clans-mines-art/config.json): from the meadow down and out to the dragon's peak. */
+export const DEPTH_NAMES = [
+  'The Mine Gate', 'Bunny Hills', 'The Old Orchard', 'The Tunnel Mouth',
+  'Lantern Tunnels', 'Crystal Cavern', 'The Underground River', 'Mushroom Deep',
+  'The Boardwalk Bog', 'Glowmarsh', 'Stilt Village', 'The Great Root',
+  'Ivy Arches', 'The Ghostly Hall', 'Guardian Stairs', 'The Fallen Throne',
+  'The Mountain Path', 'Storm Ledge', "The Wizard's Tower", 'Dragonbone Ridge', "Dragon's Peak",
+];
+export const depthName = (depth: number) => DEPTH_NAMES[Math.max(0, Math.min(DEPTH_NAMES.length - 1, depth))];
 export const zoneForDepth = (depth: number) => (depth <= 3 ? 'Meadow' : depth <= 7 ? 'Caves' : depth <= 11 ? 'Swamp' : depth <= 15 ? 'Ruins' : 'Mountain');
 
 /** Enemies that crumble when beaten; the rest run off. */

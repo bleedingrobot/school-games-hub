@@ -24,15 +24,14 @@ import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
 import { BigMove, BossBar, BossFigure, BossIntro, BossWeather, arenaBackdrop } from './BossStage';
 import { monsterHp } from '../../../shared/clans/monster';
-import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
+import { castable, choosingOrder, describe, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
 import { bestHit, roundSteps, roundSummary, stepMs, type BestHit, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
-import { fxArt, sceneArt, zoneScene, type FxId } from './art';
+import { fxArt, mineArt, sceneArt, zoneScene, type FxId } from './art';
 import { lookOf } from '../../../shared/clans/looks';
 import { nextSeed, type Session } from './session';
-import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 
 type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'replay' | 'summary' | 'over';
 
@@ -120,7 +119,6 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const [intro, setIntro] = useState(() => !!boot.fight.monster && boot.fight.round === 0);
   const [replay, setReplay] = useState<Replay | null>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const logEnd = useRef<HTMLLIElement>(null);
 
   // The first round starts when the fight does; the next ones start after each round is played.
   const startRound = (f: FightState) => {
@@ -153,10 +151,6 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     // The orders and the reward are answered with letter keys, so the panel takes focus. The question, "how it works" and "over" have their own focus (the box or an autofocused button).
     if (phase === 'orders' || phase === 'reward' || phase === 'replay' || phase === 'summary') panel.current?.focus();
   }, [phase, editing, mode]);
-  // Braces matter: newer Chrome's scrollIntoView gives back a promise, and React would try to call it as the clean-up.
-  useEffect(() => {
-    logEnd.current?.scrollIntoView?.({ block: 'nearest' });
-  }, [log]);
 
   // ---- the Battle Cry
   const submitCry = (answer: number) => {
@@ -267,6 +261,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const spells = who ? castable(who) : [];
   const knowsSpells = !!who && who.spells.some((id) => SPELLS[id] && !SPELLS[id].notYet);
   const spellNote = spells.length ? ACTION_HELP.spell : knowsSpells ? 'Not enough SP right now.' : 'Knows no spells.';
+  // In the fight the help text is read out by screen readers and shown as a tooltip, so the buttons stay one slim row.
   const help = (text: string) => <small className="cq-btn__help">{text}</small>;
   // Healing potions still free for this member: the clan's potions less the ones other members' orders already use this round.
   const potionsLeft = (fight.monster?.potions ?? 0) - plan.filter((o, i) => o?.action === 'potion' && i !== editing).length;
@@ -355,6 +350,13 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
   const zone = MONSTERS_BY_NAME[fight.enemies[0]?.name.replace(/ [A-D]$/, '') ?? '']?.zone ?? 'Meadow';
   const zoneArt = sceneArt(zoneScene(zone)).small;
+  // Mine fights are one painted stage: the zone, full size, behind both sides, with the buttons along its bottom edge.
+  const stageArt = fight.monster ? undefined : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
+  // Each side gets room for its own fighters, so four members facing two monsters aren't squeezed into half the stage.
+  const stageColumns = `minmax(0, ${Math.max(1.5, fight.enemies.length)}fr) minmax(0, ${Math.max(1.5, fight.clan.length)}fr)`;
+  const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
+  // The phases whose choices fit one slim row: they sit on the painting. The question and the end stay below it.
+  const onStage = !fight.monster && (phase === 'orders' || phase === 'replay' || phase === 'summary' || phase === 'reward');
   const look = fight.monster ? MONSTER_LOOKS[fight.monster.kind] : null;
   // The last thing in the log is the monster getting ready: the big move comes next round.
   const warned = !!look && phase !== 'replay' && !fight.result && fight.log[fight.log.length - 1]?.type === 'warn';
@@ -367,16 +369,29 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     : '';
   const backdrop = fight.monster ? arenaBackdrop(fight.monster.kind) : undefined;
   return (
-    <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''}`} aria-label="The fight">
+    <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''} ${onStage ? '' : 'is-tall-panel'}`} aria-label="The fight">
       {intro && fight.monster && <BossIntro kind={fight.monster.kind} clan={session.clan.name} onDone={() => setIntro(false)} />}
       {bossFoe && fight.monster && <BossBar kind={fight.monster.kind} hp={bossHp} maxHp={bossFoe.maxHp} startHp={bossStart} rage={warned} />}
-      <p className="cq-fight__top">
-        <strong>{look ? 'The monster attacks!' : `Depth ${fight.depth}`}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight))}{look ? ` of ${maxRoundsOf(fight)}` : <> · Fights today: {session.unlimitedToday && session.fightsLeft === 0 ? UNLIMITED_LABEL : fightsLabel(session.fightsLeft, session.fightsPerDay)}</>}
-      </p>
+      {look && (
+        <p className="cq-fight__top">
+          <strong>The monster attacks!</strong> · Round {roundNow} of {maxRoundsOf(fight)}
+        </p>
+      )}
+      <div className={`cq-fightwrap ${onStage ? 'is-on-stage' : ''}`}>
       <div
-        className={`cq-arena ${bump || bigLanding ? 'is-bump' : ''} ${fight.monster ? 'cq-arena--boss' : ''} ${bigLanding ? 'is-quake' : ''}`} onClick={skip}
-        style={backdrop ? ({ '--cq-arena-back': `url(${backdrop})` } as React.CSSProperties) : undefined}
+        className={`cq-arena ${bump || bigLanding ? 'is-bump' : ''} ${fight.monster ? 'cq-arena--boss' : 'cq-arena--stage'} ${bigLanding ? 'is-quake' : ''}`} onClick={skip}
+        style={backdrop ? ({ '--cq-arena-back': `url(${backdrop})` } as React.CSSProperties) : ({ '--cq-stage': stageArt ? `url(${stageArt})` : undefined, gridTemplateColumns: stageColumns } as React.CSSProperties)}
       >
+        {!look && (
+          <p className="cq-stage__round">
+            Depth {fight.depth} · Round {roundNow}
+          </p>
+        )}
+        {!look && shownStep && (
+          <p className="cq-stage__caption" aria-hidden="true" key={replay?.at}>
+            {shownStep.line}
+          </p>
+        )}
         {flourish && <Victory />}
         {fight.monster && <BossWeather kind={fight.monster.kind} />}
         {fight.monster && bigLanding && <BigMove kind={fight.monster.kind} />}
@@ -415,7 +430,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             <li key={f.index} className={`${hp > 0 ? '' : 'is-down'} ${upNext === f.index ? 'is-up' : ''} ${fx.cls}`} aria-current={upNext === f.index ? 'true' : undefined}>
               {fx.burst}
               {fx.float}
-              <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={3} />
+              <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={8} />
               <span className="cq-name">{f.name}</span>
               <Bar label="HP" value={hp} max={f.maxHp} kind="hp" ghost />
               {f.maxSp > 0 && <Bar label="SP" value={f.sp} max={f.maxSp} kind="sp" />}
@@ -435,7 +450,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       <div className="cq-lower">
         <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : planning ? 'The plan for this round' : phase === 'replay' ? `Round ${replay?.after.round ?? ''}` : phase === 'summary' ? 'What happened' : 'The fight is over'}>
           {phase === 'replay' && (
-            <div className="cq-choice">
+            <div className="cq-choice cq-choice--bar">
               <h3>Round {replay?.after.round}…</h3>
               <button type="button" className="cq-btn" onClick={skip}>
                 <kbd>Enter</kbd> Skip
@@ -444,7 +459,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             </div>
           )}
           {phase === 'summary' && replay && (
-            <div className="cq-choice">
+            <div className="cq-choice cq-choice--bar">
               <p className="cq-summary" role="status">{replay.summary}</p>
               <button type="button" className="cq-btn cq-btn--hot" onClick={nextRound}>
                 <kbd>Enter</kbd> Next round
@@ -458,7 +473,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             <QuestionModal question={shown(ladderQuestion)} title="Battle Cry!" note={BATTLE_CRY_NOTE} onSubmit={checkLadder} onDone={ladderDone} onClose={ladderNoThanks} closeLabel="No thanks" />
           )}
           {phase === 'reward' && (
-            <div className="cq-choice">
+            <div className="cq-choice cq-choice--bar">
               <h3>Right! Spend your Battle Cry on…</h3>
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => chooseReward('damage')}>
@@ -480,38 +495,38 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             </div>
           )}
           {planning && (
-            <div className="cq-choice">
-              <h3>The plan for this round</h3>
+            <div className="cq-choice cq-choice--bar">
+              <h3 className="sr-only">The plan for this round</h3>
               <div className="cq-actions">
                 {seq.map((i, n) => (
-                  <button type="button" key={i} className="cq-btn" aria-label={`Change ${fight.clan[i].name}: ${orderText(plan[i], fight)}`} onClick={() => setEditing(i)}>
-                    <kbd>{n + 1}</kbd> {fight.clan[i].name}: {orderText(plan[i], fight)}
-                    {help('Change')}
+                  <button type="button" key={i} className="cq-btn cq-plan" title="Change this order" aria-label={`Change ${fight.clan[i].name}: ${orderText(plan[i], fight)}`} onClick={() => setEditing(i)}>
+                    <kbd>{n + 1}</kbd> {fight.clan[i].name}
+                    <small className="cq-plan__order">{orderText(plan[i], fight)}</small>
                   </button>
                 ))}
-                <button type="button" className="cq-btn cq-btn--hot" onClick={() => play(plan)}>
-                  <kbd>Enter</kbd> Fight with this plan
+                <button type="button" className="cq-btn cq-btn--hot cq-btn--go" title={ACTION_HELP.plan} onClick={() => play(plan)}>
+                  <kbd>Enter</kbd> Fight!
                   {help(ACTION_HELP.plan)}
                 </button>
               </div>
             </div>
           )}
           {phase === 'orders' && who && (
-            <div className="cq-choice">
+            <div className="cq-choice cq-choice--bar">
               <h3>
                 {who.name}: {mode === 'action' ? 'what will they do?' : mode === 'spell' ? 'which spell?' : potion ? 'give a healing potion to…' : spell !== null ? `cast ${SPELLS[spell].name} on…` : 'attack…'}
               </h3>
               {mode === 'action' && (
                 <div className="cq-actions">
-                  <button type="button" className="cq-btn" onClick={pickAttack}>
+                  <button type="button" className="cq-btn" title={ACTION_HELP.attack} onClick={pickAttack}>
                     <kbd>A</kbd> Attack
                     {help(ACTION_HELP.attack)}
                   </button>
-                  <button type="button" className="cq-btn" disabled={!spells.length} onClick={() => setMode('spell')}>
+                  <button type="button" className="cq-btn" title={spellNote} disabled={!spells.length} onClick={() => setMode('spell')}>
                     <kbd>S</kbd> Spell
                     {help(spellNote)}
                   </button>
-                  <button type="button" className="cq-btn" onClick={() => choose({ action: 'guard' })}>
+                  <button type="button" className="cq-btn" title={ACTION_HELP.guard} onClick={() => choose({ action: 'guard' })}>
                     <kbd>G</kbd> Guard
                     {help(ACTION_HELP.guard)}
                   </button>
@@ -521,11 +536,11 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                       {help(ACTION_HELP.potion(Math.round(CONFIG.monster.potionHeal * 100)))}
                     </button>
                   )}
-                  <button type="button" className="cq-btn" onClick={() => choose({ action: 'run' })}>
+                  <button type="button" className="cq-btn" title={ACTION_HELP.run} onClick={() => choose({ action: 'run' })}>
                     <kbd>R</kbd> Run
                     {help(ACTION_HELP.run)}
                   </button>
-                  <button type="button" className="cq-btn" onClick={backToPlan}>
+                  <button type="button" className="cq-btn" title={ACTION_HELP.keep} onClick={backToPlan}>
                     <kbd>Esc</kbd> Keep the plan
                     {help(ACTION_HELP.keep)}
                   </button>
@@ -560,14 +575,13 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
           )}
           {phase === 'over' && <FightOver fight={fight} look={look} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
         </div>
-        <ol className="cq-log" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
+        {/* The fight shows each action on the painting; screen readers hear each one here. */}
+        <ol className="sr-only" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
           {log.map((line, i) => (
-            <li key={i} className={`${/^Round \d+$/.test(line) ? 'cq-log__round' : ''} ${phase === 'replay' && i === log.length - 1 && replay && replay.at > 0 ? 'is-now' : ''}`.trim() || undefined}>
-              {line}
-            </li>
+            <li key={i}>{line}</li>
           ))}
-          <li ref={logEnd} aria-hidden="true" />
         </ol>
+      </div>
       </div>
     </section>
   );
@@ -586,6 +600,12 @@ function Victory() {
     <div className="cq-victory" aria-hidden="true">
       {art && <img src={art} alt="" />}
       <strong>Victory!</strong>
+      {/* A shower of gold over the stage (CSS only; nothing shows with reduced motion). */}
+      <span className="cq-coins">
+        {Array.from({ length: 14 }, (_, i) => (
+          <span key={i} style={{ '--i': i } as React.CSSProperties} />
+        ))}
+      </span>
     </div>
   );
 }
