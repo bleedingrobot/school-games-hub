@@ -631,7 +631,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           }}
           onStart={() => setPhase({ k: 'planet' })}
           firstTime={coach.flight === null && jumpsMade === 0 && bolt}
-          onReplay={replay}
           level={level}
           onLevel={(l) => remember((m) => ({ ...m, level: l }))}
           onExit={onExit}
@@ -828,7 +827,7 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onReplay, level, onLevel, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
@@ -836,7 +835,6 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
   onStart: () => void;
   /** A new pupil: Bolt will fly with them. */
   firstTime: boolean;
-  onReplay?: () => void;
   level: HelpLevel;
   onLevel: (level: HelpLevel) => void;
   onExit?: () => void;
@@ -848,7 +846,6 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
         <p className="st-title__p">Fly a small ship between the planets. Buy cargo where it is cheap and sell it where it is dear. Upgrade your ship, outsmart the pirates, and save up to buy a moon of your very own.</p>
         <div className="st-actions st-actions--centre">
           <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart}>Start trading</button>
-          {onReplay && <button type="button" className="st-btn st-btn--big" onClick={onReplay}>Replay First Flight</button>}
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
         </div>
         {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}
