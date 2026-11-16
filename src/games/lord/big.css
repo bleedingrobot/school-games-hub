@@ -266,3 +266,18 @@
 @media (max-width: 640px) {
   .lord-pin { width: calc(50% - 10px); font-size: 0.92rem; }
 }
+
+/* Map labels all the size of the "You" label, on see-through backgrounds so the painting shows; your hero stands big in
+   the bottom left corner (James, 17 Nov 2026). These come last, so they win over the rules above. */
+.lord-map__spot > span, .lord-map__hero > span {
+  gap: 4px; padding: 0 8px 0 3px; font-size: clamp(0.8rem, 1.1vw, 0.98rem); line-height: 1.5; border-radius: 6px;
+  color: #ffe9b8; background: rgba(20, 12, 6, 0.5); border: 1px solid rgba(224, 178, 90, 0.75); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 2px #000, 0 0 6px #000;
+}
+.lord-map__spot--forest:not(:disabled) > span { font-size: clamp(0.8rem, 1.1vw, 0.98rem); background: rgba(28, 64, 24, 0.55); border-color: #a6e07a; }
+.lord-map__spot--dragon:not(:disabled) > span { font-size: clamp(0.8rem, 1.1vw, 0.98rem); background: rgba(122, 28, 14, 0.6); border-color: #ff9a6a; }
+.lord-map__spot:hover:not(:disabled) > span, .lord-map__spot:focus-visible > span { background: rgba(122, 36, 16, 0.85); color: #fff; }
+.lord-map__hero .lord-art { height: clamp(130px, 40cqh, 360px) !important; }
+@media (max-width: 760px) {
+  .lord-map__spot > span, .lord-map__hero > span { font-size: 0.85rem; }
+}

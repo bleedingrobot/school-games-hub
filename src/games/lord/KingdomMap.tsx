@@ -55,7 +55,7 @@ export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, bus
               </button>
             );
           })}
-          <button type="button" className="lord-map__hero" style={{ left: '45%', top: '73%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
+          <button type="button" className="lord-map__hero" style={{ left: '9%', top: '99%' }} onClick={() => onGo('hero')} aria-label="Your hero" aria-keyshortcuts="Y" disabled={busy}>
             <HeroSprite heroClass={heroClass} look={look} scale={4} label="" />
             <span><kbd>Y</kbd>You</span>
           </button>
