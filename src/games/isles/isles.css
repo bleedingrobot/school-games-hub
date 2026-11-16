@@ -10,7 +10,7 @@
   --si-gold-edge: #a16207;
   --si-pip-line: #1e5a8a;
   box-sizing: border-box;
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 10px 12px 14px;
   border-radius: 18px;
@@ -28,6 +28,7 @@
 .si [tabindex='-1']:focus { outline: none; }
 
 .si-top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.si-top .si-steps { margin-right: auto; }
 .si-top__right { display: flex; gap: 12px; align-items: center; }
 .si-keeperbtn { width: 48px; height: 48px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); background: var(--surface); overflow: hidden; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 53, 86, 0.3); }
 .si-keeperbtn img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -43,19 +44,58 @@
 .si-res strong { font-variant-numeric: tabular-nums; }
 .si-res__warn { font-style: normal; font-size: 0.82rem; color: var(--lost); font-weight: 700; }
 
-.si-main { display: grid; gap: 12px; }
-@media (min-width: 760px) {
-  .si-main { grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); align-items: start; }
-  .si-left { position: sticky; top: 8px; }
+/* The painting first, as big as the screen allows; everything else in a row under it (James, 17 Nov 2026). */
+.si-main { display: grid; gap: 10px; }
+.si-left { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* On a Chromebook or bigger, My island and a turn fill the screen exactly: the painting takes whatever the top bar
+   and the row under it leave. The row never takes more than about 40% (a long Last turn scrolls inside it). An island
+   with a sky garden or extra spots under it is laid out as a long page instead. */
+@media (min-width: 760px) and (min-height: 481px) {
+  .si--play:not(:has(.si-stage--tall)) { height: calc(100dvh - 24px); min-height: 520px; }
+  .si--play > .si-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .si--play .si-left { flex: 1 1 auto; min-height: 0; }
+  .si--play .si-stage:not(.si-stage--tall) { flex: 1 1 auto; min-height: 0; container-type: size; }
+  .si--play .si-stage:not(.si-stage--tall) .si-isle { --si-h: calc(100cqh / (1 + 0.08 * var(--si-aspect, 1.45))); }
+  .si--play:not(:has(.si-stage--tall)) .si-dock { flex: 0 1 auto; max-height: 40dvh; overflow-y: auto; margin: -8px; padding: 8px; }
 }
-.si-left, .si-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.si-dock { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.si-dock > * { flex: 1 1 220px; min-width: 0; }
+.si-dock > .si-step, .si-dock > .si-home { flex: 3 1 440px; }
+.si-dock > .si-pipsays { flex: 1 1 220px; }
+.si-dock .si-pipsays p { font-size: 0.95rem; }
+.si-dock .si-pip { width: 52px; }
+.si-dock .si-step .si-buildgrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+/* The decoration shelf under the painting: little cards side by side instead of one long list. */
+.si-dock .si-shelf__list { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.si-dock .si-shelf__item { flex-wrap: nowrap; padding: 6px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.si-dock .si-shelf__words { flex: 1 1 auto; }
+.si-dock .si-step { padding: 10px 14px; }
+.si-dock .si-step__body { gap: 6px; }
+.si .si-dock .si-step .si-actions .button { min-height: 44px; padding: 6px 12px; }
+/* On the painting: what the island has (top) and the road to Grand Isle (bottom), on frosted glass. */
+.si-over { position: absolute; left: 10px; z-index: 350; pointer-events: none; max-width: calc(100% - 20px); }
+.si-over--top { top: 10px; }
+.si-over--bottom { bottom: 10px; padding: 6px 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(15, 53, 86, 0.18); }
+.si-over .si-res li { background: rgba(255, 255, 255, 0.82); border-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(6px); box-shadow: 0 2px 6px rgba(15, 53, 86, 0.18); font-size: 1rem; }
+/* Small screens: the island fills the painting's width, so the numbers and the road sit just under it, still on the
+   painting, instead of over the buildings. */
+@media (max-width: 759px), (max-height: 480px) {
+  .si-over { position: static; max-width: none; margin-top: 8px; }
+  .si-over--bottom { display: inline-block; }
+}
+@media (min-width: 900px) {
+  /* Wide screens: the island sits in the middle, so the numbers stand in a column in the sky on its left. */
+  .si-over--top .si-res { flex-direction: column; align-items: flex-start; }
+}
 
 /* The play area: the painted sky and the island. */
 /* `isolation` keeps the island's own layers (buildings, walkers, the drift) inside the picture, so the question box
    always sits on top of them. */
-.si-stage { position: relative; isolation: isolate; border-radius: 16px; padding: 5% 3% 3%; background: #a9d8f2 var(--si-bg) center / cover no-repeat; overflow: hidden; }
+.si-stage { position: relative; isolation: isolate; container-type: inline-size; border-radius: 16px; padding: 0 12px 2%; background: #a9d8f2 var(--si-bg) center / cover no-repeat; overflow: hidden; }
 @media (max-width: 800px) { .si-stage { background-image: var(--si-bg-small); } }
-.si-isle { position: relative; width: min(100%, max(240px, calc((100dvh - 290px) * 1.45))); margin: 0 auto; }
+/* The island is as tall as the screen allows (--si-h, leaving room for the top bar and the row under the painting),
+   as wide as the painting at most, with headroom above it so the tallest buildings are never cut off. */
+.si-isle { --si-h: max(240px, calc(100dvh - 300px)); --si-w: min(100cqw - 24px, var(--si-h) * var(--si-aspect, 1.45)); position: relative; width: var(--si-w); margin: calc(var(--si-w) * 0.08) auto 0; }
 .si-isle__base { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
 .si-isle__drawn { position: absolute; inset: 0; border-radius: 50% 50% 46% 46% / 30% 30% 70% 70%; background: linear-gradient(180deg, #8bcf62 0 42%, #6f9a3c 42% 46%, #94643c 46%); }
 .si-spot { position: absolute; transform: translate(-50%, -84%); min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; }
@@ -181,6 +221,28 @@
 .si-steps__dots > .si-steps__now { width: 18px; background: var(--si-gold); border-color: var(--si-gold-edge); border-radius: 6px; }
 .si-steps__words { font-size: 0.92rem; font-weight: 700; color: var(--si-title); }
 .si-step { gap: 10px; }
+.si-step__body { display: grid; gap: 8px; min-width: 0; align-content: start; }
+@media (min-width: 760px) {
+  .si-step { display: flex; align-items: center; gap: 14px; }
+  .si-step__body { flex: 1 1 auto; }
+  .si-step__nav { flex: 0 0 auto; flex-wrap: nowrap; }
+  /* A tall step (the shelf) scrolls in the row; its buttons stay in view at the top right. */
+  .si-dock .si-step:has(.si-shelf) .si-step__nav { align-self: flex-start; position: sticky; top: 0; z-index: 1; }
+  /* The Build step's choices side by side, so the row under the painting stays slim. */
+  .si-step .si-actions { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .si-sofar { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+}
+.si-home { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.si .si-home .si-big { width: auto; flex: 1 1 170px; min-height: 64px; font-size: 1.35rem; }
+.si-home__more { flex: 0 1 auto; align-items: center; flex-wrap: nowrap; }
+.si .si-home__more .button { white-space: nowrap; }
+.si-resting { display: flex; gap: 12px; align-items: center; flex: 1 1 320px; }
+.si-resting .si-card-pic { width: 180px; flex: 0 0 auto; }
+/* Last turn under the painting: the weather card small, beside the words. */
+.si-report { align-content: start; }
+.si-report:has(> .si-card-pic) { grid-template-columns: auto minmax(0, 1fr); align-items: start; column-gap: 12px; }
+.si-report > h3, .si-report > .si-sums { grid-column: -2; }
+.si-report > .si-card-pic { grid-column: 1; grid-row: 1 / span 2; width: 150px; }
 .si-step__nav { align-items: center; }
 .si-step__main { font-size: 1.1rem; min-height: 48px; }
 .si-step__why { padding: 8px 10px; border-radius: 10px; background: var(--tint); color: var(--ink) !important; font-weight: 700; }
@@ -273,10 +335,17 @@
   .si-keeperbtn { width: 44px; height: 44px; }
   .si-res { gap: 4px; }
   .si-res li { padding: 1px 8px; font-size: 0.82rem; }
-  .si-main { grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1.2fr); gap: 8px; }
+  .si-main { grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr); gap: 8px; align-items: start; }
+  .si-dock { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+  .si .si-dock > * { flex: 0 0 auto; }
+  .si .si-home__more { flex-wrap: wrap; }
+  .si .si-home .si-big { flex: 0 0 auto; min-height: 52px; font-size: 1.15rem; }
+  .si-step { display: grid; }
+  .si-home { flex-direction: column; align-items: stretch; }
+  .si-over .si-res li { font-size: 0.78rem; padding: 1px 7px; }
   .si-top h2, .si-steps { white-space: nowrap; flex-wrap: nowrap; }
-  .si-isle { width: min(100%, max(200px, calc((100dvh - 215px) * 1.45))); }
-  .si-stage { padding: 3% 3% 2%; }
+  .si-isle { --si-h: max(180px, calc(100dvh - 150px)); }
+  .si-stage { padding: 0 8px 2%; }
   .si-pipsays { padding: 4px 8px; gap: 8px; }
   .si-pip { width: 40px; }
   .si-pipsays p { font-size: 0.88rem; }
@@ -335,7 +404,7 @@
 .si-name { min-height: 48px; padding: 8px 12px; border-radius: 14px; border: 3px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
 .si-name--on { border-color: var(--si-gold); box-shadow: 0 0 0 3px var(--si-gold-edge); background: var(--card); }
 .si-isle-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; font-family: var(--display); font-size: 1.15rem; font-weight: 700; color: var(--ink); }
-.si-isle-name__btn { font-size: 0.9rem; min-height: 44px; }
+.si .si-isle-name__btn { font-size: 0.85rem; min-height: 40px; padding: 4px 12px; width: auto; flex: 0 0 auto; margin-right: auto; }
 .si-mate__isle { font-weight: 700; color: var(--ink-soft); }
 .si-hall { display: grid; gap: 12px; }
 /* Painted weather cards and scenes (Card in Island.tsx). */

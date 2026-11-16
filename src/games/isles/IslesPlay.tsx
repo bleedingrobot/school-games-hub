@@ -445,7 +445,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const placing = turnStep === Step.Build && (build.kind === 'place' || build.kind === 'move');
 
   return (
-    <div className="si">
+    <div className={`si${screen.kind === 'howto' ? '' : ' si--play'}`}>
       <Say text={voiceLine} say={voice.say} />
       <TrophyWonLine games={['isles']} watch={view?.island.turn} off={backend.trial} />
       <header className={`si-top${turnStep !== null ? ' si-top--turn' : ''}`}>
@@ -454,6 +454,11 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
           <h2 ref={heading} tabIndex={-1}>
             {screen.kind === 'home' && view.name ? <><span aria-hidden="true">🏝️ </span>{view.name}</> : HEADINGS[screen.kind]}
           </h2>
+        )}
+        {screen.kind === 'home' && (
+          <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
+            {view.name ? 'Rename' : 'Name your island'}
+          </button>
         )}
         {turnStep !== null && <StepStrip step={turnStep} />}
         <div className="si-top__right">
@@ -472,17 +477,10 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
         </div>
       </header>
 
-      <Resources island={shownIsland} />
-      {screen.kind === 'home' && (
-        <p className="si-isle-name">
-          <button type="button" className="button button--light si-isle-name__btn" onClick={() => setScreen({ kind: 'name' })}>
-            {view.name ? 'Rename' : 'Name your island'}
-          </button>
-        </p>
-      )}
 
       {screen.kind === 'howto' ? (
         <section className="si-panel">
+          <Resources island={shownIsland} />
           <fieldset className="si-help">
             <legend>How much should Pip help?</legend>
             <div className="si-row" role="radiogroup" aria-label="Pip's help">
@@ -538,13 +536,50 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               }}
               pops={pops}
               fresh={fresh}
-            />
-            {turnStep === null ? <Road island={shownIsland} /> : pipLine}
+            >
+              {/* What the island has sits on the painting, in the sky round the island (James, 17 Nov 2026). */}
+              <div className="si-over si-over--top"><Resources island={shownIsland} /></div>
+              {turnStep === null && <div className="si-over si-over--bottom"><Road island={shownIsland} /></div>}
+            </IslandPicture>
           </div>
 
-          <div className="si-right">
-            {turnStep === null && pipLine}
-
+          {/* Everything else sits in a row under the painting, so the island can be as big as the screen allows. */}
+          <div className="si-dock">
+            {/* While a spot, the shelf or a place is open, its choices get the whole row (unless Pip is guiding). */}
+            {!(turnStep === Step.Build && build.kind !== 'island' && !again && !guideNow) && pipLine}
+            {screen.kind === 'home' && (
+              <section className="si-panel si-home">
+                {island.turnsLeft < 1 && !unlimited ? (
+                  <div className="si-resting">
+                    <Card art={sceneArt('night')} />
+                    <div>
+                      <p><strong>Your island is resting. See you tomorrow!</strong></p>
+                      <p className="si-note">Tomorrow brings {TURNS_PER_DAY} new turns and more land on the wind.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
+                    Play a turn
+                  </button>
+                )}
+                <div className="si-row si-home__more">
+                  {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
+                  {raceWords === null && (
+                    <button
+                      type="button"
+                      className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
+                      data-pip="race"
+                      onClick={() => setScreen({ kind: 'race', open: null })}
+                    >
+                      Sky Race
+                    </button>
+                  )}
+                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
+                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
+                </div>
+                {problem && <p className="si-problem" role="alert">{problem}</p>}
+              </section>
+            )}
 
             {screen.kind === 'home' && cheer && (
               <section className="si-panel si-cheer" aria-label="Pip says well done">
@@ -585,37 +620,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               </section>
             )}
 
-            {screen.kind === 'home' && (
-              <section className="si-panel si-home">
-                {island.turnsLeft < 1 && !unlimited ? (
-                  <div className="si-resting">
-                    <Card art={sceneArt('night')} />
-                    <p><strong>Your island is resting. See you tomorrow!</strong></p>
-                    <p className="si-note">Tomorrow brings {TURNS_PER_DAY} new turns and more land on the wind.</p>
-                  </div>
-                ) : (
-                  <button type="button" className={`button button--play si-big${lit === 'play' || stepOf(lit) !== null ? ' si-lit' : ''}`} data-pip="play" onClick={startTurn}>
-                    Play a turn
-                  </button>
-                )}
-                <div className="si-row">
-                  {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
-                  {raceWords === null && (
-                    <button
-                      type="button"
-                      className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
-                      data-pip="race"
-                      onClick={() => setScreen({ kind: 'race', open: null })}
-                    >
-                      Sky Race
-                    </button>
-                  )}
-                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
-                </div>
-                <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
-                {problem && <p className="si-problem" role="alert">{problem}</p>}
-              </section>
-            )}
 
             {turnStep !== null && planned && (
               <TurnStep
