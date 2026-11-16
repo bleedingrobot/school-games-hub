@@ -22,9 +22,8 @@ const SPOTS: { id: TownPlace; label: string; before?: string; x: number; y: numb
 export const hasTownMap = () => !!sceneArt('town').wide;
 
 /**
- * The painted town at the top of the home screen: tap a place to go there (as in Dragon Maths). It is a shortcut for a
- * mouse or a finger; the list of places under it does the same for the keyboard and screen readers, so the map itself is
- * hidden from them. `notes` add a short word under a label ("2 fights", "done today"); `off` places are faded and can't be tapped;
+ * The painted town at the top of the home screen: tap a place to go there (as in Dragon Maths). It is the way round town
+ * for everyone: each place is a real button, reached with Tab and read out with its full name and note. `notes` add a short word under a label ("2 fights", "done today"); `off` places are faded and can't be tapped;
  * `hot` places glow (something to do there now). A place missing from `shown` is not on the map today (the monster outside its week).
  */
 export function TownMap({ onGo, shown, off = [], hot = [], notes = {} }: {
@@ -33,14 +32,15 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {} }: {
   const art = sceneArt('town');
   if (!art.wide) return null;
   return (
-    <div className="cq-town" aria-hidden="true">
+    <nav className="cq-town" aria-label="Places in town">
       <picture>
         <source media="(max-width: 900px)" srcSet={art.small} />
         <img src={art.wide} alt="" draggable={false} />
       </picture>
       {SPOTS.filter((s) => shown.includes(s.id)).map((s) => (
         <button
-          key={s.id} type="button" tabIndex={-1} data-place={s.id}
+          key={s.id} type="button" data-place={s.id}
+          aria-label={`${s.before ?? ''}${s.label}${s.id === 'scoreboard' ? ' (scoreboard)' : ''}${notes[s.id] ? `, ${notes[s.id]}` : ''}`}
           className={`cq-town__spot${hot.includes(s.id) ? ' cq-town__spot--hot' : ''}`}
           style={{ left: `${s.x}%`, top: `${s.y}%` }} disabled={off.includes(s.id)} onClick={() => onGo(s.id)}
         >
@@ -50,6 +50,6 @@ export function TownMap({ onGo, shown, off = [], hot = [], notes = {} }: {
           </span>
         </button>
       ))}
-    </div>
+    </nav>
   );
 }

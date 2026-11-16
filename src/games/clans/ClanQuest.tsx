@@ -489,17 +489,22 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
               <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong> · Fame: <strong>{session.fame ?? 0}</strong> (season {session.season ?? 1})</p>
               {suppliesOnSale(session.clock) && !monsterWeek(session.clock) && <MonsterWarning clock={session.clock} />}
               <div className="cq-actions">
-                <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
-                {(monsterWeek(session.clock) || !server) && (
-                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('monster')}>{monsterWeek(session.clock) ? 'The Monster' : 'The Monster (practice)'}</button>
+                {/* The town map above is the way to every place; this list is only for when the map can't be shown. */}
+                {!hasTownMap() && (
+                  <>
+                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
+                  {(monsterWeek(session.clock) || !server) && (
+                    <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('monster')}>{monsterWeek(session.clock) ? 'The Monster' : 'The Monster (practice)'}</button>
+                  )}
+                  <button type="button" className="cq-btn" onClick={() => setScreen('market')}>The Market</button>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('training')}>The Training Hall</button>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('church')}>The Church</button>
+                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('myvillage')}>My Village</button>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('news')}>News</button>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('scoreboard')}>Scoreboard</button>
+                  </>
                 )}
-                <button type="button" className="cq-btn" onClick={() => setScreen('market')}>The Market</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('training')}>The Training Hall</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('church')}>The Church</button>
-                <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('myvillage')}>My Village</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('news')}>News</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('scoreboard')}>Scoreboard</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('howto')}>How to play</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('achievements')}>Achievements ({(session.achievements ?? []).length} of {ACHIEVEMENTS.length})</button>
               </div>
