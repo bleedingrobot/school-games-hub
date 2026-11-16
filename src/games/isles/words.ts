@@ -104,7 +104,7 @@ export function whyNot(island: Island, action: Action, problem: Problem | RacePr
 export function collectLines(island: Island, windy: boolean): string[] {
   const { collected: c } = beforeBuilding(island, windy);
   const lines: string[] = [];
-  const parts = (Object.keys(KIND_NAME) as PlotKind[]).filter((kind) => c.coins[kind]).map((kind) => `${n(c.coins[kind])} from ${KIND_NAME[kind]}s`);
+  const parts = (Object.keys(KIND_NAME) as PlotKind[]).filter((kind) => c.coins[kind]).map((kind) => `${n(c.coins[kind])} from ${KIND_NAME[kind] === 'Library' ? 'Libraries' : `${KIND_NAME[kind]}s`}`);
   const made = parts.length ? (Object.values(c.coins) as number[]).reduce((a, b) => a + b, 0) : 0;
   if (parts.length > 1) lines.push(`Coins: ${parts.join(' + ')} = ${plural(made, 'coin')}`);
   else if (parts.length) lines.push(`Coins: ${parts[0]}`);
