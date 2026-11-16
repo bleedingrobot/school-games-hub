@@ -8,8 +8,8 @@
   "text": "This is what your island made this turn."
  },
  {
-  "slug": "tap-a-spot-to-build-the-drifting-land-to-anchor-it-or-decorate-for-something-pretty",
-  "text": "Tap a spot to build, the drifting land to anchor it, or Decorate for something pretty."
+  "slug": "choose-something-to-build-or-press-done-building",
+  "text": "Choose something to build, or press Done building."
  },
  {
   "slug": "race-the-gull-riders-if-you-like-then-end-your-turn",
@@ -222,6 +222,14 @@
  {
   "slug": "press-end-turn-to-collect-what-your-island-makes",
   "text": "Press End turn to collect what your island makes."
+ },
+ {
+  "slug": "all-done-press-end-turn-to-finish-your-turn",
+  "text": "All done! Press End turn to finish your turn."
+ },
+ {
+  "slug": "that-s-all-you-can-build-for-now-press-done-building",
+  "text": "That's all you can build for now. Press Done building."
  },
  {
   "slug": "your-island-grew-you-have-0-turns-left-today-each-turn-a-question-collect-build-then-race-or-rest-i-ll-keep-a-tip-for-you-next-to-your-island-tap-show-me-any-time-and-i-ll-point-to-the-button",

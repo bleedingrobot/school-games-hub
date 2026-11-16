@@ -12,7 +12,7 @@ import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { celebration, chooseLine, GUIDE } from './guide';
 import { TIPS } from './help';
 import { RACE_WORDS, rivalWords } from './Race';
-import { QUESTION_WORDS, STEP_PIP } from './TurnSteps';
+import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP } from './TurnSteps';
 
 /** Relative to the page, so it works at bleedingrobot.github.io/school-games-hub/ too. */
 export const VOICE_FOLDER = 'voice/isles/';
@@ -33,7 +33,7 @@ export function allVoiceLines(): string[] {
       lines.add(nextTurnLine(buildLine(kind, one)));
     }
   }
-  for (const line of [RESTING_LINE, RACE_LINE, END_TURN_LINE]) lines.add(line);
+  for (const line of [RESTING_LINE, RACE_LINE, END_TURN_LINE, REST_NO_RACE, BUILD_ALL_DONE]) lines.add(line);
   for (let left = 0; left <= TURNS_PER_DAY; left++) lines.add(cheerLine(celebration(left)));
   const { gust, noGust, ...fixed } = RACE_WORDS;
   for (const line of Object.values(fixed)) lines.add(line);

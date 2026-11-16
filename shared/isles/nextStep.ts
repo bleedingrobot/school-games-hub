@@ -85,7 +85,8 @@ export const RESTING_LINE = 'Your island is resting. See you tomorrow!';
 export const RACE_LINE = `Try a Sky Race! Your first win today brings ${coins(FIRST_WIN_PRIZE.coins)} and ${crystals(FIRST_WIN_PRIZE.crystals)}, and nobody loses anything.`;
 export const END_TURN_LINE = 'Press End turn to collect what your island makes.';
 
-export function nextStep(island: Island): NextStep {
+/** `racesOn`: the class's teacher has Sky Races switched on (Pip never suggests a race that can't be had). */
+export function nextStep(island: Island, racesOn = true): NextStep {
   if (island.turnsLeft < 1) return { say: RESTING_LINE };
 
   // An empty spot to build on.
@@ -119,7 +120,7 @@ export function nextStep(island: Island): NextStep {
   }
 
   // A race.
-  if (island.racesToday === 0 && !raceProblem(island, GULL_RIDERS, '')) {
+  if (racesOn && island.racesToday === 0 && !raceProblem(island, GULL_RIDERS, '')) {
     return { say: RACE_LINE, target: 'race' };
   }
 

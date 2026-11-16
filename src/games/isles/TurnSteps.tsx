@@ -5,8 +5,9 @@
  * as it will be after the choices so far.
  */
 import type { CSSProperties, ReactNode, Ref } from 'react';
-import { LIGHTHOUSE, type DecorationId } from '../../../shared/isles/config';
-import { decoration, isGrandIsle, type Action, type Island } from '../../../shared/isles/engine';
+import type { DecorationId } from '../../../shared/isles/config';
+import { decoration, type Action, type Island } from '../../../shared/isles/engine';
+import { buildChoices } from './canDo';
 import { Choice } from './Choice';
 import { PlacePicker, Shelf } from './Decorations';
 import { spotName } from './Island';
@@ -23,9 +24,13 @@ export type Step = (typeof Step)[keyof typeof Step];
 export const STEP_PIP: Record<number, string> = {
   [Step.Question]: 'Get it right for a fair wind: more coins this turn!',
   [Step.Collect]: 'This is what your island made this turn.',
-  [Step.Build]: 'Tap a spot to build, the drifting land to anchor it, or Decorate for something pretty.',
+  [Step.Build]: 'Choose something to build, or press Done building.',
   [Step.Rest]: 'Race the Gull Riders if you like, then end your turn.',
 };
+/** Pip on the last step when there's no race to be had (races used up, raced this turn, or switched off). */
+/** Pip on the Build step once nothing more can be built this turn. */
+export const BUILD_ALL_DONE = "That's all you can build for now. Press Done building.";
+export const REST_NO_RACE = 'All done! Press End turn to finish your turn.';
 
 /** What the question step says once it's answered (or when there's none). */
 export const QUESTION_WORDS = {
@@ -88,6 +93,8 @@ export interface StepProps {
   question: { answered: { right: boolean } | null } | null;
   /** Why a Sky Race can't start now (null: it can). */
   raceWhy: string | null;
+  /** The Build step had something to do this turn (so the last step can go back to it). */
+  canBuild: boolean;
   onNext: () => void;
   onBack: () => void;
   onChoose: (a: Action) => void;
@@ -162,12 +169,13 @@ export function TurnStep(p: StepProps) {
             <p>You have {plural(island.coins, 'coin')} left.</p>
           </>
         );
-        main = (
+        // Only ask "build more?" when there's something more that can be built.
+        main = buildChoices(island).any ? (
           <>
             <button type="button" className="button button--light si-step__main" onClick={p.onAnother}>Yes, build more</button>
             {doneBuilding}
           </>
-        );
+        ) : doneBuilding;
       } else if (b.kind === 'spot' && island.spots[b.spot]) {
         const here = island.spots[b.spot];
         title = `Spot ${b.spot + 1}: ${spotName(here.kind, here.level)}`;
@@ -196,30 +204,34 @@ export function TurnStep(p: StepProps) {
       } else {
         const anchor: Action = { kind: 'anchor' };
         const light: Action = { kind: 'lighthouse' };
-        const lightReady = isGrandIsle(island) && island.lighthouse < LIGHTHOUSE.length;
+        // Only what can be done now is shown (James, 16 Nov 2026).
+        const can = buildChoices(island);
         body = (
           <>
-            <p>Tap a spot on your island to build, change or raise a building. Or:</p>
-            <div className="si-actions">
-              {island.driftLeft > 0 ? (
-                <Choice island={island} action={anchor} onChoose={p.onChoose} pip="drift" lit={p.lit} kind="button--light">
-                  <span className="si-build__name">Anchor a chunk of land: {costOf(island, anchor)}</span>
-                  <span className="si-build__job">{plural(island.driftLeft, 'chunk')} drifting by. Each one is a new building spot.</span>
-                </Choice>
-              ) : (
-                <p className="si-step__why" data-pip="drift">No land in the drift today. More drifts by tomorrow.</p>
-              )}
-              <button type="button" className={`button button--light si-choice__button${p.lit === 'decorate' ? ' si-lit' : ''}`} data-pip="decorate" onClick={() => p.onBuild({ kind: 'shelf' })}>
-                <span className="si-build__name">Decorate</span>
-                <span className="si-build__job">Pretty things for your island</span>
-              </button>
-              {lightReady && (
-                <Choice island={island} action={light} onChoose={p.onChoose} pip="lighthouse" lit={p.lit} kind="button--light">
-                  <span className="si-build__name">Sky Lighthouse stage {island.lighthouse + 1}</span>
-                  <span className="si-build__job">{costOf(island, light)}</span>
-                </Choice>
-              )}
-            </div>
+            {can.spots.length > 0 && <p>Tap a spot on your island to build, change or raise a building.</p>}
+            {(can.anchor || can.decorate || can.lighthouse) && (
+              <div className="si-actions">
+                {can.anchor && (
+                  <Choice island={island} action={anchor} onChoose={p.onChoose} pip="drift" lit={p.lit} kind="button--light">
+                    <span className="si-build__name">Anchor a chunk of land: {costOf(island, anchor)}</span>
+                    <span className="si-build__job">{plural(island.driftLeft, 'chunk')} drifting by. Each one is a new building spot.</span>
+                  </Choice>
+                )}
+                {can.decorate && (
+                  <button type="button" className={`button button--light si-choice__button${p.lit === 'decorate' ? ' si-lit' : ''}`} data-pip="decorate" onClick={() => p.onBuild({ kind: 'shelf' })}>
+                    <span className="si-build__name">Decorate</span>
+                    <span className="si-build__job">Pretty things for your island</span>
+                  </button>
+                )}
+                {can.lighthouse && (
+                  <Choice island={island} action={light} onChoose={p.onChoose} pip="lighthouse" lit={p.lit} kind="button--light">
+                    <span className="si-build__name">Sky Lighthouse stage {island.lighthouse + 1}</span>
+                    <span className="si-build__job">{costOf(island, light)}</span>
+                  </Choice>
+                )}
+              </div>
+            )}
+            {!can.any && <p>That's all you can build for now. You have {plural(island.coins, 'coin')} left.</p>}
             <SoFar lines={p.lines} onUndo={p.onUndo} />
           </>
         );
@@ -229,23 +241,25 @@ export function TurnStep(p: StepProps) {
     }
 
     case Step.Rest:
+      if (p.raceWhy !== null) title = 'End your turn';
       body = (
         <>
           {p.lines.length ? <ol className="si-step__check">{p.lines.map((line, i) => <li key={i}>{line}</li>)}</ol> : <p>No building this turn. Your coins are saved.</p>}
           <p><strong>Coins left: {n(island.coins)}</strong></p>
-          <div className="si-choice">
-            <button
-              type="button"
-              className={`button button--light si-step__main${p.lit === 'race' ? ' si-lit' : ''}`}
-              data-pip="race"
-              disabled={p.raceWhy !== null || p.busy}
-              aria-describedby={p.raceWhy ? 'si-rest-race-why' : undefined}
-              onClick={p.onRace}
-            >
-              Sky Race
-            </button>
-            {p.raceWhy && <span id="si-rest-race-why" className="si-choice__why">{p.raceWhy}</span>}
-          </div>
+          {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
+          {p.raceWhy === null && (
+            <div className="si-choice">
+              <button
+                type="button"
+                className={`button button--light si-step__main${p.lit === 'race' ? ' si-lit' : ''}`}
+                data-pip="race"
+                disabled={p.busy}
+                onClick={p.onRace}
+              >
+                Sky Race
+              </button>
+            </div>
+          )}
           {p.problem && <p className="si-problem" role="alert">{p.problem}</p>}
         </>
       );
@@ -262,7 +276,8 @@ export function TurnStep(p: StepProps) {
       <h3 ref={p.headingRef} tabIndex={-1}>{title}</h3>
       {body}
       <div className="si-row si-step__nav">
-        {canStop(step) && <button type="button" className="button button--light" onClick={p.onBack}>Back</button>}
+        {/* Back from the last step to change what's built (the header's Stop button is the way out). */}
+        {step === Step.Rest && p.canBuild && <button type="button" className="button button--light" onClick={p.onBack}>Back to building</button>}
         {main}
       </div>
     </section>
