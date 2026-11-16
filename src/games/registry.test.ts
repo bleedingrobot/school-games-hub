@@ -34,10 +34,10 @@ describe('game registry', () => {
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
     expect(inGroup('foundational')).toEqual(['robin', 'pipi', 'beanstalk', 'korora', 'tui', 'weka', 'parrot', 'hop', 'lizard', 'pigeon', 'swamphen']);
     expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'marble', 'bond-match', 'mine', 'archery', 'diamond', 'isles', 'decree', 'toonflap']);
-    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'trader', 'glyph', 'kingdom']);
+    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'trader', 'kingdom']);
     // Activities have no group: they are listed on the Activities page, not the home page.
-    expect(ALL_GAMES.filter((g) => !g.group).map((g) => g.id)).toEqual(['orderup']);
-    expect(ALL_GAMES.filter((g) => g.activity).map((g) => g.id)).toEqual(['orderup']);
+    expect(ALL_GAMES.filter((g) => !g.group).map((g) => g.id)).toEqual(['glyph', 'orderup']);
+    expect(ALL_GAMES.filter((g) => g.activity).map((g) => g.id)).toEqual(['glyph', 'orderup']);
   });
 
   it('the games with a teacher switch and teacher parts say so themselves', () => {
