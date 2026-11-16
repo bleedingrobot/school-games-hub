@@ -99,8 +99,8 @@ select is(pg_temp.save('a', 3, 4, pg_temp.state('a', 1, false, pg_temp.fight(1, 
 select is((select count(*)::integer from public.clan_fights where player = pg_temp.id('a')), 1, '... still one row');
 
 -- ---- The database refuses a fight that makes no sense ----
-select throws_ok($$ select pg_temp.save('a', 4, 5, pg_temp.state('a', 1, false, pg_temp.fight(1, (select jsonb_agg(pg_temp.round()) from generate_series(1, 9))), 1)) $$,
-  '23514', null, 'a fight has at most 8 rounds');
+select throws_ok($$ select pg_temp.save('a', 4, 5, pg_temp.state('a', 1, false, pg_temp.fight(1, (select jsonb_agg(pg_temp.round()) from generate_series(1, 13))), 1)) $$,
+  '23514', null, 'a fight has at most 12 rounds (a monster fight is the longest)');
 select throws_ok($$ select pg_temp.save('a', 4, 6, pg_temp.state('a', 1, false, pg_temp.fight(1, '[]', 21), 1)) $$, '23514', null, 'a mine only goes 20 deep');
 select throws_ok($$ select pg_temp.save('a', 4, 7, pg_temp.state('a', 1, false, pg_temp.fight(2), 1)) $$, '22023', null, 'a fight cannot be ahead of the clan''s fight count');
 select throws_ok($$ select pg_temp.save('a', 4, 8, pg_temp.state('a', 1, false, pg_temp.fight(1), 0)) $$, '22023', null, 'the fight count only goes forwards');
