@@ -32,7 +32,8 @@ function fakeServer() {
 }
 
 describe('LadderAsk', () => {
-  it('asks the quest’s two questions, marks each on the server, and says both were right', async () => {
+  it('asks the quest’s two questions and says both were right, then carries on without questions when the server cannot make them', async () => {
+    // asks the quest’s two
     const server = fakeServer();
     const done = vi.fn();
     render(<LadderAsk kind="quest" title="The quest" ask={server.send} onDone={done} onSkip={() => {}} />);
@@ -49,9 +50,8 @@ describe('LadderAsk', () => {
       await waitFor(() => expect(server.get().ask!.marks?.[slot]?.correct).toBe(true));
     }
     await waitFor(() => expect(done).toHaveBeenCalledWith([true, true]), { timeout: 4000 });
-  });
-
-  it('carries on without questions when the server cannot make them', async () => {
+    cleanup();
+    // carries on without questions when the server cannot make them
     const skip = vi.fn();
     const send = async (): Promise<ServerReply> => ({ ok: false, why: 'no-maths', say: "We couldn't get your maths questions just now.", seed: 1, state: null });
     render(<LadderAsk kind="shop" title="10% off" ask={send} onDone={() => {}} onSkip={skip} />);
