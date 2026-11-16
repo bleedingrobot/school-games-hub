@@ -4,7 +4,7 @@ import { CLASH_HP, MAX_CLASH_ROUNDS, clashGold, clashLine, clashOf, clashPrize, 
 const p = (move: ClashPick['move'], right = true): ClashPick => ({ move, right });
 
 describe('arena clashes', () => {
-  it('hammer smashes sword, sword cuts net, net tangles hammer', () => {
+  it('Hammer smashes Sword, Sword cuts Net, Net tangles Hammer; winner hits double, loser half; ends and pays as agreed', () => {
     expect(clashOf('hammer', 'sword')).toBe(0);
     expect(clashOf('sword', 'net')).toBe(0);
     expect(clashOf('net', 'hammer')).toBe(0);
@@ -13,9 +13,7 @@ describe('arena clashes', () => {
     expect(clashOf(null, 'net')).toBe(1);
     expect(clashLine('net', 'hammer')).toBe('Net tangles Hammer!');
     expect(clashLine('hammer', 'net')).toBe('Net tangles Hammer!');
-  });
 
-  it('the winner hits double, the loser half; a wrong answer only grazes; no pick, no hit', () => {
     expect(hitFor(p('sword'), 'win')).toBe(20);
     expect(hitFor(p('sword', false), 'win')).toBe(8);
     expect(hitFor(p('sword'), 'lose')).toBe(5);
@@ -25,9 +23,7 @@ describe('arena clashes', () => {
     const s = playRound(replayClash([]), [p('hammer'), p('sword')]);
     expect(s.rounds[0].hits).toEqual([20, 5]);
     expect(s.hp).toEqual([CLASH_HP - 5, CLASH_HP - 20]);
-  });
 
-  it('ends at a knock-out, after five rounds if someone is ahead, and in a draw if still level after the extra rounds', () => {
     const ko = replayClash([[p('hammer'), p('sword')], [p('hammer'), p('sword')], [p('hammer'), p('sword')]]);
     expect(ko).toMatchObject({ over: true, winner: 0, hp: [35, 0] });
     expect(() => playRound(ko, [p('net'), p('net')])).toThrow();
@@ -37,9 +33,7 @@ describe('arena clashes', () => {
     expect(five).toMatchObject({ over: true, winner: 1, hp: [24, 30] });
     const level = replayClash([...Array(MAX_CLASH_ROUNDS)].map(() => [p('net', false), p('net', false)] as [ClashPick, ClashPick]));
     expect(level).toMatchObject({ over: true, winner: null });
-  });
 
-  it('pays the winner and half of that to the other', () => {
     const [a, b] = clashPrize(0, [4, 9]);
     expect(a).toBe(clashGold(4));
     expect(b).toBe(Math.round(clashGold(4) / 2));
