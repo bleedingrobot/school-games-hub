@@ -1,0 +1,291 @@
+{
+ "_from": "docs/clans-mines-art/config.json. One painting for each ending of each Clan Quest quest (shared/clans/quests.ts): <quest>-end-<choice>, and -lose for a puzzle answered wrong.",
+ "game": "clans-quest",
+ "filename_prefix": "clans-quest/img",
+ "comfy": "http://127.0.0.1:8188",
+ "style": "a",
+ "styles": {
+  "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm glow, dramatic cinematic light, friendly and funny, suitable for children aged 8 to 12, no heroes or adventurers in the picture, no writing, no letters, no numbers anywhere. "
+ },
+ "inbox": "~/dragon-art-inbox/clans-quest",
+ "picks": "docs/clans-quest-art/picks.json",
+ "art_dir": "src/games/clans/art",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "the-wandering-goat-end-0",
+   "prompt": "A happy old farmer on a farmhouse doorstep hugging a goat with a brass bell, holding a large round cheese and a small bag of coins, chickens around, warm sunset farmyard. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-wandering-goat-end-0"
+  },
+  {
+   "name": "the-wandering-goat-end-1",
+   "prompt": "Over the top of a grassy hill, a cheerful camp of travellers with colourful painted wagons and a campfire, a goat with a bell leading the way, bunting between wagons, golden evening light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-wandering-goat-end-1"
+  },
+  {
+   "name": "the-wandering-goat-end-2",
+   "prompt": "A cosy cottage kitchen, a stern old aunt in a shawl laughing so hard she wipes away tears, a goat poking its head through the window, a big purse of gold on the table. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-wandering-goat-end-2"
+  },
+  {
+   "name": "the-stepping-stones-end-0",
+   "prompt": "A wide bubbling river with a row of flat stepping stones glowing softly, on the far bank a soggy little frog sitting beside a fat leather purse of coins, reeds, sparkling water, morning light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-stepping-stones-end-0"
+  },
+  {
+   "name": "the-stepping-stones-end-0-lose",
+   "prompt": "A wide shallow river with stepping stones, a huge comic splash of water in the middle, droplets flying everywhere, a single gold coin glinting on a muddy boot on the bank, cheerful bright light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-stepping-stones-end-0-lose"
+  },
+  {
+   "name": "the-stepping-stones-end-1",
+   "prompt": "A river crossing through shallow water, a friendly fisher in a wide straw hat on the bank waving with a fishing rod, a basket of fish, willow trees, gentle afternoon light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-stepping-stones-end-1"
+  },
+  {
+   "name": "the-three-guards-end-0",
+   "prompt": "A narrow wooden bridge guarded by three funny birds in little helmets, wings raised in a cheer, small gold coins tossed into the air, confetti of feathers, bright cheerful light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-three-guards-end-0"
+  },
+  {
+   "name": "the-three-guards-end-0-lose",
+   "prompt": "A narrow wooden bridge with three kind birds in little helmets waving goodbye, one holding a tiny sign, a small wooden toll box with a few coins, soft sunset light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-three-guards-end-0-lose"
+  },
+  {
+   "name": "the-riddling-troll-end-0",
+   "prompt": "Under a stone bridge, a big friendly green troll clapping with delight, the bridge wobbling, several smaller troll cousins arriving along the river bank waving, lanterns, warm light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-riddling-troll-end-0"
+  },
+  {
+   "name": "the-riddling-troll-end-0-lose",
+   "prompt": "Under a stone bridge, a big friendly green troll laughing and holding out a huge hand for a handshake, one small troll cousin peeking from behind him, a chalk scribble on the stone wall, warm light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-riddling-troll-end-0-lose"
+  },
+  {
+   "name": "the-riddling-troll-end-1",
+   "prompt": "Under a stone bridge, a big friendly green troll rolling on the ground laughing beside a toppled wooden stool, a fluffy sheep watching, a single gold coin spinning in the air, warm light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-riddling-troll-end-1"
+  },
+  {
+   "name": "the-frozen-cave-end-0",
+   "prompt": "Inside an icy blue cave, a huge dragon fast asleep curled on a glittering pile of treasure, snoring puffs of frost, warm wool scarves and mittens left on a rock, sparkling icicles. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-frozen-cave-end-0"
+  },
+  {
+   "name": "the-frozen-cave-end-0-lose",
+   "prompt": "Inside an icy blue cave, a huge sleeping dragon rolled over onto its back with one eye half open, a trail of dropped gold coins leading to the cave mouth, chattering icicles, cold blue light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-frozen-cave-end-0-lose"
+  },
+  {
+   "name": "the-frozen-cave-end-1",
+   "prompt": "Outside a snowy mountain cave at dusk, a crackling campfire with a big pot of steaming soup, a friendly traveller with a walking stick and backpack approaching, warm orange glow on the snow. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-frozen-cave-end-1"
+  },
+  {
+   "name": "the-village-fair-end-0",
+   "prompt": "A busy pie stall at a village fair, rows of golden steaming pies, a beaming round pie-maker in an apron holding out coins, bunting overhead, green with tents, sunny afternoon. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-village-fair-end-0"
+  },
+  {
+   "name": "the-village-fair-end-1",
+   "prompt": "A village fair green, juggling apples flying through the air with two dropped on the grass, a feathered hat on the ground full of coins, a delighted crowd of villagers, bunting, sunny light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-village-fair-end-1"
+  },
+  {
+   "name": "the-village-fair-end-2",
+   "prompt": "A village fair at golden hour, a wooden cart decorated with flags as a stage, a huge cheering crowd with raised hands, a mayor in a chain of office holding a purse, bunting and lanterns. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-village-fair-end-2"
+  },
+  {
+   "name": "the-wishing-well-end-0",
+   "prompt": "A mossy stone well in an overgrown secret garden, a long stick leaning on it, a bundle of fine soft clothes and a padded jerkin drying on a branch in the sun, ivy, butterflies. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-wishing-well-end-0"
+  },
+  {
+   "name": "the-wishing-well-end-1",
+   "prompt": "A mossy stone well in an overgrown secret garden glowing with soft magical golden light rising like sparkles from the water, ivy, fireflies, twilight. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-wishing-well-end-1"
+  },
+  {
+   "name": "the-pattern-door-end-0",
+   "prompt": "A round stone door swung wide open, glowing tiles around its frame, behind it a cosy room where a very friendly tabby cat sits on a cushion beside a few gold coins and a stack of old books, warm candlelight. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-pattern-door-end-0"
+  },
+  {
+   "name": "the-pattern-door-end-0-lose",
+   "prompt": "A round stone door half open with softly glowing tiles, a friendly tabby cat sitting in the doorway pointing a paw at the tiles, a gentle warm glow, a dusty stone corridor. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-pattern-door-end-0-lose"
+  },
+  {
+   "name": "the-sleepy-giant-end-0",
+   "prompt": "A huge giant asleep across a country road with a hat over his face, snoring leaves into the air, a small leather pouch of coins on the road and a little folded note left beside it, autumn trees. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-sleepy-giant-end-0"
+  },
+  {
+   "name": "the-sleepy-giant-end-1",
+   "prompt": "A huge giant sitting up by a country road, yawning and smiling kindly, an open old wooden toy box beside him, a small round shield inside, autumn trees, morning light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-sleepy-giant-end-1"
+  },
+  {
+   "name": "the-pie-cart-puzzle-end-0",
+   "prompt": "A pie seller doing a happy dance beside his wooden cart piled with pies, coins flying from his hand, a country road, pie steam curling, bright cheerful light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-pie-cart-puzzle-end-0"
+  },
+  {
+   "name": "the-pie-cart-puzzle-end-0-lose",
+   "prompt": "A pie seller and a cart full of pies at a roadside, crumbs everywhere, a chalk slate with scribbled sums leaning on the wheel, a few coins on the cart edge, cosy late afternoon light. Wide landscape, the main subject in the upper and middle part, the bottom third calmer and darker.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "quests",
+   "file": "the-pie-cart-puzzle-end-0-lose"
+  }
+ ]
+}

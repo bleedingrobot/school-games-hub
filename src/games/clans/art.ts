@@ -78,6 +78,15 @@ export function questArt(title: string): { wide?: string; small?: string } {
   const wide = file('quests', slug(title));
   return { wide, small: file('quests', `${slug(title)}-800`) ?? wide };
 }
+/**
+ * How a quest ended (docs/clans-quest-art/config.json): quests/<quest>-end-<choice>, and -lose when a puzzle was answered wrong.
+ * Undefined until painted; the quest's own painting stays up instead.
+ */
+export function questEndArt(title: string, choice: number, lose: boolean): { wide?: string; small?: string } {
+  const name = `${slug(title)}-end-${choice}${lose ? '-lose' : ''}`;
+  const wide = file('quests', name);
+  return { wide, small: file('quests', `${name}-800`) ?? wide };
+}
 /** A clan's banner, from the last word of its name ("Brave Owls" → owls). */
 export const bannerArt = (clanName: string) => file('banners', slug(clanName.trim().split(/\s+/).pop() ?? ''));
 
