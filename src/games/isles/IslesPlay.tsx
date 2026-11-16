@@ -17,7 +17,7 @@ import { liveIsles } from '../../data/isles';
 import { keeperArt, pipArt, sceneArt, weatherArt } from './art';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { IslesError, type IslandView, type IslesBackend, type PostShown, type PublicRace } from './backend';
-import { Shelf, freePlaces } from './Decorations';
+import { freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
 import { ClassSky, VisitIsland } from './ClassSky';
 import { HallOfSkies } from './Hall';
@@ -45,7 +45,6 @@ type Screen =
   | { kind: 'visit'; who: string }
   | { kind: 'hall' }
   | { kind: 'name' }
-  | { kind: 'decorations'; back: Screen }
   | { kind: 'howto'; back: Screen };
 
 const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper' | 'sky' | 'visit' | 'hall' | 'name'>, string> = {
@@ -53,7 +52,6 @@ const HEADINGS: Record<Exclude<Screen['kind'], 'race' | 'keeper' | 'sky' | 'visi
   problem: 'Sky Isles',
   home: 'My island',
   turn: 'Your turn',
-  decorations: 'Decorations',
   howto: 'How to play',
 };
 
@@ -439,7 +437,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     : answered ? (answered.right ? QUESTION_WORDS.right : QUESTION_WORDS.wrong)
     : pipLine ? pipSays
     : null;
-  const back = () => setScreen(screen.kind === 'decorations' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
+  const back = () => setScreen(screen.kind === 'howto' ? screen.back : { kind: 'home' });
   // The collect step: coins pop off each building (what it makes, before the fair wind).
   const pops = turnStep === Step.Collect
     ? Object.fromEntries(island.spots.flatMap((s, i) => (s.kind === 'empty' ? [] : [[i, COINS[s.kind] * s.level]])))
@@ -518,11 +516,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
             </button>
           </fieldset>
           <HowToPlayBody />
-          <button type="button" className="button button--primary" onClick={back}>Back</button>
-        </section>
-      ) : screen.kind === 'decorations' ? (
-        <section className="si-panel">
-          <Shelf island={shownIsland} lit={lit} />
           <button type="button" className="button button--primary" onClick={back}>Back</button>
         </section>
       ) : (
@@ -617,7 +610,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                       Sky Race
                     </button>
                   )}
-                  <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'decorations', back: { kind: 'home' } })}>Decorations</button>
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                 </div>
                 <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'sky' })}>Class sky</button>
