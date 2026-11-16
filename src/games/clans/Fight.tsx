@@ -69,7 +69,7 @@ type Mode = 'action' | 'spell' | 'target';
  */
 export function Fight({ session, boss = false, open, onRound, onCheck, onFinish }: {
   session: Session; boss?: boolean; open?: ShownFight; onRound?: (round: number, played: RecordedRound) => void;
-  onCheck?: (round: number, answer: number, ms: number) => Promise<CryChecked>; onFinish: (fight: FightState) => void;
+  onCheck?: (round: number, answer: number, ms: number) => Promise<CryChecked>; onFinish: (fight: FightState, best?: BestNote) => void;
 }) {
   const members: Member[] = session.clan.members;
   const clanNames = useRef(new Set(members.map((m) => m.name))).current;
@@ -279,7 +279,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       return event.preventDefault();
     }
     if (phase === 'reward') {
-      if (event.key === 'd') chooseReward('damage');
+      // Enter picks more damage (the ready one), unless a button has focus: then Enter is that button's own click.
+      if (event.key === 'd' || (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement))) chooseReward('damage');
       else if (event.key === 'h') chooseReward('heal');
       else return;
       return event.preventDefault();
@@ -359,8 +360,30 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const onStage = !fight.monster && (phase === 'orders' || phase === 'replay' || phase === 'summary' || phase === 'reward');
   // The maths question, its working and the end of the fight pop up over the painting, so nothing needs scrolling.
   // The end waits for the win flourish (the crest and the coins) to finish first.
-  const popUp = phase === 'ask' || phase === 'working' || phase === 'over';
+  const popUp = phase === 'ask' || phase === 'working';
   const look = fight.monster ? MONSTER_LOOKS[fight.monster.kind] : null;
+  // Once it's over (and the win flourish has played) it goes straight on to the results, which show the best hit (James, 17 Nov 2026).
+  const finished = useRef(false);
+  useEffect(() => {
+    if (phase !== 'over' || flourish || finished.current) return;
+    const best = bestHit(fight, clanNames);
+    const today = `${session.clan.name}|${session.day}`;
+    // Read before this fight is saved, so "a new best" compares with the fights before it.
+    const before = readBest(today);
+    const isNew = !!best && (!before || best.amount > before.amount);
+    // A win has had its flourish; any other end gets a moment to see the last blow.
+    const timer = setTimeout(() => {
+      finished.current = true;
+      if (isNew) {
+        try {
+          localStorage.setItem(BEST_KEY, JSON.stringify({ ...best, today }));
+        } catch {
+          // Storage blocked: the best hit just isn't remembered.
+        }
+      }
+      onFinish(fight, best ? { best, isNew, before } : undefined); }, fight.result === 'won' ? 0 : 1200);
+    return () => clearTimeout(timer);
+  }, [phase, flourish]); // eslint-disable-line react-hooks/exhaustive-deps
   // The last thing in the log is the monster getting ready: the big move comes next round.
   const warned = !!look && phase !== 'replay' && !fight.result && fight.log[fight.log.length - 1]?.type === 'warn';
   const bossFoe = fight.monster ? fight.enemies[0] : undefined;
@@ -479,8 +502,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             <div className="cq-choice cq-choice--bar">
               <h3>Right! Spend your Battle Cry on…</h3>
               <div className="cq-actions">
-                <button type="button" className="cq-btn cq-btn--hot" onClick={() => chooseReward('damage')}>
-                  <kbd>D</kbd> More damage this round
+                <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => chooseReward('damage')}>
+                  <kbd>Enter</kbd> More damage this round
                 </button>
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => chooseReward('heal')}>
                   <kbd>H</kbd> A little healing for everyone
@@ -576,7 +599,6 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               )}
             </div>
           )}
-          {phase === 'over' && !flourish && <FightOver fight={fight} look={look} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
         </div>
         {/* The fight shows each action on the painting; screen readers hear each one here. */}
         <ol className="sr-only" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
@@ -618,6 +640,8 @@ function Victory() {
  * the game day, so a new day starts fresh.
  */
 const BEST_KEY = 'clans-best-hit';
+/** The fight's best hit for the results, and whether it beat the best earlier today. */
+export interface BestNote { best: BestHit; isNew: boolean; before: BestHit | null }
 function readBest(today: string): BestHit | null {
   try {
     const saved = JSON.parse(localStorage.getItem(BEST_KEY) ?? 'null') as (BestHit & { today: string }) | null;
@@ -627,53 +651,3 @@ function readBest(today: string): BestHit | null {
   }
 }
 
-function FightOver({ fight, look, summary, best, today, onFinish }: { fight: FightState; look: (typeof MONSTER_LOOKS)[keyof typeof MONSTER_LOOKS] | null; summary?: string; best: BestHit | null; today: string; onFinish: () => void }) {
-  // Read once, before this fight is saved, so "a new best" compares with the fights before it.
-  const [before] = useState(() => readBest(today));
-  const isNew = !!best && (!before || best.amount > before.amount);
-  useEffect(() => {
-    if (!isNew || !best) return;
-    try {
-      localStorage.setItem(BEST_KEY, JSON.stringify({ ...best, today }));
-    } catch {
-      // Storage blocked: the best hit just isn't remembered.
-    }
-  }, [isNew, best?.amount, today]); // eslint-disable-line react-hooks/exhaustive-deps
-  const text = look
-    ? fight.result === 'won'
-      ? `${look.beaten} Well done, clan!`
-      : fight.result === 'fled'
-        ? 'The clan ran for the exit and is safe.'
-        : `${look.stompsOff} Nobody is lost for good: the clan wakes up tomorrow.`
-    : fight.result === 'won'
-      ? 'The enemies are beaten. Well done, clan!'
-      : fight.result === 'fled'
-        ? 'The clan ran for the exit and is safe.'
-        : fight.result === 'lost'
-          ? 'The whole clan is knocked out. Nothing is lost for good: they wake up tomorrow.'
-          : 'The fight fizzles out. Everyone heads home.';
-  return (
-    <div className="cq-choice">
-      {summary && <p className="cq-summary" role="status">{summary}</p>}
-      <h3>{text}</h3>
-      {best && (
-        <p className="cq-best">
-          Best hit: {best.text}.{' '}
-          {isNew ? <strong className="cq-best__new">★ Your best hit today!</strong> : before && <>Your best today is still {before.amount} ({before.text}).</>}
-        </p>
-      )}
-      <p>
-        Gold found: <strong>{fight.gold}</strong>
-        {fight.followers > 0 && (
-          <>
-            {' '}
-            · New followers: <strong>{fight.followers}</strong>
-          </>
-        )}
-      </p>
-      <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onFinish}>
-        See how everyone did
-      </button>
-    </div>
-  );
-}
