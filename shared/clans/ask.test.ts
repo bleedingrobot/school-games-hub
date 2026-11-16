@@ -127,7 +127,7 @@ describe('ask questions', () => {
       const first = ok(s, { type: 'askCheck', slot: 1, answer: b + 1, ms: 700 });
       expect(first.result).toEqual({ type: 'askCheck', slot: 1, correct: false, answer: b, given: b + 1 });
       expect(first.changed).toBe(true);
-      expect(first.effects?.ladder).toEqual({ once: `clans:ask:${SEED}:1:1`, answers: [{ key: markQuestion(s.ask!.questions[1])!.key, correct: false, ms: 700 }] });
+      expect(first.effects?.ladder).toEqual({ once: `clans:ask:${SEED}:1:1`, answers: [{ key: markQuestion(s.ask!.questions[1])!.key, correct: false, ms: 700, given: b + 1 }] });
       expect(first.state.ask!.marks![1]).toEqual({ answer: b + 1, correct: false });
       const again = ok(first.state, { type: 'askCheck', slot: 1, answer: b, ms: 10 });
       expect(again.result).toEqual(first.result);
@@ -145,7 +145,7 @@ describe('ask questions', () => {
       expect(out.result).toEqual({ type: 'buy', discount: true, answer });
       expect(out.state.ask).toBeNull();
       const key = markQuestion(asked.ask!.questions[0])!.key;
-      expect(out.effects?.ladder).toEqual({ once: `clans:ask:${SEED}:1`, answers: [{ key, correct: true, ms: 2500 }] });
+      expect(out.effects?.ladder).toEqual({ once: `clans:ask:${SEED}:1`, answers: [{ key, correct: true, ms: 2500, given: answer }] });
       expect(price(out.state)).toBeLessThan(item.price);
     }
     // buy with a shop question: wrong: full price, still clears the ask and records it as wrong

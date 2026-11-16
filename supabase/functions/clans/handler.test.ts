@@ -280,7 +280,7 @@ describe('ladder fights through the server function', () => {
     expect((await t.send({ type: 'cryCheck', round: 1, answer: q.answer, ms: 3000 }, { requestId })).body.result).toEqual(first.body.result);
     expect((await t.send({ type: 'cryCheck', round: 1, answer: 999, ms: 10 })).body.result).toMatchObject({ correct: true });
     expect(t.ladder.kept).toHaveLength(1);
-    expect(t.ladder.kept[0].list).toEqual([{ key: q.factKey, correct: true, ms: 3000, at: NOW }]);
+    expect(t.ladder.kept[0].list).toEqual([{ key: q.factKey, correct: true, ms: 3000, at: NOW, given: q.answer }]);
     // None of it goes in the old Clan Quest records.
     expect(t.answers).toEqual([]);
   });

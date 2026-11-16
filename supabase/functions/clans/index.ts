@@ -14204,7 +14204,8 @@ function takeAnswers(state, kind, given, ms) {
 		if (g !== null && g !== void 0) answers.push({
 			key: m.key,
 			correct,
-			ms
+			ms,
+			given: g
 		});
 	});
 	return {
@@ -14346,7 +14347,8 @@ function applyInner(saved, action, ctx, flags) {
 				answers: [{
 					key: marked.key,
 					correct,
-					ms: action.ms
+					ms: action.ms,
+					given: action.answer
 				}]
 			} });
 		}
@@ -14590,7 +14592,8 @@ function applyInner(saved, action, ctx, flags) {
 				answers: [{
 					key: marked.key,
 					correct,
-					ms: action.ms
+					ms: action.ms,
+					given: action.answer
 				}]
 			} });
 		}
