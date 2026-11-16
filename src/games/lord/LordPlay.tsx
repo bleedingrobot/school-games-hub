@@ -28,6 +28,8 @@ import { forestScene } from './art';
 import { KingdomMap, hasMap } from './KingdomMap';
 import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
+import { useClashes } from './useClashes';
+import { ClashAskBanner } from './LiveArena';
 import './lord.css';
 import './big.css';
 
@@ -99,10 +101,23 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const [deeds, setDeeds] = useState<string[]>([]);
   const hero = state?.hero ?? null;
   const { ask, modal } = useAsk(hero?.level ?? 1, facts, state?.topics);
+  const clashes = useClashes(hero ? backend.clashes : undefined, player);
 
   const stateRef = useRef<LordState | null>(null);
   stateRef.current = state;
   const busyRef = useRef(false);
+  // A clash that paid gold changed the hero on the server: fetch it again, so the next action isn't "out of date".
+  const paidClash = clashes.clash && clashes.clash.status === 'done' && (clashes.clash.gold[0] > 0 || clashes.clash.gold[1] > 0) ? clashes.clash.id : null;
+  useEffect(() => {
+    if (paidClash === null) return;
+    void backend.send({ action: 'load', requestId: crypto.randomUUID() }).then((sent) => {
+      if (sent.kind === 'reply' && sent.reply.ok) {
+        stateRef.current = sent.reply.state;
+        setState(sent.reply.state);
+      }
+    });
+  }, [paidClash, backend]);
+
   const say = (text: string) => setNote(text);
   const addDeed = (line: string) => setDeeds((d) => [line, ...d].slice(0, 12));
 
@@ -440,7 +455,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
     case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} onLook={() => setScreen({ name: 'look' })} />; break;
     case 'look': body = <LookPage hero={hero} act={act} back={toVillage} busy={busy} />; break;
-    case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} ask={ask} />; break;
+    case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} ask={ask} clashes={clashes} me={player} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
     case 'howto': body = <HowToPlay back={toVillage} />; break;
@@ -562,6 +577,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         else { const p = PLACES.find((x) => x.key === k); if (p) { setNote(''); setScreen({ name: p.name } as Screen); } }
       }} />}
       {body}
+      {!['fight', 'encounter', 'event', 'dragon'].includes(screen.name) && (
+        <ClashAskBanner clashes={clashes} onYes={(id) => {
+          void clashes.send({ action: 'clash-answer', clash: id, accept: true }).then((r) => { if (r.ok) setScreen({ name: 'arena' }); else say(r.message); });
+        }} />
+      )}
       {modal}
     </Frame>
   );

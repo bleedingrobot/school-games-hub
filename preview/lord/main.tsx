@@ -9,16 +9,21 @@ import { AuthContext } from '../../src/auth/AuthContext';
 import { LordPlay } from '../../src/games/lord/LordPlay';
 import { nzDate } from '../../shared/lord/engine';
 import { createTrialBackend } from '../../src/games/lord/trialBackend';
+import { pretendClashApi } from '../../src/games/lord/pretendClashes';
 import '../../src/styles.css';
 
 // ?day=N (1 to 35) gives the trial a real season on day N of season 1, to try the season road.
 const dayParam = Number(new URLSearchParams(window.location.search).get('day'));
 const seasonStart = dayParam >= 1 ? nzDate(new Date(Date.now() - (Math.min(35, dayParam) - 1) * 86400e3)) : null;
-const backend = createTrialBackend('preview', seasonStart);
+// ?clash=1 adds pretend classmates for live arena clashes (?clash=ask: one challenges you).
+const ME = '00000000-0000-4000-8000-00000000000f';
+const clashParam = new URLSearchParams(window.location.search).get('clash');
+const trial = createTrialBackend('preview', seasonStart);
+const backend = clashParam ? { ...trial, clashes: pretendClashApi(ME, { askMe: clashParam === 'ask' }) } : trial;
 
 const fakeAuth = {
   status: 'signed-in',
-  profile: { id: 'preview', display_name: 'Brave Kiwi', avatar: null, role: 'student' },
+  profile: { id: clashParam ? ME : 'preview', display_name: 'Brave Kiwi', avatar: null, role: 'student' },
   message: '',
   signIn: async () => {},
   signOut: async () => {},

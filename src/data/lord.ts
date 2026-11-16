@@ -20,6 +20,7 @@ import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import { forgetSettings } from './settingsMemory';
 import { FriendlyError } from './profile';
+import { serverClashApi, type ClashApi } from './lordClash';
 
 export type { LordAction, LordReply, LordRequest, LordState };
 
@@ -33,6 +34,8 @@ export interface LordSettings {
   topics: string[];
   /** The day the game was switched off, while the season clock waits (null when it is running). */
   pausedSince?: string | null;
+  /** Live arena clashes between classmates are on (off to start). */
+  liveArena?: boolean;
 }
 
 /** A line of the Daily News, newest first. `kind` picks the little picture. */
@@ -91,6 +94,8 @@ export interface LordBackend {
   /** The Dragon Head race (profile plan P4): how many of this season's five first-five places are left in my school.
    * Null if it couldn't be fetched. The browser-only trial has no race, so it leaves this out. */
   fetchFirstFive?(): Promise<FirstFive | null>;
+  /** Live arena clashes between classmates (none in the browser-only trial unless the preview asks for pretend ones). */
+  clashes?: ClashApi;
 }
 
 /** lord_first_five(): the dragon season in my school today (null before season 1) and the first-five places left (0 to 5). */
@@ -207,6 +212,7 @@ export function createServerBackend(player: string): LordBackend {
 
   return {
     trial: false,
+    clashes: serverClashApi,
     waiting: () => queuedFinishes(player).length,
     flush,
     fetchNews: () => readList<NewsItem>('lord_news'),
@@ -268,11 +274,12 @@ export function createServerBackend(player: string): LordBackend {
 // ---------------------------------------------------------------------------
 
 export async function fetchLordSettings(classId?: string | null): Promise<LordSettings> {
-  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since', 'lord_topics'], classId);
+  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since', 'lord_topics', 'lord_live_arena'], classId);
   if (!data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
   return {
     enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number,
     seasonStart: (data.lord_season_start as string | null) ?? null, topics: topicsOn(data.lord_topics), pausedSince: (data.lord_paused_since as string | null) ?? null,
+    liveArena: data.lord_live_arena === true,
   };
 }
 
@@ -357,6 +364,13 @@ export function saveLordSchoolSeason(start: string): Promise<LordSchoolSeason> {
 /** A school admin's holiday pause: on closes Dragon Maths for every class and stops the clock; off carries the season on. */
 export function saveLordHoliday(paused: boolean): Promise<LordSchoolSeason> {
   return saveSchool('admin_set_lord_holiday', { paused }, 'We couldn’t save the holiday pause.');
+}
+
+/** The "Classmate clashes" switch: live arena clashes between classmates (migration 20261117000200). */
+export async function saveLordLiveArena(enabled: boolean, classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_lord_live_arena', { enabled, target_class: classId });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t save that setting.');
 }
 
 /**

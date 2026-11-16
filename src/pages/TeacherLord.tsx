@@ -11,7 +11,7 @@ import { MAX_LEVEL } from '../../shared/lord/data';
 import { ALL_TOPICS } from '../../shared/lord/maths';
 import { TOPICS } from '../../shared/maths/skillPacks';
 import {
-  fetchClassLord, fetchLordSchoolSeason, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange, saveLordHoliday,
+  fetchClassLord, fetchLordSchoolSeason, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange, saveLordHoliday, saveLordLiveArena,
   saveLordSchoolSeason, type ClassLord, type LordSchoolSeason, type StudentLord,
 } from '../data/lord';
 import { FriendlyError } from '../data/profile';
@@ -106,6 +106,13 @@ function LordSettingsPanel({ classId }: { classId: string }) {
           value={s?.topics ?? null}
           loadFailed={settings.failed}
           save={(topics) => saveLordChange({ topics }, classId)}
+        />
+        <SettingToggle
+          label="Classmate clashes"
+          about="Pupils with Dragon Maths open can challenge a classmate to a live arena clash: each round both pick Hammer, Sword or Net and answer a maths question. Same class only, no chat. The winner gets gold and the other side half that, for the first 3 clashes a day. Off to start. Practice clashes against computer heroes are always on."
+          value={s ? s.liveArena === true : null}
+          loadFailed={settings.failed}
+          save={(on) => saveLordLiveArena(on, classId)}
         />
       </section>
     </>

@@ -14,10 +14,11 @@
  *    the current state.
  */
 import { runLord, type Services } from '../../../shared/lord/server';
+import { CLASH_ACTIONS, handleClash, type ClashAction, type ClashServices } from '../../../shared/lord/clashServer';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
-export type HandlerServices = Services & {
+export type HandlerServices = Services & ClashServices & {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
 };
@@ -52,6 +53,13 @@ export function makeHandler(services: HandlerServices) {
 
     const body = await readJsonBody(request);
     if (!body || typeof body !== 'object') return reply(400, { error: "That couldn't be read." });
+
+    // Live arena clashes between classmates (shared/lord/clashServer.ts).
+    const action = (body as { action?: unknown }).action;
+    if (CLASH_ACTIONS.includes(action as ClashAction)) {
+      const out = await handleClash(services, player, action as ClashAction, body as Record<string, unknown>);
+      return reply(out.status, out.body);
+    }
 
     const out = await runLord(services, player, body);
     if (out.body && 'ok' in out.body && !out.body.ok && ['tampered', 'not-allowed', 'bad-request'].includes(out.body.reason)) {
