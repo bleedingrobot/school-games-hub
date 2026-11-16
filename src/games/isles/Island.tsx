@@ -5,7 +5,7 @@
  * and (when one is being placed) each free decoration place are real buttons. Any picture that hasn't loaded is drawn
  * as a coloured shape in the same place.
  */
-import { useState, type CSSProperties, type ReactElement } from 'react';
+import { useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { DECORATION_PLACES, GRAND_ISLE, type PlotOrEmpty } from '../../../shared/isles/config';
 import { decoration, hasGarden, type Island } from '../../../shared/isles/engine';
 import {
@@ -106,6 +106,7 @@ export function IslandPicture({
   onPlace,
   pops,
   fresh = [],
+  children,
 }: {
   island: Island;
   keeper: string | null;
@@ -125,6 +126,8 @@ export function IslandPicture({
   pops?: Record<number, number>;
   /** New land: spots anchored this turn or last, ringed and sparkling. */
   fresh?: number[];
+  /** Laid over the painting (what the island has, the road to Grand Isle), in the sky round the island. */
+  children?: ReactNode;
 }) {
   const base = baseFor(island.spots.length);
   const places = SPOTS[base];
@@ -164,8 +167,8 @@ export function IslandPicture({
   };
 
   return (
-    <div className="si-stage" style={{ '--si-bg': bg.wide ? `url(${bg.wide})` : 'none', '--si-bg-small': bg.small ? `url(${bg.small})` : 'none' } as CSSProperties}>
-      <div className="si-isle" style={{ aspectRatio: String(BASE_ASPECT[base]) }}>
+    <div className={`si-stage${garden || extra > 0 ? ' si-stage--tall' : ''}`} style={{ '--si-bg': bg.wide ? `url(${bg.wide})` : 'none', '--si-bg-small': bg.small ? `url(${bg.small})` : 'none' } as CSSProperties}>
+      <div className="si-isle" style={{ aspectRatio: String(BASE_ASPECT[base]), '--si-aspect': BASE_ASPECT[base] } as CSSProperties}>
         <Art src={baseArt(base)} className="si-isle__base" fallback={<div className="si-isle__drawn" aria-hidden="true" />} />
         {island.lighthouse > 0 && (
           <Art
@@ -284,6 +287,7 @@ export function IslandPicture({
         </div>
       )}
       {island.spots.length >= GRAND_ISLE && <p className="si-stage__badge">Grand Isle!</p>}
+      {children}
     </div>
   );
 }

@@ -273,8 +273,10 @@ export function TurnStep(p: StepProps) {
 
   return (
     <section className="si-panel si-step" aria-label={STEP_NAMES[step - 1]}>
-      <h3 ref={p.headingRef} tabIndex={-1}>{title}</h3>
-      {body}
+      <div className="si-step__body">
+        <h3 ref={p.headingRef} tabIndex={-1}>{title}</h3>
+        {body}
+      </div>
       <div className="si-row si-step__nav">
         {/* Back from the last step to change what's built (the header's Stop button is the way out). */}
         {step === Step.Rest && p.canBuild && <button type="button" className="button button--light" onClick={p.onBack}>Back to building</button>}
