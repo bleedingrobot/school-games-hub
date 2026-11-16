@@ -35,7 +35,7 @@ export function depthArt(depth: number): { wide?: string; small?: string } {
   return own.wide ? own : sceneArt(zoneScene(zoneForDepth(depth)));
 }
 
-export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Session; onDepth: (d: number) => void; onGo: (boss: boolean) => void; onBack: () => void; locked?: string }) {
+export function Mines({ session, onDepth, onGo, onBack, locked, top }: { session: Session; onDepth: (d: number) => void; onGo: (boss: boolean) => void; onBack: () => void; locked?: string; top?: React.ReactNode }) {
   const hint = hintFor(session);
   const boss = bossAt(session.depth);
   const awake = session.clan.members.some((m) => !m.knockedOut);
@@ -83,6 +83,7 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
         {art.wide && (
           <img key={art.wide} className="cq-mines__pic" src={art.wide} srcSet={art.small && art.small !== art.wide ? `${art.small} 800w, ${art.wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" />
         )}
+        {top}
         <div className="cq-mines__top">
           <h2>The Mines</h2>
           <p className="cq-mines__place" aria-live="polite">
