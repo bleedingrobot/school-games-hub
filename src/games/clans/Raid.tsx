@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
 import { KINGDOMS, PUSHES, PUSH_NAMES, TROOP_NAMES, empireOf, kingdomById, might, type Kingdom, type Push } from '../../../shared/clans/empire';
-import { lootShare } from '../../../shared/clans/moments';
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Bar } from './Bars';
-import { Moment } from './Moment';
 import { kingdomScene, sceneArt } from './art';
 import { LIGHT_WORDS, kingdomLight } from './nextStep';
 import { canRaid, sendArmy, type WarDone } from './places';
@@ -17,7 +15,7 @@ export const PUSH_HELP = {
   bold: 'Your troops hit harder, but more of them are hurt.',
 } as const;
 
-type Phase = { t: 'plan' } | { t: 'loot'; kingdom: Kingdom } | { t: 'result'; kingdom: Kingdom; war: WarDone };
+type Phase = { t: 'plan' } | { t: 'result'; kingdom: Kingdom; war: WarDone };
 
 const troopList = (t: Troops) => {
   const bits = TROOP_KINDS.filter((k) => t[k] > 0).map((k) => `${t[k]} ${t[k] === 1 ? TROOP_NAMES[k].one : TROOP_NAMES[k].many}`);
@@ -39,7 +37,7 @@ function Wide({ art, id, sizes = '(max-width: 760px) 100vw, 360px' }: { art: { w
 
 /** Raid a kingdom, or have a Practice battle with it: pick the kingdom, make the battle plan, see how it went. */
 export function Raid({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
-  const { clan, settings } = session;
+  const { clan } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'plan' });
   const [kingdomId, setKingdomId] = useState(KINGDOMS[0].id);
@@ -54,16 +52,8 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
     onChange(war.session, { type: friendly ? 'war' : 'raid', kingdom: k.id, push });
     setPhase({ t: 'result', kingdom: k, war });
   };
-  const startRaid = () => {
-    if (lootShare(settings, kingdom.treasury, B.loot)) setPhase({ t: 'loot', kingdom });
-    else go(kingdom, false);
-  };
-
   let body: React.ReactNode;
-  if (phase.t === 'loot') {
-    const q = lootShare(settings, phase.kingdom.treasury, B.loot)!;
-    body = <Moment key="loot" question={q} title="How much loot?" note={`${phase.kingdom.name} has ${phase.kingdom.treasury} gold in its treasury. A win takes ${B.loot}%.`} doneLabel="Send the army!" onDone={() => go(phase.kingdom, false)} />;
-  } else if (phase.t === 'result') {
+  if (phase.t === 'result') {
     const { war, kingdom: k } = phase;
     const r = war.result;
     const end = ENDING[r.outcome];
@@ -116,7 +106,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
         <div className="cq-panel">
           <h3>Send the army</h3>
           <div className="cq-actions">
-            <button type="button" className="cq-btn cq-btn--hot" disabled={noRaid !== null} onClick={startRaid}>Raid {kingdom.name}</button>
+            <button type="button" className="cq-btn cq-btn--hot" disabled={noRaid !== null} onClick={() => go(kingdom, false)}>Raid {kingdom.name}</button>
             <button type="button" className="cq-btn" disabled={army === 0} onClick={() => go(kingdom, true)}>Practice battle with {kingdom.name}</button>
           </div>
           {noRaid && <p className="cq-warn">{noRaid}</p>}

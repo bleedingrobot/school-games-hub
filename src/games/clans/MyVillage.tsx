@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_BLURBS, BUILDING_NAMES, TROOP_NAMES, VILLAGE_TOTAL, buildsLeft, capacity, empireOf, maxLevel, might, room, troopBillOf, upgradeCost, villageComplete, villageLevels } from '../../../shared/clans/empire';
-import { landPlot, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Troops, type VillageBuilding } from '../../../shared/clans/types';
-import { Moment } from './Moment';
 import { VillageScene, type Cheer } from './VillageScene';
 import { buildingArt, troopArt } from './art';
 import { buyTroopMix, canBuyMix, canUpgradeBuilding, upgradeBuilding } from './places';
@@ -13,8 +11,6 @@ import { shielded, shieldEnds } from './shield';
 
 type Phase =
   | { t: 'idle' }
-  | { t: 'area' | 'fence'; b: VillageBuilding; level: number }
-  | { t: 'bill'; mix: Troops }
   | { t: 'done'; text: string };
 
 const none = (): Troops => ({ footman: 0, axeman: 0, knight: 0 });
@@ -33,7 +29,7 @@ const savedView = (): 'scene' | 'list' => { try { return localStorage.getItem(VI
  * One purse pays for everything. The area and fence questions are asked when you upgrade, but they never stop it.
  */
 export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { session: Session; onChange: Change; onBack: () => void; onRaid: () => void; onClassRaid: () => void }) {
-  const { clan, settings } = session;
+  const { clan } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const [mix, setMix] = useState<Troops>(none());
@@ -81,11 +77,6 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
     setNote(text);
     setCheer((c) => ({ b, level, n: (c?.n ?? 0) + 1 }));
   };
-  const startUpgrade = (b: VillageBuilding) => {
-    const level = e.levels[b] + 1;
-    if (landPlot(settings, b, level)) setPhase({ t: 'area', b, level });
-    else upgradeNow(b);
-  };
   const buy = (m: Troops) => {
     const next = buyTroopMix(session, m);
     if ('fail' in next) return setPhase({ t: 'done', text: next.fail.say });
@@ -93,22 +84,8 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
     setMix(none());
     setPhase({ t: 'done', text: `Your troops arrived. That cost ${troopBillOf(m)} gold.` });
   };
-  const startBuy = () => {
-    if (troopBill(settings, mix.footman, mix.axeman, mix.knight)) setPhase({ t: 'bill', mix });
-    else buy(mix);
-  };
-
   let body: React.ReactNode;
-  if (phase.t === 'area' || phase.t === 'fence') {
-    const q = landPlot(settings, phase.b, phase.level)!;
-    const name = BUILDING_NAMES[phase.b];
-    body = phase.t === 'area'
-      ? <Moment key="area" question={q.area} title={`How big is the ${name} plan?`} note={`Level ${phase.level} needs a space ${q.width} squares by ${q.length} squares.`} doneLabel="Next question" onDone={() => setPhase({ t: 'fence', b: phase.b, level: phase.level })} />
-      : <Moment key="fence" question={q.fence} title="How much fence?" note={`The same space, ${q.width} by ${q.length}.`} doneLabel={`Upgrade for ${upgradeCost(phase.b, phase.level)} gold`} onDone={() => upgradeNow(phase.b)} />;
-  } else if (phase.t === 'bill') {
-    const q = troopBill(settings, phase.mix.footman, phase.mix.axeman, phase.mix.knight)!;
-    body = <Moment key="bill" question={q} title="What do these troops cost?" doneLabel={`Buy them for ${troopBillOf(phase.mix)} gold`} onDone={() => buy(phase.mix)} />;
-  } else if (phase.t === 'done') {
+  if (phase.t === 'done') {
     body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text}</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>;
   } else {
     const upgradeButton = (b: VillageBuilding) => {
@@ -122,7 +99,7 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
           <button
             type="button" className="cq-btn cq-btn--hot" disabled={!check.ok} aria-describedby={check.ok ? undefined : `why-${b}`}
             aria-label={level >= max ? `${name} is fully built` : `Upgrade ${name} to level ${level + 1} for ${price} gold`}
-            onClick={() => startUpgrade(b)}
+            onClick={() => upgradeNow(b)}
           >
             {level >= max ? 'Fully built' : `Upgrade · ${price} gold`}
           </button>
@@ -152,7 +129,7 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
         ))}
         {total > 0 && !mixCheck.ok && <p className="cq-warn">{mixCheck.say}</p>}
         <div className="cq-actions">
-          <button type="button" className="cq-btn cq-btn--hot" disabled={total < 1 || !mixCheck.ok} onClick={startBuy}>{total < 1 ? 'Pick some troops' : troopBill(settings, mix.footman, mix.axeman, mix.knight) ? 'Work out the cost' : `Buy for ${bill} gold`}</button>
+          <button type="button" className="cq-btn cq-btn--hot" disabled={total < 1 || !mixCheck.ok} onClick={() => buy(mix)}>{total < 1 ? 'Pick some troops' : `Buy for ${bill} gold`}</button>
           {total > 0 && <span className="cq-soft">(about {bill} gold)</span>}
         </div>
       </div>

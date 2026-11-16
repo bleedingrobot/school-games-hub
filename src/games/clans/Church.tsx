@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { freeWakes } from '../../../shared/clans/character';
 import { CONFIG } from '../../../shared/clans/config';
-import { churchBill } from '../../../shared/clans/moments';
-import { Moment } from './Moment';
-import { knockedOut, wakeAll, wakeAllCost, wakeAllPayers, wakeCost, wakeMember } from './places';
+import { knockedOut, wakeAll, wakeAllCost, wakeCost, wakeMember } from './places';
 import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
 import { lookOf } from '../../../shared/clans/looks';
 
-type Phase = { t: 'idle' } | { t: 'one'; index: number } | { t: 'all' } | { t: 'done'; text: string };
+type Phase = { t: 'idle' } | { t: 'done'; text: string };
 
 /** The Church: wake knocked-out members. The first wake-up each day is free; the rest cost (level + 1) x 10. */
 export function Church({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
-  const { clan, settings } = session;
+  const { clan } = session;
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const out = knockedOut(clan);
   const idle = () => setPhase({ t: 'idle' });
@@ -26,11 +24,6 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
     onChange(next, { type: 'wake', member: index });
     setPhase({ t: 'done', text: `${m.name} is awake again. ${cost === 0 ? 'That one was free.' : `That cost ${cost} gold.`}` });
   };
-  const startOne = (index: number) => {
-    const m = clan.members[index];
-    if (wakeCost(clan, m) === 0 || !churchBill(settings, [m.level])) wakeOne(index);
-    else setPhase({ t: 'one', index });
-  };
   const doAll = () => {
     const cost = wakeAllCost(clan);
     const next = wakeAll(session);
@@ -38,19 +31,9 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
     onChange(next, { type: 'wakeAll' });
     setPhase({ t: 'done', text: `Everyone is awake again. ${cost === 0 ? 'That was free.' : `That cost ${cost} gold.`}` });
   };
-  const startAll = () => {
-    if (churchBill(settings, wakeAllPayers(clan))) setPhase({ t: 'all' });
-    else doAll();
-  };
-
   const allCost = wakeAllCost(clan);
   let body: React.ReactNode;
-  if (phase.t === 'one') {
-    const m = clan.members[phase.index];
-    body = <Moment key={`one-${m.name}`} question={churchBill(settings, [m.level])!} title={`Waking ${m.name}`} note="Check the bill before you pay." doneLabel={`Pay ${wakeCost(clan, m)} gold`} onDone={() => wakeOne(phase.index)} />;
-  } else if (phase.t === 'all') {
-    body = <Moment key="all" question={churchBill(settings, wakeAllPayers(clan))!} title="Waking everyone" note={freeLeft > 0 ? 'The first wake-up is free, so it is not in the bill.' : 'Check the bill before you pay.'} doneLabel={`Pay ${allCost} gold`} onDone={doAll} />;
-  } else if (phase.t === 'done') {
+  if (phase.t === 'done') {
     body = <div className="cq-panel" role="status"><p className="cq-note">{phase.text} {clan.gold} gold left.</p><button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Carry on</button></div>;
   } else if (out.length === 0) {
     body = <p>Everyone is awake and well. Nobody needs the Church today.</p>;
@@ -65,14 +48,14 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
               <li key={m.name}>
                 <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
                 <span><strong>{m.name}</strong> · level {m.level} · {cost === 0 ? 'free (first wake-up)' : `${cost} gold`}{cost > clan.gold && <span className="cq-warn"> You need {cost - clan.gold} more gold. Fights in the Mines earn more.</span>}</span>
-                <button type="button" className="cq-btn" disabled={cost > clan.gold} onClick={() => startOne(i)}>Wake {m.name}</button>
+                <button type="button" className="cq-btn" disabled={cost > clan.gold} onClick={() => wakeOne(i)}>Wake {m.name}</button>
               </li>
             );
           })}
         </ul>
         {out.length > 1 && (
           <div className="cq-actions">
-            <button type="button" className="cq-btn cq-btn--hot" disabled={allCost > clan.gold} onClick={startAll}>Wake everyone ({allCost === 0 ? 'free' : `${allCost} gold`})</button>
+            <button type="button" className="cq-btn cq-btn--hot" disabled={allCost > clan.gold} onClick={doAll}>Wake everyone ({allCost === 0 ? 'free' : `${allCost} gold`})</button>
             {allCost > clan.gold && <span className="cq-warn">Waking everyone costs {allCost} gold and you have {clan.gold}. You can still wake them one at a time.</span>}
           </div>
         )}

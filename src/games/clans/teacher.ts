@@ -4,10 +4,10 @@ import { useSetting } from '../../teacher/useSetting';
 
 /**
  * Clan Quest on the teacher's Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: the on/off switch in the
- * On column, and its maths settings summed up in the Maths column ("Year 4 · 5 topics · 10/day"). Made-up hero names, the
+ * On column, and its maths settings summed up in the Maths column ("10/day"). Made-up hero names, the
  * maths settings, raids, the class report and the villages (whole school) are in its Settings (src/pages/TeacherClans.tsx).
  *
- * This file reads the three settings it needs straight from the class's settings row, so the dashboard doesn't download the
+ * This file reads the one setting it needs straight from the class's settings row, so the dashboard doesn't download the
  * story-question code just to draw the table.
  */
 export function useClansClassSwitch(classId: string) {
@@ -15,23 +15,19 @@ export function useClansClassSwitch(classId: string) {
 }
 
 interface Brief {
-  yearBand: number;
-  topics: number;
   fightsPerDay: number;
 }
 
 async function fetchBrief(classId: string): Promise<Brief> {
-  const row = await readSettings(['clans_year_band', 'clans_topics', 'clans_fights_per_day'], classId);
-  if (!row || !Array.isArray(row.clans_topics)) throw new Error('no settings');
+  const row = await readSettings(['clans_fights_per_day'], classId);
+  if (!row || typeof row.clans_fights_per_day !== 'number') throw new Error('no settings');
   return {
-    yearBand: row.clans_year_band as number,
-    topics: (row.clans_topics as unknown[]).length,
     fightsPerDay: row.clans_fights_per_day as number,
   };
 }
 
 export function clansSummary(brief: Brief): string {
-  return [`Year ${brief.yearBand}`, `${brief.topics} ${brief.topics === 1 ? 'topic' : 'topics'}`, `${brief.fightsPerDay}/day`].join(' · ');
+  return `${brief.fightsPerDay}/day`;
 }
 
 /** The Maths column. Null while loading. */

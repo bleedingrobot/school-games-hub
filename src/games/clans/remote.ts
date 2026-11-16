@@ -3,7 +3,9 @@
  * the browser (so the test page works with no server at all); when there is a server, every change is also sent
  * to it as an action, and whatever it answers replaces the browser's copy. The server is the boss.
  */
-import type { Action, Result, ShownFight } from '../../../shared/clans/actions';
+import type { Action, AskFor, Result, ShownFight } from '../../../shared/clans/actions';
+import type { CryMark } from '../../../shared/clans/battleCry';
+import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { Clan } from '../../../shared/clans/types';
 import type { PracticalSettings } from '../../../shared/maths/practical';
 import type { SeasonClock } from '../../../shared/clans/season';
@@ -33,6 +35,8 @@ export interface ServerClan {
   /** The teacher's "Unlimited turns today" switch (the server decides; this only changes what is shown). */
   unlimitedToday?: boolean;
   achievements: string[];
+  /** Ladder questions waiting for the shop, quest or siege (never their answers), and the marks so far. */
+  ask?: { for: AskFor; questions: PublicQuestion[]; marks: (CryMark | null)[] } | null;
   /** The season clock (null when the server does not know it yet, or an older server). */
   clock?: SeasonClock | null;
 }

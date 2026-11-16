@@ -30,6 +30,10 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <p>Before each round you get a maths question from your own maths: the same kind you are working on in the other maths games. Get it right and your clan chooses a power-up: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> or <strong>a little healing</strong> for everyone.</p>
           <p>Get it wrong? Nothing is lost, and the game shows you the right answer. There is no timer. Not sure? Press <strong>No thanks</strong> and the round goes on as normal.</p>
         </section>
+        <section aria-labelledby="htp-maths">
+          <h3 id="htp-maths">Where the maths is</h3>
+          <p>Maths is in the Battle Cry, the Market's {CONFIG.shopDiscount}% off, the quest (two questions; both right for the big prize) and the monster siege. It is always from your own maths.</p>
+        </section>
         <section aria-labelledby="htp-keys">
           <h3 id="htp-keys">Using the keyboard</h3>
           <p>Each round your clan gets a plan: what every hero will do. Press <kbd>Enter</kbd> to fight with it, or <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to change one hero's order first.</p>
@@ -51,7 +55,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-village">
           <h3 id="htp-village">My Village</h3>
           <p>Your clan has its own village with {VILLAGE_BUILDINGS.length} buildings. You pay for them with your gold. Press <strong>Upgrade</strong> to make a building one level bigger. Each level costs more than the last.</p>
-          <p>Your builders can do <strong>{CONFIG.empire.buildsPerDay} upgrades a day</strong>. Before an upgrade you may get a quick maths question about the building's space. Not sure? No harm done: the upgrade still happens.</p>
+          <p>Your builders can do <strong>{CONFIG.empire.buildsPerDay} upgrades a day</strong>.</p>
         </section>
         <section aria-labelledby="htp-troops">
           <h3 id="htp-troops">Troops</h3>
@@ -65,7 +69,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-quests">
           <h3 id="htp-quests">Quests</h3>
-          <p>{CONFIG.quests.perDay === 1 ? 'One' : CONFIG.quests.perDay} short story a day. You choose what to do, and sometimes there is a puzzle. A very charming clan gets extra choices.</p>
+          <p>{CONFIG.quests.perDay === 1 ? 'One' : CONFIG.quests.perDay} short story a day. You choose what to do, and there are two maths questions: get both right for the big prize. A very charming clan gets extra choices.</p>
         </section>
         <section aria-labelledby="htp-raids">
           <h3 id="htp-raids">Raids on classmates</h3>

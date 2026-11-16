@@ -5,14 +5,12 @@
  */
 import { useState } from 'react';
 import type { MonsterOutcome, ShownFight } from '../../../shared/clans/actions';
-import { monsterSeed } from '../../../shared/clans/actions';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, empireOf } from '../../../shared/clans/empire';
-import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, siegeQuestion, siegeShare, tiredShare, type Siege } from '../../../shared/clans/monster';
+import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, siegeShare, tiredShare, type Siege } from '../../../shared/clans/monster';
 import type { SeasonClock } from '../../../shared/clans/season';
-import type { PracticalQuestion } from '../../../shared/maths/practical';
-import { PracticalAsk } from '../../maths/PracticalAsk';
+import { LadderAsk, type Asker } from './LadderAsk';
 import { MonsterArt } from './MonsterArt';
 import { siegeArt } from './art';
 import { MonsterStory } from './MonsterStory';
@@ -54,14 +52,14 @@ function Helpers({ session }: { session: Session }) {
   );
 }
 
-type Phase = { t: 'info' } | { t: 'ask'; question: PracticalQuestion } | { t: 'working' } | { t: 'siege'; go: Extract<MonsterTry, { ok: true }>; at: number; skipped: boolean };
+type Phase = { t: 'info' } | { t: 'ask' } | { t: 'working' } | { t: 'siege'; go: Extract<MonsterTry, { ok: true }>; at: number; skipped: boolean };
 
 /**
  * The Monster screen. `onTry` starts today's try (it sends monsterStart with the siege answer and gives back how it went);
  * `onFight` carries on into the clan fight. `practice`: no server, so nothing here counts.
  */
-export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
-  session: Session; practice: boolean; onTry: (answer: number | null) => Promise<MonsterTry>; onFight: (open: ShownFight) => void; onBack: () => void;
+export function MonsterWeek({ session, practice, ask, onTry, onFight, onBack }: {
+  session: Session; practice: boolean; ask?: Asker; onTry: (answer: number | null) => Promise<MonsterTry>; onFight: (open: ShownFight) => void; onBack: () => void;
 }) {
   const { clan } = session;
   const season = session.clock && session.clock.number > 0 ? session.clock.number : (session.season ?? 1);
@@ -79,7 +77,9 @@ export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
   const estimate = pct(siegeShare(clan, arrows, false));
   const estimateRight = pct(siegeShare(clan, arrows, true));
 
-  const begin = async (answer: number | null) => {
+  // The server marks the siege question itself (`askCheck`), so no answer is sent with the try.
+  const begin = async (skipped: boolean) => {
+    const answer = null;
     setPhase({ t: 'working' });
     setSay('');
     const out = await onTry(answer).catch((): MonsterTry => ({ ok: false, say: "We couldn't reach the server, so the try didn't start. Please try again." }));
@@ -89,18 +89,17 @@ export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
     }
     // Back after a refresh: the siege was shown already, so go straight to the fight.
     if (out.resumed || !out.siege) return onFight(out.open);
-    setPhase({ t: 'siege', go: out, at: 0, skipped: answer === null });
+    setPhase({ t: 'siege', go: out, at: 0, skipped });
   };
   const fight = () => {
-    const question = siegeQuestion(monsterSeed(session.baseSeed, season, save.tries), session.settings);
-    if (question) setPhase({ t: 'ask', question });
-    else void begin(null);
+    if (ask) setPhase({ t: 'ask' });
+    else void begin(true);
   };
 
   if (phase.t === 'ask') {
     return (
       <section className="cq-monster" aria-label="The siege question">
-        <PracticalAsk question={phase.question} title="The siege!" note={`${look.short} attacks the village. A right answer makes your village hit ${pct(CONFIG.monster.siege.rightAnswer - 1)}% harder. No timer, nothing lost.`} onSubmit={(n) => void begin(n)} onNoThanks={() => void begin(null)} />
+        <LadderAsk kind="siege" ask={ask!} title="The siege!" note={`${look.short} attacks the village. A right answer makes your village hit ${pct(CONFIG.monster.siege.rightAnswer - 1)}% harder. No timer, nothing lost.`} onDone={() => void begin(false)} onSkip={() => void begin(true)} />
       </section>
     );
   }

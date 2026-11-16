@@ -4,9 +4,10 @@
  * the plumbing around `applyAction`; the rules are the same `shared/clans` code the screens use, so a changed
  * browser cannot make the server do anything the rules refuse.
  *
- * Maths never blocks: the shop, Church and Training Hall take the true price whatever the child answered, so
- * those actions carry no answers. A quest puzzle changes the prize, so the quest action carries the answer and
- * the server rebuilds the puzzle from the clan's seed, the day, the quest and the choice to mark it.
+ * All the maths is ladder maths, made from the child's own maths by the server. Outside fights, `ask` makes the
+ * question(s) for the shop's 10% discount, the quest (two) or the monster siege and keeps them with the clan; `buy`,
+ * `quest` and `monsterStart` then send the answers and the server marks them once. Maths never blocks: a wrong
+ * answer only means no discount, the smaller quest prize or less help from the siege.
  *
  * A mine fight is three kinds of request. `fightStart`: the server takes one off today's fights, picks the monsters from
  * the clan's seed and the fight number, and keeps the fight open. `fightRound`: the browser plays each round itself, and
@@ -14,14 +15,13 @@
  * `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
  * (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
  * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
- * rest waits until the fight is over. A ladder fight (the browser asks for one with `ladder: true`) also keeps the questions the
+ * rest waits until the fight is over. Every new fight is a ladder fight (when the child's maths can be read): it keeps the questions the
  * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
  * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
  * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
-import { earnedDiscount } from './moments';
-import { makeRunQuestions, markQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
+import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
@@ -29,7 +29,7 @@ import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
 import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, TAKES, upgrade, upgradeSave, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type FightState, type Order } from './fight';
-import { buySupply, markSiege, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
+import { buySupply, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
 import { classByName, raceByName, refreshGear, rollMember } from './character';
 import { slotSeed } from './create';
 import { ITEMS } from './gamedata';
@@ -37,7 +37,7 @@ import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, recordBossWin, type Earned } from './rewards';
 import { buyItem, buyTroopMix, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
-import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
+import { finishQuest, todaysQuest, type QuestPrize } from './quests';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type MonsterKind, type Troops, type Village, type VillageBuilding } from './types';
 import { raidClassmateNz, raidTargetList, type RaidTarget, type Sketch, type TargetEntry } from './village';
 
@@ -86,6 +86,28 @@ export interface ServerState {
   raidNo: number;
   /** The mine fight in progress, if any. */
   fight?: OpenFight | null;
+  /**
+   * Ladder questions asked for the shop discount, the quest or the siege (`ask`), kept until they are answered.
+   * The browser is only given what to show. Missing or null: none waiting.
+   */
+  ask?: Asked | null;
+  /** How many `ask`s the clan has had, so each one's questions (and their records) are different. */
+  askNo?: number;
+}
+
+/** What ladder questions can be asked for, outside fights. */
+export const ASK_FOR = ['shop', 'quest', 'siege'] as const;
+export type AskFor = (typeof ASK_FOR)[number];
+/** How many questions each one asks: the quest asks two (both right wins the big prize). */
+export const ASK_COUNT: Record<AskFor, number> = { shop: 1, quest: 2, siege: 1 };
+
+/** Questions waiting for an answer. `no` makes the answers' record id (`clans:ask:<seed>:<no>`). */
+export interface Asked<Q = Question> {
+  for: AskFor;
+  no: number;
+  questions: Q[];
+  /** Marks so far, by slot (set by `askCheck`, so each question is answered once). */
+  marks?: (CryMark | null)[];
 }
 
 /** What changes from request to request, passed in so tests can fix it. */
@@ -125,7 +147,11 @@ export type Action =
   | { type: 'load' }
   | { type: 'create'; name: string; drafts: Draft[] }
   /** `answer` is the answer to the 10% discount question (null or missing: not asked, or "No thanks"). The server marks it. */
-  | { type: 'buy'; member: number; item: string; answer?: number | null }
+  | { type: 'buy'; member: number; item: string; answer?: number | null; ms?: number }
+  /** Ladder questions for the shop discount, the quest or the siege, made and kept by the server (asking again gives the same ones). */
+  | { type: 'ask'; for: AskFor }
+  /** Mark one waiting `ask` question now (so the question box can say right or wrong). `ms`: how long it took. */
+  | { type: 'askCheck'; slot: number; answer: number; ms: number }
   | { type: 'train'; member: number; key: TrainKey; count: number }
   | { type: 'wake'; member: number }
   | { type: 'look'; member: number; look: Look }
@@ -136,7 +162,8 @@ export type Action =
   /** A battle plan is just the push: 3 rounds and 10% loot are fixed. */
   | { type: 'raid'; kingdom: string; push: Push }
   | { type: 'war'; kingdom: string; push: Push }
-  | { type: 'quest'; choice: number; answer: number | null }
+  /** `answers`: the quest's two ladder questions, in order (null: not answered). */
+  | { type: 'quest'; choice: number; answers: (number | null)[]; ms?: number }
   /** `ladder`: this browser can show ladder questions (an older one that is still open does not say so, and gets an old-style fight). */
   | { type: 'fightStart'; depth: number; boss: boolean; ladder?: boolean }
   /** A ladder fight's Battle Cry answer for the round about to be played, marked by the server. `ms`: how long it took. */
@@ -145,7 +172,7 @@ export type Action =
   | { type: 'raidTargets' }
   | { type: 'raidClass'; target: string; take: Take; push: Push }
   /** Monster week: today's try. `siege` is the answer to the siege's question (null: "No thanks"). Then rounds go through `fightRound`. */
-  | { type: 'monsterStart'; siege: number | null; ladder?: boolean }
+  | { type: 'monsterStart'; siege: number | null; ladder?: boolean; ms?: number }
   /** Monster supplies, from day `warnFrom` of the season. */
   | { type: 'buySupply'; kind: SupplyKind; count: number }
   /** A new season: pick a member's race and class again (only before the clan has played the season), or keep them all. */
@@ -155,12 +182,17 @@ export type Action =
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'buy' | 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
-  /** `discount`: the 10% question was answered right. */
-  | { type: 'buy'; discount: boolean }
+  | { type: Exclude<ActionType, 'ask' | 'askCheck' | 'buy' | 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
+  /** The questions to show (never their answers). */
+  | { type: 'ask'; for: AskFor; questions: PublicQuestion[] }
+  /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent). */
+  | { type: 'askCheck'; slot: number; correct: boolean; answer: number; given: number }
+  /** `discount`: the 10% question was answered right. `answer`: the right answer, to show when it was wrong. */
+  | { type: 'buy'; discount: boolean; answer?: number }
   | { type: 'upgrade'; building: VillageBuilding; level: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
-  | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
+  /** `right`: both questions right (null: the choice had none). `marks`: each question's mark and right answer. */
+  | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize; marks?: { correct: boolean; answer: number }[] }
   /** `resumed`: a fight was already open, so this is it again and no fight was used. */
   | { type: 'fightStart'; resumed: boolean }
   /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent for this question). */
@@ -262,6 +294,12 @@ function parseCry(v: unknown): CryAnswer | null | undefined {
   return answer === undefined ? undefined : { answer, reward: v.reward };
 }
 
+/** An answer: a number, null (not answered), or undefined if it is not one. */
+const parseAnswer = (v: unknown): number | null | undefined =>
+  v === null || v === undefined ? null : typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1_000_000_000 ? v : undefined;
+/** How long an answer took, in ms (0 if it was not sent). */
+const parseMs = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.min(Math.round(v), 3_600_000) : 0);
+
 /** Reads an action sent by a browser. Null if it is not one the server knows, however it is changed. */
 export function parseAction(raw: unknown): Action | null {
   if (!isObj(raw) || typeof raw.type !== 'string') return null;
@@ -274,9 +312,15 @@ export function parseAction(raw: unknown): Action | null {
       return { type: 'create', name: raw.name, drafts: raw.drafts as Draft[] };
     }
     case 'buy': {
-      const answer = raw.answer === null || raw.answer === undefined ? null : typeof raw.answer === 'number' && Number.isFinite(raw.answer) ? raw.answer : undefined;
-      return member !== null && typeof raw.item === 'string' && answer !== undefined ? { type: 'buy', member, item: raw.item, answer } : null;
+      const answer = parseAnswer(raw.answer);
+      return member !== null && typeof raw.item === 'string' && answer !== undefined ? { type: 'buy', member, item: raw.item, answer, ms: parseMs(raw.ms) } : null;
     }
+    case 'askCheck': {
+      const slot = int(raw.slot, 0, 5);
+      const answer = parseAnswer(raw.answer);
+      return slot === null || answer === null || answer === undefined ? null : { type: 'askCheck', slot, answer, ms: parseMs(raw.ms) };
+    }
+    case 'ask': return typeof raw.for === 'string' && ASK_FOR.includes(raw.for as AskFor) ? { type: 'ask', for: raw.for as AskFor } : null;
     case 'train': {
       const count = int(raw.count, 1, 500);
       return member !== null && count !== null && typeof raw.key === 'string' && TRAIN_KEYS.includes(raw.key as TrainKey) ? { type: 'train', member, key: raw.key as TrainKey, count } : null;
@@ -301,8 +345,11 @@ export function parseAction(raw: unknown): Action | null {
     }
     case 'quest': {
       const choice = int(raw.choice, 0, 5);
-      const answer = raw.answer === null || raw.answer === undefined ? null : typeof raw.answer === 'number' && Number.isFinite(raw.answer) ? raw.answer : undefined;
-      return choice !== null && answer !== undefined ? { type: 'quest', choice, answer } : null;
+      if (choice === null) return null;
+      // An older page sends one `answer`; it is read as the first of the two.
+      const list: unknown[] = Array.isArray(raw.answers) ? raw.answers.slice(0, ASK_COUNT.quest) : raw.answer === undefined ? [] : [raw.answer];
+      const answers = list.map(parseAnswer);
+      return answers.every((a) => a !== undefined) ? { type: 'quest', choice, answers: answers as (number | null)[], ms: parseMs(raw.ms) } : null;
     }
     case 'fightStart': {
       const depth = int(raw.depth, 0, CONFIG.maxLevel);
@@ -331,7 +378,7 @@ export function parseAction(raw: unknown): Action | null {
     case 'monsterStart': {
       const siege = raw.siege === null || raw.siege === undefined ? null : typeof raw.siege === 'number' && Number.isFinite(raw.siege) && Math.abs(raw.siege) <= 1_000_000_000 ? raw.siege : undefined;
       if (siege === undefined) return null;
-      return raw.ladder === true ? { type: 'monsterStart', siege, ladder: true } : { type: 'monsterStart', siege };
+      return { type: 'monsterStart', siege, ms: parseMs(raw.ms), ...(raw.ladder === true ? { ladder: true } : {}) };
     }
     case 'buySupply': {
       const count = int(raw.count, 1, 10);
@@ -375,6 +422,30 @@ export function catchUp(state: ServerState, today: number, fightsPerDay: number 
 // ---------------------------------------------------------------------------
 // Doing an action
 // ---------------------------------------------------------------------------
+
+/**
+ * Mark the answers to the questions kept by `ask` for `kind`, once: the questions are taken off the clan whatever the answers.
+ * Null if none were waiting for it. Answers left out (null, "No thanks") are not marked or recorded.
+ */
+function takeAnswers(state: ServerState, kind: AskFor, given: (number | null)[], ms: number): { marks: { correct: boolean; answer: number }[]; effects?: Effects } | null {
+  const asked = state.ask;
+  if (!asked || asked.for !== kind) return null;
+  state.ask = null;
+  const marks: { correct: boolean; answer: number }[] = [];
+  const answers: { key: string; correct: boolean; ms: number }[] = [];
+  asked.questions.forEach((q, i) => {
+    const m = markQuestion(q);
+    if (!m) return;
+    // Marked already by `askCheck` (and recorded then): that mark stands, whatever is sent now.
+    const before = asked.marks?.[i];
+    if (before) return void marks.push({ correct: before.correct, answer: m.answer });
+    const g = given[i];
+    const correct = g !== null && g !== undefined && sameAnswer(g, m.answer);
+    marks.push({ correct, answer: m.answer });
+    if (g !== null && g !== undefined) answers.push({ key: m.key, correct, ms });
+  });
+  return { marks, ...(answers.length ? { effects: { ladder: { once: `clans:ask:${state.seed}:${asked.no}`, answers } } } : {}) };
+}
 
 const done = (state: ServerState, result: Result, changed = true, effects?: Effects): Applied => ({ ok: true, state, result, changed, ...(effects ? { effects } : {}) });
 
@@ -436,8 +507,38 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
     case 'buy': {
       const item = ITEMS.find((i) => i.name === action.item);
       if (!item) return refuse('item', 'The shop does not have that.');
-      const discount = earnedDiscount(settings, item.price, action.answer);
-      return settle(buyItem(clan, action.member, item, discount), { type: 'buy', discount });
+      // The 10% discount: the ladder question kept by `ask`, marked here once. No question asked (or "No thanks"): full price.
+      const marked = takeAnswers(state, 'shop', [action.answer ?? null], action.ms ?? 0);
+      const discount = marked?.marks[0]?.correct === true;
+      const bought = buyItem(clan, action.member, item, discount);
+      if (!bought.ok) return refuse(bought.why ?? 'no', bought.say ?? 'That cannot be done right now.');
+      return done(state, { type: 'buy', discount, ...(marked?.marks[0] ? { answer: marked.marks[0].answer } : {}) }, true, marked?.effects);
+    }
+    case 'ask': {
+      if (!ctx.maths) return refuse('no-maths', "We couldn't get your maths questions just now.");
+      const waiting = state.ask;
+      if (waiting && waiting.for === action.for) return done(state, { type: 'ask', for: action.for, questions: waiting.questions.map((q, i) => publicQuestion(q, i)) }, rested || upgraded);
+      const no = (state.askNo ?? 0) + 1;
+      const questions = makeRunQuestions(ctx.maths, ASK_COUNT[action.for], seededRandom(`clans:ask:${state.seed}:${no}`));
+      if (questions.length === 0) return refuse('no-maths', "We couldn't get your maths questions just now.");
+      state.ask = { for: action.for, no, questions };
+      state.askNo = no;
+      return done(state, { type: 'ask', for: action.for, questions: questions.map((q, i) => publicQuestion(q, i)) });
+    }
+    case 'askCheck': {
+      const asked = state.ask;
+      const marked = asked ? markQuestion(asked.questions[action.slot]) : null;
+      if (!asked || !marked) return refuse('no-question', 'There is no question to answer.');
+      const before = asked.marks?.[action.slot];
+      if (before) return done(state, { type: 'askCheck', slot: action.slot, correct: before.correct, answer: marked.answer, given: before.answer }, false);
+      const correct = sameAnswer(action.answer, marked.answer);
+      const marks = asked.marks ?? [];
+      while (marks.length < action.slot) marks.push(null);
+      marks[action.slot] = { answer: action.answer, correct };
+      asked.marks = marks;
+      return done(state, { type: 'askCheck', slot: action.slot, correct, answer: marked.answer, given: action.answer }, true, {
+        ladder: { once: `clans:ask:${state.seed}:${asked.no}:${action.slot}`, answers: [{ key: marked.key, correct, ms: action.ms }] },
+      });
     }
     case 'train': return settle(trainMember(clan, action.member, action.key, action.count), { type: 'train' });
     case 'wake': return settle(wakeOne(clan, action.member), { type: 'wake' });
@@ -462,12 +563,13 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       const q = todaysQuest(state.seed, state.day, settings);
       if (!q) return refuse('quest', 'There is no quest for you today.');
       if (action.choice >= q.choices.length) return refuse('choice', 'That choice is not in this story.');
-      const spec = puzzleFor(q, action.choice, state.seed, state.day, settings);
-      const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
+      // A choice with a puzzle asks the two ladder questions kept by `ask`: both right wins the big prize, otherwise the small one.
+      const puzzle = !!q.choices[action.choice].puzzle;
+      const marked = puzzle ? takeAnswers(state, 'quest', action.answers, action.ms ?? 0) : null;
+      const right = puzzle ? (marked?.marks.length === ASK_COUNT.quest && marked.marks.every((m) => m.correct)) : null;
       const finished = finishQuest(clan, state.day, q, action.choice, right);
-      // A puzzle that was tried (even wrongly, even given up on) goes in the teacher's private records.
-      const answers = spec && finished.ok ? [{ key: factKey(settings.yearBand, buildPuzzle(spec).kind), correct: right === true }] : undefined;
-      return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }, true, answers ? { answers } : undefined) : refuse('quest', finished.say);
+      if (!finished.ok) return refuse('quest', finished.say);
+      return done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize, ...(marked ? { marks: marked.marks } : {}) }, true, marked?.effects);
     }
     case 'raidTargets': {
       if (classRaidsResting(clock)) return done(state, { type: 'raidTargets', targets: [], resting: true }, rested || upgraded);
@@ -498,7 +600,10 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       if (save.lastDay === ctx.today) return refuse('tried-today', 'You have had your try today. Come back tomorrow!');
       if (!clan.members.some((m) => !m.knockedOut)) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
       const seed = monsterSeed(state.seed, season, save.tries);
-      const marked = markSiege(seed, settings, action.siege);
+      // The siege's question: the ladder question kept by `ask` (none asked: no help from the maths).
+      const asked = takeAnswers(state, 'siege', [action.siege], action.ms ?? 0);
+      const mark = asked?.marks[0];
+      const marked = { right: asked ? mark?.correct === true : null, answer: mark ? mark.answer : null };
       const arrows = save.supplies.arrows;
       const siege = playSiege(clan, arrows, marked.right, seed);
       const setup: MonsterSetup = {
@@ -506,15 +611,14 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
         potions: save.supplies.potions, net: save.supplies.net > 0, walls: empireOf(clan).levels.walls,
       };
       state.fight = { depth: CONFIG.monster.depth, boss: false, seed, no: state.fightNo + 1, settings, rounds: [], monster: { setup, siege } };
-      if (action.ladder && ctx.maths) {
+      if (ctx.maths) {
         state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.monster.rounds, seededRandom(`clans:monster:${seed}:${state.fightNo + 1}`));
         state.fight.marks = [];
       }
       state.fightNo++;
       // Fire arrows are shot in the siege; the try counts from now (one a day, even if the page is closed).
       clan.monster = { ...save, tries: save.tries + 1, lastDay: ctx.today, supplies: { ...save.supplies, arrows: 0 } };
-      const answers = marked.question && action.siege !== null ? [{ key: factKey(settings.yearBand, marked.question.kind), correct: marked.right === true }] : undefined;
-      return done(state, { type: 'monsterStart', resumed: false, right: marked.right, answer: marked.question ? marked.question.answer : null }, true, answers ? { answers } : undefined);
+      return done(state, { type: 'monsterStart', resumed: false, right: marked.right, answer: marked.answer }, true, asked?.effects);
     }
     case 'buySupply': {
       if (!suppliesOnSale(clock)) return refuse('not-yet', 'Monster supplies are sold in the last two weeks of the season.');
@@ -548,7 +652,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       state.fight = { depth: action.depth, boss: action.boss, seed, no: state.fightNo + 1, settings, rounds: [], ...(extra ? { extra: true as const } : {}) };
       // A ladder fight: the questions come from the child's own maths, made now from the fight's seed and kept with it.
       // Without the child's maths (it couldn't be loaded) the fight is an old-style one, so the fight still goes ahead.
-      if (action.ladder && ctx.maths) {
+      if (ctx.maths) {
         state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:${seed}:${state.fightNo + 1}`));
         state.fight.marks = [];
       }

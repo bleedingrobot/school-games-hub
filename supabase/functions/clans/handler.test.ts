@@ -286,6 +286,57 @@ describe('ladder fights through the server function', () => {
   });
 });
 
+describe('ask through the server function', () => {
+  const create = () => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(SEED) });
+  const stored = (t: ReturnType<typeof setup>) => t.clans.get('student-1')!.state.ask!;
+
+  it('shows no answers, is null when nothing is waiting, and keeps an askCheck answer in the child\'s own records once', async () => {
+    // shows the questions and marks, never an answer, a fact key or params
+    {
+      const t = setup();
+      await t.send(create());
+      const asked = await t.send({ type: 'ask', for: 'quest' });
+      expect(asked.body.ok).toBe(true);
+      expect(asked.body.state.ask.for).toBe('quest');
+      expect(asked.body.state.ask.questions).toHaveLength(2);
+      expect(JSON.stringify(asked.body)).not.toMatch(/"answer"|"factKey"|"params"/);
+      expect((await t.send({ type: 'load' })).body.state.ask.questions).toHaveLength(2);
+      expect(JSON.stringify((await t.send({ type: 'load' })).body)).not.toMatch(/"factKey"|"params"/);
+      // After a check the mark shows (the answer given), but the right answer is still not in the state.
+      const q = stored(t).questions[0];
+      const checked = await t.send({ type: 'askCheck', slot: 0, answer: q.answer, ms: 900 });
+      expect(checked.body.result).toMatchObject({ type: 'askCheck', slot: 0, correct: true });
+      const state = JSON.stringify(checked.body.state);
+      expect(state).not.toMatch(/"factKey"|"params"/);
+      expect(checked.body.state.ask.marks[0]).toMatchObject({ correct: true });
+      expect(checked.body.state.ask.questions.every((x: Record<string, unknown>) => !('answer' in x))).toBe(true);
+  
+    }
+    // is null when nothing is waiting, and needs the child\'s maths
+    {
+      const t = setup();
+      expect((await t.send(create())).body.state.ask).toBeNull();
+      t.ladder.context = null;
+      expect((await t.send({ type: 'ask', for: 'shop' })).body).toMatchObject({ ok: false, why: 'no-maths' });
+  
+    }
+    // keeps an askCheck answer in the child\'s own records once
+    {
+      const t = setup();
+      await t.send(create());
+      await t.send({ type: 'ask', for: 'shop' });
+      const q = stored(t).questions[0];
+      await t.send({ type: 'askCheck', slot: 0, answer: q.answer, ms: 1200 });
+      await t.send({ type: 'askCheck', slot: 0, answer: 0, ms: 5 });
+      expect(t.ladder.kept).toHaveLength(1);
+      expect(t.ladder.kept[0].once).toBe(`clans:ask:${SEED}:1:0`);
+      expect(t.ladder.kept[0].list).toMatchObject([{ key: q.factKey, correct: true, ms: 1200 }]);
+      expect(t.answers).toEqual([]);
+  
+    }
+  });
+});
+
 describe('the deployed file', () => {
   it('is up to date (run `npm run build:functions` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script

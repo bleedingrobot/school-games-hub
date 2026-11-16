@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { bestCharm, buildPuzzle, choiceOpen, type QuestDef, type QuestPrize } from '../../../shared/clans/quests';
-import { Moment } from './Moment';
-import { doQuest, questPuzzle, questToday, questUsed } from './places';
+import { bestCharm, choiceOpen, type QuestDef, type QuestPrize } from '../../../shared/clans/quests';
+import { LadderAsk, type Asker } from './LadderAsk';
+import { doQuest, questToday, questUsed } from './places';
 import type { Session, Change } from './session';
 
 type Phase = { t: 'story'; shown: number } | { t: 'puzzle'; choice: number } | { t: 'result'; text: string; prize: QuestPrize; right: boolean | null };
@@ -20,22 +20,24 @@ function prizeLine(p: QuestPrize): string {
 }
 
 /** One quest a day: the story one paragraph at a time, big choice buttons, sometimes a puzzle, and a plain result. */
-export function Quest({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
+export function Quest({ session, ask, onChange, onBack }: { session: Session; ask?: Asker; onChange: Change; onBack: () => void }) {
   const quest = questToday(session);
   const [phase, setPhase] = useState<Phase>({ t: 'story', shown: 1 });
   const used = questUsed(session) && phase.t !== 'result';
 
-  const finish = (q: QuestDef, choice: number, right: boolean | null, answer: number | null = null) => {
+  // The server marks the two questions itself (`askCheck`), so the answers are not sent again here.
+  const finish = (q: QuestDef, choice: number, right: boolean | null) => {
     const res = doQuest(session, q, choice, right);
     if ('ok' in res) return;
-    onChange(res.session, { type: 'quest', choice, answer });
+    onChange(res.session, { type: 'quest', choice, answers: [] });
     setPhase({ t: 'result', text: res.done.text, prize: res.done.prize, right });
   };
   const pick = (q: QuestDef, choice: number) => {
     const c = q.choices[choice];
     if (!choiceOpen(session.clan, c).open) return;
-    if (c.puzzle) setPhase({ t: 'puzzle', choice });
-    else finish(q, choice, null);
+    // Practice (no server): no questions, and the story goes the good way.
+    if (c.puzzle && ask) setPhase({ t: 'puzzle', choice });
+    else finish(q, choice, c.puzzle ? true : null);
   };
 
   const choosing = !!quest && !used && phase.t === 'story' && phase.shown >= quest.story.length;
@@ -62,15 +64,15 @@ export function Quest({ session, onChange, onBack }: { session: Session; onChang
   } else if (phase.t === 'result') {
     body = (
       <div className="cq-panel" role="status">
-        {phase.right !== null && <p className="cq-soft">{phase.right ? 'You solved the puzzle!' : 'The puzzle did not quite work out, but the story carries on.'}</p>}
+        {phase.right !== null && <p className="cq-soft">{phase.right ? 'Both right! You solved it.' : 'Not both right this time, but the story carries on.'}</p>}
         <p>{phase.text}</p>
         <p className="cq-note">{prizeLine(phase.prize)}</p>
         <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onBack}>Carry on</button>
       </div>
     );
   } else if (phase.t === 'puzzle') {
-    const spec = questPuzzle(session, quest, phase.choice)!;
-    body = <Moment key={`${quest.id}-${phase.choice}`} question={buildPuzzle(spec)} title={quest.title} note={quest.choices[phase.choice].label} doneLabel="See what happens" onDone={(right, answer) => finish(quest, phase.choice, right, answer)} />;
+    const choice = phase.choice;
+    body = <LadderAsk key={`${quest.id}-${choice}`} kind="quest" ask={ask!} title={quest.title} note={`${quest.choices[choice].label}. Get both right for the big prize.`} onDone={(right) => finish(quest, choice, right.length === 2 && right.every(Boolean))} onSkip={() => finish(quest, choice, false)} />;
   } else {
     const shown = phase.shown;
     const { value: charm, member } = bestCharm(session.clan);
