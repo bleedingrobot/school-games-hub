@@ -120,8 +120,8 @@ select ok(not has_function_privilege('service_role', 'public.clan_my_village_sha
 -- ---- Raid targets: the same class only ----
 select is((select string_agg(x ->> 'name', ',' order by x ->> 'name') from jsonb_array_elements(public.clan_village_mates(pg_temp.id('a'))) x), 'Blue Fox,Green Owl',
   'ana can pick ben''s and cai''s clans (same class), not dee''s (another class) or fay''s (no class)');
-select is((select string_agg(k, ',' order by k) from jsonb_object_keys(public.clan_village_mates(pg_temp.id('a')) -> 0) k), 'createdNzDay,id,name,shieldUntil,troops',
-  'all it is told about them is a hidden id, the name, the day it began, its shield and its troops');
+select is((select string_agg(k, ',' order by k) from jsonb_object_keys(public.clan_village_mates(pg_temp.id('a')) -> 0) k), 'banners,heroLevels,id,levels,name,troops',
+  'all it is told about them is a hidden id, the name, its heroes'' levels, building levels, troops and Banners (Village Raids, 17 Nov 2026)');
 select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('d'))), 0, 'dee is alone in her class: no one to raid');
 select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('f'))), 0, 'a pupil with no class gets no targets');
 select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('b')) ->> 'name', 'Blue Fox', 'a classmate''s clan can be loaded to raid');
