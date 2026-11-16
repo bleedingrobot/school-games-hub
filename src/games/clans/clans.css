@@ -292,7 +292,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 }
 
 /* The season road (docs/CLANS-SEASON-TIMELINE-PLAN.md): four round stops, a bar that fills as the days pass. */
-.cq-road { margin: 4px 0 12px; padding: 10px 14px 12px; border: 1px solid var(--f-dot); border-radius: 3px; background: linear-gradient(#1c1d20, var(--f-deep)); box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000; }
+.cq-road { margin: 14px 0 12px; padding: 10px 14px 12px; border: 1px solid var(--f-dot); border-radius: 3px; background: linear-gradient(#1c1d20, var(--f-deep)); box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000; }
 .cq-road__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
 .cq-road__head h3 { margin: 0 !important; }
 .cq-road__head p { margin: 0; color: var(--cq-ink); }

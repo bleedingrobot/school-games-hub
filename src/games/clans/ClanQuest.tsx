@@ -469,12 +469,12 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                   <h2>{session.clan.name}</h2>
                 </div>
               </div>
-              <SeasonRoad clock={session.clock} clan={session.clan} />
               <div className="cq-cards cq-cards--lineup">
                 {session.clan.members.map((m, i) => (
                   <MemberCard key={m.name} member={m} leader={i === 0} portrait={8} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
                 ))}
               </div>
+              <SeasonRoad clock={session.clock} clan={session.clan} />
               {session.notes && session.notes.length > 0 && (
                 <div className="cq-panel" role="group" aria-label="While you were away">
                   <h3>While you were away</h3>
