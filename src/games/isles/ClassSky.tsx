@@ -4,7 +4,7 @@
  * classmate's island, look only, and is where a free gift can be left. Never a classmate's coins or maths: the server
  * doesn't send them.
  */
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GIFT_COINS, GIFTS, LIGHTHOUSE, WELL_RACED_COINS, type GiftId } from '../../../shared/isles/config';
 import { PROBLEM_TEXT } from '../../../shared/isles/server';
 import { newIsland, type Island } from '../../../shared/isles/engine';
@@ -39,24 +39,13 @@ function sizeWords(c: Pick<ClassmateCard, 'spots' | 'decorations' | 'lighthouse'
 /** Reasons about the pupil's own island (not the classmate's): said once at the top of the class sky, not on every card. */
 const OWN_REASONS: string[] = [PROBLEM_TEXT['no-turns'], PROBLEM_TEXT['no-races-left'], PROBLEM_TEXT['raced-this-turn'], 'Sky Races are switched off for your class.'];
 
-/** A Race button, greyed out with the reason when the island can't be raced now (`saidAbove`: the reason's element). */
-function RaceButton({ card, onRace, saidAbove }: { card: ClassmateCard; onRace: (c: ClassmateCard) => void; saidAbove?: string }) {
-  const why = useId();
-  const own = card.raceWhy !== null && OWN_REASONS.includes(card.raceWhy) && saidAbove;
+/** A Race button, shown only when that island can be raced now (James, 16 Nov 2026: no greyed-out buttons). */
+function RaceButton({ card, onRace }: { card: ClassmateCard; onRace: (c: ClassmateCard) => void }) {
+  if (card.raceWhy !== null) return null;
   return (
-    <div className="si-choice">
-      <button
-        type="button"
-        className="button button--primary"
-        disabled={card.raceWhy !== null}
-        aria-describedby={card.raceWhy ? (own ? saidAbove : why) : undefined}
-        onClick={() => onRace(card)}
-        aria-label={`Race ${card.name}'s island`}
-      >
-        Race
-      </button>
-      {card.raceWhy && !own && <span id={why} className="si-choice__why">{card.raceWhy}</span>}
-    </div>
+    <button type="button" className="button button--primary" onClick={() => onRace(card)} aria-label={`Race ${card.name}'s island`}>
+      Race
+    </button>
   );
 }
 
@@ -71,7 +60,6 @@ export function ClassSky({ backend, today, onVisit, onRace, onHall, onBack }: {
   const [sky, setSky] = useState<ClassSkyView | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const heading = useFocusedHeading();
-  const ownWhy = useId();
   const own = sky?.classmates.find((c) => c.raceWhy !== null && OWN_REASONS.includes(c.raceWhy))?.raceWhy ?? null;
 
   useEffect(() => {
@@ -108,7 +96,7 @@ export function ClassSky({ backend, today, onVisit, onRace, onHall, onBack }: {
           </section>
           <section className="si-panel" aria-labelledby="si-mates-title">
             <h3 id="si-mates-title">Your class's islands</h3>
-            {own && <p id={ownWhy} className="si-step__why">Sky Races: {own}</p>}
+            {own && <p className="si-step__why">Sky Races: {own}</p>}
             {sky.classmates.length ? (
               <ul className="si-mates">
                 {sky.classmates.map((c) => (
@@ -121,7 +109,7 @@ export function ClassSky({ backend, today, onVisit, onRace, onHall, onBack }: {
                     </div>
                     <div className="si-mate__buttons">
                       <button type="button" className="button button--light" onClick={() => onVisit(c.id)} aria-label={`Visit ${c.name}'s island`}>Visit</button>
-                      <RaceButton card={c} onRace={onRace} saidAbove={ownWhy} />
+                      <RaceButton card={c} onRace={onRace} />
                     </div>
                   </li>
                 ))}
@@ -153,7 +141,6 @@ export function VisitIsland({ backend, who, onRace, onBack }: {
   const [sent, setSent] = useState<GiftId | null>(null);
   const [busy, setBusy] = useState(false);
   const heading = useFocusedHeading();
-  const giftWhy = useId();
 
   useEffect(() => {
     backend.send({ action: 'visit', who }).then(
@@ -203,22 +190,29 @@ export function VisitIsland({ backend, who, onRace, onBack }: {
               ) : (
                 <>
                   <p>A gift gives {visit.name} {plural(GIFT_COINS, 'coin')}. It's free to give, one gift a day.</p>
-                  <div className="si-gifts" role="group" aria-label="Choose a gift" aria-describedby={visit.giftWhy ? giftWhy : undefined}>
-                    {GIFTS.map((g) => (
-                      <button key={g.id} type="button" className="button button--light si-gift" disabled={visit.giftWhy !== null || busy} onClick={() => void give(g.id)}>
-                        <span className="si-gift__pic" aria-hidden="true"><Art src={giftArt(g.id)} fallback={<>{GIFT_EMOJI[g.id]}</>} /></span>
-                        <span>Leave {g.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {visit.giftWhy && <p id={giftWhy} className="si-choice__why">{visit.giftWhy}</p>}
+                  {visit.giftWhy ? (
+                    <p className="si-step__why">{visit.giftWhy}</p>
+                  ) : (
+                    <div className="si-gifts" role="group" aria-label="Choose a gift">
+                      {GIFTS.map((g) => (
+                        <button key={g.id} type="button" className="button button--light si-gift" disabled={busy} onClick={() => void give(g.id)}>
+                          <span className="si-gift__pic" aria-hidden="true"><Art src={giftArt(g.id)} fallback={<>{GIFT_EMOJI[g.id]}</>} /></span>
+                          <span>Leave {g.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </section>
             <section className="si-panel" aria-labelledby="si-visit-race-title">
               <h3 id="si-visit-race-title">Sky Race</h3>
-              <p>Race your boat against {visit.name}'s island. {visit.name}'s island gets {plural(WELL_RACED_COINS, 'coin')} for racing well, whoever wins.</p>
-              <RaceButton card={visit} onRace={onRace} />
+              {visit.raceWhy ? <p className="si-step__why">{visit.raceWhy}</p> : (
+                <>
+                  <p>Race your boat against {visit.name}'s island. {visit.name}'s island gets {plural(WELL_RACED_COINS, 'coin')} for racing well, whoever wins.</p>
+                  <RaceButton card={visit} onRace={onRace} />
+                </>
+              )}
             </section>
           </div>
         </div>

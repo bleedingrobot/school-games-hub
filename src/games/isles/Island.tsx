@@ -98,6 +98,7 @@ export function IslandPicture({
   island,
   keeper,
   onSpot,
+  tappable,
   onDrift,
   selected,
   lit,
@@ -110,6 +111,8 @@ export function IslandPicture({
   keeper: string | null;
   /** Tapping a spot (left out when the spots can't be tapped, as on most steps of a turn). */
   onSpot?: (spot: number) => void;
+  /** With onSpot: only these spots can be tapped (the rest have nothing that can be done now). Left out: all. */
+  tappable?: number[];
   /** Tapping the drifting chunk (only while there is one). */
   onDrift?: () => void;
   selected?: number | null;
@@ -189,7 +192,7 @@ export function IslandPicture({
             />
           );
           const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}${counting ? ' si-spot--counting' : ''}`;
-          if (!onSpot) {
+          if (!onSpot || (tappable && !tappable.includes(i))) {
             return <span key={i} className={`${look} si-spot--still`} style={style} data-pip={`spot-${i}`} role="img" aria-label={`Spot ${i + 1}: ${name}`}>{art}</span>;
           }
           return (
@@ -273,7 +276,7 @@ export function IslandPicture({
           {island.spots.slice(places.length).map((spot, j) => {
             const i = places.length + j;
             return (
-              <button key={i} type="button" className={`si-more__spot${lit === `spot-${i}` ? ' si-lit' : ''}`} data-pip={`spot-${i}`} aria-pressed={selected === i} disabled={!onSpot} onClick={() => onSpot?.(i)}>
+              <button key={i} type="button" className={`si-more__spot${lit === `spot-${i}` ? ' si-lit' : ''}`} data-pip={`spot-${i}`} aria-pressed={selected === i} disabled={!onSpot || (tappable !== undefined && !tappable.includes(i))} onClick={() => onSpot?.(i)}>
                 Spot {i + 1}: {spotName(spot.kind, spot.level)}
               </button>
             );

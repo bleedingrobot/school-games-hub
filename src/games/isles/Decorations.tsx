@@ -3,9 +3,8 @@
  * ones the island has. In a turn's Build step one can be bought and put on a free decoration place, or one moved
  * (free); between turns the shelf just shows where things stand. Every "why not" comes from the rules.
  */
-import { useId } from 'react';
 import { DECORATIONS, type DecorationId } from '../../../shared/isles/config';
-import { decoration, owns, placeCount, problemWith, type Island } from '../../../shared/isles/engine';
+import { decoration, placeCount, problemWith, type Island } from '../../../shared/isles/engine';
 import { decorArt } from './art';
 import { Art } from './Island';
 import { DECOR_EMOJI, n, priceWords, whyNot } from './words';
@@ -34,22 +33,18 @@ function whyNotBuy(island: Island, id: DecorationId): string | null {
   return problem ? whyNot(island, action, problem) : null;
 }
 
-function BuyButton({ island, id, lit, onBuy }: { island: Island; id: DecorationId; lit?: string | null; onBuy: (id: DecorationId) => void }) {
-  const why = useId();
-  const problem = whyNotBuy(island, id);
+/** Shown only when the decoration can be bought now (James, 16 Nov 2026: no greyed-out buttons). */
+function BuyButton({ id, lit, onBuy }: { island: Island; id: DecorationId; lit?: string | null; onBuy: (id: DecorationId) => void }) {
   return (
     <div className="si-choice">
       <button
         type="button"
         className={`button button--light si-choice__button${lit === `decorate-${id}` ? ' si-lit' : ''}`}
         data-pip={`decorate-${id}`}
-        disabled={problem !== null}
-        aria-describedby={problem ? why : undefined}
         onClick={() => onBuy(id)}
       >
         Put one up
       </button>
-      {problem && <span id={why} className="si-choice__why">{problem}</span>}
     </div>
   );
 }
@@ -87,7 +82,7 @@ export function Shelf({
                 <span className="si-shelf__does">{help ? `Helps: ${d.does}. One per island.` : 'Just pretty.'}</span>
                 {have > 0 && <span className="si-shelf__have">{help || have === 1 ? 'You have this' : `You have ${have}`}</span>}
               </div>
-              {onBuy && !(help && owns(island, d.id)) && <BuyButton island={island} id={d.id} lit={lit} onBuy={onBuy} />}
+              {onBuy && whyNotBuy(island, d.id) === null && <BuyButton island={island} id={d.id} lit={lit} onBuy={onBuy} />}
             </li>
           );
         })}

@@ -27,7 +27,8 @@ import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, typ
 import { Art, Card, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
-import { QUESTION_WORDS, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
+import { buildChoices } from './canDo';
+import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
 import './isles.css';
@@ -386,7 +387,15 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     );
   }
 
-  const step = nextStep(shownIsland);
+  const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
+  const raceWords = !view.races ? 'Sky Races are switched off for your class.' : raceWhy ? PROBLEM_TEXT[raceWhy] : null;
+  // What the Build step can do this turn (after collecting, before any choice), and what's left after the choices.
+  const canBuildThisTurn = steps[0] ? buildChoices(steps[0]).any : false;
+  const buildNow = turnStep === Step.Build ? buildChoices(planned!) : null;
+  // Between turns, building tips count the coins the next turn will collect (so Pip never says "save up" for
+  // something the next turn can already pay for); anything else is about the island as it is now.
+  const afterCollect = screen.kind === 'home' ? nextStep(beforeBuilding(island, false).island, view.races) : null;
+  const step = afterCollect && stepOf(afterCollect.target) === Step.Build ? afterCollect : nextStep(shownIsland, view.races);
   // In a turn Pip talks about this step only: his next step if it's about this step, or the step's own line.
   const pipHere = turnStep === null || stepOf(step.target) === turnStep;
   // Building only happens in a turn, so between turns Pip says it's for the next turn.
@@ -395,7 +404,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const resting = island.turnsLeft < 1 && !unlimited && screen.kind === 'home';
   const pipSays = guideNow ? guideNow.say
     : resting ? 'Your island is resting. See you tomorrow!'
-    : !pipHere ? STEP_PIP[turnStep!]
+    : buildNow && !buildNow.any ? BUILD_ALL_DONE
+    : !pipHere ? (turnStep === Step.Rest && raceWords !== null ? REST_NO_RACE : STEP_PIP[turnStep!])
     : nextTurn ? nextTurnLine(step.say)
     : step.say;
   const lastTurn = screen.kind === 'home' && island.turn > 0
@@ -429,8 +439,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     : answered ? (answered.right ? QUESTION_WORDS.right : QUESTION_WORDS.wrong)
     : pipLine ? pipSays
     : null;
-  const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
-  const raceWords = !view.races ? 'Sky Races are switched off for your class.' : raceWhy ? PROBLEM_TEXT[raceWhy] : null;
   const back = () => setScreen(screen.kind === 'decorations' || screen.kind === 'howto' ? screen.back : { kind: 'home' });
   // The collect step: coins pop off each building (what it makes, before the fair wind).
   const pops = turnStep === Step.Collect
@@ -526,8 +534,10 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               lit={lit}
               selected={turnStep === Step.Build && build.kind === 'spot' ? build.spot : null}
               // Spots are buttons only on the Build step: on My island they're just the picture.
-              onSpot={turnStep === Step.Build && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i }) : undefined}
-              onDrift={turnStep === Step.Build && !again && !placing ? () => choose({ kind: 'anchor' }) : undefined}
+              // Only spots (and drifting land) where something can be done now can be tapped.
+              onSpot={buildNow && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i }) : undefined}
+              tappable={buildNow?.spots}
+              onDrift={buildNow?.anchor && !again && !placing ? () => choose({ kind: 'anchor' }) : undefined}
               free={placing ? freePlaces(shownIsland) : undefined}
               onPlace={(place) => {
                 if (build.kind === 'place') choose({ kind: 'decorate', id: build.id, place });
@@ -596,19 +606,17 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                   </button>
                 )}
                 <div className="si-row">
-                  <div className="si-choice">
+                  {/* The race button only shows when a race can start (James, 16 Nov 2026). */}
+                  {raceWords === null && (
                     <button
                       type="button"
                       className={`button button--primary${lit === 'race' ? ' si-lit' : ''}`}
                       data-pip="race"
-                      disabled={raceWords !== null}
-                      aria-describedby={raceWords ? 'si-race-why' : undefined}
                       onClick={() => setScreen({ kind: 'race', open: null })}
                     >
                       Sky Race
                     </button>
-                    {raceWords && <span id="si-race-why" className="si-choice__why">{raceWords}</span>}
-                  </div>
+                  )}
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'decorations', back: { kind: 'home' } })}>Decorations</button>
                   <button type="button" className="button button--light" onClick={() => setScreen({ kind: 'howto', back: { kind: 'home' } })}>How to play</button>
                 </div>
@@ -634,7 +642,9 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                 windy={windy}
                 question={view.question ? { answered: view.question.answered ?? null } : null}
                 raceWhy={raceWords}
-                onNext={() => goTo(Math.min(turnStep + 1, Step.Rest) as Step)}
+                canBuild={canBuildThisTurn}
+                // Nothing can be built this turn: the Build step is skipped (the last step says the coins are saved).
+                onNext={() => goTo((turnStep === Step.Collect && !canBuildThisTurn ? Step.Rest : Math.min(turnStep + 1, Step.Rest)) as Step)}
                 onBack={stepBack}
                 onChoose={choose}
                 onBuild={(b) => {

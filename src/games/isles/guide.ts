@@ -8,7 +8,7 @@
 import { BUILD_COINS, TURNS_PER_DAY, type PlotKind } from '../../../shared/isles/config';
 import type { Island } from '../../../shared/isles/engine';
 import { KIND_NAME, wantedKind } from '../../../shared/isles/nextStep';
-import { Step, type BuildView } from './TurnSteps';
+import { STEP_PIP, Step, type BuildView } from './TurnSteps';
 import { KIND_JOB } from './words';
 
 export interface GuideLine {
@@ -61,9 +61,11 @@ export function guideLine(at: GuideAt): GuideLine {
   const empty = island.spots.findIndex((s) => s.kind === 'empty');
   const kind = wantedKind(island);
   const canBuild = empty >= 0 && island.coins >= BUILD_COINS[kind];
-  if (at.again || (at.build.kind === 'island' && (at.picks > 0 || !canBuild))) {
+  if (at.again || (at.build.kind === 'island' && at.picks > 0)) {
     return { say: GUIDE.wellDone, target: 'next' };
   }
+  // Nothing built yet and no empty spot to build on: Pip says what this step is for (never "Well done").
+  if (at.build.kind === 'island' && !canBuild) return { say: STEP_PIP[Step.Build] };
   if (at.build.kind === 'spot') {
     const here = island.spots[at.build.spot];
     if (here?.kind === 'empty' && island.coins >= BUILD_COINS[kind]) {
