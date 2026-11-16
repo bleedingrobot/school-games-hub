@@ -9960,6 +9960,16 @@ const MOMENT_TOPICS = {
 		"decimals",
 		"money",
 		"patterns"
+	],
+	arena: [
+		"add-sub",
+		"times-tables",
+		"place-value",
+		"division",
+		"fractions",
+		"decimals",
+		"money",
+		"patterns"
 	]
 };
 /** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */

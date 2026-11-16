@@ -91,7 +91,7 @@ describe('the lord server function', () => {
     expect(g.hero().gold).toBe(0);
   });
 
-  it('marks the three trial questions itself, hands out the fight, and pays the level and the bonus only after the replay', async () => {
+  it('marks maths itself: the three trial questions (level and bonus only after the replay) and a wrong bank-interest answer', async () => {
     const g = new Game();
     await g.start();
     g.patch({ exp: expNeeded(1), ...STRONG, strength: 200 });
@@ -111,11 +111,8 @@ describe('the lord server function', () => {
     expect(g.hero().strength).toBeGreaterThan(strength);
     expect(done.body.result.bonusStrength).toBeGreaterThan(0);
     expect(g.hero().hp).toBe(g.hero().maxHp);
-  });
 
-  it('marks a wrong bank-interest answer wrong, earns nothing and tells the right answer', async () => {
-    const g = new Game();
-    await g.start();
+    // The banker's question: a wrong answer earns nothing and is told the right answer.
     g.patch({ level: 4, bank: 259 });
     await g.refresh();
     await g.send({ action: 'bank', op: 'interest-ask' });
