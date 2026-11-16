@@ -43,7 +43,7 @@ export function ClashCircle({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0, note, ending, buttons, onLeave, secondsLeft }: {
+export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0, note, ending, buttons, onLeave, secondsLeft, tries = 0, theirCheer, problem }: {
   me: ClashHero;
   them: ClashHero & { computer?: boolean };
   /** Which side of the rounds is this pupil's. */
@@ -64,6 +64,12 @@ export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0,
   onLeave: () => void;
   /** Seconds left to pick and answer this round (live clashes). */
   secondsLeft?: number | null;
+  /** Goes up when a pick couldn't be sent, so the attack buttons come back. */
+  tries?: number;
+  /** What the other side cheered at the end ("Good fight!"). */
+  theirCheer?: string | null;
+  /** A short line when something went wrong ("We couldn't reach the server"). */
+  problem?: string | null;
 }) {
   const other: ClashSide = seat === 0 ? 1 : 0;
   const still = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -85,7 +91,7 @@ export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0,
   }, [picks.length, shown, still]);
 
   // A new round arrived: the pick made for it is spent.
-  useEffect(() => setPicked(null), [picks.length]);
+  useEffect(() => setPicked(null), [picks.length, tries]);
 
   const revealing = beat !== null ? picks[shown] : null;
   const state = useMemo(() => replayClash(picks.slice(0, shown + (beat === 'hits' ? 1 : 0))), [picks, shown, beat]);
@@ -178,6 +184,7 @@ export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0,
             <p className="lord-end__pops"><span className="lord-pop lord-pop--gold" style={{ '--d': '0.45s' } as CSSProperties}>+{prize} gold</span></p>
           )}
           {note && <p className="lord-end__line lord-clash__note">{note}</p>}
+          {theirCheer && <p className="lord-clash__cheer">{them.name}: “{theirCheer}”</p>}
           {prize > 0 && (
             <div className="lord-end__coins" aria-hidden="true">
               {COINS.map((c) => <span key={c.i} style={{ '--i': c.i, '--x': c.x, '--y': c.y } as CSSProperties} />)}
@@ -186,6 +193,7 @@ export function ClashScreen({ me, them, seat, picks, waiting, onPick, prize = 0,
         </div>
       )}
 
+      {problem && !done && <p className="lord-clash__problem" role="alert">{problem}</p>}
       <p className="lord-sr" aria-live="polite">{said}</p>
 
       <div className="lord-big__bar" role="group" aria-label={done ? 'Next' : 'Pick your attack'}>

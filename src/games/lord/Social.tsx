@@ -16,6 +16,8 @@ import type { Ask, Reply } from './Places';
 import { COMPUTER_HEROES } from '../../../shared/lord/computer';
 import { MOVE_INFO, computerPick, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
 import { ClashCircle, ClashScreen, type ClashEnding } from './Clash';
+import { ChallengeWait, ClassmatesPanel, LiveClash } from './LiveArena';
+import type { Clashes } from './useClashes';
 import { HeroSprite } from './Sprite';
 import { dayLabel, narrateDuel } from './text';
 import type { SceneId } from './art';
@@ -115,10 +117,20 @@ function PracticeClash({ hero, ask, back }: { hero: Hero; ask: Ask; back: () => 
   );
 }
 
-export function Arena({ hero, act, say, back, busy, ask, unlimited = false }: {
+export function Arena({ hero, act, say, back, busy, ask, clashes, me, unlimited = false }: {
   unlimited?: boolean; hero: Hero; act: (a: LordAction) => Promise<Reply | null>; say: (n: string) => void; back: () => void; busy: boolean; ask: Ask;
+  clashes: Clashes; me: string;
 }) {
   const [practice, setPractice] = useState(false);
+  const [mateNote, setMateNote] = useState('');
+  const [challenging, setChallenging] = useState(false);
+  const live = clashes.clash;
+  // A challenge of mine that never started: say what happened, then put it away.
+  useEffect(() => {
+    if (!live || live.seat_a !== me || !['declined', 'expired', 'cancelled'].includes(live.status)) return;
+    setMateNote(live.status === 'declined' ? `${live.name_b} said not now.` : live.status === 'expired' ? `${live.name_b} didn’t answer in time.` : '');
+    clashes.forget(live.id);
+  }, [live, me, clashes]);
   const [duel, setDuel] = useState<DuelResult | null>(null);
   const [shown, setShown] = useState(0);
   const left = hero.arenaLeft;
@@ -151,16 +163,30 @@ export function Arena({ hero, act, say, back, busy, ask, unlimited = false }: {
   const backButton = <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={back}><kbd>Esc</kbd> Back to the village</button>;
 
   if (practice) return <PracticeClash hero={hero} ask={ask} back={() => setPractice(false)} />;
+  if (live && live.status === 'asked' && live.seat_a === me) return <ChallengeWait clash={live} hero={hero} clashes={clashes} />;
+  if (live && (live.status === 'playing' || live.status === 'done')) {
+    return <LiveClash clash={live} me={me} hero={hero} ask={ask} clashes={clashes} onBack={() => setDuel(null)} />;
+  }
+
+  async function challenge(other: string) {
+    setChallenging(true);
+    setMateNote('');
+    const r = await clashes.send({ action: 'clash-challenge', other });
+    setChallenging(false);
+    if (!r.ok) setMateNote(r.message);
+  }
 
   if (!duel) {
     return (
-      <BigStage scene="arena" label="The Arena" className="lord-encounter lord-arena">
+      <BigStage scene="arena" label="The Arena" className={`lord-encounter lord-arena${clashes.on ? ' has-mates' : ''}`}>
         <div className="lord-big__top"><h2 className="lord-big__heading">The Arena</h2><Purse /></div>
         <div className="lord-big__title"><p>Pick <strong>Hammer, Sword or Net</strong>, then answer a question to power it up. <strong>Losing costs you nothing.</strong></p></div>
         <ClashCircle />
+        {mateNote && <p className="lord-clash__wait lord-arena__note" role="status">{mateNote}</p>}
+        {clashes.on && <ClassmatesPanel clashes={clashes} busy={challenging} onChallenge={(id) => void challenge(id)} />}
         <div className="lord-big__floor">
           <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
-          <div className="lord-big__fig lord-big__fig--foe"><span className="lord-arena__who" aria-hidden="true">?</span></div>
+          <div className="lord-big__fig lord-big__fig--foe">{!clashes.on && <span className="lord-arena__who" aria-hidden="true">?</span>}</div>
         </div>
         <div className="lord-big__bar">
           <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => setPractice(true)}>⚔️ Practice clash<small>against a computer hero</small></button>

@@ -6,6 +6,7 @@ import { FLUENT_DAYS, TOP_BOX, quickMsForPack } from '../../../shared/maths/conf
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import type { ArenaCandidate, Outcome, Settings } from '../../../shared/lord/server';
+import type { ClashRow } from '../../../shared/lord/clashServer';
 import { batchIdFor, makeHandler } from './handler';
 
 declare const Deno: {
@@ -73,5 +74,14 @@ Deno.serve(
     recordRefusal: (player, reason, action) => call('record_lord_refusal', { player, reason, action }),
     arenaCandidates: (player, season, level) => call<ArenaCandidate[]>('lord_arena_candidates', { player, season, lvl: level }),
     dailyNews: (player, day, lines) => call('lord_daily_news', { player, news_day: day, lines }),
+    // Live arena clashes (migration 20261117000200_lord_live_arena.sql).
+    clashLoad: (clash) => call('lord_clash_load', { clash }),
+    clashChallenge: (player, other, waitMs) => call('lord_clash_challenge', { player, other, wait_ms: waitMs }),
+    clashAnswer: (player, clash, accept, roundMs) => call('lord_clash_answer', { player, clash, accept, round_ms: roundMs }),
+    clashPick: (player, clash, round, move, right) => call('lord_clash_pick', { player, clash, round, move, is_right: right }),
+    clashRoundPicks: (clash, round) => call('lord_clash_round_picks', { clash, round }),
+    clashRound: (clash, version, rounds, missed, deadlineMs) => call<ClashRow | null>('lord_clash_round', { clash, version, rounds, missed, deadline_ms: deadlineMs }),
+    clashEnd: (clash, version, status, ending, winner, leaver, rounds, want, paidPerDay) =>
+      call<ClashRow | null>('lord_clash_end', { clash, version, status, ending, winner, leaver, rounds, want, paid_per_day: paidPerDay }),
   }),
 );

@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { ARMOURS, MAX_LEVEL, WEAPONS, baseStats, expNeeded } from '../../../shared/lord/data';
 import { forestTrip, makeRandom, stepFight } from '../../../shared/lord/engine';
 import { emptyDb, memoryServices, type MemoryDb } from '../../../shared/lord/memoryServices';
+import { clashMemory } from '../../../shared/lord/clashMemory';
 import { eventsOn } from '../../../shared/lord/events';
 import { offersSizeItUp, topicsOn } from '../../../shared/lord/maths';
 import { questionLevel, type Proof } from '../../../shared/lord/proof';
@@ -29,7 +30,7 @@ export class Game {
   constructor(settings: Parameters<typeof emptyDb>[0] = { seasonStart: SEASON_START }) {
     this.db = emptyDb(settings);
     const base = memoryServices(this.db, { now: () => this.clock, seed: () => this.forced.shift() ?? Math.floor(this.random() * 4294967296) });
-    this.services = { ...base, userIdFor: async (token: string) => (token === 'good-token' ? 'pupil-1' : null) };
+    this.services = { ...base, ...clashMemory(() => this.clock).services, userIdFor: async (token: string) => (token === 'good-token' ? 'pupil-1' : null) };
     this.handler = makeHandler(this.services);
   }
 
