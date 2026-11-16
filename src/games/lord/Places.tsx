@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
@@ -15,6 +15,7 @@ import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './S
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
 import { Portrait, Stage } from './Stage';
+import { shortcutsOn } from './shortcuts';
 import { lookThumb, type PersonId, type SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
 
@@ -151,6 +152,22 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
     say(`The healer mends ${r.healed} health for ${r.paid} gold${r.discount ? ` (10% off!)` : ''}.`);
   }
 
+  // Enter or H = heal everything (Enter on a focused button still just presses that button).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || busy || missing <= 0) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input,select,textarea') || document.querySelector('.question')) return;
+      const k = e.key.toLowerCase();
+      if ((k === 'enter' && !target?.closest('button')) || (k === 'h' && shortcutsOn())) {
+        e.preventDefault();
+        void pay(missing);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   return (
     <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" note={note} back={back}>
       <p className="lord-lead">
@@ -163,7 +180,7 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
           </button>
         ))}
         <button type="button" className="lord-btn lord-btn--hot" disabled={missing <= 0 || busy} onClick={() => void pay(missing)}>
-          Heal everything <small>({healCost(hero, missing)} gold)</small>
+          <kbd>H</kbd> Heal everything <small>({healCost(hero, missing)} gold)</small>
         </button>
       </div>
       {hero.gold < healCost(hero, missing) && missing > 0 && <p className="lord-soft">You do not have enough for everything. The healer will heal as much as you can pay for.</p>}
