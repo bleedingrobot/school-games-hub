@@ -3,6 +3,8 @@ import { applyAction, type Action, type Applied, type Context, type OpenFight, t
 import { replayFight, type CryAnswer } from './battleCry';
 import { startingDrafts } from './create';
 import { parseFocus } from '../maths/focus';
+import { LADDER } from '../maths/ladder';
+import { CONFIG } from './config';
 import { markQuestion, type MathsContext } from '../maths/serverQuestions';
 
 const SEED = 123456;
@@ -43,5 +45,23 @@ describe('ladder fights: playing rounds', () => {
     noBonus(fresh, { answer: answerOf(fresh, 1), reward: 'damage' });
     noBonus(check(fresh, 1, answerOf(fresh, 1) + 1).state, { answer: answerOf(fresh, 1), reward: 'damage' });
     noBonus(check(fresh, 1, answerOf(fresh, 1)).state, { answer: answerOf(fresh, 1) + 1, reward: 'damage' });
+  });
+});
+
+describe('ladder fights: every skill on the maths ladder', () => {
+  it('makes a full fight of questions the server can mark for every skill, and keeps the pupil\'s answer with each one', () => {
+    for (const skill of LADDER) {
+      const focus = { source: 'teacher-class' as const, skills: [skill.id], onlyThese: true, endsAt: null, canChoose: false, own: null };
+      const maths: MathsContext = { facts: [], settings: {}, focus };
+      const s = ok(created(), { type: 'fightStart', depth: 1, boss: false, ladder: true }, { maths }).state;
+      const qs = fightOf(s).questions!;
+      expect(qs.length, skill.id).toBe(CONFIG.maxRounds);
+      for (const q of qs) expect(markQuestion(q), skill.id).not.toBeNull();
+      // Round 1 answered wrongly on purpose: marked wrong, and the wrong answer goes to the pupil's records.
+      const wrong = answerOf(s, 1) + 1;
+      const out = ok(s, { type: 'cryCheck', round: 1, answer: wrong, ms: 4200 }, { maths });
+      expect(out.result, skill.id).toMatchObject({ type: 'cryCheck', correct: false, given: wrong });
+      expect(out.effects?.ladder?.answers, skill.id).toEqual([{ key: markQuestion(qs[0])!.key, correct: false, ms: 4200, given: wrong }]);
+    }
   });
 });

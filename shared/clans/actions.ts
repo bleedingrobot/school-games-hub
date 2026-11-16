@@ -242,7 +242,7 @@ export interface Effects {
   /** Maths answers to keep in the teacher's private records: the question's kind and year band (never the numbers), and whether it was right. */
   answers?: { key: string; correct: boolean }[];
   /** Ladder answers, for the child's own maths records (ladder place, skill map, focus results). `once` makes a resend count once. */
-  ladder?: { once: string; answers: { key: string; correct: boolean; ms: number }[] };
+  ladder?: { once: string; answers: { key: string; correct: boolean; ms: number; given?: number }[] };
 }
 
 export type Applied =
@@ -432,7 +432,7 @@ function takeAnswers(state: ServerState, kind: AskFor, given: (number | null)[],
   if (!asked || asked.for !== kind) return null;
   state.ask = null;
   const marks: { correct: boolean; answer: number }[] = [];
-  const answers: { key: string; correct: boolean; ms: number }[] = [];
+  const answers: { key: string; correct: boolean; ms: number; given?: number }[] = [];
   asked.questions.forEach((q, i) => {
     const m = markQuestion(q);
     if (!m) return;
@@ -442,7 +442,8 @@ function takeAnswers(state: ServerState, kind: AskFor, given: (number | null)[],
     const g = given[i];
     const correct = g !== null && g !== undefined && sameAnswer(g, m.answer);
     marks.push({ correct, answer: m.answer });
-    if (g !== null && g !== undefined) answers.push({ key: m.key, correct, ms });
+    // The pupil's answer goes with it, so a teacher can see "Often answers 54".
+    if (g !== null && g !== undefined) answers.push({ key: m.key, correct, ms, given: g });
   });
   return { marks, ...(answers.length ? { effects: { ladder: { once: `clans:ask:${state.seed}:${asked.no}`, answers } } } : {}) };
 }
@@ -537,7 +538,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       marks[action.slot] = { answer: action.answer, correct };
       asked.marks = marks;
       return done(state, { type: 'askCheck', slot: action.slot, correct, answer: marked.answer, given: action.answer }, true, {
-        ladder: { once: `clans:ask:${state.seed}:${asked.no}:${action.slot}`, answers: [{ key: marked.key, correct, ms: action.ms }] },
+        ladder: { once: `clans:ask:${state.seed}:${asked.no}:${action.slot}`, answers: [{ key: marked.key, correct, ms: action.ms, given: action.answer }] },
       });
     }
     case 'train': return settle(trainMember(clan, action.member, action.key, action.count), { type: 'train' });
@@ -674,7 +675,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       while (open.marks.length < action.round - 1) open.marks.push(null);
       open.marks[action.round - 1] = { answer: action.answer, correct };
       return done(state, { type: 'cryCheck', round: action.round, correct, answer: marked.answer, given: action.answer }, true, {
-        ladder: { once: `clans:${open.seed}:${open.no}:${action.round}`, answers: [{ key: marked.key, correct, ms: action.ms }] },
+        ladder: { once: `clans:${open.seed}:${open.no}:${action.round}`, answers: [{ key: marked.key, correct, ms: action.ms, given: action.answer }] },
       });
     }
     case 'fightRound': {

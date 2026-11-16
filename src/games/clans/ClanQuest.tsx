@@ -44,7 +44,7 @@ type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | '
 /** The painting across the top of each screen. Home has the town map instead (TownMap.tsx). The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
-  mines: 'mines', market: 'market', training: 'training', church: 'church', myvillage: 'village',
+  market: 'market', training: 'training', church: 'church', myvillage: 'village',
   raid: 'raid', classraid: 'raid', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
@@ -419,10 +419,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   return (
     <div className="cq" ref={root}>
       {backdrop && <div className="cq-backdrop" style={{ '--cq-backdrop': `url("${backdrop}")` } as React.CSSProperties} />}
-      <header className="cq-top">
-        <h1>Clan Quest</h1>
-        <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
-      </header>
+      {/* In a fight the picture gets the room: no title, gold, followers or fame (the fight names itself for screen readers). */}
+      {screen !== 'fight' && (
+        <header className="cq-top">
+          <h1>Clan Quest</h1>
+          <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
+        </header>
+      )}
       {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}

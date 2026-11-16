@@ -28,6 +28,12 @@ export function sceneArt(id: SceneId): { wide?: string; small?: string } {
   return { wide, small: file('scenes', `${id}-800`) ?? wide };
 }
 
+/** One painting per mine depth (docs/clans-mines-art/config.json), for the Mines screen and that depth's fights. */
+export function mineArt(depth: number): { wide?: string; small?: string } {
+  const wide = file('scenes', `mine-${depth}`);
+  return { wide, small: file('scenes', `mine-${depth}-800`) ?? wide };
+}
+
 /** The mine zone a fight happens in (Meadow, Caves, Swamp, Ruins, Mountain). */
 export const zoneScene = (zone: string): SceneId => `zone-${slug(zone)}` as SceneId;
 

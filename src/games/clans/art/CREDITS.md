@@ -20,5 +20,6 @@ members was painted twice, and `docs/clans-art/default-picks.json` records which
 | troops/, buildings/ | The empire's troops and buildings | Oct 2026 |
 | fx/ | The fight's glowing effects (fire, lightning, healing, magic, the gold impact and the victory crest), painted on black with the black made see-through; made with `scripts/clans-fx-art.py`, three or more tries each, picks in `docs/clans-art/fx-picks.json` | 27 Oct 2026 |
 | banners/ | One banner per clan name (Owls, Bears and so on) | Oct 2026 |
+| scenes/mine-0 to mine-20 | One painting per mine depth, for the Mines screen and that depth's fights; made with `scripts/game_art.py clans-mines` (`docs/clans-mines-art/config.json`), two tries each, picks in `docs/clans-mines-art/picks.json` | 16 Nov 2026 |
 
 Where a picture isn't there, the game still shows Kenney's 1-Bit Pack tiles (CC0, see ../KENNEY-LICENSE.txt).

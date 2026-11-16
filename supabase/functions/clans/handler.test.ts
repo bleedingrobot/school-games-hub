@@ -168,13 +168,10 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
 
 describe('the clans server function', () => {
-  it('needs a signed-in student', async () => {
+  it('needs a signed-in student, and keeps clans of different students apart', async () => {
     const { send } = setup();
     expect((await send({ type: 'load' }, { token: null })).status).toBe(401);
     expect((await send({ type: 'load' }, { token: 'fake' })).status).toBe(401);
-  });
-  it('keeps clans of different students apart', async () => {
-    const { send } = setup();
     await send(create());
     await send(create(), { token: 'ben' });
     await send({ type: 'upgrade', building: 'trainingHall' });
@@ -280,7 +277,7 @@ describe('ladder fights through the server function', () => {
     expect((await t.send({ type: 'cryCheck', round: 1, answer: q.answer, ms: 3000 }, { requestId })).body.result).toEqual(first.body.result);
     expect((await t.send({ type: 'cryCheck', round: 1, answer: 999, ms: 10 })).body.result).toMatchObject({ correct: true });
     expect(t.ladder.kept).toHaveLength(1);
-    expect(t.ladder.kept[0].list).toEqual([{ key: q.factKey, correct: true, ms: 3000, at: NOW }]);
+    expect(t.ladder.kept[0].list).toEqual([{ key: q.factKey, correct: true, ms: 3000, at: NOW, given: q.answer }]);
     // None of it goes in the old Clan Quest records.
     expect(t.answers).toEqual([]);
   });
