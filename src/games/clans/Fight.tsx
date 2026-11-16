@@ -22,7 +22,8 @@ import { PracticalAsk, Working } from '../../maths/PracticalAsk';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
-import { MonsterArt } from './MonsterArt';
+import { BigMove, BossBar, BossFigure, BossIntro, BossWeather, arenaBackdrop } from './BossStage';
+import { monsterHp } from '../../../shared/clans/monster';
 import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
 import { bestHit, roundSteps, roundSummary, stepMs, type BestHit, type Step, type Who } from './playback';
@@ -115,6 +116,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   // Monster fights: choosing who gets a healing potion.
   const [potion, setPotion] = useState(false);
   const [log, setLog] = useState<string[]>(boot.lines);
+  // The monster's entrance, before its first round (not after a refresh part-way through).
+  const [intro, setIntro] = useState(() => !!boot.fight.monster && boot.fight.round === 0);
   const [replay, setReplay] = useState<Replay | null>(null);
   const panel = useRef<HTMLDivElement>(null);
   const logEnd = useRef<HTMLLIElement>(null);
@@ -344,6 +347,9 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     };
   };
   const bump = shownStep?.targets.some((t) => t.big);
+  // Monster fights: the step where its big move lands (the boulder flies), and how the monster looks right now.
+  const bigEntry = fight.monster && replay ? replay.after.log.find((e, i) => e.type === 'big' && i >= fight.log.length) : undefined;
+  const bigLanding = !!bigEntry && !!shownStep && shownStep.line === describe(bigEntry, clanNames);
   const upNext = phase === 'orders' && who ? who.index : -1;
   const planning = phase === 'orders' && !who;
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
@@ -352,13 +358,28 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const look = fight.monster ? MONSTER_LOOKS[fight.monster.kind] : null;
   // The last thing in the log is the monster getting ready: the big move comes next round.
   const warned = !!look && phase !== 'replay' && !fight.result && fight.log[fight.log.length - 1]?.type === 'warn';
+  const bossFoe = fight.monster ? fight.enemies[0] : undefined;
+  const bossHp = bossFoe ? hpOf('e0', bossFoe.hp) : 0;
+  const bossStart = open?.monster ? monsterHp(open.monster.setup).hp : bossFoe?.maxHp ?? 0;
+  const bossFx = bossFoe ? effect('e0') : null;
+  const bossState = bossFoe
+    ? `${bossFx?.cls ?? ''} ${bossHp <= 0 ? 'is-beaten' : ''} ${warned ? 'is-warned' : ''} ${bigLanding ? 'is-smashing' : ''} ${bossFoe.maxHp > 0 && bossHp / bossFoe.maxHp < 0.3 ? 'is-hurt' : ''}`
+    : '';
+  const backdrop = fight.monster ? arenaBackdrop(fight.monster.kind) : undefined;
   return (
-    <section className="cq-fight" aria-label="The fight">
+    <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''}`} aria-label="The fight">
+      {intro && fight.monster && <BossIntro kind={fight.monster.kind} clan={session.clan.name} onDone={() => setIntro(false)} />}
+      {bossFoe && fight.monster && <BossBar kind={fight.monster.kind} hp={bossHp} maxHp={bossFoe.maxHp} startHp={bossStart} rage={warned} />}
       <p className="cq-fight__top">
         <strong>{look ? 'The monster attacks!' : `Depth ${fight.depth}`}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight))}{look ? ` of ${maxRoundsOf(fight)}` : <> · Fights today: {session.unlimitedToday && session.fightsLeft === 0 ? UNLIMITED_LABEL : fightsLabel(session.fightsLeft, session.fightsPerDay)}</>}
       </p>
-      <div className={`cq-arena ${bump ? 'is-bump' : ''}`} onClick={skip}>
+      <div
+        className={`cq-arena ${bump || bigLanding ? 'is-bump' : ''} ${fight.monster ? 'cq-arena--boss' : ''} ${bigLanding ? 'is-quake' : ''}`} onClick={skip}
+        style={backdrop ? ({ '--cq-arena-back': `url(${backdrop})` } as React.CSSProperties) : undefined}
+      >
         {flourish && <Victory />}
+        {fight.monster && <BossWeather kind={fight.monster.kind} />}
+        {fight.monster && bigLanding && <BigMove kind={fight.monster.kind} />}
         <ul className="cq-side cq-side--enemies" aria-label="Enemies" data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
           {fight.enemies.map((e) => {
             const hp = hpOf(`e${e.index}`, e.hp);
@@ -369,8 +390,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               {fx.float}
               {look ? (
                 <>
-                  <MonsterArt kind={fight.monster!.kind} size="small" />
-                  <span className="cq-name">{look.name}</span>
+                  <BossFigure kind={fight.monster!.kind} state={bossState} />
+                  <span className="cq-name sr-only">{look.name}</span>
                 </>
               ) : (
                 <>

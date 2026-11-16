@@ -100,3 +100,16 @@ export const fxArt = (id: FxId) => file('fx', id);
 export function allArtFiles(): string[] {
   return Object.keys(FILES);
 }
+
+/** The season monster fight made big (docs/CLANS-MONSTER-EPIC-PLAN.md): the whole monster cut out, its battlefield, the boulder. */
+export const bossArt = (kind: MonsterKind) => file('season-monsters', `${kind}-full`);
+export function arenaArt(kind: MonsterKind): { wide?: string; small?: string } {
+  const wide = file('season-monsters', `arena-${kind}`);
+  return { wide, small: file('season-monsters', `arena-${kind}-800`) ?? wide };
+}
+export const boulderArt = () => file('season-monsters', 'boulder');
+/** A page of the win story (1 to 5), painted. */
+export function storyArt(kind: MonsterKind, page: number): { wide?: string; small?: string } {
+  const wide = file('season-monsters', `story-${kind}-${page}`);
+  return { wide, small: file('season-monsters', `story-${kind}-${page}-800`) ?? wide };
+}

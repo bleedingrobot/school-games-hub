@@ -1,0 +1,307 @@
+{
+ "_from": "docs/game-guide/templates/art-config.json. The season monster fight and its win story (docs/CLANS-MONSTER-EPIC-PLAN.md).",
+ "game": "clans-monster",
+ "filename_prefix": "clans-monster/img",
+ "style": "a",
+ "styles": {
+  "a": ""
+ },
+ "inbox": "~/dragon-art-inbox/clans-monster",
+ "picks": "docs/clans-monster-art/picks.json",
+ "art_dir": "src/games/clans/art",
+ "home_dir": "src/assets/home",
+ "pictures": [
+  {
+   "name": "giant-full",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Grimmor the Storm Giant, a colossal shaggy mountain giant with grey-brown fur, a huge grey beard, a rope belt, holding an enormous spiked wooden club, full body standing tall and towering, seen from the front and slightly below so it looks enormous, menacing but not scary for children, arms raised ready to attack. The whole figure visible, centred, with space all around, on a plain pure white background, clean empty white all around.",
+   "size": [
+    1024,
+    1408
+   ],
+   "kind": "cut",
+   "folder": "season-monsters",
+   "file": "giant-full",
+   "max": 1100
+  },
+  {
+   "name": "arena-giant",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A wide epic battlefield on a hill just outside a medieval fantasy village wall at night, a wild thunderstorm with purple lightning, burning torches along a wooden palisade, the village with glowing windows far behind, a wide empty open stretch of trampled grass in the middle and front of the picture, dramatic sky, no people and no creatures, empty scenery for a game background. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "arena-giant"
+  },
+  {
+   "name": "story-giant-1",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Four brave young adventurers, a warrior, a mage, a ranger and a cleric, stand together in front of a medieval village gate facing Grimmor the Storm Giant, a colossal shaggy mountain giant with grey-brown fur, a huge grey beard, a rope belt, holding an enormous spiked wooden club, who towers over them in a wild thunderstorm with purple lightning, the heroes small and determined, seen from behind them, epic scale. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-giant-1"
+  },
+  {
+   "name": "story-giant-2",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Grimmor the Storm Giant, a colossal shaggy mountain giant with grey-brown fur, a huge grey beard, a rope belt, holding an enormous spiked wooden club stumbling and crashing down onto one knee after the final blow, a huge cloud of dust and sparks bursting up, four small heroes in the foreground raising their weapons, epic moment. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-giant-2"
+  },
+  {
+   "name": "story-giant-3",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. The storm clears and soft silver moonlight pours down through parting clouds onto Grimmor the Storm Giant, a colossal shaggy mountain giant with grey-brown fur, a huge grey beard, a rope belt, holding an enormous spiked wooden club, now sitting down calmly on a hillside and smiling gently down at four small heroes, peaceful and friendly. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-giant-3"
+  },
+  {
+   "name": "story-giant-4",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Dawn: Grimmor the Storm Giant, a colossal shaggy mountain giant with grey-brown fur, a huge grey beard, a rope belt, holding an enormous spiked wooden club walking away into the mountains, seen from behind, small in the distance, with his giant wooden club left standing in the ground by the village gate in the foreground, golden morning light. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-giant-4"
+  },
+  {
+   "name": "story-giant-5",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A joyful night festival in a medieval fantasy village square: lanterns, bunting, a long feast table, music, dancing villagers and children cheering four young heroes lifted up on shoulders, his giant wooden club hanging proudly above the village gate, fireworks in the sky. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-giant-5"
+  },
+  {
+   "name": "golem-full",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists, full body standing tall and towering, seen from the front and slightly below so it looks enormous, menacing but not scary for children, arms raised ready to attack. The whole figure visible, centred, with space all around, on a plain pure white background, clean empty white all around.",
+   "size": [
+    1024,
+    1408
+   ],
+   "kind": "cut",
+   "folder": "season-monsters",
+   "file": "golem-full",
+   "max": 1100
+  },
+  {
+   "name": "arena-golem",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A wide epic battlefield on a hill just outside a medieval fantasy village wall at night, a heavy dust storm and a shaking earthquake sky, burning torches along a wooden palisade, the village with glowing windows far behind, a wide empty open stretch of trampled grass in the middle and front of the picture, dramatic sky, no people and no creatures, empty scenery for a game background. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "arena-golem"
+  },
+  {
+   "name": "story-golem-1",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Four brave young adventurers, a warrior, a mage, a ranger and a cleric, stand together in front of a medieval village gate facing Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists, who towers over them in a heavy dust storm and a shaking earthquake sky, the heroes small and determined, seen from behind them, epic scale. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-golem-1"
+  },
+  {
+   "name": "story-golem-2",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists stumbling and crashing down onto one knee after the final blow, a huge cloud of dust and sparks bursting up, four small heroes in the foreground raising their weapons, epic moment. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-golem-2"
+  },
+  {
+   "name": "story-golem-3",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. The storm clears and soft silver moonlight pours down through parting clouds onto Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists, now sitting down calmly on a hillside and smiling gently down at four small heroes, peaceful and friendly. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-golem-3"
+  },
+  {
+   "name": "story-golem-4",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Dawn: Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists walking away into the far hills, seen from behind, small in the distance, with his glowing amber stone heart left standing in the ground by the village gate in the foreground, golden morning light. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-golem-4"
+  },
+  {
+   "name": "story-golem-5",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A joyful night festival in a medieval fantasy village square: lanterns, bunting, a long feast table, music, dancing villagers and children cheering four young heroes lifted up on shoulders, his glowing amber stone heart hanging proudly above the village gate, fireworks in the sky. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-golem-5"
+  },
+  {
+   "name": "golem",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Portrait of Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists, upper body, a heavy dust storm and a shaking earthquake sky behind, dramatic.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "icon",
+   "folder": "season-monsters",
+   "file": "golem",
+   "max": 512
+  },
+  {
+   "name": "siege-golem",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Old Craghold the Stone Golem, a colossal walking hill of mossy grey rock with glowing amber cracks for eyes and huge boulder fists attacks a medieval fantasy village at night in a heavy dust storm and a shaking earthquake sky, a wooden palisade, a stone watchtower with archers firing, small soldiers defending, glowing cottage windows. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "siege-golem"
+  },
+  {
+   "name": "troll-full",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath, full body standing tall and towering, seen from the front and slightly below so it looks enormous, menacing but not scary for children, arms raised ready to attack. The whole figure visible, centred, with space all around, on a plain pure white background, clean empty white all around.",
+   "size": [
+    1024,
+    1408
+   ],
+   "kind": "cut",
+   "folder": "season-monsters",
+   "file": "troll-full",
+   "max": 1100
+  },
+  {
+   "name": "arena-troll",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A wide epic battlefield on a hill just outside a medieval fantasy village wall at night, a howling blizzard with blue ice crystals, burning torches along a wooden palisade, the village with glowing windows far behind, a wide empty open stretch of trampled grass in the middle and front of the picture, dramatic sky, no people and no creatures, empty scenery for a game background. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "arena-troll"
+  },
+  {
+   "name": "story-troll-1",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Four brave young adventurers, a warrior, a mage, a ranger and a cleric, stand together in front of a medieval village gate facing Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath, who towers over them in a howling blizzard with blue ice crystals, the heroes small and determined, seen from behind them, epic scale. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-troll-1"
+  },
+  {
+   "name": "story-troll-2",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath stumbling and crashing down onto one knee after the final blow, a huge cloud of dust and sparks bursting up, four small heroes in the foreground raising their weapons, epic moment. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-troll-2"
+  },
+  {
+   "name": "story-troll-3",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. The storm clears and soft silver moonlight pours down through parting clouds onto Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath, now sitting down calmly on a hillside and smiling gently down at four small heroes, peaceful and friendly. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-troll-3"
+  },
+  {
+   "name": "story-troll-4",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Dawn: Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath walking away into the frozen north, seen from behind, small in the distance, with his huge icy blue tooth left standing in the ground by the village gate in the foreground, golden morning light. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-troll-4"
+  },
+  {
+   "name": "story-troll-5",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. A joyful night festival in a medieval fantasy village square: lanterns, bunting, a long feast table, music, dancing villagers and children cheering four young heroes lifted up on shoulders, his huge icy blue tooth hanging proudly above the village gate, fireworks in the sky. Wide landscape storybook painting.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "story-troll-5"
+  },
+  {
+   "name": "troll",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Portrait of Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath, upper body, a howling blizzard with blue ice crystals behind, dramatic.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "icon",
+   "folder": "season-monsters",
+   "file": "troll",
+   "max": 512
+  },
+  {
+   "name": "siege-troll",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. Frostjaw the Frost Troll, a colossal shaggy white-furred troll with icy blue skin, long tusks and frosty breath attacks a medieval fantasy village at night in a howling blizzard with blue ice crystals, a wooden palisade, a stone watchtower with archers firing, small soldiers defending, glowing cottage windows. Wide landscape.",
+   "size": [
+    1536,
+    864
+   ],
+   "kind": "scene",
+   "folder": "season-monsters",
+   "file": "siege-troll"
+  },
+  {
+   "name": "boulder",
+   "prompt": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, epic heroic mood, suitable for children aged 8 to 12, nothing gory. One single huge rough grey boulder with moss and cracks, flying, with a little trail of dust and pebbles behind it. The whole figure visible, centred, with space all around, on a plain pure white background, clean empty white all around.",
+   "size": [
+    1024,
+    1024
+   ],
+   "kind": "cut",
+   "folder": "season-monsters",
+   "file": "boulder",
+   "max": 600
+  }
+ ]
+}

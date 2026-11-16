@@ -180,6 +180,8 @@ export interface MonsterOutcome {
   won: boolean;
   first: boolean;
   tries: number;
+  /** The share of the monster's strength (HP) left at the end, 0 to 1 (0 when it was beaten). Missing on older saves. */
+  left?: number;
 }
 
 /** The most rounds any fight can have (a monster fight is longer than a mine fight). */
@@ -605,7 +607,9 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
           ...(first ? { wonDay: clock?.day ?? 0 } : {}),
           supplies: { ...save.supplies, potions: Math.max(0, save.supplies.potions - potionsUsed), net: Math.max(0, save.supplies.net - netUsed) },
         };
-        const monster: MonsterOutcome = { kind: open.monster.setup.kind, season, won, first, tries: clan.monster.tries };
+        const foe = replayed.enemies[0];
+        const left = won || !foe ? 0 : Math.round((Math.max(0, foe.hp) / Math.max(1, foe.maxHp)) * 100) / 100;
+        const monster: MonsterOutcome = { kind: open.monster.setup.kind, season, won, first, tries: clan.monster.tries, left };
         return done(state, { type: 'fightRound', round: action.round, over: true, summary, monster, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
       }
       // An extra fight earns no wins or bosses (the database turns those into fame and hub points); Battle Cries still count.
