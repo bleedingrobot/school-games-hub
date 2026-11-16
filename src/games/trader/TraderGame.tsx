@@ -525,19 +525,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
 
   const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
 
-  /**
-   * Start First Flight again (title screen or Bolt's help panel), with Bolt's trade picked now, so it works for a pupil
-   * who has jumped before too. Help that was Off goes back to Bolt's pick, so Bolt can fly with them.
-   */
-  const replayTrip = useMemo(() => (galaxy && t && (coach.flight !== null || jumpsMade > 0) ? starterTrade(galaxy, t, pushes) : null), [galaxy, t, pushes, coach.flight, jumpsMade]);
-  const replay = replayTrip && t ? () => {
-    remember((m) => ({ ...m, flight: null, level: m.level === 'off' ? null : m.level, run: { good: replayTrip.good, planet: replayTrip.planet, credits: t.credits, jumps: jumpsMade, acks: [] } }));
-    setHelpOpen(false);
-    helpButton.current?.focus();
-    setTab('trade');
-    setPhase({ k: 'planet' });
-  } : undefined;
-
   // First-time tips (section 4): the first one that fits now and hasn't been seen shows, and is remembered at once, so it
   // shows only once. It stays until closed or until the moment passes. On the planet they wait for First Flight's bubble.
   const moment: TipMoment = {
@@ -631,7 +618,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
           }}
           onStart={() => setPhase({ k: 'planet' })}
           firstTime={coach.flight === null && jumpsMade === 0 && bolt}
-          onReplay={replay}
           level={level}
           onLevel={(l) => remember((m) => ({ ...m, level: l }))}
           onExit={onExit}
@@ -700,7 +686,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 setHelpOpen(false);
                 showMe(target);
               }}
-              onReplay={replay}
               onClose={closeHelp}
             />
           )}
@@ -828,7 +813,7 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onReplay, level, onLevel, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, level, onLevel, onExit }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
@@ -836,7 +821,6 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
   onStart: () => void;
   /** A new pupil: Bolt will fly with them. */
   firstTime: boolean;
-  onReplay?: () => void;
   level: HelpLevel;
   onLevel: (level: HelpLevel) => void;
   onExit?: () => void;
@@ -848,7 +832,6 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
         <p className="st-title__p">Fly a small ship between the planets. Buy cargo where it is cheap and sell it where it is dear. Upgrade your ship, outsmart the pirates, and save up to buy a moon of your very own.</p>
         <div className="st-actions st-actions--centre">
           <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart}>Start trading</button>
-          {onReplay && <button type="button" className="st-btn st-btn--big" onClick={onReplay}>Replay First Flight</button>}
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
         </div>
         {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}
