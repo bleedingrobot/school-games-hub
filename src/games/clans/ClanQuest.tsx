@@ -49,9 +49,10 @@ const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
 };
 
 /** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
-function Scene({ name, art: { wide, small } }: { name: string; art: { wide?: string; small?: string } }) {
+function Scene({ name, art: { wide, small }, top }: { name: string; art: { wide?: string; small?: string }; top?: React.ReactNode }) {
   if (!wide) return null;
-  return <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={name} />;
+  const img = <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={name} />;
+  return top ? <div className="cq-scenebox">{top}{img}</div> : img;
 }
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
@@ -415,19 +416,23 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   // The same painting, dimmed, behind the whole screen (the town on the home screen).
   const backdrop = quest ? questArt(quest.title).small : scene ? sceneArt(scene).small : session && screen === 'home' ? sceneArt('town').small : undefined;
   const repicking = !!session && session.clan.repick !== undefined && session.clan.repick === session.clan.season;
+  // The title sits on the top left of the screen's painting and the gold, followers and fame on its top right (James, 17 Nov 2026).
+  // Screens with no painting keep it as a plain line above.
+  const onPicture = loading === null && screen !== 'fight' && (session && screen === 'quest' ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
+  const top = (over: boolean) => (
+    <header className={over ? 'cq-top cq-top--over' : 'cq-top'}>
+      <h1>Clan Quest</h1>
+      <span className="cq-soft">{session ? `${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
+    </header>
+  );
 
   return (
     <div className="cq" ref={root}>
       {backdrop && <div className="cq-backdrop" style={{ '--cq-backdrop': `url("${backdrop}")` } as React.CSSProperties} />}
       {/* In a fight the picture gets the room: no title, gold, followers or fame (the fight names itself for screen readers). */}
-      {screen !== 'fight' && (
-        <header className="cq-top">
-          <h1>Clan Quest</h1>
-          <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
-        </header>
-      )}
+      {screen !== 'fight' && !onPicture && top(false)}
       {/* The quest is one painted stage of its own (Quest.tsx), so no painting across the top. */}
-      {screen !== 'quest' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
+      {screen !== 'quest' && scene && <Scene key={scene} name={scene} art={sceneArt(scene)} top={onPicture ? top(true) : undefined} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
       <TrophyWonLine games={['clan-quest']} watch={monsterDone ?? (villageDone ? 'village' : null)} off={!server} />
@@ -457,6 +462,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
             <section aria-label="Your clan">
               {hasTownMap() && (
                 <TownMap
+                  top={onPicture ? top(true) : undefined}
                   onGo={(place: TownPlace) => setScreen(place)}
                   shown={['mines', 'market', 'news', 'myvillage', 'training', 'church', 'scoreboard', 'quest', ...((monsterWeek(session.clock) || !server) ? ['monster' as const] : [])]}
                   hot={[...(monsterWeek(session.clock) ? ['monster' as const] : []), ...(questUsed(session) ? [] : ['quest' as const]), ...(session.fightsLeft > 0 ? ['mines' as const] : [])]}
@@ -522,7 +528,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}
-          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} top={onPicture ? top(true) : undefined} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={finish} />}
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />
