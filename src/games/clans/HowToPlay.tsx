@@ -95,6 +95,10 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <h3 id="htp-ach">Achievements</h3>
           <p>There are {ACHIEVEMENTS.length} to collect, like your first win or reaching level {ACHIEVEMENTS.find((a) => a.measure === 'clan_level')?.goal}. Each one earns bonus points. The Achievements page shows how to get each one.</p>
         </section>
+        <section aria-labelledby="htp-credits">
+          <h3 id="htp-credits">Where the game comes from</h3>
+          <p>Game rules adapted from The Clans by Allen Ussher (1997). Paintings made for School Games Hub; small pictures from Kenney's 1-Bit Pack (CC0).</p>
+        </section>
       </div>
     </>
   );

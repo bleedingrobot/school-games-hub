@@ -34,7 +34,7 @@ import { TownMap, hasTownMap, type TownPlace } from './TownMap';
 import { empireOf, villageComplete } from '../../../shared/clans/empire';
 import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
-import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
+import { earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import { bannerArt, questArt, sceneArt, type SceneId } from './art';
 import './clans.css';
@@ -475,18 +475,12 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                   <MemberCard key={m.name} member={m} leader={i === 0} portrait={8} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
                 ))}
               </div>
-              {session.news && session.news.length > 0 && (
-                <ul className="cq-soft" aria-label="News">
-                  {session.news.slice(0, 5).map((line, i) => <li key={`${i}-${line}`}>{line}</li>)}
-                </ul>
-              )}
               {session.notes && session.notes.length > 0 && (
                 <div className="cq-panel" role="group" aria-label="While you were away">
                   <h3>While you were away</h3>
                   <ul>{session.notes.map((n) => <li key={n}>{n}</li>)}</ul>
                 </div>
               )}
-              <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong> · Fame: <strong>{session.fame ?? 0}</strong> (season {session.season ?? 1})</p>
               {suppliesOnSale(session.clock) && !monsterWeek(session.clock) && <MonsterWarning clock={session.clock} />}
               <div className="cq-actions">
                 {/* The town map above is the way to every place; this list is only for when the map can't be shown. */}
@@ -538,7 +532,6 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           )}
         </>
       )}
-      <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Paintings made for School Games Hub; small pictures from Kenney's 1-Bit Pack (CC0).</footer>
     </div>
   );
 }
