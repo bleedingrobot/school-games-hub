@@ -12,7 +12,7 @@ import type { Hero } from './types';
  * shared packs and are made and marked by code (the server rebuilds each one from its numbers).
  */
 
-export type MomentId = 'size-it-up' | 'shop' | 'healer' | 'bank' | 'riddle' | 'treasure' | 'inn-guess' | 'master-trial' | 'dragon-trial';
+export type MomentId = 'size-it-up' | 'shop' | 'healer' | 'bank' | 'riddle' | 'treasure' | 'inn-guess' | 'master-trial' | 'dragon-trial' | 'arena';
 
 /** How a question went. A "hint" is a right answer given after using the hint. */
 export type Result = 'right' | 'hint' | 'wrong';
@@ -30,6 +30,8 @@ export const MOMENT_TOPICS: Record<MomentId, PackId[]> = {
   'inn-guess': [], // the number-guess game is logic, not a pack
   'master-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
   'dragon-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
+  // An arena clash: each round's question powers that round's attack (shared/lord/clash.ts).
+  arena: ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
 };
 
 /** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */

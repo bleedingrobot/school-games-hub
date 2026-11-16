@@ -440,7 +440,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
     case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} onLook={() => setScreen({ name: 'look' })} />; break;
     case 'look': body = <LookPage hero={hero} act={act} back={toVillage} busy={busy} />; break;
-    case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
+    case 'arena': body = <Arena unlimited={!!state.unlimited} hero={hero} act={act} say={say} back={toVillage} busy={busy} ask={ask} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
     case 'howto': body = <HowToPlay back={toVillage} />; break;

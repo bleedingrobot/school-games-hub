@@ -12,7 +12,10 @@ import type { LordAction } from '../../../shared/lord/server';
 import type { Hero, HeroClass } from '../../../shared/lord/types';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import type { HallRow, LordBackend, NewsItem, WarriorRow } from '../../data/lord';
-import type { Reply } from './Places';
+import type { Ask, Reply } from './Places';
+import { COMPUTER_HEROES } from '../../../shared/lord/computer';
+import { MOVE_INFO, computerPick, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
+import { ClashCircle, ClashScreen, type ClashEnding } from './Clash';
 import { HeroSprite } from './Sprite';
 import { dayLabel, narrateDuel } from './text';
 import type { SceneId } from './art';
@@ -70,9 +73,52 @@ export interface DuelResult {
   opponent: { name: string; heroClass: HeroClass; look?: string; level: number; maxHp: number; computer: boolean };
 }
 
-export function Arena({ hero, act, say, back, busy, unlimited = false }: {
-  unlimited?: boolean; hero: Hero; act: (a: LordAction) => Promise<Reply | null>; say: (n: string) => void; back: () => void; busy: boolean;
+/** A practice clash against a computer hero: worked out in the browser, pays nothing, as many as you like. */
+function PracticeClash({ hero, ask, back }: { hero: Hero; ask: Ask; back: () => void }) {
+  const [opponent, setOpponent] = useState(() => COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
+  const [picks, setPicks] = useState<[ClashPick, ClashPick][]>([]);
+  const [waiting, setWaiting] = useState(false);
+  const [ending, setEnding] = useState<ClashEnding | null>(null);
+  const [round, setRound] = useState(0);
+
+  async function onPick(move: ClashMove) {
+    setWaiting(true);
+    const asked = await ask('arena', { title: `Power up your ${MOVE_INFO[move].name}!`, note: 'A right answer is a full hit. A wrong one is only a graze.' });
+    setPicks((p) => [...p, [{ move, right: !!asked?.correct }, computerPick(Math.random)]]);
+    setWaiting(false);
+  }
+
+  function again() {
+    setOpponent(COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
+    setPicks([]);
+    setEnding(null);
+    setRound((n) => n + 1);
+  }
+
+  return (
+    <ClashScreen
+      key={round}
+      me={{ name: 'You', heroClass: hero.heroClass, look: hero.look }}
+      them={{ name: opponent.name, heroClass: opponent.heroClass, look: opponent.look, computer: true }}
+      seat={0}
+      picks={picks}
+      waiting={waiting}
+      onPick={(m) => void onPick(m)}
+      note="Practice clash: no gold, just glory."
+      ending={ending}
+      onLeave={() => setEnding({ title: 'You stepped out', line: 'Practice is over. Come back any time!' })}
+      buttons={<>
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" autoFocus onClick={again}>Practise again</button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big lord-end__go" onClick={back}>Back to the arena</button>
+      </>}
+    />
+  );
+}
+
+export function Arena({ hero, act, say, back, busy, ask, unlimited = false }: {
+  unlimited?: boolean; hero: Hero; act: (a: LordAction) => Promise<Reply | null>; say: (n: string) => void; back: () => void; busy: boolean; ask: Ask;
 }) {
+  const [practice, setPractice] = useState(false);
   const [duel, setDuel] = useState<DuelResult | null>(null);
   const [shown, setShown] = useState(0);
   const left = hero.arenaLeft;
@@ -98,22 +144,28 @@ export function Arena({ hero, act, say, back, busy, unlimited = false }: {
 
   const leftLabel = unlimited && left <= 0 ? UNLIMITED_LABEL : `${left} left`;
   const fightButton = (
-    <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={busy || !canFight} onClick={() => void fight()}>
-      {!canFight ? 'No arena fights left today' : duel ? `Fight again (${leftLabel})` : `Step into the arena (${leftLabel})`}
+    <button type="button" className={`lord-btn ${duel ? 'lord-btn--hot' : 'lord-btn--glass'} lord-btn--big`} autoFocus={!!duel} disabled={busy || !canFight} onClick={() => void fight()}>
+      {!canFight ? 'No quick fights left today' : duel ? `Quick fight again (${leftLabel})` : <>Quick fight ({leftLabel})<small>the computer plays it for you</small></>}
     </button>
   );
   const backButton = <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={back}><kbd>Esc</kbd> Back to the village</button>;
+
+  if (practice) return <PracticeClash hero={hero} ask={ask} back={() => setPractice(false)} />;
 
   if (!duel) {
     return (
       <BigStage scene="arena" label="The Arena" className="lord-encounter lord-arena">
         <div className="lord-big__top"><h2 className="lord-big__heading">The Arena</h2><Purse /></div>
-        <div className="lord-big__title"><p>Fight a classmate’s hero or a computer hero. <strong>Losing costs you nothing.</strong></p></div>
+        <div className="lord-big__title"><p>Pick <strong>Hammer, Sword or Net</strong>, then answer a question to power it up. <strong>Losing costs you nothing.</strong></p></div>
+        <ClashCircle />
         <div className="lord-big__floor">
           <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
           <div className="lord-big__fig lord-big__fig--foe"><span className="lord-arena__who" aria-hidden="true">?</span></div>
         </div>
-        <div className="lord-big__bar">{fightButton}{backButton}</div>
+        <div className="lord-big__bar">
+          <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => setPractice(true)}>⚔️ Practice clash<small>against a computer hero</small></button>
+          {fightButton}{backButton}
+        </div>
       </BigStage>
     );
   }
