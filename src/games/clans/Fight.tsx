@@ -26,6 +26,7 @@ import { BigMove, BossBar, BossFigure, BossIntro, BossWeather, arenaBackdrop } f
 import { monsterHp } from '../../../shared/clans/monster';
 import { castable, choosingOrder, describe, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
+import { Embers, RaidIntro } from './RaidStage';
 import { bestHit, roundSteps, roundSummary, stepMs, type BestHit, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
@@ -116,7 +117,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const [potion, setPotion] = useState(false);
   const [log, setLog] = useState<string[]>(boot.lines);
   // The monster's entrance, before its first round (not after a refresh part-way through).
-  const [intro, setIntro] = useState(() => !!boot.fight.monster && boot.fight.round === 0);
+  const [intro, setIntro] = useState(() => (!!boot.fight.monster || !!boot.fight.raid) && boot.fight.round === 0);
   const [replay, setReplay] = useState<Replay | null>(null);
   const panel = useRef<HTMLDivElement>(null);
 
@@ -353,7 +354,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const zoneArt = sceneArt(zoneScene(zone)).small;
   // Mine fights are one painted stage: the zone, full size, behind both sides, with the buttons along its bottom edge.
   // A Village Raid is fought in front of the raided village (the raid painting).
-  const stageArt = fight.monster ? undefined : fight.raid ? sceneArt('raid').wide ?? sceneArt('village').wide : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
+  const stageArt = fight.monster ? undefined : fight.raid ? sceneArt('raid-arena').wide ?? sceneArt('raid').wide : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
   // Each side gets room for its own fighters, so four members facing two monsters aren't squeezed into half the stage.
   const stageColumns = `minmax(0, ${Math.max(1.5, fight.enemies.length)}fr) minmax(0, ${Math.max(1.5, fight.clan.length)}fr)`;
   const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
@@ -398,6 +399,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   return (
     <section className={`cq-fight ${fight.monster ? `cq-fight--boss cq-fight--${fight.monster.kind}` : ''} `.trim()} aria-label="The fight">
       {intro && fight.monster && <BossIntro kind={fight.monster.kind} clan={session.clan.name} onDone={() => setIntro(false)} />}
+      {intro && fight.raid && <RaidIntro mine={session.clan.name} theirs={open?.raid?.name ?? ''} onDone={() => setIntro(false)} />}
       {bossFoe && fight.monster && <BossBar kind={fight.monster.kind} hp={bossHp} maxHp={bossFoe.maxHp} startHp={bossStart} rage={warned} />}
       {look && (
         <p className="cq-fight__top">
@@ -421,6 +423,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
         )}
         {flourish && <Victory />}
         {fight.monster && <BossWeather kind={fight.monster.kind} />}
+        {fight.raid && <Embers />}
         {fight.monster && bigLanding && <BigMove kind={fight.monster.kind} />}
         <ul className={`cq-side cq-side--enemies ${fight.raid ? 'cq-side--raiders' : ''}`} aria-label={fight.raid ? 'Their heroes' : 'Enemies'} data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
           {fight.enemies.map((e) => {

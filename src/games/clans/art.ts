@@ -19,6 +19,7 @@ const file = (group: string, name: string): string | undefined => FILES[`./art/$
 export const SCENES = [
   'village', 'news', 'scoreboard', 'market', 'training', 'church', 'mines', 'empire', 'barracks', 'raid', 'quests', 'creator',
   'battlefield', 'victory', 'rest', 'town', 'zone-meadow', 'zone-caves', 'zone-swamp', 'zone-ruins', 'zone-mountain',
+  'raid-hall', 'raid-siege', 'raid-arena', 'raid-camp',
 ] as const;
 export type SceneId = (typeof SCENES)[number];
 

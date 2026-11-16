@@ -1192,3 +1192,105 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   @keyframes cq-raidsiege-in { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
 }
 @media (prefers-reduced-motion: reduce) { .cq-rival__banner { animation: none; } }
+
+/* Village Raid stage (RaidStage.tsx): embers, the painted siege, the RAID! entrance and the Banner rain. Still with reduced motion. */
+.cq-raids, .cq-arena { position: relative; }
+.cq-embers { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+.cq-embers span { position: absolute; left: var(--x); bottom: -10px; width: var(--s); height: var(--s); border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #fff3c0, #ff9a3c 55%, transparent 70%); box-shadow: 0 0 8px #ff8a2a; }
+.cq-raids > .cq-panel { position: relative; z-index: 2; }
+
+.cq-rsiege { position: fixed; inset: 0; z-index: 55; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; cursor: pointer; color: #f3e6c8; background: #05040a; }
+.cq-rsiege__pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.cq-rsiege__pic--plain { background: radial-gradient(ellipse at 50% 80%, #6b2a0c, #140a06 70%); }
+.cq-rsiege__shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(rgba(0, 0, 0, 0.55), transparent 30%, transparent 55%, rgba(0, 0, 0, 0.8)); }
+.cq h2.cq-rsiege__title, .cq-rsiege__title { position: relative; z-index: 3; margin: 16px; text-align: center; font-size: clamp(1.6rem, 4.4vw, 3rem); color: #ffd36b; text-shadow: 0 3px 0 #000, 0 0 22px rgba(255, 140, 40, 0.8); }
+.cq-rsiege__arrows { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.cq-rsiege__arrows span { position: absolute; left: var(--x); top: var(--y); width: 56px; height: 4px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, transparent, #5a3a1a 30%, #ffcf6a 85%, #fff 100%); box-shadow: 0 0 10px #ff8a2a, 0 0 18px #ff5a1a; }
+.cq-rsiege__stamp { position: relative; z-index: 3; align-self: center; justify-self: center; display: grid; justify-items: center; gap: 2px; padding: 14px 30px;
+  border-radius: 12px; background: rgba(20, 8, 2, 0.72); box-shadow: 0 0 0 3px #ffb347, 0 0 40px rgba(255, 120, 30, 0.7); text-align: center; }
+.cq-rsiege__stampword { font-family: 'IM Fell English SC', Georgia, serif; font-size: clamp(2.4rem, 8vw, 5rem); line-height: 1; color: #ffcf4a; text-shadow: 0 4px 0 #3a1400, 0 0 26px #ff7a1a; text-transform: uppercase; }
+.cq-rsiege__stampnum { font-family: 'IM Fell English SC', Georgia, serif; font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1; color: #fff; text-shadow: 0 3px 0 #000, 0 0 18px #ff9a3c; }
+.cq-rsiege__stampline { font-size: 1rem; text-shadow: 0 1px 2px #000; }
+.cq-rsiege__tower { position: absolute; z-index: 3; left: 50%; bottom: 96px; transform: translateX(-50%); margin: 0; padding: 8px 18px; border-radius: 999px; white-space: nowrap; max-width: calc(100% - 24px);
+  background: rgba(0, 0, 0, 0.75); box-shadow: 0 0 0 1px rgba(255, 190, 70, 0.4); font-size: 1.1rem; }
+.cq-rsiege__foot { position: relative; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px; padding: 12px 16px 18px; }
+.cq-rsiege__note { margin: 0; padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.7); }
+.cq-rsiege__go { font-size: 1.2rem; min-height: 52px; padding: 4px 28px; background: rgba(40, 20, 6, 0.92); box-shadow: 0 0 18px rgba(255, 160, 50, 0.55); }
+@media (max-width: 600px) { .cq-rsiege__tower { white-space: normal; bottom: 110px; border-radius: 12px; text-align: center; } }
+
+.cq-rintro { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto auto auto; justify-items: center; align-items: center; padding: 4vh 16px 6vh; overflow: hidden; cursor: pointer; color: #f3e6c8;
+  background: radial-gradient(ellipse at 50% 55%, transparent 35%, rgba(0, 0, 0, 0.7) 85%), linear-gradient(rgba(5, 4, 10, 0.1), rgba(5, 4, 10, 0.6)), var(--cq-rintro-back, linear-gradient(#1a0c04, #3a1a08)) center / cover no-repeat, #05040a; }
+.cq-rintro__clash { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: clamp(20px, 8vw, 120px); width: 100%; }
+.cq-rintro__flag { display: grid; justify-items: center; gap: 8px; }
+.cq-rintro__flag img { height: clamp(140px, 30vh, 280px); width: auto; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.8)); }
+.cq-rintro__flagplain { display: block; width: 120px; height: 200px; background: linear-gradient(#c33, #611); clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%); }
+.cq-rintro__clan { font-weight: 700; font-size: clamp(1rem, 2.6vw, 1.5rem); color: #ffe7a8; text-shadow: 0 2px 4px #000; }
+.cq-rintro__flash { position: absolute; left: 50%; top: 45%; width: 20px; height: 20px; margin: -10px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, #fff, #ffd36b 30%, rgba(255, 120, 30, 0.5) 55%, transparent 70%); }
+.cq h2.cq-rintro__title, .cq-rintro__title { z-index: 2; margin: 8px 0 0; font-size: clamp(3rem, 14vw, 8rem); line-height: 1; text-transform: uppercase; letter-spacing: 0.06em; color: #ffcf4a;
+  text-shadow: 0 6px 0 #3a1400, 0 0 40px #ff6a1a; opacity: 0; }
+.cq-rintro__line { z-index: 2; margin: 6px 0 0; font-style: italic; text-shadow: 0 2px 4px #000; opacity: 0; }
+.cq-rintro__go { z-index: 2; margin-top: 18px; font-size: 1.4rem; padding: 12px 34px; opacity: 0; background: rgba(40, 20, 6, 0.9); box-shadow: 0 0 22px rgba(255, 160, 50, 0.6); }
+.cq-rintro.is-ready .cq-rintro__title, .cq-rintro.is-ready .cq-rintro__line, .cq-rintro.is-ready .cq-rintro__go { opacity: 1; }
+.cq-rintro__swords { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-size: clamp(3rem, 9vw, 6rem); filter: drop-shadow(0 0 18px #ffb03a); z-index: 3; }
+
+.cq-bannerrain { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.cq-bannerrain span { position: absolute; left: var(--x); top: -20%; opacity: 0; font-size: 2.6rem; }
+.cq-bannerrain img { display: block; height: clamp(56px, 10vh, 96px); width: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.7)); }
+
+.cq-march p { font-size: 1.3rem; text-align: center; padding: 30px 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cq-embers span { animation: cq-ember-rise 5s linear var(--d) infinite; }
+  @keyframes cq-ember-rise { 0% { opacity: 0; transform: translate(0, 0); } 10% { opacity: 0.9; } 100% { opacity: 0; transform: translate(30px, -110vh); } }
+  .cq-rsiege { animation: cq-intro-in 0.5s ease-out; }
+  .cq-rsiege__pic { animation: cq-rsiege-push 9s ease-out both; }
+  @keyframes cq-rsiege-push { from { transform: scale(1.12) translateY(2%); } to { transform: scale(1); } }
+  .cq-rsiege__title { animation: cq-title-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) 0.2s both; }
+  .cq-rsiege__arrows span { animation: cq-rsiege-arrow 1.4s cubic-bezier(0.3, 0.1, 0.7, 1) var(--d) 3; }
+  @keyframes cq-rsiege-arrow { 0% { opacity: 0; transform: translate(0, 0) rotate(-28deg); } 10% { opacity: 1; } 50% { transform: translate(38vw, -26vh) rotate(0deg); }
+    90% { opacity: 1; } 100% { opacity: 0; transform: translate(76vw, -4vh) rotate(26deg); } }
+  .cq-rsiege.is-stage-1 { animation: cq-quake 0.5s ease-out; }
+  .cq-rsiege__stamp { animation: cq-title-slam 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .cq-rsiege__stampword { animation: cq-rsiege-glow 1.6s ease-in-out 0.5s infinite alternate; }
+  @keyframes cq-rsiege-glow { to { text-shadow: 0 4px 0 #3a1400, 0 0 46px #ffb03a, 0 0 80px #ff5a1a; } }
+  .cq-rsiege__tower { animation: cq-rsiege-slide 0.45s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+  @keyframes cq-rsiege-slide { from { opacity: 0; transform: translate(-50%, 30px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .cq-rsiege__go { animation: cq-rsiege-pulse 1.4s ease-in-out infinite; }
+  @keyframes cq-rsiege-pulse { 50% { box-shadow: 0 0 34px rgba(255, 170, 60, 0.95); } }
+
+  .cq-rintro { animation: cq-intro-in 0.4s ease-out; }
+  .cq-rintro__flag--left { animation: cq-rintro-left 0.9s cubic-bezier(0.2, 1.1, 0.4, 1) both; }
+  .cq-rintro__flag--right { animation: cq-rintro-right 0.9s cubic-bezier(0.2, 1.1, 0.4, 1) both; }
+  @keyframes cq-rintro-left { from { transform: translateX(-60vw) rotate(-25deg); } 70% { transform: translateX(24px) rotate(6deg); } to { transform: none; } }
+  @keyframes cq-rintro-right { from { transform: translateX(60vw) rotate(25deg); } 70% { transform: translateX(-24px) rotate(-6deg); } to { transform: none; } }
+  .cq-rintro__flash { animation: cq-rintro-flash 0.7s ease-out 0.6s both; }
+  @keyframes cq-rintro-flash { 0% { opacity: 0; transform: scale(0.2); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(28); } }
+  .cq-rintro .cq-rintro__clash { animation: cq-quake 0.5s ease-out 0.65s; }
+  .cq-rintro__swords { animation: cq-rintro-swords 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 0.65s both; }
+  @keyframes cq-rintro-swords { from { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-90deg); } to { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); } }
+  .cq-rintro.is-ready .cq-rintro__title { animation: cq-title-slam 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+  .cq-rintro.is-ready .cq-rintro__line { animation: cq-intro-in 0.5s ease-out 0.25s both; }
+  .cq-rintro.is-ready .cq-rintro__go { animation: cq-intro-in 0.5s ease-out 0.4s both, cq-rsiege-pulse 1.4s ease-in-out 1s infinite; }
+  .cq-rintro.is-ready .cq-rintro__flag img { animation: cq-rival-sway 3.2s ease-in-out infinite; transform-origin: top center; }
+
+  .cq-bannerrain span { animation: cq-banner-fall 2.8s cubic-bezier(0.3, 0.1, 0.6, 1) calc(1.2s + var(--d)) both; }
+  @keyframes cq-banner-fall { 0% { opacity: 0; transform: translateY(0) rotate(var(--r)); } 10% { opacity: 1; }
+    60% { transform: translateY(70vh) rotate(calc(var(--r) * -1)); opacity: 1; } 100% { opacity: 0; transform: translateY(95vh) rotate(var(--r)); } }
+
+  .cq-rival--big { animation: cq-rival-in 0.5s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+  .cq-rival--big:nth-child(2) { animation-delay: 0.12s; }
+  .cq-rival--big:nth-child(3) { animation-delay: 0.24s; }
+  @keyframes cq-rival-in { from { opacity: 0; transform: translateY(24px) scale(0.92); } to { opacity: 1; transform: none; } }
+  .cq-rival--tough { animation: cq-rival-in 0.5s cubic-bezier(0.2, 1.2, 0.4, 1) both, cq-rival-danger 2s ease-in-out 0.6s infinite; }
+  @keyframes cq-rival-danger { 50% { box-shadow: 0 0 0 2px #ff6a5f, 0 0 30px rgba(255, 80, 60, 0.7), 0 6px 14px rgba(0, 0, 0, 0.4); } }
+  .cq-rival__banner { transition: transform 0.2s; }
+  .cq-rival--big:hover .cq-rival__banner, .cq-rival--big:focus-within .cq-rival__banner { transform: scale(1.08); animation-play-state: paused; }
+  .cq-board li { animation: cq-rival-in 0.45s ease-out calc(var(--i, 0) * 0.08s) both; }
+  .cq-board li.is-me { animation: cq-rival-in 0.45s ease-out calc(var(--i, 0) * 0.08s) both, cq-board-shine 2.4s ease-in-out 1s infinite; }
+  @keyframes cq-board-shine { 50% { box-shadow: 0 0 0 1px rgba(255, 190, 70, 0.9), 0 0 16px rgba(255, 190, 70, 0.5); } }
+  .cq-march span { display: inline-block; animation: cq-march 0.5s ease-in-out infinite alternate; }
+  @keyframes cq-march { to { transform: translateY(-6px) rotate(10deg); } }
+}
