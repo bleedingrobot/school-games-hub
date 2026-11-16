@@ -15,7 +15,7 @@ export const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, 
 
 const file = (group: string, name: string): string | undefined => FILES[`./art/${group}/${name}.webp`];
 
-export const SCENES = ['village', 'map', 'forest-1', 'forest-2', 'forest-3', 'lair', 'inn', 'shop', 'healer', 'bank', 'training', 'arena', 'hall', 'news'] as const;
+export const SCENES = ['village', 'map', 'forest-1', 'forest-2', 'forest-3', 'lair', 'inn', 'shop', 'healer', 'bank', 'training', 'arena', 'hall', 'news', 'warriors'] as const;
 export type SceneId = (typeof SCENES)[number];
 
 /** A place picture: the full-size one and a smaller copy for phones (either may be missing). */

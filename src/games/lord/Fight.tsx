@@ -7,7 +7,7 @@ import { HeroSprite, MonsterSprite } from './Sprite';
 import { SKILL_HELP, narrate } from './text';
 import { sceneArt, type SceneId } from './art';
 
-function Bar({ value, max, label, side }: { value: number; max: number; label: string; side: 'me' | 'foe' }) {
+export function Bar({ value, max, label, side }: { value: number; max: number; label: string; side: 'me' | 'foe' }) {
   const share = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
   return (
     <div className={`lord-hp lord-hp--${side}${share <= 0.25 ? ' is-low' : ''}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={value}>
@@ -40,7 +40,7 @@ export function BigStage({ scene, className = '', children, label }: { scene: Sc
 export const fightScene = (fight: Pick<FightState, 'kind' | 'monster'>, forest: (level: number) => SceneId): SceneId =>
   fight.kind === 'dragon' ? 'lair' : fight.kind === 'master' ? 'training' : forest(fight.monster.level);
 
-type Float = { id: number; side: 'me' | 'foe'; text: string; tone: 'hit' | 'crit' | 'miss' | 'heal' | 'gold'; delay: number };
+export type Float = { id: number; side: 'me' | 'foe'; text: string; tone: 'hit' | 'crit' | 'miss' | 'heal' | 'gold'; delay: number };
 
 /** What a round looks like on the stage: numbers that pop over whoever was hit, in the order it happened. */
 function floatsFor(log: FightEvent[], start: number): Float[] {
@@ -64,7 +64,7 @@ const firstMover = (log: FightEvent[]): 'me' | 'foe' | null => {
   return !e ? null : e.type === 'hero-hit' ? 'me' : 'foe';
 };
 
-const COINS = Array.from({ length: 16 }, (_, i) => {
+export const COINS = Array.from({ length: 16 }, (_, i) => {
   const a = (i / 16) * Math.PI * 2;
   return { i, x: `${Math.round(Math.cos(a) * 34)}vw`, y: `${Math.round(Math.sin(a) * 26 - 12)}vh` };
 });
@@ -217,7 +217,7 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You', loo
   );
 }
 
-function FloatNum({ f }: { f: Float }) {
+export function FloatNum({ f }: { f: Float }) {
   return <span className={`lord-float lord-float--${f.tone}`} style={{ animationDelay: `${f.delay}ms` }} aria-hidden="true">{f.text}</span>;
 }
 
