@@ -78,7 +78,7 @@ export function Quest({ session, ask, onChange, onBack }: { session: Session; as
     const { value: charm, member } = bestCharm(session.clan);
     body = (
       <>
-        <div className="cq-story">
+        <div className="cq-quest-story">
           {quest.story.slice(0, shown).map((p, i) => <p key={i}>{p}</p>)}
         </div>
         {shown < quest.story.length ? (
