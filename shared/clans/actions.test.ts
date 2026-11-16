@@ -25,17 +25,14 @@ const rich = (state: ServerState, gold = 5000): ServerState => {
   return s;
 };
 
-describe('making a clan', () => {
-  it('ignores stats, gold and seeds the browser makes up', () => {
+describe('what the browser sends', () => {
+  it('ignores stats, gold and seeds the browser makes up for a new clan; the shop refuses too little gold, an unknown item or member, another class\'s item, a tier the Smithy does not sell, or one no better', () => {
+    // Making a clan: made-up stats, gold and seeds are ignored.
     const drafts = startingDrafts(SEED).map((d, i) => ({ ...d, seed: 999 + i, stats: { strength: 60 }, hp: 999 }));
-    const out = applyAction(null, { type: 'create', name: 'Red Banner', drafts: drafts as never }, ctx());
-    expect(out.ok && out.state!.clan).toEqual(created().clan);
-    expect(out.ok && out.state!.clan.members.map((m) => m.stats.strength)).not.toContain(60);
-  });
-});
-
-describe('the shop, Training Hall and Church', () => {
-  it('refuses too little gold, an unknown item or member, another class\'s item, a tier the Smithy does not sell, or one no better', () => {
+    const made = applyAction(null, { type: 'create', name: 'Red Banner', drafts: drafts as never }, ctx());
+    expect(made.ok && made.state!.clan).toEqual(created().clan);
+    expect(made.ok && made.state!.clan.members.map((m) => m.stats.strength)).not.toContain(60);
+    // The shop.
     const s = created();
     const m = s.clan.members[0];
     const next = itemAt(m.cls, 'weapon', 2)!;

@@ -17,13 +17,10 @@ const clanAt = (level: number) => {
 };
 
 describe('the Mines', () => {
-  it('recommends the deepest "just right" depth, and the bottom once every depth is too easy', () => {
+  it('recommends the deepest "just right" depth, opens there, lets the box be cleared and typed into, and goes in on Enter', () => {
     expect(recommendedDepth(clanAt(1))).toBe(2);
     expect(recommendedDepth(clanAt(10))).toBe(11);
     expect(recommendedDepth(clanAt(40))).toBe(CONFIG.maxLevel);
-  });
-
-  it('opens at the recommended depth, lets the box be cleared and typed into, and goes in on Enter', () => {
     const onDepth = vi.fn();
     const onGo = vi.fn();
     const session = { ...newSession(clanAt(10), 1), depth: 0 };

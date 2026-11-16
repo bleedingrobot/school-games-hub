@@ -168,13 +168,10 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
 
 describe('the clans server function', () => {
-  it('needs a signed-in student', async () => {
+  it('needs a signed-in student, and keeps clans of different students apart', async () => {
     const { send } = setup();
     expect((await send({ type: 'load' }, { token: null })).status).toBe(401);
     expect((await send({ type: 'load' }, { token: 'fake' })).status).toBe(401);
-  });
-  it('keeps clans of different students apart', async () => {
-    const { send } = setup();
     await send(create());
     await send(create(), { token: 'ben' });
     await send({ type: 'upgrade', building: 'trainingHall' });
