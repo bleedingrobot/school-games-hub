@@ -44,7 +44,7 @@ type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | '
 /** The painting across the top of each screen. Home has the town map instead (TownMap.tsx). The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
-  market: 'market', training: 'training', church: 'church', myvillage: 'village',
+  market: 'market', training: 'training', church: 'church',
   raid: 'raid', classraid: 'raid', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
@@ -420,7 +420,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const repicking = !!session && session.clan.repick !== undefined && session.clan.repick === session.clan.season;
   // The title sits on the top left of the screen's painting and the gold, followers and fame on its top right (James, 17 Nov 2026).
   // Screens with no painting keep it as a plain line above.
-  const onPicture = loading === null && screen !== 'fight' && (session && (screen === 'quest' || screen === 'results') ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
+  const onPicture = loading === null && screen !== 'fight' && (session && (screen === 'quest' || screen === 'results' || screen === 'myvillage' || screen === 'mines') ? true : session && screen === 'home' ? !repicking && hasTownMap() : !!scene && !!sceneArt(scene).wide);
   const top = (over: boolean) => (
     <header className={over ? 'cq-top cq-top--over' : 'cq-top'}>
       <h1>Clan Quest</h1>
@@ -458,7 +458,6 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         <Creator seed={serverSeed} typedNames={typedNames} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
       ) : (
         <>
-          {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
           {screen === 'home' && repicking && <Repick session={session} onChange={change} />}
           {screen === 'home' && !repicking && (
             <section aria-label="Your clan">
@@ -517,13 +516,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
             </section>
           )}
           {screen === 'mines' && (
-            <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={startFight} />
+            <Mines top={onPicture ? top(true) : undefined} session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={startFight} />
           )}
           {screen === 'monster' && <MonsterWeek session={session} practice={!server} ask={ask} onTry={startMonster} onFight={enterMonsterFight} onBack={() => setScreen('home')} />}
           {screen === 'market' && <Market session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'myvillage' && <MyVillage session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
+          {screen === 'myvillage' && <MyVillage top={onPicture ? top(true) : undefined} session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
           {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
@@ -543,6 +542,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
               onMines={!monsterDone && (session.fightsLeft > 0 || session.unlimitedToday === true) && session.clan.members.some((m) => !m.knockedOut) ? () => setScreen('mines') : undefined}
             />
           )}
+          {/* Test only: at the bottom, so each place's name and Back button can sit on its painting. */}
+          {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
         </>
       )}
     </div>
