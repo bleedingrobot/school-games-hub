@@ -138,7 +138,7 @@ Stages 1 to 3 went live on 27 Oct 2026 (afternoon, NZ time). Brought up to date 
 
 ## Stage 4 (16 Nov 2026): the picture first
 
-James asked for the fight to put the art first ("what do kids really need to see?"), with the buttons in one row on the picture, no combat log, and no title, gold, followers or fame during a fight. Built on `claude/clans-fight-stage`.
+James asked for the fight to put the art first ("what do kids really need to see?"), with the buttons in one row on the picture, no combat log, and no title, gold, followers or fame during a fight. **Live** since 16 Nov 2026 (PR #519).
 
 - **One painted stage.** A mine fight is now one wide painting behind both sides: that depth's own picture (below), or the zone's if it isn't painted. The two boxed panels are gone. Members and monsters stand in it unframed (the paintings are cut-outs already), as tall as a 1366 x 640 Chromebook allows (`--fig`), each side's width shared by its number of fighters. HP bars are slimmer; SP is a thin bar (its numbers are still read out and in the tooltip).
 - **Buttons in one row on the painting's bottom edge**: the plan is one compact button per member ("1 Dax · Attack Storm Knight B") and **Enter Fight!**. Help lines under each button became tooltips and screen-reader text. The Battle Cry question, its working and the end of the fight **pop up over the painting** (James: less scrolling), so the page never scrolls on a 1366 x 640 Chromebook; the end waits for the win's crest and coins to finish.
@@ -147,3 +147,8 @@ James asked for the fight to put the art first ("what do kids really need to see
 - **The season monster fight** keeps its own arena; it gets the one-row buttons and bigger, unframed members.
 - **The Mines screen**: each depth 0 to 20 has its own name (`DEPTH_NAMES` in `text.ts`) and painting (`docs/clans-mines-art/config.json`, painted in ComfyUI with `scripts/game_art.py clans-mines`), with the choices laid over it. It opens at the **recommended** depth (the deepest "just right" one) when the chosen depth is too easy or too hard, and shows a "★ Recommended" chip or button. The depth box can be cleared and typed into (it used to keep a 0 that couldn't be deleted). Keys: **Enter** goes in, **B** takes on the boss, the arrow keys or - and + change the depth.
 - **Tests**: `Mines.test.tsx` (the recommended depth; the box clears, takes 15, caps at 20; Enter goes in). Checked in the preview at 1366 x 640 and phone width.
+- **After the fight**: M goes back to the Mines and C back to the clan (shown on the buttons).
+
+## Stage 4 went live (16 Nov 2026)
+
+PR #519 merged at 20:53 NZ time, after its site checks passed (the first run failed only on the Clans test budget, 23 of 20: three overlapping pairs were combined). The next "Test and publish" run went green at 20:57 and published the site; James checked the live game on his phone. No migration; the clans function was rebuilt (ladder answers now carry `given`). The M and C keys on the results screen followed in a small PR.

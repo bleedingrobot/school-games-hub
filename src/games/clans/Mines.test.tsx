@@ -6,8 +6,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeClan, startingDrafts } from '../../../shared/clans/create';
 import { CONFIG } from '../../../shared/clans/config';
-import { Mines, recommendedDepth } from './Mines';
-import { newSession } from './session';
+import { Mines, Results, recommendedDepth } from './Mines';
+import { newSession, type FightSummary } from './session';
 
 afterEach(cleanup);
 
@@ -17,7 +17,7 @@ const clanAt = (level: number) => {
 };
 
 describe('the Mines', () => {
-  it('recommends the deepest "just right" depth, opens there, lets the box be cleared and typed into, and goes in on Enter', () => {
+  it('recommends the deepest "just right" depth, opens there, lets the box be cleared and typed into, goes in on Enter; after the fight M and C go back', () => {
     expect(recommendedDepth(clanAt(1))).toBe(2);
     expect(recommendedDepth(clanAt(10))).toBe(11);
     expect(recommendedDepth(clanAt(40))).toBe(CONFIG.maxLevel);
@@ -37,5 +37,15 @@ describe('the Mines', () => {
     expect(onDepth).toHaveBeenLastCalledWith(CONFIG.maxLevel);
     fireEvent.keyDown(box, { key: 'Enter' });
     expect(onGo).toHaveBeenCalledWith(false);
+    cleanup();
+    // After the fight: M goes back to the Mines, C back to the clan.
+    const onMines = vi.fn();
+    const onDone = vi.fn();
+    const summary = { result: 'won', gold: 10, followers: 0, xp: [1, 1, 1, 1], levels: [0, 0, 0, 0] } as unknown as FightSummary;
+    render(<Results summary={summary} members={session.clan.members} onDone={onDone} onMines={onMines} />);
+    fireEvent.keyDown(window, { key: 'm' });
+    expect(onMines).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: 'C' });
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
