@@ -36,7 +36,7 @@ Pupils have a **How to play** button on their clan page, and a "How to play" box
 - The **Village news** page shows lines the game writes: fights won, bosses beaten, buildings built, raids. They name **clans only** (for example "The Red Banner clan raided the Swift Foxes clan and won!"), never a pupil. You can see which pupil has which clan on their page.
 
 ## Village Raids (raids on classmates)
-- **Off until you switch them on** (the Raids switch in the Clan Quest villages panel). While off, the screen says so and the server refuses every raid.
+- **On** for every class at Douglas Park (James, 17 Nov 2026: the school defaults have it on, so new classes start with it on too). You can switch it off for a class with the Raids switch in the Clan Quest villages panel; while off, the screen says so and the server refuses every raid.
 - Pupils can only raid clans **in their own class**, from their very first day. Each pupil gets **3 raids a day**, each on a different clan. The screen suggests the three clans closest in strength, with a colour: *Should win*, *Close* or *Tough*.
 - A raid is a short siege (one maths question from the pupil's own maths) and then a fight between the raiders' heroes and a computer-played copy of the other clan's heroes, with a Battle Cry question every round. Village buildings matter: Forge and troops break walls, Walls and Tower defend, Strongroom adds gold.
 - **Nobody loses anything.** No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners, a loss still earns a little, and a village that holds off a raid earns gold and Banners too. The raided pupil reads a kind note next time ("Your village held off raiders..." or "...got past your walls. Nothing was taken.").

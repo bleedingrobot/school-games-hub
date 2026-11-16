@@ -1,6 +1,6 @@
 # Clan Quest: fighting classmates (plan, 17 Nov 2026)
 
-**Status:** stage 1 (Village Raids) being built on `claude/clans-village-raids`. Stage 2 (Live Clan Duels) not started.
+**Status:** stage 1 (Village Raids) live 17 Nov 2026 (#544, art and animation #545). Stage 2 (Live Clan Duels) not started.
 
 James (17 Nov 2026) wants clans to fight each other. He chose **option C**: Village Raids first (any time, the other pupil
 doesn't need to be on), then Live Clan Duels for class time (like the Dragon Maths arena). His rules:
@@ -44,7 +44,7 @@ All of that taking is gone in stage 1; the old `save_raid` SQL function stays (u
 6. **Gone:** shields, the 3-day wait for new clans, the "fair match" refusal, taking gold or buildings, troop losses, and
    raids resting at the end of the season.
 
-**Teacher switch:** still "Raids on classmates" in Clan Quest settings, off by default (question for James: on by default?).
+**Teacher switch:** "Raids on classmates" in Clan Quest settings. James (17 Nov 2026): on. Both classes and the school defaults row (copied into every new class) have it on.
 
 ### How it is built
 
