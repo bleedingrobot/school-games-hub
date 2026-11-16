@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLASH_HP, clashGold, type ClashMove } from '../../../shared/lord/clash';
+import { CLASH_HP, MAX_CLASH_ROUNDS, clashGold, clashLine, clashOf, hitFor, replayClash, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
 import { clashMemory } from '../../../shared/lord/clashMemory';
 import { MAX_MISSED, ROUND_MS, handleClash, type ClashRow, type ClashServices } from '../../../shared/lord/clashServer';
 import { proof } from './testKit';
@@ -38,7 +38,14 @@ async function started() {
 }
 
 describe('live arena clashes', () => {
-  it('challenges classmates only, and the classmate says yes or no', async () => {
+  it('rules, challenges, hidden picks, the clock, giving up, switching off and gold, all on the server', async () => {
+    // The rules (shared/lord/clash.ts): Hammer smashes Sword, Sword cuts Net, Net tangles Hammer; winner x2, loser half.
+    expect([clashOf('hammer', 'sword'), clashOf('sword', 'net'), clashOf('net', 'hammer'), clashOf('net', 'net'), clashOf(null, 'net')]).toEqual([0, 0, 0, 'tie', 1]);
+    expect(clashLine('hammer', 'net')).toBe('Net tangles Hammer!');
+    expect([hitFor({ move: 'sword', right: true }, 'win'), hitFor({ move: 'sword', right: false }, 'lose'), hitFor({ move: null, right: true }, 'tie')]).toEqual([20, 2, 0]);
+    const level = replayClash([...Array(MAX_CLASH_ROUNDS)].map(() => [{ move: 'net', right: false }, { move: 'net', right: false }] as [ClashPick, ClashPick]));
+    expect(level).toMatchObject({ over: true, winner: null });
+    {
     const t = setup();
     expect((await t.ask(A, 'clash-challenge', { other: C })).body.code).toBe('class');
     const sent = await t.ask(A, 'clash-challenge', { other: B });
@@ -48,9 +55,8 @@ describe('live arena clashes', () => {
     const yes = await t.ask(B, 'clash-answer', { clash: id, accept: true });
     expect((yes.body.clash as ClashRow).status).toBe('playing');
     expect((await t.ask(A, 'clash-challenge', { other: B })).body.code).toBe('busy');
-  });
-
-  it('keeps the first pick hidden, plays the round when both are in, and marks the maths on the server', async () => {
+    }
+    {
     const t = await started();
     const first = await t.pick(A, t.id, 0, 'hammer', true);
     expect(first.body.picked).toBe(true);
@@ -63,9 +69,8 @@ describe('live arena clashes', () => {
     expect(t.recorded).toHaveLength(2);
     // A pick for a round already played is turned down kindly.
     expect((await t.pick(A, t.id, 0, 'net')).body.code).toBe('round');
-  });
-
-  it('pays the winner and half that to the other side, for the first 3 clashes a day', async () => {
+    }
+    {
     const t = setup();
     for (let n = 0; n < 4; n++) {
       const id = ((await t.ask(A, 'clash-challenge', { other: B })).body.clash as ClashRow).id;
@@ -79,9 +84,8 @@ describe('live arena clashes', () => {
       expect(c!.gold).toEqual(n < 3 ? [clashGold(3), Math.round(clashGold(3) / 2)] : [0, 0]);
     }
     expect(t.mem.pupils.get(A)!.gold).toBe(3 * clashGold(3));
-  });
-
-  it('lets the clock take a pick (no attack), and ends a clash someone has walked away from with no gold', async () => {
+    }
+    {
     const t = await started();
     await t.pick(A, t.id, 0, 'net');
     expect((await t.ask(B, 'clash-times-up', { clash: t.id })).body.code).toBe('not-yet');
@@ -95,9 +99,8 @@ describe('live arena clashes', () => {
     }
     const end = (await t.ask(A, 'clash-times-up', { clash: t.id })).body.clash as ClashRow;
     expect(end).toMatchObject({ status: 'done', ending: 'timeouts', winner: 0, leaver: 1, gold: [0, 0] });
-  });
-
-  it('giving up hands the other side the win with no gold; switching off stops it', async () => {
+    }
+    {
     const t = await started();
     const left = (await t.ask(B, 'clash-leave', { clash: t.id })).body.clash as ClashRow;
     expect(left).toMatchObject({ status: 'done', ending: 'left', winner: 0, leaver: 1, gold: [0, 0] });
@@ -106,5 +109,6 @@ describe('live arena clashes', () => {
     const off = await u.pick(A, u.id, 0, 'sword');
     expect(off.body).toMatchObject({ code: 'off', clash: { status: 'done', ending: 'switched-off' } });
     expect(CLASH_HP).toBe(50);
+    }
   });
 });
