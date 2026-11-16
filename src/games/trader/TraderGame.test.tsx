@@ -76,11 +76,12 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
       if (skip) fireEvent.click(skip);
       const after = Number(within(screen.getByTitle('Your credits')).getByText(/\d/).textContent?.replace(/,/g, ''));
       expect(after).toBeLessThan(before);
-    });
+      // GitHub's test machines are slower than a laptop: give the trade a few seconds to land.
+    }, { timeout: 5000 });
     // Nothing but the opening request has gone to the server yet.
     expect(sent.filter((b) => b.action === 'act')).toHaveLength(0);
     expect(trial.data.game?.game.t.credits).toBe(100);
-  });
+  }, 20000);
 
 });
 
