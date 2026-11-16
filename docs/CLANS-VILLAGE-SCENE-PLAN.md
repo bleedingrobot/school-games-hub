@@ -1,7 +1,7 @@
 # Clan Quest: clickable village scene plan
 
 Turn **My Village** (`src/games/clans/MyVillage.tsx`, today a grid of 8 building cards) into a painted village you look down on, where you tap a building to upgrade it and every level makes the building look bigger and grander.
-Written 13 November 2026 (NZ) for James. **Status: V1 and V2 live 13 Nov 2026 NZ (the tappable scene, the upgrade moment, raid smoke, 3 ground looks; drawn in code until painted). Paintings (V3-V4) done 13 Nov 2026 NZ (PR #487, `scripts/clans-village-art.py`): every building level, 3 grounds, site, scaffold, smoke; walls stay drawn in code. Next: V5 village life. James chose a new painting for every building level.**
+Written 13 November 2026 (NZ) for James. **Status: V1 and V2 live 13 Nov 2026 NZ (the tappable scene, the upgrade moment, raid smoke, 3 ground looks; drawn in code until painted). Paintings (V3-V4) done 13 Nov 2026 NZ (PR #487, `scripts/clans-village-art.py`): every building level, 3 grounds, site, scaffold, smoke; walls stay drawn in code. Next: V5 village life.** **16 Nov 2026 NZ: the Walls (wall, corner and gate for each of the 5 levels) and the 4 walking villagers are painted too (`scripts/clans-village-art.py walls|villagers`), so nothing in the village is drawn in code any more once they load. James chose a new painting for every building level.**
 Sketch: project files `clans/village-scene/mock-laptop.jpg`.
 
 ## What stays the same
@@ -88,7 +88,7 @@ V1 and V2 can be built now. V4 waits for an evening on the PC.
 - Raid smoke: the levels a pupil last saw are kept on that device (`cq-village-seen:<clan name>`). A building now below that level has grey smoke and a darker, ember-lit look until it is rebuilt, and the panel says which buildings raiders knocked down.
 - Ground looks by Village total (`groundLook`): 0-12 mud, tents and a campfire; 13-29 the well, lanterns and a cart; 30-39 a paved square with a fountain, cobbled roads and four flags.
 - Buildings now grow every level: width (13.5 + 1.3 x level)% of the scene.
-- Picture names read (art.ts): `buildings/<kind>-<level>.webp` first (traininghall, smithy, church, barracks, tower, forge, strongroom), then the small/medium/big ones; `village/ground-1..3.webp` (2000x1240, covers the 1000x620 box), `village/site.webp`, `village/scaffold.webp`, `village/smoke.webp`. Code draws each one until its file exists. The Walls stay drawn in code.
+- Picture names read (art.ts): `buildings/<kind>-<level>.webp` first (traininghall, smithy, church, barracks, tower, forge, strongroom), then the small/medium/big ones; `village/ground-1..3.webp` (2000x1240, covers the 1000x620 box), `village/site.webp`, `village/scaffold.webp`, `village/smoke.webp`. Code draws each one until its file exists. The Walls read `village/wall-<level>.webp` (768x256, tiles), `corner-<level>` and `gate-<level>` (320 wide); villagers read `village/villager-child|farmer|guard|water.webp` (120 wide).
 - Start pictures for painting the ground (img2img): project files `clans/village-scene/ground-init/`.
 - Screenshots: project files `clans/village-scene/v2/`.
 
