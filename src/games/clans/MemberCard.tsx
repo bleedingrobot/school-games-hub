@@ -35,7 +35,7 @@ export function LookPicker({ race, cls, value, onPick }: { race: string; cls: st
  * A member: portrait, name, and by default only HP, attack, defence and one star. "More details" shows the rest.
  * With `onLook`, a "Change look" button opens the four paintings to pick from.
  */
-export function MemberCard({ member, leader = false, onLook, children }: { member: Member; leader?: boolean; onLook?: (look: Look) => void; children?: React.ReactNode }) {
+export function MemberCard({ member, leader = false, onLook, portrait = 4, children }: { member: Member; leader?: boolean; onLook?: (look: Look) => void; portrait?: number; children?: React.ReactNode }) {
   const [more, setMore] = useState(false);
   const [picking, setPicking] = useState(false);
   const h = headline(member);
@@ -44,7 +44,7 @@ export function MemberCard({ member, leader = false, onLook, children }: { membe
   return (
     <article className="cq-card" aria-label={member.name}>
       <header className="cq-card__head">
-        <Portrait race={member.race} cls={member.cls} look={lookOf(member)} scale={4} />
+        <Portrait race={member.race} cls={member.cls} look={lookOf(member)} scale={portrait} />
         <div>
           <h3>
             {member.name}

@@ -30,6 +30,7 @@ import type { HallRow } from '../../data/clans';
 import { HowToPlay } from './HowToPlay';
 import { Achievements, Celebration, VillageDone } from './Achievements';
 import { SeasonRoad } from './SeasonRoad';
+import { TownMap, hasTownMap, type TownPlace } from './TownMap';
 import { empireOf, villageComplete } from '../../../shared/clans/empire';
 import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
@@ -40,10 +41,10 @@ import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto' | 'monster';
 
-/** The painting across the top of each screen. Home has none of its own, so it borrows the village. The fight has none across the top (its mine zone is painted behind the
+/** The painting across the top of each screen. Home has the town map instead (TownMap.tsx). The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
-  home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', myvillage: 'village',
+  mines: 'mines', market: 'market', training: 'training', church: 'church', myvillage: 'village',
   raid: 'raid', classraid: 'raid', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
@@ -421,10 +422,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   // Today's quest has its own painting (all day, done or not); the general one is only for a day with no quest.
   const quest = screen === 'quest' && session ? questToday(session) : null;
   // A new season has reset the clan and it has not said "keep going" yet: it may pick its members' races and classes again first.
+  // The same painting, dimmed, behind the whole screen (the town on the home screen).
+  const backdrop = quest ? questArt(quest.title).small : scene ? sceneArt(scene).small : session && screen === 'home' ? sceneArt('town').small : undefined;
   const repicking = !!session && session.clan.repick !== undefined && session.clan.repick === session.clan.season;
 
   return (
     <div className="cq" ref={root}>
+      {backdrop && <div className="cq-backdrop" style={{ '--cq-backdrop': `url("${backdrop}")` } as React.CSSProperties} />}
       <header className="cq-top">
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
@@ -457,6 +461,18 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'home' && repicking && <Repick session={session} onChange={change} />}
           {screen === 'home' && !repicking && (
             <section aria-label="Your clan">
+              {hasTownMap() && (
+                <TownMap
+                  onGo={(place: TownPlace) => setScreen(place)}
+                  shown={['mines', 'market', 'news', 'myvillage', 'training', 'church', 'scoreboard', 'quest', ...((monsterWeek(session.clock) || !server) ? ['monster' as const] : [])]}
+                  hot={[...(monsterWeek(session.clock) ? ['monster' as const] : []), ...(questUsed(session) ? [] : ['quest' as const]), ...(session.fightsLeft > 0 ? ['mines' as const] : [])]}
+                  notes={{
+                    mines: session.unlimitedToday ? undefined : session.fightsLeft > 0 ? `${session.fightsLeft} fight${session.fightsLeft === 1 ? '' : 's'} left` : 'no fights left',
+                    quest: questUsed(session) ? 'done today' : undefined,
+                    monster: monsterWeek(session.clock) ? 'is here!' : 'practice',
+                  }}
+                />
+              )}
               <div className="cq-clanhead">
                 {bannerArt(session.clan.name) && <img className="cq-clanbanner" src={bannerArt(session.clan.name)} alt="" />}
                 <div>
@@ -465,9 +481,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 </div>
               </div>
               <SeasonRoad clock={session.clock} clan={session.clan} />
-              <div className="cq-cards">
+              <div className="cq-cards cq-cards--lineup">
                 {session.clan.members.map((m, i) => (
-                  <MemberCard key={m.name} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
+                  <MemberCard key={m.name} member={m} leader={i === 0} portrait={8} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
                 ))}
               </div>
               {session.news && session.news.length > 0 && (

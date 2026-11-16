@@ -1,0 +1,26 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Clan Quest town map (docs/CLANS-BIG-ART-PLAN.md).",
+  "game": "clans-town",
+  "filename_prefix": "clans-town/img",
+  "style": "a",
+  "styles": {
+    "a": "Dark gritty painterly medieval fantasy game art, hand-painted oil texture, rich muted earthy colours with warm firelight glow, dramatic cinematic light, suitable for children aged 8 to 12, no writing, no letters, no numbers anywhere. "
+  },
+  "inbox": "~/dragon-art-inbox/clans-town",
+  "picks": "docs/clans-town-art/picks.json",
+  "art_dir": "src/games/clans/art",
+  "home_dir": "src/assets/home",
+  "pictures": [
+    {
+      "name": "town",
+      "prompt": "A bird's-eye three-quarter view illustrated map of a small walled medieval clan town in a misty mountain valley at dusk, seen from high above at an angle like a game world map, every place small, clear and separate with open ground and dirt paths between them. Left: rocky hills with a dark mine entrance glowing orange, mine carts and wooden supports. Lower left: a busy market square with colourful striped tents and stalls and lanterns. Centre: a big wooden great hall with a carved roof and clan banners, the clan's home, inside a wooden palisade with a gate. Lower centre: a fenced training yard with straw dummies, weapon racks and an archery target. Right: a small stone church with a tall spire and glowing windows. Lower right: a cosy tavern with a big quest notice board covered in pinned papers outside. Upper right: a tall stone hall of heroes with golden banners and statues. Near the gate: a herald's watchtower with a bell. Top: dark jagged mountains with a giant shadowy cave lair under storm clouds. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "town"
+    }
+  ]
+}

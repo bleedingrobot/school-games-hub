@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { SHEET_COLUMNS, SHEET_ROWS, TILE, MONSTER_TILES, DEFAULT_MONSTER_TILE, CLASS_TILES, DEFAULT_CLASS_TILE, ITEM_TILES, KIND_TILES, PLACE_TILES, type Tile } from './tileMap';
 import tiles from './tiles.png';
-import { itemArt, memberThumb, monsterArt } from './art';
+import { itemArt, memberArt, memberThumb, monsterArt } from './art';
 import type { Look } from '../../../shared/clans/looks';
 
 /** The old terminal colours, used to colour the one-colour pictures. */
@@ -46,7 +46,8 @@ export function MonsterSprite({ name, zone, scale = 4 }: { name: string; zone: s
  * race-lettered badge.
  */
 export function Portrait({ race, cls, look, scale = 4 }: { race: string; cls: string; look?: Look; scale?: number }) {
-  const painted = look && memberThumb(race, cls, look);
+  // Above about 190px tall the small copy (200px) would blur, so the full painting is used.
+  const painted = look && (scale * 28 > 190 ? memberArt(race, cls, look) ?? memberThumb(race, cls, look) : memberThumb(race, cls, look));
   if (painted) {
     return (
       <span className="cq-portrait cq-portrait--painted" title={`${race} ${cls}`} style={{ '--cq-portrait': `${scale * 28}px` } as CSSProperties}>

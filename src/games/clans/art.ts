@@ -18,7 +18,7 @@ const file = (group: string, name: string): string | undefined => FILES[`./art/$
 /** The painting across the top of each place, and the fight backgrounds and moments. */
 export const SCENES = [
   'village', 'news', 'scoreboard', 'market', 'training', 'church', 'mines', 'empire', 'barracks', 'raid', 'quests', 'creator',
-  'battlefield', 'victory', 'rest', 'zone-meadow', 'zone-caves', 'zone-swamp', 'zone-ruins', 'zone-mountain',
+  'battlefield', 'victory', 'rest', 'town', 'zone-meadow', 'zone-caves', 'zone-swamp', 'zone-ruins', 'zone-mountain',
 ] as const;
 export type SceneId = (typeof SCENES)[number];
 
