@@ -26,8 +26,9 @@ export const cheerLine = (lines: string[]) => lines.join(' ');
 export function allVoiceLines(): string[] {
   const lines = new Set<string>([...Object.values(STEP_PIP), ...Object.values(GUIDE), ...Object.values(QUESTION_WORDS), ...Object.values(TIPS)]);
   const kinds = Object.keys(KIND_NAME) as PlotKind[];
-  for (const kind of kinds) {
-    lines.add(chooseLine(kind));
+  // Pip names a building only for a House or a Workshop; otherwise it's the pupil's choice (null).
+  for (const kind of [...kinds.filter((k) => k === 'house' || k === 'workshop'), null]) {
+    if (kind) lines.add(chooseLine(kind));
     for (const one of [true, false]) {
       lines.add(buildLine(kind, one));
       lines.add(nextTurnLine(buildLine(kind, one)));

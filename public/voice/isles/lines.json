@@ -92,66 +92,6 @@
   "text": "Your Lighthouse is lit, and a sky garden floated by! It has more places for decorations."
  },
  {
-  "slug": "choose-farm-crops-for-coins",
-  "text": "Choose Farm: crops for coins."
- },
- {
-  "slug": "build-a-farm-on-your-empty-spot-for-25-coins",
-  "text": "Build a Farm on your empty spot for 25 coins."
- },
- {
-  "slug": "next-turn-build-a-farm-on-your-empty-spot-for-25-coins",
-  "text": "Next turn: build a Farm on your empty spot for 25 coins."
- },
- {
-  "slug": "build-a-farm-on-an-empty-spot-for-25-coins",
-  "text": "Build a Farm on an empty spot for 25 coins."
- },
- {
-  "slug": "next-turn-build-a-farm-on-an-empty-spot-for-25-coins",
-  "text": "Next turn: build a Farm on an empty spot for 25 coins."
- },
- {
-  "slug": "choose-mine-the-steady-coin-maker",
-  "text": "Choose Mine: the steady coin-maker."
- },
- {
-  "slug": "build-a-mine-on-your-empty-spot-for-35-coins",
-  "text": "Build a Mine on your empty spot for 35 coins."
- },
- {
-  "slug": "next-turn-build-a-mine-on-your-empty-spot-for-35-coins",
-  "text": "Next turn: build a Mine on your empty spot for 35 coins."
- },
- {
-  "slug": "build-a-mine-on-an-empty-spot-for-35-coins",
-  "text": "Build a Mine on an empty spot for 35 coins."
- },
- {
-  "slug": "next-turn-build-a-mine-on-an-empty-spot-for-35-coins",
-  "text": "Next turn: build a Mine on an empty spot for 35 coins."
- },
- {
-  "slug": "choose-dock-1-sky-boat-a-little-faster-in-sky-races",
-  "text": "Choose Dock: +1 sky-boat: a little faster in Sky Races."
- },
- {
-  "slug": "build-a-dock-on-your-empty-spot-for-30-coins",
-  "text": "Build a Dock on your empty spot for 30 coins."
- },
- {
-  "slug": "next-turn-build-a-dock-on-your-empty-spot-for-30-coins",
-  "text": "Next turn: build a Dock on your empty spot for 30 coins."
- },
- {
-  "slug": "build-a-dock-on-an-empty-spot-for-30-coins",
-  "text": "Build a Dock on an empty spot for 30 coins."
- },
- {
-  "slug": "next-turn-build-a-dock-on-an-empty-spot-for-30-coins",
-  "text": "Next turn: build a Dock on an empty spot for 30 coins."
- },
- {
   "slug": "choose-house-room-for-islanders-to-move-in",
   "text": "Choose House: room for islanders to move in."
  },
@@ -176,40 +116,36 @@
   "text": "Choose Workshop: slowly makes sky crystals."
  },
  {
-  "slug": "build-a-workshop-on-your-empty-spot-for-35-coins",
-  "text": "Build a Workshop on your empty spot for 35 coins."
+  "slug": "build-a-workshop-on-your-empty-spot-for-35-coins-to-make-sky-crystals",
+  "text": "Build a Workshop on your empty spot for 35 coins to make sky crystals."
  },
  {
-  "slug": "next-turn-build-a-workshop-on-your-empty-spot-for-35-coins",
-  "text": "Next turn: build a Workshop on your empty spot for 35 coins."
+  "slug": "next-turn-build-a-workshop-on-your-empty-spot-for-35-coins-to-make-sky-crystals",
+  "text": "Next turn: build a Workshop on your empty spot for 35 coins to make sky crystals."
  },
  {
-  "slug": "build-a-workshop-on-an-empty-spot-for-35-coins",
-  "text": "Build a Workshop on an empty spot for 35 coins."
+  "slug": "build-a-workshop-on-an-empty-spot-for-35-coins-to-make-sky-crystals",
+  "text": "Build a Workshop on an empty spot for 35 coins to make sky crystals."
  },
  {
-  "slug": "next-turn-build-a-workshop-on-an-empty-spot-for-35-coins",
-  "text": "Next turn: build a Workshop on an empty spot for 35 coins."
+  "slug": "next-turn-build-a-workshop-on-an-empty-spot-for-35-coins-to-make-sky-crystals",
+  "text": "Next turn: build a Workshop on an empty spot for 35 coins to make sky crystals."
  },
  {
-  "slug": "choose-library-a-pretty-building-that-earns-well",
-  "text": "Choose Library: a pretty building that earns well."
+  "slug": "build-any-building-you-like-on-your-empty-spot-they-all-help-your-island",
+  "text": "Build any building you like on your empty spot. They all help your island!"
  },
  {
-  "slug": "build-a-library-on-your-empty-spot-for-40-coins",
-  "text": "Build a Library on your empty spot for 40 coins."
+  "slug": "next-turn-build-any-building-you-like-on-your-empty-spot-they-all-help-your-island",
+  "text": "Next turn: build any building you like on your empty spot. They all help your island!"
  },
  {
-  "slug": "next-turn-build-a-library-on-your-empty-spot-for-40-coins",
-  "text": "Next turn: build a Library on your empty spot for 40 coins."
+  "slug": "build-any-building-you-like-on-an-empty-spot-they-all-help-your-island",
+  "text": "Build any building you like on an empty spot. They all help your island!"
  },
  {
-  "slug": "build-a-library-on-an-empty-spot-for-40-coins",
-  "text": "Build a Library on an empty spot for 40 coins."
- },
- {
-  "slug": "next-turn-build-a-library-on-an-empty-spot-for-40-coins",
-  "text": "Next turn: build a Library on an empty spot for 40 coins."
+  "slug": "next-turn-build-any-building-you-like-on-an-empty-spot-they-all-help-your-island",
+  "text": "Next turn: build any building you like on an empty spot. They all help your island!"
  },
  {
   "slug": "your-island-is-resting-see-you-tomorrow",
