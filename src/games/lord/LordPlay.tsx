@@ -552,7 +552,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
 
   const keysOn = screen.name === 'village';
   return (
-    <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
+    <Frame backend={backend} state={state} hero={hero} bare={['fight', 'encounter', 'event', 'dragon', 'arena', 'news', 'warriors', 'hall'].includes(screen.name) || (screen.name === 'village' && hasMap())}>
       {keysOn && <VillageKeys onKey={(k) => {
         if (busyRef.current) return;
         if (k === 'f') void goForest();

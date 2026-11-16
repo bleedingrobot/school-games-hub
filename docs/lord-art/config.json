@@ -23,6 +23,28 @@
       "kind": "scene",
       "folder": "scenes",
       "file": "map"
+    },
+    {
+      "name": "arena",
+      "prompt": "A deserted, completely empty round stone fighting arena at stormy dusk, eye-level view from the sandy floor, a wide bare sand floor with only scattered pebbles and old footprints, curved weathered stone walls with empty wooden benches, flaming torches on iron poles, tattered banners, smoke, dark storm clouds. Abandoned and quiet: no people, no figures, no fighters, no crowd, no animals anywhere. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "arena"
+    },
+    {
+      "name": "warriors",
+      "prompt": "Inside a torchlit stone warriors' tower hall at night, a huge carved wooden wall board hung with painted hero shields in rows, crossed swords and spears, faded banners, iron candle chandelier, worn flagstone floor, a long wooden table in front, warm firelight and deep shadows, nobody in it, no people. Landscape, wide.",
+      "size": [
+        1536,
+        864
+      ],
+      "kind": "scene",
+      "folder": "scenes",
+      "file": "warriors"
     }
   ]
 }
