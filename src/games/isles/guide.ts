@@ -7,7 +7,7 @@
  */
 import { BUILD_COINS, TURNS_PER_DAY, type PlotKind } from '../../../shared/isles/config';
 import type { Island } from '../../../shared/isles/engine';
-import { KIND_NAME, wantedKind } from '../../../shared/isles/nextStep';
+import { KIND_NAME, buildPrice, wantedKind } from '../../../shared/isles/nextStep';
 import { STEP_PIP, Step, type BuildView } from './TurnSteps';
 import { KIND_JOB } from './words';
 
@@ -60,7 +60,7 @@ export function guideLine(at: GuideAt): GuideLine {
   // The Build step.
   const empty = island.spots.findIndex((s) => s.kind === 'empty');
   const kind = wantedKind(island);
-  const canBuild = empty >= 0 && island.coins >= BUILD_COINS[kind];
+  const canBuild = empty >= 0 && island.coins >= buildPrice(kind);
   if (at.again || (at.build.kind === 'island' && at.picks > 0)) {
     return { say: GUIDE.wellDone, target: 'next' };
   }
@@ -68,7 +68,7 @@ export function guideLine(at: GuideAt): GuideLine {
   if (at.build.kind === 'island' && !canBuild) return { say: STEP_PIP[Step.Build] };
   if (at.build.kind === 'spot') {
     const here = island.spots[at.build.spot];
-    if (here?.kind === 'empty' && island.coins >= BUILD_COINS[kind]) {
+    if (here?.kind === 'empty' && kind && island.coins >= BUILD_COINS[kind]) {
       return { say: chooseLine(kind), target: `build-${kind}` };
     }
     return { say: canBuild ? GUIDE.taken : GUIDE.chooseHere, target: canBuild ? 'back-to-island' : undefined };

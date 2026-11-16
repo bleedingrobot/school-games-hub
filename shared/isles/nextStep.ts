@@ -23,13 +23,19 @@ const coins = (n: number) => `${n.toLocaleString('en-NZ')} coin${n === 1 ? '' : 
 const crystals = (n: number) => `${n} sky crystal${n === 1 ? '' : 's'}`;
 const price = (p: { coins: number; crystals: number }) => (p.crystals ? `${coins(p.coins)} and ${crystals(p.crystals)}` : coins(p.coins));
 
-/** What to build on an empty spot: a House when the island is nearly full, then one Workshop for crystals, then
- * whatever earns most. */
-export function wantedKind(island: Island): PlotKind {
+/** What to build on an empty spot: a House when the island is nearly full, one Workshop for crystals, and otherwise
+ * null: the pupil's choice (the coin buildings earn about the same, so it doesn't matter which; James, 16 Nov 2026). */
+export function wantedKind(island: Island): PlotKind | null {
   if (room(island) - island.islanders <= 2) return 'house';
   if (count(island, 'workshop') === 0) return 'workshop';
-  return count(island, 'library') <= count(island, 'mine') ? 'library' : 'mine';
+  return null;
 }
+
+/** The cheapest building: enough coins for this builds something. */
+export const CHEAPEST_BUILD = Math.min(...Object.values(BUILD_COINS));
+
+/** What building `kind` costs (null: any building, so the cheapest). */
+export const buildPrice = (kind: PlotKind | null) => (kind ? BUILD_COINS[kind] : CHEAPEST_BUILD);
 
 /** "your empty spot", or "an empty spot" when there are more. */
 function emptyWords(island: Island): string {
@@ -75,9 +81,11 @@ function decorationToBuy(island: Island) {
   return can.find((d) => 'help' in d) ?? can.sort((a, b) => b.coins - a.coins)[0] ?? null;
 }
 
-/** "Build a House on your empty spot for 25 coins so more islanders can move in." (fixed words, so Bella can read it) */
-export function buildLine(kind: PlotKind, oneEmpty: boolean): string {
-  const why = kind === 'house' ? ' so more islanders can move in' : '';
+/** "Build a House on your empty spot for 25 coins so more islanders can move in." (fixed words, so Bella can read it)
+ * With no kind: build whatever they like. */
+export function buildLine(kind: PlotKind | null, oneEmpty: boolean): string {
+  if (!kind) return `Build any building you like on ${oneEmpty ? 'your empty spot' : 'an empty spot'}. They all help your island!`;
+  const why = kind === 'house' ? ' so more islanders can move in' : kind === 'workshop' ? ' to make sky crystals' : '';
   return `Build a ${KIND_NAME[kind]} on ${oneEmpty ? 'your empty spot' : 'an empty spot'} for ${coins(BUILD_COINS[kind])}${why}.`;
 }
 
@@ -93,7 +101,7 @@ export function nextStep(island: Island, racesOn = true): NextStep {
   const empty = island.spots.findIndex((spot) => spot.kind === 'empty');
   if (empty >= 0) {
     const kind = wantedKind(island);
-    if (island.coins >= BUILD_COINS[kind]) {
+    if (island.coins >= buildPrice(kind)) {
       return { say: buildLine(kind, count(island, 'empty') === 1), target: `spot-${empty}` };
     }
   }
@@ -141,7 +149,8 @@ export function nextStep(island: Island, racesOn = true): NextStep {
   }
   if (empty >= 0) {
     const kind = wantedKind(island);
-    return { say: `Save up ${coins(BUILD_COINS[kind])} to build a ${KIND_NAME[kind]} on ${emptyWords(island)} (you have ${coins(island.coins)}).`, target: 'end-turn' };
+    const what = kind ? `a ${KIND_NAME[kind]}` : 'something';
+    return { say: `Save up ${coins(buildPrice(kind))} to build ${what} on ${emptyWords(island)} (you have ${coins(island.coins)}).`, target: 'end-turn' };
   }
   if (island.driftLeft > 0) {
     return { say: `A chunk of land is drifting by. Save up ${coins(chunk)} to anchor it (you have ${coins(island.coins)}).`, target: 'end-turn' };
