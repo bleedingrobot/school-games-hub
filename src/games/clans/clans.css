@@ -945,3 +945,9 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-fightwrap.is-pop .cq-panel { animation: cq-pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
   @keyframes cq-pop-in { from { opacity: 0; transform: scale(0.85) translateY(12px); } to { opacity: 1; transform: none; } }
 }
+
+/* The town map's labels: see-through so the painting shows (James, 16 Nov 2026), with a soft blur behind the words so
+   they stay easy to read. Hover and keyboard focus still make them solid (the rules above). */
+.cq-town__label { background: rgba(12, 10, 8, 0.5); border-color: rgba(176, 138, 74, 0.7); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); text-shadow: 0 1px 2px #000, 0 0 6px rgba(0, 0, 0, 0.8); }
+.cq-town__spot[data-place='monster'].cq-town__spot--hot .cq-town__label { background: rgba(122, 28, 14, 0.62); }
+.cq-town__spot:hover:not(:disabled) .cq-town__label, .cq-town__spot:focus-visible .cq-town__label { background: #6b4a16; }
