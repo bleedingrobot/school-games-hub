@@ -56,5 +56,5 @@ export function finishPracticeTry(s: Session, open: ShownFight, fight: FightStat
       net: Math.max(0, save.supplies.net - (setup.net && fight.monster?.net === false ? 1 : 0)),
     },
   };
-  return { session: { ...s, clan, fightNo: s.fightNo + 1 }, summary, monster: { kind: setup.kind, season, won, first, tries: clan.monster.tries } };
+  return { session: { ...s, clan, fightNo: s.fightNo + 1 }, summary, monster: { kind: setup.kind, season, won, first, tries: clan.monster.tries, left: won || !fight.enemies[0] ? 0 : Math.round((Math.max(0, fight.enemies[0].hp) / Math.max(1, fight.enemies[0].maxHp)) * 100) / 100 } };
 }

@@ -14766,12 +14766,15 @@ function applyInner(saved, action, ctx, flags) {
 						net: Math.max(0, save.supplies.net - netUsed)
 					}
 				};
+				const foe = replayed.enemies[0];
+				const left = won || !foe ? 0 : Math.round(Math.max(0, foe.hp) / Math.max(1, foe.maxHp) * 100) / 100;
 				const monster = {
 					kind: open.monster.setup.kind,
 					season,
 					won,
 					first,
-					tries: clan.monster.tries
+					tries: clan.monster.tries,
+					left
 				};
 				return done(state, {
 					type: "fightRound",

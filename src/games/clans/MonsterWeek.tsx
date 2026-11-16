@@ -15,6 +15,7 @@ import type { PracticalQuestion } from '../../../shared/maths/practical';
 import { PracticalAsk } from '../../maths/PracticalAsk';
 import { MonsterArt } from './MonsterArt';
 import { siegeArt } from './art';
+import { MonsterStory } from './MonsterStory';
 import type { Session } from './session';
 
 const pct = (share: number) => Math.round(share * 100);
@@ -69,6 +70,7 @@ export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
   const [phase, setPhase] = useState<Phase>({ t: 'info' });
   const [say, setSay] = useState('');
   const won = save.wonDay !== undefined;
+  const [story, setStory] = useState(false);
   const tired = pct(tiredShare(won ? 0 : save.losses));
   // One try a day: the server decides, but a pupil who has had today's try is told before the question, not after.
   const triedToday = !practice && save.tries > 0 && save.lastDay === nzDayNumber(Date.now());
@@ -124,13 +126,17 @@ export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
       </div>
       <ul className="cq-monster-facts" aria-label="Your clan and the monster">
         <li>Tries this season: <strong>{save.tries}</strong></li>
-        <li>{won ? `You beat ${look.short}! You keep ${look.trophy}.` : `You have not beaten ${look.short} yet.`}</li>
+        <li>
+          {won ? `You beat ${look.short}! You keep ${look.trophy}.` : `You have not beaten ${look.short} yet.`}
+          {won && <>{' '}<button type="button" className="cq-link" onClick={() => setStory(true)}>Read the story again</button></>}
+        </li>
         {!won && tired > 0 && <li>{look.short} is tired from your tries: <strong>{tired}% weaker</strong> for your clan.</li>}
         <li>
           Your supplies: {SUPPLY_KINDS.map((k) => `${save.supplies[k]} ${save.supplies[k] === 1 ? SUPPLY_NAMES[k].one : SUPPLY_NAMES[k].many}`).join(', ')}.
           {' '}<span className="cq-soft">Buy more in the Market.</span>
         </li>
       </ul>
+      {story && <MonsterStory kind={monsterOf(season)} clan={session.clan.name} onClose={() => setStory(false)} />}
       <div className="cq-panel" role="group" aria-label="What your village will do">
         <h3>What your village will do</h3>
         <p>In the siege, your village should knock about <strong>{estimate}%</strong> off {look.short}'s strength before your clan even arrives{estimateRight > estimate ? ` (about ${estimateRight}% with a right answer)` : ''}.</p>
@@ -194,26 +200,48 @@ function SiegeScene({ name, kind, go, at, skipped, onNext, onFight }: { name: st
   );
 }
 
-/** What the monster did to the results screen: won (and what the clan keeps), or it stomped off (and how tired it will be). */
+/**
+ * What the monster did to the results screen. Won: the cheer, what the clan keeps, and (the first time) the story. Lost: plainly
+ * that the clan fought it off but did not beat it, how much strength it has left, and that it comes back tomorrow, weaker.
+ */
 export function MonsterResult({ outcome, session }: { outcome: MonsterOutcome; session: Session }) {
   const look = MONSTER_LOOKS[outcome.kind];
   const save = monsterSave(session.clan, outcome.season);
   const weaker = pct(tiredShare(save.losses));
   const practice = !session.clock;
+  const [story, setStory] = useState(outcome.won && outcome.first);
   if (outcome.won) {
     return (
-      <div className="cq-panel cq-monster-result" role="status">
+      <div className="cq-panel cq-monster-result cq-monster-result--won" role="status">
+        <h3>Victory! {look.short} is beaten!</h3>
         <p><strong>{look.beaten}</strong></p>
         {outcome.first
           ? <p>You keep {look.trophy}{practice ? '.' : <>, and the clan earns <strong>+{CONFIG.monster.reward.fame} fame</strong>!</>}</p>
           : <p className="cq-soft">You had beaten {look.short} already, so this one was just for fun.</p>}
+        <button type="button" className="cq-btn cq-btn--hot" onClick={() => setStory(true)}>{outcome.first ? 'Read the story' : 'Read the story again'}</button>
+        {story && <MonsterStory kind={outcome.kind} clan={session.clan.name} onClose={() => setStory(false)} />}
       </div>
     );
   }
+  const left = typeof outcome.left === 'number' ? Math.max(0, Math.min(1, outcome.left)) : null;
+  const daysLeft = session.clock ? session.clock.daysLeft : null;
   return (
-    <div className="cq-panel cq-monster-result" role="status">
-      <p><strong>{look.stompsOff}</strong></p>
-      {save.wonDay === undefined && weaker > 0 && <p>It will be <strong>{weaker}% weaker</strong> tomorrow.</p>}
+    <div className="cq-panel cq-monster-result cq-monster-result--lost" role="status">
+      <h3>You fought {look.short} off!</h3>
+      <p><strong>But {look.short} is not beaten yet.</strong> {look.stompsOff}</p>
+      {left !== null && left > 0 && (
+        <div className="cq-monster-left">
+          <p>{look.short} still has <strong>{pct(left)}%</strong> of his strength left.</p>
+          <div className="cq-bossbar__track" aria-hidden="true">
+            <span className="cq-bossbar__fill" style={{ width: `${left * 100}%` }} />
+            <span className="cq-bossbar__ticks" />
+          </div>
+        </div>
+      )}
+      {save.wonDay === undefined && weaker > 0 && <p>Your tries have tired him out: he will be <strong>{weaker}% weaker</strong> tomorrow.</p>}
+      {daysLeft !== null && daysLeft > 0 && <p className="cq-soft">You can try once a day. {days(daysLeft)} of monster week left.</p>}
+      {daysLeft !== null && daysLeft <= 0 && <p className="cq-soft">That was the last day of monster week.</p>}
+      {practice && <p className="cq-soft">You can try once a day.</p>}
     </div>
   );
 }
