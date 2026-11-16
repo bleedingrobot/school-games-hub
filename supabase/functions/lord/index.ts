@@ -10569,6 +10569,122 @@ const FINISH_ACTIONS = [
 	"dragon-finish"
 ];
 //#endregion
+//#region shared/lord/clash.ts
+/**
+* Arena clashes: a hero against a hero, one round at a time (James, 17 Nov 2026). Each round both players secretly pick
+* one of three attacks, then each answers a maths question:
+*
+*   Hammer smashes Sword, Sword cuts Net, Net tangles Hammer.
+*
+* Both heroes always swing. The one whose attack wins the clash hits twice as hard, the one whose attack loses hits half
+* as hard, and the same attack on both sides is a normal hit each. A right answer gives a full hit, a wrong answer only a
+* graze. Both heroes are the same strength here, whatever their level, so the picks and the maths decide it.
+*
+* No timer on the maths itself (the game's rule: no speed bonus); a round only has a long time limit so a classmate who
+* walks away can't hold the other up. A pick the clock took counts as no attack at all.
+*
+* Pure, so the server, the classmate screens and the practice fight all play the very same rounds.
+*/
+const CLASH_MOVES = [
+	"hammer",
+	"sword",
+	"net"
+];
+const MOVE_INFO = {
+	hammer: {
+		name: "Hammer",
+		icon: "🔨",
+		beats: "sword",
+		verb: "smashes"
+	},
+	sword: {
+		name: "Sword",
+		icon: "⚔️",
+		beats: "net",
+		verb: "cuts"
+	},
+	net: {
+		name: "Net",
+		icon: "🕸️",
+		beats: "hammer",
+		verb: "tangles"
+	}
+};
+/** Which attack wins: 0, 1 or 'tie'. No attack loses to any attack; two no-attacks tie. */
+function clashOf(a, b) {
+	if (a === b) return "tie";
+	if (!a) return 1;
+	if (!b) return 0;
+	return MOVE_INFO[a].beats === b ? 0 : 1;
+}
+/** How hard a pick hits, given whether its attack won, lost or tied the clash. */
+function hitFor(pick, result) {
+	if (!pick.move) return 0;
+	const base = pick.right ? 10 : 4;
+	return result === "win" ? base * 2 : result === "lose" ? Math.ceil(base / 2) : base;
+}
+const newClash = () => ({
+	rounds: [],
+	hp: [50, 50],
+	over: false,
+	winner: null
+});
+/** Plays one round onto a clash that isn't over. */
+function playRound(state, picks) {
+	if (state.over) throw new Error("This clash is over");
+	const clash = clashOf(picks[0].move, picks[1].move);
+	const result = (side) => clash === "tie" ? "tie" : clash === side ? "win" : "lose";
+	const hits = [hitFor(picks[0], result(0)), hitFor(picks[1], result(1))];
+	const hp = [Math.max(0, state.hp[0] - hits[1]), Math.max(0, state.hp[1] - hits[0])];
+	const rounds = [...state.rounds, {
+		picks,
+		clash,
+		hits,
+		hp
+	}];
+	const knocked = hp[0] === 0 || hp[1] === 0;
+	const level = hp[0] === hp[1];
+	const over = knocked || rounds.length >= 5 && !level || rounds.length >= 8;
+	return {
+		rounds,
+		hp,
+		over,
+		winner: !over || level ? null : hp[0] > hp[1] ? 0 : 1
+	};
+}
+/** The clash after these rounds of picks. Throws if a round comes after the end. */
+function replayClash(picks) {
+	return picks.reduce((s, p) => playRound(s, p), newClash());
+}
+/** Reads a pick as the browser sends it (null if it isn't one). The clock's "no attack" is never sent: only the server makes those. */
+function readMove(raw) {
+	return typeof raw === "string" && CLASH_MOVES.includes(raw) ? raw : null;
+}
+/** The winner's gold: about what a forest fight at their level pays. */
+const clashGold = (winnerLevel) => friendly(tierPower(winnerLevel) * 1.2);
+/** What each side is paid when a clash ends: the winner the full amount, the other half of it. A draw pays both half. */
+function clashPrize(winner, levels) {
+	if (winner === null) {
+		const half = (l) => Math.max(1, Math.round(clashGold(l) / 2));
+		return [half(levels[0]), half(levels[1])];
+	}
+	const full = clashGold(levels[winner]);
+	const half = Math.max(1, Math.round(full / 2));
+	return winner === 0 ? [full, half] : [half, full];
+}
+/** A practice clash's gold: a little for a win (about 0.4 of a forest fight), half that for a loss or a draw. */
+function practiceGold(winner, level) {
+	const win = Math.max(2, friendly(tierPower(level) * .4));
+	return winner === 0 ? win : Math.max(1, Math.round(win / 2));
+}
+/** A practice opponent's pick: any attack, and a right answer about 7 times in 10. */
+function computerPick(rand) {
+	return {
+		move: CLASH_MOVES[Math.floor(rand() * 3) % 3],
+		right: rand() < .7
+	};
+}
+//#endregion
 //#region shared/lord/server.ts
 const newStats = () => ({
 	forestWins: 0,
@@ -10587,7 +10703,8 @@ const newExtra = (stats = newStats()) => ({
 	dragon: null,
 	dragonDay: "",
 	classOpen: false,
-	stats
+	stats,
+	practice: null
 });
 /** An `extra` as saved, filled in where an older save had no such part. */
 const readExtra = (saved) => ({
@@ -10623,6 +10740,7 @@ const ACTIONS = [
 	"bank",
 	"inn",
 	"arena",
+	"practice",
 	"tools"
 ];
 function parseActions(raw) {
@@ -11288,6 +11406,100 @@ function inn(c) {
 	}
 	return { refuse: "bad-request" };
 }
+/**
+* A practice clash against a computer hero (shared/lord/clash.ts), one round per request: the pupil's attack and the
+* maths answer that powers it come in, the server marks the answer and picks the computer's attack. When the clash is
+* over it pays a little gold (the first PAID_PRACTICE_PER_DAY a day): a win, or half that for a loss or a draw.
+*/
+function practice(c) {
+	const { hero, extra } = c.w;
+	const today = extra.practice && extra.practice.day === c.today ? extra.practice : {
+		day: c.today,
+		paid: 0,
+		foe: "",
+		picks: []
+	};
+	if (c.req.op === "leave") return {
+		extra: {
+			...extra,
+			practice: {
+				...today,
+				foe: "",
+				picks: []
+			}
+		},
+		summary: { practice: "leave" },
+		result: {}
+	};
+	const move = readMove(c.req.move);
+	if (c.req.op !== "round" || !move) return { refuse: "bad-request" };
+	const rand = makeRandom(c.s.seed());
+	const fresh = c.req.fresh === true || today.picks.length === 0;
+	const named = COMPUTER_HEROES.find((h) => h.id === c.req.foe)?.id;
+	const foe = !fresh && today.foe ? today.foe : named ?? COMPUTER_HEROES[Math.floor(rand() * COMPUTER_HEROES.length)].id;
+	let before = fresh ? newClash() : replayClash(today.picks);
+	if (before.over) before = newClash();
+	const m = mark(c, c.req.proof, "arena");
+	const mine = {
+		move,
+		right: m.result !== "wrong"
+	};
+	const after = playRound(before, [mine, computerPick(rand)]);
+	const picks = after.rounds.map((r) => r.picks);
+	if (!after.over) return {
+		extra: {
+			...extra,
+			practice: {
+				...today,
+				foe,
+				picks
+			}
+		},
+		answers: m.answers,
+		notes: m.notes,
+		summary: {
+			practice: "round",
+			move,
+			right: mine.right
+		},
+		result: {
+			foe,
+			picks,
+			over: false
+		}
+	};
+	const gold = today.paid < 3 ? practiceGold(after.winner, hero.level) : 0;
+	return {
+		hero: gold > 0 ? {
+			...hero,
+			gold: hero.gold + gold
+		} : void 0,
+		extra: {
+			...extra,
+			practice: {
+				day: c.today,
+				paid: today.paid + (gold > 0 ? 1 : 0),
+				foe: "",
+				picks: []
+			}
+		},
+		answers: m.answers,
+		notes: m.notes,
+		summary: {
+			practice: "over",
+			winner: after.winner,
+			gold
+		},
+		result: {
+			foe,
+			picks,
+			over: true,
+			winner: after.winner,
+			gold,
+			paidLeft: Math.max(0, 3 - today.paid - (gold > 0 ? 1 : 0))
+		}
+	};
+}
 const sane = (h) => {
 	const x = h;
 	return !!x && typeof x === "object" && Number.isInteger(x.level) && x.level >= 1 && x.level <= 12 && Number.isInteger(x.weapon) && x.weapon >= 0 && x.weapon < WEAPONS.length && Number.isInteger(x.armour) && x.armour >= 0 && x.armour < ARMOURS.length && Number.isFinite(x.strength) && Number.isFinite(x.defence) && Number.isFinite(x.maxHp) && x.maxHp > 0 && typeof x.heroClass === "string" && x.heroClass in CLASSES;
@@ -11896,6 +12108,9 @@ async function runLord(s, player, raw) {
 		case "arena":
 			done = await arena(ctx);
 			break;
+		case "practice":
+			done = practice(ctx);
+			break;
 		case "tools":
 			done = await tools(ctx);
 			break;
@@ -11991,110 +12206,6 @@ async function runLord(s, player, raw) {
 	for (const { pack, ...a } of done.answers ?? []) byPack.set(pack, [...byPack.get(pack) ?? [], a]);
 	for (const [pack, list] of byPack) await s.recordAnswers(player, pack, `${requestId}:${pack}`, list);
 	return reply(after, out.value.version);
-}
-//#endregion
-//#region shared/lord/clash.ts
-/**
-* Arena clashes: a hero against a hero, one round at a time (James, 17 Nov 2026). Each round both players secretly pick
-* one of three attacks, then each answers a maths question:
-*
-*   Hammer smashes Sword, Sword cuts Net, Net tangles Hammer.
-*
-* Both heroes always swing. The one whose attack wins the clash hits twice as hard, the one whose attack loses hits half
-* as hard, and the same attack on both sides is a normal hit each. A right answer gives a full hit, a wrong answer only a
-* graze. Both heroes are the same strength here, whatever their level, so the picks and the maths decide it.
-*
-* No timer on the maths itself (the game's rule: no speed bonus); a round only has a long time limit so a classmate who
-* walks away can't hold the other up. A pick the clock took counts as no attack at all.
-*
-* Pure, so the server, the classmate screens and the practice fight all play the very same rounds.
-*/
-const CLASH_MOVES = [
-	"hammer",
-	"sword",
-	"net"
-];
-const MOVE_INFO = {
-	hammer: {
-		name: "Hammer",
-		icon: "🔨",
-		beats: "sword",
-		verb: "smashes"
-	},
-	sword: {
-		name: "Sword",
-		icon: "⚔️",
-		beats: "net",
-		verb: "cuts"
-	},
-	net: {
-		name: "Net",
-		icon: "🕸️",
-		beats: "hammer",
-		verb: "tangles"
-	}
-};
-/** Which attack wins: 0, 1 or 'tie'. No attack loses to any attack; two no-attacks tie. */
-function clashOf(a, b) {
-	if (a === b) return "tie";
-	if (!a) return 1;
-	if (!b) return 0;
-	return MOVE_INFO[a].beats === b ? 0 : 1;
-}
-/** How hard a pick hits, given whether its attack won, lost or tied the clash. */
-function hitFor(pick, result) {
-	if (!pick.move) return 0;
-	const base = pick.right ? 10 : 4;
-	return result === "win" ? base * 2 : result === "lose" ? Math.ceil(base / 2) : base;
-}
-const newClash = () => ({
-	rounds: [],
-	hp: [50, 50],
-	over: false,
-	winner: null
-});
-/** Plays one round onto a clash that isn't over. */
-function playRound(state, picks) {
-	if (state.over) throw new Error("This clash is over");
-	const clash = clashOf(picks[0].move, picks[1].move);
-	const result = (side) => clash === "tie" ? "tie" : clash === side ? "win" : "lose";
-	const hits = [hitFor(picks[0], result(0)), hitFor(picks[1], result(1))];
-	const hp = [Math.max(0, state.hp[0] - hits[1]), Math.max(0, state.hp[1] - hits[0])];
-	const rounds = [...state.rounds, {
-		picks,
-		clash,
-		hits,
-		hp
-	}];
-	const knocked = hp[0] === 0 || hp[1] === 0;
-	const level = hp[0] === hp[1];
-	const over = knocked || rounds.length >= 5 && !level || rounds.length >= 8;
-	return {
-		rounds,
-		hp,
-		over,
-		winner: !over || level ? null : hp[0] > hp[1] ? 0 : 1
-	};
-}
-/** The clash after these rounds of picks. Throws if a round comes after the end. */
-function replayClash(picks) {
-	return picks.reduce((s, p) => playRound(s, p), newClash());
-}
-/** Reads a pick as the browser sends it (null if it isn't one). The clock's "no attack" is never sent: only the server makes those. */
-function readMove(raw) {
-	return typeof raw === "string" && CLASH_MOVES.includes(raw) ? raw : null;
-}
-/** The winner's gold: about what a forest fight at their level pays. */
-const clashGold = (winnerLevel) => friendly(tierPower(winnerLevel) * 1.2);
-/** What each side is paid when a clash ends: the winner the full amount, the other half of it. A draw pays both half. */
-function clashPrize(winner, levels) {
-	if (winner === null) {
-		const half = (l) => Math.max(1, Math.round(clashGold(l) / 2));
-		return [half(levels[0]), half(levels[1])];
-	}
-	const full = clashGold(levels[winner]);
-	const half = Math.max(1, Math.round(full / 2));
-	return winner === 0 ? [full, half] : [half, full];
 }
 //#endregion
 //#region shared/lord/clashServer.ts

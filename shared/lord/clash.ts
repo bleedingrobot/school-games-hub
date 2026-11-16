@@ -135,6 +135,15 @@ export function clashPrize(winner: ClashSide | null, levels: [number, number]): 
 
 // ---------- The computer, for practice ----------
 
+/** Practice clashes a day that pay a little gold (James, 17 Nov 2026); more can be played for fun. */
+export const PAID_PRACTICE_PER_DAY = 3;
+
+/** A practice clash's gold: a little for a win (about 0.4 of a forest fight), half that for a loss or a draw. */
+export function practiceGold(winner: ClashSide | null, level: number): number {
+  const win = Math.max(2, friendly(tierPower(level) * 0.4));
+  return winner === 0 ? win : Math.max(1, Math.round(win / 2));
+}
+
 /** A practice opponent's pick: any attack, and a right answer about 7 times in 10. */
 export function computerPick(rand: () => number): ClashPick {
   return { move: CLASH_MOVES[Math.floor(rand() * 3) % 3], right: rand() < 0.7 };

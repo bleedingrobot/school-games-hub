@@ -14,7 +14,7 @@ import { AvatarImage } from '../../avatar/AvatarImage';
 import type { HallRow, LordBackend, NewsItem, WarriorRow } from '../../data/lord';
 import type { Ask, Reply } from './Places';
 import { COMPUTER_HEROES } from '../../../shared/lord/computer';
-import { MOVE_INFO, computerPick, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
+import { MOVE_INFO, PAID_PRACTICE_PER_DAY, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
 import { ClashCircle, ClashScreen, type ClashEnding } from './Clash';
 import { ChallengeWait, ClassmatesPanel, LiveClash } from './LiveArena';
 import type { Clashes } from './useClashes';
@@ -75,28 +75,56 @@ export interface DuelResult {
   opponent: { name: string; heroClass: HeroClass; look?: string; level: number; maxHp: number; computer: boolean };
 }
 
-/** A practice clash against a computer hero: worked out in the browser, pays nothing, as many as you like. */
-function PracticeClash({ hero, ask, back }: { hero: Hero; ask: Ask; back: () => void }) {
-  const [opponent, setOpponent] = useState(() => COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
+/**
+ * A practice clash against a computer hero, as many as you like. The server plays each round (it picks the computer's
+ * attack and marks the maths) and pays a little gold for the first few a day (James, 17 Nov 2026).
+ */
+function PracticeClash({ hero, ask, act, back }: { hero: Hero; ask: Ask; act: (a: LordAction) => Promise<Reply | null>; back: () => void }) {
+  const [foe, setFoe] = useState<string | null>(null);
   const [picks, setPicks] = useState<[ClashPick, ClashPick][]>([]);
   const [waiting, setWaiting] = useState(false);
   const [ending, setEnding] = useState<ClashEnding | null>(null);
+  const [gold, setGold] = useState(0);
+  const [paidLeft, setPaidLeft] = useState<number | null>(null);
   const [round, setRound] = useState(0);
+  const [tries, setTries] = useState(0);
+  const [problem, setProblem] = useState<string | null>(null);
+  // The computer hero for this clash (only its look and name): told to the server on round 1.
+  const [stand, setStand] = useState(() => COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
+  const opponent = COMPUTER_HEROES.find((h) => h.id === foe) ?? stand;
 
   async function onPick(move: ClashMove) {
     setWaiting(true);
+    setProblem(null);
     const asked = await ask('arena', { title: `Power up your ${MOVE_INFO[move].name}!`, note: 'A right answer is a full hit. A wrong one is only a graze.' });
-    setPicks((p) => [...p, [{ move, right: !!asked?.correct }, computerPick(Math.random)]]);
+    const reply = await act({ action: 'practice', op: 'round', move, proof: asked?.proof ?? null, fresh: picks.length === 0, foe: stand.id });
     setWaiting(false);
+    const r = reply?.result as { foe?: string; picks?: [ClashPick, ClashPick][]; over?: boolean; gold?: number; paidLeft?: number } | undefined;
+    if (!r?.picks) {
+      setTries((n) => n + 1);
+      setProblem('That round couldn’t be played just now. Try again!');
+      return;
+    }
+    if (r.foe) setFoe(r.foe);
+    if (r.over) {
+      setGold(r.gold ?? 0);
+      setPaidLeft(r.paidLeft ?? 0);
+    }
+    setPicks(r.picks);
   }
 
   function again() {
-    setOpponent(COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
+    setFoe(null);
+    setStand(COMPUTER_HEROES[Math.floor(Math.random() * COMPUTER_HEROES.length)]);
     setPicks([]);
     setEnding(null);
+    setGold(0);
     setRound((n) => n + 1);
   }
 
+  const note = paidLeft === null ? undefined : gold > 0
+    ? `Practice clash: ${paidLeft === 0 ? 'that was today’s last one with gold.' : `${paidLeft} more with gold today.`}`
+    : 'Practice clash: no gold left today, just glory.';
   return (
     <ClashScreen
       key={round}
@@ -106,9 +134,15 @@ function PracticeClash({ hero, ask, back }: { hero: Hero; ask: Ask; back: () => 
       picks={picks}
       waiting={waiting}
       onPick={(m) => void onPick(m)}
-      note="Practice clash: no gold, just glory."
+      prize={gold}
+      note={note}
       ending={ending}
-      onLeave={() => setEnding({ title: 'You stepped out', line: 'Practice is over. Come back any time!' })}
+      tries={tries}
+      problem={problem}
+      onLeave={() => {
+        void act({ action: 'practice', op: 'leave' });
+        setEnding({ title: 'You stepped out', line: 'Practice is over. Come back any time!' });
+      }}
       buttons={<>
         <button type="button" className="lord-btn lord-btn--hot lord-btn--big lord-end__go" autoFocus onClick={again}>Practise again</button>
         <button type="button" className="lord-btn lord-btn--glass lord-btn--big lord-end__go" onClick={back}>Back to the arena</button>
@@ -162,7 +196,7 @@ export function Arena({ hero, act, say, back, busy, ask, clashes, me, unlimited 
   );
   const backButton = <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={back}><kbd>Esc</kbd> Back to the village</button>;
 
-  if (practice) return <PracticeClash hero={hero} ask={ask} back={() => setPractice(false)} />;
+  if (practice) return <PracticeClash hero={hero} ask={ask} act={act} back={() => setPractice(false)} />;
   if (live && live.status === 'asked' && live.seat_a === me) return <ChallengeWait clash={live} hero={hero} clashes={clashes} />;
   if (live && (live.status === 'playing' || live.status === 'done')) {
     return <LiveClash clash={live} me={me} hero={hero} ask={ask} clashes={clashes} onBack={() => setDuel(null)} />;
@@ -189,7 +223,7 @@ export function Arena({ hero, act, say, back, busy, ask, clashes, me, unlimited 
           <div className="lord-big__fig lord-big__fig--foe">{!clashes.on && <span className="lord-arena__who" aria-hidden="true">?</span>}</div>
         </div>
         <div className="lord-big__bar">
-          <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => setPractice(true)}>⚔️ Practice clash<small>against a computer hero</small></button>
+          <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => setPractice(true)}>⚔️ Practice clash<small>against a computer hero, a little gold for {PAID_PRACTICE_PER_DAY} a day</small></button>
           {fightButton}{backButton}
         </div>
       </BigStage>

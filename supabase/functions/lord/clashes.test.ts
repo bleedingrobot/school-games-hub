@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CLASH_HP, MAX_CLASH_ROUNDS, clashGold, clashLine, clashOf, hitFor, replayClash, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
 import { clashMemory } from '../../../shared/lord/clashMemory';
 import { MAX_MISSED, ROUND_MS, handleClash, type ClashRow, type ClashServices } from '../../../shared/lord/clashServer';
-import { proof } from './testKit';
+import { Game, proof } from './testKit';
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
@@ -109,6 +109,26 @@ describe('live arena clashes', () => {
     const off = await u.pick(A, u.id, 0, 'sword');
     expect(off.body).toMatchObject({ code: 'off', clash: { status: 'done', ending: 'switched-off' } });
     expect(CLASH_HP).toBe(50);
+    }
+    {
+      // Practice against a computer hero: the server plays each round and pays a little gold, 3 clashes a day.
+      const g = new Game();
+      await g.start();
+      const golds: number[] = [];
+      for (let n = 0; n < 4; n++) {
+        let out;
+        let fresh = true;
+        do {
+          out = await g.send({ action: 'practice', op: 'round', move: 'net', proof: proof('add-sub', 1, true), fresh, foe: 'maple' });
+          fresh = false;
+          expect(out.body.ok).toBe(true);
+          expect(out.body.result.foe).toBe('maple');
+        } while (!out.body.result.over);
+        golds.push(out.body.result.gold);
+      }
+      expect(golds.slice(0, 3).every((x) => x > 0)).toBe(true);
+      expect(golds[3]).toBe(0);
+      expect(g.hero().gold).toBe(50 + golds[0] + golds[1] + golds[2]);
     }
   });
 });

@@ -41,6 +41,8 @@ import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, t
 import { markProof, type Proof } from './proof';
 import type { FightAction, FightState, Hero, HeroClass, SkillId } from './types';
 import { FINISH_ACTIONS } from './finish';
+import { PAID_PRACTICE_PER_DAY, computerPick, newClash, playRound, practiceGold, readMove, replayClash, type ClashPick } from './clash';
+import { COMPUTER_HEROES } from './computer';
 
 // ---------- What the server remembers ----------
 
@@ -78,10 +80,12 @@ export interface Extra {
   /** True after a new season starts, until the hero does something: the class can be changed. */
   classOpen: boolean;
   stats: Stats;
+  /** Today's practice clashes: how many have paid gold, and the one being played (its computer hero and rounds so far). */
+  practice: { day: string; paid: number; foe: string; picks: [ClashPick, ClashPick][] } | null;
 }
 
 export const newExtra = (stats: Stats = newStats()): Extra => ({
-  riddleDay: '', interestDay: '', interestAsk: null, guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
+  riddleDay: '', interestDay: '', interestAsk: null, guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats, practice: null,
 });
 
 /** An `extra` as saved, filled in where an older save had no such part. */
@@ -265,6 +269,9 @@ export type LordAction =
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
   | { action: 'arena' }
+  /** A practice clash against a computer hero, one round at a time: the server picks the computer's attack and marks the maths. */
+  | { action: 'practice'; op: 'round'; move: string; proof?: Proof | null; fresh?: boolean; foe?: string }
+  | { action: 'practice'; op: 'leave' }
   | { action: 'tools'; tool: ToolId; value?: number | string };
 
 /** What the browser sends: an action, with an id that makes a repeat count once, and the version it was made from. */
@@ -278,7 +285,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
   'load', 'rollover', 'start-hero', 'look', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
-  'shop-buy', 'heal', 'bank', 'inn', 'arena', 'tools',
+  'shop-buy', 'heal', 'bank', 'inn', 'arena', 'practice', 'tools',
 ];
 
 function parseActions(raw: unknown): FightAction[] | null {
@@ -666,6 +673,45 @@ function inn(c: Ctx): Done | Refuse {
   return { refuse: 'bad-request' };
 }
 
+/**
+ * A practice clash against a computer hero (shared/lord/clash.ts), one round per request: the pupil's attack and the
+ * maths answer that powers it come in, the server marks the answer and picks the computer's attack. When the clash is
+ * over it pays a little gold (the first PAID_PRACTICE_PER_DAY a day): a win, or half that for a loss or a draw.
+ */
+function practice(c: Ctx): Done | Refuse {
+  const { hero, extra } = c.w;
+  const today = extra.practice && extra.practice.day === c.today ? extra.practice : { day: c.today, paid: 0, foe: '', picks: [] };
+  if (c.req.op === 'leave') return { extra: { ...extra, practice: { ...today, foe: '', picks: [] } }, summary: { practice: 'leave' }, result: {} };
+  const move = readMove(c.req.move);
+  if (c.req.op !== 'round' || !move) return { refuse: 'bad-request' };
+  const rand = makeRandom(c.s.seed());
+  // A new clash: a fresh one was asked for, or the last one is over.
+  const fresh = c.req.fresh === true || today.picks.length === 0;
+  // Who the computer hero is only changes how it looks: the screen may name one, else the server picks.
+  const named = COMPUTER_HEROES.find((h) => h.id === c.req.foe)?.id;
+  const foe = !fresh && today.foe ? today.foe : named ?? COMPUTER_HEROES[Math.floor(rand() * COMPUTER_HEROES.length)].id;
+  let before = fresh ? newClash() : replayClash(today.picks);
+  if (before.over) before = newClash();
+  const m = mark(c, c.req.proof, 'arena');
+  const mine: ClashPick = { move, right: m.result !== 'wrong' };
+  const after = playRound(before, [mine, computerPick(rand)]);
+  const picks = after.rounds.map((r) => r.picks);
+  if (!after.over) {
+    return {
+      extra: { ...extra, practice: { ...today, foe, picks } }, answers: m.answers, notes: m.notes,
+      summary: { practice: 'round', move, right: mine.right }, result: { foe, picks, over: false },
+    };
+  }
+  const gold = today.paid < PAID_PRACTICE_PER_DAY ? practiceGold(after.winner, hero.level) : 0;
+  return {
+    hero: gold > 0 ? { ...hero, gold: hero.gold + gold } : undefined,
+    extra: { ...extra, practice: { day: c.today, paid: today.paid + (gold > 0 ? 1 : 0), foe: '', picks: [] } },
+    answers: m.answers, notes: m.notes,
+    summary: { practice: 'over', winner: after.winner, gold },
+    result: { foe, picks, over: true, winner: after.winner, gold, paidLeft: Math.max(0, PAID_PRACTICE_PER_DAY - today.paid - (gold > 0 ? 1 : 0)) },
+  };
+}
+
 /** A hero the pupil can meet in the arena: a classmate's saved copy, or a computer hero. */
 interface Opponent {
   kind: 'pupil' | 'computer';
@@ -975,6 +1021,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     case 'bank': done = await bank(ctx); break;
     case 'inn': done = inn(ctx); break;
     case 'arena': done = await arena(ctx); break;
+    case 'practice': done = practice(ctx); break;
     case 'tools': done = await tools(ctx); break;
     default: done = { refuse: 'bad-request' };
   }
