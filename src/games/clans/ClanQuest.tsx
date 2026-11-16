@@ -19,6 +19,7 @@ import { Repick } from './Repick';
 import { Mines, Results, depthArt } from './Mines';
 import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome, pretendRaidFinish, pretendRaidStart } from './places';
 import { VillageRaids, type RaidGo } from './VillageRaids';
+import { BannerRain } from './RaidStage';
 import { News } from './News';
 import { MyVillage } from './MyVillage';
 import { Raid } from './Raid';
@@ -45,7 +46,7 @@ type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | '
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
   market: 'market', training: 'training', church: 'church',
-  raid: 'raid', classraid: 'raid', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
+  raid: 'raid', classraid: 'raid-hall', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
 /** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
@@ -579,8 +580,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'results' && summary && raidDone && (
             <Results
               summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')}
-              best={bestNote.current} top={top(true)} art={sceneArt(raidDone.won ? 'victory' : 'raid')}
-              raid={{ title: raidDone.won ? 'Raid won!' : summary.result === 'fled' ? 'Back safe' : 'Good try!', banners: raidDone.banners }}
+              best={bestNote.current} top={top(true)} art={sceneArt(raidDone.won ? 'victory' : 'raid-camp').wide ? sceneArt(raidDone.won ? 'victory' : 'raid-camp') : sceneArt('raid')}
+              raid={{ title: raidDone.won ? 'Raid won!' : summary.result === 'fled' ? 'Back safe' : 'Good try!', banners: raidDone.banners, rain: raidDone.banners > 0 && <BannerRain clan={session.clan.name} count={raidDone.banners} /> }}
               extra={(
                 <div className="cq-panel" role="status">
                   <p>{raidDone.won ? `Your heroes beat the ${raidDone.name} clan's defenders!` : `The ${raidDone.name} clan's village held this time.`} Nothing was lost on either side.</p>

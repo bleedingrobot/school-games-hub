@@ -58,6 +58,14 @@ All of that taking is gone in stage 1; the old `save_raid` SQL function stays (u
 - Migration `20261117000300_clans_village_raids.sql`: `clan_village_mates` and `clan_raid_target` give heroes and
   Banners; `save_village_raid`.
 
+### Art and animation (James, 17 Nov 2026: "flashy, immersive")
+
+Four paintings made in ComfyUI on this PC (`docs/clans-raid-art/`): the war hall (raid list), the siege, the village
+square (the fight) and the camp (after a raid that didn't win). The siege fills the screen with flaming arrows and a
+BREACH! stamp; the fight opens with the two clans' banners clashing and RAID! slamming down (`RaidStage.tsx`); a win rains
+your clan's banner over the results. Rival cards and the Banners board animate in, Tough rivals glow red, embers drift.
+Nothing moves with reduced motion.
+
 ## Stage 2: Live Clan Duels (later)
 
 Like the Dragon Maths arena: two pupils online at once, a move each round (rock-paper-scissors style) plus a maths

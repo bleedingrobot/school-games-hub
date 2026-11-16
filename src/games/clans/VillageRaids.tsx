@@ -12,6 +12,7 @@ import { LIGHT_NAMES, type BoardRow, type Rival } from '../../../shared/clans/ra
 import { bannerArt } from './art';
 import { LadderAsk, type Asker } from './LadderAsk';
 import { pretendRaidList } from './places';
+import { Embers, RaidSiegeStage } from './RaidStage';
 import type { Session } from './session';
 
 /** How a raid start went: the open fight and the siege, or why not. */
@@ -78,8 +79,8 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
       </section>
     );
   }
-  if (phase.t === 'working') return <section className="cq-place" aria-label="Village Raids"><p role="status">Marching to the village…</p></section>;
-  if (phase.t === 'siege') return <RaidSiege rival={phase.rival} go={phase.go} skipped={phase.skipped} onFight={() => onFight(phase.go.open)} />;
+  if (phase.t === 'working') return <section className="cq-place cq-march" aria-label="Village Raids"><p role="status"><span aria-hidden="true">⚔️</span> Marching to the village…</p></section>;
+  if (phase.t === 'siege') return <RaidSiegeStage name={phase.rival.name} breach={phase.go.breach} tower={phase.go.tower} right={phase.go.right} skipped={phase.skipped} onFight={() => onFight(phase.go.open)} />;
 
   const left = list?.left ?? Math.max(0, R.perDay - e.raidsToday);
   const suggested = list?.targets.filter((t) => t.suggested) ?? [];
@@ -108,6 +109,7 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
   else {
     body = (
       <div className="cq-raids">
+        <Embers />
         <div className="cq-panel cq-raids__rivals">
           <h3>{left > 0 ? `Pick a village to raid: ${left} ${left === 1 ? 'raid' : 'raids'} left today` : `That's all ${R.perDay} raids for today. Come back tomorrow!`}</h3>
           {list.targets.length === 0 ? <p>There are no other clans in your class yet.</p> : (
@@ -129,7 +131,7 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
           <h3>Banners this week</h3>
           <ol className="cq-board">
             {list.board.map((r, i) => (
-              <li key={r.name} className={r.me ? 'is-me' : undefined}>
+              <li key={r.name} className={r.me ? 'is-me' : undefined} style={{ '--i': i } as React.CSSProperties}>
                 <span className="cq-board__place">{i + 1}</span>
                 <span className="cq-board__name">{r.name}{r.me ? ' (you)' : ''}</span>
                 <span className="cq-board__count">{r.banners} {r.banners === 1 ? 'Banner' : 'Banners'}</span>
@@ -149,32 +151,6 @@ export function VillageRaids({ session, ask, onStart, onFight, onBack }: {
         <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       {body}
-    </section>
-  );
-}
-
-/** The siege, before the heroes fight: what the army did to their heroes, and what their Tower did to yours. */
-function RaidSiege({ rival, go, skipped, onFight }: { rival: Rival; go: Extract<RaidGo, { ok: true }>; skipped: boolean; onFight: () => void }) {
-  const breach = pct(go.breach);
-  const tower = pct(go.tower);
-  return (
-    <section className="cq-place cq-raidsiege" aria-label="The siege">
-      <h2>Raid on the {rival.name} clan!</h2>
-      <ol className="cq-raidsiege__steps" aria-live="polite">
-        <li className="cq-raidsiege__step">
-          <span className="cq-raidsiege__icon" aria-hidden="true">⚔️</span>
-          <span>{breach > 0 ? <>Your army storms the walls! Their heroes lose <strong>{breach}%</strong> of their health.</> : <>Their walls hold your army back.</>}</span>
-        </li>
-        <li className="cq-raidsiege__step">
-          <span className="cq-raidsiege__icon" aria-hidden="true">🏹</span>
-          <span>{tower > 0 ? <>Their Tower shoots first! Your heroes lose <strong>{tower}%</strong> of their health.</> : <>They have no Tower, so nobody shoots first.</>}</span>
-        </li>
-      </ol>
-      {go.right === true && <p className="cq-note" role="status">Your answer was right, so your army hit {pct(R.siege.rightBoost - 1)}% harder!</p>}
-      {go.right === false && !skipped && <p role="status">Not quite this time. No harm done.</p>}
-      <div className="cq-actions">
-        <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onFight}>Into the fight!</button>
-      </div>
     </section>
   );
 }

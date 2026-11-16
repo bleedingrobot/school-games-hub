@@ -144,7 +144,7 @@ const COINS: [number, number][] = [[-30, -34], [-18, -48], [-6, -40], [8, -52], 
 export function Results({ summary, members, fame = 0, extra, onDone, onMines, art, top, best, raid }: {
   summary: FightSummary; members: Member[]; fame?: number; extra?: React.ReactNode; onDone: () => void; onMines?: () => void;
   /** A Village Raid: its own title and Banners, and no experience (a raid never changes the heroes). */
-  raid?: { title: string; banners: number };
+  raid?: { title: string; banners: number; rain?: React.ReactNode };
   /** The painting behind it all (the mine depth the clan fought at). */
   art?: { wide?: string; small?: string };
   /** The game's title and the clan's gold, followers and fame, over the top of the painting. */
@@ -185,6 +185,7 @@ export function Results({ summary, members, fame = 0, extra, onDone, onMines, ar
         )}
         <div className="cq-vstage__glow" aria-hidden="true" />
         {won && <div className="cq-vstage__rays" aria-hidden="true" />}
+        {raid?.rain}
         {top}
         <h2 className="cq-vstage__title">{title}</h2>
         {best && (
