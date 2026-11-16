@@ -91,6 +91,8 @@
 @media (max-width: 759px), (max-height: 480px) {
   .si-over { position: static; max-width: none; margin-top: 8px; }
   .si-over--top { flex-direction: row; flex-wrap: wrap; }
+  .si .si-over--report { width: auto; max-height: none; }
+  .si .si-over--report .si-card-pic { max-width: 220px; }
   .si .si-home__more { flex-wrap: wrap; }
   .si .si-over .si-road__track { flex-wrap: wrap; }
 }
@@ -259,9 +261,11 @@
 .si-resting .si-card-pic { width: 180px; flex: 0 0 auto; }
 /* Last turn under the painting: the weather card small, beside the words. */
 .si-report { align-content: start; }
-.si-report:has(> .si-card-pic) { grid-template-columns: auto minmax(0, 1fr); align-items: start; column-gap: 12px; }
-.si-report > h3, .si-report > .si-sums { grid-column: -2; }
-.si-report > .si-card-pic { grid-column: 1; grid-row: 1 / span 2; width: 150px; }
+/* The Last turn postcard on the painting: the weather card on top, the words under it. */
+.si-over--report { left: auto; right: 10px; top: 64px; width: min(230px, 28%); max-height: calc(100% - 200px); overflow-y: auto; pointer-events: auto; gap: 6px; padding: 8px 10px; background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(8px); box-shadow: 0 4px 14px rgba(15, 53, 86, 0.22); }
+.si-over--report .si-card-pic { width: 100%; max-width: none; border-radius: 10px; }
+.si-over--report .si-sums { font-size: 0.9rem; }
+.si .si-over--report .si-close { min-height: 36px; padding: 4px 14px; justify-self: end; }
 .si-step__nav { align-items: center; }
 .si-step__main { font-size: 1.1rem; min-height: 48px; }
 .si-step__why { padding: 8px 10px; border-radius: 10px; background: var(--tint); color: var(--ink) !important; font-weight: 700; }

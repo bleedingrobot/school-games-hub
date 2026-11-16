@@ -118,6 +118,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
   const [seen, setSeen] = useState<Tip[]>(() => seenTips());
   /** Land anchored last turn (spot numbers from…to), sparkling on My island until the next turn starts. */
   const [grew, setGrew] = useState<{ from: number; to: number } | null>(null);
+  /** The turn whose Last turn postcard was put away with OK (it comes back after the next turn). */
+  const [reportShut, setReportShut] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const voice = useIslesVoice();
   const [problem, setProblem] = useState<string | null>(null);
@@ -541,6 +543,15 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               {/* What the island has, and the road to Grand Isle, sit on the painting in the sky beside the island. */}
               <div className="si-over si-over--top"><Resources island={shownIsland} /></div>
               {turnStep === null && <div className="si-over si-over--road"><Road island={shownIsland} /></div>}
+              {/* Last turn: a little postcard in the sky on the right, with OK to put it away (James, 17 Nov 2026). */}
+              {lastTurn.length > 0 && reportShut !== island.turn && (
+                <section className="si-over si-over--report si-panel si-report" aria-label="Last turn">
+                  {report?.weather && <Card art={weatherArt(report.weather)} />}
+                  <h3>Last turn</h3>
+                  <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
+                  <button type="button" className="button button--light si-close" onClick={() => setReportShut(island.turn)}>OK</button>
+                </section>
+              )}
               {/* Pip, the step and the buttons sit along the bottom of the painting (James, 17 Nov 2026). */}
               <div className="si-over si-over--dock si-dock">
                 {/* While a spot, the shelf or a place is open, its choices get the whole row (unless Pip is guiding). */}
@@ -607,14 +618,6 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                   <section className="si-panel si-post" aria-label="Sky post">
                     <h3>Sky post</h3>
                     <ul className="si-sums">{post.map((p, i) => <li key={i}>{postLine(p)}</li>)}</ul>
-                  </section>
-                )}
-
-                {lastTurn.length > 0 && (
-                  <section className="si-panel si-report" aria-label="Last turn">
-                    <h3>Last turn</h3>
-                    {report?.weather && <Card art={weatherArt(report.weather)} />}
-                    <ul className="si-sums">{lastTurn.map((line) => <li key={line}>{line}</li>)}</ul>
                   </section>
                 )}
 
