@@ -164,6 +164,14 @@
 @keyframes si-glint { 0% { filter: drop-shadow(0 3px 2px rgba(40, 60, 20, 0.35)); } 35% { filter: drop-shadow(0 0 12px #ffd447) brightness(1.15); transform: translateY(-5px) scale(1.04); } 100% { filter: drop-shadow(0 3px 2px rgba(40, 60, 20, 0.35)); } }
 .si-after { display: grid; gap: 8px; animation: si-after 0.5s ease-out var(--si-after, 0s) both; }
 @keyframes si-after { from { opacity: 0; transform: translateY(6px); } }
+.si-count { display: grid; }
+.si-count > * { grid-area: 1 / 1; }
+.si-counting { align-self: center; font-size: 1.15rem; font-weight: 800; color: var(--si-gold-edge); animation: si-counted 0.3s ease-in var(--si-after, 0s) both; }
+.si-counting__dots span { animation: si-dot 1.2s ease-in-out infinite; }
+.si-counting__dots span:nth-child(2) { animation-delay: 0.2s; }
+.si-counting__dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes si-counted { to { opacity: 0; visibility: hidden; } }
+@keyframes si-dot { 0%, 60%, 100% { opacity: 0.2; } 30% { opacity: 1; } }
 .si-garden { position: relative; width: min(70%, 420px); margin: 10px auto 0; }
 
 .si-stage__badge { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; background: var(--si-gold); font-weight: 800; color: var(--ink); z-index: 300; }
@@ -307,8 +315,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after, .si-decor__pic, .si-decor__halo, .si-decor__twinkle { animation: none; }
+  .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after, .si-counting__dots span, .si-decor__pic, .si-decor__halo, .si-decor__twinkle { animation: none; }
   .si-decor__twinkle { opacity: 0.85; }
+  .si-counting { display: none; }
   .si-pop { transform: translate(-50%, -150%); }
   .si-boat, .si-spot img { transition: none; }
   .si-race--sailing .si-boat img:first-child { animation: none; }
