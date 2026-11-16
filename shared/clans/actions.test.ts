@@ -3,9 +3,12 @@ import { applyAction, clanDay, type Action, type Applied, type Context, type Ser
 import { itemAt } from './items';
 import { startingDrafts } from './create';
 import { ITEMS } from './gamedata';
-import { QUESTS, buildPuzzle, puzzleFor, todaysQuest } from './quests';
+import { QUESTS, todaysQuest } from './quests';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../maths/practical';
+import { parseFocus } from '../maths/focus';
+import { markQuestion, type MathsContext } from '../maths/serverQuestions';
 
+const MATHS: MathsContext = { facts: [], settings: { enabledTables: [2, 5, 10] }, focus: parseFocus(null) };
 const SEED = 123456;
 const DAY0 = 20_000;
 const ctx = (over: Partial<Context> = {}): Context => ({ seed: SEED, today: DAY0, ...over });
@@ -73,16 +76,17 @@ describe('quests', () => {
     throw new Error('no puzzle quest in ten days');
   }
 
-  it('marks the answer by rebuilding the puzzle from the clan\'s seed: right gets the big prize, wrong the smaller', () => {
+  it('marks the two ladder questions kept by ask: both right gets the big prize, anything else the smaller', () => {
     const { today, q } = stateWithPuzzle();
     const choice = puzzleChoice(q);
     const s = created();
     const day = clanDay(DAY0, today);
-    const spec = puzzleFor(q, choice, SEED, day, DEFAULT_PRACTICAL_SETTINGS)!;
-    const answer = buildPuzzle(spec).answer;
-    const right = ok(s, { type: 'quest', choice, answer }, { today });
-    const wrong = ok(s, { type: 'quest', choice, answer: answer + 1 }, { today });
-    const skipped = ok(s, { type: 'quest', choice, answer: null }, { today });
+    const answersOf = (st: ServerState) => st.ask!.questions.map((x) => markQuestion(x)!.answer);
+    const asked = ok(s, { type: 'ask', for: 'quest' }, { today, maths: MATHS }).state;
+    const [a, b] = answersOf(asked);
+    const right = ok(asked, { type: 'quest', choice, answers: [a, b] }, { today });
+    const wrong = ok(asked, { type: 'quest', choice, answers: [a + 1, b + 1] }, { today });
+    const skipped = ok(asked, { type: 'quest', choice, answers: [null, null] }, { today });
     expect(right.result).toMatchObject({ type: 'quest', questId: q.id, right: true });
     expect(wrong.result).toMatchObject({ right: false });
     expect(skipped.result).toMatchObject({ right: false });

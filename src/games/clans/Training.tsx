@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
-import { trainingBuy } from '../../../shared/clans/moments';
-import { Moment } from './Moment';
 import { train, trainOptions, type TrainKey, type TrainOption } from './places';
 import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
 import { TRAIN_HELP, isRecommended } from './text';
 import { lookOf } from '../../../shared/clans/looks';
 
-type Phase = { t: 'idle' } | { t: 'many'; opt: TrainOption } | { t: 'left'; opt: TrainOption } | { t: 'choose'; opt: TrainOption } | { t: 'done'; text: string };
+type Phase = { t: 'idle' } | { t: 'choose'; opt: TrainOption } | { t: 'done'; text: string };
 
-/** The Training Hall: spend a member's points. Two maths moments (how many can you buy, what's left), then you choose. */
+/** The Training Hall: spend a member's points. Pick what to train, then choose how many. */
 export function Training({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
-  const { clan, settings } = session;
+  const { clan } = session;
   const [mi, setMi] = useState(0);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const member = clan.members[mi];
@@ -20,7 +18,7 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
   const options = trainOptions(member, hall);
   const idle = () => setPhase({ t: 'idle' });
 
-  const pick = (opt: TrainOption) => setPhase(trainingBuy(settings, member.points, opt.cost) ? { t: 'many', opt } : { t: 'choose', opt });
+  const pick = (opt: TrainOption) => setPhase({ t: 'choose', opt });
   const buyNow = (key: TrainKey, count: number, label: string) => {
     const next = train(session, mi, key, count);
     if (!next) return;
@@ -29,12 +27,7 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
   };
 
   let body: React.ReactNode;
-  if (phase.t === 'many' || phase.t === 'left') {
-    const q = trainingBuy(settings, member.points, phase.opt.cost)!;
-    body = phase.t === 'many'
-      ? <Moment key="many" question={q.howMany} title={`Training ${phase.opt.label}`} note={`${member.name} has ${member.points} points.`} doneLabel="Next question" onDone={() => setPhase({ t: 'left', opt: phase.opt })} />
-      : <Moment key="left" question={q.leftOver} title={`Training ${phase.opt.label}`} note={`${member.name} has ${member.points} points.`} doneLabel="Carry on" onDone={() => setPhase({ t: 'choose', opt: phase.opt })} />;
-  } else if (phase.t === 'choose') {
+  if (phase.t === 'choose') {
     const { opt } = phase;
     body = (
       <div className="cq-panel">

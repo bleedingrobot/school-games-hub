@@ -5,9 +5,8 @@ import { CONFIG } from '../../../shared/clans/config';
 import { GEAR_KINDS, cannotBuy, wornItem, wornTier } from '../../../shared/clans/character';
 import { levelOf } from '../../../shared/clans/empire';
 import { CLASS_FOCUS, itemLine, offhandWord, smithyFor, unlockedTier } from '../../../shared/clans/items';
-import { discountQuestion, marketTotal } from '../../../shared/clans/moments';
 import type { GearKind, GearStat, ItemDef, Member } from '../../../shared/clans/types';
-import { Moment } from './Moment';
+import { LadderAsk, type Asker } from './LadderAsk';
 import { buyItem, buySupplies, shopPrice } from './places';
 import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
@@ -35,27 +34,23 @@ function Gains({ member, item }: { member: Member; item: ItemDef }) {
 }
 
 /**
- * Monster supplies, on sale from day 22 of the season: what each does, how many you hold, and a Buy button (with the same
- * "check the bill" moment as an item). One at a time, so the bill is the price of one.
+ * Monster supplies, on sale from day 22 of the season: what each does, how many you hold, and a Buy button. One at a time.
  */
 function Supplies({ session, onChange }: { session: Session; onChange: Change }) {
-  const { clan, settings } = session;
+  const { clan } = session;
   const season = session.clock!.number;
   const save = monsterSave(clan, season);
-  const [asking, setAsking] = useState<SupplyKind | null>(null);
   const [said, setSaid] = useState('');
   const most = (k: SupplyKind) => CONFIG.monster.supplies[k].max;
   const buy = (k: SupplyKind) => {
     const next = buySupplies(session, season, k, 1);
     if (!next) return;
     onChange(next, { type: 'buySupply', kind: k, count: 1 });
-    setAsking(null);
     setSaid(`You bought a ${SUPPLY_NAMES[k].one} for ${supplyPrice(k)} gold.`);
   };
   const start = (k: SupplyKind) => {
     setSaid('');
-    if (marketTotal(settings, CONFIG.monster.supplies[k].price, CONFIG.shopTax, SUPPLY_NAMES[k].one)) setAsking(k);
-    else buy(k);
+    buy(k);
   };
   return (
     <section className="cq-panel cq-supplies" aria-label="Monster supplies">
@@ -77,9 +72,6 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
           );
         })}
       </ul>
-      {asking && (
-        <Moment key={`supply-${asking}`} question={marketTotal(settings, CONFIG.monster.supplies[asking].price, CONFIG.shopTax, SUPPLY_NAMES[asking].one)!} title={`Paying for the ${SUPPLY_NAMES[asking].one}`} note="Check the bill before you pay." doneLabel={`Pay ${supplyPrice(asking)} gold`} onDone={() => buy(asking)} />
-      )}
       {said && <p className="cq-note" role="status">{said}</p>}
     </section>
   );
@@ -88,11 +80,11 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
 /**
  * The Market: pick one member at a time from the row at the top. Their three item lines (weapon, armour and the third
  * slot) are shown in full side by side: what they wear, the next one up, and every tier above it with what it adds. Any
- * tier the Smithy sells can be bought (skip ahead if you have saved up). Buying asks one maths question: right, and it
- * is 10% off.
+ * tier the Smithy sells can be bought (skip ahead if you have saved up). Buying asks one ladder question (from the
+ * child's own maths, marked by the server): right, and it is 10% off.
  */
-export function Market({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
-  const { clan, settings } = session;
+export function Market({ session, ask, onChange, onBack }: { session: Session; ask?: Asker; onChange: Change; onBack: () => void }) {
+  const { clan } = session;
   const [mi, setMi] = useState(0);
   const [asking, setAsking] = useState<ItemDef | null>(null);
   /** What was just bought, said above the lines (and given the focus, as the Buy button has gone). */
@@ -114,7 +106,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   };
   const start = (item: ItemDef) => {
     setBought('');
-    if (discountQuestion(settings, item.price, item.name)) setAsking(item);
+    if (ask) setAsking(item);
     else pay(item, null, false);
   };
 
@@ -184,13 +176,14 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
                 </ol>
                 {tier === line.length && <p className="cq-note">The best there is!</p>}
                 {asking && asking.kind === kind && (
-                  <Moment
+                  <LadderAsk
                     key={`buy-${asking.name}`}
-                    question={discountQuestion(settings, asking.price, asking.name)!}
+                    kind="shop"
+                    ask={ask!}
                     title={`${CONFIG.shopDiscount}% off the ${asking.name}`}
                     note={`Get it right and you pay ${shopPrice(asking, true)} gold instead of ${asking.price}.`}
-                    doneLabel="Pay and wear it"
-                    onDone={(right, answer) => pay(asking, answer, right)}
+                    onDone={(right) => pay(asking, null, right[0] === true)}
+                    onSkip={() => pay(asking, null, false)}
                   />
                 )}
               </section>

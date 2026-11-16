@@ -4,6 +4,7 @@
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/clans/teacher.ts).
  */
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import {
   fetchClanInfo,
   fetchClanMathsSettings,
@@ -26,18 +27,9 @@ import {
   type MathsKind,
 } from "../data/clans";
 import { MEMBER_NAMES } from "../../shared/clans/words";
-import {
-  TOPIC_LABELS,
-  TOPICS,
-  YEAR_BANDS,
-  type PracticalTopic,
-  type YearBand,
-} from "../../shared/maths/practical";
 import { useAuth } from "../auth/AuthContext";
 import { FriendlyError } from "../data/profile";
 import {
-  SettingChips,
-  SettingChoice,
   SettingNumber,
   SettingToggle,
   useSetting,
@@ -66,11 +58,7 @@ export function ClansTeacherSettings({ classId }: { classId: string }) {
   );
 }
 
-const BANDS = YEAR_BANDS.map((b) => ({ value: String(b), label: `Year ${b}` }));
-const TOPIC_CHIPS = TOPICS.map((t) => ({ value: t, label: TOPIC_LABELS[t] }));
-const TABLE_CHIPS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
-
-type MathsKey = "yearBand" | "enabledTopics" | "enabledTables" | "fightsPerDay";
+type MathsKey = "fightsPerDay";
 
 /** Made-up hero names, the maths settings and raids on classmates, for one class. Each saves at once. */
 function ClansSettingsPanel({ classId }: { classId: string }) {
@@ -79,9 +67,6 @@ function ClansSettingsPanel({ classId }: { classId: string }) {
   const raids = useSetting(() => fetchClanRaidsEnabled(classId), [classId]);
   const maths = useSetting(() => fetchClanMathsSettings(classId), [classId]);
   const m = maths.value;
-  // Which topics are on decides whether the times tables show; it follows the chips once they save.
-  const [topics, setTopics] = useState<readonly PracticalTopic[] | null>(null);
-  useEffect(() => setTopics(m?.enabledTopics ?? null), [m]);
 
   // The server keeps whatever isn't sent, so each control sends only its own setting. The saves still go one at a time, in
   // the order they were made, so a slow one can never land after a newer one.
@@ -118,36 +103,9 @@ function ClansSettingsPanel({ classId }: { classId: string }) {
       />
       <h3>Maths</h3>
       <p>
-        One Battle Cry question comes before each round of a mine fight, from each pupil’s own maths focus or place on the
-        ladder. The quests, the shop and the village have short story questions too: these choose them. Wrong answers never stop
-        anything. Pupils get changes the next time they open Clan Quest; a fight already open keeps its questions.
+        Clan Quest’s questions come from each child’s own maths.{" "}
+        <Link to={`/teacher/${classId}/maths`}>Set a focus on the Set focus page.</Link>
       </p>
-      <SettingChoice
-        label="Year band"
-        about="How hard the story questions are."
-        options={BANDS}
-        value={m ? String(m.yearBand) : null}
-        loadFailed={maths.failed}
-        save={(band) => saver("yearBand")(Number(band) as YearBand)}
-      />
-      <SettingChips
-        label="Topics on"
-        about="The story questions come only from topics that are on."
-        options={TOPIC_CHIPS}
-        value={m?.enabledTopics ?? null}
-        loadFailed={maths.failed}
-        save={saver("enabledTopics")}
-        onSaved={setTopics}
-      />
-      {topics?.includes("times") && (
-        <SettingChips
-          label="Times tables for the times-tables topic"
-          options={TABLE_CHIPS}
-          value={m?.enabledTables ?? null}
-          loadFailed={maths.failed}
-          save={saver("enabledTables")}
-        />
-      )}
       <SettingNumber
         label="Mine fights a day"
         about="Everyone’s mine fights come back at midnight."

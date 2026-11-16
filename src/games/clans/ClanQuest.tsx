@@ -6,7 +6,7 @@ import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
 import type { Clan } from '../../../shared/clans/types';
 import type { Draft } from '../../../shared/clans/create';
-import { TOPIC_LABELS, TOPICS, YEAR_BANDS, type PracticalTopic, type YearBand } from '../../../shared/maths/practical';
+import { YEAR_BANDS, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
 import { Creator } from './Creator';
 import { Fight, type CryChecked } from './Fight';
@@ -57,8 +57,6 @@ function Scene({ name, art: { wide, small } }: { name: string; art: { wide?: str
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
   const s = session.settings;
-  const toggle = (t: PracticalTopic) =>
-    onChange({ ...session, settings: { ...s, enabledTopics: s.enabledTopics.includes(t) ? s.enabledTopics.filter((x) => x !== t) : [...s.enabledTopics, t] } });
   return (
     <details className="cq-settings" open={open}>
       <summary>Test settings (stand in for the Teacher page)</summary>
@@ -99,14 +97,6 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
           </select>
         </label>
       </div>
-      <fieldset className="cq-settings__topics">
-        <legend>Maths topics</legend>
-        {TOPICS.map((t) => (
-          <label key={t}>
-            <input type="checkbox" checked={s.enabledTopics.includes(t)} onChange={() => toggle(t)} /> {TOPIC_LABELS[t]}
-          </label>
-        ))}
-      </fieldset>
     </details>
   );
 }
@@ -372,7 +362,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     holdFight.current = true;
     let reply: ServerReply;
     try {
-      reply = await ask!({ type: 'monsterStart', siege: answer, ladder: true });
+      reply = await ask!({ type: 'monsterStart', siege: answer });
     } finally {
       holdFight.current = false;
     }
@@ -477,7 +467,6 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 {bannerArt(session.clan.name) && <img className="cq-clanbanner" src={bannerArt(session.clan.name)} alt="" />}
                 <div>
                   <h2>{session.clan.name}</h2>
-                  <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
                 </div>
               </div>
               <SeasonRoad clock={session.clock} clan={session.clan} />
@@ -519,8 +508,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'mines' && (
             <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={startFight} />
           )}
-          {screen === 'monster' && <MonsterWeek session={session} practice={!server} onTry={startMonster} onFight={enterMonsterFight} onBack={() => setScreen('home')} />}
-          {screen === 'market' && <Market session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'monster' && <MonsterWeek session={session} practice={!server} ask={ask} onTry={startMonster} onFight={enterMonsterFight} onBack={() => setScreen('home')} />}
+          {screen === 'market' && <Market session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'myvillage' && <MyVillage session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
@@ -530,7 +519,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}
-          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={finish} />}
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />

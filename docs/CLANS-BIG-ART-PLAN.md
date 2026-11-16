@@ -1,6 +1,6 @@
 # Clan Quest: big art, a town map, and ladder maths
 
-Written 16 November 2026 (NZ) for James. **Status: plan agreed 16 Nov (James's cards: drop the bill maths, quest asks 2 ladder questions, map first with the clan below). Town map painted 16 Nov (`scenes/town`, try 1 of 4).**
+Written 16 November 2026 (NZ) for James. **Status: plan agreed 16 Nov (James's cards: drop the bill maths, quest asks 2 ladder questions, map first with the clan below). Town map painted 16 Nov (`scenes/town`, try 1 of 4). Part A LIVE 16 Nov (#512). Part B built 16 Nov: `ask` + `askCheck` (each question marked as it is answered, like the Battle Cry).**
 
 ## Why
 

@@ -131,9 +131,10 @@ export function publicFight(fight: NonNullable<ServerState['fight']>): ShownFigh
 
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
 export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'raidsOn' | 'notes'>, extras?: Extras) {
-  const { clan, seed, day, fightsLeft, fightNo, raidNo, fight } = state;
+  const { clan, seed, day, fightsLeft, fightNo, raidNo, fight, ask } = state;
   return {
     clan, seed, day, fightsLeft, fightNo, raidNo, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
+    ask: ask ? { for: ask.for, questions: ask.questions.map((q, i) => publicQuestion(q, i)), marks: ask.marks ?? [] } : null,
     raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
     unlimitedToday: extras?.settings.unlimitedToday === true,
@@ -175,9 +176,9 @@ export function makeHandler(services: Services) {
     // Made-up hero names only when the teacher has switched them on (an older database without the switch means off).
     const typedNames = extras.value.settings.typedNames === true;
     const unlimitedToday = extras.value.settings.unlimitedToday === true;
-    // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
+    // Only starting a fight and asking a question need the child's maths. If it can't be read a fight is an old-style one (the rules decide).
     const clock: SeasonClock | null = readClock(extras.value.clock);
-    const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
+    const maths = action.type === 'fightStart' || action.type === 'monsterStart' || action.type === 'ask' ? await services.mathsContext(player) : undefined;
 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);

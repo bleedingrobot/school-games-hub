@@ -72,7 +72,7 @@ const ceil = (x) => Math.ceil(Math.round(x * 1e6) / 1e6);
 const isWhole = (x) => Math.round(x * 1e6) / 1e6 === Math.round(x);
 /** A steady pick from a list that depends only on the numbers, so rebuilding gives the same wording. */
 const variant = (nums, count) => Math.abs(Math.round(nums.reduce((t, x, i) => t + x * (i + 3), 0))) % count;
-const int$3 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
+const int$2 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
 const choose = (random, list) => list[Math.floor(random() * list.length)];
 const stepped = (random, lo, hi, step) => lo + step * Math.floor(random() * ((hi - lo) / step + 1));
 const whole$2 = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
@@ -80,7 +80,7 @@ const allWhole = (nums, lo, hi) => nums.every((n) => whole$2(n, lo, hi));
 /** A total that is not an exact multiple of `per`, between lo and hi. */
 function withRemainder(random, per, lo, hi) {
 	for (let tries = 0; tries < 200; tries++) {
-		const total = int$3(random, lo, hi);
+		const total = int$2(random, lo, hi);
 		if (total % per !== 0) return total;
 	}
 	return lo - lo % per + 1;
@@ -223,12 +223,12 @@ const KIND_DEFS = {
 		generate(band, random) {
 			if (band === 4) return [1e3, stepped(random, 50, 950, 50)];
 			if (band === 5) return [1e3, stepped(random, 10, 990, 10)];
-			if (random() < .5) return [1e3, int$3(random, 101, 999)];
-			const first = int$3(random, 100, 499);
+			if (random() < .5) return [1e3, int$2(random, 101, 999)];
+			const first = int$2(random, 100, 499);
 			return [
 				1e3,
 				first,
-				int$3(random, 100, 999 - first)
+				int$2(random, 100, 999 - first)
 			];
 		}
 	},
@@ -246,9 +246,9 @@ const KIND_DEFS = {
 			};
 		},
 		generate(band, random) {
-			if (band === 4) return [int$3(random, 2, 6), int$3(random, 2, 6)];
-			if (band === 5) return [int$3(random, 3, 12), int$3(random, 3, 12)];
-			return [int$3(random, 6, 20), int$3(random, 5, 15)];
+			if (band === 4) return [int$2(random, 2, 6), int$2(random, 2, 6)];
+			if (band === 5) return [int$2(random, 3, 12), int$2(random, 3, 12)];
+			return [int$2(random, 6, 20), int$2(random, 5, 15)];
 		}
 	},
 	perimeter: {
@@ -265,9 +265,9 @@ const KIND_DEFS = {
 			};
 		},
 		generate(band, random) {
-			if (band === 4) return [int$3(random, 2, 8), int$3(random, 2, 8)];
-			if (band === 5) return [int$3(random, 3, 15), int$3(random, 3, 15)];
-			return [int$3(random, 5, 25), int$3(random, 5, 25)];
+			if (band === 4) return [int$2(random, 2, 8), int$2(random, 2, 8)];
+			if (band === 5) return [int$2(random, 3, 15), int$2(random, 3, 15)];
+			return [int$2(random, 5, 25), int$2(random, 5, 25)];
 		}
 	},
 	"share-whole": {
@@ -299,10 +299,10 @@ const KIND_DEFS = {
 				return [withRemainder(random, per, 11, 49), per];
 			}
 			if (band === 5) {
-				const per = int$3(random, 3, 9);
+				const per = int$2(random, 3, 9);
 				return [withRemainder(random, per, 30, 99), per];
 			}
-			const per = int$3(random, 6, 12);
+			const per = int$2(random, 6, 12);
 			return [withRemainder(random, per, 60, 199), per];
 		}
 	},
@@ -391,19 +391,19 @@ const KIND_DEFS = {
 		},
 		generate(band, random) {
 			if (band === 4) return [
-				int$3(random, 2, 9),
+				int$2(random, 2, 9),
 				0,
 				0
 			];
 			if (band === 5) return [
-				int$3(random, 2, 12),
-				int$3(random, 1, 6),
+				int$2(random, 2, 12),
+				int$2(random, 1, 6),
 				0
 			];
 			return [
-				int$3(random, 4, 20),
-				int$3(random, 2, 10),
-				int$3(random, 1, 6)
+				int$2(random, 4, 20),
+				int$2(random, 2, 10),
+				int$2(random, 1, 6)
 			];
 		}
 	},
@@ -450,16 +450,16 @@ const KIND_DEFS = {
 			if (random() < .5) return [
 				1,
 				100,
-				int$3(random, 5, 35),
-				int$3(random, 4, 25),
-				int$3(random, 3, 20)
+				int$2(random, 5, 35),
+				int$2(random, 4, 25),
+				int$2(random, 3, 20)
 			];
 			return [
 				0,
 				1e3,
-				int$3(random, 100, 300),
-				int$3(random, 100, 300),
-				int$3(random, 100, 300)
+				int$2(random, 100, 300),
+				int$2(random, 100, 300),
+				int$2(random, 100, 300)
 			];
 		}
 	},
@@ -496,39 +496,39 @@ const KIND_DEFS = {
 			if (band === 4) return [
 				0,
 				1,
-				int$3(random, 2, 5),
-				int$3(random, 2, 6)
+				int$2(random, 2, 5),
+				int$2(random, 2, 6)
 			];
 			if (band === 5) {
-				const a = int$3(random, 2, 5);
-				let b = int$3(random, 1, 9);
+				const a = int$2(random, 2, 5);
+				let b = int$2(random, 1, 9);
 				if (b === a) b++;
 				return [
 					0,
 					a,
 					b,
-					a * int$3(random, 2, 8)
+					a * int$2(random, 2, 8)
 				];
 			}
 			if (random() < .5) {
-				const a = int$3(random, 1, 6);
-				let b = int$3(random, 1, 7);
+				const a = int$2(random, 1, 6);
+				let b = int$2(random, 1, 7);
 				if (b === a) b++;
 				return [
 					1,
 					a,
 					b,
-					(a + b) * int$3(random, 3, 12)
+					(a + b) * int$2(random, 3, 12)
 				];
 			}
-			const a = int$3(random, 3, 8);
-			let b = int$3(random, 2, 12);
+			const a = int$2(random, 3, 8);
+			let b = int$2(random, 2, 12);
 			if (b === a) b++;
 			return [
 				0,
 				a,
 				b,
-				a * int$3(random, 3, 12)
+				a * int$2(random, 3, 12)
 			];
 		}
 	},
@@ -547,8 +547,8 @@ const KIND_DEFS = {
 		},
 		generate(_band, random) {
 			for (let tries = 0; tries < 200; tries++) {
-				const start = int$3(random, -10, 10);
-				const change = int$3(random, -15, 15);
+				const start = int$2(random, -10, 10);
+				const change = int$2(random, -15, 15);
 				if (change !== 0 && Math.abs(start + change) <= 20 && (tries > 100 || start + change < 0 || start < 0)) return [start, change];
 			}
 			return [3, -8];
@@ -590,10 +590,10 @@ const KIND_DEFS = {
 		generate(band, random) {
 			if (band === 4) {
 				for (let tries = 0; tries < 200; tries++) {
-					const rateA = int$3(random, 5, 30);
-					const rateB = int$3(random, 5, 30);
-					const countA = int$3(random, 2, 6);
-					const countB = int$3(random, 2, 6);
+					const rateA = int$2(random, 5, 30);
+					const rateB = int$2(random, 5, 30);
+					const countA = int$2(random, 2, 6);
+					const countB = int$2(random, 2, 6);
 					if (Math.abs(rateA - rateB) >= 2 && countA !== countB) return [
 						rateA * countA,
 						countA,
@@ -610,10 +610,10 @@ const KIND_DEFS = {
 			}
 			if (band === 5) {
 				for (let tries = 0; tries < 200; tries++) {
-					const rateA = int$3(random, 10, 60);
-					const rateB = int$3(random, 10, 60);
-					const countA = int$3(random, 2, 10);
-					const countB = int$3(random, 2, 10);
+					const rateA = int$2(random, 10, 60);
+					const rateB = int$2(random, 10, 60);
+					const countA = int$2(random, 2, 10);
+					const countB = int$2(random, 2, 10);
 					if (Math.abs(rateA - rateB) >= 3 && countA !== countB) return [
 						rateA * countA,
 						countA,
@@ -629,8 +629,8 @@ const KIND_DEFS = {
 				];
 			}
 			for (let tries = 0; tries < 500; tries++) {
-				const countA = int$3(random, 3, 12);
-				const countB = int$3(random, 3, 12);
+				const countA = int$2(random, 3, 12);
+				const countB = int$2(random, 3, 12);
 				const priceA = stepped(random, 50, 800, 10);
 				const priceB = stepped(random, 50, 800, 10);
 				const rateA = priceA / countA;
@@ -667,11 +667,11 @@ const KIND_DEFS = {
 		},
 		generate(band, random) {
 			if (band === 4) {
-				const level = int$3(random, 1, 9);
-				return [10, ...Array.from({ length: int$3(random, 2, 3) }, () => level)];
+				const level = int$2(random, 1, 9);
+				return [10, ...Array.from({ length: int$2(random, 2, 3) }, () => level)];
 			}
-			if (band === 5) return [10, ...Array.from({ length: int$3(random, 2, 3) }, () => int$3(random, 2, 12))];
-			return [10, ...Array.from({ length: int$3(random, 3, 4) }, () => int$3(random, 3, 18))];
+			if (band === 5) return [10, ...Array.from({ length: int$2(random, 2, 3) }, () => int$2(random, 2, 12))];
+			return [10, ...Array.from({ length: int$2(random, 3, 4) }, () => int$2(random, 3, 18))];
 		}
 	},
 	times: {
@@ -691,7 +691,7 @@ const KIND_DEFS = {
 				2,
 				5,
 				10
-			]), int$3(random, 2, band === 4 ? 10 : 12)];
+			]), int$2(random, 2, band === 4 ? 10 : 12)];
 		}
 	}
 };
@@ -701,8 +701,6 @@ const TROOP_COST = {
 	axeman: 30,
 	knight: 60
 };
-/** Which topic a kind belongs to. */
-const topicOf = (kind) => KIND_DEFS[kind].topic;
 /** The kinds that can be asked at a year band, optionally only from these topics. */
 function kindsFor(band, topics = TOPICS$1) {
 	return KINDS.filter((k) => KIND_DEFS[k].bands.includes(band) && topics.includes(KIND_DEFS[k].topic));
@@ -4138,7 +4136,7 @@ function cast(s, who, spell, target) {
 		});
 	}
 }
-function pick$2(s, list) {
+function pick$1(s, list) {
 	const live = list.filter(alive);
 	return live.length ? live[roll(s, live.length)] : void 0;
 }
@@ -4176,7 +4174,7 @@ function monsterTurn(s, who, m, cry) {
 			for (const t of s.clan.filter(alive)) smash(s, who, t, M.slam);
 			return;
 		}
-		const target = pick$2(s, s.clan);
+		const target = pick$1(s, s.clan);
 		if (!target) return;
 		smash(s, who, target, m.kind === "giant" ? M.boulder : M.breath);
 		if (m.kind === "troll" && alive(target)) {
@@ -4188,7 +4186,7 @@ function monsterTurn(s, who, m, cry) {
 		}
 		return;
 	}
-	const first = pick$2(s, s.clan);
+	const first = pick$1(s, s.clan);
 	if (!first) return;
 	attack(s, who, first, cry);
 	const rest = s.clan.filter((f) => alive(f) && f !== first);
@@ -4200,10 +4198,10 @@ function enemyTurn(s, who, cry) {
 	const spells = who.spells.map((id) => SPELLS[id]).filter((sp) => !!sp && canCast(who, sp.id));
 	if (spells.length && roll(s, 3) === 0) {
 		const spell = spells[roll(s, spells.length)];
-		const target = spell.friendly ? friends(s, who).filter(alive).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0] : pick$2(s, foes(s, who));
+		const target = spell.friendly ? friends(s, who).filter(alive).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0] : pick$1(s, foes(s, who));
 		if (target) return cast(s, who, spell, target);
 	}
-	const target = pick$2(s, foes(s, who));
+	const target = pick$1(s, foes(s, who));
 	if (target) attack(s, who, target, cry);
 }
 function clanTurn(s, who, order, cry) {
@@ -4837,7 +4835,7 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 * trusting the browser's copy of the question.
 */
 /** A whole number from lo to hi (both included). */
-const int$2 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
+const int$1 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
 const pickOne = (random, items) => items[Math.floor(random() * items.length)];
 function shuffle$1(items, random) {
 	const out = [...items];
@@ -5195,7 +5193,7 @@ const facts = {
 		return [
 			a,
 			b,
-			int$2(r, 0, 4)
+			int$1(r, 0, 4)
 		];
 	},
 	make: (key, [a, b, v]) => {
@@ -5263,54 +5261,54 @@ const ADD_SUB = {
 	label: "Adding and taking away",
 	families: {
 		facts,
-		"add:tens": kind("add:tens", "Adding tens (40 + 30)", "add-tens", (r) => [int$2(r, 1, 9) * 10, int$2(r, 1, 9) * 10], (a, b) => a % 10 === 0 && b % 10 === 0 && a >= 10 && a <= 90 && b >= 10 && b <= 90, (a, b) => sum(a, b, { wrong: [
+		"add:tens": kind("add:tens", "Adding tens (40 + 30)", "add-tens", (r) => [int$1(r, 1, 9) * 10, int$1(r, 1, 9) * 10], (a, b) => a % 10 === 0 && b % 10 === 0 && a >= 10 && a <= 90 && b >= 10 && b <= 90, (a, b) => sum(a, b, { wrong: [
 			a + b + 10,
 			a + b - 10,
 			(a + b) / 10,
 			a + b + 100
 		] })),
 		"sub:tens": kind("sub:tens", "Taking away tens (120 − 40)", "sub-tens", (r) => {
-			const b = int$2(r, 1, 9) * 10;
-			return [b + int$2(r, 1, 9) * 10, b];
+			const b = int$1(r, 1, 9) * 10;
+			return [b + int$1(r, 1, 9) * 10, b];
 		}, (a, b) => a % 10 === 0 && b % 10 === 0 && b >= 10 && b <= 90 && a - b >= 10 && a - b <= 90, (a, b) => diff(a, b, { wrong: [
 			a - b + 10,
 			a - b - 10,
 			a + b
 		] })),
-		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int$2(r, 1, 6) * 10 + int$2(r, 1, 9), int$2(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones$1(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
+		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int$1(r, 1, 6) * 10 + int$1(r, 1, 9), int$1(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones$1(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
 		"sub:2d-tens": kind("sub:2d-tens", "Taking tens from a 2-digit number (77 − 30)", "sub-tens-from-2d", (r) => {
-			const b = int$2(r, 1, 3) * 10;
-			return [b + int$2(r, 1, 5) * 10 + int$2(r, 1, 9), b];
+			const b = int$1(r, 1, 3) * 10;
+			return [b + int$1(r, 1, 5) * 10 + int$1(r, 1, 9), b];
 		}, (a, b) => b % 10 === 0 && b >= 10 && b <= 30 && a - b >= 11 && a - b <= 59 && ones$1(a) !== 0, (a, b) => diff(a, b, { wrong: subWrong(a, b).concat([a - b / 10]) })),
 		"add:bridge10": kind("add:bridge10", "Adding across a ten (47 + 8)", "add-bridge-ten", (r) => {
-			const a = int$2(r, 1, 8) * 10 + int$2(r, 2, 9);
-			return [a, int$2(r, 11 - ones$1(a), 9)];
+			const a = int$1(r, 1, 8) * 10 + int$1(r, 2, 9);
+			return [a, int$1(r, 11 - ones$1(a), 9)];
 		}, (a, b) => a >= 12 && a <= 89 && b >= 2 && b <= 9 && ones$1(a) + b >= 10, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:bridge10": kind("sub:bridge10", "Taking away across a ten (53 − 8)", "sub-bridge-ten", (r) => {
-			const a = int$2(r, 2, 9) * 10 + int$2(r, 0, 7);
-			return [a, int$2(r, Math.max(2, ones$1(a) + 1), 9)];
+			const a = int$1(r, 2, 9) * 10 + int$1(r, 0, 7);
+			return [a, int$1(r, Math.max(2, ones$1(a) + 1), 9)];
 		}, (a, b) => a >= 20 && a <= 97 && b >= 2 && b <= 9 && ones$1(a) < b, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:2d+2d": kind("add:2d+2d", "Adding 2-digit numbers (34 + 25)", "add-2d", (r) => {
-			const a = int$2(r, 1, 7) * 10 + int$2(r, 1, 8);
-			return [a, int$2(r, 1, 8 - tens(a)) * 10 + int$2(r, 1, 9 - ones$1(a))];
+			const a = int$1(r, 1, 7) * 10 + int$1(r, 1, 8);
+			return [a, int$1(r, 1, 8 - tens(a)) * 10 + int$1(r, 1, 9 - ones$1(a))];
 		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) <= 9 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d": kind("sub:2d-2d", "Taking away 2-digit numbers (59 − 25)", "sub-2d", (r) => {
-			const b = int$2(r, 1, 7) * 10 + int$2(r, 1, 8);
-			return [b + int$2(r, 1, 9 - tens(b)) * 10 + int$2(r, 0, 9 - ones$1(b)), b];
+			const b = int$1(r, 1, 7) * 10 + int$1(r, 1, 8);
+			return [b + int$1(r, 1, 9 - tens(b)) * 10 + int$1(r, 0, 9 - ones$1(b)), b];
 		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && a > b && ones$1(a) >= ones$1(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:2d+2d:carry": kind("add:2d+2d:carry", "Adding 2-digit numbers, with regrouping (47 + 36)", "add-2d-regroup", (r) => {
-			const a = int$2(r, 1, 7) * 10 + int$2(r, 2, 9);
-			return [a, int$2(r, 1, 8 - tens(a)) * 10 + int$2(r, 10 - ones$1(a), 9)];
+			const a = int$1(r, 1, 7) * 10 + int$1(r, 2, 9);
+			return [a, int$1(r, 1, 8 - tens(a)) * 10 + int$1(r, 10 - ones$1(a), 9)];
 		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) >= 10 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d:borrow": kind("sub:2d-2d:borrow", "Taking away 2-digit numbers, with regrouping (52 − 37)", "sub-2d-regroup", (r) => {
-			const a = int$2(r, 3, 9) * 10 + int$2(r, 0, 8);
-			return [a, int$2(r, 1, tens(a) - 2) * 10 + int$2(r, ones$1(a) + 1, 9)];
+			const a = int$1(r, 3, 9) * 10 + int$1(r, 0, 8);
+			return [a, int$1(r, 1, tens(a) - 2) * 10 + int$1(r, ones$1(a) + 1, 9)];
 		}, (a, b) => a >= 30 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) < ones$1(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:to100": {
 			label: "Pairs that make 100 (64 + ? = 100)",
 			curriculumTags: TODO$6("pairs-to-100"),
 			keys: ["add:to100"],
-			roll: (_k, r) => [int$2(r, 1, 8) * 10 + int$2(r, 1, 9)],
+			roll: (_k, r) => [int$1(r, 1, 8) * 10 + int$1(r, 1, 9)],
 			make: (_k, [a]) => {
 				if (!isInt(a, 11, 89) || a % 10 === 0) return null;
 				const parts = [
@@ -5335,22 +5333,22 @@ const ADD_SUB = {
 			}
 		},
 		"add:3d+3d": kind("add:3d+3d", "Adding 3-digit numbers (456 + 278)", "add-3d", (r) => {
-			const a = int$2(r, 101, 799);
-			return [a, int$2(r, 101, 999 - a)];
+			const a = int$1(r, 101, 799);
+			return [a, int$1(r, 101, 999 - a)];
 		}, (a, b) => a >= 101 && a <= 799 && b >= 101 && a + b <= 999, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:3d-3d": kind("sub:3d-3d", "Taking away 3-digit numbers (502 − 178)", "sub-3d", (r) => {
-			const b = int$2(r, 101, 799);
-			return [int$2(r, b + 11, 999), b];
+			const b = int$1(r, 101, 799);
+			return [int$1(r, b + 11, 999), b];
 		}, (a, b) => a >= 112 && a <= 999 && b >= 101 && b <= 799 && a - b >= 11, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
-		"add:near100": kind("add:near100", "Adding a number close to a hundred (398 + 250)", "add-compensate", (r) => [int$2(r, 1, 5) * 100 - int$2(r, 1, 3), int$2(r, 11, 49) * 10], (a, b) => a % 100 >= 97 && a >= 97 && a <= 499 && b % 10 === 0 && b >= 110 && b <= 490, (a, b) => sum(a, b, { wrong: [
+		"add:near100": kind("add:near100", "Adding a number close to a hundred (398 + 250)", "add-compensate", (r) => [int$1(r, 1, 5) * 100 - int$1(r, 1, 3), int$1(r, 11, 49) * 10], (a, b) => a % 100 >= 97 && a >= 97 && a <= 499 && b % 10 === 0 && b >= 110 && b <= 490, (a, b) => sum(a, b, { wrong: [
 			a + b + 2,
 			Math.ceil(a / 100) * 100 + b,
 			a + b - 10,
 			a + b + 10
 		] })),
 		"sub:near100": kind("sub:near100", "Taking away a number close to a hundred (634 − 299)", "sub-compensate", (r) => {
-			const b = int$2(r, 1, 4) * 100 - int$2(r, 1, 3);
-			return [int$2(r, Math.ceil(b / 100) * 100 + 11, 999), b];
+			const b = int$1(r, 1, 4) * 100 - int$1(r, 1, 3);
+			return [int$1(r, Math.ceil(b / 100) * 100 + 11, 999), b];
 		}, (a, b) => b % 100 >= 97 && b >= 97 && b <= 399 && a <= 999 && a - b >= 12, (a, b) => diff(a, b, { wrong: [
 			a - Math.ceil(b / 100) * 100,
 			a - b + 2,
@@ -5505,7 +5503,7 @@ const DECIMALS = {
 			label: "Adding tenths (0.3 + 0.5)",
 			curriculumTags: TODO$5("add-tenths"),
 			keys: ["dec:tenths:add"],
-			roll: (_k, r) => [int$2(r, 1, 9), int$2(r, 1, 9)],
+			roll: (_k, r) => [int$1(r, 1, 9), int$1(r, 1, 9)],
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 1, 9) || !isInt(b, 1, 9)) return null;
 				const parts = [
@@ -5535,8 +5533,8 @@ const DECIMALS = {
 			curriculumTags: TODO$5("subtract-tenths"),
 			keys: ["dec:tenths:sub"],
 			roll: (_k, r) => {
-				const a = int$2(r, 2, 19);
-				return [a, int$2(r, 1, Math.min(9, a - 1))];
+				const a = int$1(r, 2, 19);
+				return [a, int$1(r, 1, Math.min(9, a - 1))];
 			},
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 2, 19) || !isInt(b, 1, Math.min(9, a - 1))) return null;
@@ -5565,7 +5563,7 @@ const DECIMALS = {
 			label: "Tenths as decimals (7/10 = 0.7)",
 			curriculumTags: TODO$5("tenths-as-decimals"),
 			keys: ["dec:from-frac:tenths"],
-			roll: (_k, r) => [int$2(r, 1, 9)],
+			roll: (_k, r) => [int$1(r, 1, 9)],
 			make: (_k, [n]) => {
 				if (!isInt(n, 1, 9)) return null;
 				const parts = [
@@ -5591,7 +5589,7 @@ const DECIMALS = {
 			label: "Adding money ($2.40 + $1.75)",
 			curriculumTags: TODO$5("money-add"),
 			keys: ["money:add"],
-			roll: (_k, r) => [int$2(r, 21, 199) * 5, int$2(r, 21, 199) * 5],
+			roll: (_k, r) => [int$1(r, 21, 199) * 5, int$1(r, 21, 199) * 5],
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 105, 995) || !isInt(b, 105, 995) || a % 5 || b % 5) return null;
 				const parts = [
@@ -5628,7 +5626,7 @@ const DECIMALS = {
 					1e3,
 					2e3
 				]);
-				return [paid, int$2(r, 21, paid / 5 - 1) * 5];
+				return [paid, int$1(r, 21, paid / 5 - 1) * 5];
 			},
 			make: (_k, [paid, cost]) => {
 				if (![
@@ -5666,9 +5664,9 @@ const DECIMALS = {
 			roll: (_k, r) => {
 				let a;
 				do
-					a = int$2(r, 11, 99);
+					a = int$1(r, 11, 99);
 				while (a % 10 === 0);
-				return [a, int$2(r, 1, 9) * 10];
+				return [a, int$1(r, 1, 9) * 10];
 			},
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 11, 99) || a % 10 === 0 || !isInt(b, 10, 90) || b % 10) return null;
@@ -5697,10 +5695,10 @@ const DECIMALS = {
 			curriculumTags: TODO$5("compare-decimals"),
 			keys: ["dec:compare"],
 			roll: (_k, r) => {
-				const a = int$2(r, 1, 9) * 10;
+				const a = int$1(r, 1, 9) * 10;
 				let b;
 				do
-					b = int$2(r, 11, 99);
+					b = int$1(r, 11, 99);
 				while (b % 10 === 0);
 				return r() < .5 ? [a, b] : [b, a];
 			},
@@ -5724,9 +5722,9 @@ const DECIMALS = {
 			roll: (_k, r) => {
 				let a;
 				do
-					a = int$2(r, 1, 99);
+					a = int$1(r, 1, 99);
 				while (a % 10 === 0);
-				return [a, int$2(r, 1, 2)];
+				return [a, int$1(r, 1, 2)];
 			},
 			make: (_k, [a, p]) => {
 				if (!isInt(a, 1, 99) || a % 10 === 0 || !isInt(p, 1, 2)) return null;
@@ -5759,7 +5757,7 @@ const DECIMALS = {
 			roll: (_k, r) => {
 				let a;
 				do
-					a = int$2(r, 11, 199);
+					a = int$1(r, 11, 199);
 				while (a % 10 === 0);
 				return [a];
 			},
@@ -5791,7 +5789,7 @@ const DECIMALS = {
 			label: "Decimals × whole numbers (0.3 × 4)",
 			curriculumTags: TODO$5("multiply-decimals"),
 			keys: ["dec:times-whole"],
-			roll: (_k, r) => [int$2(r, 1, 9), int$2(r, 2, 9)],
+			roll: (_k, r) => [int$1(r, 1, 9), int$1(r, 2, 9)],
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 1, 9) || !isInt(b, 2, 9)) return null;
 				const parts = [
@@ -5818,7 +5816,7 @@ const DECIMALS = {
 			label: "Fractions as decimals (3/4 = 0.75)",
 			curriculumTags: TODO$5("fractions-as-decimals"),
 			keys: ["dec:from-frac"],
-			roll: (_k, r) => r() < .3 ? [int$2(r, 1, 99), 100] : pickOne(r, FRACTIONS_AS_DECIMALS),
+			roll: (_k, r) => r() < .3 ? [int$1(r, 1, 99), 100] : pickOne(r, FRACTIONS_AS_DECIMALS),
 			make: (_k, [n, d]) => {
 				if (!(d === 100 ? isInt(n, 1, 99) : FRACTIONS_AS_DECIMALS.some(([x, y]) => x === n && y === d))) return null;
 				const parts = [
@@ -5895,7 +5893,7 @@ function factFamily(label, divisors, upTo) {
 			return [
 				d,
 				n / d,
-				int$2(r, 0, 3) === 0 ? 1 : 0
+				int$1(r, 0, 3) === 0 ? 1 : 0
 			];
 		},
 		make: (key, [d, q, v]) => {
@@ -5980,8 +5978,8 @@ const DIVISION = {
 			curriculumTags: TODO$4("divide-2d-by-1d"),
 			keys: ["div:2d/1d"],
 			roll: (_k, r) => {
-				const d = int$2(r, 2, 6);
-				return [d, int$2(r, 11, Math.floor(99 / d))];
+				const d = int$1(r, 2, 6);
+				return [d, int$1(r, 11, Math.floor(99 / d))];
 			},
 			make: (_k, [d, q]) => {
 				if (!isInt(d, 2, 6) || !isInt(q, 11, Math.floor(99 / d))) return null;
@@ -5998,7 +5996,7 @@ const DIVISION = {
 			label: "Dividing by 10 and 100 (340 ÷ 10)",
 			curriculumTags: TODO$4("divide-by-10-100"),
 			keys: ["div:by10"],
-			roll: (_k, r) => [int$2(r, 1, 9) * 10 + int$2(r, 1, 9), int$2(r, 1, 2)],
+			roll: (_k, r) => [int$1(r, 1, 9) * 10 + int$1(r, 1, 9), int$1(r, 1, 2)],
 			make: (_k, [q, p]) => {
 				if (!isInt(q, 11, 99) || q % 10 === 0 || !isInt(p, 1, 2)) return null;
 				const d = 10 ** p;
@@ -6014,7 +6012,7 @@ const DIVISION = {
 			label: "Missing number in a division (? ÷ 4 = 7)",
 			curriculumTags: TODO$4("division-missing-dividend"),
 			keys: ["div:missing"],
-			roll: (_k, r) => [int$2(r, 2, 9), int$2(r, 2, 12)],
+			roll: (_k, r) => [int$1(r, 2, 9), int$1(r, 2, 12)],
 			make: (_k, [d, q]) => {
 				if (!isInt(d, 2, 9) || !isInt(q, 2, 12)) return null;
 				const parts = [
@@ -6042,11 +6040,11 @@ const DIVISION = {
 			curriculumTags: TODO$4("division-remainders"),
 			keys: ["div:remainder"],
 			roll: (_k, r) => {
-				const d = int$2(r, 3, 9);
+				const d = int$1(r, 3, 9);
 				return [
 					d,
-					int$2(r, 2, 9),
-					int$2(r, 1, d - 1)
+					int$1(r, 2, 9),
+					int$1(r, 1, d - 1)
 				];
 			},
 			make: (_k, [d, q, rem]) => {
@@ -6080,8 +6078,8 @@ const DIVISION = {
 			curriculumTags: TODO$4("divide-3d-by-1d"),
 			keys: ["div:3d/1d"],
 			roll: (_k, r) => {
-				const d = int$2(r, 3, 9);
-				return [d, int$2(r, Math.ceil(100 / d), Math.floor(999 / d))];
+				const d = int$1(r, 3, 9);
+				return [d, int$1(r, Math.ceil(100 / d), Math.floor(999 / d))];
 			},
 			make: (_k, [d, q]) => {
 				if (!isInt(d, 3, 9) || !isInt(q, Math.ceil(100 / d), Math.floor(999 / d))) return null;
@@ -6159,7 +6157,7 @@ const FRACTIONS$1 = {
 				4,
 				5,
 				10
-			]), int$2(r, 1, 10)],
+			]), int$1(r, 1, 10)],
 			make: (_k, [d, q]) => {
 				if (![
 					2,
@@ -6203,8 +6201,8 @@ const FRACTIONS$1 = {
 					10,
 					12
 				]);
-				const a = int$2(r, 1, d - 1);
-				let b = int$2(r, 1, d - 2);
+				const a = int$1(r, 1, d - 1);
+				let b = int$1(r, 1, d - 2);
 				if (b >= a) b++;
 				return [
 					a,
@@ -6228,12 +6226,12 @@ const FRACTIONS$1 = {
 				]);
 				let n;
 				do
-					n = int$2(r, 2, d - 1);
+					n = int$1(r, 2, d - 1);
 				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
-					int$2(r, 1, 10)
+					int$1(r, 1, 10)
 				];
 			},
 			make: (_k, [n, d, q]) => {
@@ -6270,16 +6268,16 @@ const FRACTIONS$1 = {
 			curriculumTags: TODO$3("equivalent-fractions"),
 			keys: ["frac:equiv"],
 			roll: (_k, r) => {
-				const d = int$2(r, 2, 5);
+				const d = int$1(r, 2, 5);
 				let n;
 				do
-					n = int$2(r, 1, d - 1);
+					n = int$1(r, 1, d - 1);
 				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
-					int$2(r, 2, 5),
-					int$2(r, 0, 1)
+					int$1(r, 2, 5),
+					int$1(r, 0, 1)
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
@@ -6324,7 +6322,7 @@ const FRACTIONS$1 = {
 					d2 = pickOne(r, DENOMINATORS);
 				while (d2 === d1);
 				return [
-					int$2(r, 1, Math.min(d1, d2) - 1),
+					int$1(r, 1, Math.min(d1, d2) - 1),
 					d1,
 					d2
 				];
@@ -6336,11 +6334,11 @@ const FRACTIONS$1 = {
 			curriculumTags: TODO$3("add-fractions"),
 			keys: ["frac:add:same-den"],
 			roll: (_k, r) => {
-				const d = int$2(r, 3, 12);
-				const a = int$2(r, 1, d - 2);
+				const d = int$1(r, 3, 12);
+				const a = int$1(r, 1, d - 2);
 				return [
 					a,
-					int$2(r, 1, d - 1 - a),
+					int$1(r, 1, d - 1 - a),
 					d
 				];
 			},
@@ -6371,11 +6369,11 @@ const FRACTIONS$1 = {
 			curriculumTags: TODO$3("subtract-fractions"),
 			keys: ["frac:sub:same-den"],
 			roll: (_k, r) => {
-				const d = int$2(r, 3, 12);
-				const a = int$2(r, 2, d);
+				const d = int$1(r, 3, 12);
+				const a = int$1(r, 2, d);
 				return [
 					a,
-					int$2(r, 1, a - 1),
+					int$1(r, 1, a - 1),
 					d
 				];
 			},
@@ -6406,12 +6404,12 @@ const FRACTIONS$1 = {
 			curriculumTags: TODO$3("mixed-numbers"),
 			keys: ["frac:improper"],
 			roll: (_k, r) => {
-				const d = int$2(r, 2, 8);
+				const d = int$1(r, 2, 8);
 				return [
-					int$2(r, 1, 4),
-					int$2(r, 1, d - 1),
+					int$1(r, 1, 4),
+					int$1(r, 1, d - 1),
 					d,
-					int$2(r, 0, 1)
+					int$1(r, 0, 1)
 				];
 			},
 			make: (_k, [w, n, d, v]) => {
@@ -6462,8 +6460,8 @@ const FRACTIONS$1 = {
 				for (;;) {
 					const d1 = pickOne(r, DENOMINATORS);
 					const d2 = pickOne(r, DENOMINATORS);
-					const n1 = int$2(r, 1, d1 - 1);
-					const n2 = int$2(r, 1, d2 - 1);
+					const n1 = int$1(r, 1, d1 - 1);
+					const n2 = int$1(r, 1, d2 - 1);
 					if (d1 !== d2 && n1 !== n2 && n1 * d2 !== n2 * d1) return [
 						n1,
 						d1,
@@ -6480,15 +6478,15 @@ const FRACTIONS$1 = {
 			keys: ["frac:simplify"],
 			roll: (_k, r) => {
 				let n;
-				const d = int$2(r, 2, 6);
+				const d = int$1(r, 2, 6);
 				do
-					n = int$2(r, 1, d - 1);
+					n = int$1(r, 1, d - 1);
 				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
-					int$2(r, 2, 6),
-					int$2(r, 0, 1)
+					int$1(r, 2, 6),
+					int$1(r, 0, 1)
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
@@ -6586,9 +6584,9 @@ function digitWorth(key, label, lo, hi) {
 		keys: [key],
 		roll: (_k, r) => {
 			for (;;) {
-				const n = int$2(r, lo, hi);
+				const n = int$1(r, lo, hi);
 				const places = askablePlaces(n, 1);
-				if (places.length) return [n, places[int$2(r, 0, places.length - 1)]];
+				if (places.length) return [n, places[int$1(r, 0, places.length - 1)]];
 			}
 		},
 		make: (_k, [n, place]) => {
@@ -6625,8 +6623,8 @@ function partition(key, label, lo, hi) {
 		keys: [key],
 		roll: (_k, r) => {
 			for (;;) {
-				const n = int$2(r, lo, hi);
-				const place = int$2(r, 1, digitCount(n) - 1);
+				const n = int$1(r, lo, hi);
+				const place = int$1(r, 1, digitCount(n) - 1);
 				if (ok(n, place)) return [n, place];
 			}
 		},
@@ -6666,10 +6664,10 @@ function moreLess(key, label, steps, lo, hi) {
 		curriculumTags: TODO("place-value-more-less"),
 		keys: [key],
 		roll: (_k, r) => {
-			const step = steps[int$2(r, 0, steps.length - 1)];
-			const v = int$2(r, 0, 1);
+			const step = steps[int$1(r, 0, steps.length - 1)];
+			const v = int$1(r, 0, 1);
 			for (;;) {
-				let n = int$2(r, lo, hi);
+				let n = int$1(r, lo, hi);
 				if (r() < .5) {
 					const digit = v === 0 ? 9 : 0;
 					n = n - digitAt(n, Math.log10(step)) * step + digit * step;
@@ -6714,7 +6712,7 @@ function rounding(key, label, to, lo, hi) {
 		keys: [key],
 		roll: (_k, r) => {
 			for (;;) {
-				let n = int$2(r, lo, hi);
+				let n = int$1(r, lo, hi);
 				if (r() < .2) n = n - n % to + to / 2;
 				if (ok(n)) return [n];
 			}
@@ -6762,7 +6760,7 @@ const PLACE_VALUE = {
 			label: "Multiplying by 10, 100 and 1000",
 			curriculumTags: TODO("multiply-by-powers-of-ten"),
 			keys: ["pv:times10"],
-			roll: (_k, r) => [int$2(r, 2, 99), int$2(r, 1, 3)],
+			roll: (_k, r) => [int$1(r, 2, 99), int$1(r, 1, 3)],
 			make: (_k, [n, p]) => {
 				if (!isInt(n, 2, 99) || !isInt(p, 1, 3)) return null;
 				const m = 10 ** p;
@@ -7191,7 +7189,7 @@ function bonds(label, tag, prefix, total, from) {
 			return [
 				a,
 				b,
-				int$2(r, 0, 3)
+				int$1(r, 0, 3)
 			];
 		},
 		make: (key, [a, b, v]) => {
@@ -7249,7 +7247,7 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		label,
 		curriculumTags: [tag],
 		keys,
-		roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
+		roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 1)],
 		make: (key, [n, v]) => {
 			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
 			if (key.startsWith("dbl:")) {
@@ -7316,7 +7314,7 @@ const tenAnd = {
 	label: "\"Ten and\" facts (10 + 4)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenand:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
+	roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
 		const t = String(10 + n);
@@ -7365,7 +7363,7 @@ const tenLess = {
 	label: "\"Ten less\" facts (14 − 10)",
 	curriculumTags: ["MS.Y1.NUM.OP.P6"],
 	keys: range$5(1, 9).map((n) => `tenless:${n}`),
-	roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
+	roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 1)],
 	make: (key, [n, v]) => {
 		if (!isInt(n, 1, 9) || key !== `tenless:${n}` || !isInt(v, 0, 1)) return null;
 		const t = String(10 + n);
@@ -7402,7 +7400,7 @@ const tenMove = (up) => {
 		label: up ? "Ten more than a teen (14 + 10)" : "Ten less than a number in the twenties (24 − 10)",
 		curriculumTags: ["MS.Y1.NUM.OP.P6"],
 		keys,
-		roll: (key, r) => [Number(key.split(":")[1]), int$2(r, 0, 1)],
+		roll: (key, r) => [Number(key.split(":")[1]), int$1(r, 0, 1)],
 		make: (key, [n, v]) => {
 			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt(v, 0, 1)) return null;
 			const [parts, answer] = up ? v === 0 ? [[
@@ -7568,7 +7566,7 @@ function skipCounting(spec) {
 		roll: (key, r) => {
 			const { kind, answer, offset } = parseSkip(key);
 			const fits = ats(kind).filter((at) => skipTerms(spec, kind, answer, at, offset));
-			return [answer, fits[int$2(r, 0, fits.length - 1)]];
+			return [answer, fits[int$1(r, 0, fits.length - 1)]];
 		},
 		make: (key, [answer, at]) => {
 			const skip = parseSkip(key);
@@ -8654,7 +8652,7 @@ function bedmasFamily(key, label) {
 	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
 		for (;;) {
 			const t = pickOne(r, mine);
-			const nums = Array.from({ length: lettersOf$1(t.src) }, (_, n) => int$2(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const nums = Array.from({ length: lettersOf$1(t.src) }, (_, n) => int$1(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
 			const made = build(t.i, nums);
 			if (made && withMistakes({
 				parts: [],
@@ -8744,7 +8742,7 @@ function talk(parts) {
 	return /[?.!:]$/.test(text) ? text : `${text}?`;
 }
 /** The two numbers every pick question ends with. */
-const rollPick = (random, wrong = 3) => [int$2(random, 0, wrong), int$2(random, 0, 9)];
+const rollPick = (random, wrong = 3) => [int$1(random, 0, wrong), int$1(random, 0, 9)];
 /** Are `slot` and `salt` numbers a roll could have given? */
 const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt, 0, 9);
 /**
@@ -8752,7 +8750,7 @@ const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt,
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
 * generator rolls again.
 */
-function pick$1(base, right, named, opts) {
+function pick(base, right, named, opts) {
 	const need = opts.wrong ?? 3;
 	if (!goodPick(opts.slot, opts.salt, need)) return null;
 	const kept = [];
@@ -8862,7 +8860,7 @@ function pairFamily(key, label, dens) {
 			"=",
 			"1"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} + ${right} = 1`
@@ -8933,7 +8931,7 @@ const fractionFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `1 − ${frac(n, d)} = ${right}`
@@ -9086,7 +9084,7 @@ const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
 /** Whole tenths, which a tenth count of 1 to 39 that is not a whole number can be shown as (0.7, 1.4, 3.9). */
 const COUNTS = range$3(1, 39).filter(notTen);
 const tenthFamilies = [
-	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int$2(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
+	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int$1(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
 		if (!isInt(d, 2, 9) || !goodPick(slot, salt)) return null;
 		const right = frac(d, 10);
 		const parts = [
@@ -9094,7 +9092,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${tenths(d)} = ${right}`
@@ -9108,7 +9106,7 @@ const tenthFamilies = [
 			salt
 		});
 	}),
-	oneKey("tenth:to-decimal", "Tenths as a decimal (3/10 = 0.3)", TENTH_TAGS, 3, (_k, r) => [int$2(r, 1, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
+	oneKey("tenth:to-decimal", "Tenths as a decimal (3/10 = 0.3)", TENTH_TAGS, 3, (_k, r) => [int$1(r, 1, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
 		if (!isInt(d, 1, 9) || !goodPick(slot, salt)) return null;
 		const right = tenths(d);
 		const parts = [
@@ -9116,7 +9114,7 @@ const tenthFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(d, 10)} = ${right}`
@@ -9170,7 +9168,7 @@ const tenthFamilies = [
 			"one tenth too few": t - 1
 		});
 	}),
-	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int$2(r, 1, 24), 1], (_k, [t, v]) => {
+	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int$1(r, 1, 24), 1], (_k, [t, v]) => {
 		if (v === 0) {
 			if (!isInt(t, 2, 38) || t % 2 !== 0) return null;
 			const parts = [
@@ -9268,9 +9266,9 @@ const addFamilies = [
 		"forgot the point": a - b
 	}), 2, 49),
 	oneKey("addten:whole", "A whole number and tenths (3 + 0.4, 5 − 0.3)", ADD_TAGS, 3, (_k, r) => [
-		int$2(r, 1, 9),
-		int$2(r, 1, 9),
-		int$2(r, 0, 2)
+		int$1(r, 1, 9),
+		int$1(r, 1, 9),
+		int$1(r, 0, 2)
 	], (_k, [w, t, v]) => {
 		if (!isInt(w, 1, 9) || !isInt(t, 1, 9) || !isInt(v, 0, 2)) return null;
 		const small = tenths(t);
@@ -9324,9 +9322,9 @@ const addFamilies = [
 		});
 	}),
 	oneKey("addten:to-one", "Tenths that make a whole (0.4 + ? = 1)", ADD_TAGS, 3, (_k, r) => [
-		int$2(r, 1, 9),
-		int$2(r, 1, 2),
-		int$2(r, 0, 2)
+		int$1(r, 1, 9),
+		int$1(r, 1, 2),
+		int$1(r, 0, 2)
 	], (_k, [t, target, v]) => {
 		if (!isInt(t, 1, 9) || !isInt(target, 1, 2) || !isInt(v, 0, 2)) return null;
 		const small = tenths(t);
@@ -9446,7 +9444,7 @@ const equivFamilies$1 = [
 			"?"
 		];
 		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show(v)]));
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -9475,7 +9473,7 @@ const equivFamilies$1 = [
 			...n >= 10 ? { "swapped the digits": Number(`0.${String(n).split("").reverse().join("")}`) } : {}
 		});
 	}),
-	oneKey("deceq:to-fraction", "A decimal as a fraction (0.75 = 3/4)", EQUIV_TAGS$1, 3, (_k, r) => [int$2(r, 0, FRACTION_DECIMALS.length - 1), ...rollPick(r)], (_k, [i, slot, salt]) => {
+	oneKey("deceq:to-fraction", "A decimal as a fraction (0.75 = 3/4)", EQUIV_TAGS$1, 3, (_k, r) => [int$1(r, 0, FRACTION_DECIMALS.length - 1), ...rollPick(r)], (_k, [i, slot, salt]) => {
 		const pair = FRACTION_DECIMALS[i];
 		if (!pair || !isInt(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
 		const [decimal, right] = pair;
@@ -9484,7 +9482,7 @@ const equivFamilies$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${decimal} = ${right}`
@@ -9498,7 +9496,7 @@ const equivFamilies$1 = [
 			const x = pickOne(r, range$3(1, 98).filter(notTen));
 			return [
 				x,
-				int$2(r, Math.floor(x / 10) + 1, 9),
+				int$1(r, Math.floor(x / 10) + 1, 9),
 				0,
 				...rollPick(r, 1)
 			];
@@ -9518,7 +9516,7 @@ const equivFamilies$1 = [
 		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths(bigger);
 		const wrong = hundredths(smaller);
-		return pick$1({
+		return pick({
 			parts: ["Which is bigger?"],
 			spoken: "Which is bigger?",
 			fact: `${right} is bigger than ${wrong}`
@@ -9617,7 +9615,7 @@ const timesFamilies = [
 			"did not move the point": n
 		}
 	})),
-	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int$2(r, 0, 3)], (_k, [t, v]) => {
+	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int$1(r, 0, 3)], (_k, [t, v]) => {
 		if (!isInt(t, 11, 99) || !notTen(t) || !isInt(v, 0, 3)) return null;
 		const small = tenths(t);
 		const [parts, answer] = v === 0 ? [[
@@ -9831,7 +9829,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${p}% = ${f.right}`
@@ -9888,7 +9886,7 @@ const families$1 = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${show(h / 100)} = ${right}`
@@ -9931,7 +9929,7 @@ const range$1 = (from, to, step = 1) => Array.from({ length: Math.floor((to - fr
 const UNIT_TAGS = ["MS.Y3.NUM.RN.P7"];
 /** 1/d of an amount that d goes into exactly. `dens` are the bottom numbers this type uses. */
 function unitFamily(key, label, dens, qLo, qHi) {
-	return oneKey(key, label, UNIT_TAGS, 2, (_k, r) => [pickOne(r, dens), int$2(r, qLo, qHi)], (_k, [d, q]) => {
+	return oneKey(key, label, UNIT_TAGS, 2, (_k, r) => [pickOne(r, dens), int$1(r, qLo, qHi)], (_k, [d, q]) => {
 		if (!dens.includes(d) || !isInt(q, qLo, qHi)) return null;
 		const amount = d * q;
 		const parts = [
@@ -10008,7 +10006,7 @@ function nonUnitFamily(word) {
 	return oneKey(`fracof:non:${word}`, label, NON_TAGS, 3, (_k, r) => [
 		pickOne(r, tops),
 		d,
-		int$2(r, 1, 10)
+		int$1(r, 1, 10)
 	], (_k, [n, den, q]) => {
 		if (den !== d || !tops.includes(n) || !isInt(q, 1, 10)) return null;
 		const parts = [
@@ -10046,7 +10044,7 @@ const equivFamilies = [
 		return [
 			n,
 			d,
-			int$2(r, 2, 6)
+			int$1(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
 		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
@@ -10074,7 +10072,7 @@ const equivFamilies = [
 		return [
 			n,
 			d,
-			int$2(r, 2, 6)
+			int$1(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
 		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
@@ -10103,7 +10101,7 @@ const equivFamilies = [
 		return [
 			n,
 			d,
-			int$2(r, 2, 5),
+			int$1(r, 2, 5),
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
@@ -10114,7 +10112,7 @@ const equivFamilies = [
 			"=",
 			"?"
 		];
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${frac(n, d)} = ${right}`
@@ -10134,7 +10132,7 @@ const equivFamilies = [
 		return [
 			n,
 			d,
-			int$2(r, 2, 5),
+			int$1(r, 2, 5),
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
@@ -10147,7 +10145,7 @@ const equivFamilies = [
 			"?"
 		];
 		const p = smallestFactor(k);
-		return pick$1({
+		return pick({
 			parts,
 			spoken: talk(parts),
 			fact: `${shown} = ${frac(n, d)} in its simplest form`
@@ -10168,8 +10166,8 @@ const equivFamilies = [
 		return [
 			n,
 			d,
-			int$2(r, 2, 5),
-			int$2(r, 0, 1)
+			int$1(r, 2, 5),
+			int$1(r, 0, 1)
 		];
 	}, (_k, [n, d, k, v]) => {
 		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
@@ -10218,7 +10216,7 @@ function wholeFamily$2(key, label, shapes, qLo, qHi) {
 		return [
 			n,
 			d,
-			int$2(r, qLo, qHi)
+			int$1(r, qLo, qHi)
 		];
 	}, (_k, [n, d, q]) => {
 		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt(q, qLo, qHi)) return null;
@@ -10343,7 +10341,7 @@ function ofMistakes(p, a) {
 }
 /** "p% of an amount that is q × step". */
 function ofFamily(key, label, tags, p, step, qLo, qHi) {
-	return oneKey(key, label, tags, 1, (_k, r) => [int$2(r, qLo, qHi)], (_k, [q]) => {
+	return oneKey(key, label, tags, 1, (_k, r) => [int$1(r, qLo, qHi)], (_k, [q]) => {
 		if (!isInt(q, qLo, qHi)) return null;
 		const amount = q * step;
 		const parts = [
@@ -10384,7 +10382,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 		25,
 		50
 	]);
-	return [p, int$2(r, BIG[p].lo, BIG[p].hi)];
+	return [p, int$1(r, BIG[p].lo, BIG[p].hi)];
 }, (_k, [p, q]) => {
 	const shape = BIG[p];
 	if (!shape || !isInt(q, shape.lo, shape.hi)) return null;
@@ -10408,7 +10406,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 * so questions rolled before this change keep working.
 */
 function wholeFamily$1(key, label, p, xLo, xHi, step = 1) {
-	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [step * int$2(r, Math.ceil(xLo / step), Math.floor(xHi / step))], (_k, [x]) => {
+	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [step * int$1(r, Math.ceil(xLo / step), Math.floor(xHi / step))], (_k, [x]) => {
 		if (!isInt(x, xLo, xHi)) return null;
 		const parts = [
 			pct(p),
@@ -10453,7 +10451,7 @@ const toFraction = oneKey("pct:to-fraction", "A percentage as a fraction (25% = 
 		"=",
 		"?"
 	];
-	return pick$1({
+	return pick({
 		parts,
 		spoken: talk(parts),
 		fact: `${pct(p)} = ${right}`
@@ -10612,7 +10610,7 @@ function bondFamily(total, type, label, tags) {
 	const key = `bond${total}:${BOND_WORD[total][type]}`;
 	const valid = (a) => type === "take" ? total === 100 ? isInt(a, 1, 99) : isInt(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
 	const candidates = range(1, total - 1).filter(valid);
-	return oneKey(key, label, tags, 2, (_k, r) => [pickOne(r, candidates), int$2(r, 0, 1)], (_k, [a, v]) => {
+	return oneKey(key, label, tags, 2, (_k, r) => [pickOne(r, candidates), int$1(r, 0, 1)], (_k, [a, v]) => {
 		if (!valid(a) || !isInt(v, 0, 1)) return null;
 		const t = String(total);
 		const answer = total - a;
@@ -10724,7 +10722,7 @@ function timesFamily(key, label, pools) {
 		}, named);
 	});
 }
-const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => [int$2(r, 2, 9), pickOne(r, TENS)], (_k, [d, q]) => {
+const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => [int$1(r, 2, 9), pickOne(r, TENS)], (_k, [d, q]) => {
 	if (!isInt(d, 2, 9) || !isTens(q)) return null;
 	const n = d * q;
 	const parts = [
@@ -10982,7 +10980,7 @@ const SQUARES = range(2, 12).map((n) => n * n);
 const CUBES = range(2, 5).map((n) => n ** 3);
 const isSquare = (n) => Number.isInteger(Math.sqrt(n));
 const squareFamilies = [
-	oneKey("square:of", "Square numbers (7 squared)", squareTags, 1, (_k, r) => [int$2(r, 2, 12)], (_k, [n]) => {
+	oneKey("square:of", "Square numbers (7 squared)", squareTags, 1, (_k, r) => [int$1(r, 2, 12)], (_k, [n]) => {
 		if (!isInt(n, 2, 12)) return null;
 		return withMistakes({
 			parts: [
@@ -11002,7 +11000,7 @@ const squareFamilies = [
 			"times the next number": n * (n + 1)
 		});
 	}),
-	oneKey("cube:of", "Cube numbers (4 cubed)", squareTags, 1, (_k, r) => [int$2(r, 2, 5)], (_k, [n]) => {
+	oneKey("cube:of", "Cube numbers (4 cubed)", squareTags, 1, (_k, r) => [int$1(r, 2, 5)], (_k, [n]) => {
 		if (!isInt(n, 2, 5)) return null;
 		return withMistakes({
 			parts: [
@@ -11066,7 +11064,7 @@ const squareFamilies = [
 	}),
 	oneKey("square:next", "The next square number", squareTags, 1, (_k, r) => {
 		for (;;) {
-			const x = int$2(r, 5, 143);
+			const x = int$1(r, 5, 143);
 			if (!isSquare(x)) return [x];
 		}
 	}, (_k, [x]) => {
@@ -11209,9 +11207,9 @@ function wholeFamily(unit, suffix, lo, hi, tags, label) {
 	const zone = unit / 10;
 	return oneKey(key, label, tags, 1, (_k, r) => {
 		for (;;) {
-			let n = int$2(r, lo, hi);
+			let n = int$1(r, lo, hi);
 			if (suffix === "halfway") n = n - n % unit + half;
-			else if (suffix === "near-halfway") n = n - n % unit + half + int$2(r, 1, zone) * (r() < .5 ? -1 : 1);
+			else if (suffix === "near-halfway") n = n - n % unit + half + int$1(r, 1, zone) * (r() < .5 ? -1 : 1);
 			if (n >= lo && n <= hi && wholeKeyOf(unit, n) === key) return [n];
 		}
 	}, (_k, [n]) => {
@@ -11269,7 +11267,7 @@ function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
 	const unitScale = UNIT_SCALE[unit];
 	return oneKey(key, label, tags, 1, (_k, r) => {
 		for (;;) {
-			let m = int$2(r, lo, hi);
+			let m = int$1(r, lo, hi);
 			if (halfway) m = m - m % 10 + 5;
 			if (m >= lo && m <= hi && decimalKeyOf(unit, dp, m) === key) return [m];
 		}
@@ -12537,39 +12535,6 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 	return result;
 }
 //#endregion
-//#region shared/clans/moments.ts
-/**
-* The maths moments in the shop, the Training Hall, the Church, on a building plan and at the barracks.
-* Each takes the real numbers (the actual price, tax, level, member count) and makes the
-* question from them, or returns null when the teacher has that topic switched off.
-*
-* A wrong answer never blocks anything: the caller shows the working and carries on with the
-* right amount, which is always `question.answer` (the tests check it matches what the engine
-* really charges). Maths here is how you check the bill, not a gate.
-*/
-function moment(settings, kind, nums, labels, item, about) {
-	if (!topicAvailable(settings, topicOf(kind))) return null;
-	return buildQuestion(kind, nums, {
-		labels,
-		item,
-		about
-	});
-}
-/** Market: "What is 10% of 80 gold?" Answered right, the item is 10% off (`shopPrice`). The server asks it again to mark it. */
-function discountQuestion(settings, price, item) {
-	const q = price > 0 ? moment(settings, "percent-of", [CONFIG.shopDiscount, price]) : null;
-	return q && {
-		...q,
-		text: `${item ? `The ${item}` : "It"} costs ${price} gold. What is ${CONFIG.shopDiscount}% of ${price}?`,
-		unit: "gold"
-	};
-}
-/** True if `answer` is right for an item's discount question (and the question is on for the class). */
-function earnedDiscount(settings, price, answer) {
-	const q = answer === null || answer === void 0 ? null : discountQuestion(settings, price);
-	return q !== null && answer === q.answer;
-}
-//#endregion
 //#region shared/space/mathsQuestion.ts
 /**
 * Which question Mission Control asks next: the same choice in the bot game (the browser) and
@@ -13091,8 +13056,6 @@ function monsterSave(clan, season) {
 }
 /** How tired the monster is for a clan that has lost `losses` tries: a share, 0 to `tiredMax`. */
 const tiredShare = (losses) => Math.min(M.tiredMax, Math.max(0, losses) * M.tiredPerLoss);
-/** The siege's maths question for a try (the Battle Cry kind, from the try's seed and the teacher's topics). Null with every topic off. */
-const siegeQuestion = (seed, settings) => cryQuestion(seed, 0, settings);
 /** Play the siege: 3 rounds, each a third of the share with a little luck. */
 function playSiege(clan, arrows, right, seed) {
 	const dice = { rng: Math.imul(seed | 0, 739982445) ^ 695872825 };
@@ -13119,18 +13082,6 @@ function playSiege(clan, arrows, right, seed) {
 		share,
 		right,
 		arrows
-	};
-}
-/** Mark a siege answer (null: skipped, or no question). */
-function markSiege(seed, settings, answer) {
-	const question = siegeQuestion(seed, settings);
-	if (!question || answer === null) return {
-		question,
-		right: question ? false : null
-	};
-	return {
-		question,
-		right: markAnswer(question, answer)
 	};
 }
 /** The monster's full HP (after tiredness, before the siege) and the HP it starts the clan fight with. */
@@ -13489,208 +13440,6 @@ function newSeasonSave(state, season) {
 * Plain data and plain functions on plain JSON, like empire.ts. Every tuning number is in config.ts (CONFIG.quests).
 */
 const Q = CONFIG.quests;
-const int$1 = (h, lo, hi) => lo + roll(h, hi - lo + 1);
-const pick = (h, list) => list[roll(h, list.length)];
-const ANIMALS = [
-	{
-		word: "crows",
-		where: "on a fence",
-		names: [
-			"Ash",
-			"Bree",
-			"Cob",
-			"Dot"
-		]
-	},
-	{
-		word: "frogs",
-		where: "on a log",
-		names: [
-			"Fern",
-			"Gus",
-			"Hob",
-			"Ivy"
-		]
-	},
-	{
-		word: "owls",
-		where: "on a branch",
-		names: [
-			"Jem",
-			"Kit",
-			"Lark",
-			"Moss"
-		]
-	}
-];
-const COUNT_WORDS = [
-	"",
-	"",
-	"Two",
-	"Three",
-	"Four"
-];
-const ASKS = [
-	"far left",
-	"far right",
-	"middle"
-];
-/** The pattern variants: 0 = count on by the same step, 1 = the step grows by one each time, 2 = doubling. */
-const PATTERN_COUNT = 5;
-function patternSequence(variant, start, step, count) {
-	const out = [start];
-	let diff = step;
-	for (let i = 1; i < count; i++) {
-		const last = out[i - 1];
-		if (variant === 0) out.push(last + step);
-		else if (variant === 1) {
-			out.push(last + diff);
-			diff++;
-		} else out.push(last * 2);
-	}
-	return out;
-}
-/** True if these numbers make a sensible puzzle of this kind. */
-function isValidPuzzle(spec) {
-	const n = spec.nums;
-	if (!n.every((x) => Number.isInteger(x))) return false;
-	switch (spec.kind) {
-		case "pattern": return n.length === 4 && n[0] >= 0 && n[0] <= 2 && n[1] >= 1 && n[1] <= 50 && n[2] >= 1 && n[2] <= 20 && n[3] === PATTERN_COUNT;
-		case "order": {
-			const [theme, count, ask] = n;
-			return n.length === 3 + (count ?? 0) && theme >= 0 && theme < ANIMALS.length && (count === 3 || count === 4) && ask >= 0 && ask < ASKS.length && isPermutation(n.slice(3), count);
-		}
-		case "riddle": return n.length === 4 && n[0] >= 1 && n[0] <= 30 && n[1] >= 2 && n[1] <= 9 && n[2] >= 1 && n[2] <= 30 && (n[3] === 0 || n[3] === 1);
-		case "cold": return n.length === 2 && n[0] >= -20 && n[0] <= 20 && n[1] !== 0 && Math.abs(n[1]) <= 40 && Math.abs(n[0] + n[1]) <= 40;
-	}
-}
-function isPermutation(list, count) {
-	return list.length === count && [...list].sort((a, b) => a - b).every((x, i) => x === i);
-}
-/** Make the puzzle (as a question the question box can show and mark) from its kind and numbers. Throws if they make no sense. */
-function buildPuzzle(spec) {
-	if (!isValidPuzzle(spec)) throw new Error(`Bad numbers for a "${spec.kind}" puzzle: ${JSON.stringify(spec.nums)}`);
-	const n = spec.nums;
-	const base = {
-		kind: `quest-${spec.kind}`,
-		nums: [...n]
-	};
-	if (spec.kind === "pattern") {
-		const [variant, start, step, count] = n;
-		const seq = patternSequence(variant, start, step, count);
-		const next = variant === 0 ? seq[count - 1] + step : variant === 1 ? seq[count - 1] + step + count - 1 : seq[count - 1] * 2;
-		const rule = variant === 0 ? `Each number is ${step} more than the one before: ${seq[count - 1]} + ${step} = ${next}.` : variant === 1 ? `The jumps go up by one each time (${seq.slice(1).map((v, i) => v - seq[i]).join(", ")}), so the next jump is ${step + count - 1}: ${seq[count - 1]} + ${step + count - 1} = ${next}.` : `Each number is double the one before: ${seq[count - 1]} × 2 = ${next}.`;
-		return {
-			...base,
-			topic: "times",
-			text: `The glowing numbers go ${seq.map(fmt).join(", ")}, and then... What number comes next?`,
-			answer: next,
-			working: ["Look at how the numbers change from one to the next.", rule]
-		};
-	}
-	if (spec.kind === "order") {
-		const [theme, count, ask] = n;
-		const order = n.slice(3);
-		const a = ANIMALS[theme];
-		const nameAt = (place) => a.names[order[place]];
-		const clues = Array.from({ length: count - 1 }, (_, i) => (i + theme) % 2 === 0 ? `${nameAt(i)} sits left of ${nameAt(i + 1)}.` : `${nameAt(i + 1)} sits right of ${nameAt(i)}.`);
-		if (clues.length > 1) clues.push(clues.shift());
-		const askPlace = ask === 0 ? 0 : ask === 1 ? count - 1 : Math.floor((count - 1) / 2) + (count === 4 ? 1 : 0);
-		const question = ask === 0 ? "Who sits furthest left?" : ask === 1 ? "Who sits furthest right?" : count === 4 ? "Who sits third from the left?" : "Who sits in the middle?";
-		const names = [...a.names].slice(0, count);
-		const choices = [...names].sort().map((nm) => ({
-			value: a.names.indexOf(nm) + 1,
-			label: nm
-		}));
-		return {
-			...base,
-			topic: "times",
-			text: `${COUNT_WORDS[count]} ${a.word} sit in a row ${a.where}: ${names.slice(0, -1).join(", ")} and ${names[count - 1]}. ${clues.join(" ")} ${question}`,
-			answer: order[askPlace] + 1,
-			choices,
-			working: [
-				"Put the clues together to find the order, left to right.",
-				`The order is ${order.map((_, i) => nameAt(i)).join(", ")}.`,
-				`${question.replace("?", "")}: ${nameAt(askPlace)}.`
-			]
-		};
-	}
-	if (spec.kind === "riddle") {
-		const [x, mul, add, minus] = n;
-		const result = minus ? x * mul - add : x * mul + add;
-		const op = minus ? "take away" : "add";
-		return {
-			...base,
-			topic: "times",
-			text: `I am a secret number. Multiply me by ${mul}, then ${op} ${add}, and you get ${fmt(result)}. What number am I?`,
-			answer: x,
-			working: [`Work backwards. Undo the last step: ${minus ? `${fmt(result)} + ${add}` : `${fmt(result)} − ${add}`} = ${fmt(x * mul)}.`, `Now undo the multiplying: ${fmt(x * mul)} ÷ ${mul} = ${fmt(x)}.`]
-		};
-	}
-	const [start, change] = n;
-	const answer = start + change;
-	return {
-		...base,
-		topic: "integers",
-		text: `At the cave door it is ${fmt(start)} degrees. Deeper in, it is ${fmt(Math.abs(change))} degrees ${change < 0 ? "colder" : "warmer"}. What is the temperature there?`,
-		answer,
-		unit: "degrees",
-		working: [`${change < 0 ? "Colder means taking away" : "Warmer means adding"}: ${fmt(start)} ${change < 0 ? "−" : "+"} ${fmt(Math.abs(change))}.`, `${fmt(start)} ${change < 0 ? "−" : "+"} ${fmt(Math.abs(change))} = ${fmt(answer)}.${answer < 0 ? " That is below zero, so it is a negative number." : ""}`]
-	};
-}
-/** Pick the numbers for a puzzle at a year band from a seed. */
-function makePuzzle(kind, band, seed) {
-	const h = { rng: seed | 0 };
-	if (kind === "pattern") {
-		const variant = band === 4 ? 0 : band === 5 ? pick(h, [0, 1]) : pick(h, [1, 2]);
-		return {
-			kind,
-			nums: [
-				variant,
-				variant === 2 ? int$1(h, 1, 5) : int$1(h, 1, band === 4 ? 12 : 20),
-				variant === 0 ? band === 4 ? int$1(h, 2, 6) : int$1(h, 4, 12) : variant === 1 ? int$1(h, 1, 3) : 2,
-				PATTERN_COUNT
-			]
-		};
-	}
-	if (kind === "order") {
-		const count = band === 4 ? 3 : 4;
-		const order = Array.from({ length: count }, (_, i) => i);
-		for (let i = count - 1; i > 0; i--) {
-			const j = roll(h, i + 1);
-			[order[i], order[j]] = [order[j], order[i]];
-		}
-		return {
-			kind,
-			nums: [
-				roll(h, ANIMALS.length),
-				count,
-				roll(h, ASKS.length),
-				...order
-			]
-		};
-	}
-	if (kind === "riddle") {
-		const minus = band === 4 ? 0 : roll(h, 2);
-		const mul = band === 4 ? int$1(h, 2, 5) : int$1(h, 3, 9);
-		const x = int$1(h, 2, band === 4 ? 10 : 15);
-		const add = int$1(h, 2, band === 4 ? 9 : 20);
-		return {
-			kind,
-			nums: [
-				x,
-				mul,
-				minus ? Math.min(add, x * mul - 1) : add,
-				minus
-			]
-		};
-	}
-	const start = int$1(h, 2, 9);
-	return {
-		kind,
-		nums: [start, -(start + int$1(h, 1, 10))]
-	};
-}
 const ALL = [
 	4,
 	5,
@@ -13976,12 +13725,6 @@ function choiceOpen(clan, choice) {
 		say: `This needs a charming member (charisma ${need} or more). Your most charming member has ${value}. Training charisma at the Training Hall can open it.`
 	};
 }
-/** The numbers for a choice's puzzle today: fixed by the seed, the day, the quest and the choice. */
-function puzzleFor(q, choiceIndex, baseSeed, day, settings) {
-	const kind = q.choices[choiceIndex]?.puzzle;
-	if (!kind) return null;
-	return makePuzzle(kind, settings.yearBand, mix(mix(baseSeed, day), q.id * 10 + choiceIndex));
-}
 /** Who gets a found item: the first member whose gear in that slot is below the found tier, and the item they get. */
 function wearer(clan, kind) {
 	for (const who of clan.members) {
@@ -14142,9 +13885,10 @@ function raidClassmateNz(state, self, target, take, push, seed, today, raidsOn) 
 * the plumbing around `applyAction`; the rules are the same `shared/clans` code the screens use, so a changed
 * browser cannot make the server do anything the rules refuse.
 *
-* Maths never blocks: the shop, Church and Training Hall take the true price whatever the child answered, so
-* those actions carry no answers. A quest puzzle changes the prize, so the quest action carries the answer and
-* the server rebuilds the puzzle from the clan's seed, the day, the quest and the choice to mark it.
+* All the maths is ladder maths, made from the child's own maths by the server. Outside fights, `ask` makes the
+* question(s) for the shop's 10% discount, the quest (two) or the monster siege and keeps them with the clan; `buy`,
+* `quest` and `monsterStart` then send the answers and the server marks them once. Maths never blocks: a wrong
+* answer only means no discount, the smaller quest prize or less help from the siege.
 *
 * A mine fight is three kinds of request. `fightStart`: the server takes one off today's fights, picks the monsters from
 * the clan's seed and the fight number, and keeps the fight open. `fightRound`: the browser plays each round itself, and
@@ -14152,11 +13896,23 @@ function raidClassmateNz(state, self, target, take, push, seed, today, raidsOn) 
 * `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
 * (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
 * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
-* rest waits until the fight is over. A ladder fight (the browser asks for one with `ladder: true`) also keeps the questions the
+* rest waits until the fight is over. Every new fight is a ladder fight (when the child's maths can be read): it keeps the questions the
 * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
 * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
 * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
 */
+/** What ladder questions can be asked for, outside fights. */
+const ASK_FOR = [
+	"shop",
+	"quest",
+	"siege"
+];
+/** How many questions each one asks: the quest asks two (both right wins the big prize). */
+const ASK_COUNT = {
+	shop: 1,
+	quest: 2,
+	siege: 1
+};
 /** The most rounds any fight can have (a monster fight is longer than a mine fight). */
 const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
 /** Is it monster week (the clock is on, the season is set and it is day `monsterFrom` or later)? */
@@ -14226,6 +13982,10 @@ function parseCry(v) {
 		reward: v.reward
 	};
 }
+/** An answer: a number, null (not answered), or undefined if it is not one. */
+const parseAnswer = (v) => v === null || v === void 0 ? null : typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1e9 ? v : void 0;
+/** How long an answer took, in ms (0 if it was not sent). */
+const parseMs = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.min(Math.round(v), 36e5) : 0;
 /** Reads an action sent by a browser. Null if it is not one the server knows, however it is changed. */
 function parseAction(raw) {
 	if (!isObj(raw) || typeof raw.type !== "string") return null;
@@ -14241,14 +14001,29 @@ function parseAction(raw) {
 				drafts: raw.drafts
 			};
 		case "buy": {
-			const answer = raw.answer === null || raw.answer === void 0 ? null : typeof raw.answer === "number" && Number.isFinite(raw.answer) ? raw.answer : void 0;
+			const answer = parseAnswer(raw.answer);
 			return member !== null && typeof raw.item === "string" && answer !== void 0 ? {
 				type: "buy",
 				member,
 				item: raw.item,
-				answer
+				answer,
+				ms: parseMs(raw.ms)
 			} : null;
 		}
+		case "askCheck": {
+			const slot = int(raw.slot, 0, 5);
+			const answer = parseAnswer(raw.answer);
+			return slot === null || answer === null || answer === void 0 ? null : {
+				type: "askCheck",
+				slot,
+				answer,
+				ms: parseMs(raw.ms)
+			};
+		}
+		case "ask": return typeof raw.for === "string" && ASK_FOR.includes(raw.for) ? {
+			type: "ask",
+			for: raw.for
+		} : null;
 		case "train": {
 			const count = int(raw.count, 1, 500);
 			return member !== null && count !== null && typeof raw.key === "string" && TRAIN_KEYS.includes(raw.key) ? {
@@ -14295,11 +14070,13 @@ function parseAction(raw) {
 		}
 		case "quest": {
 			const choice = int(raw.choice, 0, 5);
-			const answer = raw.answer === null || raw.answer === void 0 ? null : typeof raw.answer === "number" && Number.isFinite(raw.answer) ? raw.answer : void 0;
-			return choice !== null && answer !== void 0 ? {
+			if (choice === null) return null;
+			const answers = (Array.isArray(raw.answers) ? raw.answers.slice(0, ASK_COUNT.quest) : raw.answer === void 0 ? [] : [raw.answer]).map(parseAnswer);
+			return answers.every((a) => a !== void 0) ? {
 				type: "quest",
 				choice,
-				answer
+				answers,
+				ms: parseMs(raw.ms)
 			} : null;
 		}
 		case "fightStart": {
@@ -14348,13 +14125,11 @@ function parseAction(raw) {
 		case "monsterStart": {
 			const siege = raw.siege === null || raw.siege === void 0 ? null : typeof raw.siege === "number" && Number.isFinite(raw.siege) && Math.abs(raw.siege) <= 1e9 ? raw.siege : void 0;
 			if (siege === void 0) return null;
-			return raw.ladder === true ? {
+			return {
 				type: "monsterStart",
 				siege,
-				ladder: true
-			} : {
-				type: "monsterStart",
-				siege
+				ms: parseMs(raw.ms),
+				...raw.ladder === true ? { ladder: true } : {}
 			};
 		}
 		case "buySupply": {
@@ -14401,6 +14176,44 @@ function catchUp(state, today, fightsPerDay = CONFIG.fightsPerDay) {
 	state.fightsLeft = fightsPerDay;
 	state.day = day;
 	return true;
+}
+/**
+* Mark the answers to the questions kept by `ask` for `kind`, once: the questions are taken off the clan whatever the answers.
+* Null if none were waiting for it. Answers left out (null, "No thanks") are not marked or recorded.
+*/
+function takeAnswers(state, kind, given, ms) {
+	const asked = state.ask;
+	if (!asked || asked.for !== kind) return null;
+	state.ask = null;
+	const marks = [];
+	const answers = [];
+	asked.questions.forEach((q, i) => {
+		const m = markQuestion(q);
+		if (!m) return;
+		const before = asked.marks?.[i];
+		if (before) return void marks.push({
+			correct: before.correct,
+			answer: m.answer
+		});
+		const g = given[i];
+		const correct = g !== null && g !== void 0 && sameAnswer(g, m.answer);
+		marks.push({
+			correct,
+			answer: m.answer
+		});
+		if (g !== null && g !== void 0) answers.push({
+			key: m.key,
+			correct,
+			ms
+		});
+	});
+	return {
+		marks,
+		...answers.length ? { effects: { ladder: {
+			once: `clans:ask:${state.seed}:${asked.no}`,
+			answers
+		} } } : {}
+	};
 }
 const done = (state, result, changed = true, effects) => ({
 	ok: true,
@@ -14469,11 +14282,73 @@ function applyInner(saved, action, ctx, flags) {
 		case "buy": {
 			const item = ITEMS$1.find((i) => i.name === action.item);
 			if (!item) return refuse("item", "The shop does not have that.");
-			const discount = earnedDiscount(settings, item.price, action.answer);
-			return settle(buyItem(clan, action.member, item, discount), {
+			const marked = takeAnswers(state, "shop", [action.answer ?? null], action.ms ?? 0);
+			const discount = marked?.marks[0]?.correct === true;
+			const bought = buyItem(clan, action.member, item, discount);
+			if (!bought.ok) return refuse(bought.why ?? "no", bought.say ?? "That cannot be done right now.");
+			return done(state, {
 				type: "buy",
-				discount
+				discount,
+				...marked?.marks[0] ? { answer: marked.marks[0].answer } : {}
+			}, true, marked?.effects);
+		}
+		case "ask": {
+			if (!ctx.maths) return refuse("no-maths", "We couldn't get your maths questions just now.");
+			const waiting = state.ask;
+			if (waiting && waiting.for === action.for) return done(state, {
+				type: "ask",
+				for: action.for,
+				questions: waiting.questions.map((q, i) => publicQuestion(q, i))
+			}, rested || upgraded);
+			const no = (state.askNo ?? 0) + 1;
+			const questions = makeRunQuestions(ctx.maths, ASK_COUNT[action.for], seededRandom(`clans:ask:${state.seed}:${no}`));
+			if (questions.length === 0) return refuse("no-maths", "We couldn't get your maths questions just now.");
+			state.ask = {
+				for: action.for,
+				no,
+				questions
+			};
+			state.askNo = no;
+			return done(state, {
+				type: "ask",
+				for: action.for,
+				questions: questions.map((q, i) => publicQuestion(q, i))
 			});
+		}
+		case "askCheck": {
+			const asked = state.ask;
+			const marked = asked ? markQuestion(asked.questions[action.slot]) : null;
+			if (!asked || !marked) return refuse("no-question", "There is no question to answer.");
+			const before = asked.marks?.[action.slot];
+			if (before) return done(state, {
+				type: "askCheck",
+				slot: action.slot,
+				correct: before.correct,
+				answer: marked.answer,
+				given: before.answer
+			}, false);
+			const correct = sameAnswer(action.answer, marked.answer);
+			const marks = asked.marks ?? [];
+			while (marks.length < action.slot) marks.push(null);
+			marks[action.slot] = {
+				answer: action.answer,
+				correct
+			};
+			asked.marks = marks;
+			return done(state, {
+				type: "askCheck",
+				slot: action.slot,
+				correct,
+				answer: marked.answer,
+				given: action.answer
+			}, true, { ladder: {
+				once: `clans:ask:${state.seed}:${asked.no}:${action.slot}`,
+				answers: [{
+					key: marked.key,
+					correct,
+					ms: action.ms
+				}]
+			} });
 		}
 		case "train": return settle(trainMember(clan, action.member, action.key, action.count), { type: "train" });
 		case "wake": return settle(wakeOne(clan, action.member), { type: "wake" });
@@ -14511,20 +14386,19 @@ function applyInner(saved, action, ctx, flags) {
 			const q = todaysQuest(state.seed, state.day, settings);
 			if (!q) return refuse("quest", "There is no quest for you today.");
 			if (action.choice >= q.choices.length) return refuse("choice", "That choice is not in this story.");
-			const spec = puzzleFor(q, action.choice, state.seed, state.day, settings);
-			const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
+			const puzzle = !!q.choices[action.choice].puzzle;
+			const marked = puzzle ? takeAnswers(state, "quest", action.answers, action.ms ?? 0) : null;
+			const right = puzzle ? marked?.marks.length === ASK_COUNT.quest && marked.marks.every((m) => m.correct) : null;
 			const finished = finishQuest(clan, state.day, q, action.choice, right);
-			const answers = spec && finished.ok ? [{
-				key: factKey$1(settings.yearBand, buildPuzzle(spec).kind),
-				correct: right === true
-			}] : void 0;
-			return finished.ok ? done(state, {
+			if (!finished.ok) return refuse("quest", finished.say);
+			return done(state, {
 				type: "quest",
 				questId: q.id,
 				text: finished.text,
 				right: finished.right,
-				prize: finished.prize
-			}, true, answers ? { answers } : void 0) : refuse("quest", finished.say);
+				prize: finished.prize,
+				...marked ? { marks: marked.marks } : {}
+			}, true, marked?.effects);
 		}
 		case "raidTargets": {
 			if (classRaidsResting(clock)) return done(state, {
@@ -14582,7 +14456,12 @@ function applyInner(saved, action, ctx, flags) {
 			if (save.lastDay === ctx.today) return refuse("tried-today", "You have had your try today. Come back tomorrow!");
 			if (!clan.members.some((m) => !m.knockedOut)) return refuse("resting", "Everyone is resting. They wake up tomorrow.");
 			const seed = monsterSeed(state.seed, season, save.tries);
-			const marked = markSiege(seed, settings, action.siege);
+			const asked = takeAnswers(state, "siege", [action.siege], action.ms ?? 0);
+			const mark = asked?.marks[0];
+			const marked = {
+				right: asked ? mark?.correct === true : null,
+				answer: mark ? mark.answer : null
+			};
 			const arrows = save.supplies.arrows;
 			const siege = playSiege(clan, arrows, marked.right, seed);
 			const setup = {
@@ -14605,7 +14484,7 @@ function applyInner(saved, action, ctx, flags) {
 					siege
 				}
 			};
-			if (action.ladder && ctx.maths) {
+			if (ctx.maths) {
 				state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.monster.rounds, seededRandom(`clans:monster:${seed}:${state.fightNo + 1}`));
 				state.fight.marks = [];
 			}
@@ -14619,16 +14498,12 @@ function applyInner(saved, action, ctx, flags) {
 					arrows: 0
 				}
 			};
-			const answers = marked.question && action.siege !== null ? [{
-				key: factKey$1(settings.yearBand, marked.question.kind),
-				correct: marked.right === true
-			}] : void 0;
 			return done(state, {
 				type: "monsterStart",
 				resumed: false,
 				right: marked.right,
-				answer: marked.question ? marked.question.answer : null
-			}, true, answers ? { answers } : void 0);
+				answer: marked.answer
+			}, true, asked?.effects);
 		}
 		case "buySupply": {
 			if (!suppliesOnSale(clock)) return refuse("not-yet", "Monster supplies are sold in the last two weeks of the season.");
@@ -14672,7 +14547,7 @@ function applyInner(saved, action, ctx, flags) {
 				rounds: [],
 				...extra ? { extra: true } : {}
 			};
-			if (action.ladder && ctx.maths) {
+			if (ctx.maths) {
 				state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:${seed}:${state.fightNo + 1}`));
 				state.fight.marks = [];
 			}
@@ -14905,7 +14780,7 @@ function publicFight(fight) {
 }
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
 function publicState(state, settings, loaded, extras) {
-	const { clan, seed, day, fightsLeft, fightNo, raidNo, fight } = state;
+	const { clan, seed, day, fightsLeft, fightNo, raidNo, fight, ask } = state;
 	return {
 		clan,
 		seed,
@@ -14916,6 +14791,11 @@ function publicState(state, settings, loaded, extras) {
 		fight: fight ? publicFight(fight) : null,
 		settings,
 		news: loaded.news,
+		ask: ask ? {
+			for: ask.for,
+			questions: ask.questions.map((q, i) => publicQuestion(q, i)),
+			marks: ask.marks ?? []
+		} : null,
 		raidsOn: loaded.raidsOn ?? false,
 		notes: loaded.notes ?? [],
 		fame: extras?.fame ?? 0,
@@ -14961,7 +14841,7 @@ function makeHandler(services) {
 		const typedNames = extras.value.settings.typedNames === true;
 		const unlimitedToday = extras.value.settings.unlimitedToday === true;
 		const clock = readClock(extras.value.clock);
-		const maths = action.type === "fightStart" && action.ladder ? await services.mathsContext(player) : void 0;
+		const maths = action.type === "fightStart" || action.type === "monsterStart" || action.type === "ask" ? await services.mathsContext(player) : void 0;
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
 			if (!loaded.ok) return loaded.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
