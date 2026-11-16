@@ -1127,3 +1127,23 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-scenebox + :is(.cq-place, .cq-scoreboard) > .cq-place__head:first-child h2, .cq .cq-scenebox + .cq-scoreboard > h2:first-child { font-size: 1.3rem; white-space: nowrap; }
   .cq-scenebox + :is(.cq-place, .cq-scoreboard) > .cq-place__head:first-child .cq-btn { min-height: 36px; padding: 2px 8px; font-size: 0.85rem; white-space: nowrap; }
 }
+
+/* The victory is the same size as the fight it follows (James, 17 Nov 2026): same --fig, same height; the clan stands
+   at the bottom like in the fight and the words sit over the painting. Phones keep the stacked layout. */
+@media (min-width: 601px) {
+  .cq-vstage { --fig: clamp(130px, calc(100dvh - 330px), 340px); min-height: 0; height: calc(var(--fig) + 160px); }
+  .cq-vstage > .cq-top--over { position: absolute; }
+  .cq h2.cq-vstage__title { margin-top: 30px; font-size: clamp(2.4rem, 6vw, 4.2rem); }
+  .cq .cq-vstage.is-plain h2.cq-vstage__title { font-size: clamp(1.8rem, 4vw, 2.8rem); }
+  .cq-vbest { z-index: 4; }
+  .cq-vbest__label { font-size: 0.95rem; line-height: 1; }
+  .cq-vbest__num { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+  .cq-vbest__text { font-size: 1rem; }
+  .cq-vbest__new { margin-top: 2px; padding: 1px 12px; font-size: 0.85rem; }
+  .cq-vbest__burst { width: 150px; margin: -75px 0 0 -75px; }
+  .cq-vstage__clan { position: absolute; left: 0; right: 0; bottom: 64px; margin: 0; padding: 0 10px; }
+  .cq-vstage__hero { height: calc(var(--fig) * 0.68); }
+  .cq-vxp { top: 16%; font-size: clamp(1.4rem, 3vw, 2.2rem); }
+  .cq-vlevel { top: calc(16% + 40px); }
+  .cq-vstage__foot { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px clamp(12px, 3vw, 24px) 10px; }
+}
