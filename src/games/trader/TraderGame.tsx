@@ -525,19 +525,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
 
   const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
 
-  /**
-   * Start First Flight again (title screen or Bolt's help panel), with Bolt's trade picked now, so it works for a pupil
-   * who has jumped before too. Help that was Off goes back to Bolt's pick, so Bolt can fly with them.
-   */
-  const replayTrip = useMemo(() => (galaxy && t && (coach.flight !== null || jumpsMade > 0) ? starterTrade(galaxy, t, pushes) : null), [galaxy, t, pushes, coach.flight, jumpsMade]);
-  const replay = replayTrip && t ? () => {
-    remember((m) => ({ ...m, flight: null, level: m.level === 'off' ? null : m.level, run: { good: replayTrip.good, planet: replayTrip.planet, credits: t.credits, jumps: jumpsMade, acks: [] } }));
-    setHelpOpen(false);
-    helpButton.current?.focus();
-    setTab('trade');
-    setPhase({ k: 'planet' });
-  } : undefined;
-
   // First-time tips (section 4): the first one that fits now and hasn't been seen shows, and is remembered at once, so it
   // shows only once. It stays until closed or until the moment passes. On the planet they wait for First Flight's bubble.
   const moment: TipMoment = {
@@ -699,7 +686,6 @@ export function TraderGame({ api, onExit, extra, startAt = 'title', onServer = f
                 setHelpOpen(false);
                 showMe(target);
               }}
-              onReplay={replay}
               onClose={closeHelp}
             />
           )}

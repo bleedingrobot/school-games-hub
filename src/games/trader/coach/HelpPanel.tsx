@@ -9,7 +9,7 @@ import { HELP_LEVELS, type HelpLevel } from './level';
 import type { NextStep } from './nextStep';
 import { screenHelp, wordList, type HelpScreen } from './words';
 
-export function HelpPanel({ step, screen, jumpsPerDay, tips, level, picked, onLevel, onShow, onReplay, onClose }: {
+export function HelpPanel({ step, screen, jumpsPerDay, tips, level, picked, onLevel, onShow, onClose }: {
   /** Bolt's next step now (null in an encounter or a result screen). */
   step: NextStep | null;
   screen: HelpScreen;
@@ -21,8 +21,6 @@ export function HelpPanel({ step, screen, jumpsPerDay, tips, level, picked, onLe
   picked: HelpLevel | null;
   onLevel: (level: HelpLevel | null) => void;
   onShow: (target: string) => void;
-  /** Start First Flight again (missing when it can't start now). */
-  onReplay?: () => void;
   onClose: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
@@ -87,8 +85,6 @@ export function HelpPanel({ step, screen, jumpsPerDay, tips, level, picked, onLe
           <button type="button" className="st-btn st-btn--small" onClick={() => onLevel(null)}>Let {COACH_NAME} pick</button>
         )}
       </fieldset>
-
-      {onReplay && <button type="button" className="st-btn" onClick={onReplay}>Replay First Flight</button>}
     </section>
   );
 }
