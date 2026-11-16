@@ -16,7 +16,6 @@
 .cq-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; border-bottom: 1px solid var(--cq-line); margin-bottom: 6px; }
 .cq-soft { color: var(--cq-soft); }
 .cq-note { color: var(--cq-green); }
-.cq-credits { margin-top: 8px; padding-top: 4px; border-top: 1px solid #2a2a50; color: var(--cq-soft); font-size: 0.75rem; }
 .cq-sprite { display: inline-block; flex: none; vertical-align: middle; image-rendering: pixelated; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
 .cq kbd { display: inline-block; min-width: 1.4em; padding: 0 4px; border: 1px solid var(--cq-soft); border-radius: 3px; color: var(--cq-cyan); font: inherit; font-size: 0.8em; text-align: center; }
 
@@ -222,7 +221,7 @@
 .cq h3:not(.question__title) { font-size: 1.2rem; color: var(--f-head); }
 .cq .question__title { font-family: 'IM Fell English SC', Georgia, serif; }
 .cq-top { padding-bottom: 2px; }
-.cq-credits, .cq :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-color: var(--f-dot); }
+.cq :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-color: var(--f-dot); }
 .cq-tag { font-family: inherit; }
 
 /* The place's painting across the top (art.ts). Phones get the 800 copy. */
