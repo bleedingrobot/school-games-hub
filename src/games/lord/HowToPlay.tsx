@@ -51,6 +51,9 @@ export function HowToPlayBody() {
 
       <h3>Seasons</h3>
       <p>Every five weeks there is a new season and everyone starts again at level 1. Your stars, the Hall of Heroes and your achievements stay. Fights you win against the computer earn hub points, within the same daily limit as every other game.</p>
+
+      <h3>Thanks</h3>
+      <p className="lord-soft">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</p>
     </div>
   );
 }

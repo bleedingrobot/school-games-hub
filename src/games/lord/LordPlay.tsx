@@ -16,7 +16,7 @@ import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/l
 import { UNLIMITED_LABEL } from '../../../shared/unlimited';
 import { useAuth } from '../../auth/AuthContext';
 import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
-import { FightScreen } from './Fight';
+import { BigStage, FightScreen, fightScene } from './Fight';
 import { setShortcuts, shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
@@ -29,6 +29,7 @@ import { KingdomMap, hasMap } from './KingdomMap';
 import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
 import './lord.css';
+import './big.css';
 
 // The test tools are only ever loaded in the browser-only trial (preview/lord); the live game never opens them.
 const Tools = lazy(() => import('./Tools').then((m) => ({ default: m.Tools })));
@@ -480,20 +481,26 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         break;
       }
       const sizeUp = fight.sizeUp && fight.kind === 'forest';
+      const name = withArticle(fight.start.monster.name).replace(/^a/, 'A');
       body = (
-        <section className="lord-place lord-encounter" aria-label="A monster appears">
-          <Stage scene={fight.kind === 'master' ? 'training' : forestScene(fight.start.monster.level)} size="tall">
-            <div className="lord-stage__foe lord-enter"><MonsterSprite monster={fight.start.monster} scale={11} /></div>
-          </Stage>
-          <div className="lord-panel">
-          <h2>{withArticle(fight.start.monster.name).replace(/^a/, 'A')} appears!</h2>
-          <p className="lord-lead">{fight.start.monster.intro}</p>
-          <div className="lord-actions">
-            {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(true)}>Size it up: a right answer = first hit ×{sizeItUpBonus('right')} and +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</button>}
-            <button type="button" className={`lord-btn${sizeUp ? '' : ' lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
+        <BigStage scene={fightScene(fight.start, forestScene)} label="A monster appears" className="lord-encounter">
+          <div className="lord-big__title">
+            <h2>{name} appears!</h2>
+            <p>{fight.start.monster.intro}</p>
           </div>
+          <div className="lord-big__floor">
+            <div className="lord-big__fig lord-big__fig--me"><div className="lord-big__body"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} label="" /></div></div>
+            <div className="lord-big__fig lord-big__fig--foe"><div className="lord-big__body lord-enter"><MonsterSprite monster={fight.start.monster} scale={10} /></div></div>
           </div>
-        </section>
+          <div className="lord-big__bar" role="group" aria-label="What will you do?">
+            {sizeUp && (
+              <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus onClick={() => void beginFight(true)}>
+                Size it up <small>first hit ×{sizeItUpBonus('right')}, +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</small>
+              </button>
+            )}
+            <button type="button" className={`lord-btn lord-btn--big ${sizeUp ? 'lord-btn--glass' : 'lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
+          </div>
+        </BigStage>
       );
       break;
     }
@@ -501,7 +508,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       const { fight, actions, fightId, ctx } = screen;
       body = (
         <FightScreen
-          look={hero.look}
+          look={hero.look} scene={fightScene(fight, forestScene)} dragonStage={ctx.kind === 'dragon' ? ctx.stage : undefined}
           key={fightId + (ctx.kind === 'dragon' ? ctx.stage : '')} fight={fight} heroName={heroName}
           onChange={onFightChange} onContinue={() => void finishFight(fight, actions, fightId, ctx)}
         />
@@ -544,7 +551,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
 
   const keysOn = screen.name === 'village';
   return (
-    <Frame backend={backend} state={state} hero={hero} hideStatus={screen.name === 'fight'}>
+    <Frame backend={backend} state={state} hero={hero} bare={screen.name === 'fight' || screen.name === 'encounter'}>
       {keysOn && <VillageKeys onKey={(k) => {
         if (busyRef.current) return;
         if (k === 'f') void goForest();
@@ -577,20 +584,20 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
   return null;
 }
 
-function Frame({ children, hero, hideStatus, backend, state }: { children: ReactNode; hero?: Hero; hideStatus?: boolean; backend: LordBackend; state?: LordState }) {
+/** `bare`: a fight on its big painting, with nothing else on the screen (no title, season or stats). */
+function Frame({ children, hero, bare, backend, state }: { children: ReactNode; hero?: Hero; bare?: boolean; backend: LordBackend; state?: LordState }) {
   return (
-    <div className="lord" data-testid="lord">
-      <header className="lord-top">
+    <div className={`lord${bare ? ' lord--bare' : ''}`} data-testid="lord">
+      {!bare && <header className="lord-top">
         <h1>Dragon Maths</h1>
         {backend.trial ? (
           <span className="lord-trial">Trial: saved on this browser only, no points yet</span>
         ) : (
           state?.hero && <span className="lord-trial">Season {state.season.number}, day {state.season.dayOfSeason} of 35{state.season.daysLeft <= 4 ? `: ${state.season.daysLeft} days left!` : ''}</span>
         )}
-      </header>
-      {hero && !hideStatus && <StatusBar hero={hero} unlimited={!!state?.unlimited} />}
+      </header>}
+      {hero && !bare && <StatusBar hero={hero} unlimited={!!state?.unlimited} />}
       {children}
-      <footer className="lord-credits">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</footer>
     </div>
   );
 }
