@@ -1,7 +1,7 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
 import { useEffect, useRef, useState } from 'react';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
-import { monsterWeek, suppliesOnSale, type Action, type MonsterOutcome, type ShownFight } from '../../../shared/clans/actions';
+import { monsterWeek, suppliesOnSale, type Action, type MonsterOutcome, type RaidOutcome, type ShownFight } from '../../../shared/clans/actions';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
 import type { Clan } from '../../../shared/clans/types';
@@ -17,8 +17,8 @@ import { MonsterWarning, MonsterWeek, MonsterResult, type MonsterTry } from './M
 import { finishPracticeTry, startPracticeTry } from './monsterPlay';
 import { Repick } from './Repick';
 import { Mines, Results, depthArt } from './Mines';
-import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome } from './places';
-import { ClassRaid } from './ClassRaid';
+import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome, pretendRaidFinish, pretendRaidStart } from './places';
+import { VillageRaids, type RaidGo } from './VillageRaids';
 import { News } from './News';
 import { MyVillage } from './MyVillage';
 import { Raid } from './Raid';
@@ -120,6 +120,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [monsterDone, setMonsterDone] = useState<MonsterOutcome | null>(null);
   const [practiceFight, setPracticeFight] = useState<ShownFight | null>(null);
   const monsterOut = useRef<MonsterOutcome | null>(null);
+  /** The Village Raid just finished (for the results screen). */
+  const [raidDone, setRaidDone] = useState<RaidOutcome | null>(null);
+  const raidOut = useRef<RaidOutcome | null>(null);
   /** True while a monster try is starting: the siege is shown before the fight, so the reply must not jump straight to it. */
   const holdFight = useRef(false);
   const activeRef = useRef<ShownFight | null>(null);
@@ -271,11 +274,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     if (!server || !session) {
       setBoss(b);
       setMonsterDone(null);
+      setRaidDone(null);
       setPracticeFight(null);
       setScreen('fight');
       return;
     }
     setMonsterDone(null);
+    setRaidDone(null);
     waiting.current++;
     line.current = line.current.then(async () => {
       try {
@@ -307,6 +312,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           outcome.current = reply.result.summary;
           fameEarned.current = reply.result.earned ? fameFor(reply.result.earned) : 0;
           monsterOut.current = reply.result.monster ?? null;
+          raidOut.current = reply.result.raid ?? null;
           activeRef.current = null;
         } else if (reply.ok && reply.state?.fight) {
           // The server's copy, with this round in it, in case the fight has to be shown again.
@@ -345,6 +351,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       if (summary) {
         setMonsterDone(monsterOut.current);
         monsterOut.current = null;
+        setRaidDone(raidOut.current);
+        raidOut.current = null;
         setSummary(summary);
         setActiveFight(null);
         setScreen('results');
@@ -377,9 +385,32 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     }
     return { ok: true, resumed: reply.result.resumed, right: reply.result.right, answer: reply.result.answer, siege: open.monster.siege, open };
   };
-  /** The siege is over: on to the clan fight. */
+  /** A Village Raid on a classmate. With a server it sends raidStart (the siege question was marked by `ask`); without one it is Practice. */
+  const startRaid = async (target: string): Promise<RaidGo> => {
+    if (!server || !session) {
+      const out = pretendRaidStart(session!, target);
+      if (!out.ok) return { ok: false, say: out.say };
+      setSession(out.session);
+      return { ok: true, resumed: false, open: out.open, breach: out.breach, tower: out.tower, right: null };
+    }
+    holdFight.current = true;
+    let reply: ServerReply;
+    try {
+      reply = await ask!({ type: 'raidStart', target });
+    } finally {
+      holdFight.current = false;
+    }
+    const open = reply.state?.fight;
+    if (!reply.ok || reply.result.type !== 'raidStart' || !open?.raid) {
+      setNotice('');
+      return { ok: false, say: reply.ok ? 'The raid did not start. Please try again.' : reply.say };
+    }
+    return { ok: true, resumed: reply.result.resumed, open, breach: reply.result.breach, tower: reply.result.tower, right: reply.result.right };
+  };
+  /** The siege is over: on to the clan fight (a monster try's or a raid's). */
   const enterMonsterFight = (open: ShownFight) => {
     setMonsterDone(null);
+    setRaidDone(null);
     if (!server) setPracticeFight(open);
     else {
       activeRef.current = open;
@@ -391,6 +422,17 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
 
   const finish = (fight: FightState) => {
     if (!session) return;
+    if (practiceFight?.raid) {
+      const done = pretendRaidFinish(session, practiceFight.raid, fight);
+      setSession(done.session);
+      fameEarned.current = 0;
+      setSummary({ result: fight.result, gold: done.outcome.gold, followers: 0, xp: session.clan.members.map(() => 0), levels: session.clan.members.map(() => 0) });
+      setMonsterDone(null);
+      setRaidDone(done.outcome);
+      setPracticeFight(null);
+      setScreen('results');
+      return;
+    }
     if (practiceFight) {
       const done = finishPracticeTry(session, practiceFight, fight);
       setSession(done.session);
@@ -528,13 +570,26 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
-          {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}
+          {screen === 'classraid' && <VillageRaids session={session} ask={ask} onStart={startRaid} onFight={enterMonsterFight} onBack={() => setScreen('myvillage')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} top={onPicture ? top(true) : undefined} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={(f, b) => { bestNote.current = b; finish(f); }} />}
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={(_f, b) => { bestNote.current = b; finishServer(); }} />
           )}
-          {screen === 'results' && summary && (
+          {screen === 'results' && summary && raidDone && (
+            <Results
+              summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')}
+              best={bestNote.current} top={top(true)} art={sceneArt(raidDone.won ? 'victory' : 'raid')}
+              raid={{ title: raidDone.won ? 'Raid won!' : summary.result === 'fled' ? 'Back safe' : 'Good try!', banners: raidDone.banners }}
+              extra={(
+                <div className="cq-panel" role="status">
+                  <p>{raidDone.won ? `Your heroes beat the ${raidDone.name} clan's defenders!` : `The ${raidDone.name} clan's village held this time.`} Nothing was lost on either side.</p>
+                  <button type="button" className="cq-btn" onClick={() => setScreen('classraid')}>More Village Raids</button>
+                </div>
+              )}
+            />
+          )}
+          {screen === 'results' && summary && !raidDone && (
             <Results
               summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')}
               best={bestNote.current} top={top(true)} art={monsterDone && afterFight ? sceneArt(afterFight) : depthArt(session.depth)}

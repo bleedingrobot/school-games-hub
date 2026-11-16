@@ -7,7 +7,6 @@ import { buildingArt, troopArt } from './art';
 import { buyTroopMix, canBuyMix, canUpgradeBuilding, upgradeBuilding } from './places';
 import { nextVillageStep, strengthKey } from './nextStep';
 import type { Session, Change } from './session';
-import { shielded, shieldEnds } from './shield';
 
 type Phase =
   | { t: 'idle' }
@@ -139,7 +138,7 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, top 
         {top}
         <VillageScene e={e} states={states} picked={b} total={levels} cheer={cheer} smoky={smoky} onPick={(x) => pick(x === picked ? undefined : x)} />
         <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--left" onClick={onRaid}>Raid a kingdom / Practice battle</button>
-        <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--right" onClick={onClassRaid}>Raid a classmate</button>
+        <button type="button" className="cq-btn cq-btn--hot cq-vstage2__raid cq-vstage2__raid--right" onClick={onClassRaid}>Village Raids</button>
       </div>
       <div className="cq-place__head">
         <h2>My Village</h2>
@@ -185,7 +184,6 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid, top 
         <strong>Builds left: {left}{saved > 0 && ` (${today} today + ${saved} saved)`}</strong> · Clan purse: <strong>{clan.gold} gold</strong>
       </p>
       <p className="cq-soft">Builds you don&apos;t use are saved for later, up to {CONFIG.empire.buildsSavedMax}.</p>
-      {shielded(e.shieldUntil) && <p className="cq-ok" role="status">You are safe from raids until {shieldEnds(e.shieldUntil)}.</p>}
     </section>
   );
 }

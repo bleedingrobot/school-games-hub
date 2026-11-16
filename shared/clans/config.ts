@@ -62,7 +62,7 @@ export const CONFIG = {
       walls: { max: 5, base: 50, per: 10 },
       tower: { max: 5, base: 50, per: 10 },
       forge: { max: 5, base: 50, per: 10 },
-      strongroom: { max: 5, base: 50, per: 200 },
+      strongroom: { max: 5, base: 50, per: 5 },
     } satisfies Record<VillageBuilding, { max: number; base: number; per: number }>,
     /** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
     planWidth: { trainingHall: 4, smithy: 3, church: 4, barracks: 3, walls: 2, tower: 2, forge: 3, strongroom: 2 } satisfies Record<VillageBuilding, number>,
@@ -92,15 +92,8 @@ export const CONFIG = {
       lootChoices: [5, 10, 15, 20],
     },
     raids: {
-      newClanDays: 3,
-      /** Raids on classmates a day, and on computer kingdoms a day. */
-      perDay: 1,
+      /** Raids on computer kingdoms a day. (Raids on classmates are CONFIG.classRaids.) */
       kingdomPerDay: 1,
-      shieldDays: 1,
-      /** A classmate must have between 1/this and this times your strength. */
-      fairRatio: 2,
-      /** Most you may take from a classmate, in percent. */
-      classmateLootMax: 10,
     },
     /** What the old (pre-village) empire cost, so `upgradeSave` can give the right gold back. Nothing else reads this. */
     legacy: {
@@ -118,6 +111,24 @@ export const CONFIG = {
         developersHall: { gold: 150, max: 3 },
       } satisfies Record<BuildingKind, { gold: number; max: number }>,
     },
+  },
+  /**
+   * Village Raids on classmates (docs/CLANS-PVP-PLAN.md, James 17 Nov 2026). Nobody loses anything: rewards are made by the
+   * game. `power` sizes a clan up to suggest rivals (heroes' levels, building levels, army might); `light` is how much
+   * stronger or weaker a rival is for "Should win" and "Tough". The siege knocks up to `siege.most` off the defenders' HP
+   * (a right answer times `rightBoost`); their Tower takes `towerPerLevel` a level off the raiders' HP first.
+   */
+  classRaids: {
+    perDay: 3,
+    suggested: 3,
+    power: { heroLevel: 10, buildingLevel: 3, mightPer: 5 },
+    light: { easy: 0.8, tough: 1.25 },
+    siege: { most: 0.3, rightBoost: 1.25, towerPerLevel: 0.03, forgePer: 0.1, wallsPer: 0.1, base: 10 },
+    reward: { won: { gold: 40, banners: 3 }, wonTough: { gold: 60, banners: 4 }, lost: { gold: 10, banners: 1 }, held: { gold: 20, banners: 2 } },
+    /** A village that holds is paid for this many holds a day. */
+    heldPaidPerDay: 3,
+    /** Extra gold on every raid won or held, for each Strongroom level. */
+    strongroomGold: 5,
   },
   /** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
   quests: {

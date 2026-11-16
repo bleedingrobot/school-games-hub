@@ -6,9 +6,11 @@
 import { CONFIG } from '../../../shared/clans/config';
 import { churchCost, hpCost, shopPrice, spCost, trainCost, wakeCost } from '../../../shared/clans/character';
 import { buyItem as buyItemFor, buyTroopMix as buyTroopMixFor, knockedOutMembers, raidSeed as raidSeedFor, sendArmyTo, trainMember, wakeAllCost, wakeAllPayers, wakeEveryone, wakeOne, wakeOrder, type TrainKey } from '../../../shared/clans/play';
-import type { ServerState } from '../../../shared/clans/actions';
-import { canUpgrade, capacity, empireOf, might, newEmpire, raidKingdom, upgrade, type BattleResult, type Done, type Fail, type Push, type Take } from '../../../shared/clans/empire';
-import { raidClassmateNz, raidTargetList, type TargetEntry } from '../../../shared/clans/village';
+import type { RaidOutcome, ShownFight } from '../../../shared/clans/actions';
+import { canUpgrade, capacity, empireOf, newEmpire, raidKingdom, upgrade, type BattleResult, type Done, type Fail, type Push } from '../../../shared/clans/empire';
+import { addBanners, bannerBoard, clanPower, defenderCopy, lightOf, raidNews, raidReward, raidSiege, raidsLeft, rivalList, sketchPower, targetEmpire, type BoardRow, type RaidSetup, type RaidTarget, type Rival, type RivalSketch } from '../../../shared/clans/raids';
+import { weekOf } from '../../../shared/clans/village';
+import type { FightState } from '../../../shared/clans/fight';
 import { STATS, TROOP_KINDS, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops, type VillageBuilding } from '../../../shared/clans/types';
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import { earn, type Session } from './session';
@@ -168,8 +170,10 @@ export function armyToLose(s: Session): Session {
 }
 export function freshRaid(s: Session): Session {
   const next = structuredClone(s);
-  empireOf(next.clan).kingdomRaidsToday = 0;
-  next.pretendRaids = 0;
+  const e = empireOf(next.clan);
+  e.kingdomRaidsToday = 0;
+  e.raidsToday = 0;
+  e.raidedToday = [];
   return next;
 }
 
@@ -198,65 +202,96 @@ export function freshQuest(s: Session): Session {
 }
 
 // ---------------------------------------------------------------------------
-// Raids on classmates. With a server these are only drawn; on the test page the pretend classmates below stand in so the
-// screens can be tried.
+// Village Raids. With a server the classmates are real; on the test page the pretend classmates below stand in (copies of
+// your own heroes, a bit weaker or stronger), and the raid is played with the very same rules. Nothing is saved anywhere.
 // ---------------------------------------------------------------------------
 
-/** Test page only: the pretend classmates, sized from your own army so there is always a fair one. */
-export function pretendMates(s: Session): { id: string; name: string; empire: Empire; gold: number; createdNzDay: number }[] {
-  const mine = Math.max(10, might(empireOf(s.clan).troops));
-  const make = (id: string, name: string, share: number, created: number) => ({
-    id, name, createdNzDay: created, gold: 400, empire: { ...newEmpire(), troops: { footman: Math.max(1, Math.round(mine * share)), axeman: 0, knight: 0 }, shieldUntil: s.pretendShield?.includes(id) ? PRETEND_TODAY + s.day : 0 },
-  });
-  return [
-    make('pretend-foxes', 'Swift Foxes', 0.9, PRETEND_TODAY - 30),
-    make('pretend-owls', 'Brave Owls', 1.2, PRETEND_TODAY - 30),
-    make('pretend-wolves', 'Iron Wolves', 5, PRETEND_TODAY - 30),
-    make('pretend-stars', 'Lucky Stars', 1, PRETEND_TODAY + s.day - 1),
-  ];
-}
 /** The New Zealand day the test page pretends it is (its days are counted up from here). */
 const PRETEND_TODAY = 30000;
+export const pretendToday = (s: Session) => PRETEND_TODAY + s.day - 1;
 
-/** A clan you could raid, as the list shows it. `shieldUntil` (the last day of its shield) is there when the clan is resting behind one and the list knows the day. */
-export type RaidChoice = TargetEntry & { shieldUntil?: number };
+const PRETEND = [
+  { id: 'pretend-foxes', name: 'Swift Foxes', share: 0.75, banners: 4, looks: [['Elf', 'Assassin'], ['Halfling', 'Healer'], ['Elf', 'Wizard'], ['Imp', 'Warrior']] },
+  { id: 'pretend-owls', name: 'Brave Owls', share: 1, banners: 7, looks: [['Dwarf', 'Knight'], ['Human', 'Healer'], ['Half-Elf', 'Sorcerer'], ['Human', 'Pirate']] },
+  { id: 'pretend-wolves', name: 'Iron Wolves', share: 1.4, banners: 2, looks: [['Orc', 'Barbarian'], ['Minotaur', 'Warrior'], ['Muya', 'Necromancer'], ['Orc', 'Samurai']] },
+  { id: 'pretend-stars', name: 'Lucky Stars', share: 1.05, banners: 0, looks: [['Human', 'Martial Artist'], ['Elf', 'Healer'], ['Halfling', 'Assassin'], ['Dwarf', 'Wizard']] },
+] as const;
 
-export interface ClassDone {
-  session: Session;
-  take: Take;
-  result: BattleResult;
-  gold: number;
-  destroyed: VillageBuilding[];
+const scaled = (n: number, share: number) => Math.max(1, Math.round(n * share));
+
+/** A pretend classmate's heroes: copies of yours, scaled by `share`, shown as other races and classes. */
+function pretendHeroes(s: Session, p: (typeof PRETEND)[number]): Member[] {
+  return s.clan.members.map((m, i) => {
+    const [race, cls] = p.looks[i % p.looks.length];
+    const stats = { ...m.stats };
+    for (const k of STATS) stats[k] = scaled(m.stats[k], p.share);
+    return { ...structuredClone(m), race, cls, stats, maxHp: scaled(m.maxHp, p.share), hp: scaled(m.maxHp, p.share), level: scaled(m.level, p.share), knockedOut: false };
+  });
 }
 
-/** Test page only: raid a pretend classmate, with the very same rule the server uses. Nothing is saved anywhere. */
-export function pretendRaid(s: Session, mateId: string, take: Take, push: Push): ClassDone | Fail {
-  const mate = pretendMates(s).find((m) => m.id === mateId);
-  if (!mate) return { ok: false, why: 'target', say: 'That clan is not in your class.' };
+/** A pretend classmate's village: yours, scaled by `share`. */
+function pretendEmpire(s: Session, share: number): Empire {
+  const e = empireOf(s.clan);
+  const levels = { ...e.levels };
+  for (const k of Object.keys(levels) as VillageBuilding[]) levels[k] = Math.round(levels[k] * share);
+  return { ...newEmpire(), levels, troops: { footman: Math.round(e.troops.footman * share), axeman: 0, knight: 0 } };
+}
+
+/** Test page only: the pretend classmates as the raid list sees them. */
+export function pretendSketches(s: Session): RivalSketch[] {
+  const week = weekOf(pretendToday(s));
+  return PRETEND.map((p) => {
+    const e = pretendEmpire(s, p.share);
+    return { id: p.id, name: p.name, heroLevels: pretendHeroes(s, p).reduce((t, m) => t + m.level, 0), levels: e.levels, troops: e.troops, banners: { week, count: p.banners } };
+  });
+}
+
+/** Test page only: one pretend classmate, loaded to be raided. */
+export function pretendTarget(s: Session, id: string): RaidTarget | null {
+  const p = PRETEND.find((x) => x.id === id);
+  return p ? { id: p.id, name: p.name, gold: 0, members: pretendHeroes(s, p), empire: pretendEmpire(s, p.share) } : null;
+}
+
+/** Test page only: the raid screen's list and Banners board. */
+export function pretendRaidList(s: Session): { targets: Rival[]; board: BoardRow[]; left: number } {
+  const e = empireOf(s.clan);
+  const mates = pretendSketches(s);
+  return { targets: rivalList(s.clan, e.raidedToday, mates), board: bannerBoard(s.clan, weekOf(pretendToday(s)), mates), left: raidsLeft(e) };
+}
+
+/** Test page only: start a raid (no siege question in Practice). The same siege and fight the server would make. */
+export function pretendRaidStart(s: Session, id: string): { ok: true; session: Session; open: ShownFight; breach: number; tower: number } | Fail {
+  const target = pretendTarget(s, id);
+  if (!target) return { ok: false, why: 'target', say: 'That clan is not in your class.' };
   const clan = structuredClone(s.clan);
   const e = empireOf(clan);
-  e.raidsToday = s.pretendRaids ?? 0;
-  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0 } as ServerState;
-  const out = raidClassmateNz(state, 'you', mate, take, push, raidSeedFor(s.baseSeed, s.raidNo ?? 0), PRETEND_TODAY + s.day - 1, s.raidsOn !== false);
-  if (!out.ok) return out;
-  return {
-    session: earn({
-      ...s, clan, raidNo: (s.raidNo ?? 0) + 1, pretendRaids: (s.pretendRaids ?? 0) + 1, pretendShield: [...(s.pretendShield ?? []), mateId],
-      news: [out.news, ...(s.news ?? [])],
-    }, { classRaids: out.raid.result.outcome === 'won' ? 1 : 0 }),
-    take, result: out.raid.result, gold: out.raid.gold, destroyed: out.raid.destroyed,
+  if (raidsLeft(e) <= 0) return { ok: false, why: 'limit', say: `That's all ${CONFIG.classRaids.perDay} raids for today. Come back tomorrow!` };
+  if (e.raidedToday.includes(id)) return { ok: false, why: 'same', say: 'You already raided that clan today. Pick another one!' };
+  const seed = raidSeedFor(s.baseSeed, s.raidNo ?? 0);
+  const siege = raidSiege(e, targetEmpire(target), null, seed);
+  const sketch = pretendSketches(s).find((x) => x.id === id)!;
+  const setup: RaidSetup = {
+    target: id, name: target.name, light: lightOf(Math.max(1, clanPower(clan)), sketchPower(sketch)),
+    defenders: target.members.map(defenderCopy), breach: siege.breach, tower: siege.tower, right: null,
   };
+  e.raidsToday++;
+  e.raidedToday.push(id);
+  const open: ShownFight = { depth: 0, boss: false, seed, no: s.fightNo + 1, settings: s.settings, rounds: [], raid: setup };
+  return { ok: true, session: { ...s, clan, raidNo: (s.raidNo ?? 0) + 1, fightNo: s.fightNo + 1 }, open, breach: siege.breach, tower: siege.tower };
 }
 
-/** Test page only: who the pretend clan could raid, by the very same rule the server uses (with the reasons). */
-export function pretendTargets(s: Session): RaidChoice[] {
+/** Test page only: a raid is over. The same pay the server gives; the pretend classmate gets nothing (it isn't real). */
+export function pretendRaidFinish(s: Session, setup: RaidSetup, fight: FightState): { session: Session; outcome: RaidOutcome } {
   const clan = structuredClone(s.clan);
-  empireOf(clan).raidsToday = s.pretendRaids ?? 0;
-  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0 } as ServerState;
-  const today = PRETEND_TODAY + s.day - 1;
-  const sketches = pretendMates(s).map((m) => ({ id: m.id, name: m.name, createdNzDay: m.createdNzDay, shieldUntil: m.empire.shieldUntil, troops: m.empire.troops }));
-  const shields = new Map(sketches.filter((m) => m.shieldUntil >= today).map((m) => [m.id, m.shieldUntil]));
-  return raidTargetList(state, today, 'you', s.raidsOn !== false, sketches).map((t) => (shields.has(t.id) ? { ...t, shieldUntil: shields.get(t.id) } : t));
+  const e = empireOf(clan);
+  const won = fight.result === 'won';
+  const pay = raidReward(fight.result, setup.light, e);
+  clan.gold += pay.gold;
+  e.banners = addBanners(e.banners, weekOf(pretendToday(s)), pay.banners);
+  return {
+    session: earn({ ...s, clan, news: [`${raidNews(clan.name, setup.name, won)} (pretend)`, ...(s.news ?? [])] }, { classRaids: won ? 1 : 0 }),
+    outcome: { name: setup.name, light: setup.light, won, gold: pay.gold, banners: pay.banners },
+  };
 }
 
 /**

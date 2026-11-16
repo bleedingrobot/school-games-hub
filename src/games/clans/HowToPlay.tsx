@@ -72,14 +72,16 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <p>{CONFIG.quests.perDay === 1 ? 'One' : CONFIG.quests.perDay} short story a day. You choose what to do, and there are two maths questions: get both right for the big prize. A very charming clan gets extra choices.</p>
         </section>
         <section aria-labelledby="htp-raids">
-          <h3 id="htp-raids">Raids on classmates</h3>
-          <p>Your teacher can switch these on or off. When they are on, you can raid <strong>{CONFIG.empire.raids.perDay} classmate a day</strong> whose army is about as big as yours. Pick gold, or knock a level or two off their buildings. You take at most {CONFIG.empire.raids.classmateLootMax}%.</p>
-          <p>Gold kept in a Strongroom is safe, and Walls protect buildings. A new clan is safe for {CONFIG.empire.raids.newClanDays} days. A clan that was raided rests behind a shield the next {CONFIG.empire.raids.shieldDays === 1 ? 'day' : `${CONFIG.empire.raids.shieldDays} days`} too.</p>
+          <h3 id="htp-raids">Village Raids</h3>
+          <p>Raid a classmate's village, from your very first day. You can raid <strong>{CONFIG.classRaids.perDay} villages a day</strong>, each a different one. Your teacher can switch raids on or off.</p>
+          <p>First your army storms their walls (one maths question makes it hit harder). Then your heroes fight a copy of their heroes, with a Battle Cry every round.</p>
+          <p><strong>Nobody loses anything.</strong> No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners; a loss still earns a little. When your own village holds off a raid, you earn gold and Banners too.</p>
+          <p>Your village helps: the Forge and your army break their walls, Walls and Tower defend yours, and the Strongroom adds gold to every raid. Banners count for the week and start again every Monday.</p>
         </section>
         <section aria-labelledby="htp-season">
           <h3 id="htp-season">Seasons and the village goal</h3>
           <p>A season lasts 5 weeks, on the same dates as Dragon Maths. Finish every building to earn the <strong>Master Builder</strong> badge, {CONFIG.season.villageReward.fame} fame and a place in the Hall of Legends.</p>
-          <p>Builds you don't use are saved, up to {CONFIG.empire.buildsSavedMax}. In the last two weeks, raids on classmates rest. A new season starts every clan fresh, but badges and the Hall stay.</p>
+          <p>Builds you don't use are saved, up to {CONFIG.empire.buildsSavedMax}. A new season starts every clan fresh, but badges and the Hall stay.</p>
         </section>
         <section aria-labelledby="htp-monster">
           <h3 id="htp-monster">The season monster</h3>

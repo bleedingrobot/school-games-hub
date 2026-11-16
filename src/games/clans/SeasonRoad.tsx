@@ -16,7 +16,7 @@ export function SeasonRoad({ clock, clan }: { clock?: SeasonClock | null; clan?:
   const road = seasonRoad(clock, look, beatenThisSeason(clan, clock.number));
   const notes: Record<StageId, string> = {
     build: 'Win in the Mines, do quests and raid kingdoms to level up and build your village.',
-    ready: 'The Market sells fire arrows, healing potions and a giant net for the monster. Raids on classmates rest until the new season.',
+    ready: 'The Market sells fire arrows, healing potions and a giant net for the monster.',
     monster: `${look.bigHelp} Lose and it comes back tomorrow, a little more tired.`,
     new: 'Every clan starts again at level 1 with a fresh village. Trophies, achievements and the Hall of Legends stay forever.',
   };
