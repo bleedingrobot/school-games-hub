@@ -4279,8 +4279,15 @@ function settle(members, s, gain) {
 		return gain(m, s.xp[i]);
 	});
 }
-//#endregion
-//#region shared/clans/battleCry.ts
+/** How many rounds of a fight ask a Battle Cry question (Infinity: every round). */
+function cryAskRounds(fight) {
+	if (fight.monster) return Infinity;
+	if (fight.depth <= 5) return 1;
+	if (fight.depth <= 10) return 2;
+	return Infinity;
+}
+/** Does `round` (1 is the first) of this fight ask a Battle Cry question? */
+const cryAsked = (fight, round) => round <= cryAskRounds(fight);
 /** Does this fight ask ladder questions? */
 const isLadderFight = (maths) => Array.isArray(maths.questions);
 /** Plain settings mean an old-style fight. */
@@ -4338,8 +4345,20 @@ function playCryRound(state, fightMaths, orders, given) {
 		cry: null,
 		question: null
 	};
+	const round = state.round + 1;
+	if (!cryAsked(state, round)) {
+		const cry = state.cryKept ?? null;
+		playRound(state, orders, cry);
+		return {
+			answered: false,
+			correct: false,
+			cry,
+			question: null
+		};
+	}
 	const maths = asMaths(fightMaths);
-	const result = isLadderFight(maths) ? markLadderCry(maths, state.round + 1, given) : markCry(nextCryQuestion(state, maths.settings), given);
+	const result = isLadderFight(maths) ? markLadderCry(maths, round, given) : markCry(nextCryQuestion(state, maths.settings), given);
+	if (cryAskRounds(state) !== Infinity) state.cryKept = result.cry;
 	playRound(state, orders, result.cry);
 	return result;
 }
@@ -14620,6 +14639,7 @@ function applyInner(saved, action, ctx, flags) {
 			if (!open) return refuse("no-fight", "That fight is already over.");
 			if (!open.questions || !open.marks) return refuse("no-question", "There is no question to answer.");
 			if (action.round !== open.rounds.length + 1) return refuse("stale-round", "That round was already played.");
+			if (!cryAsked(open, action.round)) return refuse("no-question", "There is no question to answer.");
 			const marked = markQuestion(open.questions[action.round - 1]);
 			if (!marked) return refuse("no-question", "There is no question to answer.");
 			const before = open.marks[action.round - 1];

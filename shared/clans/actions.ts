@@ -25,7 +25,7 @@
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound } from './battleCry';
+import { cryAsked, factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
@@ -705,6 +705,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       if (!open) return refuse('no-fight', 'That fight is already over.');
       if (!open.questions || !open.marks) return refuse('no-question', 'There is no question to answer.');
       if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
+      if (!cryAsked(open, action.round)) return refuse('no-question', 'There is no question to answer.');
       // Each question is answered once: asking again gives the first mark back, and nothing changes.
       const marked = markQuestion(open.questions[action.round - 1]);
       if (!marked) return refuse('no-question', 'There is no question to answer.');

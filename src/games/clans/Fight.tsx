@@ -10,7 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { fightOf, type ShownFight } from '../../../shared/clans/actions';
-import { markCry, nextCryQuestion, playCryRound, type CryAnswer, type CryMark, type CryReward, type FightMaths, type RecordedRound } from '../../../shared/clans/battleCry';
+import { cryAsked, cryLastsTheFight, markCry, nextCryQuestion, playCryRound, type CryAnswer, type CryMark, type CryReward, type FightMaths, type RecordedRound } from '../../../shared/clans/battleCry';
 import { maxRoundsOf, type FightState, type Order } from '../../../shared/clans/fight';
 import { MONSTER_LOOKS } from '../../../shared/clans/monster';
 import { CONFIG } from '../../../shared/clans/config';
@@ -58,6 +58,8 @@ export interface CryChecked {
 const FLOAT_STEPS = 3;
 
 const BATTLE_CRY_NOTE = 'A right answer powers up the whole clan. No timer, nothing lost.';
+/** The last question of a shallow fight: its power-up lasts every round after. */
+const BATTLE_CRY_NOTE_LASTS = 'A right answer powers up the whole clan for the rest of the fight. No timer, nothing lost.';
 
 const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, prompt: q.prompt, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
 type Mode = 'action' | 'spell' | 'target';
@@ -125,8 +127,10 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const startRound = (f: FightState) => {
     if (f.result) return setPhase('over');
     // Round f.round + 1 is next: a ladder fight's question for it is number f.round in the list.
-    const lq = ladder ? ladder[f.round] ?? null : null;
-    const q = ladder ? null : nextCryQuestion(f, settings);
+    // A shallow fight asks only in its first round or two; after that the power-up already earned carries on.
+    const asks = cryAsked(f, f.round + 1);
+    const lq = ladder && asks ? ladder[f.round] ?? null : null;
+    const q = ladder || !asks ? null : nextCryQuestion(f, settings);
     setSeq(choosingOrder(f));
     setPlan(suggestedPlan(f));
     setEditing(null);
@@ -357,6 +361,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const stageArt = fight.monster ? undefined : fight.raid ? sceneArt('raid-arena').wide ?? sceneArt('raid').wide : mineArt(fight.depth).wide ?? sceneArt(zoneScene(zone)).wide ?? zoneArt;
   // Each side gets room for its own fighters, so four members facing two monsters aren't squeezed into half the stage.
   const stageColumns = `minmax(0, ${Math.max(1.5, fight.enemies.length)}fr) minmax(0, ${Math.max(1.5, fight.clan.length)}fr)`;
+  // A right answer now powers up the rest of the fight (a shallow fight's last question), not just this round.
+  const lasts = cryLastsTheFight(fight, fight.round + 1);
   const roundNow = Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight));
   // The phases whose choices fit one slim row: they sit on the painting. The question and the end stay below it.
   const onStage = !fight.monster && (phase === 'orders' || phase === 'replay' || phase === 'summary' || phase === 'reward');
@@ -502,20 +508,20 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             </div>
           )}
           {phase === 'ask' && question && (
-            <PracticalAsk question={question} title="Battle Cry!" note={BATTLE_CRY_NOTE} onSubmit={submitCry} onNoThanks={noThanks} />
+            <PracticalAsk question={question} title="Battle Cry!" note={lasts ? BATTLE_CRY_NOTE_LASTS : BATTLE_CRY_NOTE} onSubmit={submitCry} onNoThanks={noThanks} />
           )}
           {phase === 'ask' && ladderQuestion && (
-            <QuestionModal question={shown(ladderQuestion)} title="Battle Cry!" note={BATTLE_CRY_NOTE} onSubmit={checkLadder} onDone={ladderDone} onClose={ladderNoThanks} closeLabel="No thanks" />
+            <QuestionModal question={shown(ladderQuestion)} title="Battle Cry!" note={lasts ? BATTLE_CRY_NOTE_LASTS : BATTLE_CRY_NOTE} onSubmit={checkLadder} onDone={ladderDone} onClose={ladderNoThanks} closeLabel="No thanks" />
           )}
           {phase === 'reward' && (
             <div className="cq-choice cq-choice--bar">
               <h3>Right! Spend your Battle Cry on…</h3>
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={() => chooseReward('damage')}>
-                  <kbd>Enter</kbd> More damage this round
+                  <kbd>Enter</kbd> More damage {lasts ? 'every round' : 'this round'}
                 </button>
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => chooseReward('heal')}>
-                  <kbd>H</kbd> A little healing for everyone
+                  <kbd>H</kbd> A little healing for everyone{lasts ? ', every round' : ''}
                 </button>
               </div>
             </div>

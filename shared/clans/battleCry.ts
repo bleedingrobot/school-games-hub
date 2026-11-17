@@ -12,6 +12,10 @@
  * The server makes the fight's questions when it starts and keeps their answers to itself; each answer is marked by the
  * server as it is given (`cryCheck`), and the mark is kept with the fight. A round's bonus then comes from that mark,
  * so the replay still needs nothing the browser could change. A fight without `questions` is an old-style one, as above.
+ *
+ * **The maths comes in slowly** (from 17 Nov 2026). A mine fight at depth 0-5 asks only before round 1, and depth 6-10 before
+ * rounds 1 and 2; the bonus the last question earned (or nothing, after a wrong answer or "No thanks") then plays every
+ * round after it. Depth 11 and deeper, and the monster fight, ask every round as before.
  */
 import type { FactAnswer } from '../maths/leitner';
 import { markAnswer, pickQuestion, type PracticalQuestion, type PracticalSettings, type YearBand } from '../maths/practical';
@@ -38,6 +42,31 @@ export interface FightMaths {
   /** A ladder fight's marks, by round (index 0 is round 1). */
   marks?: readonly (CryMark | null | undefined)[];
 }
+
+/** Mine fights this deep or less ask only before round 1. */
+export const CRY_ONCE_TO = 5;
+/** Mine fights this deep or less (and deeper than CRY_ONCE_TO) ask before rounds 1 and 2. */
+export const CRY_TWICE_TO = 10;
+
+/** What decides how often a fight asks: its depth, and whether it is the monster fight. */
+export interface CryPace {
+  depth: number;
+  monster?: unknown;
+}
+
+/** How many rounds of a fight ask a Battle Cry question (Infinity: every round). */
+export function cryAskRounds(fight: CryPace): number {
+  if (fight.monster) return Infinity;
+  if (fight.depth <= CRY_ONCE_TO) return 1;
+  if (fight.depth <= CRY_TWICE_TO) return 2;
+  return Infinity;
+}
+
+/** Does `round` (1 is the first) of this fight ask a Battle Cry question? */
+export const cryAsked = (fight: CryPace, round: number) => round <= cryAskRounds(fight);
+
+/** Is a right answer before `round` spent on the rest of the fight (the last question asked), not just that round? */
+export const cryLastsTheFight = (fight: CryPace, round: number) => round === cryAskRounds(fight);
 
 /** Does this fight ask ladder questions? */
 export const isLadderFight = (maths: FightMaths) => Array.isArray(maths.questions);
@@ -104,8 +133,16 @@ export interface RecordedRound {
 /** Play a round with the Battle Cry marked: the one place a round and its question meet. */
 export function playCryRound(state: FightState, fightMaths: FightMaths | PracticalSettings, orders: (Order | undefined)[], given: CryAnswer | null): CryResult {
   if (state.result) return { answered: false, correct: false, cry: null, question: null };
+  const round = state.round + 1;
+  // A round with no question plays the bonus the last question earned; whatever the browser sent for it is ignored.
+  if (!cryAsked(state, round)) {
+    const cry = state.cryKept ?? null;
+    playRound(state, orders, cry);
+    return { answered: false, correct: false, cry, question: null };
+  }
   const maths = asMaths(fightMaths);
-  const result = isLadderFight(maths) ? markLadderCry(maths, state.round + 1, given) : markCry(nextCryQuestion(state, maths.settings), given);
+  const result = isLadderFight(maths) ? markLadderCry(maths, round, given) : markCry(nextCryQuestion(state, maths.settings), given);
+  if (cryAskRounds(state) !== Infinity) state.cryKept = result.cry;
   playRound(state, orders, result.cry);
   return result;
 }

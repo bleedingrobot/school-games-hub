@@ -1,4 +1,5 @@
 import { CONFIG } from '../../../shared/clans/config';
+import { CRY_ONCE_TO, CRY_TWICE_TO } from '../../../shared/clans/battleCry';
 import { ACHIEVEMENTS } from '../../../shared/clans/rewards';
 import { VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 
@@ -28,6 +29,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-cry">
           <h3 id="htp-cry">Battle Cry</h3>
           <p>Before each round you get a maths question from your own maths: the same kind you are working on in the other maths games. Get it right and your clan chooses a power-up: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> or <strong>a little healing</strong> for everyone.</p>
+          <p>Near the top of the Mines the maths comes in slowly. At depth {CRY_ONCE_TO} or less there is one question, before the first round, and its power-up lasts the whole fight. Down to depth {CRY_TWICE_TO} there are two: before rounds 1 and 2, and the second one's power-up lasts the rest of the fight. Deeper than that, and in the monster fight, every round has a question.</p>
           <p>Get it wrong? Nothing is lost, and the game shows you the right answer. There is no timer. Not sure? Press <strong>No thanks</strong> and the round goes on as normal.</p>
         </section>
         <section aria-labelledby="htp-maths">

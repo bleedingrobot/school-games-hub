@@ -111,6 +111,8 @@ export interface FightState {
   log: FightEvent[];
   /** Only in a monster fight. */
   monster?: MonsterInFight;
+  /** A shallow mine fight asks its Battle Cry only in the first round or two: the bonus earned then carries on (battleCry.ts, `cryAsked`). */
+  cryKept?: Cry;
   /** Only in a Village Raid. */
   raid?: RaidInFight;
 }
