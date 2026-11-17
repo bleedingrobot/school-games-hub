@@ -281,3 +281,41 @@
 @media (max-width: 760px) {
   .lord-map__spot > span, .lord-map__hero > span { font-size: 0.85rem; }
 }
+
+/* The bank on its big painting (James, 18 Nov 2026): Mr Penny at his counter on the right, what you carry and what is
+   in the vault as two glowing piles, coins flying between them when gold moves. */
+.lord-bank .lord-portrait { right: 2%; height: 84%; max-width: 34%; z-index: 1; bottom: 70px; }
+.lord-bank__middle { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(820px, 64%); margin: auto auto auto 3%; text-align: center; }
+.lord-bank__lead { margin: 0; padding: 6px 16px; border-radius: 8px; background: rgba(15, 9, 4, 0.72); color: #f6e9cc; font-size: clamp(1rem, 1.8vw, 1.25rem); text-shadow: 0 1px 2px #000; }
+.lord-bank__piles { position: relative; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 22px); width: 100%; }
+.lord-bank__pile { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; flex: 1 1 0; max-width: 300px; padding: 12px 14px 14px; border-radius: 14px; border: 2px solid var(--lord-gold); background: radial-gradient(circle at 50% 30%, rgba(90, 60, 15, 0.85), rgba(15, 9, 4, 0.9)); box-shadow: 0 0 26px rgba(255, 190, 60, 0.35), 0 6px 18px rgba(0, 0, 0, 0.7); }
+.lord-bank__pile--vault { border-color: #ffd36b; box-shadow: 0 0 34px rgba(255, 200, 70, 0.55), 0 6px 18px rgba(0, 0, 0, 0.7); }
+.lord-bank__label { font-family: var(--lord-display); font-size: clamp(1rem, 2vw, 1.4rem); color: #f6e9cc; text-shadow: 0 2px 0 #000; }
+.lord-bank__num { display: inline-flex; align-items: center; gap: 10px; font-family: var(--lord-display); font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: 1; color: #ffd84a; text-shadow: 0 4px 0 #3a2203, 0 6px 0 #000, 0 0 30px rgba(255, 200, 70, 0.8); }
+.lord-bank__coin { width: 0.6em; height: 0.6em; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 14px #ffcf4a, inset 0 -3px 0 rgba(0, 0, 0, 0.3); }
+.lord-bank__lane { flex: 0 0 auto; }
+.lord-bank__arrow { font-size: clamp(1.6rem, 3.4vw, 2.6rem); color: #ffd36b; text-shadow: 0 2px 0 #000, 0 0 16px rgba(255, 200, 70, 0.8); }
+.lord-bank__flight { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.lord-bank__flight span { position: absolute; left: 20%; top: 55%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; opacity: 0; background: radial-gradient(circle at 35% 35%, #fff6c8, #ffc540 55%, #b37a10); box-shadow: 0 0 14px #ffcf4a, inset 0 -2px 0 rgba(0, 0, 0, 0.3); }
+.lord-bank__interest { margin: 0; max-width: 52ch; padding: 6px 14px; border-radius: 8px; background: rgba(15, 9, 4, 0.72); color: #e8d9b8; font-size: clamp(0.92rem, 1.5vw, 1.08rem); }
+.lord-bank__interest strong { color: #ffd36b; }
+.lord-bank__note { margin: 0; padding: 8px 18px; border-radius: 999px; border: 1px solid #9dff7a; background: rgba(12, 30, 8, 0.85); color: #c9ff9a; font-weight: 700; font-size: clamp(1rem, 1.8vw, 1.2rem); box-shadow: 0 0 20px rgba(140, 255, 100, 0.35); }
+.lord-btn--gold { color: #2a1a05; background: linear-gradient(#ffe48a, #e0a52a); border-color: #fff0b0; box-shadow: 0 0 18px rgba(255, 200, 70, 0.6), 0 3px 0 #6b4508; }
+@media (prefers-reduced-motion: no-preference) {
+  .lord-bank__middle { animation: lord-rise 0.5s ease-out both; }
+  .lord-bank .lord-portrait { animation: lord-rise 0.6s 0.1s ease-out both; }
+  .lord-bank__flight span { animation: lord-bank-fly 1s cubic-bezier(0.3, 0.6, 0.4, 1) calc(var(--i) * 0.035s) both; }
+  .is-to-pocket .lord-bank__flight span { animation-name: lord-bank-back; }
+  .is-to-vault .lord-bank__pile--vault, .is-to-pocket .lord-bank__pile--pocket { animation: lord-bank-thump 0.5s 0.85s ease-out both; }
+  .lord-bank__note { animation: lord-pop 0.45s ease-out both; }
+  .lord-btn--gold:not(:disabled) { animation: lord-bank-shine 1.8s ease-in-out infinite; }
+  @keyframes lord-bank-fly { 0% { opacity: 0; left: 20%; top: 55%; transform: scale(0.5); } 12% { opacity: 1; } 50% { top: calc(5% - var(--i) * 3px); transform: scale(1.25) rotate(180deg); } 90% { opacity: 1; } 100% { opacity: 0; left: 80%; top: 55%; transform: scale(0.7) rotate(360deg); } }
+  @keyframes lord-bank-back { 0% { opacity: 0; left: 80%; top: 55%; transform: scale(0.5); } 12% { opacity: 1; } 50% { top: calc(5% - var(--i) * 3px); transform: scale(1.25) rotate(-180deg); } 90% { opacity: 1; } 100% { opacity: 0; left: 20%; top: 55%; transform: scale(0.7) rotate(-360deg); } }
+  @keyframes lord-bank-thump { 40% { transform: scale(1.12); box-shadow: 0 0 60px rgba(255, 210, 80, 1), 0 6px 18px rgba(0, 0, 0, 0.7); } }
+  @keyframes lord-bank-shine { 50% { box-shadow: 0 0 30px rgba(255, 220, 90, 0.95), 0 3px 0 #6b4508; } }
+}
+@media (max-width: 760px) {
+  .lord-bank .lord-portrait { height: 34%; max-width: 38%; right: 0; bottom: auto; top: 96px; }
+  .lord-bank__middle { width: calc(100% - 20px); margin: auto 10px; }
+  .lord-bank__lead { align-self: flex-start; max-width: 60%; text-align: left; }
+}

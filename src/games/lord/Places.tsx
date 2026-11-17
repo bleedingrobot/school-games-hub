@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
@@ -15,6 +15,8 @@ import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './S
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
 import { Portrait, Stage } from './Stage';
+import { BigStage } from './Fight';
+import { Purse } from './Purse';
 import { shortcutsOn } from './shortcuts';
 import { lookThumb, type PersonId, type SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
@@ -190,16 +192,36 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
 
 // ---------------------------------------------------------------- the bank
 
+/** How many coins fly across when gold moves, and how long the flight lasts (ms). */
+const FLIGHT_COINS = 12;
+const FLIGHT_MS = 1400;
+
+/**
+ * The bank, on its big painting like the arena and the news (James, 18 Nov 2026: every screen as big and immersive as
+ * it can be). Mr Penny stands at his counter; what you carry and what is in the vault sit on the painting as two big
+ * glowing piles, and when gold moves the coins fly from one to the other. The buttons sit in a row along the bottom.
+ */
 export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
   const due = interestDue(hero.bank);
-  const canAskInterest = hero.level >= 4 && hero.bank >= INTEREST_EVERY && !state.interestDone;
+  const showInterest = hero.level >= 4;
+  const canAskInterest = showInterest && hero.bank >= INTEREST_EVERY && !state.interestDone;
   // The banker's question, while it is on screen: one from the pupil's maths ladder or focus, made and marked by the server.
   const [question, setQuestion] = useState<{ id: number; shown: PublicQuestion } | null>(null);
   const outcome = useRef<{ interest: number; right: boolean; answer: number; bank: number } | null>(null);
+  // Coins in flight: which way, and a key so a second press starts a fresh flight.
+  const [flight, setFlight] = useState<{ key: number; to: 'vault' | 'pocket' } | null>(null);
+  useEffect(() => {
+    if (!flight) return;
+    const t = window.setTimeout(() => setFlight(null), FLIGHT_MS + 400);
+    return () => window.clearTimeout(t);
+  }, [flight]);
 
   async function move(op: 'deposit' | 'withdraw', amount: number) {
     const reply = await act({ action: 'bank', op, amount });
-    if (reply) say(op === 'deposit' ? `You put ${(reply.result as { moved: number }).moved} gold in the bank.` : `You take ${(reply.result as { moved: number }).moved} gold out of the bank.`);
+    if (!reply) return;
+    const moved = (reply.result as { moved: number }).moved;
+    say(op === 'deposit' ? `You put ${moved} gold in the vault. It is safe there!` : `You take ${moved} gold out of the vault.`);
+    if (moved > 0) setFlight({ key: Date.now(), to: op === 'deposit' ? 'vault' : 'pocket' });
   }
 
   async function interest() {
@@ -214,36 +236,59 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
     const r = outcome.current;
     outcome.current = null;
     if (!r) return;
-    if (r.right) say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
-    else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
+    if (r.right) {
+      say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
+      setFlight({ key: Date.now(), to: 'vault' });
+    } else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
   }
 
+  const interestHelp = state.interestDone ? 'done for today'
+    : hero.bank < INTEREST_EVERY ? `save ${INTEREST_EVERY} gold first`
+    : `answer a question for +${due} gold`;
+
   return (
-    <Place title="The Bank" tile="coin" scene="bank" person="bank" note={note} back={back}>
-      <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
-      <p className="lord-banked">
-        <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
-      </p>
-      <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" disabled={hero.gold <= 0 || busy} onClick={() => void move('deposit', hero.gold)}>Deposit all</button>
-        <button type="button" className="lord-btn" disabled={hero.gold <= 1 || busy} onClick={() => void move('deposit', Math.floor(hero.gold / 2))}>Deposit half</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 0 || busy} onClick={() => void move('withdraw', hero.bank)}>Withdraw all</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Withdraw half</button>
-      </div>
-      {hero.level >= 4 && (
-        <div className="lord-card">
-          <h3>Interest</h3>
-          <p className="lord-soft">
-            Once a day the banker pays <strong>1 gold for every {INTEREST_EVERY} gold</strong> you have saved (that is 5%), if you can answer a maths question.
-            {hero.bank >= INTEREST_EVERY ? ` Today's interest on your ${hero.bank} gold is ${due} gold.` : ` Save at least ${INTEREST_EVERY} gold to earn some.`}
-          </p>
-          <div className="lord-actions">
-            <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={interest}>
-              Ask about interest {state.interestDone ? '(done today)' : hero.bank < INTEREST_EVERY ? `(save ${INTEREST_EVERY} gold first)` : ''}
-            </button>
+    <BigStage scene="bank" label="The Bank" className={`lord-bank${flight ? ` is-to-${flight.to}` : ''}`}>
+      <div className="lord-big__top"><h2 className="lord-big__heading">The Bank</h2><Purse /></div>
+      <Portrait who="bank" />
+      <div className="lord-bank__middle">
+        <p className="lord-bank__lead">Gold in the vault is safe. Lose a fight and you only lose the gold you carry.</p>
+        <div className="lord-bank__piles">
+          <div className="lord-bank__pile lord-bank__pile--pocket" key={`p${flight?.to === 'pocket' ? flight.key : ''}`}>
+            <span className="lord-bank__label">You carry</span>
+            <span className="lord-bank__num"><span aria-hidden="true" className="lord-bank__coin" />{hero.gold}</span>
+          </div>
+          <div className="lord-bank__lane" aria-hidden="true">
+            <span className="lord-bank__arrow">{flight?.to === 'pocket' ? '◀' : '▶'}</span>
+            {flight && (
+              <span className="lord-bank__flight" key={flight.key}>
+                {Array.from({ length: FLIGHT_COINS }, (_, i) => <span key={i} style={{ '--i': i } as CSSProperties} />)}
+              </span>
+            )}
+          </div>
+          <div className="lord-bank__pile lord-bank__pile--vault" key={`v${flight?.to === 'vault' ? flight.key : ''}`}>
+            <span className="lord-bank__label">In the vault</span>
+            <span className="lord-bank__num"><span aria-hidden="true" className="lord-bank__coin" />{hero.bank}</span>
           </div>
         </div>
-      )}
+        {showInterest && (
+          <p className="lord-bank__interest">
+            Once a day Mr Penny pays <strong>1 gold for every {INTEREST_EVERY}</strong> you save (5%), if you answer his maths question.
+          </p>
+        )}
+        {note && <p className="lord-bank__note" role="status" key={note}>{note}</p>}
+      </div>
+      <div className="lord-big__bar">
+        <button type="button" className="lord-btn lord-btn--hot lord-btn--big" autoFocus disabled={hero.gold <= 0 || busy} onClick={() => void move('deposit', hero.gold)}>Deposit all<small>put it all in the vault</small></button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.gold <= 1 || busy} onClick={() => void move('deposit', Math.floor(hero.gold / 2))}>Deposit half</button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Take out half</button>
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" disabled={hero.bank <= 0 || busy} onClick={() => void move('withdraw', hero.bank)}>Take out all</button>
+        {showInterest && (
+          <button type="button" className={`lord-btn lord-btn--big ${canAskInterest ? 'lord-btn--gold' : 'lord-btn--glass'}`} disabled={!canAskInterest || busy} onClick={interest}>
+            Ask for interest<small>{interestHelp}</small>
+          </button>
+        )}
+        <button type="button" className="lord-btn lord-btn--glass lord-btn--big" onClick={back}><kbd>Esc</kbd> Back to the village</button>
+      </div>
       {question && (
         <QuestionModal
           key={question.id}
@@ -265,7 +310,7 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
           onDone={answered}
         />
       )}
-    </Place>
+    </BigStage>
   );
 }
 
