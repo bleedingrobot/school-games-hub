@@ -14,7 +14,7 @@ import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
 import { useAuth } from '../../auth/AuthContext';
-import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
+import { createServerBackend, type LordBackend, type LordLoad } from '../../data/lord';
 import { BigStage, FightScreen, fightScene } from './Fight';
 import { shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
@@ -93,14 +93,15 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
 
   const [load, setLoad] = useState<LordLoad | { kind: 'loading' }>({ kind: 'loading' });
   const [state, setState] = useState<LordState | null>(null);
-  const [facts, setFacts] = useState<PackFact[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: 'village' });
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(0);
   const [deeds, setDeeds] = useState<string[]>([]);
   const hero = state?.hero ?? null;
-  const { ask, modal } = useAsk(hero?.level ?? 1, facts, state?.topics);
+  // The game's own request function, for the question boxes (set once `act` is made, below).
+  const sendRef = useRef<Parameters<typeof useAsk>[0]['current']>(null);
+  const { ask, modal } = useAsk(sendRef);
   const clashes = useClashes(hero ? backend.clashes : undefined, player);
 
   const stateRef = useRef<LordState | null>(null);
@@ -128,7 +129,6 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     setWaiting(backend.waiting());
     if (result.kind === 'ready') {
       setState(result.state);
-      setFacts(result.facts);
       if (result.abandoned) setNote(ABANDONED[result.abandoned]);
     }
   }, [backend]);
@@ -213,6 +213,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     },
     [backend],
   );
+  sendRef.current = act;
 
   // A new day: the server has already given the turns back; just say so.
   const today = state?.today ?? '';
@@ -345,12 +346,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     if (!event) return toVillage();
     let proof: Answer | null = null;
     let walkOn = false;
-    // A topic the teacher has switched off since the event turned up: walk past it, no question.
-    const topicsNow = stateRef.current?.topics;
-    const mathsOn = !!event.maths && (!topicsNow || topicsNow.includes(event.maths.topic));
-    if (event.maths && !mathsOn) walkOn = true;
-    if (event.maths && mathsOn) {
-      proof = await ask('treasure', { title: event.title, note: event.text, pack: event.maths.topic, closeLabel: 'Walk on' });
+    if (event.maths) {
+      proof = await ask('treasure', { title: event.title, note: event.text, closeLabel: 'Walk on' });
       walkOn = proof === null;
     }
     const reply = await act({ action: 'event', proof: proof?.proof ?? null, walkOn });
@@ -374,6 +371,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         title: `${master.name}’s trial`,
         note: `Question ${i} of 3. Each right answer adds a little strength if you win.`,
         closeLabel: 'Skip this one',
+        slot: i - 1,
       });
       trial.push(asked?.proof ?? null);
     }

@@ -16,8 +16,9 @@
  *     the hero, so reloading or opening the game on another Chromebook offers the same fight again.
  *  4. A finished fight arrives as the actions the pupil played. The server replays them from the saved start
  *     (`replayFight`) and only then pays gold and experience. A fight can be finished once.
- *  5. A maths answer arrives as a proof (pack, key, numbers, answer). The server rebuilds the question and
- *     marks it itself (`markProof`); one it cannot prove counts as wrong.
+ *  5. Maths is ladder maths, the same as the other games (docs/game-guide/4-maths.md, way A): `ask` makes the
+ *     question(s) for a moment from the pupil's maths focus and keeps them with the hero; `ask-check` marks an answer
+ *     and records it. The action the question was for then names the question (a "ticket") and uses its mark once.
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
@@ -34,11 +35,10 @@ import {
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  ALL_TOPICS, INTEREST_EVERY, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestDue, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  ALL_TOPICS, ASK_COUNT, INTEREST_EVERY, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestDue, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
   sizeItUpBonus, sizeItUpGold, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
-import { markProof, type Proof } from './proof';
 import type { FightAction, FightState, Hero, HeroClass, SkillId } from './types';
 import { FINISH_ACTIONS } from './finish';
 import { PAID_PRACTICE_PER_DAY, computerPick, newClash, playRound, practiceGold, readMove, replayClash, type ClashPick } from './clash';
@@ -82,10 +82,33 @@ export interface Extra {
   stats: Stats;
   /** Today's practice clashes: how many have paid gold, and the one being played (its computer hero and rounds so far). */
   practice: { day: string; paid: number; foe: string; picks: [ClashPick, ClashPick][] } | null;
+  /** The ladder questions handed out by the last `ask`, kept here so their answers never leave the server. */
+  ask: AskSet | null;
+  /** How many `ask`s the hero has had, so each one's questions (and their records) are different. */
+  askNo: number;
+}
+
+/** Questions made by `ask` for one moment, with how each was answered (`ask-check`) and whether that mark was used. */
+export interface AskSet {
+  moment: MomentId;
+  no: number;
+  /** When they were handed out (a live clash round only takes a question asked during that round). */
+  at: number;
+  questions: Question[];
+  marks: ({ correct: boolean; given: number; used?: boolean } | null)[];
+}
+
+/** What the browser sends with an action to say which question it answered: the `ask` number and the question's slot. */
+export interface AskTicket {
+  no: number;
+  slot: number;
+  /** The pupil used the hint. Only ever lowers what a right answer earns, so it is safe to believe. */
+  hinted?: boolean;
 }
 
 export const newExtra = (stats: Stats = newStats()): Extra => ({
   riddleDay: '', interestDay: '', interestAsk: null, guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats, practice: null,
+  ask: null, askNo: 0,
 });
 
 /** An `extra` as saved, filled in where an older save had no such part. */
@@ -124,7 +147,7 @@ export interface Settings {
   forestPerDay: number;
   /** The first day of season 1 (YYYY-MM-DD). Null: the season starts today. */
   seasonStart: string | null;
-  /** The maths topics the teacher has left on (a missing or empty list means all of them). */
+  /** The old maths topics tick-list: no longer used (questions come from each pupil's maths focus). */
   topics?: string[];
   /** The teacher's "Unlimited turns today" switch is on: forest and arena fights no longer run out (extra ones earn no points). */
   unlimitedToday?: boolean;
@@ -252,25 +275,29 @@ export type LordAction =
   | { action: 'start-hero'; heroClass: HeroClass; look?: string }
   | { action: 'look'; look: string }
   | { action: 'forest' }
-  | { action: 'event'; proof?: Proof | null; walkOn?: boolean }
-  | { action: 'fight-finish'; fightId: string; actions: FightAction[]; sizeUp?: Proof | null }
-  | { action: 'master-start'; trial: (Proof | null)[] }
+  /** Ladder questions for a moment, made from the pupil's maths focus and kept here: only what to show goes back. */
+  | { action: 'ask'; moment: MomentId }
+  /** Marks one answer to the last `ask` now (so the question box can say right or wrong) and records it. */
+  | { action: 'ask-check'; no: number; slot: number; answer: number; ms?: number }
+  | { action: 'event'; proof?: AskTicket | null; walkOn?: boolean }
+  | { action: 'fight-finish'; fightId: string; actions: FightAction[]; sizeUp?: AskTicket | null }
+  | { action: 'master-start'; trial: (AskTicket | null)[] }
   | { action: 'master-finish'; fightId: string; actions: FightAction[] }
-  | { action: 'dragon-stage'; stage: 1 | 2 | 3; riddle?: Proof | null }
+  | { action: 'dragon-stage'; stage: 1 | 2 | 3; riddle?: AskTicket | null }
   | { action: 'dragon-finish'; fightId: string; actions: FightAction[] }
-  | { action: 'shop-buy'; slot: 'weapon' | 'armour'; index: number; proof?: Proof | null }
-  | { action: 'heal'; hp: number; proof?: Proof | null }
+  | { action: 'shop-buy'; slot: 'weapon' | 'armour'; index: number; proof?: AskTicket | null }
+  | { action: 'heal'; hp: number; proof?: AskTicket | null }
   /**
    * Interest: 'interest-ask' hands out the banker's question of the day (one from the pupil's maths ladder or focus, made and
    * kept by the server); 'interest' answers it (`answer`, and `ms` the time taken).
    */
   | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest-ask' | 'interest'; amount?: number; answer?: number | null; ms?: number }
-  | { action: 'inn'; game: 'riddle'; proof?: Proof | null }
+  | { action: 'inn'; game: 'riddle'; proof?: AskTicket | null }
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
   | { action: 'arena' }
   /** A practice clash against a computer hero, one round at a time: the server picks the computer's attack and marks the maths. */
-  | { action: 'practice'; op: 'round'; move: string; proof?: Proof | null; fresh?: boolean; foe?: string }
+  | { action: 'practice'; op: 'round'; move: string; proof?: AskTicket | null; fresh?: boolean; foe?: string }
   | { action: 'practice'; op: 'leave' }
   | { action: 'tools'; tool: ToolId; value?: number | string };
 
@@ -285,8 +312,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
   'load', 'rollover', 'start-hero', 'look', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
-  'shop-buy', 'heal', 'bank', 'inn', 'arena', 'practice', 'tools',
+  'shop-buy', 'heal', 'bank', 'inn', 'arena', 'practice', 'tools', 'ask', 'ask-check',
 ];
+/** Asking and checking a question change nothing but the questions kept: they work while a fight is open, from any version. */
+const ASKING = ['ask', 'ask-check'];
 
 function parseActions(raw: unknown): FightAction[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_FIGHT_ACTIONS) return null;
@@ -348,12 +377,66 @@ interface Ctx {
   teacher: () => Promise<boolean>;
 }
 
-/** Marks a proof and gathers what is needed to record it. A proof that cannot be checked is just wrong. */
-function mark(c: Ctx, raw: unknown, moment: MomentId, only?: string) {
-  if (raw === undefined || raw === null) return { result: 'wrong' as Result, skipped: true, answers: [] as (FactAnswer & { pack: string })[], notes: [] as string[] };
-  const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
-  if (!m.ok) return { result: 'wrong' as Result, skipped: false, answers: [], notes: [m.problem] };
-  return { result: (m.correct ? (m.hinted ? 'hint' : 'right') : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
+/**
+ * The mark of the question a ticket names, used once: it must be from the last `ask` for this moment and already marked by
+ * `ask-check` (which recorded it). Anything else counts as wrong, never as an error the pupil sees. Changes `c.w.extra.ask`
+ * in place (the mark is used), so the save that follows keeps that.
+ */
+function mark(c: Ctx, raw: unknown, moment: MomentId) {
+  const out = (result: Result, notes: string[] = [], skipped = false) => ({ result, skipped, answers: [] as (FactAnswer & { pack: string })[], notes });
+  if (raw === undefined || raw === null) return out('wrong', [], true);
+  const t = raw as Record<string, unknown>;
+  const set = c.w.extra.ask;
+  if (!set || set.moment !== moment || t.no !== set.no || !isInt(t.slot, 0, set.questions.length - 1)) return out('wrong', ['ask-ticket']);
+  const m = set.marks[t.slot];
+  if (!m) return out('wrong', ['ask-unmarked']);
+  if (m.used) return out('wrong', ['ask-used']);
+  m.used = true;
+  return out(m.correct ? (t.hinted === true ? 'hint' : 'right') : 'wrong');
+}
+
+/** Ladder questions for a moment, from the pupil's maths focus. Asking again before answering gives the same ones back. */
+async function ask(c: Ctx): Promise<Done | Refuse> {
+  const moment = c.req.moment;
+  const count = typeof moment === 'string' && Object.hasOwn(ASK_COUNT, moment) ? ASK_COUNT[moment as MomentId] : 0;
+  if (count <= 0) return { refuse: 'bad-request' };
+  const { extra } = c.w;
+  const waiting = extra.ask;
+  if (waiting && waiting.moment === moment && waiting.marks.every((m) => !m)) {
+    // Never swapped for an easier one by asking again; it just counts as asked now.
+    const again = { ...waiting, at: c.now };
+    return { extra: { ...extra, ask: again }, summary: { ask: moment, again: true }, result: { no: again.no, questions: again.questions.map((q, i) => publicQuestion(q, i)) } };
+  }
+  const context = await c.s.mathsContext(c.player);
+  if (!context.ok) return { refuse: 'busy' };
+  const no = extra.askNo + 1;
+  const questions = makeRunQuestions(context.value, count, seededRandom(`lord-ask:${c.player}:${no}:${c.s.seed()}`));
+  if (questions.length === 0) return rule('We couldn’t get your maths question just now.');
+  const set: AskSet = { moment: moment as MomentId, no, at: c.now, questions, marks: questions.map(() => null) };
+  return { extra: { ...extra, ask: set, askNo: no }, summary: { ask: moment, no }, result: { no, questions: questions.map((q, i) => publicQuestion(q, i)) } };
+}
+
+/** Marks one answer to the last `ask`, once, and records it in the pupil's maths. Sending it again gives the same mark. */
+function askCheck(c: Ctx): Done | Refuse {
+  const { extra } = c.w;
+  const set = extra.ask;
+  const slot = c.req.slot;
+  const given = c.req.answer;
+  if (!set || c.req.no !== set.no || !isInt(slot, 0, set.questions.length - 1)) return rule('There is no question to answer.');
+  if (typeof given !== 'number' || !Number.isFinite(given)) return { refuse: 'bad-request' };
+  const marked = markQuestion(set.questions[slot]);
+  if (!marked) return rule('There is no question to answer.');
+  const before = set.marks[slot];
+  if (before) return { summary: { check: set.no, again: true }, result: { correct: before.correct, answer: marked.answer } };
+  const correct = sameAnswer(given, marked.answer);
+  const marks = set.marks.map((m, i) => (i === slot ? { correct, given } : m));
+  const pack = packIdOfKey(marked.key);
+  const ms = typeof c.req.ms === 'number' && Number.isFinite(c.req.ms) && c.req.ms >= 0 ? Math.round(Math.min(c.req.ms, 120_000)) : 120_000;
+  return {
+    extra: { ...extra, ask: { ...set, marks } },
+    answers: pack ? [{ key: marked.key, correct, ms, at: c.now, pack, ...(correct ? {} : { given }) }] : [],
+    summary: { check: set.no, slot, correct }, result: { correct, answer: marked.answer },
+  };
 }
 
 // ---------- The actions ----------
@@ -386,7 +469,7 @@ function forest(c: Ctx): Done | Refuse {
   const extraTurn = hero.forestLeft <= 0 && unlimited;
   if (hero.forestLeft <= 0 && !unlimited) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
   if (hero.hp <= 0) return rule('You are too hurt to go into the forest. See the healer.');
-  const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
+  const trip = forestTrip(hero, c.s.seed(), eventsOn(ALL_TOPICS));
   if (trip.kind === 'event') {
     return { extra: { ...extra, pendingEvent: trip.event.id }, summary: { kind: 'event', id: trip.event.id }, result: { kind: 'event', eventId: trip.event.id } };
   }
@@ -404,9 +487,8 @@ function event(c: Ctx): Done | Refuse {
   let right = false;
   let answers: Done['answers'] = [];
   let notes: string[] = [];
-  // An event about a topic the teacher has since switched off is just walked past: no question, no maths reward.
-  if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
-    const m = mark(c, c.req.proof, 'treasure', e.maths.topic);
+  if (e.maths && !c.req.walkOn) {
+    const m = mark(c, c.req.proof, 'treasure');
     right = m.result !== 'wrong';
     answers = m.answers;
     notes = m.notes;
@@ -998,8 +1080,9 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     return refuse('no-hero');
   } else {
     // A finish is tied to its fight (the fight is the lock); everything else must be made from the current version.
-    if (!isFinish && req.version !== row.version) return refuse('stale');
-    if (w.open && !isFinish && action !== 'tools') return refuse('fight-open', 'Finish your fight first.');
+    const asking = ASKING.includes(action);
+    if (!isFinish && !asking && req.version !== row.version) return refuse('stale');
+    if (w.open && !isFinish && !asking && action !== 'tools') return refuse('fight-open', 'Finish your fight first.');
     if (isFinish && !w.open) return refuse('no-fight');
   }
 
@@ -1023,6 +1106,8 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     case 'arena': done = await arena(ctx); break;
     case 'practice': done = practice(ctx); break;
     case 'tools': done = await tools(ctx); break;
+    case 'ask': done = await ask(ctx); break;
+    case 'ask-check': done = askCheck(ctx); break;
     default: done = { refuse: 'bad-request' };
   }
   if (isRefuse(done)) {

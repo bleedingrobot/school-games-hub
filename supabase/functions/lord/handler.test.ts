@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { expNeeded } from '../../../shared/lord/data';
 import { MAX_REQUESTS_PER_MINUTE } from './handler';
-import { Game, STRONG, play, proof } from './testKit';
+import { Game, STRONG, answer, play } from './testKit';
 
 describe('the lord server function', () => {
   it('needs a signed-in student, and refuses things that are not requests, unknown actions and too many requests', async () => {
@@ -97,9 +97,16 @@ describe('the lord server function', () => {
     g.patch({ exp: expNeeded(1), ...STRONG, strength: 200 });
     await g.refresh();
     const strength = g.hero().strength;
-    const out = await g.send({ action: 'master-start', trial: [proof('add-sub', 1, true), proof('times-tables', 1, true), proof('add-sub', 1, false)] });
+    // Ladder questions from the pupil's maths (way A): each answer is marked and recorded once, and each mark is used once.
+    const trial = await answer(g, 'master-trial', true, true, false);
+    expect(Object.values(g.db.batches).flatMap((b) => b.answers.map((a) => a.correct))).toEqual([true, true, false]);
+    const again = await g.send({ action: 'ask-check', no: trial[0].no, slot: 0, answer: -1 });
+    expect(again.body.result.correct).toBe(true);
+    expect((await g.send({ action: 'ask', moment: 'inn-guess' })).body.reason).toBe('bad-request');
+    const out = await g.send({ action: 'master-start', trial: [trial[0], trial[1], trial[2]] });
     expect(out.body.ok).toBe(true);
     expect(out.body.result.trial).toEqual(['right', 'right', 'wrong']);
+    expect(g.db.row!.extra.ask!.marks.every((m) => m?.used)).toBe(true);
     expect(g.hero().masterTried).toBe(true);
     const open = out.body.state.openFight;
     expect(open.kind).toBe('master');

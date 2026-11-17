@@ -22,7 +22,6 @@ export function pretendClashApi(me: string, options: { askMe?: boolean } = {}): 
     now: () => Date.now(),
     load: async (p) => ({ ok: true, value: { row: { hero: { level: mem.pupils.get(p)?.level ?? 1 } } as never, openFight: null, seen: false } }),
     settings: async () => ({ ok: true, value: { enabled: true, forestPerDay: 10, seasonStart: null } }),
-    recordAnswers: async () => ({ ok: true, value: 0 }),
   };
   const listeners = new Set<(row: ClashRow) => void>();
   const tell = (row: ClashRow | null | undefined) => { if (row) for (const l of listeners) l(row); };

@@ -1,6 +1,6 @@
 /**
  * Dragon Maths on the teacher pages: the school's seasons (one date for the whole school, set by a school admin), forest
- * fights a day, the topics and the class report (where the
+ * fights a day and the class report (where the
  * class's season is, how many heroes at each level, the hardest questions, the requests the game turned down, and the Hall
  * of Heroes) in the Games table's drawer, for the header's class; and each pupil's hero, with a button to start their hero
  * again. Loaded only when opened. The on/off switch, which pauses the season clock, is in the Games table row
@@ -8,14 +8,13 @@
  */
 import { useEffect, useState } from 'react';
 import { MAX_LEVEL } from '../../shared/lord/data';
-import { ALL_TOPICS } from '../../shared/lord/maths';
 import { TOPICS } from '../../shared/maths/skillPacks';
 import {
   fetchClassLord, fetchLordSchoolSeason, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange, saveLordHoliday, saveLordLiveArena,
   saveLordSchoolSeason, type ClassLord, type LordSchoolSeason, type StudentLord,
 } from '../data/lord';
 import { FriendlyError } from '../data/profile';
-import { SettingChips, SettingDate, SettingNumber, SettingToggle, useSetting } from '../teacher/Settings';
+import { SettingDate, SettingNumber, SettingToggle, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
 import type { HardestRow, TeacherAlert } from '../games/types';
 import { refusalAlerts } from '../teacher/alerts';
@@ -40,12 +39,15 @@ const REASON: Record<string, string> = {
   'proof-level': 'a question too hard or too easy for the hero',
   'proof-params': 'a question with numbers that did not fit',
   'proof-kind': 'a times-table question of an unknown kind',
+  'ask-ticket': 'an answer to a question the game never asked',
+  'ask-unmarked': 'an answer the game had not checked',
+  'ask-used': 'one right answer used twice',
 };
 const reasonText = (code: string) => REASON[code] ?? `check failed (${code})`;
 
 /**
- * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: forest fights, the season date and
- * the topics, then the class report. The on/off switch (which pauses the season clock) is in the table row.
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: forest fights and the season date,
+ * then the class report. Questions come from each pupil's maths focus, set on the shared Set focus page. The on/off switch (which pauses the season clock) is in the table row.
  */
 export function LordTeacherSettings({ classId }: { classId: string }) {
   return (
@@ -55,8 +57,6 @@ export function LordTeacherSettings({ classId }: { classId: string }) {
     </>
   );
 }
-
-const TOPIC_CHIPS = ALL_TOPICS.map((t) => ({ value: t, label: topicLabel(t) }));
 
 function LordSettingsPanel({ classId }: { classId: string }) {
   const settings = useSetting(() => fetchLordSettings(classId), [classId]);
@@ -99,14 +99,7 @@ function LordSettingsPanel({ classId }: { classId: string }) {
             save={(seasonStart) => saveLordChange({ seasonStart }, classId)}
           />
         )}
-        <SettingChips
-          label="Topics on"
-          about="A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Pupils get the new topics the next time they open Dragon Maths."
-          options={TOPIC_CHIPS}
-          value={s?.topics ?? null}
-          loadFailed={settings.failed}
-          save={(topics) => saveLordChange({ topics }, classId)}
-        />
+        <p className="panel__empty">Dragon Maths asks each pupil questions from their maths focus, like the other maths games. Change it on the Set focus page.</p>
         <SettingToggle
           label="Classmate clashes"
           about="Pupils with Dragon Maths open can challenge a classmate to a live arena clash: each round both pick Hammer, Sword or Net and answer a maths question. Same class only, no chat. The winner gets gold and the other side half that, for the first 3 clashes a day. Off to start. Practice clashes against computer heroes are always on."

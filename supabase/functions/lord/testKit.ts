@@ -4,11 +4,10 @@ import { forestTrip, makeRandom, stepFight } from '../../../shared/lord/engine';
 import { emptyDb, memoryServices, type MemoryDb } from '../../../shared/lord/memoryServices';
 import { clashMemory } from '../../../shared/lord/clashMemory';
 import { eventsOn } from '../../../shared/lord/events';
-import { offersSizeItUp, topicsOn } from '../../../shared/lord/maths';
-import { questionLevel, type Proof } from '../../../shared/lord/proof';
-import type { LordState } from '../../../shared/lord/server';
+import { ALL_TOPICS, offersSizeItUp } from '../../../shared/lord/maths';
+import type { MomentId } from '../../../shared/lord/maths';
+import type { AskTicket, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero } from '../../../shared/lord/types';
-import { makeExtraPack, makePack, type ExtraTopicId, type TopicId } from '../../../shared/maths/skillPacks';
 import { makeHandler, type HandlerServices } from './handler';
 
 // 2026-10-19 00:00 UTC is 1 pm in New Zealand (summer time). NZ midnight between the 19th and 20th is 11:00 UTC.
@@ -69,7 +68,7 @@ export class Game {
   }
   /** The next trip into the forest finds a monster (or an event, if asked). */
   forceTrip(kind: 'fight' | 'event') {
-    const events = eventsOn(topicsOn(this.db.settings.topics));
+    const events = eventsOn(ALL_TOPICS);
     for (let s = 1; s < 5000; s++) if (forestTrip(this.hero(), s, events).kind === kind) return this.forced.push(s);
     throw new Error('no seed');
   }
@@ -100,13 +99,22 @@ export function play(start: FightState, pick: (f: FightState) => FightAction = (
   return { actions, fight };
 }
 
-/** A maths answer the way the question box reports it. */
-export function proof(pack: TopicId | ExtraTopicId, heroLevel: number, right = true): Proof {
-  const p = pack === 'money' || pack === 'patterns' ? makeExtraPack(pack) : makePack(pack);
-  const level = questionLevel(pack, heroLevel);
-  const q = p.nextQuestion({ level })!;
-  const wrong = q.answer + 1000;
-  return { pack, key: q.factKey, kind: q.kind, params: q.params, ...(pack === 'times-tables' ? { parts: q.parts } : {}), level, given: right ? q.answer : wrong, ms: 4000 };
+/**
+ * Answers ladder questions the way the question box does: `ask` for the moment, then `ask-check` for each answer (right or
+ * wrong, in order). Gives back the tickets the action then sends.
+ */
+export async function answer(g: Game, moment: MomentId, ...right: boolean[]): Promise<AskTicket[]> {
+  const asked = await g.send({ action: 'ask', moment });
+  expect(asked.body.ok).toBe(true);
+  const no = asked.body.result.no as number;
+  const tickets: AskTicket[] = [];
+  for (const [slot, r] of (right.length ? right : [true]).entries()) {
+    const q = g.db.row!.extra.ask!.questions[slot];
+    const checked = await g.send({ action: 'ask-check', no, slot, answer: r ? q.answer : q.answer + 1000, ms: 4000 });
+    expect(checked.body.result).toMatchObject({ correct: r, answer: q.answer });
+    tickets.push({ no, slot });
+  }
+  return tickets;
 }
 
 export const STRONG = { strength: 900, defence: 50, hp: 400, maxHp: 400 };
