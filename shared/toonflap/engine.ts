@@ -6,7 +6,7 @@
  * and the next flap lifts it off. A bump adds `BUMP_PENALTY_STEPS` to the time and the bird hovers again just in front of
  * the wall it hit, so a bump costs about 3 seconds and never ends the run.
  */
-import { BIRD_HALF, BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, DT, MAX_RUN_STEPS, POTIONS_PER_RUN, RESPAWN_BACK, RESPAWN_LOW, SKY, START_X, START_Y, STEPS_PER_SECOND, TAILWIND_STEPS, UNDERWATER, WALL_WIDTH, WINGS } from './config';
+import { ANSWER_RESPAWN_ROOM, BIRD_HALF, BUMP_PENALTY_STEPS, CHECK_BONUS_STEPS, DT, MAX_RUN_STEPS, POTIONS_PER_RUN, RESPAWN_BACK, RESPAWN_LOW, SKY, START_X, START_Y, STEPS_PER_SECOND, TAILWIND_STEPS, UNDERWATER, WALL_WIDTH, WINGS } from './config';
 import type { Course, Gap, Wall, Zone } from './levels';
 
 export type Mode = 'hover' | 'fly' | 'done';
@@ -65,10 +65,17 @@ function respawn(course: Course, s: RunState): void {
   const wall = course.walls[s.nextWall];
   if (wall) {
     const before = s.nextWall > 0 ? course.walls[s.nextWall - 1].x + WALL_WIDTH : START_X;
-    s.x = wall.x - (wall.x - before) * RESPAWN_BACK;
-    const gaps = gapsAt(wall, s.t);
-    // A little below the middle of the opening, because the flap that sets off lifts the bird about a unit.
-    s.y = gaps.reduce((best, g) => (Math.abs(g.y - SKY / 2) < Math.abs(best.y - SKY / 2) ? g : best), gaps[0]).y - RESPAWN_LOW;
+    if (wall.answer !== undefined) {
+      // An answer wall: come back right after the wall before, in the middle of the sky, so there is room to reach
+      // any answer, even the bottom one (James, 17 Nov 2026: from just in front, the bird couldn't drop far enough).
+      s.x = before + ANSWER_RESPAWN_ROOM;
+      s.y = SKY / 2 - RESPAWN_LOW;
+    } else {
+      s.x = wall.x - (wall.x - before) * RESPAWN_BACK;
+      const gaps = gapsAt(wall, s.t);
+      // A little below the middle of the opening, because the flap that sets off lifts the bird about a unit.
+      s.y = gaps.reduce((best, g) => (Math.abs(g.y - SKY / 2) < Math.abs(best.y - SKY / 2) ? g : best), gaps[0]).y - RESPAWN_LOW;
+    }
   } else {
     const last = course.walls[course.walls.length - 1];
     s.x = Math.max(last.x + WALL_WIDTH + 0.5, s.x - 1.5);
