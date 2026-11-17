@@ -1,6 +1,7 @@
 /**
  * Today's challenge at Swamp Hen's Reed Rows: ten goes in the reed garden (docs/SWAMPHEN-PLAN.md).
  *
+ *  - Equal rows: four pictures, tap the garden whose rows are all the same.
  *  - Plant: plant the rows one at a time, then how many shoots?
  *  - Under the mat: a garden with a mat over most of it; how many shoots?
  *  - Turn: the garden turned round; which garden is it now? (a picture card, picked before it turns)
@@ -24,7 +25,7 @@ import { stepGo, NEW_GO, type GoState } from '../../../shared/kit/mistakes';
 import { STRUGGLE_GOES } from '../../../shared/kit/help';
 import type { Tap } from '../../../shared/swamphen/play';
 import type { Friend as FriendName } from '../../../shared/swamphen/progress';
-import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, showRound, sisterGo, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
+import { GOES_PER_ROUND, fairShare, pictureFor, pictureOf, rowLengths, showRound, sisterGo, viewFor, type Go, type HelpLevel, type Round } from '../../../shared/swamphen/round';
 import { playSound } from '../sounds';
 import { DealLanes, Friend, Garden, Pile, sceneStyle, type Pose, type Scenery } from './art';
 import { SLIP_LINES, askLine, lookLine } from './voiceLines';
@@ -111,7 +112,10 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   const needPlant = plantFirst && planted < go.rows;
   const solved = phase !== 'ask';
   const isShare = go.kind === 'share';
-  const pictureCards = go.kind === 'which' || go.kind === 'turn';
+  const pictureCards = go.kind === 'which' || go.kind === 'turn' || go.kind === 'equal';
+  // Equal rows and which garden have no garden of their own to look at: the cards are the pictures.
+  const noField = go.kind === 'which' || go.kind === 'equal';
+  const pickLabel = go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : go.kind === 'equal' ? WORDS.pickEqual : WORDS.pickCard;
   const laneCounts = lanes.length === go.rows ? lanes : Array.from({ length: go.rows }, () => 0);
   const left = go.total - laneCounts.reduce((x, y) => x + y, 0);
   const fair = isShare && left === 0 && fairShare(laneCounts);
@@ -276,7 +280,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
   const gardenLabel = WORDS.garden(rows, cols);
   
   function picture() {
-    if (go.kind === 'which') return null;
+    if (noField) return null;
     if (isShare) {
       return (
         <div className="sh-share">
@@ -326,7 +330,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
 
   return (
     <div className={`sh-play sh-scene--${scenery}`} style={sceneStyle(scenery)}>
-      <h2 className="sh-sr" tabIndex={-1} ref={heading}>{go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : WORDS.pickCard}</h2>
+      <h2 className="sh-sr" tabIndex={-1} ref={heading}>{pickLabel}</h2>
       <div className="sh-top">
         <div className="sh-progress" aria-label={WORDS.goesDone(made, GOES_PER_ROUND)}>
           {Array.from({ length: GOES_PER_ROUND }, (_, i) => (
@@ -347,7 +351,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
         ) : (<>
         <p className="sh-ask" aria-live="polite">{askLine(go)}</p>
         {isShare && needDeal && phase === 'ask' && <p className="sh-hint">{WORDS.dealIt}</p>}
-        {go.kind !== 'which' && <div className={`sh-field${go.kind === 'turn' && turned ? ' sh-field--turned' : ''}`}>{picture()}</div>}
+        {!noField && <div className={`sh-field${go.kind === 'turn' && turned ? ' sh-field--turned' : ''}`}>{picture()}</div>}
         <div className="sh-tools">
           {guideHand.pointing && plantFirst && planted === 0 && <PointingHand prefix="sh" />}
           {plantFirst && planted < go.rows && phase === 'ask' && (
@@ -399,7 +403,7 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
       )}
       {gs.phase === 'redo' && <NowYouTry prefix="sh" line={WORDS.nowYouTry} />}
 
-      <div hidden={demoActive} className={`sh-cards sh-cards--${go.kind}`} role="group" aria-label={go.kind === 'which' ? WORDS.pickGarden : go.kind === 'turn' ? WORDS.pickTurned : WORDS.pickCard}>
+      <div hidden={demoActive} className={`sh-cards sh-cards--${go.kind}`} role="group" aria-label={pickLabel}>
         {cards.map((n) => {
           const cls = `sh-choice${wobble === n ? ' sh-choice--wobble' : ''}${(solved || markRight) && n === go.answer ? ' sh-choice--right' : ''}${solved && n !== go.answer ? ' sh-choice--off' : ''}`;
           const p = pictureCards ? pictureOf(n) : null;
@@ -410,9 +414,9 @@ export function Goes({ guided = false, round, seenKinds, markSeen, scenery, frie
               disabled={gs.phase === 'look' || needPlant || needDeal || demoActive}
               className={cls}
               onClick={() => pick(n)}
-              aria-label={p ? (p.rows ? WORDS.garden(p.rows, p.cols) : WORDS.pile(p.cols)) : heard(n)}
+              aria-label={p ? (p.rows ? (p.uneven ? WORDS.unevenGarden(p.rows) : WORDS.garden(p.rows, p.cols)) : WORDS.pile(p.cols)) : heard(n)}
             >
-              {p ? (p.rows ? <Garden rows={p.rows} cols={p.cols} view="rows" small label="" /> : <Pile n={p.cols} label="" />) : n}
+              {p ? (p.rows ? <Garden rows={p.rows} cols={p.uneven === 2 ? p.cols + 1 : p.cols} lengths={p.uneven ? rowLengths(p) : undefined} view="rows" small label="" /> : <Pile n={p.cols} label="" />) : n}
             </button>
           );
         })}

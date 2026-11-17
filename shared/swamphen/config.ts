@@ -6,8 +6,15 @@
 // ---------------------------------------------------------------- a challenge
 
 export const GOES_PER_ROUND = 10;
-/** From step 2 on, this many goes are from earlier steps (the rest are today's step). */
+/** From step 2 on, this many goes are from earlier steps once a step is settled (the rest are today's step). */
 export const REVIEW_GOES = 3;
+/**
+ * New goes ease in: on the first counted day at a step only this many of the ten are the new step, then more, then the
+ * usual ten less REVIEW_GOES (index = counted days at the step so far; the last number stays).
+ */
+export const NEW_GOES_BY_DAY: readonly number[] = [3, 5, 7];
+/** At most this many kinds of go in one day's challenge, so it never feels like a jumble. */
+export const MAX_KINDS = 2;
 
 // ---------------------------------------------------------------- steps and help (the kit's rule 5 numbers)
 
@@ -15,21 +22,25 @@ export const REVIEW_GOES = 3;
 export const GOOD = 8;
 /** This many or fewer makes a hard one. */
 export const HARD = 4;
-/** Good challenges at a step that pass it (two, as Tūī). */
-export const GOOD_TO_PASS = 2;
+/** Good challenges at a step that pass it (three: the plan of 18 Nov 2026, two was too fast for 6-year-olds). */
+export const GOOD_TO_PASS = 3;
+/** Hard challenges in a row that take the child back one step, quietly. */
+export const HARD_TO_DROP = 2;
 /** Good challenges in a row that take the help down one level. */
 export const GOOD_TO_FADE = 2;
 /** Levels of help a new step brings back (up two), unless the help faded on that same go. */
 export const NEW_STEP_HELP = 2;
 export const TOP_LEVEL = 5;
-export const TOP_STEP = 6;
+export const TOP_STEP = 9;
+/** The Big Garden: steps from here on (6s to 9s built from facts the child knows), only after every earlier step is passed. */
+export const BIG_GARDEN_STEP = 8;
 
-/** A child who has most of the 3 to 8 times tables when they first play starts here. */
+/** A child who has most of the 2 to 5 times tables when they first play starts here (under the mat, not the Big Garden). */
 export const TABLES_SECURE = 0.7;
-export const TABLES_START = { step: 5, level: 2 } as const;
-/** A child who has most of Hop's counting in fives and tens starts here. */
+export const TABLES_START = { step: 7, level: 3 } as const;
+/** A child who has most of Hop's counting in fives and tens starts here (rows of 10 and 5). */
 export const SKIP_SECURE = 0.7;
-export const SKIP_START = { step: 2, level: 5 } as const;
+export const SKIP_START = { step: 3, level: 5 } as const;
 
 
 // ---------------------------------------------------------------- the cards
@@ -38,10 +49,16 @@ export const SKIP_START = { step: 2, level: 5 } as const;
 export const WRONG_CARDS = 3;
 /** The most two cards may share an ending (the kit's "tell" check). */
 export const MAX_SHARE_TELL = 2;
-/** The shoots in a row at step 1 (2, 5 and 10), as the plan's first rung. */
-export const STEP_ONE_ROW_SIZES: readonly number[] = [2, 5, 10];
+/** The biggest garden in an "equal rows or not?" go (step 1): small enough to see at a glance. */
+export const EQUAL_MAX = 12;
+/** Sharing at step 4 stays at 20 shoots or fewer. */
+export const SHARE_MAX = 20;
+/** Turning at step 5: rows and shoots in a row 2 to 5, 15 shoots or fewer. */
+export const TURN_MAX = 15;
 /** A picture card's code is rows times this plus columns (a scatter has no rows: the code is its count). */
 export const CODE = 100;
+/** An uneven garden's code adds this times its way of being uneven (1 last row short, 2 first row long). */
+export const UNEVEN = 1000;
 
 // ---------------------------------------------------------------- the days
 

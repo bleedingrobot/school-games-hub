@@ -1639,59 +1639,43 @@ function fadeByKind(kindLevels, goes, rules, startLevel) {
 	return out;
 }
 /**
-* `fadeAfter`, for a game with steps. A new step brings `newStepHelp` back only if the help didn't fade on this same round:
-* a pass and a fade usually land together, and the fade must stand, or a strong child never sees the help go. Test fade and
-* step-up together (LEARNING-DESIGN rule 5).
+* New goes ease in: on the first counted day at a step only this many of the ten are the new step, then more, then the
+* usual ten less REVIEW_GOES (index = counted days at the step so far; the last number stays).
 */
-function placeAfter$1(p, right, rules) {
-	const fade = fadeAfter(p, right, rules);
-	const goodAtStep = right >= rules.good ? p.goodAtStep + 1 : p.goodAtStep;
-	if (goodAtStep < rules.goodToPass || p.step >= rules.topStep) return {
-		step: p.step,
-		level: fade.level,
-		goodInRow: fade.goodInRow,
-		goodAtStep
-	};
-	const level = Math.min(rules.topLevel, fade.faded ? fade.level : fade.level + rules.newStepHelp);
-	return {
-		step: p.step + 1,
-		level: Math.max(rules.newStepLevel, level),
-		goodInRow: 0,
-		goodAtStep: 0
-	};
-}
+const NEW_GOES_BY_DAY = [
+	3,
+	5,
+	7
+];
 const TABLES_START = {
-	step: 5,
-	level: 2
+	step: 7,
+	level: 3
 };
-/** A child who has most of Hop's counting in fives and tens starts here. */
+/** A child who has most of Hop's counting in fives and tens starts here (rows of 10 and 5). */
 const SKIP_SECURE = .7;
 const SKIP_START = {
-	step: 2,
+	step: 3,
 	level: 5
 };
-/** The shoots in a row at step 1 (2, 5 and 10), as the plan's first rung. */
-const STEP_ONE_ROW_SIZES = [
-	2,
-	5,
-	10
-];
+/** An uneven garden's code adds this times its way of being uneven (1 last row short, 2 first row long). */
+const UNEVEN = 1e3;
 //#endregion
 //#region shared/swamphen/round.ts
 /**
 * One day's challenge at Swamp Hen's Reed Rows (docs/SWAMPHEN-PLAN.md): ten goes in the reed garden, each an array of shoots in
 * neat rows. The facts are the hub's shared equal-rows keys (`rows:4x6`, `turn:3x5`, `share:24/4`, `cut:6x7`, `which:3x5` in
 * shared/maths/skillPacks/earlyFacts.ts, ladder skills `equal-rows`, `arrays-turn`, `sharing-rows`, `cut-arrays`); every go that
-* is a times fact also records the plain times-table key (`mul:4x6`). The key says the numbers; the *kind* of go (plant it, under
-* the mat, turn it, which garden, share it, cut it, one row short) comes from the key and its step.
+* is a times fact also records the plain times-table key (`mul:4x6`). The key says the numbers; the *kind* of go (equal rows or
+* not, plant it, under the mat, turn it, which garden, share it, cut it, one row short) comes from the key and its step.
 *
 * Two things move separately, both from the child's own challenges and both kept by the server:
-* - the **step**: 1 Equal rows, 2 Turn the garden, 3 Under the mat, 4 Share them out, 5 Cut the garden, 6 One row short.
-*   Passed after two good challenges (8 or more of 10 right at the first tap). Never drops back.
+* - the **step**: the nine steps in STEPS (plan of 18 Nov 2026). Passed after three good challenges (8 or more of 10 right at
+*   the first tap); two hard ones in a row (4 or fewer) take the child back one step.
 * - the **help level**: 5 every row a shade with the running total, down to 0 the sum only (see `viewFor`).
 */
 /** Every kind of go, for the kinds a child has seen (the server accepts only these). */
 const KINDS = [
+	"equal",
 	"plant",
 	"mat",
 	"turn",
@@ -1700,6 +1684,59 @@ const KINDS = [
 	"cut",
 	"short"
 ];
+/**
+* The ladder (plan of 18 Nov 2026, after research on how children come to multiply): equal groups first, then counting the
+* rows in 2s, 10s and 5s, sharing by dealing, turning small arrays, rows of 3 and 4, the mat over facts the child knows, and
+* last, behind the Big Garden gate, the 6s to 9s built from facts they know.
+*/
+const STEPS = [
+	{
+		step: 1,
+		name: "Equal rows",
+		kinds: ["equal"]
+	},
+	{
+		step: 2,
+		name: "Rows of 2",
+		kinds: ["plant"]
+	},
+	{
+		step: 3,
+		name: "Rows of 10 and 5",
+		kinds: ["plant"]
+	},
+	{
+		step: 4,
+		name: "Share them out",
+		kinds: ["share"]
+	},
+	{
+		step: 5,
+		name: "Turn the garden",
+		kinds: ["turn", "which"]
+	},
+	{
+		step: 6,
+		name: "Rows of 3 and 4",
+		kinds: ["plant"]
+	},
+	{
+		step: 7,
+		name: "Under the mat",
+		kinds: ["mat"]
+	},
+	{
+		step: 8,
+		name: "Big Garden: 6 and 7 rows",
+		kinds: ["cut"]
+	},
+	{
+		step: 9,
+		name: "Big Garden: 8 and 9 rows",
+		kinds: ["short", "cut"]
+	}
+];
+const stepKinds = (step) => STEPS[step - 1].kinds;
 const familyKeys = (name) => EARLY_FACTS.families[name].keys;
 const rowsKeys = familyKeys("rows");
 const cutKeys = familyKeys("cut");
@@ -1708,66 +1745,148 @@ const keyPair = (key) => {
 	const m = /(\d+)[x/](\d+)$/.exec(key);
 	return [Number(m[1]), Number(m[2])];
 };
-const stepOneRows = (key) => STEP_ONE_ROW_SIZES.includes(keyPair(key)[1]);
+/** "Which garden has equal rows?": small gardens, 2 to 5 rows of 2 to 5, 12 shoots or fewer. Not a times fact: never recorded. */
+const EQUAL_KEYS = [
+	2,
+	3,
+	4,
+	5
+].flatMap((r) => [
+	2,
+	3,
+	4,
+	5
+].filter((c) => r * c <= 12).map((c) => `equal:${r}x${c}`));
+const inRow = (sizes) => (key) => sizes.includes(keyPair(key)[1]);
+const smallTurn = (key) => {
+	const [a, b] = keyPair(key);
+	return a <= 5 && b <= 5 && a * b <= 15;
+};
 /** The keys each step asks as its own. */
 const STEP_KEYS = {
-	1: rowsKeys.filter(stepOneRows),
-	2: [...familyKeys("turn"), ...familyKeys("which")],
-	3: rowsKeys.filter((k) => !stepOneRows(k)),
-	4: familyKeys("share"),
-	5: cutKeys.filter((k) => keyPair(k)[0] < 9),
-	6: cutKeys.filter((k) => keyPair(k)[0] === 9)
+	1: EQUAL_KEYS,
+	2: rowsKeys.filter(inRow([2])),
+	3: rowsKeys.filter(inRow([10, 5])),
+	4: familyKeys("share").filter((k) => [2, 5].includes(keyPair(k)[1]) && keyPair(k)[0] <= 20),
+	5: [...familyKeys("turn"), ...familyKeys("which")].filter(smallTurn),
+	6: rowsKeys.filter(inRow([3, 4])),
+	7: rowsKeys.filter(inRow([
+		2,
+		3,
+		4,
+		5,
+		10
+	])),
+	8: cutKeys.filter((k) => [6, 7].includes(keyPair(k)[0]) && keyPair(k)[1] <= 5),
+	9: cutKeys.filter((k) => [8, 9].includes(keyPair(k)[0]) && keyPair(k)[1] <= 5)
 };
-/** Every key the game can ask. */
-const KEYS = [...new Set(Object.values(STEP_KEYS).flat())];
+/**
+* Every key the game can replay: every key of its fact families (a challenge started on the old ladder still finishes) and the
+* equal-rows keys. The keys a step asks are in STEP_KEYS.
+*/
+const KEYS = [...new Set([...EQUAL_KEYS, ...[
+	"rows",
+	"turn",
+	"which",
+	"share",
+	"cut"
+].flatMap(familyKeys)])];
 /** The level a kind of go is at: its own, or (not in the map yet) the child's. */
 const kindLevel = (kindLevels, kind, level) => {
 	const own = kindLevels?.[kind]?.level;
 	return isLevel(own) ? own : level;
 };
-/** The kind of go a key is. */
-function kindOfKey(key) {
+/** The kinds of go a key can be: rows are planted or under the mat (by the step), the rest one kind each. */
+function kindsOfKey(key) {
 	switch (/^([a-z]+):/.exec(key)?.[1]) {
-		case "rows": return stepOneRows(key) ? "plant" : "mat";
-		case "turn": return "turn";
-		case "which": return "which";
-		case "share": return "share";
-		case "cut": return keyPair(key)[0] === 9 ? "short" : "cut";
-		default: return null;
+		case "equal": return ["equal"];
+		case "rows": return ["plant", "mat"];
+		case "turn": return ["turn"];
+		case "which": return ["which"];
+		case "share": return ["share"];
+		case "cut": return [keyPair(key)[0] === 9 ? "short" : "cut"];
+		default: return [];
 	}
 }
-/** The plain times-table key a go also records, or null for sharing and turning (neither states a total to find). */
+/**
+* The kind of go a key is on the step that asks it: rows are under the mat at step 7 and planted on the other steps. With no
+* step (a key from the records), rows of 6 to 9 in a row are under the mat, as on the old ladder.
+*/
+function kindOfKey(key, step) {
+	const kinds = kindsOfKey(key);
+	if (!kinds.length) return null;
+	if (kinds.length === 1) return kinds[0];
+	return step === 7 || step === void 0 && !inRow([
+		2,
+		3,
+		4,
+		5,
+		10
+	])(key) ? "mat" : "plant";
+}
+/** The plain times-table key a go also records, or null for sharing, turning and equal rows (none states a total to find). */
 function mulKeyOf(key) {
-	if (key.startsWith("share:") || key.startsWith("turn:")) return null;
+	if (key.startsWith("share:") || key.startsWith("turn:") || key.startsWith("equal:")) return null;
 	const [a, b] = keyPair(key);
 	return factKey(a, b);
 }
+/** Equal-rows goes are about seeing equal groups, not a fact to remember: they are left out of the maths records. */
+const isRecorded = (key) => !key.startsWith("equal:");
 const RULES = {
 	...ROUND_OF_TEN,
-	topLevel: 5,
-	goodToPass: 2,
-	topStep: 6,
-	newStepHelp: 2,
-	newStepLevel: 0
+	topLevel: 5
 };
 /** The help level of each kind of go after a day's first finish: the kit's rule with the round of ten (a new kind starts at the child's level). */
 function kindLevelsAfter(kindLevels, goes, level) {
 	return fadeByKind(kindLevels, goes, RULES, level);
 }
-/** The place after a day's first finish with `right` goes right at the first tap: the kit's rule. */
+/** The kinds' help when the step changes: the new step's own kinds start again with full help, the others keep theirs. */
+function kindLevelsForStep(kindLevels, step) {
+	const out = { ...kindLevels };
+	for (const kind of stepKinds(step)) delete out[kind];
+	return out;
+}
+/**
+* The place after a day's first finish with `right` goes right at the first tap (plan of 18 Nov 2026):
+*  - help fades after two good challenges in a row and comes back one level after a hard one (the kit's fadeAfter);
+*  - three good challenges at a step pass it, and the next step starts with full help;
+*  - two hard challenges in a row take the child back one step, with full help, and one good day there moves them on again.
+*/
 function placeAfter(p, right) {
-	const next = placeAfter$1(p, right, RULES);
+	const fade = fadeAfter(p, right, RULES);
+	const goodAtStep = right >= 8 ? p.goodAtStep + 1 : p.goodAtStep;
+	const hardInRow = right <= 4 ? p.hardInRow + 1 : 0;
+	const top = 5;
+	if (hardInRow >= 2 && p.step > 1) return {
+		step: p.step - 1,
+		level: top,
+		goodInRow: 0,
+		goodAtStep: 2,
+		daysAtStep: NEW_GOES_BY_DAY.length,
+		hardInRow: 0
+	};
+	if (goodAtStep >= 3 && p.step < 9) return {
+		step: p.step + 1,
+		level: top,
+		goodInRow: 0,
+		goodAtStep: 0,
+		daysAtStep: 0,
+		hardInRow: 0
+	};
 	return {
-		...next,
-		step: next.step,
-		level: next.level
+		step: p.step,
+		level: fade.level,
+		goodInRow: fade.goodInRow,
+		goodAtStep,
+		daysAtStep: p.daysAtStep + 1,
+		hardInRow
 	};
 }
 const secureShare = (keys, box) => keys.length ? keys.filter((k) => (box.get(k) ?? 0) >= 2).length / keys.length : 0;
 const tableKeys = (tables) => tables.flatMap((t) => Array.from({ length: 13 - t }, (_, i) => factKey(t, t + i)));
 /**
-* A child who already knows the times tables (most of the 2 to 5 times facts secure) when they first play starts at step 5,
-* level 2; one who has most of Hop's counting in fives and tens starts at step 2; everyone else at step 1, level 5.
+* A child who already knows the 2 to 5 times tables when they first play starts at step 7 (under the mat), help level 3; one
+* who has most of Hop's counting in fives and tens starts at step 3 (rows of 10 and 5); everyone else at step 1, level 5.
 */
 function startFor(stats) {
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
@@ -1807,61 +1926,95 @@ const weakest = (keys, box, random) => shuffle(keys, random).map((k, i) => ({
 	k,
 	i
 })).sort((a, b) => (box.get(a.k) ?? 0) - (box.get(b.k) ?? 0) || a.i - b.i).map((x) => x.k);
-/** The same key never comes twice in a row: a repeat swaps with a later go where it fits. */
+/** `n` keys from a pool, weakest first, going round the pool again when it is smaller than `n`. */
+const take = (pool, n, box, random) => {
+	const order = weakest(pool, box, random);
+	return order.length ? Array.from({ length: n }, (_, i) => order[i % order.length]) : [];
+};
+/**
+* The same key never comes twice in a row: at each place the key with the most goes left that isn't the one just asked (ties
+* in the given order, which is already shuffled). The first key stays first (the guided go).
+*/
 function spreadOut(keys) {
-	const out = [...keys];
-	for (let i = 1; i < out.length; i++) {
-		if (out[i] !== out[i - 1]) continue;
-		const at = out.findIndex((k, x) => x > i && k !== out[i] && out[x - 1] !== out[i] && out[x + 1] !== out[i]);
-		if (at !== -1) [out[i], out[at]] = [out[at], out[i]];
+	if (keys.length < 2) return [...keys];
+	const left = new Map();
+	for (const k of keys.slice(1)) left.set(k, (left.get(k) ?? 0) + 1);
+	const out = [keys[0]];
+	while (out.length < keys.length) {
+		let best = null;
+		for (const [k, n] of left) if (n > 0 && k !== out[out.length - 1] && (best === null || n > left.get(best))) best = k;
+		best ??= [...left].find(([, n]) => n > 0)[0];
+		out.push(best);
+		left.set(best, left.get(best) - 1);
 	}
 	return out;
 }
+/** How many of the ten goes are the step's own after `daysAtStep` counted days at it: 3, then 5, then 7 (step 1: all ten). */
+const newGoes = (step, daysAtStep) => step === 1 ? 10 : NEW_GOES_BY_DAY[Math.min(Math.max(0, daysAtStep), NEW_GOES_BY_DAY.length - 1)];
 /**
-* Today's challenge from a fresh seed, the child's records, their place and the teacher's setting. Step 1 is ten goes from the
-* twelve first rows (the weakest first). From step 2 on, seven goes are today's step (weakest first) and three are from earlier
-* steps (weakest first). The same inputs always give the same round.
+* Today's challenge from a fresh seed, the child's records, their place and the teacher's setting (plan of 18 Nov 2026).
+*  - The step's own goes ease in: 3 on the first day at a step, then 5, then 7 (step 1: all ten), weakest first.
+*  - A step with two kinds of go starts with its first kind alone; the second joins from the next day.
+*  - The rest are review from earlier steps, all of one kind (picked by the seed), so a day never has more than two kinds.
+*    With nothing earlier of a kind that fits, the step's own goes fill the ten.
+* The same inputs always give the same round.
 */
 function makeRound(seed, stats, opts = {}) {
 	if (!isSeed(seed)) throw new RangeError(`Bad seed ${seed}`);
 	const step = opts.step ?? 1;
 	const level = opts.level ?? 5;
 	const help = opts.help ?? "fade";
+	const days = opts.daysAtStep ?? NEW_GOES_BY_DAY.length;
 	const random = seeded(seed);
 	random();
 	random();
 	const box = new Map([...stats].map((s) => [s.key, s.box]));
-	let keys;
-	if (step === 1) keys = weakest(STEP_KEYS[1], box, random).slice(0, 10);
-	else {
-		const fresh = weakest(STEP_KEYS[step], box, random).slice(0, 7);
-		const earlier = [
-			1,
-			2,
-			3,
-			4,
-			5
-		].filter((s) => s < step).flatMap((s) => STEP_KEYS[s]);
-		const review = weakest(earlier, box, random).slice(0, 3);
-		keys = shuffle([...fresh, ...review], random);
-	}
-	if (opts.guided) keys = [GUIDED_KEY, ...keys.filter((k) => k !== GUIDED_KEY)].slice(0, 10);
-	while (keys.length < 10) keys.push(keys[keys.length % Math.max(1, keys.length)]);
-	keys = spreadOut(keys);
+	const ownKinds = days === 0 ? stepKinds(step).slice(0, 1) : stepKinds(step);
+	const own = STEP_KEYS[step].map((key) => ({
+		key,
+		kind: kindOfKey(key, step)
+	})).filter((p) => ownKinds.includes(p.kind));
+	const ownKind = new Map(own.map((p) => [p.key, p.kind]));
+	const earlier = STEPS.filter((s) => s.step < step && (s.step > 1 || step <= 3)).flatMap((s) => STEP_KEYS[s.step].map((key) => ({
+		key,
+		kind: kindOfKey(key, s.step)
+	})));
+	const room = 2 - ownKinds.length;
+	const candidates = earlier.filter((p) => !ownKind.has(p.key));
+	const reviewKinds = room > 0 ? [...new Set(candidates.map((p) => p.kind))].filter((k) => !ownKinds.includes(k)) : [];
+	const reviewKind = reviewKinds.length ? reviewKinds[Math.floor(random() * reviewKinds.length)] : null;
+	const pool = new Map();
+	for (const p of candidates) if ((p.kind === reviewKind || ownKinds.includes(p.kind)) && !pool.has(p.key)) pool.set(p.key, p.kind);
+	const reviewCount = pool.size ? 10 - newGoes(step, days) : 0;
+	let plans = shuffle([...take(own.map((p) => p.key), 10 - reviewCount, box, random).map((key) => ({
+		key,
+		kind: ownKind.get(key)
+	})), ...take([...pool.keys()], reviewCount, box, random).map((key) => ({
+		key,
+		kind: pool.get(key)
+	}))], random);
+	if (opts.guided) plans = [{
+		key: GUIDED_KEY,
+		kind: "plant"
+	}, ...plans.filter((p) => p.key !== GUIDED_KEY)].slice(0, 10);
+	const kindOf = new Map(plans.map((p) => [p.key, p.kind]));
 	return {
 		seed,
 		step,
 		level,
 		help,
-		goes: keys.map((key, i) => ({
-			key,
-			kind: kindOfKey(key),
-			l: opts.guided && i === 0 ? 5 : shownLevel(kindLevel(opts.kindLevels, kindOfKey(key), level), help)
-		}))
+		goes: spreadOut(plans.map((p) => p.key)).map((key, i) => {
+			const kind = kindOf.get(key);
+			return {
+				key,
+				kind,
+				l: opts.guided && i === 0 ? 5 : shownLevel(kindLevel(opts.kindLevels, kind, level), help)
+			};
+		})
 	};
 }
 /** A which-garden card: its rows times 100 plus its shoots in a row, or (no rows) a scatter of that many shoots. */
-const pictureCode = (rows, cols) => rows * 100 + cols;
+const pictureCode = (rows, cols, uneven = 0) => uneven * UNEVEN + rows * 100 + cols;
 /** Named wrong candidates for a go, best first; the plain neighbours follow in `wrongCards`. */
 function candidates(kind, a, b, answer) {
 	switch (kind) {
@@ -1920,7 +2073,7 @@ function wrongCards(kind, a, b, answer, random) {
 }
 /** A go made again from its plan, with its cards fixed by the seed. Null when the plan isn't one the game could make. */
 function showGo(round, index, plan) {
-	if (!KEYS.includes(plan.key) || !isLevel(plan.l) || kindOfKey(plan.key) !== plan.kind) return null;
+	if (!KEYS.includes(plan.key) || !isLevel(plan.l) || !kindsOfKey(plan.key).includes(plan.kind)) return null;
 	const [a, b] = keyPair(plan.key);
 	const random = seeded((round.seed + 7919 * (index + 1)) % MAX_SEED);
 	random();
@@ -1950,6 +2103,32 @@ function showGo(round, index, plan) {
 			{
 				n: pictureCode(1, a + b),
 				kind: "added"
+			},
+			{
+				n: total,
+				kind: "scatter"
+			}
+		];
+		return {
+			...plan,
+			rows: a,
+			cols: b,
+			total,
+			answer,
+			wrongs,
+			choices: shuffle([answer, ...wrongs.map((w) => w.n)], random)
+		};
+	}
+	if (plan.kind === "equal") {
+		const answer = pictureCode(a, b);
+		const wrongs = [
+			{
+				n: pictureCode(a, b, 1),
+				kind: "uneven"
+			},
+			{
+				n: pictureCode(a, b, 2),
+				kind: "uneven"
 			},
 			{
 				n: total,
@@ -2014,11 +2193,12 @@ function showRound(round) {
 }
 //#endregion
 //#region shared/swamphen/play.ts
-/** The answers for the maths records: each go's key, then the plain times-table key of it (once each). */
+/** The answers for the maths records: each go's key, then the plain times-table key of it (once each). Equal-rows goes are left out. */
 function withTimes(answers) {
 	const out = [];
 	const seen = new Set();
 	for (const a of answers) {
+		if (!isRecorded(a.key)) continue;
 		out.push(a);
 		const mul = mulKeyOf(a.key);
 		if (mul && !seen.has(mul)) {
@@ -2165,6 +2345,8 @@ const unplayed = () => ({
 	level: 5,
 	goodInRow: 0,
 	goodAtStep: 0,
+	daysAtStep: 0,
+	hardInRow: 0,
 	kindLevels: {},
 	version: 0
 });
@@ -2190,7 +2372,7 @@ function readTaps(v) {
 	for (const t of v) {
 		if (!t || typeof t !== "object") return null;
 		const { pick, ms } = t;
-		if (!isWhole(pick, 1e3) || !isWhole(ms, MAX_TAP_MS)) return null;
+		if (!isWhole(pick, 9999) || !isWhole(ms, MAX_TAP_MS)) return null;
 		taps.push({
 			pick,
 			ms
@@ -2204,12 +2386,16 @@ function placeOf(s, facts) {
 		step: s.step,
 		level: s.level,
 		goodInRow: s.goodInRow,
-		goodAtStep: s.goodAtStep
+		goodAtStep: s.goodAtStep,
+		daysAtStep: s.daysAtStep ?? 0,
+		hardInRow: s.hardInRow ?? 0
 	};
 	return {
 		...startFor(facts),
 		goodInRow: 0,
-		goodAtStep: 0
+		goodAtStep: 0,
+		daysAtStep: 0,
+		hardInRow: 0
 	};
 }
 async function handleSwamphen(services, player, body) {
@@ -2247,7 +2433,7 @@ async function handleSwamphen(services, player, body) {
 	if (body.action === "start") {
 		const [s, facts] = await Promise.all([services.load(player), services.facts(player)]);
 		if (s === "busy" || facts === "busy") return busy();
-		const { step, level } = placeOf(s, facts);
+		const { step, level, daysAtStep } = placeOf(s, facts);
 		const kindLevels = s.kindLevels ?? {};
 		const guided = s.daysDone === 0 && s.lastDay === null;
 		for (let tries = 0; tries < TRIES; tries++) {
@@ -2256,7 +2442,8 @@ async function handleSwamphen(services, player, body) {
 				level,
 				help: settings.help,
 				guided,
-				kindLevels
+				kindLevels,
+				daysAtStep
 			});
 			const kept = await services.start(player, round);
 			if (kept === "busy") return busy();
@@ -2291,12 +2478,15 @@ async function handleSwamphen(services, player, body) {
 				step: s.step,
 				level: s.level,
 				goodInRow: s.goodInRow,
-				goodAtStep: s.goodAtStep
+				goodAtStep: s.goodAtStep,
+				daysAtStep: s.daysAtStep ?? 0,
+				hardInRow: s.hardInRow ?? 0
 			};
 			const result = finishChallenge(s.daysDone, s.lastDay, today());
 			const place = result.rowChanged === null ? before : placeAfter(before, played.firstRight);
 			const stored = s.kindLevels ?? {};
-			const kindLevels = result.rowChanged === null ? stored : place.step !== before.step ? {} : kindLevelsAfter(stored, played.kindGoes, before.level);
+			const moved = result.rowChanged === null ? stored : kindLevelsAfter(stored, played.kindGoes, before.level);
+			const kindLevels = place.step !== before.step ? kindLevelsForStep(moved, place.step) : moved;
 			const progress = {
 				daysDone: result.daysDone,
 				lastDay: result.lastDay,
@@ -7658,6 +7848,8 @@ Deno.serve(makeHandler({
 		level: progress.level,
 		good_in_row: progress.goodInRow,
 		good_at_step: progress.goodAtStep,
+		days_at_step: progress.daysAtStep,
+		hard_in_row: progress.hardInRow,
 		taps: ending.taps,
 		mistakes: ending.mistakes,
 		first_right: ending.firstRight,

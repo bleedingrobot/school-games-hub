@@ -139,7 +139,7 @@ export function trialBackend({ storageKey }: { storageKey: string }) {
     setPlace: (step: Step, level: HelpLevel = TOP_LEVEL as HelpLevel) =>
       change((s) => {
         const p = pupil(s);
-        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, kindLevels: {}, version: p.version + 1 };
+        s.data.players[PUPIL] = { ...p, step, level, goodInRow: 0, goodAtStep: 0, daysAtStep: 0, hardInRow: 0, kindLevels: {}, version: p.version + 1 };
       }),
     place: () => {
       const p = pupil(read());

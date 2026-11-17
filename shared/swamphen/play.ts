@@ -11,7 +11,7 @@
 import type { FactAnswer } from '../maths/leitner';
 import { replayTaps, type TapReplay } from '../kit/replay';
 import { JUNIOR_MIN_THINK_MS, thoughtOf } from '../juniorQuick';
-import { GOES_PER_ROUND, mulKeyOf, showRound, type Kind, type Round, type Slip } from './round';
+import { GOES_PER_ROUND, isRecorded, mulKeyOf, showRound, type Kind, type Round, type Slip } from './round';
 
 export type { Tap } from '../kit/replay';
 
@@ -22,11 +22,12 @@ export interface Replay extends TapReplay {
   kindGoes: { kind: Kind; right: boolean }[];
 }
 
-/** The answers for the maths records: each go's key, then the plain times-table key of it (once each). */
+/** The answers for the maths records: each go's key, then the plain times-table key of it (once each). Equal-rows goes are left out. */
 function withTimes(answers: TapReplay['answers']): TapReplay['answers'] {
   const out: TapReplay['answers'] = [];
   const seen = new Set<string>();
   for (const a of answers) {
+    if (!isRecorded(a.key)) continue;
     out.push(a);
     const mul = mulKeyOf(a.key);
     if (mul && !seen.has(mul)) {

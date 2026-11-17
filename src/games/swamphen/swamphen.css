@@ -34,6 +34,7 @@
 }
 .sh-scene--silver { --sh-sky: #e2eef5; }
 .sh-scene--gold { --sh-sky: #ffe2a8; }
+.sh-scene--big { --sh-sky: #ffe7a6; }
 
 /* Home and finish: the branch with its ten clusters, and a panel beside it (below on a narrow screen). */
 .sh-home { flex: 1; display: flex; min-height: var(--sh-room, 100dvh); }
@@ -149,14 +150,18 @@
 .sh-lane--more { border-style: solid; border-color: #d83a2e; background: rgb(216 58 46 / 0.15); }
 .sh-lanes--fair .sh-lane { border-style: solid; border-color: var(--sh-leaf-dark); animation: sh-right 0.6s ease-out; }
 .sh-hint { margin: 0; font: 800 1.1rem system-ui, sans-serif; text-align: center; }
-.sh-field--turned .sh-garden { animation: sh-turn 0.6s ease-in-out; }
-@keyframes sh-turn { from { transform: rotate(-90deg) scale(0.8); } }
+.sh-field--turned .sh-garden { animation: sh-turn 0.9s cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes sh-turn {
+  0% { transform: rotate(-90deg) scale(0.7); filter: drop-shadow(0 0 0 #fff6b0); }
+  55% { transform: rotate(10deg) scale(1.1); filter: drop-shadow(0 0 22px #fff6b0); }
+  100% { transform: none; filter: none; }
+}
 @media (prefers-reduced-motion: reduce) { .sh-field--turned .sh-garden, .sh-lane--glow { animation: none; } }
 .sh-share { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 24px; min-height: 56px; }
 .sh-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .sh-tool { min-height: 64px; }
-.sh-cards--which .sh-choice, .sh-cards--turn .sh-choice { min-width: var(--sh-card); width: clamp(88px, 22vw, 190px); padding: 6px; }
-.sh-cards--which .sh-choice svg, .sh-cards--turn .sh-choice svg { display: block; width: 100%; }
+.sh-cards--which .sh-choice, .sh-cards--turn .sh-choice, .sh-cards--equal .sh-choice { min-width: var(--sh-card); width: clamp(88px, 22vw, 190px); padding: 6px; }
+.sh-cards--which .sh-choice svg, .sh-cards--turn .sh-choice svg, .sh-cards--equal .sh-choice svg { display: block; width: 100%; }
 .sh-coach { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 0 10px; padding: 10px 12px; border-radius: 16px; border: 3px solid var(--sh-gold); background: #fff8dc; text-align: center; }
 .sh-coach__say { margin: 0; font-weight: 700; line-height: 1.3; }
 .sh-tip__face { display: block; width: 56px; }
@@ -169,7 +174,20 @@
 .sh-tools { position: relative; }
 .sh-tools .sh-hand { left: 58%; top: 30%; }
 .sh-cards--which, .sh-cards--turn { display: grid; grid-template-columns: repeat(2, 1fr); max-width: 340px; margin: 0 auto; }
-.sh-cards--which .sh-choice, .sh-cards--turn .sh-choice { width: auto; }
+.sh-cards--which .sh-choice, .sh-cards--turn .sh-choice, .sh-cards--equal .sh-choice { width: auto; }
+/* Equal rows: the four gardens are the whole go, so they are big: in one row on a wide screen, two by two on a narrow one. */
+.sh-cards--equal { display: grid; grid-template-columns: repeat(4, 1fr); width: min(100%, 820px); margin: 0 auto; }
+.sh-cards--equal .sh-garden--small { max-height: 24dvh; }
+@media (max-width: 640px) {
+  .sh-cards--equal { grid-template-columns: repeat(2, 1fr); }
+  .sh-cards--equal .sh-garden--small { max-height: 16dvh; }
+}
+/* A demo hides the cards: the grids above must not show them again. */
+.sh-cards[hidden] { display: none; }
+.sh-cards--equal .sh-choice { animation: sh-in 0.4s ease-out backwards; }
+.sh-cards--equal .sh-choice:nth-child(2) { animation-delay: 0.1s; }
+.sh-cards--equal .sh-choice:nth-child(3) { animation-delay: 0.2s; }
+.sh-cards--equal .sh-choice:nth-child(4) { animation-delay: 0.3s; }
 
 /* Painted pictures (art.tsx sets --sh-back; without it the gradient above shows). */
 .sh-tree[style*="--sh-back"], .sh-play[style*="--sh-back"] { background: var(--sh-back) center / cover no-repeat, var(--sh-sky); }
@@ -185,3 +203,33 @@
 .sh-hand--a { left: 12%; top: 16%; }
 .sh-hand--b { left: 40%; top: 45%; }
 .sh-hand--c { left: 40%; top: 74%; }
+
+/* Lively bits (plan of 18 Nov 2026): shoots spring up as a row is planted, running totals pop in along the rows, a dealt
+   shoot flies into its row, and the Big Garden gate swings open. All off for reduced motion (above). */
+.sh-shoot { transform-box: fill-box; transform-origin: 50% 100%; animation: sh-sprout 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) backwards; }
+@keyframes sh-sprout { from { scale: 0.1 0; opacity: 0; } 60% { opacity: 1; } }
+.sh-count { animation: sh-pop 0.45s cubic-bezier(0.3, 1.8, 0.5, 1) backwards; transform-box: fill-box; transform-origin: 0 50%; }
+@keyframes sh-pop { from { scale: 0; opacity: 0; } }
+.sh-lane__reed:last-child { animation: sh-fly 0.4s cubic-bezier(0.2, 1.3, 0.5, 1); }
+@keyframes sh-fly { from { translate: -60px 40px; rotate: -40deg; scale: 0.4; opacity: 0.3; } }
+.sh-stepup { display: inline-block; animation: sh-stepup 1s cubic-bezier(0.3, 1.6, 0.5, 1) backwards 0.3s, sh-shine 1.6s ease-in-out 1.3s 2; }
+@keyframes sh-stepup { from { scale: 0; rotate: -12deg; } }
+@keyframes sh-shine { 50% { box-shadow: 0 0 0 6px var(--sh-gold), 0 0 28px 10px #fff6b0; } }
+
+.sh-gate { position: relative; display: block; width: min(92%, 420px); aspect-ratio: 1198 / 676; margin: 4px auto 10px; perspective: 900px; }
+.sh-gate__garden { position: absolute; inset: 8% 14% 2%; border-radius: 40% 40% 8px 8px; background: var(--sh-big, linear-gradient(#ffe7a6, #7fbe4f)) center / cover; box-shadow: inset 0 0 30px rgb(255 240 170 / 0.9); }
+.sh-gate__door { position: absolute; inset: 0; background: var(--sh-gate) center / 100% 100% no-repeat; filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.3)); animation: 1.1s cubic-bezier(0.5, 0, 0.3, 1.2) 0.7s forwards; }
+.sh-gate__door--left { clip-path: inset(0 45% 0 0); transform-origin: 10% 50%; animation-name: sh-door-left; }
+.sh-gate__door--right { clip-path: inset(0 0 0 55%); transform-origin: 90% 50%; animation-name: sh-door-right; }
+.sh-gate:not([style*="--sh-gate"]) .sh-gate__door { background: repeating-linear-gradient(90deg, #d9a441 0 14px, #b8862c 14px 18px); border-radius: 30% 30% 6px 6px; }
+@keyframes sh-door-left { to { transform: rotateY(-115deg); } }
+@keyframes sh-door-right { to { transform: rotateY(115deg); } }
+.sh-gate__burst { position: absolute; left: 50%; top: 55%; }
+.sh-gate__reed { position: absolute; width: 34px; margin: -20px 0 0 -17px; opacity: 0; font-size: 1.8rem; animation: sh-burst 1.4s ease-out forwards; }
+.sh-gate__reed img { display: block; width: 100%; }
+@keyframes sh-burst {
+  0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.3); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-150px) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) { .sh-gate__door { display: none; } }

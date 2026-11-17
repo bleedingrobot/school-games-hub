@@ -21,7 +21,8 @@ export function sceneStyle(scenery: Scenery): CSSProperties | undefined {
 }
 
 export type Pose = 'sit' | 'eat' | 'cheer';
-export type Scenery = 'bronze' | 'silver' | 'gold';
+/** The day's light, or the Big Garden (steps 8 and 9). */
+export type Scenery = 'bronze' | 'silver' | 'gold' | 'big';
 
 const BODY: Record<FriendName, { body: string; belly: string }> = {
   swamphen: { body: '#2c3a8c', belly: '#5a6ad0' },
@@ -129,6 +130,8 @@ export interface GardenProps {
   short?: boolean;
   /** Draw it a different size: small picture cards. */
   small?: boolean;
+  /** The shoots in each row when the rows are not all the same (an "equal rows?" card); `cols` is then the longest. */
+  lengths?: readonly number[];
   label: string;
 }
 
@@ -147,7 +150,7 @@ export function cellMode(view: string, r: number, c: number, mat: boolean): Cell
  * last one: the child does the last jump), 'rows' shades them, 'bars' draws each row as a bar, 'edges' only the outline and the
  * two edge numbers, and 'peek' and 'plain' show nothing. The total is never drawn.
  */
-export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = false, small = false, label }: GardenProps) {
+export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = false, small = false, lengths, label }: GardenProps) {
   const drawn = short ? rows + 1 : rows;
   const w = cols * CELL + PAD * 2 + (small ? 0 : EDGE) + (view === "count" && !small ? 30 : 0);
   const h = drawn * CELL + PAD * 2 + (small ? 0 : EDGE * 0.8);
@@ -167,28 +170,32 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
         const colour = cut ? '#e8b04a' : r % 2 ? '#9bd06a' : '#7fbe4f';
         const y = PAD + r * CELL;
         const rowCovered = mat && r > 0;
+        const len = lengths?.[r] ?? cols;
         return (
           <g key={r} opacity={here ? (fade ? 0.35 : 1) : 0.15}>
-            {bands && here && <rect x={x0} y={y + 1} width={cols * CELL} height={CELL - 2} rx="6" fill={view === 'bars' ? colour : colour} opacity={view === 'bars' ? 0.95 : 0.5} />}
+            {bands && here && <rect x={x0} y={y + 1} width={len * CELL} height={CELL - 2} rx="6" fill={view === 'bars' ? colour : colour} opacity={view === 'bars' ? 0.95 : 0.5} />}
             {here &&
-              Array.from({ length: cols }, (_, c) => {
+              Array.from({ length: len }, (_, c) => {
                 const mode = cellMode(view, r, c, mat);
                 if (mode === 'none' || mode === 'covered') return null;
                 return (
                 <g key={c} opacity={mode === 'faint' ? 0.22 : 1} transform={`translate(${x0 + c * CELL + CELL / 2} ${y + CELL / 2})`}>
+                  {/* Each shoot springs up as its row is planted, one after another along the row. */}
+                  <g className="sh-shoot" style={{ animationDelay: `${(planted === undefined ? r * 90 : 0) + c * 35}ms` }}>
                   {(cut ? amber : green) ? (
                     <image href={cut ? amber : green} x="-9" y="-12" width="18" height="24" preserveAspectRatio="xMidYMid meet" />
                   ) : (
                     <>
-                          <path d="M0 8 V-2" stroke="#2f6b3f" strokeWidth="3" strokeLinecap="round" />
+                      <path d="M0 8 V-2" stroke="#2f6b3f" strokeWidth="3" strokeLinecap="round" />
                       <ellipse cx="0" cy="-6" rx="3.6" ry="6" fill={cut ? '#c9862a' : '#3f8a3f'} />
                     </>
                   )}
+                  </g>
                 </g>
                 );
               })}
             {view === 'count' && here && r < rows - 1 && !rowCovered && !fade && (
-              <text x={x0 + cols * CELL + 8} y={y + CELL / 2 + 5} fontSize="14" fontWeight="800" fill="#1b2340">{(r + 1) * cols}</text>
+              <text className="sh-count" style={{ animationDelay: `${300 + r * 260}ms` }} x={x0 + cols * CELL + 8} y={y + CELL / 2 + 5} fontSize="14" fontWeight="800" fill="#1b2340">{(r + 1) * cols}</text>
             )}
           </g>
         );
@@ -213,6 +220,30 @@ export function Garden({ rows, cols, view, planted, mat = false, cutAt, short = 
         </g>
       )}
     </svg>
+  );
+}
+
+/**
+ * The Big Garden gate, on the finish screen the day a child passes every step before it: the painted gate's two doors swing
+ * open on the painted Big Garden, with a burst of golden reeds. Each door is one half of the same painting.
+ */
+export function BigGate({ label }: { label: string }) {
+  const gate = paint('garden/gate');
+  const big = paint('back/big');
+  const reed = paint('reeds/reed');
+  return (
+    <span className="sh-gate" role="img" aria-label={label} style={{ '--sh-gate': gate ? `url(${gate})` : undefined, '--sh-big': big ? `url(${big})` : undefined } as CSSProperties}>
+      <span className="sh-gate__garden" />
+      <span className="sh-gate__door sh-gate__door--left" />
+      <span className="sh-gate__door sh-gate__door--right" />
+      <span className="sh-gate__burst" aria-hidden="true">
+        {Array.from({ length: 14 }, (_, i) => (
+          <span key={i} className="sh-gate__reed" style={{ '--a': `${(i * 360) / 14}deg`, animationDelay: `${1100 + (i % 4) * 90}ms` } as CSSProperties}>
+            {reed ? <img src={reed} alt="" draggable={false} /> : '🌾'}
+          </span>
+        ))}
+      </span>
+    </span>
   );
 }
 
