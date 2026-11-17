@@ -179,12 +179,24 @@
 }
 .kr-row--mirror { transform: scaleY(-1); }
 .kr-fish--mirror .kr-fish__art { opacity: 0.85; }
-.kr-fish--extra .kr-fish__art { filter: drop-shadow(0 0 5px #ffd54a) drop-shadow(0 0 2px #fff); opacity: 1; }
-/* Near doubles: the one more fish stands apart from the rock and the water. */
-.kr-rockline { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 8px; width: 100%; }
-.kr-rockline .kr-rock { flex: 1 1 60%; width: auto; }
-.kr-more { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 20px; background: rgb(255 255 255 / 0.35); }
-.kr-more__label { font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+/* Near doubles: the one more fish is part of the water's row, upright, golden and glowing, with + 1 on it; the
+   rock keeps an empty spot above it so every other fish has its mirror fish straight underneath. */
+.kr-fish--gap { visibility: hidden; cursor: default; }
+.kr-fish--extra { transform: scaleY(-1); z-index: 1; }
+.kr-fish--extra .kr-fish__art {
+  opacity: 1; filter: hue-rotate(32deg) saturate(1.5) brightness(1.15) drop-shadow(0 0 6px #ffe066) drop-shadow(0 0 2px #fff);
+  animation: kr-extra-glow 1.4s ease-in-out infinite;
+}
+.kr-fish--extra::before {
+  content: ''; position: absolute; inset: -14% -10%; border-radius: 50%; border: 3px solid #ffe066;
+  box-shadow: 0 0 12px #ffe066; pointer-events: none;
+}
+.kr-fish--extra:not(.kr-fish--counted)::after {
+  content: '+1'; position: absolute; left: 50%; bottom: -46%; translate: -50% 0; padding: 0 6px; border-radius: 999px;
+  background: #ffe066; color: var(--kr-ink); font: 900 calc(var(--kr-fish) * 0.36) / 1.3 system-ui, sans-serif; pointer-events: none;
+}
+@keyframes kr-extra-glow { 50% { translate: 0 -8%; scale: 1.08; } }
+@media (prefers-reduced-motion: reduce) { .kr-fish--extra .kr-fish__art { animation: none; } }
 /* Full help on a half: the nests wait for fish. */
 .kr-nest--next .kr-chick { animation: kr-bounce 1.1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .kr-nest--next .kr-chick { animation: none; outline: 3px dashed #fff; outline-offset: 4px; } }
