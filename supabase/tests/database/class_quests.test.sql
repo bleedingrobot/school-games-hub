@@ -4,7 +4,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(28);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -67,7 +67,7 @@ select throws_ok($$ select public.teacher_start_class_quest('22222222-2222-4222-
 select is((public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils' -> 0 -> 'days' ->> 0)::date
           is not null or (public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils' -> 1 -> 'days' ->> 0)::date is not null,
           true, 'today''s day (done before the quest started) counts');
-select is(jsonb_array_length(public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils'), 2, 'the teacher sees both pupils');
+select is(jsonb_array_length(public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils'), 3, 'the teacher sees both pupils, and a row for themselves');
 select pg_temp.reset();
 
 -- ---- Pupils ----
@@ -104,6 +104,16 @@ insert into public.quest_wins (player, kind) select pg_temp.id('b'), 'trader' fr
 select public.quest_won(pg_temp.id('b'));
 select is((select count(*)::integer from public.trophies where player = pg_temp.id('b') and trophy = 'quest-hero'), 1,
           '5 quests: the bronze Questing Hero');
+
+-- ---- The class teacher plays along ----
+insert into public.quest_days (player, kind, day)
+select pg_temp.id('f'), 'trader', public.nz_day(now()) + n from generate_series(0, 4) n;
+select is((select count(*)::integer from public.quest_wins where player = pg_temp.id('f')), 1, 'the class teacher can finish the quest too');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fox@douglaspark.school.nz');
+select is(public.my_class_quest() -> 'quest' ->> 'kind', 'trader', '... sees it on their own home page');
+select is((select count(*)::integer from jsonb_array_elements(public.teacher_class_quests('11111111-1111-4111-8111-111111111111') -> 'pupils') e
+           where (e ->> 'teacher')::boolean and (e ->> 'won')::boolean), 1, '... and in the class table, marked as the teacher');
+select pg_temp.reset();
 
 -- ---- Stopping ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'fox@douglaspark.school.nz');

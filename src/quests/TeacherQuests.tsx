@@ -77,7 +77,7 @@ function QuestsPage({ classId }: { classId: string }) {
           <h2 id="tq-start" className="panel__title">Start a weekly quest</h2>
           <p className="tquests__line">
             Pupils play the quest&rsquo;s game properly (all of that day&rsquo;s turns) on {DAYS_NEEDED} of the next 7 days. It starts
-            today and ends by itself. They see it on their home page.
+            today and ends by itself. They see it on their home page. You can play along and finish it too.
           </p>
           <div className="tquests__cards">
             {QUEST_KINDS.map((k) => {
@@ -156,10 +156,11 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
     const named = data.pupils.map((p) => {
       const person = people.get(p.id);
       const week = questWeek(quest.startsOn, data.today, p.days, DAYS_NEEDED);
-      return { ...p, week, name: person?.real_name || person?.display_name || 'Pupil' };
+      const name = p.teacher ? `${p.name ?? 'Teacher'} (teacher)` : person?.real_name || person?.display_name || 'Pupil';
+      return { ...p, week, name };
     });
-    // Pupils who still need days first (fewest done at the top), finished pupils last.
-    return named.sort((a, b) => Number(a.won) - Number(b.won) || a.week.done - b.week.done || a.name.localeCompare(b.name));
+    // Pupils who still need days first (fewest done at the top), finished pupils after them, teachers last.
+    return named.sort((a, b) => Number(!!a.teacher) - Number(!!b.teacher) || Number(a.won) - Number(b.won) || a.week.done - b.week.done || a.name.localeCompare(b.name));
   }, [data, people, quest.startsOn]);
   const days = rows[0]?.week.days ?? questWeek(quest.startsOn, data.today, [], DAYS_NEEDED).days;
 
@@ -195,7 +196,7 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className={r.won ? 'is-won' : undefined}>
+              <tr key={r.id} className={[r.won ? 'is-won' : '', r.teacher ? 'is-teacher' : ''].join(' ').trim() || undefined}>
                 <th scope="row">{r.name}</th>
                 {r.week.days.map((d) => (
                   <td key={d.date}>

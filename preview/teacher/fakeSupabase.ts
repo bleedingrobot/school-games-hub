@@ -141,10 +141,13 @@ const teacherQuests = (which?: string) => {
     switches: { trader: true, lord: true, clans: false },
     quests: classQuests,
     shown: shown?.id ?? null,
-    pupils: PEOPLE.map(([id], i) => {
-      const days = shown ? questDays(i, shown) : [];
-      return { id, days, won: days.length >= 5, questsDone: (i * 3) % 9 };
-    }),
+    pupils: [
+      ...PEOPLE.map(([id], i) => {
+        const days = shown ? questDays(i, shown) : [];
+        return { id, days, won: days.length >= 5, questsDone: (i * 3) % 9 };
+      }),
+      { id: 'me', teacher: true, name: 'Sneaky Dragon 28', days: shown ? questDays(4, shown) : [], won: false, questsDone: 1 },
+    ],
   };
 };
 const myQuest = () => {

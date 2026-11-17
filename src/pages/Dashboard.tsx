@@ -434,7 +434,8 @@ function DashboardPage() {
       ) : (
         <>
 
-        {pupil && <QuestBar quest={answer?.classQuest} moves={answer?.moves} />}
+        {/* Teachers see their class's quest too, so they can play along. */}
+        <QuestBar quest={answer?.classQuest} moves={answer?.moves} />
 
         {answer?.recentTrophies && <RecentTrophies trophies={answer.recentTrophies} />}
 

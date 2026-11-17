@@ -51,6 +51,8 @@
 .tquests__table th[scope='row'] { text-align: left; font-weight: 600; }
 .tquests__table thead th.is-today { color: #b8741a; }
 .tquests__table tr.is-won th[scope='row'] { color: #2f7d32; }
+.tquests__table tr.is-teacher { background: rgb(245 179 1 / 0.08); }
+.tquests__table tr.is-teacher th[scope='row'] { font-style: italic; }
 
 .tquests__dot {
   display: inline-block;

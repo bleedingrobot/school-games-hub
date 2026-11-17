@@ -181,7 +181,21 @@ begin
 end;
 $$;
 
--- Writes the win for every running quest of the pupil's class this day counts towards, once the days reach days_needed.
+-- The classes whose quests count for a player: a pupil's class, and every class a teacher teaches (James, 18 Nov 2026: the
+-- class teacher can play and finish the quest too).
+create function public.quest_classes_of(who uuid)
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select m.class_id from public.class_members m where m.student_id = who
+  union
+  select t.class_id from public.class_teachers t join public.classes c on c.id = t.class_id and not c.archived where t.teacher_id = who
+$$;
+
+-- Writes the win for every running quest of the player's classes this day counts towards, once the days reach days_needed.
 create function public.quest_win_check(who uuid, which text, on_day date)
 returns void
 language plpgsql
@@ -195,8 +209,8 @@ declare
 begin
   for q in
     select cq.* from public.class_quests cq
-    join public.class_members m on m.class_id = cq.class_id and m.student_id = who
-    where cq.kind = which and cq.stopped_at is null and on_day between cq.starts_on and cq.ends_on
+    where cq.class_id in (select public.quest_classes_of(who))
+      and cq.kind = which and cq.stopped_at is null and on_day between cq.starts_on and cq.ends_on
   loop
     select count(*) into n from public.quest_days d
     where d.player = who and d.kind = q.kind and d.day between q.starts_on and q.ends_on;
@@ -282,7 +296,8 @@ insert into public.trophy_types (id, game, name, how, kind, repeat, art, sort) v
 -- 5. Reads and teacher actions
 -- ---------------------------------------------------------------------------
 
--- The pupil's class quest for the home page: the running one, or one that ended in the last 2 days. Null when there is none.
+-- The player's class quest for the home page: the running one, or one that ended in the last 2 days. Null when there is none.
+-- A teacher gets the newest quest of the classes they teach, so they can play along.
 -- { quest: { id, kind, startsOn, endsOn, daysNeeded }, today, days: [dates done], won, classWon, questsDone }
 -- classWon is a number only: pupils never see which classmates finished.
 create function public.my_class_quest()
@@ -295,10 +310,9 @@ as $$
   with me as (select auth.uid() as id where public.is_school_user()),
   t as (select public.nz_day(now()) as today),
   q as (
-    select cq.* from public.class_quests cq
-    join public.class_members m on m.class_id = cq.class_id
-    join me on m.student_id = me.id, t
-    where cq.stopped_at is null and cq.starts_on <= t.today and cq.ends_on >= t.today - 2
+    select cq.* from public.class_quests cq, me, t
+    where cq.class_id in (select public.quest_classes_of(me.id))
+      and cq.stopped_at is null and cq.starts_on <= t.today and cq.ends_on >= t.today - 2
     order by cq.starts_on desc, cq.started_at desc
     limit 1)
   select jsonb_build_object(
@@ -362,16 +376,20 @@ begin
                from (select * from public.class_quests x where x.class_id = target_class
                      order by x.starts_on desc, x.started_at desc limit 30) cq), '[]'::jsonb),
     'shown', shown.id,
+    -- The class's pupils, then its teachers (teacher: true, with their made-up name; they can play along).
     'pupils', coalesce((select jsonb_agg(jsonb_build_object(
-                 'id', m.student_id,
+                 'id', m.id,
+                 'teacher', m.teacher,
+                 'name', case when m.teacher then p.display_name end,
                  'days', coalesce((select jsonb_agg(d.day order by d.day) from public.quest_days d
-                                   where shown.id is not null and d.player = m.student_id and d.kind = shown.kind
+                                   where shown.id is not null and d.player = m.id and d.kind = shown.kind
                                      and d.day between shown.starts_on and shown.ends_on), '[]'::jsonb),
-                 'won', shown.id is not null and exists (select 1 from public.quest_wins w where w.quest = shown.id and w.player = m.student_id),
-                 'questsDone', (select count(*) from public.quest_wins w where w.player = m.student_id)))
-               from public.class_members m
-               join public.profiles p on p.id = m.student_id and p.role = 'student'
-               where m.class_id = target_class), '[]'::jsonb));
+                 'won', shown.id is not null and exists (select 1 from public.quest_wins w where w.quest = shown.id and w.player = m.id),
+                 'questsDone', (select count(*) from public.quest_wins w where w.player = m.id)) order by m.teacher)
+               from (select cm.student_id as id, false as teacher from public.class_members cm where cm.class_id = target_class
+                     union
+                     select ct.teacher_id, true from public.class_teachers ct where ct.class_id = target_class) m
+               join public.profiles p on p.id = m.id and p.role = case when m.teacher then 'teacher' else 'student' end), '[]'::jsonb));
 end;
 $$;
 
@@ -429,7 +447,7 @@ $$;
 
 revoke execute on function
   public.quest_day_done(uuid, text), public.trader_quest_day(), public.lord_quest_day(), public.clans_quest_day(),
-  public.quest_won(uuid), public.quest_win_check(uuid, text, date), public.quest_days_check(),
+  public.quest_won(uuid), public.quest_win_check(uuid, text, date), public.quest_days_check(), public.quest_classes_of(uuid),
   public.quest_counts(uuid), public.quest_point_rules(), public.quest_players_list(),
   public.my_class_quest(), public.teacher_class_quests(uuid, uuid), public.teacher_start_class_quest(uuid, text),
   public.teacher_stop_class_quest(uuid)

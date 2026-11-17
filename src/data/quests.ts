@@ -37,6 +37,10 @@ export interface TeacherQuestRow {
 
 export interface TeacherQuestPupil {
   id: string;
+  /** One of the class's teachers, playing along (James, 18 Nov 2026). */
+  teacher?: boolean;
+  /** A teacher's made-up name (pupils' names come from the teacher's own pupil list). */
+  name?: string | null;
   days: string[];
   won: boolean;
   questsDone: number;

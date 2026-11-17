@@ -14,6 +14,7 @@ More quest kinds will follow, so a quest kind is one entry in one list.
 | Days needed | **Always 5** out of the 7. |
 | Rewards | **Achievements** at 1, 5, 10, 15, 20 quests done (all kinds together) **+ painted "Questing Hero" trophy**: bronze at 5, silver at 10, gold at 20. |
 | What pupils see of classmates | **Own bar + class count** ("9 heroes finished"), no names. |
+| The teacher | **Can play along and finish it too** (James, same day): their days count, the bar shows on their home page, they get the achievements and trophy, and they have their own row (marked teacher) in the class table. |
 
 ## The first three quests
 
