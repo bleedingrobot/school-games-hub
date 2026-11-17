@@ -8106,6 +8106,8 @@ const LEAD_IN_SECONDS = 2.2;
 const RESPAWN_BACK = .55;
 /** …and this far below the middle of the opening, since the flap that sets off lifts it. */
 const RESPAWN_LOW = .45;
+/** After bumping an answer wall the bird comes back this far past the wall before, so it can reach every answer. */
+const ANSWER_RESPAWN_ROOM = .5;
 const READ_TIME_LEVELS = [
 	3,
 	4,
@@ -8943,9 +8945,14 @@ function respawn(course, s) {
 	const wall = course.walls[s.nextWall];
 	if (wall) {
 		const before = s.nextWall > 0 ? course.walls[s.nextWall - 1].x + WALL_WIDTH : 2;
-		s.x = wall.x - (wall.x - before) * RESPAWN_BACK;
-		const gaps = gapsAt(wall, s.t);
-		s.y = gaps.reduce((best, g) => Math.abs(g.y - 5) < Math.abs(best.y - 5) ? g : best, gaps[0]).y - RESPAWN_LOW;
+		if (wall.answer !== void 0) {
+			s.x = before + ANSWER_RESPAWN_ROOM;
+			s.y = 4.55;
+		} else {
+			s.x = wall.x - (wall.x - before) * RESPAWN_BACK;
+			const gaps = gapsAt(wall, s.t);
+			s.y = gaps.reduce((best, g) => Math.abs(g.y - 5) < Math.abs(best.y - 5) ? g : best, gaps[0]).y - RESPAWN_LOW;
+		}
 	} else {
 		const last = course.walls[course.walls.length - 1];
 		s.x = Math.max(last.x + WALL_WIDTH + .5, s.x - 1.5);
