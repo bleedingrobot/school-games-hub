@@ -36,6 +36,7 @@ const TeacherStudents = lazy(() => import('./teacher/Students').then((m) => ({ d
 const StudentPage = lazy(() => import('./teacher/StudentPage').then((m) => ({ default: m.StudentPage })));
 const BadgeSheet = lazy(() => import('./teacher/BadgeSheet').then((m) => ({ default: m.BadgeSheet })));
 const HardestQuestions = lazy(() => import('./teacher/Hardest').then((m) => ({ default: m.HardestQuestions })));
+const TeacherQuests = lazy(() => import('./quests/TeacherQuests').then((m) => ({ default: m.TeacherQuests })));
 const TeacherGames = lazy(() => import('./teacher/Games').then((m) => ({ default: m.TeacherGames })));
 const AdminYear = lazy(() => import('./teacher/AdminYear').then((m) => ({ default: m.AdminYear })));
 const Today = lazy(() => import('./teacher/Today').then((m) => ({ default: m.Today })));
@@ -101,6 +102,7 @@ export function teacherRoutes() {
           {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}
           <Route path=":gameId" element={null} />
         </Route>
+        <Route path="quests" element={<TeacherQuests />} />
         <Route path="setup" element={<ClassSetup />} />
         <Route path="*" element={<Navigate to=".." relative="path" replace />} />
       </Route>
