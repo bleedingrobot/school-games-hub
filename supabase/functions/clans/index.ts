@@ -1292,8 +1292,8 @@ const VILLAGE_BUILDINGS = [
 * Every number is in `config.ts` (CONFIG.empire).
 */
 const E = CONFIG.empire;
-const ok$1 = { ok: true };
-const no$1 = (why, say) => ({
+const ok$2 = { ok: true };
+const no$2 = (why, say) => ({
 	ok: false,
 	why,
 	say
@@ -1446,13 +1446,13 @@ VILLAGE_BUILDINGS.reduce((t, b) => t + E.buildings[b].max, 0);
 /** Can this building go up a level now, and what stops it? */
 function canUpgrade(clan, b) {
 	const e = empireOf(clan);
-	if (!VILLAGE_BUILDINGS.includes(b)) return no$1("building", "Pick one of the buildings in your village.");
+	if (!VILLAGE_BUILDINGS.includes(b)) return no$2("building", "Pick one of the buildings in your village.");
 	const level = e.levels[b];
-	if (level >= maxLevel(b)) return no$1("max", `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
-	if (buildsLeft(e) <= 0) return no$1("builds", "Your builders have done every job they can. They start again tomorrow!");
+	if (level >= maxLevel(b)) return no$2("max", `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
+	if (buildsLeft(e) <= 0) return no$2("builds", "Your builders have done every job they can. They start again tomorrow!");
 	const cost = upgradeCost(b, level + 1);
-	if (clan.gold < cost) return no$1("gold", `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
-	return ok$1;
+	if (clan.gold < cost) return no$2("gold", `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
+	return ok$2;
 }
 /** Pay for one level of a building from the purse. Uses one of today's builds first, a saved one only when today's are gone. */
 function upgrade(clan, b) {
@@ -1465,20 +1465,20 @@ function upgrade(clan, b) {
 	else e.buildsSaved = Math.max(0, (e.buildsSaved ?? 0) - 1);
 	syncVillage(clan);
 	if (b === "barracks") joinFollowers(clan);
-	return ok$1;
+	return ok$2;
 }
 const capacity = (e, kind) => e.levels.barracks * E.troopCap[kind];
 const room = (e, kind) => Math.max(0, capacity(e, kind) - e.troops[kind]);
 /** Buy troops from the purse, as far as the Barracks have room. */
 function buyTroops(clan, kind, n) {
 	const e = empireOf(clan);
-	if (!Number.isInteger(n) || n < 1) return no$1("amount", "Pick how many to buy.");
-	if (room(e, kind) < n) return no$1("room", `The barracks have room for ${room(e, kind)} more ${TROOP_NAMES[kind].many}.`);
+	if (!Number.isInteger(n) || n < 1) return no$2("amount", "Pick how many to buy.");
+	if (room(e, kind) < n) return no$2("room", `The barracks have room for ${room(e, kind)} more ${TROOP_NAMES[kind].many}.`);
 	const cost = n * E.troopCost[kind];
-	if (clan.gold < cost) return no$1("gold", `That costs ${cost} gold and the clan has ${clan.gold}.`);
+	if (clan.gold < cost) return no$2("gold", `That costs ${cost} gold and the clan has ${clan.gold}.`);
 	clan.gold -= cost;
 	e.troops[kind] += n;
-	return ok$1;
+	return ok$2;
 }
 /**
 * Followers join by themselves: as footmen, as far as the Barracks have room. The rest stay as followers
@@ -1693,9 +1693,9 @@ const lootGold = (treasury, percent) => Math.min(treasury, Math.ceil(treasury * 
 function raidKingdom(clan, kingdomId, push, seed) {
 	const e = empireOf(clan);
 	const k = kingdomById(kingdomId);
-	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
-	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
-	if (e.kingdomRaidsToday >= E.raids.kingdomPerDay) return no$1("limit", `You have already raided ${E.raids.kingdomPerDay} times today. Try again tomorrow, or have a Friendly War.`);
+	if (!k) return no$2("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$2("army", "You need some troops to send.");
+	if (e.kingdomRaidsToday >= E.raids.kingdomPerDay) return no$2("limit", `You have already raided ${E.raids.kingdomPerDay} times today. Try again tomorrow, or have a Friendly War.`);
 	const result = battle(sideOf(e), kingdomSide(k), fixedPlan(push), seed);
 	e.kingdomRaidsToday++;
 	takeLosses(e, result.attackerLost);
@@ -1710,8 +1710,8 @@ function raidKingdom(clan, kingdomId, push, seed) {
 /** Friendly War: the same battle, but nobody loses or wins anything, and it does not count as a raid. */
 function friendlyWar(e, kingdomId, push, seed) {
 	const k = kingdomById(kingdomId);
-	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
-	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
+	if (!k) return no$2("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$2("army", "You need some troops to send.");
 	return {
 		ok: true,
 		result: battle(sideOf(e), kingdomSide(k), fixedPlan(push), seed)
@@ -13167,8 +13167,8 @@ function recordBossWin(clan, depth, season) {
 * yes or no (with a kind sentence). The screens call these through `places.ts` on a copy of the clan; the server
 * calls the very same functions, so a changed browser cannot do anything the rules refuse.
 */
-const ok = { ok: true };
-const no = (why, say) => ({
+const ok$1 = { ok: true };
+const no$1 = (why, say) => ({
 	ok: false,
 	why,
 	say
@@ -13185,36 +13185,36 @@ const memberAt = (clan, index) => clan.members[index] ?? null;
 */
 function buyItem(clan, memberIndex, item, discount = false) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
+	if (!m) return no$1("member", "Pick one of your clan.");
 	const why = cannotBuy(clan, m, item);
-	if (why) return no("shelf", why);
+	if (why) return no$1("shelf", why);
 	const price = shopPrice(item, discount);
-	if (clan.gold < price) return no("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
-	return buy(clan, m, item, discount) ? ok : no("gold", "That cannot be bought right now.");
+	if (clan.gold < price) return no$1("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
+	return buy(clan, m, item, discount) ? ok$1 : no$1("gold", "That cannot be bought right now.");
 }
 /** Buy `count` of something at the Training Hall (stops early if the points run out). Fails if not even one could be bought. */
 function trainMember(clan, memberIndex, key, count) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
-	if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no("amount", "Pick what to train and how many.");
+	if (!m) return no$1("member", "Pick one of your clan.");
+	if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no$1("amount", "Pick what to train and how many.");
 	const hall = levelOf(clan, "trainingHall");
 	let done = 0;
 	for (let i = 0; i < count; i++) {
 		if (!(key === "hp" ? trainHp(m, hall) : key === "sp" ? trainSp(m, hall) : trainStat(m, key, hall))) break;
 		done++;
 	}
-	if (done > 0) return ok;
+	if (done > 0) return ok$1;
 	const cost = key === "hp" ? hpCost(hall) : key === "sp" ? spCost(hall) : Math.max(1, CONFIG.trainCost[key] - hall);
-	return no("points", `That needs ${cost} training points and ${m.name} has ${m.points}, or is already as strong as can be.`);
+	return no$1("points", `That needs ${cost} training points and ${m.name} has ${m.points}, or is already as strong as can be.`);
 }
 /** Wake one member at the Church (the first wake-up each day is free). */
 function wakeOne(clan, memberIndex) {
 	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
-	if (!m.knockedOut) return no("awake", `${m.name} is already awake.`);
+	if (!m) return no$1("member", "Pick one of your clan.");
+	if (!m.knockedOut) return no$1("awake", `${m.name} is already awake.`);
 	const cost = wakeCost(clan, m);
-	if (clan.gold < cost) return no("gold", `Waking ${m.name} costs ${cost} gold and the clan has ${clan.gold}.`);
-	return wake(clan, m) ? ok : no("gold", "That cannot be done right now.");
+	if (clan.gold < cost) return no$1("gold", `Waking ${m.name} costs ${cost} gold and the clan has ${clan.gold}.`);
+	return wake(clan, m) ? ok$1 : no$1("gold", "That cannot be done right now.");
 }
 const knockedOutMembers = (clan) => clan.members.map((m, i) => ({
 	m,
@@ -13232,16 +13232,16 @@ const wakeAllCost = (clan) => wakeAllPayers(clan).reduce((t, l) => t + (l + 1) *
 /** Wake everyone, dearest first. Nobody is woken unless the clan can afford the lot. */
 function wakeEveryone(clan) {
 	const order = wakeOrder(clan);
-	if (order.length === 0) return no("awake", "Everyone is already awake.");
+	if (order.length === 0) return no$1("awake", "Everyone is already awake.");
 	const cost = wakeAllCost(clan);
-	if (clan.gold < cost) return no("gold", `Waking everyone costs ${cost} gold and the clan has ${clan.gold}.`);
-	return order.every(({ i }) => wake(clan, clan.members[i])) ? ok : no("gold", "That cannot be done right now.");
+	if (clan.gold < cost) return no$1("gold", `Waking everyone costs ${cost} gold and the clan has ${clan.gold}.`);
+	return order.every(({ i }) => wake(clan, clan.members[i])) ? ok$1 : no$1("gold", "That cannot be done right now.");
 }
 const noMix = (mix) => TROOP_KINDS.every((k) => mix[k] === 0);
 /** Buy a mix of troops in one go, or none of them: the first thing that cannot be done is the answer. Works on the clan it is given, so callers keep a copy. */
 function buyTroopMix(clan, mix) {
 	const e = empireOf(clan);
-	if (noMix(mix)) return no("amount", "Pick how many to buy.");
+	if (noMix(mix)) return no$1("amount", "Pick how many to buy.");
 	const before = {
 		gold: clan.gold,
 		troops: { ...e.troops }
@@ -13255,7 +13255,7 @@ function buyTroopMix(clan, mix) {
 			return done;
 		}
 	}
-	return ok;
+	return ok$1;
 }
 /** The seed for the next raid or Friendly War: from the clan's seed and how many there have been. */
 const raidSeed = (baseSeed, raidNo) => Math.imul(baseSeed | 0, 625341585) ^ Math.imul(raidNo + 1, 668265263);
@@ -13929,14 +13929,16 @@ const ASK_FOR = [
 	"shop",
 	"quest",
 	"siege",
-	"raid"
+	"raid",
+	"duel"
 ];
 /** How many questions each one asks: the quest asks two (both right wins the big prize). */
 const ASK_COUNT = {
 	shop: 1,
 	quest: 2,
 	siege: 1,
-	raid: 1
+	raid: 1,
+	duel: 1
 };
 /** The most rounds any fight can have (a monster fight is longer than a mine fight). */
 const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
@@ -14316,7 +14318,8 @@ function applyInner(saved, action, ctx, flags) {
 		case "ask": {
 			if (!ctx.maths) return refuse("no-maths", "We couldn't get your maths questions just now.");
 			const waiting = state.ask;
-			if (waiting && waiting.for === action.for) return done(state, {
+			const spent = action.for === "duel" && !!waiting?.marks?.[0];
+			if (waiting && waiting.for === action.for && !spent) return done(state, {
 				type: "ask",
 				for: action.for,
 				questions: waiting.questions.map((q, i) => publicQuestion(q, i))
@@ -14794,6 +14797,354 @@ function finishRaid(state, raid, fight, round, rightCry, effects, ctx) {
 	});
 }
 //#endregion
+//#region shared/clans/duel.ts
+const DUEL_MOVES = [
+	"charge",
+	"volley",
+	"shield"
+];
+const DUEL_MOVE_INFO = {
+	charge: {
+		name: "Charge",
+		icon: "🐎",
+		beats: "volley",
+		verb: "rides down"
+	},
+	volley: {
+		name: "Volley",
+		icon: "🏹",
+		beats: "shield",
+		verb: "rains over"
+	},
+	shield: {
+		name: "Shield Wall",
+		icon: "🛡️",
+		beats: "charge",
+		verb: "stops"
+	}
+};
+/** What each village level adds (levels top out at 5, the Church at 3). */
+const DUEL_BONUS = {
+	forgePer: .04,
+	wallsPer: .04,
+	barracksHp: 2,
+	towerHit: 2,
+	churchHeal: 3
+};
+const startHp = (v) => 60 + v.barracks * DUEL_BONUS.barracksHp;
+function duelClashOf(a, b) {
+	if (a === b) return "tie";
+	if (!a) return 1;
+	if (!b) return 0;
+	return DUEL_MOVE_INFO[a].beats === b ? 0 : 1;
+}
+/** How hard a clan's pick hits, with its Forge, against the other clan's Walls. */
+function duelHit(pick, result, mine, theirs) {
+	if (!pick.move) return 0;
+	const base = pick.right ? 10 : 4;
+	const clash = result === "win" ? base * 2 : result === "lose" ? base / 2 : base;
+	return Math.max(1, Math.round(clash * (1 + mine.forge * DUEL_BONUS.forgePer) * (1 - theirs.walls * DUEL_BONUS.wallsPer)));
+}
+function newDuel(villages) {
+	const max = [startHp(villages[0]), startHp(villages[1])];
+	const opening = [villages[0].tower * DUEL_BONUS.towerHit, villages[1].tower * DUEL_BONUS.towerHit];
+	return {
+		opening,
+		rounds: [],
+		hp: [max[0] - opening[1], max[1] - opening[0]],
+		max,
+		healed: [false, false],
+		over: false,
+		winner: null
+	};
+}
+/** Plays one round onto a duel that isn't over. */
+function playDuelRound(state, picks, villages) {
+	if (state.over) throw new Error("This duel is over");
+	const clash = duelClashOf(picks[0].move, picks[1].move);
+	const result = (side) => clash === "tie" ? "tie" : clash === side ? "win" : "lose";
+	const hits = [duelHit(picks[0], result(0), villages[0], villages[1]), duelHit(picks[1], result(1), villages[1], villages[0])];
+	const hp = [Math.max(0, state.hp[0] - hits[1]), Math.max(0, state.hp[1] - hits[0])];
+	const healed = [...state.healed];
+	const heals = [0, 0];
+	for (const side of [0, 1]) {
+		const heal = villages[side].church * DUEL_BONUS.churchHeal;
+		if (!healed[side] && heal > 0 && hp[side] > 0 && hp[side] < state.max[side] / 2) {
+			healed[side] = true;
+			heals[side] = Math.min(heal, state.max[side] - hp[side]);
+			hp[side] += heals[side];
+		}
+	}
+	const rounds = [...state.rounds, {
+		picks,
+		clash,
+		hits,
+		heals,
+		hp
+	}];
+	const knocked = hp[0] === 0 || hp[1] === 0;
+	const share = (side) => hp[side] / state.max[side];
+	const level = Math.abs(share(0) - share(1)) < 1e-9;
+	const over = knocked || rounds.length >= 5 && !level || rounds.length >= 8;
+	const winner = !over || level && !knocked ? null : hp[0] === 0 && hp[1] === 0 ? null : hp[1] === 0 ? 0 : hp[0] === 0 ? 1 : share(0) > share(1) ? 0 : 1;
+	return {
+		...state,
+		rounds,
+		hp,
+		healed,
+		over,
+		winner
+	};
+}
+function replayDuel(picks, villages) {
+	return picks.reduce((s, p) => playDuelRound(s, p, villages), newDuel(villages));
+}
+function readDuelMove(raw) {
+	return typeof raw === "string" && DUEL_MOVES.includes(raw) ? raw : null;
+}
+const DUEL_PRIZE = {
+	won: {
+		gold: 40,
+		banners: 3
+	},
+	lost: {
+		gold: 15,
+		banners: 1
+	},
+	draw: {
+		gold: 25,
+		banners: 2
+	},
+	strongroomGold: 5
+};
+/** What each side gets when a duel is played to the end. Nobody ever loses anything. */
+function duelPrize(winner, villages) {
+	const one = (side) => {
+		const p = winner === null ? DUEL_PRIZE.draw : winner === side ? DUEL_PRIZE.won : DUEL_PRIZE.lost;
+		return {
+			gold: p.gold + villages[side].strongroom * DUEL_PRIZE.strongroomGold,
+			banners: p.banners
+		};
+	};
+	const a = one(0);
+	const b = one(1);
+	return {
+		gold: [a.gold, b.gold],
+		banners: [a.banners, b.banners]
+	};
+}
+//#endregion
+//#region shared/clans/duelServer.ts
+/**
+* Live Clan Duels, the server's side (rules in duel.ts; database in migration 20261117000400_clans_live_duels.sql). The same
+* pattern as Dragon Maths' arena clashes (shared/lord/clashServer.ts): the browser only asks ("duel the Brave Owls", "yes",
+* "Charge", "the clock ran out", "I'm leaving"); this works out who is asking from their sign-in, keeps each pick hidden in
+* the database until both are in, and plays the round with the shared rules, saving "only if nothing changed since it looked".
+*
+*   duel-challenge  {other}               sends a challenge (same class only; `other` is the clan's hidden public id);
+*   duel-answer     {duel, accept}        the classmate says yes (round 1 starts) or no;
+*   duel-pick       {duel, round, move}   this round's order. Its maths is the clan's waiting `ask` for 'duel', marked by
+*                                         `askCheck` already; each question powers one round only;
+*   duel-times-up   {duel}                the round's time ran out (the server checks its own clock);
+*   duel-leave      {duel}                calls off a challenge, or gives up (the other side wins, no prizes).
+*
+* Prizes only for a duel played to the end, for each pupil's first PAID_DUELS_PER_DAY a day: gold and Banners to both sides.
+* Nobody ever loses gold, heroes, troops or buildings. Every reply carries the duel as it now is.
+*/
+const DUEL_CHALLENGE_MS = 3e4;
+const DUEL_ROUND_MS = 6e4;
+const DUEL_ROUND_GRACE_MS = 1500;
+const duelOpen = (d) => d.status === "asked" || d.status === "playing";
+const duelSeat = (d, player) => d.seat_a === player ? 0 : d.seat_b === player ? 1 : -1;
+const duelVillages = (d) => [d.clans[0].village, d.clans[1].village];
+const DUEL_ACTIONS = [
+	"duel-challenge",
+	"duel-answer",
+	"duel-pick",
+	"duel-times-up",
+	"duel-leave"
+];
+const DUEL_SAY = {
+	bad: "That couldn't be read.",
+	busy: "That couldn't be done just now. Try again in a moment.",
+	notYours: "That isn't your duel.",
+	away: "That clan isn't in Clan Quest right now.",
+	otherClass: "You can only duel clans in your own class.",
+	inDuel: "One of you is already in a duel. Try again when it's over.",
+	off: "Live duels are switched off for now. You can still practise against a computer clan!",
+	noClan: "You both need a clan first.",
+	late: "That challenge has run out.",
+	notStarted: "The duel hasn't started yet.",
+	over: "This duel has already ended.",
+	changed: "The duel changed just then. Have another look.",
+	round: "That round's already been played.",
+	notYet: "There's still time on the clock.",
+	stopped: "Your teacher has switched live duels off, so this duel has stopped."
+};
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+const failed = (o) => o.why === "refused" ? no(400, DUEL_SAY.bad) : no(503, DUEL_SAY.busy);
+const isId = (v) => Number.isSafeInteger(v) && v >= 1;
+async function afterRound(s, d, picks, missed) {
+	const villages = duelVillages(d);
+	let state;
+	try {
+		state = playDuelRound(replayDuel(d.rounds, villages), picks, villages);
+	} catch {
+		return no(409, DUEL_SAY.over, {
+			code: "over",
+			duel: d
+		});
+	}
+	const rounds = [...d.rounds, picks];
+	if (!state.over) {
+		const saved = await s.duelRound(d.id, d.version, rounds, missed, s.now() + DUEL_ROUND_MS);
+		if (!saved.ok) return failed(saved);
+		if (!saved.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: saved.value });
+	}
+	const prize = duelPrize(state.winner, villages);
+	const ended = await s.duelEnd(d.id, d.version, "done", "finished", state.winner, null, rounds, prize.gold, prize.banners, 3);
+	if (!ended.ok) return failed(ended);
+	if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+	return ok({ duel: ended.value });
+}
+async function handleDuel(s, player, action, body) {
+	if (action === "duel-challenge") {
+		if (typeof body.other !== "string" || body.other.length < 1 || body.other.length > 64) return no(400, DUEL_SAY.bad);
+		const r = await s.duelChallenge(player, body.other, DUEL_CHALLENGE_MS);
+		if (!r.ok) return failed(r);
+		const why = r.value.result;
+		if (why !== "ok" || r.value.duel === null) {
+			const words = why === "away" ? DUEL_SAY.away : why === "class" ? DUEL_SAY.otherClass : why === "busy" ? DUEL_SAY.inDuel : why === "off" ? DUEL_SAY.off : why === "no-clan" ? DUEL_SAY.noClan : DUEL_SAY.bad;
+			return no(409, words, { code: why });
+		}
+		const loaded = await s.duelLoad(r.value.duel);
+		if (!loaded.ok || !loaded.value) return no(503, DUEL_SAY.busy);
+		return ok({ duel: loaded.value.duel });
+	}
+	if (!isId(body.duel)) return no(400, DUEL_SAY.bad);
+	const loaded = await s.duelLoad(body.duel);
+	if (!loaded.ok) return failed(loaded);
+	const seat = loaded.value ? duelSeat(loaded.value.duel, player) : -1;
+	if (!loaded.value || seat < 0) return no(403, DUEL_SAY.notYours);
+	const d = loaded.value.duel;
+	const me = seat;
+	const other = 1 - me;
+	if ((!loaded.value.on[0] || !loaded.value.on[1]) && duelOpen(d)) {
+		const playing = d.status === "playing";
+		const ended = await s.duelEnd(d.id, d.version, playing ? "done" : "cancelled", playing ? "switched-off" : null, null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		return no(403, DUEL_SAY.stopped, {
+			code: "off",
+			duel: ended.value ?? d
+		});
+	}
+	if (action === "duel-answer") {
+		if (typeof body.accept !== "boolean") return no(400, DUEL_SAY.bad);
+		const r = await s.duelAnswer(player, d.id, body.accept, DUEL_ROUND_MS);
+		if (!r.ok) return failed(r);
+		const { result, duel } = r.value;
+		if (result === "not-yours") return no(403, DUEL_SAY.notYours);
+		if (result === "late") return no(409, DUEL_SAY.late, {
+			code: "late",
+			duel
+		});
+		if (result === "busy") return no(409, DUEL_SAY.inDuel, {
+			code: "busy",
+			duel
+		});
+		return ok({ duel });
+	}
+	if (action === "duel-leave") {
+		if (!duelOpen(d)) return ok({ duel: d });
+		const ended = d.status === "playing" ? await s.duelEnd(d.id, d.version, "done", "left", other, me, null, null, null, 3) : await s.duelEnd(d.id, d.version, me === 1 ? "declined" : "cancelled", null, null, null, null, null, null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: ended.value });
+	}
+	if (d.status === "asked") return no(409, DUEL_SAY.notStarted, {
+		code: "not-started",
+		duel: d
+	});
+	if (d.status !== "playing") return no(409, DUEL_SAY.over, {
+		code: "over",
+		duel: d
+	});
+	const round = d.rounds.length;
+	if (round >= 8) return no(409, DUEL_SAY.over, {
+		code: "over",
+		duel: d
+	});
+	if (action === "duel-pick") {
+		const move = readDuelMove(body.move);
+		if (!move || body.round !== round) {
+			if (Number.isInteger(body.round) && body.round < round) return no(409, DUEL_SAY.round, {
+				code: "round",
+				duel: d
+			});
+			return no(400, DUEL_SAY.bad);
+		}
+		const maths = await s.duelMaths(player);
+		const r = await s.duelPick(player, d.id, round, move, maths.right, maths.askNo);
+		if (!r.ok) return failed(r);
+		const { result, picks } = r.value;
+		const now = r.value.duel ?? d;
+		if (result === "not-yours") return no(403, DUEL_SAY.notYours);
+		if (result === "over") return no(409, DUEL_SAY.over, {
+			code: "over",
+			duel: now
+		});
+		if (result === "round") return no(409, DUEL_SAY.round, {
+			code: "round",
+			duel: now
+		});
+		if (result === "late") return no(409, DUEL_SAY.late, {
+			code: "late",
+			duel: now
+		});
+		if (result === "ok" && picks?.[0] && picks[1]) return afterRound(s, now, [picks[0], picks[1]], [0, 0]);
+		return ok({
+			duel: now,
+			picked: true
+		});
+	}
+	const left = Date.parse(d.deadline) + DUEL_ROUND_GRACE_MS - s.now();
+	if (!(left <= 0)) return no(409, DUEL_SAY.notYet, {
+		code: "not-yet",
+		secondsLeft: Number.isFinite(left) ? Math.ceil(left / 1e3) : 60,
+		duel: d
+	});
+	const got = await s.duelRoundPicks(d.id, round);
+	if (!got.ok) return failed(got);
+	const picks = [got.value[0] ?? {
+		move: null,
+		right: false
+	}, got.value[1] ?? {
+		move: null,
+		right: false
+	}];
+	const missed = [got.value[0] ? 0 : d.missed[0] + 1, got.value[1] ? 0 : d.missed[1] + 1];
+	const gone = [0, 1].filter((i) => missed[i] >= 2);
+	if (gone.length > 0) {
+		const winner = gone.length === 1 ? 1 - gone[0] : null;
+		const ended = await s.duelEnd(d.id, d.version, "done", "timeouts", winner, gone.length === 1 ? gone[0] : null, [...d.rounds, picks], null, null, 3);
+		if (!ended.ok) return failed(ended);
+		if (!ended.value) return no(409, DUEL_SAY.changed, { code: "changed" });
+		return ok({ duel: ended.value });
+	}
+	return afterRound(s, d, picks, missed);
+}
+//#endregion
 //#region supabase/functions/_shared/http.ts
 /** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
@@ -14945,6 +15296,24 @@ function makeHandler(services) {
 		if (!player) return reply(401, { error: "Please sign in again." });
 		if (!limiter.allow(player, 40)) return reply(429, { error: "Slow down a little!" });
 		const body = await readJsonBody(request);
+		if (body && typeof body.action === "string" && DUEL_ACTIONS.includes(body.action)) {
+			const duelMaths = async (who) => {
+				const loaded = await services.load(who, "00000000-0000-4000-8000-000000000000");
+				const ask = loaded.ok ? loaded.value.state?.ask : null;
+				return ask && ask.for === "duel" && ask.marks?.[0] ? {
+					right: ask.marks[0].correct === true,
+					askNo: ask.no
+				} : {
+					right: false,
+					askNo: null
+				};
+			};
+			const out = await handleDuel({
+				...services,
+				duelMaths
+			}, player, body.action, body);
+			return reply(out.status, out.body);
+		}
 		const action = body ? parseAction(body.action) : null;
 		if (!body || typeof body.requestId !== "string" || !UUID.test(body.requestId) || !action) {
 			console.warn("clans: refused a request that could not be read");
@@ -15157,6 +15526,49 @@ Deno.serve(makeHandler({
 	target: (player, targetId) => call("clan_raid_target", {
 		player,
 		target: targetId
+	}),
+	duelLoad: (duel) => call("clan_duel_load", { duel }),
+	duelChallenge: (player, other, waitMs) => call("clan_duel_challenge", {
+		player,
+		other,
+		wait_ms: waitMs
+	}),
+	duelAnswer: (player, duel, accept, roundMs) => call("clan_duel_answer", {
+		player,
+		duel,
+		accept,
+		round_ms: roundMs
+	}),
+	duelPick: (player, duel, round, move, right, askNo) => call("clan_duel_pick", {
+		player,
+		duel,
+		round,
+		move,
+		is_right: right,
+		ask_no: askNo
+	}),
+	duelRoundPicks: (duel, round) => call("clan_duel_round_picks", {
+		duel,
+		round
+	}),
+	duelRound: (duel, version, rounds, missed, deadlineMs) => call("clan_duel_round", {
+		duel,
+		version,
+		rounds,
+		missed,
+		deadline_ms: deadlineMs
+	}),
+	duelEnd: (duel, version, status, ending, winner, leaver, rounds, gold, banners, paidPerDay) => call("clan_duel_end", {
+		duel,
+		version,
+		status,
+		ending,
+		winner,
+		leaver,
+		rounds,
+		gold,
+		banners,
+		paid_per_day: paidPerDay
 	}),
 	saveRaid: (player, expectedVersion, raid, requestId, state, result) => call("save_village_raid", {
 		player,

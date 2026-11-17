@@ -78,6 +78,11 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <p><strong>Nobody loses anything.</strong> No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners; a loss still earns a little. When your own village holds off a raid, you earn gold and Banners too.</p>
           <p>Your village helps: the Forge and your army break their walls, Walls and Tower defend yours, and the Strongroom adds gold to every raid. Banners count for the week and start again every Monday.</p>
         </section>
+        <section aria-labelledby="htp-duels">
+          <h3 id="htp-duels">Live duels</h3>
+          <p>In the <strong>Duel Arena</strong> you can challenge a classmate's clan to a live duel. Each round you both pick an order in secret: <strong>Charge</strong> rides down <strong>Volley</strong>, <strong>Volley</strong> rains over <strong>Shield Wall</strong>, and <strong>Shield Wall</strong> stops <strong>Charge</strong>. Then a maths question powers your hit.</p>
+          <p>Your Forge, Walls, Barracks, Tower and Church each help a little. <strong>Nobody loses anything</strong>: both clans earn gold and Banners for a finished duel. You can practise against computer clans any time.</p>
+        </section>
         <section aria-labelledby="htp-season">
           <h3 id="htp-season">Seasons and the village goal</h3>
           <p>A season lasts 5 weeks, on the same dates as Dragon Maths. Finish every building to earn the <strong>Master Builder</strong> badge, {CONFIG.season.villageReward.fame} fame and a place in the Hall of Legends.</p>

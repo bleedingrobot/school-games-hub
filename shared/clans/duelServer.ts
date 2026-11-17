@@ -104,7 +104,6 @@ export const DUEL_SAY = {
 const ok = (body: Record<string, unknown>): DuelReply => ({ status: 200, body });
 const no = (status: number, error: string, extra: Record<string, unknown> = {}): DuelReply => ({ status, body: { error, ...extra } });
 const failed = (o: { why: string }) => (o.why === 'refused' ? no(400, DUEL_SAY.bad) : no(503, DUEL_SAY.busy));
-const isUuid = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
 const isId = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 1;
 
 async function afterRound(s: DuelServices, d: DuelRow, picks: [DuelPick, DuelPick], missed: [number, number]): Promise<DuelReply> {
@@ -131,7 +130,7 @@ async function afterRound(s: DuelServices, d: DuelRow, picks: [DuelPick, DuelPic
 
 export async function handleDuel(s: DuelServices, player: string, action: DuelAction, body: Record<string, unknown>): Promise<DuelReply> {
   if (action === 'duel-challenge') {
-    if (!isUuid(body.other)) return no(400, DUEL_SAY.bad);
+    if (typeof body.other !== 'string' || body.other.length < 1 || body.other.length > 64) return no(400, DUEL_SAY.bad);
     const r = await s.duelChallenge(player, body.other, DUEL_CHALLENGE_MS);
     if (!r.ok) return failed(r);
     const why = r.value.result;

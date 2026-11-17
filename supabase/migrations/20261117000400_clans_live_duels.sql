@@ -499,7 +499,7 @@ select cron.schedule('tidy-clan-duels', '*/5 * * * *', 'select public.clan_duel_
 -- ---------------------------------------------------------------------------
 
 create function public.teacher_set_clan_live_duels(enabled boolean, target_class uuid default null)
-returns void
+returns boolean
 language plpgsql
 security definer
 set search_path = ''
@@ -509,6 +509,7 @@ begin
   perform public.require_settings_target(target_class);
   update public.app_settings set clan_live_duels = coalesce(enabled, false)
   where id in (select public.settings_to_change(target_class));
+  return coalesce(enabled, false);
 end;
 $$;
 

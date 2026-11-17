@@ -1,5 +1,5 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TrophyWonLine } from '../../trophies/TrophyWonLine';
 import { monsterWeek, suppliesOnSale, type Action, type MonsterOutcome, type RaidOutcome, type ShownFight } from '../../../shared/clans/actions';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
@@ -20,6 +20,10 @@ import { Mines, Results, depthArt } from './Mines';
 import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveSupplies, knockOutSome, pretendRaidFinish, pretendRaidStart } from './places';
 import { VillageRaids, type RaidGo } from './VillageRaids';
 import { BannerRain } from './RaidStage';
+import { DuelArena, DuelAskBanner } from './Duels';
+import { useDuels } from './useDuels';
+import { pretendDuelApi } from './pretendDuels';
+import type { DuelApi } from '../../data/clanDuel';
 import { News } from './News';
 import { MyVillage } from './MyVillage';
 import { Raid } from './Raid';
@@ -40,13 +44,13 @@ import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import { bannerArt, questArt, sceneArt, type SceneId } from './art';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto' | 'monster';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'duels' | 'scoreboard' | 'achievements' | 'howto' | 'monster';
 
 /** The painting across the top of each screen. Home has the town map instead (TownMap.tsx). The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
   market: 'market', training: 'training', church: 'church',
-  raid: 'raid', classraid: 'raid-hall', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
+  raid: 'raid', classraid: 'raid-hall', duels: 'duel-gate', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
 /** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
@@ -108,8 +112,13 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
  * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
  */
-export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, hall, typedNames = false }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; typedNames?: boolean }) {
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, hall, typedNames = false, duelApi }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; typedNames?: boolean; duelApi?: DuelApi }) {
   const [session, setSession] = useState<Session | null>(initial);
+  // Live Clan Duels: the school's server, or pretend classmates' clans on the test page.
+  const sessionRef = useRef<Session | null>(initial);
+  sessionRef.current = session;
+  const pretendDuels = useMemo(() => (server ? undefined : pretendDuelApi(() => sessionRef.current?.clan ?? null, { askMe: true })), [server]);
+  const duels = useDuels(session ? duelApi ?? pretendDuels : undefined);
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
@@ -565,13 +574,15 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'market' && <Market session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'myvillage' && <MyVillage top={onPicture ? top(true) : undefined} session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
+          {screen === 'myvillage' && <MyVillage top={onPicture ? top(true) : undefined} session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} onDuels={() => setScreen('duels')} />}
+          {screen === 'duels' && <DuelArena session={session} duels={duels} ask={ask} onBack={() => setScreen('myvillage')} />}
+          {screen !== 'duels' && screen !== 'fight' && <DuelAskBanner duels={duels} onYes={(id) => { void duels.send({ action: 'duel-answer', duel: id, accept: true }); setScreen('duels'); }} />}
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
           {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
-          {screen === 'classraid' && <VillageRaids session={session} ask={ask} onStart={startRaid} onFight={enterMonsterFight} onBack={() => setScreen('myvillage')} />}
+          {screen === 'classraid' && <VillageRaids session={session} ask={ask} onStart={startRaid} onFight={enterMonsterFight} onBack={() => setScreen('myvillage')} onDuels={() => setScreen('duels')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} top={onPicture ? top(true) : undefined} session={session} ask={ask} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'fight' && !server && <Fight key={`${session.fightNo}-${practiceFight ? 'monster' : 'mines'}`} session={session} boss={boss} open={practiceFight ?? undefined} onFinish={(f, b) => { bestNote.current = b; finish(f); }} />}
           {screen === 'fight' && server && activeFight && (

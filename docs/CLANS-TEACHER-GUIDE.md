@@ -42,6 +42,11 @@ Pupils have a **How to play** button on their clan page, and a "How to play" box
 - **Nobody loses anything.** No gold, heroes, troops or buildings are ever taken. A win earns gold and Banners, a loss still earns a little, and a village that holds off a raid earns gold and Banners too. The raided pupil reads a kind note next time ("Your village held off raiders..." or "...got past your walls. Nothing was taken.").
 - **Banners** count for the week and show on a class board on the raid screen; it starts again every Monday. Banners never come from maths scores, and the board shows clan names only.
 
+## Live duels
+- **On** to start. Switch it off for a class with **Live duels** in the Clan Quest settings panel; an open duel then stops.
+- Two pupils in the same class duel live: each round both pick Charge, Volley or Shield Wall in secret and answer one maths question from their own maths. Village buildings give small bonuses, so a brand-new clan can still win.
+- **Nobody loses anything.** Both sides are paid gold and Banners for a finished duel (the first 3 a day). Pupils only see clan names and three ready-made cheers; there is no chat.
+
 ## The maths
 In the **Clan Quest maths** panel on the Teacher view you choose, for the whole school:
 - the **year band** (4, 5 or 6), which sets how hard the numbers are;
