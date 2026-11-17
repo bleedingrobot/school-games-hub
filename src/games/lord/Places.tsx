@@ -221,7 +221,7 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
   return (
     <Place title="The Bank" tile="coin" scene="bank" person="bank" note={note} back={back}>
       <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
-      <p className="lord-big">
+      <p className="lord-banked">
         <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
       </p>
       <div className="lord-actions">
