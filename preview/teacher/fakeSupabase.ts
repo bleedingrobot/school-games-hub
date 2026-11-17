@@ -6,6 +6,7 @@ import { GAME_IDS } from '../../src/data/foundational';
 import { ALL_SWITCH_COLUMNS } from '../../src/data/games';
 import { LADDER } from '../../shared/maths/ladder';
 import { newStats } from '../../shared/maths/leitner';
+import { addDays } from '../../shared/quests/week';
 import { busyPupil, newPupil, fakeSupabase, setWorld, homeAnswer } from '../../src/pages/homePageFake';
 
 const SCENE = new URLSearchParams(window.location.search).get('scene') ?? 'teacher';
@@ -122,7 +123,53 @@ const base = fakeSupabase().supabase;
 const ok = (data: unknown) => Promise.resolve({ data, error: null });
 let requests = [...warpRequests];
 
+// ---- Weekly class quests (docs/CLASS-QUESTS-PLAN.md). ?quest=won|none|lord|clans for the pupil's bar --------------------------
+const QUEST = new URLSearchParams(window.location.search).get('quest');
+const qToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+const qDay = (n: number) => addDays(qToday, n);
+type FakeQuest = { id: string; kind: string; startsOn: string; endsOn: string; stoppedAt: string | null; won: number };
+let classQuests: FakeQuest[] = [
+  { id: 'q1', kind: 'trader', startsOn: qDay(-3), endsOn: qDay(3), stoppedAt: null, won: 3 },
+  { id: 'q0', kind: 'lord', startsOn: qDay(-12), endsOn: qDay(-6), stoppedAt: null, won: 11 },
+];
+const questDays = (i: number, q: FakeQuest) =>
+  Array.from({ length: 7 }, (_, n) => addDays(q.startsOn, n)).filter((d, n) => d <= qToday && (i * 3 + n * 5) % 7 < (i % 4 === 0 ? 7 : 4));
+const teacherQuests = (which?: string) => {
+  const shown = classQuests.find((q) => q.id === which) ?? classQuests[0];
+  return {
+    today: qToday,
+    switches: { trader: true, lord: true, clans: false },
+    quests: classQuests,
+    shown: shown?.id ?? null,
+    pupils: [
+      ...PEOPLE.map(([id], i) => {
+        const days = shown ? questDays(i, shown) : [];
+        return { id, days, won: days.length >= 5, questsDone: (i * 3) % 9 };
+      }),
+      { id: 'me', teacher: true, name: 'Sneaky Dragon 28', days: shown ? questDays(4, shown) : [], won: false, questsDone: 1 },
+    ],
+  };
+};
+const myQuest = () => {
+  if (QUEST === 'none') return null;
+  const kind = QUEST === 'lord' || QUEST === 'clans' ? QUEST : 'trader';
+  const won = QUEST === 'won';
+  const days = won ? [qDay(-4), qDay(-3), qDay(-2), qDay(-1), qDay(0)] : [qDay(-3), qDay(-1)];
+  return { quest: { id: `preview-${kind}-${won}`, kind, startsOn: qDay(won ? -4 : -3), endsOn: qDay(won ? 2 : 3), daysNeeded: 5 }, today: qToday, days, won, classWon: 9, questsDone: won ? 5 : 2 };
+};
+world.jobs.my_class_quest = myQuest();
+
 const answers: Record<string, (a: Row) => unknown> = {
+  my_class_quest: () => myQuest(),
+  teacher_class_quests: (a) => teacherQuests(a.which ? String(a.which) : undefined),
+  teacher_start_class_quest: (a) => {
+    classQuests = [{ id: `q${classQuests.length + 1}`, kind: String(a.which), startsOn: qToday, endsOn: qDay(6), stoppedAt: null, won: 0 }, ...classQuests];
+    return classQuests[0].id;
+  },
+  teacher_stop_class_quest: () => {
+    classQuests = classQuests.map((q) => (q.stoppedAt || q.endsOn < qToday ? q : { ...q, stoppedAt: new Date().toISOString() }));
+    return null;
+  },
   my_school_info: () => ({ id: 1, name: 'Douglas Park School', admin: false }),
   teacher_classes: () => (SCENE === 'noclass' ? [] : [classSummary]),
   teacher_class_detail: () => classDetail,

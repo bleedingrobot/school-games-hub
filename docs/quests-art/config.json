@@ -1,0 +1,23 @@
+{
+  "_from": "docs/game-guide/templates/art-config.json. Weekly class quest paintings (docs/CLASS-QUESTS-PLAN.md). Scenes: --style scene; trophy: --style epic.",
+  "game": "quests",
+  "filename_prefix": "quests/img",
+  "comfy": "http://127.0.0.1:8188",
+  "style": "scene",
+  "seed_by": "name+style",
+  "styles": {
+    "scene": "Epic vibrant painterly game key art, wide cinematic banner, rich saturated colour, dramatic glowing light, sense of adventure and motion, friendly and heroic, made for children aged 8 to 11, no blood, no gore, no text, no letters, no numbers anywhere. ",
+    "epic": "Epic collectible-card illustration, luminous painterly fantasy art, a radiant sunburst of light rays behind the subject, glowing magic particles and lens sparkles, mirror-bright metal, rich saturated colour, deep dark midnight-blue and violet jewel-toned background, one subject, large and centred, filling the square, bold clear silhouette, friendly and heroic, made for children aged 5 to 11, no text, no letters, no numbers. "
+  },
+  "inbox": "~/dragon-art-inbox/quests",
+  "picks": "docs/quests-art/picks.json",
+  "art_dir": "src",
+  "pictures": [
+    { "name": "quest-trader", "prompt": "A small brave trading starship with glowing blue engines leaping through hyperspace, streaking light lanes curving toward a distant shining space station, a colourful nebula of teal, magenta and gold, bright stars and planets, the ship on the left third flying right, open dark space across the middle, exciting speed lines.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-trader" },
+    { "name": "quest-lord", "prompt": "A young hero with a sword and a round shield standing ready on a mossy path in an enchanted misty forest, facing a big friendly-scary glowing-eyed forest beast among giant twisted trees, shafts of golden light through the leaves, floating fireflies, green and gold colours, the hero on the left, the beast on the right, open misty path in the middle.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-lord" },
+    { "name": "quest-clans", "prompt": "A small band of brave medieval clan warriors with torches and banners marching toward a glowing mine entrance cut into a rocky hillside at dusk, warm orange light pouring out of the mine, glittering crystals and gold ore in the rocks, mine cart tracks leading in, purple dusk sky with first stars, the warriors on the left, the mine on the right.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-clans" },
+    { "name": "questing-hero-bronze", "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-bronze", "max": 512, "small": 160 },
+    { "name": "questing-hero-silver", "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of gleaming polished silver metal with blue-white shine, fine engraved swirls, cool moonlight glow and bright twinkling sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-silver", "max": 512, "small": 160 },
+    { "name": "questing-hero-gold", "prompt": "A magnificent heroic round shield with a blazing compass star on its front set with a glowing ruby, a flowing royal banner ribbon wrapped beneath it and small wings at its sides, all made of radiant shining gold metal, ornate engraving, a brilliant golden aura, light rays and many glittering sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-gold", "max": 512, "small": 160 }
+  ]
+}
