@@ -3,7 +3,7 @@
  * worked out on the server; these just read it and send the teacher's start and stop.
  */
 import { supabase } from '../lib/supabase';
-import type { QuestKind } from '../../shared/quests/kinds';
+import type { QuestKind, QuestRule } from '../../shared/quests/kinds';
 import { FriendlyError } from './profile';
 
 export interface ClassQuest {
@@ -12,13 +12,18 @@ export interface ClassQuest {
   startsOn: string;
   endsOn: string;
   daysNeeded: number;
+  /** Missing before stage 2 (then it is a 'turns' quest). */
+  rule?: QuestRule;
 }
 
 export interface MyQuest {
   quest: ClassQuest;
   today: string;
-  /** The quest's days I've done. */
+  /** The days to light: done days for a daily quest, days played for a weekly one. */
   days: string[];
+  /** My count and the target: days for a daily quest, goes (or different things) for a weekly one. */
+  count?: number;
+  target?: number;
   won: boolean;
   /** How many in my class have finished it (a number only). */
   classWon: number;
@@ -37,6 +42,9 @@ export interface TeacherQuestRow {
 
 export interface TeacherQuestPupil {
   id: string;
+  /** Their count and the target in the shown quest (as MyQuest). */
+  count?: number;
+  target?: number | null;
   /** One of the class's teachers, playing along (James, 18 Nov 2026). */
   teacher?: boolean;
   /** A teacher's made-up name (pupils' names come from the teacher's own pupil list). */

@@ -5,7 +5,7 @@
 
 .tquests__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
@@ -30,6 +30,37 @@
 }
 .tquests__card:hover { transform: translateY(-2px); box-shadow: 0 0.5rem 1.2rem rgb(20 10 50 / 0.35); }
 .tquests__card.is-picked { border-color: #ffd45c; box-shadow: 0 0 0 3px rgb(255 212 92 / 0.45), 0 0.5rem 1.2rem rgb(20 10 50 / 0.35); }
+.tquests__group { margin-top: 0.75rem; }
+.tquests__group-title { margin: 0.5rem 0; font-size: 1.15rem; }
+.tquests__game { margin-bottom: 0.75rem; }
+.tquests__game-title { margin: 0 0 0.35rem; font-size: 0.95rem; opacity: 0.8; }
+.tquests__card-kind {
+  justify-self: start;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #1b1036;
+  background: #ffd45c;
+}
+.tquests__startbar {
+  position: sticky;
+  bottom: 0.5rem;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.8rem;
+  color: #fff;
+  background: rgb(27 16 54 / 0.92);
+  box-shadow: 0 0.4rem 1.2rem rgb(20 10 50 / 0.35);
+}
+.tquests__startbar .button { min-height: 0; padding: 0.45rem 1.1rem; font-size: 1rem; }
 .tquests__card-name { font-size: 1.05rem; text-shadow: 0 1px 4px rgb(0 0 0 / 0.8); }
 .tquests__card-name strong { color: #ffd45c; }
 .tquests__card-rule { font-size: 0.85rem; opacity: 0.9; text-shadow: 0 1px 4px rgb(0 0 0 / 0.8); }

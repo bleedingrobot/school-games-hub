@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
-import { questKind } from '../../shared/quests/kinds';
+import { isDaily, questKind } from '../../shared/quests/kinds';
 import { questWeek, weekday } from '../../shared/quests/week';
 import type { MyQuest } from '../data/quests';
 import type { MovesByGame } from '../data/movesLeft';
@@ -44,14 +44,20 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
   // Which stones are newly lit, and whether the win fanfare is still to play (both remembered per quest in this browser).
   // Each is only remembered once it has been seen, as the home page can open twice in a row.
   const [seenLit, setSeenLit] = useState<number | null>(null);
+  const [seenCount, setSeenCount] = useState<number | null>(null);
   const [fanfare, setFanfare] = useState(false);
   const wonKey = mine ? `quest-won-${mine.quest.id}` : '';
   useEffect(() => {
     if (!mine || !week) return;
     const litKey = `quest-lit-${mine.quest.id}`;
+    const countKey = `quest-count-${mine.quest.id}`;
     setSeenLit(remembered(litKey));
+    setSeenCount(remembered(countKey));
     if (mine.won && !remembered(`quest-won-${mine.quest.id}`)) setFanfare(true);
-    const seen = window.setTimeout(() => remember(litKey, week.done), 2500);
+    const seen = window.setTimeout(() => {
+      remember(litKey, week.done);
+      remember(countKey, mine.count ?? 0);
+    }, 2500);
     return () => window.clearTimeout(seen);
   }, [mine, week]);
 
@@ -61,13 +67,22 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
   const todayStone = week.days.find((d) => d.date === mine.today);
   const chip = moves?.[kind.card]?.chips[0];
   const turnsLeft = chip ? Number.parseInt(chip.text, 10) : NaN;
+  // A daily quest counts lit days (5 of 7); a weekly one counts goes, planets or villagers towards its target.
+  const daily = isDaily(kind.rule);
+  const count = daily ? week.done : (mine.count ?? 0);
+  const target = daily ? week.needed : (mine.target ?? kind.amount ?? 1);
+  const toGo = Math.max(0, target - count);
   let todayLine: string;
   if (!week.running) todayLine = mine.won ? 'Quest complete! Ask your teacher for the next one.' : 'This quest is over.';
+  else if (mine.won) todayLine = 'You did it! Keep playing for fun.';
+  else if (!daily) todayLine = `${kind.goal} this week: ${plural(toGo, 'more', 'more')} to go.`;
   else if (todayStone?.state === 'done') todayLine = 'Today done! ✓ Come back tomorrow.';
-  else if (Number.isFinite(turnsLeft) && turnsLeft > 0) todayLine = `${kind.daily}: ${plural(turnsLeft, kind.turn.one, kind.turn.many)} left today.`;
-  else todayLine = `${kind.daily} today.`;
+  else if (kind.rule === 'turns' && Number.isFinite(turnsLeft) && turnsLeft > 0) todayLine = `${kind.goal}: ${plural(turnsLeft, kind.unit.one, kind.unit.many)} left today.`;
+  else todayLine = `${kind.goal} today.`;
+  const showPlay = week.running && !mine.won && (!daily || todayStone?.state !== 'done');
+  const grew = !daily && seenCount !== null && count > seenCount;
 
-  const fill = Math.min(1, week.done / week.needed);
+  const fill = Math.min(1, count / target);
   // This win reached a new metal of the Questing Hero trophy (the server gives it at 5, 10 and 20 quests).
   const metal = TROPHY_AT[mine.questsDone];
   const trophy = metal ? paintedTrophy('quest-hero', metal) : undefined;
@@ -75,7 +90,7 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
   return (
     <section
       className={`qbar qbar--${kind.id}${mine.won ? ' qbar--won' : ''}${week.running ? '' : ' qbar--over'}`}
-      aria-label={`Class quest: ${kind.game}, ${kind.name}. ${week.done} of ${week.needed} days.`}
+      aria-label={`Class quest: ${kind.game}, ${kind.name}. ${count} of ${daily ? `${target} days` : plural(target, kind.unit.one, kind.unit.many)}.`}
       style={{ '--qbar-art': art ? `url(${art})` : undefined, '--qbar-fill': fill } as CSSProperties}
     >
       <div className="qbar__art" aria-hidden="true" />
@@ -116,17 +131,19 @@ export function QuestBar({ quest: mine, moves }: { quest: MyQuest | null | undef
       </ol>
 
       <footer className="qbar__bottom">
-        <div className="qbar__meter" aria-hidden="true">
+        <div className={`qbar__meter${grew ? ' is-growing' : ''}`} aria-hidden="true">
           <div className="qbar__meter-fill" />
         </div>
         <p className="qbar__count">
-          <strong>{Math.min(week.done, week.needed)} of {week.needed} days</strong>
+          <strong>
+            {Math.min(count, target)} of {daily ? `${target} days` : plural(target, kind.unit.one, kind.unit.many)}
+          </strong>
           {week.running && !mine.won && ` · ${plural(week.left, 'day', 'days')} left`}
           {mine.won && ' · Quest complete! 🏆'}
-          {week.outOfReach && !mine.won && ' · keep playing for next time!'}
+          {daily && week.outOfReach && !mine.won && ' · keep playing for next time!'}
         </p>
         <p className="qbar__today">{todayLine}</p>
-        {week.running && todayStone?.state !== 'done' && (
+        {showPlay && (
           <Link to={`/${kind.card}`} className="button button--play qbar__go">
             <span aria-hidden="true">▶</span> Play {kind.game}
           </Link>

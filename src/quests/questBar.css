@@ -171,6 +171,10 @@
   box-shadow: 0 0 12px var(--qbar-glow);
   animation: qbar-shine 2.4s linear infinite, qbar-grow 1.2s ease-out both;
 }
+.qbar__meter.is-growing .qbar__meter-fill { animation: qbar-shine 2.4s linear infinite, qbar-grow-pop 1.4s ease-out both; }
+.qbar__meter.is-growing { box-shadow: 0 0 14px var(--qbar-glow); animation: qbar-meter-flash 1.4s ease-out 2; }
+@keyframes qbar-grow-pop { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+@keyframes qbar-meter-flash { 50% { box-shadow: 0 0 26px 6px var(--qbar-glow); } }
 .qbar__count,
 .qbar__today {
   margin: 0;

@@ -3,7 +3,7 @@
  * quests (docs/CLASS-QUESTS-PLAN.md). The database checks every action; names come from the teacher's own pupil list.
  */
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { DAYS_NEEDED, QUEST_KINDS, questKind, type QuestKind } from '../../shared/quests/kinds';
+import { DAYS_NEEDED, isDaily, QUEST_KINDS, questKind, type QuestGroup, type QuestKind, type QuestKindInfo } from '../../shared/quests/kinds';
 import { questWeek, weekday } from '../../shared/quests/week';
 import { FriendlyError } from '../data/profile';
 import { fetchPeople, type Person } from '../data/teacher';
@@ -11,6 +11,13 @@ import { fetchTeacherQuests, startQuest, stopQuest, type TeacherQuests as Data }
 import { useTeacherClass } from '../teacher/TeacherClass';
 import { questArt } from './art';
 import './teacherQuests.css';
+
+const GROUPS: { id: QuestGroup; title: string }[] = [
+  { id: 'complex', title: 'Complex maths' },
+  { id: 'easy', title: 'Easy maths' },
+];
+const gamesIn = (group: QuestGroup) => [...new Set(QUEST_KINDS.filter((k) => k.group === group).map((k) => k.game))];
+const ruleLine = (k: QuestKindInfo) => (isDaily(k.rule) ? `${k.goal}, ${DAYS_NEEDED} days out of 7` : `${k.goal} this week, any days`);
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
@@ -76,36 +83,48 @@ function QuestsPage({ classId }: { classId: string }) {
         <section className="panel" aria-labelledby="tq-start">
           <h2 id="tq-start" className="panel__title">Start a weekly quest</h2>
           <p className="tquests__line">
-            Pupils play the quest&rsquo;s game properly (all of that day&rsquo;s turns) on {DAYS_NEEDED} of the next 7 days. It starts
-            today and ends by itself. They see it on their home page. You can play along and finish it too.
+            Daily quests: a little play on {DAYS_NEEDED} of the next 7 days. Weekly quests: a total by the end of the week, on any days.
+            Every quest starts today and ends by itself after 7 days. Pupils see it on their home page, and you can play along too.
           </p>
-          <div className="tquests__cards">
-            {QUEST_KINDS.map((k) => {
-              const on = data.switches[k.id] !== false;
-              const art = questArt(k.id, true);
-              return (
-                <button
-                  key={k.id}
-                  type="button"
-                  className={`tquests__card${picked === k.id ? ' is-picked' : ''}`}
-                  style={{ '--tq-art': art ? `url(${art})` : undefined } as CSSProperties}
-                  aria-pressed={picked === k.id}
-                  onClick={() => setPicked(k.id)}
-                >
-                  <span className="tquests__card-name">
-                    {k.game}: <strong>{k.name}</strong>
-                  </span>
-                  <span className="tquests__card-rule">{k.daily}, {DAYS_NEEDED} days out of 7</span>
-                  {!on && <span className="tquests__card-off">{k.game} is switched off for this class: turn it on in Games first.</span>}
-                </button>
-              );
-            })}
-          </div>
-          <p>
+          {GROUPS.map((group) => (
+            <div key={group.id} className="tquests__group">
+              <h3 className="tquests__group-title">{group.title}</h3>
+              {gamesIn(group.id).map((game) => (
+                <div key={game} className="tquests__game">
+                  <h4 className="tquests__game-title">{game}</h4>
+                  <div className="tquests__cards">
+                    {QUEST_KINDS.filter((k) => k.group === group.id && k.game === game).map((k) => {
+                      const on = data.switches[k.id] !== false;
+                      const art = questArt(k.id, true);
+                      return (
+                        <button
+                          key={k.id}
+                          type="button"
+                          className={`tquests__card${picked === k.id ? ' is-picked' : ''}`}
+                          style={{ '--tq-art': art ? `url(${art})` : undefined } as CSSProperties}
+                          aria-pressed={picked === k.id}
+                          onClick={() => setPicked(k.id)}
+                        >
+                          <span className="tquests__card-kind">{isDaily(k.rule) ? 'Daily' : 'Weekly'}</span>
+                          <span className="tquests__card-name">
+                            <strong>{k.name}</strong>
+                          </span>
+                          <span className="tquests__card-rule">{ruleLine(k)}</span>
+                          {!on && <span className="tquests__card-off">{k.game} is switched off for this class: turn it on in Games first.</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="tquests__startbar">
+            <span>{picked ? `${questKind(picked)?.game}: ${questKind(picked)?.name}` : 'Pick a quest above'}</span>
             <button type="button" className="button button--play" disabled={!picked || busy} onClick={() => picked && act(() => startQuest(classId, picked))}>
               Start this week&rsquo;s quest
             </button>
-          </p>
+          </div>
         </section>
       )}
 
@@ -160,8 +179,9 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
       return { ...p, week, name };
     });
     // Pupils who still need days first (fewest done at the top), finished pupils after them, teachers last.
-    return named.sort((a, b) => Number(!!a.teacher) - Number(!!b.teacher) || Number(a.won) - Number(b.won) || a.week.done - b.week.done || a.name.localeCompare(b.name));
+    return named.sort((a, b) => Number(!!a.teacher) - Number(!!b.teacher) || Number(a.won) - Number(b.won) || (a.count ?? a.week.done) - (b.count ?? b.week.done) || a.name.localeCompare(b.name));
   }, [data, people, quest.startsOn]);
+  const daily = !k || isDaily(k.rule);
   const days = rows[0]?.week.days ?? questWeek(quest.startsOn, data.today, [], DAYS_NEEDED).days;
 
   return (
@@ -190,7 +210,7 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
                   {weekday(d.date)}
                 </th>
               ))}
-              <th scope="col">Days</th>
+              <th scope="col">{daily || !k ? 'Days' : k.unit.many[0].toUpperCase() + k.unit.many.slice(1)}</th>
               <th scope="col" title="Quests finished, all time">Quests</th>
             </tr>
           </thead>
@@ -205,7 +225,7 @@ function QuestTable({ data, people, isRunning, busy, onStop }: { data: Data; peo
                 ))}
                 <td>
                   {r.won ? '✓ ' : ''}
-                  {Math.min(r.week.done, DAYS_NEEDED)}/{DAYS_NEEDED}
+                  {daily ? `${Math.min(r.week.done, DAYS_NEEDED)}/${DAYS_NEEDED}` : `${Math.min(r.count ?? 0, r.target ?? 0)}/${r.target ?? k?.amount ?? ''}`}
                 </td>
                 <td>{r.questsDone}</td>
               </tr>

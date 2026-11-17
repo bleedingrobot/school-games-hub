@@ -13,11 +13,374 @@
   "picks": "docs/quests-art/picks.json",
   "art_dir": "src",
   "pictures": [
-    { "name": "quest-trader", "prompt": "A small brave trading starship with glowing blue engines leaping through hyperspace, streaking light lanes curving toward a distant shining space station, a colourful nebula of teal, magenta and gold, bright stars and planets, the ship on the left third flying right, open dark space across the middle, exciting speed lines.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-trader" },
-    { "name": "quest-lord", "prompt": "A young hero with a sword and a round shield standing ready on a mossy path in an enchanted misty forest, facing a big friendly-scary glowing-eyed forest beast among giant twisted trees, shafts of golden light through the leaves, floating fireflies, green and gold colours, the hero on the left, the beast on the right, open misty path in the middle.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-lord" },
-    { "name": "quest-clans", "prompt": "A small band of brave medieval clan warriors with torches and banners marching toward a glowing mine entrance cut into a rocky hillside at dusk, warm orange light pouring out of the mine, glittering crystals and gold ore in the rocks, mine cart tracks leading in, purple dusk sky with first stars, the warriors on the left, the mine on the right.", "size": [1536, 640], "kind": "scene", "folder": "quests/art", "file": "quest-clans" },
-    { "name": "questing-hero-bronze", "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-bronze", "max": 512, "small": 160 },
-    { "name": "questing-hero-silver", "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of gleaming polished silver metal with blue-white shine, fine engraved swirls, cool moonlight glow and bright twinkling sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-silver", "max": 512, "small": 160 },
-    { "name": "questing-hero-gold", "prompt": "A magnificent heroic round shield with a blazing compass star on its front set with a glowing ruby, a flowing royal banner ribbon wrapped beneath it and small wings at its sides, all made of radiant shining gold metal, ornate engraving, a brilliant golden aura, light rays and many glittering sparkles. Nothing else in the picture.", "size": [1024, 1024], "kind": "icon", "folder": "avatar/art/trophies", "file": "questing-hero-gold", "max": 512, "small": 160 }
+    {
+      "name": "quest-trader",
+      "prompt": "A small brave trading starship with glowing blue engines leaping through hyperspace, streaking light lanes curving toward a distant shining space station, a colourful nebula of teal, magenta and gold, bright stars and planets, the ship on the left third flying right, open dark space across the middle, exciting speed lines.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-trader"
+    },
+    {
+      "name": "quest-lord",
+      "prompt": "A young hero with a sword and a round shield standing ready on a mossy path in an enchanted misty forest, facing a big friendly-scary glowing-eyed forest beast among giant twisted trees, shafts of golden light through the leaves, floating fireflies, green and gold colours, the hero on the left, the beast on the right, open misty path in the middle.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-lord"
+    },
+    {
+      "name": "quest-clans",
+      "prompt": "A small band of brave medieval clan warriors with torches and banners marching toward a glowing mine entrance cut into a rocky hillside at dusk, warm orange light pouring out of the mine, glittering crystals and gold ore in the rocks, mine cart tracks leading in, purple dusk sky with first stars, the warriors on the left, the mine on the right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-clans"
+    },
+    {
+      "name": "questing-hero-bronze",
+      "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of warm reddish-brown bronze metal, sturdy and plain with hammered marks, a soft amber glow and just a few small sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "avatar/art/trophies",
+      "file": "questing-hero-bronze",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "questing-hero-silver",
+      "prompt": "A heroic round shield with a compass star on its front and a flowing banner ribbon wrapped beneath it, the shield and compass made of gleaming polished silver metal with blue-white shine, fine engraved swirls, cool moonlight glow and bright twinkling sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "avatar/art/trophies",
+      "file": "questing-hero-silver",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "questing-hero-gold",
+      "prompt": "A magnificent heroic round shield with a blazing compass star on its front set with a glowing ruby, a flowing royal banner ribbon wrapped beneath it and small wings at its sides, all made of radiant shining gold metal, ornate engraving, a brilliant golden aura, light rays and many glittering sparkles. Nothing else in the picture.",
+      "size": [
+        1024,
+        1024
+      ],
+      "kind": "icon",
+      "folder": "avatar/art/trophies",
+      "file": "questing-hero-gold",
+      "max": 512,
+      "small": 160
+    },
+    {
+      "name": "quest-trader-planets",
+      "prompt": "A cheerful little trading starship gliding past a row of five very different colourful planets, a ringed gas giant, an ice world, a jungle world, a lava world and a candy-pink world, little landing beacons glowing on each, starry deep blue space, the ship on the left flying right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-trader-planets"
+    },
+    {
+      "name": "quest-lord-arena",
+      "prompt": "A grand sunny stone fantasy arena with cheering colourful banners and flags, two young heroes with wooden practice swords and shields facing each other on the sand, crowd silhouettes in the stands, golden afternoon light, dust sparkling in the air, the heroes small in the middle, wide open sand.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-lord-arena"
+    },
+    {
+      "name": "quest-clans-raids",
+      "prompt": "A band of cheerful clan warriors with colourful banners charging playfully toward a neighbouring hilltop village with wooden walls and a big banner flag, the defenders waving back, sunset sky with dramatic clouds, the raiders on the left, the village on the right, friendly sporting rivalry, no weapons drawn.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-clans-raids"
+    },
+    {
+      "name": "quest-kingdom-years",
+      "prompt": "A bustling medieval river town through the four seasons in one wide picture, spring blossom on the left, summer fields, autumn harvest, snowy winter on the right, a stone bridge over a sparkling river, a small castle, warm golden light.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-kingdom-years"
+    },
+    {
+      "name": "quest-kingdom-reigns",
+      "prompt": "A young ruler with a golden crown standing on a castle balcony waving to a happy crowd in a big medieval city square below, fireworks and banners in the evening sky, a river and bridges, warm festive light, the ruler on the left.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-kingdom-reigns"
+    },
+    {
+      "name": "quest-monsters-battles",
+      "prompt": "Two cute colourful fantasy monsters having a friendly battle in a sunny grassy meadow, a fire lizard and a water bubble creature, swirls of elemental magic between them, a young trainer cheering on the left, rolling hills and a tall tower in the distance.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-monsters-battles"
+    },
+    {
+      "name": "quest-monsters-catches",
+      "prompt": "A young monster trainer in long grass at golden hour holding up a glowing magic capture orb, cute colourful wild monsters peeking out of the grass, bushes and flowers, fireflies, a winding path to a forest, the trainer on the left.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-monsters-catches"
+    },
+    {
+      "name": "quest-archery-fights",
+      "prompt": "A young archer drawing a bow in a sunlit forest clearing aiming at a bright round target on the right, an arrow flying with a glowing trail, leaves drifting, golden light beams, a friendly rival archer in the distance.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-archery-fights"
+    },
+    {
+      "name": "quest-archery-sets",
+      "prompt": "A cosy archery workshop with a big glowing quiver filling with shining golden arrows, gold coins spilling from a chest, bows on the wooden walls, warm lantern light, windows to a forest, the quiver on the left.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-archery-sets"
+    },
+    {
+      "name": "quest-bond-daily",
+      "prompt": "Rows of glowing magic face-down cards on a starry purple table, two cards flipped face up with matching glowing symbols joined by a bright ribbon of light, sparkles, a friendly owl watching from the right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-bond-daily"
+    },
+    {
+      "name": "quest-bond-total",
+      "prompt": "A huge cascade of shimmering magic cards flying in a spiral through a starry sky, pairs of cards joined by bright ribbons of light, bursts of confetti and sparkles, joyful and energetic.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-bond-total"
+    },
+    {
+      "name": "quest-decree-cards",
+      "prompt": "A young ruler on a cosy wooden throne in a sunny village hall, a queue of friendly villagers waiting with requests, a baker, a farmer, a knight and a gardener with a giant pumpkin, scrolls and a big royal seal on a table, warm light.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-decree-cards"
+    },
+    {
+      "name": "quest-decree-villagers",
+      "prompt": "A cheerful medieval village square full of friendly villagers waving, a baker at a bread stall, a blacksmith, a fisher with a fish, a gardener with a huge pumpkin, a musician, children playing, flags and flowers, sunny day.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-decree-villagers"
+    },
+    {
+      "name": "quest-diamond-daily",
+      "prompt": "A giant shiny golden mechanical claw hanging from a chain, lowering down into a deep sparkling mine shaft whose rock walls are studded with colourful gems, rubies, emeralds and sapphires, warm lantern light, dust sparkles, the claw on the left, no machines, no signs.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-diamond-daily"
+    },
+    {
+      "name": "quest-diamond-total",
+      "prompt": "A deep underground crystal cavern with a giant glowing heart-shaped diamond far below, a mechanical claw descending past layers of colourful gems, glowing mushrooms, waterfalls of light, wonder and depth.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-diamond-total"
+    },
+    {
+      "name": "quest-gemkeep-daily",
+      "prompt": "A small sturdy stone keep on a hill guarding a glowing pile of treasure gems, cute cartoon goblins approaching in waves across a meadow, magical crystal towers firing sparkly beams, sunset sky.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-gemkeep-daily"
+    },
+    {
+      "name": "quest-gemkeep-total",
+      "prompt": "A magnificent crystal fortress glowing with colourful gems on a mountain at night, waves of cute cartoon goblins retreating across the valley, bright magical beams lighting the sky, triumphant feeling.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-gemkeep-total"
+    },
+    {
+      "name": "quest-isles-turns",
+      "prompt": "A cosy floating island in a bright blue sky with a little village, farms, a windmill and a lighthouse, waterfalls spilling off the edges, small hot air balloons and birds, fluffy clouds, other little islands in the distance.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-isles-turns"
+    },
+    {
+      "name": "quest-isles-races",
+      "prompt": "A race of small colourful sky ships with patchwork sails zooming between floating islands, streaming ribbons and wind swirls, a checkered finish banner hanging between two islands on the right, bright clouds, speed and fun.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-isles-races"
+    },
+    {
+      "name": "quest-marble-daily",
+      "prompt": "A glossy glass marble rolling fast down a twisting colourful toy track with loops and ramps, motion blur, wooden blocks and bright plastic pieces, sunny playroom light, the marble on the left heading right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-marble-daily"
+    },
+    {
+      "name": "quest-marble-total",
+      "prompt": "A huge spectacular marble run sculpture with many glass marbles racing down spirals, loops, funnels and jumps, rainbow coloured tracks, a golden finish bell, sparkling light, busy and joyful.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-marble-total"
+    },
+    {
+      "name": "quest-mine-daily",
+      "prompt": "A small brave flying mining ship with a glowing headlamp zooming through a winding underground mine tunnel, glittering crystals and rails, warm lamp light and blue shadows, the ship on the left flying right toward a bright exit.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-mine-daily"
+    },
+    {
+      "name": "quest-mine-total",
+      "prompt": "A small flying mining ship racing away from a glowing reactor core deep in a vast cavern full of crystals, bright orange and blue light, rocks tumbling, dramatic but friendly, a bright exit tunnel on the right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-mine-total"
+    },
+    {
+      "name": "quest-space-games",
+      "prompt": "A colourful space board game come to life, little rocket ships racing along a glowing path of stars toward a shining space station, a swirling wormhole and a dark black hole beside the path, planets and nebula, the rockets on the left.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-space-games"
+    },
+    {
+      "name": "quest-space-wormholes",
+      "prompt": "A cute rocket ship zooming through a dazzling swirling rainbow wormhole tunnel, stars stretching into streaks, spirals of purple, teal and gold light, sense of speed and wonder.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-space-wormholes"
+    },
+    {
+      "name": "quest-toonflap-daily",
+      "prompt": "A cheerful cartoon bird flapping through a bright cartoon sky between tall colourful pipe-like towers with open gaps, fluffy clouds, a sunny cartoon landscape below, the bird on the left flying right.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-toonflap-daily"
+    },
+    {
+      "name": "quest-toonflap-total",
+      "prompt": "A cheerful cartoon bird soaring through six different cartoon worlds in one long wide picture, a candy land, a jungle, an ice world, a stormy sky, a lava land and a starry night, joined by a trail of feathers.",
+      "size": [
+        1536,
+        640
+      ],
+      "kind": "scene",
+      "folder": "quests/art",
+      "file": "quest-toonflap-total"
+    }
   ]
 }
