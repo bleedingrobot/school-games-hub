@@ -158,6 +158,36 @@ export function QuestionModal({
     if (!inline) box.current?.focus();
   }, [question.id, inline]);
 
+  // A sum (no words) stays on one line: if it is too wide for the box ("(12 + 8) × 3 − 4 = ?"), the text shrinks to fit
+  // instead of wrapping onto a second line. Re-fitted when the answer typed in the blank grows, and when the window resizes.
+  const fact = useRef<HTMLParagraphElement>(null);
+  const oneLine = !question.parts.some((part) => /[a-z]/i.test(part));
+  const shownAnswer = result ? 'done' : typed;
+  useLayoutEffect(() => {
+    const el = fact.current;
+    if (!el || !oneLine) return;
+    const fit = () => {
+      el.style.fontSize = '';
+      const holder = el.parentElement;
+      if (!holder) return;
+      // The room the box gives the sum, measured while it may wrap, so the one long line can't stretch the box first.
+      el.style.flexWrap = 'wrap';
+      el.style.whiteSpace = 'normal';
+      const pad = getComputedStyle(holder);
+      const room = holder.clientWidth - parseFloat(pad.paddingLeft) - parseFloat(pad.paddingRight);
+      el.style.flexWrap = '';
+      el.style.whiteSpace = '';
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (el.scrollWidth > room + 1 && size > 16) {
+        size -= 1;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [question.id, question.parts, oneLine, shownAnswer]);
+
   // Each question shown is noted once for the teacher: answered at the first try, or skipped if the box closes (or moves on
   // to another question) without one. Escape, a skip button, a timer running out and the game rolling past it all count.
   const answeredId = useRef<ShownQuestion['id'] | null>(null);
@@ -286,7 +316,7 @@ export function QuestionModal({
         </h2>
         {note && <p className="question__note">{note}</p>}
         {question.prompt && <p className="question__prompt">{question.prompt}</p>}
-        <p className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined}>
+        <p ref={fact} className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined} data-one-line={oneLine || undefined}>
           {question.parts.map((part, i) => (
             <Part key={i} text={part} blank={blankBox} />
           ))}

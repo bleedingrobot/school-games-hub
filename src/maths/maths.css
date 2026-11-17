@@ -303,6 +303,12 @@
   font-size: clamp(1.8rem, 7.5vw, 2.5rem);
 }
 
+/* A sum with no words stays on one line; QuestionModal shrinks the text if it is too wide for the box. */
+.question__fact[data-one-line] {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
 /* The decimal pad has an extra row: shorter keys on Chromebook-height screens so the tick stays in view. */
 @media (max-height: 760px) {
   .numpad[data-decimal] .numpad__key {
