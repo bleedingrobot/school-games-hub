@@ -99,6 +99,7 @@ export function IslandPicture({
   keeper,
   onSpot,
   tappable,
+  glow,
   onDrift,
   selected,
   lit,
@@ -114,6 +115,8 @@ export function IslandPicture({
   onSpot?: (spot: number) => void;
   /** With onSpot: only these spots can be tapped (the rest have nothing that can be done now). Left out: all. */
   tappable?: number[];
+  /** Spots glowing with a bobbing up-arrow (picking a building to upgrade). */
+  glow?: number[];
   /** Tapping the drifting chunk (only while there is one). */
   onDrift?: () => void;
   selected?: number | null;
@@ -194,13 +197,14 @@ export function IslandPicture({
               fallback={<span className={`si-spot__drawn si-kind--${spot.kind}`} aria-hidden="true">{spot.kind === 'empty' ? '+' : `${KIND_NAME[spot.kind][0]}${spot.level}`}</span>}
             />
           );
-          const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}${counting ? ' si-spot--counting' : ''}`;
+          const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}${glow?.includes(i) ? ' si-spot--up' : ''}${counting ? ' si-spot--counting' : ''}`;
           if (!onSpot || (tappable && !tappable.includes(i))) {
             return <span key={i} className={`${look} si-spot--still`} style={style} data-pip={`spot-${i}`} role="img" aria-label={`Spot ${i + 1}: ${name}`}>{art}</span>;
           }
           return (
-            <button key={i} type="button" className={look} style={style} data-pip={`spot-${i}`} aria-label={`Spot ${i + 1}: ${name}`} aria-pressed={selected === i} onClick={() => onSpot(i)}>
+            <button key={i} type="button" className={look} style={style} data-pip={`spot-${i}`} aria-label={`Spot ${i + 1}: ${name}${glow?.includes(i) ? ', can be upgraded' : ''}`} aria-pressed={selected === i} onClick={() => onSpot(i)}>
               {art}
+              {glow?.includes(i) && <span className="si-spot__up" aria-hidden="true">⬆</span>}
             </button>
           );
         })}

@@ -7,7 +7,7 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 import type { DecorationId } from '../../../shared/isles/config';
 import { decoration, type Action, type Island } from '../../../shared/isles/engine';
-import { buildChoices } from './canDo';
+import { buildChoices, upgradeChoice } from './canDo';
 import { Choice } from './Choice';
 import { PlacePicker, Shelf } from './Decorations';
 import { spotName } from './Island';
@@ -42,7 +42,7 @@ export const QUESTION_WORDS = {
 /** The step that holds the button a `data-pip` name means (null: it's on My island, between turns). */
 export function stepOf(target: string | undefined | null): Step | null {
   if (!target) return null;
-  if (target.startsWith('spot-') || target.startsWith('decorate') || target.startsWith('place-') || target === 'drift' || target === 'lighthouse') return Step.Build;
+  if (target.startsWith('spot-') || target.startsWith('decorate') || target === 'upgrade' || target.startsWith('place-') || target === 'drift' || target === 'lighthouse') return Step.Build;
   if (target === 'race' || target === 'end-turn') return Step.Rest;
   return null;
 }
@@ -63,10 +63,14 @@ export function StepStrip({ step }: { step: number }) {
   );
 }
 
-/** What the Build step is showing: the island, one spot, the decoration shelf, or where a decoration goes. */
+/**
+ * What the Build step is showing: the island, one spot (from "Upgrade a building": just its upgrade), picking a
+ * building to upgrade, the decoration shelf, or where a decoration goes.
+ */
 export type BuildView =
   | { kind: 'island' }
-  | { kind: 'spot'; spot: number }
+  | { kind: 'spot'; spot: number; upgrade?: boolean }
+  | { kind: 'upgrade' }
   | { kind: 'shelf' }
   | { kind: 'place'; id: DecorationId }
   | { kind: 'move'; decoration: number };
@@ -183,7 +187,17 @@ export function TurnStep(p: StepProps) {
       } else if (b.kind === 'spot' && island.spots[b.spot]) {
         const here = island.spots[b.spot];
         title = `Spot ${b.spot + 1}: ${spotName(here.kind, here.level)}`;
-        body = <SpotChoices island={island} spot={b.spot} onChoose={p.onChoose} lit={p.lit} />;
+        body = <SpotChoices island={island} spot={b.spot} onChoose={p.onChoose} lit={p.lit} upgradeOnly={b.upgrade} />;
+        main = b.upgrade ? (
+          <button type="button" className="button button--light" onClick={() => p.onBuild({ kind: 'upgrade' })}>Pick another building</button>
+        ) : toIsland;
+      } else if (b.kind === 'upgrade') {
+        title = 'Upgrade a building';
+        body = (
+          <p className="si-upgrade-pick">
+            <span className="si-upgrade-pick__arrow" aria-hidden="true">⬆</span> Tap a glowing building to upgrade it. Upgraded buildings make more!
+          </p>
+        );
         main = toIsland;
       } else if (b.kind === 'shelf') {
         title = 'Decorate';
@@ -210,31 +224,45 @@ export function TurnStep(p: StepProps) {
         const light: Action = { kind: 'lighthouse' };
         // Only what can be done now is shown (James, 16 Nov 2026).
         const can = buildChoices(island);
+        // Upgrading is always shown, greyed out with the reason when nothing can be upgraded (James, 18 Nov 2026).
+        const up = upgradeChoice(island);
         body = (
           <>
-            {can.spots.length > 0 && <p>Tap a spot on your island to build, change or raise a building.</p>}
-            {(can.anchor || can.decorate || can.lighthouse) && (
-              <div className="si-actions">
-                {can.anchor && (
-                  <Choice island={island} action={anchor} onChoose={p.onChoose} pip="drift" lit={p.lit} kind="button--light">
-                    <span className="si-build__name">Anchor a chunk of land: {costOf(island, anchor)}</span>
-                    <span className="si-build__job">{plural(island.driftLeft, 'chunk')} drifting by. Each one is a new building spot.</span>
-                  </Choice>
-                )}
-                {can.decorate && (
-                  <button type="button" className={`button button--light si-choice__button${p.lit === 'decorate' ? ' si-lit' : ''}`} data-pip="decorate" onClick={() => p.onBuild({ kind: 'shelf' })}>
-                    <span className="si-build__name">Decorate</span>
-                    <span className="si-build__job">Pretty things for your island</span>
-                  </button>
-                )}
-                {can.lighthouse && (
-                  <Choice island={island} action={light} onChoose={p.onChoose} pip="lighthouse" lit={p.lit} kind="button--light">
-                    <span className="si-build__name">Sky Lighthouse stage {island.lighthouse + 1}</span>
-                    <span className="si-build__job">{costOf(island, light)}</span>
-                  </Choice>
-                )}
+            {can.spots.length > 0 && <p>Tap a spot on your island to build, change or upgrade a building.</p>}
+            <div className="si-actions">
+              <div className="si-choice">
+                <button
+                  type="button"
+                  className={`button button--light si-choice__button si-upgrade${p.lit === 'upgrade' ? ' si-lit' : ''}`}
+                  data-pip="upgrade"
+                  disabled={up.why !== null}
+                  aria-describedby={up.why ? 'si-upgrade-why' : undefined}
+                  onClick={() => p.onBuild({ kind: 'upgrade' })}
+                >
+                  <span className="si-build__name"><span aria-hidden="true">⬆ </span>Upgrade a building</span>
+                  <span className="si-build__job">Level up a building so it makes more</span>
+                </button>
+                {up.why && <span id="si-upgrade-why" className="si-choice__why">{up.why}</span>}
               </div>
-            )}
+              {can.anchor && (
+                <Choice island={island} action={anchor} onChoose={p.onChoose} pip="drift" lit={p.lit} kind="button--light">
+                  <span className="si-build__name">Anchor a chunk of land: {costOf(island, anchor)}</span>
+                  <span className="si-build__job">{plural(island.driftLeft, 'chunk')} drifting by. Each one is a new building spot.</span>
+                </Choice>
+              )}
+              {can.decorate && (
+                <button type="button" className={`button button--light si-choice__button${p.lit === 'decorate' ? ' si-lit' : ''}`} data-pip="decorate" onClick={() => p.onBuild({ kind: 'shelf' })}>
+                  <span className="si-build__name">Decorate</span>
+                  <span className="si-build__job">Pretty things for your island</span>
+                </button>
+              )}
+              {can.lighthouse && (
+                <Choice island={island} action={light} onChoose={p.onChoose} pip="lighthouse" lit={p.lit} kind="button--light">
+                  <span className="si-build__name">Sky Lighthouse stage {island.lighthouse + 1}</span>
+                  <span className="si-build__job">{costOf(island, light)}</span>
+                </Choice>
+              )}
+            </div>
             {!can.any && <p>That's all you can build for now. You have {plural(island.coins, 'coin')} left.</p>}
             <SoFar lines={p.lines} onUndo={p.onUndo} />
           </>

@@ -27,7 +27,7 @@ import { HELP_NAMES, TIPS, helpFor, markTipSeen, saveHelp, seenTips, tipNow, typ
 import { Art, Card, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
-import { buildChoices } from './canDo';
+import { buildChoices, upgradeChoice } from './canDo';
 import { BUILD_ALL_DONE, QUESTION_WORDS, REST_NO_RACE, STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
 import { Say, cheerLine, nextTurnLine, useIslesVoice } from './voice';
 import { actionText, collectLines, n, plural, postLine, reportLines } from './words';
@@ -445,6 +445,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     ? Object.fromEntries(island.spots.flatMap((s, i) => (s.kind === 'empty' ? [] : [[i, COINS[s.kind] * s.level]])))
     : undefined;
   const placing = turnStep === Step.Build && (build.kind === 'place' || build.kind === 'move');
+  // Picking a building to upgrade: only the buildings that can be upgraded now glow and can be tapped.
+  const upgrading = turnStep === Step.Build && build.kind === 'upgrade' && !again ? upgradeChoice(planned!).spots : null;
 
   return (
     <div className={`si${screen.kind === 'howto' ? '' : ' si--play'}`}>
@@ -529,8 +531,9 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
               selected={turnStep === Step.Build && build.kind === 'spot' ? build.spot : null}
               // Spots are buttons only on the Build step: on My island they're just the picture.
               // Only spots (and drifting land) where something can be done now can be tapped.
-              onSpot={buildNow && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i }) : undefined}
-              tappable={buildNow?.spots}
+              onSpot={buildNow && !again && !placing ? (i) => setBuild({ kind: 'spot', spot: i, upgrade: upgrading !== null }) : undefined}
+              tappable={upgrading ?? buildNow?.spots}
+              glow={upgrading ?? undefined}
               onDrift={buildNow?.anchor && !again && !placing ? () => choose({ kind: 'anchor' }) : undefined}
               free={placing ? freePlaces(shownIsland) : undefined}
               onPlace={(place) => {

@@ -139,7 +139,7 @@ export function actionText(island: Island, action: Action): string {
       return `Build a ${KIND_NAME[action.plot]} on spot ${action.spot + 1}`;
     case 'raise': {
       const here = island.spots[action.spot];
-      return `Raise the ${here && here.kind !== 'empty' ? KIND_NAME[here.kind] : 'building'} on spot ${action.spot + 1}`;
+      return `Upgrade the ${here && here.kind !== 'empty' ? KIND_NAME[here.kind] : 'building'} on spot ${action.spot + 1}`;
     }
     case 'decorate':
       return `Put up ${decoration(action.id)?.name ?? 'a decoration'}`;
