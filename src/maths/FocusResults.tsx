@@ -1,5 +1,5 @@
 /**
- * "How they did": what each student answered while one focus ran (answers, right, and quick), with a class total. A student who did
+ * "How they did": what each student (game name and real name) answered while one focus ran (answers, right, and quick), with a class total. A student who did
  * none is listed as "none", not hidden. Results are counted from the day this was added, so a focus that ended before says that
  * instead of showing zeros that look like "did nothing". Loads when opened, and again each time it is opened.
  */
@@ -58,7 +58,10 @@ export function FocusResults({ batch, startsAt, endsAt, running }: { batch: stri
             <tbody>
               {results.students.map((s) => (
                 <tr key={s.id}>
-                  <th scope="row">{s.name}</th>
+                  <th scope="row">
+                    {s.name}
+                    {s.realName && <span className="skill-map__real focus-results__real">{s.realName}</span>}
+                  </th>
                   {s.answers === 0 ? (
                     <td colSpan={3}>none</td>
                   ) : (
