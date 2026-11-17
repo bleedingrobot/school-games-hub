@@ -19,6 +19,7 @@ export const SLIP_WORDS: Record<Slip, string> = {
   turned: 'mixed up rows and columns',
   unturned: 'forgot to turn it round',
   scatter: 'picked shoots not in rows',
+  uneven: 'picked rows that were not equal',
   near: 'was close but off',
 };
 

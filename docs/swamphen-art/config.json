@@ -246,6 +246,29 @@
         0.95,
         0.6
       ]
+    },
+    {
+      "name": "back/big",
+      "prompt": "The Big Reed Garden, wide landscape: a grand swamp garden seen from its open gateway, long neat rows of tall green and golden reeds stretching far into the distance on both sides, a woven reed fence with little flags, calm blue-green water filling the whole lower half of the picture right down to the bottom edge, warm late-afternoon golden light, a few fluffy clouds, no animals, no text. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "scene",
+      "folder": "back",
+      "file": "big"
+    },
+    {
+      "name": "garden/gate",
+      "prompt": "A big closed garden gate, front view: two tall wooden doors meeting in the middle, each door made of woven golden reed panels in a sturdy wooden frame, a round arch on top with carved swamp hen shapes and little red flowers, green reeds growing up both posts, a big round brass handle on each door, warm light, no animals, no text. Single object, centred, the whole object visible with space around it, on a plain pure white background. Suitable for young children aged 5 to 7.",
+      "size": [
+        1088,
+        640
+      ],
+      "kind": "cut",
+      "folder": "garden",
+      "file": "gate",
+      "max": 1200
     }
   ],
   "tints": {

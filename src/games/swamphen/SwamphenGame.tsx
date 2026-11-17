@@ -11,11 +11,12 @@ import { NextPartChip } from '../../components/NextPartChip';
 import { ROWS } from '../../../shared/swamphen/progress';
 import type { Tap } from '../../../shared/swamphen/play';
 import { DAYS_PER_GARDEN, FRIEND_NAMES, gardenAfter, type Friend as FriendName, type Metal } from '../../../shared/swamphen/progress';
-import type { Round } from '../../../shared/swamphen/round';
+import { isBigGarden, type Round } from '../../../shared/swamphen/round';
+import { BIG_GARDEN_STEP } from '../../../shared/swamphen/config';
 import { useSound } from '../../sound';
 import { canReadAloud, speak, stopSpeaking } from '../../speech';
 import { playSound } from '../sounds';
-import { ReedRow, Friend, GoldenGarden, sceneStyle, type Pose, type Scenery } from './art';
+import { BigGate, ReedRow, Friend, GoldenGarden, sceneStyle, type Pose, type Scenery } from './art';
 import { SwamphenError, type SwamphenBackend, type SwamphenFinish, type SwamphenState } from './backend';
 import { Goes } from './Goes';
 import { finishLine, homeLine, VOICE_FOLDER } from './voiceLines';
@@ -126,7 +127,7 @@ export function SwamphenGame({ backend, onExit, extra }: Props) {
   else if (!state || screen.kind === 'loading') body = <p className="sh-message">…</p>;
   else if (screen.kind === 'play') {
     const branch = gardenAfter(state.daysDone);
-    body = <Goes guided={state.daysDone === 0} round={screen.round} seenKinds={state.seen} markSeen={markSeen} scenery={branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
+    body = <Goes guided={state.daysDone === 0} round={screen.round} seenKinds={state.seen} markSeen={markSeen} scenery={isBigGarden(screen.round.step) ? 'big' : branch.today} friend={branch.friend} sound={soundOn} say={voice.say} onDone={(taps) => done(screen.round.seed, taps)} />;
   } else if (screen.kind === 'finish') body = <Finish result={screen.result} say={voice.say} onNext={() => setScreen({ kind: 'home' })} />;
   else body = <Home state={state} say={voice.say} onPlay={play} />;
 
@@ -239,7 +240,8 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
   const changed = result.rowChanged === null ? null : rowList[result.rowChanged].metal;
   const name = FRIEND_NAMES[branch.friend];
   const main = result.goldenGarden ? WORDS.goldenGarden(name) : changed ? WORDS.rowTurned(changed as 'bronze') : WORDS.doneToday;
-  const up = result.step !== result.stepBefore ? result.step : null;
+  // Only a step up is told; a quiet step back (two hard days) says nothing about it.
+  const up = result.step > result.stepBefore ? result.step : null;
   const how = WORDS.how[finishBand(result.firstRight)];
   const line = finishLine(main, how, up);
   return (
@@ -247,7 +249,8 @@ function Finish({ result, say, onNext }: { result: SwamphenFinish; say: (t: stri
       <Branch scenery={result.goldenGarden ? 'gold' : branch.today} rows={rowList} friend={branch.friend} pose="cheer" />
       <WhatsNext prefix="sh" wearMe={result.goldenGarden} title={main} spoken={line} buttonLabel="OK" say={say} onNext={onNext}>
         <p className="sh-chip">{how}</p>
-        {up && <p className="sh-chip">{WORDS.nextStep(up)}</p>}
+        {up === BIG_GARDEN_STEP && <BigGate label={WORDS.bigGate} />}
+        {up && <p className="sh-chip sh-stepup">{WORDS.newStep} {WORDS.nextStep(up)}</p>}
         {result.goldenGarden && <span className="sh-prize"><GoldenGarden /></span>}
       </WhatsNext>
     </div>

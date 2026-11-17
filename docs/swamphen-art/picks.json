@@ -17,5 +17,7 @@
   "back/silver": 32,
   "back/gold": 31,
   "card": 3,
-  "garden/mat": 7
+  "garden/mat": 7,
+  "back/big": 3,
+  "garden/gate": 2
 }
