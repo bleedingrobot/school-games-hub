@@ -6,7 +6,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { ClashMove } from '../../shared/lord/clash';
 import type { ClashRow } from '../../shared/lord/clashServer';
-import type { Proof } from '../../shared/lord/proof';
+import type { AskTicket } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { fetchClockOffset, type LiveStatus } from './multiplayer';
@@ -44,7 +44,7 @@ export async function sayHere(): Promise<Here | null> {
 export type ClashRequest =
   | { action: 'clash-challenge'; other: string }
   | { action: 'clash-answer'; clash: number; accept: boolean }
-  | { action: 'clash-pick'; clash: number; round: number; move: ClashMove; proof: Proof | null }
+  | { action: 'clash-pick'; clash: number; round: number; move: ClashMove; proof: AskTicket | null }
   | { action: 'clash-times-up' | 'clash-leave'; clash: number };
 
 /** What a clash request came to: the clash as it now is, and words for the pupil when it was turned down. */

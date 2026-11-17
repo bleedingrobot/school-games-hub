@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { CLASH_HP, MAX_CLASH_ROUNDS, clashGold, clashLine, clashOf, hitFor, replayClash, type ClashMove, type ClashPick } from '../../../shared/lord/clash';
 import { clashMemory } from '../../../shared/lord/clashMemory';
 import { MAX_MISSED, ROUND_MS, handleClash, type ClashRow, type ClashServices } from '../../../shared/lord/clashServer';
-import { Game, proof } from './testKit';
+import type { AskSet } from '../../../shared/lord/server';
+import { Game, answer } from './testKit';
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
@@ -14,19 +15,22 @@ function setup() {
   mem.pupils.set(A, { name: 'Ari', classId: 'room-4', level: 3, here: true });
   mem.pupils.set(B, { name: 'Bea', classId: 'room-4', level: 6, here: true });
   mem.pupils.set(C, { name: 'Cal', classId: 'room-9', level: 3, here: true });
-  const recorded: string[] = [];
+  // Each pupil's last arena question, as the game's own `ask` and `ask-check` would have left it.
+  const asked = new Map<string, AskSet>();
   const services: ClashServices = {
     ...mem.services,
     now: () => clock,
-    load: async (p) => ({ ok: true, value: { row: { hero: { level: mem.pupils.get(p)?.level ?? 1 } } as never, openFight: null, seen: false } }),
+    load: async (p) => ({ ok: true, value: { row: { hero: { level: mem.pupils.get(p)?.level ?? 1 }, extra: { ask: asked.get(p) ?? null } } as never, openFight: null, seen: false } }),
     settings: async () => ({ ok: true, value: { enabled: true, forestPerDay: 10, seasonStart: null } }),
-    recordAnswers: async (_p, pack, key) => { recorded.push(`${pack}:${key}`); return { ok: true, value: 1 }; },
   };
   const ask = (who: string, action: Parameters<typeof handleClash>[2], body: Record<string, unknown> = {}) => handleClash(services, who, action, body);
-  const pick = (who: string, clash: number, round: number, move: ClashMove, right = true) =>
-    ask(who, 'clash-pick', { clash, round, move, proof: proof('add-sub', mem.pupils.get(who)!.level, right) });
+  const pick = (who: string, clash: number, round: number, move: ClashMove, right = true, at = clock) => {
+    const no = (asked.get(who)?.no ?? 0) + 1;
+    asked.set(who, { moment: 'arena', no, at, questions: [], marks: [{ correct: right, given: 1 }] });
+    return ask(who, 'clash-pick', { clash, round, move, proof: { no, slot: 0 } });
+  };
   const tick = (ms: number) => { clock += ms; };
-  return { mem, ask, pick, tick, recorded };
+  return { mem, ask, pick, tick };
 }
 
 async function started() {
@@ -66,9 +70,13 @@ describe('live arena clashes', () => {
     const c = second.body.clash as ClashRow;
     expect(c.rounds).toEqual([[{ move: 'hammer', right: true }, { move: 'sword', right: false }]]);
     expect(t.mem.picks.size).toBe(0);
-    expect(t.recorded).toHaveLength(2);
     // A pick for a round already played is turned down kindly.
     expect((await t.pick(A, t.id, 0, 'net')).body.code).toBe('round');
+    // A right answer to a question asked before this round began can't power this round's attack.
+    t.tick(1000);
+    await t.pick(A, t.id, 1, 'hammer', true, Date.parse(c.deadline) - 2 * ROUND_MS);
+    const next = (await t.pick(B, t.id, 1, 'sword', true)).body.clash as ClashRow;
+    expect(next.rounds[1]).toEqual([{ move: 'hammer', right: false }, { move: 'sword', right: true }]);
     }
     {
     const t = setup();
@@ -119,7 +127,8 @@ describe('live arena clashes', () => {
         let out;
         let fresh = true;
         do {
-          out = await g.send({ action: 'practice', op: 'round', move: 'net', proof: proof('add-sub', 1, true), fresh, foe: 'maple' });
+          const [ticket] = await answer(g, 'arena');
+          out = await g.send({ action: 'practice', op: 'round', move: 'net', proof: ticket, fresh, foe: 'maple' });
           fresh = false;
           expect(out.body.ok).toBe(true);
           expect(out.body.result.foe).toBe('maple');

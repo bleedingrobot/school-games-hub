@@ -2144,339 +2144,7 @@ const FRACTIONS$1 = {
 * Gold is a whole number, so no decimals. Every question is made from its numbers, so the server can make it again.
 */
 const TODO$2 = (what) => [`TODO-${what}`];
-const ITEMS = [
-	"pie",
-	"potion",
-	"torch",
-	"map",
-	"apple pie",
-	"rope",
-	"shield polish",
-	"lantern",
-	"bandage",
-	"sweet roll"
-];
-const ITEMS_PLURAL = [
-	"pies",
-	"potions",
-	"torches",
-	"maps",
-	"apple pies",
-	"ropes",
-	"tins of polish",
-	"lanterns",
-	"bandages",
-	"sweet rolls"
-];
-const item = (i) => ITEMS[i % ITEMS.length];
-const plural = (i) => ITEMS_PLURAL[i % ITEMS.length];
-const gold = (n) => `${show(n)} gold`;
-const itemIndex = (r) => int(r, 0, ITEMS.length - 1);
-const MONEY = {
-	id: "money",
-	label: "Gold and shopping",
-	families: {
-		"money:change": {
-			label: "Change from a purchase (40 gold, costs 25)",
-			curriculumTags: TODO$2("money-change"),
-			keys: ["money:change"],
-			roll: (_k, r) => {
-				const pay = pickOne(r, [50, 100]);
-				const cost = int(r, 3, pay / 5 - 1) * 5;
-				return [
-					itemIndex(r),
-					cost,
-					pay
-				];
-			},
-			make: (_k, [i, cost, pay]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(cost, 15, 95) || cost % 5 !== 0 || pay !== 50 && pay !== 100 || cost >= pay) return null;
-				const parts = [
-					"A",
-					item(i),
-					"costs",
-					gold(cost) + ".",
-					`You pay ${gold(pay)}. Change:`,
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: pay - cost,
-					wrong: [
-						pay - cost + 5,
-						pay - cost - 5,
-						pay + cost,
-						pay - cost + 10,
-						pay - cost - 10
-					],
-					fact: `${show(pay)} − ${show(cost)} = ${show(pay - cost)} gold change`
-				};
-			}
-		},
-		"money:several": {
-			label: "The cost of 2 or 3 of something (3 pies at 12 gold)",
-			curriculumTags: TODO$2("money-several"),
-			keys: ["money:several"],
-			roll: (_k, r) => [
-				itemIndex(r),
-				int(r, 2, 5),
-				int(r, 2, 12)
-			],
-			make: (_k, [i, n, price]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(n, 2, 5) || !isInt$1(price, 2, 12)) return null;
-				const parts = [
-					`${n} ${plural(i)} at`,
-					gold(price) + " each cost",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: n * price,
-					wrong: [
-						n + price,
-						n * price + price,
-						n * price - price,
-						(n + 1) * price + 1
-					],
-					fact: `${n} × ${price} = ${show(n * price)} gold`
-				};
-			}
-		},
-		"money:total": {
-			label: "The total of two things (a sword 85 gold and a shield 60 gold)",
-			curriculumTags: TODO$2("money-total"),
-			keys: ["money:total"],
-			roll: (_k, r) => [
-				itemIndex(r),
-				int(r, 12, 90),
-				int(r, 12, 90)
-			],
-			make: (_k, [i, a, b]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(a, 12, 90) || !isInt$1(b, 12, 90)) return null;
-				const j = i + 1;
-				const parts = [
-					`A ${item(i)} costs`,
-					gold(a) + ". ",
-					`A ${item(j)} costs`,
-					gold(b) + ".",
-					"Both cost",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: a + b,
-					wrong: [
-						a + b + 10,
-						a + b - 10,
-						Math.abs(a - b),
-						a + b + 1,
-						a + b - 1
-					],
-					fact: `${show(a)} + ${show(b)} = ${show(a + b)} gold`
-				};
-			}
-		},
-		"money:left": {
-			label: "Gold left after buying two things",
-			curriculumTags: TODO$2("money-left"),
-			keys: ["money:left"],
-			roll: (_k, r) => {
-				const a = int(r, 10, 60);
-				const b = int(r, 10, 60);
-				return [
-					itemIndex(r),
-					a,
-					b,
-					a + b + int(r, 5, 50)
-				];
-			},
-			make: (_k, [i, a, b, have]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(a, 10, 60) || !isInt$1(b, 10, 60) || !isInt$1(have, a + b + 5, a + b + 50)) return null;
-				const parts = [
-					`You have ${gold(have)}. You buy a ${item(i)} for`,
-					gold(a),
-					`and a ${item(i + 1)} for`,
-					gold(b) + ". Gold left:",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: have - a - b,
-					wrong: [
-						have - a,
-						have - b,
-						have - a - b + 10,
-						have - a - b - 10,
-						have + a + b
-					],
-					fact: `${show(a)} + ${show(b)} = ${show(a + b)}, and ${show(have)} − ${show(a + b)} = ${show(have - a - b)} gold left`
-				};
-			}
-		},
-		"money:swap": {
-			label: "Swap rates (2 gems buy 3 potions: how many potions for 8 gems?)",
-			curriculumTags: TODO$2("money-swap"),
-			keys: ["money:swap"],
-			roll: (_k, r) => {
-				const gems = int(r, 2, 4);
-				return [
-					itemIndex(r),
-					gems,
-					int(r, 2, 6),
-					int(r, 2, 5)
-				];
-			},
-			make: (_k, [i, gems, per, times]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(gems, 2, 4) || !isInt$1(per, 2, 6) || !isInt$1(times, 2, 5)) return null;
-				const parts = [
-					`${gems} gems buy ${per} ${plural(i)}.`,
-					`How many ${plural(i)} for ${gems * times} gems?`,
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: per * times,
-					wrong: [
-						per + times,
-						per * times + per,
-						per * (times - 1),
-						per * (times + 1),
-						gems * times
-					],
-					fact: `${gems * times} gems is ${times} lots of ${gems}, so ${times} × ${per} = ${per * times} ${plural(i)}`
-				};
-			}
-		},
-		"money:short": {
-			label: "How much more gold do you need?",
-			curriculumTags: TODO$2("money-short"),
-			keys: ["money:short"],
-			roll: (_k, r) => {
-				const have = int(r, 20, 150);
-				return [
-					itemIndex(r),
-					have,
-					have + int(r, 8, 90)
-				];
-			},
-			make: (_k, [i, have, cost]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(have, 20, 150) || !isInt$1(cost, have + 8, have + 90)) return null;
-				const parts = [
-					`You have ${gold(have)}. A ${item(i)} costs`,
-					gold(cost) + ". You need",
-					"?",
-					"more gold."
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: cost - have,
-					wrong: [
-						cost + have,
-						cost - have + 10,
-						cost - have - 10,
-						cost - have + 1,
-						cost - have - 1
-					],
-					fact: `${show(cost)} − ${show(have)} = ${show(cost - have)} gold`
-				};
-			}
-		},
-		"money:value": {
-			label: "Which is better value? (3 for 12 gold or 5 for 15 gold)",
-			curriculumTags: TODO$2("money-value"),
-			keys: ["money:value"],
-			roll: (_k, r) => {
-				for (;;) {
-					const unitA = int(r, 2, 9);
-					const unitB = int(r, 2, 9);
-					if (unitA === unitB) continue;
-					const nA = int(r, 2, 6);
-					const nB = int(r, 2, 6);
-					return [
-						itemIndex(r),
-						nA,
-						unitA * nA,
-						nB,
-						unitB * nB
-					];
-				}
-			},
-			make: (_k, [i, nA, priceA, nB, priceB]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || !isInt$1(nA, 2, 6) || !isInt$1(nB, 2, 6) || !isInt$1(priceA, 4, 54) || !isInt$1(priceB, 4, 54)) return null;
-				if (priceA % nA !== 0 || priceB % nB !== 0 || priceA / nA === priceB / nB) return null;
-				const unitA = priceA / nA;
-				const unitB = priceB / nB;
-				const parts = [`Deal A: ${nA} ${plural(i)} for ${gold(priceA)}. Deal B: ${nB} ${plural(i)} for ${gold(priceB)}. Which is cheaper for each one?`, "?"];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: unitA < unitB ? 0 : 1,
-					pick: [`Deal A (${nA} for ${priceA})`, `Deal B (${nB} for ${priceB})`],
-					fact: `A costs ${show(priceA)} ÷ ${nA} = ${unitA} each. B costs ${show(priceB)} ÷ ${nB} = ${unitB} each. ${unitA < unitB ? "A" : "B"} is cheaper.`
-				};
-			}
-		},
-		"money:change-big": {
-			label: "Bigger change (250 gold, costs 187)",
-			curriculumTags: TODO$2("money-change-big"),
-			keys: ["money:change-big"],
-			roll: (_k, r) => {
-				const pay = pickOne(r, [
-					200,
-					250,
-					300,
-					500
-				]);
-				return [
-					itemIndex(r),
-					int(r, 101, pay - 6),
-					pay
-				];
-			},
-			make: (_k, [i, cost, pay]) => {
-				if (!isInt$1(i, 0, ITEMS.length - 1) || ![
-					200,
-					250,
-					300,
-					500
-				].includes(pay) || !isInt$1(cost, 101, pay - 6)) return null;
-				const parts = [
-					"A",
-					item(i),
-					"costs",
-					gold(cost) + ".",
-					`You pay ${gold(pay)}. Change:`,
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: pay - cost,
-					wrong: [
-						pay - cost + 10,
-						pay - cost - 10,
-						pay - cost + 100,
-						pay - cost - 100,
-						pay - cost + 1
-					],
-					fact: `${show(pay)} − ${show(cost)} = ${show(pay - cost)} gold change`
-				};
-			}
-		}
-	},
-	bands: [
-		["money:change", "money:several"],
-		["money:total", "money:left"],
-		["money:swap", "money:short"],
-		["money:value", "money:change-big"]
-	]
-};
+TODO$2("money-change"), TODO$2("money-several"), TODO$2("money-total"), TODO$2("money-left"), TODO$2("money-swap"), TODO$2("money-short"), TODO$2("money-value"), TODO$2("money-change-big");
 //#endregion
 //#region shared/maths/skillPacks/patterns.ts
 /**
@@ -2488,269 +2156,7 @@ const MONEY = {
 * Band 4: growing steps (+1, +2, +3 ...) and rules like "n × 3 + 1".
 */
 const TODO$1 = (what) => [`TODO-${what}`];
-const seq = (nums) => nums.map((n) => show(n) + ",").join(" ");
-/** The terms of an arithmetic pattern. */
-const arithmetic = (start, step, count) => Array.from({ length: count }, (_, i) => start + step * i);
-const PATTERNS$1 = {
-	id: "patterns",
-	label: "Number patterns",
-	families: {
-		"pat:add": {
-			label: "Next number, counting on (3, 7, 11, 15, ?)",
-			curriculumTags: TODO$1("pattern-add"),
-			keys: ["pat:add"],
-			roll: (_k, r) => [int(r, 1, 30), pickOne(r, [
-				2,
-				3,
-				4,
-				5,
-				6,
-				7,
-				8,
-				9,
-				10
-			])],
-			make: (_k, [start, step]) => {
-				if (!isInt$1(start, 1, 30) || !isInt$1(step, 2, 10)) return null;
-				const terms = arithmetic(start, step, 5);
-				const parts = [
-					"What comes next?",
-					seq(terms.slice(0, 4)),
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: terms[4],
-					wrong: [
-						terms[3] + step + 1,
-						terms[3] + step - 1,
-						terms[3] + 1,
-						terms[3] + step * 2
-					],
-					fact: `It goes up by ${step} each time: ${terms[3]} + ${step} = ${terms[4]}`
-				};
-			}
-		},
-		"pat:down": {
-			label: "Next number, counting back (50, 45, 40, 35, ?)",
-			curriculumTags: TODO$1("pattern-down"),
-			keys: ["pat:down"],
-			roll: (_k, r) => {
-				const step = pickOne(r, [
-					2,
-					3,
-					4,
-					5,
-					6,
-					10
-				]);
-				return [step, step * 4 + int(r, 2, 40)];
-			},
-			make: (_k, [step, start]) => {
-				if (!isInt$1(step, 2, 10) || !isInt$1(start, step * 4 + 2, step * 4 + 40)) return null;
-				const terms = arithmetic(start, -step, 5);
-				const parts = [
-					"What comes next?",
-					seq(terms.slice(0, 4)),
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: terms[4],
-					wrong: [
-						terms[3] - step - 1,
-						terms[3] - step + 1,
-						terms[3] + step,
-						terms[3] - 1
-					],
-					fact: `It goes down by ${step} each time: ${terms[3]} − ${step} = ${terms[4]}`
-				};
-			}
-		},
-		"pat:double": {
-			label: "Doubling (2, 4, 8, 16, ?)",
-			curriculumTags: TODO$1("pattern-double"),
-			keys: ["pat:double"],
-			roll: (_k, r) => [pickOne(r, [
-				1,
-				2,
-				3,
-				5
-			]), int(r, 3, 4)],
-			make: (_k, [start, shown]) => {
-				if (![
-					1,
-					2,
-					3,
-					5
-				].includes(start) || !isInt$1(shown, 3, 4)) return null;
-				const terms = Array.from({ length: shown + 1 }, (_, i) => start * 2 ** i);
-				const parts = [
-					"What comes next?",
-					seq(terms.slice(0, shown)),
-					"?"
-				];
-				const last = terms[shown - 1];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: terms[shown],
-					wrong: [
-						last + 2,
-						last + (last - terms[shown - 2]),
-						last * 3,
-						last + 1
-					],
-					fact: `Each number is doubled: ${last} × 2 = ${terms[shown]}`
-				};
-			}
-		},
-		"pat:missing": {
-			label: "A missing number in the middle (5, 9, ?, 17, 21)",
-			curriculumTags: TODO$1("pattern-missing"),
-			keys: ["pat:missing"],
-			roll: (_k, r) => [
-				int(r, 1, 40),
-				pickOne(r, [
-					2,
-					3,
-					4,
-					5,
-					6,
-					7,
-					8,
-					9,
-					10,
-					12
-				]),
-				int(r, 1, 3)
-			],
-			make: (_k, [start, step, hole]) => {
-				if (!isInt$1(start, 1, 40) || !isInt$1(step, 2, 12) || !isInt$1(hole, 1, 3)) return null;
-				const terms = arithmetic(start, step, 5);
-				const parts = ["Fill the gap:", ...terms.map((n, i) => i === hole ? "?" : show(n) + (i < 4 ? "," : ""))];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: terms[hole],
-					wrong: [
-						terms[hole] + 1,
-						terms[hole] - 1,
-						terms[hole] + step,
-						terms[hole] - step
-					],
-					fact: `It goes up by ${step} each time, so the gap is ${terms[hole - 1]} + ${step} = ${terms[hole]}`
-				};
-			}
-		},
-		"pat:step": {
-			label: "What is the step? (4, 9, 14, 19: it goes up by ?)",
-			curriculumTags: TODO$1("pattern-step"),
-			keys: ["pat:step"],
-			roll: (_k, r) => [int(r, 1, 40), pickOne(r, [
-				2,
-				3,
-				4,
-				5,
-				6,
-				7,
-				8,
-				9,
-				10,
-				11,
-				12,
-				15,
-				20,
-				25
-			])],
-			make: (_k, [start, step]) => {
-				if (!isInt$1(start, 1, 40) || !isInt$1(step, 2, 25)) return null;
-				const terms = arithmetic(start, step, 4);
-				const parts = [
-					seq(terms),
-					"it goes up by",
-					"?"
-				];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: step,
-					wrong: [
-						step + 1,
-						step - 1,
-						step + 2,
-						step * 2
-					],
-					fact: `${terms[1]} − ${terms[0]} = ${step}, so it goes up by ${step}`
-				};
-			}
-		},
-		"pat:grow": {
-			label: "Growing steps (1, 2, 4, 7, 11, ?)",
-			curriculumTags: TODO$1("pattern-grow"),
-			keys: ["pat:grow"],
-			roll: (_k, r) => [int(r, 1, 10), int(r, 1, 3)],
-			make: (_k, [start, firstStep]) => {
-				if (!isInt$1(start, 1, 10) || !isInt$1(firstStep, 1, 3)) return null;
-				const terms = [start];
-				for (let i = 0; i < 5; i++) terms.push(terms[i] + firstStep + i);
-				const parts = [
-					"What comes next?",
-					seq(terms.slice(0, 5)),
-					"?"
-				];
-				const lastStep = firstStep + 3;
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: terms[5],
-					wrong: [
-						terms[4] + lastStep,
-						terms[4] + lastStep + 2,
-						terms[4] + lastStep - 2,
-						terms[4] + firstStep
-					],
-					fact: `The jumps grow by 1 each time: ${firstStep}, ${firstStep + 1}, ${firstStep + 2}, ${lastStep}, so next is ${terms[4]} + ${lastStep + 1} = ${terms[5]}`
-				};
-			}
-		},
-		"pat:rule": {
-			label: "A rule (n × 3 + 1: what is it when n is 6?)",
-			curriculumTags: TODO$1("pattern-rule"),
-			keys: ["pat:rule"],
-			roll: (_k, r) => [
-				int(r, 2, 6),
-				int(r, 0, 5),
-				int(r, 3, 10)
-			],
-			make: (_k, [times, plus, n]) => {
-				if (!isInt$1(times, 2, 6) || !isInt$1(plus, 0, 5) || !isInt$1(n, 3, 10)) return null;
-				const parts = [`Rule: n × ${times}${plus ? ` + ${plus}` : ""}. When n is ${n}, the answer is`, "?"];
-				return {
-					parts,
-					spoken: speak(parts),
-					answer: n * times + plus,
-					wrong: [
-						n * times,
-						n + times + plus,
-						n * (times + plus),
-						n * times + plus + 1,
-						n * times + plus - 1
-					],
-					fact: `${n} × ${times}${plus ? ` + ${plus}` : ""} = ${n * times + plus}`
-				};
-			}
-		}
-	},
-	bands: [
-		["pat:add"],
-		["pat:down", "pat:double"],
-		["pat:missing", "pat:step"],
-		["pat:grow", "pat:rule"]
-	]
-};
+TODO$1("pattern-add"), TODO$1("pattern-down"), TODO$1("pattern-double"), TODO$1("pattern-missing"), TODO$1("pattern-step"), TODO$1("pattern-grow"), TODO$1("pattern-rule");
 //#endregion
 //#region shared/maths/skillPacks/placeValue.ts
 /**
@@ -3026,41 +2432,6 @@ const TIMES_TABLES_KINDS = {
 		curriculumTags: TIMES_TABLES_TAGS
 	}
 };
-/**
-* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
-* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
-* server uses this to check answers it didn't see being given.
-*/
-function solveQuestion(parts) {
-	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
-	const [a, op, b, , c] = parts;
-	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
-	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
-	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
-	let x;
-	let y;
-	let answer;
-	if (op === "×" && c === "?") {
-		[x, y] = [num(a), num(b)];
-		answer = x * y;
-	} else if (op === "×" && a === "?") {
-		y = num(b);
-		x = answer = num(c) / y;
-		if (num(c) !== x * y) return null;
-	} else if (op === "×" && b === "?") {
-		x = num(a);
-		y = answer = num(c) / x;
-		if (num(c) !== x * y) return null;
-	} else if (op === "÷" && c === "?") {
-		y = num(b);
-		x = answer = num(a) / y;
-	} else return null;
-	if (!inTables(x) || !inTables(y)) return null;
-	return {
-		answer,
-		key: factKey(x, y)
-	};
-}
 const SPOKEN = {
 	"×": "times",
 	"÷": "divided by",
@@ -3228,10 +2599,6 @@ const BANDED_PACKS = {
 	decimals: DECIMALS
 };
 PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
-const EXTRA_PACKS = {
-	money: MONEY,
-	patterns: PATTERNS$1
-};
 //#endregion
 //#region shared/seededRandom.ts
 /** A tiny repeatable random number generator, so "random" test games are the same every run. */
@@ -8494,6 +7861,16 @@ function makeFocusPack(stats, focus, opts = {}, random, now) {
 		focus: spec
 	});
 }
+/** Splits answers by the pack that keeps their record (times tables, early facts, adding, division, generated skills). */
+function groupByPack(answers) {
+	const out = new Map();
+	for (const answer of answers) {
+		const pack = packIdOfKey(answer.key);
+		if (!pack) continue;
+		out.set(pack, [...out.get(pack) ?? [], answer]);
+	}
+	return out;
+}
 const ladderKeys = ladderKeyPacks();
 for (let a = 1; a <= 12; a++) for (let b = a; b <= 12; b++) ladderKeys.set(`mul:${a}x${b}`, "times-tables");
 /** True for a mastery key the games record under a focus. */
@@ -8645,6 +8022,113 @@ function solveParts(parts) {
 		answer,
 		keys
 	} : null;
+}
+//#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/recordAnswers.ts
+/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
+async function batchIdFor$1(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/** `given` passes through only as a finite number or a string of at most 20 characters; anything else is left off. */
+function cleanGiven(a) {
+	const { given, ...rest } = a;
+	return typeof given === "number" && Number.isFinite(given) || typeof given === "string" && given.length > 0 && given.length <= 20 ? {
+		...rest,
+		given
+	} : rest;
+}
+/**
+* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
+* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
+* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+* minutes (`keptMs`), and the running maths focuses'
+* results counted for a batch the records took for the first time, so a retry never counts twice.
+* It never throws: a problem is logged with its code (never who) and the game goes on.
+*/
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor$1(`${from}:${o}:${pack}`), quickMs, minMs) {
+	const result = {
+		saved: 0,
+		failed: 0
+	};
+	for (const [pack, group] of groupByPack(answers)) try {
+		const { data, error } = await rpc("record_fact_answers", {
+			player,
+			pack,
+			batch_id: await batchId(once, pack),
+			answers: group.map((a) => ({
+				...cleanGiven(a),
+				ms: keptMs(a.ms)
+			})),
+			quick_ms: quickMs ?? quickMsForPack(pack),
+			fluent_days: 2,
+			top_box: 4,
+			min_ms: minMs ?? 0
+		});
+		if (error) {
+			result.failed++;
+			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+			continue;
+		}
+		const saved = typeof data === "number" ? data : 0;
+		result.saved += saved;
+		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+	} catch {
+		result.failed++;
+		console.error(`${from}: record answers failed`);
+	}
+	return result;
 }
 //#endregion
 //#region shared/space/mathsQuestion.ts
@@ -9920,59 +9404,23 @@ function playDuel(a, b, seed) {
 const arenaExp = (level) => Math.max(1, Math.round(tierPower(level) * .5));
 //#endregion
 //#region shared/lord/maths.ts
-/** The pack each moment draws from. Where the teacher has turned a topic off, the game uses the next in the list. */
-const MOMENT_TOPICS = {
-	"size-it-up": [
-		"add-sub",
-		"times-tables",
-		"place-value",
-		"division",
-		"fractions",
-		"decimals"
-	],
-	shop: ["money", "add-sub"],
-	healer: ["times-tables", "division"],
-	bank: ["decimals", "add-sub"],
-	riddle: ["patterns", "place-value"],
-	treasure: [
-		"place-value",
-		"division",
-		"money",
-		"patterns"
-	],
-	"inn-guess": [],
-	"master-trial": [
-		"add-sub",
-		"times-tables",
-		"place-value",
-		"division",
-		"fractions",
-		"decimals",
-		"money",
-		"patterns"
-	],
-	"dragon-trial": [
-		"add-sub",
-		"times-tables",
-		"place-value",
-		"division",
-		"fractions",
-		"decimals",
-		"money",
-		"patterns"
-	],
-	arena: [
-		"add-sub",
-		"times-tables",
-		"place-value",
-		"division",
-		"fractions",
-		"decimals",
-		"money",
-		"patterns"
-	]
+/**
+* How many ladder questions each moment asks (`ask` on the server). Every question comes from the pupil's own maths focus
+* (the ladder, or what the teacher set), the same as the other games: the moment only decides what a right answer is worth.
+*/
+const ASK_COUNT = {
+	"size-it-up": 1,
+	shop: 1,
+	healer: 1,
+	bank: 1,
+	riddle: 1,
+	treasure: 1,
+	"inn-guess": 0,
+	"master-trial": 3,
+	"dragon-trial": 1,
+	arena: 1
 };
-/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+/** The topics of the forest's treasure events (once the teacher's tick-list; questions now come from the maths focus). */
 const ALL_TOPICS = [
 	"place-value",
 	"add-sub",
@@ -9988,18 +9436,6 @@ function topicsOn(list) {
 	const on = Array.isArray(list) ? ALL_TOPICS.filter((t) => list.includes(t)) : [];
 	return on.length ? on : ALL_TOPICS;
 }
-/**
-* The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
-* its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
-*/
-function momentTopics(moment, on = ALL_TOPICS) {
-	const own = MOMENT_TOPICS[moment];
-	if (own.length === 0) return [];
-	const kept = own.filter((t) => on.includes(t));
-	return kept.length ? kept : [...on];
-}
-/** The difficulty band (1 easiest, 4 hardest) that suits a hero's level when nothing better is known. */
-const defaultBand = (level) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 /** Does this fight offer a "size it up" question? A pure function of the seed so a replay agrees. */
 const offersSizeItUp = (seed) => (Math.imul(seed >>> 0, 2654435761) >>> 0) % 3 === 0;
 /** Size it up: a right answer finds the monster's weak spot. */
@@ -10431,136 +9867,6 @@ const flattenedLine = (player, monster) => ({
 	dedupe: `flat:${player}`
 });
 //#endregion
-//#region shared/lord/proof.ts
-/**
-* Checking one maths answer from the browser without trusting it. The browser sends a "proof": which pack
-* the question came from, its key and numbers, and what the pupil gave. The server makes the question again
-* from the key and numbers (`BandedPack.rebuild`, as Maths Monsters does) and marks it itself. A proof that
-* can't be checked counts as wrong, never as an error the pupil sees; the reason is kept for the teacher page.
-*/
-const KINDS = [
-	"multiply",
-	"missing-factor",
-	"divide"
-];
-/** The level a question is asked at: a band for most packs, a campaign level for times tables. */
-const questionLevel = (pack, heroLevel) => pack === "times-tables" ? [
-	1,
-	3,
-	6,
-	9
-][defaultBand(heroLevel) - 1] ?? 1 : defaultBand(heroLevel);
-const bandedPacks = new Map();
-function bandedPack(id) {
-	const def = BANDED_PACKS[id] ?? EXTRA_PACKS[id];
-	if (!def) return null;
-	let pack = bandedPacks.get(id);
-	if (!pack) {
-		pack = new BandedPack(def);
-		bandedPacks.set(id, pack);
-	}
-	return pack;
-}
-const isNumber = (n) => typeof n === "number" && Number.isFinite(n);
-/**
-* Is this a question the game could have asked a hero of this level at this moment, and was it right?
-* `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed. `on` is the list of
-* topics the teacher has left on: a question from any other topic is refused.
-*/
-function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
-	if (!raw || typeof raw !== "object") return {
-		ok: false,
-		problem: "proof"
-	};
-	const p = raw;
-	if (typeof p.pack !== "string") return {
-		ok: false,
-		problem: "proof-pack"
-	};
-	if (!(only ? on.includes(only) ? [only] : [] : momentTopics(moment, on)).includes(p.pack)) return {
-		ok: false,
-		problem: "proof-pack"
-	};
-	if (typeof p.key !== "string" || p.key.length > 60) return {
-		ok: false,
-		problem: "proof-key"
-	};
-	if (!isNumber(p.given)) return {
-		ok: false,
-		problem: "proof-answer"
-	};
-	if (p.level !== questionLevel(p.pack, heroLevel)) return {
-		ok: false,
-		problem: "proof-level"
-	};
-	const level = p.level;
-	const ms = isNumber(p.ms) ? Math.max(0, Math.min(12e4, Math.round(p.ms))) : 6e4;
-	let correct;
-	if (p.pack === "times-tables") {
-		if (!parseFactKey(p.key)) return {
-			ok: false,
-			problem: "proof-key"
-		};
-		const pools = poolsFor({ level });
-		if (![
-			...pools.focus,
-			...pools.review,
-			...pools.stretch
-		].includes(p.key)) return {
-			ok: false,
-			problem: "proof-level"
-		};
-		if (typeof p.kind !== "string" || !KINDS.includes(p.kind)) return {
-			ok: false,
-			problem: "proof-kind"
-		};
-		const parts = Array.isArray(p.parts) && p.parts.length === 5 && p.parts.every((x) => typeof x === "string") ? p.parts : null;
-		const solved = parts ? solveQuestion(parts) : null;
-		if (!parts || !solved || solved.key !== p.key) return {
-			ok: false,
-			problem: "proof-parts"
-		};
-		if ((parts[1] === "÷" ? "divide" : parts[4] === "?" ? "multiply" : "missing-factor") !== p.kind) return {
-			ok: false,
-			problem: "proof-kind"
-		};
-		correct = p.given === solved.answer;
-	} else {
-		const pack = bandedPack(p.pack);
-		if (!pack) return {
-			ok: false,
-			problem: "proof-pack"
-		};
-		const keyBand = pack.bandOf(p.key);
-		if (keyBand === void 0 || keyBand > Math.min(level + 1, pack.bandCount)) return {
-			ok: false,
-			problem: "proof-level"
-		};
-		if (!Array.isArray(p.params) || p.params.length > 8 || !p.params.every(isNumber)) return {
-			ok: false,
-			problem: "proof-params"
-		};
-		const made = pack.rebuild(p.key, p.params);
-		if (!made) return {
-			ok: false,
-			problem: "proof-params"
-		};
-		correct = sameAnswer$1(p.given, made.answer);
-	}
-	return {
-		ok: true,
-		correct,
-		hinted: p.hinted === true,
-		answer: {
-			pack: p.pack,
-			key: p.key,
-			correct,
-			ms,
-			at: now
-		}
-	};
-}
-//#endregion
 //#region shared/lord/finish.ts
 /** The actions that finish a fight. Its own file so the browser can read it without the whole Dragon Maths server (dashboard plan D7). */
 const FINISH_ACTIONS = [
@@ -10704,7 +10010,9 @@ const newExtra = (stats = newStats()) => ({
 	dragonDay: "",
 	classOpen: false,
 	stats,
-	practice: null
+	practice: null,
+	ask: null,
+	askNo: 0
 });
 /** An `extra` as saved, filled in where an older save had no such part. */
 const readExtra = (saved) => ({
@@ -10741,8 +10049,12 @@ const ACTIONS = [
 	"inn",
 	"arena",
 	"practice",
-	"tools"
+	"tools",
+	"ask",
+	"ask-check"
 ];
+/** Asking and checking a question change nothing but the questions kept: they work while a fight is open, from any version. */
+const ASKING = ["ask", "ask-check"];
 function parseActions(raw) {
 	if (!Array.isArray(raw) || raw.length === 0 || raw.length > 300) return null;
 	const out = [];
@@ -10763,26 +10075,136 @@ const rule = (message) => ({
 	message
 });
 const isRefuse = (x) => "refuse" in x;
-/** Marks a proof and gathers what is needed to record it. A proof that cannot be checked is just wrong. */
-function mark(c, raw, moment, only) {
-	if (raw === void 0 || raw === null) return {
-		result: "wrong",
-		skipped: true,
+/**
+* The mark of the question a ticket names, used once: it must be from the last `ask` for this moment and already marked by
+* `ask-check` (which recorded it). Anything else counts as wrong, never as an error the pupil sees. Changes `c.w.extra.ask`
+* in place (the mark is used), so the save that follows keeps that.
+*/
+function mark(c, raw, moment) {
+	const out = (result, notes = [], skipped = false) => ({
+		result,
+		skipped,
 		answers: [],
-		notes: []
-	};
-	const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
-	if (!m.ok) return {
-		result: "wrong",
-		skipped: false,
-		answers: [],
-		notes: [m.problem]
+		notes
+	});
+	if (raw === void 0 || raw === null) return out("wrong", [], true);
+	const t = raw;
+	const set = c.w.extra.ask;
+	if (!set || set.moment !== moment || t.no !== set.no || !isInt(t.slot, 0, set.questions.length - 1)) return out("wrong", ["ask-ticket"]);
+	const m = set.marks[t.slot];
+	if (!m) return out("wrong", ["ask-unmarked"]);
+	if (m.used) return out("wrong", ["ask-used"]);
+	m.used = true;
+	return out(m.correct ? t.hinted === true ? "hint" : "right" : "wrong");
+}
+/** Ladder questions for a moment, from the pupil's maths focus. Asking again before answering gives the same ones back. */
+async function ask(c) {
+	const moment = c.req.moment;
+	const count = typeof moment === "string" && Object.hasOwn(ASK_COUNT, moment) ? ASK_COUNT[moment] : 0;
+	if (count <= 0) return { refuse: "bad-request" };
+	const { extra } = c.w;
+	const waiting = extra.ask;
+	if (waiting && waiting.moment === moment && waiting.marks.every((m) => !m)) {
+		const again = {
+			...waiting,
+			at: c.now
+		};
+		return {
+			extra: {
+				...extra,
+				ask: again
+			},
+			summary: {
+				ask: moment,
+				again: true
+			},
+			result: {
+				no: again.no,
+				questions: again.questions.map((q, i) => publicQuestion(q, i))
+			}
+		};
+	}
+	const context = await c.s.mathsContext(c.player);
+	if (!context.ok) return { refuse: "busy" };
+	const no = extra.askNo + 1;
+	const questions = makeRunQuestions(context.value, count, seededRandom(`lord-ask:${c.player}:${no}:${c.s.seed()}`));
+	if (questions.length === 0) return rule("We couldn’t get your maths question just now.");
+	const set = {
+		moment,
+		no,
+		at: c.now,
+		questions,
+		marks: questions.map(() => null)
 	};
 	return {
-		result: m.correct ? m.hinted ? "hint" : "right" : "wrong",
-		skipped: false,
-		answers: [m.answer],
-		notes: []
+		extra: {
+			...extra,
+			ask: set,
+			askNo: no
+		},
+		summary: {
+			ask: moment,
+			no
+		},
+		result: {
+			no,
+			questions: questions.map((q, i) => publicQuestion(q, i))
+		}
+	};
+}
+/** Marks one answer to the last `ask`, once, and records it in the pupil's maths. Sending it again gives the same mark. */
+function askCheck(c) {
+	const { extra } = c.w;
+	const set = extra.ask;
+	const slot = c.req.slot;
+	const given = c.req.answer;
+	if (!set || c.req.no !== set.no || !isInt(slot, 0, set.questions.length - 1)) return rule("There is no question to answer.");
+	if (typeof given !== "number" || !Number.isFinite(given)) return { refuse: "bad-request" };
+	const marked = markQuestion(set.questions[slot]);
+	if (!marked) return rule("There is no question to answer.");
+	const before = set.marks[slot];
+	if (before) return {
+		summary: {
+			check: set.no,
+			again: true
+		},
+		result: {
+			correct: before.correct,
+			answer: marked.answer
+		}
+	};
+	const correct = sameAnswer(given, marked.answer);
+	const marks = set.marks.map((m, i) => i === slot ? {
+		correct,
+		given
+	} : m);
+	const pack = packIdOfKey(marked.key);
+	const ms = typeof c.req.ms === "number" && Number.isFinite(c.req.ms) && c.req.ms >= 0 ? Math.round(Math.min(c.req.ms, 12e4)) : 12e4;
+	return {
+		extra: {
+			...extra,
+			ask: {
+				...set,
+				marks
+			}
+		},
+		answers: pack ? [{
+			key: marked.key,
+			correct,
+			ms,
+			at: c.now,
+			pack,
+			...correct ? {} : { given }
+		}] : [],
+		summary: {
+			check: set.no,
+			slot,
+			correct
+		},
+		result: {
+			correct,
+			answer: marked.answer
+		}
 	};
 }
 function startHero(c, existing) {
@@ -10837,7 +10259,7 @@ function forest(c) {
 		message: "You have used all your forest fights today. Come back tomorrow, or visit the village."
 	};
 	if (hero.hp <= 0) return rule("You are too hurt to go into the forest. See the healer.");
-	const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
+	const trip = forestTrip(hero, c.s.seed(), eventsOn(ALL_TOPICS));
 	if (trip.kind === "event") return {
 		extra: {
 			...extra,
@@ -10881,8 +10303,8 @@ function event(c) {
 	let right = false;
 	let answers = [];
 	let notes = [];
-	if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
-		const m = mark(c, c.req.proof, "treasure", e.maths.topic);
+	if (e.maths && !c.req.walkOn) {
+		const m = mark(c, c.req.proof, "treasure");
 		right = m.result !== "wrong";
 		answers = m.answers;
 		notes = m.notes;
@@ -12043,8 +11465,9 @@ async function runLord(s, player, raw) {
 	const isFinish = FINISH_ACTIONS.includes(action);
 	if (action === "start-hero" && !row) {} else if (!row || !w) return refuse("no-hero");
 	else {
-		if (!isFinish && req.version !== row.version) return refuse("stale");
-		if (w.open && !isFinish && action !== "tools") return refuse("fight-open", "Finish your fight first.");
+		const asking = ASKING.includes(action);
+		if (!isFinish && !asking && req.version !== row.version) return refuse("stale");
+		if (w.open && !isFinish && !asking && action !== "tools") return refuse("fight-open", "Finish your fight first.");
 		if (isFinish && !w.open) return refuse("no-fight");
 	}
 	const base = w ?? {
@@ -12113,6 +11536,12 @@ async function runLord(s, player, raw) {
 			break;
 		case "tools":
 			done = await tools(ctx);
+			break;
+		case "ask":
+			done = await ask(ctx);
+			break;
+		case "ask-check":
+			done = askCheck(ctx);
 			break;
 		default: done = { refuse: "bad-request" };
 	}
@@ -12209,6 +11638,23 @@ async function runLord(s, player, raw) {
 }
 //#endregion
 //#region shared/lord/clashServer.ts
+/**
+* Dragon Maths: live arena clashes between classmates, the server's side (rules in clash.ts; database in migration
+* 20261117000200_lord_live_arena.sql). The same pattern as Archery's classmate fights: the browser only ever asks
+* ("challenge Mia", "yes", "Hammer, and here's my answer", "the clock ran out", "I'm leaving"); this works out who's
+* asking from their sign-in, marks the maths answer itself, keeps each pick hidden in the database until both are in, and
+* plays the round with the shared rules. It saves "only if nothing has changed since it looked".
+*
+*   clash-challenge  {other}                         sends a challenge (same school and class only);
+*   clash-answer     {clash, accept}                 the classmate says yes (round 1 starts) or no;
+*   clash-pick       {clash, round, move, proof}     this round's attack, and which ladder question powers it (asked with the
+*                                                    game's own `ask` during this round and marked by `ask-check`);
+*   clash-times-up   {clash}                         the round's time ran out (the server checks its own clock);
+*   clash-leave      {clash}                         calls off a challenge, or gives up (the other side wins, no gold).
+*
+* Gold only for a clash played to the end: the winner about a forest fight's worth at their level, the other side half of
+* that (a draw: half each), for each pupil's first PAID_CLASHES_PER_DAY a day. Every reply carries the clash as it now is.
+*/
 /** How long a challenge waits for an answer, and each round's time to pick and answer. */
 const CHALLENGE_MS = 3e4;
 const ROUND_MS = 6e4;
@@ -12279,18 +11725,18 @@ async function afterRound(s, c, picks, missed) {
 	if (!ended.value) return no(409, CLASH_SAY.changed, { code: "changed" });
 	return ok({ clash: ended.value });
 }
-/** Marks the maths answer that came with a pick. One that can't be checked counts as wrong (never an error the pupil sees). */
-async function markAnswer(s, player, raw, batchKey) {
-	const [loaded, settings] = await Promise.all([s.load(player), s.settings(player)]);
-	const level = loaded.ok ? loaded.value.row?.hero.level ?? 1 : 1;
-	const topics = settings.ok ? topicsOn(settings.value.topics) : void 0;
-	const marked = markProof(raw, "arena", level, s.now(), void 0, topics);
-	if (!marked.ok) return false;
-	const { pack, ...answer } = marked.answer;
-	try {
-		await s.recordAnswers(player, pack, batchKey, [answer]);
-	} catch {}
-	return marked.correct;
+/**
+* Was the ladder question a pick names answered right? It must be the pupil's last `ask` for the arena, asked during this
+* round (so one right answer can't power two rounds) and already marked by `ask-check`, which recorded it in their maths.
+* Anything else counts as wrong (never an error the pupil sees).
+*/
+async function markAnswer(s, player, raw, roundStart) {
+	if (!raw || typeof raw !== "object") return false;
+	const t = raw;
+	const loaded = await s.load(player);
+	const set = loaded.ok && loaded.value.row ? readExtra(loaded.value.row.extra).ask : null;
+	if (!set || set.moment !== "arena" || t.no !== set.no || set.at < roundStart || typeof t.slot !== "number") return false;
+	return set.marks[t.slot]?.correct === true;
 }
 async function handleClash(s, player, action, body) {
 	if (action === "clash-challenge") {
@@ -12368,7 +11814,7 @@ async function handleClash(s, player, action, body) {
 			});
 			return no(400, CLASH_SAY.bad);
 		}
-		const right = await markAnswer(s, player, body.proof, `clash:${c.id}:${round}:${seat}`);
+		const right = await markAnswer(s, player, body.proof, Date.parse(c.deadline) - ROUND_MS - ROUND_GRACE_MS);
 		const r = await s.clashPick(player, c.id, round, move, right);
 		if (!r.ok) return failed(r);
 		const { result, picks } = r.value;
@@ -12580,16 +12026,15 @@ Deno.serve(makeHandler({
 		player,
 		change: commit
 	}),
-	async recordAnswers(player, pack, batchKey, answers) {
-		return call("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchIdFor(`${batchKey}`),
-			answers,
-			quick_ms: quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4
-		});
+	async recordAnswers(player, _pack, batchKey, answers) {
+		const r = await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, batchKey, "lord", (once) => batchIdFor(once));
+		return r.failed > 0 && r.saved === 0 ? {
+			ok: false,
+			why: "busy"
+		} : {
+			ok: true,
+			value: r.saved
+		};
 	},
 	async mathsContext(player) {
 		const r = await call("space_maths_context", { player });

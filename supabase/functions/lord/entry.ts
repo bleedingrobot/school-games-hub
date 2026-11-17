@@ -2,7 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
-import { FLUENT_DAYS, TOP_BOX, quickMsForPack } from '../../../shared/maths/config';
+import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { parseFocus } from '../../../shared/maths/focus';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import type { ArenaCandidate, Outcome, Settings } from '../../../shared/lord/server';
@@ -51,10 +51,11 @@ Deno.serve(
     settings: (player) => call<Settings>('lord_server_settings', { player }),
     load: (player, requestId) => call('load_lord', { player, request_id: requestId ?? null }),
     commit: (player, commit) => call('lord_commit', { player, change: commit }),
-    async recordAnswers(player, pack, batchKey, answers) {
-      return call('record_fact_answers', {
-        player, pack, batch_id: await batchIdFor(`${batchKey}`), answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
-      });
+    // The one approved way (docs/game-guide/4-maths.md rule 6): each pack's quick time, and the running focuses' results.
+    // Batch ids are made as before, so an answer sent again after this change still counts once.
+    async recordAnswers(player, _pack, batchKey, answers) {
+      const r = await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, batchKey, 'lord', (once) => batchIdFor(once));
+      return r.failed > 0 && r.saved === 0 ? { ok: false, why: 'busy' } : { ok: true, value: r.saved };
     },
     async mathsContext(player): Promise<Outcome<MathsContext>> {
       const r = await call<{ facts: MathsContext['facts']; settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean }; focus?: unknown } | null>('space_maths_context', { player });

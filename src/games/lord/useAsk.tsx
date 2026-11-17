@@ -1,17 +1,15 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
-import type { FactStats } from '../../../shared/maths/leitner';
-import type { AnswerResult, Question, SkillPack } from '../../../shared/maths/skillPack';
-import { EXTRA_PACKS, makeExtraPack, makePack, type ExtraTopicId, type TopicId } from '../../../shared/maths/skillPacks';
-import { momentTopics, type MomentId } from '../../../shared/lord/maths';
-import { questionLevel, type Proof } from '../../../shared/lord/proof';
-import { QuestionModal, type ShownQuestion } from '../../maths/QuestionModal';
+import { useCallback, useRef, useState, type ReactNode, type RefObject } from 'react';
+import type { MomentId } from '../../../shared/lord/maths';
+import type { AskTicket, LordAction, LordReply } from '../../../shared/lord/server';
+import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
+import { QuestionModal } from '../../maths/QuestionModal';
 
-/** How a question went: the proof the server will check, and whether it was right (for the pupil's own feedback only). */
+/** How a question went: the ticket naming the question the server marked, and whether it was right (for the pupil's own feedback). */
 export interface Answer {
-  proof: Proof;
+  proof: AskTicket;
   correct: boolean;
 }
-/** Null: the pupil chose not to answer. The server then treats it as no answer, never as wrong. */
+/** Null: the pupil chose not to answer (or the question couldn't be had). The server then treats it as no answer, never as wrong. */
 export type Asked = Answer | null;
 
 export interface AskOptions {
@@ -19,62 +17,52 @@ export interface AskOptions {
   note?: string;
   /** Lets the player say "no thanks" (the answer then counts as skipped, never as wrong). */
   closeLabel?: string;
-  /** Force one kind of question (a forest event's own topic). */
-  pack?: TopicId | ExtraTopicId;
+  /** The next question of the same `ask` (a master's trial asks three at once): 0, or left out, asks the server for new ones. */
+  slot?: number;
 }
+
+type Send = (action: LordAction) => Promise<Extract<LordReply, { ok: true }> | null>;
 
 interface Pending {
   /** New for every question, so the box starts fresh even when one question follows straight on from another. */
   id: number;
-  question: Question;
-  pack: SkillPack;
-  packId: TopicId | ExtraTopicId;
+  no: number;
+  slot: number;
+  shown: PublicQuestion;
   moment: MomentId;
-  level: number;
-  given: { value: number; ms: number } | null;
-  hinted: boolean;
+  marked: { correct: boolean } | null;
   options: AskOptions;
   resolve: (result: Asked) => void;
 }
 
-const isExtra = (id: string): id is ExtraTopicId => id in EXTRA_PACKS;
-
 /**
- * Asks maths questions in the dragon game. `ask(moment, options)` shows a question box and hands back a proof of
- * how it went; `modal` is what to render. Questions come from the shared packs; the server rebuilds each one from
- * its numbers and marks it itself, so what the browser thinks is right only decides what the pupil sees.
+ * Asks maths questions in the dragon game, the same ladder questions as the other games (docs/game-guide/4-maths.md, way A).
+ * `ask(moment, options)` gets the question from the server (`ask`: made from the pupil's maths focus and kept there), shows
+ * it, has the server mark the answer (`ask-check`, which records it), and hands back a ticket for the action it was for.
+ * `send` is the game's own request function (a ref, as the game makes it after this hook).
  */
-export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[] = [], topicsOn?: readonly string[]) {
-  const packs = useRef(new Map<string, SkillPack>());
+export function useAsk(send: RefObject<Send | null>) {
   const [pending, setPending] = useState<Pending | null>(null);
-  // The topics the teacher has left on. A ref, so a change never makes a question box in use start again.
-  const on = useRef(topicsOn);
-  on.current = topicsOn;
+  const last = useRef<{ moment: MomentId; no: number; questions: PublicQuestion[] } | null>(null);
   const nextId = useRef(0);
 
-  const packOf = (id: TopicId | ExtraTopicId): SkillPack => {
-    let pack = packs.current.get(id);
-    if (!pack) {
-      const saved = facts.filter((f) => f.pack === id);
-      pack = isExtra(id) ? makeExtraPack(id, saved) : makePack(id, saved);
-      packs.current.set(id, pack);
-    }
-    return pack;
-  };
-
   const ask = useCallback(
-    (moment: MomentId, options: AskOptions): Promise<Asked> => {
-      const topics = momentTopics(moment, on.current as (TopicId | ExtraTopicId)[] | undefined);
-      const chosen = options.pack ?? (topics.length ? topics[Math.floor(Math.random() * topics.length)] : null);
-      if (!chosen) return Promise.resolve(null);
-      const pack = packOf(chosen);
-      const level = questionLevel(chosen, heroLevel);
-      const question = pack.nextQuestion({ level });
-      if (!question) return Promise.resolve(null);
-      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, question, pack, packId: chosen, moment, level, given: null, hinted: false, options, resolve }));
+    async (moment: MomentId, options: AskOptions): Promise<Asked> => {
+      const slot = options.slot ?? 0;
+      let set = last.current;
+      if (slot === 0 || !set || set.moment !== moment) {
+        const reply = await send.current?.({ action: 'ask', moment });
+        const r = reply?.result as { no?: number; questions?: PublicQuestion[] } | undefined;
+        if (!r || typeof r.no !== 'number' || !r.questions?.length) return null;
+        set = { moment, no: r.no, questions: r.questions };
+        last.current = set;
+      }
+      const shown = set.questions[slot];
+      if (!shown) return null;
+      const no = set.no;
+      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, no, slot, shown, moment, marked: null, options, resolve }));
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [heroLevel, facts],
+    [send],
   );
 
   const finish = (result: Asked) => {
@@ -85,26 +73,23 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
   const modal: ReactNode = pending && (
     <QuestionModal
       key={pending.id}
-      question={pending.question as ShownQuestion & { answer: number }}
+      question={{ ...pending.shown, id: pending.id }}
       title={pending.options.title}
       spot={pending.moment}
       note={pending.options.note}
       closeLabel={pending.options.closeLabel}
-      onHint={() => {
-        pending.hinted = true;
-      }}
       onClose={pending.options.closeLabel ? () => finish(null) : undefined}
-      onSubmit={(answer, ms): AnswerResult & { answer: number } => {
-        pending.given = { value: answer, ms };
-        return { ...pending.pack.recordAnswer(pending.question, answer, ms), answer: pending.question.answer };
+      onSubmit={async (given, ms) => {
+        const reply = await send.current?.({ action: 'ask-check', no: pending.no, slot: pending.slot, answer: given, ms });
+        const r = reply?.result as { correct?: boolean; answer?: number } | undefined;
+        if (!r || typeof r.correct !== 'boolean' || typeof r.answer !== 'number') throw new Error('We couldn’t check that one. Try again.');
+        pending.marked = { correct: r.correct };
+        const fact = pending.shown.parts.join(' ').replace('?', String(r.answer));
+        return { correct: r.correct, boxBefore: 0, boxAfter: 0, fact, answer: r.answer };
       }}
-      onDone={(r) => {
-        const q = pending.question;
-        const given = pending.given ?? { value: Number.NaN, ms: 0 };
-        finish({
-          correct: r.correct,
-          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, ...(pending.packId === 'times-tables' ? { parts: q.parts } : {}), level: pending.level, given: given.value, ms: given.ms, ...(pending.hinted ? { hinted: true } : {}) },
-        });
+      onDone={() => {
+        const marked = pending.marked;
+        finish(marked ? { correct: marked.correct, proof: { no: pending.no, slot: pending.slot } } : null);
       }}
     />
   );

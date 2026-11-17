@@ -8,8 +8,8 @@ import type { Hero } from './types';
  * Where maths turns up in Dragon Maths, and what each result is worth (docs/LORD-PLAN.md section 8).
  *
  * The rules that never change: no timer and no speed bonus; a wrong answer shows the worked answer and
- * the game goes on with nothing lost; one hint per question. The questions themselves come from the
- * shared packs and are made and marked by code (the server rebuilds each one from its numbers).
+ * the game goes on with nothing lost; one hint per question. The questions themselves are ladder questions from
+ * the pupil's maths focus, made, kept and marked by the server (`ask` and `ask-check` in server.ts).
  */
 
 export type MomentId = 'size-it-up' | 'shop' | 'healer' | 'bank' | 'riddle' | 'treasure' | 'inn-guess' | 'master-trial' | 'dragon-trial' | 'arena';
@@ -19,22 +19,19 @@ export type Result = 'right' | 'hint' | 'wrong';
 
 type PackId = TopicId | ExtraTopicId;
 
-/** The pack each moment draws from. Where the teacher has turned a topic off, the game uses the next in the list. */
-export const MOMENT_TOPICS: Record<MomentId, PackId[]> = {
-  'size-it-up': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals'], // whichever the teacher has on
-  shop: ['money', 'add-sub'],
-  healer: ['times-tables', 'division'],
-  bank: ['decimals', 'add-sub'],
-  riddle: ['patterns', 'place-value'],
-  treasure: ['place-value', 'division', 'money', 'patterns'],
-  'inn-guess': [], // the number-guess game is logic, not a pack
-  'master-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
-  'dragon-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
+/**
+ * How many ladder questions each moment asks (`ask` on the server). Every question comes from the pupil's own maths focus
+ * (the ladder, or what the teacher set), the same as the other games: the moment only decides what a right answer is worth.
+ */
+export const ASK_COUNT: Record<MomentId, number> = {
+  'size-it-up': 1, shop: 1, healer: 1, bank: 1, riddle: 1, treasure: 1,
+  'inn-guess': 0, // the number-guess game is logic, not a question
+  'master-trial': 3, 'dragon-trial': 1,
   // An arena clash: each round's question powers that round's attack (shared/lord/clash.ts).
-  arena: ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
+  arena: 1,
 };
 
-/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+/** The topics of the forest's treasure events (once the teacher's tick-list; questions now come from the maths focus). */
 export const ALL_TOPICS: PackId[] = ['place-value', 'add-sub', 'times-tables', 'division', 'fractions', 'decimals', 'money', 'patterns'];
 
 /** The topics to use from a settings list: the known ones only, and never none (an empty or unreadable list means all). */
@@ -43,24 +40,10 @@ export function topicsOn(list: unknown): PackId[] {
   return on.length ? on : ALL_TOPICS;
 }
 
-/**
- * The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
- * its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
- */
-export function momentTopics(moment: MomentId, on: readonly PackId[] = ALL_TOPICS): PackId[] {
-  const own = MOMENT_TOPICS[moment];
-  if (own.length === 0) return [];
-  const kept = own.filter((t) => on.includes(t));
-  return kept.length ? kept : [...on];
-}
-
 /** Questions in a master's trial. */
 export const MASTER_TRIAL_QUESTIONS = 3;
 /** About one fight in this many offers "size it up". */
 export const SIZE_IT_UP_ONE_IN = 3;
-
-/** The difficulty band (1 easiest, 4 hardest) that suits a hero's level when nothing better is known. */
-export const defaultBand = (level: number) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 
 /** Does this fight offer a "size it up" question? A pure function of the seed so a replay agrees. */
 export const offersSizeItUp = (seed: number) => (Math.imul(seed >>> 0, 2654435761) >>> 0) % SIZE_IT_UP_ONE_IN === 0;

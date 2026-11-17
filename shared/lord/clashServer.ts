@@ -7,18 +7,16 @@
  *
  *   clash-challenge  {other}                         sends a challenge (same school and class only);
  *   clash-answer     {clash, accept}                 the classmate says yes (round 1 starts) or no;
- *   clash-pick       {clash, round, move, proof}     this round's attack and the answer that powers it;
+ *   clash-pick       {clash, round, move, proof}     this round's attack, and which ladder question powers it (asked with the
+ *                                                    game's own `ask` during this round and marked by `ask-check`);
  *   clash-times-up   {clash}                         the round's time ran out (the server checks its own clock);
  *   clash-leave      {clash}                         calls off a challenge, or gives up (the other side wins, no gold).
  *
  * Gold only for a clash played to the end: the winner about a forest fight's worth at their level, the other side half of
  * that (a draw: half each), for each pupil's first PAID_CLASHES_PER_DAY a day. Every reply carries the clash as it now is.
  */
-import type { FactAnswer } from '../maths/leitner';
 import { MAX_CLASH_ROUNDS, PAID_CLASHES_PER_DAY, clashPrize, playRound, readMove, replayClash, type ClashPick, type ClashSide } from './clash';
-import { topicsOn } from './maths';
-import { markProof } from './proof';
-import type { Outcome, Services } from './server';
+import { readExtra, type Outcome, type Services } from './server';
 
 /** How long a challenge waits for an answer, and each round's time to pick and answer. */
 export const CHALLENGE_MS = 30_000;
@@ -58,7 +56,7 @@ export const seatIn = (c: Pick<ClashRow, 'seat_a' | 'seat_b'>, player: string): 
 
 type Picks = [ClashPick | null, ClashPick | null];
 
-export interface ClashServices extends Pick<Services, 'now' | 'load' | 'settings' | 'recordAnswers'> {
+export interface ClashServices extends Pick<Services, 'now' | 'load' | 'settings'> {
   clashLoad(clash: number): Promise<Outcome<{ clash: ClashRow; on: [boolean, boolean] } | null>>;
   clashChallenge(player: string, other: string, waitMs: number): Promise<Outcome<{ result: 'ok' | 'away' | 'class' | 'busy' | 'off' | 'no-hero'; clash: number | null }>>;
   clashAnswer(player: string, clash: number, accept: boolean, roundMs: number): Promise<Outcome<{ result: 'ok' | 'late' | 'busy' | 'not-yours'; clash?: ClashRow }>>;
@@ -126,21 +124,18 @@ async function afterRound(s: ClashServices, c: ClashRow, picks: [ClashPick, Clas
   return ok({ clash: ended.value });
 }
 
-/** Marks the maths answer that came with a pick. One that can't be checked counts as wrong (never an error the pupil sees). */
-async function markAnswer(s: ClashServices, player: string, raw: unknown, batchKey: string): Promise<boolean> {
-  const [loaded, settings] = await Promise.all([s.load(player), s.settings(player)]);
-  const level = loaded.ok ? loaded.value.row?.hero.level ?? 1 : 1;
-  const topics = settings.ok ? topicsOn(settings.value.topics) : undefined;
-  const marked = markProof(raw, 'arena', level, s.now(), undefined, topics);
-  if (!marked.ok) return false;
-  const { pack, ...answer } = marked.answer;
-  // The answer goes in the pupil's maths records like any other (a failure here never stops the clash).
-  try {
-    await s.recordAnswers(player, pack, batchKey, [answer as FactAnswer]);
-  } catch {
-    /* only the record is lost */
-  }
-  return marked.correct;
+/**
+ * Was the ladder question a pick names answered right? It must be the pupil's last `ask` for the arena, asked during this
+ * round (so one right answer can't power two rounds) and already marked by `ask-check`, which recorded it in their maths.
+ * Anything else counts as wrong (never an error the pupil sees).
+ */
+async function markAnswer(s: ClashServices, player: string, raw: unknown, roundStart: number): Promise<boolean> {
+  if (!raw || typeof raw !== 'object') return false;
+  const t = raw as Record<string, unknown>;
+  const loaded = await s.load(player);
+  const set = loaded.ok && loaded.value.row ? readExtra(loaded.value.row.extra).ask : null;
+  if (!set || set.moment !== 'arena' || t.no !== set.no || set.at < roundStart || typeof t.slot !== 'number') return false;
+  return set.marks[t.slot]?.correct === true;
 }
 
 export async function handleClash(s: ClashServices, player: string, action: ClashAction, body: Record<string, unknown>): Promise<ClashReply> {
@@ -209,7 +204,7 @@ export async function handleClash(s: ClashServices, player: string, action: Clas
       if (Number.isInteger(body.round) && (body.round as number) < round) return no(409, CLASH_SAY.round, { code: 'round', clash: c });
       return no(400, CLASH_SAY.bad);
     }
-    const right = await markAnswer(s, player, body.proof, `clash:${c.id}:${round}:${seat}`);
+    const right = await markAnswer(s, player, body.proof, Date.parse(c.deadline) - ROUND_MS - ROUND_GRACE_MS);
     const r = await s.clashPick(player, c.id, round, move, right);
     if (!r.ok) return failed(r);
     const { result, picks } = r.value;
