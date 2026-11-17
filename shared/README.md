@@ -85,3 +85,5 @@ The `save-bot-game` server function runs exactly this code before saving a resul
 - `kit/`: the game kit, learning rules any game can use instead of copying (`docs/plans/GAME-KIT-PLAN.md`). `help.ts` is
   help that follows the child, `replay.ts` the replay of a child's taps, `dayArc.ts` the bronze, silver, gold days, `mistakes.ts` wrong choices with a kind, the near-miss check and the two-tap show-why flow (its screens are in `src/kit/ShowWhy.tsx`; the bank of mistake kinds is in `docs/kit/README.md`). No game
   words inside; never changed from a game branch.
+- `quests/`: weekly class quests (docs/CLASS-QUESTS-PLAN.md). `kinds.ts` lists the quest kinds (each matches a
+  `quest_kinds` row and a watcher on its game's table), `week.ts` works out a quest's seven days the same way as the database.

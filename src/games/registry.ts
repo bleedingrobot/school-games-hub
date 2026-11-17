@@ -87,7 +87,10 @@ export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep
 export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest]), ...(kingdomOn() ? [] : [kingdomKeeper]), ...(glyphOn() ? [] : [glyphGates])];
 
 /** The hub's own achievement groups that are not games and have no card (migration 20261113000100: homework). */
-export const HUB_ACHIEVEMENT_GROUPS: { id: string; name: string }[] = [{ id: 'homework', name: 'Homework' }];
+export const HUB_ACHIEVEMENT_GROUPS: { id: string; name: string }[] = [
+  { id: 'homework', name: 'Homework' },
+  { id: 'quests', name: 'Class quests' },
+];
 
 /** A game's name for lists of saved games, even for Power Clash while its card is off. Also names the hub's own groups. */
 export const gameLabel = (id: string | undefined) =>

@@ -6,6 +6,7 @@
  *   /teacher/:classId/progress   Progress (every pupil's step in every Foundational game)
  *   /teacher/:classId/students   Students (the class roster; /students/:studentId is one student's page)
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
+ *   /teacher/:classId/quests     Quests (weekly class quests: start one, every pupil's days)
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
  *   /teacher/admin               Admin (school admins only: Overview, Classes, Students, Teachers, End of year)
@@ -100,6 +101,7 @@ function TeacherHeader({ isAdmin }: { isAdmin: boolean }) {
     { to: pathFor(classId, 'students'), label: 'Students' },
     { to: pathFor(classId, 'maths'), label: 'Maths' },
     { to: pathFor(classId, 'games'), label: 'Games' },
+    { to: pathFor(classId, 'quests'), label: 'Quests' },
     { to: pathFor(classId, 'setup'), label: 'Class set-up' },
   ];
   return (

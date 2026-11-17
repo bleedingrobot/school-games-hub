@@ -1,0 +1,89 @@
+/* The teacher's Quests tab (TeacherQuests.tsx). */
+.tquests { display: grid; gap: 1rem; }
+.tquests__line { margin: 0.25rem 0 0.75rem; }
+.tquests__error { color: #b42318; font-weight: 700; }
+
+.tquests__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.tquests__card {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 0.2rem;
+  min-height: 8.5rem;
+  padding: 0.75rem;
+  border: 3px solid transparent;
+  border-radius: 0.9rem;
+  color: #fff;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background:
+    linear-gradient(180deg, rgb(10 6 30 / 0) 30%, rgb(10 6 30 / 0.85)),
+    var(--tq-art, linear-gradient(120deg, #2a1b5e, #0d3b5c)) center / cover;
+  box-shadow: 0 0.3rem 0.8rem rgb(20 10 50 / 0.25);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tquests__card:hover { transform: translateY(-2px); box-shadow: 0 0.5rem 1.2rem rgb(20 10 50 / 0.35); }
+.tquests__card.is-picked { border-color: #ffd45c; box-shadow: 0 0 0 3px rgb(255 212 92 / 0.45), 0 0.5rem 1.2rem rgb(20 10 50 / 0.35); }
+.tquests__card-name { font-size: 1.05rem; text-shadow: 0 1px 4px rgb(0 0 0 / 0.8); }
+.tquests__card-name strong { color: #ffd45c; }
+.tquests__card-rule { font-size: 0.85rem; opacity: 0.9; text-shadow: 0 1px 4px rgb(0 0 0 / 0.8); }
+.tquests__card-off {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.4rem;
+  background: rgb(180 35 24 / 0.85);
+}
+
+.tquests__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; }
+.tquests__head .tquests__line { margin: 0; }
+.tquests__stop { margin-left: auto; }
+.tquests__scroll { overflow-x: auto; margin-top: 0.5rem; }
+.tquests__table { width: 100%; border-collapse: collapse; }
+.tquests__table th,
+.tquests__table td { padding: 0.35rem 0.4rem; text-align: center; border-bottom: 1px solid rgb(127 127 127 / 0.2); white-space: nowrap; }
+.tquests__table th[scope='row'] { text-align: left; font-weight: 600; }
+.tquests__table thead th.is-today { color: #b8741a; }
+.tquests__table tr.is-won th[scope='row'] { color: #2f7d32; }
+
+.tquests__dot {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  vertical-align: middle;
+  border: 2px solid rgb(127 127 127 / 0.5);
+}
+.tquests__dot.is-done { background: #f5b301; border-color: #c98a00; box-shadow: 0 0 6px rgb(245 179 1 / 0.6); }
+.tquests__dot.is-today { border: 2px dashed #f5b301; }
+.tquests__dot.is-missed { background: rgb(127 127 127 / 0.35); border-color: transparent; }
+.tquests__dot.is-later { opacity: 0.5; }
+.tquests__key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.85rem; opacity: 0.8; }
+.tquests__key .tquests__dot { margin-left: 0.5rem; }
+
+.tquests__past { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.tquests__past-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(10rem, 1.2fr) auto;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(127 127 127 / 0.25);
+  border-radius: 0.5rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tquests__past-row.is-shown { border-color: #f5b301; background: rgb(245 179 1 / 0.08); }
+
+@media (max-width: 560px) {
+  .tquests__past-row { grid-template-columns: 1fr; gap: 0.1rem; }
+}

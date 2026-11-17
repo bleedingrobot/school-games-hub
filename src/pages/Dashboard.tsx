@@ -30,6 +30,7 @@ import { readRememberedCards, rememberCards, useClassSwitches } from '../data/cl
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 import { RecentTrophies } from '../trophies/RecentTrophies';
 import { SeasonNote } from '../trophies/SeasonNote';
+import { QuestBar } from '../quests/QuestBar';
 
 // The teacher pages and older tests still find these here.
 export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
@@ -432,6 +433,8 @@ function DashboardPage() {
         </div>
       ) : (
         <>
+
+        {pupil && <QuestBar quest={answer?.classQuest} moves={answer?.moves} />}
 
         {answer?.recentTrophies && <RecentTrophies trophies={answer.recentTrophies} />}
 

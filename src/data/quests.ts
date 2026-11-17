@@ -1,0 +1,76 @@
+/**
+ * Weekly class quests (docs/CLASS-QUESTS-PLAN.md, migration 20261118000100_class_quests.sql). Everything that counts is
+ * worked out on the server; these just read it and send the teacher's start and stop.
+ */
+import { supabase } from '../lib/supabase';
+import type { QuestKind } from '../../shared/quests/kinds';
+import { FriendlyError } from './profile';
+
+export interface ClassQuest {
+  id: string;
+  kind: QuestKind;
+  startsOn: string;
+  endsOn: string;
+  daysNeeded: number;
+}
+
+export interface MyQuest {
+  quest: ClassQuest;
+  today: string;
+  /** The quest's days I've done. */
+  days: string[];
+  won: boolean;
+  /** How many in my class have finished it (a number only). */
+  classWon: number;
+  /** My quests finished, ever. */
+  questsDone: number;
+}
+
+export interface TeacherQuestRow {
+  id: string;
+  kind: QuestKind;
+  startsOn: string;
+  endsOn: string;
+  stoppedAt: string | null;
+  won: number;
+}
+
+export interface TeacherQuestPupil {
+  id: string;
+  days: string[];
+  won: boolean;
+  questsDone: number;
+}
+
+export interface TeacherQuests {
+  today: string;
+  /** Whether each quest's game is switched on for the class (null: not known). */
+  switches: Partial<Record<QuestKind, boolean | null>>;
+  quests: TeacherQuestRow[];
+  /** The quest the pupils' days are for (the newest, or the one asked for). */
+  shown: string | null;
+  pupils: TeacherQuestPupil[];
+}
+
+function fail(error: { code?: string; message?: string } | null, fallback: string): never {
+  if (error?.code && ['22023', '42501'].includes(error.code) && error.message && !error.message.includes('permission denied')) {
+    throw new FriendlyError(error.message);
+  }
+  throw new FriendlyError(fallback);
+}
+
+export async function fetchTeacherQuests(classId: string, which?: string): Promise<TeacherQuests> {
+  const { data, error } = await supabase.rpc('teacher_class_quests', { target_class: classId, which: which ?? null });
+  if (error || !data) fail(error, 'We couldn’t load the class quests.');
+  return data as TeacherQuests;
+}
+
+export async function startQuest(classId: string, kind: QuestKind): Promise<void> {
+  const { error } = await supabase.rpc('teacher_start_class_quest', { target_class: classId, which: kind });
+  if (error) fail(error, 'We couldn’t start the quest.');
+}
+
+export async function stopQuest(classId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_stop_class_quest', { target_class: classId });
+  if (error) fail(error, 'We couldn’t stop the quest.');
+}
