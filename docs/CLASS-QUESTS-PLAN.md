@@ -1,6 +1,6 @@
 # Weekly class quests
 
-**Status:** stage 1 live 18 Nov 2026 (PR #551, migration `20261118000100_class_quests.sql`): Star Trader, Dragon Maths and Clan Quest "all your turns" quests, with the class teacher playing along. Stage 2 (two quests for every complex and easy maths game) planned below, not built.
+**Status:** stage 1 live 18 Nov 2026 (PR #551, migration `20261118000100_class_quests.sql`): Star Trader, Dragon Maths and Clan Quest "all your turns" quests, with the class teacher playing along. Stage 2 (two quests for every complex and easy maths game, 27 new) built 18 Nov 2026 on branch `claude/quest-stage2`, migration `20261118003100_class_quests_more.sql`. Tallies are only kept for players whose class has a quest running that counts them.
 
 James (18 Nov 2026): a teacher sets a weekly class quest; pupils must play a game properly on 5 days out of 7. A quest tracker
 bar on the home page when the class has one. Teachers track every pupil. Achievements for 1, 5, 10, 15 and 20 quests done.

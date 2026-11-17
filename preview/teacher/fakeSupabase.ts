@@ -7,6 +7,7 @@ import { ALL_SWITCH_COLUMNS } from '../../src/data/games';
 import { LADDER } from '../../shared/maths/ladder';
 import { newStats } from '../../shared/maths/leitner';
 import { addDays } from '../../shared/quests/week';
+import { isDaily, questKind } from '../../shared/quests/kinds';
 import { busyPupil, newPupil, fakeSupabase, setWorld, homeAnswer } from '../../src/pages/homePageFake';
 
 const SCENE = new URLSearchParams(window.location.search).get('scene') ?? 'teacher';
@@ -150,12 +151,19 @@ const teacherQuests = (which?: string) => {
     ],
   };
 };
+// ?quest=<kind id> (any quest in shared/quests/kinds.ts), ?quest=won, ?quest=none.
 const myQuest = () => {
   if (QUEST === 'none') return null;
-  const kind = QUEST === 'lord' || QUEST === 'clans' ? QUEST : 'trader';
   const won = QUEST === 'won';
+  const info = questKind(QUEST) ?? questKind('trader')!;
+  const daily = isDaily(info.rule);
   const days = won ? [qDay(-4), qDay(-3), qDay(-2), qDay(-1), qDay(0)] : [qDay(-3), qDay(-1)];
-  return { quest: { id: `preview-${kind}-${won}`, kind, startsOn: qDay(won ? -4 : -3), endsOn: qDay(won ? 2 : 3), daysNeeded: 5 }, today: qToday, days, won, classWon: 9, questsDone: won ? 5 : 2 };
+  const target = daily ? 5 : info.amount ?? 10;
+  const count = won ? target : daily ? days.length : Math.max(1, Math.round(target * 0.6));
+  return {
+    quest: { id: `preview-${info.id}-${won}`, kind: info.id, startsOn: qDay(won ? -4 : -3), endsOn: qDay(won ? 2 : 3), daysNeeded: 5, rule: info.rule },
+    today: qToday, days, count, target, won, classWon: 9, questsDone: won ? 5 : 2,
+  };
 };
 world.jobs.my_class_quest = myQuest();
 
