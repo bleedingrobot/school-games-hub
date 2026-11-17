@@ -43,7 +43,17 @@ export const CHECK_CONFIG = {
   questionMs: 30_000,
   /** The website says who is due (my_facts_check()); pupils below this school year aren't asked. */
   fromYear: 3,
+  /**
+   * A pupil's first check waits until they have finished this many Training sessions (17 Nov 2026): a brand-new pupil's first
+   * "Training" was otherwise a hard test (7 × 8, 72 ÷ 8) that leaves their facts map empty. Later checks are never held back.
+   */
+  firstAfterSessions: 3,
 } as const;
+
+/** Whether to ask for the check now: the server says one is due, and a first check also waits for a few Training sessions. */
+export function checkDueNow(serverDue: boolean, checksDone: number, sessionsDone: number): boolean {
+  return serverDue && (checksDone > 0 || sessionsDone >= CHECK_CONFIG.firstAfterSessions);
+}
 
 /** One answer, in CHECK_FACTS order. `given` null = "Not sure yet" or ran out of time. */
 export interface CheckAnswer {

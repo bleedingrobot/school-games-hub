@@ -491,7 +491,12 @@ const CHECK_CONFIG = {
 	/** A question moves on by itself after this long, as not answered. */
 	questionMs: 3e4,
 	/** The website says who is due (my_facts_check()); pupils below this school year aren't asked. */
-	fromYear: 3
+	fromYear: 3,
+	/**
+	* A pupil's first check waits until they have finished this many Training sessions (17 Nov 2026): a brand-new pupil's first
+	* "Training" was otherwise a hard test (7 × 8, 72 ÷ 8) that leaves their facts map empty. Later checks are never held back.
+	*/
+	firstAfterSessions: 3
 };
 function thinkMsOf(a) {
 	return Math.max(0, a.ms - a.typingMs);

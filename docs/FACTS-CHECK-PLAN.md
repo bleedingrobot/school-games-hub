@@ -11,7 +11,7 @@ On 15 Nov the coordinator looked at Training's answers: 69 pupils with 60+ answe
 ## 2. What pupils do
 
 - **Who:** pupils in Year 3 and up, or with no year set (`CHECK_CONFIG.fromYear`). Teachers and Years 0 to 2 are never asked.
-- **When:** at the start of Training, when they have never done one or their last was 28 or more days ago (`everyDays`). "Facts check" replaces the Today's session button until it is done. A maths warm-up still comes first if their class needs one.
+- **When:** at the start of Training, when they have never done one or their last was 28 or more days ago (`everyDays`). A pupil's first check waits until they have finished 3 Training sessions (`firstAfterSessions`, 17 Nov 2026), so a brand-new pupil starts with easy wins and a filling facts map, not a hard test. "Facts check" replaces the Today's session button until it is done. A maths warm-up still comes first if their class needs one.
 - **What:** Training's typing warm-up, then the same 24 facts (`CHECK_FACTS` in `shared/training/check.ts`): 16 times and 8 division, easy to hard across ×2 to ×12. Shuffled order, always shown the same way round. No right/wrong shown, no picture help, no clock on screen. "Not sure yet" moves on, and so does 30 seconds with no answer.
 - **At the end:** "You got 18 of 24 right" and one kind line: more quick facts or more right than last time, or "Keep training and watch your facts grow". Never seconds, never "fewer".
 - **Counts as a Training session:** it opens the games (Training before games) and counts towards Training trophies, so it isn't an extra job before games.

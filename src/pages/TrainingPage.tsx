@@ -13,6 +13,7 @@ import { NO_LADDER, type LadderInfo } from '../../shared/maths/place';
 import { needsPlacement, trainingPassedSteps } from '../../shared/training/start';
 import { PlacementFirstCard } from '../training/PlacementFirst';
 import { fetchMyFactsCheck, type MyFactsCheck } from '../data/factsCheck';
+import { checkDueNow } from '../../shared/training/check';
 import { addAnswer, enqueueCheck, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
 import { GamesGateNote } from '../training/TrainFirst';
 import type { QuickAnswerEvent } from '../subitising/SubitisingApp';
@@ -181,7 +182,7 @@ function Loaded({ player, start, offline, quickStart, placeFirst, check }: { pla
         gateNote={<GamesGateNote />}
         placementFirst={placeFirst ? <PlacementFirstCard back="/training" /> : undefined}
         check={{
-          due: check.due,
+          due: checkDueNow(check.due, check.count, state.sessionsDone),
           last: check.last,
           onDone: (item) => {
             enqueueCheck(player, item);
